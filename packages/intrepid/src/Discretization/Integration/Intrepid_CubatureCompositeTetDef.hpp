@@ -52,7 +52,7 @@ template <class Scalar, class ArrayPoint, class ArrayWeight>
 CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::CubatureCompositeTet(const int degree) {
   this->degree_    = degree;
   this->dimension_ = 3;
-  TEST_FOR_EXCEPTION(degree != 3,
+  TEUCHOS_TEST_FOR_EXCEPTION(degree != 3,
                      std::out_of_range,
                      ">>> ERROR (CubatureDirectTetDefault): No direct cubature rule implemented for the desired polynomial degree.");
 } // end constructor

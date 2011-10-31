@@ -35,9 +35,6 @@ extern "C" {
  * in defs.h in the version of ParMetis you are using!
  * Both ParMetis 2.0 and 3.0 defs are included below.
  */
-#define OPTION_IPART            1
-#define OPTION_FOLDF            2
-#define OPTION_DBGLVL           3
 #define PMV3_OPTION_DBGLVL      1
 #define PMV3_OPTION_SEED        2
 #define PMV3_OPTION_IPART       3

@@ -40,6 +40,7 @@
 #include "AnasaziBasicOrthoManager.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -163,7 +164,7 @@ int main(int argc, char *argv[])
       OM = rcp( new ICGSOrthoManager<ST,MV,OP>(M) );
     }
     else {
-      TEST_FOR_EXCEPTION(true,invalid_argument,"Command line parameter \"ortho\" must be \"SVQB\" or \"Basic\".");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,invalid_argument,"Command line parameter \"ortho\" must be \"SVQB\" or \"Basic\".");
     }
 
     // multivector to spawn off of
@@ -187,25 +188,25 @@ int main(int argc, char *argv[])
       // X1
       MVT::MvRandom(*X1);
       dummy = OM->normalize(*X1);
-      TEST_FOR_EXCEPTION(dummy != sizeX1, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(dummy != sizeX1, std::runtime_error, 
           "normalize(X1) returned rank " << dummy << " from " 
           << sizeX1 << " vectors. Cannot continue.");
       err = OM->orthonormError(*X1);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "normalize(X1) did meet tolerance: orthonormError(X1) == " << err);
       MyOM->stream(Warnings) << "   || <X1,X1> - I || : " << err << endl;
       // X2
       MVT::MvRandom(*X2);
       dummy = OM->projectAndNormalize(*X2,tuple<RCP<const MV> >(X1));
-      TEST_FOR_EXCEPTION(dummy != sizeX2, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(dummy != sizeX2, std::runtime_error, 
           "projectAndNormalize(X2,X1) returned rank " << dummy << " from " 
           << sizeX2 << " vectors. Cannot continue.");
       err = OM->orthonormError(*X2);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "projectAndNormalize(X2,X1) did not meet tolerance: orthonormError(X2) == " << err);
       err = OM->orthogError(*X2,*X1);
       MyOM->stream(Warnings) << "   || <X2,X2> - I || : " << err << endl;
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "projectAndNormalize(X2,X1) did not meet tolerance: orthogError(X2,X1) == " << err);
       MyOM->stream(Warnings) << "   || <X2,X1> ||     : " << err << endl;
     }
@@ -335,7 +336,7 @@ int main(int argc, char *argv[])
     if (numFailed) {
       MyOM->stream(Errors) << numFailed << " errors." << endl;
     }
-    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;	
+    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;
     return -1;
   }
   //
@@ -343,7 +344,7 @@ int main(int argc, char *argv[])
   //
   MyOM->stream(Errors) << "End Result: TEST PASSED" << endl;
   return 0;
-}	
+}
 
 
 
@@ -731,7 +732,8 @@ int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
       lclMS = MS;
     }
 
-    RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
+    Teuchos::ArrayRCP<ST> Bdata = Teuchos::arcp<ST>(sizeS*sizeS);
+    RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,Bdata.getRawPtr(),sizeS,sizeS,sizeS) );
 
     try {
       // call routine
@@ -771,7 +773,7 @@ int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
         if (MScopy != null) {
           MScopy = MVT::CloneViewNonConst(*MScopy,ind);
         }
-        B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,*B,ret,sizeS) );
+        B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,Bdata.getRawPtr(),ret,ret,sizeS) );
       }
 
       // test all outputs for correctness

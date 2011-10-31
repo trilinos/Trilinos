@@ -46,7 +46,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
       cout.precision(8);
       cout << "    Area = " << area << " (should be 3.0)" << endl;
       cout << "    Difference = " << fabs(area - 3.0) << " (should be 0.0)" << endl;
-      TEST_FOR_EXCEPTION((fabs(area - 3.0) > 1e-8), std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION((fabs(area - 3.0) > 1e-8), std::logic_error, 
 			 "Area integration failed!");
       cout << "    **Area integration...passed!" << endl;
     }
@@ -155,9 +155,9 @@ int main(int argc, char *argv[])
 	cout << "    dudx = " << dudx << endl;
 	cout << "    dudy = " << dudy << endl;
 	
-	TEST_FOR_EXCEPTION( fabs(dudx - 1.0) > 1.0e-8, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION( fabs(dudx - 1.0) > 1.0e-8, std::logic_error,
 			    "X Derivative is incorrect!" );
-	TEST_FOR_EXCEPTION( fabs(dudy) > 1.0e-8, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION( fabs(dudy) > 1.0e-8, std::logic_error,
 			    "Y Derivative is incorrect!" );
       }
       
@@ -180,9 +180,9 @@ int main(int argc, char *argv[])
 	cout << "    dudx = " << dudx << endl;
 	cout << "    dudy = " << dudy << endl;
 	
-	TEST_FOR_EXCEPTION( fabs(dudx) > 1.0e-8, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION( fabs(dudx) > 1.0e-8, std::logic_error,
 			    "X Derivative is incorrect!" );
-	TEST_FOR_EXCEPTION( fabs(dudy - 1.0) > 1.0e-8, std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION( fabs(dudy - 1.0) > 1.0e-8, std::logic_error,
 			    "Y Derivative is incorrect!" );
 	
       }
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 	}
       }
       cout << "    area = " << area << ", should be " << 15.0 << endl;
-      TEST_FOR_EXCEPTION( ((area - 15.0) > 1.0e-12), std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( ((area - 15.0) > 1.0e-12), std::logic_error,
 			  "Mesh area integration failed!");
     }
     cout << "  **Mesh Integration passed!" << endl;

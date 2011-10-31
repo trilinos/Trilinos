@@ -56,7 +56,7 @@ namespace Teuchos {
   }
 
 template <typename ForwardIterator>
-bool is_sorted(ForwardIterator first, ForwardIterator last)
+bool tpetra_is_sorted(ForwardIterator first, ForwardIterator last)
 {
   if (first == last)
     return true;
@@ -100,8 +100,8 @@ namespace {
     sort2( arr1.begin(), arr1.end(), arr2.begin() );
     out << "after  (arr1): "; std::copy( arr1.begin(), arr1.end(), ostream_iterator<T1>(out, " ")); out << endl;
     out << "       (arr2): "; std::copy( arr2.begin(), arr2.end(), ostream_iterator<T2>(out, " ")); out << endl;
-    TEST_EQUALITY_CONST( is_sorted(arr1.begin(), arr1.end()), true );
-    TEST_EQUALITY_CONST( is_sorted(arr2.begin(), arr2.end()), false );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr1.begin(), arr1.end()), true );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr2.begin(), arr2.end()), false );
     TEST_COMPARE_ARRAYS_NEG( arr1, arr2 )
     // currently, arr2 goes from high to low, arr1 from low to high
     // sort according to arr2
@@ -110,8 +110,8 @@ namespace {
     sort2( arr2.begin(), arr2.end(), arr1.begin() );
     out << "after  (arr1): "; std::copy( arr1.begin(), arr1.end(), ostream_iterator<T1>(out, " ")); out << endl;
     out << "       (arr2): "; std::copy( arr2.begin(), arr2.end(), ostream_iterator<T2>(out, " ")); out << endl;
-    TEST_EQUALITY_CONST( is_sorted(arr2.begin(), arr2.end()), true );
-    TEST_EQUALITY_CONST( is_sorted(arr1.begin(), arr1.end()), false );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr2.begin(), arr2.end()), true );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr1.begin(), arr1.end()), false );
     TEST_COMPARE_ARRAYS_NEG( arr1, arr2 )
   }
 
@@ -139,9 +139,9 @@ namespace {
     out << "after  (arr1): "; std::copy( arr1.begin(), arr1.end(), ostream_iterator<T1>(out, " ")); out << endl;
     out << "       (arr2): "; std::copy( arr2.begin(), arr2.end(), ostream_iterator<T2>(out, " ")); out << endl;
     out << "       (arr3): "; std::copy( arr3.begin(), arr3.end(), ostream_iterator<T1>(out, " ")); out << endl;
-    TEST_EQUALITY_CONST( is_sorted(arr1.begin(), arr1.end()), true );
-    TEST_EQUALITY_CONST( is_sorted(arr2.begin(), arr2.end()), false );
-    TEST_EQUALITY_CONST( is_sorted(arr3.begin(), arr3.end()), true );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr1.begin(), arr1.end()), true );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr2.begin(), arr2.end()), false );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr3.begin(), arr3.end()), true );
     TEST_COMPARE_ARRAYS( arr1, arr3 );
     TEST_COMPARE_ARRAYS_NEG( arr1, arr2 )
     // currently, arr2 goes from high to low, arr1/arr3 from low to high
@@ -153,9 +153,9 @@ namespace {
     out << "after  (arr1): "; std::copy( arr1.begin(), arr1.end(), ostream_iterator<T1>(out, " ")); out << endl;
     out << "       (arr2): "; std::copy( arr2.begin(), arr2.end(), ostream_iterator<T2>(out, " ")); out << endl;
     out << "       (arr3): "; std::copy( arr3.begin(), arr3.end(), ostream_iterator<T1>(out, " ")); out << endl;
-    TEST_EQUALITY_CONST( is_sorted(arr1.begin(), arr1.end()), false );
-    TEST_EQUALITY_CONST( is_sorted(arr2.begin(), arr2.end()), true );
-    TEST_EQUALITY_CONST( is_sorted(arr3.begin(), arr3.end()), false );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr1.begin(), arr1.end()), false );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr2.begin(), arr2.end()), true );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr3.begin(), arr3.end()), false );
     TEST_COMPARE_ARRAYS( arr1, arr3 );
     TEST_COMPARE_ARRAYS_NEG( arr1, arr2 )
     // currently, arr1/arr3 goes from high to low, arr2 from low to high
@@ -167,9 +167,9 @@ namespace {
     out << "after  (arr1): "; std::copy( arr1.begin(), arr1.end(), ostream_iterator<T1>(out, " ")); out << endl;
     out << "       (arr2): "; std::copy( arr2.begin(), arr2.end(), ostream_iterator<T2>(out, " ")); out << endl;
     out << "       (arr3): "; std::copy( arr3.begin(), arr3.end(), ostream_iterator<T1>(out, " ")); out << endl;
-    TEST_EQUALITY_CONST( is_sorted(arr1.begin(), arr1.end()), true );
-    TEST_EQUALITY_CONST( is_sorted(arr2.begin(), arr2.end()), false );
-    TEST_EQUALITY_CONST( is_sorted(arr3.begin(), arr3.end()), true );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr1.begin(), arr1.end()), true );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr2.begin(), arr2.end()), false );
+    TEST_EQUALITY_CONST( tpetra_is_sorted(arr3.begin(), arr3.end()), true );
     TEST_COMPARE_ARRAYS( arr1, arr3 );
     TEST_COMPARE_ARRAYS_NEG( arr1, arr2 )
   }

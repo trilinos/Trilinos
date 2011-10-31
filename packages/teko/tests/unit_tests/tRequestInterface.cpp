@@ -209,7 +209,7 @@ public:
 Teuchos::RCP<Teuchos::ParameterList> PLCallback::request(const Teko::RequestMesg & rm)
 {
    Teuchos::RCP<const Teuchos::ParameterList> inputPL = rm.getParameterList();
-   TEST_FOR_EXCEPTION(inputPL==Teuchos::null,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(inputPL==Teuchos::null,std::runtime_error,
                       "Parameter list not included in request message");
 
    Teuchos::RCP<Teuchos::ParameterList> outputPL = Teuchos::rcp(new Teuchos::ParameterList);

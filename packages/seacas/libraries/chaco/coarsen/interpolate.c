@@ -15,14 +15,16 @@
 */
 
 
-void      interpolate(vecs, cvecs, ndims, graph, nvtxs, v2cv, using_ewgts)
-double  **vecs;			/* approximate eigenvectors for graph */
-double  **cvecs;		/* exact eigenvectors for coarse graph */
-int       ndims;		/* number of vectors to interpolate */
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int      *v2cv;			/* mapping from vtxs to cvtxs */
-int       using_ewgts;		/* are edge weights being used in fine graph? */
+void 
+interpolate (
+    double **vecs,			/* approximate eigenvectors for graph */
+    double **cvecs,		/* exact eigenvectors for coarse graph */
+    int ndims,		/* number of vectors to interpolate */
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int *v2cv,			/* mapping from vtxs to cvtxs */
+    int using_ewgts		/* are edge weights being used in fine graph? */
+)
 {
     double   *vec, *cvec;	/* pointers into vecs and vecs */
     int      *eptr;		/* loops through edge lists */

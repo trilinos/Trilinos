@@ -21,7 +21,7 @@
 #include "Teuchos_RCP.hpp"
 // #include "Teuchos_BLAS.hpp"
 #include "Teuchos_oblackholestream.hpp"
-//#include "Teuchos_TestForException.hpp"
+//#include "Teuchos_Assert.hpp"
 
 #include <stk_percept/ExceptionWatch.hpp>
 #include <stk_util/diag/Timer.hpp>

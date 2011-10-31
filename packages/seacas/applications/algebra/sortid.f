@@ -51,9 +51,9 @@ C   --
 C   --Common Variables:
 C   --   Sets NAMVAR, TYPVAR, IDVAR, ISTVAR, IEVVAR of /VAR../
 
-      include 'namlen.blk'
-      include 'params.blk'
-      include 'var.blk'
+      include 'ag_namlen.blk'
+      include 'exodusII.inc'
+      include 'ag_var.blk'
 
       CHARACTER STYP
 

@@ -70,6 +70,7 @@ class RelativeNormF : public Generic {
 public:
 
   RelativeNormF(double tolerance,
+		bool scale_norms_by_vector_length = false,
 		const NOX::Utils* u = NULL);
 
   // derived
@@ -94,6 +95,9 @@ private:
 
   //! Current Norm of F
   double normF;
+
+  //! If set to true, the norms are scaled by the size of the vector
+  bool scale_norms_by_vector_length;
 
   //! Ostream used to print errors
   NOX::Utils utils;

@@ -29,7 +29,7 @@
 // @HEADER
 
 #include "SimpleME.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Stokhos_Epetra.hpp"
 
 SimpleME::SimpleME(const Teuchos::RCP<const Epetra_Comm>& comm) 
@@ -90,7 +90,7 @@ SimpleME::get_f_map() const
 Teuchos::RCP<const Epetra_Map>
 SimpleME::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
 		     std::logic_error,
                      std::endl << 
                      "Error!  SimpleME::get_p_map():  " <<
@@ -102,7 +102,7 @@ SimpleME::get_p_map(int l) const
 Teuchos::RCP<const Teuchos::Array<std::string> >
 SimpleME::get_p_names(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
 		     std::logic_error,
                      std::endl << 
                      "Error!  SimpleME::get_p_names():  " <<
@@ -120,7 +120,7 @@ SimpleME::get_x_init() const
 Teuchos::RCP<const Epetra_Vector>
 SimpleME::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
 		     std::logic_error,
                      std::endl << 
                      "Error!  SimpleME::get_p_init():  " <<

@@ -1,0 +1,12 @@
+namespace-TestForExceptionMacros.20111017.sh
+namespace-TestForExceptionMacros.20111017.token-list
+namespace-TestForExceptionMacros.20111017.ignore-files-list
+TestForException_throwTest.cpp
+Teuchos_Assert.cpp
+Teuchos_Assert.hpp
+Teuchos_StandardCatchMacros.hpp
+Teuchos_TestForException.cpp
+Teuchos_TestForException.hpp
+OldTestForException_UnitTests.cpp
+ReleaseNotes.txt
+CMakeLists.txt

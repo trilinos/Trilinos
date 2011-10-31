@@ -30,7 +30,7 @@
 
 #include "Piro_ConfigDefs.hpp"
 #include "Piro_Epetra_Factory.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #ifdef Piro_ENABLE_NOX
 #include "Piro_Epetra_NOXSolver.hpp"
@@ -116,7 +116,7 @@ createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
 			  piroParams, model, observer));
   }
 
-  TEST_FOR_EXCEPTION(!found, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(!found, Teuchos::Exceptions::InvalidParameter,
 		     std::endl << "Error!  Piro::Epetra::Factory():  " <<
 		     "Invalid Solver Type " << name << std::endl);
 

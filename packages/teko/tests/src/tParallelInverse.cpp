@@ -84,7 +84,7 @@ void tParallelInverse::loadMatrix()
 {
    // Read in the matrix, store pointer as an RCP
    Epetra_CrsMatrix * ptrA = 0;
-   TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("data/lsc_F_2.mm",*GetComm(),ptrA));
+   TEUCHOS_TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("data/lsc_F_2.mm",*GetComm(),ptrA));
    F_ = Thyra::epetraLinearOp(rcp(ptrA));
 }
 
@@ -93,7 +93,7 @@ void tParallelInverse::loadStridedMatrix()
    // Read in the matrix, store pointer as an RCP
    Epetra_CrsMatrix * ptrA = 0;
    std::vector<int> vec(2); vec[0] = 1; vec[1] = 2;
-   TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("data/nsjac.mm",*GetComm(),ptrA));
+   TEUCHOS_TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("data/nsjac.mm",*GetComm(),ptrA));
    RCP<Epetra_CrsMatrix> A = rcp(ptrA);
 
    // Block the linear system using a strided epetra operator

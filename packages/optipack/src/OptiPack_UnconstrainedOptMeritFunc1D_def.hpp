@@ -113,7 +113,7 @@ void UnconstrainedOptMeritFunc1D<Scalar>::eval(
   using Thyra::eval_g_DgDp;
   pointEvaluator_->computePoint(alpha, p_.ptr());
   if (!is_null(g_grad_vec_)) {
-    TEST_FOR_EXCEPT_MSG( true,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
       "Error, g_grad_vec has not been implemented yet!.");
   }
   else {

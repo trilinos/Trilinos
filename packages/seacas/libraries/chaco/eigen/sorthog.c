@@ -6,11 +6,13 @@
 #include "defs.h"
 #include "structs.h"
 
-void      sorthog(vec, n, solist, ngood)
-double   *vec;			/* vector to be orthogonalized */
-int       n;			/* length of the columns of orth */
-struct orthlink **solist;	/* set of vecs to orth. against */
-int       ngood;		/* number of vecs in solist */
+void 
+sorthog (
+    double *vec,			/* vector to be orthogonalized */
+    int n,			/* length of the columns of orth */
+    struct orthlink **solist,	/* set of vecs to orth. against */
+    int ngood		/* number of vecs in solist */
+)
 {
     double    alpha;
     double   *dir;
@@ -25,11 +27,13 @@ int       ngood;		/* number of vecs in solist */
     }
 }
 
-void      sorthog_float(vec, n, solist, ngood)
-float    *vec;			/* vector to be orthogonalized */
-int       n;			/* length of the columns of orth */
-struct orthlink_float **solist;	/* set of vecs to orth. against */
-int       ngood;		/* number of vecs in solist */
+void 
+sorthog_float (
+    float *vec,			/* vector to be orthogonalized */
+    int n,			/* length of the columns of orth */
+    struct orthlink_float **solist,	/* set of vecs to orth. against */
+    int ngood		/* number of vecs in solist */
+)
 {
     float     alpha;
     float    *dir;

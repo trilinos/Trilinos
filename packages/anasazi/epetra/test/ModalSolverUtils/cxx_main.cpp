@@ -124,11 +124,11 @@ int main(int argc, char *argv[])
     H.random();
     // QR of random matrix H: this puts Householder reflectors in H,tau
     lapack.GEQRF(H.numRows(),H.numCols(),H.values(),H.stride(),&tau[0],&qrwork[0],(int)qrwork.size(),&info);
-    TEST_FOR_EXCEPTION(info != 0,std::logic_error,"error in LAPACK::GEQRF()");
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error,"error in LAPACK::GEQRF()");
     // generate Q of the QR=H
     Q.assign(H);
     lapack.ORGQR(Q.numRows(),Q.numCols(),Q.numCols(),Q.values(),Q.stride(),&tau[0],&qrwork[0],(int)qrwork.size(),&info);
-    TEST_FOR_EXCEPTION(info != 0,std::logic_error,"error in LAPACK::ORGQR()");
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error,"error in LAPACK::ORGQR()");
 
     // test orthonormality of V
     err = orthman.orthonormError(V);
@@ -370,14 +370,14 @@ int main(int argc, char *argv[])
         Utils::permuteVectors(rperm,Q);
         // compute Q'*K*Q
         info = T1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0,KK,Q,0.0);
-        TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Erroneous call to Teuchos::SDM::multiply.");
+        TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Erroneous call to Teuchos::SDM::multiply.");
         info = TK.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,1.0,Q,T1,0.0);
-        TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Erroneous call to Teuchos::SDM::multiply.");
+        TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Erroneous call to Teuchos::SDM::multiply.");
         // compute Q'*M*Q
         info = T1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0,MM,Q,0.0);
-        TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Erroneous call to Teuchos::SDM::multiply.");
+        TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Erroneous call to Teuchos::SDM::multiply.");
         info = TM.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,1.0,Q,T1,0.0);
-        TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Erroneous call to Teuchos::SDM::multiply.");
+        TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error, "Erroneous call to Teuchos::SDM::multiply.");
         bool testfailed = false;
         for (int i=0; i<nev; i++) {
           // check lambda2

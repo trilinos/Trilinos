@@ -47,7 +47,7 @@
 
 #include <sstream>
 #include "Phalanx_TypeStrings.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 //**********************************************************************
 template<typename DataT>

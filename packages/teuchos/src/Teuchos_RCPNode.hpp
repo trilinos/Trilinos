@@ -92,7 +92,7 @@ inline void debugAssertStrength(ERCPStrength strength)
       return; // Fine
     case RCP_STRENGTH_INVALID:
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
 #endif
 }
@@ -113,14 +113,14 @@ public:
         case RCP_STRONG:
           return "RCP_STRONG";
         case RCP_WEAK:
-          return "RCP_STRONG";
+          return "RCP_WEAK";
         default:
           // Should never get here but fall through ...
           break;
       }
       // Should never get here!
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
       return "";
       // 2009/06/30: rabartl: The above logic avoid a warning from the Intel
@@ -513,7 +513,7 @@ public:
   ~RCPNodeTmpl()
     {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION( ptr_!=0, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( ptr_!=0, std::logic_error,
         "Error, the underlying object must be explicitly deleted before deleting"
         " the node object!" );
 #endif
@@ -571,7 +571,7 @@ public:
     const void* rcp_obj_ptr
     ) const
     {
-      TEST_FOR_EXCEPT_MSG( ptr_!=0, "Internal coding error!" );
+      TEUCHOS_TEST_FOR_EXCEPT_MSG( ptr_!=0, "Internal coding error!" );
       const T* deleted_ptr =
 #ifdef TEUCHOS_DEBUG
         deleted_ptr_
@@ -580,7 +580,7 @@ public:
 #endif
         ;
       TEUCHOS_ASSERT(rcp_node_ptr);
-      TEST_FOR_EXCEPTION( true, DanglingReferenceError,
+      TEUCHOS_TEST_FOR_EXCEPTION( true, DanglingReferenceError,
         "Error, an attempt has been made to dereference the underlying object\n"
         "from a weak smart pointer object where the underling object has already\n"
         "been deleted since the strong count has already gone to zero.\n"
@@ -675,7 +675,7 @@ namespace Teuchos {
 
 
 /** \brief Utility handle class for handling the reference counting and
- * managuement of the RCPNode object.
+ * management of the RCPNode object.
  *
  * Again, this is *not* a user-level class.  Instead, this class is used by
  * all of the user-level reference-counting classes.
@@ -683,7 +683,7 @@ namespace Teuchos {
  * NOTE: I (Ross Bartlett) am not generally a big fan of handle classes and
  * greatly prefer smart pointers.  However, this is one case where a handle
  * class makes sense.  First, I want special behavior in some functions when
- * the wrapped RCPNode pointer is null.  Secound, I can't use one of the
+ * the wrapped RCPNode pointer is null.  Second, I can't use one of the
  * smart-pointer classes because this class is used to implement all of those
  * smart-pointer classes!
  *

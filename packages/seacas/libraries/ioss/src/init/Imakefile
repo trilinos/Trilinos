@@ -44,5 +44,5 @@ OBJS = ${SRCS:.C=.o}
 LibraryTargetSubdirs(libIonit.a,$(OBJS),../)
 
 MakeDirectories(install, $(INCDIR)/ioss)
-InstallIncludeList(install,Ionit_Initializer.h,$(INCDIR)/ioss)
+InstallIncludeList(install,Ionit_Initializer.h,$(INCDIR)/ioss/init)
 

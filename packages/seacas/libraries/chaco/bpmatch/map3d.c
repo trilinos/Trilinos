@@ -11,13 +11,15 @@
 
 static void free3d();
 
-void      map3d(graph, xvecs, nvtxs, sets, goal, vwgt_max)
-struct vtx_data **graph;	/* graph data structure */
-double  **xvecs;		/* vectors to partition */
-int       nvtxs;		/* number of vertices */
-int    *sets;			/* set each vertex gets assigned to */
-double   *goal;			/* desired set sizes */
-int       vwgt_max;		/* largest vertex weight */
+void 
+map3d (
+    struct vtx_data **graph,	/* graph data structure */
+    double **xvecs,		/* vectors to partition */
+    int nvtxs,		/* number of vertices */
+    int *sets,			/* set each vertex gets assigned to */
+    double *goal,			/* desired set sizes */
+    int vwgt_max		/* largest vertex weight */
+)
 {
     extern int DEBUG_BPMATCH;	/* debug flag for bipartite matching */
     extern int N_VTX_MOVES;	/* number of vertices moved between sets */
@@ -62,9 +64,8 @@ int       vwgt_max;		/* largest vertex weight */
 }
 
 
-static void free3d(vals, indices)
-double   *vals[8][MAXSETS];
-int      *indices[8][MAXSETS];
+static void 
+free3d (double *vals[8][MAXSETS], int *indices[8][MAXSETS])
 {
 
 

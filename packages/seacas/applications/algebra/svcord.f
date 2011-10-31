@@ -52,10 +52,10 @@ C   --   Uses NUMNP of /DBNUMS/
 C   --   Uses ICOBEG, ICOEND of /DBXVAR/
 
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
-      include 'namlen.blk'
-      include 'var.blk'
-      include 'dbnums.blk'
-      include 'dbxvar.blk'
+      include 'ag_namlen.blk'
+      include 'ag_var.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbxvar.blk'
 
       REAL CORD(NUMNP,NDIM)
       REAL VARVAL(MAXNE,*)

@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -367,7 +367,7 @@ inline
 void DefaultAddedLinearOp<Scalar>::assertInitialized() const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( numOps() > 0 ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( numOps() > 0 ) );
 #endif
 }
 

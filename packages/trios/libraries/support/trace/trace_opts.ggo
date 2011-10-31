@@ -1,0 +1,4 @@
+option "trace-enable" - "Enable tracing on specified groups (comma-separated list)" string optional
+option "trace-path" - "Path to the trace file" string optional
+option "trace-ftype" -"Type of tracefile (0=binary,1=ASCII)" int default="0" optional
+

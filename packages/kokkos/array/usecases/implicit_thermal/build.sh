@@ -23,6 +23,11 @@ HOST | Host | host )
   export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_HOST"
   export CXX_SOURCES="${CXX_SOURCES} testHost.cpp"
   ;;
+PTHREAD | Pthread | pthread )
+  export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_PTHREAD"
+  export CXX_SOURCES="${CXX_SOURCES} ../../src/DevicePthread/*.cpp testPthread.cpp"
+  export LIB="${LIB} -lpthread"
+  ;;
 TPI | tpi )
   echo "#define HAVE_PTHREAD" > ThreadPool_config.h
   export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_TPI"

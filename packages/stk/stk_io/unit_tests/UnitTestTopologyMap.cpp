@@ -98,7 +98,13 @@ int testElement(const std::string &name)
   errors += my_assert(cell.getEdgeCount(),
 		      static_cast<unsigned>(element->number_edges()),
 		      "edge count");
-  errors += my_assert(cell.getSideCount(),
+  
+  // NOTE: Ioss counts edges and faces as boundaries for shell elements
+  int add_boundary = 0;
+  if (add_to == 1 && element->spatial_dimension() == 3 && element->parametric_dimension() == 2)
+    add_boundary = cell.getEdgeCount();
+
+  errors += my_assert(cell.getSideCount() + add_boundary,
 		      static_cast<unsigned>(element->number_boundaries()),
 		      "boundary count");
 

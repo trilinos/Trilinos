@@ -226,6 +226,16 @@ int main(int argc, char *argv[]) {
     // Save solution to file
     EpetraExt::VectorToMatrixMarketFile("stochastic_solution.mm", *sg_x);
 
+    // Save RHS to file
+    EpetraExt::VectorToMatrixMarketFile("stochastic_RHS.mm", *sg_f);
+
+    // Save operator to file (set "Operator Method" to "Fully Assembled" above)
+    Teuchos::RCP<Epetra_CrsMatrix> sg_J_crs =
+      Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(sg_J);
+    if (sg_J_crs != Teuchos::null)
+      EpetraExt::RowMatrixToMatrixMarketFile("stochastic_operator.mm", 
+					     *sg_J_crs);
+
     // Save mean and variance to file
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x_poly = 
       sg_model->create_x_sg(View, sg_x.get());

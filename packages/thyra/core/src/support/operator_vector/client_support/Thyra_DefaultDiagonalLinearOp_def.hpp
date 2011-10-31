@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -94,7 +94,7 @@ void DefaultDiagonalLinearOp<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(space.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(space.get()==NULL);
 #endif
   initialize(createMember(space)); // Note that the space is guaranteed to be remembered here!
 }

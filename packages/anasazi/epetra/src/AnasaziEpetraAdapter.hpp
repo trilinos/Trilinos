@@ -39,7 +39,7 @@
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperator.hpp"
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -216,7 +216,7 @@ namespace Anasazi {
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */
     void MvScale ( double alpha ) { 
-      TEST_FOR_EXCEPTION( this->Scale( alpha )!=0, EpetraMultiVecFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( this->Scale( alpha )!=0, EpetraMultiVecFailure,
           "Anasazi::EpetraMultiVec::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
     }
     
@@ -233,7 +233,7 @@ namespace Anasazi {
     */
     void MvNorm ( std::vector<double> & normvec ) const {
       if (((int)normvec.size() >= GetNumberVecs()) ) {
-        TEST_FOR_EXCEPTION( this->Norm2(&normvec[0])!=0, EpetraMultiVecFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION( this->Norm2(&normvec[0])!=0, EpetraMultiVecFailure,
             "Anasazi::EpetraMultiVec::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value.");
       }
     };
@@ -251,14 +251,14 @@ namespace Anasazi {
     /*! \brief Fill the vectors in \c *this with random numbers.
      */
     void MvRandom() { 
-      TEST_FOR_EXCEPTION( this->Random()!=0, EpetraMultiVecFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( this->Random()!=0, EpetraMultiVecFailure,
           "Anasazi::EpetraMultiVec::MvRandom call to Epetra_MultiVector::Random() returned a nonzero value.");
     };
 
     /*! \brief Replace each element of the vectors in \c *this with \c alpha.
      */
     void MvInit ( double alpha ) { 
-      TEST_FOR_EXCEPTION( this->PutScalar( alpha )!=0, EpetraMultiVecFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( this->PutScalar( alpha )!=0, EpetraMultiVecFailure,
           "Anasazi::EpetraMultiVec::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
     };
     
@@ -674,7 +674,7 @@ namespace Anasazi {
     static Teuchos::RCP<Epetra_MultiVector> 
     Clone (const Epetra_MultiVector& mv, const int outNumVecs)
     { 
-      TEST_FOR_EXCEPTION(outNumVecs <= 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(outNumVecs <= 0, std::invalid_argument,
 			 "Belos::MultiVecTraits<double, Epetra_MultiVector>::"
 			 "Clone(mv, outNumVecs = " << outNumVecs << "): "
 			 "outNumVecs must be positive.");
@@ -707,7 +707,7 @@ namespace Anasazi {
       const int outNumVecs = index.size();
 
       // Simple, inexpensive tests of the index vector.
-      TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
 			 "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::"
 			 "CloneCopy(mv, index = {}): At least one vector must be"
 			 " cloned from mv.");
@@ -720,7 +720,7 @@ namespace Anasazi {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): There are " << outNumVecs 
 	     << " indices to copy, but only " << inNumVecs << " columns of mv.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #ifdef TEUCHOS_DEBUG
       // In debug mode, we perform more expensive tests of the index
@@ -739,7 +739,7 @@ namespace Anasazi {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): Indices must be nonnegative, but "
 	    "the smallest index " << minIndex << " is negative.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
       if (maxIndex >= inNumVecs)
 	{
@@ -751,7 +751,7 @@ namespace Anasazi {
 	  os << index[outNumVecs-1] << "}): Indices must be strictly less than "
 	    "the number of vectors " << inNumVecs << " in mv; the largest index " 
 	     << maxIndex << " is out of bounds.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #endif // TEUCHOS_DEBUG
       // Cast to nonconst, because Epetra_MultiVector's constructor
@@ -774,11 +774,11 @@ namespace Anasazi {
 	  std::ostringstream os;
 	  os <<	"Anasazi::MultiVecTraits<double,Epetra_MultiVector>::Clone(mv,"
 	    "index=[" << index.lbound() << ", " << index.ubound() << "]): ";
-	  TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonempty.");
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonnegative.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= inNumVecs, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= inNumVecs, std::invalid_argument,
 			     os.str() << "Column index range must not exceed "
 			     "number of vectors " << inNumVecs << " in the "
 			     "input multivector.");
@@ -798,7 +798,7 @@ namespace Anasazi {
       const int outNumVecs = index.size();
 
       // Simple, inexpensive tests of the index vector.
-      TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
 			 "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::"
 			 "CloneViewNonConst(mv, index = {}): The output view "
 			 "must have at least one column.");
@@ -811,7 +811,7 @@ namespace Anasazi {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): There are " << outNumVecs 
 	     << " indices to view, but only " << inNumVecs << " columns of mv.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #ifdef TEUCHOS_DEBUG
       // In debug mode, we perform more expensive tests of the index
@@ -830,7 +830,7 @@ namespace Anasazi {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): Indices must be nonnegative, but "
 	    "the smallest index " << minIndex << " is negative.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
       if (maxIndex >= inNumVecs)
 	{
@@ -842,7 +842,7 @@ namespace Anasazi {
 	  os << index[outNumVecs-1] << "}): Indices must be strictly less than "
 	    "the number of vectors " << inNumVecs << " in mv; the largest index " 
 	     << maxIndex << " is out of bounds.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #endif // TEUCHOS_DEBUG
       // Cast to nonconst, because Epetra_MultiVector's constructor
@@ -864,11 +864,11 @@ namespace Anasazi {
 	  os <<	"Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneView"
 	    "NonConst(mv,index=[" << index.lbound() << ", " << index.ubound() 
 	     << "]): ";
-	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonempty.");
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonnegative.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
 			     std::invalid_argument,
 			     os.str() << "Column index range must not exceed "
 			     "number of vectors " << mv.NumVectors() << " in "
@@ -889,7 +889,7 @@ namespace Anasazi {
       const int outNumVecs = index.size();
 
       // Simple, inexpensive tests of the index vector.
-      TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(outNumVecs == 0, std::invalid_argument,
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
 			 "CloneView(mv, index = {}): The output view "
 			 "must have at least one column.");
@@ -902,7 +902,7 @@ namespace Anasazi {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): There are " << outNumVecs 
 	     << " indices to view, but only " << inNumVecs << " columns of mv.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #ifdef TEUCHOS_DEBUG
       // In debug mode, we perform more expensive tests of the index
@@ -921,7 +921,7 @@ namespace Anasazi {
 	    os << index[k] << ", ";
 	  os << index[outNumVecs-1] << "}): Indices must be nonnegative, but "
 	    "the smallest index " << minIndex << " is negative.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
       if (maxIndex >= inNumVecs)
 	{
@@ -933,7 +933,7 @@ namespace Anasazi {
 	  os << index[outNumVecs-1] << "}): Indices must be strictly less than "
 	    "the number of vectors " << inNumVecs << " in mv; the largest index " 
 	     << maxIndex << " is out of bounds.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
 #endif // TEUCHOS_DEBUG
       // Cast to nonconst, because Epetra_MultiVector's constructor
@@ -955,11 +955,11 @@ namespace Anasazi {
 	  os <<	"Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneView"
 	    "(mv,index=[" << index.lbound() << ", " << index.ubound() 
 	     << "]): ";
-	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonempty.");
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Column index range must be nonnegative.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= mv.NumVectors(), 
 			     std::invalid_argument,
 			     os.str() << "Column index range must not exceed "
 			     "number of vectors " << mv.NumVectors() << " in "
@@ -997,7 +997,7 @@ namespace Anasazi {
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
 
-      TEST_FOR_EXCEPTION( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta )!=0, EpetraMultiVecFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta )!=0, EpetraMultiVecFailure,
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Multiply() returned a nonzero value.");
     }
 
@@ -1036,7 +1036,7 @@ namespace Anasazi {
         }
         else {
           // single update
-          TEST_FOR_EXCEPTION( mv.Update( alpha, A, 0.0 )!=0, EpetraMultiVecFailure,
+          TEUCHOS_TEST_FOR_EXCEPTION( mv.Update( alpha, A, 0.0 )!=0, EpetraMultiVecFailure,
               "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvAddMv call to Epetra_MultiVector::Update(alpha,A,0.0) returned a nonzero value.");
         }
       }
@@ -1047,13 +1047,13 @@ namespace Anasazi {
         }
         else {
           // single update
-          TEST_FOR_EXCEPTION( mv.Update( beta, B, 0.0 )!=0, EpetraMultiVecFailure,
+          TEUCHOS_TEST_FOR_EXCEPTION( mv.Update( beta, B, 0.0 )!=0, EpetraMultiVecFailure,
               "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvAddMv call to Epetra_MultiVector::Update(beta,B,0.0) returned a nonzero value.");
         }
       }
       else {
         // double update
-        TEST_FOR_EXCEPTION( mv.Update( alpha, A, beta, B, 0.0 )!=0, EpetraMultiVecFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION( mv.Update( alpha, A, beta, B, 0.0 )!=0, EpetraMultiVecFailure,
             "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvAddMv call to Epetra_MultiVector::Update(alpha,A,beta,B,0.0) returned a nonzero value.");
       }
     }
@@ -1069,7 +1069,7 @@ namespace Anasazi {
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
       
-      TEST_FOR_EXCEPTION( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 )!=0, EpetraMultiVecFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 )!=0, EpetraMultiVecFailure,
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvTransMv call to Epetra_MultiVector::Multiply() returned a nonzero value.");
     }
     
@@ -1082,12 +1082,12 @@ namespace Anasazi {
                       )
     {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION(A.NumVectors() != B.NumVectors(),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(A.NumVectors() != B.NumVectors(),std::invalid_argument,
           "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvDot(A,B,b): A and B must have the same number of vectors.");
-      TEST_FOR_EXCEPTION(b.size() != (unsigned int)A.NumVectors(),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(b.size() != (unsigned int)A.NumVectors(),std::invalid_argument,
           "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvDot(A,B,b): b must have room for all dot products.");
 #endif
-      TEST_FOR_EXCEPTION( A.Dot( B, &b[0] )!=0, EpetraMultiVecFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( A.Dot( B, &b[0] )!=0, EpetraMultiVecFailure,
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvDot(A,B,b) call to Epetra_MultiVector::Dot() returned a nonzero value.");     
     }
 
@@ -1101,10 +1101,10 @@ namespace Anasazi {
     static void MvNorm( const Epetra_MultiVector& mv, std::vector<double> &normvec )
     { 
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION((unsigned int)mv.NumVectors() != normvec.size(),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION((unsigned int)mv.NumVectors() != normvec.size(),std::invalid_argument,
           "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvNorm(mv,normvec): normvec must be the same size of mv.");
 #endif
-      TEST_FOR_EXCEPTION( mv.Norm2(&normvec[0])!=0, EpetraMultiVecFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( mv.Norm2(&normvec[0])!=0, EpetraMultiVecFailure,
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value."); 
     }
 
@@ -1141,7 +1141,7 @@ namespace Anasazi {
 	    }
 	  os << "}): A has only " << inNumVecs << " columns, but there are "
 	     << outNumVecs << " indices in the index vector.";
-	  TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str());
 	}
       // Make a view of the columns of mv indicated by the index std::vector.
       Teuchos::RCP<Epetra_MultiVector> mv_view = CloneViewNonConst (mv, index);
@@ -1183,17 +1183,17 @@ namespace Anasazi {
 	  os <<	"Anasazi::MultiVecTraits<double, Epetra_MultiVector>::SetBlock"
 	    "(A, index=[" << index.lbound() << ", " << index.ubound() << "], "
 	    "mv): ";
-	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     os.str() << "Range lower bound must be nonnegative.");
-	  TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
 			     os.str() << "Range upper bound must be less than "
 			     "the number of columns " << numColsA << " in the "
 			     "'mv' output argument.");
-	  TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
 			     os.str() << "Range must have no more elements than"
 			     " the number of columns " << numColsA << " in the "
 			     "'A' input argument.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
 
       // View of columns [index.lbound(), index.ubound()] of the
@@ -1236,11 +1236,11 @@ namespace Anasazi {
 	  std::ostringstream os;
 	  os <<	"Anasazi::MultiVecTraits<double, Epetra_MultiVector>::Assign"
 	    "(A, mv): ";
-	  TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
 			     os.str() << "Input multivector 'A' has " 
 			     << numColsA << " columns, but output multivector "
 			     "'mv' has only " << numColsMv << " columns.");
-	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
       // View of the first [0, numColsA-1] columns of mv.
       Teuchos::RCP<Epetra_MultiVector> mv_view;
@@ -1263,7 +1263,7 @@ namespace Anasazi {
      */
     static void MvScale ( Epetra_MultiVector& mv, double alpha ) 
     { 
-      TEST_FOR_EXCEPTION( mv.Scale( alpha )!=0, EpetraMultiVecFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( mv.Scale( alpha )!=0, EpetraMultiVecFailure,
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale(mv,double alpha) returned a nonzero value."); 
     }
 
@@ -1274,11 +1274,11 @@ namespace Anasazi {
       // Check to make sure the vector is as long as the multivector has columns.
       int numvecs = mv.NumVectors();
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION( alpha.size() != (unsigned int)numvecs, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( alpha.size() != (unsigned int)numvecs, std::invalid_argument,
                           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvScale(mv,vector alpha): size of alpha inconsistent with number of vectors in mv.")
 #endif
       for (int i=0; i<numvecs; i++) {
-        TEST_FOR_EXCEPTION( mv(i)->Scale(alpha[i])!=0, EpetraMultiVecFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION( mv(i)->Scale(alpha[i])!=0, EpetraMultiVecFailure,
             "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
       }
     }
@@ -1287,7 +1287,7 @@ namespace Anasazi {
      */
     static void MvRandom( Epetra_MultiVector& mv )
     { 
-      TEST_FOR_EXCEPTION( mv.Random()!=0, EpetraMultiVecFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( mv.Random()!=0, EpetraMultiVecFailure,
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvRandom call to Epetra_MultiVector::Random() returned a nonzero value.");
     }
 
@@ -1295,7 +1295,7 @@ namespace Anasazi {
      */
     static void MvInit( Epetra_MultiVector& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
     { 
-      TEST_FOR_EXCEPTION( mv.PutScalar(alpha)!=0, EpetraMultiVecFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( mv.PutScalar(alpha)!=0, EpetraMultiVecFailure,
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
     }
 
@@ -1353,11 +1353,11 @@ namespace Anasazi {
                         Epetra_MultiVector& y )
     { 
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION(x.NumVectors() != y.NumVectors(),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(x.NumVectors() != y.NumVectors(),std::invalid_argument,
           "Anasazi::OperatorTraits<double,Epetra_MultiVector,Epetra_Operator>::Apply(Op,x,y): x and y must have the same number of columns.");
 #endif
       int ret = Op.Apply(x,y);
-      TEST_FOR_EXCEPTION(ret != 0, OperatorError, 
+      TEUCHOS_TEST_FOR_EXCEPTION(ret != 0, OperatorError, 
           "Anasazi::OperatorTraits<double,Epetra_Multivector,Epetra_Operator>::Apply(): Error in Epetra_Operator::Apply(). Code " << ret);
     }
     

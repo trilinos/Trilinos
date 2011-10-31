@@ -35,6 +35,7 @@ syntax(
   std::cout << "Syntax " << expr << " ... ";
   try {
     stk::expreval::fad::Eval expr_eval(stk::expreval::fad::Eval::VariableMap::getDefaultResolver(), expr);
+    expr_eval.parse();
   }
   catch (std::runtime_error &x) {
     std::cout << "fail, " << x.what() << std::endl;
@@ -52,6 +53,7 @@ fail_syntax(
   std::cout << "Invalid syntax " << expr << " ...  ";
   try {
     stk::expreval::fad::Eval expr_eval(stk::expreval::fad::Eval::VariableMap::getDefaultResolver(), expr);
+    expr_eval.parse();
   }
   catch (std::runtime_error &x) {
     std::cout << "pass" << std::endl;
@@ -68,6 +70,7 @@ vectest(
   std::cout << " syntax " << expr << " ...  ";
   try {
     stk::expreval::fad::Eval expr_eval(stk::expreval::fad::Eval::VariableMap::getDefaultResolver(), expr);
+    expr_eval.parse();
   }
   catch (std::runtime_error &x) {
     std::cout << "pass" << std::endl;
@@ -89,6 +92,7 @@ test(
   std::cout << "Evaluate " << expr << " ... ";
   std::string by_expr = std::string("by=") + expr + ";";
   stk::expreval::fad::Eval expr_eval(stk::expreval::fad::Eval::VariableMap::getDefaultResolver(), by_expr.c_str());
+  expr_eval.parse();
 
   // result and by are the ExprEvalFAD results
   // y is the c++ result

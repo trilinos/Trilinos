@@ -258,7 +258,7 @@ void SCLOP_solver::determine_ownership()
   delete [] flag_con_max;
   Epetra_Map RowMapCon(NumberMpc_keep, 0, *Comm);
   MpcLocalMap = new Epetra_Map(-1, nmpc_loc, mpc_loc, 0, *Comm);
-  Epetra_CrsMatrix ConSubdomain(View, *SubMap, count1);
+  Epetra_CrsMatrix ConSubdomain(Copy, *SubMap, count1);
   for (i=0; i<nnode; i++) {
     for (j=nodebeg[i]; j<nodebeg[i+1]; j++) {
       int gdof = maxdofnode*gnn[i] + nodedof[j];

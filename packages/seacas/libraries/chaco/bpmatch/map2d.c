@@ -10,13 +10,15 @@
 
 static void free2d();
 
-void      map2d(graph, xvecs, nvtxs, sets, goal, vwgt_max)
-struct vtx_data **graph;	/* data structure with vertex weights */
-double  **xvecs;		/* vectors to partition */
-int       nvtxs;		/* number of vertices */
-int    *sets;			/* set each vertex gets assigned to */
-double   *goal;			/* desired set sizes */
-int       vwgt_max;		/* largest vertex weight */
+void 
+map2d (
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    double **xvecs,		/* vectors to partition */
+    int nvtxs,		/* number of vertices */
+    int *sets,			/* set each vertex gets assigned to */
+    double *goal,			/* desired set sizes */
+    int vwgt_max		/* largest vertex weight */
+)
 {
     extern int DEBUG_BPMATCH;	/* turn on debuging for bipartite matching */
     extern int N_VTX_MOVES;	/* total number of vertex moves */
@@ -62,9 +64,8 @@ int       vwgt_max;		/* largest vertex weight */
 
 
 /* Free the space used in the bpmatch routines. */
-static void free2d(vals, indices)
-double   *vals[4][MAXSETS];
-int      *indices[4][MAXSETS];
+static void 
+free2d (double *vals[4][MAXSETS], int *indices[4][MAXSETS])
 {
 
 

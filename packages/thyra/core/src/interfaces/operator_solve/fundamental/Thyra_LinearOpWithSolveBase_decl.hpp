@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -515,7 +515,7 @@ protected:
     const Ptr<const SolveCriteria<Scalar> > solveCriteria
     ) const
     {
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
       return(false);
     }
 

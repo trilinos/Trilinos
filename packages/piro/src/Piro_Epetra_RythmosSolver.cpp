@@ -74,10 +74,10 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
   num_p = model->createInArgs().Np();
   num_g = model->createOutArgs().Ng();
 
-  TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::RythmosSolver " <<
                      "Not Implemented for Np>1 : " << num_p << std::endl);
-  TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::RythmosSolver " <<
                      "Not Implemented for Ng>1 : " << num_g << std::endl);
 
@@ -162,7 +162,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       else if (stepperType == "Explicit RK")
         fwdStateStepper = Rythmos::explicitRKStepper<double>(fwdStateModel);
       else 
-        TEST_FOR_EXCEPTION( true, Teuchos::Exceptions::InvalidParameter,
+        TEUCHOS_TEST_FOR_EXCEPTION( true, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
                      << stepperType << std::endl);
 
@@ -207,7 +207,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::RythmosSolver::get_f_map() const
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::RythmosSolver::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::RythmosSolver::get_p_map():  " <<
                      "Invalid parameter index l = " <<
@@ -217,7 +217,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::RythmosSolver::get_p_map(int l) con
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::RythmosSolver::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::RythmosSolver::get_g_map():  " <<
                      "Invalid response index j = " <<
@@ -235,7 +235,7 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::RythmosSolver::get_x_init() cons
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::RythmosSolver::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::RythmosSolver::get_p_init():  " <<
                      "Invalid parameter index l = " <<

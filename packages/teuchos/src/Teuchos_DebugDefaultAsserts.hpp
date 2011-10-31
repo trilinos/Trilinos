@@ -43,11 +43,11 @@
 #define TEUCHOS_DEBUG_DEFAULT_ASSERTS_HPP
 
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 #ifdef TEUCHOS_DEBUG
-#define TEUCHOS_SWITCH_DEFAULT_DEBUG_ASSERT() default: TEST_FOR_EXCEPT(true); break
+#define TEUCHOS_SWITCH_DEFAULT_DEBUG_ASSERT() default: TEUCHOS_TEST_FOR_EXCEPT(true); break
 #else
 /** \brief Macro to insert switch default that throws in a debug build.
  *
@@ -61,7 +61,7 @@
 
 
 #ifdef TEUCHOS_DEBUG
-#define TEUCHOS_IF_ELSE_DEBUG_ASSERT() else { TEST_FOR_EXCEPT(true); }
+#define TEUCHOS_IF_ELSE_DEBUG_ASSERT() else { TEUCHOS_TEST_FOR_EXCEPT(true); }
 #else
 /** \brief Macro to insert else block that throws in a debug build.
  *

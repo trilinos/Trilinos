@@ -1682,6 +1682,9 @@ int ML_random_global_subset(ML_Operator *Amat, double reduction,
 /*                            = (P_tent)^T Q A Q^T P_tent                    */
 /* This implies that Q^T P_tent used with the original matrix generates the  */
 /* same coarse grid operator.                                                */
+/*                                                                           */
+/* Note: the time to repartition the matrix is included in its build_time.   */
+/*                                                                           */
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -1696,6 +1699,9 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 #if !defined(HAVE_ML_PARMETIS) && !defined(HAVE_ML_ZOLTAN) && !defined(HAVE_ML_JOSTLE)
  int oldj, *the_list = NULL, offset, Nnonzero, oldNnonzero, *itemp = NULL;
   double * d2vec;
+#endif
+#if defined(ML_TIMING)
+  double t0;
 #endif
 
  int *remote_offsets = NULL, *iwork = NULL;
@@ -2036,6 +2042,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   ML_Operator_Set_ApplyFunc( permt_mat, CSR_matvec);
   permt_mat->data_destroy = ML_CSR_MSRdata_Destroy;
   permt_mat->max_nz_per_row = 1;
+  permt_mat->min_nz_per_row = 1;
   permt_mat->N_nonzeros     = mat->invec_leng;
   *permt = ML_Operator_Create(comm);
   ML_back_to_csrlocal(permt_mat, *permt, max_per_processor);
@@ -2075,7 +2082,17 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
   permuted_Amat = ML_Operator_Create(comm);
 
+#if defined(ML_TIMING)
+  t0 = GetClock();
+#endif
   ML_rap(perm_mat,mat,*permt,permuted_Amat, ML_CSR_MATRIX);
+#if defined(ML_TIMING)
+  t0 = GetClock() - t0;
+#endif
+  ML_Operator_Copy_Statistics(mat,permuted_Amat);
+#if defined(ML_TIMING)
+  permuted_Amat->build_time += t0;
+#endif
   if (UseImplicitTranspose)
     ML_Operator_ImplicitTranspose(perm_mat,*permt, ML_FALSE);
 
@@ -2383,6 +2400,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
     newP = ML_Operator_Create(Pmat->comm);
     ML_2matmult(Pmat, permt, newP, ML_CSR_MATRIX); 
+    ML_Operator_Copy_Statistics(Pmat,newP);
     ML_Operator_Move2HierarchyAndDestroy(&newP, Pmat);
     
     if (R_is_Ptranspose == ML_TRUE) {
@@ -2393,6 +2411,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     else if (Rmat->getrow->post_comm == NULL) {
       newR = ML_Operator_Create(Rmat->comm);
       ML_2matmult(perm, Rmat, newR, ML_CSR_MATRIX); 
+      ML_Operator_Copy_Statistics(Rmat,newR);
       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
     }
     else {

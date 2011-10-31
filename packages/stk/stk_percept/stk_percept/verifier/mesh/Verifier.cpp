@@ -32,9 +32,10 @@ namespace stk
       
 
       bool debug_re=true;
+      ParallelMachineFinalize pmf(true);
       RunEnvironment run_environment(&argc, &argv, debug_re);
       process_options(run_environment);
-      run_environment.processCommandLine(&argc, &argv);
+      run_environment.processCommandLine();
 
       {
         if (run_environment.help_opt) {
@@ -73,7 +74,7 @@ namespace stk
           }
       }
 
-      RunEnvironment::doLoadBalance(run_environment.m_comm, file_name);
+      //RunEnvironment::doLoadBalance(run_environment.m_comm, file_name);
 
       PerceptMesh mesh(3, run_environment.m_comm);
       mesh.openReadOnly(file_name);

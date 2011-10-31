@@ -90,7 +90,7 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
   /*
     This constructor builds a tensor product rule according to quadInfo myRule.
   */  
-  TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
+  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
 		      dimension!=(int)rule1D.size()),std::out_of_range,
            ">>> ERROR (CubatureTensorSorted): Dimension mismatch for inputs.");
 
@@ -128,7 +128,7 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
   /*
     This constructor builds a tensor product rule according to quadInfo myRule.
   */  
-  TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
+  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
 		      dimension!=(int)rule1D.size()||
 		      dimension!=(int)growth1D.size()),std::out_of_range,
            ">>> ERROR (CubatureTensorSorted): Dimension mismatch for inputs.");
@@ -168,7 +168,7 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
   /*
     This constructor builds a tensor product rule according to quadInfo myRule.
   */  
-  TEST_FOR_EXCEPTION((dimension!=(int)rule1D.size()||
+  TEUCHOS_TEST_FOR_EXCEPTION((dimension!=(int)rule1D.size()||
 		      dimension!=(int)growth1D.size()),std::out_of_range,
             ">>> ERROR (CubatureTensorSorted): Dimension mismatch for inputs.");
   dimension_ = dimension;

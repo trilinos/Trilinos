@@ -391,7 +391,7 @@ namespace Anasazi {
 #ifdef TEUCHOS_DEBUG
     for (int j=0; j<Z.numCols(); j++) {
       for (int i=0; i<Z.numRows(); i++) {
-        TEST_FOR_EXCEPTION(SCT::isnaninf(Z(i,j)), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(SCT::isnaninf(Z(i,j)), std::logic_error,
             "Anasazi::MatOrthoManager::innerProdMat(): detected NaN/inf.");
       }
     }

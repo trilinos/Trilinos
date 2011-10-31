@@ -5,12 +5,14 @@
 #include <stdio.h>
 
 
-int       make_maps(setlists, list_ptrs, set, glob2loc, loc2glob)
-int      *setlists;		/* linked list of set vertices */
-int      *list_ptrs;		/* head of each linked list */
-int       set;			/* set value denoting subgraph */
-int      *glob2loc;		/* graph -> subgraph numbering map */
-int      *loc2glob;		/* subgraph -> graph numbering map */
+int 
+make_maps (
+    int *setlists,		/* linked list of set vertices */
+    int *list_ptrs,		/* head of each linked list */
+    int set,			/* set value denoting subgraph */
+    int *glob2loc,		/* graph -> subgraph numbering map */
+    int *loc2glob		/* subgraph -> graph numbering map */
+)
 {
     int       i, j;		/* loop counter */
 
@@ -37,12 +39,14 @@ int      *loc2glob;		/* subgraph -> graph numbering map */
 
 
 
-void      make_maps2(assignment, nvtxs, set, glob2loc, loc2glob)
-int    *assignment;		/* set assignments for graph */
-int       nvtxs;		/* length of assignment */
-int       set;			/* set value denoting subgraph */
-int      *glob2loc;		/* graph -> subgraph numbering map */
-int      *loc2glob;		/* subgraph -> graph numbering map */
+void 
+make_maps2 (
+    int *assignment,		/* set assignments for graph */
+    int nvtxs,		/* length of assignment */
+    int set,			/* set value denoting subgraph */
+    int *glob2loc,		/* graph -> subgraph numbering map */
+    int *loc2glob		/* subgraph -> graph numbering map */
+)
 {
     int       i, j;		/* loop counter */
 

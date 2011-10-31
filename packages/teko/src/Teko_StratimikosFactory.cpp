@@ -136,8 +136,8 @@ void StratimikosFactory::initializePrec(
 
   Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
 #ifdef _DEBUG
-  TEST_FOR_EXCEPT(fwdOp.get()==NULL);
-  TEST_FOR_EXCEPT(prec==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(fwdOp.get()==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(prec==NULL);
 #endif
 
   //
@@ -273,7 +273,7 @@ void StratimikosFactory::uninitializePrec(
   Thyra::ESupportSolveUse *supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 
@@ -284,7 +284,7 @@ void StratimikosFactory::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
-   TEST_FOR_EXCEPT(paramList.get()==NULL);
+   TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
 
    paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
    paramList_ = paramList;
@@ -415,7 +415,7 @@ std::string StratimikosFactory::description() const
 void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
                                const std::string & stratName)
 {
-   TEST_FOR_EXCEPTION(builder.getValidParameters()->sublist("Preconditioner Types").isParameter(stratName),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(builder.getValidParameters()->sublist("Preconditioner Types").isParameter(stratName),std::logic_error,
                       "Teko::addTekoToStratimikosBuilder cannot add \"" + stratName +"\" because it is already included in builder!");
 
    // use default constructor to add Teko::StratimikosFactory
@@ -428,7 +428,7 @@ void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & build
                                const Teuchos::RCP<Teko::RequestHandler> & rh,
                                const std::string & stratName)
 {
-   TEST_FOR_EXCEPTION(builder.getValidParameters()->sublist("Preconditioner Types").isParameter(stratName),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(builder.getValidParameters()->sublist("Preconditioner Types").isParameter(stratName),std::logic_error,
                       "Teko::addTekoToStratimikosBuilder cannot add \"" + stratName +"\" because it is already included in builder!");
 
    // build an instance of a Teuchos::AbsractFactory<Thyra::PFB> so request handler is passed onto

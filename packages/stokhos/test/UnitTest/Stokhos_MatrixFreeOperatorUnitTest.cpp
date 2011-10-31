@@ -140,7 +140,7 @@ namespace MatrixFreeOperatorUnitTest {
       for (int block=0; block<basis->size(); block++) {
 	Teuchos::RCP<Epetra_CrsMatrix> mat =
 	  Teuchos::rcp(new Epetra_CrsMatrix(Copy, *graph));
-	TEST_FOR_EXCEPTION(!mat->IndicesAreLocal(), std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(!mat->IndicesAreLocal(), std::logic_error,
 			   "Indices are not local!");
 	double values[num_indices];
 	for (int i=0; i<f_map->NumMyElements(); i++) {

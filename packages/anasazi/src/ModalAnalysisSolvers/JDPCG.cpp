@@ -28,7 +28,7 @@
 
 #include "JDPCG.h"
 #include <stdexcept>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 
 JDPCG::JDPCG(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
@@ -1119,7 +1119,7 @@ int JDPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int star
       // Treat the error messages for Cholesky factorization
       if (info != 0) {
 	// mfh 14 Jan 2011: INFO < 0 is definitely a logic error.
-	TEST_FOR_EXCEPTION(info < 0, std::logic_error, "Argument number " 
+	TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error, "Argument number " 
 			   << -info << " of LAPACK's DPOTRF routine had "
 			   "an illegal value.");
         // Restart as factorization failed

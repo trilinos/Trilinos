@@ -350,7 +350,7 @@ struct throw_no_scalar_support_exception {
   {
     // typedef ConcreteSolver<Matrix,Vector> concretesolver_matrix_vector;
     typedef typename MatrixTraits<Matrix>::scalar_t scalar_t;
-    TEST_FOR_EXCEPTION( true,
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
                         std::invalid_argument,
                         "The requested Amesos2 "
                         // << concretesolver_matrix_vector::name <<
@@ -554,7 +554,7 @@ struct throw_no_scalar_support_exception {
      * this, and return null.
      */
     std::string err_msg = solver_name + " is not enabled or is not supported";
-    TEST_FOR_EXCEPTION(true, std::invalid_argument, err_msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, err_msg);
     return( Teuchos::null );
   }
 

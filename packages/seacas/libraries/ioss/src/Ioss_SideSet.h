@@ -48,7 +48,7 @@ namespace Ioss {
 
   class SideSet : public GroupingEntity {
   public:
-    SideSet(const DatabaseIO *io_database, const std::string& name);
+    SideSet(DatabaseIO *io_database, const std::string& name);
     ~SideSet();
 
     std::string type_string() const {return "SideSet";}

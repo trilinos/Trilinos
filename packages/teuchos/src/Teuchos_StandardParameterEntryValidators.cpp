@@ -40,6 +40,8 @@
 // @HEADER
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_as.hpp"
+
 
 std::string Teuchos::getVerbosityLevelParameterValueName(
   const EVerbosityLevel verbLevel
@@ -59,7 +61,7 @@ std::string Teuchos::getVerbosityLevelParameterValueName(
     case VERB_EXTREME:
       return "extreme";
     default:
-      TEST_FOR_EXCEPT("Should never get here!");
+      TEUCHOS_TEST_FOR_EXCEPT("Should never get here!");
   }
   return ""; // Never get here!
 }
@@ -130,6 +132,7 @@ AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
   finishInitialization();
 }
 
+
 //  Local non-virtual validated lookup functions
 
 
@@ -142,7 +145,7 @@ int AnyNumberParameterEntryValidator::getInt(
   if( acceptedTypes_.allowInt() && anyValue.type() == typeid(int) )
     return any_cast<int>(anyValue);
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
-    return static_cast<int>(any_cast<double>(anyValue));
+    return as<int>(any_cast<double>(anyValue));
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
     return std::atoi(any_cast<std::string>(anyValue).c_str());
   throwTypeError(entry,paramName,sublistName);
@@ -157,7 +160,7 @@ double AnyNumberParameterEntryValidator::getDouble(
 {
   const any &anyValue = entry.getAny(activeQuery);
   if( acceptedTypes_.allowInt() && anyValue.type() == typeid(int) )
-    return static_cast<double>(any_cast<int>(anyValue));
+    return as<double>(any_cast<int>(anyValue));
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return any_cast<double>(anyValue);
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
@@ -274,8 +277,12 @@ void AnyNumberParameterEntryValidator::validate(
   std::string const& sublistName
   ) const
 {
-  // Validate (any of the get functions will do!)
-  getInt(entry,paramName,sublistName,false);
+  // Validate that the parameter exists and can be converted to a double.
+  // NOTE: Even if the target type will be an 'int', we don't know that here
+  // so it will be better to assert that a 'double' can be created.  The type
+  // 'double' has a very large exponent range and, subject to digit
+  // truncation, a 'double' can represent every 'int' value.
+  getDouble(entry, paramName, sublistName, false);
 }
 
 
@@ -285,7 +292,7 @@ void AnyNumberParameterEntryValidator::validateAndModify(
   ParameterEntry * entry
   ) const
 {
-  TEST_FOR_EXCEPT(0==entry);
+  TEUCHOS_TEST_FOR_EXCEPT(0==entry);
   switch(preferredType_) {
     case PREFER_INT:
       entry->setValue(
@@ -306,7 +313,7 @@ void AnyNumberParameterEntryValidator::validateAndModify(
         );
       break;
     default:
-      TEST_FOR_EXCEPT("Error, Invalid EPreferredType value!");
+      TEUCHOS_TEST_FOR_EXCEPT("Error, Invalid EPreferredType value!");
   }
 }
 
@@ -344,7 +351,7 @@ void AnyNumberParameterEntryValidator::throwTypeError(
   ) const
 {
   const std::string &entryName = entry.getAny(false).typeName();
-  TEST_FOR_EXCEPTION_PURE_MSG(
+  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
     true, Exceptions::InvalidParameterType
     ,"Error, the parameter {paramName=\""<<paramName<<"\""
     ",type=\""<<entryName<<"\"}"
@@ -354,6 +361,7 @@ void AnyNumberParameterEntryValidator::throwTypeError(
     );
 }
 
+
 RCP<AnyNumberParameterEntryValidator> 
   DummyObjectGetter<AnyNumberParameterEntryValidator>::getDummyObject()
 {
@@ -362,9 +370,11 @@ RCP<AnyNumberParameterEntryValidator>
     AnyNumberParameterEntryValidator::AcceptedTypes());
 }
 
+
 FileNameValidator::FileNameValidator(bool mustAlreadyExist)
   : ParameterEntryValidator(), mustAlreadyExist_(mustAlreadyExist)
 {}
+
 
 bool FileNameValidator::fileMustExist() const
 {
@@ -391,7 +401,7 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
 {
   const std::string &entryName = entry.getAny(false).typeName();
   any anyValue = entry.getAny(true);
-  TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
+  TEUCHOS_TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
     Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName << 
@@ -406,7 +416,7 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
     std::endl << std::endl);
   if(mustAlreadyExist_){
     std::string fileName = getValue<std::string>(entry);
-    TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
+    TEUCHOS_TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
       Exceptions::InvalidParameterValue,
       "Aww shoot! Sorry bud, but it looks like the \"" 
       << paramName << "\"" <<
@@ -438,18 +448,22 @@ void FileNameValidator::printDoc(
   out << "#  FileName Validator" << std::endl;
 }
 
+
 RCP<FileNameValidator> DummyObjectGetter<FileNameValidator>::getDummyObject(){
   return rcp(new FileNameValidator(true));
 }
+
 
 StringValidator::StringValidator()
   : ParameterEntryValidator(), validStrings_(NULL)
 {}
 
+
 StringValidator::StringValidator(const Array<std::string>& validStrings):
   ParameterEntryValidator(),
   validStrings_(rcp(new Array<std::string>(validStrings)))
 {}
+
 
 ParameterEntryValidator::ValidStringsList
 StringValidator::setValidStrings(const Array<std::string>& validStrings)
@@ -472,7 +486,7 @@ void StringValidator::validate(
 {
   any anyValue = entry.getAny(true);
   const std::string &entryName = entry.getAny(false).typeName();
-  TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string)) ,
+  TEUCHOS_TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string)) ,
     Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName << 
@@ -489,7 +503,7 @@ void StringValidator::validate(
     Array<std::string>::const_iterator
       it = std::find(validStrings_->begin(),
       validStrings_->end(), getValue<std::string>(entry));
-    TEST_FOR_EXCEPTION(it == validStrings_->end(),
+    TEUCHOS_TEST_FOR_EXCEPTION(it == validStrings_->end(),
       Exceptions::InvalidParameterValue,
       "Aww shoot! Sorry bud, but it looks like the \""
       << paramName << "\"" <<
@@ -523,6 +537,7 @@ void StringValidator::printDoc(std::string const &docString,
   out << "#  String Validator" << std::endl;
 }
 
+
 RCP<StringValidator> DummyObjectGetter<StringValidator>::getDummyObject(){
   return rcp(new StringValidator(tuple<std::string>("")));
 }
@@ -532,6 +547,7 @@ RCP<StringValidator> DummyObjectGetter<StringValidator>::getDummyObject(){
 
 
 // Nonmmeber helper functions
+
 
 Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
 Teuchos::anyNumberParameterEntryValidator()
@@ -560,7 +576,7 @@ void Teuchos::setIntParameter(
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
   )
 {
-  TEST_FOR_EXCEPT(0==paramList);
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
   const RCP<const ParameterEntryValidator> paramEntryValidator =  
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_INT, acceptedTypes
@@ -576,7 +592,7 @@ void Teuchos::setDoubleParameter(
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
   )
 {
-  TEST_FOR_EXCEPT(0==paramList);
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
   const RCP<const ParameterEntryValidator> paramEntryValidator =  
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_DOUBLE, acceptedTypes
@@ -592,7 +608,7 @@ void Teuchos::setNumericStringParameter(
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
   )
 {
-  TEST_FOR_EXCEPT(0==paramList);
+  TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
   const RCP<const ParameterEntryValidator> paramEntryValidator =  
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_STRING, acceptedTypes
@@ -659,5 +675,3 @@ std::string Teuchos::getNumericStringParameter(
   const AnyNumberParameterEntryValidator myAnyNumValidator;
   return myAnyNumValidator.getString(entry,paramName,paramList.name());
 }
-
-

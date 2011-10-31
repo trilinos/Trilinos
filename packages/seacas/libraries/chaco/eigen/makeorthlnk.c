@@ -7,7 +7,8 @@
 #include "smalloc.h"
 
 /* Allocate space for new orthlink, double version. */
-struct orthlink *makeorthlnk()
+struct orthlink *
+makeorthlnk (void)
 {
     struct orthlink *newlnk;
 
@@ -16,7 +17,8 @@ struct orthlink *makeorthlnk()
 }
 
 /* Allocate space for new orthlink, float version. */
-struct orthlink_float *makeorthlnk_float()
+struct orthlink_float *
+makeorthlnk_float (void)
 {
     struct orthlink_float *newlnk;
 

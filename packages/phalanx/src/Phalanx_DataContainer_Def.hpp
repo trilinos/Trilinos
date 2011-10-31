@@ -45,7 +45,7 @@
 #ifndef PHX_DATA_CONTAINER_DEF_HPP
 #define PHX_DATA_CONTAINER_DEF_HPP
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include <iostream>
 #include <typeinfo>
 #include <sstream>
@@ -69,7 +69,7 @@ getFieldData(const PHX::FieldTag& t)
     msg << "The field:\n\n" << t
 	<< "\n\ndoes not exist in DataContainer of type: " 
 	<< type << std::endl;
-    TEST_FOR_EXCEPTION(it == m_data.end(), std::logic_error, msg.str());
+    TEUCHOS_TEST_FOR_EXCEPTION(it == m_data.end(), std::logic_error, msg.str());
   }
 
   return it->second;

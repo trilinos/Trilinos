@@ -86,7 +86,6 @@ C     databases, so we need to see if it is there or not.  The others are always
       READ (NTXT, *, END=160, ERR=160) LNPSNL, LNPSDF
       READ (NTXT, *, END=170, ERR=170) LESSEL, LESSNL, LESSDF
 
-  100 CONTINUE
       RETURN
 
   110 CONTINUE

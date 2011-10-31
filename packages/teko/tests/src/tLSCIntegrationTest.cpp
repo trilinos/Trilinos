@@ -127,10 +127,10 @@ void tLSCIntegrationTest::loadStableSystem()
    F=0; B=0; Bt=0; Qu=0;
 
    // read in stable discretization
-   TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("./data/lsc_F_2.mm",*velMap_,*velMap_,*velMap_,F));
-   TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("./data/lsc_B_2.mm",*prsMap_,*prsMap_,*velMap_,B));
-   TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("./data/lsc_Bt_2.mm",*velMap_,*velMap_,*prsMap_,Bt));
-   TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("./data/lsc_Qu_2.mm",*velMap_,*velMap_,*velMap_,Qu));
+   TEUCHOS_TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("./data/lsc_F_2.mm",*velMap_,*velMap_,*velMap_,F));
+   TEUCHOS_TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("./data/lsc_B_2.mm",*prsMap_,*prsMap_,*velMap_,B));
+   TEUCHOS_TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("./data/lsc_Bt_2.mm",*velMap_,*velMap_,*prsMap_,Bt));
+   TEUCHOS_TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("./data/lsc_Qu_2.mm",*velMap_,*velMap_,*velMap_,Qu));
 
    // set stable matrix pointers
    sF_  = rcp(F); sB_  = rcp(B); sBt_ = rcp(Bt); sQu_ = rcp(Qu);
@@ -147,7 +147,7 @@ void tLSCIntegrationTest::loadStableSystem()
       Epetra_Vector *vfull=0, *temp=0;
  
       // read in rhs file 
-      TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToVector("./data/lsc_rhs.mm",*fullMap_,vfull));
+      TEUCHOS_TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToVector("./data/lsc_rhs.mm",*fullMap_,vfull));
 
       // MMFileToVector is immplemented incompletely...thats why an exporter is used
       temp = new Epetra_Vector(sA_->OperatorRangeMap());
@@ -162,7 +162,7 @@ void tLSCIntegrationTest::loadStableSystem()
       Epetra_Vector *vfull=0, *temp=0;
  
       // read in exact solution file 
-      TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToVector("./data/lsc_exact_2.mm",*fullMap_,vfull));
+      TEUCHOS_TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToVector("./data/lsc_exact_2.mm",*fullMap_,vfull));
 
       // MMFileToVector is immplemented incompletely...thats why an exporter is used
       temp = new Epetra_Vector(sA_->OperatorRangeMap());

@@ -68,7 +68,7 @@ template<class Scalar>
 void TOpLinearCombination<Scalar>::alpha(
   const ArrayView<const Scalar> &alpha_in )
 {
-  TEST_FOR_EXCEPT( alpha_in.size() == 0 );
+  TEUCHOS_TEST_FOR_EXCEPT( alpha_in.size() == 0 );
   alpha_ = alpha_in;
 }
 
@@ -124,8 +124,8 @@ void TOpLinearCombination<Scalar>::apply_op_impl(
   Workspace<ptrdiff_t> v_s(wss,l_num_vecs,false);
   for( int k = 0; k < l_num_vecs; ++k ) {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT( sub_vecs[k].subDim() != subDim );
-    TEST_FOR_EXCEPT( sub_vecs[k].globalOffset() != targ_sub_vecs[0].globalOffset() );
+    TEUCHOS_TEST_FOR_EXCEPT( sub_vecs[k].subDim() != subDim );
+    TEUCHOS_TEST_FOR_EXCEPT( sub_vecs[k].globalOffset() != targ_sub_vecs[0].globalOffset() );
 #endif					
     v_val[k] = sub_vecs[k].values().begin();
     v_s[k] = sub_vecs[k].stride();

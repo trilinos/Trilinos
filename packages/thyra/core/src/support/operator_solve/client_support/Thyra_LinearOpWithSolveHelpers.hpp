@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -73,7 +73,7 @@ void assertSolveSupports(
  * \defgroup Thyra_deprecated_grp
  */
 template<class Scalar>
-void assertSupportsSolveMeasureType(
+THYRA_DEPRECATED void assertSupportsSolveMeasureType(
   const LinearOpWithSolveBase<Scalar> &lows,
   const EOpTransp M_trans,
   const SolveMeasureType &solveMeasureType
@@ -97,7 +97,7 @@ void Thyra::assertSolveSupports(
   )
 {
   using Teuchos::toString;
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !lows.solveSupports(M_trans, solveCriteria),
     std::logic_error,
     "Error, the LinearOpWithSolve object \"" << lows.description() << "\"\n"
@@ -118,7 +118,7 @@ void Thyra::assertSupportsSolveMeasureType(
   const SolveMeasureType &solveMeasureType
   )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !solveSupportsSolveMeasureType(lows,M_trans,solveMeasureType),
     std::logic_error,
     "Error, the LinearOpWithSolve object \"" << lows.description() << "\"\n"

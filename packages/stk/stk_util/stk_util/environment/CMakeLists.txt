@@ -74,8 +74,6 @@ PACKAGE_ADD_LIBRARY(
   DEPLIBS stk_util_util
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
-#srk  DEPLIBS stk_util_util stk_util_parallel
-#srk  STATIC
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION

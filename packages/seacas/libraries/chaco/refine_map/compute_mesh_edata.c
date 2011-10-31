@@ -8,12 +8,14 @@
 #include	"refine_map.h"
 
 
-double    compute_mesh_edata(edata, vdata, mesh_dims, comm_graph, node2vtx)
-struct refine_edata *edata;	/* desire data for current edge */
-struct refine_vdata *vdata;	/* data for all vertices */
-int       mesh_dims[3];		/* dimensions of processor mesh */
-struct vtx_data **comm_graph;	/* communication graph */
-int    *node2vtx;		/* maps mesh nodes to graph vertices */
+double 
+compute_mesh_edata (
+    struct refine_edata *edata,	/* desire data for current edge */
+    struct refine_vdata *vdata,	/* data for all vertices */
+    int mesh_dims[3],		/* dimensions of processor mesh */
+    struct vtx_data **comm_graph,	/* communication graph */
+    int *node2vtx		/* maps mesh nodes to graph vertices */
+)
 {
     double    desire;		/* edge's interest in flipping */
     float     ewgt;		/* edge weight */

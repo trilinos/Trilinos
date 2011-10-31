@@ -72,11 +72,11 @@ C   --   Sets (by DATA) FNCNAM, FNCTYP, FNCSTO of /FNCTB./
 
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
 
-      include 'params.blk'
-      include 'namlen.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
       
-      include 'alias.blk'
-      include 'fnctbc.blk'
+      include 'ag_alias.blk'
+      include 'ag_fnctbc.blk'
 
       INTEGER       IENTYP(*)
       CHARACTER*(*) CENTRY(*)
@@ -632,8 +632,8 @@ C     are set in the most labor intensive manner is that the
 C     current fortran compiler on the SGI does not seem to recognize
 C     BLOCK DATA files.
 
-      include 'params.blk'
-      include 'fnctbc.blk'
+      include 'exodusII.inc'
+      include 'ag_fnctbc.blk'
 
 C     PARAMETER (MAXFNC=50)
 C     PARAMETER (NUMFNC=39)
@@ -676,8 +676,8 @@ C                   12345678901234567890123456789012
       FNCNAM(18) = 'ATAN                            '
       FNCNAM(19) = 'ATAN2                           '
       FNCNAM(20) = 'SINH                            '
-      FNCNAM(21) = 'COSH                            '                         
-      FNCNAM(22) = 'TANH                            '                         
+      FNCNAM(21) = 'COSH                            '
+      FNCNAM(22) = 'TANH                            '
       FNCNAM(23) = 'TMAG                            '
       FNCNAM(24) = 'PMAX                            '
       FNCNAM(25) = 'PMIN                            '
@@ -757,7 +757,7 @@ C                   12345678901234567890123456789012
  
       FNCOLD(1) = 'ATN2                            '
       FNCOLD(2) = 'PMX2                            '
-      FNCOLD(3) = 'PMN2                            '                         
+      FNCOLD(3) = 'PMN2                            '
       FNCOLD(4) = '                                '
 
       FNCNEW(1) = 'ATAN2                           '

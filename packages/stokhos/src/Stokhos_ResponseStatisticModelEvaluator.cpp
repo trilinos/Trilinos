@@ -30,7 +30,7 @@
 #include "Stokhos_EpetraVectorOrthogPoly.hpp"
 #include "Stokhos_EpetraMultiVectorOrthogPoly.hpp"
 #include "Stokhos_EpetraOperatorOrthogPoly.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 Stokhos::ResponseStatisticModelEvaluator::ResponseStatisticModelEvaluator(
   const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
@@ -72,7 +72,7 @@ Teuchos::RCP<const Epetra_Map>
 Stokhos::ResponseStatisticModelEvaluator::
 get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     l >= num_p || l < 0, std::logic_error,
     std::endl << 
     "Error!  Stokhos::ResponseStatisticModelEvaluator::get_p_map():  " << 
@@ -85,7 +85,7 @@ Teuchos::RCP<const Epetra_Map>
 Stokhos::ResponseStatisticModelEvaluator::
 get_g_map(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     l >= 3*num_g || l < 0, std::logic_error,
     std::endl << 
     "Error!  Stokhos::ResponseStatisticModelEvaluator::get_g_map():  " << 
@@ -103,7 +103,7 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 Stokhos::ResponseStatisticModelEvaluator::
 get_p_names(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     l >= num_p || l < 0, std::logic_error,
     std::endl << 
     "Error!  Stokhos::ResponseStatisticModelEvaluator::get_p_names():  " << 
@@ -116,7 +116,7 @@ Teuchos::RCP<const Epetra_Vector>
 Stokhos::ResponseStatisticModelEvaluator::
 get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     l >= num_p || l < 0, std::logic_error,
     std::endl << 
     "Error!  Stokhos::ResponseStatisticModelEvaluator::get_p_init():  " << 
@@ -308,7 +308,7 @@ Stokhos::ResponseStatisticModelEvaluator::evalModel(const InArgs& inArgs,
 	      X_sg.init(0.0);
 	      for (int l=0; l<n; l++)
 		X_sg[0][l][l] = 1.0;
-	      TEST_FOR_EXCEPTION(
+	      TEUCHOS_TEST_FOR_EXCEPTION(
 		outArgs.get_DgDp(i+num_g,j).getMultiVectorOrientation() == DERIV_MV_BY_COL, 
 		std::logic_error,
 		"Error!  ResponseStatisticModelEvaluator does not support " <<
@@ -320,7 +320,7 @@ Stokhos::ResponseStatisticModelEvaluator::evalModel(const InArgs& inArgs,
 	      for (int k=1; k<sg_basis->size(); k++)
 		for (int l=0; l<n; l++)
 		  X_sg[k][l][l] = 2.0*(*g_sg)[k][l]*sg_basis->norm_squared(k);
-	      TEST_FOR_EXCEPTION(
+	      TEUCHOS_TEST_FOR_EXCEPTION(
 		outArgs.get_DgDp(i+2*num_g,j).getMultiVectorOrientation() == DERIV_MV_BY_COL, 
 		std::logic_error,
 		"Error!  ResponseStatisticModelEvaluator does not support " <<

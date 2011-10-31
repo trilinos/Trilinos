@@ -8,8 +8,8 @@
 
 /* Free a graph data structure. */
 
-void      free_graph(graph)
-struct vtx_data **graph;
+void 
+free_graph (struct vtx_data **graph)
 {
 
 

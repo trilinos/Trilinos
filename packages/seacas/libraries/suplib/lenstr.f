@@ -32,23 +32,8 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C=======================================================================
       INTEGER FUNCTION LENSTR (STRING)
 C=======================================================================
-C$Id: lenstr.f,v 1.2 2009/03/25 12:46:02 gdsjaar Exp $
-C$Log: lenstr.f,v $
-CRevision 1.2  2009/03/25 12:46:02  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.1.1.1  1990/08/14 16:15:16  gdsjaar
-CTesting
-C
-c Revision 1.1  90/08/14  16:15:15  gdsjaar
-c Initial revision
-c 
-c Revision 1.1  90/08/09  13:39:33  gdsjaar
-c Initial revision
-c 
 
 C   --*** LENSTR *** (STRLIB) Return string length
-C   --   Written by Amy Gilkey - revised 02/14/86
 C   --
 C   --LENSTR returns the length of a passed string.  There can be blanks
 C   --embedded within the string.  To prevent problems, an empty string

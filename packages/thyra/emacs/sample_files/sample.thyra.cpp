@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -115,7 +115,7 @@ void NamespaceA::func1( int a, int b, int c,
         aa = 6.0;
         break;
       default:
-        TEST_FOR_EXCEPT("Should never get here!");
+        TEUCHOS_TEST_FOR_EXCEPT("Should never get here!");
     }
 
     if(

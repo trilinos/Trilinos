@@ -127,11 +127,13 @@ if ($package eq "ParMETIS") {
   if ($np > 1) {
     @inpfiles = glob("zdrive.inp.adap*
                       zdrive.inp.part* 
-                      zdrive.inp.*metis*");
+                      zdrive.inp.*order-metis-*
+                      zdrive.inp.*parmetis*");
   } else {
     ### ParMETIS adaptive methods do not work on one processor.
     @inpfiles = glob("zdrive.inp.part* 
-                      zdrive.inp.*metis*");
+                      zdrive.inp.*order-metis-*
+                      zdrive.inp.*parmetis*");
   }
 } 
 if ($package eq "Scotch") {

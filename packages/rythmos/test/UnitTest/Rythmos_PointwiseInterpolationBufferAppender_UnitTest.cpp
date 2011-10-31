@@ -171,17 +171,17 @@ TEUCHOS_UNIT_TEST( Rythmos_PointwiseInterpolationBufferAppender, append_none_to_
       );
   RCP<InterpolationBuffer<double> > ibSink = interpolationBuffer<double>();
   TimeRange<double> appendRange(0.25,0.75); 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   // no time points to add, will throw (04/21/09 tscoffe:  Is that the right behavior?)
   TEST_THROW(piba->append(*ibSource,appendRange,Teuchos::outArg(*ibSink)), std::logic_error);
-#else // RYTHMOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   piba->append(*ibSource,appendRange,Teuchos::outArg(*ibSink));
   // Verify no points got added:
   Array<double> time_vec_out;
   ibSink->getNodes(&time_vec_out);
   Array<double> time_vec_valid;
   TEST_COMPARE_ARRAYS( time_vec_out, time_vec_valid );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_PointwiseInterpolationBufferAppender, append_last_to_nonempty ) {
@@ -342,35 +342,35 @@ TEUCHOS_UNIT_TEST( Rythmos_PointwiseInterpolationBufferAppender, invalid_appendR
       );
   {
     TimeRange<double> appendRange(2.0,3.5); 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     TEST_THROW(
       piba->append(*ibSource,appendRange,Teuchos::outArg(*ibSink)),
       std::logic_error
       );
-#else // RYTHMOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
     piba->append(*ibSource,appendRange,Teuchos::outArg(*ibSink));
     // Verify one points got added:
     Array<double> time_vec_out;
     ibSink->getNodes(&time_vec_out);
     Array<double> time_vec_valid = tuple<double>(2.0,3.0,4.0);
     TEST_COMPARE_ARRAYS( time_vec_out, time_vec_valid );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   }
   {
     TimeRange<double> appendRange(3.5,5.0); 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     TEST_THROW(
       piba->append(*ibSource,appendRange,Teuchos::outArg(*ibSink)),
       std::logic_error
       );
-#else // RYTHMOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
     piba->append(*ibSource,appendRange,Teuchos::outArg(*ibSink));
     // Verify no points got added:
     Array<double> time_vec_out;
     ibSink->getNodes(&time_vec_out);
     Array<double> time_vec_valid = tuple<double>(2.0,3.0,4.0);
     TEST_COMPARE_ARRAYS( time_vec_out, time_vec_valid );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   }
 }
 // Test appendRange does not sit inside sourceRange (throw)
@@ -397,19 +397,19 @@ TEUCHOS_UNIT_TEST( Rythmos_PointwiseInterpolationBufferAppender, invalid_appendR
         tuple<double>(3.0,4.0)
         );
     TimeRange<double> appendRange(1.0,2.5); 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     TEST_THROW(
       piba->append(*ibSource,appendRange,Teuchos::outArg(*ibSink)),
       std::logic_error
       );
-#else // RYTHMOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
     piba->append(*ibSource,appendRange,Teuchos::outArg(*ibSink));
     // Verify both points got added:
     Array<double> time_vec_out;
     ibSink->getNodes(&time_vec_out);
     Array<double> time_vec_valid = tuple<double>(1.0,2.0,3.0,4.0);
     TEST_COMPARE_ARRAYS( time_vec_out, time_vec_valid );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   }
   {
     Array<double> time_vec_source = tuple<double>(5.0,6.0);
@@ -420,19 +420,19 @@ TEUCHOS_UNIT_TEST( Rythmos_PointwiseInterpolationBufferAppender, invalid_appendR
         tuple<double>(3.0,4.0)
         );
     TimeRange<double> appendRange(4.5,6.0); 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     TEST_THROW(
       piba->append(*ibSource,appendRange,Teuchos::outArg(*ibSink)),
       std::logic_error
       );
-#else // RYTHMOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
     piba->append(*ibSource,appendRange,Teuchos::outArg(*ibSink));
     // Verify both points got added:
     Array<double> time_vec_out;
     ibSink->getNodes(&time_vec_out);
     Array<double> time_vec_valid = tuple<double>(1.0,2.0,3.0,4.0,5.0,6.0);
     TEST_COMPARE_ARRAYS( time_vec_out, time_vec_valid );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   }
 }
 

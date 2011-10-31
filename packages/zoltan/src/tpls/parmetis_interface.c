@@ -126,13 +126,6 @@ int Zoltan_ParMetis(
   indextype numflag = 0;
   indextype num_part = zz->LB.Num_Global_Parts; /* passed to ParMETIS. */
 
-#ifndef ZOLTAN_PARMETIS
-  ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                     "ParMetis requested but not compiled into library.");
-  return ZOLTAN_FATAL;
-
-#endif /* ZOLTAN_PARMETIS */
-
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   Zoltan_Third_Init(&gr, &prt, &vsp, &part,
@@ -333,6 +326,8 @@ int Zoltan_ParMetis(
     if (strcmp(alg, "PARTKWAY") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS 4 library "
                                   "METIS_WPartGraphKway");
+      /* Use default options for METIS */
+      options[0] = 0;
       METIS_WPartGraphKway (gr.vtxdist+1, gr.xadj, gr.adjncy, 
                             gr.vwgt, gr.ewgts, &wgtflag,
                             &numflag, &num_part, prt.part_sizes, 
@@ -486,9 +481,11 @@ static int Zoltan_Parmetis_Parse(
          at least two processors. */
       char str[256];
       sprintf(str, "ParMETIS method %s fails on one processor due to a bug"
-                   " in ParMETIS v3.x; please select another method.", alg);
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, str);
-      return (ZOLTAN_FATAL);
+                   " in ParMETIS v3.x; resetting method to PartKway.", alg);
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, str);
+
+      strcpy(alg, "PARTKWAY");
+      return (ZOLTAN_WARN);
     }
 
     return(ZOLTAN_OK);
@@ -533,8 +530,8 @@ int Zoltan_ParMetis_Order(
 #ifdef ZOLTAN_PARMETIS
   MPI_Comm comm = zz->Communicator;/* don't want to risk letting external 
                                       packages changing our communicator */
-  indextype numflag = 0;
 #endif
+  indextype numflag = 0;
 
   int timer_p = 0;
   int get_times = 0;

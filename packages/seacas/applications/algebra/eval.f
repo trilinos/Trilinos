@@ -74,12 +74,12 @@ C   --   Uses NUMNP, NUMEL of /DBNUMS/
 C   --   Uses EQNLIN of /EQNLNS/
 C   --   Uses NUMELO, NUMNPO of /DBOUT/
 
-      include 'namlen.blk'
-      include 'numeqn.blk'
-      include 'var.blk'
-      include 'dbnums.blk'
-      include 'dbout.blk'
-      include 'eqnlns.blk'
+      include 'ag_namlen.blk'
+      include 'ag_numeqn.blk'
+      include 'ag_var.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbout.blk'
+      include 'ag_eqnlns.blk'
 
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
 
@@ -110,6 +110,7 @@ C   --   Uses NUMELO, NUMNPO of /DBOUT/
      *  myatan, myatan2, mysinh, mycosh, mytanh, mysqrt
 
       MERR = 0
+      IOP2 = 0
 
       IF (NUMENT .LT. 3) RETURN
 

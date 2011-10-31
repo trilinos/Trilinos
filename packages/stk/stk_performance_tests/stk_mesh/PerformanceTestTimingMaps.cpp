@@ -21,8 +21,8 @@
 #include <stk_util/environment/WallTime.hpp>
 
 // Only run tests for GCC 4 for now
-// altix preprocessor variables are bizzare: defines __GNUC__, does not define __ICC even though it's intel
-#if __GNUC__ == 4 && !defined __itanium__ && !defined __ICC
+// Altix preprocessor variables are bizzare: defines __GNUC__, does not define __ICC even though it's intel
+#if __GNUC__ == 4 && !defined __itanium__ && !defined __ICC && !defined __PATHSCALE__ && !defined __PGI
 
 #define FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_STD 1
 #define FLAG_EASTL_HASH_MAP 0

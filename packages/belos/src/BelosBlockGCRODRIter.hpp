@@ -480,19 +480,19 @@ namespace Belos{
     	B_              = Teuchos::null;
 	R_              = Teuchos::null;
 	// Get the maximum number of blocks allowed for this Krylov subspace
-	TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument, "Belos::BlockGCRODRIter::constructor: mandatory parameter \"Num Blocks\" is not specified.");
+	TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument, "Belos::BlockGCRODRIter::constructor: mandatory parameter \"Num Blocks\" is not specified.");
 	int nb = Teuchos::getParameter<int>(params, "Num Blocks");
 
-	TEST_FOR_EXCEPTION(!params.isParameter("Recycled Blocks"), std::invalid_argument,"Belos::BlockGCRODRIter::constructor: mandatory parameter \"Recycled Blocks\" is not specified.");
+	TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Recycled Blocks"), std::invalid_argument,"Belos::BlockGCRODRIter::constructor: mandatory parameter \"Recycled Blocks\" is not specified.");
 	int rb = Teuchos::getParameter<int>(params, "Recycled Blocks");
 
-	TEST_FOR_EXCEPTION(nb <= 0, std::invalid_argument, "Belos::BlockGCRODRIter() was passed a non-positive argument for \"Num Blocks\".");
-	TEST_FOR_EXCEPTION(rb >= nb, std::invalid_argument, "Belos::BlockGCRODRIter() the number of recycled blocks is larger than the allowable subspace.");
+	TEUCHOS_TEST_FOR_EXCEPTION(nb <= 0, std::invalid_argument, "Belos::BlockGCRODRIter() was passed a non-positive argument for \"Num Blocks\".");
+	TEUCHOS_TEST_FOR_EXCEPTION(rb >= nb, std::invalid_argument, "Belos::BlockGCRODRIter() the number of recycled blocks is larger than the allowable subspace.");
 
 
 	int bs = Teuchos::getParameter<int>(params, "Block Size");
 
-	TEST_FOR_EXCEPTION(bs <= 0, std::invalid_argument, "Belos::BlockGCRODRIter() the block size was passed a non-postitive argument.");
+	TEUCHOS_TEST_FOR_EXCEPTION(bs <= 0, std::invalid_argument, "Belos::BlockGCRODRIter() the block size was passed a non-postitive argument.");
 
 
 	numBlocks_ = nb;
@@ -524,7 +524,7 @@ namespace Belos{
    // Iterate until the status test informs us we should stop.
    template <class ScalarType, class MV, class OP>
    void BlockGCRODRIter<ScalarType,MV,OP>::iterate() {
-	TEST_FOR_EXCEPTION( initialized_ == false, BlockGCRODRIterInitFailure,"Belos::BlockGCRODRIter::iterate(): GCRODRIter class not initialized." );
+	TEUCHOS_TEST_FOR_EXCEPTION( initialized_ == false, BlockGCRODRIterInitFailure,"Belos::BlockGCRODRIter::iterate(): GCRODRIter class not initialized." );
 
 // MLP
 sleep(1);
@@ -555,7 +555,7 @@ std::cout << "Calling normalize" << std::endl;
 // MLP
 sleep(1);
 std::cout << "Assigning Z" << std::endl;
-	TEST_FOR_EXCEPTION(rank != blockSize_,BlockGCRODRIterOrthoFailure, "Belos::BlockGCRODRIter::iterate(): couldn't generate basis of full rank at the initial step.");
+	TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_,BlockGCRODRIterOrthoFailure, "Belos::BlockGCRODRIter::iterate(): couldn't generate basis of full rank at the initial step.");
 	// Copy Z0 into the leading blockSize_ by blockSize_ block of Z_
 	Teuchos::RCP<SDM > Z_block = Teuchos::rcp( new SDM(Teuchos::View, Z_, blockSize_,blockSize_) );
 	Z_block->assign(*Z0);
@@ -631,7 +631,7 @@ std::cout << "Assigning Z" << std::endl;
 		SDM subH2( Teuchos::View,*H_,(lclIter_+1)*blockSize_,blockSize_,0,HFirstCol);
 		subR2.assign(subH2);
 
-		TEST_FOR_EXCEPTION(rank != blockSize_,BlockGCRODRIterOrthoFailure, "Belos::BlockGCRODRIter::iterate(): couldn't generate basis of full rank.");
+		TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_,BlockGCRODRIterOrthoFailure, "Belos::BlockGCRODRIter::iterate(): couldn't generate basis of full rank.");
 
 		// Update the QR factorization of the upper Hessenberg matrix
 		updateLSQR();
@@ -670,8 +670,8 @@ std::cout << "Assigning Z" << std::endl;
 		}
     	}
     	else {
-      		TEST_FOR_EXCEPTION(newstate.V == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): BlockGCRODRIterState does not have V initialized.");
-      		TEST_FOR_EXCEPTION(newstate.H == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): BlockGCRODRIterState does not have H initialized.");
+      		TEUCHOS_TEST_FOR_EXCEPTION(newstate.V == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): BlockGCRODRIterState does not have V initialized.");
+      		TEUCHOS_TEST_FOR_EXCEPTION(newstate.H == Teuchos::null,std::invalid_argument,"Belos::GCRODRIter::initialize(): BlockGCRODRIterState does not have H initialized.");
     	}
     	// the solver is initialized
         initialized_ = true;

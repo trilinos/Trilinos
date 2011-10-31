@@ -15,7 +15,6 @@ export TDD_PARALLEL_LEVEL=8
 
 # Trilinos settings:
 #
-export Trilinos_PACKAGES=Teuchos
 
 # Machine specific environment:
 #

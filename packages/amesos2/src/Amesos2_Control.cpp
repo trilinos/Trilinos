@@ -125,7 +125,7 @@ void Control::setControlParameters(
       oss << "Amesos2 : ERROR" << std::endl
           << "Amesos2 : matrixProperty value not recognized ("
           << MatrixProperty << ")" << std::endl;
-      TEST_FOR_EXCEPTION(true,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
         std::invalid_argument,
         oss.str());
     }

@@ -52,7 +52,7 @@ template <class Scalar, class ArrayPoint, class ArrayWeight>
 CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::CubatureDirectLineGauss(const int degree) {
   this->degree_    = degree;
   this->dimension_ = 1;
-  TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_LINE_GAUSS_MAX_ENUM),
+  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_LINE_GAUSS_MAX_ENUM),
                      std::out_of_range,
                      ">>> ERROR (CubatureDirectLineGauss): No cubature rule implemented for the desired polynomial degree.");
 } // end constructor

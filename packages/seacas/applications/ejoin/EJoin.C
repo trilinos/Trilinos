@@ -52,20 +52,22 @@
 #include <ctype.h>
 #include <sys/utsname.h>
 
-#include "adler.h"
 #include "smart_assert.h"
 #include "to_string.h"
+#include "add_to_log.h"
 
-#include <Ionit_Initializer.h>
+#include <exodusII.h>
+
+#include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Transform.h>
 
-#include "CodeTypes.h"
-#include "SystemInterface.h"
-#include "match_xyz.h"
-#include "mapping.h"
-#include "Vector3.h"
-#include "Version.h"
+#include "EJ_CodeTypes.h"
+#include "EJ_SystemInterface.h"
+#include "EJ_match_xyz.h"
+#include "EJ_mapping.h"
+#include "EJ_vector3d.h"
+#include "EJ_Version.h"
 
 namespace {
   bool valid_variable(const std::string variable, int id, const StringIdVector &variable_list);
@@ -112,11 +114,6 @@ namespace {
 #endif
   }
 }
-
-extern void add_to_log(const char *name, int elapsed);
-extern double ejoin_timer();
-
-#include <exodusII.h>
 
 namespace {
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug);
@@ -200,7 +197,7 @@ int main(int argc, char* argv[])
     part_mesh[p] = new Ioss::Region(dbi, name);
     part_mesh[p]->property_add(Ioss::Property("block_omission_count", (int)omissions[p].size()));
 
-    Vector3 offset = interface.offset();
+    vector3d offset = interface.offset();
     if (p > 0 && (offset.x != 0.0 || offset.y != 0.0 || offset.z != 0.0)) {
       Ioss::NodeBlock *nb = part_mesh[p]->get_node_blocks()[0];
       Ioss::Field coord = nb->get_field("mesh_model_coordinates");
@@ -342,6 +339,22 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh)
     }
   }
     
+  if (!interface.information_record_parts().empty()) {
+    const std::vector<int> &info_parts = interface.information_record_parts();
+    if (info_parts[0] == 0) {
+      // Transfer info records from all parts...
+      for (size_t p = 0; p < part_count; p++) {
+	const std::vector<std::string> &info = part_mesh[p]->get_information_records();
+	output_region.add_information_records(info);
+      }
+    } else {
+      for (size_t i = 0; i < info_parts.size(); i++) {
+	const std::vector<std::string> &info = part_mesh[info_parts[i]-1]->get_information_records();
+	output_region.add_information_records(info);
+      }
+    }
+  }
+
   output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
   output_region.begin_mode(Ioss::STATE_MODEL);
@@ -1148,8 +1161,7 @@ namespace {
 				    const std::string &field_name)
   {
 
-    size_t isize = ige->get_field(field_name).get_size();
-    assert (isize == oge->get_field(field_name).get_size());
+    assert (ige->get_field(field_name).get_size() == oge->get_field(field_name).get_size());
 
     std::vector<double> data;
     ige->get_field_data(field_name, data);

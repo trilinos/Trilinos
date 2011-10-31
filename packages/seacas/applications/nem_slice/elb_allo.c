@@ -57,13 +57,11 @@ static void *smalloc (size_t n);
  *      POINT    **points, corner;
  *
  *      points = (POINT **) array_alloc (2, x, y, sizeof(POINT));
- *                               ^ ^ ^
- *                               | | |
- *         number of dimensions--+ | |
- *                                 | |
- *          first dimension max----+ |
- *                                   |
- *         second dimension max------+
+ *                                       ^  ^  ^
+ *                                       |  |  |
+ *                 number of dimensions--+  |  |
+ *                   first dimension max----+  |
+ *                   second dimension max------+
  *
  *         (points may be now be used as if it were declared
  *          POINT points[x][y])
@@ -160,7 +158,7 @@ static void *smalloc (size_t n)
 
 	if(pntr == NULL && n != 0) {
 	  fprintf(stderr, "smalloc: Out of space - number of bytes "
-		  "requested = %ld\n", n);
+		  "requested = %lu\n", (long unsigned)n);
 	  exit(0);
 	}
    	return (pntr);

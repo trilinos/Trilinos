@@ -60,19 +60,19 @@ Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Sc
   switch (cellTopology.getBaseCellTopologyData()->key) {
 
     case shards::Line<>::key:
-      TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
                           ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       pickCubature = Teuchos::rcp(new CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
       break;
 
     case shards::Triangle<>::key:
-      TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
                           ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       pickCubature = Teuchos::rcp(new CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
       break;
 
     case shards::Quadrilateral<>::key:
-      TEST_FOR_EXCEPTION( (degree.size() < 2), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (degree.size() < 2), std::invalid_argument,
                           ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       {
       std::vector< Teuchos::RCP< Cubature<Scalar,ArrayPoint,ArrayWeight> > > lineCubs(2);
@@ -82,20 +82,22 @@ Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Sc
       }
       break;
 
-    case shards::Tetrahedron<11>::key:
-          TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
-                              ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-          pickCubature = Teuchos::rcp(new CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
-          break;
-
     case shards::Tetrahedron<>::key:
-      TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
-                          ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-      pickCubature = Teuchos::rcp(new CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
+      if (cellTopology.getCellTopologyData()->key == shards::Tetrahedron<11>::key)
+      {
+	TEUCHOS_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
+			    ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
+	pickCubature = Teuchos::rcp(new CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
+      } 
+      else
+      {
+	TEUCHOS_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
+			    ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
+	pickCubature = Teuchos::rcp(new CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
+      }
       break;
-
     case shards::Hexahedron<>::key:
-      TEST_FOR_EXCEPTION( (degree.size() < 3), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (degree.size() < 3), std::invalid_argument,
                           ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       {
       std::vector< Teuchos::RCP< Cubature<Scalar,ArrayPoint,ArrayWeight> > > lineCubs(3);
@@ -107,7 +109,7 @@ Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Sc
       break;
 
     case shards::Wedge<>::key:
-      TEST_FOR_EXCEPTION( (degree.size() < 2), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (degree.size() < 2), std::invalid_argument,
                           ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.")
       {
       std::vector< Teuchos::RCP< Cubature<Scalar,ArrayPoint,ArrayWeight> > > miscCubs(2);
@@ -118,7 +120,7 @@ Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Sc
       break;
 
     default:
-      TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key)             &&
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key)             &&
                             (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key)         &&
                             (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key)    &&
                             (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key)      &&

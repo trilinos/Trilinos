@@ -47,7 +47,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
       
       cout << "\nTesting getFieldData()...";
       ArrayRCP<MyVector<double> > den = dc_vector.getFieldData(*d_tag);
-      TEST_FOR_EXCEPTION(den == Teuchos::null, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(den == Teuchos::null, std::logic_error,
 			 "Array is null!");
       cout << "Passed!" << endl;
 

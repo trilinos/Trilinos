@@ -185,22 +185,22 @@ void ImplicitRKModelEvaluator<Scalar>::initializeIRKModel(
 {
   // ToDo: Assert input arguments!
   // How do I verify the basePoint is an authentic InArgs from daeModel?
-  TEST_FOR_EXCEPTION( 
+  TEUCHOS_TEST_FOR_EXCEPTION( 
       is_null(basePoint.get_x()), 
       std::logic_error,
       "Error!  The basepoint x vector is null!"
       );
-  TEST_FOR_EXCEPTION( 
+  TEUCHOS_TEST_FOR_EXCEPTION( 
       is_null(daeModel), 
       std::logic_error,
       "Error!  The model evaluator pointer is null!"
       );
-  TEST_FOR_EXCEPTION( 
+  TEUCHOS_TEST_FOR_EXCEPTION( 
       !daeModel->get_x_space()->isCompatible(*(basePoint.get_x()->space())), 
       std::logic_error,
       "Error!  The basepoint input arguments are incompatible with the model evaluator vector space!"
       );
-  TEST_FOR_EXCEPT(is_null(irk_W_factory));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(irk_W_factory));
 
   daeModel_ = daeModel;
   basePoint_ = basePoint;
@@ -251,10 +251,10 @@ void ImplicitRKModelEvaluator<Scalar>::setTimeStepPoint(
   )
 {
   typedef ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT( is_null(x_old) );
-  TEST_FOR_EXCEPT( delta_t <= ST::zero() );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(x_old) );
+  TEUCHOS_TEST_FOR_EXCEPT( delta_t <= ST::zero() );
   // Verify x_old is compatible with the vector space in the DAE Model.
-  TEST_FOR_EXCEPTION(!daeModel_->get_x_space()->isCompatible(*(x_old->space())), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!daeModel_->get_x_space()->isCompatible(*(x_old->space())), std::logic_error,
       "Error!  The incoming VectorBase object is not compatible with the DAE model that was provided at initialization!");
   x_old_ = x_old;
   t_old_ = t_old;
@@ -270,7 +270,7 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 ImplicitRKModelEvaluator<Scalar>::get_x_space() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeIRKModel must be called first!\n"
       );
   return x_bar_space_;
@@ -281,7 +281,7 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 ImplicitRKModelEvaluator<Scalar>::get_f_space() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeIRKModel must be called first!\n"
       );
   return f_bar_space_;
@@ -292,7 +292,7 @@ template<class Scalar>
 RCP<Thyra::LinearOpBase<Scalar> >
 ImplicitRKModelEvaluator<Scalar>::create_W_op() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeIRKModel must be called first!\n"
       );
   // Create the block structure for W_op_bar right away!
@@ -312,7 +312,7 @@ template<class Scalar>
 RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 ImplicitRKModelEvaluator<Scalar>::get_W_factory() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeIRKModel must be called first!\n"
       );
   return irk_W_factory_;
@@ -323,7 +323,7 @@ template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 ImplicitRKModelEvaluator<Scalar>::getNominalValues() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeIRKModel must be called first!\n"
       );
   return nominalValues_;
@@ -334,7 +334,7 @@ template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 ImplicitRKModelEvaluator<Scalar>::createInArgs() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeIRKModel must be called first!\n"
       );
   return inArgs_;
@@ -348,7 +348,7 @@ template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 ImplicitRKModelEvaluator<Scalar>::createOutArgsImpl() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeIRKModel must be called first!\n"
       );
   return outArgs_;
@@ -369,11 +369,11 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   typedef Thyra::ProductVectorBase<Scalar> PVB;
   typedef Thyra::BlockedLinearOpBase<Scalar> BLWB;
 
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error!  initializeIRKModel must be called before evalModel\n"
       );
 
-  TEST_FOR_EXCEPTION( !setTimeStepPointCalled_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !setTimeStepPointCalled_, std::logic_error,
       "Error!  setTimeStepPoint must be called before evalModel"
       );
 

@@ -10,8 +10,8 @@ This program provides functionality for a number of Percept tasks from
 the command line.
 
 Example usage:
-# Uniformly refine a mesh containing different element types."
-percept refine -n "Summer Vacation 2009" -t Vermont ~/photos/vacation2009/*
+# Uniformly refine a mesh containing different element types.\"
+percept refine -n \"Summer Vacation 2009\" -t Vermont ~/photos/vacation2009/*
 
 # blah blah
 percept refine
@@ -27,6 +27,7 @@ Some terminology in use:
   task: What the client wants done (e.g. refine, enrich, convert).
 
 """
+
 import os
 import sys
 import argparse

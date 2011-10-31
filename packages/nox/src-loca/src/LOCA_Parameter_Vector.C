@@ -41,7 +41,7 @@
 
 #include "LOCA_Parameter_Vector.H" // class definition
 
-#include "Teuchos_TestForException.hpp" // for errors
+#include "Teuchos_Assert.hpp" // for errors
 
 LOCA::ParameterVector::ParameterVector() : 
   x(),
@@ -129,7 +129,7 @@ LOCA::ParameterVector::operator=(const LOCA::ParameterVector& source)
 double& 
 LOCA::ParameterVector::operator[] (unsigned int i)
 {
-  TEST_FOR_EXCEPTION(i >= x.size(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(i >= x.size(), 
 		     std::out_of_range,
 		     "Error:  LOCA::ParameterVector::operator[]:  " << 
 		     " Index " << i << " is out of range!");
@@ -139,7 +139,7 @@ LOCA::ParameterVector::operator[] (unsigned int i)
 const double& 
 LOCA::ParameterVector::operator[] (unsigned int i) const
 {
-  TEST_FOR_EXCEPTION(i >= x.size(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(i >= x.size(), 
 		     std::out_of_range,
 		     "Error:  LOCA::ParameterVector::operator[]:  " << 
 		     " Index " << i << " is out of range!");
@@ -149,7 +149,7 @@ LOCA::ParameterVector::operator[] (unsigned int i) const
 void 
 LOCA::ParameterVector::setValue(unsigned int i, double value)
 {
-  TEST_FOR_EXCEPTION(i >= x.size(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(i >= x.size(), 
 		     std::out_of_range,
 		     "Error:  LOCA::ParameterVector::setValue():  " << 
 		     " Index " << i << " is out of range!");
@@ -168,7 +168,7 @@ LOCA::ParameterVector::setValue(string label, double value)
     }
   }
 
-  TEST_FOR_EXCEPTION(true, 
+  TEUCHOS_TEST_FOR_EXCEPTION(true, 
 		     std::invalid_argument,
 		     "Error:  LOCA::ParameterVector::setValue():  " << 
 		     " Label " << label << " is not valid!");
@@ -177,7 +177,7 @@ LOCA::ParameterVector::setValue(string label, double value)
 double 
 LOCA::ParameterVector::getValue(unsigned int i) const
 {
-  TEST_FOR_EXCEPTION(i >= x.size(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(i >= x.size(), 
 		     std::out_of_range,
 		     "Error:  LOCA::ParameterVector::getValue():  " << 
 		     " Index " << i << " is out of range!");
@@ -192,7 +192,7 @@ LOCA::ParameterVector::getValue(string label) const
       return x[i];
   }
 
-  TEST_FOR_EXCEPTION(true, 
+  TEUCHOS_TEST_FOR_EXCEPTION(true, 
 		     std::invalid_argument,
 		     "Error:  LOCA::ParameterVector::getValue():  " << 
 		     " Label " << label << " is not valid!");
@@ -207,7 +207,7 @@ LOCA::ParameterVector::getIndex(string label) const
       return i;
   }
 
-  TEST_FOR_EXCEPTION(true, 
+  TEUCHOS_TEST_FOR_EXCEPTION(true, 
 		     std::invalid_argument,
 		     "Error:  LOCA::ParameterVector::getIndex():  " << 
 		     " Label " << label << " is not valid!");

@@ -7,17 +7,18 @@
 #include	"defs.h"
 
 
-int       make_kl_list(graph, movelist, buckets, listspace, sets, nsets, bspace, dvals,
-		                 maxdval)
-struct vtx_data **graph;	/* data structure for graph */
-struct bilist *movelist;	/* list of vtxs to be moved */
-struct bilist ****buckets;	/* array of lists for bucket sort */
-struct bilist **listspace;	/* list data structure for each vertex */
-int    *sets;			/* processor each vertex is assigned to */
-int       nsets;		/* number of sets divided into */
-int      *bspace;		/* list of active vertices for bucketsort */
-int     **dvals;		/* d-values for each transition */
-int       maxdval;		/* maximum d-value for a vertex */
+int 
+make_kl_list (
+    struct vtx_data **graph,	/* data structure for graph */
+    struct bilist *movelist,	/* list of vtxs to be moved */
+    struct bilist ****buckets,	/* array of lists for bucket sort */
+    struct bilist **listspace,	/* list data structure for each vertex */
+    int *sets,			/* processor each vertex is assigned to */
+    int nsets,		/* number of sets divided into */
+    int *bspace,		/* list of active vertices for bucketsort */
+    int **dvals,		/* d-values for each transition */
+    int maxdval		/* maximum d-value for a vertex */
+)
 {
     struct bilist **list;	/* bucket to erase element from */
     struct bilist *vptr;	/* loops through movelist */

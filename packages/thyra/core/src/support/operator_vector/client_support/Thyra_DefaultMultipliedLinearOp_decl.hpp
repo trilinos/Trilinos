@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -260,26 +260,28 @@ public:
   /** \name Deprecated. */
   //@{
 
-
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultMultipliedLinearOp(
     const int numOps_in,
     const RCP<LinearOpBase<Scalar> > Ops[]
     )
     {
-      initialize(numOps_in, Ops);
+      initialize(Teuchos::arrayView(Ops, numOps_in));
     }
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultMultipliedLinearOp(
     const int numOps_in,
     const RCP<const LinearOpBase<Scalar> > Ops[]
     )
     {
-      initialize(numOps_in, Ops);
+      initialize(Teuchos::arrayView(Ops, numOps_in));
     }
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   void initialize(
     const int numOps_in,
     const RCP<LinearOpBase<Scalar> > Ops[]
@@ -289,6 +291,7 @@ public:
     }
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   void initialize(
     const int numOps_in,
     const RCP<const LinearOpBase<Scalar> > Ops[]
@@ -407,7 +410,7 @@ inline
 void DefaultMultipliedLinearOp<Scalar>::assertInitialized() const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( numOps() > 0 ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( numOps() > 0 ) );
 #endif
 }
 

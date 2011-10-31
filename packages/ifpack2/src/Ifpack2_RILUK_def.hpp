@@ -273,9 +273,9 @@ void RILUK<MatrixType>::compute() {
   L_->resumeFill();
   U_->resumeFill();
 
-  TEST_FOR_EXCEPTION(!isInitialized(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized(), std::runtime_error,
       "Ifpack2::RILUK::compute() ERROR: isInitialized() must be true.");
-  TEST_FOR_EXCEPTION(isComputed() == true, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(isComputed() == true, std::runtime_error,
       "Ifpack2::RILUK::compute() ERROR: Can't have already computed factors.");
 
   // MinMachNum should be officially defined, for now pick something a little 
@@ -417,7 +417,7 @@ void RILUK<MatrixType>::apply(
              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
              Teuchos::ETransp mode, Scalar alpha, Scalar beta) const
 {
-  TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
     "Ifpack2::RILUK::apply() ERROR, compute() hasn't been called yet.");
 
 //
@@ -530,7 +530,7 @@ void RILUK<MatrixType>::generateXY(Teuchos::ETransp mode,
 
   // Generate an X and Y suitable for performing Solve() and Multiply() methods
 
-  TEST_FOR_EXCEPTION(Xin.getNumVectors()!=Yin.getNumVectors(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(Xin.getNumVectors()!=Yin.getNumVectors(), std::runtime_error,
        "Ifpack2::RILUK::GenerateXY ERROR: X and Y not the same size");
 
   //cout << "Xin = " << Xin << endl;

@@ -409,7 +409,7 @@ void ExplicitTaylorPolynomialStepper<Scalar>::setModel(
   const RCP<const Thyra::ModelEvaluator<Scalar> >& model
   )
 {
-  TEST_FOR_EXCEPT( is_null(model) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
   assertValidModel( *this, *model );
     
   model_ = model;
@@ -528,7 +528,7 @@ ExplicitTaylorPolynomialStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
       eval_model_explicit<Scalar>(*model_,basePoint_,*x_vector_,t_+shadowed_dt,Teuchos::outArg(*f_vector_));
 
       // compute || xdot(t_+shadowed_dt) - f( x(t_+shadowed_dt), t_+shadowed_dt ) ||
-      Thyra::Vp_StV(x_dot_vector_.get(), -ST::one(),
+      Thyra::Vp_StV(x_dot_vector_.ptr(), -ST::one(),
         *f_vector_);
       local_error = norm_inf(*x_dot_vector_);
 
@@ -539,7 +539,7 @@ ExplicitTaylorPolynomialStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
     } while (local_error > local_error_tolerance_ && shadowed_dt > min_step_size_);
 
     // Check if minimum step size was reached
-    TEST_FOR_EXCEPTION(shadowed_dt < min_step_size_, 
+    TEUCHOS_TEST_FOR_EXCEPTION(shadowed_dt < min_step_size_, 
       std::runtime_error,
       "ExplicitTaylorPolynomialStepper<Scalar>::takeStep(): " 
       << "Step size reached minimum step size " 
@@ -629,7 +629,7 @@ void ExplicitTaylorPolynomialStepper<Scalar>::setParameterList(RCP<Teuchos::Para
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParameters(*this->getValidParameters());
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
@@ -746,7 +746,7 @@ void ExplicitTaylorPolynomialStepper<Scalar>::addPoints(
   ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
   )
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for the ExplicitTaylorPolynomialStepper.\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for the ExplicitTaylorPolynomialStepper.\n");
 }
 
 
@@ -799,7 +799,7 @@ void ExplicitTaylorPolynomialStepper<Scalar>::getNodes(Array<Scalar>* time_vec) 
 template<class Scalar>
 void ExplicitTaylorPolynomialStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for the ExplicitTaylorPolynomialStepper.\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for the ExplicitTaylorPolynomialStepper.\n");
 }
 
 
@@ -838,8 +838,8 @@ ExplicitTaylorPolynomialStepper<Scalar>::computeTaylorSeriesSolution_()
       
     // x[k] = f[k-1] / k
     tmp = x_poly_->getCoefficient(k);
-    copy(*(f_poly_->getCoefficient(k-1)), tmp.get());
-    scale(Scalar(1.0)/Scalar(k), tmp.get());
+    copy(*(f_poly_->getCoefficient(k-1)), tmp.ptr());
+    scale(Scalar(1.0)/Scalar(k), tmp.ptr());
   }
 
 }

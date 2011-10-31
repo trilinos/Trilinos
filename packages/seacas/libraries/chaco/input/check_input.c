@@ -12,28 +12,26 @@
 static int check_params(), check_assignment();
 
 /* Check graph and input options and parameters. */
-int       check_input(graph, nvtxs, nedges, igeom, coords,
-		         graphname, assignment, goal,
-			 architecture, ndims_tot, mesh_dims,
-		         global_method, local_method, rqi_flag, vmax, ndims,
-		         eigtol)
-struct vtx_data **graph;	/* linked lists of vertex data */
-int       nvtxs;		/* number of vertices */
-int       nedges;		/* number of edges */
-int       igeom;		/* geometric dimension for inertial method */
-float   **coords;		/* coordinates for inertial method */
-char     *graphname;		/* graph input file name */
-int    *assignment;		/* set numbers if read-from-file */
-double   *goal;			/* desired sizes of different sets */
-int       architecture;		/* 0=> hypercube, d=> d-dimensional mesh */
-int       ndims_tot;		/* number of hypercube dimensions */
-int       mesh_dims[3];		/* size of mesh in each dimension */
-int       global_method;	/* global partitioning algorithm */
-int       local_method;		/* local partitioning algorithm */
-int       rqi_flag;		/* flag for RQI/symmlq eigensolver */
-int      *vmax;			/* smallest acceptable coarsened nvtxs */
-int       ndims;		/* partitioning level */
-double    eigtol;		/* tolerance for eigen-pairs */
+int 
+check_input (
+    struct vtx_data **graph,	/* linked lists of vertex data */
+    int nvtxs,		/* number of vertices */
+    int nedges,		/* number of edges */
+    int igeom,		/* geometric dimension for inertial method */
+    float **coords,		/* coordinates for inertial method */
+    char *graphname,		/* graph input file name */
+    int *assignment,		/* set numbers if read-from-file */
+    double *goal,			/* desired sizes of different sets */
+    int architecture,		/* 0=> hypercube, d=> d-dimensional mesh */
+    int ndims_tot,		/* number of hypercube dimensions */
+    int mesh_dims[3],		/* size of mesh in each dimension */
+    int global_method,	/* global partitioning algorithm */
+    int local_method,		/* local partitioning algorithm */
+    int rqi_flag,		/* flag for RQI/symmlq eigensolver */
+    int *vmax,			/* smallest acceptable coarsened nvtxs */
+    int ndims,		/* partitioning level */
+    double eigtol		/* tolerance for eigen-pairs */
+)
 {
     extern FILE *Output_File;		/* output file or null */
     extern int DEBUG_TRACE;		/* trace main execution path? */
@@ -234,11 +232,13 @@ double    eigtol;		/* tolerance for eigen-pairs */
 
 
 
-static int check_params(global_method, local_method, rqi_flag, ndims)
-int       global_method;	/* global partitioning algorithm */
-int       local_method;		/* local partitioning algorithm */
-int       rqi_flag;		/* use multilevel eigensolver? */
-int       ndims;		/* number of eigenvectors */
+static int 
+check_params (
+    int global_method,	/* global partitioning algorithm */
+    int local_method,		/* local partitioning algorithm */
+    int rqi_flag,		/* use multilevel eigensolver? */
+    int ndims		/* number of eigenvectors */
+)
 {
     extern FILE *Output_File;	/* Output file or null */
     extern int ECHO;		/* print input/param options? to file? (-2..2) */
@@ -469,12 +469,14 @@ int       ndims;		/* number of eigenvectors */
 }
 
 
-static int check_assignment(assignment, nvtxs, nsets_tot, ndims, local_method)
-int    *assignment;		/* set numbers if read-from-file */
-int       nvtxs;		/* number of vertices */
-int       nsets_tot;		/* total number of desired sets */
-int       ndims;		/* partitioning level */
-int       local_method;		/* local partitioning algorithm */
+static int 
+check_assignment (
+    int *assignment,		/* set numbers if read-from-file */
+    int nvtxs,		/* number of vertices */
+    int nsets_tot,		/* total number of desired sets */
+    int ndims,		/* partitioning level */
+    int local_method		/* local partitioning algorithm */
+)
 {
     int       flag;		/* return status */
     int       nsets;		/* number of sets created at each level */

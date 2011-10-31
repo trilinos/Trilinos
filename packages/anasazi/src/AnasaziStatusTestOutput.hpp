@@ -110,7 +110,7 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
     \return ::TestStatus indicating whether the underlying test passed or failed.
   */
   TestStatus checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) {
-    TEST_FOR_EXCEPTION(test_ == Teuchos::null,StatusTestError,"StatusTestOutput::checkStatus(): child pointer is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(test_ == Teuchos::null,StatusTestError,"StatusTestOutput::checkStatus(): child pointer is null.");
     state_ = test_->checkStatus(solver);
 
     if (numCalls_++ % modTest_ == 0) {

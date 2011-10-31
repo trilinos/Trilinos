@@ -41,7 +41,7 @@
 // @HEADER
 */
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
     return parse_return;
   }
   
-  TestForException_setEnableStacktrace(enableStackTrace);
+  Teuchos::TestForException_setEnableStacktrace(enableStackTrace);
 
   bool success = true;
   

@@ -105,7 +105,7 @@ namespace Amesos2 {
 			     const ArrayView<scalar_t>& vals,
 			     size_t& nnz) const
   {
-    TEST_FOR_EXCEPTION( true,
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
 			std::runtime_error,
 			"Column access to row-based object not yet supported.  "
 			"Please contact the Amesos2 developers." );
@@ -171,7 +171,7 @@ namespace Amesos2 {
 		      Node>,
     DerivedMat>::getMaxColNNZ_impl() const
   {
-    TEST_FOR_EXCEPTION( true,
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
 			std::runtime_error,
 			"Column access to row-based object not yet supported.  "
 			"Please contact the Amesos2 developers." );
@@ -223,7 +223,7 @@ namespace Amesos2 {
 		      Node>,
     DerivedMat>::getGlobalColNNZ_impl(global_ordinal_t col) const
   {
-    TEST_FOR_EXCEPTION( true,
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
 			std::runtime_error,
 			"Column access to row-based object not yet supported.  "
 			"Please contact the Amesos2 developers." );
@@ -243,7 +243,7 @@ namespace Amesos2 {
 		      Node>,
     DerivedMat>::getLocalColNNZ_impl(local_ordinal_t col) const
   {
-    TEST_FOR_EXCEPTION( true,
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
 			std::runtime_error,
 			"Column access to row-based object not yet supported.  "
 			"Please contact the Amesos2 developers." );

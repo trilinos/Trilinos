@@ -209,10 +209,14 @@ INCLUDE(PackageAddTestHelpers)
 #   CATEGORIES <category1> <category2> ...
 #
 #     If specified, gives the specific categories of the test.  Valid test
-#     categories include BASIC, NIGHTLY, and PERFORMANCE.  Other test
-#     categories will be added as needed.  By default, the category is BASIC.
-#     When the category is BASIC it will also match
-#     ${PROJECT_NAME}_TEST_CATEGORIES==NIGHTLY.
+#     categories include BASIC, CONTINUOUS, NIGHTLY, and PERFORMANCE.  Other
+#     test categories will be added as needed.  By default, the category is
+#     BASIC.  When the CATEGORIES is BASIC it will match
+#     ${PROJECT_NAME}_TEST_CATEGORIES equal to CONTINUOUS and NIGHTLY.  When
+#     the CATEGORIES is CONTINUOUS it will match
+#     ${PROJECT_NAME}_TEST_CATEGORIES equal to CONTINUOUS and NIGHTLY.  When
+#     the CATEGORIES is PERFORMANCE it will match
+#     ${PROJECT_NAME}_TEST_CATEGORIES=PERFORMANCE ony.
 #
 #   HOSTTYPE <hosttype1> <hosttype2> ...
 #
@@ -276,11 +280,13 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
      #prefix
      PARSE
      #lists
-     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION"
+     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT"
      #options
      "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;CREATE_WORKING_DIR"
      ${ARGN}
      )
+  # NOTE: The TIMEOUT argument is not documented on purpose.  I don't want to
+  # advertise it!
 
   IF (PARSE_ARGS)
     LIST(LENGTH PARSE_ARGS NUM_PARSE_ARGS)

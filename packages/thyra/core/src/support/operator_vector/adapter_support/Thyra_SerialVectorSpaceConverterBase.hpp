@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -88,13 +88,13 @@ void SerialVectorSpaceConverterBase<ScalarFrom,ScalarTo>::convert(
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(mv_to==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(mv_to==NULL);
 #endif
   ConstDetachedMultiVectorView<ScalarFrom> emv_from(mv_from);
   DetachedMultiVectorView<ScalarTo> emv_to(*mv_to);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(emv_from.subDim() != emv_to.subDim());
-  TEST_FOR_EXCEPT(emv_from.numSubCols() != emv_to.numSubCols());
+  TEUCHOS_TEST_FOR_EXCEPT(emv_from.subDim() != emv_to.subDim());
+  TEUCHOS_TEST_FOR_EXCEPT(emv_from.numSubCols() != emv_to.numSubCols());
 #endif
   for( Ordinal j = 0; j < emv_from.numSubCols(); ++j ) {
     for( Ordinal i = 0; i < emv_from.subDim(); ++i ) {

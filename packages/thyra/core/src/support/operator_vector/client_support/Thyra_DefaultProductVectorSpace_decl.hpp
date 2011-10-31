@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -356,22 +356,26 @@ public:
   //@{
 
   /** \brief Deprecated . */
+  THYRA_DEPRECATED
   DefaultProductVectorSpace(
     const int numBlocks_in,
     const RCP<const VectorSpaceBase<Scalar> > vecSpaces_in[]
     )
     : numBlocks_(-1), dim_(-1)
     {
-      initialize(numBlocks_in, vecSpaces_in);
+      using Teuchos::as;
+      initialize(Teuchos::arrayView(vecSpaces_in, as<Ordinal>(numBlocks_in)));
     }
 
   /** \brief Deprecated . */
+  THYRA_DEPRECATED
   void initialize(
     const int numBlocks_in,
     const RCP<const VectorSpaceBase<Scalar> > vecSpaces_in[]
     )
     {
-      initialize(Teuchos::arrayView(vecSpaces_in, numBlocks_in));
+      using Teuchos::as;
+      initialize(Teuchos::arrayView(vecSpaces_in, as<Ordinal>(numBlocks_in)));
     }
 
   //@}
@@ -488,7 +492,7 @@ void DefaultProductVectorSpace<Scalar>::assertInitialized() const
 {
   using Teuchos::implicit_cast;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( is_null(vecSpaces_) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(vecSpaces_) );
 #endif
 }
 

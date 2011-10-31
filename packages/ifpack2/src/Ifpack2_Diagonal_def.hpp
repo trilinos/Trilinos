@@ -111,7 +111,7 @@ void Diagonal<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,G
                  Scalar alpha,
                  Scalar beta) const
 {
-  TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
     "Ifpack2::Diagonal::apply() ERROR, compute() hasn't been called yet.");
 
   ++numApply_;

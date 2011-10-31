@@ -50,9 +50,13 @@ static double cval;		/* value of constraint equation */
 static double cgrad[3];		/* grad of constraint equation */
 
 
-double    func3d(coeffs, theta, phi, gamma2)
-double    coeffs[15];		/* five different 4-way products */
-double    theta, phi, gamma2;	/* angular parameters */
+double 
+func3d (
+    double coeffs[15],		/* five different 4-way products */
+    double theta,
+    double phi,
+    double gamma2	/* angular parameters */
+)
 
 /* Returns value of penalty function at given angle. */
 {
@@ -119,10 +123,14 @@ double    theta, phi, gamma2;	/* angular parameters */
 
 static double grad0(), grad1(), grad2();
 
-void      grad3d(coeffs, grad, theta, phi, gamma2)
-double    coeffs[15];		/* five different 4-way products */
-double    grad[3];		/* gradient returned */
-double    theta, phi, gamma2;	/* angular parameters */
+void 
+grad3d (
+    double coeffs[15],		/* five different 4-way products */
+    double grad[3],		/* gradient returned */
+    double theta,
+    double phi,
+    double gamma2	/* angular parameters */
+)
 
 /* Returns 1st derivative of penalty function at given angle. */
 {
@@ -192,8 +200,8 @@ double    theta, phi, gamma2;	/* angular parameters */
     grad[2] = grad2(coeffs);
 }
 
-static double grad0(coeffs)
-double   *coeffs;
+static double 
+grad0 (double *coeffs)
 {
     double    val;
 
@@ -230,8 +238,8 @@ double   *coeffs;
     return (val);
 }
 
-static double grad1(coeffs)
-double   *coeffs;
+static double 
+grad1 (double *coeffs)
 {
     double    val;
 
@@ -268,8 +276,8 @@ double   *coeffs;
     return (val);
 }
 
-static double grad2(coeffs)
-double   *coeffs;
+static double 
+grad2 (double *coeffs)
 {
     double    val;
 
@@ -309,9 +317,11 @@ double   *coeffs;
 
 static double hess00(), hess11(), hess22(), hess01(), hess02(), hess12();
 
-void      hess3d(coeffs, hess)
-double    coeffs[15];		/* five different 4-way products */
-double    hess[3][3];		/* Hessian returned */
+void 
+hess3d (
+    double coeffs[15],		/* five different 4-way products */
+    double hess[3][3]		/* Hessian returned */
+)
 
 /* Returns 2nd derivative of penalty function at given angle. */
 {
@@ -399,8 +409,8 @@ double    hess[3][3];		/* Hessian returned */
     hess[1][2] = hess[2][1] = hess12(coeffs);
 }
 
-static double hess00(coeffs)
-double   *coeffs;
+static double 
+hess00 (double *coeffs)
 {
     double    val;
 
@@ -473,8 +483,8 @@ double   *coeffs;
     return (val);
 }
 
-static double hess11(coeffs)
-double   *coeffs;
+static double 
+hess11 (double *coeffs)
 {
     double    val;
 
@@ -547,8 +557,8 @@ double   *coeffs;
     return (val);
 }
 
-static double hess22(coeffs)
-double   *coeffs;
+static double 
+hess22 (double *coeffs)
 {
     double    val;
 
@@ -621,8 +631,8 @@ double   *coeffs;
     return (val);
 }
 
-static double hess01(coeffs)
-double   *coeffs;
+static double 
+hess01 (double *coeffs)
 {
     double    val;
 
@@ -713,8 +723,8 @@ double   *coeffs;
     return (val);
 }
 
-static double hess02(coeffs)
-double   *coeffs;
+static double 
+hess02 (double *coeffs)
 {
     double    val;
 
@@ -805,8 +815,8 @@ double   *coeffs;
     return (val);
 }
 
-static double hess12(coeffs)
-double   *coeffs;
+static double 
+hess12 (double *coeffs)
 {
     double    val;
 
@@ -898,8 +908,10 @@ double   *coeffs;
 }
 
 
-double    constraint(coeffs2)
-double   *coeffs2;		/* coefficients for constraint eqn */
+double 
+constraint (
+    double *coeffs2		/* coefficients for constraint eqn */
+)
 {
     double    val;		/* value of constraint (should be zero) */
 
@@ -921,9 +933,11 @@ double   *coeffs2;		/* coefficients for constraint eqn */
 
 static double gradcon0(), gradcon1(), gradcon2();
 
-void      gradcon(coeffs2, grad)
-double   *coeffs2;		/* coefficients for constraint eqn */
-double    grad[3];		/* gradient returned */
+void 
+gradcon (
+    double *coeffs2,		/* coefficients for constraint eqn */
+    double grad[3]		/* gradient returned */
+)
 {
     int       i;		/* loop counter */
 
@@ -947,8 +961,8 @@ double    grad[3];		/* gradient returned */
 	grad[i] = 2 * cval * cgrad[i];
 }
 
-static double gradcon0(coeffs2)
-double   *coeffs2;
+static double 
+gradcon0 (double *coeffs2)
 {
     double    val;
 
@@ -982,8 +996,8 @@ double   *coeffs2;
     return (val);
 }
 
-static double gradcon1(coeffs2)
-double   *coeffs2;
+static double 
+gradcon1 (double *coeffs2)
 {
     double    val;
 
@@ -1017,8 +1031,8 @@ double   *coeffs2;
     return (val);
 }
 
-static double gradcon2(coeffs2)
-double   *coeffs2;
+static double 
+gradcon2 (double *coeffs2)
 {
     double    val;
 
@@ -1056,9 +1070,11 @@ double   *coeffs2;
 static double hesscon00(), hesscon11(), hesscon22();
 static double hesscon01(), hesscon02(), hesscon12();
 
-void      hesscon(coeffs2, hess)
-double   *coeffs2;		/* coefficients for constraint eqn */
-double    hess[3][3];		/* hessian returned */
+void 
+hesscon (
+    double *coeffs2,		/* coefficients for constraint eqn */
+    double hess[3][3]		/* hessian returned */
+)
 {
     int       i, j;		/* loop variables */
 
@@ -1080,8 +1096,8 @@ double    hess[3][3];		/* hessian returned */
     hess[2][1] = hess[1][2];
 }
 
-static double hesscon00(coeffs2)
-double   *coeffs2;
+static double 
+hesscon00 (double *coeffs2)
 {
     double    val;
 
@@ -1169,8 +1185,8 @@ double   *coeffs2;
     return (val);
 }
 
-static double hesscon11(coeffs2)
-double   *coeffs2;
+static double 
+hesscon11 (double *coeffs2)
 {
     double    val;
 
@@ -1258,8 +1274,8 @@ double   *coeffs2;
     return (val);
 }
 
-static double hesscon22(coeffs2)
-double   *coeffs2;
+static double 
+hesscon22 (double *coeffs2)
 {
     double    val;
 
@@ -1347,8 +1363,8 @@ double   *coeffs2;
     return (val);
 }
 
-static double hesscon01(coeffs2)
-double   *coeffs2;
+static double 
+hesscon01 (double *coeffs2)
 {
     double    val;
 
@@ -1436,8 +1452,8 @@ double   *coeffs2;
     return (val);
 }
 
-static double hesscon02(coeffs2)
-double   *coeffs2;
+static double 
+hesscon02 (double *coeffs2)
 {
     double    val;
 
@@ -1525,8 +1541,8 @@ double   *coeffs2;
     return (val);
 }
 
-static double hesscon12(coeffs2)
-double   *coeffs2;
+static double 
+hesscon12 (double *coeffs2)
 {
     double    val;
 

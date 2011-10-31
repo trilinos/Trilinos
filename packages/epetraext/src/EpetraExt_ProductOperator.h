@@ -397,7 +397,7 @@ ProductOperator::Op_inverse(int k) const
 inline
 void ProductOperator::assertInitialized() const
 {
-	TEST_FOR_EXCEPTION(
+	TEUCHOS_TEST_FOR_EXCEPTION(
 		Op_.size()==0, std::logic_error
 		,"Epetra::ProductOperator: Error, Client has not called initialize(...) yet!"
 		);
@@ -406,7 +406,7 @@ void ProductOperator::assertInitialized() const
 inline
 void ProductOperator::validateIndex(int k) const
 {
-	TEST_FOR_EXCEPTION(
+	TEUCHOS_TEST_FOR_EXCEPTION(
 		k < 0 || static_cast<int>(Op_.size())-1 < k, std::logic_error
 		,"Epetra::ProductOperator: Error, k = "<<k<< " is not in the range [0,"<<Op_.size()-1<<"]!"
 		);

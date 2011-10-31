@@ -884,7 +884,7 @@ void ForwardSensitivityStepper<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParameters(*getValidParameters());
   this->setMyParamList(paramList);
   forceUpToDateW_ = paramList->get(forceUpToDateW_name_,forceUpToDateW_default_);
@@ -926,7 +926,7 @@ void ForwardSensitivityStepper<Scalar>::setModel(
   const RCP<const Thyra::ModelEvaluator<Scalar> >& model
   )
 {
-  TEST_FOR_EXCEPT_MSG( true,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
     "Error, this stepper subclass does not accept a model"
     " as defined by the StepperBase interface!");
 }
@@ -937,7 +937,7 @@ void ForwardSensitivityStepper<Scalar>::setNonconstModel(
   const RCP<Thyra::ModelEvaluator<Scalar> >& model
   )
 {
-  TEST_FOR_EXCEPT_MSG( true,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
     "Error, this stepper subclass does not accept a model"
     " as defined by the StepperBase interface!");
 }
@@ -971,7 +971,7 @@ void ForwardSensitivityStepper<Scalar>::setInitialCondition(
 
   // Get the product vectors for x_bar = [ x; s_bar ] and x_bar_dot
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(state_and_sens_ic.get_x()), std::logic_error,
     "Error, the initial condition for x_bar = [ x; s_bar ] can not be null!" );
 
@@ -1048,9 +1048,7 @@ ForwardSensitivityStepper<Scalar>::takeStep(
   )
 {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep");
-#endif
+  RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep");
 
   if (!is_null(stateIntegrator_)) {
     return takeDecoupledStep(dt,stepType);
@@ -1114,7 +1112,7 @@ void ForwardSensitivityStepper<Scalar>::addPoints(
   const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
   )
 {
-  TEST_FOR_EXCEPT("Not implemented addPoints(...) yet but we could if we wanted!");
+  TEUCHOS_TEST_FOR_EXCEPT("Not implemented addPoints(...) yet but we could if we wanted!");
 }
 
 
@@ -1137,8 +1135,8 @@ void ForwardSensitivityStepper<Scalar>::getPoints(
 
   using Teuchos::as;
 
-#ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT( as<int>(time_vec.size()) == 0 );
+#ifdef HAVE_RYTHMOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPT( as<int>(time_vec.size()) == 0 );
 #endif
 
   const int numTimePoints = time_vec.size();
@@ -1222,7 +1220,7 @@ void ForwardSensitivityStepper<Scalar>::removeNodes(
   Array<Scalar>& time_vec
   )
 {
-  TEST_FOR_EXCEPT("Not implemented yet but we can!");
+  TEUCHOS_TEST_FOR_EXCEPT("Not implemented yet but we can!");
 }
 
 
@@ -1266,10 +1264,10 @@ void ForwardSensitivityStepper<Scalar>::initializeCommon(
   if (p_index >= 0) {
     TEUCHOS_ASSERT(is_null(p_space));
   }
-  TEST_FOR_EXCEPT( is_null(stateModel) );
-  TEST_FOR_EXCEPT( is_null(stateStepper) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateModel) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateStepper) );
   if (stateStepper->isImplicit()) {
-    TEST_FOR_EXCEPT( is_null(stateTimeStepSolver) ); // allow to be null for explicit methods
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(stateTimeStepSolver) ); // allow to be null for explicit methods
   }
 
   //
@@ -1316,7 +1314,7 @@ void ForwardSensitivityStepper<Scalar>::initializeCommon(
   }
   else {
     sensStepper_ = stateStepper_->cloneStepperAlgorithm();
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       is_null(sensStepper_), std::logic_error,
       "Error, if the client does not pass in a stepper for the senitivity\n"
       "equations then the stateStepper object must support cloning to create\n"
@@ -1366,10 +1364,8 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
   )
 {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Rythmos:ForwardSensitivityStepper::takeStep: synced",
+  RYTHMOS_FUNC_TIME_MONITOR_DIFF("Rythmos:ForwardSensitivityStepper::takeStep: synced",
     TopLevel);
-#endif
 
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -1402,9 +1398,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
 
   Scalar state_dt = -1.0;
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: stateStep");
-#endif
+    RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: stateStep");
     VOTSIBB stateStepper_outputTempState(stateStepper_,out,verbLevel);
     state_dt = stateStepper_->takeStep(dt,stepType);
   }
@@ -1416,9 +1410,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
   }
 
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: updateSensModel");
-#endif
+    RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: updateSensModel");
     // Set up the sensitivity model for this timestep
     sensModel_->initializePointState(Teuchos::inOutArg(*stateStepper_),forceUpToDateW_);
   } 
@@ -1436,9 +1428,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
 
   Scalar sens_dt = -1.0;
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: sensStep");
-#endif
+    RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: sensStep");
     // Copy the step control data to make sure that the sensStepper takes the
     // same type of step that the statStepper took.  This is needed to ensure
     // that the W matrix is the same for one.
@@ -1452,7 +1442,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
     *out << "\nSensitivity step status:\n" << sensStepStatus;
   }
   
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     sens_dt != state_dt, std::logic_error,
     "Error, the sensitivity step failed for some reason.  We should\n"
     "just return a negative step size and reject the step but currently\n"
@@ -1485,9 +1475,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeDecoupledStep(
   )
 {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: decoupled");
-#endif
+  RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: decoupled");
 
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -1531,7 +1519,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeDecoupledStep(
   // B) Wipe out all state interp buffer info before this sens timestep
   //
   
-  //TEST_FOR_EXCEPT(true);
+  //TEUCHOS_TEST_FOR_EXCEPT(true);
 
   if (lowTrace) {
     *out

@@ -10,13 +10,15 @@
 
 
 /* Partition vertices into sets in one of several simplistic ways. */
-void      simple_part(graph, nvtxs, sets, nsets, simple_type, goal)
-struct vtx_data **graph;	/* data structure for graph */
-int       nvtxs;		/* total number of vtxs in graph */
-int    *sets;			/* sets vertices get assigned to */
-int       nsets;		/* number of sets at each division */
-int       simple_type;		/* type of decomposition */
-double   *goal;			/* desired set sizes */
+void 
+simple_part (
+    struct vtx_data **graph,	/* data structure for graph */
+    int nvtxs,		/* total number of vtxs in graph */
+    int *sets,			/* sets vertices get assigned to */
+    int nsets,		/* number of sets at each division */
+    int simple_type,		/* type of decomposition */
+    double *goal			/* desired set sizes */
+)
 {
     extern int DEBUG_TRACE;	/* trace the execution of the code */
     double    cutoff;		/* ending weight for a partition */

@@ -36,7 +36,7 @@
 
   template <class NODE>
   RCP<NODE> getNode() {
-    TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
   }
 
   using Kokkos::SerialNode;
@@ -108,7 +108,7 @@
       }
     }
     SCALAR expectedResult = (SCALAR)(N);
-    TEST_FOR_EXCEPT(result != expectedResult);
+    TEUCHOS_TEST_FOR_EXCEPT(result != expectedResult);
     // compute sum x[i], i=1:N-2
     {
       Teuchos::TimeMonitor localTimer(*time);
@@ -121,7 +121,7 @@
       }
     }
     expectedResult = (SCALAR)(N-2);
-    TEST_FOR_EXCEPT(result != expectedResult);
+    TEUCHOS_TEST_FOR_EXCEPT(result != expectedResult);
     {
       x = Teuchos::null;
     }
@@ -163,7 +163,7 @@
       vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
       NNZsofar += 2;
       offsets[N]   = NNZsofar;
-      TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
+      TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
     }
     G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
     offsets = Teuchos::null;

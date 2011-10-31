@@ -52,7 +52,7 @@
 #include "Teuchos_Range1D.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_implicit_cast.hpp"
 
 
@@ -718,7 +718,7 @@ private:
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT( primitiveObjs.size()!=1 || indexObjs.size()!=0
+      TEUCHOS_TEST_FOR_EXCEPT( primitiveObjs.size()!=1 || indexObjs.size()!=0
         || charObjs.size()!=0 );
 #endif
     }
@@ -769,7 +769,7 @@ private:
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT( primitiveObjs.size()!=0 || indexObjs.size()!=1
+      TEUCHOS_TEST_FOR_EXCEPT( primitiveObjs.size()!=0 || indexObjs.size()!=1
         || charObjs.size()!=0 );
 #endif
     }
@@ -843,7 +843,7 @@ private:
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT(
+      TEUCHOS_TEST_FOR_EXCEPT(
         primitiveObjs.size()!=2*ScalarPrimitiveTypeTraits::numPrimitiveObjs()
         || indexObjs.size()!=0
         || charObjs.size()!=0 );
@@ -903,7 +903,7 @@ private:
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT(
+      TEUCHOS_TEST_FOR_EXCEPT(
         primitiveObjs.size()!=ScalarPrimitiveTypeTraits::numPrimitiveObjs()
         || indexObjs.size()!=0
         || charObjs.size()!=0 );

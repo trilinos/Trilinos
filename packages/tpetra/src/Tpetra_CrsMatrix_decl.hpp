@@ -372,10 +372,10 @@ namespace Tpetra {
         */
       bool isUpperTriangular() const;
 
-      //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
+      //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
       bool isLocallyIndexed() const;
 
-      //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
+      //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
       bool isGloballyIndexed() const;
 
       //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
@@ -396,7 +396,7 @@ namespace Tpetra {
       //! Returns \c true if the matrix was allocated with static data structures.
       ProfileType getProfileType() const;
 
-      //! Indicates that the graph is static, so that new entries cannot be added to this matrix. */
+      //! Indicates that the graph is static, so that new entries cannot be added to this matrix.
       bool isStaticGraph() const;
 
       //! Returns the Frobenius norm of the matrix. 
@@ -468,7 +468,7 @@ namespace Tpetra {
        */
       void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const;
 
-      //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
+      //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
       /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
           the zero and non-zero diagonals owned by this node. */
       void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;

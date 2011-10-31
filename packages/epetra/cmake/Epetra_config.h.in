@@ -135,3 +135,5 @@
 #cmakedefine STDC_HEADERS
 
 #cmakedefine Epetra_ENABLE_CASK
+
+@EPETRA_DEPRECATED_DECLARATIONS@

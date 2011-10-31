@@ -4,7 +4,8 @@
 
 
 /* Switchable timer routine  */
-double    lanc_seconds()
+double 
+lanc_seconds (void)
 {
     extern int LANCZOS_TIME; /* perform detailed timing on Lanczos_SO? */
     double seconds();

@@ -34,7 +34,7 @@
 #include "Piro_Epetra_MatrixFreeDecorator.hpp"
 
 #include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_implicit_cast.hpp"
 #include "EpetraExt_ModelEvaluator.h"
 
@@ -183,7 +183,7 @@ void Piro::Epetra::MatrixFreeDecorator::evalModel( const InArgs& inArgs,
     RCP<Piro::Epetra::MatrixFreeOperator> W_mfo =
       Teuchos::rcp_dynamic_cast<Piro::Epetra::MatrixFreeOperator>(W_out);
 
-    TEST_FOR_EXCEPTION(W_mfo==Teuchos::null, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(W_mfo==Teuchos::null, std::logic_error, 
       "Epetra_Operator sent as W to Piro::Epetra::MatrixFreeDecorator\n" 
       "be of type Piro::Epetra::MatrixFreeOperator");
    
@@ -262,7 +262,7 @@ void Piro::Epetra::MatrixFreeOperator::setBase(
 int  Piro::Epetra::MatrixFreeOperator::Apply
     (const Epetra_MultiVector& V, Epetra_MultiVector& Y) const
 {
-  TEST_FOR_EXCEPTION(!baseIsSet, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(!baseIsSet, std::logic_error, 
      " Piro::Epetra::MatrixFreeOperator must have Base values set before Apply");
 
   // Compute  Wv=y  by perturbing x
@@ -320,20 +320,20 @@ Piro::Epetra::MatrixFreeOperator::~MatrixFreeOperator() {
 // The following are trivial implementations
 int  Piro::Epetra::MatrixFreeOperator::SetUseTranspose(bool UseTranspose)
 {
-   TEST_FOR_EXCEPTION(UseTranspose, std::logic_error, 
+   TEUCHOS_TEST_FOR_EXCEPTION(UseTranspose, std::logic_error, 
      " Piro::Epetra::MatrixFreeOperator cannot support Transpose operators");
    return 0;
 }
 int  Piro::Epetra::MatrixFreeOperator::ApplyInverse
     (const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-   TEST_FOR_EXCEPTION(true, std::logic_error, 
+   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
      " Piro::Epetra::MatrixFreeOperator does not support applyInverse");
    return 0;
 }
 double  Piro::Epetra::MatrixFreeOperator::NormInf() const
 {
-   TEST_FOR_EXCEPTION(true, std::logic_error, 
+   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
      " Piro::Epetra::MatrixFreeOperator does not support NormInf");
    return 0.0;
 }

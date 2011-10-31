@@ -45,7 +45,7 @@
 
 #include "RTOpPack_RTOpT_decl.hpp"
 #include "Teuchos_Workspace.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
 
@@ -161,7 +161,7 @@ void RTOpT<Scalar>::setOpNameBase( const std::string &op_name_base )
 template<class Scalar>
 void RTOpT<Scalar>::throwNoReductError() const
 {
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "Error, no reduction is defined for concrete reduction op \'"
     << this->description() << "\'!" );
 }

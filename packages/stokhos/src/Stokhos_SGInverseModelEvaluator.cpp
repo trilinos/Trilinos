@@ -32,7 +32,7 @@
 #include "Stokhos_EpetraMultiVectorOrthogPoly.hpp"
 #include "Stokhos_EpetraOperatorOrthogPoly.hpp"
 #include "Epetra_Map.h"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator(
   const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
@@ -53,7 +53,7 @@ Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator(
   num_p = me_inargs.Np() - num_p_sg;
   num_g = me_outargs.Ng();
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     base_g_maps.size() != num_g_sg, std::logic_error,
     std::endl 
     << "Error!  Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator():"
@@ -80,7 +80,7 @@ Teuchos::RCP<const Epetra_Map>
 Stokhos::SGInverseModelEvaluator::
 get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     l >= num_p || l < 0, std::logic_error,
     std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_map():"
     << "  Invalid parameter index l = " << l << std::endl);
@@ -91,7 +91,7 @@ Teuchos::RCP<const Epetra_Map>
 Stokhos::SGInverseModelEvaluator::
 get_g_map(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     l >= num_g || l < 0, std::logic_error,
     std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_g_map():"
     << "  Invalid response index l = " << l << std::endl);
@@ -102,7 +102,7 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 Stokhos::SGInverseModelEvaluator::
 get_p_names(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     l >= num_p || l < 0, std::logic_error,
     std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_names():"
     << "  Invalid parameter index l = " << l << std::endl);
@@ -113,7 +113,7 @@ Teuchos::RCP<const Epetra_Vector>
 Stokhos::SGInverseModelEvaluator::
 get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     l >= num_p || l < 0, std::logic_error,
     std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_init():"
     << "  Invalid parameter index l = " << l << std::endl);

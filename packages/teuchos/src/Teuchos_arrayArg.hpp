@@ -43,7 +43,7 @@
 #define TEUCHOS_ARRAY_ARG_HPP
 
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace Teuchos {

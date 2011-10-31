@@ -59,13 +59,13 @@ namespace Tpetra {
                     MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
                     Teuchos::ETransp mode, OpScalar alpha, OpScalar beta) const 
   {
-    TEST_FOR_EXCEPTION(!matrix_->isFillComplete(), std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(!matrix_->isFillComplete(), std::runtime_error, 
         Teuchos::typeName(*this) << "::apply(): underlying matrix is not fill-complete.");
-    TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
         Teuchos::typeName(*this) << "::apply(X,Y): X and Y must have the same number of vectors.");
-    TEST_FOR_EXCEPTION(matrix_->isLowerTriangular() == false && matrix_->isUpperTriangular() == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(matrix_->isLowerTriangular() == false && matrix_->isUpperTriangular() == false, std::runtime_error,
         Teuchos::typeName(*this) << "::apply() requires either upper or lower triangular structure in underlying matrix.");
-    TEST_FOR_EXCEPTION( alpha != Teuchos::ScalarTraits<OpScalar>::one() || beta != Teuchos::ScalarTraits<OpScalar>::zero(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( alpha != Teuchos::ScalarTraits<OpScalar>::one() || beta != Teuchos::ScalarTraits<OpScalar>::zero(), std::runtime_error,
         Teuchos::typeName(*this) << "::apply(): non-trivial alpha,beta not supported at this time.");
     if (mode == Teuchos::NO_TRANS) {
       applyNonTranspose(X,Y);

@@ -64,7 +64,7 @@ void ImplicitLinearOp::applyImpl(const Thyra::EOpTransp M_trans, const Thyra::Mu
                                  const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & y, 
                                  const double alpha, const double beta) const
 {
-   TEST_FOR_EXCEPTION(M_trans!=Thyra::NOTRANS,std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(M_trans!=Thyra::NOTRANS,std::runtime_error,
                            "Linear operators of inherited type Teko::ImplicitLinearOp "
                            "cannot handle conjugation (yet!)");
 

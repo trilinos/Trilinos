@@ -62,7 +62,7 @@ bool TestSingleStratimikosSolver(
 
   try {
 
-    TEST_FOR_EXCEPT(!paramList_inout);
+    TEUCHOS_TEST_FOR_EXCEPT(!paramList_inout);
 
     RCP<ParameterList>
       paramList = rcp(paramList_inout,false);

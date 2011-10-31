@@ -54,10 +54,11 @@
 #include "parsing.h"
 #include "FileInfo.h"
 
- 
+#include "add_to_log.h"
+
 using namespace std;
 
-string Version() { return "2.47 (2011-08-15)"; }
+string Version() { return "2.48 (2011-09-14)"; }
 
 string Date() {
   char tbuf[32];
@@ -330,7 +331,6 @@ void Echo_Help(const std::string &option) {
   //           different blocks.
 
 
-  extern void add_to_log(const char *name);
   extern void Build_Variable_Names(ExoII_Read& file1, ExoII_Read& file2, bool *diff_found);
   extern bool Check_Global( ExoII_Read& file1, ExoII_Read& file2);
 
@@ -619,7 +619,7 @@ void output_init(ExoII_Read& file, int count, const char *prefix)
   
     double* var_vals = 0;
     if (out_file_id >= 0) {
-      int max_ent = specs.glob_var_names->size();
+      size_t max_ent = specs.glob_var_names->size();
       if (file1.Num_Nodes() > max_ent)
 	max_ent = file1.Num_Nodes();
       if (file1.Num_Elmts() > max_ent)
@@ -749,12 +749,12 @@ void output_init(ExoII_Read& file, int count, const char *prefix)
     } else {
       node_id_map = new int[file1.Num_Nodes()];
       int *tmp_map = const_cast<int*>(node_id_map);
-      for (int i=0; i < file1.Num_Nodes(); i++) {
+      for (size_t i=0; i < file1.Num_Nodes(); i++) {
 	tmp_map[i] = i+1;
       }
       elem_id_map = new int[file1.Num_Elmts()];
       tmp_map = const_cast<int*>(elem_id_map);
-      for (int i=0; i < file1.Num_Elmts(); i++) {
+      for (size_t i=0; i < file1.Num_Elmts(); i++) {
 	tmp_map[i] = i+1;
       }
     }
@@ -912,12 +912,12 @@ void output_init(ExoII_Read& file, int count, const char *prefix)
       file2.Close_File();
 
 #if 1
-    add_to_log(argv[0]);
+    add_to_log(argv[0], 0);
 #else
     // Temporarily differentiate this version from previous version in logs.
     ostringstream code;
     code << "exodiff-" << Version();
-    add_to_log( code.str().c_str() );
+    add_to_log( code.str().c_str(), 0 );
 #endif
   
     if (specs.exit_status_switch && diff_flag)

@@ -177,11 +177,11 @@ va_dcl
    dim[0].index = va_arg(va, int);
 
 
-   if (dim[0].index <= 0) {
+   if (dim[0].index == 0) {
 #ifdef DEBUG
     fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-            "dimension <= 0, %ld; will return NULL\n",
-            yo, file, lineno, dim[0].index);
+            "dimension == 0, %lu; will return NULL\n",
+            yo, file, lineno, (unsigned long)dim[0].index);
 #endif
       return((double *) NULL);
    }
@@ -245,7 +245,7 @@ static double *smalloc (size_t n, char *filename, int lineno)
 
   if (pntr == NULL && n != 0) {
     fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
-            "requested = %ld\n", yo, filename, lineno, n);
+            "requested = %lu\n", yo, filename, lineno, (unsigned long)n);
     exit(0);
   }
 

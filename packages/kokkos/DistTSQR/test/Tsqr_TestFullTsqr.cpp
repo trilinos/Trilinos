@@ -186,9 +186,9 @@ namespace {
 
       // Validate command-line options.  We provide default values
       // for unset options, so we don't have to validate those.
-      TEST_FOR_EXCEPTION(numRowsLocal <= 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(numRowsLocal <= 0, std::invalid_argument,
 			 "Number of rows per process must be positive.");
-      TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
 			 "Number of columns must be positive.");
       return false; // Did not print help
     }
@@ -230,7 +230,7 @@ namespace {
   test (int argc,
 	char* argv[],
 	const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-	const Teuchos::RCP<const Kokkos::SerialNode>& node,
+	const Teuchos::RCP<Kokkos::SerialNode>& node,
 	const bool allowedToPrint)
   {
     using TSQR::Test::NullCons;
@@ -310,7 +310,7 @@ main (int argc, char* argv[])
   using std::endl;
 
 #ifdef HAVE_MPI
-  typedef RCP< const Teuchos::Comm<int> > comm_ptr;
+  typedef RCP<const Teuchos::Comm<int> > comm_ptr;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
@@ -334,7 +334,7 @@ main (int argc, char* argv[])
 
   RCP<ParameterList> nodeParams = 
     TSQR::Test::getValidNodeParameters<Kokkos::SerialNode> ();
-  RCP<const Kokkos::SerialNode> node =
+  RCP<Kokkos::SerialNode> node =
     TSQR::Test::getNode<Kokkos::SerialNode> (nodeParams);
 
   const bool success = test (argc, argv, comm, node, allowedToPrint);

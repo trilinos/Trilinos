@@ -232,23 +232,6 @@ namespace Belos {
     
   private:
 
-    // Method to convert std::string to enumerated type for residual.
-    Belos::ScaleType convertStringToScaleType( const std::string& scaleType ) {
-      if (scaleType == "Norm of Initial Residual") {
-        return Belos::NormOfInitRes;
-      } else if (scaleType == "Norm of Preconditioned Initial Residual") {
-        // This algorithm only provides true residuals, not preconditioned residuals, 
-        // so the residuals should only be scaled by the unpreconditioned initial residual.
-        return Belos::NormOfInitRes;
-      } else if (scaleType == "Norm of RHS") {
-        return Belos::NormOfRHS;
-      } else if (scaleType == "None") {
-        return Belos::None;
-      } else 
-        TEST_FOR_EXCEPTION( true ,std::logic_error,
-			    "Belos::PseudoBlockCGSolMgr(): Invalid residual scaling type.");
-    }
-
     // Linear problem.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
     
@@ -368,7 +351,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr(
   label_(label_default_),
   isSet_(false)
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 
   // If the parameter list pointer is null, then set the current parameters to the default parameter list.
   if (!is_null(pl)) {
@@ -629,7 +612,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
   
   Teuchos::BLAS<int,ScalarType> blas;
   
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PseudoBlockCGSolMgrLinearProblemFailure,
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PseudoBlockCGSolMgrLinearProblemFailure,
                      "Belos::PseudoBlockCGSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   // Create indices for the linear systems to be solved.
@@ -767,7 +750,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
 	  ////////////////////////////////////////////////////////////////////////////////////
 
 	  else {
-	    TEST_FOR_EXCEPTION(true,std::logic_error,
+	    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
 			       "Belos::PseudoBlockCGSolMgr::solve(): Invalid return from PseudoBlockCGIter::iterate().");
 	  }
 	}	

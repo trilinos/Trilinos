@@ -3,7 +3,7 @@ TEUCHOS_BUILD_BASE=$(TRILINOS_BUILD)/packages/teuchos/src
 TEUCHOS_SRC_BASE=../../../packages/teuchos/src
 
 COMMON = -DHAVE_CONFIG_H -I$(TEUCHOS_SRC_BASE) -I$(TEUCHOS_BUILD_BASE) \
-  $(TEUCHOS_SRC_BASE)/Teuchos_TestForException.cpp \
+  $(TEUCHOS_SRC_BASE)/Teuchos_Assert.cpp \
   $(TEUCHOS_SRC_BASE)/Teuchos_RCPNode.cpp \
   $(TEUCHOS_SRC_BASE)/Teuchos_Ptr.cpp \
   $(TEUCHOS_SRC_BASE)/Teuchos_TypeNameTraits.cpp

@@ -132,7 +132,7 @@ public:
 
   /** \brief Return the the overriding output stream if set.
    *
-   * This is the output stream tthat will be returned from
+   * This is the output stream that will be returned from
    * <tt>getOStream()</tt> regardless that stream is set by
    * <tt>setOStream()</tt>.
    */
@@ -210,7 +210,7 @@ private:
  * indentation (using the <tt>OSTab</tt> class) and has other useful features.
  *
  * Note that <tt>setOStream()</tt> and <tt>setVerbLevel()</tt> are actually
- * decalared as <tt>const</tt> functions.  This is to allow a client to
+ * declared as <tt>const</tt> functions.  This is to allow a client to
  * temporarily change the stream and verbosity level.  To do this saftely, use
  * the class <tt>VerboseObjectTempState</tt> which will revert the output
  * state after it is destroyed.
@@ -408,7 +408,7 @@ VerboseObject<ObjectType>::setOverridingVerbLevel(
 template<class ObjectType>
 EVerbosityLevel VerboseObject<ObjectType>::getVerbLevel() const
 {
-  if (VERB_DEFAULT != thisOverridingVerbLevel_)
+  if (VERB_DEFAULT != thisOverridingVerbLevel_) //Bug??
     return thisOverridingVerbLevel_;
   if (VERB_DEFAULT == thisVerbLevel_)
     return getDefaultVerbLevel();

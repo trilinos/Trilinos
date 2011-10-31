@@ -144,8 +144,8 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
   */
   StatusType checkStatus( Iteration<ScalarType,MV,OP>* solver ) 
   {
-    TEST_FOR_EXCEPTION(iterTest_ == Teuchos::null,StatusTestError,"StatusTestResNormOutput::checkStatus():  iteration test pointer is null.");
-    TEST_FOR_EXCEPTION(resTestVec_.size() == 0,StatusTestError,"StatusTestResNormOutput::checkStatus():  residual test pointer is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(iterTest_ == Teuchos::null,StatusTestError,"StatusTestResNormOutput::checkStatus():  iteration test pointer is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(resTestVec_.size() == 0,StatusTestError,"StatusTestResNormOutput::checkStatus():  residual test pointer is null.");
     state_ = test_->checkStatus(solver);
 
     // Update some information for the header, if it has not printed or the linear system has changed.
@@ -201,7 +201,7 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
 
     // First check to see if this test is a combination test
     Teuchos::RCP<StatusTestCombo_t> comboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(test);
-    TEST_FOR_EXCEPTION(comboTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be a Belos::StatusTestCombo.");
+    TEUCHOS_TEST_FOR_EXCEPTION(comboTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be a Belos::StatusTestCombo.");
     std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = comboTest->getStatusTests();
     
     // Get the number of tests.
@@ -229,14 +229,14 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
 	
       // Check if the residual test is a combination of several StatusTestResNorm objects.
       Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(tmpVec[i]);
-      TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be Belos::StatusTest[MaxIters|ResNorm|Combo].");
+      TEUCHOS_TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be Belos::StatusTest[MaxIters|ResNorm|Combo].");
       tmpVec = tmpComboTest->getStatusTests();
       comboType_ = tmpComboTest->getComboType();
       numResTests_ = tmpVec.size();
       resTestVec_.resize( numResTests_ );
       for (int j=0; j<numResTests_; ++j) {
 	tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(tmpVec[j]);
-	TEST_FOR_EXCEPTION(tmpResTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be a vector of Belos::StatusTestResNorm.");
+	TEUCHOS_TEST_FOR_EXCEPTION(tmpResTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be a vector of Belos::StatusTestResNorm.");
 	resTestVec_[j] = tmpResTest;
       }
     }

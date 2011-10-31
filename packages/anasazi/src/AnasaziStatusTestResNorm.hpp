@@ -268,7 +268,7 @@ namespace Anasazi {
     int have = 0;
     ind_.resize(res.size());
     for (unsigned int i=0; i<res.size(); i++) {
-      TEST_FOR_EXCEPTION( MT::isnaninf(res[i]), ResNormNaNError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MT::isnaninf(res[i]), ResNormNaNError, 
           "StatusTestResNorm::checkStatus(): residual norm is nan or inf" );
       if (res[i] < tol_) {
         ind_[have] = i;

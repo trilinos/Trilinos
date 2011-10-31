@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -345,7 +345,7 @@ inline
 void DefaultInverseLinearOp<Scalar>::assertInitialized() const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !lows_.getConstObj().get() );
+  TEUCHOS_TEST_FOR_EXCEPT( !lows_.getConstObj().get() );
 #endif
 }
 
@@ -360,7 +360,7 @@ void DefaultInverseLinearOp<Scalar>::assertInitialized() const
  * \ingroup Thyra_deprecated_grp
  */
 template<class Scalar>
-RCP<LinearOpBase<Scalar> >
+THYRA_DEPRECATED RCP<LinearOpBase<Scalar> >
 nonconstInverse(
   const RCP<LinearOpWithSolveBase<Scalar> > &A,
   const SolveCriteria<Scalar> *fwdSolveCriteria,
@@ -380,7 +380,7 @@ nonconstInverse(
  * \ingroup Thyra_deprecated_grp
  */
 template<class Scalar>
-RCP<LinearOpBase<Scalar> >
+THYRA_DEPRECATED RCP<LinearOpBase<Scalar> >
 inverse(
   const RCP<const LinearOpWithSolveBase<Scalar> > &A,
   const SolveCriteria<Scalar> *fwdSolveCriteria,

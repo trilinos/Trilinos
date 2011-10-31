@@ -191,7 +191,7 @@ namespace ML_Epetra
 
 #ifdef HAVE_ML_IFPACK    
     //! Ifpack Chebyshev Smoother
-    Ifpack_Chebyshev* Smoother_;
+    Epetra_Operator* Smoother_;
 #endif
     
     //! Edge Domain Map

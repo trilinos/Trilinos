@@ -178,7 +178,7 @@ template<class Scalar>
 RCP<IntegrationObserverBase<Scalar> >
 ForwardResponseSensitivityComputerObserver<Scalar>::cloneIntegrationObserver() const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return Teuchos::null;                       
 }
 

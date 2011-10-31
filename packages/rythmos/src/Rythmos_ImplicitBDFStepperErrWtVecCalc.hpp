@@ -76,25 +76,26 @@ void ImplicitBDFStepperErrWtVecCalc<Scalar>::errWtVecSet(
      ,Scalar absTol
      ) const
 {
+  using Teuchos::as;
+  using Teuchos::ptrFromRef;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT(weight==NULL);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPT(weight==NULL);
+  TEUCHOS_TEST_FOR_EXCEPTION(
       ( ( relTol == ST::zero() ) && ( absTol == ST::zero() ) ), std::logic_error,
       "Error, relTol and absTol cannot both be zero!\n"
       );
   Thyra::VectorBase<Scalar> &w = *weight;
-  Thyra::abs(ptr(&w),vector);
-  Vt_S(ptr(&w),relTol);
-  Vp_S(ptr(&w),absTol);
-  reciprocal(ptr(&w),w);
-  Vt_StV(ptr(&w),ST::one(),w); // We square w because of how weighted norm_2 is computed.
+  Thyra::abs(vector, ptrFromRef(w));
+  Vt_S(ptrFromRef(w), relTol);
+  Vp_S(ptrFromRef(w), absTol);
+  reciprocal(w, ptrFromRef(w));
+  Vt_StV(ptrFromRef(w), ST::one(), w); // We square w because of how weighted norm_2 is computed.
   // divide by N to get RMS norm
   int N = vector.space()->dim();
-  Vt_S(ptr(&w),Scalar(1.0/N));
+  Vt_S(ptrFromRef(w), as<Scalar>(1.0/N));
   // Now you can compute WRMS norm as:
   // Scalar WRMSnorm = norm_2(w,y); // WRMS norm of y with respect to weights w.
 
-  using Teuchos::as;
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"errWtVecSet");
@@ -110,7 +111,7 @@ void ImplicitBDFStepperErrWtVecCalc<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(paramList == Teuchos::null);
+  TEUCHOS_TEST_FOR_EXCEPT(paramList == Teuchos::null);
   paramList->validateParameters(*this->getValidParameters(),0);
   paramList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*paramList_,this);

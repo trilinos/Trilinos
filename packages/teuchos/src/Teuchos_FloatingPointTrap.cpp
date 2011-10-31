@@ -42,7 +42,7 @@
 
 
 #include "Teuchos_FloatingPointTrap.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 //
@@ -146,7 +146,7 @@ double _0 = 0.;
 
 static void ieee0(bool enableTrap)
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     enableTrap == false, std::logic_error,
     "Error, don't know how to turn off trap for MSpc!"
     );
@@ -196,7 +196,7 @@ static void ieeeuserhand2(unsigned int **j)
 
 static void ieee0(bool enableTrap)
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     enableTrap == false, std::logic_error,
     "Error, don't know how to turn off trap for MIPS!"
     );
@@ -238,7 +238,7 @@ static void ieee0(bool enableTrap)
 static void ieee0(bool enableTrap)
 {
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     enableTrap == false, std::logic_error,
     "Error, don't know how to turn off trap for LINUX!"
     );
@@ -295,7 +295,7 @@ static void ieee0(bool enableTrap)
 
 #else /* !_FPU_IEEE */
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error,
     "Error, don't know how to trap floating-point errors on this Linux system!"
     );
@@ -323,7 +323,7 @@ static void ieee0(bool enableTrap)
 
 static void ieee0(bool enableTrap)
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     enableTrap == false, std::logic_error,
     "Error, don't know how to turn off trap for Alpha!"
     );
@@ -356,7 +356,7 @@ static void ieee0(bool enableTrap)
 
 static void ieee0(bool enableTrap)
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     enableTrap == false, std::logic_error,
     "Error, don't know how to turn off trap for HPUX!"
     );
@@ -378,7 +378,7 @@ static void ieee0(bool enableTrap)
 
 static void ieee0(bool enableTrap)
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     enableTrap == false, std::logic_error,
     "Error, don't know how to turn off trap for AIX!"
     );
@@ -401,7 +401,7 @@ static void ieee0(bool enableTrap)
 
 static void ieee0(bool enableTrap)
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     enableTrap == false, std::logic_error,
     "Error, don't know how to turn off trap for SUN!"
     );
@@ -420,7 +420,7 @@ static void ieee0(bool enableTrap)
 
 static void ieee0(bool enableTrap)
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error,
     "Error, Don't know how to implement floating-point traps on this platform!"
     );

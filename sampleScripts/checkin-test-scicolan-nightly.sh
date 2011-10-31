@@ -16,7 +16,17 @@ EXTRA_ARGS=$@
 #
 
 echo "
--D Trilinos_ENABLE_Fortran:BOOL=OFF
+" > COMMON.config
+
+echo "
+" > MPI_DEBUG.config
+
+
+echo "
+" > SERIAL_RELEASE.config
+
+echo "
+-D Trilinos_ENABLE_TriKota:BOOL=OFF
 -D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON
 -D TPL_ENABLE_Boost:BOOL=ON
 -D Boost_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/boost
@@ -25,28 +35,32 @@ echo "
 -D gtest_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/gtest/include
 -D gtest_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/gtest/1.5.0/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared/
 -D TPL_ENABLE_Netcdf:BOOL=ON
--D TPL_Netcdf_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/netcdf/src/include
--D Netcdf_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/netcdf/4.0-snl3/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared
+-D TPL_Netcdf_INCLUDE_DIRS:PATH=/projects/seacas/linux_rhel5/current/include
+-D Netcdf_LIBRARY_DIRS:PATH=/projects/seacas/linux_rhel5/current/lib
 -D SEACAS_ENABLE_XDMF:BOOL=OFF
+-D Trilinos_ENABLE_SEACASMat2exo:BOOL=OFF
 -D TPL_ENABLE_XMDF:BOOL=OFF
 -D TPL_ENABLE_HDF5:BOOL=OFF
--D Claps_ENABLE_SClaps:BOOL=ON
-" > COMMON.config
-#-D CMAKE_BUILD_DEBUG:BOOL=ON
-#-D Netcdf_INCLUDE_DIRS:PATH=/projects/seacas/current/include
-#-D TPL_ENABLE_BoostLib:BOOL=ON
-#-D BoostLib_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/boost
-#-D BoostLib_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/boost/1.46.1/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared
+" > MPI_DEBUG_STK.config
 
 echo "
--D MPI_BASE_DIR:PATH=/usr/netpub/mpi/OpenMPI/1.4/64Bit/gnu
-" > MPI_DEBUG.config
+-D Trilinos_ENABLE_TriKota:BOOL=OFF
+-D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON
+-D TPL_ENABLE_Boost:BOOL=ON
+-D Boost_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/boost
+-D Boost_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/boost/1.46.1/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared
+-D TPL_ENABLE_gtest:BOOL=ON
+-D gtest_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/gtest/include
+-D gtest_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/gtest/1.5.0/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared/
+-D TPL_ENABLE_Netcdf:BOOL=ON
+-D TPL_Netcdf_INCLUDE_DIRS:PATH=/projects/seacas/linux_rhel5/current/include
+-D Netcdf_LIBRARY_DIRS:PATH=/projects/seacas/linux_rhel5/current/lib
+-D SEACAS_ENABLE_XDMF:BOOL=OFF
+-D Trilinos_ENABLE_SEACASMat2exo:BOOL=OFF
+-D TPL_ENABLE_XMDF:BOOL=OFF
+-D TPL_ENABLE_HDF5:BOOL=OFF
+" > SERIAL_RELEASE_STK.config
 
-
-echo "
--DCMAKE_C_COMPILER:PATH=/usr/bin/gcc
--DCMAKE_CXX_COMPILER:PATH=/usr/bin/g++
-" > SERIAL_RELEASE.config
 
 #
 # Run the standard checkin testing script with my specializations
@@ -54,8 +68,9 @@ echo "
 
 ../Trilinos/checkin-test.py \
 --no-eg-git-version-check \
+--ss-extra-builds=MPI_DEBUG_STK,SERIAL_RELEASE_STK \
 --make-options=-j8 \
 --ctest-options=-j4 \
 --ctest-timeout=180 \
---no-rebase \
 $EXTRA_ARGS  
+

@@ -88,7 +88,7 @@ MockModelEval_C::get_f_map() const
 RCP<const Epetra_Map> 
 MockModelEval_C::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
                      "Error!  App::ModelEval::get_p_map() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
@@ -99,7 +99,7 @@ MockModelEval_C::get_p_map(int l) const
 RCP<const  Teuchos::Array<std::string> > 
 MockModelEval_C::get_p_names(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
                      "Error!  App::ModelEval::get_p_names() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
@@ -120,7 +120,7 @@ MockModelEval_C::get_p_names(int l) const
 RCP<const Epetra_Map> 
 MockModelEval_C::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPTION(j != 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(j != 0, std::logic_error,
                      std::endl <<
                      "Error!  MockModelEval_C::get_g_map() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
@@ -143,7 +143,7 @@ MockModelEval_C::get_x_dot_init() const
 RCP<const Epetra_Vector> 
 MockModelEval_C::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
                      "Error!  App::ModelEval::get_p_map() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<

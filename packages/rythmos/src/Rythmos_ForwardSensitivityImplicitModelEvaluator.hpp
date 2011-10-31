@@ -637,7 +637,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
 
   const StepStatus<Scalar> stateStepStatus = stateStepper->getStepStatus();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       stateStepStatus.stepStatus != STEP_STATUS_CONVERGED, std::logic_error,
       "Error, the status should be converged since a positive step size was returned!"
       );
@@ -680,19 +680,19 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
   RCP<Thyra::LinearOpWithSolveBase<Scalar> >
     W_tilde = stateTimeStepSolver->get_nonconst_W(forceUpToDateW);
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       is_null(W_tilde), std::logic_error,
       "Error, the W from the state time step must be non-null!"
       );
 
-#ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+#ifdef HAVE_RYTHMOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(stateModel_), std::logic_error,
     "Error, you must call intializeStructure(...) before you call initializeState(...)"
     );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_x()) );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_x_dot()) );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_p(p_index_)) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_x()) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_x_dot()) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_p(p_index_)) );
   // What about the other parameter values?  We really can't say anything
   // about these and we can't check them.  They can be null just fine.
   if (!is_null(W_tilde)) {
@@ -725,15 +725,15 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeState(
 
   typedef Thyra::ModelEvaluatorBase MEB;
 
-#ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
+#ifdef HAVE_RYTHMOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(stateModel_), std::logic_error,
     "Error, you must call intializeStructure(...) before you call initializeState(...)"
     );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x()) );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x_dot()) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x()) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x_dot()) );
   if (hasStateFuncParams()) {
-    TEST_FOR_EXCEPT( is_null(stateBasePoint.get_p(p_index_)) );
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(stateBasePoint.get_p(p_index_)) );
   }
   // What about the other parameter values?  We really can't say anything
   // about these and we can't check them.  They can be null just fine.
@@ -897,6 +897,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   ) const
 {
 
+  using Teuchos::as;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -911,12 +912,10 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   //
   
   {
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+    RYTHMOS_FUNC_TIME_MONITOR_DIFF(
       "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeMatrices",
       RythmosFSIMEmain
       );
-#endif
     computeDerivativeMatrices(inArgs);
   }
 
@@ -964,21 +963,19 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
 
   if(nonnull(F_sens)) {
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+    RYTHMOS_FUNC_TIME_MONITOR_DIFF(
       "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeSens",
       Rythmos_FSIME);
-#endif
 
     // S_diff =  -(coeff_x_dot/coeff_x)*S + S_dot
     RCP<Thyra::MultiVectorBase<Scalar> >
       S_diff = createMembers( stateModel_->get_x_space(), np_ );
-    V_StVpV( &*S_diff, Scalar(-coeff_x_dot_/coeff_x_), *S, *S_dot );
+    V_StVpV( S_diff.ptr(), as<Scalar>(-coeff_x_dot_/coeff_x_), *S, *S_dot );
     // F_sens = (1/coeff_x) * W_tilde * S
     Thyra::apply(
       *W_tilde_, Thyra::NOTRANS,
       *S, F_sens.ptr(),
-      Scalar(1.0/coeff_x_), ST::zero()
+      as<Scalar>(1.0/coeff_x_), ST::zero()
       );
     // F_sens += d(f)/d(x_dot) * S_diff
     Thyra::apply(
@@ -988,15 +985,15 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
       );
     // F_sens += d(f)/d(p)
     if (hasStateFuncParams())
-      Vp_V( &*F_sens, *DfDp_ );
+      Vp_V( F_sens.ptr(), *DfDp_ );
   }
   
   if(nonnull(W_sens)) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       alpha != coeff_x_dot_, std::logic_error,
       "Error, alpha="<<alpha<<" != coeff_x_dot="<<coeff_x_dot_
       <<" with difference = "<<(alpha-coeff_x_dot_)<<"!" );
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       beta != coeff_x_, std::logic_error,
       "Error, beta="<<beta<<" != coeff_x="<<coeff_x_
       <<" with difference = "<<(beta-coeff_x_)<<"!" );
@@ -1029,7 +1026,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructureCommon
   TEUCHOS_ASSERT(nonnull(stateModel));
   TEUCHOS_ASSERT(p_index >= 0 || nonnull(p_space));
   if (p_index >= 0) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !( 0 <= p_index && p_index < stateModel->Np() ), std::logic_error,
       "Error, p_index does not fall in the range [0,"<<(stateModel->Np()-1)<<"]!" );
     // ToDo: Validate support for DfDp!
@@ -1125,7 +1122,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
   TEUCHOS_ASSERT_EQUALITY( t , t_base );
 
   if (is_null(W_tilde_)) {
-    TEST_FOR_EXCEPT_MSG(true, "ToDo: compute W_tilde from scratch!");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: compute W_tilde from scratch!");
   }
   
   if ( is_null(DfDx_dot_) || is_null(DfDp_) ) {
@@ -1162,7 +1159,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
   
   }
 
-  TEST_FOR_EXCEPT_MSG( nonnull(stateIntegrator_),
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( nonnull(stateIntegrator_),
     "ToDo: Update for using the stateIntegrator!" );
 
 /* 2007/12/11: rabartl: ToDo: Update the code below to work for the general

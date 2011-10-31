@@ -38,15 +38,11 @@
 #include <Ioss_Utils.h>
 #include <string>
 
-namespace {
-  const std::string SCALAR() { return std::string("scalar");}
-}
-
 Ioss::FaceSet::FaceSet()
   : Ioss::EntitySet(NULL, "invalid", 0)
 {}
 
-Ioss::FaceSet::FaceSet(const Ioss::DatabaseIO *io_database, const std::string& my_name,
+Ioss::FaceSet::FaceSet(Ioss::DatabaseIO *io_database, const std::string& my_name,
 		       size_t number_faces)
   : Ioss::EntitySet(io_database, my_name, number_faces)
 {

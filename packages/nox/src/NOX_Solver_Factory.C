@@ -90,7 +90,7 @@ buildSolver(const Teuchos::RCP<NOX::Abstract::Group>& grp,
   else {
     std::ostringstream msg;
     msg << "Error - NOX::Solver::Manager::buildSolver() - The \"Nonlinear Solver\" parameter \"" << method << "\" is not a valid solver option.  Please fix your parameter list!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
   }
   
   return solver;

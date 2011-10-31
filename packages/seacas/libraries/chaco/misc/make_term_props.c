@@ -11,23 +11,23 @@ static void avg_dists_cube(), avg_dists_mesh();
 static double avg_dist_mesh(), avg_dist_interval();
 
 /* Compute the terminal constraints for next partition. */
-void      make_term_props(graph, sub_nvtxs, loc2glob, assignment, architecture,
-	                ndims_tot, ndims, set_info, setnum, nsets,
-			set_max, subsets, term_wgts, using_ewgts)
-struct vtx_data **graph;	/* data structure for graph */
-int       sub_nvtxs;		/* number of vtxs in subgraph */
-int      *loc2glob;		/* mapping from subgraph to graph */
-int    *assignment;		/* set for each vertex */
-int       architecture;		/* 0 => hypercube, 1 => mesh */
-int       ndims_tot;		/* total hypercube dimensions */
-int       ndims;		/* number of dimensions at this step */
-struct set_info *set_info;	/* data about all the sets */
-int       setnum;		/* number of set being divided */
-int       nsets;		/* number of subsets being created */
-int       set_max;		/* largest set created so far */
-int    *subsets;		/* subsets being created */
-float    *term_wgts[];		/* set of terminal weights for each vertex */
-int       using_ewgts;		/* are edge weights being used? */
+void 
+make_term_props (
+    struct vtx_data **graph,	/* data structure for graph */
+    int sub_nvtxs,		/* number of vtxs in subgraph */
+    int *loc2glob,		/* mapping from subgraph to graph */
+    int *assignment,		/* set for each vertex */
+    int architecture,		/* 0 => hypercube, 1 => mesh */
+    int ndims_tot,		/* total hypercube dimensions */
+    int ndims,		/* number of dimensions at this step */
+    struct set_info *set_info,	/* data about all the sets */
+    int setnum,		/* number of set being divided */
+    int nsets,		/* number of subsets being created */
+    int set_max,		/* largest set created so far */
+    int *subsets,		/* subsets being created */
+    float *term_wgts[],		/* set of terminal weights for each vertex */
+    int using_ewgts		/* are edge weights being used? */
+)
 {
     double    term_wgt[MAXSETS];	/* terminal weights */
     float    *twptr;		/* one of the term_wgts vectors */
@@ -88,14 +88,16 @@ int       using_ewgts;		/* are edge weights being used? */
 }
 
 
-static void avg_dists_cube(ndims_tot, ndims, set_info, nsets, set_max, subsets, dists)
-int       ndims_tot;		/* total number of hypercube dimensions */
-int       ndims;		/* number of dimensions created this step */
-struct set_info *set_info;	/* data about all the sets */
-int       nsets;		/* number of subsets being created */
-int       set_max;		/* largest set created so far */
-int    *subsets;		/* subsets being created */
-float    *dists[MAXSETS];	/* distances from my subsets to other sets */
+static void 
+avg_dists_cube (
+    int ndims_tot,		/* total number of hypercube dimensions */
+    int ndims,		/* number of dimensions created this step */
+    struct set_info *set_info,	/* data about all the sets */
+    int nsets,		/* number of subsets being created */
+    int set_max,		/* largest set created so far */
+    int *subsets,		/* subsets being created */
+    float *dists[MAXSETS]	/* distances from my subsets to other sets */
+)
 {
     float    *dist0;		/* first of dists vectors */
     float    *dist;		/* one of dists vectors */
@@ -149,14 +151,15 @@ float    *dists[MAXSETS];	/* distances from my subsets to other sets */
 }
 
 
-static void avg_dists_mesh(architecture, set_info, nsets, set_max,
-    subsets, dists)
-int      architecture;		/* dimensions of mesh */
-struct set_info *set_info;	/* data about all the sets */
-int       nsets;		/* number of subsets being created */
-int       set_max;		/* largest set created so far */
-int    *subsets;		/* subsets being created */
-float    *dists[MAXSETS];	/* distances from my subsets to other sets */
+static void 
+avg_dists_mesh (
+    int architecture,		/* dimensions of mesh */
+    struct set_info *set_info,	/* data about all the sets */
+    int nsets,		/* number of subsets being created */
+    int set_max,		/* largest set created so far */
+    int *subsets,		/* subsets being created */
+    float *dists[MAXSETS]	/* distances from my subsets to other sets */
+)
 {
     float    *dist0;		/* first of dists vectors */
     float    *dist;		/* one of dists vectors */
@@ -196,10 +199,12 @@ float    *dists[MAXSETS];	/* distances from my subsets to other sets */
 
 
 /* Compute the average distance between two subsets of mesh processors. */
-static double avg_dist_mesh(set1, set2, architecture)
-struct set_info *set1;		/* data about all first set */
-struct set_info *set2;		/* data about all second set */
-int       architecture;		/* dimension of mesh */
+static double 
+avg_dist_mesh (
+    struct set_info *set1,		/* data about all first set */
+    struct set_info *set2,		/* data about all second set */
+    int architecture		/* dimension of mesh */
+)
 {
     double    val;		/* distance returned */
     int       i;		/* loop counter */
@@ -217,11 +222,13 @@ int       architecture;		/* dimension of mesh */
  
 
 /* Compute the average distance between two intervals */
-static double avg_dist_interval(set1_low, set1_span, set2_low, set2_span)
-int     set1_low;		/* lowest point for first interval */
-int     set1_span;		/* highest point for first interval */
-int     set2_low;		/* lowest point for second interval */
-int     set2_span;		/* highest point for second interval */
+static double 
+avg_dist_interval (
+    int set1_low,		/* lowest point for first interval */
+    int set1_span,		/* highest point for first interval */
+    int set2_low,		/* lowest point for second interval */
+    int set2_span		/* highest point for second interval */
+)
 {
     double    set1_high;	/* length of first interval */
     double    set1_avg;		/* average value in first interval */

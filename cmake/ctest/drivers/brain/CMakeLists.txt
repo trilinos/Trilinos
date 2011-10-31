@@ -1,15 +1,23 @@
 TRILINOS_DRIVER_SETUP()
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT
-  ctest_linux_nightly_mpi_opt_gcc-4.6.1_brain.cmake
+  MPI_OPT_DEV2 
+  ctest_linux_nightly_mpi_development_opt_gcc_4.6.1_brain.cmake
   CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
   TIMEOUT_MINUTES 240
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG
   ctest_linux_nightly_serial_debug_gcc-4.6.1_cxx11_brain.cmake
+  CTEST_INSTALLER_TYPE dev
+  TIMEOUT_MINUTES 240
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  SERIAL_DEBUG_MEMCHECK
+  ctest_linux_nightly_serial_debug_gcc-4.1.2_memcheck_brain.cmake
   CTEST_INSTALLER_TYPE dev
   TIMEOUT_MINUTES 240
 )

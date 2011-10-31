@@ -55,6 +55,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+
 #include <string.h>
 #include <math.h>
 
@@ -130,7 +132,7 @@ char *ne_catstr2(char *name,
 /* Note: This function assumes a 1-d vector of data for "ne_var_name".
  */
 /*****************************************************************************/
-int ne_id_lkup(int neid, char *ne_var_name, size_t *idx, int ne_var_id)
+int ne_id_lkup(int neid, char *ne_var_name, int64_t *idx, int ne_var_id)
 {
   char    *func_name="ne_id_lkup";
 
@@ -341,15 +343,18 @@ int ne_check_file_version(int neid)
  * position given.
  */
 /*****************************************************************************/
-int ne_get_idx(int neid, char *ne_var_name, size_t *index, int pos)
+int ne_get_idx(int neid, char *ne_var_name, int64_t *index, int pos)
 {
   char  *func_name="ne_get_idx";
 
   int      status;
   int      varid;
   size_t   start[1], count[1];
-  int      varidx[2];
-
+#if defined(NC_NETCDF4)
+  long long varidx[2];
+#else
+  int varidx[2];
+#endif
   char   errmsg[MAX_ERR_LENGTH];
 /*-----------------------------Execution begins-----------------------------*/
 
@@ -374,7 +379,12 @@ int ne_get_idx(int neid, char *ne_var_name, size_t *index, int pos)
       count[0] = 2;
     }
 
-    if ((status = nc_get_vara_int(neid, varid, start, count, varidx)) != NC_NOERR) {
+#if defined(NC_NETCDF4)
+    status = nc_get_vara_longlong(neid, varid, start, count, varidx);
+#else
+    status = nc_get_vara_int(neid, varid, start, count, varidx);
+#endif
+    if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
               "Error: failed to find variable \"%s\" in file ID %d",

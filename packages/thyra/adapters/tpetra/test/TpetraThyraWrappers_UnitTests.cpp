@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -573,7 +573,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp,
   linearOpTester.show_all_tests(showAllTests);
   linearOpTester.dump_all(dumpAll);
   if (runLinearOpTester) {
-    TEST_ASSERT(linearOpTester.check(*thyraLinearOp, &out));
+    TEST_ASSERT(linearOpTester.check(*thyraLinearOp, Teuchos::inOutArg(out)));
   }
 
 }

@@ -56,11 +56,11 @@ C   --Common Variables:
 C   --   Uses ITIME, IGVBEG, INVBEG, IEVBEG, IGVEND, INVEND, IEVEND
 C   --      of /DBXVAR/
 
-      include 'namlen.blk'
-      include 'var.blk'
-      include 'dbase.blk'
-      include 'dbnums.blk'
-      include 'dbxvar.blk'
+      include 'ag_namlen.blk'
+      include 'ag_var.blk'
+      include 'ag_dbase.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbxvar.blk'
       
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
 

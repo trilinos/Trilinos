@@ -205,7 +205,7 @@ Scalar AdaptiveSparseGrid<Scalar,UserVector>::refine_grid(
 	  Scalar globalErrorIndicator,
 	  AdaptiveSparseGridInterface<Scalar,UserVector> & problem_data) {
  
- TEST_FOR_EXCEPTION((activeIndex.empty()),std::out_of_range,
+ TEUCHOS_TEST_FOR_EXCEPTION((activeIndex.empty()),std::out_of_range,
               ">>> ERROR (AdaptiveSparseGrid): Active Index set is empty.");  
 
   int dimension = problem_data.getDimension();
@@ -285,7 +285,7 @@ Scalar AdaptiveSparseGrid<Scalar,UserVector>::refine_grid(
 	Scalar globalErrorIndicator,
 	AdaptiveSparseGridInterface<Scalar,UserVector> & problem_data) {
 
-  TEST_FOR_EXCEPTION((activeIndex.empty()),std::out_of_range,
+  TEUCHOS_TEST_FOR_EXCEPTION((activeIndex.empty()),std::out_of_range,
               ">>> ERROR (AdaptiveSparseGrid): Active Index set is empty.");  
 
   int dimension = problem_data.getDimension();

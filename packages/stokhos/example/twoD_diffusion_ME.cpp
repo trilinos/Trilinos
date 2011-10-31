@@ -30,7 +30,7 @@
 
 #include "Stokhos_KL_ExponentialRandomField.hpp"
 #include "EpetraExt_MatrixMatrix.h"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Stokhos_PreconditionerFactory.hpp"
 
 namespace {
@@ -324,7 +324,7 @@ Teuchos::RCP<const Epetra_Map>
 twoD_diffusion_ME::
 get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
 		     std::logic_error,
                      std::endl << 
                      "Error!  twoD_diffusion_ME::get_p_map():  " <<
@@ -337,7 +337,7 @@ Teuchos::RCP<const Epetra_Map>
 twoD_diffusion_ME::
 get_g_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
 		     std::logic_error,
                      std::endl << 
                      "Error!  twoD_diffusion_ME::get_g_map():  " <<
@@ -350,7 +350,7 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 twoD_diffusion_ME::
 get_p_names(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
 		     std::logic_error,
                      std::endl << 
                      "Error!  twoD_diffusion_ME::get_p_names():  " <<
@@ -370,7 +370,7 @@ Teuchos::RCP<const Epetra_Vector>
 twoD_diffusion_ME::
 get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l != 0, 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
 		     std::logic_error,
                      std::endl << 
                      "Error!  twoD_diffusion_ME::get_p_init():  " <<

@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -263,7 +263,7 @@ getTpetraMultiVector(const RCP<MultiVectorBase<Scalar> > &mv)
     return tv->getTpetraVector();
   }
 
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "Error, the input mv = " << mv->description() << " does not support the"
     " Thyra::TpetraMultiVector or the Thyra::TpetraVector interfaces!");
 
@@ -300,7 +300,7 @@ getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> > &mv)
     return tv->getConstTpetraVector();
   }
 
-  TEST_FOR_EXCEPTION(true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "Error, the input mv = " << mv->description() << " does not support the"
     " Thyra::TpetraMultiVector or the Thyra::TpetraVector interfaces!");
 

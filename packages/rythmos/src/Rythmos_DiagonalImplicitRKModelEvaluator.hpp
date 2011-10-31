@@ -198,22 +198,22 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::initializeDIRKModel(
   typedef ScalarTraits<Scalar> ST;
   // ToDo: Assert input arguments!
   // How do I verify the basePoint is an authentic InArgs from daeModel?
-  TEST_FOR_EXCEPTION( 
+  TEUCHOS_TEST_FOR_EXCEPTION( 
       is_null(basePoint.get_x()), 
       std::logic_error,
       "Error!  The basepoint x vector is null!"
       );
-  TEST_FOR_EXCEPTION( 
+  TEUCHOS_TEST_FOR_EXCEPTION( 
       is_null(daeModel), 
       std::logic_error,
       "Error!  The model evaluator pointer is null!"
       );
-  TEST_FOR_EXCEPTION( 
+  TEUCHOS_TEST_FOR_EXCEPTION( 
       !daeModel->get_x_space()->isCompatible(*(basePoint.get_x()->space())), 
       std::logic_error,
       "Error!  The basepoint input arguments are incompatible with the model evaluator vector space!"
       );
-  //TEST_FOR_EXCEPT(is_null(dirk_W_factory));
+  //TEUCHOS_TEST_FOR_EXCEPT(is_null(dirk_W_factory));
 
   daeModel_ = daeModel;
   basePoint_ = basePoint;
@@ -260,10 +260,10 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::setTimeStepPoint(
   )
 {
   typedef ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT( is_null(x_old) );
-  TEST_FOR_EXCEPT( delta_t <= ST::zero() );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(x_old) );
+  TEUCHOS_TEST_FOR_EXCEPT( delta_t <= ST::zero() );
   // Verify x_old is compatible with the vector space in the DAE Model.
-  TEST_FOR_EXCEPTION(!daeModel_->get_x_space()->isCompatible(*(x_old->space())), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!daeModel_->get_x_space()->isCompatible(*(x_old->space())), std::logic_error,
       "Error!  The incoming VectorBase object is not compatible with the DAE model that was provided at initialization!");
   x_old_ = x_old;
   t_old_ = t_old;
@@ -277,8 +277,8 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::setStageSolution(
       const Thyra::VectorBase<Scalar>& stage_solution
       )
 {
-  TEST_FOR_EXCEPT(stageNumber < 0);
-  TEST_FOR_EXCEPT(stageNumber >= dirkButcherTableau_->numStages());
+  TEUCHOS_TEST_FOR_EXCEPT(stageNumber < 0);
+  TEUCHOS_TEST_FOR_EXCEPT(stageNumber >= dirkButcherTableau_->numStages());
   Thyra::V_V(stage_derivatives_->getNonconstVectorBlock(stageNumber).ptr(),stage_solution);
 }
 
@@ -287,8 +287,8 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::setCurrentStage(
       int currentStage
       )
 {
-  TEST_FOR_EXCEPT(currentStage < 0);
-  TEST_FOR_EXCEPT(currentStage >= dirkButcherTableau_->numStages());
+  TEUCHOS_TEST_FOR_EXCEPT(currentStage < 0);
+  TEUCHOS_TEST_FOR_EXCEPT(currentStage >= dirkButcherTableau_->numStages());
   currentStage_ = currentStage;
 }
 
@@ -301,7 +301,7 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 DiagonalImplicitRKModelEvaluator<Scalar>::get_x_space() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeDIRKModel must be called first!\n"
       );
   return daeModel_->get_x_space();
@@ -312,7 +312,7 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 DiagonalImplicitRKModelEvaluator<Scalar>::get_f_space() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeDIRKModel must be called first!\n"
       );
   return daeModel_->get_f_space();
@@ -323,7 +323,7 @@ template<class Scalar>
 RCP<Thyra::LinearOpBase<Scalar> >
 DiagonalImplicitRKModelEvaluator<Scalar>::create_W_op() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeDIRKModel must be called first!\n"
       );
   return daeModel_->create_W_op();
@@ -334,7 +334,7 @@ template<class Scalar>
 RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 DiagonalImplicitRKModelEvaluator<Scalar>::get_W_factory() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeDIRKModel must be called first!\n"
       );
   return daeModel_->get_W_factory();
@@ -345,7 +345,7 @@ template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 DiagonalImplicitRKModelEvaluator<Scalar>::getNominalValues() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeDIRKModel must be called first!\n"
       );
   return nominalValues_;
@@ -356,7 +356,7 @@ template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 DiagonalImplicitRKModelEvaluator<Scalar>::createInArgs() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeDIRKModel must be called first!\n"
       );
   return inArgs_;
@@ -370,7 +370,7 @@ template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 DiagonalImplicitRKModelEvaluator<Scalar>::createOutArgsImpl() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, initializeDIRKModel must be called first!\n"
       );
   return outArgs_;
@@ -387,15 +387,15 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   typedef ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error!  initializeDIRKModel must be called before evalModel\n"
       );
 
-  TEST_FOR_EXCEPTION( !setTimeStepPointCalled_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !setTimeStepPointCalled_, std::logic_error,
       "Error!  setTimeStepPoint must be called before evalModel"
       );
 
-  TEST_FOR_EXCEPTION( currentStage_ == -1, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( currentStage_ == -1, std::logic_error,
       "Error!  setCurrentStage must be called before evalModel"
       );
 

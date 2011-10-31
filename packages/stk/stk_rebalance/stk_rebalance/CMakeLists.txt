@@ -41,7 +41,6 @@ ENDIF()
 
 PACKAGE_ADD_LIBRARY(
   stk_rebalance
-  DEPLIBS stk_mesh_base
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

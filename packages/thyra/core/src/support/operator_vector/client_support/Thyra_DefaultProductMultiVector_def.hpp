@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -67,8 +67,8 @@ void DefaultProductMultiVector<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( is_null(productSpace_in) );
-  TEST_FOR_EXCEPT( numMembers <= 0 );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(productSpace_in) );
+  TEUCHOS_TEST_FOR_EXCEPT( numMembers <= 0 );
 #endif
   Array<RCP<MultiVectorBase<Scalar> > > multiVecs;
   const int numBlocks = productSpace_in->numBlocks();
@@ -166,7 +166,7 @@ void DefaultProductMultiVector<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 
@@ -255,7 +255,7 @@ DefaultProductMultiVector<Scalar>::colImpl(Ordinal j) const
   Array<RCP<const VectorBase<Scalar> > > cols_;
   for ( int k = 0; k < numBlocks_; ++k )
     cols_.push_back(multiVecs_[k].getConstObj()->col(j));
-  return defaultProductVector<Scalar>(productSpace_,&cols_[0]);
+  return defaultProductVector<Scalar>(productSpace_, cols_());
 }
 
 
@@ -267,7 +267,7 @@ DefaultProductMultiVector<Scalar>::nonconstColImpl(Ordinal j)
   Array<RCP<VectorBase<Scalar> > > cols_;
   for ( int k = 0; k < numBlocks_; ++k )
     cols_.push_back(multiVecs_[k].getNonconstObj()->col(j));
-  return defaultProductVector<Scalar>(productSpace_,&cols_[0]);
+  return defaultProductVector<Scalar>(productSpace_, cols_());
 }
 
 
@@ -371,7 +371,7 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
   Array<Ptr<const ProductMultiVectorBase<Scalar> > > multi_vecs;
   for ( int j = 0; j < multi_vecs_in.size() && allProductMultiVectors; ++j ) {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT( is_null(multi_vecs_in[j]) );
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(multi_vecs_in[j]) );
 #endif
     const Ptr<const ProductMultiVectorBase<Scalar> >
       multi_vecs_j = ptr_dynamic_cast<const ProductMultiVectorBase<Scalar> >(
@@ -389,7 +389,7 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
   for ( int j = 0; j < targ_multi_vecs_inout.size() && allProductMultiVectors; ++j )
   {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT( is_null(targ_multi_vecs_inout[j]) );
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(targ_multi_vecs_inout[j]) );
 #endif
     Ptr<ProductMultiVectorBase<Scalar> >
       targ_multi_vecs_j = ptr_dynamic_cast<ProductMultiVectorBase<Scalar> >(
@@ -634,7 +634,7 @@ void DefaultProductMultiVector<Scalar>::initializeImpl(
 template<class Scalar>
 void DefaultProductMultiVector<Scalar>::assertInitialized() const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(productSpace_), std::logic_error,
     "Error, this DefaultProductMultiVector object is not intialized!"
     );
@@ -646,7 +646,7 @@ void DefaultProductMultiVector<Scalar>::validateColIndex(const int j) const
 {
   assertInitialized();
   const int domainDim = multiVecs_[0].getConstObj()->domain()->dim();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     ! ( 0 <= j && j < domainDim ), std::logic_error,
     "Error, the column index j = " << j << " does not fall in the range [0,"<<domainDim<<"]!"
     );

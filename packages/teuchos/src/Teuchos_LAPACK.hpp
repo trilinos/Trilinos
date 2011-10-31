@@ -153,7 +153,42 @@ namespace Teuchos
     //! Solves an over/underdetermined real \c m by \c n linear system \c A using QR or LQ factorization of A.
     void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
-    //! Computes the minimum norm solution to a real \c m by \c n linear least squares problem using the singular value decomposition (SVD) of \c A.
+    /// \brief Use the SVD to solve a possibly rank-deficient linear least-squares problem.
+    ///
+    /// GELSS uses the singular value decomposition (SVD) to compute
+    /// the minimum-norm solution to a possibly rank-deficient linear
+    /// least-squares problem.  The problem may be under- or
+    /// overdetermined.
+    ///
+    /// LAPACK's _GELSS routines take different arguments, depending
+    /// on whether they are for real or complex arithmetic.  This is
+    /// because _GELSS imitates the interface of LAPACK's SVD routine.
+    /// LAPACK's SVD routine takes an additional RWORK workspace array
+    /// argument for COMPLEX*8 (CGELSS) and COMPLEX*16 (ZGELSS).
+    /// LAPACK's real SVD routines (SGELSS and DGELSS) do not take the
+    /// RWORK argument.
+    ///
+    /// This class had already exposed GELSS for ScalarType = float
+    /// and double that does <i>not</i> include an RWORK argument.
+    /// Backwards compatibility requirements prevent us from simply
+    /// changing that interface.  We could provide a different
+    /// interface for LAPACK specializations with ScalarType =
+    /// std::complex<T>, but that would make the GELSS interface not
+    /// generic at compile time.  This would make using GELSS in
+    /// generic code harder (for example, you would need to specialize
+    /// code that <i>uses</i> GELSS on a Boolean, which specifies
+    /// whether ScalarType is complex).
+    ///
+    /// We fix this problem by providing an overloaded generic GELSS
+    /// interface that does take an RWORK argument.  This does not
+    /// change the existing interface, but provides the additional
+    /// capability to solve complex-valued least-squares problems.
+    /// The RWORK argument is ignored when ScalarType is real, and may
+    /// therefore be set to NULL in that case.
+    /// 
+    void GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, MagnitudeType* S, const MagnitudeType rcond, OrdinalType* rank, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const;
+
+    //! Legacy GELSS interface for real-valued ScalarType.
     void GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* S, const ScalarType rcond, OrdinalType* rank, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
     //! Solves the linear equality-constrained least squares (LSE) problem where \c A is an \c m by \c n matrix,\c B is a \c p by \c n matrix \c C is a given \c m-vector, and D is a given \c p-vector.
@@ -176,6 +211,23 @@ namespace Teuchos
 
     //! Computes the inverse of a matrix \c A using the LU factorization computed by GETRF.
     void GETRI(const OrdinalType n, ScalarType* A, const OrdinalType lda, const OrdinalType* IPIV, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
+    /// \brief Robustly solve a possibly singular triangular linear system.  
+    ///
+    /// \note This routine is slower than the BLAS' TRSM, but can
+    ///   detect possible singularity of A.
+    void 
+    LATRS (const char UPLO, 
+	   const char TRANS, 
+	   const char DIAG, 
+	   const char NORMIN, 
+	   const OrdinalType N,
+	   ScalarType* A, 
+	   const OrdinalType LDA,
+	   ScalarType* X, 
+	   MagnitudeType* SCALE,
+	   MagnitudeType* CNORM,
+	   OrdinalType* INFO) const;
 
     //! Estimates the reciprocal of the condition number of a general real matrix \c A, in either the 1-norm or the infinity-norm, using the LU factorization computed by GETRF.
     void GECON(const char NORM, const OrdinalType n, const ScalarType* A, const OrdinalType lda, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
@@ -452,6 +504,12 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, MagnitudeType* S, const MagnitudeType rcond, OrdinalType* rank, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* S, const ScalarType rcond, OrdinalType* rank, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -495,6 +553,24 @@ namespace Teuchos
   
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GETRI(const OrdinalType n, ScalarType* A, const OrdinalType lda, const OrdinalType* IPIV, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void 
+  LAPACK<OrdinalType,ScalarType>::
+  LATRS (const char UPLO, 
+	 const char TRANS, 
+	 const char DIAG, 
+	 const char NORMIN, 
+	 const OrdinalType N, 
+	 ScalarType* A, 
+	 const OrdinalType LDA, 
+	 ScalarType* X, 
+	 MagnitudeType* SCALE, 
+	 MagnitudeType* CNORM, 
+	 OrdinalType* INFO) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -768,6 +844,7 @@ namespace Teuchos
 
     // General Linear System Routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, float* WORK, const int lwork, int* info) const;
+    void GELSS(const int m, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, float* S, const float rcond, int* rank, float* WORK, const int lwork, float* RWORK, int* info) const;
     void GELSS(const int m, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, float* S, const float rcond, int* rank, float* WORK, const int lwork, int* info) const;
     void GGLSE(const int m, const int n, const int p, float* A, const int lda, float* B, const int ldb, float* C, float* D, float* X, float* WORK, const int lwork, int* info) const;
     void GEQRF( const int m, const int n, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const;
@@ -778,6 +855,7 @@ namespace Teuchos
 
 
     void GETRI(const int n, float* A, const int lda, const int* IPIV, float* WORK, const int lwork, int* info) const;
+    void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, float* A, const int LDA, float* X, float* SCALE, float* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const float* A, const int lda, const float anorm, float* rcond, float* WORK, int* IWORK, int* info) const;
     void GESV(const int n, const int nrhs, float* A, const int lda, int* IPIV, float* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const float* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
@@ -866,6 +944,7 @@ namespace Teuchos
 
     // General linear system routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, double* WORK, const int lwork, int* info) const;
+    void GELSS(const int m, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, double* S, const double rcond, int* rank, double* WORK, const int lwork, double* RWORK, int* info) const;
     void GELSS(const int m, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, double* S, const double rcond, int* rank, double* WORK, const int lwork, int* info) const;
     void GGLSE(const int m, const int n, const int p, double* A, const int lda, double* B, const int ldb, double* C, double* D, double* X, double* WORK, const int lwork, int* info) const;
     void GEQRF( const int m, const int n, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const;
@@ -874,6 +953,7 @@ namespace Teuchos
     void GTTRF(const int n, double* dl, double* d, double* du, double* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const double* dl, const double* d, const double* du, const double* du2, const int* IPIV, double* B, const int ldb, int* info) const;
     void GETRI(const int n, double* A, const int lda, const int* IPIV, double* WORK, const int lwork, int* info) const;
+    void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, double* A, const int LDA, double* X, double* SCALE, double* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const double* A, const int lda, const double anorm, double* rcond, double* WORK, int* IWORK, int* info) const;
     void GESV(const int n, const int nrhs, double* A, const int lda, int* IPIV, double* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const double* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
@@ -965,6 +1045,7 @@ namespace Teuchos
 
     // General Linear System Routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, std::complex<float>* WORK, const int lwork, int* info) const;
+    void GELSS(const int m, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, float* S, const float rcond, int* rank, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
     void GEQRF( const int m, const int n, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
     void UNGQR(const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
     void GETRF(const int m, const int n, std::complex<float>* A, const int lda, int* IPIV, int* info) const;
@@ -972,6 +1053,7 @@ namespace Teuchos
     void GTTRF(const int n, std::complex<float>* dl, std::complex<float>* d, std::complex<float>* du, std::complex<float>* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* dl, const std::complex<float>* d, const std::complex<float>* du, const std::complex<float>* du2, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void GETRI(const int n, std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* WORK, const int lwork, int* info) const;
+    void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, std::complex<float>* A, const int LDA, std::complex<float>* X, float* SCALE, float* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const std::complex<float>* A, const int lda, const float anorm, float* rcond, std::complex<float>* WORK, float* RWORK, int* info) const;
     void GESV(const int n, const int nrhs, std::complex<float>* A, const int lda, int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const std::complex<float>* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
@@ -1044,6 +1126,7 @@ namespace Teuchos
 
     // General Linear System Routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, std::complex<double>* WORK, const int lwork, int* info) const;
+    void GELSS(const int m, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, double* S, const double rcond, int* rank, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
     void GEQRF( const int m, const int n, std::complex<double>* A, const int lda, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
     void UNGQR(const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
     void GETRF(const int m, const int n, std::complex<double>* A, const int lda, int* IPIV, int* info) const;
@@ -1051,6 +1134,7 @@ namespace Teuchos
     void GTTRF(const int n, std::complex<double>* dl, std::complex<double>* d, std::complex<double>* du, std::complex<double>* du2, int* IPIV, int* info) const;
     void GTTRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* dl, const std::complex<double>* d, const std::complex<double>* du, const std::complex<double>* du2, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void GETRI(const int n, std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* WORK, const int lwork, int* info) const;
+    void LATRS (const char UPLO, const char TRANS, const char DIAG, const char NORMIN, const int N, std::complex<double>* A, const int LDA, std::complex<double>* X, double* SCALE, double* CNORM, int* INFO) const;
     void GECON(const char NORM, const int n, const std::complex<double>* A, const int lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, int* info) const;
     void GESV(const int n, const int nrhs, std::complex<double>* A, const int lda, int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void GEEQU(const int m, const int n, const std::complex<double>* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;

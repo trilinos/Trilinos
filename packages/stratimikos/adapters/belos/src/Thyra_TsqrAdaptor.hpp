@@ -34,11 +34,9 @@
 #include <Thyra_DetachedMultiVectorView.hpp>
 #include <Thyra_MultiVectorBase.hpp>
 #include <Thyra_MultiVectorStdOps.hpp>
-
+#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <stdexcept>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace Thyra {
 
@@ -52,67 +50,83 @@ namespace Thyra {
   ///
   /// TSQR works independently of the particular multivector
   /// implementation, and interfaces to the latter via an adaptor
-  /// class.  Thyra::TsqrAdaptor is the adaptor class for
-  /// Thyra::MultiVectorBase.  It templates on the MultiVector (MV)
-  /// type so that it can pick up that class' typedefs.  In
-  /// particular, TSQR chooses its intranode implementation based on
-  /// the Kokkos Node type of the multivector.
+  /// class.  This class is the adaptor class for \c MultiVectorBase.
+  /// It templates on the MultiVector (MV) type so that it can pick up
+  /// that class' typedefs.  In particular, TSQR chooses its intranode
+  /// implementation based on the Kokkos Node type of the multivector.
   ///
   /// \warning This is a stub adaptor that just placates the compiler
-  ///   and does nothing.
-  ///
-  template< class Scalar >
-  class TsqrAdaptor {
+  ///   and does nothing.  It's not hard to implement a Thyra adaptor,
+  ///   but in order for the adaptor to be efficient, it requires
+  ///   special cases for extracting the actual multivector
+  ///   implementation (e.g., Epetra_MultiVector or
+  ///   Tpetra::MultiVector) out of the Thyra wrapper.
+  template<class Scalar>
+  class TsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
-    typedef Thyra::MultiVectorBase< Scalar > MV;
+    typedef Thyra::MultiVectorBase<Scalar> MV;
     typedef Scalar scalar_type;
     typedef int ordinal_type; // MultiVectorBase really does use int for this
     typedef int node_type; // FIXME (mfh 26 Oct 2010) stub for now
-    typedef Teuchos::SerialDenseMatrix< ordinal_type, scalar_type > dense_matrix_type;
-    typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
+    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   public:
-    /// \brief Default parameters
-    ///
-    /// Return default parameters for the TSQR variant used by Epetra.
-    ///
-    /// \warning This method may not be reentrant.  It should only be
-    ///   called by one thread at a time.  We do not protect it from
-    ///   calls by more than one thread at a time.
-    ///
-    /// \warning This method is a stub for now.
-    static Teuchos::RCP<const Teuchos::ParameterList>
-    getDefaultParameters ()
-    {
-      return Teuchos::parameterList();
-    }
-
-    /// \brief Constructor
-    ///
-    /// \param mv [in] Multivector object, used only to access the
-    ///   underlying communicator object (in this case,
-    ///   Teuchos::Comm<int>, accessed via the Tpetra::Map belonging
-    ///   to the multivector).  All multivector objects with which
-    ///   this Adaptor works must use the same map and communicator.
+    /// \brief Constructor (that accepts a parameter list).
     ///
     /// \param plist [in] List of parameters for configuring TSQR.
-    ///   The specific parameter keys that are read depend on the
-    ///   TSQR implementation.  "cacheBlockSize" (cache block size
-    ///   per core, in bytes) tends to be defined for all of the
-    ///   non-GPU implementations.  For details, check the specific
-    ///   NodeTsqrFactory implementation.
-    TsqrAdaptor (const MV& mv,
-		 const Teuchos::RCP<const Teuchos::ParameterList>& plist) 
+    ///   The specific parameter keys that are read depend on the TSQR
+    ///   implementation.  For details, call \c getValidParameters()
+    ///   and examine the documentation embedded therein.
+    TsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& plist) 
     {
       throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
 
-    /// \brief Compute QR factorization [Q,R] = qr(A,0)
+    //! Constructor (that uses default parameters).
+    TsqrAdaptor ()
+    {
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
+    }
+
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters () const
+    {
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
+    }
+
+    void 
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    {
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
+    }
+
+    /// \brief Compute QR factorization [Q,R] = qr(A,0).
     ///
+    /// \param A [in/out] On input: the multivector to factor.
+    ///   Overwritten with garbage on output.
+    ///
+    /// \param Q [out] On output: the (explicitly stored) Q factor in
+    ///   the QR factorization of the (input) multivector A.
+    ///
+    /// \param R [out] On output: the R factor in the QR factorization
+    ///   of the (input) multivector A.
+    ///
+    /// \param forceNonnegativeDiagonal [in] If true, then (if
+    ///   necessary) do extra work (modifying both the Q and R
+    ///   factors) in order to force the R factor to have a
+    ///   nonnegative diagonal.
+    ///
+    /// \warning Currently, this method only works if A and Q have the
+    ///   same communicator and row distribution ("map," in Petra
+    ///   terms) as those of the multivector given to this TsqrAdaptor
+    ///   instance's constructor.  Otherwise, the result of this
+    ///   method is undefined.
     void
     factorExplicit (MV& A,
 		    MV& Q,
-		    dense_matrix_type& R)
+		    dense_matrix_type& R,
+		    const bool forceNonnegativeDiagonal=false)
     {
       throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }

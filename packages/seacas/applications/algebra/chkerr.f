@@ -42,6 +42,8 @@ C     caller  - IN - The subroutine invoking the exodusII call
 C     ierr    - IN - The error code returned from the exodusII call
 C     
 
+      include 'exodusII.inc'
+
       character*6 routine
       CHARACTER*8 caller
       character*(512) string, path, msg

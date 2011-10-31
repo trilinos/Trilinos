@@ -8,13 +8,15 @@
 
 
 /* Sparse linked A(matrix) times x(vector), double precision. */
-void      splarax(result, mat, n, vec, vwsqrt, work)
-double   *result;		/* result of matrix vector multiplication */
-struct    vtx_data **mat;	/* graph data structure */
-int       n;			/* number of rows/columns in matrix */
-double   *vec;			/* vector being multiplied by matrix */
-double   *vwsqrt;		/* square roots of vertex weights */
-double   *work;			/* work vector from 1-n */
+void 
+splarax (
+    double *result,		/* result of matrix vector multiplication */
+    struct vtx_data **mat,	/* graph data structure */
+    int n,			/* number of rows/columns in matrix */
+    double *vec,			/* vector being multiplied by matrix */
+    double *vwsqrt,		/* square roots of vertex weights */
+    double *work			/* work vector from 1-n */
+)
 {
     extern int PERTURB;		/* perturb matrix? */
     extern int NPERTURB;	/* if so, number of edges to perturb */
@@ -111,13 +113,15 @@ double   *work;			/* work vector from 1-n */
 }
 
 /* Sparse linked A(matrix) times x(vector)i, float version. */
-void      splarax_float(result, mat, n, vec, vwsqrt, work)
-float    *result;		/* result of matrix vector multiplication */
-struct    vtx_data **mat;	/* graph data structure */
-int       n;			/* number of rows/columns in matrix */
-float    *vec;			/* vector being multiplied by matrix */
-float    *vwsqrt;		/* square roots of vertex weights */
-float    *work;			/* work vector from 1-n */
+void 
+splarax_float (
+    float *result,		/* result of matrix vector multiplication */
+    struct vtx_data **mat,	/* graph data structure */
+    int n,			/* number of rows/columns in matrix */
+    float *vec,			/* vector being multiplied by matrix */
+    float *vwsqrt,		/* square roots of vertex weights */
+    float *work			/* work vector from 1-n */
+)
 {
     extern int PERTURB;		/* perturb matrix? */
     extern int NPERTURB;	/* if so, number of edges to perturb */

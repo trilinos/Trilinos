@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -80,7 +80,7 @@ const std::string toString(const EAdjointEpetraOp adjointEpetraOp)
     case EPETRA_OP_ADJOINT_UNSUPPORTED:
       return "EPETRA_OP_ADJOINT_UNSUPPORTED";
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return "";
 }
@@ -109,7 +109,7 @@ const std::string toString(const EApplyEpetraOpAs applyEpetraOpAs)
     case EPETRA_OP_APPLY_APPLY_INVERSE:
       return "EPETRA_OP_APPLY_APPLY_INVERSE";
     default:
-      TEST_FOR_EXCEPT(true);
+      TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   return "";
 }

@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -262,7 +262,7 @@ DefaultSpmdMultiVector<Scalar>::nonconstColImpl(Ordinal j)
   std::cerr << "\nSpmdMultiVectorStd<Scalar>::col() called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( !( 0 <= j && j < this->domain()->dim() ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= j && j < this->domain()->dim() ) );
 #endif
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(

@@ -127,9 +127,9 @@ void yyerror(char *);
 	 create a block so we don't get into bad nesting problems.  It
 	 also lets the user terminate the macro with a ;
 */
-#define NEWSTR(from,to)	do { int len=strlen(from);\
-			       ALLOC(to, len+1, char *);\
-			       memcpy(to, from, len+1);	\
+#define NEWSTR(from,to)	do { int len_=strlen(from);\
+			       ALLOC(to, len_+1, char *);\
+			       memcpy(to, from, len_+1);	\
 			       } while(0)
 
 #define SET_FILE_LIST(file_num, line, temp_file, loop_cnt) do { \

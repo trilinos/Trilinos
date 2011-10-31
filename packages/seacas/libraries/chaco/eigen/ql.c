@@ -12,9 +12,8 @@
 
 #define SIGN(a,b) ((b)<0 ? -fabs(a) : fabs(a))
 
-int       ql(d, e, n)
-double    d[], e[];
-int       n;
+int 
+ql (double d[], double e[], int n)
 
 {
     int       m, l, iter, i;

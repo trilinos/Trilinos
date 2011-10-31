@@ -1401,11 +1401,12 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
     ConstraintType* cr = (*cr_iter).second;
 
     fei::Record<int>* slaveRecord = cr->getSlave();
+    int slaveID = slaveRecord->getID();
     int slaveIDType = cr->getIDType();
     int slaveFieldID = cr->getSlaveFieldID();
     int offsetIntoSlaveField = cr->getOffsetIntoSlaveField();
     int slaveEqn = -1;
-    CHK_ERR( rowSpace_->getGlobalIndex(slaveIDType, slaveRecord->getID(),
+    CHK_ERR( rowSpace_->getGlobalIndex(slaveIDType, slaveID,
                                        slaveFieldID, 0, offsetIntoSlaveField,
                                        slaveEqn) );
 

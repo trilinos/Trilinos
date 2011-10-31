@@ -148,6 +148,24 @@ public:
     const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
     );
 
+  /**
+   * \brief Construct a communicator with a new context with the same properties
+   * as the original.
+   *
+   * The newly constructed communicator will have a duplicate communication
+   * space that has the same properties (e.g. processes, attributes,
+   * topologies) as the input communicator.
+   *
+   * \param other The communicator to copy from.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>
+   * other.getRawMpiComm().get() != NULL && *other.getRawMpiComm() != NULL
+   * </tt></li>
+   * </ul>
+   */
+  MpiComm(const MpiComm<Ordinal>& other);
+
   /** \brief Return the embedded wrapped opaque <tt>MPI_Comm</tt> object. */
   RCP<const OpaqueWrapper<MPI_Comm> > getRawMpiComm() const
   {return rawMpiComm_;}
@@ -219,7 +237,12 @@ public:
   virtual void wait(
     const Ptr<RCP<CommRequest> > &request
     ) const;
-
+  /** \brief . */
+  virtual RCP< Comm<Ordinal> > duplicate() const;
+  /** \brief . */
+  virtual RCP< Comm<Ordinal> > split(const int color, const int key) const;
+  /** \brief . */
+  virtual RCP< Comm<Ordinal> > createSubcommunicator(const std::vector<int>& ranks) const;
   //@}
 
   //! @name Overridden from Describable 
@@ -237,6 +260,8 @@ public:
 
 private:
 
+  // Set internal data members once the rawMpiComm_ data member is valid.
+  void setupMembersFromComm();
   static int tagCounter_;
 
   RCP<const OpaqueWrapper<MPI_Comm> > rawMpiComm_;
@@ -296,16 +321,32 @@ MpiComm<Ordinal>::MpiComm(
   const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
   )
 {
-  TEST_FOR_EXCEPT( rawMpiComm.get()==NULL );
-  TEST_FOR_EXCEPT( *rawMpiComm == MPI_COMM_NULL );
+  TEUCHOS_TEST_FOR_EXCEPT( rawMpiComm.get()==NULL );
+  TEUCHOS_TEST_FOR_EXCEPT( *rawMpiComm == MPI_COMM_NULL );
   rawMpiComm_ = rawMpiComm;
-  MPI_Comm_size(*rawMpiComm_,&size_);
-  MPI_Comm_rank(*rawMpiComm_,&rank_);
+  setupMembersFromComm();
+}
+
+template<typename Ordinal>
+MpiComm<Ordinal>::MpiComm(const MpiComm<Ordinal>& other)
+{
+  TEUCHOS_TEST_FOR_EXCEPT(other.getRawMpiComm().get() == NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(*other.getRawMpiComm() == MPI_COMM_NULL);
+  MPI_Comm newComm;
+  MPI_Comm_dup(*other.getRawMpiComm(), &newComm);
+  rawMpiComm_ = opaqueWrapper(newComm);
+  setupMembersFromComm();
+}
+
+template<typename Ordinal>
+void MpiComm<Ordinal>::setupMembersFromComm()
+{
+  MPI_Comm_size(*rawMpiComm_, &size_);
+  MPI_Comm_rank(*rawMpiComm_, &rank_);
   if(tagCounter_ > maxTag_)
     tagCounter_ = minTag_;
   tag_ = tagCounter_++;
 }
-
 
 // Overridden from Comm
 
@@ -402,7 +443,7 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
   for( Ordinal i = 0; i < size_; ++i ) {
     sumRecvBytes += recvCounts[i];
   }
-  TEST_FOR_EXCEPT(!(sumRecvBytes==sendBytes));
+  TEUCHOS_TEST_FOR_EXCEPT(!(sumRecvBytes==sendBytes));
 #endif // TEUCHOS_DEBUG
 
 #ifdef TEUCHOS_MPI_COMM_DUMP
@@ -475,7 +516,7 @@ void MpiComm<Ordinal>::send(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::send(...)"
     );
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     ! ( 0 <= destRank && destRank < size_ ), std::logic_error
     ,"Error, destRank = " << destRank << " is not < 0 or is not"
     " in the range [0,"<<size_-1<<"]!"
@@ -506,7 +547,7 @@ void MpiComm<Ordinal>::readySend(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::readySend(...)"
     );
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     ! ( 0 <= destRank && destRank < size_ ), std::logic_error
     ,"Error, destRank = " << destRank << " is not < 0 or is not"
     " in the range [0,"<<size_-1<<"]!"
@@ -536,7 +577,7 @@ int MpiComm<Ordinal>::receive(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::receive(...)"
     );
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     sourceRank >=0 && !(sourceRank < size_), std::logic_error
     ,"Error, sourceRank = " << sourceRank << " is not < 0 or is not"
     " in the range [0,"<<(size_-1)<<"]!"
@@ -614,7 +655,7 @@ void MpiComm<Ordinal>::waitAll(
     );
   const int count = requests.size();
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( requests.size() == 0 );
+  TEUCHOS_TEST_FOR_EXCEPT( requests.size() == 0 );
 #endif
   
   Array<MPI_Request> rawMpiRequests(count, MPI_REQUEST_NULL);
@@ -656,6 +697,63 @@ void MpiComm<Ordinal>::wait(
   *request = null;
 }
 
+template<typename Ordinal>
+RCP< Comm<Ordinal> >
+MpiComm<Ordinal>::duplicate() const
+{
+  return rcp(new MpiComm<Ordinal>(*this));
+}
+
+template<typename Ordinal>
+RCP< Comm<Ordinal> >
+MpiComm<Ordinal>::split(const int color, const int key) const
+{
+  MPI_Comm newComm;
+  int splitReturn = MPI_Comm_split(
+    *rawMpiComm_,
+    color < 0 ? MPI_UNDEFINED : color,
+    key,
+    &newComm);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    splitReturn != MPI_SUCCESS,
+    std::logic_error,
+    "Failed to create communicator with color " << color <<
+    "and key " << key << ".");
+  if (newComm == MPI_COMM_NULL) {
+    return RCP< Comm<Ordinal> >();
+  } else {
+    return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
+  }
+}
+
+template<typename Ordinal>
+RCP< Comm<Ordinal> >
+MpiComm<Ordinal>::createSubcommunicator(const std::vector<int> &ranks) const
+{
+  int mpiReturn;
+
+  // Get the group that this communicator is in.
+  MPI_Group thisGroup;
+  mpiReturn = MPI_Comm_group(*rawMpiComm_, &thisGroup);
+  TEUCHOS_TEST_FOR_EXCEPTION(mpiReturn != MPI_SUCCESS, std::logic_error,
+                     "Failed to obtain group.");
+  // Create a new group with the specified members.
+  MPI_Group newGroup;
+  mpiReturn = MPI_Group_incl(
+    thisGroup, ranks.size(), const_cast<int *>(&ranks[0]), &newGroup);
+  TEUCHOS_TEST_FOR_EXCEPTION(mpiReturn != MPI_SUCCESS, std::logic_error,
+                     "Failed to create subgroup.");
+  // Create a new communicator from the new group.
+  MPI_Comm newComm;
+  mpiReturn = MPI_Comm_create(*rawMpiComm_, newGroup, &newComm);
+  TEUCHOS_TEST_FOR_EXCEPTION(mpiReturn != MPI_SUCCESS, std::logic_error,
+                     "Failed to create subcommunicator.");
+  if (newComm == MPI_COMM_NULL) {
+    return RCP< Comm<Ordinal> >();
+  } else {
+    return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
+  }
+}
 
 // Overridden from Describable
 
@@ -687,7 +785,7 @@ bool MpiComm<Ordinal>::show_dump = false;
 template<typename Ordinal>
 void MpiComm<Ordinal>::assertRank(const int rank, const std::string &rankName) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     ! ( 0 <= rank && rank < size_ ), std::logic_error
     ,"Error, "<<rankName<<" = " << rank << " is not < 0 or is not"
     " in the range [0,"<<size_-1<<"]!"

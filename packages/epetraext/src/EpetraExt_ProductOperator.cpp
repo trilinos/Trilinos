@@ -68,7 +68,7 @@ void ProductOperator::initialize(
 	)
 {
 #ifdef _DEBUG
-	TEST_FOR_EXCEPTION(
+	TEUCHOS_TEST_FOR_EXCEPTION(
 		num_Op < 1, std::invalid_argument
 		,"ProductOperator::initialize(...): Error!"
 		);
@@ -94,7 +94,7 @@ void ProductOperator::uninitialize(
 	)
 {
 #ifdef _DEBUG
-	TEST_FOR_EXCEPTION(
+	TEUCHOS_TEST_FOR_EXCEPTION(
 		(Op!=NULL || Op_trans!=NULL || Op_inverse!=NULL) && num_Op==NULL
 		,std::invalid_argument
 		,"ProductOperator::uninitialize(...): Error!"
@@ -128,7 +128,7 @@ void ProductOperator::applyConstituent(
 	const bool applyInverse_k = (Op_inverse==APPLY_MODE_APPLY)!=(Op_inverse_[k]==APPLY_MODE_APPLY);
 	const int err = !applyInverse_k ? Op_[k]->Apply(X_k,*Y_k) :  Op_[k]->ApplyInverse(X_k,*Y_k);
   Op_k.SetUseTranspose(oldUseTranspose);
-	TEST_FOR_EXCEPTION(
+	TEUCHOS_TEST_FOR_EXCEPTION(
 		err!=0, std::runtime_error
 		,"ProductOperator::applyConstituent(...): Error, Op["<<k<<"]."
 		<<(!applyInverse_k?"Apply":"ApplyInverse")<<"(...) returned "

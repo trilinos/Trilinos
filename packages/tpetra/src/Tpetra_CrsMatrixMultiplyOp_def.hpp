@@ -67,11 +67,11 @@ namespace Tpetra {
                     MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &Y_in,
                     Teuchos::ETransp mode, OpScalar alpha, OpScalar beta) const 
   {
-    TEST_FOR_EXCEPTION(!matrix_->isFillComplete(), std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(!matrix_->isFillComplete(), std::runtime_error, 
         Teuchos::typeName(*this) << "::apply(): underlying matrix is not fill-complete.");
-    TEST_FOR_EXCEPTION(X_in.getNumVectors() != Y_in.getNumVectors(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(X_in.getNumVectors() != Y_in.getNumVectors(), std::runtime_error,
         Teuchos::typeName(*this) << "::apply(X,Y): X and Y must have the same number of vectors.");
-    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<OpScalar>::isComplex && mode == Teuchos::TRANS, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<OpScalar>::isComplex && mode == Teuchos::TRANS, std::logic_error,
         Teuchos::typeName(*this) << "::apply() does not currently support transposed multiplications for complex scalar types.");
     if (mode == Teuchos::NO_TRANS) {
       applyNonTranspose(X_in, Y_in, alpha, beta);

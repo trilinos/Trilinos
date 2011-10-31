@@ -8,19 +8,21 @@
 /* Finds first extended eigenpair of system corresponding to
    tridiagonal T using using Rafael's bisection technique. */
 
-void      get_extval(alpha, beta, j, ritzval, s, eigtol, wnorm_g, sigma, extval, v, work1, work2)
-double   *alpha;	/* j-vector of Lanczos scalars (using elements 1 to j) */
-double   *beta;		/* (j+1)-vector of " " (has 0 element but using 1 to j-1) */
-int       j;		/* number of Lanczos iterations taken */
-double    ritzval;	/* Ritz value */
-double   *s;		/* Ritz vector (length n, re-computed in this routine) */
-double    eigtol;	/* tolerance on eigenpair */
-double    wnorm_g;	/* W-norm of n-vector g, the rhs in the extended eig. problem */
-double    sigma;	/* the norm constraint on the extended eigenvector */
-double   *extval;	/* the extended eigenvalue this routine computes */
-double   *v;		/* the j-vector solving the extended eig problem in T */
-double   *work1;	/* j-vector of workspace */
-double   *work2;	/* j-vector of workspace */
+void 
+get_extval (
+    double *alpha,	/* j-vector of Lanczos scalars (using elements 1 to j) */
+    double *beta,		/* (j+1)-vector of " " (has 0 element but using 1 to j-1) */
+    int j,		/* number of Lanczos iterations taken */
+    double ritzval,	/* Ritz value */
+    double *s,		/* Ritz vector (length n, re-computed in this routine) */
+    double eigtol,	/* tolerance on eigenpair */
+    double wnorm_g,	/* W-norm of n-vector g, the rhs in the extended eig. problem */
+    double sigma,	/* the norm constraint on the extended eigenvector */
+    double *extval,	/* the extended eigenvalue this routine computes */
+    double *v,		/* the j-vector solving the extended eig problem in T */
+    double *work1,	/* j-vector of workspace */
+    double *work2	/* j-vector of workspace */
+)
 {
     extern int DEBUG_EVECS;	/* debug flag for eigen computation */
     double    lambda_low;	/* lower bound on extended eval */

@@ -23,7 +23,7 @@ namespace {
 
   template <class PLAT>
   RCP<PLAT> getPlatform() {
-    TEST_FOR_EXCEPTION(true,std::logic_error,"Platform type " << Teuchos::TypeNameTraits<PLAT>::name() << " not defined.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Platform type " << Teuchos::TypeNameTraits<PLAT>::name() << " not defined.");
   }
 
   RCP<SerialNode> snode;

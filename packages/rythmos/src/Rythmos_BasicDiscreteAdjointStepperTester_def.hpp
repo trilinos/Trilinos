@@ -226,32 +226,32 @@ bool BasicDiscreteAdjointStepperTester<Scalar>::testAdjointStepper(
   //
 
   // Set the initial condition
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 
   // Solve the fwd sens equations
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 
   // Compute the reduced gradient at t_f
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 
   //
   *out << "\nF) Solve the adjoint equations and compute adj reduced sens ...\n";
   //
 
   // Compute and set the adjoint initial condition
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 
   // Solve the adjoint equations
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 
   // Compute the reduced gradient at t_0
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 
   //
   *out << "\nG) Compare forward and adjoint reduced sens ...\n";
   //
 
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 
   //
   *out << "\n*** Leaving BasicDiscreteAdjointStepperTester<Scalar>::testAdjointStepper(...) ...\n";

@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -207,7 +207,7 @@ template<class Scalar>
 RCP<LinearOpWithSolveBase<Scalar> >
 DefaultModelEvaluatorWithSolveFactory<Scalar>::create_W() const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     W_factory_.get()==NULL, std::logic_error
     ,"Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>::create_W(): "
     "Error, the client did not set a LinearOpWithSolveFactoryBase object for W!"
@@ -322,7 +322,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModelImpl(
   }
  
   if( W_op.get() ) {
-    TEST_FOR_EXCEPT(true); // Handle this case later if we need to!
+    TEUCHOS_TEST_FOR_EXCEPT(true); // Handle this case later if we need to!
   }
 
   timer.stop();

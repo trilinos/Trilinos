@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_ParameterList.hpp"
 #ifdef HAVE_TEUCHOS_EXTENDED
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -79,7 +79,7 @@ buildStatusTests(const std::string& file_name ,
   status_tests = this->buildStatusTests(param_list, globalData, tagged_tests);
 #else
   std::string msg = "Error - Teuchos Extended Support must be enabled to use the xml reader for parameter lists.  Please rebuild the Trilinos Teuchos library with --enable-teuchos-extended in teh configure script.";
-  TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
 #endif
 
   return status_tests;
@@ -101,7 +101,7 @@ buildStatusTests(Teuchos::ParameterList& p,
     test_type = get<std::string>(p, "Test Type");
   else {
     std::string msg = "Error - The \"Test Type\" is a required parameter in the LOCA::StatusTest::Factory!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
 
   if (test_type == "Combo")
@@ -111,7 +111,7 @@ buildStatusTests(Teuchos::ParameterList& p,
   else {
     std::ostringstream msg;
     msg << "Error - the test type \"" << test_type << "\" is invalid!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
   }
 
   this->checkAndTagTest(p, status_test, tagged_tests);
@@ -139,7 +139,7 @@ buildComboTest(Teuchos::ParameterList& p,
   else{
     std::string msg = 
       "Error - The \"Combo Type\" must be \"AND\" or \"OR\"!";
-    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
   
   RCP<LOCA::StatusTest::Combo> combo_test =

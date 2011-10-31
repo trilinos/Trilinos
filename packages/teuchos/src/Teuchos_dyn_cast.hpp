@@ -54,7 +54,7 @@ namespace Teuchos {
 \ingroup teuchos_language_support_grp
 
 We create this class so that we may throw a bad_cast when appropriate and
-still use the TEST_FOR_EXCEPTION macro.  We recommend users try to catch a
+still use the TEUCHOS_TEST_FOR_EXCEPTION macro.  We recommend users try to catch a
 bad_cast.
 */
 class m_bad_cast : public std::bad_cast {

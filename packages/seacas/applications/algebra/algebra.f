@@ -116,45 +116,45 @@ C   --   "ALGEBRA - A Program That Algebraically Manipulates the Output
 C   --   of a Finite Element Analysis"
 
       include 'exodusII.inc'
-      include 'namlen.blk'
+      include 'ag_namlen.blk'
       
 C     max_num_equation, max_parsed_entries
-      include 'numeqn.blk'
+      include 'ag_numeqn.blk'
 C     QAINFO array with program information
-      include 'progqa.blk'
+      include 'ag_progqa.blk'
 C     input equation info
-      include 'ent.blk'
+      include 'ag_ent.blk'
 C     input variable info
-      include 'var.blk'
+      include 'ag_var.blk'
 C     aliases
-      include 'alias.blk'
+      include 'ag_alias.blk'
 C     I/O file names
-      include 'dbase.blk'
+      include 'ag_dbase.blk'
 C     I/O database titles
-      include 'dbtitl.blk'
+      include 'ag_dbtitl.blk'
 C     num_of: nodes,elements,coordinated/node,element_blks
 C     num_of: history,global,nodal,element variables, num_of_time_steps
-      include 'dbnums.blk'
+      include 'ag_dbnums.blk'
 C     node set/side sets number,length,dist factor
-      include 'dbnumg.blk'
+      include 'ag_dbnumg.blk'
 C     database type, num_of qa and info records
-      include 'dbnumq.blk'
+      include 'ag_dbnumq.blk'
 C     num_of: nodes,elements,element blks,node_sets,side_sets in zoom mesh
 C     num_of: output history,global,nodal,element variables
-      include 'dbout.blk'
+      include 'ag_dbout.blk'
 C     time_index, I_index/O_index for history,global,nodal and element vars
-      include 'dbxvar.blk'
+      include 'ag_dbxvar.blk'
 C     time variables
-      include 'times.blk'
+      include 'ag_times.blk'
 C     zoom info
-      include 'zoom.blk'
+      include 'ag_zoom.blk'
 C     function variables
-      include 'fnctbc.blk'
+      include 'ag_fnctbc.blk'
 C     equation line error messages
-      include 'eqnlns.blk'
+      include 'ag_eqnlns.blk'
 C     floating point byte size
-      include 'dbws.blk'
-      include 'f2kcli.inc'
+      include 'ag_dbws.blk'
+      include 'argparse.inc'
 
 C     Input/Output File Arguments
 C     CPUWS - The word size in bytes of the floating point variables
@@ -185,7 +185,7 @@ C     while exiting the program
       LOGICAL INOPEN, OTOPEN
 
 C     Executable code in qainfo.blk
-      include 'qainfo.blk'
+      include 'ag_qainfo.blk'
 
       INOPEN = .FALSE.
       OTOPEN = .FALSE.
@@ -234,7 +234,7 @@ C     Open the log file - temporary file unless the user decides to save it
       CALL OPNLOG (NLOG)
 
 C .. Get filename from command line.  If not specified, emit error message
-      NARG = COMMAND_ARGUMENT_COUNT()
+      NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filenames not specified.')
         CALL PRTERR ('FATAL',
@@ -248,7 +248,7 @@ C .. Get filename from command line.  If not specified, emit error message
       end if
 
 C     Open the input database; Exit on error
-      CALL GET_COMMAND_ARGUMENT(1,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(1,FILNAM, LFIL)
       ndbin = exopen(filnam(:lfil), EXREAD, cpuws, iows,
      &       vers, ierr)
       IF (IERR .NE. 0) THEN
@@ -308,8 +308,8 @@ C     Print the database filename, title, and db initial variables
 C     Cannot print global, element, or nodal info.  Data has not
 C     been read from the input database yet.
       CALL DBPINI ('TIS', NDBIN, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
-     &             NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL,
-     &             LESSDF, IDUM, IDUM, IDUM)
+     &             NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, 
+     &             LESSDF, IDUM, IDUM, IDUM, ' ')
 
 cccc     DBLIST uses MDFIND to locate NUMELB, NUMLNK, NUMATR
 cccc     Scan the connectivity to get the element block IDs
@@ -563,7 +563,7 @@ C     name.
 C *************************************************************
 C                   Open the Output Database
 C *************************************************************
-      CALL GET_COMMAND_ARGUMENT(2,FILNAM, LFIL, ISTATUS)
+      CALL get_argument(2,FILNAM, LFIL)
       ndbout = excre(filnam(:lfil), EXCLOB, CPUWS, IOWS, IERR)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Problems creating database "'//FILNAM(:LFIL)//'".'

@@ -45,7 +45,7 @@
 #include <cmath>
 #include "MeshBuilder.hpp"
 #include "Element_Linear2D.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 //**********************************************************************
 MeshBuilder::MeshBuilder(const Teuchos::RCP<Epetra_Comm>& comm,
@@ -68,7 +68,7 @@ MeshBuilder::MeshBuilder(const Teuchos::RCP<Epetra_Comm>& comm,
   int last_proc = num_procs - 1;
 
   // Divide elements across processors in x direction only.
-  TEST_FOR_EXCEPTION(num_procs > num_elements_x,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(num_procs > num_elements_x,std::logic_error,
 		     "Number of processors must be less than number of elements in the x direction.");
 
   // number of columns of elements on this processor

@@ -112,7 +112,18 @@ public:
   PairIterEntityComm comm( const Ghosting & sub ) const { return m_entityImpl.comm( sub ); }
 
   //------------------------------------
+#ifdef SIERRA_MIGRATION
+//!!strictly temporary mechanism to help us through the sierra fmwk-stk migration!!
+  void set_void_ptr(void* vptr) { m_voidptr = vptr; }
+  void* get_void_ptr() const { return m_voidptr; }
+#endif
+
 private:
+
+#ifdef SIERRA_MIGRATION
+//!!strictly temporary mechanism to help us through the sierra fmwk-stk migration!!
+  void* m_voidptr;
+#endif
 
   impl::EntityImpl m_entityImpl;
 

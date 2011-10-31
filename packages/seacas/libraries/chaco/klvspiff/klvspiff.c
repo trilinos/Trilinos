@@ -14,15 +14,16 @@ int       VERTEX_SEPARATOR = FALSE;
 
 static void free_klv();
 
-void      klvspiff(graph, nvtxs, sets, goal, max_dev,
-	           bndy_list, weights)
-struct vtx_data **graph;	/* list of graph info for each vertex */
-int       nvtxs;		/* number of vertices in graph */
-int    *sets;			/* local partitioning of vtxs */
-double   *goal;			/* desired set sizes */
-int       max_dev;		/* largest deviation from balance allowed */
-int     **bndy_list;		/* list of vertices on boundary (0 ends) */
-double   *weights;		/* vertex weights in each set */
+void 
+klvspiff (
+    struct vtx_data **graph,	/* list of graph info for each vertex */
+    int nvtxs,		/* number of vertices in graph */
+    int *sets,			/* local partitioning of vtxs */
+    double *goal,			/* desired set sizes */
+    int max_dev,		/* largest deviation from balance allowed */
+    int **bndy_list,		/* list of vertices on boundary (0 ends) */
+    double *weights		/* vertex weights in each set */
+)
 {
     extern FILE *Output_File;	/* output file or null */
     extern int DEBUG_TRACE;	/* debug flag for Kernighan-Lin */
@@ -107,14 +108,16 @@ double   *weights;		/* vertex weights in each set */
 }
 
 
-static void free_klv(lbuckets, rbuckets, llistspace, rlistspace, ldvals, rdvals)
+static void 
+free_klv (
 /* Free everything malloc'd for KLV. */
-struct bilist **lbuckets;	/* space for bucket sorts */
-struct bilist **rbuckets;	/* space for bucket sorts */
-struct bilist *llistspace;	/* space for all bidirectional elements */
-struct bilist *rlistspace;	/* space for all bidirectional elements */
-int      *ldvals;		/* change in penalty for each possible move */
-int      *rdvals;		/* change in penalty for each possible move */
+    struct bilist **lbuckets,	/* space for bucket sorts */
+    struct bilist **rbuckets,	/* space for bucket sorts */
+    struct bilist *llistspace,	/* space for all bidirectional elements */
+    struct bilist *rlistspace,	/* space for all bidirectional elements */
+    int *ldvals,		/* change in penalty for each possible move */
+    int *rdvals		/* change in penalty for each possible move */
+)
 {
     sfree(rlistspace);
     sfree(llistspace);

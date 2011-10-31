@@ -92,9 +92,9 @@ void LinearInterpolator<Scalar>::interpolate(
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   assertBaseInterpolatePreconditions(*nodes_,t_values,data_out);
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   
   // Output info
   const RCP<FancyOStream> out = this->getOStream();
@@ -270,7 +270,7 @@ void LinearInterpolator<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);

@@ -33,6 +33,7 @@
 #include <assert.h>
 #include "exodusII.h"
 
+#include "add_to_log.h"
 /**************** conditional compilation ************************/
 #ifdef HAS_MATLAB
 #include "mat.h"
@@ -54,8 +55,6 @@ int textfile=1;
 
 FILE* m_file=0;       /* file for m file output */
 MATFile *mat_file=0;  /* file for binary .mat output */
-
-extern void add_to_log(const char *my_name);
 
 static char *qainfo[] =
 {
@@ -660,6 +659,6 @@ int main (int argc, char *argv[])
   
 
   /* exit status */
-  add_to_log("exo2mat");
+  add_to_log("exo2mat", 0);
   return(0);
 }

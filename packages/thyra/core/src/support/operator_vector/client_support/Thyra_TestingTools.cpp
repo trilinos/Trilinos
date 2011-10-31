@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -42,15 +42,15 @@
 #include "Thyra_TestingTools.hpp"
 
 bool Thyra::testBoolExpr(
-  const std::string    &boolExprName
-  ,const bool          &boolExpr
-  ,const bool          &boolExpected
-  ,std::ostream        *out
-  ,const std::string   &li
+  const std::string &boolExprName,
+  const bool &boolExpr,
+  const bool &boolExpected,
+  const Ptr<std::ostream> &out,
+  const std::string &li
   )
 {
   const bool success = ( boolExpr == boolExpected );
-  if(out) {
+  if (nonnull(out)) {
     *out
       << std::endl
       << li << "Check: " << boolExprName << " = " << boolExpr << " == " << boolExpected

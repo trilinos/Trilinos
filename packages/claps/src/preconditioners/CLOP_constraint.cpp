@@ -359,7 +359,7 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   // construct Epetra_CrsMatrix for on-processor contributions to 
   // constraint matrix
   //
-  Epetra_CrsMatrix ConMat_Loc(View, NewColMap, A->RowMap(), 0);
+  Epetra_CrsMatrix ConMat_Loc(Copy, NewColMap, A->RowMap(), 0);
   for (i=0; i<ncol; i++) {
     NumEntries = 0;
     for (j=0; j<nnzcol[i]; j++) {

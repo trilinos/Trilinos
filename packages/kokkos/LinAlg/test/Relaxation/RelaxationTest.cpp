@@ -187,7 +187,7 @@ namespace {
       vals_h[NNZsofar] =  -1; vals_h[NNZsofar+1] = 2;
       NNZsofar += 2;
       offsets_h[N]   = NNZsofar;
-      TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
+      TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
       inds_h    = null;
       vals_h    = null;
       offsets_h = null;

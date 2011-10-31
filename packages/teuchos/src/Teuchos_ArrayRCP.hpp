@@ -45,7 +45,7 @@
 
 #include "Teuchos_ArrayRCPDecl.hpp"
 #include "Teuchos_ArrayView.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_as.hpp"
 
@@ -687,7 +687,7 @@ const ArrayRCP<T>&
 ArrayRCP<T>::assert_in_range( size_type lowerOffset_in, size_type size_in ) const
 {
   assert_not_null();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !(
       (lowerOffset_ <= lowerOffset_in && lowerOffset_in+size_in-1 <= upperOffset_)
       &&
@@ -752,13 +752,13 @@ const RCPNodeHandle& ArrayRCP<T>::access_private_node() const
 
 ArrayRCP<void>::ArrayRCP()
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 
 ArrayRCP<const void>::ArrayRCP()
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 
@@ -777,7 +777,7 @@ inline void assert_shares_resource(
   )
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !p1.shares_resource(p2), IncompatibleIteratorsError,
     "Error, these iterators are *not* pointing to the same valid memory!"
     );
@@ -1192,7 +1192,7 @@ Teuchos::get_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
   RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>
     *dnode = dynamic_cast<RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(
       p.access_private_node().node_ptr());
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     dnode==NULL, NullReferenceError
     ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name()
     << "," << TypeNameTraits<T>::name() << ">(p): "

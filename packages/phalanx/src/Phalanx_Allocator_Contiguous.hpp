@@ -50,7 +50,7 @@
 #include <exception>
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace PHX {
   
@@ -85,7 +85,7 @@ namespace PHX {
     { 
       if (m_setup_called) {
 	std::string msg = "ERROR - PHX::ContiguousAllocator::addRequiredByte() - The method addRequiredBytes() has been called after the setup() has been called!  Please fix your logic.";
-	TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
       }
 
       std::size_t field_size = size_of_data_type * num_elements;
@@ -116,7 +116,7 @@ namespace PHX {
 // 		  << sizeof(AlignmentT) << std::endl;
 
 	// Make sure the alignment is correct
-	TEST_FOR_EXCEPTION(m_total_bytes % sizeof(AlignmentT) != 0,
+	TEUCHOS_TEST_FOR_EXCEPTION(m_total_bytes % sizeof(AlignmentT) != 0,
 			   std::logic_error,
 			   "Error - a remainder of " 
 			   << m_total_bytes % sizeof(AlignmentT) 
@@ -139,7 +139,7 @@ namespace PHX {
     template<class DataT> 
     Teuchos::ArrayRCP<DataT> allocate(std::size_t num_elements)
     {       
-      TEST_FOR_EXCEPTION(!m_setup_called, std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(!m_setup_called, std::logic_error, 
 			 "setup() has not been called.  The memory block has therefore not been allocated yet!  Please call setup before calling allocate().");
 
       std::size_t size_of_data_type = sizeof(DataT);
@@ -151,7 +151,7 @@ namespace PHX {
 	padding = alignment_size - remainder;
       std::size_t field_size_with_padding = field_size + padding;
 
-      TEST_FOR_EXCEPTION(m_offset + field_size_with_padding > m_total_bytes, 
+      TEUCHOS_TEST_FOR_EXCEPTION(m_offset + field_size_with_padding > m_total_bytes, 
 			 std::logic_error, 
 			 "The requested number of bytes is larger than the size of the allocated contiguous block!");
 

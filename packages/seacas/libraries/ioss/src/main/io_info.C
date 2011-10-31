@@ -68,9 +68,11 @@ namespace {
   {
     bool summary;
     bool check_node_status;
+    bool compute_element_volume;
     double maximum_time;
     double minimum_time;
     int  surface_split_type;
+    char field_suffix_separator;
     std::string working_directory;
   };
 
@@ -120,7 +122,7 @@ namespace {
 
 
 }
-void hex_volume(Ioss::ElementBlock *block, std::vector<double> &coordinates);
+void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinates);
 
 // ========================================================================
 
@@ -143,6 +145,8 @@ int main(int argc, char *argv[])
   globals.minimum_time = 0.0;
   globals.surface_split_type = 1;
   globals.check_node_status = false;
+  globals.compute_element_volume = false;
+  globals.field_suffix_separator = '_';
   
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
@@ -157,7 +161,12 @@ int main(int argc, char *argv[])
   // Skip past any options...
   int i=1;
   while (i < argc && argv[i][0] == '-') {
-    if (std::strcmp("-directory", argv[i]) == 0 ||
+    if (std::strcmp("-h", argv[i]) == 0 ||
+	std::strcmp("--help", argv[i]) == 0) {
+      show_usage(codename);
+      exit(0);
+    }
+    else if (std::strcmp("--directory", argv[i]) == 0 ||
 	std::strcmp("-d", argv[i]) == 0) {
       i++;
       globals.working_directory = argv[i++];
@@ -166,15 +175,21 @@ int main(int argc, char *argv[])
       i++;
       in_type = argv[i++];
     }
-    else if (std::strcmp("-Maximum_Time", argv[i]) == 0) {
+    else if (std::strcmp("--Field_Suffix_Separator", argv[i]) == 0) {
+      i++;
+      globals.field_suffix_separator = argv[i++][0];
+      if (globals.field_suffix_separator == '0')
+	globals.field_suffix_separator = '\0';
+    }
+    else if (std::strcmp("--Maximum_Time", argv[i]) == 0) {
       i++;
       globals.maximum_time = std::strtod(argv[i++], NULL);
     }
-    else if (std::strcmp("-Minimum_Time", argv[i]) == 0) {
+    else if (std::strcmp("--Minimum_Time", argv[i]) == 0) {
       i++;
       globals.minimum_time = std::strtod(argv[i++], NULL);
     }
-    else if (std::strcmp("-Surface_Split_Scheme", argv[i]) == 0) {
+    else if (std::strcmp("--Surface_Split_Scheme", argv[i]) == 0) {
       i++;
       char *split_scheme = argv[i++];
       if (std::strcmp(split_scheme, "TOPOLOGY") == 0)
@@ -185,9 +200,14 @@ int main(int argc, char *argv[])
 	globals.surface_split_type = 3;
     }
 
-    else if (std::strcmp("-Node_Status", argv[i]) == 0) {
+    else if (std::strcmp("--Node_Status", argv[i]) == 0) {
       i++;
       globals.check_node_status = true;
+    }
+
+    else if (std::strcmp("--Compute_Volume", argv[i]) == 0) {
+      i++;
+      globals.compute_element_volume = true;
     }
 
     // Found an option.  See if it has an argument...
@@ -219,7 +239,10 @@ namespace {
   void show_usage(const std::string &prog)
   {
     OUTPUT << "\nUSAGE: " << prog << " input_database\n";
-    OUTPUT << "       version: " << version << "\n";
+    OUTPUT << "       version: " << version << "\n\n";
+    OUTPUT << "Options: --Node_Status --Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT}\n"
+	   << "         --Maximum_Time <t> --Minimum_Time <t> --Field_Suffix_Separator <char>\n"
+	   << "         --Compute_Volume --directory <dir> --in_type <db_type>\n";
     Ioss::NameList db_types;
     Ioss::IOFactory::describe(&db_types);
     OUTPUT << "\nSupports database types:\n\t";
@@ -258,7 +281,7 @@ namespace {
     }
 
     dbi->set_surface_split_type(Ioss::int_to_surface_split(globals.surface_split_type));
-    //    dbi->set_field_separator(0);
+    dbi->set_field_separator(globals.field_suffix_separator);
     dbi->set_node_global_id_backward_compatibility(false);
     
     // NOTE: 'region' owns 'db' pointer at this time...
@@ -283,7 +306,7 @@ namespace {
     if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
       std::pair<int, double> state_time_max = region.get_max_time();
       std::pair<int, double> state_time_min = region.get_min_time();
-      OUTPUT << " Number of time steps on database     =" << std::setw(9)
+      OUTPUT << " Number of time steps on database     =" << std::setw(12)
 	     << region.get_property("state_count").get_int() << "\n"
 	     << "    Minimum time = " << state_time_min.second << " at step " << state_time_min.first << "\n"
 	     << "    Maximum time = " << state_time_max.second << " at step " << state_time_max.first << "\n\n";
@@ -304,8 +327,7 @@ namespace {
     info_sidesets(region,     globals.summary);
     info_commsets(region,     globals.summary);
 
-    bool do_volume = true;
-    if (do_volume) {
+    if (globals.compute_element_volume) {
       element_volume(region);
     }
   }
@@ -321,12 +343,12 @@ namespace {
       int    degree    = (*i)->get_property("component_degree").get_int();
       int    num_attrib= (*i)->get_property("attribute_count").get_int();
       if (options.summary) {
-	OUTPUT << " Number of spatial dimensions         =" << std::setw(9) << degree << "\n";
-	OUTPUT << " Number of nodeblocks                 =" << std::setw(9) << 1 << "\t";
-	OUTPUT << " Number of nodes            =" << std::setw(9) << num_nodes << "\n";
+	OUTPUT << " Number of spatial dimensions =" << std::setw(12) << degree << "\n";
+	OUTPUT << " Number of nodeblocks         =" << std::setw(12) << 1 << "\t";
+	OUTPUT << " Number of nodes            =" << std::setw(12) << num_nodes << "\n";
       } else {
 	OUTPUT << '\n' << name(*i) 
-	       << std::setw(9) << num_nodes << " nodes, "
+	       << std::setw(12) << num_nodes << " nodes, "
 	       << std::setw(3) << num_attrib << " attributes.\n";
 	if (options.check_node_status) {
 	  std::vector<char> node_status;
@@ -369,7 +391,7 @@ namespace {
 	OUTPUT << '\n' << name(*i)
 	       << " id: " << std::setw(6) << id(*i)
 	       << ", topology: " << std::setw(10) << type << ", "
-	       << std::setw(9) << num_elem << " elements, "
+	       << std::setw(12) << num_elem << " elements, "
 	       << std::setw(3) << num_attrib << " attributes.\n";
 
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
@@ -388,8 +410,8 @@ namespace {
       ++i;
     }
     if (summary) {
-      OUTPUT << " Number of element blocks             =" << std::setw(9) << ebs.size() << "\t";
-      OUTPUT << " Number of elements         =" << std::setw(9) << total_elements << "\n";
+      OUTPUT << " Number of element blocks     =" << std::setw(12) << ebs.size() << "\t";
+      OUTPUT << " Number of elements         =" << std::setw(12) << total_elements << "\n";
     }
 
   }
@@ -409,7 +431,7 @@ namespace {
 	OUTPUT << '\n' << name(*i)
 	       << " id: " << std::setw(6) << id(*i)
 	       << ", topology: " << std::setw(10) << type << ", "
-	       << std::setw(9) << num_edge << " edges, "
+	       << std::setw(12) << num_edge << " edges, "
 	       << std::setw(3) << num_attrib << " attributes.\n";
 
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
@@ -430,8 +452,8 @@ namespace {
       ++i;
     }
     if (summary) {
-      OUTPUT << " Number of edge blocks                =" << std::setw(9) << ebs.size() << "\t";
-      OUTPUT << " Number of edges            =" << std::setw(9) << total_edges << "\n";
+      OUTPUT << " Number of edge blocks        =" << std::setw(12) << ebs.size() << "\t";
+      OUTPUT << " Number of edges            =" << std::setw(12) << total_edges << "\n";
     }
 
   }
@@ -451,7 +473,7 @@ namespace {
 	OUTPUT << '\n' << name(*i)
 	       << " id: " << std::setw(6) << id(*i)
 	       << ", topology: " << std::setw(10) << type << ", "
-	       << std::setw(9) << num_face << " faces, "
+	       << std::setw(12) << num_face << " faces, "
 	       << std::setw(3) << num_attrib << " attributes.\n";
 
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
@@ -472,8 +494,8 @@ namespace {
       ++i;
     }
     if (summary) {
-      OUTPUT << " Number of face blocks                =" << std::setw(9) << ebs.size() << "\t";
-      OUTPUT << " Number of faces            =" << std::setw(9) << total_faces << "\n";
+      OUTPUT << " Number of face blocks        =" << std::setw(12) << ebs.size() << "\t";
+      OUTPUT << " Number of faces            =" << std::setw(12) << total_faces << "\n";
     }
 
   }
@@ -526,8 +548,8 @@ namespace {
       ++i;
     }
     if (summary) {
-      OUTPUT << " Number of element side sets          =" << std::setw(9) << fss.size() << "\t";
-      OUTPUT << " Number of element sides    =" << std::setw(9) << total_sides << "\n";
+      OUTPUT << " Number of element side sets  =" << std::setw(12) << fss.size() << "\t";
+      OUTPUT << " Number of element sides    =" << std::setw(12) << total_sides << "\n";
     }
   }
 
@@ -551,8 +573,8 @@ namespace {
       ++i;
     }
     if (summary) {
-      OUTPUT << " Number of nodal point sets           =" << std::setw(9) << nss.size() << "\t";
-      OUTPUT << " Length of node list        =" << std::setw(9) << total_nodes << "\n";
+      OUTPUT << " Number of nodal point sets   =" << std::setw(12) << nss.size() << "\t";
+      OUTPUT << " Length of node list        =" << std::setw(12) << total_nodes << "\n";
     }
   }
 
@@ -576,8 +598,8 @@ namespace {
       ++i;
     }
     if (summary) {
-      OUTPUT << " Number of edge sets                  =" << std::setw(9) << nss.size() << "\t";
-      OUTPUT << " Length of edge list        =" << std::setw(9) << total_edges << "\n";
+      OUTPUT << " Number of edge sets          =" << std::setw(12) << nss.size() << "\t";
+      OUTPUT << " Length of edge list        =" << std::setw(12) << total_edges << "\n";
     }
   }
 
@@ -601,8 +623,8 @@ namespace {
       ++i;
     }
     if (summary) {
-      OUTPUT << " Number of face sets                  =" << std::setw(9) << nss.size() << "\t";
-      OUTPUT << " Length of face list        =" << std::setw(9) << total_faces << "\n";
+      OUTPUT << " Number of face sets          =" << std::setw(12) << nss.size() << "\t";
+      OUTPUT << " Length of face list        =" << std::setw(12) << total_faces << "\n";
     }
   }
 
@@ -624,8 +646,8 @@ namespace {
       ++i;
     }
     if (summary) {
-      OUTPUT << " Number of element sets               =" << std::setw(9) << nss.size() << "\t";
-      OUTPUT << " Length of element list     =" << std::setw(9) << total_elements << "\n";
+      OUTPUT << " Number of element sets       =" << std::setw(12) << nss.size() << "\t";
+      OUTPUT << " Length of element list     =" << std::setw(12) << total_elements << "\n";
     }
   }
 

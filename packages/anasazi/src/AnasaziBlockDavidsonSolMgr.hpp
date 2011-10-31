@@ -277,16 +277,16 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   _timerLocking(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockDavidsonSolMgr locking"))
 #endif
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
-  TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
-  TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
+  TEUCHOS_TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
   std::string strtmp;
 
   // which values to solve for
   whch_ = pl.get("Which",whch_);
-  TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",std::invalid_argument, "Invalid sorting string.");
+  TEUCHOS_TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",std::invalid_argument, "Invalid sorting string.");
 
   // which orthogonalization to use
   ortho_ = pl.get("Orthogonalization",ortho_);
@@ -305,7 +305,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
     convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
   }
   else {
-    TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
         "Anasazi::BlockDavidsonSolMgr: Invalid Convergence Norm.");
   }
   
@@ -323,7 +323,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
     lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
   }
   else {
-    TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
         "Anasazi::BlockDavidsonSolMgr: Invalid Locking Norm.");
   }
 
@@ -332,10 +332,10 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
 
   // block size: default is nev()
   blockSize_ = pl.get("Block Size",problem_->getNEV());
-  TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Block Size\" must be strictly positive.");
   numBlocks_ = pl.get("Num Blocks",2);
-  TEST_FOR_EXCEPTION(numBlocks_ <= 1, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ <= 1, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Num Blocks\" must be >= 1.");
 
   // max locked: default is nev(), must satisfy maxLocked_ + blockSize_ >= nev
@@ -348,27 +348,27 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   if (maxLocked_ == 0) {
     useLocking_ = false;
   }
-  TEST_FOR_EXCEPTION(maxLocked_ < 0, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(maxLocked_ < 0, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Max Locked\" must be positive.");
-  TEST_FOR_EXCEPTION(maxLocked_ + blockSize_ < problem_->getNEV(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(maxLocked_ + blockSize_ < problem_->getNEV(), 
                      std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: Not enough storage space for requested number of eigenpairs.");
-  TEST_FOR_EXCEPTION(numBlocks_*blockSize_ + maxLocked_ > MVT::GetVecLength(*problem_->getInitVec()),
+  TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_*blockSize_ + maxLocked_ > MVT::GetVecLength(*problem_->getInitVec()),
                      std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: Potentially impossible orthogonality requests. Reduce basis size or locking size.");
 
   if (useLocking_) {
     lockQuorum_ = pl.get("Locking Quorum",lockQuorum_);
-    TEST_FOR_EXCEPTION(lockQuorum_ <= 0,
+    TEUCHOS_TEST_FOR_EXCEPTION(lockQuorum_ <= 0,
                        std::invalid_argument,
                        "Anasazi::BlockDavidsonSolMgr: \"Locking Quorum\" must be strictly positive.");
   }
 
   // restart size
   numRestartBlocks_ = pl.get("Num Restart Blocks",numRestartBlocks_);
-  TEST_FOR_EXCEPTION(numRestartBlocks_ <= 0, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(numRestartBlocks_ <= 0, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Num Restart Blocks\" must be strictly positive.");
-  TEST_FOR_EXCEPTION(numRestartBlocks_ >= numBlocks_, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(numRestartBlocks_ >= numBlocks_, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Num Restart Blocks\" must be strictly less than \"Num Blocks\".");
 
   // restarting technique: V*Q or applyHouse(V,H,tau)
@@ -510,7 +510,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   } else if (ortho_=="DGKS") {
     ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
   } else {
-    TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS",std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid orthogonalization type.");
+    TEUCHOS_TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS",std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid orthogonalization type.");
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -706,9 +706,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           }
 #       endif
           int info = msutils::directSolver(curdim,*state.KK,Teuchos::null,S,theta,rank,10);
-          TEST_FOR_EXCEPTION(info != 0     ,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(info != 0     ,std::logic_error,
               "Anasazi::BlockDavidsonSolMgr::solve(): error calling SolverUtils::directSolver.");       // this should never happen
-          TEST_FOR_EXCEPTION(rank != curdim,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(rank != curdim,std::logic_error,
               "Anasazi::BlockDavidsonSolMgr::solve(): direct solve did not compute all eigenvectors."); // this should never happen
 
 #       ifdef TEUCHOS_DEBUG
@@ -761,11 +761,11 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             int teuchosRet;
             // KKtmp = KKold*Sr
             teuchosRet = KKtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,KKold,Sr,ZERO);
-            TEST_FOR_EXCEPTION(teuchosRet != 0,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(teuchosRet != 0,std::logic_error,
                 "Anasazi::BlockDavidsonSolMgr::solve(): Logic error calling SerialDenseMatrix::multiply.");
             // newKK = Sr'*KKtmp = Sr'*KKold*Sr
             teuchosRet = newKK.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,Sr,KKtmp,ZERO);
-            TEST_FOR_EXCEPTION(teuchosRet != 0,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(teuchosRet != 0,std::logic_error,
                 "Anasazi::BlockDavidsonSolMgr::solve(): Logic error calling SerialDenseMatrix::multiply.");
             // make it Hermitian in memory
             for (int j=0; j<newdim-1; ++j) {
@@ -811,7 +811,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             std::vector<ScalarType> tau(newdim), work(newdim);
             int geqrf_info;
             lapack.GEQRF(curdim,newdim,Sr.values(),Sr.stride(),&tau[0],&work[0],work.size(),&geqrf_info);
-            TEST_FOR_EXCEPTION(geqrf_info != 0,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(geqrf_info != 0,std::logic_error,
                 "Anasazi::BlockDavidsonSolMgr::solve(): error calling GEQRF during restarting.");
             if (printer_->isVerbosity(Debug)) {
               Teuchos::SerialDenseMatrix<int,ScalarType> R(Teuchos::Copy,Sr,newdim,newdim);
@@ -878,12 +878,12 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
           //
           // get number,indices of vectors to be locked
-          TEST_FOR_EXCEPTION(locktest->howMany() <= 0,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(locktest->howMany() <= 0,std::logic_error,
               "Anasazi::BlockDavidsonSolMgr::solve(): status test mistake: howMany() non-positive.");
-          TEST_FOR_EXCEPTION(locktest->howMany() != (int)locktest->whichVecs().size(),std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(locktest->howMany() != (int)locktest->whichVecs().size(),std::logic_error,
               "Anasazi::BlockDavidsonSolMgr::solve(): status test mistake: howMany() not consistent with whichVecs().");
           // we should have room to lock vectors; otherwise, locking should have been deactivated
-          TEST_FOR_EXCEPTION(curNumLocked == maxLocked_,std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(curNumLocked == maxLocked_,std::logic_error,
               "Anasazi::BlockDavidsonSolMgr::solve(): status test mistake: locking not deactivated.");
           //
           // don't lock more than maxLocked_; we didn't allocate enough space.
@@ -933,9 +933,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           {
             int rank = curdim;
             int info = msutils::directSolver(curdim,*state.KK,Teuchos::null,S,theta,rank,10);
-            TEST_FOR_EXCEPTION(info != 0     ,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(info != 0     ,std::logic_error,
                 "Anasazi::BlockDavidsonSolMgr::solve(): error calling SolverUtils::directSolver.");       // this should never happen
-            TEST_FOR_EXCEPTION(rank != curdim,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(rank != curdim,std::logic_error,
                 "Anasazi::BlockDavidsonSolMgr::solve(): direct solve did not compute all eigenvectors."); // this should never happen
             // 
             // sort the eigenvalues (so that we can order the eigenvectors)
@@ -976,7 +976,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             std::vector<ScalarType> tau(numUnlocked), work(numUnlocked);
             int info;
             lapack.GEQRF(curdim,numUnlocked,copySu.values(),copySu.stride(),&tau[0],&work[0],work.size(),&info);
-            TEST_FOR_EXCEPTION(info != 0,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error,
                 "Anasazi::BlockDavidsonSolMgr::solve(): error calling GEQRF during restarting.");
             if (printer_->isVerbosity(Debug)) {
               Teuchos::SerialDenseMatrix<int,ScalarType> R(Teuchos::Copy,copySu,numUnlocked,numUnlocked);
@@ -1081,11 +1081,11 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             int teuchosRet;
             // KKtmp = KKold*Su
             teuchosRet = KKtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,KKold,Su,ZERO);
-            TEST_FOR_EXCEPTION(teuchosRet != 0,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(teuchosRet != 0,std::logic_error,
                 "Anasazi::BlockDavidsonSolMgr::solve(): Logic error calling SerialDenseMatrix::multiply.");
             // KK11 = Su'*KKtmp = Su'*KKold*Su
             teuchosRet = KK11.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,Su,KKtmp,ZERO);
-            TEST_FOR_EXCEPTION(teuchosRet != 0,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(teuchosRet != 0,std::logic_error,
                 "Anasazi::BlockDavidsonSolMgr::solve(): Logic error calling SerialDenseMatrix::multiply.");
           }
           //
@@ -1169,7 +1169,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         //
         ////////////////////////////////////////////////////////////////////////////////////
         else {
-          TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid return from bd_solver::iterate().");
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid return from bd_solver::iterate().");
         }
       }
       catch (const AnasaziError &err) {
@@ -1199,17 +1199,17 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       std::vector<int> inlocked(0), insolver(0);
       for (unsigned int i=0; i<which.size(); i++) {
         if (which[i] >= 0) {
-          TEST_FOR_EXCEPTION(which[i] >= blockSize_,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): positive indexing mistake from ordertest.");
+          TEUCHOS_TEST_FOR_EXCEPTION(which[i] >= blockSize_,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): positive indexing mistake from ordertest.");
           insolver.push_back(which[i]);
         }
         else {
           // sanity check
-          TEST_FOR_EXCEPTION(which[i] < -curNumLocked,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): negative indexing mistake from ordertest.");
+          TEUCHOS_TEST_FOR_EXCEPTION(which[i] < -curNumLocked,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): negative indexing mistake from ordertest.");
           inlocked.push_back(which[i] + curNumLocked);
         }
       }
 
-      TEST_FOR_EXCEPTION(insolver.size() + inlocked.size() != (unsigned int)sol.numVecs,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): indexing mistake.");
+      TEUCHOS_TEST_FOR_EXCEPTION(insolver.size() + inlocked.size() != (unsigned int)sol.numVecs,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): indexing mistake.");
 
       // set the vecs,vals in the solution
       if (insolver.size() > 0) {

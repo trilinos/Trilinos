@@ -1,7 +1,31 @@
-
 ------------------------------------------
 Release Notes for Trilinos Package Teuchos
 ------------------------------------------
+
+
+
+Trilinos 10.10:
+----------------
+
+
+(*) Deprecated the non-namespaced family of TEST_FOR_EXCEPTION(...) macros in
+the file Teuchos_TestForException.hpp: There are now namespaced versions
+prefixed with TEUCHOS_.
+
+To upgrade client code to use the new namespaced macros, just run:
+
+   teuchos/refactoring/namespace-TestForExceptionMacros.20111017.sh
+
+on your code as:
+
+     $ cd WHATEVER_YOUR_BASE_DIR_IS
+     $ $TRILINOS_HOME/packages/teuchos/refactoring/namespace-TestForExceptionMacros.20111017.sh
+
+If client code needs to maintain backward compatibility with older versions of
+Trilinos, just leave the code as is and client code will compile and run just
+fine without any changes.  This approach, however, will generate deprecated
+warnings (unless you turn them off at configure time).
+
 
 
 Trilinos 10.8:

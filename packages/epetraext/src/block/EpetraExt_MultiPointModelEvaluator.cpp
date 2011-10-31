@@ -101,7 +101,7 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
    }
 
    // This code assumes 2 parameter vectors, 1 for opt, second for MultiPoint states
-   TEST_FOR_EXCEPT(underlyingOutArgs.Np()!=2);
+   TEUCHOS_TEST_FOR_EXCEPT(underlyingOutArgs.Np()!=2);
 
    // temporary quantities
    const Epetra_Map& split_map = split_W->RowMatrixRowMap();
@@ -160,9 +160,9 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
    else matchingProblem = true;
 
    if (matchingProblem) {
-     TEST_FOR_EXCEPT(as<int>(matching_vec->size())!=timeStepsOnTimeDomain);
-     TEST_FOR_EXCEPT(!(*matching_vec)[0]->Map().SameAs(*(underlyingME_->get_g_map(0))));
-     TEST_FOR_EXCEPT(num_g0 != 1); //This restriction may be lifted later
+     TEUCHOS_TEST_FOR_EXCEPT(as<int>(matching_vec->size())!=timeStepsOnTimeDomain);
+     TEUCHOS_TEST_FOR_EXCEPT(!(*matching_vec)[0]->Map().SameAs(*(underlyingME_->get_g_map(0))));
+     TEUCHOS_TEST_FOR_EXCEPT(num_g0 != 1); //This restriction may be lifted later
    }
 }
 

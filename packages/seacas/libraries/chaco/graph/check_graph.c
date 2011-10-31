@@ -11,10 +11,12 @@
 /* Check graph for errors */
 
 
-int       check_graph(graph, nvtxs, nedges)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices */
-int       nedges;		/* number of edges */
+int 
+check_graph (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices */
+    int nedges		/* number of edges */
+)
 {
     extern FILE *Output_File;   /* output file or null */
     float     eweight;		/* edge weight */
@@ -124,10 +126,12 @@ int       nedges;		/* number of edges */
 }
 
 
-int       is_an_edge(vertex, v2, weight2)
-struct vtx_data *vertex;	/* data for a vertex */
-int       v2;			/* neighbor to look for */
-float    *weight2;		/* weight of edge if found */
+int 
+is_an_edge (
+    struct vtx_data *vertex,	/* data for a vertex */
+    int v2,			/* neighbor to look for */
+    float *weight2		/* weight of edge if found */
+)
 {
     int       i;		/* loop counter */
 

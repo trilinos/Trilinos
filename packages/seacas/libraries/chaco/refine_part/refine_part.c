@@ -10,16 +10,17 @@
 
 
 /* Construct a graph representing the inter-set communication. */
-int       refine_part(graph, nvtxs, using_ewgts, assign, architecture,
-    ndims_tot, mesh_dims, goal)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-int       using_ewgts;		/* are edge weights being used? */
-int    *assign;		/* current assignment */
-int       architecture;		/* 0 => hypercube, d => d-dimensional mesh */
-int       ndims_tot;		/* if hypercube, number of dimensions */
-int       mesh_dims[3];		/* if mesh, size in each direction */
-double   *goal;			/* desired set sizes */
+int 
+refine_part (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    int using_ewgts,		/* are edge weights being used? */
+    int *assign,		/* current assignment */
+    int architecture,		/* 0 => hypercube, d => d-dimensional mesh */
+    int ndims_tot,		/* if hypercube, number of dimensions */
+    int mesh_dims[3],		/* if mesh, size in each direction */
+    double *goal			/* desired set sizes */
+)
 {
     extern int TERM_PROP;	/* perform terminal propagation? */
     struct bilist *set_list = NULL;	/* lists of vtxs in each set */

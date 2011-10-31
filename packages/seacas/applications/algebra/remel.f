@@ -36,9 +36,9 @@ C=======================================================================
      &                  IXNODE, IXELBO, IXELEM, NODIX, MAPEL)
 C=======================================================================
 
-      include 'dbnums.blk'
-      include 'dbout.blk'
-      include 'remove.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbout.blk'
+      include 'ag_remove.blk'
 
       INTEGER IXELB(0:NELBLK)
       INTEGER NUMLNK(*)

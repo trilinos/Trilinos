@@ -8,31 +8,29 @@
 #include "structs.h"
 #include "smalloc.h"
 
-void      balance(graph, nvtxs, nedges, using_vwgts, using_ewgts, vwsqrt,
-		            igeom, coords, assignment, goal,
-		            architecture, ndims_tot, mesh_dims,
-		            global_method, local_method, rqi_flag, vmax, ndims,
-		            eigtol, hops)
-struct vtx_data **graph;	/* data structure for graph */
-int       nvtxs;		/* number of vertices in full graph */
-int       nedges;		/* number of edges in graph */
-int       using_vwgts;		/* are vertex weights being used? */
-int       using_ewgts;		/* are edge weights being used? */
-double   *vwsqrt;		/* sqrt of vertex weights (length nvtxs+1) */
-int       igeom;		/* geometric dimension for inertial method */
-float   **coords;		/* coordinates for inertial method */
-int    *assignment;		/* set number of each vtx (length n) */
-double   *goal;			/* desired set sizes */
-int       architecture;		/* 0=> hypercube, d=> d-dimensional mesh */
-int       ndims_tot;		/* number of cuts to make in total */
-int      *mesh_dims;		/* shape of mesh */
-int       global_method;	/* global partitioning algorithm */
-int       local_method;		/* local partitioning algorithm */
-int       rqi_flag;		/* should I use multilevel eigensolver? */
-int       vmax;			/* if so, how many vertices to coarsen down to? */
-int       ndims;		/* number of eigenvectors (2^d sets) */
-double    eigtol;		/* tolerance on eigenvectors */
-int     (*hops)[MAXSETS];	/* between-set hop cost for KL */
+void 
+balance (
+    struct vtx_data **graph,	/* data structure for graph */
+    int nvtxs,		/* number of vertices in full graph */
+    int nedges,		/* number of edges in graph */
+    int using_vwgts,		/* are vertex weights being used? */
+    int using_ewgts,		/* are edge weights being used? */
+    double *vwsqrt,		/* sqrt of vertex weights (length nvtxs+1) */
+    int igeom,		/* geometric dimension for inertial method */
+    float **coords,		/* coordinates for inertial method */
+    int *assignment,		/* set number of each vtx (length n) */
+    double *goal,			/* desired set sizes */
+    int architecture,		/* 0=> hypercube, d=> d-dimensional mesh */
+    int ndims_tot,		/* number of cuts to make in total */
+    int *mesh_dims,		/* shape of mesh */
+    int global_method,	/* global partitioning algorithm */
+    int local_method,		/* local partitioning algorithm */
+    int rqi_flag,		/* should I use multilevel eigensolver? */
+    int vmax,			/* if so, how many vertices to coarsen down to? */
+    int ndims,		/* number of eigenvectors (2^d sets) */
+    double eigtol,		/* tolerance on eigenvectors */
+    int (*hops)[MAXSETS]	/* between-set hop cost for KL */
+)
 {
     extern int TERM_PROP;	/* invoking terminal propogation? */
     extern int DEBUG_TRACE;	/* trace the execution of the code */

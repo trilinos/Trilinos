@@ -814,7 +814,7 @@ bool requireRankRange(std::string&   errmsg,
                       const int      lowerBound, 
                       const int      upperBound){
   
-  TEST_FOR_EXCEPTION( (lowerBound > upperBound) , std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (lowerBound > upperBound) , std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireRankRange): lowerBound <= upperBound required!");
   
   bool OK = true;
@@ -860,9 +860,9 @@ bool requireDimensionRange(std::string&  errmsg,
                            const int     lowerBound,
                            const int     upperBound){
   
-  TEST_FOR_EXCEPTION( (lowerBound > upperBound) , std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (lowerBound > upperBound) , std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionRange): lowerBound <= upperBound required!");
-  TEST_FOR_EXCEPTION( !( (0 <= dim) && (dim < array.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= dim) && (dim < array.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionRange): 0 <= dim < array.rank() required!");
   
@@ -910,10 +910,10 @@ bool requireDimensionMatch(std::string&   errmsg,
                            const Array2&  array2, 
                            const int      a2_dim0){
   
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
 
@@ -938,16 +938,16 @@ bool requireDimensionMatch(std::string&   errmsg,
                            const Array2&  array2, 
                            const int      a2_dim0, const int a2_dim1){
   
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && (a2_dim1 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && (a2_dim1 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim1 < array2.rank() required!");
  
@@ -970,22 +970,22 @@ bool requireDimensionMatch(std::string&   errmsg,
                            const Array2&  array2, 
                            const int      a2_dim0, const int a2_dim1, const int a2_dim2){
   
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim2 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && (a2_dim1 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && (a2_dim1 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim1 < array2.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && (a2_dim2 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && (a2_dim2 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim2 < array2.rank() required!");
   
@@ -1012,28 +1012,28 @@ bool requireDimensionMatch(std::string&   errmsg,
                            const Array2&  array2, 
                            const int      a2_dim0, const int a2_dim1, const int a2_dim2, const int a2_dim3){
   
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim2 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && (a1_dim3 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && (a1_dim3 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim3 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && (a2_dim1 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && (a2_dim1 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim1 < array2.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && (a2_dim2 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && (a2_dim2 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim2 < array2.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim3) && (a2_dim3 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim3) && (a2_dim3 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim3 < array2.rank() required!");
   bool OK = true;
@@ -1063,34 +1063,34 @@ bool requireDimensionMatch(std::string&   errmsg,
                            const int      a2_dim0, const int a2_dim1, const int a2_dim2, 
                            const int      a2_dim3, const int a2_dim4){
   
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim2 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && (a1_dim3 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && (a1_dim3 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim3 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a1_dim4) && (a1_dim4 < array1.rank() ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim4) && (a1_dim4 < array1.rank() ) ), 
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim4 < array1.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && (a2_dim1 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && (a2_dim1 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim1 < array2.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && (a2_dim2 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && (a2_dim2 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim2 < array2.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim3) && (a2_dim3 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim3) && (a2_dim3 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim3 < array2.rank() required!");
-  TEST_FOR_EXCEPTION( !( (0 <= a2_dim4) && (a2_dim4 < array2.rank() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim4) && (a2_dim4 < array2.rank() ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim4 < array2.rank() required!");
   
@@ -1120,7 +1120,7 @@ bool requireDimensionMatch(std::string&   errmsg,
                            const Array1&  array1,
                            const Array2&  array2){
   
-  TEST_FOR_EXCEPTION( !requireRankMatch(errmsg, array1, array2 ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireRankMatch(errmsg, array1, array2 ), std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): Arrays with equal ranks are required to test for all dimensions match." )
   
   bool OK = true;  

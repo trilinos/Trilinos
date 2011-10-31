@@ -67,7 +67,7 @@ namespace Intrepid {
       getWarpBlendLattice<Scalar,ArrayType>( cellType , pts , order , offset );
       break;
     default:
-      TEST_FOR_EXCEPTION( true ,
+      TEUCHOS_TEST_FOR_EXCEPTION( true ,
 			  std::invalid_argument ,
 			  "PointTools::getLattice: invalid EPointType" );
     }
@@ -103,7 +103,7 @@ namespace Intrepid {
     case shards::Tetrahedron<4>::key:
     case shards::Tetrahedron<8>::key:
     case shards::Tetrahedron<10>::key:
-      TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
+      TEUCHOS_TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
                           || points.dimension(1) != 3 ,
                           std::invalid_argument ,
                           ">>> ERROR(PointTools::getEquispacedLattice): points argument is ill-sized." );
@@ -112,7 +112,7 @@ namespace Intrepid {
     case shards::Triangle<3>::key:
     case shards::Triangle<4>::key:
     case shards::Triangle<6>::key:
-      TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
+      TEUCHOS_TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
                           || points.dimension(1) != 2 ,
                           std::invalid_argument ,
                           ">>> ERROR(PointTools::getEquispacedLattice): points argument is ill-sized." );
@@ -120,14 +120,14 @@ namespace Intrepid {
       break;
     case shards::Line<2>::key:
     case shards::Line<3>::key:
-      TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
+      TEUCHOS_TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
                           || points.dimension(1) != 1 ,
                           std::invalid_argument ,
                           ">>> ERROR(PointTools::getEquispacedLattice): points argument is ill-sized." );
       getEquispacedLatticeLine<Scalar,ArrayType>( points , order , offset );
       break;
     default:
-      TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
                           ">>> ERROR (Intrepid::PointTools::getEquispacedLattice): Illegal cell type" );
     }
     
@@ -144,7 +144,7 @@ namespace Intrepid {
     case shards::Tetrahedron<4>::key:
     case shards::Tetrahedron<8>::key:
     case shards::Tetrahedron<10>::key:
-      TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
+      TEUCHOS_TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
                           || points.dimension(1) != 3 ,
                           std::invalid_argument ,
                           ">>> ERROR(PointTools::getWarpBlendLattice): points argument is ill-sized." );
@@ -153,7 +153,7 @@ namespace Intrepid {
     case shards::Triangle<3>::key:
     case shards::Triangle<4>::key:
     case shards::Triangle<6>::key:
-      TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
+      TEUCHOS_TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
                           || points.dimension(1) != 2 ,
                           std::invalid_argument ,
                           ">>> ERROR(PointTools::getWarpBlendLattice): points argument is ill-sized." );
@@ -161,14 +161,14 @@ namespace Intrepid {
       break;
     case shards::Line<2>::key:
     case shards::Line<3>::key:
-      TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
+      TEUCHOS_TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
                           || points.dimension(1) != 1 ,
                           std::invalid_argument ,
                           ">>> ERROR(PointTools::getWarpBlendLattice): points argument is ill-sized." );
       getWarpBlendLatticeLine<Scalar,ArrayType>( points , order , offset );
       break;
     default:
-      TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
                           ">>> ERROR (Intrepid::PointTools::getWarpBlendLattice): Illegal cell type" );
     }
     
@@ -179,7 +179,7 @@ namespace Intrepid {
                                              const int order ,
                                              const int offset )
   {
-    TEST_FOR_EXCEPTION( order < 0 ,
+    TEUCHOS_TEST_FOR_EXCEPTION( order < 0 ,
                         std::invalid_argument ,
                         ">>> ERROR (Intrepid::PointTools::getEquispacedLatticeLine): order must be positive" );
     if (order == 0) {
@@ -201,7 +201,7 @@ namespace Intrepid {
                                                  const int order ,
                                                  const int offset )
   {
-    TEST_FOR_EXCEPTION( order <= 0 ,
+    TEUCHOS_TEST_FOR_EXCEPTION( order <= 0 ,
                         std::invalid_argument ,
                         ">>> ERROR (Intrepid::PointTools::getEquispacedLatticeLine): order must be positive" );
 
@@ -224,7 +224,7 @@ namespace Intrepid {
                                                     const int order ,
                                                     const int offset )
   {
-    TEST_FOR_EXCEPTION( (order <= 0) ,
+    TEUCHOS_TEST_FOR_EXCEPTION( (order <= 0) ,
                         std::invalid_argument ,
                         ">>> ERROR (Intrepid::PointTools::getEquispacedLatticeTetrahedron): order must be positive" );
 
@@ -273,7 +273,7 @@ namespace Intrepid {
                               const ArrayType &xout ,
                               ArrayType &warp)
   {
-    TEST_FOR_EXCEPTION( ( warp.dimension(0) != xout.dimension(0) ) ,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( warp.dimension(0) != xout.dimension(0) ) ,
                         std::invalid_argument ,
                         ">>> ERROR (PointTools::warpFactor): xout and warp must be same size." );
 
@@ -286,7 +286,7 @@ namespace Intrepid {
     PointTools::getEquispacedLatticeLine<Scalar,ArrayType>( xeq , order , 0 );
     xeq.resize( order + 1 );
 
-    TEST_FOR_EXCEPTION( ( xeq.dimension(0) != xnodes.dimension(0) ) ,
+    TEUCHOS_TEST_FOR_EXCEPTION( ( xeq.dimension(0) != xnodes.dimension(0) ) ,
                         std::invalid_argument ,
                         ">>> ERROR (PointTools::warpFactor): xeq and xnodes must be same size." );
     

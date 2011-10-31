@@ -838,7 +838,7 @@ bool basic_FancyOStream_buf<CharT,Traits>::getShowLinePrefix() const
 template<typename CharT, typename Traits>
 void basic_FancyOStream_buf<CharT,Traits>::setMaxLenLinePrefix(const int maxLenLinePrefix)
 {
-  TEST_FOR_EXCEPT( !(maxLenLinePrefix>=5) );
+  TEUCHOS_TEST_FOR_EXCEPT( !(maxLenLinePrefix>=5) );
   maxLenLinePrefix_ = maxLenLinePrefix;
 }
 

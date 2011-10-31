@@ -1,0 +1,21 @@
+#!/bin/bash
+
+export INC_PATH="-I. -I../../src"
+export CXX_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp"
+export CXX="g++"
+export CXXFLAGS="-Wall"
+
+export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
+export NVCC_SOURCES="../../src/DeviceCuda/*.cu testCuda.cu"
+export NVCC_PATH="/usr/local/cuda"
+export NVCC="${NVCC_PATH}/bin/nvcc -arch=sm_20 -lib -o libCuda.a"
+export LIB="${LIB} -L${NVCC_PATH}/lib64 libCuda.a -lcudart -lcuda -lcusparse"
+
+
+${NVCC} -O3 ${NVCCFLAGS} ${INC_PATH} ${NVCC_SOURCES}
+
+${CXX} -O3 ${CXXFLAGS} ${INC_PATH} ${TEST_MACRO} -o main.exe main.cpp ${CXX_SOURCES} ${LIB}
+
+rm libCuda.a
+
+

@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -139,7 +139,7 @@ template<class Scalar>
 RCP<const LinearOpBase<Scalar> >
 DiagonalScalarProd<Scalar>::getLinearOpImpl() const
 {
-  TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement when needed!")
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement when needed!")
   return Teuchos::null;
 }
 

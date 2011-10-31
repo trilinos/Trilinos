@@ -7,11 +7,13 @@
 
 
 /* Find eigenvalues of 3x3 symmetric system by solving cubic. */
-void      evals3(H, eval1, eval2, eval3)
-double    H[3][3];		/* 3x3 sym matrix for lowest eigenvalue */
-double   *eval1;		/* smallest eigenvalue */
-double   *eval2;		/* middle eigenvalue */
-double   *eval3;		/* largest eigenvalue */
+void 
+evals3 (
+    double H[3][3],		/* 3x3 sym matrix for lowest eigenvalue */
+    double *eval1,		/* smallest eigenvalue */
+    double *eval2,		/* middle eigenvalue */
+    double *eval3		/* largest eigenvalue */
+)
 {
     double    mat[3][3];	/* scaled version of H */
     double    a1, a2, a3;	/* coefficents of cubic equation */
@@ -104,8 +106,12 @@ double   *eval3;		/* largest eigenvalue */
 }
 
 
-void      kramer3(A, b, x)	/* Use Kramer's rule to solve 3x3 */
-double    A[3][3], b[3], x[3];	/* Solve Ax=b */
+void 
+kramer3 (	/* Use Kramer's rule to solve 3x3 */
+    double A[3][3],
+    double b[3],
+    double x[3]	/* Solve Ax=b */
+)
 {
     double    det;		/* determinant of system */
     double    determinant();
@@ -127,11 +133,13 @@ double    A[3][3], b[3], x[3];	/* Solve Ax=b */
 
 
 /* Find the eigenvector of symmetric 3x3 matrix w/ given eigenvalue. */
-void      eigenvec3(A, eval, evec, res)
-double    A[3][3];		/* matrix to find eigenvector of */
-double    eval;			/* eigenvalue */
-double    evec[3];		/* eigenvector returned */
-double   *res;			/* returned error estimate */
+void 
+eigenvec3 (
+    double A[3][3],		/* matrix to find eigenvector of */
+    double eval,			/* eigenvalue */
+    double evec[3],		/* eigenvector returned */
+    double *res			/* returned error estimate */
+)
 {
     double    mat[3][3];	/* copy of A to write over */
     int       ind[3];		/* permutation indices */

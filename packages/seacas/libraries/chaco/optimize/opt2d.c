@@ -8,12 +8,14 @@
 #include	"structs.h"
 
 
-double    opt2d(graph, yvecs, nvtxs, nmyvtxs)
+double 
+opt2d (
 /* Compute rotation angle to minimize distance to discrete points. */
-struct vtx_data **graph;	/* data structure with vertex weights */
-double  **yvecs;		/* eigenvectors */
-int       nvtxs;		/* total number of vertices */
-int       nmyvtxs;		/* number of vertices I own */
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    double **yvecs,		/* eigenvectors */
+    int nvtxs,		/* total number of vertices */
+    int nmyvtxs		/* number of vertices I own */
+)
 {
     extern int DEBUG_OPTIMIZE;	/* debug flag for optimization */
     double   *aptr, *bptr;	/* loop through yvecs */

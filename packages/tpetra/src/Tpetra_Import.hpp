@@ -359,7 +359,7 @@ namespace Tpetra {
             ++numValidRemote;
           }
         }
-        TEST_FOR_EXCEPTION( numValidRemote != totalNumRemote - numInvalidRemote, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( numValidRemote != totalNumRemote - numInvalidRemote, std::logic_error,
             typeName(*this) << "::setupExport(): internal logic error. Please contact Tpetra team.")
         remoteImageIDs.resize(numValidRemote);
         (*remoteGIDs_).resize(numValidRemote);
@@ -407,7 +407,7 @@ namespace Tpetra {
   {
     if (src == tgt) return null;
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(src == null || tgt == null, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(src == null || tgt == null, std::runtime_error,
         "Tpetra::createImport(): neither source nor target map may be null:\nsource: " << src << "\ntarget: " << tgt << "\n");
 #endif
     return rcp(new Import<LO,GO,Node>(src,tgt));

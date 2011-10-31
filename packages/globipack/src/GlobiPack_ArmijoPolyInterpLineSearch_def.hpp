@@ -227,7 +227,7 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
   tblout.outputHeader();
 
   // Check that this is a decent direction
-  TEST_FOR_EXCEPTION( !(Dphi_k < ST::zero()), Exceptions::NotDescentDirection,
+  TEUCHOS_TEST_FOR_EXCEPTION( !(Dphi_k < ST::zero()), Exceptions::NotDescentDirection,
     "ArmijoPolyInterpLineSearch::doLineSearch(): "
     "The given descent direction for the given "
     "phi Dphi_k="<<Dphi_k<<" >= 0!" );

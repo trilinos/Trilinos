@@ -72,11 +72,11 @@ public:
   static void execute( const size_type work_count ,
                        const FunctorType & functor )
   {
-    DeviceTBB::set_dispatch_functor();
+    DeviceTBB::memory_space::set_dispatch_functor();
 
     ParallelFor driver( & functor );
 
-    DeviceTBB::clear_dispatch_functor();
+    DeviceTBB::memory_space::clear_dispatch_functor();
 
 	tbb::parallel_for(tbb::blocked_range<size_type>(0,work_count) , driver , tbb::auto_partitioner() );
   }

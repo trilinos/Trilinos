@@ -12,19 +12,20 @@
    is tried. The return value is 0 if one of the routines succeeds. If they
    both fail, the return value is 1, and Lanczos should compute the best
    approximation it can based on previous iterations. */ 
-int       get_ritzvals(alpha, beta, j, Anorm, workj, ritz, d, left_goodlim,
-		       right_goodlim, eigtol, bis_safety)
-double   *alpha;		/* vector of Lanczos scalars */
-double   *beta;			/* vector of Lanczos scalars */
-int       j;			/* number of Lanczos iterations taken */
-double    Anorm;		/* Gershgorin estimate */
-double   *workj;		/* work vector for Sturm sequence */
-double   *ritz;			/* array holding evals */
-int       d;			/* problem dimension = num. eigenpairs needed */
-int       left_goodlim;		/* number of ritz pairs checked on left end */
-int       right_goodlim;	/* number of ritz pairs checked on right end */
-double    eigtol;		/* tolerance on eigenpair */
-double    bis_safety;		/* bisection tolerance function divisor */
+int 
+get_ritzvals (
+    double *alpha,		/* vector of Lanczos scalars */
+    double *beta,			/* vector of Lanczos scalars */
+    int j,			/* number of Lanczos iterations taken */
+    double Anorm,		/* Gershgorin estimate */
+    double *workj,		/* work vector for Sturm sequence */
+    double *ritz,			/* array holding evals */
+    int d,			/* problem dimension = num. eigenpairs needed */
+    int left_goodlim,		/* number of ritz pairs checked on left end */
+    int right_goodlim,	/* number of ritz pairs checked on right end */
+    double eigtol,		/* tolerance on eigenpair */
+    double bis_safety		/* bisection tolerance function divisor */
+)
 {
     extern int DEBUG_EVECS;	/* debug flag for eigen computation */
     extern int WARNING_EVECS;	/* warning flag for eigen computation */

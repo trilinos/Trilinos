@@ -41,7 +41,7 @@
 
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
 #include "Teuchos_StrUtils.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 using namespace Teuchos;
 
@@ -53,7 +53,7 @@ TreeBuildingXMLHandler::TreeBuildingXMLHandler()
 
 void TreeBuildingXMLHandler::characters(const std::string& chars)
 {
-  TEST_FOR_EXCEPTION(current_.isEmpty(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(current_.isEmpty(), std::logic_error,
                      "TreeBuildingXMLHandler::trying to add content to an empty node");
                         
   current_.addContent(StrUtils::fixUnprintableCharacters(chars));

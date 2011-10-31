@@ -126,11 +126,19 @@ namespace stk {
     /**
      * For all transient input fields defined either manually or via
      * the define_input_fields() function, read the data at the
-     * specified 'time' and populate the stk data structures with those
-     * values.
+     * specified database step 'step' (1-based) and populate the stk
+     * data structures with those values.
      */
-    void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, int time);
+    void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, int step);
 
+    /**
+     * For all transient input fields defined either manually or via
+     * the define_input_fields() function, read the data at the
+     * specified database time 'time' and populate the stk
+     * data structures with those values.  The database time closest
+     * to the specified time will be used with no interpolation (yet).
+     */
+    void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, double time);
 
     /**
      * Create an exodus mesh database with the specified

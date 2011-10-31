@@ -13,8 +13,6 @@
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
 #include <stk_percept/fixtures/Fixture.hpp>
-#include <stk_percept/Teuchos_My_Hashtable.hpp>
-#include <stk_percept/Hashtable.hpp>
 
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/WallTime.hpp>
@@ -43,105 +41,12 @@
 #include <google/dense_hash_map>
 #endif
 
-namespace Teuchos
-{
-  template <>
-  inline
-  int hashCode(const unsigned& x)
-  {
-    return (int)x;
-  }
-
-  typedef stk::percept::NoMallocArray<int, 3> NMA1;
-
-  template <>
-  inline
-  int hashCode(const NMA1& x)
-  {
-    return (int)(x.m_data[0] + x.m_data[1] + x.m_data[2]);
-  }
-
-}
-
 namespace stk {
 namespace percept {
 namespace unit_tests {
 
 #define EXTRA_PRINT 0
 
-//=============================================================================
-//=============================================================================
-//=============================================================================
-#if 0
-STKUNIT_UNIT_TEST(unit_tests_percept, hashtable_1)
-{
-  typedef NoMallocArray<int, 3> NMA;
-  typedef percept::Hashtable<NMA, int> HTII;
-  HTII ht;
-  std::cout << "HTII start " << std::endl;
-  NMA nma;
-  nma.insert(1); nma.insert(2); nma.insert(3);
-  NMA nma1;
-  nma1.insert(1); nma1.insert(2); nma1.insert(4);
-  ht.put(nma,-2);
-  ht[nma1] = -1;
-
-  std::cout << "ht[1]= " << ht[nma] << std::endl;
-  std::cout << "ht[3]= " << ht.get(nma1) << std::endl;
-
-  HTII::iterator it = ht.begin();
-  std::cout << "here 2 " << std::endl;
-
-  std::cout << "here 2 it=" << (*it).first() << " " << (*it).second() << std::endl;
-
-  for ( ; it != ht.end(); ++it)
-  {
-    NMA& key = (*it).first();
-    int val = (*it).second();
-    std::cout << "key= " << key << " val= " << val << std::endl;
-    //std::cout << "here" << std::endl;
-  }
-
-}
-#endif
-
-//=============================================================================
-//=============================================================================
-//=============================================================================
-STKUNIT_UNIT_TEST(unit_tests_percept, hashtable)
-{
-  typedef percept::Hashtable<int, int> HTII;
-  HTII ht;
-  std::cout << "HTII start " << std::endl;
-  ht.put(1,-2);
-  ht[2] = -1;
-  int i=1;
-  std::cout << "ht[1]= " << ht[i] << std::endl;
-  bool got_it = false;
-  try {
-    std::cout << "ht[3]= " << ht.get(3) << std::endl;
-  }
-  catch(std::runtime_error& err)
-  {
-    got_it = true;
-  }
-  std::cout << "got_it= " << got_it << " [should be true] " << std::endl;
-  STKUNIT_EXPECT_TRUE(got_it);
-
-  HTII::iterator it = ht.begin();
-  std::cout << "here 2 " << std::endl;
-
-  std::cout << "here 2 it=" << (*it).first() << " " << (*it).second() << std::endl;
-
-  for ( ; it != ht.end(); ++it)
-  {
-    int key = (*it).first();
-    int val = (*it).second();
-    std::cout << "key= " << key << " val= " << val << std::endl;
-    //std::cout << "here" << std::endl;
-  }
-
-}
 
 //=============================================================================
 //=============================================================================
@@ -299,12 +204,6 @@ STKUNIT_UNIT_TEST(time_maps, compare_different_maps)
 
   //std::map<unsigned, unsigned *> std_map;
 
-  typedef percept::Hashtable<unsigned, unsigned *> percept_map_type;
-  percept_map_type percept_map1(init_capacity);
-  percept_map_type percept_map2(init_capacity);
-  percept_map_type::iterator percept_map_it1;
-  percept_map_type::iterator percept_map_it2;
-
 #if USE_SPARSEHASH
   typedef google::dense_hash_map<unsigned, unsigned *> google_dense_map_type;
   google_dense_map_type google_dense_map1(init_capacity);
@@ -315,8 +214,6 @@ STKUNIT_UNIT_TEST(time_maps, compare_different_maps)
     FindMapItem1< google_dense_map_type, google_dense_map_type::iterator > fm1;
     if (1) doTest(google_dense_map1, google_dense_map_it1, N, niter, fm1, "google_dense_map, map[key]");
 
-    //FindMapItem2< percept_map_type, percept_map_type::iterator > fm2;
-    //if (1) doTest(percept_map2, percept_map_it2, N, niter, fm2, "percept_map, find(key)");
   }
 #endif
 
@@ -331,19 +228,8 @@ STKUNIT_UNIT_TEST(time_maps, compare_different_maps)
     FindMapItem1< google_sparse_map_type, google_sparse_map_type::iterator > fm1;
     if (1) doTest(google_sparse_map1, google_sparse_map_it1, N, niter, fm1, "google_sparse_map, map[key]");
 
-    //FindMapItem2< percept_map_type, percept_map_type::iterator > fm2;
-    //if (1) doTest(percept_map2, percept_map_it2, N, niter, fm2, "percept_map, find(key)");
   }
 #endif
-
-  {
-    FindMapItem1< percept_map_type, percept_map_type::iterator > fm1;
-    if (1) doTest(percept_map1, percept_map_it1, N, niter, fm1, "percept_map, map[key]");
-
-    //FindMapItem2< percept_map_type, percept_map_type::iterator > fm2;
-    //if (1) doTest(percept_map2, percept_map_it2, N, niter, fm2, "percept_map, find(key)");
-  }
-
 
   {
     FindMapItem1< boost_map_type, boost_map_type::iterator > fm1;

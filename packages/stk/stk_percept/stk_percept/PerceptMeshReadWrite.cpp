@@ -257,6 +257,9 @@ namespace stk {
 #if PERCEPT_USE_FAMILY_TREE
             entity_rank_names.push_back("FAMILY_TREE");
 #endif
+#if PERCEPT_USE_PSEUDO_ELEMENTS
+            entity_rank_names.push_back("PSEUDO_ELEMENT");
+#endif
             meta.FEM_initialize(spatial_dim, entity_rank_names);
           }
 

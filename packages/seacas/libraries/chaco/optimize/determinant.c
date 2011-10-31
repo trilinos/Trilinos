@@ -3,9 +3,8 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 
-double    determinant(M, ndims)
-double    M[3][3];
-int       ndims;
+double 
+determinant (double M[3][3], int ndims)
 {
     if (ndims == 1)
 	return (M[0][0]);

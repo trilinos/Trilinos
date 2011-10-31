@@ -217,7 +217,7 @@ namespace Belos {
 	// The caller gave us a previously computed MX.  Make sure
 	// that it has at least as many columns as X.
 	const int numColsMX = MVT::GetNumberVecs(*MX);
-	TEST_FOR_EXCEPTION(numColsMX < numColsX, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(numColsMX < numColsX, std::invalid_argument,
 			   "MatOrthoManager::norm(X, MX, normvec): "
 			   "MX has fewer columns than X: "
 			   "MX has " << numColsMX << " columns, "

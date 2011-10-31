@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -62,7 +62,7 @@ void LinearOpWithSolveFactoryBase<Scalar>::setPreconditionerFactory(
   ,const std::string &precFactoryName
   )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true,std::logic_error
     ,"Error, the concrete implementation described as \'"<<this->description()<<"\' did not override this "
     "setPreconditionerFactory(...) function and the default implementation throws this exception!"
@@ -116,7 +116,7 @@ void LinearOpWithSolveFactoryBase<Scalar>::initializePreconditionedOp(
   ,const ESupportSolveUse supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true,std::logic_error
     ,"Error, the concrete implementation described as \'"<<this->description()<<"\' did not override this "
     "initializePreconditionedOp(...) function and the default implementation throws this exception!"
@@ -132,7 +132,7 @@ void LinearOpWithSolveFactoryBase<Scalar>::initializeApproxPreconditionedOp(
   ,const ESupportSolveUse supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true,std::logic_error
     ,"Error, the concrete implementation described as \'"<<this->description()<<"\' did not override this "
     "initializePreconditionedOp(...) function and the default implementation throws this exception!"

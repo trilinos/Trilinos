@@ -37,9 +37,9 @@ C=======================================================================
      *                   ISEVOK, VALUES)
 C=======================================================================
 
-      include 'dbnums.blk'
-      include 'dbout.blk'
-      include 'filter.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbout.blk'
+      include 'ag_filter.blk'
 
       INTEGER IXELB(0:NELBLK)
       INTEGER NUMLNK(*)

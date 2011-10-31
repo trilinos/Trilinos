@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -72,18 +72,18 @@ namespace Teuchos {
 
     //! Copy a coefficient
     static inline void copy(const coeff_type& x, coeff_type* y) {
-      Thyra::copy(x,y);
+      Thyra::copy(x, Teuchos::ptr(y));
     }
 
     //! Assign a scalar to a coefficient
     static inline void assign(coeff_type* y, const scalar_type& alpha) {
-      Thyra::assign(y,alpha);
+      Thyra::assign(Teuchos::ptr(y), alpha);
     }
 
     //! y = x + beta*y
     static inline void update(coeff_type* y, const coeff_type& x, 
             const scalar_type& beta) {
-      Thyra::Vp_V(y,x,beta);
+      Thyra::Vp_V(Teuchos::ptr(y), x, beta);
     }
 
   }; // class PolynomialTraits< Thyra::VectorBase<Scalar> >

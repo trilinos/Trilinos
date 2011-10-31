@@ -11,25 +11,26 @@
 
 /* See comments in lanczos_SO() */
 
-void      lanczos_SO_float(A, n, d, y, lambda, bound, eigtol, vwsqrt, maxdeg, version,
-               cube_or_mesh, nsets, assignment, active, mediantype, goal, vwgt_max)
-struct vtx_data **A;		/* sparse matrix in row linked list format */
-int       n;			/* problem size */
-int       d;			/* problem dimension = number of eigvecs to find */
-double  **y;			/* columns of y are eigenvectors of A  */
-double   *lambda;		/* ritz approximation to eigenvals of A */
-double   *bound;		/* on ritz pair approximations to eig pairs of A */
-double    eigtol;		/* tolerance on eigenvectors */
-double   *vwsqrt;		/* square roots of vertex weights */
-double    maxdeg;		/* maximum degree of graph */
-int       version;		/* flags which version of sel. orth. to use */
-int       cube_or_mesh;		/* 0 => hypercube, d => d-dimensional mesh */
-int       nsets;		/* number of sets to divide into */
-int    *assignment;		/* set number of each vtx (length n+1) */
-int      *active;		/* space for nvtxs integers */
-int       mediantype;		/* which partitioning strategy to use */
-double   *goal;			/* desired set sizes */
-int       vwgt_max;		/* largest vertex weight */
+void 
+lanczos_SO_float (
+    struct vtx_data **A,		/* sparse matrix in row linked list format */
+    int n,			/* problem size */
+    int d,			/* problem dimension = number of eigvecs to find */
+    double **y,			/* columns of y are eigenvectors of A  */
+    double *lambda,		/* ritz approximation to eigenvals of A */
+    double *bound,		/* on ritz pair approximations to eig pairs of A */
+    double eigtol,		/* tolerance on eigenvectors */
+    double *vwsqrt,		/* square roots of vertex weights */
+    double maxdeg,		/* maximum degree of graph */
+    int version,		/* flags which version of sel. orth. to use */
+    int cube_or_mesh,		/* 0 => hypercube, d => d-dimensional mesh */
+    int nsets,		/* number of sets to divide into */
+    int *assignment,		/* set number of each vtx (length n+1) */
+    int *active,		/* space for nvtxs integers */
+    int mediantype,		/* which partitioning strategy to use */
+    double *goal,			/* desired set sizes */
+    int vwgt_max		/* largest vertex weight */
+)
 {
     extern FILE *Output_File;		/* output file or null */
     extern int LANCZOS_SO_INTERVAL;	/* interval between orthogonalizations */

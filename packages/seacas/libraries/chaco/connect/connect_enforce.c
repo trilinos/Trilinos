@@ -11,16 +11,17 @@
 /* Move vertices between domains to ensure each domain is connected. */
 /* Note: This will likely result in load imbalance. */
 
-void      connect_enforce(graph, nvtxs, using_ewgts, assignment, goal, nsets_tot,
-			  total_move, max_move)
-struct vtx_data **graph;	/* data structure for graph */
-int       nvtxs;		/* number of vertices in full graph */
-int       using_ewgts;		/* are edge weights being used? */
-int    *assignment;		/* set number of each vtx (length n) */
-double   *goal;			/* desired sizes for each set */
-int       nsets_tot;		/* total number sets created */
-int      *total_move;		/* total number of vertices moved */
-int      *max_move;		/* largest connected component moved */
+void
+connect_enforce (
+    struct vtx_data **graph,	/* data structure for graph */
+    int nvtxs,		/* number of vertices in full graph */
+    int using_ewgts,		/* are edge weights being used? */
+    int *assignment,		/* set number of each vtx (length n) */
+    double *goal,			/* desired sizes for each set */
+    int nsets_tot,		/* total number sets created */
+    int *total_move,		/* total number of vertices moved */
+    int *max_move		/* largest connected component moved */
+)
 {
     struct vtx_data **subgraph;	/* data structure for domain graph */
     int       subnvtxs;		/* number of vertices in a domain */

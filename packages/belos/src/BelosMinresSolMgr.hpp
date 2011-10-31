@@ -475,7 +475,7 @@ namespace Belos {
     numIters_ (0),
     parametersSet_ (false)
   {
-    TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 
     // If the parameter list pointer is null, then set the current parameters to the default parameter list.
     if ( !is_null(params) ) {
@@ -488,14 +488,14 @@ namespace Belos {
   MinresSolMgr< ScalarType, MV, OP >::
   validateProblem (const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > > &problem) 
   {
-    TEST_FOR_EXCEPTION(Teuchos::is_null(problem), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(problem), std::invalid_argument, 
 		       "MINRES requires a non-null LinearProblem object,"
 		       "which represents the linear problem to solve.");
-    TEST_FOR_EXCEPTION(Teuchos::is_null(problem->getOperator()), 
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(problem->getOperator()), 
 		       std::invalid_argument, 
 		       "MINRES requires a LinearProblem object with a non-null "
 		       "operator.");
-    TEST_FOR_EXCEPTION(Teuchos::is_null(problem->getRHS()),
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(problem->getRHS()),
 		       std::invalid_argument, 
 		       "MINRES requires a LinearProblem object with a non-null "
 		       "right-hand side.");
@@ -690,7 +690,7 @@ namespace Belos {
 #endif
 
     // We need a problem to solve, else we can't solve it.
-    TEST_FOR_EXCEPTION( !problem_->isProblemSet(),
+    TEUCHOS_TEST_FOR_EXCEPTION( !problem_->isProblemSet(),
 			MinresSolMgrLinearProblemFailure,
 			"Belos::MinresSolMgr::solve(): The linear problem to "
 			"solve has not been set, so it is not valid to call the "
@@ -762,7 +762,7 @@ namespace Belos {
 	      // If we get here, we returned from iterate(), but none of
 	      // our status tests Passed.  Something is wrong, and it is
 	      // probably our fault.
-	      TEST_FOR_EXCEPTION(true, std::logic_error,
+	      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "Belos::MinresSolMgr::solve(): iterations neither"
                                " converged, nor reached the maximum number of "
                                "iterations " << maxIters_ << ".  That means someth"

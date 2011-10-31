@@ -29,7 +29,7 @@
 #include "Tsqr_ConfigDefs.hpp"
 #include "Tsqr_CombineTest.hpp"
 
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Tsqr_Random_NormalGenerator.hpp>
 #include <Tsqr_Random_MatrixGenerator.hpp>
 
@@ -664,7 +664,7 @@ namespace TSQR {
 		normgenZ.getSeed (iseed);
 	      }
 #else // NOT HAVE_TSQR_COMPLEX
-	      TEST_FOR_EXCEPTION(true, std::logic_error,
+	      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 				 "Trilinos was not built with "
 				 "complex arithmetic support");
 #endif // HAVE_TSQR_COMPLEX
@@ -722,7 +722,7 @@ namespace TSQR {
 		normgenZ.getSeed (iseed);
 	      }
 #else // NOT HAVE_TSQR_COMPLEX
-	      TEST_FOR_EXCEPTION(true, std::logic_error,
+	      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 				 "Trilinos was not built with "
 				 "complex arithmetic support");
 #endif // HAVE_TSQR_COMPLEX

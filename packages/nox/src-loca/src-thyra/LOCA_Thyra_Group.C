@@ -41,7 +41,7 @@
 
 #include "LOCA_Thyra_Group.H"	          // class definition
 #include "NOX_Thyra_MultiVector.H"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
@@ -68,7 +68,7 @@ LOCA::Thyra::Group::Group(
   // Create thyra vector to store parameters that is a view of LOCA
   // parameter vector
   RTOpPack::SubVectorView<double> pv(0,params.length(),
-				     params.getDoubleArrayPointer(),1);
+				     Teuchos::ArrayRCP<double>(params.getDoubleArrayPointer(),0,params.length(),false),1);
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps = 
     model_->get_p_space(param_index);
   param_thyra_vec = ::Thyra::createMemberView(ps,pv);
@@ -77,7 +77,7 @@ LOCA::Thyra::Group::Group(
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs = 
     model_->get_x_space();
   x_dot_vec = ::Thyra::createMember(xs);
-  ::Thyra::put_scalar(0.0, x_dot_vec.get());
+  ::Thyra::put_scalar(0.0, x_dot_vec.ptr());
 }
 
 LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source, 
@@ -93,7 +93,7 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   // Create thyra vector to store parameters that is a view of LOCA
   // parameter vector
   RTOpPack::SubVectorView<double> pv(0,params.length(),
-				     params.getDoubleArrayPointer(),1);
+				     Teuchos::ArrayRCP<double>(params.getDoubleArrayPointer(),0,params.length(),false),1);
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps = 
     model_->get_p_space(param_index);
   param_thyra_vec = ::Thyra::createMemberView(ps,pv);
@@ -102,7 +102,7 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs = 
     model_->get_x_space();
   x_dot_vec = ::Thyra::createMember(xs);
-  ::Thyra::put_scalar(0.0, x_dot_vec.get());
+  ::Thyra::put_scalar(0.0, x_dot_vec.ptr());
 }
 
 LOCA::Thyra::Group::~Group() 
@@ -177,6 +177,8 @@ LOCA::Thyra::Group::computeJacobian()
   if (this->isJacobian())
     return NOX::Abstract::Group::Ok;
 
+  shared_jacobian_->getObject(this);
+
   in_args_.set_x(x_vec_->getThyraRCPVector());
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
     in_args_.set_x_dot(x_dot_vec);
@@ -185,13 +187,13 @@ LOCA::Thyra::Group::computeJacobian()
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
     in_args_.set_beta(1.0);
   in_args_.set_p(param_index, param_thyra_vec);
-  out_args_.set_W(shared_jacobian_->getObject(this));
+  out_args_.set_W_op(lop_);
 
   model_->evalModel(in_args_, out_args_);
 
   in_args_.set_x(Teuchos::null);
   in_args_.set_p(param_index, Teuchos::null);
-  out_args_.set_W(Teuchos::null);
+  out_args_.set_W_op(Teuchos::null);
 
   is_valid_jacobian_ = true;
 
@@ -377,13 +379,15 @@ LOCA::Thyra::Group::scaleVector(NOX::Abstract::Vector& x) const
 NOX::Abstract::Group::ReturnType
 LOCA::Thyra::Group::computeShiftedMatrix(double alpha, double beta)
 {
+  shared_jacobian_->getObject(this);
+  
   in_args_.set_x(x_vec_->getThyraRCPVector());
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
     in_args_.set_x_dot(x_dot_vec);
   in_args_.set_p(param_index, param_thyra_vec);
   in_args_.set_alpha(-beta);
   in_args_.set_beta(alpha);
-  out_args_.set_W(shared_jacobian_->getObject(this));
+  out_args_.set_W_op(lop_);
 
   model_->evalModel(in_args_, out_args_);
 
@@ -391,9 +395,10 @@ LOCA::Thyra::Group::computeShiftedMatrix(double alpha, double beta)
   in_args_.set_p(param_index, Teuchos::null);
   in_args_.set_alpha(0.0);
   in_args_.set_beta(1.0);
-  out_args_.set_W(Teuchos::null);
+  out_args_.set_W_op(Teuchos::null);
 
   is_valid_jacobian_ = false;
+  is_valid_lows_ = false;
 
   if (out_args_.isFailed())
     return NOX::Abstract::Group::Failed;
@@ -410,8 +415,8 @@ LOCA::Thyra::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
   NOX::Thyra::Vector& thyra_result = 
     dynamic_cast<NOX::Thyra::Vector&>(result);
 
-  ::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::NOTRANS,
-		 thyra_input.getThyraVector(), &thyra_result.getThyraVector());
+  ::Thyra::apply(*lop_, ::Thyra::NOTRANS,
+		 thyra_input.getThyraVector(), thyra_result.getThyraRCPVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -426,10 +431,10 @@ LOCA::Thyra::Group::applyShiftedMatrixMultiVector(
   NOX::Thyra::MultiVector& nt_result = 
     Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
 
-  ::Thyra::apply(*shared_jacobian_->getObject(), 
+  ::Thyra::apply(*lop_, 
 		 ::Thyra::NOTRANS,
 		 *nt_input.getThyraMultiVector(), 
-		 nt_result.getThyraMultiVector().get());
+		 nt_result.getThyraMultiVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }

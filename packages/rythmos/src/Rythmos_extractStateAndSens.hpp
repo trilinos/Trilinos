@@ -87,12 +87,12 @@ void Rythmos::extractStateAndSens(
 
   using Teuchos::rcp_dynamic_cast;
 
-  TEST_FOR_EXCEPT(is_null(x_bar));
-  TEST_FOR_EXCEPT(is_null(x_bar_dot));
-  TEST_FOR_EXCEPT(0==x);
-  TEST_FOR_EXCEPT(0==S);
-  TEST_FOR_EXCEPT(0==x_dot);
-  TEST_FOR_EXCEPT(0==S_dot);
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(x_bar));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(x_bar_dot));
+  TEUCHOS_TEST_FOR_EXCEPT(0==x);
+  TEUCHOS_TEST_FOR_EXCEPT(0==S);
+  TEUCHOS_TEST_FOR_EXCEPT(0==x_dot);
+  TEUCHOS_TEST_FOR_EXCEPT(0==S_dot);
 
   RCP<const Thyra::ProductVectorBase<Scalar> >
     x_bar_pv = Thyra::productVectorBase<Scalar>(x_bar),

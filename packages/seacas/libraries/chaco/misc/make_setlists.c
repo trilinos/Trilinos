@@ -4,16 +4,17 @@
 
 
 /* Make linked list of elements in each set. */
-void      make_setlists(setlists, list_ptrs, nsets, subsets, subassign,
-	      loc2glob, subnvtxs, first)
-int      *setlists;		/* space for linked lists of vertices in sets */
-int      *list_ptrs;		/* headers of each linked list */
-int       nsets;		/* number of sets being created this step */
-int    *subsets;		/* subsets being created at current step */
-int    *subassign;		/* assignment for vertices in (sub)graph */
-int      *loc2glob;		/* mapping from subgraph to graph numbering */
-int       subnvtxs;		/* number of vertices in (sub)graph */
-int       first;		/* is this full graph or subgraph? */
+void 
+make_setlists (
+    int *setlists,		/* space for linked lists of vertices in sets */
+    int *list_ptrs,		/* headers of each linked list */
+    int nsets,		/* number of sets being created this step */
+    int *subsets,		/* subsets being created at current step */
+    int *subassign,		/* assignment for vertices in (sub)graph */
+    int *loc2glob,		/* mapping from subgraph to graph numbering */
+    int subnvtxs,		/* number of vertices in (sub)graph */
+    int first		/* is this full graph or subgraph? */
+)
 {
     int set;			/* set a vertex belongs to */
     int i, j;			/* loop counters */

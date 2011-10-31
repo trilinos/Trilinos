@@ -13,9 +13,9 @@ Tpetra::Utils::generateMatrix(const Teuchos::RCP<Teuchos::ParameterList> &plist,
                               Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A) 
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPTION( plist == Teuchos::null, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( plist == Teuchos::null, std::runtime_error,
       "Tpetra::Utils::generateMatrix(): ParameterList is null.");
-  TEST_FOR_EXCEPTION( Teuchos::isParameterType<std::string>(*plist,"mat_type") == false, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::isParameterType<std::string>(*plist,"mat_type") == false, std::runtime_error,
       "Tpetra::Utils::generateMatrix(): ParameterList did not contain string parameter ""mat_type"".");
   std::string mat_type = plist->get<std::string>("mat_type");
   if (mat_type == "Lap3D") {
@@ -51,7 +51,7 @@ Tpetra::Utils::generateMatrix(const Teuchos::RCP<Teuchos::ParameterList> &plist,
     A->fillComplete(DoOptimizeStorage);
   }
   else {
-    TEST_FOR_EXCEPTION( true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error, 
         "Tpetra::Utils::generateMatrix(): ParameterList specified unsupported ""mat_type"".");
   }
 }
@@ -79,7 +79,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
     Teuchos::ArrayRCP<int> colptrs, rowinds;
     std::string type;
     Tpetra::Utils::readHBMatDouble(filename,numRows,numCols,numNZ,type,colptrs,rowinds,dvals);
-    TEST_FOR_EXCEPT(type.size() != 3);
+    TEUCHOS_TEST_FOR_EXCEPT(type.size() != 3);
     if (type[0] != 'R' && type[0] != 'r') {
       // only real matrices right now
       fail = 1;
@@ -153,7 +153,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
             break;
           }
         }
-        TEST_FOR_EXCEPTION(!isequal || nnzPerRow.size() != nnzPerRow_debug.size(), std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(!isequal || nnzPerRow.size() != nnzPerRow_debug.size(), std::logic_error,
             "Tpetra::Utils::readHBMatrix(): Logic error.");
       }
 #endif
@@ -162,7 +162,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   }
   // check for read errors
   broadcast(*comm,0,&fail);
-  TEST_FOR_EXCEPTION(fail == 1, std::runtime_error, "Tpetra::Utils::readHBMatrix() can only read Real matrices.");
+  TEUCHOS_TEST_FOR_EXCEPTION(fail == 1, std::runtime_error, "Tpetra::Utils::readHBMatrix() can only read Real matrices.");
   // distribute global matrix info
   broadcast(*comm,0,&numRows);
   broadcast(*comm,0,&numCols);
@@ -171,9 +171,9 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
     rowMap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>((global_size_t)numRows,(GlobalOrdinal)0,comm,GloballyDistributed,node));
   }
   else {
-    TEST_FOR_EXCEPTION( rowMap->getGlobalNumElements() != (global_size_t)numRows, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( rowMap->getGlobalNumElements() != (global_size_t)numRows, std::runtime_error,
         "Tpetra::Utils::readHBMatrix(): specified map has incorrect number of elements.");
-    TEST_FOR_EXCEPTION( rowMap->isDistributed() == false && comm->getSize() > 1, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( rowMap->isDistributed() == false && comm->getSize() > 1, std::runtime_error,
         "Tpetra::Utils::readHBMatrix(): specified map is not distributed.");
   }
   Teuchos::ArrayRCP<size_t> myNNZ;

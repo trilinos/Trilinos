@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -151,7 +151,7 @@ template<class Scalar>
 RCP<LinearOpWithSolveBase<Scalar> >
 ResponseOnlyModelEvaluatorBase<Scalar>::create_W() const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error
     ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
     " this function create_W() must be overridden by the subclass to return"
@@ -165,7 +165,7 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 ResponseOnlyModelEvaluatorBase<Scalar>::create_W_op() const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error
     ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
     " this function create_W_op() must be overridden by the subclass "
@@ -179,7 +179,7 @@ template<class Scalar>
 RCP<const LinearOpWithSolveFactoryBase<Scalar> >
 ResponseOnlyModelEvaluatorBase<Scalar>::get_W_factory() const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error
     ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
     " this function get_W_factory() must be overridden by the subclass "

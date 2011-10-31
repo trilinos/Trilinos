@@ -539,7 +539,7 @@ NonlinearCG<Scalar>::doSolve(
           break;
         }
         default:
-          TEST_FOR_EXCEPT(true);
+          TEUCHOS_TEST_FOR_EXCEPT(true);
       }
       *out << "\nbeta_k = " << beta_k << "\n";
 

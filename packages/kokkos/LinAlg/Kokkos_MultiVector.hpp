@@ -34,7 +34,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
 namespace Kokkos {
@@ -139,7 +139,7 @@ namespace Kokkos {
       ArrayRCP<Scalar>
       getValuesNonConst(size_t i) {
 #ifdef HAVE_KOKKOS_DEBUG
-        TEST_FOR_EXCEPTION( !( (contigValues_ != null) &&  // Data to return
+        TEUCHOS_TEST_FOR_EXCEPTION( !( (contigValues_ != null) &&  // Data to return
                                ( (i > 0 || i == 0) && i < numCols_)    // In range
                              ), std::runtime_error, 
                              Teuchos::typeName(*this) << "::getValuesNonConst(): index out of range or data structure not initialized.");
@@ -159,7 +159,7 @@ namespace Kokkos {
       ArrayRCP<const Scalar>
       getValues(size_t i) const {
 #ifdef HAVE_KOKKOS_DEBUG
-        TEST_FOR_EXCEPTION( !( (contigValues_ != null) &&  // Data to return
+        TEUCHOS_TEST_FOR_EXCEPTION( !( (contigValues_ != null) &&  // Data to return
                                ( (i > 0 || i == 0) && i < numCols_)    // In range
                              ), std::runtime_error, 
                              Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");

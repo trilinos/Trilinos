@@ -1210,7 +1210,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, getValidParameters ) {
   validPL->validateParameters(*pl);  
 }
 
-//#ifdef RYTHMOS_DEBUG
+//#ifdef HAVE_RYTHMOS_DEBUG
 //TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, printParams ) {
 //  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
 //  RCP<const ParameterList> pl = ib->getValidParameters();
@@ -1218,7 +1218,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, getValidParameters ) {
 //  pl->print(std::cout,Teuchos::ParameterList::PrintOptions().showDoc(true).indent(4));
 //  TEST_ASSERT( true );
 //}
-//#endif // RYTHMOS_DEBUG
+//#endif // HAVE_RYTHMOS_DEBUG
 
 } // namespace Rythmos 
 

@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -73,9 +73,9 @@ void DelayedLinearOpWithSolve<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(fwdOpSrc));
-  TEST_FOR_EXCEPT(!is_null(prec) && !is_null(approxFwdOpSrc));
-  TEST_FOR_EXCEPT(is_null(lowsf));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdOpSrc));
+  TEUCHOS_TEST_FOR_EXCEPT(!is_null(prec) && !is_null(approxFwdOpSrc));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(lowsf));
 #endif  
   fwdOpSrc_ = fwdOpSrc;
   prec_ = prec;

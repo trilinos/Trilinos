@@ -300,6 +300,15 @@ MACRO(PACKAGE_ADD_DEBUG_OPTION)
 ENDMACRO()
 
 
+MACRO(PACKAGE_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION)
+  OPTION(
+    ${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
+     "Enable Teuchos time monitors for package ${PACKAGE_NAME}"
+    ${${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR}
+    )
+ENDMACRO()
+
+
 MACRO(PACKAGE_ADD_SHOW_DEPRECATED_WARNINGS_OPTION)
   OPTION(
     ${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS
@@ -415,6 +424,13 @@ MACRO(PACKAGE_POSTPROCESS_COMMON)
     PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
   ENDIF()
 
+  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+    # Create the configure file so external projects can find packages with a
+    # call to find_package(<package_name>)
+    # This also creates the Makefile.export.* files.
+    PACKAGE_WRITE_PACKAGE_CONFIG_FILE(${PACKAGE_NAME})
+  ENDIF()
+  
   SET(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
     CACHE INTERNAL "")
 
@@ -439,14 +455,6 @@ MACRO(PACKAGE_POSTPROCESS)
 
   PACAKGE_SETUP_DEPENDENCY_VARS_IF_NO_LIBS()
   PACKAGE_POSTPROCESS_COMMON()
-
-  # Create the configure file so external projects can find packages with a
-  # call to find_package(<package_name>)
-  # This also creates the Makefile.export.* files.
-  PACKAGE_WRITE_PACKAGE_CONFIG_FILE(${PACKAGE_NAME})
-
-  SET(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
-    CACHE INTERNAL "")
 
 ENDMACRO()
 

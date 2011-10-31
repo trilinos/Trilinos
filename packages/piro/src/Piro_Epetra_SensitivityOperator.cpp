@@ -29,7 +29,7 @@
 // @HEADER
 
 #include "Piro_Epetra_SensitivityOperator.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Vector.h"
@@ -196,7 +196,7 @@ applyForward(const Epetra_MultiVector& Input,
       Result.Multiply('T', 'N', 1.0, *dgdp_mv, Input, 0.0);
   }
   else 
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       std::endl <<"Piro::Epetra::SensitivityOperator::applyForward():  " <<
       "dgdp is NULL" << std::endl);
@@ -223,7 +223,7 @@ applyForward(const Epetra_MultiVector& Input,
     }
   }
   else 
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       std::endl <<"Piro::Epetra::SensitivityOperator::applyForward():  " <<
       "dfdp is NULL" << std::endl);
@@ -255,7 +255,7 @@ applyForward(const Epetra_MultiVector& Input,
       Result.Multiply('T', 'N', -1.0, *dgdx_mv, *y, 1.0);
   }
   else 
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       std::endl <<"Piro::Epetra::SensitivityOperator::applyForward():  " <<
       "dgdx is NULL" << std::endl);
@@ -288,7 +288,7 @@ applyAdjoint(const Epetra_MultiVector& Input,
       Result.Multiply('N', 'N', 1.0, *dgdp_mv, Input, 0.0);
   }
   else 
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       std::endl <<"Piro::Epetra::SensitivityOperator::applyForward():  " <<
       "dgdp is NULL" << std::endl);
@@ -315,7 +315,7 @@ applyAdjoint(const Epetra_MultiVector& Input,
     }
   }
   else 
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       std::endl <<"Piro::Epetra::SensitivityOperator::applyForward():  " <<
       "dgdx is NULL" << std::endl);
@@ -351,7 +351,7 @@ applyAdjoint(const Epetra_MultiVector& Input,
       Result.Multiply('N', 'N', -1.0, *dfdp_mv, *y, 1.0);
   }
   else 
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       std::endl <<"Piro::Epetra::SensitivityOperator::applyForward():  " <<
       "dfdp is NULL" << std::endl);

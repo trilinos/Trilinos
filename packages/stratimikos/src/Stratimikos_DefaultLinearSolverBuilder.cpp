@@ -153,7 +153,7 @@ void DefaultLinearSolverBuilder::setDefaultPreconditioningStrategyFactoryName(
 
 void DefaultLinearSolverBuilder::setupCLP( Teuchos::CommandLineProcessor *clp )
 {
-  TEST_FOR_EXCEPT(clp==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(clp==NULL);
   clp->setOption(
     paramsXmlFileNameOption().c_str(),&paramsXmlFileName_
     ,"Name of an XML file containing parameters for linear solver "
@@ -230,7 +230,7 @@ void DefaultLinearSolverBuilder::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
-  TEST_FOR_EXCEPT(is_null(paramList));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParameters(*this->getValidParameters());
   paramList_ = paramList;
   enableDelayedSolverConstruction_ = paramList_->get(

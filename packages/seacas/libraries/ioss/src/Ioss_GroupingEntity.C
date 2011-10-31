@@ -47,7 +47,7 @@ Ioss::GroupingEntity::GroupingEntity()
     attributeCount(0)
 {}
 
-Ioss::GroupingEntity::GroupingEntity(const Ioss::DatabaseIO *io_database,
+Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database,
 				     const std::string& my_name,
 				     size_t entity_count)
   : entityCount(entity_count), entityName(my_name), database_(io_database),
@@ -90,7 +90,7 @@ bool Ioss::GroupingEntity::is_alias(const std::string &my_name) const
   return region->get_alias(my_name) == entityName;
 }
 
-const Ioss::DatabaseIO* Ioss::GroupingEntity::get_database() const
+Ioss::DatabaseIO* Ioss::GroupingEntity::get_database() const
 {
   assert(database_ != NULL);
   return database_;
@@ -105,7 +105,7 @@ std::string Ioss::GroupingEntity::get_filename() const
     return database_->get_filename();
 }
 
-void Ioss::GroupingEntity::set_database(const Ioss::DatabaseIO *io_database)
+void Ioss::GroupingEntity::set_database(Ioss::DatabaseIO *io_database)
 {
   assert(database_ == NULL);     // Must be unset if we are setting it.
   assert(io_database != NULL);  // Must be set to valid value

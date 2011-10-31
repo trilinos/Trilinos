@@ -80,7 +80,8 @@ packages/Sundance/doc/latex/
 linux-intrepid-debug
 linux-sundance-opt
 linux-sundance-debug
-
+linux
+ser_linux
 
 packages/tpetra/doc/MatrixMatrixReport/matmatreport.aux
 packages/tpetra/doc/MatrixMatrixReport/matmatreport.bbl
@@ -93,3 +94,6 @@ packages/tpetra/doc/MatrixMatrixReport/matmatreport.pdf
 packages/tpetra/doc/MatrixMatrixReport/tpetraDevData/*pdf
 packages/tpetra/doc/MatrixMatrixReport/allMatsData/*pdf
 packages/tpetra/doc/MatrixMatrixReport/atransData/*pdf
+
+rsync.*
+.project

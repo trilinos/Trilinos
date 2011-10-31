@@ -60,9 +60,9 @@ C   --   Uses NDIM, NUMNP, NUMEL, NELBLK of /DBNUMS/
 C   --   Sets NUMNPO, NUMELO, NELBO of /DBOUT/
 C   --   Uses ISZOOM, ZMLIM of /ZOOM/
       
-      include 'dbnums.blk'
-      include 'dbout.blk'
-      include 'zoom.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbout.blk'
+      include 'ag_zoom.blk'
 
       REAL XN(*), YN(*), ZN(*)
       INTEGER IXELB(0:NELBLK)

@@ -3,10 +3,13 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 
-void      orthogvec(vec1, beg, end, vec2)
-double   *vec1;			/* vector to be orthogonalized */
-int       beg, end;		/* start and stop range for vector */
-double   *vec2;			/* vector to be orthogonalized against */
+void 
+orthogvec (
+    double *vec1,			/* vector to be orthogonalized */
+    int beg,
+    int end,		/* start and stop range for vector */
+    double *vec2			/* vector to be orthogonalized against */
+)
 {
     double    alpha;
     double    dot();
@@ -16,10 +19,13 @@ double   *vec2;			/* vector to be orthogonalized against */
     scadd(vec1, beg, end, alpha, vec2);
 }
 
-void      orthogvec_float(vec1, beg, end, vec2)
-float    *vec1;			/* vector to be orthogonalized */
-int       beg, end;		/* start and stop range for vector */
-float    *vec2;			/* vector to be orthogonalized against */
+void 
+orthogvec_float (
+    float *vec1,			/* vector to be orthogonalized */
+    int beg,
+    int end,		/* start and stop range for vector */
+    float *vec2			/* vector to be orthogonalized against */
+)
 {
     float     alpha;
     double    dot_float();

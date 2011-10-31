@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 #include "Stokhos_BasisFactory.hpp"
 #include "Stokhos_QuadratureFactory.hpp"
@@ -70,7 +70,7 @@ create(Teuchos::ParameterList& sgParams)
     else if (tp_type == "Linear")
       tp_sz = basis->dimension()+1;
     else
-      TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 			 std::endl << 
 			 "Error!  Stokhos::ExpansionFactory::create():  " <<
 			 "Invalid triple product expansion type  " << tp_type <<
@@ -106,7 +106,7 @@ create(Teuchos::ParameterList& sgParams)
     expansion = 
       Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, method, rtol));
 #else
-    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << 
 		       "Error!  Stokhos::ExpansionFactory::create():  " <<
 		       "ForUQTK expansion requires ForUQTK!" << std::endl);
@@ -136,7 +136,7 @@ create(Teuchos::ParameterList& sgParams)
   }
   */
   else
-    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << 
 		       "Error!  Stokhos::ExpansionFactory::create():  " <<
 		       "Invalid expansion type  " << exp_type << std::endl);

@@ -121,9 +121,14 @@ void ExoII_Read::Get_Init_Data()
   
   char title_buff[MAX_LINE_LENGTH+1];
   
-  int err = ex_get_init(file_id, title_buff, &dimension, &num_nodes,
-                        &num_elmts, &num_elmt_blocks, &num_node_sets,
+  int num_nodes_t = 0;
+  int num_elmts_t = 0;
+  int err = ex_get_init(file_id, title_buff, &dimension, &num_nodes_t,
+                        &num_elmts_t, &num_elmt_blocks, &num_node_sets,
                         &num_side_sets);
+  num_nodes = num_nodes_t;
+  num_elmts = num_elmts_t;
+  
   if (err < 0) {
     std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get init data!"
 	      << " Error number = " << err << ".  Aborting..." << std::endl;
@@ -133,9 +138,7 @@ void ExoII_Read::Get_Init_Data()
   if (err > 0 && !specs.quiet_flag)
     std::cout << "ExoII_Read::Get_Init_Data(): WARNING: was issued, number = "
 	      << err << std::endl;
-  if (dimension < 1 || dimension > 3 ||
-      num_nodes < 0 || num_elmts < 0 || num_elmt_blocks < 0 ||
-      num_node_sets < 0 || num_side_sets < 0) {
+  if (dimension < 1 || dimension > 3 || num_elmt_blocks < 0 || num_node_sets < 0 || num_side_sets < 0) {
     std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Init data appears corrupt:"
 	      << std::endl
 	      << "         dimension = "       << dimension       << std::endl
@@ -195,7 +198,7 @@ void ExoII_Read::Get_Init_Data()
       exit(1);
     }
     
-    int e_count = 0;
+    size_t e_count = 0;
     for (int b = 0; b < num_elmt_blocks; ++b) {
       if (ids[b] <= EX_INVALID_ID) {
 	std::cout << "ExoII_Read::Get_Init_Data()  WARNING:  Element block Id "

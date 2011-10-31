@@ -34,7 +34,7 @@
 namespace Rythmos {
 
 int GModel_ThyraModelEvaluator::calcDerivs(double *yin, double *yout, double t) {
-  TEST_FOR_EXCEPT(is_null(thyraModel_));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(thyraModel_));
   // Set up const view of yin as Thyra::VectorBase<double>
 
   // Convert double * to const Thyra::VectorBase view
@@ -65,16 +65,16 @@ int GModel_ThyraModelEvaluator::calcDerivs(double *yin, double *yout, double t) 
 
 
 void GModel_ThyraModelEvaluator::updateParameters(std::vector<double>) {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 int GModel_ThyraModelEvaluator::getDim() {
-  TEST_FOR_EXCEPT(is_null(thyraModel_));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(thyraModel_));
   return(dim_);
 }
 
 void GModel_ThyraModelEvaluator::setThyraModel(Teuchos::RCP<Thyra::ModelEvaluator<double> > model) {
-  TEST_FOR_EXCEPT(is_null(model));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(model));
   thyraModel_ = model;
   dim_ = thyraModel_->get_x_space()->dim();
   inArgs_ = thyraModel_->createInArgs();
@@ -85,7 +85,7 @@ void GModel_ThyraModelEvaluator::setThyraModel(Teuchos::RCP<Thyra::ModelEvaluato
 
 // Convert a Thyra::ModelEvaluator into a GModelBase
 boost::shared_ptr<GModel_ThyraModelEvaluator> gModel_ThyraModelEvaluator(Teuchos::RCP<Thyra::ModelEvaluator<double> > tModel) {
-  TEST_FOR_EXCEPT(is_null(tModel));
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(tModel));
   boost::shared_ptr<GModel_ThyraModelEvaluator> gModel(new GModel_ThyraModelEvaluator);
   gModel->setThyraModel(tModel);
   return(gModel);

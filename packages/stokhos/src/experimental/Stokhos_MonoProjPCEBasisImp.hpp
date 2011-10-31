@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -124,25 +124,25 @@ MonoProjPCEBasis(
   Teuchos::LAPACK<ordinal_type,value_type> lapack;
   lapack.GEQRF(pce_sz, pce_sz, K.values(), K.stride(), &tau[0], 
 	       &ws_size_query, -1, &info);
-  TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
 		     "GEQRF returned value " << info);
   ws_size = static_cast<ordinal_type>(ws_size_query);
   Teuchos::Array<value_type> work(ws_size);
   lapack.GEQRF(pce_sz, pce_sz, K.values(), K.stride(), &tau[0], 
 	       &work[0], ws_size, &info);
-  TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
 		     "GEQRF returned value " << info);
   
   // Get Q
   lapack.ORGQR(pce_sz, pce_sz, pce_sz, K.values(), K.stride(), &tau[0], 
 	       &ws_size_query, -1, &info);
-  TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
 		     "ORGQR returned value " << info);
   ws_size = static_cast<ordinal_type>(ws_size_query);
   work.resize(ws_size);
   lapack.ORGQR(pce_sz, pce_sz, pce_sz, K.values(), K.stride(), &tau[0], 
 	       &work[0], ws_size, &info);
-  TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
 		     "ORGQR returned value " << info);
 
   // Get basis vectors

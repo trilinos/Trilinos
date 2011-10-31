@@ -8,11 +8,13 @@
 #include "smalloc.h"
 
 
-void      genvals3d(xvecs, vals, nvtxs)
+void 
+genvals3d (
 /* Create lists of sets of values to be sorted. */
-double  **xvecs;		/* vectors to partition */
-double   *vals[8][MAXSETS];	/* ptrs to lists of values */
-int       nvtxs;		/* number of values */
+    double **xvecs,		/* vectors to partition */
+    double *vals[8][MAXSETS],	/* ptrs to lists of values */
+    int nvtxs		/* number of values */
+)
 {
     int       nsets = 8;	/* number of sets */
     int       nlists = 13;	/* number of lists to generate */

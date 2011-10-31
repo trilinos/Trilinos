@@ -43,7 +43,7 @@
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
-#include "Teuchos_TestForException.hpp" // for errors
+#include "Teuchos_Assert.hpp" // for errors
 
 template <class ValueType>
 void
@@ -169,7 +169,7 @@ LOCA::Parameter::Library::getEntry(const string& name) {
 
   // Find map for this parameter name
   ParameterMapIterator paramIterator = getEntryMapIterator(name);
-  TEST_FOR_EXCEPTION(paramIterator == library.end(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(paramIterator == library.end(), 
 		     std::invalid_argument,
 		     func << "Parameter library has no set of entries for " << 
 		     "parameter " << name);
@@ -180,7 +180,7 @@ LOCA::Parameter::Library::getEntry(const string& name) {
   // Find entry corresponding to this ValueType
   ValueTypeMapIterator valueIterator = getEntryIterator(valueTypeString, 
 							paramIterator);
-  TEST_FOR_EXCEPTION(valueIterator == (*paramIterator).second->end(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(valueIterator == (*paramIterator).second->end(), 
 		     std::invalid_argument,
 		     func << "Parameter library has no entry for parameter " <<
 		     name << " of type " << valueTypeString);
@@ -188,7 +188,7 @@ LOCA::Parameter::Library::getEntry(const string& name) {
   // Cast entry to LOCA::Parameter::Entry<ValueType>
   LOCA::Parameter::Entry<ValueType>* entry = 
     dynamic_cast<LOCA::Parameter::Entry<ValueType>*>((*valueIterator).second);
-  TEST_FOR_EXCEPTION(entry == NULL, 
+  TEUCHOS_TEST_FOR_EXCEPTION(entry == NULL, 
 		     std::invalid_argument,
 		     func << "Parameter entry for parameter " << name <<  
 		     " and type " << valueTypeString <<
@@ -205,7 +205,7 @@ LOCA::Parameter::Library::getEntry(const string& name) const {
 
   // Find map for this parameter name
   ParameterMapConstIterator paramIterator = getEntryMapIterator(name);
-  TEST_FOR_EXCEPTION(paramIterator == library.end(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(paramIterator == library.end(), 
 		     std::invalid_argument,
 		     func << "Parameter library has no set of entries for " << 
 		     "parameter " << name);
@@ -216,7 +216,7 @@ LOCA::Parameter::Library::getEntry(const string& name) const {
   // Find entry corresponding to this ValueType
   ValueTypeMapConstIterator valueIterator = getEntryIterator(valueTypeString, 
 							     paramIterator);
-  TEST_FOR_EXCEPTION(valueIterator == (*paramIterator).second->end(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(valueIterator == (*paramIterator).second->end(), 
 		     std::invalid_argument,
 		     func << "Parameter library has no entry for parameter " <<
 		     name << " of type " << valueTypeString);
@@ -224,7 +224,7 @@ LOCA::Parameter::Library::getEntry(const string& name) const {
   // Cast entry to LOCA::Parameter::Entry<ValueType>
   const LOCA::Parameter::Entry<ValueType>* entry = 
     dynamic_cast<const LOCA::Parameter::Entry<ValueType>*>((*valueIterator).second);
-  TEST_FOR_EXCEPTION(entry == NULL, 
+  TEUCHOS_TEST_FOR_EXCEPTION(entry == NULL, 
 		     std::invalid_argument,
 		     func << "Parameter entry for parameter " << name <<  
 		     " and type " << valueTypeString <<

@@ -177,14 +177,14 @@ main(int argc, char *argv[])
     frequency = -1;
 
   // Validate command-line arguments
-  TEST_FOR_EXCEPTION( tol < 0, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( tol < 0, std::invalid_argument,
 		      "Relative residual tolerance must be nonnegative, but "
 		      "you supplied tol = " << tol << "." );
-  TEST_FOR_EXCEPTION( numrhs < 1, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( numrhs < 1, std::invalid_argument,
 		      "MINRES test requires at least one right-hand side, but "
 		      "you set the number of right-hand sides to " 
 		      << numrhs << "." );
-  TEST_FOR_EXCEPTION( maxiters < 1, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( maxiters < 1, std::invalid_argument,
 		      "MINRES test requires at least one iteration, but you "
 		      "set the maximum number of iterations to " 
 		      << maxiters << "." );
@@ -217,7 +217,7 @@ main(int argc, char *argv[])
   Belos::LinearProblem< ST, MV, OP > problem (A, X, B);
   {
     const bool set = problem.setProblem();
-    TEST_FOR_EXCEPTION( set == false, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( set == false, std::logic_error, 
 			"Belos::LinearProblem failed to set up correctly (setP"
 			"roblem() returned false)!  This probably means we imp"
 			"lemented our test incorrectly." );

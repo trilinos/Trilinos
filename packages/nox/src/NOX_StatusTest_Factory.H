@@ -187,6 +187,15 @@ namespace StatusTest {
      (NOX::StatusTest::RelativeNormF): 
      <ul> 
        <li> "Tolerance" <double> required tolerance for the test to return a converged status. (default = 1.0e-8)
+       <li> "Scale Norms by Length" <bool> if set to true, the norms are scaled by the length of the vector. (default = false)
+     </ul>
+
+     Additional parameters valid for a NStep test
+     (NOX::StatusTest::NStep): 
+     <ul> 
+       <li> "Number of Nonlinear Iterations" <int> Number of nonlinear iterations to take until convergence (default = 1)
+       <li> "Number of Initial Ramping Steps" <int> Number of nonlinear solves in an initial ramping phase (default = 0)
+       <li> "Number of Nonlinear Iterations in Ramping Phase" <int> Number of nonlinear iterations to take until convergence in ramping phase (default = 10)
      </ul>
 
      Additional parameters valid for a "User Defined" test: 
@@ -315,6 +324,10 @@ private:
   Teuchos::RCP<NOX::StatusTest::Generic> 
   buildRelativeNormFTest(Teuchos::ParameterList& p, 
 			 const NOX::Utils& utils) const;
+
+  Teuchos::RCP<NOX::StatusTest::Generic> 
+  buildNStepTest(Teuchos::ParameterList& p, 
+		 const NOX::Utils& utils) const;
 
   Teuchos::RCP<NOX::StatusTest::Generic> 
   buildUserDefinedTest(Teuchos::ParameterList& p, 

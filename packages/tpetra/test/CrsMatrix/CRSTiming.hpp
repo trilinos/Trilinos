@@ -75,7 +75,7 @@ void CRSTiming(const Teuchos::RCP<const Tpetra::CrsMatrix<double,int,int,Node> >
 //       vals[NNZsofar] =  -1;           vals[NNZsofar+1] = 2;
 //       NNZsofar += 2;
 //       offsets[Test::numRows]   = NNZsofar;
-//       TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
+//       TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
 //       G.set1DStructure(inds, offsets, offsets.persistingView(1,Test::numRows));
 //       offsets = Teuchos::null;
 //       inds    = Teuchos::null;

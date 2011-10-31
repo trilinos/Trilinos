@@ -325,7 +325,7 @@ namespace Belos {
     
     //! \brief Set the blocksize.
     void setBlockSize(int blockSize) {
-      TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
 			 "Belos::RCGIter::setBlockSize(): Cannot use a block size that is not one.");
     }
 
@@ -423,11 +423,11 @@ namespace Belos {
     iter_(0)
   {
     // Get the maximum number of blocks allowed for this Krylov subspace
-    TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
                        "Belos::RCGIter::constructor: mandatory parameter \"Num Blocks\" is not specified.");
     int nb = Teuchos::getParameter<int>(params, "Num Blocks");
 
-    TEST_FOR_EXCEPTION(!params.isParameter("Recycled Blocks"), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Recycled Blocks"), std::invalid_argument,
                        "Belos::RCGIter::constructor: mandatory parameter \"Recycled Blocks\" is not specified.");
     int rb = Teuchos::getParameter<int>(params, "Recycled Blocks");
 
@@ -441,9 +441,9 @@ namespace Belos {
   void RCGIter<ScalarType,MV,OP>::setSize( int recycleBlocks, int numBlocks )
   {
 
-    TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, "Belos::RCGIter::setSize() was passed a non-positive argument for \"Num Blocks\".");
-    TEST_FOR_EXCEPTION(recycleBlocks <= 0, std::invalid_argument, "Belos::RCGIter::setSize() was passed a non-positive argument for \"Recycled Blocks\".");
-    TEST_FOR_EXCEPTION(recycleBlocks >= numBlocks, std::invalid_argument, "Belos::RCGIter::setSize() the number of recycled blocks is larger than the allowable subspace.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, "Belos::RCGIter::setSize() was passed a non-positive argument for \"Num Blocks\".");
+    TEUCHOS_TEST_FOR_EXCEPTION(recycleBlocks <= 0, std::invalid_argument, "Belos::RCGIter::setSize() was passed a non-positive argument for \"Recycled Blocks\".");
+    TEUCHOS_TEST_FOR_EXCEPTION(recycleBlocks >= numBlocks, std::invalid_argument, "Belos::RCGIter::setSize() the number of recycled blocks is larger than the allowable subspace.");
 
     numBlocks_ = numBlocks;
     recycleBlocks_ = recycleBlocks;
@@ -488,43 +488,43 @@ namespace Belos {
     }
     else {
 
-      TEST_FOR_EXCEPTION(newstate.P == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.P == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have P initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.Ap == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.Ap == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have Ap initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.r == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.r == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have r initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.z == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.z == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have z initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.U == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.U == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have U initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.AU == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.AU == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have AU initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.Alpha == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.Alpha == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have Alpha initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.Beta == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.Beta == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have Beta initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.D == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.D == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have D initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.Delta == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.Delta == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have Delta initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.LUUTAU == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.LUUTAU == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have LUUTAU initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.ipiv == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.ipiv == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have ipiv initialized.");
 
-      TEST_FOR_EXCEPTION(newstate.rTz_old == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.rTz_old == Teuchos::null,std::invalid_argument,
                          "Belos::RCGIter::initialize(): RCGIterState does not have rTz_old initialized.");
 
     }
@@ -539,7 +539,7 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void RCGIter<ScalarType,MV,OP>::iterate()
   {
-    TEST_FOR_EXCEPTION( initialized_ == false, RCGIterFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( initialized_ == false, RCGIterFailure,
                         "Belos::RCGIter::iterate(): RCGIter class not initialized." );
     
     // We'll need LAPACK
@@ -557,7 +557,7 @@ namespace Belos {
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
  
     // Check that the current solution std::vector only has one column.
-    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, RCGIterFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, RCGIterFailure,
                         "Belos::RCGIter::iterate(): current linear system has more than one std::vector!" );
     
     // Compute the current search dimension. 
@@ -589,7 +589,7 @@ namespace Belos {
       (*Alpha_)(i_,0) = (*rTz_old_)(0,0) / pAp(0,0);
 
       // Check that alpha is a positive number
-      TEST_FOR_EXCEPTION( SCT::real(pAp(0,0)) <= zero, RCGIterFailure, "Belos::RCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(pAp(0,0)) <= zero, RCGIterFailure, "Belos::RCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
       // x = x + (alpha * p);
       MVT::MvAddMv( one, *cur_soln_vec, (*Alpha_)(i_,0), *p_, *cur_soln_vec );
@@ -630,7 +630,7 @@ namespace Belos {
         char TRANS = 'N';
         int info;
         lapack.GETRS( TRANS, recycleBlocks_, 1, LUUTAU_->values(), LUUTAU_->stride(), &(*ipiv_)[0], mu.values(), mu.stride(), &info );
-        TEST_FOR_EXCEPTION(info != 0, RCGIterLAPACKFailure,
+        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, RCGIterLAPACKFailure,
                            "Belos::RCGIter::solve(): LAPACK GETRS failed to compute a solution.");
         // p = -(U*mu) + (beta*p) + z (in two steps)
         // p = (beta*p) + z;

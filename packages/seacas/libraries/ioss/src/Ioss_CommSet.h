@@ -43,7 +43,7 @@ namespace Ioss {
 
   class CommSet : public GroupingEntity {
   public:
-    CommSet(const DatabaseIO *io_database, const std::string& name,
+    CommSet(DatabaseIO *io_database, const std::string& name,
 	    const std::string& entity_type, size_t entity_count);
 
     std::string type_string() const {return "CommSet";}

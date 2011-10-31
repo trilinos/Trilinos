@@ -111,6 +111,9 @@ namespace Epetra {
     //! Get SG method
     SG_METHOD getSGMethod() const { return sg_method; }
 
+    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > 
+    getExpansion() const { return expansion; }
+
     //@}
     
   private:

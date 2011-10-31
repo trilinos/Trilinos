@@ -30,6 +30,8 @@
 #define __TSQR_TBB_TbbParallelTsqr_hpp
 
 #include <tbb/tbb.h>
+#include <tbb/task_scheduler_init.h>
+
 #include <TbbTsqr_FactorTask.hpp>
 #include <TbbTsqr_ApplyTask.hpp>
 #include <TbbTsqr_ExplicitQTask.hpp>
@@ -44,8 +46,6 @@
 #include <algorithm>
 #include <limits>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace TBB {
@@ -85,7 +85,7 @@ namespace TSQR {
 	  return seq_.top_block (C, contiguous_cache_blocks);
 	else
 	  {
-	    typedef std::pair< MatrixViewType, MatrixViewType > split_type;
+	    typedef std::pair<MatrixViewType, MatrixViewType> split_type;
 
 	    // Divide [P_first, P_last] into two intervals: [P_first,
 	    // P_mid] and [P_mid+1, P_last].  Recurse on the first
@@ -125,11 +125,13 @@ namespace TSQR {
       /// \typedef SeqOutput
       /// \brief Results of SequentialTsqr for each core.
       typedef typename SequentialTsqr<LocalOrdinal, Scalar>::FactorOutput SeqOutput;
+
       /// \typedef ParOutput
-      /// \brief Array of ncores "local tau arrays" from parallel TSQR.
+      /// \brief Array of numTasks_ "local tau arrays" from parallel TSQR.
       ///
       /// (Local Q factors are stored in place.)
       typedef std::vector<std::vector<Scalar> > ParOutput;
+
       /// \typedef FactorOutput
       /// \brief Partial representation of the Q factor.
       ///
@@ -138,14 +140,14 @@ namespace TSQR {
       /// combining the data on the cores.
       typedef typename std::pair<std::vector<SeqOutput>, ParOutput> FactorOutput;
 
-      /// \brief Constructor
+      /// \brief Constructor.
       /// 
-      /// \param numCores [in] Number of parallel cores to use in the
-      ///   factorization.  This should be <= the number of cores with 
+      /// \param numTasks [in] Number of parallel tasks to use in the
+      ///   factorization.  This should be >= the number of cores with 
       ///   which Intel TBB was initialized.
       /// \param cacheSizeHint [in] Cache size hint in bytes.  Zero 
       ///   means that TSQR will pick a reasonable nonzero default.
-      TbbParallelTsqr (const size_t numCores = 1,
+      TbbParallelTsqr (const size_t numTasks = 1,
 		       const size_t cacheSizeHint = 0) :
 	seq_ (cacheSizeHint),
 	min_seq_factor_timing_ (std::numeric_limits<double>::max()),
@@ -153,17 +155,104 @@ namespace TSQR {
 	min_seq_apply_timing_ (std::numeric_limits<double>::max()),
 	max_seq_apply_timing_ (std::numeric_limits<double>::min())
       {
-	if (numCores < 1)
-	  ncores_ = 1; // default is no parallelism
+	if (numTasks < 1)
+	  numTasks_ = 1; // default is no parallelism
 	else
-	  ncores_ = numCores;
+	  numTasks_ = numTasks;
       }
-      
-      /// \brief Number of cores that TSQR will use to solve the problem.
+
+      /// \brief Constructor (that takes a parameter list).
+      ///
+      /// \param plist [in/out] On input: list of parameters.  On
+      ///   output: missing parameters are filled in with default
+      ///   values.
+      ///
+      /// For a list of accepted parameters and thei documentation,
+      /// see the parameter list returned by \c getValidParameters().
+      TbbParallelTsqr (const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+	seq_ (plist), // SequentialTsqr has a plist-accepting constructor.
+	numTasks_ (1),  // Set a safe default for now.
+	min_seq_factor_timing_ (std::numeric_limits<double>::max()),
+	max_seq_factor_timing_ (std::numeric_limits<double>::min()),
+	min_seq_apply_timing_ (std::numeric_limits<double>::max()),
+	max_seq_apply_timing_ (std::numeric_limits<double>::min())
+      {
+	if (! plist.is_null()) {
+	  const int defaultNumTasks = 1; // A reasonable safe default value.
+	  int numTasks = plist->get ("Num Tasks", defaultNumTasks);
+	  if (numTasks < 1) { // Default is no parallelism.
+	    plist->set ("Num Tasks", defaultNumTasks);
+	  }
+	  numTasks_ = numTasks;
+	}
+      }
+
+      Teuchos::RCP<const Teuchos::ParameterList>
+      getValidParameters () const
+      {
+	using Teuchos::ParameterList;
+	using Teuchos::parameterList;
+	using Teuchos::RCP;
+
+	// TbbTsqr recursively divides the tall skinny matrix on the
+	// node into TBB tasks.  Each task works on a block row.  The
+	// TBB task scheduler ensures that oversubscribing TBB tasks
+	// won't oversubscribe cores, so it's OK if
+	// default_num_threads() is too many.  For example, TBB might
+	// say default_num_threads() is the number of cores on the
+	// node, but the TBB task scheduler might have been
+	// initialized with the number of cores per NUMA region, for
+	// hybrid MPI + TBB parallelism.
+	const int numTasks = 
+	  tbb::task_scheduler_init::default_num_threads();
+	const size_t cacheSizeHint = 0;
+	const size_t sizeOfScalar = sizeof(Scalar);
+
+	RCP<ParameterList> params = parameterList ("NodeTsqr");
+	params->set ("Num Tasks", numTasks, 
+		     "Number of tasks to use in the intranode parallel part "
+		     "TSQR.  There is little/no performance penalty for mild "
+		     "oversubscription, but a potential performance penalty "
+		     "for undersubscription.");
+	params->set ("Cache Size Hint", cacheSizeHint, 
+		    "Cache size hint in bytes (as a size_t) to use for "
+		    "intranode TSQR.  If zero, TSQR will pick a reasonable "
+		    "default.  See the documentation of SequentialTsqr for "
+		     "a discussion of how to tune this parameter.");
+	params->set ("Size of Scalar", sizeOfScalar);
+
+	return params;
+      }
+
+      void 
+      setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+      {
+	seq_.setParameterList (plist);
+
+	if (! plist.is_null()) {
+	  const int defaultNumCores = 1; // A reasonable safe default value.
+	  int numTasks = plist->get ("Num Tasks", defaultNumCores);
+	  if (numTasks < 1) { // Default is no parallelism.
+	    plist->set ("Num Tasks", defaultNumCores);
+	  }
+	  numTasks_ = numTasks;
+	}
+      }
+
+      /// \brief Number of tasks that TSQR will use to solve the problem.
       /// 
-      /// That is, the number of subproblems into which to divide the
-      /// main problem, to solve it in parallel.
-      size_t ncores() const { return ncores_; }
+      /// This is the number of subproblems into which to divide the
+      /// main problem, in order to solve it in parallel.  
+      size_t ntasks() const { return numTasks_; }
+
+      /// \brief Number of tasks that TSQR will use to solve the problem.
+      /// 
+      /// This is the number of subproblems into which to divide the
+      /// main problem, in order to solve it in parallel.  
+      ///
+      /// This method is deprecated, because the name is misleading.
+      /// Please call \c ntasks() instead.
+      size_t TEUCHOS_DEPRECATED ncores() const { return numTasks_; }
 
       /// \brief Cache size hint (in bytes) used for the factorization.
       ///
@@ -210,9 +299,9 @@ namespace TSQR {
 	// factor after finishing the factorization.
 	mat_view A_top;
 
-	std::vector<SeqOutput> seq_output (ncores());
-	ParOutput par_output (ncores(), std::vector<Scalar>(ncols));
-	if (ncores() < 1)
+	std::vector<SeqOutput> seq_output (ntasks());
+	ParOutput par_output (ntasks(), std::vector<Scalar>(ncols));
+	if (ntasks() < 1)
 	  {
 	    if (! A_view.empty())
 	      throw std::logic_error("Zero subproblems, but A not empty!");
@@ -230,7 +319,7 @@ namespace TSQR {
 	  // topmost partition of A.  We can then extract the R factor
 	  // from A_top.
 	  factor_task_t& root_task = *new( task::allocate_root() ) 
-	    factor_task_t(0, ncores()-1, A_view, &A_top, seq_output, 
+	    factor_task_t(0, ntasks()-1, A_view, &A_top, seq_output, 
 			  par_output, seq_, my_seq_timing, min_seq_timing,
 			  max_seq_timing, contiguous_cache_blocks);
 	  task::spawn_root_and_wait (root_task);
@@ -284,8 +373,8 @@ namespace TSQR {
 	mat_view C_view (nrows, ncols_C, C, ldc);
 	if (! apply_type.transposed())
 	  {
-	    array_top_blocks_t top_blocks (ncores());
-	    build_partition_array (0, ncores()-1, top_blocks, Q_view, 
+	    array_top_blocks_t top_blocks (ntasks());
+	    build_partition_array (0, ntasks()-1, top_blocks, Q_view, 
 				   C_view, contiguous_cache_blocks);
 	    double my_seq_timing = 0.0;
 	    double min_seq_timing = 0.0;
@@ -294,7 +383,7 @@ namespace TSQR {
 	      typedef ApplyTask<LocalOrdinal, Scalar, TimerType> apply_task_t;
 	      apply_task_t& root_task = 
 		*new( task::allocate_root() )
-		apply_task_t (0, ncores()-1, Q_view, C_view, top_blocks,
+		apply_task_t (0, ntasks()-1, Q_view, C_view, top_blocks,
 			      factor_output, seq_, my_seq_timing, 
 			      min_seq_timing, max_seq_timing,
 			      contiguous_cache_blocks);
@@ -335,7 +424,7 @@ namespace TSQR {
 	try {
 	  typedef ExplicitQTask< LocalOrdinal, Scalar > explicit_Q_task_t;	  
 	  explicit_Q_task_t& root_task = *new( task::allocate_root() )
-	    explicit_Q_task_t (0, ncores()-1, Q_out_view, seq_, 
+	    explicit_Q_task_t (0, ntasks()-1, Q_out_view, seq_, 
 			       contiguous_cache_blocks);
 	  task::spawn_root_and_wait (root_task);
 	} catch (tbb::captured_exception& ex) {
@@ -378,7 +467,7 @@ namespace TSQR {
 	  const_mat_view B_view (ncols, ncols, B, ldb);
 
 	  rrtask_type& root_task = *new( task::allocate_root() )
-	    rrtask_type (0, ncores()-1, Q_view, B_view, seq_, 
+	    rrtask_type (0, ntasks()-1, Q_view, B_view, seq_, 
 			 contiguous_cache_blocks);
 	  task::spawn_root_and_wait (root_task);
 	} catch (tbb::captured_exception& ex) {
@@ -468,7 +557,7 @@ namespace TSQR {
 	try {
 	  typedef CacheBlockTask< LocalOrdinal, Scalar > cache_block_task_t;
 	  cache_block_task_t& root_task = *new( task::allocate_root() )
-	    cache_block_task_t (0, ncores()-1, A_out_view, A_in_view, seq_);
+	    cache_block_task_t (0, ntasks()-1, A_out_view, A_in_view, seq_);
 	  task::spawn_root_and_wait (root_task);
 	} catch (tbb::captured_exception& ex) {
 	  std::ostringstream os;
@@ -497,7 +586,7 @@ namespace TSQR {
 	try {
 	  typedef UnCacheBlockTask< LocalOrdinal, Scalar > un_cache_block_task_t;
 	  un_cache_block_task_t& root_task = *new( task::allocate_root() )
-	    un_cache_block_task_t (0, ncores()-1, A_out_view, A_in_view, seq_);
+	    un_cache_block_task_t (0, ntasks()-1, A_out_view, A_in_view, seq_);
 	  task::spawn_root_and_wait (root_task);
 	} catch (tbb::captured_exception& ex) {
 	  std::ostringstream os;
@@ -514,7 +603,7 @@ namespace TSQR {
       top_block (const MatrixViewType& C, 
 		 const bool contiguous_cache_blocks = false) const
       {
-	return top_block_helper (0, ncores()-1, C, contiguous_cache_blocks);
+	return top_block_helper (0, ntasks()-1, C, contiguous_cache_blocks);
       }
 
       void
@@ -530,7 +619,7 @@ namespace TSQR {
 	try {
 	  typedef FillWithZerosTask< LocalOrdinal, Scalar > fill_task_t;
 	  fill_task_t& root_task = *new( task::allocate_root() )
-	    fill_task_t (0, ncores()-1, C_view, seq_, contiguous_cache_blocks);
+	    fill_task_t (0, ntasks()-1, C_view, seq_, contiguous_cache_blocks);
 	  task::spawn_root_and_wait (root_task);
 	} catch (tbb::captured_exception& ex) {
 	  std::ostringstream os;
@@ -543,7 +632,7 @@ namespace TSQR {
       }
 
     private:
-      size_t ncores_;
+      size_t numTasks_;
       TSQR::SequentialTsqr<LocalOrdinal, Scalar> seq_;
       TSQR::Combine<LocalOrdinal, Scalar> combine_;
       Partitioner<LocalOrdinal, Scalar> partitioner_;

@@ -42,7 +42,7 @@ namespace Ioss {
 
   class NodeBlock : public EntityBlock {
   public:
-    NodeBlock(const DatabaseIO *io_database,
+    NodeBlock(DatabaseIO *io_database,
 	      const std::string& name,
 	      size_t node_count,
 	      size_t degrees_of_freedom);

@@ -187,6 +187,7 @@ APPEND_SET(HEADERS
   Utils/ml_amesos_wrap.h
   Utils/ml_ifpack.h
   Utils/ml_ifpack_wrap.h
+  Utils/ml_ifpack_epetra_wrap.h
   Utils/ml_self.h
   Utils/ml_self_wrap.h
   Utils/ml_epetra_preconditioner.h
@@ -264,6 +265,7 @@ APPEND_SET(SOURCES
   Utils/ml_amesos_wrap.cpp
   Utils/ml_ifpack.c
   Utils/ml_ifpack_wrap.cpp
+  Utils/ml_ifpack_epetra_wrap.cpp
   Utils/ml_self.c
   Utils/ml_self_wrap.cpp
   Utils/ml_MultiLevelPreconditioner.cpp

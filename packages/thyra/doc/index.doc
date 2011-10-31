@@ -66,19 +66,6 @@ The documentation for %Thyra is broken up into a number of different doxygen
 collections as described in the next section.
 
 
-\section thyra_software_sec Thyra Software Package Documentation Collections
-
-The Doxygen-generated documentation is broken up into a number of different
-doxygen collections in an attempt to make each individual collection more
-manageable to browse and comprehend.  To access each separate collection, just
-click on the [doxygen collection] next to each header below.
-
-The thrya package is broadly divided into interoperability interfaces and
-support software and the directory structure and the doxygen documentation is
-also divided in this way.  This organization mirrors the <a
-href="../../browser/doc/html/dirs.html">directory structure of thyra</a>.
-
-
 \subsection thyra_interfaces_sec Thyra interoperability interfaces
 
 Module: \ref Thyra_interfaces_grp
@@ -530,11 +517,11 @@ software is performed using the built-in C++ exception handling mechanisms
 (i.e. <tt>try</tt>, <tt>throw</tt> and <tt>catch</tt>) and all thrown
 exceptions should inherit from the standard base class
 <tt>std::exception</tt>.  All exceptions in %Thyra software are thrown using
-the macros <tt>TEST_FOR_EXCEPTION()</tt> or <tt>TEST_FOR_EXCEPT()</tt>.  By
+the macros <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> or <tt>TEUCHOS_TEST_FOR_EXCEPT()</tt>.  By
 consistently using these macros it is easy to set a breakpoint in a debugger
 just before an exception is thrown by setting a breakpoint on the function
-<tt>TestForException_break()</tt> (e.g. by typing <tt>break
-TestForException_break</tt> in gdb).  If Trilinos is configured with
+<tt>Teuchos::TestForException_break()</tt> (e.g. by typing <tt>break
+Teuchos::TestForException_break</tt> in gdb).  If Trilinos is configured with
 <tt>Trilinos_ENABLE_DEBUG=ON</tt> then a lot of runtime error checking is
 performed in %Thyra support software, as well as in many other software
 packages.  Whenever development work is being performed this option should

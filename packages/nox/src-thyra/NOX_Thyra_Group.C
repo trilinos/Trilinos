@@ -39,11 +39,18 @@
 // ************************************************************************
 //@HEADER
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_Ptr.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_LinearOpBase.hpp"
+#include "Thyra_LinearOpWithSolveBase.hpp"
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_PreconditionerBase.hpp"
+#include "Thyra_PreconditionerFactoryBase.hpp"
 #include "NOX_Common.H"
 #include "NOX_Thyra_Group.H"	// class definition
 #include "NOX_Abstract_MultiVector.H"
@@ -60,8 +67,23 @@ Group(const NOX::Thyra::Vector& initial_guess,
   gradient_vec_ = 
     Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, ShapeCopy));
   
-  shared_jacobian_ = Teuchos::rcp(new NOX::SharedObject< ::Thyra::LinearOpWithSolveBase<double>, NOX::Thyra::Group >(model->create_W()));
+  // create jacobian operator
+  lows_factory_ = model->get_W_factory();
 
+  lop_ = model->create_W_op();
+
+  // Create jacobian with solver
+  shared_jacobian_ = Teuchos::rcp(new NOX::SharedObject< ::Thyra::LinearOpWithSolveBase<double>, NOX::Thyra::Group >(lows_factory_->createOp()));
+
+  losb_ = Teuchos::rcp(new ::Thyra::DefaultLinearOpSource<double>(lop_));
+
+  // create preconditioner
+  prec_factory_ = lows_factory_->getPreconditionerFactory();
+  
+  if (Teuchos::nonnull(prec_factory_))
+    prec_ = prec_factory_->createPrec();
+
+  // Create in/out args
   in_args_ = model_->createInArgs();
   out_args_ = model_->createOutArgs();
 
@@ -70,7 +92,12 @@ Group(const NOX::Thyra::Vector& initial_guess,
 
 NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   model_(source.model_),
-  shared_jacobian_(source.shared_jacobian_)
+  shared_jacobian_(source.shared_jacobian_),
+  lows_factory_(source.lows_factory_),
+  lop_(source.lop_),
+  losb_(source.losb_),
+  prec_factory_(source.prec_factory_),
+  prec_(source.prec_)
 {
 
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.x_vec_, type));
@@ -83,11 +110,14 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   in_args_ = model_->createInArgs();
   out_args_ = model_->createOutArgs();
   
+  
+
   if (type == NOX::DeepCopy) {
     is_valid_f_ = source.is_valid_f_;
     is_valid_jacobian_ = source.is_valid_jacobian_;
     is_valid_newton_dir_ = source.is_valid_newton_dir_;
     is_valid_gradient_dir_ = source.is_valid_gradient_dir_;
+    is_valid_lows_ = source.is_valid_lows_;
 
     // New copy takes ownership of the shared Jacobian for DeepCopy
     if (this->isJacobian())
@@ -97,7 +127,7 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
     resetIsValidFlags();
   }
   else {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "NOX Error - Copy type is invalid!");
   }
   
@@ -113,6 +143,7 @@ void NOX::Thyra::Group::resetIsValidFlags()
   is_valid_jacobian_ = false;
   is_valid_newton_dir_ = false;
   is_valid_gradient_dir_ = false;
+  is_valid_lows_ = false;
 }
 
 Teuchos::RCP<NOX::Abstract::Group> NOX::Thyra::Group::
@@ -138,12 +169,18 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
   is_valid_jacobian_ = source.is_valid_jacobian_;
   is_valid_newton_dir_ = source.is_valid_newton_dir_;
   is_valid_gradient_dir_ = source.is_valid_gradient_dir_;
+  is_valid_lows_ = source.is_valid_lows_;
 
   if (this->isF())
     *f_vec_ = *(source.f_vec_);
 
   // Jacobian is shared, always assign shared object
   shared_jacobian_ = source.shared_jacobian_;
+  lows_factory_ = source.lows_factory_;
+  lop_ = source.lop_;
+  losb_ = source.losb_;
+  prec_factory_ = source.prec_factory_;
+  prec_ = source.prec_;
 
   if (this->isNewton())
     *newton_vec_ = *(source.newton_vec_);
@@ -168,9 +205,25 @@ NOX::Thyra::Group::get_current_x() const
 }
 
 
+Teuchos::RCP< ::Thyra::LinearOpBase<double> >
+NOX::Thyra::Group::getNonconstJacobianOperator()
+{
+  shared_jacobian_->getObject(this);
+  return lop_;
+}
+
+
+Teuchos::RCP<const ::Thyra::LinearOpBase<double> >
+NOX::Thyra::Group::getJacobianOperator() const
+{
+  return lop_;
+}
+
+
 Teuchos::RCP< ::Thyra::LinearOpWithSolveBase<double> >
 NOX::Thyra::Group::getNonconstJacobian()
 {
+  this->updateLOWS();
   return shared_jacobian_->getObject(this);
 }
 
@@ -178,6 +231,7 @@ NOX::Thyra::Group::getNonconstJacobian()
 Teuchos::RCP<const ::Thyra::LinearOpWithSolveBase<double> >
 NOX::Thyra::Group::getJacobian() const
 {
+  this->updateLOWS();
   return shared_jacobian_->getObject();
 }
 
@@ -241,11 +295,13 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeJacobian()
   if (this->isJacobian())
     return NOX::Abstract::Group::Ok;
 
+  shared_jacobian_->getObject(this);
+
   in_args_.set_x(x_vec_->getThyraRCPVector());
-  out_args_.set_W(shared_jacobian_->getObject(this));
+  out_args_.set_W_op(lop_);
   model_->evalModel(in_args_, out_args_);
   in_args_.set_x(Teuchos::null);
-  out_args_.set_W(Teuchos::null);
+  out_args_.set_W_op(Teuchos::null);
 
   is_valid_jacobian_ = true;
 
@@ -258,7 +314,7 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeJacobian()
 NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeGradient() 
 {
   if ( ::Thyra::opSupported(*shared_jacobian_->getObject(), ::Thyra::TRANS) ) {
-    TEST_FOR_EXCEPTION(true,  std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true,  std::logic_error, 
 		       "NOX Error - compute gradient not implemented yet!");
     return NOX::Abstract::Group::Ok;
   }
@@ -289,13 +345,14 @@ NOX::Abstract::Group::ReturnType
 NOX::Thyra::Group::applyJacobian(const Vector& input, Vector& result) const
 {
   if ( !(this->isJacobian()) ) {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "NOX Error - Jacobian is not valid.  " <<
 		       "Call computeJacobian before calling applyJacobian!");
   }
   
-  ::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::NOTRANS,
-		 input.getThyraVector(), &result.getThyraVector());
+  //::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::NOTRANS,
+  ::Thyra::apply(*lop_, ::Thyra::NOTRANS,
+		 input.getThyraVector(), result.getThyraRCPVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -306,7 +363,7 @@ NOX::Thyra::Group::applyJacobianMultiVector(
 				 NOX::Abstract::MultiVector& result) const
 {
   if ( !(this->isJacobian()) ) {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "NOX Error - Jacobian is not valid.  " <<
 		       "Call computeJacobian before calling applyJacobian!");
   }
@@ -316,10 +373,10 @@ NOX::Thyra::Group::applyJacobianMultiVector(
   NOX::Thyra::MultiVector& nt_result = 
     Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
 
-  ::Thyra::apply(*shared_jacobian_->getObject(), 
+  ::Thyra::apply(*lop_, 
 		 ::Thyra::NOTRANS,
 		 *nt_input.getThyraMultiVector(), 
-		 nt_result.getThyraMultiVector().get());
+		 nt_result.getThyraMultiVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -338,14 +395,14 @@ NOX::Thyra::Group::applyJacobianTranspose(const NOX::Thyra::Vector& input,
 					  NOX::Thyra::Vector& result) const
 {
   if ( !(this->isJacobian()) ) {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "NOX Error - Jacobian is not valid.  " <<
 		       "Call computeJacobian before calling applyJacobian!");
   }
 
-  if ( ::Thyra::opSupported(*shared_jacobian_->getObject(), ::Thyra::TRANS) ) {
+  if ( ::Thyra::opSupported(*lop_, ::Thyra::TRANS) ) {
     ::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::TRANS,
-		   input.getThyraVector(), &result.getThyraVector());
+		   input.getThyraVector(), result.getThyraRCPVector().ptr());
     return NOX::Abstract::Group::Ok;
   }
   return NOX::Abstract::Group::Failed;
@@ -357,7 +414,7 @@ NOX::Thyra::Group::applyJacobianTransposeMultiVector(
 				 NOX::Abstract::MultiVector& result) const
 {
   if ( !(this->isJacobian()) ) {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 		       "NOX Error - Jacobian is not valid.  " <<
 		       "Call computeJacobian before calling applyJacobian!");
   }
@@ -370,10 +427,10 @@ NOX::Thyra::Group::applyJacobianTransposeMultiVector(
   NOX::Thyra::MultiVector& nt_result = 
     Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
 
-  ::Thyra::apply(*shared_jacobian_->getObject(), 
+  ::Thyra::apply(*lop_, 
 		 ::Thyra::TRANS,
 		 *nt_input.getThyraMultiVector(), 
-		 nt_result.getThyraMultiVector().get());
+		 nt_result.getThyraMultiVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -487,7 +544,7 @@ Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getGradientPtr() 
 
 void NOX::Thyra::Group::print() const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 // protected
@@ -496,6 +553,9 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 				const ::Thyra::MultiVectorBase<double>& input, 
 				::Thyra::MultiVectorBase<double>& result) const
 {
+  this->updateLOWS();
+
+  // Create solve criteria
   ::Thyra::SolveCriteria<double> solveCriteria;
   solveCriteria.requestedTol = p.get("Tolerance", 1.0e-6);
 
@@ -508,13 +568,14 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 			      getThyraNormType(denom_measure));
 
   // Initialize result to zero to remove possible NaNs
-  ::Thyra::assign(&result, 0.0);
+  ::Thyra::assign(Teuchos::ptrFromRef(result), 0.0);
 
   const ::Thyra::SolveStatus<double> solve_status = 
     ::Thyra::solve(*shared_jacobian_->getObject(), 
-		   ::Thyra::NOTRANS, input, &result, 
-		   &solveCriteria);
-  
+		   ::Thyra::NOTRANS, input, 
+		   Teuchos::ptrFromRef(result), 
+		   Teuchos::constPtr(solveCriteria));
+
   // ToDo: Get the output statistics and achieved tolerance to pass
   // back ...
   
@@ -540,8 +601,31 @@ NOX::Thyra::Group::getThyraNormType(const string& name) const
   else if (name == "Norm RHS")
     return ::Thyra::SOLVE_MEASURE_NORM_RHS;
   else {
-    TEST_FOR_EXCEPTION(true,  std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true,  std::logic_error, 
 		       "NOX Error - unknown solve measure " << name);
     return ::Thyra::SOLVE_MEASURE_ONE;
   }
+}
+
+void NOX::Thyra::Group::updateLOWS() const
+{ 
+  if (is_valid_lows_)
+    return;
+
+  if (Teuchos::nonnull(prec_factory_)) {
+    prec_factory_->initializePrec(losb_, prec_.get());
+    
+    ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
+						lop_,
+						prec_,
+						shared_jacobian_->getObject(this).ptr());
+  }
+  else {
+    ::Thyra::initializeOp<double>(*lows_factory_,
+				  lop_,
+				  shared_jacobian_->getObject(this).ptr());
+
+  }
+
+  is_valid_lows_ = true;
 }

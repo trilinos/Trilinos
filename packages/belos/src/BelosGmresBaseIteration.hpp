@@ -100,22 +100,9 @@ namespace Belos {
       // iterations allowed (for storage of the basis vectors).  The
       // status test will also perform intermediate output via the
       // OutputManager object.
-      //
-      // FIXME (mfh 14 Jan 2011): The owning solver manager object
-      // really should set up this Iteration so that the status test
-      // doesn't allow the GmresBase subclass to advance beyond its
-      // capacity to advance.  For example, the status test should set
-      // the maximum number of iterations no bigger than the amount of
-      // vector storage that the GmresBase subclass allocates.  Thus,
-      // the additional "status test" should be unnecessary.
-      while (stest_->checkStatus(this) != Passed)
-	{ 
-	  if (! impl_->canAdvance())
-	    throw std::logic_error("Attempt to advance iteration when it is "
-				   "no longer possible to advance!");
-	  impl_->advance();
-	}
-      
+      while (stest_->checkStatus(this) != Passed && impl_->canAdvance()) {
+	impl_->advance();
+      }
     }
 
     /// Initialize the solver
@@ -149,7 +136,7 @@ namespace Belos {
     /// it promises more than the Iteration interface, which reserves
     /// the right to invalidate all iteration state (???).
     void resetNumIters (int iter = 0) { 
-      TEST_FOR_EXCEPTION(iter < 0, std::invalid_argument, "Belos::GmresBaseIter"
+      TEUCHOS_TEST_FOR_EXCEPTION(iter < 0, std::invalid_argument, "Belos::GmresBaseIter"
 			 "ation::resetNumIters: iter = " << iter << " is "
 			 "invalid; only nonnegative values are allowed.");
       impl_->backOut (iter); 
@@ -157,7 +144,7 @@ namespace Belos {
 
     //! Restart GMRES.
     void restart () { 
-      TEST_FOR_EXCEPTION(impl_.is_null(), std::logic_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(impl_.is_null(), std::logic_error, 
 			 "Belos::GmresBaseIteration::restart(): GmresBase "
 			 "subclass instance is null.");
       impl_->restart ();
@@ -200,7 +187,7 @@ namespace Belos {
 	{
 	  // This should always be 1
 	  const int blockSize = getBlockSize();
-	  TEST_FOR_EXCEPTION(blockSize != 1, std::logic_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(blockSize != 1, std::logic_error,
 			     "This implementation of Arnoldi/GMRES only "
 			     "supports a block size of 1, but the current "
 			     "block size is " << blockSize << ".");
@@ -246,7 +233,7 @@ namespace Belos {
     /// an" Iteration, because it does not support arbitrary block
     /// sizes.)
     void setBlockSize (int blockSize) {
-      TEST_FOR_EXCEPTION(blockSize != 1, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(blockSize != 1, std::invalid_argument,
 			 "Belos::GmresBaseIteration::setBlockSize: blockSize = " 
 			 << blockSize << " is invalid; only blockSize = 1 is "
 			 "allowed for this iteration.");
@@ -365,14 +352,14 @@ namespace Belos {
   validatedProblem (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem)
   {
     const char prefix[] = "Belos::GmresBaseIteration constructor: ";
-    TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
 		       prefix << "The linear problem (Belos::LinearProblem "
 		       "instance) that you want me to solve is null.");
     if (! problem->isProblemSet())
       {
 	const bool notInitialized = problem->getOperator().is_null() || 
 	  problem->getRHS().is_null() || problem->getLHS().is_null();
-	TEST_FOR_EXCEPTION(notInitialized, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(notInitialized, std::invalid_argument,
 			   prefix << "The given linear problem (Belos::Linear"
 			   "Problem) instance is not fully initialized: "
 			   << (problem->getOperator().is_null() ? "the operator A is null; " : "")
@@ -381,7 +368,7 @@ namespace Belos {
 			   << ".");
 	if (! problem->isProblemSet())
 	  problem->setProblem();
-	TEST_FOR_EXCEPTION(! problem->isProblemSet(), std::logic_error,
+	TEUCHOS_TEST_FOR_EXCEPTION(! problem->isProblemSet(), std::logic_error,
 			   prefix << "Although the given LinearProblem instance "
 			   "has non-null operator (matrix A), right-hand side B,"
 			   " and initial guess X, and although its setProblem() "

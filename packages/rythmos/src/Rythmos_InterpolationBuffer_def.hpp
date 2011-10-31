@@ -131,7 +131,7 @@ template<class Scalar>
 void InterpolationBuffer<Scalar>::setStorage( int storage )
 {
   int storage_limit = std::max(2,storage); // Minimum of two points so interpolation is possible
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     Teuchos::as<int>(data_vec_->size()) > storage_limit,
     std::logic_error,
     "Error, specified storage = " << storage_limit
@@ -200,34 +200,34 @@ void InterpolationBuffer<Scalar>::addPoints(
   ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec 
   )
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   // Check preconditions
   assertTimePointsAreSorted(time_vec);
   int tsize = Teuchos::as<int>(time_vec.size());
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     tsize == 0, std::logic_error,
     "Error, time_vec is empty!"
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     Teuchos::as<int>(x_vec.size()) != tsize, std::logic_error,
     "Error, size of x_vec = " << x_vec.size() << " != " << tsize << " = size of time_vec!\n"
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     Teuchos::as<int>(xdot_vec.size()) != tsize, std::logic_error,
     "Error, size of xdot_vec = " << x_vec.size() << " != " << tsize << " = size of time_vec!\n"
     );
   for (int i=0; i<tsize ; ++i) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       x_vec[i] == Teuchos::null, std::logic_error,
       "Error, x_vec[" << i << "] == null!\n"
       );
-//    TEST_FOR_EXCEPTION(
+//    TEUCHOS_TEST_FOR_EXCEPTION(
 //      xdot_vec[i] == Teuchos::null, std::logic_error,
 //      "Error, xdot_vec[" << i << "] == null!\n"
 //      );
   }
   assertNoTimePointsInsideCurrentTimeRange(*this,time_vec);
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::addPoints");
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
@@ -253,7 +253,7 @@ void InterpolationBuffer<Scalar>::addPoints(
   // Check that we're not going to exceed our storage limit:
   if (Teuchos::as<int>(data_vec_->size()+input_data_list.size()) > storage_limit_) { 
     if (policy_ == BUFFER_POLICY_STATIC) {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error,
         "Error, buffer would be over-full and buffer policy is BUFFER_POLICY_STATIC, these points can not be added\n"
         );
@@ -262,11 +262,11 @@ void InterpolationBuffer<Scalar>::addPoints(
         // Case:  all of new points are past end of existing points
         // Remove points from the beginning of data_vec, then add new points
         int num_extra_points = input_data_list.size()-(storage_limit_-data_vec_->size());
-#ifdef RYTHMOS_DEBUG
-        TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error, 
+#ifdef HAVE_RYTHMOS_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error, 
             "Error!  Buffer policy is keep newest and input data size = " << input_data_list.size() << ", storage limit  = " << storage_limit_ << ", and data_vec size = " << data_vec_->size() << ".  Somehow number of points to delete = " << num_extra_points << " <= 0!"
             );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
         typename DataStore<Scalar>::DataStoreVector_t::iterator 
           data_it = data_vec_->begin();
         for (int i=0 ; i < num_extra_points ; ++i) {
@@ -281,11 +281,11 @@ void InterpolationBuffer<Scalar>::addPoints(
         // Case:  all of new points are before beginning of existing points
         // Remove points from end of data_vec, then add new points
         int num_extra_points = input_data_list.size()-(storage_limit_-data_vec_->size());
-#ifdef RYTHMOS_DEBUG
-        TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error, 
+#ifdef HAVE_RYTHMOS_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error, 
             "Error!  Buffer policy is keep newest and input data size = " << input_data_list.size() << ", storage limit  = " << storage_limit_ << ", and data_vec size = " << data_vec_->size() << ".  Somehow number of points to delete = " << num_extra_points << " <= 0!"
             );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
         typename DataStore<Scalar>::DataStoreVector_t::iterator 
           data_it = data_vec_->end();
         for (int i=0 ; i < num_extra_points ; ++i) {
@@ -298,14 +298,14 @@ void InterpolationBuffer<Scalar>::addPoints(
         data_vec_->erase(data_it,data_vec_->end());
       } else {
         // Case:  Some points are before beginning of data_vec and some points are after end of data_vec
-        TEST_FOR_EXCEPTION(
+        TEUCHOS_TEST_FOR_EXCEPTION(
           true, std::logic_error,
           "Error, incoming points are on both sides of TimeRange, I don't know which points are newest in this case.\n"
           );
       }
     } else {
       // Unknown Buffer policy:
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error,
         "Error, unknown buffer policy.\n"
         );
@@ -346,7 +346,7 @@ void InterpolationBuffer<Scalar>::getPoints(
   interpolate<Scalar>(*interpolator_, data_vec_, time_vec, &data_out);
   Array<Scalar> time_out_vec;
   dataStoreVectorToVector<Scalar>(data_out, &time_out_vec, x_vec, xdot_vec, accuracy_vec);
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     (time_vec.size() != time_out_vec.size()), std::logic_error,
     "Error, number of time points returned from interpolator = " <<
     time_out_vec.size() << " != " << time_vec.size() << 
@@ -394,11 +394,11 @@ void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   int N = time_vec.size();
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   // Check preconditions:
   TimeRange<Scalar> range = this->getTimeRange();
   for (int i=0; i<N ; ++i) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       ~(range.lower() <= time_vec[i]) && (time_vec[i] <= range.upper()),
       std::logic_error,
       "Error, time_vec[" << i << "] = " << time_vec[i] << 
@@ -406,14 +406,14 @@ void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec )
       range.lower() << "," << range.upper() << "]!\n"
       );
   }
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   RCP<Thyra::VectorBase<Scalar> > vec_temp;
   ScalarMag z = ST::zero();
   for (int i=0; i<N ; ++i) {
     DataStore<Scalar> ds_temp(time_vec[i],vec_temp,vec_temp,z);
     typename DataStore<Scalar>::DataStoreVector_t::iterator 
       data_it = std::find(data_vec_->begin(),data_vec_->end(),ds_temp);
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       data_it == data_vec_->end(), std::logic_error,
       "Error, time_vec[" << i << "] = " << time_vec[i] << "is not a node in the interpolation buffer!\n"
       );
@@ -464,7 +464,7 @@ void InterpolationBuffer<Scalar>::describe(
 template <class Scalar>
 void InterpolationBuffer<Scalar>::setParameterList(RCP<Teuchos::ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT( is_null(paramList) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParameters(*this->getValidParameters());
   paramList_ = paramList;
 

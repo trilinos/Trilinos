@@ -27,7 +27,7 @@ class ReverseMapper {
   /** destructor */
   virtual ~ReverseMapper();
 
-  EqnRecord getEqnRecord(int global_eqn) const;
+  EqnRecord getEqnRecord(int global_eqn, int option=0) const;
 
  private:
   std::map<int,EqnRecord> eqnmap_;

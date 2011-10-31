@@ -42,14 +42,19 @@
 // //////////////////////////////////////////////////
 // Teuchos_CommandLineProcessor.cpp
 
+
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_Assert.hpp"
+
 
 namespace {
 
+
 inline int my_max( int a, int b ) { return a > b ? a : b; }
+
 
 std::string remove_quotes( const std::string& str )
 {
@@ -58,6 +63,7 @@ std::string remove_quotes( const std::string& str )
   return str.substr(1,str.size()-2);
 }
 
+
 std::string add_quotes( const std::string& str )
 {
   if(str[0] == '\"')
@@ -65,9 +71,12 @@ std::string add_quotes( const std::string& str )
   return "\"" + str + "\"";
 }
 
+
 } // end namespace
 
+
 namespace Teuchos {
+
 
 const bool  CommandLineProcessor::output_all_front_matter_default_(false);
 const bool  CommandLineProcessor::output_show_line_prefix_default_(false);
@@ -75,6 +84,8 @@ const bool  CommandLineProcessor::output_show_tab_count_default_(false);
 const bool  CommandLineProcessor::output_show_proc_rank_default_(false);
 const int   CommandLineProcessor::output_to_root_rank_only_default_(0);
 const bool  CommandLineProcessor::print_rcpnode_statistics_on_exit_default_(false);
+const bool  CommandLineProcessor::show_timer_summary_on_exit_default_(false);
+
 
 CommandLineProcessor::CommandLineProcessor(
   bool   throwExceptions_in
@@ -90,16 +101,27 @@ CommandLineProcessor::CommandLineProcessor(
   ,output_show_proc_rank_(output_show_proc_rank_default_)
   ,output_to_root_rank_only_(output_to_root_rank_only_default_)
   ,print_rcpnode_statistics_on_exit_(print_rcpnode_statistics_on_exit_default_)
+  ,show_timer_summary_on_exit_(show_timer_summary_on_exit_default_)
+  ,printed_timer_summary_(false)
   ,added_extra_output_setup_options_(false)
   ,in_add_extra_output_setup_options_(false)
 {}
 
+
+CommandLineProcessor::~CommandLineProcessor()
+{
+  printFinalTimerSummary();
+}
+
+
 // Set up options
+
 
 void CommandLineProcessor::setDocString( const char doc_string[] )
 {
   doc_string_ = doc_string;
 }
+
 
 void CommandLineProcessor::setOption(
   const char     option_true[]
@@ -109,7 +131,7 @@ void CommandLineProcessor::setOption(
   )
 {
   add_extra_output_setup_options();
-  TEST_FOR_EXCEPT(!(option_val!=NULL));
+  TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
   options_list_[std::string(option_true)]
     = opt_val_val_t(OPT_BOOL_TRUE,any(option_val),false);
   options_list_[std::string(option_false)]
@@ -120,6 +142,7 @@ void CommandLineProcessor::setOption(
     );
 }
 
+
 void CommandLineProcessor::setOption(
   const char     option_name[]
   ,int           *option_val
@@ -128,7 +151,7 @@ void CommandLineProcessor::setOption(
   )
 {
   add_extra_output_setup_options();
-  TEST_FOR_EXCEPT(!(option_val!=NULL));
+  TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
   options_list_[std::string(option_name)]
     = opt_val_val_t(OPT_INT,any(option_val),required);
   options_documentation_list_.push_back(
@@ -136,6 +159,7 @@ void CommandLineProcessor::setOption(
       any(option_val))
     );
 }
+
 
 void CommandLineProcessor::setOption(
   const char     option_name[]
@@ -145,7 +169,7 @@ void CommandLineProcessor::setOption(
   )
 {
   add_extra_output_setup_options();
-  TEST_FOR_EXCEPT(!(option_val!=NULL));
+  TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
   options_list_[std::string(option_name)]
     = opt_val_val_t(OPT_DOUBLE,any(option_val),required);
   options_documentation_list_.push_back(
@@ -153,6 +177,7 @@ void CommandLineProcessor::setOption(
       any(option_val))
     );
 }
+
 
 void CommandLineProcessor::setOption(
   const char     option_name[]
@@ -162,7 +187,7 @@ void CommandLineProcessor::setOption(
   )
 {
   add_extra_output_setup_options();
-  TEST_FOR_EXCEPT(!(option_val!=NULL));
+  TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
   options_list_[std::string(option_name)]
     = opt_val_val_t(OPT_STRING,any(option_val),required);
   options_documentation_list_.push_back(
@@ -171,7 +196,9 @@ void CommandLineProcessor::setOption(
     );
 }
 
+
 // Parse command line
+
 
 CommandLineProcessor::EParseCommandLineReturn
 CommandLineProcessor::parse(
@@ -261,7 +288,7 @@ CommandLineProcessor::parse(
         }
         break;
       default:
-        TEST_FOR_EXCEPT(true); // Local programming error only
+        TEUCHOS_TEST_FOR_EXCEPT(true); // Local programming error only
     }
   }
   // Look for options that were required but were not set
@@ -274,7 +301,7 @@ CommandLineProcessor::parse(
     const std::string     &opt_val_name = (*itr).first;
     const opt_val_val_t   &opt_val_val  = (*itr).second;
     if( opt_val_val.required && !opt_val_val.was_read ) {
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error
         ,"Error, the option --"<<opt_val_name<<" was required but was not set!"
         );
@@ -298,6 +325,7 @@ CommandLineProcessor::parse(
   }
   return PARSE_SUCCESSFUL;
 }
+
 
 void CommandLineProcessor::printHelpMessage( const char program_name[],
   std::ostream &out ) const
@@ -420,7 +448,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
           out << "--" << itr->opt_name;
           break;
         default:
-          TEST_FOR_EXCEPT(true); // Local programming error only
+          TEUCHOS_TEST_FOR_EXCEPT(true); // Local programming error only
       }
       switch( itr->opt_type ) {
         case OPT_BOOL_TRUE:
@@ -439,7 +467,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
             enum_opt_default_val_name(itr->opt_name,any_cast<int>(itr->default_val),&out));
           break;
         default:
-          TEST_FOR_EXCEPT(true); // Local programming error only
+          TEUCHOS_TEST_FOR_EXCEPT(true); // Local programming error only
       }
       out << ")\n";
     }
@@ -447,11 +475,32 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
       out << "\nDETAILED DOCUMENTATION:\n\n" << doc_string_ << std::endl << std::endl;
     }
     if(throwExceptions_)
-      TEST_FOR_EXCEPTION( true, HelpPrinted, "Help message was printed" );
+      TEUCHOS_TEST_FOR_EXCEPTION( true, HelpPrinted, "Help message was printed" );
   }
 }
 
+
+void CommandLineProcessor::printFinalTimerSummary(
+  const Ptr<std::ostream> &out_inout
+  )
+{
+  if (!printed_timer_summary_ && show_timer_summary_on_exit_) {
+    RCP<std::ostream> out;
+    if (nonnull(out_inout)) {
+      out = rcpFromPtr(out_inout);
+    }
+    else {
+      out = VerboseObjectBase::getDefaultOStream();
+    }
+    TimeMonitor::summarize(*out << "\n");
+    printed_timer_summary_ = true;
+  }
+  
+}
+
+
 // private
+
 
 void CommandLineProcessor::add_extra_output_setup_options() const
 {
@@ -499,10 +548,16 @@ void CommandLineProcessor::add_extra_output_setup_options() const
     " this prints to std::cerr or every process so do not turn this on for very large"
     " parallel runs."
     );
+  clp->setOption(
+    "show-timer-summary", "no-show-timer-sumary", &clp->show_timer_summary_on_exit_,
+    "If true, then Teuchos::TimeMonitor::summarize() is called in"
+    " CommandLineProcessor's destructor (usually at the end of main)."
+    );
 
   clp->added_extra_output_setup_options_ = true;
   clp->in_add_extra_output_setup_options_ = false;
 }
+
 
 void CommandLineProcessor::setEnumOption(
   const char    enum_option_name[]
@@ -516,10 +571,10 @@ void CommandLineProcessor::setEnumOption(
 {
   add_extra_output_setup_options();
 
-  TEST_FOR_EXCEPT(enum_option_val==NULL);
-  TEST_FOR_EXCEPT(num_enum_opt_values<=0);
-  TEST_FOR_EXCEPT(enum_opt_values==NULL);
-  TEST_FOR_EXCEPT(enum_opt_names==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(enum_option_val==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(num_enum_opt_values<=0);
+  TEUCHOS_TEST_FOR_EXCEPT(enum_opt_values==NULL);
+  TEUCHOS_TEST_FOR_EXCEPT(enum_opt_names==NULL);
 
   enum_opt_data_list_.push_back(
     enum_opt_data_t(enum_option_val,num_enum_opt_values,enum_opt_values,enum_opt_names)
@@ -532,6 +587,7 @@ void CommandLineProcessor::setEnumOption(
       std::string(documentation?documentation:""), any(opt_id))
     );
 }
+
 
 bool CommandLineProcessor::set_enum_value(
   int                  argv_i
@@ -557,7 +613,7 @@ bool CommandLineProcessor::set_enum_value(
     if(errout)
       *errout << std::endl << argv[0] << " : " << CLP_ERR_MSG << std::endl;
     if( throwExceptions() ) {
-      TEST_FOR_EXCEPTION( true, std::invalid_argument, CLP_ERR_MSG );
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, CLP_ERR_MSG );
     }
     else {
       return false;
@@ -568,6 +624,7 @@ bool CommandLineProcessor::set_enum_value(
   *enum_opt_data.enum_option_val = enum_opt_data.enum_opt_values.at(enum_opt_val_index);
   return true;
 }
+
 
 void CommandLineProcessor::print_enum_opt_names(
   const int            enum_id
@@ -589,6 +646,7 @@ void CommandLineProcessor::print_enum_opt_names(
   }
 }
 
+
 std::string
 CommandLineProcessor::enum_opt_default_val_name(
   const std::string    &enum_name
@@ -604,6 +662,7 @@ CommandLineProcessor::enum_opt_default_val_name(
       )
     );
 }
+
 
 int CommandLineProcessor::find_enum_opt_index(
   const std::string           &enum_opt_name
@@ -624,11 +683,12 @@ int CommandLineProcessor::find_enum_opt_index(
     if(errout)
       *errout << CLP_ERR_MSG << std::endl;
     if( throwExceptions() )
-      TEST_FOR_EXCEPTION( true, std::invalid_argument, CLP_ERR_MSG );
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, CLP_ERR_MSG );
 #undef CLP_ERR_MSG
   }
   return itr - itr_begin;
 }
+
 
 bool CommandLineProcessor::get_opt_val(
   const char     str[]
@@ -670,10 +730,9 @@ void CommandLineProcessor::print_bad_opt(
   if(errout)
     *errout << std::endl << argv[0] << " : " << CLP_ERR_MSG << std::endl;
   if( recogniseAllOptions() && throwExceptions() )
-    TEST_FOR_EXCEPTION( true, UnrecognizedOption, CLP_ERR_MSG );
+    TEUCHOS_TEST_FOR_EXCEPTION( true, UnrecognizedOption, CLP_ERR_MSG );
 #undef CLP_ERR_MSG
 }
 
+
 } // end namespace Teuchos
-
-

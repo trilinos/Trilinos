@@ -59,17 +59,19 @@
    need to orthogonalize out a given mode periodically. But we want to be
    extra robust numericlly. */
 
-void      lanczos_FO(A, n, d, y, lambda, bound, eigtol, vwsqrt, maxdeg, version)
-struct vtx_data **A;		/* graph data structure */
-int       n;			/* number of rows/colums in matrix */
-int       d;			/* problem dimension = # evecs to find */
-double  **y;			/* columns of y are eigenvectors of A  */
-double   *lambda;		/* ritz approximation to eigenvals of A */
-double   *bound;		/* on ritz pair approximations to eig pairs of A */
-double    eigtol;		/* tolerance on eigenvectors */
-double   *vwsqrt;		/* square root of vertex weights */
-double    maxdeg;               /* maximum degree of graph */
-int       version;		/* 1 = standard mode, 2 = inverse operator mode */
+void 
+lanczos_FO (
+    struct vtx_data **A,		/* graph data structure */
+    int n,			/* number of rows/colums in matrix */
+    int d,			/* problem dimension = # evecs to find */
+    double **y,			/* columns of y are eigenvectors of A  */
+    double *lambda,		/* ritz approximation to eigenvals of A */
+    double *bound,		/* on ritz pair approximations to eig pairs of A */
+    double eigtol,		/* tolerance on eigenvectors */
+    double *vwsqrt,		/* square root of vertex weights */
+    double maxdeg,               /* maximum degree of graph */
+    int version		/* 1 = standard mode, 2 = inverse operator mode */
+)
 
 {
     extern FILE *Output_File;	/* output file or NULL */

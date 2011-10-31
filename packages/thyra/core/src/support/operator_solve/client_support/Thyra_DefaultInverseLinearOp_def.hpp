@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -240,7 +240,7 @@ void DefaultInverseLinearOp<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true); // Should never be called!
+      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never be called!
   }
 }
 
@@ -296,11 +296,11 @@ void DefaultInverseLinearOp<Scalar>::applyImpl(
       ? fwdSolveCriteria_.ptr()
       : adjSolveCriteria_.ptr()
       );
-  assign(T.get(), ST::zero()); // Have to initialize before solve!
+  assign(T.ptr(), ST::zero()); // Have to initialize before solve!
   SolveStatus<Scalar> solveStatus =
     Thyra::solve<Scalar>(*lows_.getConstObj(), M_trans, X, T.ptr(), solveCriteria);
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     nonnull(solveCriteria) && solveStatus.solveStatus!=SOLVE_STATUS_CONVERGED
     && ( real_trans(M_trans)==NOTRANS
          ? throwOnFwdSolveFailure_==THROW_ON_SOLVE_FAILURE

@@ -571,7 +571,7 @@ public:
     ) const
   {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT(!inArgs);
+    TEUCHOS_TEST_FOR_EXCEPT(!inArgs);
 #endif
     inArgs->set_x_dot(x_dot);
   }
@@ -597,7 +597,7 @@ public:
     ) const
   {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT(!inArgs);
+    TEUCHOS_TEST_FOR_EXCEPT(!inArgs);
 #endif
     inArgs->set_x(x);
   }
@@ -626,7 +626,7 @@ public:
     ) const
   {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT(!inArgs);
+    TEUCHOS_TEST_FOR_EXCEPT(!inArgs);
 #endif
     inArgs->set_p(l_,p_l);
   }
@@ -656,7 +656,7 @@ public:
     ) const
   {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT(!outArgs);
+    TEUCHOS_TEST_FOR_EXCEPT(!outArgs);
 #endif
     outArgs->set_f(f);
   }
@@ -682,7 +682,7 @@ public:
     ) const
   {
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT(!outArgs);
+    TEUCHOS_TEST_FOR_EXCEPT(!outArgs);
 #endif
     outArgs->set_g(j_,g_j);
   }

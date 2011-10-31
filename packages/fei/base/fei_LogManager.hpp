@@ -54,15 +54,6 @@ class LogManager {
   */
   void setNumProcs(int nprocs, int localproc);
 
-  /** Register an instance of fei::Logger, to be notified when relevant
-    attributes change.
-  */
-  void registerLogger(Logger* logger);
-
-  /** Remove an instance of fei::Logger from the notify list.
-  */
-  void removeLogger(Logger* logger);
-
  private:
   /** constructor */
   LogManager();
@@ -71,7 +62,6 @@ class LogManager {
   std::string output_path_;
   int numProcs_;
   int localProc_;
-  std::vector<fei::Logger*> loggers_;
 }; //class LogManager
 }//namespace fei
 #endif

@@ -103,7 +103,7 @@ void assembleERKState(
   Teuchos::Ptr<Thyra::VectorBase<Scalar> > x_out_ptr
   )
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 /* \brief . */
@@ -116,7 +116,7 @@ void assembleERKSolution(
   Teuchos::Ptr<Thyra::VectorBase<Scalar> > x_out_ptr
   )
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 template<class Scalar>
@@ -149,7 +149,7 @@ bool isEmptyRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt ) {
 template<class Scalar>
 void assertNonEmptyRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 {
-  TEST_FOR_EXCEPTION( isEmptyRKButcherTableau(rkbt), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( isEmptyRKButcherTableau(rkbt), std::logic_error,
       "Error, this RKButcherTableau is either empty or the b vector is all zeros!\n"
       );
 }
@@ -185,7 +185,7 @@ bool isIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 template<class Scalar>
 void validateIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 {
-  TEST_FOR_EXCEPTION( !isIRKButcherTableau(rkbt), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isIRKButcherTableau(rkbt), std::logic_error,
     "Error!  This implicit RK Butcher Tableau is empty!\n"
     );
 }
@@ -193,7 +193,7 @@ void validateIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 template<class Scalar>
 void validateDIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 {
-  TEST_FOR_EXCEPTION( !isDIRKButcherTableau(rkbt), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isDIRKButcherTableau(rkbt), std::logic_error,
       "Error!  This Diagonal Implicit RK Butcher Tableau has non-zeros in the upper triangular part!\n" 
       );
 }
@@ -223,7 +223,7 @@ bool isSDIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 template<class Scalar>
 void validateSDIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 {
-  TEST_FOR_EXCEPTION( !isSDIRKButcherTableau(rkbt), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isSDIRKButcherTableau(rkbt), std::logic_error,
       "Error!  This Singly Diagonal Implicit RK Butcher Tableau does not have equal diagonal entries!\n"
       );
 }
@@ -258,7 +258,7 @@ bool isERKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt)
 template<class Scalar>
 void validateERKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 {
-  TEST_FOR_EXCEPTION( !isERKButcherTableau(rkbt), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isERKButcherTableau(rkbt), std::logic_error,
       "Error!  This ERK Butcher Tableau is not lower triangular or c(0) is not zero!\n" 
       );
 }
@@ -272,7 +272,7 @@ void validateERKOrder( RKButcherTableauBase<Scalar> rkbt, int order_in )
   Teuchos::SerialDenseVector<int,Scalar> b_local = rkbt.b();
   Teuchos::SerialDenseVector<int,Scalar> c_local = rkbt.c();
   int N = rkbt.numStages();
-  TEST_FOR_EXCEPT(N == 0);
+  TEUCHOS_TEST_FOR_EXCEPT(N == 0);
 
   if (order_in == 3) {
     Scalar sum1 = ST::zero();
@@ -289,7 +289,7 @@ void validateERKOrder( RKButcherTableauBase<Scalar> rkbt, int order_in )
         }
       }
     }
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
         (
          ( sum1 != ST::one() ) || 
          ( sum2 != ST::one() ) ||
@@ -300,7 +300,7 @@ void validateERKOrder( RKButcherTableauBase<Scalar> rkbt, int order_in )
         "Error!, this RK Butcher Tableau does not meet the order conditions for 3rd order\n"
         );
   } else {
-    TEST_FOR_EXCEPTION( true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
         "Error!  this function is only defined for order 3\n"
         );
   }
@@ -309,19 +309,19 @@ void validateERKOrder( RKButcherTableauBase<Scalar> rkbt, int order_in )
 template<class Scalar>
 void validateIRKOrder( RKButcherTableauBase<Scalar> rkbt, int order_in )
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 template<class Scalar>
 void validateDIRKOrder( RKButcherTableauBase<Scalar> rkbt, int order_in )
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
 template<class Scalar>
 void validateSDIRKOrder( RKButcherTableauBase<Scalar> rkbt, int order_in )
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 */
  

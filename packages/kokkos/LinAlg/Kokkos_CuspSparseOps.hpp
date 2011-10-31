@@ -30,7 +30,7 @@
 #define KOKKOS_CUSPSPARSEOPS_HPP
 
 #include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <stdexcept>
@@ -178,7 +178,7 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void CUSPSparseOps<Scalar,Ordinal,Node>::initializeStructure(const CrsGraphHostCompute<Ordinal,Node,CUSPSparseOps<void,Ordinal,Node> > &graph) {
-    TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error, 
         Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
     numRows_ = graph.getNumRows();
     if (graph.isEmpty() || numRows_ == 0) {
@@ -192,7 +192,7 @@ namespace Kokkos {
       if (graph.is2DStructure()) {
       }
       else {
-        TEST_FOR_EXCEPT(true);
+        TEUCHOS_TEST_FOR_EXCEPT(true);
       }
     }
       ArrayRCP<Ordinal> inds;
@@ -206,9 +206,9 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void CUSPSparseOps<Scalar,Ordinal,Node>::initializeValues(const CrsMatrixHostCompute<Scalar,Ordinal,Node,CUSPSparseOps<void,Ordinal,Node> > &matrix) {
-    TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error, 
         Teuchos::typeName(*this) << "::initializeValues(): must initialize values after graph.");
-    TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty(), std::runtime_error,
         Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
     if (!isEmpty_) {
       ArrayRCP<Scalar> vals;
@@ -225,7 +225,7 @@ namespace Kokkos {
                       Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
                       const MultiVector<DomainScalar,Node> &Y,
                             MultiVector<RangeScalar,Node> &X) const {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
       Teuchos::typeName(*this) << "::solve(): this class does not provide support for transposed multipication. Consider manually transposing the matrix.");
     return;
   }
@@ -239,11 +239,11 @@ namespace Kokkos {
                                 const MultiVector<DomainScalar,Node> &X, 
                                 MultiVector<RangeScalar,Node> &Y) const {
     // beta is not provided and the output multivector enjoys overwrite semantics
-    TEST_FOR_EXCEPTION(trans != Teuchos::NO_TRANS, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(trans != Teuchos::NO_TRANS, std::logic_error, 
       Teuchos::typeName(*this) << "::multiply(): this class does not provide support for transposed multipication. Consider manually transposing the matrix.");
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
       // Y <= 0 * X
@@ -261,7 +261,7 @@ namespace Kokkos {
                                 Teuchos::ETransp trans, 
                                 RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, 
                                 RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const { 
-    TEST_FOR_EXCEPTION(true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       Teuchos::typeName(*this) << "::multiply(): CUSP does not support multiple scalar types for sparse matrix-vector multiplication.");
   }
 
@@ -272,10 +272,10 @@ namespace Kokkos {
                                 Scalar alpha, const MultiVector<Scalar,Node> &X, 
                                 Scalar beta, MultiVector<Scalar,Node> &Y) const {
     // beta is provided and the output multivector enjoys accumulate semantics
-    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
-    TEST_FOR_EXCEPTION(trans != Teuchos::NO_TRANS, std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    TEUCHOS_TEST_FOR_EXCEPTION(trans != Teuchos::NO_TRANS, std::logic_error, 
       Teuchos::typeName(*this) << "::multiply(): this class does not provide support for transposed multipication. Consider manually transposing the matrix.");
     const size_t numRHS = X.getNumCols(),
                  Xstride = X.getStride(),

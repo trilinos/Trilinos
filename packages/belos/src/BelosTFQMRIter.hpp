@@ -276,7 +276,7 @@ namespace Belos {
     
     //! \brief Set the blocksize.
     void setBlockSize(int blockSize) {
-      TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
                        "Belos::TFQMRIter::setBlockSize(): Cannot use a block size that is not one.");
     }
     
@@ -400,7 +400,7 @@ namespace Belos {
         if (R_ == Teuchos::null) {
           // Get the multivector that is not null.
           Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-          TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
                              "Belos::TFQMRIter::setStateSize(): linear problem does not specify multivectors to clone from.");
           R_ = MVT::Clone( *tmp, 1 );
 	  AU_ = MVT::Clone( *tmp, 1 );
@@ -423,7 +423,7 @@ namespace Belos {
     if (!stateStorageInitialized_)
       setStateSize();
 
-    TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
                        "Belos::TFQMRIter::initialize(): Cannot initialize state storage!");
 
     // NOTE:  In TFQMRIter R_, the initial residual, is required!!!
@@ -437,9 +437,9 @@ namespace Belos {
 
     if (newstate.R != Teuchos::null) {
 
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != 1,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != 1,
                           std::invalid_argument, errstr );
 
       // Copy basis vectors from newstate into V
@@ -469,7 +469,7 @@ namespace Belos {
     }
     else {
 
-      TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
                          "Belos::TFQMRIter::initialize(): TFQMRIterState does not have initial residual.");
     }
 
@@ -502,7 +502,7 @@ namespace Belos {
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
     // Check that the current solution vector only has one column.
-    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, TFQMRIterateFailure,
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, TFQMRIterateFailure,
                         "Belos::TFQMRIter::iterate(): current linear system has more than one vector!" );
 
 

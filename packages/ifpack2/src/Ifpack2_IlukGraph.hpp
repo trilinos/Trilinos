@@ -386,7 +386,7 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
  
       // Diagonal
       
-      TEST_FOR_EXCEPTION(Next != i, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(Next != i, std::runtime_error,
                          "Ifpack2::IlukGraph::constructFilledGraph: FATAL: U has zero diagonal")
 
       LevelsRowU[0] = CurrentLevel[Next];

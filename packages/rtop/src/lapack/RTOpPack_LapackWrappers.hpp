@@ -108,9 +108,9 @@ void RTOpPack::getrf(
   using Teuchos::as;
   const int maxRank = TEUCHOS_MIN( A.subDim(), A.numSubCols() );
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( A.subDim() == 0  );
-  TEST_FOR_EXCEPT( A.numSubCols() == 0  );
-  TEST_FOR_EXCEPT( is_null(A.values()) );
+  TEUCHOS_TEST_FOR_EXCEPT( A.subDim() == 0  );
+  TEUCHOS_TEST_FOR_EXCEPT( A.numSubCols() == 0  );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(A.values()) );
   TEUCHOS_ASSERT_EQUALITY( as<int>(ipiv.size()), maxRank );
 #endif
 
@@ -119,7 +119,7 @@ void RTOpPack::getrf(
   lapack.GETRF( A.subDim(), A.numSubCols(), A.values().get(), A.leadingDim(),
     &ipiv[0], &info );
   *rank = maxRank;
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     info < 0, std::invalid_argument
     ,"getrf(...): Error, Invalid argument "
     << -info << " sent to LAPACK function xGETRF(...)" );
@@ -141,9 +141,9 @@ void RTOpPack::getrs(
   TEUCHOS_ASSERT( !is_null(BX) );
   TEUCHOS_ASSERT_EQUALITY( A.subDim(), BX->subDim() );
   TEUCHOS_ASSERT_EQUALITY( A.subDim(), A.numSubCols() );
-  TEST_FOR_EXCEPT( A.subDim() == 0  );
-  TEST_FOR_EXCEPT( A.numSubCols() == 0  );
-  TEST_FOR_EXCEPT( is_null(A.values()) );
+  TEUCHOS_TEST_FOR_EXCEPT( A.subDim() == 0  );
+  TEUCHOS_TEST_FOR_EXCEPT( A.numSubCols() == 0  );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(A.values()) );
   TEUCHOS_ASSERT_EQUALITY( A.subDim(), ipiv.size() );
 #endif
   Teuchos::LAPACK<int, Scalar> lapack;
@@ -153,7 +153,7 @@ void RTOpPack::getrs(
     A.subDim(), BX->numSubCols(), A.values().get(), A.leadingDim(),
     &ipiv[0], BX->values().get(), BX->leadingDim(), &info
     );
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     info < 0, std::invalid_argument
     ,"getrs(...): Error, Invalid argument "
     << -info << " sent to LAPACK function xGETRS(...)" );

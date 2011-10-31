@@ -262,9 +262,9 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _timerRestarting(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr restarting")),
   _printNum(-1)
 {
-  TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!_problem->isProblemSet(),               std::invalid_argument, "Problem not set.");
-  TEST_FOR_EXCEPTION(_problem->getInitVec() == Teuchos::null, std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+  TEUCHOS_TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!_problem->isProblemSet(),               std::invalid_argument, "Problem not set.");
+  TEUCHOS_TEST_FOR_EXCEPTION(_problem->getInitVec() == Teuchos::null, std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
   const int nev = _problem->getNEV();
 
@@ -277,7 +277,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
 
   // block size: default is 1
   _blockSize = pl.get("Block Size",1);
-  TEST_FOR_EXCEPTION(_blockSize <= 0, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(_blockSize <= 0, std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: \"Block Size\" must be strictly positive.");
 
   // set the number of blocks we need to save to compute the nev eigenvalues of interest.
@@ -289,10 +289,10 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   }
 
   _numBlocks = pl.get("Num Blocks",3*_nevBlocks);
-  TEST_FOR_EXCEPTION(_numBlocks <= _nevBlocks, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(_numBlocks <= _nevBlocks, std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: \"Num Blocks\" must be strictly positive and large enough to compute the requested eigenvalues.");
 
-  TEST_FOR_EXCEPTION(_numBlocks*_blockSize > MVT::GetVecLength(*_problem->getInitVec()),
+  TEUCHOS_TEST_FOR_EXCEPTION(_numBlocks*_blockSize > MVT::GetVecLength(*_problem->getInitVec()),
                      std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: Potentially impossible orthogonality requests. Reduce basis size.");
   
@@ -302,7 +302,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   } else {
     _stepSize = pl.get("Step Size", _numBlocks+1);
   }
-  TEST_FOR_EXCEPTION(_stepSize < 1, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(_stepSize < 1, std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: \"Step Size\" must be strictly positive.");
 
   // get the sort manager
@@ -311,7 +311,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   } else {
     // which values to solve for
     _whch = pl.get("Which",_whch);
-    TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR" && _whch != "SI" && _whch != "LI",
+    TEUCHOS_TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR" && _whch != "SI" && _whch != "LI",
                        std::invalid_argument, "Invalid sorting string.");
     _sort = Teuchos::rcp( new BasicSort<MagnitudeType>(_whch) );
   }
@@ -407,7 +407,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
       ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(_problem->getM(),_ortho_kappa) );
     }
   } else {
-    TEST_FOR_EXCEPTION(_ortho!="SVQB"&&_ortho!="DGKS",std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid orthogonalization type.");
+    TEUCHOS_TEST_FOR_EXCEPTION(_ortho!="SVQB"&&_ortho!="DGKS",std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid orthogonalization type.");
   }
   
   //////////////////////////////////////////////////////////////////////////////////////
@@ -565,7 +565,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             std::vector<ScalarType> tau(cur_nevBlocks), work(cur_nevBlocks);
             int info;
             lapack.GEQRF(curDim,cur_nevBlocks,copyQnev.values(),copyQnev.stride(),&tau[0],&work[0],work.size(),&info);
-            TEST_FOR_EXCEPTION(info != 0,std::logic_error,
+            TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error,
                                "Anasazi::BlockDavidsonSolMgr::solve(): error calling GEQRF during restarting.");
             // we need to get the diagonal of D
             std::vector<ScalarType> d(cur_nevBlocks);
@@ -669,7 +669,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
         //
         ////////////////////////////////////////////////////////////////////////////////////
         else {
-          TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid return from bks_solver::iterate().");
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid return from bks_solver::iterate().");
         }
       }
       catch (const AnasaziError &err) {

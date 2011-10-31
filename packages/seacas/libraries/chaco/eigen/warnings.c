@@ -7,25 +7,26 @@
 #include "structs.h"
 
 /* Post various warnings about computation  */
-void      warnings(workn, A, y, n, lambda, vwsqrt, Ares, bound,
-		           index, d, j, maxj, Sres_max, eigtol, u, Anorm, out_file)
-double   *workn;		/* work vector (1..n) */
-struct vtx_data **A;		/* graph */
-double  **y;			/* eigenvectors */
-int       n;			/* number of vtxs */
-double   *lambda;		/* ritz approximation to eigenvals of A */
-double   *vwsqrt;		/* square roots of vertex weights */
-double   *Ares;			/* how well Lanczos calc. eigpair lambda,y */
-int      *index;		/* the Ritz index of an eigenpair */
-double   *bound;		/* on ritz pair approximations to eig pairs of A */
-int       d;			/* problem dimension = number of eigvecs to find */
-int       j;			/* number of Lanczos iterations used */
-int       maxj;			/* maximum number of Lanczos iterations */
-double    Sres_max;		/* Max value of Sres */
-double    eigtol;		/* tolerance on eigenvectors */
-double   *u;			/* Lanczos vector; here used as workspace */
-double    Anorm;		/* Gershgorin bound on eigenvalue */
-FILE     *out_file;		/* output file */
+void 
+warnings (
+    double *workn,		/* work vector (1..n) */
+    struct vtx_data **A,		/* graph */
+    double **y,			/* eigenvectors */
+    int n,			/* number of vtxs */
+    double *lambda,		/* ritz approximation to eigenvals of A */
+    double *vwsqrt,		/* square roots of vertex weights */
+    double *Ares,			/* how well Lanczos calc. eigpair lambda,y */
+    double *bound,		/* on ritz pair approximations to eig pairs of A */
+    int *index,		/* the Ritz index of an eigenpair */
+    int d,			/* problem dimension = number of eigvecs to find */
+    int j,			/* number of Lanczos iterations used */
+    int maxj,			/* maximum number of Lanczos iterations */
+    double Sres_max,		/* Max value of Sres */
+    double eigtol,		/* tolerance on eigenvectors */
+    double *u,			/* Lanczos vector; here used as workspace */
+    double Anorm,		/* Gershgorin bound on eigenvalue */
+    FILE *out_file		/* output file */
+)
 {
     extern int DEBUG_EVECS;	/* print debugging output? */
     extern int WARNING_EVECS;	/* print warning messages? */

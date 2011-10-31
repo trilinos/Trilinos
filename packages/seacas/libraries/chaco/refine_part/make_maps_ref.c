@@ -8,20 +8,22 @@
 
 
 /* Set up data structures for refine_part. */
-void      make_maps_ref(graph, set_list, vtx_elems, assignment, sub_assign,
-    set1, set2, glob2loc, loc2glob, psub_nvtxs, pvwgt_max,
-    pvwgt_sum1, pvwgt_sum2)
-struct vtx_data **graph;	/* graph data structure */
-struct bilist *set_list;	/* lists of vertices in each set */
-struct bilist *vtx_elems;	/* start of storage for vertices */
-int    *assignment;		/* set assignments for graph */
-int    *sub_assign;		/* assignment file for subgraph */
-int       set1, set2;		/* set value denoting subgraph */
-int      *glob2loc;		/* graph -> subgraph numbering map */
-int      *loc2glob;		/* subgraph -> graph numbering map */
-int      *psub_nvtxs;		/* number of vtxs in subgraph */
-int      *pvwgt_max;		/* returned largest vwgt */
-int      *pvwgt_sum1, *pvwgt_sum2;	/* returned set sizes */
+void 
+make_maps_ref (
+    struct vtx_data **graph,	/* graph data structure */
+    struct bilist *set_list,	/* lists of vertices in each set */
+    struct bilist *vtx_elems,	/* start of storage for vertices */
+    int *assignment,		/* set assignments for graph */
+    int *sub_assign,		/* assignment file for subgraph */
+    int set1,
+    int set2,		/* set value denoting subgraph */
+    int *glob2loc,		/* graph -> subgraph numbering map */
+    int *loc2glob,		/* subgraph -> graph numbering map */
+    int *psub_nvtxs,		/* number of vtxs in subgraph */
+    int *pvwgt_max,		/* returned largest vwgt */
+    int *pvwgt_sum1,
+    int *pvwgt_sum2	/* returned set sizes */
+)
 {
     struct bilist *ptr;		/* loops through set lists */
     int       vwgt_max;		/* largest vertex weight in subgraph */

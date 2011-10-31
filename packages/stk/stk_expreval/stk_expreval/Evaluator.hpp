@@ -155,6 +155,17 @@ public:
   }
 
   /**
+   * @brief Member function <b>newNode</b> allocates a new node.  The
+   * new node is allocated on a node list so that it may be
+   * deallocated properly on exception.
+   *
+   * @param opcode		a <b>int</b> value of the opcode for the node.
+   *
+   * @return                    a <b>Node</b> pointer to the newly allocated node.
+   */
+  Node *newNode(int op);
+  
+  /**
    * @brief Member function <b>bindVariable</b> binds the variable to the address of
    * the specified value.  This address must remain in scope during the lifetime of the
    * variable are until rebound to a new address.
@@ -256,6 +267,7 @@ private:
   bool			m_parseStatus;		///< True if parsed successfully
 
   Node *		m_headNode;		///< Head of compiled expression
+  std::vector<Node *>   m_nodes;                ///< Allocated nodes
 };
 
 } // namespace expreval

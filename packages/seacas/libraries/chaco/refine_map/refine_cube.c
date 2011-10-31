@@ -12,12 +12,14 @@
 /* Use a greedy strategy to swap assignments to reduce hops. */
 /* Note that because of our graph data structure, set assignments in the graph */
 /* begin at 1 instead of at 0. */
-int       refine_cube(comm_graph, ndims_tot, maxdesire, vtx2node, node2vtx)
-struct vtx_data **comm_graph;	/* graph for communication requirements */
-int       ndims_tot;		/* dimensionality of hypercube */
-double    maxdesire;		/* largest possible desire to flip an edge */
-int    *vtx2node;		/* mapping from comm_graph vtxs to processors */
-int    *node2vtx;		/* mapping from processors to comm_graph vtxs */
+int 
+refine_cube (
+    struct vtx_data **comm_graph,	/* graph for communication requirements */
+    int ndims_tot,		/* dimensionality of hypercube */
+    double maxdesire,		/* largest possible desire to flip an edge */
+    int *vtx2node,		/* mapping from comm_graph vtxs to processors */
+    int *node2vtx		/* mapping from processors to comm_graph vtxs */
+)
 {
     struct refine_vdata *vdata = NULL;	/* desire data for vertices */
     struct refine_vdata *vptr;	/* loops through vdata */

@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -727,7 +727,7 @@ public:
   //@{
 
   /** \brief Deprecated . */
-  void scalarProds(
+  THYRA_DEPRECATED void scalarProds(
     const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
     Scalar scalarProds[]
     ) const;

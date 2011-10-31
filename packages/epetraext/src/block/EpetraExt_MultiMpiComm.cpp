@@ -40,7 +40,7 @@
 //@HEADER
 
 #include "EpetraExt_MultiMpiComm.h" 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 
 namespace EpetraExt {
@@ -68,7 +68,7 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
   ierrmpi = MPI_Comm_size(globalMpiComm, &size);
   ierrmpi = MPI_Comm_rank(globalMpiComm, &rank);
 
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     size % subDomainProcs != 0,
     std::logic_error,
     "ERROR: num subDomainProcs "<< subDomainProcs << 

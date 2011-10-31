@@ -8,14 +8,18 @@
 #include	"defs.h"
 
 
-void      opt3d(graph, yvecs, nvtxs, nmyvtxs, vwsqrt, ptheta, pphi, pgamma, using_vwgts)
-struct vtx_data **graph;	/* data structure containing vertex weights */
-double  **yvecs;		/* eigenvectors */
-int       nvtxs;		/* total number of vertices */
-int       nmyvtxs;		/* number of vertices I own */
-double   *vwsqrt;		/* square root of vertex weights */
-double   *ptheta, *pphi, *pgamma;	/* return optimal angles */
-int       using_vwgts;		/* are vertex weights being used? */
+void 
+opt3d (
+    struct vtx_data **graph,	/* data structure containing vertex weights */
+    double **yvecs,		/* eigenvectors */
+    int nvtxs,		/* total number of vertices */
+    int nmyvtxs,		/* number of vertices I own */
+    double *vwsqrt,		/* square root of vertex weights */
+    double *ptheta,
+    double *pphi,
+    double *pgamma,	/* return optimal angles */
+    int using_vwgts		/* are vertex weights being used? */
+)
 
 /* Compute rotation angle to minimize distance to discrete points. */
 {

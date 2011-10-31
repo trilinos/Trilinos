@@ -43,11 +43,15 @@
 #define TEUCHOS_TEST_FOR_EXCEPTION_H
 
 /*! \file Teuchos_TestForException.hpp
-\brief Macro for throwing an exception with breakpointing to ease debugging.
+\brief Standard test and throw macros.
 */
 
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_stacktrace.hpp"
+
+
+namespace Teuchos {
+
 
 /*! \defgroup TestForException_grp Utility code for throwing exceptions and setting breakpoints. 
 \ingroup teuchos_language_support_grp
@@ -71,9 +75,13 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_setEnableStacktrace(bool enableStra
  * exceptions are thrown. */
 TEUCHOS_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
 
+
+} // namespace Teuchos
+
+
 #ifdef HAVE_TEUCHOS_STACKTRACE
 #  define TEUCHOS_STORE_STACKTRACE() \
-  if (TestForException_getEnableStacktrace()) { \
+  if (Teuchos::TestForException_getEnableStacktrace()) { \
     Teuchos::store_stacktrace(); \
   }
 #else
@@ -106,7 +114,7 @@ TEUCHOS_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  * for instance):
  \verbatim
 
- TEST_FOR_EXCEPTION( n > 100, std::out_of_range,
+ TEUCHOS_TEST_FOR_EXCEPTION( n > 100, std::out_of_range,
     "Error, n = " << n << is bad" );
  \endverbatim
  * When the program runs and with <tt>n = 125 > 100</tt> for instance,
@@ -129,13 +137,13 @@ TEUCHOS_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  * instead of:
  \verbatim
 
- TEST_FOR_EXCEPTION( obj1->val() > obj2->val(), std::logic_error, "Oh no!" );
+ TEUCHOS_TEST_FOR_EXCEPTION( obj1->val() > obj2->val(), std::logic_error, "Oh no!" );
  \endverbatim
  * try:
  \verbatim
 
  double obj1_val = obj1->val(), obj2_val = obj2->val();
- TEST_FOR_EXCEPTION( obj1_val > obj2_val, std::logic_error, "Oh no!" );
+ TEUCHOS_TEST_FOR_EXCEPTION( obj1_val > obj2_val, std::logic_error, "Oh no!" );
  \endverbatim
  * If the developer goes to the line in the source file that is contained
  * in the error message of the exception thrown, he/she will see the
@@ -156,22 +164,22 @@ TEUCHOS_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  *
  * \ingroup TestForException_grp
  */
-#define TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
+#define TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
 { \
   const bool throw_exception = (throw_exception_test); \
   if(throw_exception) { \
-    TestForException_incrThrowNumber(); \
+    Teuchos::TestForException_incrThrowNumber(); \
     std::ostringstream omsg; \
     omsg \
       << __FILE__ << ":" << __LINE__ << ":\n\n" \
-      << "Throw number = " << TestForException_getThrowNumber() \
+      << "Throw number = " << Teuchos::TestForException_getThrowNumber() \
       << "\n\n" \
       << "Throw test that evaluated to true: "#throw_exception_test \
       << "\n\n" \
       << msg; \
     const std::string &omsgstr = omsg.str(); \
     TEUCHOS_STORE_STACKTRACE(); \
-    TestForException_break(omsgstr); \
+    Teuchos::TestForException_break(omsgstr); \
     throw Exception(omsgstr); \
   } \
 }
@@ -202,53 +210,87 @@ TEUCHOS_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  * typename of the enclosing class.
  *
  * The way that this macro is intended to be used is to call it from a member
- * of of a class. It is used similarly to TEST_FOR_EXCEPTION, except that it
+ * of of a class. It is used similarly to TEUCHOS_TEST_FOR_EXCEPTION, except that it
  * assumes that the (above) variables <tt>this</tt> and <tt>fecfFuncName</tt>
  * exist and are properly defined. Example usage is:
  
  \code
 
    std::string tfecfFuncName("someMethod");
-    TEST_FOR_EXCEPTION_CLASS_FUNC( test, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( test, std::runtime_error,
       ": can't call this method in that way.");
 
  \endcode
 
- * See <tt>TEST_FOR_EXCEPTION()</tt> for more details.
+ * See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> for more details.
  *
  * \ingroup TestForException_grp
  */
-#define TEST_FOR_EXCEPTION_CLASS_FUNC(throw_exception_test, Exception, msg) \
+#define TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(throw_exception_test, Exception, msg) \
 { \
-   TEST_FOR_EXCEPTION( (throw_exception_test), Exception, \
+   TEUCHOS_TEST_FOR_EXCEPTION( (throw_exception_test), Exception, \
    typeName(*this) << "::" << tfecfFuncName << msg ) \
 }
 
 
 /** \brief Macro for throwing an exception with breakpointing to ease debugging
  *
- * This macro is equivalent to the <tt>TEST_FOR_EXCEPTION()</tt> macro except
+ * This macro is equivalent to the <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> macro except
  * the file name, line number, and test condition are not printed.
  *
  * \ingroup TestForException_grp
  */
-#define TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test, Exception, msg) \
+#define TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test, Exception, msg) \
 { \
     const bool throw_exception = (throw_exception_test); \
     if(throw_exception) { \
-      TestForException_incrThrowNumber(); \
+      Teuchos::TestForException_incrThrowNumber(); \
       std::ostringstream omsg; \
 	    omsg << msg; \
-      omsg << "\n\nThrow number = " << TestForException_getThrowNumber() << "\n\n"; \
+      omsg << "\n\nThrow number = " << Teuchos::TestForException_getThrowNumber() << "\n\n"; \
       const std::string &omsgstr = omsg.str(); \
-      TestForException_break(omsgstr); \
+      Teuchos::TestForException_break(omsgstr); \
       TEUCHOS_STORE_STACKTRACE(); \
       throw Exception(omsgstr); \
     } \
 }
 
+
+/** \brief This macro is the same as <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> except that the
+ * exception will be caught, the message printed, and then rethrown.
+ *
+ * \param throw_exception_test [in] See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt>.
+ *
+ * \param Exception [in] See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt>.
+ *
+ * \param msg [in] See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt>.
+ *
+ * \param out_ptr [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will
+ * receive a printout of a line of output that gives the exception type and
+ * the error message that is generated.
+ *
+ * See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> for more details.
+ *
+ * \ingroup TestForException_grp
+ */
+#define TEUCHOS_TEST_FOR_EXCEPTION_PRINT(throw_exception_test, Exception, msg, out_ptr) \
+try { \
+  TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg); \
+} \
+catch(const std::exception &except) { \
+  std::ostream *l_out_ptr = (out_ptr); \
+  if(l_out_ptr) { \
+    *l_out_ptr \
+      << "\nThrowing an std::exception of type \'"<<Teuchos::typeName(except) \
+      <<"\' with the error message: " \
+      << except.what(); \
+  } \
+  throw; \
+}
+
+
 /** \brief This macro is designed to be a short version of
- * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
+ * <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> that is easier to call.
  *
  * \param throw_exception_test [in] Test for when to throw the exception.
  * This can and should be an expression that may mean something to the user.
@@ -259,11 +301,12 @@ TEUCHOS_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  *
  * \ingroup TestForException_grp
  */
-#define TEST_FOR_EXCEPT(throw_exception_test) \
-  TEST_FOR_EXCEPTION(throw_exception_test, std::logic_error, "Error!")
+#define TEUCHOS_TEST_FOR_EXCEPT(throw_exception_test) \
+  TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, std::logic_error, "Error!")
+
 
 /** \brief This macro is designed to be a short version of
- * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
+ * <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> that is easier to call.
  *
  * \param throw_exception_test [in] Test for when to throw the exception.
  * This can and should be an expression that may mean something to the user.
@@ -274,61 +317,29 @@ TEUCHOS_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  *
  * \note The exception thrown is <tt>std::logic_error</tt>.
  *
- * See <tt>TEST_FOR_EXCEPTION()</tt> for more details.
+ * See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> for more details.
  *
  * \ingroup TestForException_grp
  */
-#define TEST_FOR_EXCEPT_MSG(throw_exception_test, msg) \
-  TEST_FOR_EXCEPTION(throw_exception_test, std::logic_error, msg)
+#define TEUCHOS_TEST_FOR_EXCEPT_MSG(throw_exception_test, msg) \
+  TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, std::logic_error, msg)
 
-/** \brief This macro is the same as <tt>TEST_FOR_EXCEPTION()</tt> except that the
+
+/** \brief This macro is the same as <tt>TEUCHOS_TEST_FOR_EXCEPT()</tt> except that the
  * exception will be caught, the message printed, and then rethrown.
  *
- * \param throw_exception_test [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
- *
- * \param Exception [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
- *
- * \param msg [in] See <tt>TEST_FOR_EXCEPTION()</tt>.
+ * \param throw_exception_test [in] See <tt>TEUCHOS_TEST_FOR_EXCEPT()</tt>.
  *
  * \param out_ptr [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will
  * receive a printout of a line of output that gives the exception type and
  * the error message that is generated.
  *
- * See <tt>TEST_FOR_EXCEPTION()</tt> for more details.
+ * See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> for more details.
  *
  * \ingroup TestForException_grp
  */
-#define TEST_FOR_EXCEPTION_PRINT(throw_exception_test, Exception, msg, out_ptr) \
-try { \
-  TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg); \
-} \
-catch(const std::exception &except) { \
-  std::ostream *l_out_ptr = (out_ptr); \
-  if(l_out_ptr) { \
-    *l_out_ptr \
-      << "\nThorwing an std::exception of type \'"<<Teuchos::typeName(except) \
-      <<"\' with the error message: " \
-      << except.what(); \
-  } \
-  throw; \
-}
-
-
-/** \brief This macro is the same as <tt>TEST_FOR_EXCEPT()</tt> except that the
- * exception will be caught, the message printed, and then rethrown.
- *
- * \param throw_exception_test [in] See <tt>TEST_FOR_EXCEPT()</tt>.
- *
- * \param out_ptr [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will
- * receive a printout of a line of output that gives the exception type and
- * the error message that is generated.
- *
- * See <tt>TEST_FOR_EXCEPTION()</tt> for more details.
- *
- * \ingroup TestForException_grp
- */
-#define TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr) \
-  TEST_FOR_EXCEPTION_PRINT(throw_exception_test, std::logic_error, "Error!", out_ptr)
+#define TEUCHOS_TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr) \
+  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(throw_exception_test, std::logic_error, "Error!", out_ptr)
 
 
 /** \brief This macro intercepts an exception, prints a standardized message
@@ -346,6 +357,123 @@ catch(const std::exception &except) { \
        << "caught in " << __FILE__ << ":" << __LINE__ << std::endl ; \
   throw std::runtime_error(omsg.str()); \
 }
+
+
+//
+// Deprecated functions
+//
+
+
+/** \brief Deprecated. */
+TEUCHOS_DEPRECATED inline
+void TestForException_incrThrowNumber()
+{
+  Teuchos::TestForException_incrThrowNumber();
+}
+
+
+/** \brief Deprecated. */
+TEUCHOS_DEPRECATED inline
+int TestForException_getThrowNumber()
+{
+  return Teuchos::TestForException_getThrowNumber();
+}
+
+
+/** \brief Deprecated. */
+TEUCHOS_DEPRECATED inline
+void TestForException_break( const std::string &msg )
+{
+  Teuchos::TestForException_break(msg);
+}
+
+
+/** \brief Deprecated. */
+TEUCHOS_DEPRECATED inline
+void TestForException_setEnableStacktrace(bool enableStrackTrace)
+{
+  Teuchos::TestForException_setEnableStacktrace(enableStrackTrace);
+}
+
+
+/** \brief Deprecated. */
+TEUCHOS_DEPRECATED inline
+bool TestForException_getEnableStacktrace()
+{
+  return Teuchos::TestForException_getEnableStacktrace();
+}
+
+
+//
+// Deprecated macros
+//
+// NOTE: You can't deprecate macros but you can deprecate functions that
+// deprecated macros can call!  This way, as people get a fairly good
+// deprecated warning when they use the non-namespaced macros.
+//
+
+
+TEUCHOS_DEPRECATED inline void TEST_FOR_EXCEPTION_this_macro_is_deprecated() {}
+/** \brief Deprecated. */
+#define TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
+  { \
+    TEST_FOR_EXCEPTION_this_macro_is_deprecated(); \
+    TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg); \
+  }
+
+
+TEUCHOS_DEPRECATED inline void TEST_FOR_EXCEPTION_CLASS_FUNC_this_macro_is_deprecated() {}
+/** \brief Deprecated. */
+#define TEST_FOR_EXCEPTION_CLASS_FUNC(throw_exception_test, Exception, msg) \
+  { \
+    TEST_FOR_EXCEPTION_CLASS_FUNC_this_macro_is_deprecated(); \
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(throw_exception_test, Exception, msg); \
+  }
+
+
+TEUCHOS_DEPRECATED inline void TEST_FOR_EXCEPTION_PURE_MSG_this_macro_is_deprecated() {}
+/** \brief Deprecated. */
+#define TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test, Exception, msg) \
+  { \
+    TEST_FOR_EXCEPTION_PURE_MSG_this_macro_is_deprecated(); \
+    TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test, Exception, msg); \
+  }
+
+
+TEUCHOS_DEPRECATED inline void TEST_FOR_EXCEPTION_PRINT_this_macro_is_deprecated() {}
+/** \brief Deprecated. */
+#define TEST_FOR_EXCEPTION_PRINT(throw_exception_test, Exception, msg, out_ptr) \
+  { \
+    TEST_FOR_EXCEPTION_PRINT_this_macro_is_deprecated(); \
+    TEUCHOS_TEST_FOR_EXCEPTION_PRINT(throw_exception_test, Exception, msg, out_ptr); \
+  }
+
+
+TEUCHOS_DEPRECATED inline void TEST_FOR_EXCEPT_this_macro_is_deprecated() {}
+/** \brief Deprecated. */
+#define TEST_FOR_EXCEPT(throw_exception_test) \
+  { \
+    TEST_FOR_EXCEPT_this_macro_is_deprecated(); \
+    TEUCHOS_TEST_FOR_EXCEPT(throw_exception_test); \
+  }
+
+
+TEUCHOS_DEPRECATED inline void TEST_FOR_EXCEPT_MSG_this_macro_is_deprecated() {}
+/** \brief Deprecated. */
+#define TEST_FOR_EXCEPT_MSG(throw_exception_test, msg) \
+  { \
+    TEST_FOR_EXCEPT_MSG_this_macro_is_deprecated(); \
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(throw_exception_test, msg); \
+  }
+
+
+TEUCHOS_DEPRECATED inline void TEST_FOR_EXCEPT_PRINT_this_macro_is_deprecated() {}
+/** \brief Deprecated. */
+#define TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr) \
+  { \
+    TEST_FOR_EXCEPT_PRINT_this_macro_is_deprecated(); \
+    TEUCHOS_TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr); \
+  }
 
 
 #endif // TEUCHOS_TEST_FOR_EXCEPTION_H

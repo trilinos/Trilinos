@@ -43,7 +43,7 @@ namespace Ioss {
   class EdgeSet : public EntitySet {
   public:
     EdgeSet(); // Used for template typing only
-    EdgeSet(const DatabaseIO *io_database, const std::string& name,
+    EdgeSet(DatabaseIO *io_database, const std::string& name,
 	    size_t number_edges);
 
     std::string type_string() const {return "EdgeSet";}

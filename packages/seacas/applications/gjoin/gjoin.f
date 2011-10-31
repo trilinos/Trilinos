@@ -77,12 +77,12 @@ C   --   "User's Manual for GJOIN"
 
       include 'exodusII.inc'
 
-      include 'params.blk'
-      INCLUDE 'progqa.blk'
-      INCLUDE 'titles.blk'
-      INCLUDE 'dbvars.blk'
-      INCLUDE 'filnum.blk'
-      INCLUDE 'xyzrot.blk'
+      include 'gj_params.blk'
+      include 'gj_progqa.blk'
+      include 'gj_titles.blk'
+      include 'gj_dbvars.blk'
+      include 'gj_filnum.blk'
+      include 'gj_xyzrot.blk'
 
       DIMENSION A(1), IA(1)
 C      --A - the dynamic numeric memory base array
@@ -103,7 +103,7 @@ C    or 'MULTIPLE_TOPOLOGIES' if not common topology.
 C      --QAREC - the QA records
 C      --INFREC - the information records
 
-      INCLUDE 'qainfo.blk'
+      include 'gj_qainfo.blk'
 
       CALL STRTUP (QAINFO)
 
@@ -445,7 +445,7 @@ C   --"Munch" the element blocks
      &      IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
      &      IA(KLINK), A(KATRIB), IA(KLINKO), A(KATRO),
      &      IA(KIXEL), IA(KIXELB), IA(KJNELB), IA(KISCR),
-     $      C(KNMLB),  C(KNMSC), LLINK, LATRIB)
+     &      C(KNMLB),  C(KNMSC), LLINK, LATRIB)
 
          CALL MDDEL ('LINKO')
          CALL MDDEL ('ATRIBO')

@@ -5,14 +5,16 @@
 #include <stdio.h>
 #include "structs.h"
 
-int       aprod_(lnvtxs, x, y, dA, vwsqrt, work, dorthlist)
-long     *lnvtxs;
-double   *x;
-double   *y;
-double   *dA;
-double   *vwsqrt;
-double   *work;
-double   *dorthlist;		/* vectors to orthogonalize against */
+int 
+aprod_ (
+    long *lnvtxs,
+    double *x,
+    double *y,
+    double *dA,
+    double *vwsqrt,
+    double *work,
+    double *dorthlist		/* vectors to orthogonalize against */
+)
 {
     int       nvtxs;		/* int copy of long_nvtxs */
     struct vtx_data **A;

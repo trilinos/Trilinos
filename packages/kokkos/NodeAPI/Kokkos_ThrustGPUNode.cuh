@@ -53,7 +53,7 @@ namespace Kokkos {
   void ThrustGPUNode::parallel_for(int begin, int end, WDP wd) {
 #ifdef HAVE_KOKKOS_DEBUG
     cudaError_t err = cudaGetLastError();
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
         "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
         << "cudaGetLastError() returned error before function call:\n"
         << cudaGetErrorString(err) );
@@ -65,7 +65,7 @@ namespace Kokkos {
     thrust::for_each( bit, eit, body );
 #ifdef HAVE_KOKKOS_DEBUG
     err = cudaThreadSynchronize();
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
         "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
         << "cudaThreadSynchronize() returned error after function call:\n"
         << cudaGetErrorString(err) );
@@ -78,7 +78,7 @@ namespace Kokkos {
   {
 #ifdef HAVE_KOKKOS_DEBUG
     cudaError_t err = cudaGetLastError();
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
         "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
         << "cudaGetLastError() returned error before function call:\n"
         << cudaGetErrorString(err) );
@@ -92,7 +92,7 @@ namespace Kokkos {
     ret = thrust::transform_reduce( bit, eit, TOp, init, ROp );
 #ifdef HAVE_KOKKOS_DEBUG
     err = cudaThreadSynchronize();
-    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
         "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
         << "cudaThreadSynchronize() returned error after function call:\n"
         << cudaGetErrorString(err) );

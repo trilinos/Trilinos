@@ -1,0 +1,7 @@
+
+INCLUDE(PackageMacros)
+
+IF (${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT)
+   ADD_SUBDIRECTORY(xfer-service)
+ENDIF()
+

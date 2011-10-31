@@ -49,7 +49,7 @@
 // Utilities
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 // I/O utilities
 #include "EpetraExt_VectorOut.h"
@@ -487,7 +487,7 @@ int main(int argc, char *argv[]) {
     else if (opMethod == FULLY_ASSEMBLED)
       sgOpParams.set("Operator Method", "Fully Assembled");
     else
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  Unknown operator method " << opMethod
 			 << "." << std::endl);
     if (precMethod == MEAN)  {
@@ -543,7 +543,7 @@ int main(int argc, char *argv[]) {
       GPrecParams.set("schwarz: combine mode", "Add");
     }
     else
-      TEST_FOR_EXCEPTION(true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  Unknown preconditioner method " << precMethod
 			 << "." << std::endl);
 

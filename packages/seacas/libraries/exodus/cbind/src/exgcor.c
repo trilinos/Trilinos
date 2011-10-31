@@ -246,7 +246,7 @@ int ex_get_coord (int exoid,
 	    exerrval = status;
 	    sprintf(errmsg,
 		    "Error: failed to get %s coord array in file id %d", which, exoid);
-	    ex_err("ex_put_coord",errmsg,exerrval);
+	    ex_err("ex_get_coord",errmsg,exerrval);
 	    return (EX_FATAL);
 	  }
         }

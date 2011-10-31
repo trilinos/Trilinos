@@ -66,7 +66,7 @@
 #include "MyIncompleteChol.h"
 
 #include <stdexcept>
-#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
 
 const int LOBPCG_CHOL = 1;
 const int LOBPCG_LIGHT = 2;
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     if (myPid == i) {
       ifstream fin("control.driver");
       char buff[101];
-      TEST_FOR_EXCEPTION( !fin, std::runtime_error, "The input file 'control."
+      TEUCHOS_TEST_FOR_EXCEPTION( !fin, std::runtime_error, "The input file 'control."
 			  "driver' could not be opened." );
       fin >> dimension; fin.getline(buff, 100);
       switch (dimension) {
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
     // FIXME (mfh 14 Jan 2011) I'm not sure if std::runtime_error is
     // the right exception to throw.  I'm just replacing exit(1) with
     // an exception, as per Trilinos coding standards.
-    TEST_FOR_EXCEPTION( massNEV < 1, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( massNEV < 1, std::runtime_error, 
 			"Error in the computation of smallest eigenvalue for "
 			"the mass matrix. Output information from eigensolver"
 			" = " << massNEV );

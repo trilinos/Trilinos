@@ -43,8 +43,8 @@ namespace Ioss {
   class ElementSet : public EntitySet {
   public:
     ElementSet(); // Used for template typing only
-    ElementSet(const DatabaseIO *io_database, const std::string& name,
-	    size_t number_elements);
+    ElementSet(DatabaseIO *io_database, const std::string& name,
+	       size_t number_elements);
 
     std::string type_string() const {return "ElementSet";}
     EntityType type() const {return ELEMENTSET;}

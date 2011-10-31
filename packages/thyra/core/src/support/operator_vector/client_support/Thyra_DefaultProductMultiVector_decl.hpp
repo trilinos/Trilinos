@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -231,6 +231,7 @@ public:
   //@{
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultProductMultiVector(
     const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
     const int numMembers
@@ -239,6 +240,7 @@ public:
     { initialize(productSpace_in, numMembers); }
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultProductMultiVector(
     const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
     const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
@@ -247,6 +249,7 @@ public:
     { initialize(productSpace_in, multiVecs); }
 
   /** \brief Deprecated. */
+  THYRA_DEPRECATED
   DefaultProductMultiVector(
     const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
     const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs

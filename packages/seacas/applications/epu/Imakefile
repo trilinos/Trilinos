@@ -9,12 +9,9 @@ CXXEXTRA_DEFINES = -LANG:std
 LOCAL_LDFLAGS = -LANG:std
 #endif
 
-LIBS = $(EXOIIV2C) $(NETCDF) -lm
+LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) -lm
 
-SRCS =	ExodusFile.C GetLongOpt.C \
-	Internals.C ParallelDisks.C \
-	SystemInterface.C epu.C tokenize.C \
-	smart_assert.C add_to_log.C timer.C to_string.C
+SRCS =	EP_ExodusFile.C EP_Internals.C EP_ParallelDisks.C EP_SystemInterface.C epu.C
 
 OBJS = $(SRCS:.C=.o)
 

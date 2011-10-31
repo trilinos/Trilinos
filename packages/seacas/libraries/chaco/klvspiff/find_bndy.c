@@ -10,12 +10,14 @@
 
 /* Find vertices on boundary of partition, and change their assignments. */
 
-int       find_bndy(graph, nvtxs, assignment, new_val, pbndy_list)
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int    *assignment;		/* processor each vertex gets assigned to */
-int       new_val;		/* assignment value for boundary vtxs */
-int     **pbndy_list;		/* returned list, end with zero */
+int 
+find_bndy (
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int *assignment,		/* processor each vertex gets assigned to */
+    int new_val,		/* assignment value for boundary vtxs */
+    int **pbndy_list		/* returned list, end with zero */
+)
 {
     int      *bndy_list;	/* returned list, end with zero */
     int      *edges;		/* loops through edge list */
@@ -52,13 +54,15 @@ int     **pbndy_list;		/* returned list, end with zero */
 
 /* Find a vertex separator on one side of an edge separator. */
 
-int       find_side_bndy(graph, nvtxs, assignment, side, new_val, pbndy_list)
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int    *assignment;		/* processor each vertex gets assigned to */
-int       side;			/* side to take vertices from */
-int       new_val;		/* assignment value for boundary vtxs */
-int     **pbndy_list;		/* returned list, end with zero */
+int 
+find_side_bndy (
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int *assignment,		/* processor each vertex gets assigned to */
+    int side,			/* side to take vertices from */
+    int new_val,		/* assignment value for boundary vtxs */
+    int **pbndy_list		/* returned list, end with zero */
+)
 
 {
     int      *edges;		/* loops through edge list */

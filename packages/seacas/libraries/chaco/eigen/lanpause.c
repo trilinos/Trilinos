@@ -7,15 +7,17 @@
 #include "structs.h"
 
 /* Determine whether to pause in Lanczos */
-int       lanpause(j, lastpause, interval, q, n, pausemode, version, beta)
-int       j;			/* current step */
-int       lastpause;		/* when last paused */
-int       interval;		/* interval between pauses */
-double  **q;			/* the Lanczos vectors */
-int       n;			/* length of Lanczos vectors */
-int      *pausemode;		/* which pausing criterion to use */
-int       version;		/* which version of sel. orth. we are using */
-double    beta;			/* current off-diagonal value */
+int 
+lanpause (
+    int j,			/* current step */
+    int lastpause,		/* when last paused */
+    int interval,		/* interval between pauses */
+    double **q,			/* the Lanczos vectors */
+    int n,			/* length of Lanczos vectors */
+    int *pausemode,		/* which pausing criterion to use */
+    int version,		/* which version of sel. orth. we are using */
+    double beta			/* current off-diagonal value */
+)
 {
     extern int DEBUG_EVECS;	/* debugging level for eigen computation */
     extern double DOUBLE_EPSILON;       /* machine precision */
@@ -73,15 +75,17 @@ double    beta;			/* current off-diagonal value */
 }
 
 
-int       lanpause_float(j, lastpause, interval, q, n, pausemode, version, beta)
-int       j;			/* current step */
-int       lastpause;		/* when last paused */
-int       interval;		/* interval between pauses */
-float   **q;			/* the Lanczos vectors */
-int       n;			/* length of Lanczos vectors */
-int      *pausemode;		/* which pausing criterion to use */
-int       version;		/* which version of sel. orth. we are using */
-double    beta;			/* current off-diagonal value */
+int 
+lanpause_float (
+    int j,			/* current step */
+    int lastpause,		/* when last paused */
+    int interval,		/* interval between pauses */
+    float **q,			/* the Lanczos vectors */
+    int n,			/* length of Lanczos vectors */
+    int *pausemode,		/* which pausing criterion to use */
+    int version,		/* which version of sel. orth. we are using */
+    double beta			/* current off-diagonal value */
+)
 {
     extern int DEBUG_EVECS;	/* debugging level for eigen computation */
     extern double DOUBLE_EPSILON;       /* machine precision */

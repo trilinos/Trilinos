@@ -129,7 +129,7 @@ void SinCosModel::setImplicitFlag(bool implicit)
 
 ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSolution(double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
@@ -162,14 +162,14 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSolution(double t) const
 //
 ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSensSolution(int j, double t) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
   if (!acceptModelParams_) {
     return inArgs;
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, np_ );
 #endif
   double exact_t = t;
@@ -230,7 +230,7 @@ SinCosModel::get_f_space() const
 ModelEvaluatorBase::InArgs<double>
 SinCosModel::getNominalValues() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
   return nominalValues_;
@@ -318,9 +318,7 @@ SinCosModel::get_W_factory() const
 ModelEvaluatorBase::InArgs<double>
 SinCosModel::createInArgs() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
-      "Error, setImplicitFlag must be called first!\n"
-      );
+  setupInOutArgs_();
   return inArgs_;
 }
 
@@ -331,9 +329,7 @@ SinCosModel::createInArgs() const
 ModelEvaluatorBase::OutArgs<double>
 SinCosModel::createOutArgsImpl() const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
-      "Error, setImplicitFlag must be called first!\n"
-      );
+  setupInOutArgs_();
   return outArgs_;
 }
 
@@ -343,7 +339,7 @@ void SinCosModel::evalModelImpl(
   const ModelEvaluatorBase::OutArgs<double> &outArgs
   ) const
 {
-  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setImplicitFlag must be called first!\n"
       );
 
@@ -433,7 +429,7 @@ RCP<const Thyra::VectorSpaceBase<double> > SinCosModel::get_p_space(int l) const
   if (!acceptModelParams_) {
     return Teuchos::null;
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   return p_space_;
@@ -444,7 +440,7 @@ RCP<const Teuchos::Array<std::string> > SinCosModel::get_p_names(int l) const
   if (!acceptModelParams_) {
     return Teuchos::null;
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   RCP<Teuchos::Array<std::string> > p_strings = 
@@ -457,7 +453,7 @@ RCP<const Teuchos::Array<std::string> > SinCosModel::get_p_names(int l) const
 
 RCP<const Thyra::VectorSpaceBase<double> > SinCosModel::get_g_space(int j) const
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
 #endif
   return g_space_;
@@ -465,83 +461,85 @@ RCP<const Thyra::VectorSpaceBase<double> > SinCosModel::get_g_space(int j) const
 
 // private
 
-void SinCosModel::setupInOutArgs_() 
+void SinCosModel::setupInOutArgs_() const
 {
-  if (!isInitialized_) {
-    
-    {
-      // Set up prototypical InArgs
-      ModelEvaluatorBase::InArgsSetup<double> inArgs;
-      inArgs.setModelEvalDescription(this->description());
-      inArgs.setSupports( ModelEvaluatorBase::IN_ARG_t );
-      inArgs.setSupports( ModelEvaluatorBase::IN_ARG_x );
-      inArgs.setSupports( ModelEvaluatorBase::IN_ARG_beta );
-      if (isImplicit_) {
-        inArgs.setSupports( ModelEvaluatorBase::IN_ARG_x_dot );
-        inArgs.setSupports( ModelEvaluatorBase::IN_ARG_alpha );
-      }
-      if (acceptModelParams_) {
-        inArgs.set_Np(Np_);
-      }
-      inArgs_ = inArgs;
-    }
-    {
-      // Set up prototypical OutArgs
-      ModelEvaluatorBase::OutArgsSetup<double> outArgs;
-      outArgs.setModelEvalDescription(this->description());
-      outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_f );
-      //if (isImplicit_) { // Thyra_ModelEvaluatorBase requires this
-        outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_W_op );
-      //}
-      if (acceptModelParams_) {
-        outArgs.set_Np_Ng(Np_,Ng_);
-        outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_DfDp,0,DERIV_MV_BY_COL );
-      }
-      outArgs_ = outArgs;
-    }
-
-    // Set up nominal values 
-    nominalValues_ = inArgs_;
-    if (haveIC_) 
-    {
-      nominalValues_.set_t(t0_ic_);
-      const RCP<VectorBase<double> > x_ic = createMember(x_space_);
-      { // scope to delete DetachedVectorView
-        Thyra::DetachedVectorView<double> x_ic_view( *x_ic );
-        x_ic_view[0] = a_+b_*sin((f_/L_)*t0_ic_+phi_);
-        x_ic_view[1] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
-      }
-      nominalValues_.set_x(x_ic);
-      if (acceptModelParams_) {
-        const RCP<VectorBase<double> > p_ic = createMember(p_space_);
-        {
-          Thyra::DetachedVectorView<double> p_ic_view( *p_ic );
-          p_ic_view[0] = a_;
-          p_ic_view[1] = f_;
-          p_ic_view[2] = L_;
-        }
-        nominalValues_.set_p(0,p_ic);
-      }
-      if (isImplicit_) {
-        const RCP<VectorBase<double> > x_dot_ic = createMember(x_space_);
-        { // scope to delete DetachedVectorView
-          Thyra::DetachedVectorView<double> x_dot_ic_view( *x_dot_ic );
-          x_dot_ic_view[0] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
-          x_dot_ic_view[1] = -b_*(f_/L_)*(f_/L_)*sin((f_/L_)*t0_ic_+phi_);
-        }
-        nominalValues_.set_x_dot(x_dot_ic);
-      }
-    }
-    isInitialized_ = true;
-
+  if (isInitialized_) {
+    return;
   }
+    
+  {
+    // Set up prototypical InArgs
+    ModelEvaluatorBase::InArgsSetup<double> inArgs;
+    inArgs.setModelEvalDescription(this->description());
+    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_t );
+    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_x );
+    inArgs.setSupports( ModelEvaluatorBase::IN_ARG_beta );
+    if (isImplicit_) {
+      inArgs.setSupports( ModelEvaluatorBase::IN_ARG_x_dot );
+      inArgs.setSupports( ModelEvaluatorBase::IN_ARG_alpha );
+    }
+    if (acceptModelParams_) {
+      inArgs.set_Np(Np_);
+    }
+    inArgs_ = inArgs;
+  }
+
+  {
+    // Set up prototypical OutArgs
+    ModelEvaluatorBase::OutArgsSetup<double> outArgs;
+    outArgs.setModelEvalDescription(this->description());
+    outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_f );
+    //if (isImplicit_) { // Thyra_ModelEvaluatorBase requires this
+      outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_W_op );
+    //}
+    if (acceptModelParams_) {
+      outArgs.set_Np_Ng(Np_,Ng_);
+      outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_DfDp,0,DERIV_MV_BY_COL );
+    }
+    outArgs_ = outArgs;
+  }
+
+  // Set up nominal values 
+  nominalValues_ = inArgs_;
+  if (haveIC_) 
+  {
+    nominalValues_.set_t(t0_ic_);
+    const RCP<VectorBase<double> > x_ic = createMember(x_space_);
+    { // scope to delete DetachedVectorView
+      Thyra::DetachedVectorView<double> x_ic_view( *x_ic );
+      x_ic_view[0] = a_+b_*sin((f_/L_)*t0_ic_+phi_);
+      x_ic_view[1] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
+    }
+    nominalValues_.set_x(x_ic);
+    if (acceptModelParams_) {
+      const RCP<VectorBase<double> > p_ic = createMember(p_space_);
+      {
+        Thyra::DetachedVectorView<double> p_ic_view( *p_ic );
+        p_ic_view[0] = a_;
+        p_ic_view[1] = f_;
+        p_ic_view[2] = L_;
+      }
+      nominalValues_.set_p(0,p_ic);
+    }
+    if (isImplicit_) {
+      const RCP<VectorBase<double> > x_dot_ic = createMember(x_space_);
+      { // scope to delete DetachedVectorView
+        Thyra::DetachedVectorView<double> x_dot_ic_view( *x_dot_ic );
+        x_dot_ic_view[0] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
+        x_dot_ic_view[1] = -b_*(f_/L_)*(f_/L_)*sin((f_/L_)*t0_ic_+phi_);
+      }
+      nominalValues_.set_x_dot(x_dot_ic);
+    }
+  }
+
+  isInitialized_ = true;
 
 }
 
 void SinCosModel::setParameterList(RCP<ParameterList> const& paramList)
 {
   using Teuchos::get;
-  TEST_FOR_EXCEPT( is_null(paramList) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   // 06/16/09 tscoffe:  TODO:  Only set the parameters that explicitely show up
   // in the new parameter list I.e.  Save all the previous options that have

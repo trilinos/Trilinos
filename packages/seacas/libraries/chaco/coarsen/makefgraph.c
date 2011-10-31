@@ -9,19 +9,20 @@
 
 static void makecv2v();
 
-void      makefgraph(graph, nvtxs, nedges, pcgraph, cnvtxs, pcnedges, v2cv,
-		               using_ewgts, igeom, coords, ccoords)
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-struct vtx_data ***pcgraph;	/* coarsened version of graph */
-int       cnvtxs;		/* number of vtxs in coarsened graph */
-int      *pcnedges;		/* number of edges in coarsened graph */
-int      *v2cv;			/* mapping from vtxs to coarsened vtxs */
-int       using_ewgts;		/* are edge weights being used? */
-int       igeom;		/* dimensions of geometric data */
-float   **coords;		/* coordinates for vertices */
-float   **ccoords;		/* coordinates for coarsened vertices */
+void 
+makefgraph (
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    struct vtx_data ***pcgraph,	/* coarsened version of graph */
+    int cnvtxs,		/* number of vtxs in coarsened graph */
+    int *pcnedges,		/* number of edges in coarsened graph */
+    int *v2cv,			/* mapping from vtxs to coarsened vtxs */
+    int using_ewgts,		/* are edge weights being used? */
+    int igeom,		/* dimensions of geometric data */
+    float **coords,		/* coordinates for vertices */
+    float **ccoords		/* coordinates for coarsened vertices */
+)
 {
     extern double make_cgraph_time;
     extern int DEBUG_COARSEN;	/* debug flag for coarsening output */
@@ -211,12 +212,14 @@ float   **ccoords;		/* coordinates for coarsened vertices */
 
 
 
-static void makecv2v(nvtxs, cnvtxs, v2cv, cv2v_vals, cv2v_ptrs)
-int       nvtxs;		/* number of vertices in graph */
-int       cnvtxs;		/* number of vtxs in coarsened graph */
-int      *v2cv;			/* mapping from vtxs to coarsened vtxs */
-int      *cv2v_vals;		/* vtxs corresponding to each cvtx */
-int      *cv2v_ptrs;		/* indices into cv2c_vals */
+static void 
+makecv2v (
+    int nvtxs,		/* number of vertices in graph */
+    int cnvtxs,		/* number of vtxs in coarsened graph */
+    int *v2cv,			/* mapping from vtxs to coarsened vtxs */
+    int *cv2v_vals,		/* vtxs corresponding to each cvtx */
+    int *cv2v_ptrs		/* indices into cv2c_vals */
+)
 
 {
     int       sum;		/* cumulative offests into vals array */

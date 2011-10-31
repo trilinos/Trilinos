@@ -42,6 +42,7 @@
 
 #include <cstddef>
 #include <string>
+#include <Kokkos_DeviceHost.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 #include <impl/Kokkos_ArrayBounds.hpp>
 

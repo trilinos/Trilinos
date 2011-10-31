@@ -161,6 +161,12 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   gtest           ""    EX
   BoostLib        ""    SS
   OpenNURBS       ""    EX
+  Portals         ""    SS
+  CrayPortals     ""    SS
+  Gemini          ""    SS
+  InfiniBand      ""    SS
+  Pablo           ""    SS
+  Pnetcdf         ""    SS
   )
 
 # NOTES:

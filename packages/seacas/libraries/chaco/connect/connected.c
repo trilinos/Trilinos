@@ -8,15 +8,17 @@
 #include "smalloc.h"
 
 
-void      make_connected(graph, nvtxs, nedges, mark, vtxlist, cdata, using_ewgts)
+void 
+make_connected (
 /* Add edges to make graph connected. */
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-int      *nedges;		/* number of edges in graph */
-int    *mark;			/* space for nvtxs+1 ints */
-int      *vtxlist;		/* space for nvtxs ints */
-struct connect_data **cdata;	/* space for connectivity data */
-int       using_ewgts;		/* are edges of graph weighted? */
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    int *nedges,		/* number of edges in graph */
+    int *mark,			/* space for nvtxs+1 ints */
+    int *vtxlist,		/* space for nvtxs ints */
+    struct connect_data **cdata,	/* space for connectivity data */
+    int using_ewgts		/* are edges of graph weighted? */
+)
 {
     struct edgeslist *new_edges;/* list of edges connecting graph */
     struct edgeslist *prev_edge;/* pointer for manipulating edge list */
@@ -57,12 +59,14 @@ int       using_ewgts;		/* are edges of graph weighted? */
 }
 
 
-void      make_unconnected(graph, nedges, cdata, using_ewgts)
+void 
+make_unconnected (
 /* Restore graph to its pristine state and free space for connectivity. */
-struct vtx_data **graph;	/* graph data structure */
-int      *nedges;		/* number of edges in graph */
-struct connect_data **cdata;	/* space for connectivity data */
-int       using_ewgts;		/* are edges of graph weighted? */
+    struct vtx_data **graph,	/* graph data structure */
+    int *nedges,		/* number of edges in graph */
+    struct connect_data **cdata,	/* space for connectivity data */
+    int using_ewgts		/* are edges of graph weighted? */
+)
 {
     struct ilists *old_edges = NULL;	/* edges overwritten for connecting */
     struct flists *old_ewgts = NULL;	/* weights of edges overwritten */
@@ -117,8 +121,10 @@ int       using_ewgts;		/* are edges of graph weighted? */
 
 
 /* Print out the added edges. */
-void      print_connected(cdata)
-struct connect_data *cdata;	/* space for connectivity data */
+void 
+print_connected (
+    struct connect_data *cdata	/* space for connectivity data */
+)
 {
     struct edgeslist *edges;	/* loops through new edges */
 
@@ -137,8 +143,10 @@ struct connect_data *cdata;	/* space for connectivity data */
 
 
 /* Free the edge list created by find_edges. */
-void      free_edgeslist(edge_list)
-struct edgeslist *edge_list;	/* list to be freed */
+void 
+free_edgeslist (
+    struct edgeslist *edge_list	/* list to be freed */
+)
 {
     struct edgeslist *next_list;/* next guy in list */
 

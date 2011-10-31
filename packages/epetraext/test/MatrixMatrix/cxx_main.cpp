@@ -124,6 +124,8 @@ Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
 int time_matrix_matrix_multiply(Epetra_Comm& Comm,
                                 bool verbose);
 
+int test_drumm1(Epetra_Comm& Comm);
+
 /////////////////////////////////////
 //Global variable!!!!
 std::string path;
@@ -198,6 +200,12 @@ int main(int argc, char** argv) {
   err = test_find_rows(Comm);
   if (err != 0) {
     std::cout << "test_find_rows returned err=="<<err<<std::endl;
+    return(err);
+  }
+
+  err = test_drumm1(Comm);
+  if (err != 0) {
+    std::cout << "test_drumm1 returned err=="<<err<<std::endl;
     return(err);
   }
 
@@ -928,5 +936,70 @@ Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
   }
 
   return(matrix);
+}
+
+int test_drumm1(Epetra_Comm& Comm)
+{
+  int size = Comm.NumProc();
+  if (size != 2) return 0;
+
+  int rank = Comm.MyPID();
+
+  int indexBase = 0;
+  int numGlobalElements = 2;
+  
+  Epetra_Map emap(numGlobalElements, indexBase, Comm);
+
+  Epetra_CrsMatrix A(Copy, emap, 0);
+
+  // 2x2 matrix:
+  //   3 4
+  //   1 2
+  std::vector<std::vector<double> > vals(numGlobalElements);
+  vals[0].push_back(3); vals[0].push_back(4);
+  vals[1].push_back(1); vals[1].push_back(2);
+
+  std::vector<int> indices;
+  indices.push_back(0); indices.push_back(1);
+
+  for (size_t row=0; row<numGlobalElements; ++row) {
+    if ( A.MyGRID(row) )
+      A.InsertGlobalValues(row, numGlobalElements, &(vals[row][0]), &indices[0]);
+  }
+
+  A.FillComplete();
+
+  Epetra_CrsMatrix B(Copy, emap, 0);
+  EpetraExt::MatrixMatrix::Multiply(A, true, A, false, B);
+
+  // B = Transpose(A) x A should be
+  //  10 14
+  //  14 20
+  int idx[2];
+  int tmp;
+  double val[2];
+
+  //for this little test, global_row == rank:
+  B.ExtractGlobalRowCopy(rank, 2, tmp, val, idx);
+
+  int test_result = 0;
+
+  if (rank == 0) {
+    if (idx[0] == 0 && val[0] != 10.0) test_result = 1;
+    if (idx[1] == 0 && val[1] != 10.0) test_result = 1;
+    if (idx[0] == 1 && val[0] != 14.0) test_result = 1;
+    if (idx[1] == 1 && val[1] != 14.0) test_result = 1;
+  }
+  else {
+    if (idx[0] == 0 && val[0] != 14.0) test_result = 1;
+    if (idx[1] == 0 && val[1] != 14.0) test_result = 1;
+    if (idx[0] == 1 && val[0] != 20.0) test_result = 1;
+    if (idx[1] == 1 && val[1] != 20.0) test_result = 1;
+  }
+
+  int global_test_result = 0;
+  Comm.SumAll(&test_result, &global_test_result, 1);
+
+  return global_test_result;
 }
 

@@ -169,16 +169,25 @@ namespace ML_Epetra
     //! Nodal Laplacian (for aggregation)
     const Epetra_CrsMatrix * TMT_Matrix_;
     
+#ifdef HAVE_ML_EPETRAEXT
+    //! Structure for compatibility between Epetra and ML column maps.
+    EpetraExt::CrsMatrix_SolverMap K2_Matrix_Trans_;
+    EpetraExt::CrsMatrix_SolverMap K1_Matrix_Trans_;
+    EpetraExt::CrsMatrix_SolverMap FaceNode_Matrix_Trans_;
+    EpetraExt::CrsMatrix_SolverMap D0_Clean_Matrix_Trans_;
+    EpetraExt::CrsMatrix_SolverMap D0_Matrix_Trans_;    
+    EpetraExt::CrsMatrix_SolverMap TMT_Matrix_Trans_;
+#endif
+
     //! (1,1) Block Preconditioner
     ML_Preconditioner * FacePC;
 
     //! (2,2) Block Preconditioner
-    //    ML_Preconditioner * EdgePC;
     ML_Preconditioner * EdgePC;
 
 #ifdef HAVE_ML_IFPACK
     // Outer Smoother
-    Ifpack_Preconditioner *IfSmoother;
+    Epetra_Operator *IfSmoother;
 #endif
 
     //! Domain Map

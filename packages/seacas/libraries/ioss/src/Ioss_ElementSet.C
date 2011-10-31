@@ -38,16 +38,12 @@
 #include <Ioss_Utils.h>
 #include <string>
 
-namespace {
-  const std::string SCALAR() { return std::string("scalar");}
-}
-
 Ioss::ElementSet::ElementSet()
   : Ioss::EntitySet(NULL, "invalid", 0)
 {}
 
-Ioss::ElementSet::ElementSet(const Ioss::DatabaseIO *io_database, const std::string& my_name,
-		       size_t number_elements)
+Ioss::ElementSet::ElementSet(Ioss::DatabaseIO *io_database, const std::string& my_name,
+			     size_t number_elements)
   : Ioss::EntitySet(io_database, my_name, number_elements)
 {}
 

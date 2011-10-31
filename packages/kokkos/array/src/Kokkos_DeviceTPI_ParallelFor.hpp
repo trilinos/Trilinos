@@ -84,11 +84,11 @@ public:
   static void execute( const size_type work_count ,
                        const FunctorType & functor )
   {
-    DeviceTPI::set_dispatch_functor();
+    DeviceTPI::memory_space::set_dispatch_functor();
 
     ParallelFor driver( work_count , functor );
 
-    DeviceTPI::clear_dispatch_functor();
+    DeviceTPI::memory_space::clear_dispatch_functor();
 
     TPI_Run_threads( & run_on_tpi , & driver , 0 );
   }

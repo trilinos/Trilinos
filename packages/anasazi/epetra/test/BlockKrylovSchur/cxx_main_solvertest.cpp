@@ -78,18 +78,18 @@ void checks( RCP<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int
 
   // Remember that block Krylov-Schur needs to keep an extra vector for F, 
   // the next block of the factorization (AV=VH+FB^T).
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)-solver->getBlockSize() != solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match allocated size for V");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)-solver->getBlockSize() != solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match allocated size for V");
 
-  TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
 
-  TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
+  TEUCHOS_TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
 
   if (solver->getProblem().isHermitian()) {
-    TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks,get_out,
+    TEUCHOS_TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks,get_out,
         "BlockKrylovSchur::getMaxSubspaceDim() should be blocksize times the number of blocks.");
   }
   else {
-    TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks+1,get_out,
+    TEUCHOS_TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks+1,get_out,
         "BlockKrylovSchur::getMaxSubspaceDim() should be one vector more than the blocksize times the number of blocks.");
   }
 
@@ -130,7 +130,7 @@ void checks( RCP<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int
       MagnitudeType error;
       for (int i=0; i<numRitzVecs; i++) {
         error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzVecNrm[i] - 1.0 );
-        TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz vectors are not normalized.");
+        TEUCHOS_TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz vectors are not normalized.");
       }      
 
       /* TO DO: Fix the iteration to compute residuals in the event of a non-euclidean normalization of the basis.
@@ -140,14 +140,14 @@ void checks( RCP<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int
       for (int i=0; i<(int)ritzResNrm.size(); i++) {
       error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzResids[i] - ritzResNrm[i] );
       cout << error/ritzResNrm[i] << endl;
-      TEST_FOR_EXCEPTION(error > 1e-13,get_out,"Ritz residuals from iteration do not compare to those computed.");
+      TEUCHOS_TEST_FOR_EXCEPTION(error > 1e-13,get_out,"Ritz residuals from iteration do not compare to those computed.");
       }
       */
     }
   }
   else {
     // not initialized
-    TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"In unitialized state, getCurSubspaceDim() should be 0.");
+    TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"In unitialized state, getCurSubspaceDim() should be 0.");
   }
 }
 
@@ -165,13 +165,13 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver;
   try {
     solver = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
-    TEST_FOR_EXCEPTION(invalid, get_out, "Instantiating with invalid parameters failed to throw exception.")
+    TEUCHOS_TEST_FOR_EXCEPTION(invalid, get_out, "Instantiating with invalid parameters failed to throw exception.")
   }
   catch (const std::invalid_argument &ia) {
     if (!invalid) {
       printer->stream(Warnings) << "Error thrown at instantiation: " << ia.what() << endl;
     }
-    TEST_FOR_EXCEPTION(!invalid, get_out, "Instantiating with valid parameters unexpectadly threw exception.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!invalid, get_out, "Instantiating with valid parameters unexpectadly threw exception.");
 
     // caught expected exception
     return;
@@ -184,49 +184,49 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   SolverUtils<ScalarType,MV,OP> msutils;
 
   // solver should be uninitialized
-  TEST_FOR_EXCEPTION(solver->isInitialized() != false,get_out,"Solver should be un-initialized after instantiation.");  
-  TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations after initialization should be zero after init.")
-  TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != false,get_out,"Solver should be un-initialized after instantiation.");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations after initialization should be zero after init.")
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 
   // initialize solver and perform checks
   try {
     solver->initialize(initstate);
-    TEST_FOR_EXCEPTION(invalidinit, get_out, "Initializing with invalid data failed to throw exception.")
+    TEUCHOS_TEST_FOR_EXCEPTION(invalidinit, get_out, "Initializing with invalid data failed to throw exception.")
   }
   catch (const std::invalid_argument &ia) {
-    TEST_FOR_EXCEPTION(!invalidinit, get_out, "Initializing with valid data unexpectadly threw exception.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!invalidinit, get_out, "Initializing with valid data unexpectadly threw exception.");
     // caught expected exception
     return;
   }
 
-  TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
-  TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
-  TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"after init, getCurSubspaceDim() should be zero, only the kernel was generated.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"after init, getCurSubspaceDim() should be zero, only the kernel was generated.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 
   // call iterate(); solver should perform exactly one iteration and return; status test should be passed
   solver->iterate();
-  TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
-  TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
-  TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
-  TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != blocksize,get_out,"after one step, getCurSubspaceDim() should be blocksize.");
+  TEUCHOS_TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != blocksize,get_out,"after one step, getCurSubspaceDim() should be blocksize.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 
   // reset numiters, call iterate(); solver should perform exactly one iteration and return; status test should be passed
   solver->resetNumIters();
-  TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero after resetNumIters().")
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero after resetNumIters().")
   solver->iterate();
-  TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
-  TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
-  TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
-  TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 2*blocksize,get_out,"after two steps, getCurSubspaceDim() should be 2*blocksize.");
+  TEUCHOS_TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 2*blocksize,get_out,"after two steps, getCurSubspaceDim() should be 2*blocksize.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 }
 
@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
     try {
       RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver 
         = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
     catch (const std::invalid_argument &ia) {
       // caught expected exception
@@ -469,7 +469,7 @@ int main(int argc, char *argv[])
     try {
       RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver 
         = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
     catch (const std::invalid_argument &ia) {
       // caught expected exception
@@ -480,7 +480,7 @@ int main(int argc, char *argv[])
     try {
       RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver 
         = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
     catch (const std::invalid_argument &ia) {
       // caught expected exception
@@ -491,7 +491,7 @@ int main(int argc, char *argv[])
     try {
       RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver 
         = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
     catch (const std::invalid_argument &ia) {
       // caught expected exception
@@ -502,7 +502,7 @@ int main(int argc, char *argv[])
     try {
       RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver 
         = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
     catch (const std::invalid_argument &ia) {
       // caught expected exception

@@ -5,16 +5,21 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int tinvit_(nm, n, d, e, e2, m, w, ind, z, ierr, rv1, rv2, 
-	rv3, rv4, rv6)
-integer *nm, *n;
-doublereal *d, *e, *e2;
-integer *m;
-doublereal *w;
-integer *ind;
-doublereal *z;
-integer *ierr;
-doublereal *rv1, *rv2, *rv3, *rv4, *rv6;
+int tinvit_(integer *nm,
+	    integer *n,
+	    doublereal *d,
+	    doublereal *e,
+	    doublereal *e2,
+	    integer *m,
+	    doublereal *w,
+	    integer *ind,
+	    doublereal *z,
+	    integer *ierr,
+	    doublereal *rv1,
+	    doublereal *rv2,
+	    doublereal *rv3,
+	    doublereal *rv4,
+	    doublereal *rv6)
 {
     /* System generated locals */
     integer z_dim1, z_offset, i__1, i__2, i__3;

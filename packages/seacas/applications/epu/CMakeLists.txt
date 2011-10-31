@@ -4,19 +4,21 @@ INCLUDE(PackageLibraryMacros)
 
 SUBPACKAGE(Epu)
 
-SET(CMAKE_EXECUTABLE_SUFFIX "")
-
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 SET(HEADERS "")
-SET(SOURCES ExodusFile.C GetLongOpt.C Internals.C ParallelDisks.C 
-	SystemInterface.C tokenize.C smart_assert.C add_to_log.C timer.C to_string.C)
+SET(SOURCES EP_ExodusFile.C EP_Internals.C EP_ParallelDisks.C EP_SystemInterface.C )
 
-PACKAGE_ADD_LIBRARY(epu_lib SOURCES ${SOURCES} DEPLIBS exodus)
-PACKAGE_ADD_EXECUTABLE(epu NOEXEPREFIX NOEXESUFFIX SOURCES epu.C DEPLIBS epu_lib)
-install_executable(epu)
+#disabling on PGI due to an odd compiler issue with the compiler generated assembly.
+#this error only seems to manifest on pgi 11.1, however, the version of the compiler
+#is not given for pgi compilers unfortunately so we can't be more specific
+IF(NOT __LINUX_COMPILER_PGI)
+  PACKAGE_ADD_LIBRARY(epu_lib SOURCES ${SOURCES} DEPLIBS suplib exodus)
+  PACKAGE_ADD_EXECUTABLE(epu NOEXEPREFIX NOEXESUFFIX SOURCES epu.C DEPLIBS epu_lib)
+  install_executable(epu)
+ENDIF()
 
 SUBPACKAGE_POSTPROCESS()
 

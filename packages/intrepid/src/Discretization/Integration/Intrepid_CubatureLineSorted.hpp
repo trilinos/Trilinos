@@ -52,7 +52,7 @@
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_Cubature.hpp"
 #include "Intrepid_BurkardtRules.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
 #include "Intrepid_FieldContainer.hpp"
 

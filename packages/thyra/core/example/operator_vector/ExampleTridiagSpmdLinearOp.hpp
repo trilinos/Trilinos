@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -237,7 +237,7 @@ void ExampleTridiagSpmdLinearOp<Scalar>::initialize(
   const Teuchos::ArrayView<const Scalar> &upper
   )
 {
-  TEST_FOR_EXCEPT( localDim < 2 );
+  TEUCHOS_TEST_FOR_EXCEPT( localDim < 2 );
   comm_ = comm;
   space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm, localDim, -1);
   lower_ = lower;

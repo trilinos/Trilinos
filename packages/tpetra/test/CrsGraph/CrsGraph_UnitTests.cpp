@@ -545,7 +545,7 @@ namespace {
     if (numImages > 1) {
       // create a Map
       const size_t numLocal = (myImageID == 1 ? 0 : 1);
-      TEST_FOR_EXCEPTION( myImageID != 1 && numLocal != 1, std::logic_error, "numLocal assumed below to be 1.");
+      TEUCHOS_TEST_FOR_EXCEPTION( myImageID != 1 && numLocal != 1, std::logic_error, "numLocal assumed below to be 1.");
       RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,(myImageID == 1 ? 0 : numLocal),comm);
       RCP<RowGraph<LO,GO> > test_row;
       {

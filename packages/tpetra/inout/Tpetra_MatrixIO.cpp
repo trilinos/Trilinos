@@ -11,7 +11,7 @@
 #include <cctype>
 
 bool Tpetra::Utils::parseIfmt(Teuchos::ArrayRCP<char> fmt, int &perline, int &width) {
-  TEST_FOR_EXCEPT(fmt.size() != 0 && fmt[fmt.size()-1] != '\0');
+  TEUCHOS_TEST_FOR_EXCEPT(fmt.size() != 0 && fmt[fmt.size()-1] != '\0');
   // parses integers n and d out of (nId)
   bool error = true;
   std::transform(fmt.begin(), fmt.end(), fmt, static_cast < int(*)(int) > (std::toupper));
@@ -22,7 +22,7 @@ bool Tpetra::Utils::parseIfmt(Teuchos::ArrayRCP<char> fmt, int &perline, int &wi
 }
 
 bool Tpetra::Utils::parseRfmt(Teuchos::ArrayRCP<char> fmt, int &perline, int &width, int &prec, char &valformat) {
-  TEST_FOR_EXCEPT(fmt.size() != 0 && fmt[fmt.size()-1] != '\0');
+  TEUCHOS_TEST_FOR_EXCEPT(fmt.size() != 0 && fmt[fmt.size()-1] != '\0');
   std::transform(fmt.begin(), fmt.end(), fmt, static_cast < int(*)(int) > (std::toupper));
   // find the first left paren '(' and the last right paren ')'
   Teuchos::ArrayRCP<char>::iterator firstLeftParen = std::find( fmt.begin(),  fmt.end(), '(');
@@ -74,35 +74,35 @@ void Tpetra::Utils::readHBHeader(std::ifstream &fin, Teuchos::ArrayRCP<char> &Ti
   const std::string errStr("Tpetra::Utils::readHBHeader(): Improperly formatted H/B file: ");
   /*  First line:   (A72,A8) */
   fin.getline(line,MAXLINE);
-  TEST_FOR_EXCEPTION( std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
+  TEUCHOS_TEST_FOR_EXCEPTION( std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
   (void)std::sscanf(line, "%72c%8[^\n]", Title.getRawPtr(), Key.getRawPtr());
   /*  Second line:  (5I14) or (4I14) */
   fin.getline(line,MAXLINE);
-  TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
   if ( std::sscanf(line,"%14d%14d%14d%14d%14d",&Totcrd,&Ptrcrd,&Indcrd,&Valcrd,&Rhscrd) != 5 ) {
     Rhscrd = 0;
-    TEST_FOR_EXCEPTION(std::sscanf(line,"%14d%14d%14d%14d",&Totcrd,&Ptrcrd,&Indcrd,&Valcrd) != 4, std::runtime_error, errStr << "error reading pointers (line 2)");
+    TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%14d%14d%14d%14d",&Totcrd,&Ptrcrd,&Indcrd,&Valcrd) != 4, std::runtime_error, errStr << "error reading pointers (line 2)");
   }
   /*  Third line:   (A3, 11X, 4I14) */
   fin.getline(line,MAXLINE);
-  TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
-  TEST_FOR_EXCEPTION(std::sscanf(line, "%3c%14i%14i%14i%14i", Type.getRawPtr(),&Nrow,&Ncol,&Nnzero,&Neltvl) != 5 , std::runtime_error, errStr << "error reading matrix meta-data (line 3)");
+  TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line, "%3c%14i%14i%14i%14i", Type.getRawPtr(),&Nrow,&Ncol,&Nnzero,&Neltvl) != 5 , std::runtime_error, errStr << "error reading matrix meta-data (line 3)");
   std::transform(Type.begin(), Type.end(), Type.begin(), static_cast < int(*)(int) > (std::toupper));
   /*  Fourth line:  */
   fin.getline(line,MAXLINE);
-  TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
   if (Rhscrd != 0) {
-    TEST_FOR_EXCEPTION(std::sscanf(line,"%16c%16c%20c%20c",Ptrfmt.getRawPtr(),Indfmt.getRawPtr(),Valfmt.getRawPtr(),Rhsfmt.getRawPtr()) != 4, std::runtime_error, errStr << "error reading formats (line 4)");
+    TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%16c%16c%20c%20c",Ptrfmt.getRawPtr(),Indfmt.getRawPtr(),Valfmt.getRawPtr(),Rhsfmt.getRawPtr()) != 4, std::runtime_error, errStr << "error reading formats (line 4)");
   }
   else {
-    TEST_FOR_EXCEPTION(std::sscanf(line,"%16c%16c%20c",Ptrfmt.getRawPtr(),Indfmt.getRawPtr(),Valfmt.getRawPtr()) != 3,                        std::runtime_error, errStr << "error reading formats (line 4)");
+    TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%16c%16c%20c",Ptrfmt.getRawPtr(),Indfmt.getRawPtr(),Valfmt.getRawPtr()) != 3,                        std::runtime_error, errStr << "error reading formats (line 4)");
   }
   /*  (Optional) Fifth line: */
   if (Rhscrd != 0 ) { 
     Rhstype.resize(3 + 1,'\0');
     fin.getline(line,MAXLINE);
-    TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
-    TEST_FOR_EXCEPTION(std::sscanf(line,"%3c%14d%14d", Rhstype.getRawPtr(), &Nrhs, &Nrhsix) != 3, std::runtime_error, errStr << "error reading right-hand-side meta-data (line 5)");
+    TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
+    TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%3c%14d%14d", Rhstype.getRawPtr(), &Nrhs, &Nrhsix) != 3, std::runtime_error, errStr << "error reading right-hand-side meta-data (line 5)");
   }
 }
 
@@ -119,7 +119,7 @@ void Tpetra::Utils::readHBInfo(const std::string &filename, int &M, int &N, int 
     fin.close();
   }
   catch (std::exception &e) {
-    TEST_FOR_EXCEPTION(true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, 
         "Tpetra::Utils::readHBInfo() of filename \"" << filename << "\" caught exception: " << std::endl
         << e.what() << std::endl);
   }
@@ -157,12 +157,12 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
     const bool readPatternOnly = (type[0] == 'P' || type[0] == 'p');
     const bool readComplex     = (type[0] == 'C' || type[0] == 'c');
     /*  Parse the array input formats from Line 3 of HB file  */
-    TEST_FOR_EXCEPTION( Tpetra::Utils::parseIfmt(Ptrfmt,ptrsPerLine,ptrWidth) == true, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( Tpetra::Utils::parseIfmt(Ptrfmt,ptrsPerLine,ptrWidth) == true, std::runtime_error,
         "Tpetra::Utils::readHBMatDouble(): error parsing. Invalid/unsupported file format.");
-    TEST_FOR_EXCEPTION( Tpetra::Utils::parseIfmt(Indfmt,indsPerLine,indWidth) == true, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( Tpetra::Utils::parseIfmt(Indfmt,indsPerLine,indWidth) == true, std::runtime_error,
         "Tpetra::Utils::readHBMatDouble(): error parsing. Invalid/unsupported file format.");
     if (readPatternOnly == false) {
-      TEST_FOR_EXCEPTION( Tpetra::Utils::parseRfmt(Valfmt,valsPerLine,valWidth,valPrec,valFlag) == true, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION( Tpetra::Utils::parseRfmt(Valfmt,valsPerLine,valWidth,valPrec,valFlag) == true, std::runtime_error,
           "Tpetra::Utils::readHBMatDouble(): error parsing. Invalid/unsupported file format.");
     }
     // special case this: the reason is that the number of colPtrs read is numCols+1, which is non-zero even if numCols == 0
@@ -190,7 +190,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
       char NullSub = '\0';
       for (int lno=0; lno < ptrCrd; ++lno) {
         fin.getline(lineBuf, MAXSIZE);
-        TEST_FOR_EXCEPTION(std::sscanf(lineBuf,"%*s") < 0, std::runtime_error, errStr);
+        TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(lineBuf,"%*s") < 0, std::runtime_error, errStr);
         char *linePtr = lineBuf;
         for (int ptr=0; ptr < ptrsPerLine; ++ptr) {
           if (colPtrsRead == numCols + 1) break;
@@ -205,7 +205,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
           colPtrs[colPtrsRead++] = cptr;
         }
       }
-      TEST_FOR_EXCEPT(colPtrsRead != numCols + 1);
+      TEUCHOS_TEST_FOR_EXCEPT(colPtrsRead != numCols + 1);
     }
     /* Read row index array:
        Specifically, read indCrd number of lines, and on each line, read indsPerLine number of integers, each of width indWidth
@@ -215,7 +215,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
       int indicesRead = 0;
       for (int lno=0; lno < indCrd; ++lno) {
         fin.getline(lineBuf, MAXSIZE);
-        TEST_FOR_EXCEPTION(std::sscanf(lineBuf,"%*s") < 0, std::runtime_error, errStr);
+        TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(lineBuf,"%*s") < 0, std::runtime_error, errStr);
         char *linePtr = lineBuf;
         for (int indcntr=0; indcntr < indsPerLine; ++indcntr) {
           if (indicesRead == numNZ) break;
@@ -230,7 +230,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
           rowInds[indicesRead++] = ind;
         }
       }
-      TEST_FOR_EXCEPT(indicesRead != numNZ);
+      TEUCHOS_TEST_FOR_EXCEPT(indicesRead != numNZ);
     }
     /* Read array of values:
        Specifically, read valCrd number of lines, and on each line, read valsPerLine number of real values, each of width/precision valWidth/valPrec
@@ -248,7 +248,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
       int valsRead = 0;
       for (int lno=0; lno < valCrd; ++lno) {
         fin.getline(lineBuf, MAXSIZE);
-        TEST_FOR_EXCEPTION(std::sscanf(lineBuf,"%*s") < 0, std::runtime_error, errStr);
+        TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(lineBuf,"%*s") < 0, std::runtime_error, errStr);
         // if valFlag == 'D', then we need to convert [dD] in fp vals into [eE] that scanf can parse
         if (valFlag == 'D') std::replace_if(lineBuf, lineBuf+MAXSIZE, std::bind2nd(std::equal_to<char>(), 'D'), 'E'); 
         char *linePtr = lineBuf;
@@ -265,12 +265,12 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
           vals[valsRead++] = val;
         }
       }
-      TEST_FOR_EXCEPT(valsRead != totalNumVals);
+      TEUCHOS_TEST_FOR_EXCEPT(valsRead != totalNumVals);
     }
     fin.close();
   }
   catch (std::exception &e) {
-    TEST_FOR_EXCEPTION(true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, 
         "Tpetra::Utils::readHBInfo() of filename \"" << filename << "\" caught exception: " << std::endl
         << e.what() << std::endl);
   }

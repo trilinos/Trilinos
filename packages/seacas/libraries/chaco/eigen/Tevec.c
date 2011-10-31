@@ -34,12 +34,14 @@ int SRES_SWITCHES = 0;	/* # switchs to backup routine for computing evec of T */
          is not an issue in the backward recurrence since we set s[j] positive. */
 
 /* Finds eigenvector s of T and returns residual norm. */
-double    Tevec(alpha, beta, j, ritz, s)
-double   *alpha;		/* vector of Lanczos scalars */
-double   *beta;			/* vector of Lanczos scalars */
-int       j;			/* number of Lanczos iterations taken */
-double    ritz;			/* approximate eigenvalue  of T */
-double   *s;			/* approximate eigenvector of T */
+double 
+Tevec (
+    double *alpha,		/* vector of Lanczos scalars */
+    double *beta,			/* vector of Lanczos scalars */
+    int j,			/* number of Lanczos iterations taken */
+    double ritz,			/* approximate eigenvalue  of T */
+    double *s			/* approximate eigenvector of T */
+)
 {
     extern double SRESTOL;      /* limit on relative residual tol for evec of T */
     extern double DOUBLE_MAX;	/* maximum double precision value */

@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -55,9 +55,9 @@ void Thyra::unwrap(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( scalar==NULL );
-  TEST_FOR_EXCEPT( transp==NULL );
-  TEST_FOR_EXCEPT( origOp==NULL );
+  TEUCHOS_TEST_FOR_EXCEPT( scalar==NULL );
+  TEUCHOS_TEST_FOR_EXCEPT( transp==NULL );
+  TEUCHOS_TEST_FOR_EXCEPT( origOp==NULL );
 #endif
   typedef Teuchos::ScalarTraits<Scalar>  ST;
   const ScaledAdjointLinearOpBase<Scalar>
@@ -84,9 +84,9 @@ void Thyra::unwrap(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( scalar==NULL );
-  TEST_FOR_EXCEPT( transp==NULL );
-  TEST_FOR_EXCEPT( origOp==NULL );
+  TEUCHOS_TEST_FOR_EXCEPT( scalar==NULL );
+  TEUCHOS_TEST_FOR_EXCEPT( transp==NULL );
+  TEUCHOS_TEST_FOR_EXCEPT( origOp==NULL );
 #endif
   typedef Teuchos::ScalarTraits<Scalar>  ST;
   RCP<const ScaledAdjointLinearOpBase<Scalar> >

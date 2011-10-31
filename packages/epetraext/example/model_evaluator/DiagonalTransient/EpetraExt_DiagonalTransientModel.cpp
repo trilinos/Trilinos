@@ -240,7 +240,7 @@ void DiagonalTransientModel::setParameterList(
 {
   using Teuchos::get; using Teuchos::getIntegralValue;
   using Teuchos::getArrayFromStringParameter;
-  TEST_FOR_EXCEPT( is_null(paramList) );
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   isIntialized_ = false;
   paramList_ = paramList;
@@ -615,7 +615,7 @@ void DiagonalTransientModel::initialize()
       break;
     }
     default:
-      TEST_FOR_EXCEPT("Should never get here!");
+      TEUCHOS_TEST_FOR_EXCEPT("Should never get here!");
   }
 
   //
@@ -654,7 +654,7 @@ void DiagonalTransientModel::initialize()
     }
   }
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(
+  TEUCHOS_TEST_FOR_EXCEPT(
     ( as<int>(coeff_s_idx_.size()) != numElements_ ) && "Internal programming error!" );
 #endif
 

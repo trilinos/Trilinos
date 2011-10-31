@@ -139,6 +139,7 @@ public:
 
   Record<GlobalIDType>& operator=(const Record<GlobalIDType>& src)
   {
+    isInLocalSubdomain_ = src.isInLocalSubdomain_;
     ID_ = src.ID_;
     number_ = src.number_;
     fieldMask_ = src.fieldMask_;

@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
       MyProblem->setHermitian(false);
       MyProblem->setNEV( nev );
       // Inform the eigenproblem that you are finished passing it information
-      TEST_FOR_EXCEPTION( MyProblem->setProblem() != true, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MyProblem->setProblem() != true, 
                           std::runtime_error, "Anasazi::BasicEigenproblem::setProblem() returned with error.");
 
       // Initialize the Block Arnoldi solver

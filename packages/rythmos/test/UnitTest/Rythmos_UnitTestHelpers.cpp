@@ -44,15 +44,15 @@ TEUCHOS_UNIT_TEST( Rythmos_UnitTestHelpers, createDefaultVectorSpace ) {
   }
 }
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
 TEUCHOS_UNIT_TEST( Rythmos_UnitTestHelpers, debug_mode_is_ON ) {
   TEST_ASSERT(true);
 }
-#else // RYTHMOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
 TEUCHOS_UNIT_TEST( Rythmos_UnitTestHelpers, debug_mode_is_OFF ) {
   TEST_ASSERT(true);
 }
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 
 } // namespace Rythmos
 

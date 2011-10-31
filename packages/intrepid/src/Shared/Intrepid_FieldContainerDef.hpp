@@ -83,7 +83,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0) : dim0_(dim0
   using Teuchos::as;
   using Teuchos::Ordinal;
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative dimension.");
 
 #endif
@@ -102,9 +102,9 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
   using Teuchos::as;
   using Teuchos::Ordinal;
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
-  TEST_FOR_EXCEPTION( (0 > dim1), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim1), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 2nd dimension.");
   
 #endif
@@ -123,11 +123,11 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim2) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(0), dim4_(0)
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
-  TEST_FOR_EXCEPTION( (0 > dim1), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim1), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 2nd dimension.");
-  TEST_FOR_EXCEPTION( (0 > dim2), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim2), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 3rd dimension.");
 #endif
   dimensions_.resize(3); 
@@ -147,13 +147,13 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim3) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(dim3), dim4_(0)
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
-  TEST_FOR_EXCEPTION( (0 > dim1), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim1), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 2nd dimension.");
-  TEST_FOR_EXCEPTION( (0 > dim2), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim2), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 3rd dimension.");
-  TEST_FOR_EXCEPTION( (0 > dim3), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim3), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 4th dimension.");  
 #endif
   dimensions_.resize(4); 
@@ -175,15 +175,15 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim4) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(dim3), dim4_(dim4)
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
-  TEST_FOR_EXCEPTION( (0 > dim1), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim1), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 2nd dimension.");
-  TEST_FOR_EXCEPTION( (0 > dim2), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim2), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 3rd dimension.");
-  TEST_FOR_EXCEPTION( (0 > dim3), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim3), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 4th dimension.");  
-  TEST_FOR_EXCEPTION( (0 > dim4), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim4), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 5th dimension.");  
 #endif
   dimensions_.resize(5); 
@@ -205,7 +205,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>& d
 // srkenno@sandia.gov 6/12/10: changed unsigned int to int - this was causing a warning on compilers that 
 //   signed & unsigned int's were being comparied.
   for( int dim = 0; dim < dimensions.size(); dim++) {
-    TEST_FOR_EXCEPTION( (0 > dimensions[dim] ), std::invalid_argument,  
+    TEUCHOS_TEST_FOR_EXCEPTION( (0 > dimensions[dim] ), std::invalid_argument,  
                         ">>> ERROR (FieldContainer): One or more negative dimensions");  
   }
 #endif
@@ -326,7 +326,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&  
   
     // Validate input: size of data array must match container size specified by its dimensions
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (int)data.size() != this -> size() ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (int)data.size() != this -> size() ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Size of input data does not match size of this container.");
 #endif
@@ -399,7 +399,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&  
   
     // Validate input: size of data array must match container size specified by its dimensions
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (int)data.size() != this -> size() ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (int)data.size() != this -> size() ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Size of input data does not match size of this container.");
 #endif
@@ -651,9 +651,9 @@ inline void FieldContainer<Scalar, ArrayTypeId>::dimensions(Vector& dimensions) 
 template<class Scalar, int ArrayTypeId>
 inline int FieldContainer<Scalar, ArrayTypeId>::dimension(const int whichDim) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (0 > whichDim), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (0 > whichDim), std::invalid_argument,
                       ">>> ERROR (FieldContainer): dimension order cannot be negative");
-  TEST_FOR_EXCEPTION( (whichDim >= this -> rank() ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (whichDim >= this -> rank() ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): dimension order cannot exceed rank of the container");
 #endif
   return dimensions_[whichDim];
@@ -664,9 +664,9 @@ inline int FieldContainer<Scalar, ArrayTypeId>::dimension(const int whichDim) co
 template<class Scalar, int ArrayTypeId>
 inline int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const int i0) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): index is out of range.");
 #endif
   return i0;
@@ -678,11 +678,11 @@ template<class Scalar, int ArrayTypeId>
 inline int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const int i0,
                                                   const int i1) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 2), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 2), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
   return i0*dim1_ + i1;
@@ -695,13 +695,13 @@ inline int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const int i0,
                                                   const int i1,
                                                   const int i2) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 3), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 3), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
 #endif
   return (i0*dim1_ + i1)*dim2_ + i2;
@@ -715,15 +715,15 @@ inline int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const int i0,
                                                   const int i2,
                                                   const int i3) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 4), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 4), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
 #endif
   return ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3;
@@ -738,17 +738,17 @@ inline int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const int i0,
                                                   const int i3,
                                                   const int i4) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 5), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 5), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || ( i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 5th index is out of range.");    
 #endif
   return ( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4;
@@ -762,10 +762,10 @@ int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const Teuchos::Array<int
 
 #ifdef HAVE_INTREPID_DEBUG
   // Check if number of multi-indices matches rank of the FieldContainer object
-  TEST_FOR_EXCEPTION( ( multiIndex.size() != dimensions_.size() ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( multiIndex.size() != dimensions_.size() ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Number of multi-indices does not match rank of container.");
-  TEST_FOR_EXCEPTION( ( ( multiIndex[0] < 0) || ( multiIndex[0] >= dim0_) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( ( multiIndex[0] < 0) || ( multiIndex[0] >= dim0_) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
 #endif  
@@ -777,16 +777,16 @@ int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const Teuchos::Array<int
     // Optimize enumeration computation for low rank (<= 5) containers
     case 5:
 #ifdef HAVE_INTREPID_DEBUG
-      TEST_FOR_EXCEPTION( ( (multiIndex[4] < 0) || (multiIndex[4] >= dim4_) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[4] < 0) || (multiIndex[4] >= dim4_) ),
                           std::invalid_argument,
                           ">>> ERROR (FieldContainer): 5th index is out of range.");    
-      TEST_FOR_EXCEPTION( ( (multiIndex[3] < 0) || (multiIndex[3] >= dim3_) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[3] < 0) || (multiIndex[3] >= dim3_) ),
                           std::invalid_argument,
                           ">>> ERROR (FieldContainer): 4th index is out of range.");    
-      TEST_FOR_EXCEPTION( ( (multiIndex[2] < 0) || (multiIndex[2] >= dim2_) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[2] < 0) || (multiIndex[2] >= dim2_) ),
                           std::invalid_argument,
                           ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-      TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= dim1_) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= dim1_) ),
                           std::invalid_argument,
                           ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
@@ -795,13 +795,13 @@ int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const Teuchos::Array<int
       
     case 4:
 #ifdef HAVE_INTREPID_DEBUG
-      TEST_FOR_EXCEPTION( ( (multiIndex[3] < 0) || (multiIndex[3] >= dim3_) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[3] < 0) || (multiIndex[3] >= dim3_) ),
                           std::invalid_argument,
                           ">>> ERROR (FieldContainer): 4th index is out of range.");    
-      TEST_FOR_EXCEPTION( ( (multiIndex[2] < 0) || (multiIndex[2] >= dim2_) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[2] < 0) || (multiIndex[2] >= dim2_) ),
                           std::invalid_argument,
                           ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-      TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= dim1_) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= dim1_) ),
                           std::invalid_argument,
                           ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
@@ -810,10 +810,10 @@ int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const Teuchos::Array<int
 
     case 3:
 #ifdef HAVE_INTREPID_DEBUG
-      TEST_FOR_EXCEPTION( ( (multiIndex[2] < 0) || (multiIndex[2] >= dim2_) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[2] < 0) || (multiIndex[2] >= dim2_) ),
                           std::invalid_argument,
                           ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-      TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= dim1_) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= dim1_) ),
                           std::invalid_argument,
                           ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
@@ -822,7 +822,7 @@ int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const Teuchos::Array<int
 
     case 2:
 #ifdef HAVE_INTREPID_DEBUG
-      TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= dim1_) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[1] < 0) || (multiIndex[1] >= dim1_) ),
                           std::invalid_argument,
                           ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
@@ -839,7 +839,7 @@ int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const Teuchos::Array<int
       address = multiIndex[0];
       for (int r = 0; r < rank - 1; r++){
 #ifdef HAVE_INTREPID_DEBUG
-        TEST_FOR_EXCEPTION( ( (multiIndex[r+1] < 0) || (multiIndex[r+1] >= dimensions_[r+1]) ),
+        TEUCHOS_TEST_FOR_EXCEPTION( ( (multiIndex[r+1] < 0) || (multiIndex[r+1] >= dimensions_[r+1]) ),
                             std::invalid_argument,
                             ">>> ERROR (FieldContainer): Multi-index component out of range.");    
 #endif
@@ -858,9 +858,9 @@ void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(int & i0,
                                            const int valueEnum) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
 #endif
@@ -875,9 +875,9 @@ void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(int & i0,
                                            const int valueEnum) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 2), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 2), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
 #endif
@@ -895,9 +895,9 @@ void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(int & i0,
                                            const int valueEnum) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 3), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 3), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
 #endif
@@ -924,9 +924,9 @@ void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(int & i0,
                                            const int valueEnum) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 4), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 4), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
 #endif
@@ -959,9 +959,9 @@ void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(int & i0,
                                            const int valueEnum) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 5), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 5), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
 #endif
@@ -996,7 +996,7 @@ void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(Vector &             mul
   
   // Verify address is in the admissible range for this FieldContainer
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (valueEnum < 0) || (valueEnum >= (int)data_.size()) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Value enumeration is out of range.");    
 #endif
@@ -1284,13 +1284,13 @@ void FieldContainer<Scalar, ArrayTypeId>::resize(const int             numPoints
                                     const int             spaceDim) {  
   // Validate input
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( numPoints < 0),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( numPoints < 0),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Number of points cannot be negative!");  
-  TEST_FOR_EXCEPTION( ( numFields < 0),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( numFields < 0),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Number of fields cannot be negative!");  
-  TEST_FOR_EXCEPTION( !( (1 <=  spaceDim ) && ( spaceDim <= 3  ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <=  spaceDim ) && ( spaceDim <= 3  ) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Invalid space dimension.");  
 #endif  
@@ -1345,7 +1345,7 @@ void FieldContainer<Scalar, ArrayTypeId>::resize(const int             numPoints
       break;
       
     default:
-      TEST_FOR_EXCEPTION( !(Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !(Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (FieldContainer): Invalid operator type");    
   }
   
@@ -1396,7 +1396,7 @@ inline void FieldContainer<Scalar, ArrayTypeId>::setValue(const Scalar dataValue
 template<class Scalar, int ArrayTypeId>
 void FieldContainer<Scalar, ArrayTypeId>::setValues(const Teuchos::ArrayView<Scalar>& dataArray) {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (dataArray.size() != (data_.size()) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( (dataArray.size() != (data_.size()) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Size of argument does not match the size of container.");  
 #endif  
@@ -1411,7 +1411,7 @@ void FieldContainer<Scalar, ArrayTypeId>::setValues(const Scalar* dataPtr,
                                        const int numData) 
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (numData != this -> size() ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (numData != this -> size() ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): Number of data does not match the size of container.");  
 
 #endif
@@ -1425,9 +1425,9 @@ template<class Scalar, int ArrayTypeId>
 inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): index is out of range.");    
 #endif
   return data_ptr_[i0]; 
@@ -1438,9 +1438,9 @@ template<class Scalar, int ArrayTypeId>
 inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0)  
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): index is out of range.");    
 #endif
   return data_ptr_[i0]; 
@@ -1453,11 +1453,11 @@ inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int
                                                           const int i1) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 2), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 2), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
   return data_ptr_[i0*dim1_ + i1]; 
@@ -1469,11 +1469,11 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0,
                                                     const int i1)  
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 2), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 2), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
   return data_ptr_[i0*dim1_ + i1]; 
@@ -1487,13 +1487,13 @@ inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int
                                                           const int i2) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 3), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 3), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
 #endif
   return data_ptr_[(i0*dim1_ + i1)*dim2_ + i2]; 
@@ -1505,13 +1505,13 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0,
                                                     const int i2) 
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 3), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 3), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
 #endif
   return data_ptr_[(i0*dim1_ + i1)*dim2_ + i2]; 
@@ -1525,15 +1525,15 @@ inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const in
                                                            const int i2,
                                                            const int i3) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 4), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 4), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
 #endif
   return data_ptr_[( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3];
@@ -1546,15 +1546,15 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const int i0,
                                                      const int i2,
                                                      const int i3) {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 4), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 4), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
 #endif
   return data_ptr_[( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3];
@@ -1569,17 +1569,17 @@ inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const in
                                                            const int i3,
                                                            const int i4) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 5), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 5), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 5th index is out of range.");    
 #endif
   return data_ptr_[( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4];
@@ -1592,17 +1592,17 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const int i0,
                                                      const int i3,
                                                      const int i4) {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this -> rank() != 5), std::invalid_argument, 
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this -> rank() != 5), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
-  TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 1st index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
-  TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 5th index is out of range.");    
 #endif
   return data_ptr_[( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4];
@@ -1613,7 +1613,7 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const int i0,
 template<class Scalar, int ArrayTypeId>
 const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator [] (const int address) const {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Specified address is out of range.");
 #endif
@@ -1625,7 +1625,7 @@ const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator [] (const int addres
 template<class Scalar, int ArrayTypeId>
 Scalar& FieldContainer<Scalar, ArrayTypeId>::operator [] (const int address) {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Specified address is out of range.");
 #endif
@@ -1638,7 +1638,7 @@ template<class Scalar, int ArrayTypeId>
 inline FieldContainer<Scalar, ArrayTypeId>& FieldContainer<Scalar, ArrayTypeId>::operator = (const FieldContainer<Scalar, ArrayTypeId>& right)
 {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( ( this == &right ),
+  TEUCHOS_TEST_FOR_EXCEPTION( ( this == &right ),
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Invalid right-hand side to '='. Self-assignment prohibited.");
 #endif

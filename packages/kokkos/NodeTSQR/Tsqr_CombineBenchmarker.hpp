@@ -371,7 +371,7 @@ namespace TSQR {
 	  throw std::invalid_argument("Benchmarking does not make sense for "
 				      "a matrix with either zero rows or zero "
 				      "columns.");
-	TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument,
 			   "The number of trials must be positive, but "
 			   "numTrials = " << numTrials << ".");
 
@@ -567,7 +567,7 @@ namespace TSQR {
 	  throw std::invalid_argument("Benchmarking does not make sense for "
 				      "a matrix with either zero rows or zero "
 				      "columns.");
-	TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument,
 			   "The number of trials must be positive, but "
 			   "numTrials = " << numTrials << ".");
 
@@ -766,7 +766,7 @@ namespace TSQR {
 	if (numCols == 0)
 	  throw std::invalid_argument("Benchmarking does not make sense for "
 				      "a matrix with zero columns.");
-	TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument,
+	TEUCHOS_TEST_FOR_EXCEPTION(numTrials < 1, std::invalid_argument,
 			   "The number of trials must be positive, but "
 			   "numTrials = " << numTrials << ".");
 

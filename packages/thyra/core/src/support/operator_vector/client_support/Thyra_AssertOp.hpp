@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -47,7 +47,7 @@
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_LinearOpBase.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace Thyra {
@@ -148,9 +148,9 @@ const Thyra::VectorSpaceBase<Scalar>& linear_op_op(
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 #define THYRA_ASSERT_LHS_ARG(FUNC_NAME,LHS_ARG) \
-  TEST_FOR_EXCEPTION( \
-    (LHS_ARG) == NULL, std::invalid_argument \
-    ,FUNC_NAME << " : Error!" \
+  TEUCHOS_TEST_FOR_EXCEPTION( \
+    (&*LHS_ARG) == NULL, std::invalid_argument, \
+    FUNC_NAME << " : Error!" \
     );
 
 
@@ -166,7 +166,7 @@ const Thyra::VectorSpaceBase<Scalar>& linear_op_op(
 #define THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,VS1_NAME,VS2,VS2_NAME) \
 { \
   const bool l_isCompatible = (VS1).isCompatible(VS2); \
-  TEST_FOR_EXCEPTION( \
+  TEUCHOS_TEST_FOR_EXCEPTION( \
     !l_isCompatible, ::Thyra::Exceptions::IncompatibleVectorSpaces, \
     FUNC_NAME << "\n\n" \
     << ::Thyra::dump_vec_spaces(VS1,VS1_NAME,VS2,VS2_NAME) \
@@ -230,7 +230,6 @@ THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,#VS1,VS2,#VS2)
       << #M << ( (M_T) == Thyra::NOTRANS ? "" : "^T" ) << " * " \
       << #X << " and " << #Y; \
     const std::string &header = headeross.str(); \
-    THYRA_ASSERT_LHS_ARG(header,Y); \
     THYRA_ASSERT_MAT_VEC_SPACES(header,M,M_T,::Thyra::VS_RANGE,*(Y)->space()); \
     THYRA_ASSERT_MAT_VEC_SPACES(header,M,M_T,::Thyra::VS_DOMAIN,*(X).space()); \
   }
@@ -257,7 +256,6 @@ THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,#VS1,VS2,#VS2)
       << #M << ( (M_T) == Thyra::NOTRANS ? "" : "^T" ) << " * " \
       << #X << " and " << #Y << ":\n\n"; \
     const std::string &header = headeross.str(); \
-    THYRA_ASSERT_LHS_ARG(header,Y); \
     THYRA_ASSERT_VEC_SPACES(header,*(X).domain(),*(Y)->domain()); \
     THYRA_ASSERT_MAT_VEC_SPACES(header,M,M_T,::Thyra::VS_RANGE,*(Y)->range()); \
     THYRA_ASSERT_MAT_VEC_SPACES(header,M,M_T,::Thyra::VS_DOMAIN,*(X).range()); \
@@ -347,7 +345,7 @@ void assertLinearOpTimesLinearOpNames(
       *M2.range(), M2_name + ".domain()" );
   }
   else {
-    TEST_FOR_EXCEPTION( true, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       header << "\n\n" << "Error, invalid value for trasponse enums!" );
   }
 }

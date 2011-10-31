@@ -54,10 +54,10 @@ Piro::Epetra::VelocityVerletSolver::VelocityVerletSolver(Teuchos::RCP<Teuchos::P
   num_p = model->createInArgs().Np();
   num_g = model->createOutArgs().Ng();
 
-  TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(num_p > 1, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::VelocityVerletSolver " <<
                      "Not Implemented for Np>1 : " << num_p << std::endl);
-  TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(num_g > 1, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::VelocityVerletSolver " <<
                      "Not Implemented for Ng>1 : " << num_g << std::endl);
 
@@ -108,7 +108,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::VelocityVerletSolver::get_f_map() c
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::VelocityVerletSolver::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::VelocityVerletSolver::get_p_map():  " <<
                      "Invalid parameter index l = " <<
@@ -118,7 +118,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::VelocityVerletSolver::get_p_map(int
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::VelocityVerletSolver::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::VelocityVerletSolver::get_g_map():  " <<
                      "Invalid response index j = " <<
@@ -136,7 +136,7 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::VelocityVerletSolver::get_x_init
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::VelocityVerletSolver::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::Epetra::VelocityVerletSolver::get_p_init():  " <<
                      "Invalid parameter index l = " <<
@@ -193,7 +193,7 @@ void Piro::Epetra::VelocityVerletSolver::evalModel( const InArgs& inArgs,
   RCP<Epetra_Vector> a = rcp(new Epetra_Vector(*model->get_f_map()));
   a->PutScalar(0.0); 
 
-  TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null, 
                      Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::VelocityVerletSolver " <<
                      "Requires initial x and x_dot: " << std::endl);

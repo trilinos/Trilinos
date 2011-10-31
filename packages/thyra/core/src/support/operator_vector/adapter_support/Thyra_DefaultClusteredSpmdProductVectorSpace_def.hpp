@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -153,7 +153,7 @@ bool DefaultClusteredSpmdProductVectorSpace<Scalar>::isCompatible(
     return true;
   // For now, I will just do the dynamic cast but in the future, we could get
   // more sophisticated.
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_TEST_FOR_EXCEPT(true);
   return false;
 }
 
@@ -171,8 +171,8 @@ Scalar DefaultClusteredSpmdProductVectorSpace<Scalar>::scalarProd(
   const VectorBase<Scalar>& x, const VectorBase<Scalar>& y
   ) const
 {
-  Scalar scalarProds_out[1];
-  this->scalarProds(x, y, &scalarProds_out[0]);
+  Teuchos::Tuple<Scalar,1> scalarProds_out;
+  this->scalarProds(x, y, scalarProds_out());
   return scalarProds_out[0];
 }
 
@@ -181,7 +181,7 @@ void DefaultClusteredSpmdProductVectorSpace<Scalar>::scalarProdsImpl(
   const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
   const ArrayView<Scalar> &scalarProds_out ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     !isEuclidean_, std::logic_error
     ,"Error, have not implemented support for none Euclidean scalar products yet!"
     );
@@ -230,7 +230,7 @@ Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::getBlock(const int k) const
 {
   using Teuchos::implicit_cast;
-  TEST_FOR_EXCEPT( !( 0 <= k && k < implicit_cast<int>(vecSpaces_.size()) ) );
+  TEUCHOS_TEST_FOR_EXCEPT( !( 0 <= k && k < implicit_cast<int>(vecSpaces_.size()) ) );
   return vecSpaces_[k];
 } 
 

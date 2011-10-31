@@ -59,6 +59,7 @@ int main( int argc, char* argv[] ) {
   using Teuchos::constPtr;
   using Teuchos::outArg;
   using Teuchos::inOutArg;
+  using Teuchos::inoutArg;
   using Teuchos::optInArg;
   using Teuchos::constOptInArg;
   using Teuchos::CommandLineProcessor;
@@ -100,7 +101,7 @@ int main( int argc, char* argv[] ) {
       try {
         A &a = *a_ptr; // Should throw!
         a.A_g();
-        TEST_FOR_EXCEPTION( true, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
           "Error, Ptr::operator*() on null Ptr should have thrown exception!" );
       }
       catch( const Teuchos::NullReferenceError &except ) {
@@ -110,7 +111,7 @@ int main( int argc, char* argv[] ) {
 #ifdef TEUCHOS_DEBUG
       try {
         a_ptr->A_g(); // Should throw!
-        TEST_FOR_EXCEPTION( true, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
           "Error, Ptr::operator->() on null Ptr should have thrown exception!" );
       }
       catch( const Teuchos::NullReferenceError &except ) {
@@ -195,6 +196,14 @@ int main( int argc, char* argv[] ) {
     }
  
     {
+      // Test construction of Ptr from inOutArg()
+      A a;
+      Ptr<A> a_ptr = inoutArg(a);
+      TEUCHOS_ASSERT_EQUALITY( &a, &*a_ptr );
+      TEUCHOS_ASSERT_EQUALITY( &a, a_ptr.get() );
+    }
+ 
+    {
       // Test construction of Ptr from optInArg()
       A a;
       Ptr<const A> a_ptr = optInArg(a);
@@ -264,7 +273,7 @@ int main( int argc, char* argv[] ) {
       Ptr<A> a_ptr(&b1);
       try {
         Ptr<C> b2_ptr = Teuchos::ptr_dynamic_cast<C>(a_ptr,true);
-        TEST_FOR_EXCEPTION( true, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
           "If you get here then the test failed!" );
       }
       catch ( const Teuchos::m_bad_cast &except ) {

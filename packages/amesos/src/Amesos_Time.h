@@ -6,7 +6,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -87,7 +87,7 @@ class Amesos_Time
     }
     
     // Check to make sure the data id is valid
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       timerID >=  (int)(data_.size()), std::logic_error,
       "Amesos_Time::AddTime(...): Error, dataID="<<dataID
       <<" is >= data_.size()="<<data_.size() <<" for dataName=\""<<what<<"\"!"

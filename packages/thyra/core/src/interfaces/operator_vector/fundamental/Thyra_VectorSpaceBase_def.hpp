@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -128,7 +128,7 @@ Thyra::makeHaveOwnership( const RCP<const VectorSpaceBase<Scalar> > &vs_in )
   if (vs_in.has_ownership())
     return vs_in;
   const RCP<const VectorSpaceBase<Scalar> > vs = vs_in->clone();
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(vs), std::logic_error
     ,"Thyra::makeHaveOwnership(vs): Error, the concrete VectorSpaceBase object identified as \'"
     << vs->description() << "\' does not support the clone() function!"

@@ -47,7 +47,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_FancyOStream.hpp"
@@ -880,15 +880,15 @@ int main(int argc, char *argv[])
 
     }
 
-    TEST_FOR_EXCEPTION(!converged, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(!converged, std::runtime_error,
 		       "Problem failed to converge!");
 
-    TEST_FOR_EXCEPTION(num_newton_steps != 10, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(num_newton_steps != 10, std::runtime_error,
 		       "Incorrect number of Newton steps!");
 
     // Only check num gmres steps in serial
 #ifndef HAVE_MPI
-    TEST_FOR_EXCEPTION(num_gmres_iterations != 10, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(num_gmres_iterations != 10, std::runtime_error,
 		       "Incorrect number of GMRES iterations!");
 #endif
 

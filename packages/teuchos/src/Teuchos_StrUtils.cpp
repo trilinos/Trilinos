@@ -40,7 +40,7 @@
 // @HEADER
 
 #include "Teuchos_StrUtils.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace Teuchos {
@@ -245,7 +245,7 @@ std::string StrUtils::varTableSubstitute(const std::string& rawLine,
   const Array<std::string>& varNames,
   const Array<std::string>& varValues)
 {
-  TEST_FOR_EXCEPTION(varNames.length() != varValues.length(),
+  TEUCHOS_TEST_FOR_EXCEPTION(varNames.length() != varValues.length(),
     std::runtime_error,
     "mismatched variable tables in varTableSubstitute");
                      
@@ -286,7 +286,7 @@ std::string StrUtils::before(const std::string& str, char sub)
 
 std::string StrUtils::before(const std::string& str, const std::string& sub)
 {
-  TEST_FOR_EXCEPTION(sub.c_str()==0,
+  TEUCHOS_TEST_FOR_EXCEPTION(sub.c_str()==0,
     std::runtime_error, "String::before: arg is null pointer");
 
   char* p = std::strstr((char*) str.c_str(), (char*) sub.c_str());
@@ -299,7 +299,7 @@ std::string StrUtils::before(const std::string& str, const std::string& sub)
 
 std::string StrUtils::after(const std::string& str, const std::string& sub)
 {
-  TEST_FOR_EXCEPTION(sub.c_str()==0,
+  TEUCHOS_TEST_FOR_EXCEPTION(sub.c_str()==0,
     std::runtime_error, "String::after: arg is null pointer");
 
   // find beginning of substring
@@ -371,7 +371,7 @@ std::string StrUtils::subString(const std::string& str, int begin, int end)
 
 std::string StrUtils::readFromStream(std::istream& is)
 {
-  TEST_FOR_EXCEPTION(true, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
     "StrUtils::readFromStream isn't implemented yet");
 
 	return "";

@@ -85,10 +85,10 @@ namespace Belos {
     /// \brief Preferred constructor.
     ///
     /// \param problem [in/out] The linear problem to solve.
-    /// \param params [in] Parameters for the solve.  If null, 
-    ///   we use defaults, else we make a deep copy.
+    /// \param params [in/out] Parameters for the solve.  If null, 
+    ///   we use defaults, else we modify in place.
     GmresSolMgr (const Teuchos::RCP<LinearProblem<Scalar,MV,OP> >& problem,
-		 const Teuchos::RCP<const Teuchos::ParameterList>& params,
+		 const Teuchos::RCP<Teuchos::ParameterList>& params,
 		 const bool debug = false) : 
       problem_ (validatedProblem (problem)), 
       debug_ (debug)
@@ -201,15 +201,9 @@ namespace Belos {
     /// not yet been set, or if the maximum number of iterations has
     /// changed (which affects GMRES storage).
     ///
-    /// \param params [in] New parameters for the linear solve.  The
-    ///   original parameter list is not modified.  Since
-    ///   setParameters() implements a pure virtual method of
-    ///   Belos::SolutionManager, the ParameterList has to be passed
-    ///   in as non-const, even though we don't modify it.
-    ///
-    /// \note We don't actually keep a pointer to params.  This is
-    ///   because we might fill in unsupplied parameters with their
-    ///   default values.  Instead, we make a deep copy.
+    /// \param params [in] New parameters for the linear solve.  This
+    ///   may be modified in place on output in order to fill in
+    ///   missing parameters with default values.
     void 
     setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
@@ -284,7 +278,7 @@ namespace Belos {
     void 
     setRHS (const Teuchos::RCP<const MV>& B) 
     {
-      TEST_FOR_EXCEPTION(B.is_null(), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(B.is_null(), std::invalid_argument,
 			 "Belos::GmresSolMgr::setRHS(): the given new right-"
 			 "hand side B is null.");
       // This "unsets" the problem: it makes the initial residual (and
@@ -312,7 +306,7 @@ namespace Belos {
     void 
     setLHS (const Teuchos::RCP<MV>& X) 
     {
-      TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
 			 "Belos::GmresSolMgr::setLHS(): the given new initial "
 			 "guess X is null.");
       // This "unsets" the problem; it makes the initial residual (and
@@ -338,7 +332,7 @@ namespace Belos {
       // Testing maxNumRestarts now, rather than below, ensures the
       // strong exception guarantee: either no state will be changed,
       // or no exceptions will be thrown.
-      TEST_FOR_EXCEPTION(maxNumRestarts < 0, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(maxNumRestarts < 0, std::invalid_argument,
 			 "The maximum number of restart cycle(s) must be "
 			 "nonnegative, but a value of " << maxNumRestarts 
 			 << " was specified.");
@@ -400,19 +394,18 @@ namespace Belos {
     /// not yet been set, or if the maximum number of iterations has
     /// changed (which affects GMRES storage).
     ///
-    /// \param params [in] New parameters for the linear solve.
-    ///   The original parameter list is not modified.
+    /// \param params [in/out] New parameters for the linear solve.
     void 
-    setParametersImpl (const Teuchos::RCP<const Teuchos::ParameterList>& params);
+    setParametersImpl (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief (Re)build all the iteration stopping criteria.
     ///
-    /// \param plist [in] If supplied, read the parameters for
+    /// \param plist [in/out] If supplied, read the parameters for
     ///   constructing the stopping criteria from the given parameter
     ///   list.  Otherwise, use the solver manager's current parameter
     ///   list (params_).
     void 
-    rebuildStatusTests (Teuchos::RCP<const Teuchos::ParameterList> plist = 
+    rebuildStatusTests (Teuchos::RCP<Teuchos::ParameterList> plist = 
 			Teuchos::null);
 
     /// \brief (Re)build all the iteration stopping criteria.
@@ -433,22 +426,22 @@ namespace Belos {
 
     /// \brief Initialize the OrthoManager (orthogonalization method).
     ///
-    /// \param plist [in] If supplied, read the parameters for
+    /// \param plist [in/out] If supplied, read the parameters for
     ///   constructing the orthogonalization method from the given
     ///   parameter list.  Otherwise, use the solver manager's current
     ///   parameter list (params_).
     void
-    rebuildOrthoManager (Teuchos::RCP<const Teuchos::ParameterList> plist = 
+    rebuildOrthoManager (Teuchos::RCP<Teuchos::ParameterList> plist = 
 			 Teuchos::null);
 
     /// \brief (Re)build the Iteration subclass.
     ///
-    /// \param plist [in] If supplied, read the parameters for
+    /// \param plist [in/out] If supplied, read the parameters for
     ///   constructing the Iteration subclass from the given parameter
     ///   list.  Otherwise, use the solver manager's current parameter
     ///   list (params_).
     void 
-    rebuildIteration (Teuchos::RCP<const Teuchos::ParameterList> plist = 
+    rebuildIteration (Teuchos::RCP<Teuchos::ParameterList> plist = 
 		      Teuchos::null);
 
     /// \brief Make sure that GmresSolMgr can solve the given problem.
@@ -466,7 +459,7 @@ namespace Belos {
     validatedProblem (const Teuchos::RCP<LinearProblem<Scalar, MV, OP> >& problem)
     {
       const char prefix[] = "Belos::GmresSolMgr: ";
-      TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
 			 prefix << "The linear problem (Belos::LinearProblem "
 			 "instance) that you want me to solve is null.");
       if (! problem->isProblemSet())
@@ -483,9 +476,9 @@ namespace Belos {
 		 << (problem->getRHS().is_null() ? "the right-hand side B is null; " : "")
 		 << (problem->getLHS().is_null() ? "the initial guess X is null" : "")
 		 << ".";
-	      TEST_FOR_EXCEPTION(notInitialized, std::invalid_argument, os.str());
+	      TEUCHOS_TEST_FOR_EXCEPTION(notInitialized, std::invalid_argument, os.str());
 	    }
-	  TEST_FOR_EXCEPTION(! problem->isProblemSet(), std::logic_error,
+	  TEUCHOS_TEST_FOR_EXCEPTION(! problem->isProblemSet(), std::logic_error,
 			     prefix << "Although the given LinearProblem instance "
 			     "has non-null operator (matrix A), right-hand side B,"
 			     " and initial guess X, and although its setProblem() "
@@ -508,7 +501,7 @@ namespace Belos {
       else if (scaleType == "None")
         return Belos::None;
       else {
-        TEST_FOR_EXCEPTION (true, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION (true, std::logic_error,
 			    "Invalid residual scaling type \"" << scaleType 
 			    << "\".");
       }
@@ -634,11 +627,11 @@ namespace Belos {
   {
     using Teuchos::RCP;
 
-    TEST_FOR_EXCEPTION(outMan.is_null(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(outMan.is_null(), std::logic_error,
 			"Construction / reinitialization of the output status "
 			"test depends on the OutputManager being initialized, "
 			"but it has not yet been initialized.");
-    TEST_FOR_EXCEPTION(statusTest.is_null(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(statusTest.is_null(), std::logic_error,
 		       "Construction / reinitialization of the output status "
 		       "test depends on the status test being initialized, "
 		       "but it has not yet been initialized.");
@@ -889,17 +882,13 @@ namespace Belos {
   {
     using Teuchos::ParameterList;
     using Teuchos::rcp_const_cast;
-    // const_cast is OK, because setParametersImpl doesn't modify its
-    // input.  We just have to pass in a non-const ParameterList
-    // because Belos::SolutionManager requires it for implementations
-    // of setParameters().
-    setParametersImpl (rcp_const_cast<const ParameterList> (params));
+    setParametersImpl (params);
   }
 
   template<class Scalar, class MV, class OP>
   void
   GmresSolMgr<Scalar,MV,OP>::
-  setParametersImpl (const Teuchos::RCP<const Teuchos::ParameterList>& params)
+  setParametersImpl (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     using Teuchos::Exceptions::InvalidParameter;
     using Teuchos::Exceptions::InvalidParameterType;
@@ -911,59 +900,42 @@ namespace Belos {
     using std::endl;
 
     RCP<const ParameterList> defaultParams = getDefaultParameters();
-    TEST_FOR_EXCEPTION(defaultParams.is_null(), std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(defaultParams.is_null(), std::logic_error, 
 		       "Belos::GmresSolMgr::setParametersImpl: The default "
 		       "parameter list is null; this should never happen.  "
 		       "Please report this bug to the Belos developers.");
-    RCP<ParameterList> actualParams;
-    if (params.is_null())
-      actualParams = parameterList (*defaultParams);
-    else
-      { // Make a deep copy of the given parameter list.  This ensures
-	// that the solver's behavior won't change, even if users
-	// modify params later on.  Users _must_ invoke
-	// setParameters() in order to change the solver's behavior.
-	actualParams = parameterList (*params);
+    RCP<ParameterList> actualParams = params.is_null() ? 
+      parameterList (*defaultParams) : params;
 
-	// Fill in default values for parameters that aren't provided,
-	// and make sure that all the provided parameters' values are
-	// correct.
-	//
-	// FIXME (mfh 16 Feb 2011) Reading the output stream (which
-	// has type RCP<std::ostream>) from a ParameterList may be
-	// impossible if the ParameterList was read in from a file.
-	// We hackishly test for this by catching
-	// InvalidParameterType, setting the output stream in
-	// actualParams to its default value, and redoing the
-	// validation.  This is a hack because we don't know whether
-	// the "Output Stream" parameter really caused that exception
-	// to be thrown.
-	bool success = false;
-	try {
-	  actualParams->validateParametersAndSetDefaults (*defaultParams);
-	  success = true;
-	} catch (InvalidParameterType&) {
-	  success = false;
-	}
-	if (! success)
-	  {
-	    RCP<std::ostream> outStream = 
-	      defaultParams->get<RCP<std::ostream> > ("Output Stream");
-	    actualParams->set ("Output Stream", outStream, 
-			       "A reference-counted pointer to the output "
-			       "stream where all solver output is sent.");
-	    // Retry the validation.
-	    actualParams->validateParametersAndSetDefaults (*defaultParams);
-	    success = true;
-	  }
-      }
-
-    // Use the given name if one was provided, otherwise name the
-    // parameter list appropriately.
-    if (params.is_null() || params->name() == "" || params->name() == "ANONYMOUS")
-      actualParams->setName (defaultParams->name());
-    else
-      actualParams->setName (params->name());
+    // Fill in default values for parameters that aren't provided,
+    // and make sure that all the provided parameters' values are
+    // correct.
+    //
+    // FIXME (mfh 16 Feb 2011) Reading the output stream (which has
+    // type RCP<std::ostream>) from a ParameterList may be impossible
+    // if the ParameterList was read in from a file.  We hackishly
+    // test for this by catching InvalidParameterType, setting the
+    // output stream in actualParams to its default value, and redoing
+    // the validation.  This is a hack because we don't know whether
+    // the "Output Stream" parameter really caused that exception to
+    // be thrown.
+    bool success = false;
+    try {
+      actualParams->validateParametersAndSetDefaults (*defaultParams);
+      success = true;
+    } catch (InvalidParameterType&) {
+      success = false;
+    }
+    if (! success) {
+      RCP<std::ostream> outStream = 
+	defaultParams->get<RCP<std::ostream> > ("Output Stream");
+      actualParams->set ("Output Stream", outStream, 
+			 "A reference-counted pointer to the output "
+			 "stream where all solver output is sent.");
+      // Retry the validation.
+      actualParams->validateParametersAndSetDefaults (*defaultParams);
+      success = true;
+    }
 
     // If we don't have a problem to solve yet, we haven't previously
     // gotten parameters, or the maximum number of iterations per
@@ -1014,7 +986,7 @@ namespace Belos {
       // previously been initialized (== is not null).
       outMan_ = initOutputManager (outMan_, verbosity, outStream);
     }
-    TEST_FOR_EXCEPTION(outMan_.is_null(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(outMan_.is_null(), std::logic_error,
 		       "Belos::GmresSolMgr::setParametersImpl: OutputManager "
 		       "instance is null after its initialization; this should"
 		       " never happen.  Please report this bug to the Belos "
@@ -1100,7 +1072,7 @@ namespace Belos {
   template<class Scalar, class MV, class OP>
   void
   GmresSolMgr<Scalar,MV,OP>::
-  rebuildStatusTests (Teuchos::RCP<const Teuchos::ParameterList> plist)
+  rebuildStatusTests (Teuchos::RCP<Teuchos::ParameterList> plist)
   {
     using Teuchos::rcp_const_cast;
     using Teuchos::ParameterList;
@@ -1108,19 +1080,19 @@ namespace Belos {
 
     // Default value for plist is null, in which case we use the
     // stored parameter list.  One of those two should be non-null.
-    RCP<const ParameterList> theParams = plist.is_null() ? 
-      rcp_const_cast<const ParameterList>(params_) : plist;
-    TEST_FOR_EXCEPTION(theParams.is_null(),
+    RCP<const ParameterList> theParams = plist.is_null() ? params_ : plist;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(theParams.is_null(),
 		       std::logic_error,
 		       "Belos::GmresSolMgr::rebuildStatusTests: We can't (re)"
 		       "build the status tests without any parameters.");
     const magnitude_type convTol = 
       theParams->get<magnitude_type> ("Convergence Tolerance");
-    TEST_FOR_EXCEPTION(convTol < STM::zero(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(convTol < STM::zero(), std::invalid_argument,
 		       "Convergence tolerance " << convTol << " is negative.");
     const int maxIters = 
       theParams->get<int> ("Maximum Iterations");
-    TEST_FOR_EXCEPTION(maxIters < 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(maxIters < 0, std::invalid_argument,
 		       "Maximum number of iterations " << maxIters 
 		       << " is negative.");
     // TODO (mfh 15 Feb 2011) Validate.
@@ -1154,10 +1126,10 @@ namespace Belos {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
 
-    TEST_FOR_EXCEPTION(convTol < STM::zero(), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(convTol < STM::zero(), std::invalid_argument,
 		       "Convergence tolerance " << convTol << " is negative.");
     params_->set ("Convergence Tolerance", convTol);
-    TEST_FOR_EXCEPTION(maxItersPerRestart < 0, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(maxItersPerRestart < 0, std::invalid_argument,
 		       "Maximum number of iterations " << maxItersPerRestart
 		       << " per restart cycle is negative.");
     params_->set ("Maximum Iterations", maxItersPerRestart,
@@ -1184,24 +1156,26 @@ namespace Belos {
   template<class Scalar, class MV, class OP>
   void
   GmresSolMgr<Scalar,MV,OP>::
-  rebuildOrthoManager (Teuchos::RCP<const Teuchos::ParameterList> plist)
+  rebuildOrthoManager (Teuchos::RCP<Teuchos::ParameterList> plist)
   {
-    using Teuchos::rcp_const_cast;
-    using Teuchos::ParameterList;
-    using Teuchos::RCP;
     using Teuchos::null;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::sublist;
 
     const char prefix[] = "Belos::GmresSolMgr::rebuildOrthoManager: ";
-    TEST_FOR_EXCEPTION(outMan_.is_null(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(outMan_.is_null(), std::logic_error,
 		       prefix << "Cannot (re)build the orthogonalization "
 		       "method unless the OutputManager has been "
 		       "instantiated.");
 
     // Default value for plist is null, in which case we use the
     // stored parameter list.  One of those two should be non-null.
-    RCP<const ParameterList> actualParams = plist.is_null() ? 
-      rcp_const_cast<const ParameterList>(params_) : plist;
-    TEST_FOR_EXCEPTION(actualParams.is_null(), std::logic_error,
+    RCP<ParameterList> actualParams = plist.is_null() ? params_ : plist;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(actualParams.is_null(), std::logic_error,
 		       prefix << "We can't (re)build the orthogonalization "
 		       "method without any parameters.");
 
@@ -1224,13 +1198,8 @@ namespace Belos {
       }
 
     // Get the parameters for that orthogonalization method.
-    //
-    // FIXME (mfh 16 Feb 2011) Extraction via reference is legitimate
-    // only if we know that the whole parameter list won't go away.
-    // Some OrthoManager subclasses might not copy their input
-    // parameter lists deeply.
-    const ParameterList& orthoParams = 
-      actualParams->sublist ("Orthogonalization Parameters");
+    RCP<ParameterList> orthoParams = 
+      sublist (actualParams, "Orthogonalization Parameters");
       
     // (Re)instantiate the orthogonalization manager.  Don't bother
     // caching this, since it's too much of a pain to check whether
@@ -1239,51 +1208,47 @@ namespace Belos {
     // Set the timer label for orthogonalization
     std::ostringstream os; 
     os << "Orthogonalization (method \"" << orthoType << "\")";
-    orthoMan_ = factory.makeOrthoManager (orthoType, null, outMan_, os.str(),
-					  Teuchos::rcpFromRef (orthoParams));
+    orthoMan_ = factory.makeOrthoManager (orthoType, null, outMan_, 
+					  os.str(), orthoParams);
   }
 
   template<class Scalar, class MV, class OP>
   void
   GmresSolMgr<Scalar,MV,OP>::
-  rebuildIteration (Teuchos::RCP<const Teuchos::ParameterList> plist)
+  rebuildIteration (Teuchos::RCP<Teuchos::ParameterList> plist)
   {
     using Teuchos::rcp_const_cast;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::sublist;
     using std::endl;
     const char prefix[] = "Belos::GmresSolMgr::rebuildIteration: ";
 
     std::ostream& dbg = outMan_->stream(Debug);
     dbg << prefix << endl;
 
-    RCP<const ParameterList> theParams = plist.is_null() ? 
-      rcp_const_cast<const ParameterList>(params_) : plist;
-    TEST_FOR_EXCEPTION(theParams.is_null(), std::logic_error,
+    RCP<ParameterList> theParams = plist.is_null() ? params_ : plist;
+    TEUCHOS_TEST_FOR_EXCEPTION(theParams.is_null(), std::logic_error,
 		       prefix << "We can't (re)build the Iteration subclass "
 		       "instance without any parameters.");
-    TEST_FOR_EXCEPTION(! theParams->isSublist ("Iteration Parameters"),
+    TEUCHOS_TEST_FOR_EXCEPTION(! theParams->isSublist ("Iteration Parameters"),
 		       std::logic_error,
 		       prefix << "The parameter list needs an \"Iteration "
 		       "Parameters\" sublist.");
 
-    // Extraction of a sublist via reference is legitimate only if we
-    // know that the parent parameter list won't go away.  That's why
-    // we make a deep copy.
-    const ParameterList& theSubList = theParams->sublist ("Iteration Parameters");
-    RCP<const ParameterList> iterParams = parameterList (theSubList);
+    RCP<ParameterList> iterParams = sublist (theParams, "Iteration Parameters");
     dbg << "-- Instantiating GmresBaseIteration instance:" << endl;
-    TEST_FOR_EXCEPTION(problem_.is_null(), std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_.is_null(), std::logic_error, 
 		       prefix << "LinearProblem instance is null.");
-    TEST_FOR_EXCEPTION(orthoMan_.is_null(), std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(orthoMan_.is_null(), std::logic_error, 
 		       prefix << "OrthoManager instance is null.");
-    TEST_FOR_EXCEPTION(outMan_.is_null(), std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(outMan_.is_null(), std::logic_error, 
 		       prefix << "OutputManager instance is null.");
-    TEST_FOR_EXCEPTION(statusTest_.is_null(), std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(statusTest_.is_null(), std::logic_error, 
 		       prefix << "StatusTest instance is null.");
-    TEST_FOR_EXCEPTION(iterParams.is_null(), std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(iterParams.is_null(), std::logic_error, 
 		       prefix << "Iteration parameters list is null.");
     iter_ = rcp (new iteration_type (problem_, orthoMan_, outMan_, 
 				     statusTest_, iterParams));
@@ -1361,15 +1326,15 @@ namespace Belos {
     dbg << "-- Resetting status test number of calls" << endl;
     outTest_->resetNumCalls();
 
-    TEST_FOR_EXCEPTION(problem_.is_null(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_.is_null(), std::logic_error,
 		       prefix << "The LinearProblem instance is null.");
-    TEST_FOR_EXCEPTION(problem_->getOperator().is_null(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_->getOperator().is_null(), std::logic_error,
 		       prefix << "The LinearProblem's operator (the matrix A "
 		       "in the equation AX=B) is null.");
-    TEST_FOR_EXCEPTION(problem_->getRHS().is_null(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_->getRHS().is_null(), std::logic_error,
 		       prefix << "The LinearProblem's initial guess X is "
 		       "null.");
-    TEST_FOR_EXCEPTION(problem_->getRHS().is_null(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_->getRHS().is_null(), std::logic_error,
 		       prefix << "The LinearProblem's right-hand side B is "
 		       "null.");
 
@@ -1434,7 +1399,7 @@ namespace Belos {
 	  // the current linear system to solve) will return null.
 	  RCP<const MV> X = problem_->getCurrLHSVec();
 	  RCP<const MV> B = problem_->getCurrRHSVec();
-	  TEST_FOR_EXCEPTION(X.is_null() || B.is_null(), std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(X.is_null() || B.is_null(), std::invalid_argument,
 			     prefix << "setLSIndex() must not yet have been "
 			     "called on the given Belos::LinearProblem "
 			     "instance, since getCurrLHSVec() and/or "
@@ -1444,7 +1409,7 @@ namespace Belos {
 	  // exactly one column.
 	  const int nLHS = MVT::GetNumberVecs(*X);
 	  const int nRHS = MVT::GetNumberVecs(*B);
-	  TEST_FOR_EXCEPTION(nLHS != 1 || nRHS != 1, std::invalid_argument,
+	  TEUCHOS_TEST_FOR_EXCEPTION(nLHS != 1 || nRHS != 1, std::invalid_argument,
 			     prefix << "The current linear system to solve has "
 			     << nLHS << " initial guess" 
 			     << (nLHS != 1 ? "es" : "")

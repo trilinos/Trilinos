@@ -40,13 +40,10 @@
 /*****************************************************************************/
 
 extern int   ilog2i (unsigned int n);
-extern void  sortN_int_int    (int nval, int ra[], int narr, ...);
-extern void  sortN_int_float  (int nval, int ra[], int narr, ...);
-extern void  sortN_int_floatlist  (int nval, int ra[], int narr, float *rb[]);
-extern void  sortN_int_double (int nval, int ra[], int narr, ...);
-extern void  sortN_int_doublelist (int nval, int ra[], int narr, double *rb[]);
+extern void  sort_int_int    (int nval, int ra[], int rb[]);
+extern void  sort_int_float  (int nval, int ra[], float rb[]);
+extern void  sort_int_double (int nval, int ra[], double rb[]);
 extern void  sort_int_ptr(int nval, int ra[], char *rb[]);
-extern void  sort_int_int(int nval, int ra[], int rb[]);
 extern void  sort_int_int_ptr(int nval, int ra[], int rb[], char *rc[]);
 extern void  sort_int_int_int(int nval, int ra[], int rb[], int rc[]);
 extern void  sort_int (int n, int ra[]);

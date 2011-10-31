@@ -182,8 +182,6 @@ void write_exo_mesh(
 void create_node_map (int len_map, int len_connect, int *domain_connect, int *node_map,
                       int *loc_num_nodes, int map_origin);
 
-void sort_int(int n, int ra[]);
-
 int bin_search2 (int value, int num, int List[]);
 
 /***********************************************************************
@@ -909,57 +907,6 @@ void create_local_connect(int *node_map,
     }
   }
 }
-
-
-
-/*****************************************************************************
- *
- *       Numerical Recipies in C source code
- *       modified to have first argument an integer array
- *
- *       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
- *       heapsort algorithm.
- *
- *****************************************************************************/
-
-void sort_int(int n, int ra[])
-
-{
-  int   l, j, ir, i;
-  int   rra;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (n <= 1) return;
-
-  l=n >> 1;
-  ir=n-1;
-  for (;;) {
-    if (l > 0)
-      rra=ra[--l];
-    else {
-      rra=ra[ir];
-      ra[ir]=ra[0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    ra[i]=rra;
-  }
-}
-
 
 /*****************************************************************************
  *

@@ -9,18 +9,20 @@
 /* Check an extended eigenpair of A by direct multiplication. Uses
    the Ay = extval*y + Dg form of the problem for convenience. */
 
-double    checkeig_ext(err, work, A, y, n, extval, vwsqrt, gvec, eigtol, warnings)
-double   *err;
-double   *work;			/* work vector of length n */
-struct vtx_data **A;
-double   *y;
-int       n;
-double    extval;
-double   *vwsqrt;
-double   *gvec;
-double    eigtol;
-int       warnings;		/* don't want to see warning messages in one of the
+double 
+checkeig_ext (
+    double *err,
+    double *work,			/* work vector of length n */
+    struct vtx_data **A,
+    double *y,
+    int n,
+    double extval,
+    double *vwsqrt,
+    double *gvec,
+    double eigtol,
+    int warnings		/* don't want to see warning messages in one of the
 				   contexts this is called */
+)
 {
     extern FILE *Output_File;	/* output file or null */
     extern int DEBUG_EVECS;	/* print debugging output? */

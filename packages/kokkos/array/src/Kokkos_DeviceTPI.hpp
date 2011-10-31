@@ -49,10 +49,6 @@
 namespace Kokkos {
 
 class DeviceTPI {
-private:
-
-  static unsigned m_launching_kernel ;
-
 public:
 
   /** \brief  On the TPI device use size_t for indexing */
@@ -72,8 +68,6 @@ public:
 
   /*--------------------------------*/
 
-  static void set_dispatch_functor();
-  static void clear_dispatch_functor();
   static void wait_functor_completion() {}
 
   /*--------------------------------*/

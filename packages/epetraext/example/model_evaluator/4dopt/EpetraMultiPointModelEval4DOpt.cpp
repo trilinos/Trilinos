@@ -144,7 +144,7 @@ EpetraMultiPointModelEval4DOpt::get_f_map() const
 Teuchos::RefCountPtr<const Epetra_Map>
 EpetraMultiPointModelEval4DOpt::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPT(l>1);
+  TEUCHOS_TEST_FOR_EXCEPT(l>1);
   if (l==0) return map_p_;
   else return map_q_;
 }
@@ -152,7 +152,7 @@ EpetraMultiPointModelEval4DOpt::get_p_map(int l) const
 Teuchos::RefCountPtr<const Epetra_Map>
 EpetraMultiPointModelEval4DOpt::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPT(j!=0);
+  TEUCHOS_TEST_FOR_EXCEPT(j!=0);
   return map_g_;
 }
 
@@ -165,7 +165,7 @@ EpetraMultiPointModelEval4DOpt::get_x_init() const
 Teuchos::RefCountPtr<const Epetra_Vector>
 EpetraMultiPointModelEval4DOpt::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPT(l>1);
+  TEUCHOS_TEST_FOR_EXCEPT(l>1);
   if (l==0) return p0_;
   else return q_;
 }
@@ -185,7 +185,7 @@ EpetraMultiPointModelEval4DOpt::get_x_upper_bounds() const
 Teuchos::RefCountPtr<const Epetra_Vector>
 EpetraMultiPointModelEval4DOpt::get_p_lower_bounds(int l) const
 {
-  TEST_FOR_EXCEPT(l>1);
+  TEUCHOS_TEST_FOR_EXCEPT(l>1);
   if (l==0) return pL_;
   else      return qL_;
 }
@@ -193,7 +193,7 @@ EpetraMultiPointModelEval4DOpt::get_p_lower_bounds(int l) const
 Teuchos::RefCountPtr<const Epetra_Vector>
 EpetraMultiPointModelEval4DOpt::get_p_upper_bounds(int l) const
 {
-  TEST_FOR_EXCEPT(l>1);
+  TEUCHOS_TEST_FOR_EXCEPT(l>1);
   if (l==0) return pU_;
   else      return qU_;
 }

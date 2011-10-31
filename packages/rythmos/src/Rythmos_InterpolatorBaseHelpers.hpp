@@ -56,7 +56,7 @@ void assertBaseInterpolatePreconditions(
   typename DataStore<Scalar>::DataStoreVector_t *data_out
   )
 {
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
       data_in.size()==0, std::logic_error,
       "Error, data_in.size() == 0!\n"
       );
@@ -65,11 +65,11 @@ void assertBaseInterpolatePreconditions(
   assertTimePointsAreSorted<Scalar>(time_vec);
   assertTimePointsAreSorted<Scalar>(t_values);
   if (data_in.size() == 1) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       t_values.size()>1, std::logic_error,
       "Error, data_in.size() == 1, but t_values.size() > 1!\n"
       );
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       compareTimeValues(t_values[0],data_in[0].time)!=0, std::logic_error,
       "Error, data_in.size) == 1, but t_values[0] = " << 
       t_values[0] << " != " << data_in[0].time << " = data_in[0].time!\n"
@@ -77,13 +77,13 @@ void assertBaseInterpolatePreconditions(
   }
   TimeRange<Scalar> range(data_in.front().time,data_in.back().time);
   for (int i=0; i<Teuchos::as<int>(t_values.size()) ; ++i) {
-    TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       !range.isInRange(t_values[i]), std::out_of_range,
       "Error, t_values[" << i << "] = " << t_values[i] << 
       " is not in range of data_in = " << range << "!\n"
       );
   }
-  TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     data_out == 0, std::logic_error,
     "Error, data_out = NULL!\n"
     );
@@ -99,7 +99,7 @@ void assertNodesUnChanged(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   int N = nodes.size();
   int Ncopy = nodes_copy.size();
-  TEST_FOR_EXCEPTION( N != Ncopy, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION( N != Ncopy, std::logic_error, 
       "Error!  The number of nodes passed in through setNodes has changed!"
       );
   if (N > 0) {
@@ -116,7 +116,7 @@ void assertNodesUnChanged(
       }
       Scalar xdiffnorm = norm_inf(*xdiff);
       Scalar xdotdiffnorm = norm_inf(*xdotdiff);
-      TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
           ( ( nodes[i].time != nodes_copy[i].time ) ||
             ( xdiffnorm != ST::zero() ) ||
             ( xdotdiffnorm != ST::zero() ) ||

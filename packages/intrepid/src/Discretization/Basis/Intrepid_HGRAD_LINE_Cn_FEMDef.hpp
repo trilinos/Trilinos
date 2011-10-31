@@ -69,7 +69,7 @@ namespace Intrepid {
 
     // check validity of points
     for (int i=0;i<n;i++) {
-      TEST_FOR_EXCEPTION( pts(i,0) >= pts(i+1,0) ,
+      TEUCHOS_TEST_FOR_EXCEPTION( pts(i,0) >= pts(i+1,0) ,
 			  std::runtime_error ,
 			  "Intrepid::Basis_HGRAD_LINE_Cn_FEM Illegal points given to constructor" );
     }
@@ -145,7 +145,7 @@ namespace Intrepid {
       PointTools::getGaussPoints<Scalar,FieldContainer<Scalar> >( latticePts_ , n );
       break;
     default:
-      TEST_FOR_EXCEPTION( true , std::invalid_argument , "Basis_HGRAD_LINE_Cn_FEM:: invalid point type" );
+      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument , "Basis_HGRAD_LINE_Cn_FEM:: invalid point type" );
       break;
     }
 
@@ -308,13 +308,13 @@ namespace Intrepid {
         }
         break;
       default:
-        TEST_FOR_EXCEPTION( true , std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument,
                             ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): Operator type not implemented" );
         break;
       }
     }
     catch (std::invalid_argument &exception){
-      TEST_FOR_EXCEPTION( true , std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): Operator failed");    
     }
 
@@ -327,7 +327,7 @@ namespace Intrepid {
                                                               const ArrayScalar &    inputPoints,
                                                               const ArrayScalar &    cellVertices,
                                                               const EOperator        operatorType) const {
-    TEST_FOR_EXCEPTION( (true), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                         ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): FEM Basis calling an FVD member function");
   }
 

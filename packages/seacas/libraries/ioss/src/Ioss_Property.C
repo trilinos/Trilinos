@@ -203,7 +203,7 @@ bool Ioss::Property::get_value(std::string *value) const
   return valid_request;
 }
 
-bool Ioss::Property::get_value(void*   value) const
+bool Ioss::Property::get_value(void*&   value) const
 {
   bool valid_request = false;
   if (type_ == POINTER) {

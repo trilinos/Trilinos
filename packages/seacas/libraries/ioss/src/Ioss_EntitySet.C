@@ -40,9 +40,9 @@
 #include <string>
 #include <assert.h>
 
-Ioss::EntitySet::EntitySet(const Ioss::DatabaseIO *io_database,
-			       const std::string& my_name,
-			       size_t entity_count)
+Ioss::EntitySet::EntitySet(Ioss::DatabaseIO *io_database,
+			   const std::string& my_name,
+			   size_t entity_count)
   : Ioss::GroupingEntity(io_database, my_name, entity_count)
 {
   properties.add(Ioss::Property("distribution_factor_count",

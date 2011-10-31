@@ -40,6 +40,7 @@
 /* use by SALSA.                                                            */
 /*--------------------------------------------------------------------------*/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -66,12 +67,20 @@
 #include "rf_fem_const.h"
 #include "rf_fem.h"
 
+#include "add_to_log.h"
+
 #if defined(USE_MPI)
 #include <mpi.h>
 #endif
 
+#if defined(__STRICT_ANSI__)
+#include <getopt.h>
+#endif
+
 extern void brdcst_command_info(void);
-extern void add_to_log(const char *name);
+#if defined(__STRICT_ANSI__)
+#include <getopt.h>
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -79,6 +88,7 @@ int main(int argc, char *argv[])
   double       g_start_t, g_end_t, start_t, end_t;
   char         *salsa_cmd_file;
   int          i1, io_ws;
+  int c;
   static char yo[] = "nem_spread";
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -91,59 +101,43 @@ int main(int argc, char *argv[])
   /* Determine Processor Number and size of Parallel Machine */
   get_parallel_info(&Proc, &Num_Proc, &Dim);
 
-  /* Scan the command line arguments for a version flag */
-  for(i1=0; i1 < argc; i1++) {
-    if(strcmp(argv[i1],"-V") == 0) {
+  Proc_Info[4] = -1;
+  Proc_Info[5] = -1;
+  
+  while ((c = getopt(argc, argv, "Vhp:r:s:n:")) != -1) {
+    switch (c) {
+    case 'h':
+      fprintf(stderr, " usage:\n");
+      fprintf(stderr, "\tnem_spread  [-s <start_proc>] [-n <num_proc>] [command_file]\n");
+      fprintf(stderr, "\t\tDecompose for processors <start_proc> to <start_proc>+<num_proc>\n");
+      fprintf(stderr, "\tnem_spread  [-V] [-h] (show version or usage info)\n");
+      fprintf(stderr, "\tnem_spread  [command file] [<-p Proc> <-r raid #>]\n");
+      exit(1);
+      break;
+    case 'V':
       printf("%s version %s\n", UTIL_NAME, VER_STR);
       exit(0);
+      break;
+    case 'p': /* Which proc to use? Also for compatability */
+      i1 = sscanf(optarg, "%d", &Proc_For);
+      break;
+    case 'r': /* raid number.  Seems to be unused; left around for compatability */
+      break;
+    case 's': /* Start with processor <x> */
+      sscanf(optarg, "%d", &Proc_Info[4]);
+      break;
+    case 'n': /* Number of processors to output files for */
+      sscanf(optarg, "%d", &Proc_Info[5]);
+      break;
     }
   }
 
-
-  /* Interpret the command line */
-  switch(argc)
-  {
-  case 1:
+  if (optind >= argc)
     salsa_cmd_file = "nem_spread.inp";
-    break;
-
-  case 2:
-    salsa_cmd_file = argv[1];
-    break;
-
-  case 4:
-    salsa_cmd_file = argv[1];
-    if(strstr(argv[2], "-p")) {
-      i1 = sscanf(argv[3], "%d", &Proc_For);
-      if(i1 != 1) {
-        fprintf(stderr, "ERROR: Incorrect command line!\n");
-        fprintf(stderr, " usage:\n");
-        fprintf(stderr, "\tnem_spread [salsa command file] [<-p Proc> ");
-        fprintf(stderr, "<-r raid #>]\n");
-        exit(1);
-      }
-    }
-    else {
-      fprintf(stderr, "ERROR: Incorrect command line!\n");
-      fprintf(stderr, " usage:\n");
-      fprintf(stderr, "\tnem_spread [salsa command file] ");
-      fprintf(stderr, "[<-p Proc> <-r raid #>]\n");
-      exit(1);
-    }
-    break;
-
-  default:
-    fprintf(stderr, "%s MAIN: ERROR in command line,", yo);
-    if(Proc == 0)
-    {
-      fprintf(stderr, " usage:\n");
-      fprintf(stderr, "\tnem_spread [salsa command file] [<-p Proc> ");
-      fprintf(stderr, "<-r raid #>]");
-    }
-    exit(1);
-    break;
+  else {
+    salsa_cmd_file = argv[optind];
   }
-
+    
   if(Proc == 0) {
     printf("%s version %s\n", UTIL_NAME, VER_STR);
     if (Num_Proc > 1) {
@@ -238,7 +232,15 @@ int main(int argc, char *argv[])
   end_t   = second () - start_t;
   if (Proc == 0) printf ("\nLoad load balance information time: %f (sec.)\n\n", end_t);
 
-
+  /*
+   * Verify parameters in case spreading a subset of mesh...
+   */
+  if (Proc_Info[4] < 0) Proc_Info[4] = 0;
+  if (Proc_Info[5] < 0) Proc_Info[5] = Proc_Info[0];
+  
+  if (Proc_Info[4] + Proc_Info[5] > Proc_Info[0])
+    Proc_Info[5] = Proc_Info[0] - Proc_Info[4];
+  
   /*
    * Get any restart parameter information
    *  - Read the parameters from the input ExodusII file
@@ -302,6 +304,6 @@ int main(int argc, char *argv[])
 #if defined(USE_MPI)
   MPI_Finalize();
 #endif
-  add_to_log(argv[0]);
+  add_to_log(argv[0], g_end_t);
   return 0;
 }

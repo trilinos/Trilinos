@@ -99,14 +99,14 @@ public:
                        const FunctorType & functor ,
                        const FinalizeType & finalize )
   {
-    DeviceTBB::set_dispatch_functor();
+    DeviceTBB::memory_space::set_dispatch_functor();
     // Make a locally owned copy for consistent behavior
     // across all devices.
     const FunctorType  driver_functor = functor;
     const FinalizeType driver_finalize = finalize;
     ParallelReduce driver( & driver_functor );
 
-    DeviceTBB::clear_dispatch_functor();
+    DeviceTBB::memory_space::clear_dispatch_functor();
 
     tbb::parallel_reduce(tbb::blocked_range<size_type>(0,work_count) , driver , tbb::auto_partitioner() );
     

@@ -8,11 +8,13 @@
 #include	"refine_map.h"
 
 
-void      init_cube_edata(edata, node1, dim, mask)
-struct refine_edata *edata;	/* desire data for current edge */
-int       node1;		/* processor incident to current wire */
-int       dim;			/* direction of wire */
-int       mask;			/* bit set in wire dimension */
+void 
+init_cube_edata (
+    struct refine_edata *edata,	/* desire data for current edge */
+    int node1,		/* processor incident to current wire */
+    int dim,			/* direction of wire */
+    int mask			/* bit set in wire dimension */
+)
 {
 
     edata->node1 = (int) node1;

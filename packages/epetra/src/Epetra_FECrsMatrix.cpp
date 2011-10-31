@@ -527,7 +527,7 @@ int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int* rows,
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete, Epetra_CombineMode combineMode)
 {
-  return( GlobalAssemble(DomainMap(), RangeMap(), callFillComplete), combineMode );
+  return( GlobalAssemble(DomainMap(), RangeMap(), callFillComplete, combineMode ));
 }
 
 //----------------------------------------------------------------------------
@@ -663,7 +663,7 @@ int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
   int err = 0;
 
   for(int i=0; i<numRows; ++i) {
-    double* valuesptr = (double*)values + i*numRows;
+    double* valuesptr = (double*)values + i*numCols;
 
     int local_row_id = Map().LID(rows[i]);
     if (local_row_id >= 0) {
@@ -738,7 +738,7 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
     //This is slow and not thread-safe.
 
     for(int j=0; j<numCols; ++j) {
-      valuesptr[j] = values[i][j];
+      valuesptr[j] = values[j][i];
     }
 
     returncode += InputGlobalValues_RowMajor(1, &rows[i], numCols, cols, valuesptr, mode);

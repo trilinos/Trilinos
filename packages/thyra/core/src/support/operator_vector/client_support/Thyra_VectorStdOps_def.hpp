@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -68,11 +68,12 @@
 #include "RTOpPack_TOpEleWiseProd.hpp"
 #include "RTOpPack_TOpEleWiseConjProd.hpp"
 #include "RTOpPack_TOpEleWiseProdUpdate.hpp"
+#include "RTOpPack_TOpEleWiseScale.hpp"
 #include "RTOpPack_TOpLinearCombination.hpp"
 #include "RTOpPack_TOpScaleVector.hpp"
 #include "RTOpPack_TOpReciprocal.hpp"
 #include "RTOpPack_TOpRandomize.hpp"
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_Assert.hpp"
 
 
@@ -256,7 +257,7 @@ void Thyra::scale( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &v_lhs )
 
 
 template<class Scalar>
-void Thyra::abs( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x )
+void Thyra::abs( const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> > &y )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpAbs<Scalar> abs_op;
@@ -265,7 +266,7 @@ void Thyra::abs( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x 
 
 
 template<class Scalar>
-void Thyra::reciprocal( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x )
+void Thyra::reciprocal( const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> > &y )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpReciprocal<Scalar> recip_op;
@@ -296,6 +297,16 @@ void Thyra::ele_wise_conj_prod(
   RTOpPack::TOpEleWiseConjProd<Scalar> ele_wise_conj_prod_op(alpha);
   applyOp<Scalar>( ele_wise_conj_prod_op, tuple(ptrInArg(v_rhs1),ptrInArg(v_rhs2)),
     tuple(v_lhs), null );
+}
+
+
+template<class Scalar>
+void Thyra::ele_wise_scale( const VectorBase<Scalar>& x,
+  const Ptr<VectorBase<Scalar> > &y )
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  RTOpPack::TOpEleWiseScale<Scalar> ele_wise_scale;
+  applyOp<Scalar>( ele_wise_scale, tuple(ptrInArg(x)), tuple(y), null );
 }
 
 
@@ -680,9 +691,9 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
    \
   template void scale( const SCALAR& alpha, const Ptr<VectorBase<SCALAR > > &v_lhs );  \
    \
-  template void abs( const Ptr<VectorBase<SCALAR > > &y, const VectorBase<SCALAR >& x );  \
+  template void abs( const VectorBase< SCALAR > &x, const Ptr<VectorBase< SCALAR > > &y );  \
    \
-  template void reciprocal( const Ptr<VectorBase<SCALAR > > &y, const VectorBase<SCALAR >& x );  \
+  template void reciprocal( const VectorBase< SCALAR > &x, const Ptr<VectorBase< SCALAR > > &y );  \
    \
   template void ele_wise_prod(  \
     const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
@@ -693,6 +704,9 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
     const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
     const VectorBase<SCALAR >& v_rhs2, const Ptr<VectorBase<SCALAR > > &v_lhs  \
     );  \
+   \
+  template void ele_wise_scale( const VectorBase<SCALAR>& x, \
+    const Ptr<VectorBase<SCALAR> > &y ); \
    \
   template void Vp_StVtV(  \
     const Ptr<VectorBase<SCALAR > > &v_lhs,  \
