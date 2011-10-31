@@ -22,6 +22,7 @@
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_IdentifierMap.hpp>
+#include <Xpetra_Map.hpp>
 
 namespace Zoltan2 {
 
@@ -56,7 +57,7 @@ public:
   typedef typename Adapter::user_t    user_t;
   
   GraphModel(){
-    std::cout <<"GRAPH MODEL base" << std::endl;
+    //std::cout <<"GRAPH MODEL base" << std::endl;
   }
 
   /*! Returns the number vertices on this process.
@@ -209,8 +210,7 @@ public:
       input_(inputAdapter), rowMap_(inputAdapter->getMatrix()->getRowMap()),
       colMap_(inputAdapter->getMatrix()->getColMap()), comm_(comm), env_(env),
       gnos_(), edgeGnos_(), procIds_(), offsets_(),
-      numLocalEdges_(), numGlobalEdges_(0), numLocalVtx_(),
-      allocatedCopies_(false), copyoffsets_(NULL), copynborIds_(NULL)
+      numLocalEdges_(), numGlobalEdges_(0), numLocalVtx_()
   {
     gno_t const *vtxIds=NULL, *nborIds=NULL;
     lno_t const  *offsets=NULL, *lids=NULL; 
@@ -220,48 +220,53 @@ public:
     catch (std::exception &e)
       Z2_THROW_ZOLTAN2_ERROR(env_, e);
 
+    numLocalEdges_ = offsets[numLocalVtx_];
+    size_t numOffsets = numLocalVtx_ + 1;
+
     ArrayView<gno_t> av1(const_cast<gno_t *>(vtxIds), numLocalVtx_);
     gnos_ = av1.getConst();  // to make ArrayView<const gno_t>
 
-    numLocalEdges_ = offsets[numLocalVtx_];
-
-    copyoffsets_ = const_cast<lno_t*> (offsets); 
-    copynborIds_ = const_cast<gno_t*> (nborIds);
+    lno_t *tmpOffsets = NULL;
+    gno_t *tmpEdges = NULL;
+    lno_t nSelfEdges = 0;
 
     if (removeSelfEdges) {
 
-      // Need to copy the offsets and edges to remove self edges.
-      // When/how should these arrays be deleted?  In destructor?
-      allocatedCopies_ = true;
-      copyoffsets_ = (lno_t *) malloc((numLocalVtx_+1)*sizeof(lno_t));
-      copynborIds_ = (gno_t *) malloc(numLocalEdges_ *sizeof(gno_t));
+      Z2_ASYNC_MEMORY_ALLOC(*comm, *env, lno_t, tmpOffsets, numOffsets);
+      Z2_ASYNC_MEMORY_ALLOC(*comm, *env, gno_t, tmpEdges, numLocalEdges_);
 
-      lno_t nSelfEdges = 0;
+      for (lno_t i=0; i < numLocalVtx_; i++){
 
-      for (lno_t i = 0; i < numLocalVtx_; i++) {
-        copyoffsets_[i] = offsets[i] - nSelfEdges;
+        tmpOffsets[i] = offsets[i] - nSelfEdges;
 
         for (lno_t j = offsets[i]; j < offsets[i+1]; j++) {
           if (gnos_[i] == nborIds[j]) { // self edge; remove it
             nSelfEdges++;
           }
           else {  // Not a self-edge; keep it.
-            copynborIds_[j-nSelfEdges] = nborIds[j];
+            tmpEdges[j-nSelfEdges] = nborIds[j];
           }
         }
       }
-      copyoffsets_[numLocalVtx_] = offsets[numLocalVtx_] - nSelfEdges;
+
       numLocalEdges_ -= nSelfEdges;
 
-      cout << comm->getRank() << " Removed " << nSelfEdges 
-           << " self-edges" << endl;
+      if (nSelfEdges == 0){
+        delete [] tmpOffsets;
+        tmpOffsets = NULL;
+        delete [] tmpEdges;
+        tmpEdges= NULL;
+      }
     }
-
-    ArrayView<lno_t> av2(const_cast<lno_t *>(copyoffsets_), numLocalVtx_+1);
-    offsets_ = av2.getConst();
-
-    ArrayView<gno_t> av3(const_cast<gno_t *>(copynborIds_), numLocalEdges_);
-    edgeGnos_ = av3.getConst();
+  
+    if (nSelfEdges == 0){
+      offsets_ = arcp(const_cast<lno_t *>(offsets), 0, numOffsets, false);
+      edgeGnos_ = arcp(const_cast<gno_t *>(nborIds), 0, numLocalEdges_, false);
+    }
+    else{
+      offsets_ = arcp(tmpOffsets, 0, numOffsets, true);
+      edgeGnos_ = arcp(tmpEdges, 0, numLocalEdges_, true);
+    }
 
     Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
       &numLocalEdges_, &numGlobalEdges_);
@@ -269,11 +274,10 @@ public:
     RCP<Array<int> > procBuf =  rcp(new Array<int>(numLocalEdges_));
     procIds_ = arcp(procBuf);
 
-    cout << comm->getRank() << " KDDKDD numLocalEdges_ " << numLocalEdges_ << endl;
-    for (gno_t i = 0; i < numLocalEdges_; i++) cout<< edgeGnos_[i] << endl;
     try{
-      rowMap_->getRemoteIndexList(edgeGnos_.view(0,numLocalEdges_), 
-        procIds_.view(0, numLocalEdges_));
+      ArrayView<const gno_t> gnoView = 
+        edgeGnos_.view(0,numLocalEdges_).getConst();
+      rowMap_->getRemoteIndexList(gnoView, procIds_.view(0, numLocalEdges_));
     }
     catch (std::exception &e){
       Z2_THROW_ZOLTAN2_ERROR(env_, e);
@@ -282,10 +286,6 @@ public:
 
   //!  Destructor
   ~GraphModel() {
-    if (allocatedCopies_) {
-      delete [] copyoffsets_;
-      delete [] copynborIds_;
-    }
   }
 
   // // // // // // // // // // // // // // // // // // // // // /
@@ -343,9 +343,9 @@ public:
     ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
     ArrayView<const scalar_t> &wgts) const
   {
-    edgeIds = edgeGnos_.view(0, numLocalEdges_);
-    procIds = procIds_.view(0, numLocalEdges_);
-    offsets = offsets_.view(0, numLocalVtx_+1);
+    edgeIds = edgeGnos_.view(0,numLocalEdges_).getConst();
+    procIds = procIds_.view(0, numLocalEdges_).getConst();
+    offsets = offsets_.view(0, numLocalVtx_+1).getConst();
 
     return numLocalEdges_;
   }
@@ -371,8 +371,8 @@ public:
     lno_t nextVtx = (lno < gnos_.size()-1) ? offsets_[lno+1] : numLocalEdges_;
     size_t nEdges = nextVtx - thisVtx;
 
-    edgeId = edgeGnos_.view(thisVtx, nEdges);
-    procId = procIds_.view(thisVtx, nEdges);
+    edgeId = edgeGnos_.view(thisVtx, nEdges).getConst();
+    procId = procIds_.view(thisVtx, nEdges).getConst();
     return nEdges;
   }
 
@@ -385,9 +385,9 @@ private:
   RCP<const Environment > env_;
 
   ArrayView<const gno_t> gnos_;
-  ArrayView<const gno_t> edgeGnos_;
+  ArrayRCP<const gno_t> edgeGnos_;
   ArrayRCP<int> procIds_;
-  ArrayView<const lno_t> offsets_;
+  ArrayRCP<const lno_t> offsets_;
 
   // Transpose is required only if vertices are columns.
   // KDDKDD ??  We won't form an actual transpose, will we?
@@ -396,17 +396,6 @@ private:
   global_size_t numLocalEdges_;
   global_size_t numGlobalEdges_;
   size_t numLocalVtx_;
-
-  // Arrays that hold (possibly modified) copies of of the input data.
-  // Pointers may be set directly to the input data, or additional space 
-  // may be allocated for these arrays.
-  // TODO Using these arrays is not perfect, and probably conflicts with the
-  // TODO ArrayViews above, but it was the only way I could get the code to work
-  // TODO in short order.  I need to understand ArrayViews and ArrayRCPs better.
-  bool allocatedCopies_;
-  lno_t *copyoffsets_;
-  gno_t *copynborIds_;
-
 };
 
 }   // namespace Zoltan2
