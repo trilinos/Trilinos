@@ -181,7 +181,6 @@ public:
            for a Zoltan2::XpetraCrsMatrixInput object.
 */
 
-template <>
 template <typename User>
 class GraphModel<XpetraCrsMatrixInput<User> >
 {
