@@ -30,9 +30,6 @@ namespace MueLu {
 
 #include "MueLu_UseShortNames.hpp"
 
-    template<class AA, class BB, class CC, class DD, class EE>
-    inline friend std::ostream& operator<<(std::ostream& os, GenericRFactory<AA,BB,CC,DD,EE> &factory);
-
   public:
     //! @name Constructors/Destructors.
     //@{
@@ -112,17 +109,8 @@ namespace MueLu {
 
   }; //class TransPFactory
 
-  //! Friend print function.
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::ostream& operator<<(std::ostream& os, GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &factory) {
-    os << "Printing a GenericRFactory object" << std::endl;
-    return os;
-  }
-
 } //namespace MueLu
 
 #define MUELU_GENERICRFACTORY_SHORT
-
-
 
 #endif /* MUELU_GENERICRFACTORY_HPP_ */

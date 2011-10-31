@@ -37,9 +37,6 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 class PgPFactory : public PFactory {
 #include "MueLu_UseShortNames.hpp"
 
-  template<class AA, class BB, class CC, class DD, class EE>
-  inline friend std::ostream& operator<<(std::ostream& os, PgPFactory<AA,BB,CC,DD, EE> &factory);
-
 public:
 
   /* Options defining how to pick-up the next root node in the local aggregation procedure */
@@ -518,13 +515,6 @@ private:
   //! minimization norm
   MinimizationNorm min_norm_;
 };
-
-//! Friend print function.
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-std::ostream& operator<<(std::ostream& os, PgPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &factory) {
-  os << "Printing an PgPFactory object" << std::endl;
-  return os;
-}
 
 } //namespace MueLu
 

@@ -28,9 +28,6 @@ namespace MueLu {
   class SaPFactory : public PFactory {
 #include "MueLu_UseShortNames.hpp"
 
-    template<class AA, class BB, class CC, class DD, class EE>
-    inline friend std::ostream& operator<<(std::ostream& os, SaPFactory<AA,BB,CC,DD, EE> &factory);
-
   public:
 
     //! @name Constructors/Destructors.
@@ -229,13 +226,6 @@ namespace MueLu {
     std::string diagonalView_;
 
   }; //class SaPFactory
-
-  //! Friend print function.
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::ostream& operator<<(std::ostream& os, SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &factory) {
-    os << "Printing an SaPFactory object" << std::endl;
-    return os;
-  }
 
 } //namespace MueLu
 

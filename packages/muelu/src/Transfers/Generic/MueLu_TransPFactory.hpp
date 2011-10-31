@@ -26,9 +26,6 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
 #include "MueLu_UseShortNames.hpp"
 
-    template<class AA, class BB, class CC, class DD, class EE>
-    inline friend std::ostream& operator<<(std::ostream& os, TransPFactory<AA,BB,CC,DD,EE> &factory);
-
   public:
     //! @name Constructors/Destructors.
     //@{
@@ -114,13 +111,6 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     RCP<FactoryBase> PFact_;
 
   }; //class TransPFactory
-
-  //! Friend print function.
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::ostream& operator<<(std::ostream& os, TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &factory) {
-    os << "Printing a TransPFactory object" << std::endl;
-    return os;
-  }
 
 } //namespace MueLu
 
