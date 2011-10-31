@@ -5,7 +5,7 @@
  *      Author: wiesner
  */
 
-#include "MueLu_NoFactory.hpp"
+#include "MueLu_NoFactory_def.hpp"
 
 namespace MueLu {
 

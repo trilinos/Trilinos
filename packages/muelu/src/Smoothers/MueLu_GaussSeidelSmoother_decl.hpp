@@ -22,7 +22,7 @@ namespace MueLu {
     //! @name Constructors/Destructors
     //@{
 
-    GaussSeidelSmoother(LO sweeps = 1, SC omega = 1.0) : nSweeps_(sweeps), omega_(omega) ;
+    GaussSeidelSmoother(LO sweeps = 1, SC omega = 1.0) ;
 
     virtual ~GaussSeidelSmoother() ;
 

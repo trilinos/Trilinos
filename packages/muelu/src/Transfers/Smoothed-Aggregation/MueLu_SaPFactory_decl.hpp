@@ -39,8 +39,7 @@ namespace MueLu {
       User can supply a factory for generating the tentative prolongator.
     */
     SaPFactory(RCP<PFactory> InitialPFact = Teuchos::null, RCP<SingleLevelFactoryBase> AFact = Teuchos::null)
-      : initialPFact_(InitialPFact), AFact_(AFact),
-        dampingFactor_(4./3), diagonalView_("current") ;
+      ;
   
     //! Destructor.
     virtual ~SaPFactory() ;

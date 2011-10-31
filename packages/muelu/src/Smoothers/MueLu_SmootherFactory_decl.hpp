@@ -86,11 +86,9 @@ namespace MueLu {
     //Note: Teuchos::null as parameter allowed (= no smoother) but must be explicitly defined (no parameter default value)
     //Note: precondition: input smoother must not be Setup()
     SmootherFactory(RCP<SmootherPrototype> preAndPostSmootherPrototype)
-      : preSmootherPrototype_(preAndPostSmootherPrototype), postSmootherPrototype_(preAndPostSmootherPrototype)
     ;
 
     SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype)
-      : preSmootherPrototype_(preSmootherPrototype), postSmootherPrototype_(postSmootherPrototype)
     ;
 
     virtual ~SmootherFactory() ;

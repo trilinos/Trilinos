@@ -24,7 +24,6 @@ namespace MueLu {
 
     //! Constructor
     NullspaceFactory(RCP<const FactoryBase> AFact = Teuchos::null)
-      : AFact_(AFact)
     ;
 
     //! Destructor

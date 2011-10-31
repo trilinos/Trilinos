@@ -29,12 +29,10 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
     //! Constructor
     MergedSmoother(ArrayRCP<RCP<SmootherPrototype> > & smootherList, bool verbose=false)
-      : smootherList_(smootherList), reverseOrder_(false), verbose_(verbose), out_(this->getOStream())
     ;
     
     //! Copy constructor (performs a deep copy of input object)
     MergedSmoother(const MergedSmoother& src) 
-      : reverseOrder_(src.reverseOrder_), verbose_(src.verbose_), out_(this->getOStream())
     ;
 
     //! Copy method (performs a deep copy of input object)

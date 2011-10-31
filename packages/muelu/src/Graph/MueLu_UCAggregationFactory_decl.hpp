@@ -46,7 +46,6 @@ namespace MueLu {
 
     //! Constructor.
     UCAggregationFactory(RCP<FactoryBase> graphFact = Teuchos::null)
-      : graphFact_(graphFact)
     ;
 
     //! Destructor.

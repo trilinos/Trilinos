@@ -40,7 +40,6 @@ namespace MueLu {
       If you are using type=="", then either SuperLU or KLU2 are used by default.
     */
     Amesos2Smoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null)
-      : type_(type), paramList_(paramList), AFact_(AFact)
     ;
 
     //! Destructor

@@ -72,7 +72,6 @@ namespace MueLu {
     */
 
     AmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null)
-      : type_(type), paramList_(paramList), AFact_(AFact)
     ;
 
     //! Destructor

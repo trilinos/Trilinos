@@ -72,7 +72,6 @@ namespace MueLu {
     See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT.
     */
     Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null) //TODO: empty paramList valid for Ifpack??
-      : type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
     ;
 
     //! Destructor

@@ -45,7 +45,7 @@
 #include <Xpetra_BlockedCrsOperator.hpp>
 #include <Xpetra_Exceptions.hpp>
 
-#include <MueLu_Utilities.hpp>
+#include <MueLu_Utilities.hpp> //TODO: Xpetra tests should not use MueLu
 
 namespace {
 

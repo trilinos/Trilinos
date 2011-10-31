@@ -40,12 +40,10 @@ namespace MueLu {
 
     //! Default constructor.
     Hierarchy()
-      : maxCoarseSize_(50), implicitTranspose_(false)
     ;
 
     //! Constructor
     Hierarchy(const RCP<Operator> & A)
-      :  maxCoarseSize_(50), implicitTranspose_(false)
     ;
 
     //! Destructor.

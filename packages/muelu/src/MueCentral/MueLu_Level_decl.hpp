@@ -40,10 +40,10 @@ namespace MueLu {
     //@{
 
     //! @name Constructors / Destructors
-    Level() : levelID_(-1) ;
+    Level() ;
 
     //! Constructor
-    Level(RCP<FactoryManagerBase> & factoryManager) : levelID_(-1), factoryManager_(factoryManager) ;
+    Level(RCP<FactoryManagerBase> & factoryManager);
 
     //@}
 
@@ -183,8 +183,8 @@ namespace MueLu {
     //! If input factory == NULL, returns the default factory. Else, return input factory.
     const FactoryBase* GetFactory(const std::string& varname, const FactoryBase* factory) const ;
 
-    enum   RequestMode ;;
-    static RequestMode requestMode_;
+    enum   RequestMode { REQUEST, RELEASE, UNDEF }; //EI TODO
+    static RequestMode requestMode_;                //EI TODO
 
     //
     //

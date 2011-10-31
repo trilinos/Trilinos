@@ -38,7 +38,6 @@ namespace MueLu {
 
     //! Constructor.
     GenericRFactory(RCP<PFactory> PFact = Teuchos::null)
-      : PFact_(PFact)
     ;
 
     //! Destructor.

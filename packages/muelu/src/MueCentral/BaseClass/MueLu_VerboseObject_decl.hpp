@@ -31,9 +31,7 @@ namespace MueLu {
     
   public:
     
-    VerboseObject()
-      : verbLevel_(High) //TODO: Default
-    ;
+    VerboseObject() ;
 
     //! Destructor.
     virtual ~VerboseObject() ;

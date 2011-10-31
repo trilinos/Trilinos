@@ -1,9 +1,14 @@
 #ifndef MUELU_HIERARCHYHELPERS_DEF_HPP
 #define MUELU_HIERARCHYHELPERS_DEF_HPP
 
+#include <Xpetra_Operator.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
+#include "MueLu_SmootherBase.hpp"
 
 namespace MueLu {
 

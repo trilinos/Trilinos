@@ -51,8 +51,7 @@ public:
       User can supply a factory for generating the tentative prolongator.
    */
   PgPFactory(RCP<PFactory> InitialPFact = Teuchos::null, RCP<SingleLevelFactoryBase> AFact = Teuchos::null)
-  : initialPFact_(InitialPFact), AFact_(AFact),
-    diagonalView_("current") ;
+    ;
 
   //! Destructor.
   virtual ~PgPFactory() ;

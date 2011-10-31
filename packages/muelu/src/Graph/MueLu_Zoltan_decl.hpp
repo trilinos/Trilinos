@@ -38,7 +38,7 @@ class ZoltanInterface : public BaseClass {
    //@{
 
    //! Constructor
-   ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact = Teuchos::null) : AFact_(AFact) ;
+  ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact = Teuchos::null) ;
 
    //! Destructor
    virtual ~ZoltanInterface() ;

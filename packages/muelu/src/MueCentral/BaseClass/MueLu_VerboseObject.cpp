@@ -1,4 +1,4 @@
-#include "MueLu_VerboseObject.hpp"
+#include "MueLu_VerboseObject_def.hpp"
 
 namespace MueLu {
  

@@ -39,7 +39,6 @@ public:
 
   //!
   InternalFactoryManager(RCP<const FactoryManagerBase> & parentFactoryManager)
-  : factoryManager_(parentFactoryManager), noFact_(NoFactory::getRCP())
   ;
 
   //! Destructor.

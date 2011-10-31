@@ -34,7 +34,6 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
     //! Constructor.
     TransPFactory(RCP<FactoryBase> PFact = Teuchos::null)
-      : PFact_(PFact)
     ;
 
     //! Destructor.

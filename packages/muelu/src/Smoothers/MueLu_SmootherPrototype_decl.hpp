@@ -30,7 +30,7 @@ namespace MueLu {
     //!@nameConstructors/Destructors.
     //@{
 
-    SmootherPrototype() : isSetup_(false) ;
+    SmootherPrototype() ;
 
     virtual ~SmootherPrototype() ;
 

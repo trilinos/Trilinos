@@ -32,13 +32,13 @@ namespace MueLu {
     Scalar threshold_;
 
   public:
-    /// Constructor
-    explicit PreDropFunctionConstVal(const Scalar threshold)
-    : threshold_(threshold) ;
-    /// Destructor
+    // Constructor
+    explicit PreDropFunctionConstVal(const Scalar threshold);
+
+    // Destructor
     ~PreDropFunctionConstVal() ;
 
-    /// Drop
+    // Drop
     RCP<Graph> Drop(RCP<Operator> A) ;
   };
 

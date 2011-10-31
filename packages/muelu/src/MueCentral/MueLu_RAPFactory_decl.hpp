@@ -26,7 +26,7 @@ namespace MueLu {
       implicitTranspose_(false) ;*/
 
     RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null)
-    : PFact_(PFact), RFact_(RFact), AFact_(AFact), implicitTranspose_(false) ;
+      ;
 
     virtual ~RAPFactory() ;
     //@}

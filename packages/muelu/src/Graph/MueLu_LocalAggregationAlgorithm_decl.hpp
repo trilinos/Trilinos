@@ -85,7 +85,6 @@ namespace MueLu {
 
     //! Constructor.
     LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact=Teuchos::null)
-      : ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0)
     ;
 
     //! Destructor.

@@ -31,8 +31,6 @@ namespace MueLu {
 
     //! Constructor.
     LeftoverAggregationAlgorithm():
-      phase3AggCreation_(.5),
-      minNodesPerAggregate_(1)
     ;
 
     //! Destructor.

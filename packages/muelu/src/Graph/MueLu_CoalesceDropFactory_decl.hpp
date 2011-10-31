@@ -39,7 +39,6 @@ namespace MueLu {
 
     //! Constructor
     CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null)
-      : AFact_(AFact), fixedBlkSize_(true)
     ;
 
     //! Destructor

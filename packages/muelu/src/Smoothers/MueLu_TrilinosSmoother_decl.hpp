@@ -33,7 +33,6 @@ namespace MueLu {
 
     //! @brief Constructor
     TrilinosSmoother(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null)
-      : lib_(lib), type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
     ;
     
     //! Destructor

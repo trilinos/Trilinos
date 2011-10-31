@@ -34,7 +34,6 @@ namespace MueLu {
     //! @brief Constructor
     //! Note: only parameters shared by Amesos and Amesos2 should be used for type and paramList (example: type= "Klu", "Superlu", paramList = <empty>) .
     DirectSolver(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null)
-      : lib_(lib), type_(type), paramList_(paramList), AFact_(AFact)
     ;
     
     //! Destructor
