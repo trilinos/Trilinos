@@ -1,5 +1,5 @@
-#ifndef MUELU_VERBOSECLASS_HPP
-#define MUELU_VERBOSECLASS_HPP
+#ifndef MUELU_VERBOSEOBJECT_DEF_HPP
+#define MUELU_VERBOSEOBJECT_DEF_HPP
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -82,4 +82,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_VERBOSECLASS_SHORT
-#endif // ifndef MUELU_VERBOSECLASS_HPP
+#endif // MUELU_VERBOSEOBJECT_DEF_HPP

@@ -1,5 +1,5 @@
-#ifndef MUELU_PGPFACTORY_HPP_
-#define MUELU_PGPFACTORY_HPP_
+#ifndef MUELU_PGPFACTORY_DECL_HPP
+#define MUELU_PGPFACTORY_DECL_HPP
 
 /*
  * MueLu_PgPFactory.hpp
@@ -167,4 +167,4 @@ private:
 } //namespace MueLu
 
 #define MUELU_PGPFACTORY_SHORT
-#endif /* MUELU_PGPFACTORY_HPP_ */
+#endif // MUELU_PGPFACTORY_DECL_HPP

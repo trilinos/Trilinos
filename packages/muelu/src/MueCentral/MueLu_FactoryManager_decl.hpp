@@ -1,5 +1,5 @@
-#ifndef MUELU_FACTORYMANAGER_HPP
-#define MUELU_FACTORYMANAGER_HPP
+#ifndef MUELU_FACTORYMANAGER_DECL_HPP
+#define MUELU_FACTORYMANAGER_DECL_HPP
 
 #include <map>
 
@@ -93,4 +93,4 @@ namespace MueLu {
 //TODO: use Teuchos::ConstNonConstObjectContainer to allow user to modify factories after a GetFactory()
 
 #define MUELU_FACTORYMANAGER_SHORT
-#endif // ifndef MUELU_FACTORYMANAGER_HPP
+#endif // MUELU_FACTORYMANAGER_DECL_HPP

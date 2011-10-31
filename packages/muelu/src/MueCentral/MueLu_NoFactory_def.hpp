@@ -1,5 +1,5 @@
-#ifndef MUELU_NOFACTORY_HPP
-#define MUELU_NOFACTORY_HPP
+#ifndef MUELU_NOFACTORY_DEF_HPP
+#define MUELU_NOFACTORY_DEF_HPP
 
 #include <Teuchos_Assert.hpp>
 
@@ -66,4 +66,4 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif
+#endif // MUELU_NOFACTORY_DEF_HPP

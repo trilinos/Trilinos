@@ -1,5 +1,5 @@
-#ifndef MUELU_GRAPH_HPP
-#define MUELU_GRAPH_HPP
+#ifndef MUELU_GRAPH_DEF_HPP
+#define MUELU_GRAPH_DEF_HPP
 
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_CrsGraph.hpp>
@@ -94,4 +94,4 @@ namespace MueLu {
 }
 
 #define MUELU_GRAPH_SHORT
-#endif
+#endif // MUELU_GRAPH_DEF_HPP

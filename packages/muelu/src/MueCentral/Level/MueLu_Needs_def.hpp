@@ -1,5 +1,5 @@
-#ifndef MUELU_NEEDS_HPP
-#define MUELU_NEEDS_HPP
+#ifndef MUELU_NEEDS_DEF_HPP
+#define MUELU_NEEDS_DEF_HPP
 
 #include <Teuchos_ParameterEntry.hpp>
 
@@ -321,4 +321,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_NEEDS_SHORT
-#endif //ifndef MUELU_NEEDS_HPP
+#endif // MUELU_NEEDS_DEF_HPP

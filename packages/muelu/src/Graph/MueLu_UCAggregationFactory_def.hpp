@@ -1,5 +1,5 @@
-#ifndef MUELU_UCAGGREGATIONFACTORY_HPP
-#define MUELU_UCAGGREGATIONFACTORY_HPP
+#ifndef MUELU_UCAGGREGATIONFACTORY_DEF_HPP
+#define MUELU_UCAGGREGATIONFACTORY_DEF_HPP
 
 #include <Teuchos_Utils.hpp>
 
@@ -139,4 +139,4 @@ namespace MueLu {
 // - base class for algorithm and options forward to algorithm as parameter list
 
 #define MUELU_UCAGGREGATIONFACTORY_SHORT
-#endif //ifndef MUELU_UCAGGREGATIONFACTORY_HPP
+#endif // MUELU_UCAGGREGATIONFACTORY_DEF_HPP

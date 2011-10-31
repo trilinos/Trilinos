@@ -1,5 +1,5 @@
-#ifndef MUELU_SAPFACTORY_HPP
-#define MUELU_SAPFACTORY_HPP
+#ifndef MUELU_SAPFACTORY_DECL_HPP
+#define MUELU_SAPFACTORY_DECL_HPP
 
 #include <iostream>
 
@@ -110,4 +110,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_SAPFACTORY_SHORT
-#endif //ifndef MUELU_SAPFACTORY_HPP
+#endif // MUELU_SAPFACTORY_DECL_HPP

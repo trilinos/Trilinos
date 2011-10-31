@@ -1,5 +1,5 @@
-#ifndef MUELU_RAPFACTORY_HPP
-#define MUELU_RAPFACTORY_HPP
+#ifndef MUELU_RAPFACTORY_DEF_HPP
+#define MUELU_RAPFACTORY_DEF_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
@@ -146,4 +146,4 @@ private:
 } //namespace MueLu
 
 #define MUELU_RAPFACTORY_SHORT
-#endif //ifndef MUELU_RAPFACTORY_HPP
+#endif // MUELU_RAPFACTORY_DEF_HPP

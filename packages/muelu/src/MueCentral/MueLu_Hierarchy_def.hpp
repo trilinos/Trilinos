@@ -1,5 +1,5 @@
-#ifndef MUELU_HIERARCHY_HPP
-#define MUELU_HIERARCHY_HPP
+#ifndef MUELU_HIERARCHY_DEF_HPP
+#define MUELU_HIERARCHY_DEF_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -525,4 +525,4 @@ namespace MueLu {
 // TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
 
 #define MUELU_HIERARCHY_SHORT
-#endif //ifndef MUELU_HIERARCHY_HPP
+#endif // MUELU_HIERARCHY_DEF_HPP

@@ -1,5 +1,5 @@
-#ifndef MUELU_UTILITIES_HPP
-#define MUELU_UTILITIES_HPP
+#ifndef MUELU_UTILITIES_DEF_HPP
+#define MUELU_UTILITIES_DEF_HPP
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -1393,4 +1393,4 @@ public:
 } //namespace MueLu
 
 #define MUELU_UTILITIES_SHORT
-#endif //ifndef MUELU_UTILITIES_HPP
+#endif // MUELU_UTILITIES_DEF_HPP

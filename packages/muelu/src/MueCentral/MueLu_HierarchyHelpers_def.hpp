@@ -1,5 +1,5 @@
-#ifndef MUELU_HIERARCHY_HELPERS_HPP
-#define MUELU_HIERARCHY_HELPERS_HPP
+#ifndef MUELU_HIERARCHYHELPERS_DEF_HPP
+#define MUELU_HIERARCHYHELPERS_DEF_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Level.hpp"
@@ -165,4 +165,4 @@ private:
 // TODO: remove 'RCP' for TopRAPFactory::factoryManager_ and TopSmootherFactory::factoryManager_?
 
 #define MUELU_HIERARCHY_HELPERS_SHORT
-#endif //ifndef MUELU_HIERARCHY_HELPERS_HPP
+#endif // MUELU_HIERARCHYHELPERS_DEF_HPP

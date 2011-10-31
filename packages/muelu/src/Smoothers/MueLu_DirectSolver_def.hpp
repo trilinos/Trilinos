@@ -1,5 +1,5 @@
-#ifndef MUELU_DIRECT_SOLVER_HPP
-#define MUELU_DIRECT_SOLVER_HPP
+#ifndef MUELU_DIRECTSOLVER_DEF_HPP
+#define MUELU_DIRECTSOLVER_DEF_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherPrototype.hpp"
@@ -145,4 +145,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_DIRECT_SOLVER_SHORT
-#endif // MUELU_DIRECT_SOLVER_HPP
+#endif // MUELU_DIRECTSOLVER_DEF_HPP

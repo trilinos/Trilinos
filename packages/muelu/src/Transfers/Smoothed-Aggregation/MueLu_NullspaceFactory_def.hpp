@@ -1,5 +1,5 @@
-#ifndef MUELU_NULLSPACEFACTORY_HPP
-#define MUELU_NULLSPACEFACTORY_HPP
+#ifndef MUELU_NULLSPACEFACTORY_DEF_HPP
+#define MUELU_NULLSPACEFACTORY_DEF_HPP
 
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
@@ -77,4 +77,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_NULLSPACEFACTORY_SHORT
-#endif //ifndef MUELU_NULLSPACEFACTORY_HPP
+#endif // MUELU_NULLSPACEFACTORY_DEF_HPP

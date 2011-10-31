@@ -1,5 +1,5 @@
-#ifndef MUELU_TRANSPFACTORY_HPP
-#define MUELU_TRANSPFACTORY_HPP
+#ifndef MUELU_TRANSPFACTORY_DECL_HPP
+#define MUELU_TRANSPFACTORY_DECL_HPP
 
 #include <iostream>
 
@@ -73,4 +73,4 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 } //namespace MueLu
 
 #define MUELU_TRANSPFACTORY_SHORT
-#endif //ifndef MUELU_TRANSPFACTORY_HPP
+#endif // MUELU_TRANSPFACTORY_DECL_HPP

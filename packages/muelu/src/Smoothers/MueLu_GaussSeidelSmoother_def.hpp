@@ -1,5 +1,5 @@
-#ifndef MUELU_GAUSSSEIDELSMOOTHER_HPP
-#define MUELU_GAUSSSEIDELSMOOTHER_HPP
+#ifndef MUELU_GAUSSSEIDELSMOOTHER_DEF_HPP
+#define MUELU_GAUSSSEIDELSMOOTHER_DEF_HPP
 
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -105,4 +105,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_GAUSSSEIDELSMOOTHER_SHORT
-#endif //ifndef MUELU_GAUSSSEIDELSMOOTHER_HPP
+#endif // MUELU_GAUSSSEIDELSMOOTHER_DEF_HPP

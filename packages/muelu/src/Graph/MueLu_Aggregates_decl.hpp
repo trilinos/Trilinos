@@ -1,5 +1,5 @@
-#ifndef MUELU_AGGREGATES_HPP
-#define MUELU_AGGREGATES_HPP
+#ifndef MUELU_AGGREGATES_DECL_HPP
+#define MUELU_AGGREGATES_DECL_HPP
 
 #include <Teuchos_Describable.hpp>
 
@@ -91,4 +91,4 @@ namespace MueLu {
   } //namespace MueLu
 
 #define MUELU_AGGREGATES_SHORT
-#endif //ifndef MUELU_AGGREGATES_HPP
+#endif // MUELU_AGGREGATES_DECL_HPP

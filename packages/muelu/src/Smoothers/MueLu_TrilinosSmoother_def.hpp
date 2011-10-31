@@ -1,5 +1,5 @@
-#ifndef MUELU_TRILINOS_SMOOTHER_HPP
-#define MUELU_TRILINOS_SMOOTHER_HPP
+#ifndef MUELU_TRILINOSSMOOTHER_DEF_HPP
+#define MUELU_TRILINOSSMOOTHER_DEF_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherPrototype.hpp"
@@ -180,4 +180,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_TRILINOS_SMOOTHER_SHORT
-#endif // MUELU_TRILINOS_SMOOTHER_HPP
+#endif // MUELU_TRILINOSSMOOTHER_DEF_HPP

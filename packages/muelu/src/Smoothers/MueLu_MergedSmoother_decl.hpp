@@ -1,5 +1,5 @@
-#ifndef MUELU_MERGED_SMOOTHER_HPP
-#define MUELU_MERGED_SMOOTHER_HPP
+#ifndef MUELU_MERGEDSMOOTHER_DECL_HPP
+#define MUELU_MERGEDSMOOTHER_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherPrototype.hpp"
@@ -110,4 +110,4 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 } //namespace MueLu
 
 #define MUELU_MERGED_SMOOTHER_SHORT
-#endif //ifndef MUELU_MERGED_SMOOTHER_HPP
+#endif // MUELU_MERGEDSMOOTHER_DECL_HPP

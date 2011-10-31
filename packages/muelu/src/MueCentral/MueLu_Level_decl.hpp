@@ -1,5 +1,5 @@
-#ifndef MUELU_LEVEL_HPP
-#define MUELU_LEVEL_HPP
+#ifndef MUELU_LEVEL_DECL_HPP
+#define MUELU_LEVEL_DECL_HPP
 
 #include <iostream>
 #include <sstream>
@@ -201,4 +201,4 @@ namespace MueLu {
 //TODO: Caps should not matter
 
 #define MUELU_LEVEL_SHORT
-#endif //ifndef MUELU_LEVEL_HPP
+#endif // MUELU_LEVEL_DECL_HPP

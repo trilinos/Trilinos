@@ -1,5 +1,5 @@
-#ifndef MUELU_SMOOTHERPROTOTYPE_HPP
-#define MUELU_SMOOTHERPROTOTYPE_HPP
+#ifndef MUELU_SMOOTHERPROTOTYPE_DECL_HPP
+#define MUELU_SMOOTHERPROTOTYPE_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
@@ -73,4 +73,4 @@ namespace MueLu {
 //TODO: update comments
 
 #define MUELU_SMOOTHERPROTOTYPE_SHORT
-#endif //ifndef MUELU_SMOOTHERPROTOTYPE_HPP
+#endif // MUELU_SMOOTHERPROTOTYPE_DECL_HPP

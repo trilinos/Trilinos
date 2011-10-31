@@ -1,5 +1,5 @@
-#ifndef MUELU_SMOOTHERFACTORY_HPP
-#define MUELU_SMOOTHERFACTORY_HPP
+#ifndef MUELU_SMOOTHERFACTORY_DECL_HPP
+#define MUELU_SMOOTHERFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherFactoryBase.hpp"
@@ -165,4 +165,4 @@ namespace MueLu {
 
 //TODO: doc: setup done twice if PostSmoother object != PreSmoother object and no adv. reused capability
 
-#endif // ifndef MUELU_SMOOTHERFACTORY_HPP
+#endif // MUELU_SMOOTHERFACTORY_DECL_HPP

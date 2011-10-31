@@ -1,5 +1,5 @@
-#ifndef MUELU_PFACTORY_HPP
-#define MUELU_PFACTORY_HPP
+#ifndef MUELU_PFACTORY_DECL_HPP
+#define MUELU_PFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
@@ -60,4 +60,4 @@ class PFactory : public TwoLevelFactoryBase {
 } //namespace MueLu
 
 #define MUELU_PFACTORY_SHORT
-#endif //ifndef MUELU_PFACTORY_HPP
+#endif // MUELU_PFACTORY_DECL_HPP

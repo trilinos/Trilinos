@@ -1,5 +1,5 @@
-#ifndef MUELU_DESCRIBABLE_HPP
-#define MUELU_DESCRIBABLE_HPP
+#ifndef MUELU_DESCRIBABLE_DEF_HPP
+#define MUELU_DESCRIBABLE_DEF_HPP
 
 #include <Teuchos_Describable.hpp>
 
@@ -54,4 +54,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_DESCRIBABLE_SHORT
-#endif // ifndef MUELU_DESCRIBABLE_HPP
+#endif // MUELU_DESCRIBABLE_DEF_HPP

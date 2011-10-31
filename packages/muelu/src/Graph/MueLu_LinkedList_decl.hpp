@@ -1,5 +1,5 @@
-#ifndef MUELU_LINKEDLIST_HPP
-#define MUELU_LINKEDLIST_HPP
+#ifndef MUELU_LINKEDLIST_DECL_HPP
+#define MUELU_LINKEDLIST_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -40,4 +40,4 @@ namespace MueLu {
 
 //TODO: nodeTail unused -> remove?
 
-#endif
+#endif // MUELU_LINKEDLIST_DECL_HPP

@@ -1,5 +1,5 @@
-#ifndef MUELU_UCAGGREGATIONCOMMHELPER_HPP
-#define MUELU_UCAGGREGATIONCOMMHELPER_HPP
+#ifndef MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
+#define MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
 
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -154,4 +154,4 @@ namespace MueLu {
 // - companion == aggregates.GetVertex2AggId() == local aggregate ID -> LocalOrdinal
 
 #define MUELU_UCAGGREGATIONCOMMHELPER_SHORT
-#endif //ifndef MUELU_UCAGGREGATIONCOMMHELPER_HPP
+#endif // MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP

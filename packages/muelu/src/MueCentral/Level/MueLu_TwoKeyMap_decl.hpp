@@ -1,5 +1,5 @@
-#ifndef MUELU_TWOKEYMAP_HPP
-#define MUELU_TWOKEYMAP_HPP
+#ifndef MUELU_TWOKEYMAP_DECL_HPP
+#define MUELU_TWOKEYMAP_DECL_HPP
 
 #include <Teuchos_TabularOutputter.hpp>
 #include <Teuchos_map.hpp>
@@ -57,4 +57,4 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif /* MUELU_TWOKEYMAP_HPP */
+#endif // MUELU_TWOKEYMAP_DECL_HPP

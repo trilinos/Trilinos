@@ -1,5 +1,5 @@
-#ifndef MUELU_ZOLTAN_HPP
-#define MUELU_ZOLTAN_HPP
+#ifndef MUELU_ZOLTAN_DECL_HPP
+#define MUELU_ZOLTAN_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -124,4 +124,4 @@ class ZoltanInterface : public BaseClass {
 #endif //if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
 #define MUELU_ZOLTANINTERFACE_SHORT
-#endif //ifndef MUELU_ZOLTAN_HPP
+#endif // MUELU_ZOLTAN_DECL_HPP
