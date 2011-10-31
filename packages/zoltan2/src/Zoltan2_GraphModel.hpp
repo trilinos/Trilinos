@@ -248,8 +248,8 @@ public:
           }
         }
       }
-
       numLocalEdges_ -= nSelfEdges;
+      tmpOffsets[numLocalVtx_] = numLocalEdges_;
 
       if (nSelfEdges == 0){
         delete [] tmpOffsets;
