@@ -70,6 +70,11 @@ namespace periodic_helpers {
    /** Builds a vector of local ids and their matching global indices.
      * This requires a previously discovered vector of pairs of locally matched
      * ids to distribute. This vector comes from the getLocallyMatchedSideIds.
+     *
+     * \param[in] locallyRequiredIds Global IDs required by this processor to find
+     *                               a matched pair. This condition was not satisfied
+     *                               locally.
+     * \param[in] locallyMatchedIds Global IDs that this processor has matched.
      */
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
    getGlobalPairing(const std::vector<std::size_t> & locallyRequiredIds,

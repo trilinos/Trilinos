@@ -30,7 +30,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   //    3. If a processor requires a node on the left (if it is owned or ghosted)
   //       communicate matching conditions from the right boundary 
   //
-  // Note: The matching check could definitely be spead up with a sorting operation
+  // Note: The matching check could definitely be sped up with a sorting operation
   // Note: The communication could be done in a way that requires less global communication
   //       Essentially doing step one in a Many-2-Many way as opposed to an All-2-All
   //
@@ -81,6 +81,9 @@ matchPeriodicSides(const std::string & left,const std::string & right,
      reverseMap[ownedToMapped[i].second].push_back(ownedToMapped[i].first);
   
   Teuchos::RCP<std::vector<std::size_t> > locallyRequiredIds = getLocalSideIds(mesh,left);
+  std::vector<std::size_t> saved_locallyRequiredIds = *locallyRequiredIds; // will be required
+                                                                           // to check owner/ghostship
+                                                                           // of IDs
   std::vector<std::pair<std::size_t,std::size_t> > unusedOwnedToMapped;
 
   // apply previous mappings to this set of local IDs
@@ -105,24 +108,48 @@ matchPeriodicSides(const std::string & left,const std::string & right,
      unique_locallyRequiredIds.insert(unique_locallyRequiredIds.begin(),s.begin(),s.end());
   }
 
-  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-
   // next line requires communication
   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > globallyMatchedIds
         = getGlobalPairing(unique_locallyRequiredIds,*locallyMatchedIds,mesh,failure);
 
-  std::size_t origSz = globallyMatchedIds->size();
-  for(std::size_t i=0;i<origSz;i++) {
-     std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds)[i];
-     const std::vector<std::size_t> & others = reverseMap[pair.first];
-     for(std::size_t j=0;j<others.size();j++) 
-        globallyMatchedIds->push_back(std::make_pair(others[j],pair.second)); 
+  // this nasty bit of code gurantees that only owned/ghosted IDs will
+  // end up in the globallyMatchedIds vector.  It uses a search on
+  // only locally owned IDs to make sure that they are locally owned.
+  // this is a result (and fix) for some of the complexity incurred by
+  // the reverseMap above.
+  {
+     // fill up set with current globally matched ids (not neccessarily owned/ghosted)
+     std::set<std::pair<std::size_t,std::size_t> > gmi_set;
+     gmi_set.insert(globallyMatchedIds->begin(),globallyMatchedIds->end()); 
+   
+     // for each globally matched ID, update IDs from the previous 
+     // run (i.e. from ownedToMapped) using the reverseMap
+     for(std::size_t i=0;i<globallyMatchedIds->size();i++) {
+        std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds)[i];
+        const std::vector<std::size_t> & others = reverseMap[pair.first];
+        
+        // add in reverse map (note other[j] is guranteed to be local to this processor
+        // if it was when ownedToMapped was passed in)
+        for(std::size_t j=0;j<others.size();j++) 
+           gmi_set.insert(std::make_pair(others[j],pair.second)); 
+   
+        // remove ids that are not ghosted/owned by this processor
+        if(std::find(saved_locallyRequiredIds.begin(),
+                     saved_locallyRequiredIds.end(),
+                     pair.first)==saved_locallyRequiredIds.end()) {
+           gmi_set.erase(pair);
+        }
+     }
+
+     // clear old data, and populate with new matched ids
+     globallyMatchedIds->clear();
+     globallyMatchedIds->insert(globallyMatchedIds->begin(),gmi_set.begin(),gmi_set.end());
   }
 
   // now you have a pair of ids that maps ids on the left required by this processor 
   // to ids on the right
   globallyMatchedIds->insert(globallyMatchedIds->end(),unusedOwnedToMapped.begin(),unusedOwnedToMapped.end());
-  
+
   return globallyMatchedIds;
 }
 

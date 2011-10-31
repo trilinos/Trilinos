@@ -18,6 +18,7 @@
 #include "Panzer_STK_PeriodicBC_MatchConditions.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_PauseToAttach.hpp"
 
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
@@ -288,6 +289,8 @@ namespace panzer {
     mesh->addPeriodicBC(panzer_stk::buildPeriodicBC_Matcher("top","bottom",x_matcher));
     mesh->addPeriodicBC(panzer_stk::buildPeriodicBC_Matcher("left","right",y_matcher));
 
+    mesh->writeToExodus("twod.exo");
+
     // connection manager
     /////////////////////////////////////////////
     Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
@@ -415,7 +418,7 @@ namespace panzer {
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
 
-    mesh->writeToExodus("what.exo");
+    // mesh->writeToExodus("what.exo");
 
     panzer_stk::PlaneMatcher top_matcher(0,2);
     panzer_stk::PlaneMatcher side_matcher(1,2);
@@ -519,6 +522,58 @@ namespace panzer {
        TEST_EQUALITY(conn3[7],1);
     }
   }
+
+  TEUCHOS_UNIT_TEST(periodic_mesh, conn_manager_3d_yz_xy_periodic)
+  {
+    using Teuchos::RCP;
+
+    Epetra_MpiComm Comm(MPI_COMM_WORLD);
+    TEUCHOS_ASSERT(Comm.NumProc()==2);
+    int myRank = Comm.MyPID(); 
+
+    // panzer::pauseToAttach();
+
+    panzer_stk::CubeHexMeshFactory mesh_factory;
+
+    // setup mesh
+    /////////////////////////////////////////////
+    RCP<panzer_stk::STK_Interface> mesh;
+    {
+       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Blocks",1);
+       pl->set("Y Blocks",2);
+       pl->set("Z Blocks",1);
+       pl->set("X Elements",4);
+       pl->set("Y Elements",2);
+       pl->set("Z Elements",2);
+       pl->set("X Procs",2);
+       pl->set("Y Procs",1);
+       pl->set("Z Procs",1);
+       pl->set("X0",0.0);
+       pl->set("Y0",0.0);
+       pl->set("Z0",0.0);
+       pl->set("Xf",4.0);
+       pl->set("Yf",2.0);
+       pl->set("Zf",0.25);
+       mesh_factory.setParameterList(pl);
+       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+    }
+
+    panzer_stk::PlaneMatcher side_matcher(1,2);
+    panzer_stk::PlaneMatcher front_matcher(0,1);
+    mesh->addPeriodicBC(panzer_stk::buildPeriodicBC_Matcher("left","right",side_matcher));
+    mesh->addPeriodicBC(panzer_stk::buildPeriodicBC_Matcher("front","back",front_matcher));
+
+    // connection manager
+    /////////////////////////////////////////////
+    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+
+    RCP<const panzer::FieldPattern> fp
+         = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+    connMngr->buildConnectivity(*fp);
+  }
+
 
   TEUCHOS_UNIT_TEST(periodic_mesh, getSideIdsAndCoords)
   {
