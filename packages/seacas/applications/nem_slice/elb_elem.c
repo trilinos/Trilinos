@@ -1329,7 +1329,7 @@ int get_side_id(const E_Type etype, const int *connect, const int nsnodes,
 
   default:
     sprintf(err_buff, "fatal: unknown element type %d in function %s",
-            etype, func_name);
+            (int)etype, func_name);
     Gen_Error(0, err_buff);
     error_report();
     exit(1);
@@ -1458,7 +1458,7 @@ int get_side_id_hex_tet(const E_Type etype, const int *connect,
 
   default:
     sprintf(err_buff, "fatal: unknown element type %d in function %s",
-            etype, func_name);
+            (int)etype, func_name);
     Gen_Error(0, err_buff);
     error_report();
     exit(1);

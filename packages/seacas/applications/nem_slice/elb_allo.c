@@ -158,7 +158,7 @@ static void *smalloc (size_t n)
 
 	if(pntr == NULL && n != 0) {
 	  fprintf(stderr, "smalloc: Out of space - number of bytes "
-		  "requested = %ld\n", n);
+		  "requested = %lu\n", (long unsigned)n);
 	  exit(0);
 	}
    	return (pntr);
