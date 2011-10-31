@@ -230,5 +230,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_SAPFACTORY_SHORT
-
 #endif //ifndef MUELU_SAPFACTORY_HPP

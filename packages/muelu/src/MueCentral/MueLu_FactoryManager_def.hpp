@@ -143,10 +143,10 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_FACTORYMANAGER_SHORT
-#endif // ifndef MUELU_FACTORYMANAGER_HPP
-
 //TODO: add operator[]
 //TODO: should we use a parameterList instead of a std::map? It might be useful to tag which factory have been used and report unused factory.
 //TODO: add an option 'NoDefault' to check if we are using any default factory.
 //TODO: use Teuchos::ConstNonConstObjectContainer to allow user to modify factories after a GetFactory()
+
+#define MUELU_FACTORYMANAGER_SHORT
+#endif // ifndef MUELU_FACTORYMANAGER_HPP

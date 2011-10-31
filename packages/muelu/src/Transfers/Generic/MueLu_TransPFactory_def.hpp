@@ -115,5 +115,4 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 } //namespace MueLu
 
 #define MUELU_TRANSPFACTORY_SHORT
-
 #endif //ifndef MUELU_TRANSPFACTORY_HPP

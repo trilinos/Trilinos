@@ -176,8 +176,7 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_HIERARCHY_SHORT
-
-#endif //ifndef MUELU_HIERARCHY_HPP
-
 // TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
+
+#define MUELU_HIERARCHY_SHORT
+#endif //ifndef MUELU_HIERARCHY_HPP

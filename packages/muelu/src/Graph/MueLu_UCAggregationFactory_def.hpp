@@ -134,9 +134,9 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_UCAGGREGATIONFACTORY_SHORT
-#endif //ifndef MUELU_UCAGGREGATIONFACTORY_HPP
-
 //TODO: can be more generic:
 // - allow to choose algo 
 // - base class for algorithm and options forward to algorithm as parameter list
+
+#define MUELU_UCAGGREGATIONFACTORY_SHORT
+#endif //ifndef MUELU_UCAGGREGATIONFACTORY_HPP

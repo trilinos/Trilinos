@@ -1,12 +1,12 @@
+#ifndef MUELU_PGPFACTORY_HPP_
+#define MUELU_PGPFACTORY_HPP_
+
 /*
  * MueLu_PgPFactory.hpp
  *
  *  Created on: 23.09.2011
  *      Author: tobias
  */
-
-#ifndef MUELU_PGPFACTORY_HPP_
-#define MUELU_PGPFACTORY_HPP_
 
 #include <Teuchos_Assert.hpp>
 
@@ -519,5 +519,4 @@ private:
 } //namespace MueLu
 
 #define MUELU_PGPFACTORY_SHORT
-
 #endif /* MUELU_PGPFACTORY_HPP_ */

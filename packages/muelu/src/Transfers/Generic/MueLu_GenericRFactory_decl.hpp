@@ -1,12 +1,12 @@
+#ifndef MUELU_GENERICRFACTORY_HPP_
+#define MUELU_GENERICRFACTORY_HPP_
+
 /*
  * MueLu_GenericRFactory.hpp
  *
  *  Created on: 20.09.2011
  *      Author: tobias
  */
-
-#ifndef MUELU_GENERICRFACTORY_HPP_
-#define MUELU_GENERICRFACTORY_HPP_
 
 #include <iostream>
 
@@ -69,5 +69,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_GENERICRFACTORY_SHORT
-
 #endif /* MUELU_GENERICRFACTORY_HPP_ */

@@ -79,5 +79,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_COALESCEDROPFACTORY_SHORT
-
 #endif //ifndef MUELU_COALESCEDROPFACTORY_HPP

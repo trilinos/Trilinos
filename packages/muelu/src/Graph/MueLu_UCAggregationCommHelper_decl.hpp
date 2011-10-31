@@ -149,9 +149,9 @@ namespace MueLu {
 
 }
 
-#define MUELU_UCAGGREGATIONCOMMHELPER_SHORT
-#endif //ifndef MUELU_UCAGGREGATIONCOMMHELPER_HPP
-
 //JG: 
 // - procWinner is an array of proc ID -> LocalOrdinal
 // - companion == aggregates.GetVertex2AggId() == local aggregate ID -> LocalOrdinal
+
+#define MUELU_UCAGGREGATIONCOMMHELPER_SHORT
+#endif //ifndef MUELU_UCAGGREGATIONCOMMHELPER_HPP

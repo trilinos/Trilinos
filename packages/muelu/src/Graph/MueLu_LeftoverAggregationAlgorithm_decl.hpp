@@ -268,7 +268,7 @@ namespace MueLu {
 
 } //namespace MueLu
 
+//      graphName_("UC_CleanUp")
+
 #define MUELU_LEFTOVERAGGREGATIONALGORITHM_SHORT
 #endif //ifndef MUELU_LEFTOVERAGGREGATIONALGORITHM_HPP
-
-//      graphName_("UC_CleanUp")

@@ -101,7 +101,7 @@ private:
 
 } // namespace MueLu
 
+// TODO: remove 'RCP' for TopRAPFactory::factoryManager_ and TopSmootherFactory::factoryManager_?
+
 #define MUELU_HIERARCHY_HELPERS_SHORT
 #endif //ifndef MUELU_HIERARCHY_HELPERS_HPP
-
-// TODO: remove 'RCP' for TopRAPFactory::factoryManager_ and TopSmootherFactory::factoryManager_?

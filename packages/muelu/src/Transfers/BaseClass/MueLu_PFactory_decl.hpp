@@ -60,5 +60,4 @@ class PFactory : public TwoLevelFactoryBase {
 } //namespace MueLu
 
 #define MUELU_PFACTORY_SHORT
-
 #endif //ifndef MUELU_PFACTORY_HPP

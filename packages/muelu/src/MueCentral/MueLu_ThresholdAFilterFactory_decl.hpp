@@ -1,12 +1,12 @@
+#ifndef MUELU_THRESHOLDAFILTERFACTORY_HPP_
+#define MUELU_THRESHOLDAFILTERFACTORY_HPP_
+
 /*
  * MueLu_ThresholdAFilterFactory.hpp
  *
  *  Created on: 14.10.2011
  *      Author: tobias
  */
-
-#ifndef MUELU_THRESHOLDAFILTERFACTORY_HPP_
-#define MUELU_THRESHOLDAFILTERFACTORY_HPP_
 
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_RCP.hpp>
@@ -72,5 +72,4 @@ namespace MueLu {
 } //#ifndef MUELU_THRESHOLDAFILTERFACTORY_HPP_namespace MueLu
 
 #define MUELU_THRESHOLDAFILTERFACTORY_SHORT
-
 #endif /* MUELU_THRESHOLDAFILTERFACTORY_HPP_ */

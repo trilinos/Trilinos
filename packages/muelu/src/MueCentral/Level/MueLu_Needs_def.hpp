@@ -321,5 +321,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_NEEDS_SHORT
-
 #endif //ifndef MUELU_NEEDS_HPP

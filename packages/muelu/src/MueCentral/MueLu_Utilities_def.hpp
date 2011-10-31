@@ -1391,6 +1391,6 @@ public:
 
 
 } //namespace MueLu
-#define MUELU_UTILITIES_SHORT
 
+#define MUELU_UTILITIES_SHORT
 #endif //ifndef MUELU_UTILITIES_HPP

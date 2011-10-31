@@ -77,5 +77,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_NULLSPACEFACTORY_SHORT
-
 #endif //ifndef MUELU_NULLSPACEFACTORY_HPP

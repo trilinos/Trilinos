@@ -69,8 +69,8 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_SMOOTHERPROTOTYPE_SHORT
-#endif //ifndef MUELU_SMOOTHERPROTOTYPE_HPP
-
 //TODO: private copy constructor
 //TODO: update comments
+
+#define MUELU_SMOOTHERPROTOTYPE_SHORT
+#endif //ifndef MUELU_SMOOTHERPROTOTYPE_HPP

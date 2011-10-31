@@ -518,8 +518,7 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_TENTATIVEPFACTORY_SHORT
-
-#endif //ifndef MUELU_TENTATIVEPFACTORY_HPP
-
 //TODO: noQR_
+
+#define MUELU_TENTATIVEPFACTORY_SHORT
+#endif //ifndef MUELU_TENTATIVEPFACTORY_HPP

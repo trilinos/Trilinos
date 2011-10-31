@@ -65,5 +65,7 @@ namespace MueLu {
   };
 
 }
-#endif
+
 //TODO: nodeTail unused -> remove?
+
+#endif
