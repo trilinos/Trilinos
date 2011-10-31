@@ -1,6 +1,8 @@
 #ifndef MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
 #define MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>
@@ -154,4 +156,5 @@ namespace MueLu {
 // - companion == aggregates.GetVertex2AggId() == local aggregate ID -> LocalOrdinal
 
 #define MUELU_UCAGGREGATIONCOMMHELPER_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP

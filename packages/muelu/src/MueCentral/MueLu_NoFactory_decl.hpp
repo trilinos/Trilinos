@@ -1,6 +1,8 @@
 #ifndef MUELU_NOFACTORY_DECL_HPP
 #define MUELU_NOFACTORY_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <Teuchos_Assert.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -56,4 +58,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_NOFACTORY_DECL_HPP

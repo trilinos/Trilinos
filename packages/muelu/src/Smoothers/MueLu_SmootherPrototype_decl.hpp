@@ -1,6 +1,8 @@
 #ifndef MUELU_SMOOTHERPROTOTYPE_DECL_HPP
 #define MUELU_SMOOTHERPROTOTYPE_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
 
@@ -73,4 +75,5 @@ namespace MueLu {
 //TODO: update comments
 
 #define MUELU_SMOOTHERPROTOTYPE_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_SMOOTHERPROTOTYPE_DECL_HPP

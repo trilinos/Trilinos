@@ -1,6 +1,8 @@
 #ifndef MUELU_COALESCEDROPFACTORY_DECL_HPP
 #define MUELU_COALESCEDROPFACTORY_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include "Xpetra_Operator.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
@@ -79,4 +81,5 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_COALESCEDROPFACTORY_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_COALESCEDROPFACTORY_DECL_HPP

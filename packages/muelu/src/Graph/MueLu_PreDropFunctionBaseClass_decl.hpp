@@ -1,6 +1,8 @@
 #ifndef MUELU_PREDROPFUNCTIONBASECLASS_DECL_HPP
 #define MUELU_PREDROPFUNCTIONBASECLASS_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 /*
  * MueLu_PreDrop.hpp
  *
@@ -38,4 +40,5 @@ namespace MueLu {
 }
 
 #define MUELU_PREDROPFUNCTIONBASECLASS_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_PREDROPFUNCTIONBASECLASS_DECL_HPP

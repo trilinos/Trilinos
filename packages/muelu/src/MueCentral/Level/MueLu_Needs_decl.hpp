@@ -1,6 +1,8 @@
 #ifndef MUELU_NEEDS_DECL_HPP
 #define MUELU_NEEDS_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <Teuchos_ParameterEntry.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -157,4 +159,5 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_NEEDS_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_NEEDS_DECL_HPP

@@ -1,6 +1,8 @@
 #ifndef MUELU_LEFTOVERAGGREGATIONALGORITHM_DECL_HPP
 #define MUELU_LEFTOVERAGGREGATIONALGORITHM_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <assert.h>
 #include <math.h>
 #include <vector>
@@ -271,4 +273,5 @@ namespace MueLu {
 //      graphName_("UC_CleanUp")
 
 #define MUELU_LEFTOVERAGGREGATIONALGORITHM_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_LEFTOVERAGGREGATIONALGORITHM_DECL_HPP

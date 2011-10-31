@@ -1,6 +1,8 @@
 #ifndef MUELU_HIERARCHYHELPERS_DECL_HPP
 #define MUELU_HIERARCHYHELPERS_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
@@ -104,4 +106,5 @@ private:
 // TODO: remove 'RCP' for TopRAPFactory::factoryManager_ and TopSmootherFactory::factoryManager_?
 
 #define MUELU_HIERARCHY_HELPERS_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_HIERARCHYHELPERS_DECL_HPP

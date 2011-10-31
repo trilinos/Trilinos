@@ -1,6 +1,8 @@
 #ifndef MUELU_TWOKEYMAP_DECL_HPP
 #define MUELU_TWOKEYMAP_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <Teuchos_TabularOutputter.hpp>
 #include <Teuchos_map.hpp>
 
@@ -57,4 +59,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_TWOKEYMAP_DECL_HPP

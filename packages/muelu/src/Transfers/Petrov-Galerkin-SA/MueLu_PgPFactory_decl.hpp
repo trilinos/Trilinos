@@ -1,6 +1,8 @@
 #ifndef MUELU_PGPFACTORY_DECL_HPP
 #define MUELU_PGPFACTORY_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 /*
  * MueLu_PgPFactory.hpp
  *
@@ -167,4 +169,5 @@ private:
 } //namespace MueLu
 
 #define MUELU_PGPFACTORY_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_PGPFACTORY_DECL_HPP

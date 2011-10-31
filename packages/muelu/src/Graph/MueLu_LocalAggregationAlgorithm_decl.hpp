@@ -1,6 +1,8 @@
 #ifndef MUELU_LOCALAGGREGATIONALGORITHM_DECL_HPP
 #define MUELU_LOCALAGGREGATIONALGORITHM_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
@@ -138,4 +140,5 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_LOCALAGGREGATIONALGORITHM_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_LOCALAGGREGATIONALGORITHM_DECL_HPP

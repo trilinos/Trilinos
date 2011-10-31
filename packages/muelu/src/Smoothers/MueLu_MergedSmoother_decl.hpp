@@ -1,6 +1,8 @@
 #ifndef MUELU_MERGEDSMOOTHER_DECL_HPP
 #define MUELU_MERGEDSMOOTHER_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities.hpp"
@@ -110,4 +112,5 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 } //namespace MueLu
 
 #define MUELU_MERGED_SMOOTHER_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_MERGEDSMOOTHER_DECL_HPP

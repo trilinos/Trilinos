@@ -1,6 +1,8 @@
 #ifndef MUELU_AMESOS2SMOOTHER_DECL_HPP
 #define MUELU_AMESOS2SMOOTHER_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 // TODO: PARAMETER LIST NOT TAKE INTO ACCOUNT !!!
 
 #ifdef HAVE_MUELU_AMESOS2
@@ -109,4 +111,5 @@ namespace MueLu {
 
 #endif // HAVE_MUELU_AMESOS2
 
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_AMESOS2SMOOTHER_DECL_HPP

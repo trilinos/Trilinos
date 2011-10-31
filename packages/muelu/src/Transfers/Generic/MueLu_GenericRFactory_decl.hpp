@@ -1,6 +1,8 @@
 #ifndef MUELU_GENERICRFACTORY_DECL_HPP
 #define MUELU_GENERICRFACTORY_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 /*
  * MueLu_GenericRFactory.hpp
  *
@@ -69,4 +71,5 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_GENERICRFACTORY_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_GENERICRFACTORY_DECL_HPP

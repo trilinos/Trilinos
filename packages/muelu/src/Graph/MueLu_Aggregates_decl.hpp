@@ -1,6 +1,8 @@
 #ifndef MUELU_AGGREGATES_DECL_HPP
 #define MUELU_AGGREGATES_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <Teuchos_Describable.hpp>
 
 #include <Xpetra_VectorFactory.hpp>
@@ -91,4 +93,5 @@ namespace MueLu {
   } //namespace MueLu
 
 #define MUELU_AGGREGATES_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_AGGREGATES_DECL_HPP

@@ -1,6 +1,8 @@
 #ifndef MUELU_PFACTORY_DECL_HPP
 #define MUELU_PFACTORY_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 
@@ -60,4 +62,5 @@ class PFactory : public TwoLevelFactoryBase {
 } //namespace MueLu
 
 #define MUELU_PFACTORY_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_PFACTORY_DECL_HPP

@@ -1,6 +1,8 @@
 #ifndef MUELU_UTILITIES_DECL_HPP
 #define MUELU_UTILITIES_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_TypeTraits.hpp>
@@ -382,4 +384,5 @@ public:
 } //namespace MueLu
 
 #define MUELU_UTILITIES_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_UTILITIES_DECL_HPP

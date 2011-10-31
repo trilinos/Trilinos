@@ -1,6 +1,8 @@
 #ifndef MUELU_FACTORYMANAGER_DECL_HPP
 #define MUELU_FACTORYMANAGER_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <map>
 
 #include <Xpetra_Operator.hpp>
@@ -93,4 +95,5 @@ namespace MueLu {
 //TODO: use Teuchos::ConstNonConstObjectContainer to allow user to modify factories after a GetFactory()
 
 #define MUELU_FACTORYMANAGER_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_FACTORYMANAGER_DECL_HPP

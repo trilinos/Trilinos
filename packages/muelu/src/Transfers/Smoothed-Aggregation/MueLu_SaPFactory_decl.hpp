@@ -1,6 +1,8 @@
 #ifndef MUELU_SAPFACTORY_DECL_HPP
 #define MUELU_SAPFACTORY_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <iostream>
 
 #include <Xpetra_Map.hpp>
@@ -110,4 +112,5 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_SAPFACTORY_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_SAPFACTORY_DECL_HPP

@@ -1,6 +1,8 @@
 #ifndef MUELU_AMESOSSMOOTHER_DECL_HPP
 #define MUELU_AMESOSSMOOTHER_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include "MueLu_ConfigDefs.hpp"
 
 #ifdef HAVE_MUELU_AMESOS
@@ -169,4 +171,5 @@ namespace MueLu {
 #define MUELU_AMESOS_SMOOTHER_SHORT
 
 #endif // HAVE_MUELU_AMESOS
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_AMESOSSMOOTHER_DECL_HPP

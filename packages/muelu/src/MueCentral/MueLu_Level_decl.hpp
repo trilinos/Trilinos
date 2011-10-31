@@ -1,6 +1,8 @@
 #ifndef MUELU_LEVEL_DECL_HPP
 #define MUELU_LEVEL_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+
 #include <iostream>
 #include <sstream>
 
@@ -201,4 +203,5 @@ namespace MueLu {
 //TODO: Caps should not matter
 
 #define MUELU_LEVEL_SHORT
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_LEVEL_DECL_HPP
