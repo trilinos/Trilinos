@@ -211,4 +211,175 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
     /*! @brief Get Operator Diagonal
      */
    static RCP<Operator> BuildMatrixDiagonal(RCP<Operator> const &A)
+    ; //BuildMatrixDiagonal()
+
+    /*! @brief Extract Operator Diagonal
+
+        Returns Operator diagonal in ArrayRCP.
+
+        Note -- it's assumed that A has been fillComplete'd.
+    */
+    static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(RCP<Operator> const &A)
+    ; //GetMatrixDiagonal
+
+    /*! @brief Left scale matrix by an arbitrary vector.
+
+       Algorithmically, this left scales a matrix by a diagonal matrix.
+       The inverse of a diagonal matrix can also be applied.
+
+       @param Op matrix to be scaled
+       @param scalingVector vector that represents diagonal matrix
+       @doInverse Indicates whether the inverse of the diagonal matrix should be applied.  (Default is to use inverse.)
+     */
+   static void ScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true)
+   ; //ScaleMatrix()
+
+    /*! @brief Get reciprocal of Operator diagonal
+     */
+
+   static RCP<Operator> BuildMatrixInverseDiagonal(RCP<Operator> const &A)
+    ; //BuildMatrixInverseDiagonal()
+
+   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+
+    // TODO: should NOT return an Array. Definition must be changed to:
+    // - ArrayRCP<> ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
+    // or
+    // - void ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
+   static Teuchos::Array<Magnitude>
+   ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
+   ;
+    
+    static RCP<MultiVector> Residual(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
     ;
+
+   /*! @brief Save matrix to file in Matrix Market format.
+
+     TODO Move this to Xpetra?
+   */
+   static void Write(std::string const & fileName, Operator const & Op) ; //Write
+
+#include <unistd.h>
+
+   static void PauseForDebugger()
+   ; //PauseForDebugger
+
+
+   /*! @brief Simple transpose for Tpetra::CrsMatrix types
+
+      Note:  This is very inefficient, as it inserts one entry at a time.
+   */
+#ifdef HAVE_MUELU_TPETRA
+   static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > simple_Transpose(RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > const &A)
+   ; //simple_Transpose
+#endif // HAVE_MUELU_TPETRA
+
+#ifdef HAVE_MUELU_EPETRAEXT
+   /*! @brief Simple transpose for Epetra_CrsMatrix types
+
+      Note:  This is very inefficient, as it inserts one entry at a time.
+   */
+   static RCP<Epetra_CrsMatrix> simple_EpetraTranspose(RCP<const Epetra_CrsMatrix> const &A)
+   ; //simple_Transpose
+#endif
+
+    /*! @brief Power method.
+
+      @param A matrix
+      @param scaleByDiag if true, estimate the largest eigenvalue of \f$ D^; A \f$.
+      @param niters maximum number of iterations
+      @param tolerance stopping tolerance
+      @verbose if true, print iteration information
+      
+      (Shamelessly grabbed from tpetra/examples.)
+    */
+    static Scalar PowerMethod(Operator const &A, bool scaleByDiag=true,
+                              LO niters=10, Magnitude tolerance=1e-2, bool verbose=false, unsigned int seed = 123)
+    ; //PowerMethod
+
+   static void MyOldScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true,
+                                bool doFillComplete=true,
+                                bool doOptimizeStorage=true)
+   ; //ScaleMatrix()
+
+   static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream & os) ;
+
+  }; // class Utils
+
+#ifdef HAVE_MUELU_EPETRA
+//This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
+template<class SC,class LO,class GO,class NO, class LMO>
+RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator(RCP<Epetra_CrsMatrix> &epAB) {
+   TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+   return Teuchos::null;
+}
+
+typedef Kokkos::DefaultNode::DefaultNodeType KDNT;
+typedef Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps KDKSO;
+
+//specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
+template<>
+inline RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> &epAB) {
+  RCP<Xpetra::EpetraCrsMatrix> tmpC1 = rcp(new Xpetra::EpetraCrsMatrix(epAB));
+   RCP<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> >(tmpC1);
+   RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsOperator<double,int,int,KDNT,KDKSO>(tmpC2));
+   return tmpC3;
+}
+#endif
+
+//! Little helper function to convert non-string types to strings
+template<class T>
+std::string toString(T const &what) {
+  std::ostringstream buf; buf << what;
+  return buf.str();
+}
+
+//RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> epAB)
+
+/*
+  Separate class for Utilities that need a specialization for Epetra.
+*/
+  template <class Scalar, 
+            class LocalOrdinal  = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node          = Kokkos::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+  class Utils2 {
+
+#include "MueLu_UseShortNames.hpp"
+
+public:
+
+    /*! @brief Transpose a Xpetra::Operator
+
+      Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
+      In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
+    */
+
+   static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
+   ; //Transpose
+  }; // class Utils2
+
+  // specialization Utils2 for SC=double
+  template<>
+  class Utils2<double,int,int>//, Kokkos::DefaultNode::DefaultNodeType,
+               //Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps >
+  {
+   typedef Xpetra::Operator<double,int,int> Operator;
+   typedef double SC;
+   typedef int LO;
+   typedef int GO;
+   typedef Kokkos::DefaultNode::DefaultNodeType NO;
+   typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LMO;
+
+public:
+
+   static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
+   ; //Transpose
+  }; //specialization to Scalar=double
+
+
+} //namespace MueLu
+
+#define MUELU_UTILITIES_SHORT
+#endif //ifndef MUELU_UTILITIES_HPP

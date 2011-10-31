@@ -706,13 +706,13 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       std::vector<SC> diag(rowmap->getNodeNumElements());
       Teuchos::ArrayView<const LO> cols;
       Teuchos::ArrayView<const SC> vals;
-      //for (size_t i=0; i<A->getNodeNumRows(); ++i) {
+      //for (size_t i=0; i<A->getNodeNumRows(); ++i)
       for (size_t i=0; i<rowmap->getNodeNumElements(); ++i) {
         A->getLocalRowView(i,cols,vals);
-        //for (Teuchos::ArrayView<const LO>::size_type j=0; j<cols.size(); j++) {
+        //for (Teuchos::ArrayView<const LO>::size_type j=0; j<cols.size(); j++)
         for (size_t j=0; j<cols.size(); j++) {
           //TODO this will break down if diagonal entry is not present
-          //if (!(cols[j] > i)) {  //JG says this will work ... maybe
+          //if (!(cols[j] > i)) //JG says this will work ... maybe
           if (cols[j] == i) {
             diag[i] = vals[j];
             break;
@@ -723,7 +723,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       RCP< Operator > D = rcp( new CrsOperator(rowmap, 1) );
       std::vector<LO> diagInd(1);
       Teuchos::ArrayView<GO> iv(&diagInd[0],1);
-      //for (size_t i=0; i< A->getNodeNumRows(); ++i) {
+      //for (size_t i=0; i< A->getNodeNumRows(); ++i)
       for (size_t i=0; i< rowmap->getNodeNumElements(); ++i) {
         Teuchos::ArrayView<SC> av(&diag[i],1);
         diagInd[0] = rowmap->getGlobalElement(i);
@@ -806,7 +806,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       std::vector<SC> diag(rowmap->getNodeNumElements());
       Teuchos::ArrayView<const LO> cols;
       Teuchos::ArrayView<const SC> vals;
-      //for (size_t i=0; i<A->getNodeNumRows(); ++i) {
+      //for (size_t i=0; i<A->getNodeNumRows(); ++i)
       LO rowmapLocalSize = (LO) rowmap->getNodeNumElements();
       for (LO i=0; i<rowmapLocalSize; ++i) {
         A->getLocalRowView(i,cols,vals);
@@ -822,7 +822,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       RCP< Operator > D = rcp( new CrsOperator(rowmap, 1) );
       std::vector<GO> diagInd(1);
       Teuchos::ArrayView<GO> iv(&diagInd[0],1);
-      //for (size_t i=0; i< A->getNodeNumRows(); ++i) {
+      //for (size_t i=0; i< A->getNodeNumRows(); ++i)
 
       for (size_t i=0; i< rowmap->getNodeNumElements(); ++i) {
         Teuchos::ArrayView<SC> av(&diag[i],1);
@@ -1230,7 +1230,7 @@ std::string toString(T const &what) {
   return buf.str();
 }
 
-//RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> epAB) {
+//RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> epAB)
 
 /*
   Separate class for Utilities that need a specialization for Epetra.
