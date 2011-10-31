@@ -245,7 +245,7 @@ static double *smalloc (size_t n, char *filename, int lineno)
 
   if (pntr == NULL && n != 0) {
     fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
-            "requested = %ld\n", yo, filename, lineno, n);
+            "requested = %lu\n", yo, filename, lineno, (unsigned long)n);
     exit(0);
   }
 
