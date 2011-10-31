@@ -59,7 +59,7 @@ INCLUDE(PrintVar)
 
 
 #
-# Function that creates a set of tempalte code client headers that either
+# Function that creates a set of template code client headers that either
 # includes or does not include the template instantiations depending on
 # whether implicit or explicit instantiation is supported or not.
 #
