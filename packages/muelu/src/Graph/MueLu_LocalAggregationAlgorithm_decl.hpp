@@ -1,5 +1,5 @@
-#ifndef MUELU_LOCALAGGREGATIONFACTORY_HPP_DECL
-#define MUELU_LOCALAGGREGATIONFACTORY_HPP_DECL
+#ifndef MUELU_LOCALAGGREGATIONFACTORY_HPP
+#define MUELU_LOCALAGGREGATIONFACTORY_HPP
 
 #include <assert.h>
 #include <stdio.h>
@@ -28,21 +28,46 @@
 namespace MueLu {
 
   namespace AggOptions {
-
-    enum Ordering {
-      NATURAL = 0, 
-      RANDOM  = 1, 
-      GRAPH   = 2  
-    };
-  }
+    /* Options defining how to pick-up the next root node in the local aggregation procedure */
+    enum Ordering ;;
+  } // namespace AggOptions
 
   using namespace AggOptions;
 
+  /* ************************************************************************* */
+  /* definition of the structure from ML for holding aggregate information     */
+  /* ------------------------------------------------------------------------- */
+  typedef struct MueLu_SuperNode_Struct
+  {
+    int    length;
+    int    maxLength;
+    int    index;
+    Teuchos::ArrayRCP<int> list;
+    struct MueLu_SuperNode_Struct *next;
+  } MueLu_SuperNode;
+
+  /* In the algorithm, aggStat[]=READY/NOTSEL/SELECTED indicates whether a node has been aggregated. */
   enum NodeState {
-    READY   = -11,
-    NOTSEL  = -12,
-    SELECTED = -13
+    READY   = -11,   /* indicates that a node is available to be */
+    /* selected as a root node of an aggregate  */
+
+    NOTSEL  = -12,   /* indicates that a node has been rejected  */
+    /* as a root node. This could perhaps be    */
+    /* because if this node had been selected a */
+    /* small aggregate would have resulted.     */
+
+    SELECTED = -13   /* indicates that a node has been assigned  */
+    /* to an aggregate.                         */
   };
+
+  /*!
+    @class LocalAggregationAlgorithm class.
+    @brief Algorithm for coarsening a graph with uncoupled aggregation.
+
+    This method has two phases.  The first is a local clustering algorithm.  The second creates aggregates
+    that can include unknowns from more than one process.
+
+  */
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class LocalAggregationAlgorithm : public BaseClass {
@@ -53,33 +78,64 @@ namespace MueLu {
 
 
   public:
-  
-    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact=Teuchos::null);
+    //! @name Constructors/Destructors.
+    //@{
 
-    virtual ~LocalAggregationAlgorithm();
+    //! Constructor.
+    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact=Teuchos::null)
+      : ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0)
+    ;
 
-    void SetOrdering(Ordering ordering);                          
-    void SetMinNodesPerAggregate(int minNodesPerAggregate)  ;     
+    //! Destructor.
+    virtual ~LocalAggregationAlgorithm() ;
+
+    //@}
+
+    //! @name Set/get methods.
+    //@{
+
+    void SetOrdering(Ordering ordering)                          ;
+    void SetMinNodesPerAggregate(int minNodesPerAggregate)       ;
     void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) ;
     
-    Ordering GetOrdering()                const;
-    int      GetMinNodesPerAggregate()    const;
-    int      GetMaxNeighAlreadySelected() const;
+    Ordering GetOrdering()                const ;
+    int      GetMinNodesPerAggregate()    const ;
+    int      GetMaxNeighAlreadySelected() const ;
 
-    void CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const;
+    //@}
+
+    //! @name Aggregation methods.
+    //@{
+
+    /*! @brief Local aggregation. */
+    void CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const
+    ; // CoarsenUncoupled
 
   private:
+    //! Aggregation options (TODO: Teuchos::ParameterList?)
     Ordering ordering_;                /**<  natural, random, graph           */
     int      minNodesPerAggregate_;    /**<  aggregate size control           */
     int      maxNeighAlreadySelected_; /**<  complexity control               */
 
-    void RandomReorder(Teuchos::ArrayRCP<LO> list) const;
+    //! @name Utilities
+    //@{
 
-    int RandomOrdinal(int min, int max) const;
+    /*! @brief Utility to take a list of integers and reorder them randomly (by using a local permutation).
+      @param list On input, a bunch of integers. On output, the same integers in a different order
+      that is determined randomly.
+    */
+    void RandomReorder(Teuchos::ArrayRCP<LO> list) const
+    ; 
+
+    /*! @brief Generate a random number in the range [min, max] */
+    int RandomOrdinal(int min, int max) const
+    ;
+
+    //@}
   
-  };
+  }; //class LocalAggregationFactory
 
-}
+} //namespace MueLu
 
 #define MUELU_LOCALAGGREGATIONALGORITHM_SHORT
-#endif //ifndef MUELU_LOCALAGGREGATIONFACTORY_HPP_DECL
+#endif //ifndef MUELU_LOCALAGGREGATIONFACTORY_HPP
