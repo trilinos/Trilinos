@@ -1,3 +1,6 @@
+#include "MueLu_Aggregates_def.hpp"
+#define MUELU_AGGREGATES_DECL_HPP
+
 #ifndef MUELU_AGGREGATES_DECL_HPP
 #define MUELU_AGGREGATES_DECL_HPP
 

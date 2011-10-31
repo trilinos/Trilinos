@@ -86,7 +86,28 @@ namespace MueLu {
     
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;; // class TrilinosSmoother
+    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+
+    //@}
+
+  private:
+    //! Tpetra or Epetra?
+    Xpetra::UnderlyingLib lib_;
+
+    //! ifpack1/2-specific key phrase that denote smoother type
+    std::string type_;
+    
+    //! parameter list that is used by Ifpack/Ifpack2 internally
+    Teuchos::ParameterList paramList_;
+
+    //! overlap when using the smoother in additive Schwarz mode
+    LO overlap_;
+
+    //! A Factory
+    RCP<FactoryBase> AFact_;
+
+  }; // class TrilinosSmoother
 
 } // namespace MueLu
 

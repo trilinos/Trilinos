@@ -69,9 +69,24 @@ namespace MueLu {
     //! Return a simple one-line description of this object.
     std::string description() const ;
     
-    //! Print the object with some verbosity level to an FancyOStream object.
-    //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;; // class DirectSolver
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+
+    //@}
+
+  private:
+    //! Tpetra or Epetra?
+    Xpetra::UnderlyingLib lib_;
+
+    //! amesos1/2-specific key phrase that denote smoother type
+    std::string type_;
+    
+    //! parameter list that is used by Amesos internally
+    Teuchos::ParameterList paramList_;
+
+    //! A Factory
+    RCP<FactoryBase> AFact_;
+
+  }; // class DirectSolver
 
 } // namespace MueLu
 

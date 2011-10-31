@@ -1,5 +1,5 @@
-#ifndef MUELU_NOFACTORY_DEF_HPP
-#define MUELU_NOFACTORY_DEF_HPP
+#ifndef MUELU_NOFACTORY_HPP
+#define MUELU_NOFACTORY_HPP
 
 #include <Teuchos_Assert.hpp>
 
@@ -20,23 +20,21 @@ namespace MueLu {
   class NoFactory : public FactoryBase {
 
     //! Constructor.
-    NoFactory() { }
+    NoFactory() ;
 
   public:
 
     //! Destructor.
-    virtual ~NoFactory() { }
+    virtual ~NoFactory() ;
 
     //! Implementation of FactoryBase interface
     //@{
     
     //!
-    void CallBuild(Level & requestedLevel) const {  
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::NoFactory::Build(): this method cannot be called.");
-    }
+    void CallBuild(Level & requestedLevel) const ;
 
     //!
-    void CallDeclareInput(Level & requestedLevel) const {  }
+    void CallDeclareInput(Level & requestedLevel) const ;
 
     //@}
     
@@ -44,18 +42,10 @@ namespace MueLu {
     //@{
     
     //! 
-    static const RCP<const NoFactory> getRCP() {
-      if(noFactory_ == Teuchos::null) {
-        noFactory_ = rcp(new NoFactory());
-      }
-
-      return noFactory_;
-    }
+    static const RCP<const NoFactory> getRCP() ;
 
     //! 
-    static const NoFactory* get() {
-      return getRCP().get();
-    }
+    static const NoFactory* get() ;
 
     //@}
 
@@ -66,4 +56,4 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif // MUELU_NOFACTORY_DEF_HPP
+#endif // MUELU_NOFACTORY_HPP

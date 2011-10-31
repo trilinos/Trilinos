@@ -1,7 +1,5 @@
-#ifndef MUELU_VERBOSEOBJECT_DECL_HPP
-#define MUELU_VERBOSEOBJECT_DECL_HPP
-
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+#ifndef MUELU_VERBOSEOBJECT_HPP
+#define MUELU_VERBOSEOBJECT_HPP
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -64,5 +62,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_VERBOSECLASS_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
-#endif // MUELU_VERBOSEOBJECT_DECL_HPP
+#endif // MUELU_VERBOSEOBJECT_HPP

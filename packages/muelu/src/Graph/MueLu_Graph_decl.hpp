@@ -1,3 +1,7 @@
+//TMP
+#include "MueLu_Graph_def.hpp"
+#define MUELU_GRAPH_DECL_HPP
+
 #ifndef MUELU_GRAPH_DECL_HPP
 #define MUELU_GRAPH_DECL_HPP
 

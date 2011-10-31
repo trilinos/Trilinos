@@ -6,7 +6,7 @@
 
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_FactoryBase.hpp"
+#include "MueLu_FactoryBase.hpp" //TODO: remove
 
 namespace MueLu {
   namespace UTILS {

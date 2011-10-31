@@ -5,6 +5,7 @@
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Level.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Exceptions.hpp"
 

@@ -60,15 +60,16 @@ namespace MueLu {
     void SetOrdering(Ordering ordering) { algo1_.SetOrdering(ordering); }
     void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { algo1_.SetMaxNeighAlreadySelected(maxNeighAlreadySelected); }
     Ordering GetOrdering() const { return algo1_.GetOrdering(); }
-    int GetMaxNeighAlreadySelected() const { return algo1_.GetmaxNeighAlreadySelected(); }
+    int GetMaxNeighAlreadySelected() const { return algo1_.GetMaxNeighAlreadySelected(); }
 
     // Options algo2
     void SetPhase3AggCreation(double phase3AggCreation) { algo2_.SetPhase3AggCreation(phase3AggCreation); }
-    double GetPhase3AggCreation() const { return algo2_.SetPhase3AggCreation(); }
+    double GetPhase3AggCreation() const { return algo2_.GetPhase3AggCreation(); }
 
     // Options shared algo1 and algo2
     void SetMinNodesPerAggregate(int minNodesPerAggregate) { algo1_.SetMinNodesPerAggregate(minNodesPerAggregate); algo2_.SetMinNodesPerAggregate(minNodesPerAggregate); }
     int GetMinNodesPerAggregate() const { return algo1_.GetMinNodesPerAggregate(); TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, ""); }
+
     //@}
 
     //! Input

@@ -60,6 +60,8 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     // UNUSED size_type GetNumSmoothers() const ;
     //@}
 
+    void DeclareInput(Level &currentLevel) const;
+
     //! @name Setup and Apply methods.
     //@{
 
@@ -89,9 +91,6 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     ArrayRCP<RCP<SmootherPrototype> > SmootherListDeepCopy(const ArrayRCP<const RCP<SmootherPrototype> >& srcSmootherList) ;
 
     //@}
-
-  protected:
-    RCP<Teuchos::FancyOStream> out_;
 
   private:
     // List of smoothers. It is an ArrayRCP of RCP because:

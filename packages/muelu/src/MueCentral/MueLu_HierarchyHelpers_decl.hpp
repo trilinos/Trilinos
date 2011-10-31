@@ -18,7 +18,6 @@ public:
 
   //!
   SetFactoryManager(Level & level, const RCP<const FactoryManagerBase> & factoryManager)
-  : level_(level)
   ;
 
   //! Destructor.
@@ -63,7 +62,6 @@ class TopRAPFactory : public TwoLevelFactoryBase {
 public:
 
   TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager)
-  : factoryManager_(rcp( new InternalFactoryManager(parentFactoryManager))), PFact_(parentFactoryManager->GetFactory("P")), RFact_(parentFactoryManager->GetFactory("R")), AcFact_(parentFactoryManager->GetFactory("A"))
   ;
 
   virtual ~TopRAPFactory() ;
@@ -86,7 +84,6 @@ class TopSmootherFactory : public SingleLevelFactoryBase { //TODO: inherit from 
 public:
 
   TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string & varName)
-  : factoryManager_(rcp( new InternalFactoryManager(parentFactoryManager))), smootherFact_(parentFactoryManager->GetFactory(varName))
   ;
 
   virtual ~TopSmootherFactory() ;

@@ -7,6 +7,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 

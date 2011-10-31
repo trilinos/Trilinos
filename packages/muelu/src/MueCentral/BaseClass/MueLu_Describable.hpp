@@ -1,8 +1,6 @@
 #ifndef MUELU_DESCRIBABLE_DECL_HPP
 #define MUELU_DESCRIBABLE_DECL_HPP
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include <Teuchos_Describable.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -43,5 +41,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_DESCRIBABLE_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_DESCRIBABLE_DECL_HPP

@@ -1,7 +1,5 @@
-#ifndef MUELU_LINKEDLIST_DECL_HPP
-#define MUELU_LINKEDLIST_DECL_HPP
-
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+#ifndef MUELU_LINKEDLIST_HPP
+#define MUELU_LINKEDLIST_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -20,7 +18,7 @@ namespace MueLu {
   class LinkedList {
 
   public:    
-    LinkedList() : nodeHead(NULL), nodeTail(NULL) ;
+    LinkedList() ;
 
     ~LinkedList() ;
 
@@ -40,7 +38,4 @@ namespace MueLu {
 
 }
 
-//TODO: nodeTail unused -> remove?
-
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
-#endif // MUELU_LINKEDLIST_DECL_HPP
+#endif // MUELU_LINKEDLIST_HPP

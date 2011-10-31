@@ -18,6 +18,9 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Utilities.hpp"
 
+#include "MueLu_PFactory.hpp"
+#include "MueLu_Monitor.hpp"
+
 namespace MueLu {
 
   /*!

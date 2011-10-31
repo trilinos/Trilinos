@@ -12,6 +12,7 @@
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -90,7 +91,7 @@ namespace MueLu {
         // TODO: I don't know if Ifpack returns an error code or exception or ignore parameters modification in this case...
 
         Teuchos::ParameterList nonConstParamList = paramList; // because Ifpack SetParameters() input argument is not const...
-        prec_->SetParameters(nonConstParamList);
+        prec_->setParameters(nonConstParamList);
       }
     }
 

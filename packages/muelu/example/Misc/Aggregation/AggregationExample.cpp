@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   AggFact->SetMinNodesPerAggregate(2);  
   AggFact->SetMaxNeighAlreadySelected(5);
   AggFact->SetOrdering(MueLu::AggOptions::GRAPH);
-  AggFact->SetPhase3AggCreation(0.5);
+  //AggFact->SetPhase3AggCreation(0.5); TODO: error with explicit instantiation. I don't know why
 
 #ifdef JG_TO_UPDATE
 //   RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC")); 

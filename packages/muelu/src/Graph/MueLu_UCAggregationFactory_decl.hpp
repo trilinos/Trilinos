@@ -62,7 +62,7 @@ namespace MueLu {
     int GetMaxNeighAlreadySelected() const ;
 
     // Options algo2
-    void SetPhase3AggCreation(double phase3AggCreation) ;
+    void SetPhase3AggCreation(double phase3AggCreation);
     double GetPhase3AggCreation() const ;
 
     // Options shared algo1 and algo2

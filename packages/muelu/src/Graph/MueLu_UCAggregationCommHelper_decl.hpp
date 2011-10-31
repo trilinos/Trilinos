@@ -56,7 +56,7 @@ namespace MueLu {
 
     ~UCAggregationCommHelper() ;
 
-    inline void ArbitrateAndCommunicate(Vector &weights, Aggregates &aggregates, const bool perturb) const
+    void ArbitrateAndCommunicate(Vector &weights, Aggregates &aggregates, const bool perturb) const
     ;
 
     //

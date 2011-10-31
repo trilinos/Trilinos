@@ -31,7 +31,11 @@ namespace MueLu {
 
   namespace AggOptions {
     /* Options defining how to pick-up the next root node in the local aggregation procedure */
-    enum Ordering ;;
+    enum Ordering {
+      NATURAL = 0, /* node ordering   */
+      RANDOM  = 1, /* random ordering */
+      GRAPH   = 2  /* graph ordering  */
+    };
   } // namespace AggOptions
 
   using namespace AggOptions;

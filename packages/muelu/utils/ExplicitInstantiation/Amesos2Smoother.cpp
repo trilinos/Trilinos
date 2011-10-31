@@ -1,4 +1,7 @@
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_ExplicitInstantiation.hpp"
+
+#ifdef HAVE_MUELU_AMESOS2
 
 #include "MueLu_Amesos2Smoother_def.hpp"
 
@@ -14,4 +17,6 @@ template class MueLu::Amesos2Smoother<double, int, long long int, Kokkos::Defaul
 #else
 # warning To compile MueLu with 'long long int' support, please turn on HAVE_TEUCHOS_LONG_LONG_INT
 # endif
+#endif
+
 #endif

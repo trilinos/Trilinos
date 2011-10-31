@@ -42,7 +42,12 @@ class PgPFactory : public PFactory {
 public:
 
   /* Options defining how to pick-up the next root node in the local aggregation procedure */
-  enum MinimizationNorm ;;
+  enum MinimizationNorm {
+    ANORM = 0, /* A norm   */
+    L2NORM = 1, /* L2 norm */
+    DINVANORM  = 2, /* Dinv A norm */
+    ATDINVTPLUSDINVANORM = 3 /* most expensive variant */
+  };
 
   //! @name Constructors/Destructors.
   //@{

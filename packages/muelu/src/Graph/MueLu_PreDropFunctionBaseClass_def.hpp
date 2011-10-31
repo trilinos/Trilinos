@@ -10,10 +10,16 @@
 
 #include "Xpetra_Operator.hpp"
 
+//TMP
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Graph.hpp"
+
+// #include "MueLu_ConfigDefs.hpp"
+// #include "MueLu_SingleLevelFactoryBase.hpp"
+// #include "MueLu_Level_def.hpp"
+// #include "MueLu_Graph_def.hpp"
 
 namespace MueLu {
 
@@ -29,6 +35,7 @@ namespace MueLu {
   public:
     /// Constructor
     PreDropFunctionBaseClass() {}
+
     /// Destructor
     virtual ~PreDropFunctionBaseClass() {}
 
@@ -38,5 +45,4 @@ namespace MueLu {
 }
 
 #define MUELU_PREDROPFUNCTIONBASECLASS_SHORT
-
 #endif // MUELU_PREDROPFUNCTIONBASECLASS_DEF_HPP

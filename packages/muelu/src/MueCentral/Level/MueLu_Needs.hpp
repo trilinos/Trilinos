@@ -1,7 +1,5 @@
-#ifndef MUELU_NEEDS_DECL_HPP
-#define MUELU_NEEDS_DECL_HPP
-
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
+#ifndef MUELU_NEEDS_HPP
+#define MUELU_NEEDS_HPP
 
 #include <Teuchos_ParameterEntry.hpp>
 
@@ -60,7 +58,13 @@ namespace MueLu {
 
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
-    void Set(const std::string & ename, const T & entry, const FactoryBase* factory) ; // Set
+    void Set(const std::string & ename, const T & entry, const FactoryBase* factory) {
+      // Store entry only if data have been requested (or IsKeep)
+      if (IsRequested(ename, factory) ||
+          IsKept(ename, factory)) {
+        dataTable_.Set(ename, factory, Teuchos::ParameterEntry(entry));
+      }
+    } //Set
 
     //@}
 
@@ -82,12 +86,17 @@ namespace MueLu {
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
     // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
     template <class T>
-    const T & Get(const std::string & ename, const FactoryBase* factory) const ;
-
+    const T & Get(const std::string & ename, const FactoryBase* factory) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
+      return Teuchos::getValue<T>(dataTable_.Get(ename, factory));
+    }
+    
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
     // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
     template <class T>
-    T & Get(const std::string & ename, const FactoryBase* factory) ;
+    T & Get(const std::string & ename, const FactoryBase* factory) {
+      return const_cast<T &>(const_cast<const Needs &>(*this).Get<T>(ename, factory)); // Valid cast. See Effective C++, Item 3.
+    }
 
     //@}
 
@@ -159,5 +168,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_NEEDS_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
-#endif // MUELU_NEEDS_DECL_HPP
+#endif // MUELU_NEEDS_HPP

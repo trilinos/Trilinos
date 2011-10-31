@@ -18,7 +18,10 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
-
+#include "MueLu_Level.hpp"
+#include "MueLu_Monitor.hpp"
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_CrsOperator.hpp>
 
 namespace MueLu {
 
@@ -65,7 +68,7 @@ namespace MueLu {
       Monitor m(*this, "A filter (thresholding)");
 
       // create new empty Operator
-      RCP<CrsOperator> Aout = rcp(new CrsOperator(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile));
+      RCP<CrsOperator> Aout = rcp(new CrsOperator(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile)); //FIXME
 
       // loop over local rows
       for(size_t row=0; row<Ain->getNodeNumRows(); row++)

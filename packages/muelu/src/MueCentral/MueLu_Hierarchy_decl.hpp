@@ -172,11 +172,27 @@ namespace MueLu {
     
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;; //class Hierarchy
+    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+
+    //@}
+
+  private:
+    //! Copy constructor is not implemented.
+    Hierarchy(const Hierarchy &h);
+
+    //! vector of Level objects
+    Array<RCP<Level> > Levels_;
+
+    Xpetra::global_size_t maxCoarseSize_;
+    bool implicitTranspose_;
+
+  }; //class Hierarchy
 
 } //namespace MueLu
 
 // TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
+
 
 #define MUELU_HIERARCHY_SHORT
 #endif // HAVE_MUELU_EXPLICIT_INSTANTIATION

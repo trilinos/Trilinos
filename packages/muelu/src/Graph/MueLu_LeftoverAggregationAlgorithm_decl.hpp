@@ -30,7 +30,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    LeftoverAggregationAlgorithm():
+    LeftoverAggregationAlgorithm()
     ;
 
     //! Destructor.

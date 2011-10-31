@@ -1,3 +1,7 @@
+//TMP
+#include "MueLu_Utilities_def.hpp"
+#define MUELU_UTILITIES_DECL_HPP
+
 #ifndef MUELU_UTILITIES_DECL_HPP
 #define MUELU_UTILITIES_DECL_HPP
 
