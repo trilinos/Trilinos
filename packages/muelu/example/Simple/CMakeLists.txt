@@ -39,13 +39,14 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
     COMM serial mpi
     )
 
-  #Simple-Belos
-  IF(${PACKAGE_NAME}_ENABLE_Belos)
-    PACKAGE_ADD_EXECUTABLE(
-      Simple-Belos
-      SOURCES Simple-Belos.cpp
-      DEPLIBS muelu muelu-xpetra muelu-adapters
-      )
-  ENDIF()
+#TODO
+#   #Simple-Belos
+#   IF(${PACKAGE_NAME}_ENABLE_Belos)
+#     PACKAGE_ADD_EXECUTABLE(
+#       Simple-Belos
+#       SOURCES Simple-Belos.cpp
+#       DEPLIBS muelu muelu-xpetra muelu-adapters
+#       )
+#   ENDIF()
 
 ENDIF()

@@ -5,9 +5,6 @@
  *      Author: tobias
  */
 
-
-
-
 #include <iostream>
 
 // Teuchos
