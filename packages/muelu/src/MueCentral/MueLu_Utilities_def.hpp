@@ -721,7 +721,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
       }
 
       RCP< Operator > D = rcp( new CrsOperator(rowmap, 1) );
-      std::vector<LO> diagInd(1);
+      std::vector<GO> diagInd(1);
       Teuchos::ArrayView<GO> iv(&diagInd[0],1);
       //for (size_t i=0; i< A->getNodeNumRows(); ++i)
       for (size_t i=0; i< rowmap->getNodeNumElements(); ++i) {

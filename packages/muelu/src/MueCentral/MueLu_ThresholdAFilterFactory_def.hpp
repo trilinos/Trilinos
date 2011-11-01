@@ -81,7 +81,7 @@ namespace MueLu {
 
         TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::ThresholdAFilterFactory::Build: number of nonzeros not equal to number of indices? Error.");
 
-        Teuchos::ArrayRCP<LocalOrdinal> indout(indices.size(),Teuchos::ScalarTraits<LocalOrdinal>::zero());
+        Teuchos::ArrayRCP<GlobalOrdinal> indout(indices.size(),Teuchos::ScalarTraits<GlobalOrdinal>::zero());
         Teuchos::ArrayRCP<Scalar> valout(indices.size(),Teuchos::ScalarTraits<Scalar>::zero());
         size_t nNonzeros = 0;
         for(size_t i=0; i<(size_t)indices.size(); i++) {
