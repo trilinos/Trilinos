@@ -5,26 +5,6 @@
 #include <stdio.h>
 #include "smalloc.h"
 
-static void assign_out_normal(), assign_out_inv();
-
-void 
-assign_out (
-    int nvtxs,		/* number of vertices to output */
-    int *sets,			/* values to be printed */
-    int nsets,		/* number of sets */
-    char *outname		/* name of output file */
-)
-{
-    extern int OUT_ASSIGN_INV;	/* print assignment in inverted form? */
-
-    if (OUT_ASSIGN_INV) {
-	assign_out_inv(nvtxs, sets, nsets, outname);
-    }
-    else {
-	assign_out_normal(nvtxs, sets, outname);
-    }
-}
-
 static void 
 assign_out_normal (
     int nvtxs,		/* number of vertices to output */
@@ -52,7 +32,6 @@ assign_out_normal (
         fclose(fout);
     }
 }
-
 
 static void 
 assign_out_inv (
@@ -120,3 +99,22 @@ assign_out_inv (
         fclose(fout);
     }
 }
+
+void 
+assign_out (
+    int nvtxs,		/* number of vertices to output */
+    int *sets,			/* values to be printed */
+    int nsets,		/* number of sets */
+    char *outname		/* name of output file */
+)
+{
+    extern int OUT_ASSIGN_INV;	/* print assignment in inverted form? */
+
+    if (OUT_ASSIGN_INV) {
+	assign_out_inv(nvtxs, sets, nsets, outname);
+    }
+    else {
+	assign_out_normal(nvtxs, sets, outname);
+    }
+}
+

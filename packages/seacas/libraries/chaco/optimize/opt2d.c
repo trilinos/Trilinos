@@ -21,7 +21,7 @@ opt2d (
     double   *aptr, *bptr;	/* loop through yvecs */
     double    coeffs[5];	/* various products of yvecs */
     double    a, b;		/* temporary values */
-    double    func;		/* value of function to be minimized */
+    double    func=0.0;		/* value of function to be minimized */
     double    grad, hess;	/* first and 2nd derivatives of function */
     double    grad_min;		/* acceptably small gradient */
     double    theta;		/* angle being optimized */

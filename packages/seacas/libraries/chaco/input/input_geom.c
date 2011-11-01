@@ -29,7 +29,7 @@ input_geom (
     int       line_num;		/* counts input lines in file */
     int       end_flag;		/* return conditional */
     int       ndims;		/* number of values in an input line */
-    int       i;		/* loop counter */
+    int       i=0;		/* loop counter */
     double   read_val();
 
     if (DEBUG_TRACE > 0) {
