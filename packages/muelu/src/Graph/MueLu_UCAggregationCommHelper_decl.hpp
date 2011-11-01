@@ -1,6 +1,8 @@
 #ifndef MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
 #define MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
 #include <Xpetra_VectorFactory.hpp>
@@ -8,7 +10,6 @@
 #include <Xpetra_ExportFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Aggregates.hpp"
 

@@ -1,6 +1,8 @@
 #ifndef MUELU_PGPFACTORY_DECL_HPP
 #define MUELU_PGPFACTORY_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
 /*
@@ -20,7 +22,6 @@
 #ifdef HAVE_MUELU_TPETRA
 #include <Xpetra_TpetraVector.hpp>
 #endif
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_MatrixFactory.hpp"

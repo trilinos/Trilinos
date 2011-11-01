@@ -5,6 +5,8 @@
 #ifndef MUELU_UTILITIES_DECL_HPP
 #define MUELU_UTILITIES_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
 #include <Teuchos_ScalarTraits.hpp>
@@ -13,8 +15,6 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Utils.hpp>
-
-#include "MueLu_ConfigDefs.hpp"
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>

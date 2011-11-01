@@ -1,6 +1,8 @@
 #ifndef MUELU_PREDROPFUNCTIONCONSTVAL_DECL_HPP
 #define MUELU_PREDROPFUNCTIONCONSTVAL_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
 /*
@@ -12,7 +14,6 @@
 
 #include "Xpetra_Operator.hpp"
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Graph.hpp"

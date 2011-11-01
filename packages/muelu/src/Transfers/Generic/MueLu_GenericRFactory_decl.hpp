@@ -1,6 +1,8 @@
 #ifndef MUELU_GENERICRFACTORY_DECL_HPP
 #define MUELU_GENERICRFACTORY_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
 /*
@@ -14,7 +16,6 @@
 
 #include "Xpetra_CrsOperator.hpp"
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_RFactory.hpp"
 #include "MueLu_Exceptions.hpp"

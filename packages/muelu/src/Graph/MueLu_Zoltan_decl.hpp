@@ -1,9 +1,10 @@
 #ifndef MUELU_ZOLTAN_DECL_HPP
 #define MUELU_ZOLTAN_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
-#include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
 #include "zoltan_cpp.h"

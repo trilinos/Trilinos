@@ -1,13 +1,14 @@
 #ifndef MUELU_FACTORYMANAGER_DECL_HPP
 #define MUELU_FACTORYMANAGER_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
 #include <map>
 
 #include <Xpetra_Operator.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SmootherFactoryBase.hpp" //TODO:remove
 #include "MueLu_SmootherBase.hpp"

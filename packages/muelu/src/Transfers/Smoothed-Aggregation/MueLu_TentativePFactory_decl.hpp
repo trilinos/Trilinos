@@ -1,6 +1,8 @@
 #ifndef MUELU_TENTATIVEPFACTORY_DECL_HPP
 #define MUELU_TENTATIVEPFACTORY_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
 #include <Teuchos_ScalarTraits.hpp>
@@ -11,7 +13,6 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp" // TODO: inheritence of TentativePFactory
 #include "MueLu_Level.hpp"
 #include "MueLu_PFactory.hpp"

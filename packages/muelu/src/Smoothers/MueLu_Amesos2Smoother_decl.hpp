@@ -1,6 +1,8 @@
 #ifndef MUELU_AMESOS2SMOOTHER_DECL_HPP
 #define MUELU_AMESOS2SMOOTHER_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
 // TODO: PARAMETER LIST NOT TAKE INTO ACCOUNT !!!
@@ -9,7 +11,6 @@
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities.hpp"
