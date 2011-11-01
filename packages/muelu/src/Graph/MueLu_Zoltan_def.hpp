@@ -27,8 +27,8 @@ namespace MueLu {
 template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType,
           class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
 class ZoltanInterface : public BaseClass {
-
-#include "MueLu_UseShortNames.hpp"
+  typedef double Scalar;           // FIXME: this class is using Operator instead of Graph
+#include "MueLu_UseShortNames.hpp" // FIXME: UseShortNamesOrdinal
 
   public:
 
