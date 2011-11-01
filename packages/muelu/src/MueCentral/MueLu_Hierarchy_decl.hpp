@@ -1,9 +1,10 @@
 #ifndef MUELU_HIERARCHY_DECL_HPP
 #define MUELU_HIERARCHY_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Types.hpp"
