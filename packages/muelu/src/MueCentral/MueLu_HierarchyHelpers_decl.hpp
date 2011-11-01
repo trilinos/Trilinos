@@ -18,10 +18,15 @@ public:
 
   //!
   SetFactoryManager(Level & level, const RCP<const FactoryManagerBase> & factoryManager)
-  ;
+  : level_(level)
+  {
+    level.SetFactoryManager(factoryManager);
+  }
 
   //! Destructor.
-  virtual ~SetFactoryManager() ;
+  virtual ~SetFactoryManager() {
+    level_.SetFactoryManager(Teuchos::null);
+  }
 
   //@}
 
@@ -38,16 +43,25 @@ public:
 
   //!
   InternalFactoryManager(RCP<const FactoryManagerBase> & parentFactoryManager)
-  ;
+  : factoryManager_(parentFactoryManager), noFact_(NoFactory::getRCP())
+  { }
 
   //! Destructor.
-  virtual ~InternalFactoryManager() ;
+  virtual ~InternalFactoryManager() { }
 
   //! GetFactory
-  const RCP<const FactoryBase> & GetFactory(const std::string & varName) const ;
+  const RCP<const FactoryBase> & GetFactory(const std::string & varName) const {
+    if (varName == "A") return noFact_;
+    // if (varName == "P") return noFact_;
+    // if (varName == "R") return noFact_;
+    // if (varName == "PreSmoother")  return noFact_;
+    // if (varName == "PostSmoother") return noFact_;
+
+    return factoryManager_->GetFactory(varName);
+  }
 
   //! Clean
-  void Clean() const ;
+  void Clean() const { factoryManager_->Clean(); }
 
 private:
   RCP<const FactoryManagerBase> factoryManager_;
