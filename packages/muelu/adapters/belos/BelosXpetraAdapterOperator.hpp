@@ -3,7 +3,7 @@
 
 //Note: using MACRO HAVE_XPETRA_ instead of HAVE_MUELU_ because this file will eventually be moved to Xpetra
 
-#ifdef HAVE_XPETRA_EPETRAEXT
+#ifdef HAVE_XPETRA_EPETRA
 #include <BelosOperator.hpp>
 #endif
 
@@ -150,7 +150,7 @@ namespace Belos {
     }
 #endif
 
-#ifdef HAVE_XPETRA_EPETRAEXT
+#ifdef HAVE_XPETRA_EPETRA
     // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
     /*! \brief This routine takes the Epetra_MultiVector \c x and applies the operator
       to it resulting in the Epetra_MultiVector \c y, which is returned.

@@ -1,7 +1,7 @@
 #ifndef BELOS_MUELU_ADAPTER_HPP
 #define BELOS_MUELU_ADAPTER_HPP
 
-#ifdef HAVE_MUELU_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA
 #include <BelosOperator.hpp>
 #endif
 
@@ -156,7 +156,7 @@ namespace Belos {
     }
 #endif
 
-#ifdef HAVE_MUELU_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA
     // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
       to it resulting in the Tpetra::MultiVector \c y, which is returned.
