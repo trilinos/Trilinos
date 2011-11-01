@@ -157,9 +157,9 @@ namespace {
     case Excn::NSET:
       return EX_NODE_SET;
     default:
-      SMART_ASSERT(1==0 && "Invalid Object Type in exodus_object_type")(conjoin_type);
-      return EX_INVALID;
+      throw std::runtime_error("Invalid Object Type in exodus_object_type: " + conjoin_type);
     }
+    return EX_INVALID;
   }
 
   char **get_name_array(int size, size_t length) {
@@ -2631,7 +2631,7 @@ namespace {
   template <typename T, typename U>
   void map_sideset_vars(U &, int, int, std::vector<T> &, std::vector<T> &)
   {
-    SMART_ASSERT(1==0 && "Internal Error!");
+    throw std::runtime_error("Internal Error.");
   }
 
   void map_sideset_vars(Excn::SideSet &local_set, int entity_count, int glob_entity_count,
@@ -2663,7 +2663,7 @@ namespace {
   template <typename T, typename U>
   void map_nodeset_vars(U &, int, int, std::vector<T> &, std::vector<T> &)
   {
-    SMART_ASSERT(1==0 && "Internal Error!");
+    throw std::runtime_error("Internal Error.");
   }
 
   void map_nodeset_vars(Excn::NodeSet &local_set, int entity_count, int glob_entity_count,

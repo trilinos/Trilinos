@@ -44,6 +44,7 @@
 #include <map>
 #include <string>
 #include <exception>
+#include <stdexcept>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -96,9 +97,9 @@ namespace {
     case Excn::NSET:
       return EX_NODE_SET;
     default:
-      SMART_ASSERT(1==0 && "Invalid Object Type in exodus_object_type")(epu_type);
-      return EX_INVALID;
+      throw std::runtime_error("Invalid Object Type in exodus_object_type: " + epu_type);
     }
+    return EX_INVALID;
   }
 
   char **get_name_array(int size, int length) {
@@ -2790,7 +2791,7 @@ namespace {
   void map_nodeset_vars(U &local_set, int entity_count, int glob_entity_count,
 			std::vector<T> &values, T *global_values)
   {
-    SMART_ASSERT(1==0 && "Internal Error!");
+    throw std::runtime_error("Internal Error!");
   }
 
   void map_nodeset_vars(Excn::NodeSet &local_set, int entity_count, int glob_entity_count,
