@@ -7,6 +7,7 @@
 
 
 #include <iostream>
+#include <unistd.h>
 
 // Teuchos
 #include <Teuchos_RCP.hpp>
@@ -14,6 +15,13 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
+
+#include <Xpetra_Map.hpp>
+#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Parameters.hpp>
 
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -25,13 +33,6 @@
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
 
-#include <Xpetra_Map.hpp>
-#include <Xpetra_CrsOperator.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_Parameters.hpp>
-
 // Gallery
 #define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include <MueLu_GalleryParameters.hpp>
@@ -39,7 +40,6 @@
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
-#include <unistd.h>
 /**********************************************************************************/
 
 // Belos
