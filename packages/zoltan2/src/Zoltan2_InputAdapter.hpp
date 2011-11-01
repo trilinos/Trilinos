@@ -48,6 +48,8 @@ enum InputAdapterType {
   MeshAdapterType,
   GraphAdapterType,
   CoordAdapterType,
+  VectorAdapterType,
+  MultiVectorAdapterType,
   IdAdapterType,
   XpetraCrsMatrixAdapterType  // Special case for performance with Epetra/Tpetra
 };

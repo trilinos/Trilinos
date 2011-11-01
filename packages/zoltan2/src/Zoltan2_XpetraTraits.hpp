@@ -283,6 +283,131 @@ struct XpetraTraits<Epetra_CrsGraph>
     }
 };
 
-}  //namespace Zoltan2
-  
+//////////////////////////////////////////////////////////////////////////////
+// Epetra_Vector
+template < >
+struct XpetraTraits<Epetra_Vector>
+{
+  typedef double scalar_t;
+  typedef int lno_t;
+  typedef int gno_t;
+  typedef Zoltan2::default_node_t node_t;
+  typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> x_vector_t;
+  static inline RCP<const x_vector_t>
+    convertToXpetra(const RCP<const Epetra_Vector> &a)
+    {
+      return rcp(new Xpetra::EpetraVector(rcp_const_cast<Epetra_Vector>(a)));
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// Epetra_MultiVector
+template < >
+struct XpetraTraits<Epetra_MultiVector>
+{
+  typedef double scalar_t;
+  typedef int lno_t;
+  typedef int gno_t;
+  typedef Zoltan2::default_node_t node_t;
+  typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> x_mvector_t;
+  static inline RCP<const x_mvector_t>
+    convertToXpetra(const RCP<const Epetra_MultiVector> &a)
+    {
+      return rcp(new Xpetra::EpetraMultiVector( 
+        rcp_const_cast<Epetra_MultiVector>(a)));
+    }
+};
+
+#if 0
+//////////////////////////////////////////////////////////////////////////////
+// Epetra_IntVector
+//    TODO - Xpetra doesn't wrap Epetra_IntVector.  Is it
+//     important to support Epetra_IntVector if so do
+//     some extra work in the XpetraMultiVectorInput constructor
+//     
+template < >
+struct XpetraTraits<Epetra_IntVector>
+{
+  static inline RCP<const Xpetra::EpetraIntVector>
+    convertToXpetra(const RCP<const Epetra_IntVector> &a)
+    {
+      return rcp(new Xpetra::EpetraIntVector(
+        rcp_const_cast<Epetra_IntVector>(a)));
+    }
+};
 #endif
+
+//////////////////////////////////////////////////////////////////////////////
+// Tpetra::Vector
+template <typename scalar_t,
+          typename lno_t,
+          typename gno_t,
+          typename node_t>
+struct XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
+{
+  typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> t_vector_t;
+  typedef Xpetra::TpetraVector<scalar_t, lno_t, gno_t, node_t> xt_vector_t;
+  typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> x_vector_t;
+
+  static inline RCP<const x_vector_t>
+    convertToXpetra(const RCP<const t_vector_t> &a)
+    {
+      return rcp(new xt_vector_t(rcp_const_cast<t_vector_t>(a)));
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// Tpetra::MultiVector
+template <typename scalar_t,
+          typename lno_t,
+          typename gno_t,
+          typename node_t>
+struct XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
+{
+  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> t_vector_t;
+  typedef Xpetra::TpetraMultiVector<scalar_t, lno_t, gno_t, node_t> xt_vector_t;
+  typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> x_vector_t;
+
+  static inline RCP<const x_vector_t>
+    convertToXpetra(const RCP<const t_vector_t> &a)
+    {
+      return rcp(new xt_vector_t(rcp_const_cast<t_vector_t>(a)));
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// Xpetra::Vector
+template <typename scalar_t,
+          typename lno_t,
+          typename gno_t,
+          typename node_t>
+struct XpetraTraits<Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
+{
+  typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> x_vector_t;
+
+  static inline RCP<const x_vector_t>
+    convertToXpetra(const RCP<const x_vector_t> &a)
+    {
+      return a;
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// Xpetra::MultiVector
+template <typename scalar_t,
+          typename lno_t,
+          typename gno_t,
+          typename node_t>
+struct XpetraTraits<Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
+{
+  typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> x_mvector_t;
+
+  static inline RCP<const x_mvector_t>
+    convertToXpetra(const RCP<const x_mvector_t> &a)
+    {
+      return a;
+    }
+};
+}  //namespace Zoltan2
+
+#endif // _ZOLTAN2_XPETRATRAITS_HPP_

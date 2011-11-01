@@ -131,7 +131,113 @@ struct InputTraits<Epetra_CrsGraph>
   static inline std::string name() {return "Epetra_CrsGraph";}
 };
 
+// Epetra_Vector
+template < >
+struct InputTraits<Epetra_Vector>
+{
+  typedef double scalar_t;
+  typedef int   lno_t;
+  typedef int   gno_t;
+  typedef int   lid_t;
+  typedef int   gid_t;
+  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "Epetra_Vector";}
+};
 
-}
-
+#if 0
+// Epetra_IntVector
+template < >
+struct InputTraits<Epetra_IntVector>
+{
+  typedef int scalar_t;
+  typedef int   lno_t;
+  typedef int   gno_t;
+  typedef int   lid_t;
+  typedef int   gid_t;
+  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "Epetra_IntVector";}
+};
 #endif
+
+// Epetra_MultiVector
+template < >
+struct InputTraits<Epetra_MultiVector>
+{
+  typedef double scalar_t;
+  typedef int   lno_t;
+  typedef int   gno_t;
+  typedef int   lid_t;
+  typedef int   gid_t;
+  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  static inline std::string name() {return "Epetra_MultiVector";}
+};
+
+//TODO A Tpetra::Vector is a Tpetra::MultiVector - can we just
+//  define MultiVector traits only?  Ditto with Xpetra.  Test this
+
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Tpetra::Vector";}
+};
+
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Tpetra::MultiVector";}
+};
+
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Xpetra::Vector";}
+};
+
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef LocalOrdinal  lid_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline std::string name() {return "Xpetra::MultiVector";}
+};
+
+
+
+}  // namespace
+
+#endif // ZOLTAN2_INPUTTRAITS_HPP
+

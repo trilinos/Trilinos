@@ -52,6 +52,8 @@ public:
   };
 
   // Other methods
+  //   LRIESEN - Do we restate virtual in the concrete class?  I
+  //    don't think I've seen this style before.
   virtual void solve();
   virtual void redistribute();
 
