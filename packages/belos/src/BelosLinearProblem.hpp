@@ -391,7 +391,7 @@ namespace Belos {
      *   - time spent applying preconditioner
      */
     Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-      return tuple(timerOp_,timerPrec_);
+      return Teuchos::tuple(timerOp_,timerPrec_);
     }
 
 

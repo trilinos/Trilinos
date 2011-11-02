@@ -225,7 +225,7 @@ namespace Belos {
     /// solve() routine.  Thus, the returned Array currently has only
     /// one element.
     Teuchos::Array< Teuchos::RCP< Teuchos::Time > > getTimers() const {
-      return tuple(timerSolve_);
+      return Teuchos::tuple(timerSolve_);
     }
 
     //! Get the iteration count for the most recent call to \c solve().
