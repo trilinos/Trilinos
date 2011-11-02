@@ -100,6 +100,9 @@ namespace panzer {
     pl->set("Y Blocks",1);
     pl->set("X Elements",6);
     pl->set("Y Elements",4);
+
+    Teuchos::RCP<shards::CellTopology> topo
+       = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
@@ -150,7 +153,7 @@ namespace panzer {
       }
       
       Teuchos::RCP<std::map<unsigned,panzer::Workset> > workset = 
-	buildBCWorkset(*bc, local_cell_ids, local_side_ids,
+	buildBCWorkset(*bc,topo, local_cell_ids, local_side_ids,
 		       vertices, ipb, base_cell_dimension);
       
       bc_worksets.push_back(workset);

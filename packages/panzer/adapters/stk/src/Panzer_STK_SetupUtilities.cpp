@@ -170,10 +170,13 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   // condition may have not elements and thus no contribution
   // on this processor
   if(elements.size()!=0) {
+      Teuchos::RCP<const shards::CellTopology> topo 
+         = mesh.getCellTopology(bc.elementBlockID());
+
       Intrepid::FieldContainer<double> vertices;
       mesh.getElementVertices(local_cell_ids,vertices);
   
-      return panzer::buildBCWorkset(bc, local_cell_ids, local_side_ids,
+      return panzer::buildBCWorkset(bc,topo, local_cell_ids, local_side_ids,
 	                            vertices, ipb, base_cell_dimension);
   }
   

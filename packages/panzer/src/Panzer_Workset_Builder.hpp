@@ -32,6 +32,7 @@ namespace panzer {
   template<typename ArrayT>
   Teuchos::RCP<std::map<unsigned,panzer::Workset> >
   buildBCWorkset(const panzer::BC& bc,
+                 const Teuchos::RCP<const shards::CellTopology> & blockTopo,
 		 const std::vector<std::size_t>& local_cell_ids,
 		 const std::vector<std::size_t>& local_side_ids,
 		 const ArrayT& vertex_coordinates, 

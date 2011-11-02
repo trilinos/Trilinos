@@ -123,7 +123,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   volume_worksets["block_0"] = panzer::buildWorksets(topo,"block_0",cellIds,coords, ipb, workset_size,2);
 
   std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
-  bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(bcs[myRank],cellIds,sideIds,coords, ipb,2);
+  bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(bcs[myRank],topo,cellIds,sideIds,coords, ipb,2);
 
   // build DOF Manager
   /////////////////////////////////////////////////////////////

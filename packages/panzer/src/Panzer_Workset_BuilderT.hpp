@@ -180,7 +180,7 @@ panzer::buildWorksets(const std::string& block_id,
     const panzer::CellData volume_cell_data(workset_size, base_cell_dimension);
       
     RCP<panzer::IntegrationRule> ir = 
-      rcp(new panzer::IntegrationRule(ir_degrees[i], volume_cell_data));
+      rcp(new panzer::IntegrationRule(blockTopo,ir_degrees[i], volume_cell_data));
     
     degree_to_int_rule[ir_degrees[i]] = ir;
 
@@ -237,6 +237,7 @@ panzer::buildWorksets(const std::string& block_id,
 template<typename ArrayT>
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 panzer::buildBCWorkset(const panzer::BC& bc,
+                       const Teuchos::RCP<const shards::CellTopology> & blockTopo,
 		       const std::vector<std::size_t>& local_cell_ids,
 		       const std::vector<std::size_t>& local_side_ids,
 		       const ArrayT& vertex_coordinates, 
@@ -332,7 +333,7 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 					    static_cast<int>(wkst->first));
 
       RCP<panzer::IntegrationRule> ir = 
-	rcp(new panzer::IntegrationRule(ir_degrees[i], side_cell_data));
+	rcp(new panzer::IntegrationRule(blockTopo,ir_degrees[i], side_cell_data));
       
       wkst->second.ir_degrees = rcp_ir_degrees;
 
