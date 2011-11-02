@@ -412,6 +412,10 @@ public:
      */
    void printMetaData(std::ostream & os) const;
 
+   /** Get the cell topology from the element block.
+     */
+   Teuchos::RCP<const shards::CellTopology> getCellTopology(const std::string & eBlock) const;
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;

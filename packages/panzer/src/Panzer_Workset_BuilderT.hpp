@@ -21,6 +21,7 @@
 template<typename ArrayT>
 Teuchos::RCP< std::vector<panzer::Workset> > 
 panzer::buildWorksets(const std::string& block_id,
+                      const Teuchos::RCP<const shards::CellTopology> & blockTopo,
 		      const std::vector<std::size_t>& local_cell_ids,
 		      const ArrayT& vertex_coordinates, 
 		      const panzer::InputPhysicsBlock& ipb,
@@ -76,7 +77,7 @@ panzer::buildWorksets(const std::string& block_id,
        const panzer::CellData volume_cell_data(workset_size, base_cell_dimension);
          
        RCP<panzer::IntegrationRule> ir = 
-         rcp(new panzer::IntegrationRule(ir_degrees[j], volume_cell_data));
+         rcp(new panzer::IntegrationRule(blockTopo,ir_degrees[j], volume_cell_data));
 
        degree_to_int_rule[ir_degrees[j]] = ir;
        

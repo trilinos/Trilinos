@@ -61,7 +61,11 @@ namespace panzer {
       panzer_stk::workset_utils::getIdsAndVertices(*mesh, element_blocks[i], local_cell_ids, 
 				cell_vertex_coordinates);
 
-      worksets.push_back(panzer::buildWorksets(element_blocks[i],
+      Teuchos::RCP<shards::CellTopology> topo
+         = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+
+      worksets.push_back(panzer::buildWorksets(element_blocks[i],topo,
 					       local_cell_ids,
 					       cell_vertex_coordinates,
 					       ipb,

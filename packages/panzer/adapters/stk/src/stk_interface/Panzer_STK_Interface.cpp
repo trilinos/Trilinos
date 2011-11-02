@@ -742,4 +742,15 @@ void STK_Interface::printMetaData(std::ostream & os) const
    }
 }
 
+Teuchos::RCP<const shards::CellTopology> STK_Interface::getCellTopology(const std::string & eBlock) const
+{
+   std::map<std::string, Teuchos::RCP<shards::CellTopology> >::const_iterator itr;
+   itr = elementBlockCT_.find(eBlock);
+
+   TEUCHOS_TEST_FOR_EXCEPTION(itr==elementBlockCT_.end(),std::logic_error,
+                              "STK_Interface::getCellTopology: No such element block \"" +eBlock +"\" available.");              
+
+   return itr->second;
+}
+
 } // end namespace panzer_stk

@@ -8,7 +8,7 @@
 #include "Panzer_CellData.hpp"
 
 panzer::IntegrationRule::
-IntegrationRule(const Teuchos::RCP<shards::CellTopology> & baseTopo, 
+IntegrationRule(const Teuchos::RCP<const shards::CellTopology> & baseTopo, 
                 int in_cubature_degree, const panzer::CellData& cell_data) :
   side(-1)
 {
@@ -32,7 +32,7 @@ IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
   setup(baseTopo,in_cubature_degree,cell_data);
 }
 
-void panzer::IntegrationRule::setup(const Teuchos::RCP<shards::CellTopology> & baseTopo,
+void panzer::IntegrationRule::setup(const Teuchos::RCP<const shards::CellTopology> & baseTopo,
                                     int in_cubature_degree, const panzer::CellData& cell_data)
 {
   cubature_degree = in_cubature_degree ;

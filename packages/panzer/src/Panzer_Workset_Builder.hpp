@@ -22,6 +22,7 @@ namespace panzer {
   template<typename ArrayT>
   Teuchos::RCP<std::vector<panzer::Workset> > 
   buildWorksets(const std::string& block_id,
+                const Teuchos::RCP<const shards::CellTopology> & blockTopo,
 		const std::vector<std::size_t>& local_cell_ids,
 		const ArrayT& vertex_coordinates, 
 		const panzer::InputPhysicsBlock& ipb,

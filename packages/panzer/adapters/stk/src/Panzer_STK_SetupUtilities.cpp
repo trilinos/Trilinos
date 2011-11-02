@@ -42,56 +42,6 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 
     worksets.insert(std::make_pair(element_blocks[i],
                                    panzer_stk::buildWorksets(mesh,element_blocks[i],ipb,workset_size)));
-
-#if 0
-    std::vector<std::size_t> local_cell_ids;
-    Intrepid::FieldContainer<double> cell_vertex_coordinates;
-
-    getIdsAndVertices(mesh, element_blocks[i], local_cell_ids, 
-				cell_vertex_coordinates);
-
-    std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_iterator = 
-      eb_to_ipb.find(element_blocks[i]);
-    
-    // on error print ot all available worksets
-    if(ipb_iterator==eb_to_ipb.end()) {
-       std::stringstream ss;
-
-       ss << "buildWorksets: Could not find input physics block corresponding to element block"
-          << " \"" << element_blocks[i] << "\"\n\n Choose one of:\n";
-
-       std::vector<std::string>::const_iterator str_iter;
-       for(str_iter=element_blocks.begin();str_iter!=element_blocks.end();++str_iter)
-          ss << "   \"" << *str_iter << "\"\n"; 
-
-       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, std::logic_error,ss.str());
-
-       // should never get here!
-    }
-
-    const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
-
-    // only build workset if there are elements to worry about
-    // this may be processor dependent, so an element block
-    // may not have elements and thus no contribution
-    // on this processor
-    if(local_cell_ids.size()!=0) {
-        worksets.insert(std::make_pair(element_blocks[i],panzer::buildWorksets(element_blocks[i],
-      							                       local_cell_ids,
-							                       cell_vertex_coordinates,
-							                       ipb,
-							                       workset_size,
-							                       base_cell_dimension)));
-    }
-    else {
-       worksets.insert(std::make_pair(element_blocks[i],panzer::buildWorksets(element_blocks[i],
-      							                       local_cell_ids,
-							                       cell_vertex_coordinates,
-							                       ipb,
-							                       workset_size,
-							                       base_cell_dimension)));
-    }
-    #endif
   }
   
   return worksets;
@@ -113,11 +63,13 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 
   getIdsAndVertices(mesh, eBlock, local_cell_ids, cell_vertex_coordinates);
 
+  Teuchos::RCP<const shards::CellTopology> topo =  mesh.getCellTopology(eBlock);
+
   // only build workset if there are elements to worry about
   // this may be processor dependent, so an element block
   // may not have elements and thus no contribution
   // on this processor
-  return panzer::buildWorksets(eBlock, local_cell_ids, cell_vertex_coordinates,
+  return panzer::buildWorksets(eBlock,topo, local_cell_ids, cell_vertex_coordinates,
                                ipb, workset_size, base_cell_dimension);
 }
 
@@ -147,82 +99,6 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
     Teuchos::RCP<std::map<unsigned,panzer::Workset> > wMap = buildBCWorksets(mesh,ipb,*bc);
     if(wMap!=Teuchos::null)
        bc_worksets[*bc] = wMap;
-#if 0
-    
-    std::vector<stk::mesh::Entity*> sideEntities; 
-
-    try {
-       // grab local entities on this side
-       // ...catch any failure...primarily wrong side set and element block info
-       mesh.getMySides(bc->sidesetID(),bc->elementBlockID(),sideEntities);
-    } 
-    catch(STK_Interface::SidesetException & e) {
-       std::stringstream ss;
-       std::vector<std::string> sideSets; 
-       mesh.getSidesetNames(sideSets);
- 
-       // build an error message
-       ss << e.what() << "\nChoose one of:\n";
-       for(std::size_t i=0;i<sideSets.size();i++) 
-          ss << "\"" << sideSets[i] << "\"\n";
-
-       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
-    }
-    catch(STK_Interface::ElementBlockException & e) {
-       std::stringstream ss;
-       std::vector<std::string> elementBlocks; 
-       mesh.getElementBlockNames(elementBlocks);
-  
-       // build an error message
-       ss << e.what() << "\nChoose one of:\n";
-       for(std::size_t i=0;i<elementBlocks.size();i++) 
-          ss << "\"" << elementBlocks[i] << "\"\n";
-
-       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
-    }
-    catch(std::logic_error & e) {
-       std::stringstream ss;
-       ss << e.what() << "\nUnrecognized logic error.\n";
-
-       TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
-    }
-    
-    std::vector<stk::mesh::Entity*> elements;
-    std::vector<std::size_t> local_cell_ids;
-    std::vector<std::size_t> local_side_ids;
-    getSideElements(mesh, bc->elementBlockID(),
-		      sideEntities,local_side_ids,elements);
-
-    // loop over elements of this block
-    for(std::size_t elm=0;elm<elements.size();++elm) {
-	stk::mesh::Entity * element = elements[elm];
-	
-	local_cell_ids.push_back(mesh.elementLocalId(element));
-    }
-
-    std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_iterator = 
-      eb_to_ipb.find(bc->elementBlockID());
-    
-    TEUCHOS_TEST_FOR_EXCEPTION(ipb_iterator == eb_to_ipb.end(), std::logic_error,
-		       "Could not find input physics block corresponding to region");
-
-    const panzer::InputPhysicsBlock& ipb = ipb_iterator->second;
-
-    // only build workset if there are elements to worry about
-    // this may be processor dependent, so a defined boundary
-    // condition may have not elements and thus no contribution
-    // on this processor
-    if(elements.size()!=0) {
-        Intrepid::FieldContainer<double> vertices;
-        mesh.getElementVertices(local_cell_ids,vertices);
-    
-        Teuchos::RCP<std::map<unsigned,panzer::Workset> > workset = 
-              panzer::buildBCWorkset(*bc, local_cell_ids, local_side_ids,
-  	                             vertices, ipb, base_cell_dimension);
-   
-       bc_worksets[*bc] = workset;
-    }
-#endif
   }
   
   return bc_worksets;

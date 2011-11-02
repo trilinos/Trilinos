@@ -110,6 +110,9 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
 
   // build worksets
   //////////////////////////////////////////////////////////////
+  Teuchos::RCP<const shards::CellTopology> topo = 
+      Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
   Intrepid::FieldContainer<double> coords;
   std::vector<std::size_t> cellIds(1,0);
   std::vector<std::size_t> sideIds(1,0);
@@ -117,7 +120,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   indexer->getCoordinates(cellIds[0],coords);
 
   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > volume_worksets;
-  volume_worksets["block_0"] = panzer::buildWorksets("block_0",cellIds,coords, ipb, workset_size,2);
+  volume_worksets["block_0"] = panzer::buildWorksets(topo,"block_0",cellIds,coords, ipb, workset_size,2);
 
   std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
   bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(bcs[myRank],cellIds,sideIds,coords, ipb,2);
