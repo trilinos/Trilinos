@@ -1174,7 +1174,6 @@ namespace MueLu {
      
   } //Transpose
 
-
 } //namespace MueLu
 
 #define MUELU_UTILITIES_SHORT
