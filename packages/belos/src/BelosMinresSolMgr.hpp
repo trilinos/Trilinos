@@ -123,20 +123,18 @@ namespace Belos {
     
   public:
 
-    /// \brief List of default parameters
+    /// \brief List of valid MINRES parameters and their default values.
     /// 
-    /// Return a smart pointer to a list of valid parameters and their
-    /// default values.  The right way to set up this solver manager
-    /// with nondefault parameters, is to make a deep non-const copy
-    /// of the default parameters, and change the parameters you want
-    /// to change.
+    /// One way to set up this solver manager with nondefault
+    /// parameters, is to make a deep non-const copy of the default
+    /// parameters, and change the parameters you want to change.
     ///
     /// \note This is a class ("static") method, so that it can be
-    /// called before you have constructed a MinresSolMgr object
-    /// (useful for you, so you can have valid parameters before
-    /// constructing one), or within the MinresSolMgr constructor
-    /// (useful for me, so I can set default parameters).
-    static Teuchos::RCP< const Teuchos::ParameterList > defaultParameters();
+    ///   called before you have constructed a MinresSolMgr object
+    ///   (useful for you, so you can have valid parameters before
+    ///   constructing one), or within the MinresSolMgr constructor
+    ///   (useful for me, so I can set default parameters).
+    static Teuchos::RCP<const Teuchos::ParameterList> defaultParameters();
 
     /// \brief Validate parameters
     ///
@@ -209,23 +207,29 @@ namespace Belos {
     }
 
     //! Return the list of default parameters for this object.
-    Teuchos::RCP< const Teuchos::ParameterList > getValidParameters() const {
-      return defaultParameters();
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
+      if (defaultParams_.is_null()) {
+	defaultParams_ = defaultParameters ();
+      }
+      return defaultParams_;
     }
     
     //! Return the list of current parameters for this object.
-    Teuchos::RCP< const Teuchos::ParameterList > getCurrentParameters() const { 
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { 
       return params_; 
     }
     
     /// \brief Return all timers for this object.
     ///
-    /// Return all the timers for this object.  Currently only one
-    /// timer is being used, which is the total time spent in the
-    /// solve() routine.  Thus, the returned Array currently has only
-    /// one element.
-    Teuchos::Array< Teuchos::RCP< Teuchos::Time > > getTimers() const {
-      return Teuchos::tuple(timerSolve_);
+    /// Currently only one timer is being used, which is the total
+    /// time spent in the \c solve() routine.  Thus, the returned
+    /// Array currently has only one element.
+    ///
+    /// \warning If \c setParameters() has not yet been called, or if
+    ///   you change the timer label, that invalidates the pointer
+    ///   timer(s).
+    Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
+      return Teuchos::tuple (timerSolve_);
     }
 
     //! Get the iteration count for the most recent call to \c solve().
@@ -242,64 +246,44 @@ namespace Belos {
  
     //@}
     
-    //! @name Set methods
+    //! @name Set methods (overridden from \c SolverManager)
     //@{
    
-    //! Set the linear problem to be solved.
     void 
-    setProblem (const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > > &problem) 
+    setProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> > &problem) 
     { 
       validateProblem (problem);
       problem_ = problem; 
     }
    
-    /// Set the parameters to use when solving the linear problem.
-    ///
-    /// \param params [in/out] List of parameters to use when solving
-    ///   the linear problem.  This list will be modified as necessary
-    ///   to include default parameters that need not be provided.
-    ///   If params is null, then use default parameters entirely.
-    ///
-    /// \note If you want nondefault parameter values, the right way
-    ///   to start is to make a deep copy of the ParameterList
-    ///   returned by defaultParameters().  That ParameterList has all
-    ///   the parameters that MinresSolMgr wants, along with
-    ///   human-readable documentation and validators.
     void 
-    setParameters (const Teuchos::RCP< Teuchos::ParameterList >& params);
+    setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //@}
    
-    //! @name Reset methods
+    //! @name Reset methods (overridden from \c SolverManager)
     //@{
 
-    /// \brief Reset the solver manager
-    ///
-    /// Reset the solver manager in a way specified by the \c
-    /// ResetType.  This informs the solver manager that the solver
-    /// should prepare for the next call to solve by resetting certain
-    /// elements of the iterative solver strategy.
     void 
     reset (const ResetType type) 
     { 
-      if ((type & Belos::Problem) && ! Teuchos::is_null (problem_)) 
-	problem_->setProblem(); 
+      if ((type & Belos::Problem) && ! problem_.is_null()) {
+	problem_->setProblem (); 
+      }
     }
     //@}
  
-    //! @name Solver application methods
+    //! @name Solver application methods (overridden from \c SolverManager)
     //@{ 
     
-    /// \brief Iterate until status test tells us to stop
-    //
-    /// This method performs possibly repeated calls to the underlying
-    /// linear solver's iterate() routine, until the problem has been
-    /// solved (as decided by the solver manager via the status
-    /// test(s)), or the solver manager decides to quit.
+    /// \brief Iterate until the status test tells us to stop.
     ///
-    /// This method calls MinresIter::iterate(), which will return
-    /// either because a specially constructed status test that
-    /// evaluates to ::Passed, or an std::exception is thrown.
+    /// This method implements SolverManager::solve() (which see).
+    ///
+    /// MINRES' implementation of this method invokes \c
+    /// MinresIter::iterate(), which will return either because a
+    /// specially constructed status test that evaluates to ::Passed,
+    /// or an std::exception is thrown.
     ///
     /// A return from MinresIter::iterate() signifies one of the
     /// following scenarios:
@@ -308,13 +292,7 @@ namespace Belos {
     ///   placed in the linear problem and return ::Unconverged.
     /// - global convergence has been met. In this case, the current
     ///   solutions to the linear system will be placed in the linear
-    ///   problem and the solver manager will return ::Converged
-    ///
-    /// \return ::ReturnType specifying:
-    ///   - ::Converged: the linear problem was solved to the
-    ///     specification required by the solver manager.
-    ///   - ::Unconverged: the linear problem was not solved to the
-    ///     specification desired by the solver manager.
+    ///   problem and the solver manager will return ::Converged.
     ReturnType solve();
     
     //@}
@@ -322,23 +300,11 @@ namespace Belos {
     /** \name Overridden from Teuchos::Describable */
     //@{
     
-    //! Description of the MINRES solver manager
     std::string description() const;
     
     //@}
     
   private:
-    /// Validate the given linear problem, by raising
-    /// std::invalid_argument (with an informative message) if the
-    /// problem is null or its essential components are null.
-    static void
-    validateProblem (const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > >& problem);
-
-    /// Read the parameters' values from the given parameter list, and
-    /// set up solver components as necessary.
-    void 
-    readParameters (const Teuchos::RCP< const Teuchos::ParameterList >& params);
-
     //! Linear problem to solve
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
     
@@ -346,20 +312,37 @@ namespace Belos {
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
     Teuchos::RCP<std::ostream> outputStream_;
 
-    //! The full status test
+    /// \brief The full status test.
+    ///
+    /// sTest_ is an OR combination of maxIterTest_ and convTest_.  If
+    /// you reallocate either of these, you have to give them to
+    /// sTest_ again.  If you reallocate sTest_, you have to tell
+    /// outputTest_.
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
 
-    //! One of sTest_'s components
+    /// \brief The status test for maximum iteration count.
+    ///
+    /// If you reallocate this, sTest_ needs the new RCP.
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
 
-    //! One of sTest_'s components
+    /// \brief The status test for convergence.
+    ///
+    /// If you reallocate this, sTest_ needs the new RCP.
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
 
-    //! Status test output
+    /// \brief The "status test" that handles output.
+    ///
+    /// This object keeps a pointer to printer_ and sTest_.  If you
+    /// reallocate either of them, outputTest_ needs to know.
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
+    /// \brief List of default parameters.
+    ///
+    /// This is declared "mutable" because it is computed on demand.
+    mutable Teuchos::RCP<const Teuchos::ParameterList> defaultParams_;
+
     //! List of current parameters
-    Teuchos::RCP< Teuchos::ParameterList > params_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
 
     //! Current relative residual 2-norm convergence tolerance
     MagnitudeType convtol_;
@@ -390,65 +373,64 @@ namespace Belos {
 
     //! Whether the solver manager's parameters have been set
     bool parametersSet_;
+
+    /// \brief Validate the given linear problem.
+    ///
+    /// We do this by raising std::invalid_argument (with an
+    /// informative message) if the problem is null or its essential
+    /// components are null.
+    static void
+    validateProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> >& problem);
   };
 
 
   template<class ScalarType, class MV, class OP>
-  Teuchos::RCP< const Teuchos::ParameterList > 
-  MinresSolMgr< ScalarType, MV, OP >::defaultParameters()
+  Teuchos::RCP<const Teuchos::ParameterList> 
+  MinresSolMgr<ScalarType, MV, OP>::defaultParameters()
   {
-    using Teuchos::is_null;
     using Teuchos::ParameterList;
+    using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::rcpFromRef;
     using Teuchos::EnhancedNumberValidator;
-    typedef Teuchos::ScalarTraits< MagnitudeType > MST;
-    typedef Teuchos::ScalarTraits< int > IST;
+    typedef MagnitudeType MT;
+    typedef Teuchos::ScalarTraits<MT> MST;
+    typedef Teuchos::ScalarTraits<int> IST;
 
     // List of parameters accepted by MINRES, and their default values.
-    static RCP< const ParameterList > validPL;
+    RCP<ParameterList> pl = parameterList ("MINRES");
   
-    // If we haven't already initialized the list of accepted parameters
-    // and their default values, do so.
-    if (is_null (validPL)) 
-      {
-	// validPL is a pointer to a const ParameterList, so we need to
-	// make a non-const ParameterList first in order to fill it with
-	// parameters and their default values.
-	RCP< ParameterList > pl (new ParameterList);
-
-	pl->set ("Convergence Tolerance", static_cast< MagnitudeType >(1e-8),
-		 "Relative residual tolerance that needs to be achieved by "
-		 "the iterative solver, in order for the linear system to be "
-		 "declared converged.",
-		 rcp (new EnhancedNumberValidator< MagnitudeType > (MST::zero(), MST::rmax())));
-	pl->set ("Maximum Iterations", static_cast<int>(1000),
-		 "Maximum number of iterations allowed for each right-hand "
-		 "side solved.",
-		 rcp (new EnhancedNumberValidator< int > (0, INT_MAX)));
-	pl->set ("Block Size", static_cast<int>(1),
-		 "Number of vectors in each block.  WARNING: The current "
-		 "implementation of MINRES only accepts a block size of 1, "
-		 "since it can only solve for 1 right-hand side at a time.",
-		 rcp (new EnhancedNumberValidator< int > (1, 1)));  // [1,1] is inclusive range
-	pl->set ("Verbosity", (int) Belos::Errors,
-		 "The type(s) of solver information that should "
-		 "be written to the output stream.");
-	pl->set ("Output Style", (int) Belos::General,
-		 "What style is used for the solver information written "
-		 "to the output stream.");
-	pl->set ("Output Frequency", static_cast<int>(-1),
-		 "How often (in terms of number of iterations) intermediate "
-		 "convergence information should be written to the output stream."
-		 "  -1 means never.");
-	pl->set ("Output Stream", rcp(&std::cout, false),
-		 "A reference-counted pointer to the output stream where all "
-		 "solver output is sent.  The output stream defaults to stdout.");
-	pl->set ("Timer Label", std::string("Belos"),
-		 "The string to use as a prefix for the timer labels.");
-	validPL = pl;
-      }
-    return validPL;
+    pl->set ("Convergence Tolerance", MST::squareroot (MST::eps()),
+	     "Relative residual tolerance that needs to be achieved by "
+	     "the iterative solver, in order for the linear system to be "
+	     "declared converged.",
+	     rcp (new EnhancedNumberValidator<MT> (MST::zero(), MST::rmax())));
+    pl->set ("Maximum Iterations", static_cast<int>(1000),
+	     "Maximum number of iterations allowed for each right-hand "
+	     "side solved.",
+	     rcp (new EnhancedNumberValidator<int> (0, INT_MAX)));
+    pl->set ("Block Size", static_cast<int>(1),
+	     "Number of vectors in each block.  WARNING: The current "
+	     "implementation of MINRES only accepts a block size of 1, "
+	     "since it can only solve for 1 right-hand side at a time.",
+	     rcp (new EnhancedNumberValidator<int> (1, 1)));
+    pl->set ("Verbosity", (int) Belos::Errors,
+	     "The type(s) of solver information that should "
+	     "be written to the output stream.");
+    pl->set ("Output Style", (int) Belos::General,
+	     "What style is used for the solver information written "
+	     "to the output stream.");
+    pl->set ("Output Frequency", static_cast<int>(-1),
+	     "How often (in terms of number of iterations) intermediate "
+	     "convergence information should be written to the output stream."
+	     "  -1 means never.");
+    pl->set ("Output Stream", rcpFromRef(std::cout),
+	     "A reference-counted pointer to the output stream where all "
+	     "solver output is sent.  The output stream defaults to stdout.");
+    pl->set ("Timer Label", std::string("Belos"),
+	     "The string to use as a prefix for the timer labels.");
+    return pl;
   }
 
   //
@@ -458,37 +440,31 @@ namespace Belos {
   MinresSolMgr<ScalarType,MV,OP>::MinresSolMgr () :
     numIters_ (0),
     parametersSet_ (false)
-  {
-    // Pass in a null parameter list so setParameters grabs the default parameter list.
-    Teuchos::RCP< Teuchos::ParameterList > nullParams = Teuchos::null;
-    setParameters ( nullParams );
-  }
+  {}
 
   //
   // Primary constructor (use this one)
   //
   template<class ScalarType, class MV, class OP>
-  MinresSolMgr< ScalarType, MV, OP >::
-  MinresSolMgr (const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > > &problem,
-		const Teuchos::RCP< Teuchos::ParameterList >& params) :
+  MinresSolMgr<ScalarType, MV, OP>::
+  MinresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> > &problem,
+		const Teuchos::RCP<Teuchos::ParameterList>& params) :
     problem_ (problem),
     numIters_ (0),
     parametersSet_ (false)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
-
-    // If the parameter list pointer is null, then set the current parameters to the default parameter list.
-    if ( !is_null(params) ) {
-      setParameters( params );  
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(problem_.is_null(), std::invalid_argument, 
+			       "MinresSolMgr: The version of the constructor "
+			       "that takes a LinearProblem to solve was given a "
+			       "null LinearProblem.");
   }
 
   template<class ScalarType, class MV, class OP>
   void
-  MinresSolMgr< ScalarType, MV, OP >::
-  validateProblem (const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > > &problem) 
+  MinresSolMgr<ScalarType, MV, OP>::
+  validateProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> >& problem) 
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(problem), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument, 
 		       "MINRES requires a non-null LinearProblem object,"
 		       "which represents the linear problem to solve.");
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(problem->getOperator()), 
@@ -501,10 +477,10 @@ namespace Belos {
 		       "right-hand side.");
   }
 
-  template< class ScalarType, class MV, class OP >
+  template<class ScalarType, class MV, class OP>
   void
   MinresSolMgr< ScalarType, MV, OP>::
-  validateParameters (const Teuchos::RCP< Teuchos::ParameterList >& params)
+  validateParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     using Teuchos::Exceptions::InvalidParameterName;
     using Teuchos::is_null;
@@ -512,13 +488,14 @@ namespace Belos {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    if (is_null (params)) 
+    if (params.is_null()) {
       throw std::logic_error ("MinresSolMgr::validateParameters() requires a "
 			      "non-null input, but was given a null input.  Th"
 			      "is is likely the result of a bug in the impleme"
 			      "ntation of MinresSolMgr.");
+    }
     // List of default, known-valid parameters.
-    Teuchos::RCP< const Teuchos::ParameterList > defaults = defaultParameters();
+    RCP<const ParameterList> defaults = getValidParameters ();
 
     // Validate parameters' values in params, and add default values
     // for parameters that are not in params.
@@ -531,14 +508,16 @@ namespace Belos {
     // compatibility.  We could do this by implementing a variant of
     // validateParametersAndSetDefaults() that ignores parameters in
     // params that are not in defaults.
-    params->validateParametersAndSetDefaults(*defaults);
+    params->validateParametersAndSetDefaults (*defaults);
   }
 
   template<class ScalarType, class MV, class OP>
   void 
-  MinresSolMgr< ScalarType, MV, OP>::
-  readParameters (const Teuchos::RCP< const Teuchos::ParameterList >& params)
+  MinresSolMgr<ScalarType, MV, OP>::
+  setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::null;
@@ -546,136 +525,125 @@ namespace Belos {
     using std::string;
     using std::ostream;
 
-    // Set the block size.  The only valid value is 1, for this
-    // particular solver.
-    blockSize_ = params->get<int> ("Block Size");
+    RCP<const ParameterList> defaults = getValidParameters ();
 
-    // Change the timer label.
-    {
-      label_ = params->get< string > ("Timer Label");
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      const string solveLabel = label_ + ": MinresSolMgr total solve time";
-      timerSolve_ = Teuchos::TimeMonitor::getNewTimer (solveLabel);
-#endif
+    RCP<ParameterList> pl;
+    if (params.is_null()) {
+      // We don't need to validate the default parameter values.
+      pl = parameterList (*defaults);
+    } else {
+      pl = params;
+      pl->validateParametersAndSetDefaults (*defaults);
     }
 
-    // Set verbosity level
-    verbosity_ = params->get< int > ("Verbosity");
-    // We may not have created the output manager yet.  If we haven't,
-    // we will create it below and set the verbosity level
-    // appropriately.
-    if (! is_null (printer_))
-      printer_->setVerbosity (verbosity_);
+    //
+    // Read parameters from the parameter list.  We have already
+    // populated it with defaults.
+    //
+    blockSize_ = pl->get<int> ("Block Size");
+    verbosity_ = pl->get<int> ("Verbosity");
+    outputStyle_ = pl->get<int> ("Output Style");
+    outputFreq_ = pl->get<int>("Output Frequency");
+    outputStream_ = pl->get<RCP<std::ostream> > ("Output Stream");
+    convtol_ = pl->get<MagnitudeType> ("Convergence Tolerance");
+    maxIters_ = pl->get<int> ("Maximum Iterations");
+    //
+    // All done reading parameters from the parameter list.
+    // Now we know it's valid and we can store it.
+    //
+    params_ = pl;
 
-    // Set output style
-    outputStyle_ = params->get<int> ("Output Style");
-
-    // Set output stream
-    outputStream_ = params->get< RCP< std::ostream > > ("Output Stream");
-    // Tell the output manager about the new output stream.  We
-    // may not yet have created the output manager yet, so check
-    // here if it is not null.  We will create the output manager
-    // if necessary below.
-    if (! Teuchos::is_null (printer_))
-      printer_->setOStream (outputStream_);
-
-    // Set output frequency level
-    if (Belos::StatusTestDetails) 
-      {
-	outputFreq_ = params->get<int>("Output Frequency");
-	// We may not have created the status test output object yet.
-	if (! is_null (outputTest_))
-	  outputTest_->setOutputFrequency (outputFreq_);
+    // Change the timer label, and create the timer if necessary.
+    const string newLabel = pl->get<string> ("Timer Label");
+    {
+      if (newLabel != label_ || timerSolve_.is_null()) {
+	label_ = newLabel;
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+	const string solveLabel = label_ + ": MinresSolMgr total solve time";
+	// Unregister the old timer before creating a new one.
+	if (! timerSolve_.is_null()) {
+	  Teuchos::TimeMonitor::clearCounter (label_);
+	  timerSolve_ = Teuchos::null;
+	}
+	timerSolve_ = Teuchos::TimeMonitor::getNewCounter (solveLabel);
+#endif // BELOS_TEUCHOS_TIME_MONITOR
       }
+    }
 
-    // Create output manager
-    printer_ = rcp (new OutputManager< ScalarType >(verbosity_, outputStream_));
-  
+    // Create output manager, if necessary; otherwise, set its parameters.
+    bool recreatedPrinter = false;
+    if (printer_.is_null()) {
+      printer_ = rcp (new OutputManager<ScalarType> (verbosity_, outputStream_));
+      recreatedPrinter = true;
+    } else {
+      // Set the output stream's verbosity level.
+      printer_->setVerbosity (verbosity_);
+      // Tell the output manager about the new output stream.
+      printer_->setOStream (outputStream_);
+    }
+
     //
     // Set up the convergence tests
     //
-    typedef Belos::StatusTestCombo< ScalarType, MV, OP > StatusTestCombo_t;
-    typedef Belos::StatusTestGenResNorm< ScalarType, MV, OP > StatusTestResNorm_t;
+    typedef Belos::StatusTestCombo<ScalarType, MV, OP> StatusTestCombo_t;
+    typedef Belos::StatusTestGenResNorm<ScalarType, MV, OP> StatusTestResNorm_t;
 
-    // Set convergence tolerance
-    convtol_ = params->get< MagnitudeType >("Convergence Tolerance");
+    // Whether we need to recreate the full status test.  We only need
+    // to do that if at least one of convTest_ or maxIterTest_ had to
+    // be reallocated.
+    bool needToRecreateFullStatusTest = sTest.is_null();
 
     // Residual status test.  It uses the native residual to determine
     // if convergence was achieved.  Initialize it if we haven't yet
     // done so, otherwise tell it the new convergence tolerance.
-    if (is_null (convTest_))
+    if (convTest_.is_null()) {
       convTest_ = rcp (new StatusTestResNorm_t (convtol_, -1));
-    else
+      needToRecreateFullStatusTest = true;
+    } else {
       convTest_->setTolerance (convtol_);
-
-    // Set maximum number of iterations.
-    maxIters_ = params->get<int>("Maximum Iterations");
+    }
 
     // Maximum number of iterations status test.  It tells the solver to
     // stop iteration, if the maximum number of iterations has been
     // exceeded.  Initialize it if we haven't yet done so, otherwise
     // tell it the new maximum number of iterations.
-    if (is_null (maxIterTest_))
+    if (maxIterTest_.is_null()) {
       maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP> (maxIters_));
-    else
+      needToRecreateFullStatusTest = true;
+    } else {
       maxIterTest_->setMaxIters (maxIters_);
+    }
 
     // Create the full status test if we need to.  
     //
-    // The full status test: maximum number of iterations reached, OR
-    // residual has converged.
+    // The full status test: the maximum number of iterations have
+    // been reached, OR the residual has converged.
     //
-    // "If we need to" means if the status test was never created
-    // before.  The full status test has pointers to maxIterTest_ and
-    // convTest_, so if we changed either the convergence tolerance
-    // and/or the maximum number of iterations, the full status test
-    // will get the results of the updates.
-    if (is_null (sTest_))
-      sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, maxIterTest_, convTest_));
+    // "If we need to" means either that the status test was never
+    // created before, or that its two component tests had to be
+    // reallocated.
+    if (needToRecreateFullStatusTest) {
+      sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, 
+					   maxIterTest_, convTest_));
+    }
   
     // If necessary, create the status test output class.  This class
-    // manages and formats the output from the status test.
-    if (is_null (outputTest_))
-      {
-	StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
-	outputTest_ = stoFactory.create (printer_, sTest_, outputFreq_,
-					 Passed+Failed+Undefined);
-	// Set the solver string for the output test
-	outputTest_->setSolverDesc (std::string(" MINRES "));
-      }
+    // manages and formats the output from the status test.  We have
+    // to recreate the output test if we had to (re)allocate either
+    // printer_ or sTest_.
+    if (outputTest_.is_null() || needToRecreateFullStatusTest || recreatedPrinter) {
+      StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
+      outputTest_ = stoFactory.create (printer_, sTest_, outputFreq_,
+				       Passed+Failed+Undefined);
+    } else {
+      outputTest_->setOutputFrequency (outputFreq_);
+    }
+    // Set the solver string for the output test.
+    // StatusTestOutputFactory has no constructor argument for this.
+    outputTest_->setSolverDesc (std::string (" MINRES "));
 
-    // Create the timer if we need to.
-    if (is_null (timerSolve_))
-      {
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-	const std::string solveLabel = label_ + ": MinresSolMgr total solve time";
-	timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
-#endif
-      }
     // Inform the solver manager that the current parameters were set.
     parametersSet_ = true;
-  }
-
-
-  template<class ScalarType, class MV, class OP>
-  void 
-  MinresSolMgr< ScalarType, MV, OP>::
-  setParameters (const Teuchos::RCP< Teuchos::ParameterList >& params)
-  {
-    if (Teuchos::is_null (params))
-      // We don't need to validate the default parameter values.
-      // However, we do need to make a deep copy, since params_ is
-      // const and the input params is non-const.
-      params_ = Teuchos::rcp (new Teuchos::ParameterList (*defaultParameters()));
-    else
-      {
-	// Validate params.  All the entries that should be there, are
-	// there, with default values if the entries were not supplied in
-	// the input parameter list, and with valid values otherwise.
-	validateParameters (params);
-	params_ = params; // both are non-const
-      }
-    readParameters (params_);
   }
 
 
