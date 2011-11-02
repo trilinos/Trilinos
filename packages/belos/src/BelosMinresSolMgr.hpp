@@ -687,7 +687,7 @@ namespace Belos {
 
     // Create MINRES iteration object.  Pass along the solver
     // manager's parameters, which have already been validated.
-    typedef MinresIteration<ScalarType, MV, OP> iter_type;
+    typedef MinresIter<ScalarType, MV, OP> iter_type;
     RCP<iter_type> minres_iter =
       rcp (new iter_type (problem_, printer_, outputTest_, *params_));
 
