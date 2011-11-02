@@ -236,6 +236,17 @@ public:
   /// \note If writeGlobalStats is true, this method <i>must</i> be
   ///   called by all processors.  This method will <i>only</i>
   ///   perform communication if writeGlobalStats is true.
+  ///
+  /// \note If Trilinos has been built with MPI support, but MPI has
+  ///   not yet been initialized (via MPI_Init() or one of the
+  ///   wrappers in Epetra or Teuchos), summarize() will use a
+  ///   "serial" communicator (that does not actually use MPI).  This
+  ///   may produce output on all the MPI processes if you are running
+  ///   with Trilinos as an MPI job with more than one process.  Thus,
+  ///   if you intend to use this method in parallel, you should first
+  ///   initialize MPI.  (We cannot initialize MPI for you, because we
+  ///   have no way to know whether you intend to run an MPI-enabled
+  ///   build serially.)
   static void 
   summarize (std::ostream &out=std::cout, 
 	     const bool alwaysWriteLocal=false,

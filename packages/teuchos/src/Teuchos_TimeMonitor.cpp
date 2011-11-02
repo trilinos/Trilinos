@@ -359,9 +359,10 @@ namespace Teuchos {
 			       << ".  Please report this bug to the Teuchos developers.");
 	  }
 
-	// mergeTimers() just merges timer names, not their actual
-	// data.  Now we need to fill globalTimerData with this MPI
-	// process' timer data for those timers in globalTimerNames.
+	// mergeCounterNames() just merges the counters' names, not
+	// their actual data.  Now we need to fill globalTimerData
+	// with this MPI process' timer data for those timers in
+	// globalTimerNames.
 	//
 	// All processes need the full list of global timers, since
 	// there may be some global timers that are not local timers.
