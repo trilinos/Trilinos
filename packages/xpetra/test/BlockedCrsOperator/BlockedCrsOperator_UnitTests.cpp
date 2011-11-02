@@ -758,7 +758,7 @@ namespace {
     // build 1st block matrix
 
     // build Xpetra objects from Epetra_CrsMatrix objects
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xfuA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(fullA));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xfuA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(fullA)); //TODO: should use ALL the template parameters
     Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11));
     Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12));
     Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A21));

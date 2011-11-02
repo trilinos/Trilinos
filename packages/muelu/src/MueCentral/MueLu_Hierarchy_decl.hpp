@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Types.hpp"
@@ -40,15 +38,13 @@ namespace MueLu {
     //@{
 
     //! Default constructor.
-    Hierarchy()
-    ;
+    Hierarchy();
 
     //! Constructor
-    Hierarchy(const RCP<Operator> & A)
-    ;
+    Hierarchy(const RCP<Operator> & A);
 
     //! Destructor.
-    virtual ~Hierarchy() ;
+    virtual ~Hierarchy();
 
     //@}
 
@@ -56,33 +52,33 @@ namespace MueLu {
     //@{
 
     //!
-    void SetMaxCoarseSize(Xpetra::global_size_t const &maxCoarseSize) ;
+    void SetMaxCoarseSize(Xpetra::global_size_t const &maxCoarseSize);
 
     //!
-    Xpetra::global_size_t GetMaxCoarseSize() const ;
+    Xpetra::global_size_t GetMaxCoarseSize() const;
 
   private:
-    int LastLevelID() const ;
+    int LastLevelID() const;
 
   public:
 
     //! Add a level at the end of the hierarchy
-    void AddLevel(const RCP<Level> & level) ;
+    void AddLevel(const RCP<Level> & level);
 
     //! Add a new level at the end of the hierarchy
-    void AddNewLevel() ;
+    void AddNewLevel();
 
 
     //! Retrieve a certain level from hierarchy.
-    RCP<Level> & GetLevel(const int levelID = 0) ;
+    RCP<Level> & GetLevel(const int levelID = 0);
 
-    LO GetNumLevels() const ;
+    LO GetNumLevels() const;
 
     //! Indicate that Iterate should use tranpose of prolongator for restriction operations.
-    void SetImplicitTranspose(const bool &implicit) ;
+    void SetImplicitTranspose(const bool &implicit);
 
     //! If true is returned, iterate will use tranpose of prolongator for restriction operations.
-    bool GetImplicitTranspose() const ;
+    bool GetImplicitTranspose() const;
 
     //@}
 
@@ -101,7 +97,7 @@ namespace MueLu {
                                         const FactoryBase & RFact, 
                                         const TwoLevelFactoryBase & AcFact, 
                                         const SmootherFactory & SmooFact, 
-                                        const int &startLevel = 0, const int &numDesiredLevels = 10) ;
+                                        const int &startLevel = 0, const int &numDesiredLevels = 10);
 
     /*! @brief Populate hierarchy with A's, R's, and P's.
 
@@ -115,10 +111,10 @@ namespace MueLu {
     */
     Teuchos::ParameterList FillHierarchy(const PFactory & PFact, const RFactory & RFact, 
                                          const TwoLevelFactoryBase & AcFact, 
-                                         const int startLevel = 0, const int numDesiredLevels = 10) ;
+                                         const int startLevel = 0, const int numDesiredLevels = 10);
     // FillHierarchy
 
-    Teuchos::ParameterList Setup(const FactoryManager & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10) ; // Setup()
+    Teuchos::ParameterList Setup(const FactoryManager & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
 
     /*! @brief Set solve method for coarsest level.
 
@@ -131,7 +127,7 @@ namespace MueLu {
     */
     //TODO: remove PRE/POST
 
-    void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH) ;
+    void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH);
 
     /*! @brief Construct smoothers on all levels but the coarsest.
 
@@ -143,9 +139,9 @@ namespace MueLu {
     to define a smoother for the last level. Otherwise, a direct solve is
     assumed
     */
-    void SetSmoothers(SmootherFactory const & smooFact, LO const & startLevel = 0, LO numDesiredLevels = -1) ; //SetSmoothers()
+    void SetSmoothers(SmootherFactory const & smooFact, LO const & startLevel = 0, LO numDesiredLevels = -1); //SetSmoothers()
 
-    // #define GimmeNorm(someVec, someLabel) ;
+    // #define GimmeNorm(someVec, someLabel);
 
     /*!
       @brief Apply the multigrid preconditioner.
@@ -160,8 +156,7 @@ namespace MueLu {
       @param Cycle Supports VCYCLE and WCYCLE types.
     */
     void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value = 1
-                 const bool &InitialGuessIsZero = false, const CycleType &Cycle = VCYCLE, const LO &startLevel = 0)
-    ; //Iterate()
+                 const bool &InitialGuessIsZero = false, const CycleType &Cycle = VCYCLE, const LO &startLevel = 0);
 
     //@}
 
@@ -169,12 +164,12 @@ namespace MueLu {
     //@{
     
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
     
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     //@}
 
@@ -192,9 +187,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-// TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
-
-
 #define MUELU_HIERARCHY_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_HIERARCHY_DECL_HPP

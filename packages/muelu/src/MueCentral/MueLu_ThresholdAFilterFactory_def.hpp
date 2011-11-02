@@ -1,77 +1,42 @@
 #ifndef MUELU_THRESHOLDAFILTERFACTORY_DEF_HPP
 #define MUELU_THRESHOLDAFILTERFACTORY_DEF_HPP
 
-/*
- * MueLu_ThresholdAFilterFactory.hpp
- *
- *  Created on: 14.10.2011
- *      Author: tobias
- */
+#include "MueLu_ThresholdAFilterFactory_decl.hpp"
 
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-
-#include "MueLu_Level.hpp"
-#include "MueLu_Monitor.hpp"
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_CrsOperator.hpp>
+#include "MueLu_Level.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
-  /*!
-    @class ThresholdAFilterFactory class.
-    @brief Factory for building a thresholded operator.
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ThresholdAFilterFactory(const std::string& ename, const FactoryBase* fac, const Scalar threshold)
+    : varName_(ename), factory_(fac), threshold_(threshold)
+  { }
 
-  */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~ThresholdAFilterFactory() {}
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class ThresholdAFilterFactory : public SingleLevelFactoryBase {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+    currentLevel.DeclareInput(varName_,factory_);
+  }
 
-    #include "MueLu_UseShortNames.hpp"
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const {
+    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator; //TODO
+    typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperator; //TODO
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+    RCP<Operator> Ain = currentLevel.Get< RCP<Operator> >(varName_, factory_);
 
-    //! Constructor.
-    ThresholdAFilterFactory(const std::string& ename, const FactoryBase* fac, const Scalar threshold)
-      : varName_(ename), factory_(fac), threshold_(threshold)
-    { }
+    Monitor m(*this, "A filter (thresholding)");
 
-    //! Destructor.
-    virtual ~ThresholdAFilterFactory() {}
-    //@}
+    // create new empty Operator
+    RCP<CrsOperator> Aout = rcp(new CrsOperator(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile)); //FIXME
 
-    //! Input
-    //@{
-
-    void DeclareInput(Level &currentLevel) const {
-      currentLevel.DeclareInput(varName_,factory_);
-    }
-
-    //@}
-
-    //@{
-    //! @name Build methods.
-
-    //! Build an object with this factory.
-    void Build(Level & currentLevel) const {
-      RCP<Operator> Ain = currentLevel.Get< RCP<Operator> >(varName_, factory_);
-
-      Monitor m(*this, "A filter (thresholding)");
-
-      // create new empty Operator
-      RCP<CrsOperator> Aout = rcp(new CrsOperator(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile)); //FIXME
-
-      // loop over local rows
-      for(size_t row=0; row<Ain->getNodeNumRows(); row++)
+    // loop over local rows
+    for(size_t row=0; row<Ain->getNodeNumRows(); row++)
       {
         size_t nnz = Ain->getNumEntriesInLocalRow(row);
 
@@ -98,24 +63,13 @@ namespace MueLu {
         Aout->insertGlobalValues(Ain->getRowMap()->getGlobalElement(row), indout.view(0,indout.size()), valout.view(0,valout.size()));
       }
 
-      Aout->fillComplete(Ain->getDomainMap(), Ain->getRangeMap());
+    Aout->fillComplete(Ain->getDomainMap(), Ain->getRangeMap());
 
-      GetOStream(Statistics0, 0) << "Nonzeros in " << varName_ << "(input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering " << varName_ << " (parameter: " << threshold_ << "): " << Aout->getGlobalNumEntries() << std::endl;
+    GetOStream(Statistics0, 0) << "Nonzeros in " << varName_ << "(input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering " << varName_ << " (parameter: " << threshold_ << "): " << Aout->getGlobalNumEntries() << std::endl;
 
-      currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<Operator>(Aout), this);
-    }
+    currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<Operator>(Aout), this);
+  }
 
-    //@}
+} // namespace MueLu
 
-  private:
-    std::string         varName_;   ///< name of input and output variable
-    const FactoryBase*  factory_;   ///< generating factory of input variable
-    const Scalar        threshold_; ///< threshold parameter
-
-
-  }; // class ThresholdAFilterFactory
-
-} //#ifndef MUELU_THRESHOLDAFILTERFACTORY_HPP_namespace MueLu
-
-#define MUELU_THRESHOLDAFILTERFACTORY_SHORT
 #endif // MUELU_THRESHOLDAFILTERFACTORY_DEF_HPP

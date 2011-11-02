@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -77,5 +75,4 @@ private:
 } //namespace MueLu
 
 #define MUELU_RAPFACTORY_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_RAPFACTORY_DECL_HPP

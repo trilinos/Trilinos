@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 /*
  * MueLu_ThresholdAFilterFactory.hpp
  *
@@ -20,8 +18,6 @@
 
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-
-
 
 namespace MueLu {
 
@@ -71,8 +67,7 @@ namespace MueLu {
 
   }; // class ThresholdAFilterFactory
 
-} //#ifndef MUELU_THRESHOLDAFILTERFACTORY_HPP_namespace MueLu
+} // namespace MueLu
 
 #define MUELU_THRESHOLDAFILTERFACTORY_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_THRESHOLDAFILTERFACTORY_DECL_HPP

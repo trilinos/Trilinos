@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include <map>
 
 #include <Xpetra_Operator.hpp>
@@ -90,11 +88,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-//TODO: add operator[]
-//TODO: should we use a parameterList instead of a std::map? It might be useful to tag which factory have been used and report unused factory.
-//TODO: add an option 'NoDefault' to check if we are using any default factory.
-//TODO: use Teuchos::ConstNonConstObjectContainer to allow user to modify factories after a GetFactory()
-
 #define MUELU_FACTORYMANAGER_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_FACTORYMANAGER_DECL_HPP

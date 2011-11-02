@@ -1,13 +1,7 @@
-//TMP
-#include "MueLu_Utilities_def.hpp"
-#define MUELU_UTILITIES_DECL_HPP
-
 #ifndef MUELU_UTILITIES_DECL_HPP
 #define MUELU_UTILITIES_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -54,6 +48,11 @@
 #include "Tpetra_RowMatrixTransposer_def.hpp"
 #endif
 
+#ifdef HAVE_MUELU_ML
+#include "ml_operator.h"
+#include "ml_epetra_utils.h"
+#endif
+
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
@@ -61,11 +60,6 @@
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
 #define maxAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
-
-#ifdef HAVE_MUELU_ML
-#include "ml_operator.h"
-#include "ml_epetra_utils.h"
-#endif
 
 namespace MueLu {
 
@@ -388,5 +382,4 @@ public:
 } //namespace MueLu
 
 #define MUELU_UTILITIES_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_UTILITIES_DECL_HPP
