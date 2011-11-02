@@ -35,7 +35,7 @@ C
       ELSE
         NEXTN = TESTV + MODLUS
       ENDIF
-      RAND = REAL(NEXTN)/REAL(MODLUS)
+      RAN1 = REAL(NEXTN)/REAL(MODLUS)
 C
       RETURN
       END

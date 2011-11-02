@@ -12,12 +12,14 @@
 static float *old_ewgts;	/* space for old edge weights */
 
 
-void      compress_ewgts(graph, nvtxs, nedges, ewgt_max, using_ewgts)
-struct vtx_data **graph;	/* list of graph info for each vertex */
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-float     ewgt_max;		/* largest edge weight */
-int       using_ewgts;		/* are edge weights being used? */
+void 
+compress_ewgts (
+    struct vtx_data **graph,	/* list of graph info for each vertex */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    double ewgt_max,		/* largest edge weight */
+    int using_ewgts		/* are edge weights being used? */
+)
 {
     extern double EWGT_RATIO_MAX;	/* max allowed ewgt/nvtxs */
     float    *old_ewptr;	/* loops through old edge weights */
@@ -63,9 +65,11 @@ int       using_ewgts;		/* are edge weights being used? */
 }
 
 
-void      restore_ewgts(graph, nvtxs)
-struct vtx_data **graph;	/* list of graph info for each vertex */
-int       nvtxs;		/* number of vertices in graph */
+void 
+restore_ewgts (
+    struct vtx_data **graph,	/* list of graph info for each vertex */
+    int nvtxs		/* number of vertices in graph */
+)
 {
     int       i;		/* loop counter */
 

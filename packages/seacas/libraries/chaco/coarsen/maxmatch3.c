@@ -12,11 +12,13 @@
 /* Randomly permute vertices, and then have each select an unmatched */
 /* neighbor. */
 
-int       maxmatch3(graph, nvtxs, mflag, using_ewgts)
-struct vtx_data **graph;	/* array of vtx data for graph */
-int       nvtxs;		/* number of vertices in graph */
-int      *mflag;		/* flag indicating vtx selected or not */
-int       using_ewgts;		/* are edge weights being used? */
+int 
+maxmatch3 (
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int *mflag,		/* flag indicating vtx selected or not */
+    int using_ewgts		/* are edge weights being used? */
+)
 {
     extern int HEAVY_MATCH;	/* pick heavy edges in matching? */
     int      *order;		/* random ordering of vertices */

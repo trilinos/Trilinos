@@ -98,15 +98,15 @@ C   --   Sets NPTIMS, TMIN, TMAX, DELT, NINTV, WHONLY of /TIMES/
 C   --   Sets ISZOOM, ZMLIM of /ZOOM/
 C   --   Uses FNCNAM of /FNCTBL/
 
-      include 'params.blk'
-      include 'namlen.blk'
-      include 'dbnums.blk'
-      include 'dbtitl.blk'
-      include 'times.blk'
-      include 'zoom.blk'
-      include 'filter.blk'
-      include 'remove.blk'
-      include 'fnctbc.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbtitl.blk'
+      include 'ag_times.blk'
+      include 'ag_zoom.blk'
+      include 'ag_filter.blk'
+      include 'ag_remove.blk'
+      include 'ag_fnctbc.blk'
       
       common /debugc/ cdebug
       common /debugn/ idebug

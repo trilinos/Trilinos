@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
     precParams.set("smoother: sweeps",2);
     precParams.set("smoother: pre or post", "both");
     precParams.set("coarse: max size", 200);
+    //precParams.set("PDE equations",sz);
 #ifdef HAVE_ML_AMESOS
     precParams.set("coarse: type","Amesos-KLU");
 #else

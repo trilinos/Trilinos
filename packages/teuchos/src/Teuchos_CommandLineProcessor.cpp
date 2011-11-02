@@ -42,14 +42,19 @@
 // //////////////////////////////////////////////////
 // Teuchos_CommandLineProcessor.cpp
 
+
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Assert.hpp"
+
 
 namespace {
 
+
 inline int my_max( int a, int b ) { return a > b ? a : b; }
+
 
 std::string remove_quotes( const std::string& str )
 {
@@ -58,6 +63,7 @@ std::string remove_quotes( const std::string& str )
   return str.substr(1,str.size()-2);
 }
 
+
 std::string add_quotes( const std::string& str )
 {
   if(str[0] == '\"')
@@ -65,9 +71,12 @@ std::string add_quotes( const std::string& str )
   return "\"" + str + "\"";
 }
 
+
 } // end namespace
 
+
 namespace Teuchos {
+
 
 const bool  CommandLineProcessor::output_all_front_matter_default_(false);
 const bool  CommandLineProcessor::output_show_line_prefix_default_(false);
@@ -75,6 +84,8 @@ const bool  CommandLineProcessor::output_show_tab_count_default_(false);
 const bool  CommandLineProcessor::output_show_proc_rank_default_(false);
 const int   CommandLineProcessor::output_to_root_rank_only_default_(0);
 const bool  CommandLineProcessor::print_rcpnode_statistics_on_exit_default_(false);
+const bool  CommandLineProcessor::show_timer_summary_on_exit_default_(false);
+
 
 CommandLineProcessor::CommandLineProcessor(
   bool   throwExceptions_in
@@ -90,16 +101,27 @@ CommandLineProcessor::CommandLineProcessor(
   ,output_show_proc_rank_(output_show_proc_rank_default_)
   ,output_to_root_rank_only_(output_to_root_rank_only_default_)
   ,print_rcpnode_statistics_on_exit_(print_rcpnode_statistics_on_exit_default_)
+  ,show_timer_summary_on_exit_(show_timer_summary_on_exit_default_)
+  ,printed_timer_summary_(false)
   ,added_extra_output_setup_options_(false)
   ,in_add_extra_output_setup_options_(false)
 {}
 
+
+CommandLineProcessor::~CommandLineProcessor()
+{
+  printFinalTimerSummary();
+}
+
+
 // Set up options
+
 
 void CommandLineProcessor::setDocString( const char doc_string[] )
 {
   doc_string_ = doc_string;
 }
+
 
 void CommandLineProcessor::setOption(
   const char     option_true[]
@@ -120,6 +142,7 @@ void CommandLineProcessor::setOption(
     );
 }
 
+
 void CommandLineProcessor::setOption(
   const char     option_name[]
   ,int           *option_val
@@ -136,6 +159,7 @@ void CommandLineProcessor::setOption(
       any(option_val))
     );
 }
+
 
 void CommandLineProcessor::setOption(
   const char     option_name[]
@@ -154,6 +178,7 @@ void CommandLineProcessor::setOption(
     );
 }
 
+
 void CommandLineProcessor::setOption(
   const char     option_name[]
   ,std::string   *option_val
@@ -171,7 +196,9 @@ void CommandLineProcessor::setOption(
     );
 }
 
+
 // Parse command line
+
 
 CommandLineProcessor::EParseCommandLineReturn
 CommandLineProcessor::parse(
@@ -298,6 +325,7 @@ CommandLineProcessor::parse(
   }
   return PARSE_SUCCESSFUL;
 }
+
 
 void CommandLineProcessor::printHelpMessage( const char program_name[],
   std::ostream &out ) const
@@ -451,7 +479,28 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
   }
 }
 
+
+void CommandLineProcessor::printFinalTimerSummary(
+  const Ptr<std::ostream> &out_inout
+  )
+{
+  if (!printed_timer_summary_ && show_timer_summary_on_exit_) {
+    RCP<std::ostream> out;
+    if (nonnull(out_inout)) {
+      out = rcpFromPtr(out_inout);
+    }
+    else {
+      out = VerboseObjectBase::getDefaultOStream();
+    }
+    TimeMonitor::summarize(*out << "\n");
+    printed_timer_summary_ = true;
+  }
+  
+}
+
+
 // private
+
 
 void CommandLineProcessor::add_extra_output_setup_options() const
 {
@@ -499,10 +548,16 @@ void CommandLineProcessor::add_extra_output_setup_options() const
     " this prints to std::cerr or every process so do not turn this on for very large"
     " parallel runs."
     );
+  clp->setOption(
+    "show-timer-summary", "no-show-timer-sumary", &clp->show_timer_summary_on_exit_,
+    "If true, then Teuchos::TimeMonitor::summarize() is called in"
+    " CommandLineProcessor's destructor (usually at the end of main)."
+    );
 
   clp->added_extra_output_setup_options_ = true;
   clp->in_add_extra_output_setup_options_ = false;
 }
+
 
 void CommandLineProcessor::setEnumOption(
   const char    enum_option_name[]
@@ -532,6 +587,7 @@ void CommandLineProcessor::setEnumOption(
       std::string(documentation?documentation:""), any(opt_id))
     );
 }
+
 
 bool CommandLineProcessor::set_enum_value(
   int                  argv_i
@@ -569,6 +625,7 @@ bool CommandLineProcessor::set_enum_value(
   return true;
 }
 
+
 void CommandLineProcessor::print_enum_opt_names(
   const int            enum_id
   ,std::ostream        &out
@@ -589,6 +646,7 @@ void CommandLineProcessor::print_enum_opt_names(
   }
 }
 
+
 std::string
 CommandLineProcessor::enum_opt_default_val_name(
   const std::string    &enum_name
@@ -604,6 +662,7 @@ CommandLineProcessor::enum_opt_default_val_name(
       )
     );
 }
+
 
 int CommandLineProcessor::find_enum_opt_index(
   const std::string           &enum_opt_name
@@ -629,6 +688,7 @@ int CommandLineProcessor::find_enum_opt_index(
   }
   return itr - itr_begin;
 }
+
 
 bool CommandLineProcessor::get_opt_val(
   const char     str[]
@@ -674,6 +734,5 @@ void CommandLineProcessor::print_bad_opt(
 #undef CLP_ERR_MSG
 }
 
+
 } // end namespace Teuchos
-
-

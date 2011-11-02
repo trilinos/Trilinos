@@ -8,17 +8,18 @@
 #include "params.h"
 
 
-int       define_subcubes(nsets_real, ndims_tot, ndims, set, set_info, subsets,
-			            inert, pstriping, hop_mtx_special)
-int       nsets_real;		/* actual number of sets being created */
-int       ndims_tot;		/* total hypercube dimensions */
-int       ndims;		/* # dimension in this cut */
-struct set_info *set;		/* data for set being divided */
-struct set_info *set_info;	/* data for all sets */
-int    *subsets;		/* subsets to be created */
-int       inert;		/* using inertial method? */
-int      *pstriping;		/* cut in single direction? */
-int     hop_mtx_special[MAXSETS][MAXSETS];	/* nonstandard hop values */
+int 
+define_subcubes (
+    int nsets_real,		/* actual number of sets being created */
+    int ndims_tot,		/* total hypercube dimensions */
+    int ndims,		/* # dimension in this cut */
+    struct set_info *set,		/* data for set being divided */
+    struct set_info *set_info,	/* data for all sets */
+    int *subsets,		/* subsets to be created */
+    int inert,		/* using inertial method? */
+    int *pstriping,		/* cut in single direction? */
+    int hop_mtx_special[MAXSETS][MAXSETS]	/* nonstandard hop values */
+)
 {
     extern int KL_METRIC;	/* 2 => using hops so generate hop matrix */
     int       hop_flag;		/* use special hop matrix? */

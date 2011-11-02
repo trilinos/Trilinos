@@ -173,8 +173,10 @@ C            --Get BY and step value
             GOTO 110
          END IF
 
-         IF (IRANGE(1) .GT. MAXVAL .AND. MAXVAL .GT. 0) IRANGE(1) = MAXVAL
-         IF (IRANGE(2) .GT. MAXVAL .AND. MAXVAL .GT. 0) IRANGE(2) = MAXVAL
+         IF (IRANGE(1) .GT. MAXVAL .AND. MAXVAL .GT. 0)
+     *     IRANGE(1) = MAXVAL
+         IF (IRANGE(2) .GT. MAXVAL .AND. MAXVAL .GT. 0)
+     *     IRANGE(2) = MAXVAL
       END IF
 
       RETURN

@@ -1915,6 +1915,7 @@ int ML_overlap(ML_Operator *oldA, ML_Operator *newA, int overlap,
 			       tempA->outvec_leng, NULL, 0);
  ML_Operator_Set_Getrow(newA, tempA->outvec_leng, CSR_getrow);
  newA->max_nz_per_row = tempA->max_nz_per_row;
+ newA->min_nz_per_row = tempA->min_nz_per_row;
  newA->N_nonzeros     = nz_ptr;
  ML_Operator_Set_ApplyFunc (newA, CSR_matvec);
 
@@ -1971,7 +1972,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
                                   int perfAndCommStats)
 {
   double t1;
-  double j, Nglobrows, Nglobcols;
+  double j, Nglobrows, Nglobcols, NglobNonzeros;
   int i,k,NumActiveProc, proc_active;
   ML_Comm *comm = mat->comm;
   int mypid = mat->comm->ML_mypid;
@@ -1980,6 +1981,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
   char *origlabel = NULL, *modlabel = NULL;
   ML_CommInfoOP *c_info;
   int minnzs,maxnzs;
+  int minStencil,maxStencil;
   char eqLine[76];
 
   if (ML_Get_PrintLevel() == 0)
@@ -2010,6 +2012,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
   Nglobcols = ML_gsum_double((double)i, comm);
   i = mat->outvec_leng; 
   Nglobrows = ML_gsum_double((double)i, comm);
+  NglobNonzeros = ML_Comm_GsumDouble(comm, (double) mat->N_nonzeros);
 
   for (i=0; i<75; i++) eqLine[i] = '=';
   eqLine[75] = '\0';
@@ -2022,19 +2025,17 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
       i = mat->getrow->pre_comm->N_neighbors;
     else i = 0;
     i = ML_Comm_GsumInt(comm, i);
-    j = ML_Comm_GsumDouble(comm, (double) mat->N_nonzeros);
     maxnzs = ML_gmax_int(mat->N_nonzeros, comm);
     maxproc = ML_gmax_int( (maxnzs == mat->N_nonzeros ? mypid:0), comm);
     if (proc_active) k=mat->N_nonzeros;
     else k = maxnzs;
     minnzs = ML_gmin_int(k, comm);
     minproc = ML_gmax_int((minnzs == mat->N_nonzeros ? mypid:0), comm);
-    t1 = ML_gsum_double( (proc_active ? (double) mat->N_nonzeros : 0.0), comm);
-    t1 = t1/((double) NumActiveProc);
+    t1 = NglobNonzeros/((double) NumActiveProc);
     if (mypid == 0) {
        printf("= %s =\n",eqLine);
        printf("%s: %1.0f rows, %1.0f cols, %1.0f global nonzeros\n",
-              mat->label,Nglobrows,Nglobcols, j);
+              mat->label,Nglobrows,Nglobcols, NglobNonzeros);
        printf("%s: num PDES = %d, lambda_max = %2.3e, lambda_min = %2.3e\n",
               mat->label, mat->num_PDEs, mat->lambda_max, mat->lambda_min);
        printf("%s: %2.3e avg nbrs, %d active proc\n\n",
@@ -2043,7 +2044,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
               mat->label,maxproc,maxnzs);
        printf("%s: min nonzeros (pid %d) \t= %d\n",
               mat->label,minproc,minnzs);
-       printf("%s: avg nonzeros \t\t= %2.3e\n",
+       printf("%s: avg nonzeros per core \t\t= %2.3e\n",
               mat->label,t1);
     }
 
@@ -2058,10 +2059,25 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
       printf("%s: min number of rows (pid %d) \t= %d\n",
              mat->label,minproc,minrows);
     }
+
     t1 = ML_gsum_double( (proc_active ? (double) mat->outvec_leng : 0.0), comm);
     t1 = t1/((double) NumActiveProc);
     if (mypid == 0)
        printf("%s: avg number of rows \t\t= %2.3e\n",mat->label,t1);
+
+    maxStencil = ML_gmax_int(mat->max_nz_per_row, comm);
+    maxproc = ML_gmax_int( (maxStencil == mat->max_nz_per_row ? mypid:0), comm);
+    minStencil = ML_gmin_int( (proc_active ? mat->min_nz_per_row : 1e11), comm);
+    minproc = ML_gmax_int( (minStencil == mat->min_nz_per_row ? mypid:0), comm);
+    t1 = NglobNonzeros/((double) Nglobrows);
+    if (mypid == 0) {
+      printf("%s: max stencil size (pid %d) \t= %d\n",
+             mat->label,maxproc,maxStencil);
+      printf("%s: min stencil size (pid %d) \t= %d\n",
+             mat->label,minproc,minStencil);
+      printf("%s: avg stencil size \t\t= %2.3e\n",
+             mat->label,t1);
+    }
 
     if (perfAndCommStats == ML_TRUE) {
       /* communication statistics */
@@ -2712,7 +2728,7 @@ ML_Operator *ML_CSRmatrix_ColumnSubset(ML_Operator *Amat, int Nsubset,
   struct ML_CSR_MSRdata *csr_data;
   int    *row_ptr, *columns, *newrowptr, *newcolumns;
   double *values, *newvalues;
-  int    i, j, n, count, max_nz_per_row, nnz_in_row;
+  int    i, j, n, count, max_nz_per_row, min_nz_per_row, nnz_in_row;
   ML_Operator *Amat_subset;
 
   /* This only works for CSR matrices */
@@ -2739,6 +2755,7 @@ ML_Operator *ML_CSRmatrix_ColumnSubset(ML_Operator *Amat, int Nsubset,
   count      = 0;
   newrowptr[0]   = 0;
   max_nz_per_row = 0;
+  min_nz_per_row = 1e6;
   for (i = 0; i < n ; i++) {
     nnz_in_row = 0;
     for (j = row_ptr[i]; j < row_ptr[i+1]; j++) {
@@ -2749,6 +2766,7 @@ ML_Operator *ML_CSRmatrix_ColumnSubset(ML_Operator *Amat, int Nsubset,
       }
     }
     if (nnz_in_row > max_nz_per_row) max_nz_per_row = nnz_in_row;
+    if (nnz_in_row < min_nz_per_row && nnz_in_row>0) min_nz_per_row = nnz_in_row;
     newrowptr[i+1] = count;
   }
   csr_data =(struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
@@ -2765,6 +2783,7 @@ ML_Operator *ML_CSRmatrix_ColumnSubset(ML_Operator *Amat, int Nsubset,
                Amat->getrow->pre_comm, Nsubset, subset);
   Amat_subset->data_destroy   = ML_CSR_MSRdata_Destroy;
   Amat_subset->max_nz_per_row = max_nz_per_row;
+  Amat_subset->min_nz_per_row = min_nz_per_row;
   Amat_subset->N_nonzeros     = count;
 return Amat_subset;
 }

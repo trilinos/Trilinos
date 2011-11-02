@@ -125,7 +125,6 @@ C   --   LENSTR - (STRLIB) Get string length
      &      STATUS=STAT(:LSTAT), ERR=10)
 
       END IF
- 30   CONTINUE
 
       IERR = 0
  10   CONTINUE

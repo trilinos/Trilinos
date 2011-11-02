@@ -51,16 +51,17 @@ static void bpflow(), reachability(), touch();
 static int augment(), touch2();
 
 
-void      wbpcover(n_left, n_right, pointers, indices, vweight,
-		             psep_size, psep_weight, psep_nodes)
-int       n_left;		/* number of vertices on left side */
-int       n_right;		/* number of vertices on right side */
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *vweight;		/* vertex weights */
-int      *psep_size;		/* returned size of separator */
-int      *psep_weight;		/* returned weight of separator */
-int     **psep_nodes;		/* list of separator nodes */
+void 
+wbpcover (
+    int n_left,		/* number of vertices on left side */
+    int n_right,		/* number of vertices on right side */
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *vweight,		/* vertex weights */
+    int *psep_size,		/* returned size of separator */
+    int *psep_weight,		/* returned weight of separator */
+    int **psep_nodes		/* list of separator nodes */
+)
 {
     extern int DEBUG_COVER;	/* debug flag for this routine */
     int      *touched;		/* flags for each vertex */
@@ -161,15 +162,17 @@ confirm_cover(n_left, n_right, pointers, indices, flow, vweight, resid,
 }
 
 
-static void bpflow(n_left, n_right, pointers, indices, vweight, resid, flow, touched)
-int       n_left;		/* number of vertices on left side */
-int       n_right;		/* number of vertices on right side */
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *vweight;		/* vertex weights */
-int      *resid;		/* residual weight at each vertex */
-int      *flow;			/* flow on right->left edges */
-int      *touched;		/* flags for each vertex */
+static void 
+bpflow (
+    int n_left,		/* number of vertices on left side */
+    int n_right,		/* number of vertices on right side */
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *vweight,		/* vertex weights */
+    int *resid,		/* residual weight at each vertex */
+    int *flow,			/* flow on right->left edges */
+    int *touched		/* flags for each vertex */
+)
 {
     int      *seen;		/* space for list of encountered vertices */
     int       neighbor;		/* neighboring vertex */
@@ -218,14 +221,16 @@ int      *touched;		/* flags for each vertex */
 }
 
 
-static int augment(node, pointers, indices, resid, flow, touched, seen)
-int       node;			/* start node in augmenting path */
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *resid;		/* residual weight at each vertex */
-int      *flow;			/* flow on right->left edges */
-int      *touched;		/* flags for each vertex */
-int      *seen;			/* keeps list of vertices encountered */
+static int 
+augment (
+    int node,			/* start node in augmenting path */
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *resid,		/* residual weight at each vertex */
+    int *flow,			/* flow on right->left edges */
+    int *touched,		/* flags for each vertex */
+    int *seen			/* keeps list of vertices encountered */
+)
 {
     int       nseen;		/* number of vertices encountered */
     int       flow1;		/* flow redirected via augmenting path */
@@ -254,16 +259,18 @@ int      *seen;			/* keeps list of vertices encountered */
 
 /* Mark everybody in my alternating path tree, and return vertex at */
 /* end of augmenting path if found. */
-static void touch(node, pointers, indices, resid, flow, touched, flow1, seen, nseen)
-int       node;
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *resid;		/* residual weight at each vertex */
-int      *flow;			/* flow on right->left edges */
-int      *touched;		/* flags for each vertex */
-int      *flow1;		/* max flow we are looking for */
-int      *seen;			/* list of vertices encountered */
-int      *nseen;		/* number of vertices encountered */
+static void 
+touch (
+    int node,
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *resid,		/* residual weight at each vertex */
+    int *flow,			/* flow on right->left edges */
+    int *touched,		/* flags for each vertex */
+    int *flow1,		/* max flow we are looking for */
+    int *seen,			/* list of vertices encountered */
+    int *nseen		/* number of vertices encountered */
+)
 {
     int       flow2;		/* flow passed down recursion tree */
     int       neighbor;		/* neighbor of a vertex */
@@ -318,14 +325,16 @@ int      *nseen;		/* number of vertices encountered */
 }
 
 
-static void reachability(n_left, n_right, pointers, indices, resid, flow, touched)
-int       n_left;		/* number of vertices on left side */
-int       n_right;		/* number of vertices on right side */
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *resid;		/* residual weight at each vertex */
-int      *flow;			/* flow on right->left edges */
-int      *touched;		/* flags for each vertex */
+static void 
+reachability (
+    int n_left,		/* number of vertices on left side */
+    int n_right,		/* number of vertices on right side */
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *resid,		/* residual weight at each vertex */
+    int *flow,			/* flow on right->left edges */
+    int *touched		/* flags for each vertex */
+)
 {
     int       i;		/* loop counter */
 
@@ -342,12 +351,14 @@ int      *touched;		/* flags for each vertex */
 
 /* Mark everybody in my alternating path tree, and return vertex at */
 /* end of augmenting path if found. */
-static int touch2(node, pointers, indices, flow, touched)
-int       node;
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *flow;			/* flow on right->left edges */
-int      *touched;		/* flags for each vertex */
+static int 
+touch2 (
+    int node,
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *flow,			/* flow on right->left edges */
+    int *touched		/* flags for each vertex */
+)
 {
     int       neighbor;		/* neighbor of a vertex */
     int       result;		/* return value */
@@ -374,17 +385,18 @@ int      *touched;		/* flags for each vertex */
 
 
 
-void confirm_cover(n_left, n_right, pointers, indices, flow, vweight, resid,
-		  sep_size, sep_nodes)
-int       n_left;
-int       n_right;
-int      *pointers;
-int      *indices;
-int      *flow;	
-int      *vweight;
-int      *resid;		/* residual weight at each vertex */
-int       sep_size;
-int      *sep_nodes;
+void 
+confirm_cover (
+    int n_left,
+    int n_right,
+    int *pointers,
+    int *indices,
+    int *flow,
+    int *vweight,
+    int *resid,		/* residual weight at each vertex */
+    int sep_size,
+    int *sep_nodes
+)
 {
     int     *marked;
     int      sep_weight;
@@ -433,11 +445,8 @@ int      *sep_nodes;
     sfree(marked);
 }
 
-int count_flow(n_left, n_right, pointers, flow)
-int       n_left;
-int       n_right;
-int      *pointers;
-int      *flow;	
+int 
+count_flow (int n_left, int n_right, int *pointers, int *flow)	
 {
     int i, total_flow;
 
@@ -448,12 +457,8 @@ int      *flow;
     return(total_flow);
 }
 
-void count_resid(n_left, n_right, resid, vweight, marked)
-int       n_left;
-int       n_right;
-int      *resid;
-int      *vweight;
-int      *marked;
+void 
+count_resid (int n_left, int n_right, int *resid, int *vweight, int *marked)
 {
     int i, left_used, right_used;
 
@@ -484,14 +489,16 @@ int      *marked;
     }
 }
 
-void check_resid(n_left, n_right, vweight, resid, pointers, indices, flow)
-int       n_left;
-int       n_right;
-int      *vweight;		/* vertex weights */
-int      *resid;
-int      *pointers;
-int      *indices;
-int      *flow;
+void 
+check_resid (
+    int n_left,
+    int n_right,
+    int *vweight,		/* vertex weights */
+    int *resid,
+    int *pointers,
+    int *indices,
+    int *flow
+)
 {
     int i, j, left_used, right_used;
     int *diff;

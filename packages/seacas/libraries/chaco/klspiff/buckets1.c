@@ -16,19 +16,20 @@
 */
 
 
-void      bucketsort1(graph, vtx, buckets, listspace, dvals, sets, term_wgts,
-             maxdval, nsets, hops,  using_ewgts)
-struct vtx_data **graph;	/* graph data structure */
-int       vtx;			/* vertex being added to lists */
-struct bilist ****buckets;	/* array of lists for bucket sort */
-struct bilist **listspace;	/* list data structure for each vertex */
-int     **dvals;		/* d-values for each vertex for removing */
-int    *sets;			/* processor each vertex is assigned to */
-float    *term_wgts[];		/* weights for terminal propogation */
-int       maxdval;		/* maximum possible dvalue for a vertex */
-int       nsets;		/* number of sets being divided into */
-int     (*hops)[MAXSETS];	/* hop cost between sets */
-int       using_ewgts;		/* are edge weights being used? */
+void 
+bucketsort1 (
+    struct vtx_data **graph,	/* graph data structure */
+    int vtx,			/* vertex being added to lists */
+    struct bilist ****buckets,	/* array of lists for bucket sort */
+    struct bilist **listspace,	/* list data structure for each vertex */
+    int **dvals,		/* d-values for each vertex for removing */
+    int *sets,			/* processor each vertex is assigned to */
+    float *term_wgts[],		/* weights for terminal propogation */
+    int maxdval,		/* maximum possible dvalue for a vertex */
+    int nsets,		/* number of sets being divided into */
+    int (*hops)[MAXSETS],	/* hop cost between sets */
+    int using_ewgts		/* are edge weights being used? */
+)
 {
     extern double CUT_TO_HOP_COST;	/* if term_prop, cut/hop importance */
     struct bilist *lptr=NULL;	/* pointer to an element in listspace */

@@ -595,8 +595,6 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::solve() {
   if (refineSolution_ && !inverted()) ierr1 = applyRefinement();
   if (ierr1!=0) 
     return(ierr1);
-  else
-    return(ierr);
   
   if (equilibrate_) ierr1 = unequilibrateLHS();
   return(ierr1);
@@ -759,10 +757,10 @@ int SerialSpdDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
 
   if (!equilibratedB_) return(0); // Nothing to do
 
-  OrdinalType LDX = RHS_->stride(), NRHS = RHS_->numCols();
-  ScalarType * X = RHS_->values();
+  OrdinalType LDX = LHS_->stride(), NLHS = LHS_->numCols();
+  ScalarType * X = LHS_->values();
   ScalarType * ptr;
-  for (j=0; j<NRHS; j++) {
+  for (j=0; j<NLHS; j++) {
     ptr = X + j*LDX;
     for (i=0; i<numRowCols_; i++) {
       *ptr = *ptr*R_[i];

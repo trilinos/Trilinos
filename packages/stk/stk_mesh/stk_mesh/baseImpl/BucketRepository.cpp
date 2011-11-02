@@ -156,6 +156,9 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
   // Get the first bucket in the same family as the bucket being deleted
   Bucket * const first = bucket_to_be_deleted->m_bucketImpl.first_bucket_in_family();
 
+  ThrowRequireMsg( bucket_to_be_deleted->equivalent(*first), "Logic error - bucket_to_be_deleted is not in same family as first_bucket_in_family");
+  ThrowRequireMsg( first->equivalent(*bucket_to_be_deleted), "Logic error - first_bucket_in_family is not in same family as bucket_to_be_deleted");
+
   ThrowRequireMsg( bucket_to_be_deleted->size() == 0,
       "Destroying non-empty bucket " << *(bucket_to_be_deleted->key()) );
 
@@ -464,6 +467,9 @@ BucketRepository::declare_bucket(
 
   //----------------------------------
 
+  ThrowRequireMsg( bucket->equivalent(*bucket->m_bucketImpl.first_bucket_in_family()), "Logic error - new bucket is not in same family as first_bucket_in_family");
+  ThrowRequireMsg( bucket->m_bucketImpl.first_bucket_in_family()->equivalent(*bucket), "Logic error - first_bucket_in_family is not in same family as new bucket");
+
   return bucket ;
 }
 
@@ -634,6 +640,9 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
   // The last bucket is the only non-full bucket in the family.
 
   Bucket * const last = k->m_bucketImpl.last_bucket_in_family();
+
+  ThrowRequireMsg( last->equivalent(*k), "Logic error - last bucket in family not equivalent to bucket");
+  ThrowRequireMsg( k->equivalent(*last), "Logic error - bucket not equivalent to last bucket in family");
 
   // Fill in the gap if it is not the last entity being removed
 

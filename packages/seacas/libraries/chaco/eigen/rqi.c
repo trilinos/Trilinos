@@ -10,27 +10,33 @@
 
 /* Perform Rayleigh Quotient Iteration */
 
-void      rqi(A, yvecs, index, n, r1, r2, v, w, x, y, work, tol, initshift, evalest,
-	      vwsqrt, orthlist, cube_or_mesh, nsets, assignment, active, mediantype,
-	      goal, vwgt_max, ndims)
-struct vtx_data **A;		/* matrix/graph being analyzed */
-double  **yvecs;		/* eigenvectors to be refined */
-int       index;		/* index of vector in yvecs to be refined */
-double   *r1, *r2, *v, *w, *x, *y, *work;	/* work space for symmlq */
-int       n;			/* number of rows/columns in matrix */
-double    tol;			/* error tolerance in eigenpair */
-double    initshift;		/* initial shift */
-double   *evalest;		/* returned eigenvalue */
-double   *vwsqrt;		/* square roots of vertex weights */
-struct orthlink *orthlist;	/* lower evecs to orthogonalize against */
-int       cube_or_mesh;		/* 0 => hypercube, d => d-dimensional mesh */
-int       nsets;		/* number of sets to divide into */
-int    *assignment;		/* set number of each vtx (length n+1) */
-int      *active;		/* space for nvtxs integers */
-int       mediantype;		/* which partitioning strategy to use */
-double   *goal;			/* desired set sizes */
-int       vwgt_max;		/* largest vertex weight */
-int       ndims;		/* dimensionality of partition */
+void 
+rqi (
+    struct vtx_data **A,		/* matrix/graph being analyzed */
+    double **yvecs,		/* eigenvectors to be refined */
+    int index,		/* index of vector in yvecs to be refined */
+    int n,			/* number of rows/columns in matrix */
+    double *r1,
+    double *r2,
+    double *v,
+    double *w,
+    double *x,
+    double *y,
+    double *work,	/* work space for symmlq */
+    double tol,			/* error tolerance in eigenpair */
+    double initshift,		/* initial shift */
+    double *evalest,		/* returned eigenvalue */
+    double *vwsqrt,		/* square roots of vertex weights */
+    struct orthlink *orthlist,	/* lower evecs to orthogonalize against */
+    int cube_or_mesh,		/* 0 => hypercube, d => d-dimensional mesh */
+    int nsets,		/* number of sets to divide into */
+    int *assignment,		/* set number of each vtx (length n+1) */
+    int *active,		/* space for nvtxs integers */
+    int mediantype,		/* which partitioning strategy to use */
+    double *goal,			/* desired set sizes */
+    int vwgt_max,		/* largest vertex weight */
+    int ndims		/* dimensionality of partition */
+)
 {
     extern int DEBUG_EVECS;	/* debug flag for eigen computation */
     extern int DEBUG_TRACE;	/* trace main execution path */

@@ -5,28 +5,12 @@
 #include <stdio.h>
 #include "smalloc.h"
 
-static void assign_out_normal(), assign_out_inv();
-
-void      assign_out(nvtxs, sets, nsets, outname)
-int       nvtxs;		/* number of vertices to output */
-int    *sets;			/* values to be printed */
-int       nsets;		/* number of sets */
-char     *outname;		/* name of output file */
-{
-    extern int OUT_ASSIGN_INV;	/* print assignment in inverted form? */
-
-    if (OUT_ASSIGN_INV) {
-	assign_out_inv(nvtxs, sets, nsets, outname);
-    }
-    else {
-	assign_out_normal(nvtxs, sets, outname);
-    }
-}
-
-static void assign_out_normal(nvtxs, sets, outname)
-int       nvtxs;		/* number of vertices to output */
-int    *sets;			/* values to be printed */
-char     *outname;		/* name of output file */
+static void 
+assign_out_normal (
+    int nvtxs,		/* number of vertices to output */
+    int *sets,			/* values to be printed */
+    char *outname		/* name of output file */
+)
 {
     FILE     *fout;		/* output file */
     int       i;		/* loop counter */
@@ -49,12 +33,13 @@ char     *outname;		/* name of output file */
     }
 }
 
-
-static void assign_out_inv(nvtxs, sets, nsets, outname)
-int       nvtxs;		/* number of vertices to output */
-int    *sets;			/* values to be printed */
-int       nsets;		/* number of sets */
-char     *outname;		/* name of output file */
+static void 
+assign_out_inv (
+    int nvtxs,		/* number of vertices to output */
+    int *sets,			/* values to be printed */
+    int nsets,		/* number of sets */
+    char *outname		/* name of output file */
+)
 {
     FILE     *fout;		/* output file */
     int      *size;		/* # vtxs in sets / index into inorder */
@@ -114,3 +99,22 @@ char     *outname;		/* name of output file */
         fclose(fout);
     }
 }
+
+void 
+assign_out (
+    int nvtxs,		/* number of vertices to output */
+    int *sets,			/* values to be printed */
+    int nsets,		/* number of sets */
+    char *outname		/* name of output file */
+)
+{
+    extern int OUT_ASSIGN_INV;	/* print assignment in inverted form? */
+
+    if (OUT_ASSIGN_INV) {
+	assign_out_inv(nvtxs, sets, nsets, outname);
+    }
+    else {
+	assign_out_normal(nvtxs, sets, outname);
+    }
+}
+

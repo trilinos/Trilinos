@@ -11,12 +11,14 @@
    for some reason. Otherwise it returns 0.  Note Wilkinson indexes beta such that 
    first off-diagonal entry in T is beta[2]. We index such that it is beta[1]. */
 
-int       sturmcnt(alpha, beta, j, mu, p)
-double   *alpha;		/* vector of Lanczos scalars */
-double   *beta;			/* vector of Lanczos scalars */
-int       j;			/* index of Lanczos step we're on */
-double    mu;			/* argument to the sequence generating polynomial */
-double   *p;			/* work vector for sturm sequence */
+int 
+sturmcnt (
+    double *alpha,		/* vector of Lanczos scalars */
+    double *beta,			/* vector of Lanczos scalars */
+    int j,			/* index of Lanczos step we're on */
+    double mu,			/* argument to the sequence generating polynomial */
+    double *p			/* work vector for sturm sequence */
+)
 {
     extern double DOUBLE_MAX;   /* maximum double precision number to be used */
     int       i;		/* loop index */

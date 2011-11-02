@@ -10,18 +10,19 @@
 /* Construct a subgraph of a graph. */
 /* This reuses the graph storage, and can be undone. */
 
-void      make_subgraph(graph, subgraph, subnvtxs, psubnedges, assignment, set,
-			          glob2loc, loc2glob, degree, using_ewgts)
-struct vtx_data **graph;	/* graph data structure */
-struct vtx_data **subgraph;	/* subgraph data structure */
-int       subnvtxs;		/* number of vtxs in subgraph */
-int      *psubnedges;		/* ptr to number of edges in subgraph */
-int    *assignment;		/* values designating subgraph inclusion */
-int       set;			/* assignment value indicating inclusion */
-int      *glob2loc;		/* mapping from graph to subgraph numbering */
-int      *loc2glob;		/* mapping from subgraph to graph numbering */
-int    *degree;		/* degrees of vertices in graph */
-int       using_ewgts;		/* are edge weights being used? */
+void 
+make_subgraph (
+    struct vtx_data **graph,	/* graph data structure */
+    struct vtx_data **subgraph,	/* subgraph data structure */
+    int subnvtxs,		/* number of vtxs in subgraph */
+    int *psubnedges,		/* ptr to number of edges in subgraph */
+    int *assignment,		/* values designating subgraph inclusion */
+    int set,			/* assignment value indicating inclusion */
+    int *glob2loc,		/* mapping from graph to subgraph numbering */
+    int *loc2glob,		/* mapping from subgraph to graph numbering */
+    int *degree,		/* degrees of vertices in graph */
+    int using_ewgts		/* are edge weights being used? */
+)
 {
     struct vtx_data *subgptr=NULL;/* loops through subgraph */
     float    *fptr=NULL;	/* loops through edge weights */
@@ -78,12 +79,14 @@ int       using_ewgts;		/* are edge weights being used? */
 
 
 /* Undo the construction of the subgraph. */
-void      remake_graph(subgraph, subnvtxs, loc2glob, degree, using_ewgts)
-struct vtx_data **subgraph;	/* subgraph data structure */
-int       subnvtxs;		/* number of vtxs in subgraph */
-int      *loc2glob;		/* mapping from subgraph to graph numbering */
-int    *degree;		/* degrees of vertices in graph */
-int       using_ewgts;		/* are edge weights being used? */
+void 
+remake_graph (
+    struct vtx_data **subgraph,	/* subgraph data structure */
+    int subnvtxs,		/* number of vtxs in subgraph */
+    int *loc2glob,		/* mapping from subgraph to graph numbering */
+    int *degree,		/* degrees of vertices in graph */
+    int using_ewgts		/* are edge weights being used? */
+)
 {
     struct vtx_data *subgptr;	/* loops through subgraph */
     float    *fptr;		/* loops through edge weights */

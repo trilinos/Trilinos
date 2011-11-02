@@ -5,8 +5,6 @@ INCLUDE(PackageLibraryMacros)
 # A) Package-specific configuration options
 #
 
-SET(TEUCHOS_SHOW_DEPRECATED_WARNINGS ${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS)
-
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(CURRENT_PACKAGE TEUCHOS)
@@ -154,7 +152,7 @@ APPEND_SET(HEADERS
   Teuchos_TableEntry.hpp
   Teuchos_TableFormat.hpp
   Teuchos_TabularOutputter.hpp
-  Teuchos_Assert.hpp
+  Teuchos_TestForException.hpp
   Teuchos_TestingHelpers.hpp
   Teuchos_Time.hpp
   Teuchos_TimeMonitor.hpp
@@ -193,7 +191,6 @@ APPEND_SET(HEADERS
 # Set sources
 
 APPEND_SET(SOURCES
-  Teuchos_Assert.cpp
   Teuchos_BLAS.cpp
   Teuchos_CTimeMonitor.cpp
   Teuchos_CommandLineProcessor.cpp
@@ -228,6 +225,7 @@ APPEND_SET(SOURCES
   Teuchos_TableEntry.cpp
   Teuchos_TableFormat.cpp
   Teuchos_TabularOutputter.cpp
+  Teuchos_TestForException.cpp
   Teuchos_TestingHelpers.cpp
   Teuchos_Time.cpp
   Teuchos_TimeMonitor.cpp

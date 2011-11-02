@@ -49,7 +49,7 @@ namespace {
 const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
 } // empty namespace
 
-static void printEntity(std::ostringstream& msg, Entity *entity)
+void printEntity(std::ostringstream& msg, Entity *entity)
 {
   msg << " :: " << print_entity_key(entity) << ":o[" << entity->owner_rank() << "]:l[" << entity->log_query()
       << "]:ec[";
@@ -59,21 +59,19 @@ static void printEntity(std::ostringstream& msg, Entity *entity)
   msg << "]";
 }
 
-static void printNode(std::ostringstream& msg, Entity *node)
+void printNode(std::ostringstream& msg, Entity *node)
 {
   printEntity(msg, node);
   PairIterRelation rels = node->relations();
   for (unsigned i = 0; i < rels.size(); i++)
     {
       Entity *entity = rels[i].entity();
-      //if (entity->entity_rank() > 2) continue;
       if (entity->entity_rank() > node->entity_rank())
         printEntity(msg, entity);
-      //msg << "\n";
     }
 }
 
-static void printBuckets(std::ostringstream& msg, BulkData& mesh)
+void printBuckets(std::ostringstream& msg, BulkData& mesh)
 {
   const std::vector<Bucket*> & buckets = mesh.buckets(0);
   for (unsigned i=0; i < buckets.size(); i++)
@@ -90,7 +88,6 @@ static void printBuckets(std::ostringstream& msg, BulkData& mesh)
 
 static void checkBuckets( BulkData& mesh)
 {
-  std::cout << "P[" << mesh.parallel_rank() << "] checkBuckets..." << std::endl;
   const std::vector<Bucket*> & buckets = mesh.buckets(0);
   for (unsigned i=0; i < buckets.size(); i++)
     {
@@ -101,7 +98,6 @@ static void checkBuckets( BulkData& mesh)
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 {
-  const bool debug_print = false;
   //
   // testing if modification flags propagate properly for ghosted entities
   //
@@ -174,13 +170,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
           mesh.declare_relation( *elem, *nodes[0], 0 );
           mesh.declare_relation( *elem, *nodes[1], 1 );
 
-          if (debug_print) std::cout << "P[" << p_rank << "] create " << print_entity_key(elem) << " " << print_entity_key(nodes[0]) << " " << print_entity_key(nodes[1]) << std::endl;
         }
     }
 
   mesh.modification_end();
-
-  if (debug_print) std::cout << "P[" << p_rank << "] after create...." << std::endl;
 
   Entity* node1 = 0;
 
@@ -204,32 +197,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 
   mesh.modification_end();
 
-  // print info
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  if (debug_print)
-    {
-      std::ostringstream msg;
-      node1 = mesh.get_entity(0, 21);
-      if (node1) { std::ostringstream msg2; printNode(msg2, node1); std::cout << "P[" << p_rank << "] node before mod= " << node1->identifier() << " " << msg2.str() << std::endl; }
-      node1 = mesh.get_entity(0, 32);
-      if (node1) { std::ostringstream msg2; printNode(msg2, node1); std::cout << "P[" << p_rank << "] node before mod= " << node1->identifier() << " " << msg2.str() << std::endl; }
-      node1 = mesh.get_entity(0, 50);
-      if (node1) { std::ostringstream msg2; printNode(msg2, node1); std::cout << "P[" << p_rank << "] node before mod= " << node1->identifier() << " " << msg2.str() << std::endl; }
-      node1 = mesh.get_entity(0, 41);
-      if (node1) { std::ostringstream msg2; printNode(msg2, node1); std::cout << "P[" << p_rank << "] node before mod= " << node1->identifier() << " " << msg2.str() << std::endl; }
-    }
-
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  if (debug_print)
-    {
-      std::ostringstream msg0;
-      printBuckets(msg0, mesh);
-      std::cout << "P[" << p_rank << "] buckets before mod= " << msg0.str() << std::endl;
-    }
   checkBuckets(mesh);
-  
+
   MPI_Barrier(MPI_COMM_WORLD);
 
 
@@ -237,26 +206,20 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   mesh.modification_begin();
 
   if (p_rank == 2)
-    {  
+    {
       node1 = mesh.get_entity(0, 21);
-      std::cout << "P[" << p_rank << "]  node1 = " << node1 << " id= " << node1->identifier() << std::endl;
       Entity *elem1 = mesh.get_entity(2, 201);
       Entity *elem2 = mesh.get_entity(2, 100);
 
       bool did_it_elem = mesh.destroy_entity(elem1);
       did_it_elem = did_it_elem & mesh.destroy_entity(elem2);
+      STKUNIT_ASSERT(did_it_elem);
       bool did_it = mesh.destroy_entity(node1);
-      std::cout << "P[" << p_rank << "] did_it= " << did_it << " did_it_elem= " << did_it_elem << " node1 = " << node1 << std::endl;
+      STKUNIT_ASSERT(did_it);
     }
 
   mesh.modification_end();
 
-  if (debug_print)
-    {
-      std::ostringstream msg0;
-      printBuckets(msg0, mesh);
-      std::cout << "P[" << p_rank << "] buckets after bucket mod= " << msg0.str() << std::endl;
-    }
   checkBuckets(mesh);
 
   // this node should no longer exist anywhere

@@ -152,8 +152,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   // note: lof has different meanings for IC and ICT.  For IC and ILU, we
   // will cast it to an integer later.
   double IfpackLOF=0.0;
-  if(IfpackType=="ILUT" || IfpackType=="ICT") List_.get("smoother: ifpack level-of-fill",0.);
-  else List_.get("smoother: ifpack level-of-fill",1.);
+  if(IfpackType=="ILUT" || IfpackType=="ICT") IfpackLOF=List_.get("smoother: ifpack level-of-fill",1.);
+  else IfpackLOF=List_.get("smoother: ifpack level-of-fill",0.);
   double IfpackRelThreshold=List_.get("smoother: ifpack relative threshold",1.);
   double IfpackAbsThreshold=List_.get("smoother: ifpack absolute threshold",0.);
 

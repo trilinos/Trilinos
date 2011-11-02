@@ -8,12 +8,14 @@
 #include "smalloc.h"
 
 
-void      add_edges(graph, new_edges, old_edges, old_ewgts, using_ewgts)
-struct vtx_data **graph;	/* graph data structure */
-struct edgeslist *new_edges;	/* list of edges connecting graph */
-struct ilists **old_edges;	/* edges data overwritten for connecting */
-struct flists **old_ewgts;	/* weights of edges overwritten */
-int       using_ewgts;		/* are edge weights being used? */
+void 
+add_edges (
+    struct vtx_data **graph,	/* graph data structure */
+    struct edgeslist *new_edges,	/* list of edges connecting graph */
+    struct ilists **old_edges,	/* edges data overwritten for connecting */
+    struct flists **old_ewgts,	/* weights of edges overwritten */
+    int using_ewgts		/* are edge weights being used? */
+)
 {
     struct ilists *save_list;	/* space to save old edge list */
     struct flists *save_ewgts;	/* space to save old edge weights */

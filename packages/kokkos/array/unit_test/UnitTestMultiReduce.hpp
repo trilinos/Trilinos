@@ -166,8 +166,10 @@ public:
 
     value_type result ;
 
-    Kokkos::MultiFunctorParallelReduce< reduce_traits , result_type >
-      reduce_op ;
+    result_type result_view = Kokkos::create_value< result_type >();
+
+    Kokkos::MultiFunctorParallelReduce< reduce_traits , result_type , device_type >
+      reduce_op( result_view );
 
     for ( size_type j = 0 ; j < nfunctor ; ) {
       const size_type work_beg = (size_t(nwork) * size_t(j) ) / nfunctor ;
@@ -177,10 +179,9 @@ public:
       reduce_op.push_back( work_count , functor_type( nwork , work_beg ) );
     }
 
-    reduce_op.result = Kokkos::create_value< result_type >();
     reduce_op.execute();
 
-    Kokkos::deep_copy( result , reduce_op.result );
+    Kokkos::deep_copy( result , result_view );
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )

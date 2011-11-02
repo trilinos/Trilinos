@@ -238,8 +238,6 @@ C     CURRENT VERSION DESIGNATOR- $Revision: 1.12 $
 C
 C     ******************************************************************
 C
-      include 'exodusII.inc'
-C
       include 'aexds1.blk'
       include 'aexds2.blk'
       include 'amesh.blk'
@@ -262,7 +260,8 @@ C
       DIMENSION A(1),IA(1)
       EQUIVALENCE (A(1),IA(1))
       CHARACTER*(MXSTLN) TYP
-C
+      CHARACTER*8   MEMDBG
+
 C     ******************************************************************
 C
 C     MAIN PROGRAM FOR MAPVAR
@@ -281,22 +280,14 @@ C     ******************************************************************
 C
 C open all disk files
 C
-c      call excpus(timin)
-c      write(nout,1001)
-c      write(ntpout,1001)
-C
       call init
 
 C disable netcdf warning messages
 C
       CALL EXOPTS(0,IERR)
 C
+      call debug('OPNFIL')
       CALL OPNFIL
-c      call excpus(timout)
-c      timsub= timout - timin
-c      write(nout,2001)timsub
-c      write(ntpout,2001)timsub
-c 2001 format('cpu time in subroutine',1x,e14.6)
 C
 C get info for QA records
 C
@@ -305,6 +296,16 @@ C
 C initialize memory manager
 C
       CALL MDINIT (A)
+
+C ... If EXT99 Environment variable set, turn on supes memory debugging
+C     The numeric value of the variable is used as the unit to write 
+C     debug information to.
+      CALL EXNAME (-99, MEMDBG, L)
+      IF (L .GE. 1) THEN
+        READ(MEMDBG(:L), '(I8)', ERR=20) IUNIT
+        CALL MDDEBG(IUNIT)
+      END IF
+ 20   CONTINUE
 C
 C
 C ******************************************************************
@@ -317,18 +318,21 @@ C
      &             NUMNPS,NUMESS,IERR)
       CALL EXGINI (NTP3EX,HED,NDIMB,NODESB,NUMELB,NBLKSB,
      &             NUMNPS,NUMESS,IERR)
-      MBLK = NBLKSA+NBLKSB
 C
 C A(NT1)      =   TIMES(1:NTIMES) - times on Mesh-A database
 C IA(NAEB)    =   IDA(1:NBLKSA) - Donor mesh element block I.D.'s
 C IA(NBEB)    =   IDB(1:NBLKSA) - Recipient mesh element block I.D.'s
 C IA(NMAP)    =   MP(1:3,1:MBLK) - Donor to recipient mesh map
 C
+      MBLK = NBLKSA + NBLKSB
       CALL MDRSRV ('TIMES', NT1,   NTIMES)
       CALL MDRSRV ('IDA',   NAEB,  NBLKSA)
       CALL MDRSRV ('IDB',   NBEB,  NBLKSB)
       CALL MDRSRV ('MP',    NMAP,  MBLK*3)
-C
+
+C reserve space for storing the search box size for each map operation
+      CALL MDRSRV ('MPSEA', NMAPS, MBLK)
+
       CALL MDSTAT (MNERRS, MNUSED)
       IF (MNERRS .NE. 0) THEN
          CALL MDEROR(NOUT)
@@ -338,9 +342,8 @@ C
       END IF
 C
 C
-c      write(nout,1003)
-c      write(ntpout,1003)
-      CALL RDINPT (A(NT1),IA(NAEB),IA(NBEB),IA(NMAP),IMP)
+      call debug('RDINPT')
+      CALL RDINPT (A(NT1),IA(NAEB),IA(NBEB),IA(NMAP),A(NMAPS),IMP,MBLK)
 C
 C
 C ******************************************************************
@@ -396,8 +399,7 @@ c read mesh A (coords,displ,variable names,QA, INFO records),
 c write mesh C, (variable names, QA, INFO records)
 c
 c
-c      write(nout,1005)
-c      write(ntpout,1005)
+      call debug('RDA1')
       CALL RDA1 (A(NAX),A(NAY),A(NAZ),A(NADX),A(NADY),A(NADZ))
 C
       IF (IACCU .EQ. 1)THEN
@@ -552,8 +554,7 @@ C
 C
 c read coordinates for mesh B
 c
-c      write(nout,1009)
-c      write(ntpout,1009)
+      call debug('RDB1')
       CALL RDB1 (A(NBX),A(NBY),A(NBZ))
 C
 C
@@ -594,6 +595,7 @@ C
 
       call inirea(nodesb*nvarnp, 0.0, a(nbsoln))
 
+      call debug('TRUTBL')
       CALL TRUTBL(IA(NMAP),IMP,IA(NAEB),IA(NBEB),IA(ITTA),IA(ITTB))
 C
 C *********************************************************************
@@ -602,12 +604,19 @@ C START OF ELEMENT BLOCK-BY-ELEMENT BLOCK INTERPOLATION LOOP
 C
 C *********************************************************************
 C
+C store default values of search box tolerances per element type
+      TOLSHC = TOLSHL
+      TOLQAC = TOLQAD
+      TOLHEC = TOLHEX
+      TOLTEC = TOLTET
+      
       DO 50 IM = 1, IMP
         IMOFF = IM * 3
         IDBLKA = IA(NMAP-3+IMOFF)
         IDBLKB = IA(NMAP-2+IMOFF)
         ISCHEM = IA(NMAP-1+IMOFF)
-
+        TOLSEA = A(NMAPS+IM-1)
+        
         do 15 i=1, nblksa
           if (idblka .eq. ia(naeb-1+i)) then
             iblka = i
@@ -652,9 +661,9 @@ C     ELEMENT BLOCK BY ELEMENT BLOCK INTERPOLATION
 C     REQUIRED FOR ELEMENT DATA BUT ALSO USED FOR NODAL DATA
 C     **********************************************************
 C
-        WRITE(NOUT,330)IM,IDBLKB
+        WRITE(NOUT,330)IM,IMP,IDBLKB
         WRITE(NOUT,320)IDBLKA
-        WRITE(NTPOUT,330)IM,IDBLKB
+        WRITE(NTPOUT,330)IM,IMP,IDBLKB
         WRITE(NTPOUT,320)IDBLKA
 C
         CALL EXGELB(NTP2EX,IDBLKA,TYP,NUMEBA,NELNDA,NATRIB,
@@ -692,15 +701,58 @@ C
 C
 c 2nd read of mesh A
 c
-c        write(nout,1011)
-c        write(ntpout,1011)
+        call debug('RDA2')
         CALL RDA2 (IDBLKA,IA(NACON),IA(NANDLST),A(NASTAT),
      &             MAXLN)
+C 
+C Set the search box tolerance for the current mapping
+C
+        IF ( ITYPE .EQ. 13) THEN
+C shell
+          IF ( TOLSEA .GT. 0.0) THEN
+            TOLSHL = TOLSEA
+          ELSE
+            TOLSHL = TOLSHC
+          END IF
+          WRITE( NOUT, 321) TOLSHL
+          WRITE( NTPOUT, 321) TOLSHL
+        ELSE IF ( ( ITYPE .EQ. 3) .OR.
+     &            ( ITYPE .EQ. 4) .OR.
+     &            ( ITYPE .EQ. 5)) THEN
+C quad-4
+          IF ( TOLSEA .GT. 0.0) THEN
+            TOLQAD = TOLSEA
+          ELSE
+            TOLQAD = TOLQAC
+          END IF
+          WRITE( NOUT, 321) TOLQAD
+          WRITE( NTPOUT, 321) TOLQAD
+        ELSE IF ( ( ITYPE .EQ.  6) .OR.
+     &            ( ITYPE .EQ. 10)) THEN
+C hex-8 or tet-8
+          IF ( TOLSEA .GT. 0.0) THEN
+            TOLHEX = TOLSEA
+            TOLTET = TOLSEA
+          ELSE
+            TOLHEX = TOLHEC
+            TOLTET = TOLTEC
+          END IF
+          IF ( ITYPE .EQ. 6) THEN
+            WRITE( NOUT, 321) TOLTET
+            WRITE( NTPOUT, 321) TOLTET
+          ELSE
+            WRITE( NOUT, 321) TOLHEX
+            WRITE( NTPOUT, 321) TOLHEX
+          END IF
+        ELSE
+          CALL ERROR ('MAPVAR','INCORRECT ELEMENT TYPE',
+     &                'ELEMENT TYPE =',ITYPE,
+     &                'NOT YET IMPLEMENTED',0,' ',' ',1)
+        END IF
 c
 c 2nd read of mesh-b
 c
-c        write(nout,1013)
-c        write(ntpout,1013)
+        call debug('RDB2')
         CALL RDB2(IDBLKB,IDBLKA,IA(NBCON),IA(NBNDLST))
 C
 C
@@ -775,7 +827,8 @@ C
           CALL MDRSRV ('INVCN',  NAINVC,  MAXLN*NODESA)
           CALL MDRSRV ('ICHKEL', NICHKE,  NUMEBA)
           CALL MDRSRV ('SOLGRA', NSOLGR,  NDIMA*NUMEBA*NVAREL)
-        ELSE  
+        ELSE
+
           CALL ERROR('MAPVAR',' ','ISCHEM',
      &               ischem,'INCORRECT ARGUMENT',0,' ',' ',1)
         END IF
@@ -796,26 +849,22 @@ C     **********************************************************
 C     Path through code for shells
 C     **********************************************************
 C
-c          write(nout,1014)
-c          write(ntpout,1014)
+          call debug('BLDSRF')
           CALL BLDSRF(A(NAX),A(NAY),A(NAZ),A(NS16))
 C
           IF (NVARNP .GT. 0)THEN
 C
-c            write(nout,1015)
-c            write(ntpout,1015)
+            call debug('BLDPTN')
             CALL BLDPTN(A(NBX),A(NBY),A(NBZ),IA(NBNDLST),A(NS17))
 C
-c            write(nout,1017)
-c            write(ntpout,1017)
+            call debug('SRCHS-nodes')
             CALL SRCHS (NODESA,NUMEBA,IA(NACON),A(NS16),
      1       NUMNDB,A(NS17),TOLSHL,1,6,
      2       NISS,NRSS,IA(NS1),A(NS2),LBLK,
      3       IA(NS3),IA(NS4),IA(NS5),IA(NS6),IA(NS7),IA(NS8),IA(NS9),
      4       IA(NS10),IA(NS11),A(NS12),A(NS13),IA(NS14),A(NS15),IERR)
 C
-c            write(nout,1019)
-c            write(ntpout,1019)
+            call debug('SINTPN')
             CALL SINTPN(IA(NACON),A(NASOLN),IA(NS1),1,A(NS2),6,
      1                  A(NBSOLN),IA(NBNDLST),A(NBX),A(NBY),A(NBZ),
      2                  IDBLKB,A(NT1),INSUB,A(NSN))
@@ -823,12 +872,10 @@ C
           END IF
           IF (NVAREL .GT. 0)THEN
 C
-c            write(nout,1021)
-c            write(ntpout,1021)
+            call debug('BLDPTE')
             CALL BLDPTE(A(NBX),A(NBY),A(NBZ),IA(NBCON),A(NS17))
 C
-c            write(nout,1023)
-c            write(ntpout,1023)
+            call debug('SRCHS-element centroids')
             CALL SRCHS (NODESA,NUMEBA,IA(NACON),A(NS16),
      1       NUMEBB,A(NS17),TOLSHL,1,6,
      2       NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -854,14 +901,12 @@ C
                   ISTP = ISTEP
                 END IF
 C     
-c                write(nout,1025)
-c                write(ntpout,1025)
+                call debug('SETON0')
                 CALL SETON0(IA(NACON),IA(NANELTN),A(NASOLE),
      &           A(NASOLEN),IDBLKA,A(NAX),A(NAY),A(NAZ),ISTP,
      &           IA(ITTB),IBLKB)
 C
-c                write(nout,1027)
-c                write(ntpout,1027)
+                call debug('SINTPE')
                 CALL SINTPE(IA(NACON),A(NASOLEN),IA(NS1),1,A(NS2),6,
      &                      A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      &                      IA(NBCON),IA(ITTB),IBLKB,A(NT1),A(NS17),
@@ -870,8 +915,7 @@ c                write(ntpout,1027)
 C
             ELSE IF (ISCHEM .EQ. 1) THEN
 C
-c              write(nout,1028)
-c              write(ntpout,1028)
+              call debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 C
 C Set up time steps
@@ -889,15 +933,13 @@ C
                   ISTP = ISTEP
                 END IF
 C     
-c                write(nout,1029)
-c                write(ntpout,1029)
+                call debug('SETON1')
                 CALL SETON1(A(NACTR),A(NASOLE),A(NASOLEN),IDBLKA,
      &                    A(NAX),A(NAY),A(NAZ),IA(NACON),IA(NANDLST),
      &                    IA(NAINVLN),IA(NAINVC),MAXLN,ISTP,
      &                    IA(ITTB),IBLKB)
 C
-c                write(nout,1027)
-c                write(ntpout,1027)
+                call debug('SINTPE')
                 CALL SINTPE(IA(NACON),A(NASOLEN),IA(NS1),1,A(NS2),6,
      &                      A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      &                      IA(NBCON),IA(ITTB),IBLKB,A(NT1),A(NS17),
@@ -908,8 +950,7 @@ C
 c
 c direct transfer, does not require scatter to nodes
 c
-c              write(nout,1031)
-c              write(ntpout,1031)
+              call debug('STRAN')
               CALL STRAN(IA(NS1),1,A(NASOLE),A(NBSOLE),
      &                    IDBLKA,IDBLKB,
      &                    IA(ITTB),IBLKB,A(NT1),A(NS17),
@@ -918,8 +959,7 @@ c              write(ntpout,1031)
 C
             ELSE IF (ISCHEM .EQ. 3)THEN
 C
-c              write(nout,1028)
-c              write(ntpout,1028)
+              call debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 C
 C Set up time steps
@@ -937,15 +977,13 @@ C
                   ISTP = ISTEP
                 END IF
 C
-c                write(nout,1065)
-c                write(ntpout,1065)
+                call debug('ELGRAD')
                 CALL ELGRAD(A(NACTR),A(NAX),A(NAY),A(NAZ),
      &                      A(NASOLE),A(NSOLGR),IA(NICHKE),
      &                      IDBLKA,IA(NACON),IA(NAINVLN),IA(NAINVC),
      &                      MAXLN,ISTP,IA(ITTB),IBLKB)
 C
-c                write(nout,1067)
-c                write(ntpout,1067)
+                call debug('INTRP3')
                 CALL INTRP3(A(NACTR),A(NS17),IA(NS1),
      &                      A(NBSOLE),A(NASOLE),A(NSOLGR),
      &                      IDBLKB,IA(ITTB),IBLKB,A(NT1),
@@ -975,18 +1013,15 @@ C     *****************************************************
 C
 C find and store location of mesh-b nodes within mesh-a
 C
-c          write(nout,1014)
-c          write(ntpout,1014)
+          call debug('BLDSRF')
           CALL BLDSRF(A(NAX),A(NAY),A(NAZ),A(NS16))
 C
           IF (NVARNP .GT. 0)THEN
 C
-c            write(nout,1015)
-c            write(ntpout,1015)
+            call debug('BLDPTN')
             CALL BLDPTN(A(NBX),A(NBY),A(NBZ),IA(NBNDLST),A(NS17))
 C   
-c            write(nout,1035)
-c            write(ntpout,1035)
+            call debug('SRCHQ-nodes')
             CALL SRCHQ (NODESA,NUMEBA,IA(NACON),A(NS16),
      1       NUMNDB,A(NS17),TOLQAD,1,3,
      2       NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1015,12 +1050,10 @@ c
           END IF
           IF (NVAREL .GT. 0)THEN
 C
-c            write(nout,1021)
-c            write(ntpout,1021)
+            call debug('BLDPTE')
             CALL BLDPTE(A(NBX),A(NBY),A(NBZ),IA(NBCON),A(NS17))
 C
-c            write(nout,1039)
-c            write(ntpout,1039)
+            call debug('SRCHQ-element centroids')
             CALL SRCHQ (NODESA,NUMEBA,IA(NACON),A(NS16),
      1       NUMEBB,A(NS17),TOLQAD,1,3,
      2       NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1047,16 +1080,14 @@ C
                   ISTP = ISTEP
                 END IF
 C
-c                write(nout,1041)
-c                write(ntpout,1041)
+                call debug('ELTON0')
                 CALL ELTON0(IA(NACON),IA(NANELTN),A(NASOLE),
      &           A(NASOLEN),IDBLKA,A(NAX),A(NAY),A(NAZ),ISTP,
      &           IA(ITTB),IBLKB)
 c
 c interpolate element vars
 c
-c                write(nout,1043)
-c                write(ntpout,1043)
+                call debug('INTRPE')
                 CALL INTRPE(IA(NACON),A(NASOLEN),IA(NS1),A(NS2),
      1                    A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      2                    IA(NBCON),IA(ITTB),IBLKB,A(NT1),
@@ -1067,8 +1098,7 @@ c element centroid variables linear least squares to nodes
 c
             ELSE IF (ISCHEM .EQ. 1)THEN
 C
-c              write(nout,1028)
-c              write(ntpout,1028)
+              call debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 C
 C Set up time steps
@@ -1086,8 +1116,7 @@ C
                   ISTP = ISTEP
                 END IF
 C
-c                write(nout,1045)
-c                write(ntpout,1045)
+                call debug('ELTON1')
                 CALL ELTON1(A(NACTR),A(NASOLE),A(NASOLEN),IDBLKA,
      &                    A(NAX),A(NAY),A(NAZ),IA(NACON),IA(NANDLST),
      &                    IA(NAINVLN),IA(NAINVC),MAXLN,ISTP,
@@ -1095,8 +1124,7 @@ c                write(ntpout,1045)
 c
 c interpolate element vars
 c
-c                write(nout,1043)
-c                write(ntpout,1043)
+                call debug('INTRPE')
                 CALL INTRPE(IA(NACON),A(NASOLEN),IA(NS1),A(NS2),
      1                    A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      2                    IA(NBCON),IA(ITTB),IBLKB,A(NT1),
@@ -1107,8 +1135,7 @@ C
 C
 c direct transfer from Mesh-A to Mesh-B
 c
-c              write(nout,1047)
-c              write(ntpout,1047)
+              call debug('TRANAB')
               CALL TRANAB(IA(NS1),A(NASOLE),A(NBSOLE),
      &                  IDBLKA,IDBLKB,
      &                  IA(ITTB),IBLKB,A(NT1),A(NS17),
@@ -1117,8 +1144,7 @@ c              write(ntpout,1047)
 c
             ELSE IF (ISCHEM .EQ. 3)THEN
 C
-c              write(nout,1028)
-c              write(ntpout,1028)
+              call debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 C
 C Set up time steps
@@ -1136,15 +1162,13 @@ C
                   ISTP = ISTEP
                 END IF
 C 
-c                write(nout,1065)
-c                write(ntpout,1065)
+                call debug('ELGRAD')
                 CALL ELGRAD(A(NACTR),A(NAX),A(NAY),A(NAZ),
      &                    A(NASOLE),A(NSOLGR),IA(NICHKE),
      &                    IDBLKA,IA(NACON),IA(NAINVLN),IA(NAINVC),
      &                    MAXLN,ISTP,IA(ITTB),IBLKB)
 C
-c                write(nout,1067)
-c                write(ntpout,1067)
+                call debug('INTRP3')
                 CALL INTRP3(A(NACTR),A(NS17),IA(NS1),
      &                    A(NBSOLE),A(NASOLE),A(NSOLGR),
      &                    IDBLKB,IA(ITTB),IBLKB,A(NT1),
@@ -1168,19 +1192,16 @@ C     *****************************************************
 C
 C     FIND AND STORE LOCATION OF MESH-B NODES WITHIN MESH-A
 C
-c          write(nout,1014)
-c          write(ntpout,1014)
+          call debug('BLDSRF')
           CALL BLDSRF(A(NAX),A(NAY),A(NAZ),A(NS16))
 C
           IF (NVARNP .GT. 0)THEN
 C
-c             write(nout,1015)
-c             write(ntpout,1015)
+            call debug('BLDPTN')
              CALL BLDPTN(A(NBX),A(NBY),A(NBZ),IA(NBNDLST),A(NS17))
 C
             IF (ITYPE .EQ. 10)THEN
-c              write(nout,1049)
-c              write(ntpout,1049)
+              call debug('SRCHH-nodes')
               CALL SRCHH (NODESA,NUMEBA,IA(NACON),A(NS16),
      1          NUMNDB,A(NS17),TOLHEX,1,3,
      2          NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1190,8 +1211,7 @@ c              write(ntpout,1049)
      6          IERR)
 C
             ELSEIF (ITYPE .EQ. 6)THEN
-c              write(nout,1050)
-c              write(ntpout,1050)
+              call debug('SRCHT-nodes')
               CALL SRCHT (NODESA,NUMEBA,IA(NACON),A(NS16),
      1          NUMNDB,A(NS17),TOLHEX,1,3,
      2          NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1203,8 +1223,7 @@ c              write(ntpout,1050)
 C
 c interpolate nodal variables
 c
-c            write(nout,1051)
-c            write(ntpout,1051)
+            call debug('INTRPN')
             CALL INTRPN(IA(NACON),A(NASOLN),IA(NS1),A(NS2),
      &                A(NBSOLN),IA(NBNDLST),A(NBX),A(NBY),A(NBZ),
      &                IDBLKB,A(NT1),INSUB,A(NSN))
@@ -1216,13 +1235,11 @@ c
           END IF
           IF (NVAREL .GT. 0)THEN
 C
-c            write(nout,1021)
-c            write(ntpout,1021)
+            call debug('BLDPTE')
             CALL BLDPTE(A(NBX),A(NBY),A(NBZ),IA(NBCON),A(NS17))
 C
             IF (ITYPE .EQ. 10)THEN
-c              write(nout,1053)
-c              write(ntpout,1053)
+              call debug('SRCHH-element centroids')
               CALL SRCHH (NODESA,NUMEBA,IA(NACON),A(NS16),
      1          NUMEBB,A(NS17),TOLHEX,1,3,
      2          NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1232,8 +1249,7 @@ c              write(ntpout,1053)
      6          IERR)
 C
             ELSEIF (ITYPE .EQ. 6)THEN
-c              write(nout,1054)
-c              write(ntpout,1054)
+              call debug('SRCHT-element centroids')
               CALL SRCHT (NODESA,NUMEBA,IA(NACON),A(NS16),
      1          NUMEBB,A(NS17),TOLHEX,1,3,
      2          NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1260,16 +1276,14 @@ C
                   ISTP = ISTEP
                 END IF
 C     
-c                write(nout,1055)
-c                write(ntpout,1055)
+                call debug('ELTON0')
                 CALL ELTON0(IA(NACON),IA(NANELTN),A(NASOLE),
      &               A(NASOLEN),IDBLKA,A(NAX),A(NAY),A(NAZ),ISTP,
      &               IA(ITTB),IBLKB)
 C
 c interpolate element vars
 c
-c                write(nout,1043)
-c                write(ntpout,1043)
+                call debug('INTRPE')
                 CALL INTRPE(IA(NACON),A(NASOLEN),IA(NS1),A(NS2),
      1                    A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      2                    IA(NBCON),IA(ITTB),IBLKB,A(NT1),
@@ -1278,8 +1292,7 @@ c                write(ntpout,1043)
 C
             ELSE IF (ISCHEM .EQ. 1)THEN
 C
-c              write(nout,1028)
-c              write(ntpout,1028)
+              call debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 C
 C Set up time steps
@@ -1297,8 +1310,7 @@ C
                   ISTP = ISTEP
                 END IF
 C     
-c                write(nout,1045)
-c                write(ntpout,1045)
+                call debug('ELTON1')
                 CALL ELTON1(A(NACTR),A(NASOLE),A(NASOLEN),IDBLKA,
      &                    A(NAX),A(NAY),A(NAZ),IA(NACON),IA(NANDLST),
      &                    IA(NAINVLN),IA(NAINVC),MAXLN,ISTP,
@@ -1306,8 +1318,7 @@ c                write(ntpout,1045)
 C
 c interpolate element vars
 c
-c                write(nout,1043)
-c                write(ntpout,1043)
+                call debug('INTRPE')
                 CALL INTRPE(IA(NACON),A(NASOLEN),IA(NS1),A(NS2),
      1                    A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      2                    IA(NBCON),IA(ITTB),IBLKB,A(NT1),
@@ -1318,8 +1329,7 @@ c
 C
 c direct transfer from Mesh-A to Mesh-B
 c
-c              write(nout,1047)
-c              write(ntpout,1047)
+              call debug('TRANAB')
               CALL TRANAB(IA(NS1),A(NASOLE),A(NBSOLE),
      &                IDBLKA,IDBLKB,
      &                IA(ITTB),IBLKB,A(NT1),A(NS17),
@@ -1328,8 +1338,7 @@ c              write(ntpout,1047)
 c
             ELSE IF (ISCHEM .EQ. 3)THEN
 C
-c              write(nout,1028)
-c              write(ntpout,1028)
+              call debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 C
 C Set up time steps
@@ -1347,21 +1356,20 @@ C
                   ISTP = ISTEP
                 END IF
 C
-c                write(nout,1065)
-c                write(ntpout,1065)
+                call debug('ELGRAD')
                 CALL ELGRAD(A(NACTR),A(NAX),A(NAY),A(NAZ),
      &                    A(NASOLE),A(NSOLGR),IA(NICHKE),
      &                    IDBLKA,IA(NACON),IA(NAINVLN),IA(NAINVC),
      &                    MAXLN,ISTP,IA(ITTB),IBLKB)
 C
-c                write(nout,1067)
-c                write(ntpout,1067)
+                call debug('INTRP3')
                 CALL INTRP3(A(NACTR),A(NS17),IA(NS1),
      &                    A(NBSOLE),A(NASOLE),A(NSOLGR),
      &                    IDBLKB,IA(ITTB),IBLKB,A(NT1),
      &                    ISTP,IST,INSUB,ICOMPL,
      &                    A(NBX),A(NBY),A(NBZ),IA(NBCON),A(NSE))
  690          CONTINUE
+
             ELSE
               CALL ERROR('MAPVAR',' ','ISCHEM =',
      &                 ischem,'INCORRECT ARGUMENT',0,' ',' ',1)
@@ -1590,8 +1598,7 @@ C     A(NAGV)    =    GVAR(1:NVARGP) Global variables
 C
       CALL MDRSRV ('GVAR',   NAGV, NVARGP)
 C
-c      write(nout,1061)
-c      write(ntpout,1061)
+      call debug('WRTC')
       CALL WRTC(A(NBX),A(NBY),A(NBZ),A(NAGV),A(NBSOLN))
 C
 C
@@ -1605,87 +1612,25 @@ C
 c
       CALL BANNR2(84,'NORMAL',NTPOUT)
       CALL BANNR2(84,'EXIT',NTPOUT)
-c      write(nout,1063)
-c      write(ntpout,1063)
+      call debug('CLSFIL')
       CALL CLSFIL
 C
       call addlog (qainfo(1))
       call wrapup(qainfo(1))
       STOP
 C
-  210 FORMAT (//,3X,'DATA FOR RECTANGULAR GRID USED IN COARSE SEARCH -',
-     1//,10X,'NUMBER OF ZONES (X COORDINATE) - ',I7,/,10X,'NUMBER OF ZON
-     2ES (Y COORDINATE) - ',I7,/,10X,'NUMBER OF ZONES (Z COORDINATE) - '
-     3,I7,/,10X,'TOTAL NUMBER OF ZONES (BINS) -   ',I7,/,10X,'NUMBER OF 
-     4ELEMENTS ALLOWED IN EACH BIN - ',I7,/)
   270 FORMAT (3X,'DATA FROM MESH "A" FILE-',//,10X,'HEADING - ',A,/)
   280 FORMAT (10x,I1,'-DIMENSIONAL MODEL',/
-     &       ,10X,'NUMBER OF NODES IN MESH A (nodesa) -      ',I7,/
-     &       ,10X,'NUMBER OF ELEMENTS IN MESH A (numela) -   ',I7,/
-     &       ,10X,'NUMBER OF ELEMENT BLOCKS IN A (nblksa) -  ',I7)
+     &       ,10X,'NUMBER OF NODES IN MESH A (nodesa) -      ',I9,/
+     &       ,10X,'NUMBER OF ELEMENTS IN MESH A (numela) -   ',I9,/
+     &       ,10X,'NUMBER OF ELEMENT BLOCKS IN A (nblksa) -  ',I9)
   290 FORMAT (3X,'DATA FROM MESH "B" FILE-',//,10X,'HEADING - ',A,/)
   300 FORMAT (10x,I1,'-DIMENSIONAL MODEL',/
      &       ,10X,'NUMBER OF NODES IN MESH B (nodesb) -      ',I7,/
      &       ,10X,'NUMBER OF ELEMENTS IN MESH B (numelb) -   ',I7,/
      &       ,10X,'NUMBER OF ELEMENT BLOCKS IN B (nblksb) -  ',I7)
-  310 FORMAT (10x,'MESH-B INCOMPATIBLE WITH MESH-A',/
-     &       ,10X,'NUMBER OF BLOCKS IN MESH-A (nblksa)',I7,/
-     &       ,10X,'NUMBER OF BLOCKS IN MESH-B (nblksb)',I7,/
-     &       ,10X,'****THIS IS ONLY A WARNING****')
   320 FORMAT (10X,'CORRESPONDS TO MESH-A ELEMENT BLOCK ID',I7,/)
+  321 FORMAT (10X,'USING SEARCH BOX TOLERANCE            ',F14.6,/)
   330 FORMAT (10X,'WORKING ON MESH-B ELEMENT BLOCK       ',I7,/
      &       ,10X,'ELEMENT BLOCK ID                      ',I7)
-  410 FORMAT (/,5X,'MESH-B NODE NUMBER ',I7,/
-     &       ,5x,' ELEMENT BLOCK     ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHS')
-  420 FORMAT (/,5X,'MESH-B CENTROID ELEMENT NUMBER ',I7,/
-     &       ,5X,' OF ELEMENT BLOCK                    ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHS')
-  430 FORMAT (/,5X,'MESH-B NODE NUMBER ',I7,/
-     &       ,5x,' ELEMENT BLOCK     ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHQ')
-  440 FORMAT (/,5X,'MESH-B CENTROID ELEMENT NUMBER ',I7,/
-     &       ,5X,' OF ELEMENT BLOCK                    ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHQ')
-  450 FORMAT (/,5X,'MESH-B NODE NUMBER ',I7,/
-     &       ,5x,' ELEMENT BLOCK     ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHH')
-  460 FORMAT (/,5X,'MESH-B CENTROID ELEMENT NUMBER ',I7,/
-     &       ,5X,' OF ELEMENT BLOCK                    ',I7,/
-     &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHH')
- 1001 format(5x,'into  OPNFIL')
- 1003 format(5x,'into  RDINPT')
- 1005 format(5x,'into  RDA1')
- 1009 format(5x,'into  RDB1')
- 1010 format(5x,'into  TRUTBL')
- 1011 format(5x,'into  RDA2')
- 1013 format(5x,'into  RDB2')
- 1014 format(5x,'into  BLDSRF')
- 1015 format(5x,'into  BLDPTN')
- 1017 format(5x,'into  SRCHS - nodes')
- 1019 format(5x,'into  SINTPN')
- 1021 format(5x,'into  BLDPTE')
- 1023 format(5x,'into  SRCHS - element centroids')
- 1025 format(5x,'into  SETON0')
- 1027 format(5x,'into  SINTPE')
- 1028 format(5x,'into  INVCON')
- 1029 format(5x,'into  SETON1')
- 1031 format(5x,'into  STRAN')
- 1035 format(5x,'into  SRCHQ - nodes')
- 1037 format(5x,'into  INTRPN')
- 1039 format(5x,'into  SRCHQ - element centroids')
- 1041 format(5x,'into  ELTON0')      
- 1043 format(5x,'into  INTRPE')
- 1045 format(5x,'into  ELTON1')
- 1047 format(5x,'into  TRANAB')
- 1049 format(5x,'into  SRCHH - nodes')
- 1050 format(5x,'into  SRCHT - nodes')
- 1051 format(5x,'into  INTRPN')
- 1053 format(5x,'into  SRCHH - element centroids')
- 1054 format(5x,'into  SRCHT - element centroids')
- 1055 format(5x,'into  ELTON0')      
- 1061 format(5x,'into  WRTC')
- 1063 format(5x,'into  CLSFIL',//,5x,'NORMAL TERMINATION')
- 1065 format(5x,'into  ELGRAD')
- 1067 format(5x,'into  INTRP3')
       END

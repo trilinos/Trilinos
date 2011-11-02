@@ -84,12 +84,12 @@ C   --   Sets NUMINP, IXLHS, NAMVAR, TYPVAR, IDVAR, ISTVAR, IEVVAR of /VAR../
 C   --   Uses NDIM, NUMNP, NUMEL, NVARNP, NVAREL, NVARGL of /DBNUMS/
 C   --   Uses FNCTYP of /FNCTB./
 
-      include 'params.blk'
-      include 'namlen.blk'
-      include 'numeqn.blk'
-      include 'var.blk'
-      include 'dbnums.blk'
-      include 'fnctbc.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
+      include 'ag_numeqn.blk'
+      include 'ag_var.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_fnctbc.blk'
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
 
       CHARACTER*(*) NAMECO(*)
@@ -125,6 +125,7 @@ C   --Set up to check postfix stack if no errors so far
 
       MAXSTK = 0
 
+      VTYP = ' '
       DO 100 NENT = 1, NUMENT
          IEVENT(NENT) = -999
   100 CONTINUE

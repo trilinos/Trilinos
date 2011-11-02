@@ -8,32 +8,30 @@
 #include "structs.h"
 #include "smalloc.h"
 
-void      divide(graph, nvtxs, nedges, using_vwgts, using_ewgts, vwsqrt,
-		           igeom, coords, assignment, goal,
-		           architecture, term_wgts,
-		           global_method, local_method, rqi_flag, vmax, ndims,
-		           eigtol, hop_mtx, nsets, striping)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-int       nedges;		/* number of edges in graph */
-int       using_vwgts;		/* are vertex weights being used? */
-int       using_ewgts;		/* are edge weights being used? */
-double   *vwsqrt;		/* sqrt of vertex weights (length nvtxs+1) */
-int       igeom;		/* geometry dimension for inertial method */
-float   **coords;		/* coordinates for inertial method */
-int    *assignment;		/* set number of each vtx (length n) */
-double   *goal;			/* desired set sizes */
-int       architecture;		/* 0 => hypercube, d => d-dimensional mesh */
-float    *term_wgts[];		/* weights for terminal propogation */
-int       global_method;	/* global partitioning algorithm */
-int       local_method;		/* local partitioning algorithm */
-int       rqi_flag;		/* should I use multilevel eigensolver? */
-int       vmax;			/* if so, # vertices to coarsen down to */
-int       ndims;		/* number of eigenvectors */
-double    eigtol;		/* tolerance on eigenvectors */
-int     (*hop_mtx)[MAXSETS];	/* between-set hop costs for KL */
-int       nsets;		/* number of sets to partition into */
-int       striping;		/* partition by striping into pieces? */
+void 
+divide (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    int using_vwgts,		/* are vertex weights being used? */
+    int using_ewgts,		/* are edge weights being used? */
+    double *vwsqrt,		/* sqrt of vertex weights (length nvtxs+1) */
+    int igeom,		/* geometry dimension for inertial method */
+    float **coords,		/* coordinates for inertial method */
+    int *assignment,		/* set number of each vtx (length n) */
+    double *goal,			/* desired set sizes */
+    int architecture,		/* 0 => hypercube, d => d-dimensional mesh */
+    float *term_wgts[],		/* weights for terminal propogation */
+    int global_method,	/* global partitioning algorithm */
+    int local_method,		/* local partitioning algorithm */
+    int rqi_flag,		/* should I use multilevel eigensolver? */
+    int vmax,			/* if so, # vertices to coarsen down to */
+    int ndims,		/* number of eigenvectors */
+    double eigtol,		/* tolerance on eigenvectors */
+    int (*hop_mtx)[MAXSETS],	/* between-set hop costs for KL */
+    int nsets,		/* number of sets to partition into */
+    int striping		/* partition by striping into pieces? */
+)
 {
     extern int DEBUG_TRACE;	/* trace main execution path? */
     extern int DEBUG_CONNECTED;	/* debug flag for connected components */

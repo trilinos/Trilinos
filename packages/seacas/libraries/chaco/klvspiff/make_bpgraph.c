@@ -9,21 +9,21 @@
 
 /* Make a bipartite graph from vertex separator and neighbors. */
 
-void      make_bpgraph(graph, sets, bndy_list, sep_size, set_match,
-		       ppointers, pindices, pvweight, ploc2glob,
-		       pnleft, pnright, using_vwgts)
-struct vtx_data **graph;	/* list of graph info for each vertex */
-int    *sets;			/* local partitioning of vtxs */
-int      *bndy_list;		/* list of vertices on boundary (0 ends) */
-int       sep_size;		/* length of bndy_list */
-int       set_match;		/* side to match against */
-int     **ppointers;		/* start/stop of adjacency lists */
-int     **pindices;		/* adjacency list for each vertex */
-int     **pvweight;		/* weight of each vertex */
-int     **ploc2glob;		/* maps bp number to full graph */
-int      *pnleft;		/* number of nodes in left half */
-int      *pnright;		/* number of nodes in right half */
-int       using_vwgts;		/* are vertices weighted? */
+void 
+make_bpgraph (
+    struct vtx_data **graph,	/* list of graph info for each vertex */
+    int *sets,			/* local partitioning of vtxs */
+    int *bndy_list,		/* list of vertices on boundary (0 ends) */
+    int sep_size,		/* length of bndy_list */
+    int set_match,		/* side to match against */
+    int **ppointers,		/* start/stop of adjacency lists */
+    int **pindices,		/* adjacency list for each vertex */
+    int **pvweight,		/* weight of each vertex */
+    int **ploc2glob,		/* maps bp number to full graph */
+    int *pnleft,		/* number of nodes in left half */
+    int *pnright,		/* number of nodes in right half */
+    int using_vwgts		/* are vertices weighted? */
+)
 {
     int      *loc2glob=NULL;	/* maps bp number to full graph */
     int      *pointers=NULL;	/* start/stop of adjacency lists */
@@ -162,8 +162,8 @@ check_bpgraph(nleft, nright, pointers, indices);
 }
 
 
-void check_bpgraph(n_left, n_right, pointers, indices)
-int n_left, n_right, *pointers, *indices;
+void 
+check_bpgraph (int n_left, int n_right, int *pointers, int *indices)
 {
     int i, j, k, neighbor;
 
@@ -201,8 +201,8 @@ int n_left, n_right, *pointers, *indices;
 }
 
 
-void print_bpgraph(nleft, nright, pointers, indices, vwgts)
-int nleft, nright, *pointers, *indices, *vwgts;
+void 
+print_bpgraph (int nleft, int nright, int *pointers, int *indices, int *vwgts)
 {
    FILE *file;
    int i, j, nedges, nvtxs;

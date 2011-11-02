@@ -7,7 +7,7 @@
 
 #include <stddef.h>
 
-typedef size_t (*gl_strwidth_proc)(char *);
+typedef size_t (*gl_strwidth_proc)(void);
 
 char           *getline_int(char *);		/* read a line of input */
 void            gl_setwidth(int);		/* specify width of screen */

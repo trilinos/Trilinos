@@ -240,9 +240,6 @@ int main(int argc, char *argv[]) {
       belosParams.set("Solver Type","GCRODR");
       belosSolverParams = 
 	&(belosParams.sublist("Solver Types").sublist("GCRODR"));
-      Teuchos::RCP<const Teuchos::ParameterList> ortho_params = 
-	  Teuchos::rcp(new Teuchos::ParameterList);
-      belosSolverParams->set("Orthogonalization Parameters", ortho_params);
       belosSolverParams->set("Num Recycled Blocks", 20);
     }
     else if (solver_type == "RCG") {

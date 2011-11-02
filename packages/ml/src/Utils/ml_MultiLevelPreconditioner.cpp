@@ -107,10 +107,10 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
 
   if (verbose_ && mlpLabel_ != "not-set")
-    cout << "***" << endl
+    std::cout << "***" << std::endl
          << "*** destroying ML_Epetra::MultiLevelPreconditioner [" 
-         << mlpLabel_ << "]" << endl
-         << "***" << endl;
+         << mlpLabel_ << "]" << std::endl
+         << "***" << std::endl;
 
   if (SubMatMLPrec_ != NULL) {
     for (int i = 0; i < NBlocks_ ; i++) delete SubMatMLPrec_[i];
@@ -734,7 +734,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetLevelIds(int Direction)
   // check no levels are negative
   for (int i = 0 ; i < NumLevels_ ; ++i)
     if (LevelID_[i] < 0) {
-      cerr << ErrorMsg_ << "Level " << i << " has a negative ID" << endl;
+      cerr << ErrorMsg_ << "Level " << i << " has a negative ID" << std::endl;
       ML_EXIT(EXIT_FAILURE);
     }
 
@@ -846,20 +846,20 @@ int ML_Epetra::MultiLevelPreconditioner::SetFinestLevelMatrix()
 
   if (verbose_) {
     std::cout << PrintMsg_ << "*** " << std::endl;
-    cout << PrintMsg_ << "*** ML_Epetra::MultiLevelPreconditioner";
+    std::cout << PrintMsg_ << "*** ML_Epetra::MultiLevelPreconditioner";
     if (mlpLabel_ != "not-set")
-      cout << " [" << mlpLabel_ << "]";
-    cout << endl << PrintMsg_ << "***" << endl;
-    cout << PrintMsg_ << "Matrix has " << RowMatrix_->NumGlobalRows()
+      std::cout << " [" << mlpLabel_ << "]";
+    std::cout << std::endl << PrintMsg_ << "***" << std::endl;
+    std::cout << PrintMsg_ << "Matrix has " << RowMatrix_->NumGlobalRows()
      << " rows and " << globalNnz
-         << " nonzeros, distributed over " << Comm().NumProc() << " process(es)" << endl;
+         << " nonzeros, distributed over " << Comm().NumProc() << " process(es)" << std::endl;
     {
       const Epetra_CrsMatrix * dummy = dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
-      if( dummy ) cout << "The linear system matrix is an Epetra_CrsMatrix" << endl;
+      if( dummy ) std::cout << "The linear system matrix is an Epetra_CrsMatrix" << std::endl;
     }    
     {
       const Epetra_VbrMatrix * dummy = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
-      if( dummy ) cout << "The linear system matrix is an Epetra_VbrMatrix" << endl;
+      if( dummy ) std::cout << "The linear system matrix is an Epetra_VbrMatrix" << std::endl;
     }
   }
 
@@ -1095,7 +1095,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     int NumRows = VbrMatrix->RowMap().NumGlobalPoints();                     //
     if( NumRows % NumBlockRows ) {                                           //
       cerr << "# rows must be a multiple of # block rows ("                  //
-       << NumRows << "," << NumBlockRows << ")" << endl;                     //
+       << NumRows << "," << NumBlockRows << ")" << std::endl;                     //
       exit( EXIT_FAILURE );                                                  //
     }                                                                        //
     NumPDEEqns_ = NumRows/NumBlockRows;                                      //
@@ -1132,16 +1132,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
      && !ValidateMLPParameters(List_,depth))
   {
     if (Comm_->MyPID() == 0)
-      cout<<"ERROR: ML's Teuchos::ParameterList contains incorrect parameter!\n"<<endl;
-      cout << endl << "** IMPORTANT **" << endl << endl;
-      cout << "ML copies your parameter list and modifies copy:" << endl
-           << "   1) Level-specific smoother and aggregation options are placed in sublists" << endl
-           << "      called \"smoother: list (level XX)\" and \"aggregation: list (level XX)\"," << endl
-           << "      respectively." << endl
-           << "   2) Coarse options are placed in a sublist called \"coarse: list\"." << endl
-           << "   3) In \"coarse: list\", any option that started with \"coarse:\" now starts" << endl
+      std::cout<<"ERROR: ML's Teuchos::ParameterList contains incorrect parameter!\n"<<endl;
+      std::cout << std::endl << "** IMPORTANT **" << std::endl << std::endl;
+      std::cout << "ML copies your parameter list and modifies copy:" << std::endl
+           << "   1) Level-specific smoother and aggregation options are placed in sublists" << std::endl
+           << "      called \"smoother: list (level XX)\" and \"aggregation: list (level XX)\"," << std::endl
+           << "      respectively." << std::endl
+           << "   2) Coarse options are placed in a sublist called \"coarse: list\"." << std::endl
+           << "   3) In \"coarse: list\", any option that started with \"coarse:\" now starts" << std::endl
            << "      with \"smoother:\"."
-           << endl << endl;
+           << std::endl << std::endl;
 #   ifdef HAVE_MPI
     MPI_Finalize();
 #   endif
@@ -1174,15 +1174,15 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   if (verbose_) {
     if( List_.isParameter("default values") ){
-      cout << PrintMsg_ << "Default values for `" << List_.get("default values", "DD") << "'" << endl;
+      std::cout << PrintMsg_ << "Default values for `" << List_.get("default values", "DD") << "'" << std::endl;
     }
-    cout << PrintMsg_ << "Maximum number of levels = " << NumLevels_ << endl;
-    if( IsIncreasing == "increasing" ) cout << PrintMsg_ << "Using increasing levels. ";
-    else                               cout << PrintMsg_ << "Using decreasing levels. ";
-    cout << "Finest level  = " << LevelID_[0];
-    cout << ", coarsest level = " << LevelID_[NumLevels_-1] << endl;
-    cout << "Number of applications of the ML cycle = " << CycleApplications_ << endl;
-    cout << "Number of PDE equations = " << NumPDEEqns_ << endl;
+    std::cout << PrintMsg_ << "Maximum number of levels = " << NumLevels_ << std::endl;
+    if( IsIncreasing == "increasing" ) std::cout << PrintMsg_ << "Using increasing levels. ";
+    else                               std::cout << PrintMsg_ << "Using decreasing levels. ";
+    std::cout << "Finest level  = " << LevelID_[0];
+    std::cout << ", coarsest level = " << LevelID_[NumLevels_-1] << std::endl;
+    std::cout << "Number of applications of the ML cycle = " << CycleApplications_ << std::endl;
+    std::cout << "Number of PDE equations = " << NumPDEEqns_ << std::endl;
   }
 
   if (AMGSolver_ == ML_MAXWELL) {
@@ -1934,16 +1934,15 @@ void ML_Epetra::MultiLevelPreconditioner::PrintUnused(const int MyPID) const
 
 void ML_Epetra::MultiLevelPreconditioner::PrintList()
 {
-  using namespace std;
   ML_print_line("+",78);
-  cout << "+++ Printing ML parameter list \"" << List_.name()
-       << "\" on pid " << Comm().MyPID() << endl;
+  std::cout << "+++ Printing ML parameter list \"" << List_.name()
+       << "\" on pid " << Comm().MyPID() << std::endl;
   ML_print_line("+",78);
   List_.print(cout);
   ML_print_line("-",49);
-  cout << "----------- end of ML parameter list ------------" << endl;
+  std::cout << "----------- end of ML parameter list ------------" << std::endl;
   ML_print_line("-",49);
-  cout << endl;
+  std::cout << std::endl;
 }
 
 // ============================================================================
@@ -2538,9 +2537,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 #endif
        else {
          if( Comm().MyPID() == 0 ) {
-           cout << ErrorMsg_ << "specified options ("
-                << MyCoarsenScheme << ") not valid. Should be:" << endl;
-           cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <Zoltan> /<MIS> / <Uncoupled> / <Coupled> / <user>" << endl;
+           std::cout << ErrorMsg_ << "specified options ("
+                << MyCoarsenScheme << ") not valid. Should be:" << std::endl;
+           std::cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <Zoltan> /<MIS> / <Uncoupled> / <Coupled> / <user>" << std::endl;
          }
          exit( EXIT_FAILURE );
        }
@@ -3443,26 +3442,25 @@ ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
 void ML_Epetra::MultiLevelPreconditioner::
 ReportTime()
 {
-  using namespace std;
   ML_print_line("-",78);
   double TotalTime = FirstApplicationTime_ + ApplicationTime_;
-  cout << PrintMsg_ << "   ML time information (seconds)          total          avg" << endl << endl
+  std::cout << PrintMsg_ << "   ML time information (seconds)          total          avg" << std::endl << std::endl
    << PrintMsg_ << "   1- Construction                  = " 
        << setw(10) << ConstructionTime_ << "  "
-       << setw(10) << ConstructionTime_ / NumConstructions_ << endl;
-  cout << PrintMsg_ << "   2- Preconditioner apply          = " 
-       << setw(10) << TotalTime << endl;
-  cout << PrintMsg_ << "     a- first application(s) only   = " 
+       << setw(10) << ConstructionTime_ / NumConstructions_ << std::endl;
+  std::cout << PrintMsg_ << "   2- Preconditioner apply          = " 
+       << setw(10) << TotalTime << std::endl;
+  std::cout << PrintMsg_ << "     a- first application(s) only   = " 
        << setw(10) << FirstApplicationTime_ << "  " 
        << setw(10) << FirstApplicationTime_ / NumConstructions_
-       << endl;
-  cout << PrintMsg_ << "     b- remaining applications      = " 
+       << std::endl;
+  std::cout << PrintMsg_ << "     b- remaining applications      = " 
        << setw(10) << ApplicationTime_ << "  "
-       << setw(10) << ApplicationTime_ / NumApplications_ << endl;
-  cout << endl;
-  cout << PrintMsg_ << "   3- Total time required by ML so far is " 
-       << ConstructionTime_ + TotalTime << " seconds" << endl;
-  cout << PrintMsg_ << "      (constr + all applications)" << endl;
+       << setw(10) << ApplicationTime_ / NumApplications_ << std::endl;
+  std::cout << std::endl;
+  std::cout << PrintMsg_ << "   3- Total time required by ML so far is " 
+       << ConstructionTime_ + TotalTime << " seconds" << std::endl;
+  std::cout << PrintMsg_ << "      (constr + all applications)" << std::endl;
 } //MLP::ReportTime()
 
 // ============================================================================

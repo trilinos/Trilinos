@@ -5,8 +5,7 @@
 
 #include "f2c.h"
 
-doublereal epslon_(x)
-doublereal *x;
+doublereal epslon_(doublereal *x)
 {
     /* System generated locals */
     doublereal ret_val, d__1;

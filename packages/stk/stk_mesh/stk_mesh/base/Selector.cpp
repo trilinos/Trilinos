@@ -156,7 +156,7 @@ void Selector::verify_compatible( const Bucket & B ) const
 }
 
 
-bool Selector::bucket_has_part(
+bool Selector::apply(
     unsigned part_id,
     const Bucket & candidate
     ) const
@@ -178,7 +178,7 @@ bool Selector::apply(
       i += i->m_count ;
     }
     else { // Test for containment of bucket in this part, or not in
-      result = i->m_unary ^ bucket_has_part( i->m_part_id , candidate );
+      result = i->m_unary ^ apply( i->m_part_id , candidate );
       ++i ;
     }
   }
@@ -318,23 +318,6 @@ std::string Selector::printExpression(
     outS << " AND " << printExpression(start_it,finish);
   }
   return outS.str();
-}
-
-
-Selector::OpType::OpType( const OpType & opType )
-  : m_part_id(opType.m_part_id),
-    m_unary(opType.m_unary),
-    m_count(opType.m_count)
-{
-}
-
-
-Selector::OpType & Selector::OpType::operator=( const OpType & opType )
-{
-  this->m_part_id = opType.m_part_id;
-  this->m_unary = opType.m_unary;
-  this->m_count = opType.m_count;
-  return *this;
 }
 
 

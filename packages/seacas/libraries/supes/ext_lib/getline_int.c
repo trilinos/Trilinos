@@ -152,8 +152,8 @@ gl_char_init()			/* turn off input echo */
 
 }
 
-static void
-gl_char_cleanup()		/* undo effects of gl_char_init */
+static void 
+gl_char_cleanup (void)		/* undo effects of gl_char_init */
 {
 #ifdef POSIX 
     tcsetattr(0, TCSANOW, &old_termios);
@@ -166,8 +166,8 @@ gl_char_cleanup()		/* undo effects of gl_char_init */
 #endif /* POSIX */
 }
 
-static int
-gl_getc()
+static int 
+gl_getc (void)
 /* get a character without echoing it to screen */
 {
     int             c;
@@ -181,9 +181,8 @@ gl_getc()
     return c;
 }
 
-static void
-gl_putc(c)
-int     c;
+static void 
+gl_putc (int c)
 {
     char   ch = c;
 
@@ -196,9 +195,8 @@ int     c;
 
 /******************** fairly portable part *********************************/
 
-static void
-gl_puts(buf)
-char *buf;
+static void 
+gl_puts (char *buf)
 {
     int len; 
     
@@ -208,9 +206,8 @@ char *buf;
     }
 }
 
-static void
-gl_error(buf)
-char *buf;
+static void 
+gl_error (char *buf)
 {
     int len = strlen(buf);
 
@@ -219,8 +216,8 @@ char *buf;
     exit(1);
 }
 
-static void
-gl_init()
+static void 
+gl_init (void)
 /* set up variables and terminal */
 {
     if (gl_init_done < 0) {		/* -1 only on startup */
@@ -232,8 +229,8 @@ gl_init()
     gl_init_done = 1;
 }
 
-static void
-gl_cleanup()
+static void 
+gl_cleanup (void)
 /* undo effects of gl_init, as necessary */
 {
     if (gl_init_done > 0)
@@ -409,9 +406,8 @@ char *getline_int(char *prompt)
     return gl_buf;
 }
 
-static void
-gl_addchar(c)
-int c;
+static void 
+gl_addchar (int c)
 /* adds the character c to the input buffer at current location */
 {
     int  i;
@@ -430,8 +426,8 @@ int c;
     }
 }
 
-static void
-gl_yank()
+static void 
+gl_yank (void)
 /* adds the kill buffer to the input buffer at current location */
 {
     int  i, len;
@@ -461,8 +457,8 @@ gl_yank()
 	gl_putc('\007');
 }
 
-static void
-gl_transpose()
+static void 
+gl_transpose (void)
 /* switch character under cursor and to left of cursor */
 {
     int    c;
@@ -477,8 +473,8 @@ gl_transpose()
 	gl_putc('\007');
 }
 
-static void
-gl_newline()
+static void 
+gl_newline (void)
 /*
  * Cleans up entire line before returning to caller. A \n is appended.
  * If line longer than screen, we redraw starting at beginning
@@ -502,9 +498,8 @@ gl_newline()
     gl_putc('\n');
 }
 
-static void
-gl_del(loc)
-int loc;
+static void 
+gl_del (int loc)
 /*
  * Delete a character.  The loc variable can be:
  *    -1 : delete character to left of cursor
@@ -521,9 +516,8 @@ int loc;
 	gl_putc('\007');
 }
 
-static void
-gl_kill(pos)
-int pos;
+static void 
+gl_kill (int pos)
 /* delete from pos to the end of line */
 {
     if (pos < gl_cnt) {
@@ -534,9 +528,8 @@ int pos;
 	gl_putc('\007');
 }
 
-static void
-gl_word(direction)
-int direction;
+static void 
+gl_word (int direction)
 /* move forward or backword one word */
 {
     int pos = gl_pos;
@@ -559,8 +552,8 @@ int direction;
     gl_fixup(gl_prompt, -1, pos);
 }
 
-static void
-gl_redraw()
+static void 
+gl_redraw (void)
 /* emit a newline, reset and redraw prompt and current input line */
 {
     if (gl_init_done > 0) {
@@ -569,10 +562,8 @@ gl_redraw()
     }
 }
 
-static void
-gl_fixup(prompt, change, cursor)
-char  *prompt;
-int    change, cursor;
+static void 
+gl_fixup (char *prompt, int change, int cursor)
 /*
  * This function is used both for redrawing when input changes or for
  * moving within the input line.  The parameters are:
@@ -692,11 +683,8 @@ int    change, cursor;
     gl_pos = cursor;
 }
 
-static int
-gl_tab(buf, offset, loc)
-char  *buf;
-int    offset;
-int   *loc;
+static int 
+gl_tab (char *buf, int offset, int *loc)
 /* default tab handler, acts like tabstops every 8 cols */
 {
     int i, count, len;
@@ -714,8 +702,8 @@ int   *loc;
 
 /******************* strlen stuff **************************************/
 
-void gl_strwidth(func)
-size_t (*func)();
+void 
+gl_strwidth (size_t (*func)(void))
 {
     if (func != 0) {
 	gl_strlen = func;
@@ -731,8 +719,8 @@ size_t (*func)();
 static int      hist_pos = 0, hist_last = 0;
 static char    *hist_buf[HIST_SIZE];
 
-static void
-hist_init()
+static void 
+hist_init (void)
 {
     int i;
 
@@ -741,9 +729,8 @@ hist_init()
 	hist_buf[i] = (char *)0;
 }
 
-void
-gl_histadd(buf)
-char *buf;
+void 
+gl_histadd (char *buf)
 {
     static char *prev = 0;
     char *p = buf;
@@ -775,7 +762,7 @@ char *buf;
 }
 
 static char *
-hist_prev()
+hist_prev (void)
 /* loads previous hist entry into input buffer, sticks on first */
 {
     char *p = 0;
@@ -793,7 +780,7 @@ hist_prev()
 }
 
 static char *
-hist_next()
+hist_next (void)
 /* loads next hist entry into input buffer, clears on last */
 {
     char *p = 0;
@@ -810,8 +797,7 @@ hist_next()
 }
 
 static char *
-hist_save(p)
-char *p;
+hist_save (char *p)
 /* makes a copy of the string */
 {
     char *s = 0;
@@ -841,9 +827,8 @@ static int   search_pos = 0;      /* current location in search_string */
 static int   search_forw_flg = 0; /* search direction flag */
 static int   search_last = 0;	  /* last match found */
 
-static void  
-search_update(c)
-int c;
+static void 
+search_update (int c)
 {
     if (c == 0) {
 	search_pos = 0;
@@ -874,8 +859,7 @@ int c;
 }
 
 static void 
-search_addchar(c)
-int  c;
+search_addchar (int c)
 {
     char *loc;
 
@@ -902,8 +886,8 @@ int  c;
     }
 }
 
-static void     
-search_term()
+static void 
+search_term (void)
 {
     gl_search_mode = 0;
     if (gl_buf[0] == 0)		/* not found, reset hist list */
@@ -913,9 +897,8 @@ search_term()
     gl_fixup(gl_prompt, 0, gl_pos);
 }
 
-static void     
-search_back(new_search)
-int new_search;
+static void 
+search_back (int new_search)
 {
     int    found = 0;
     char  *p, *loc;
@@ -947,9 +930,8 @@ int new_search;
     }
 }
 
-static void     
-search_forw(new_search)
-int new_search;
+static void 
+search_forw (int new_search)
 {
     int    found = 0;
     char  *p, *loc;

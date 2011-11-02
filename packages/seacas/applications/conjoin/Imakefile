@@ -41,11 +41,9 @@ CXXEXTRA_DEFINES = -LANG:std
 LOCAL_LDFLAGS = -LANG:std
 #endif
 
-LIBS = $(EXODUS) $(NETCDF) -lm
+LIBS = $(SUPLIB) $(EXODUS) $(NETCDF) -lm
 
-SRCS =	ExodusFile.C GetLongOpt.C \
-	Internals.C SystemInterface.C Conjoin.C \
-	smart_assert.C add_to_log.C timer.C to_string.C adler.C tokenize.C
+SRCS =	CJ_ExodusFile.C CJ_Internals.C CJ_SystemInterface.C Conjoin.C
 
 OBJS = $(SRCS:.C=.o)
 

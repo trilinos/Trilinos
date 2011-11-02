@@ -129,6 +129,14 @@ namespace TSQR {
       distTsqr_ (distTsqr)
     {}
 
+    /// \brief Get the intranode part of TSQR.  
+    ///
+    /// Sometimes we need this in order to do post-construction
+    /// initialization.
+    Teuchos::RCP<node_tsqr_type> getNodeTsqr () {
+      return nodeTsqr_;
+    }
+
     /// \brief Cache size hint in bytes used by the intranode part of TSQR.
     ///
     /// This value may differ from the cache size hint given to the

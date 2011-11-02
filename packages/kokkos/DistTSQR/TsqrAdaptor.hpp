@@ -158,6 +158,9 @@ namespace TSQR {
 		      dense_matrix_type& R,
 		      const bool contiguousCacheBlocks = false)
       {
+	// Lazily init the intranode part of TSQR if necessary.
+	initNodeTsqr (A);
+
 	factor_output_type output = factor (A, R, contiguousCacheBlocks);
 	explicitQ (A, output, Q, contiguousCacheBlocks);
       }
@@ -203,6 +206,9 @@ namespace TSQR {
 	      dense_matrix_type& R,
 	      const bool contiguousCacheBlocks = false)
       {
+	// Lazily init the intranode part of TSQR if necessary.
+	initNodeTsqr (A);
+
 	local_ordinal_type nrowsLocal, ncols, LDA;
 	fetchDims (A, nrowsLocal, ncols, LDA);
 	// This is guaranteed to be _correct_ for any Node type, but
@@ -254,6 +260,9 @@ namespace TSQR {
 		 const bool contiguousCacheBlocks = false)
       {
 	using Teuchos::ArrayRCP;
+
+	// Lazily init the intranode part of TSQR if necessary.
+	initNodeTsqr (Q_in);
 
 	local_ordinal_type nrowsLocal, ncols_in, LDQ_in;
 	fetchDims (Q_in, nrowsLocal, ncols_in, LDQ_in);
@@ -309,6 +318,9 @@ namespace TSQR {
       {
 	using Teuchos::ArrayRCP;
 
+	// Lazily init the intranode part of TSQR if necessary.
+	initNodeTsqr (Q);
+
 	local_ordinal_type nrowsLocal, ncols, ldqLocal;
 	fetchDims (Q, nrowsLocal, ncols, ldqLocal);
 
@@ -335,6 +347,9 @@ namespace TSQR {
 		  multivector_type& A_out)
       {
 	using Teuchos::ArrayRCP;
+
+	// Lazily init the intranode part of TSQR if necessary.
+	initNodeTsqr (A_in);
 
 	local_ordinal_type nrowsLocal, ncols, LDA_in;
 	fetchDims (A_in, nrowsLocal, ncols, LDA_in);
@@ -373,6 +388,9 @@ namespace TSQR {
 		    multivector_type& A_out)
       {
 	using Teuchos::ArrayRCP;
+
+	// Lazily init the intranode part of TSQR if necessary.
+	initNodeTsqr (A_in);
 
 	local_ordinal_type nrowsLocal, ncols, LDA_in;
 	fetchDims (A_in, nrowsLocal, ncols, LDA_in);
@@ -452,7 +470,7 @@ namespace TSQR {
       /// instantiate an instance of a pure virtual class.)
       void 
       init (const multivector_type& mv,
-	    const Teuchos::ParameterList& plist)
+	    const Teuchos::RCP<Teuchos::ParameterList>& plist)
       {
 	// This is done in a multivector type - dependent way.
 	fetchMessengers (mv, pScalarMessenger_, pOrdinalMessenger_);
@@ -461,6 +479,9 @@ namespace TSQR {
 	// plist and pScalarMessenger_ are inputs.  Construct *pTsqr_.
 	factory.makeTsqr (plist, pScalarMessenger_, pTsqr_);
       }
+
+      // Lazily init the intranode part of TSQR if necessary.
+      virtual void initNodeTsqr (const multivector_type& A);
 
     private:
       /// \brief Return dimensions of a multivector object.

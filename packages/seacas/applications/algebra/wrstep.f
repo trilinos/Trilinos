@@ -59,11 +59,11 @@ C   --Database must be positioned in front of time step upon entry;
 C   --upon exit positioned after time step.
 
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
-      include 'namlen.blk'
-      include 'var.blk'
-      include 'dbnums.blk'
-      include 'dbout.blk'
-      include 'dbxvar.blk'
+      include 'ag_namlen.blk'
+      include 'ag_var.blk'
+      include 'ag_dbnums.blk'
+      include 'ag_dbout.blk'
+      include 'ag_dbxvar.blk'
       
       REAL VARVAL(MAXNE,*)
       LOGICAL VISELB(NELBLK)

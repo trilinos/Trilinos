@@ -8,11 +8,13 @@
 #include "smalloc.h"
 
 
-void      sorts3d(vals, indices, nvtxs)
+void 
+sorts3d (
 /* Sort the lists needed to find the splitter. */
-double   *vals[8][MAXSETS];	/* lists of values to sort */
-int      *indices[8][MAXSETS];	/* indices of sorted lists */
-int       nvtxs;		/* number of vertices */
+    double *vals[8][MAXSETS],	/* lists of values to sort */
+    int *indices[8][MAXSETS],	/* indices of sorted lists */
+    int nvtxs		/* number of vertices */
+)
 {
     int      *space;		/* space for mergesort routine */
     int       nsets = 8;	/* number of sets */

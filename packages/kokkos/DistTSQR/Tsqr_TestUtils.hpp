@@ -130,13 +130,13 @@ namespace TSQR {
     ///   list (for example, to fill in any missing parameters with
     ///   defaults).  Do not rely on this behavior.
     template<class NodeType>
-    Teuchos::RCP<const NodeType>
+    Teuchos::RCP<NodeType>
     getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
       using Teuchos::rcp;
       using Teuchos::rcp_const_cast;
 
-      return rcp_const_cast<const NodeType> (rcp (new NodeType (*plist)));
+      return rcp (new NodeType (*plist));
     }
 
     /// \class Cons

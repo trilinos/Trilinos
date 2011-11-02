@@ -263,7 +263,7 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
   RCP<const Thyra::VectorBase<Scalar> >
     x_init = initialCondition.get_x();
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
@@ -591,7 +591,7 @@ void ImplicitRKStepper<Scalar>::initialize_()
   TEUCHOS_TEST_FOR_EXCEPT(irkButcherTableau_->numStages() == 0);
   TEUCHOS_ASSERT(haveInitialCondition_);
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   THYRA_ASSERT_VEC_SPACES(
     "Rythmos::ImplicitRKStepper::initialize_(...)",
     *x_->space(), *model_->get_x_space() );

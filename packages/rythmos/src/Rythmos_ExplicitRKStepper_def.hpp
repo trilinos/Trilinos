@@ -155,11 +155,11 @@ void ExplicitRKStepper<Scalar>::initialize_()
       k_vector_.push_back(Thyra::createMember(model_->get_f_space()));
     }
   }
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   THYRA_ASSERT_VEC_SPACES(
     "Rythmos::ExplicitRKStepper::initialize_(...)",
     *solution_vector_->space(), *model_->get_x_space() );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   isInitialized_ = true;
 }
 
@@ -181,11 +181,11 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
   this->initialize_();
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( flag == STEP_TYPE_VARIABLE, std::logic_error,
         "Error!  ExplicitRKStepper does not support variable time steps at this time."
         );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   if ((flag == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
     return(Scalar(-ST::one()));
   }
@@ -434,7 +434,7 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
   RCP<const Thyra::VectorBase<Scalar> >
     x_init = initialCondition.get_x();
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"

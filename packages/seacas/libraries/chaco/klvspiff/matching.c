@@ -23,14 +23,15 @@ static void bpmatching(), reachability(), augment();
 static int touch(), touch2();
 
 
-void      bpcover(n_left, n_right, pointers, indices,
-			               sep_size, sep_nodes)
-int       n_left;		/* number of vertices on left side */
-int       n_right;		/* number of vertices on right side */
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *sep_size;		/* returned size of separator */
-int      *sep_nodes;		/* list of separator nodes */
+void 
+bpcover (
+    int n_left,		/* number of vertices on left side */
+    int n_right,		/* number of vertices on right side */
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *sep_size,		/* returned size of separator */
+    int *sep_nodes		/* list of separator nodes */
+)
 {
     extern int DEBUG_COVER;	/* controls debugging output in this routine */
     int      *matching;		/* array to encode matching */
@@ -80,13 +81,15 @@ if (DEBUG_COVER) {
 }
 
 
-static void bpmatching(n_left, n_right, pointers, indices, matching, touched)
-int       n_left;		/* number of vertices on left side */
-int       n_right;		/* number of vertices on right side */
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *matching;		/* array to encode matching */
-int      *touched;		/* flags for each vertex */
+static void 
+bpmatching (
+    int n_left,		/* number of vertices on left side */
+    int n_right,		/* number of vertices on right side */
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *matching,		/* array to encode matching */
+    int *touched		/* flags for each vertex */
+)
 {
     int      *seen;		/* space for list of encountered vertices */
     int       i, j;		/* loop counters */
@@ -125,13 +128,15 @@ int      *touched;		/* flags for each vertex */
 }
 
 
-static void augment(node, pointers, indices, matching, touched, seen)
-int       node;			/* start node in augmenting path */
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *matching;		/* array to encode matching */
-int      *touched;		/* flags for each vertex */
-int      *seen;			/* keeps list of vertices encountered */
+static void 
+augment (
+    int node,			/* start node in augmenting path */
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *matching,		/* array to encode matching */
+    int *touched,		/* flags for each vertex */
+    int *seen			/* keeps list of vertices encountered */
+)
 {
     int       nseen;			/* number of vertices encountered */
     int       enlarged;			/* was matching enlarged? */
@@ -155,14 +160,16 @@ int      *seen;			/* keeps list of vertices encountered */
 
 /* Mark everybody in my alternating path tree, and recursively update */
 /* matching if augmenting path found. */
-static int touch(node, pointers, indices, matching, touched, seen, nseen)
-int       node;
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *matching;		/* array to encode matching */
-int      *touched;		/* flags for each vertex */
-int      *seen;			/* list of vertices encountered */
-int      *nseen;		/* number of vertices encountered */
+static int 
+touch (
+    int node,
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *matching,		/* array to encode matching */
+    int *touched,		/* flags for each vertex */
+    int *seen,			/* list of vertices encountered */
+    int *nseen		/* number of vertices encountered */
+)
 {
     int       neighbor;		/* neighbor of a vertex */
     int       result;		/* return node number (or -1) */
@@ -196,13 +203,15 @@ int      *nseen;		/* number of vertices encountered */
 }
 
 
-static void reachability(n_left, n_right, pointers, indices, matching, touched)
-int       n_left;		/* number of vertices on left side */
-int       n_right;		/* number of vertices on right side */
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *matching;		/* array to encode matching */
-int      *touched;		/* flags for each vertex */
+static void 
+reachability (
+    int n_left,		/* number of vertices on left side */
+    int n_right,		/* number of vertices on right side */
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *matching,		/* array to encode matching */
+    int *touched		/* flags for each vertex */
+)
 {
     int       i;		/* loop counter */
 
@@ -218,12 +227,14 @@ int      *touched;		/* flags for each vertex */
 
 /* Mark everybody in my alternating path tree, and return vertex at */
 /* end of augmenting path if found. */
-static int touch2(node, pointers, indices, matching, touched)
-int       node;
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *matching;		/* array to encode matching */
-int      *touched;		/* flags for each vertex */
+static int 
+touch2 (
+    int node,
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *matching,		/* array to encode matching */
+    int *touched		/* flags for each vertex */
+)
 {
     int       neighbor;		/* neighbor of a vertex */
     int       result;		/* return node number (or -1) */
@@ -249,14 +260,16 @@ int      *touched;		/* flags for each vertex */
 }
 
 
-void confirm_match(n_left, n_right, pointers, indices, matching, sep_size, sep_nodes)
-int       n_left;		/* number of vertices on left side */
-int       n_right;		/* number of vertices on right side */
-int      *pointers;		/* start/stop of adjacency lists */
-int      *indices;		/* adjacency list for each vertex */
-int      *matching;		/* array to encode matching */
-int       sep_size;		/* returned size of separator */
-int      *sep_nodes;		/* list of separator nodes */
+void 
+confirm_match (
+    int n_left,		/* number of vertices on left side */
+    int n_right,		/* number of vertices on right side */
+    int *pointers,		/* start/stop of adjacency lists */
+    int *indices,		/* adjacency list for each vertex */
+    int *matching,		/* array to encode matching */
+    int sep_size,		/* returned size of separator */
+    int *sep_nodes		/* list of separator nodes */
+)
 {
     int      *marked;
     int       neighbor;
@@ -301,8 +314,8 @@ int      *sep_nodes;		/* list of separator nodes */
 }
 
 
-int match_size(matching, nleft)
-int *matching, nleft;
+int 
+match_size (int *matching, int nleft)
 {
     int i, nmatch;
 

@@ -54,11 +54,11 @@ C   --   Sets NUMALI, NAMALI, NIXALI, IXALI of /ALIAS../
 C   --   Uses NVARHI, NVARGL, NVARNP, NVAREL of /DBNUMS/
 
 
-      include 'params.blk'
-      include 'namlen.blk'
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
 
-      include 'alias.blk'
-      include 'dbnums.blk'
+      include 'ag_alias.blk'
+      include 'ag_dbnums.blk'
 
       CHARACTER*(*) INLINE
       INTEGER INTYP(*)

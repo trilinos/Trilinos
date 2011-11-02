@@ -1,2 +1,0 @@
-      COMMON /HEADER/ HED
-      CHARACTER*80 HED

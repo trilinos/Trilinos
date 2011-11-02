@@ -49,8 +49,10 @@ double    median_time = 0;
 double    sim_time = 0;
 
 
-void      time_out(outfile)
-FILE     *outfile;		/* file to print output to */
+void 
+time_out (
+    FILE *outfile		/* file to print output to */
+)
 {
     FILE     *tempfile;		/* file name for two passes */
     extern int ECHO;		/* parameter for different output styles */
@@ -191,7 +193,8 @@ FILE     *outfile;		/* file to print output to */
 }
 
 
-void      clear_timing()
+void 
+clear_timing (void)
 {
     start_time = -1;
     total_time = 0;

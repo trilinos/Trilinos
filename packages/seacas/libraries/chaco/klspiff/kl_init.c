@@ -8,14 +8,16 @@
 #include "smalloc.h"
 
 
-int       kl_init(bucket_ptrs, listspace, dvals, tops, nvtxs, nsets, maxchange)
-struct bilist *****bucket_ptrs;	/* space for multiple bucket sorts */
-struct bilist ***listspace;	/* space for all elements of linked lists */
-int    ***dvals;		/* change in cross edges for each move */
-int    ***tops;			/* top dval for each type of move */
-int       nvtxs;		/* number of vertices in the graph */
-int       nsets;		/* number of sets created at each step */
-int       maxchange;		/* maximum change by moving a vertex */
+int 
+kl_init (
+    struct bilist *****bucket_ptrs,	/* space for multiple bucket sorts */
+    struct bilist ***listspace,	/* space for all elements of linked lists */
+    int ***dvals,		/* change in cross edges for each move */
+    int ***tops,			/* top dval for each type of move */
+    int nvtxs,		/* number of vertices in the graph */
+    int nsets,		/* number of sets created at each step */
+    int maxchange		/* maximum change by moving a vertex */
+)
 {
     struct bilist *spacel;	/* space for all listspace entries */
     struct bilist **spaceb;	/* space for all buckets entries */

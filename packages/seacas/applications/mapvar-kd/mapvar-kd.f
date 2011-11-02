@@ -184,7 +184,7 @@ C IA(NAEB)    =   IDA(1:NBLKSA) - Donor mesh element block I.D.'s
 C IA(NBEB)    =   IDB(1:NBLKSA) - Recipient mesh element block I.D.'s
 C IA(NMAP)    =   MP(1:3,1:MBLK) - Donor to recipient mesh map
 C
-      MBLK = NBLKSA * NBLKSB
+      MBLK = NBLKSA + NBLKSB
       CALL MDRSRV ('TIMES', NT1,   NTIMES)
       CALL MDRSRV ('IDA',   NAEB,  NBLKSA)
       CALL MDRSRV ('IDB',   NBEB,  NBLKSB)
@@ -192,7 +192,7 @@ C
 
 C reserve space for storing the search box size for each map operation
       CALL MDRSRV ('MPSEA', NMAPS, MBLK)
-C
+
       CALL MDSTAT (MNERRS, MNUSED)
       IF (MNERRS .NE. 0) THEN
          CALL MDEROR(NOUT)

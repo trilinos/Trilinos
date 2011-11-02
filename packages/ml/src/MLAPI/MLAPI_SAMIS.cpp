@@ -11,8 +11,6 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_VbrMatrix.h"
 
-using namespace std;
-
 namespace MLAPI {
 namespace SAMIS {
 

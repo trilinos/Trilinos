@@ -14,12 +14,14 @@
 /* (Use float instead of double values to save space.) */
 /* THIS ROUTINE IS SLOWER THAN MAXMATCH3, AND SO PROBABLY OBSOLETE. */
 
-int       maxmatch4(graph, nvtxs, nedges, mflag, using_ewgts)
-     struct vtx_data **graph;	/* array of vtx data for graph */
-     int       nvtxs;		/* number of vertices in graph */
-     int       nedges;		/* number of edges in graph */
-     int      *mflag;		/* flag indicating vtx selected or not */
-     int       using_ewgts;
+int 
+maxmatch4 (
+    struct vtx_data **graph,	/* array of vtx data for graph */
+    int nvtxs,		/* number of vertices in graph */
+    int nedges,		/* number of edges in graph */
+    int *mflag,		/* flag indicating vtx selected or not */
+    int using_ewgts
+)
 {
     extern int HEAVY_MATCH;	/* try for heavy edges in matching? */
     int      *iptr;		/* loops through integer arrays */

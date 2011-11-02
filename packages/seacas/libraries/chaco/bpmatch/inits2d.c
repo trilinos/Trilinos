@@ -7,25 +7,71 @@
 #include	"structs.h"
 #include	"defs.h"
 
+int 
+findindex (
+    int *indices,		/* indices sorting values */
+    double *vals,			/* values sorted by indices */
+    double target,		/* target value */
+    int nvals		/* number of values */
+)
+{
+    double    ratio;		/* interpolation parameter */
+    double    vlow, vhigh;	/* values at limits of search range */
+    int       low, high;	/* range left to search */
+    int       new;		/* new index limit */
 
-void      inits2d(graph, xvecs, vals, indices, nvtxs, dist, startvtx, size, sets)
-struct vtx_data **graph;	/* graph data structure for vertex weights */
-double  **xvecs;		/* values to partition with */
-double   *vals[4][MAXSETS];	/* values in sorted lists */
-int      *indices[4][MAXSETS];	/* indices sorting lists */
-int       nvtxs;		/* number of vertices */
-double   *dist;			/* trial separation point */
-int       startvtx[4][MAXSETS];	/* indices defining separation */
-double   *size;			/* size of each set being modified */
-int    *sets;			/* set each vertex gets assigned to */
+    if (target <= vals[indices[0]])
+	return (0);
+    if (target >= vals[indices[nvals - 1]])
+	return (nvals - 1);
+
+    low = 0;
+    high = nvals - 1;
+
+    while (high - low > 1) {
+	vlow = vals[indices[low]];
+	vhigh = vals[indices[high]];
+	if (vlow == vhigh)
+	    return ((vlow + vhigh) / 2);
+
+	ratio = (target - vlow) / (vhigh - vlow);
+	new = low + ratio * (high - low);
+	if (new == low)
+	    ++new;
+	else if (new == high)
+	    --new;
+
+	if (vals[indices[new]] < target)
+	    low = new;
+	else
+	    high = new;
+    }
+
+    if (target == vals[indices[high]])
+	return (high);
+    else
+	return (low);
+}
+
+void 
+inits2d (
+    struct vtx_data **graph,	/* graph data structure for vertex weights */
+    double **xvecs,		/* values to partition with */
+    double *vals[4][MAXSETS],	/* values in sorted lists */
+    int *indices[4][MAXSETS],	/* indices sorting lists */
+    int nvtxs,		/* number of vertices */
+    double *dist,			/* trial separation point */
+    int startvtx[4][MAXSETS],	/* indices defining separation */
+    double *size,			/* size of each set being modified */
+    int *sets			/* set each vertex gets assigned to */
+)
 {
     double    xmid, ymid;	/* median x and y values */
     double    val, bestval;	/* values for determining set preferences */
-    int     bestset;		/* set vertex wants to be in */
+    int     bestset = 0;	/* set vertex wants to be in */
     int       signx, signy;	/* sign values for different target points */
     int       nsets = 4;	/* number of different sets */
     int       i, j;		/* loop counters */
-    int       findindex();
 
 /*
     xmid = .25 * (vals[0][1][indices[0][1][nvtxs / 2]] +
@@ -70,46 +116,3 @@ int    *sets;			/* set each vertex gets assigned to */
 }
 
 
-int       findindex(indices, vals, target, nvals)
-int      *indices;		/* indices sorting values */
-double   *vals;			/* values sorted by indices */
-double    target;		/* target value */
-int       nvals;		/* number of values */
-{
-    double    ratio;		/* interpolation parameter */
-    double    vlow, vhigh;	/* values at limits of search range */
-    int       low, high;	/* range left to search */
-    int       new;		/* new index limit */
-
-    if (target <= vals[indices[0]])
-	return (0);
-    if (target >= vals[indices[nvals - 1]])
-	return (nvals - 1);
-
-    low = 0;
-    high = nvals - 1;
-
-    while (high - low > 1) {
-	vlow = vals[indices[low]];
-	vhigh = vals[indices[high]];
-	if (vlow == vhigh)
-	    return ((vlow + vhigh) / 2);
-
-	ratio = (target - vlow) / (vhigh - vlow);
-	new = low + ratio * (high - low);
-	if (new == low)
-	    ++new;
-	else if (new == high)
-	    --new;
-
-	if (vals[indices[new]] < target)
-	    low = new;
-	else
-	    high = new;
-    }
-
-    if (target == vals[indices[high]])
-	return (high);
-    else
-	return (low);
-}

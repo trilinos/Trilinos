@@ -7,10 +7,13 @@
 #include "defs.h"
 
 /* Return minimum of vector over range */
-void      scanmin(vec, beg, end, scanlist)
-double   *vec;			/* vector to scan */
-int       beg, end;		/* index range */
-struct scanlink **scanlist;	/* pntr to list holding results of scan */
+void 
+scanmin (
+    double *vec,			/* vector to scan */
+    int beg,
+    int end,		/* index range */
+    struct scanlink **scanlist	/* pntr to list holding results of scan */
+)
 {
     extern double DOUBLE_MAX;
     struct scanlink *top;

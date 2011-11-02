@@ -8,10 +8,8 @@
 #include "structs.h"
 
 /* Check orthogonality of vector set */
-void      checkorth(mat, n, dim)
-double  **mat;
-int       n;
-int       dim;
+void 
+checkorth (double **mat, int n, int dim)
 {
     int       i, j;		/* loop idices */
     double    measure;		/* Froebenius norm */
@@ -83,10 +81,8 @@ int       dim;
 
 
 /* Check orthogonality of vector set */
-void      checkorth_float(mat, n, dim)
-float   **mat;
-int       n;
-int       dim;
+void 
+checkorth_float (float **mat, int n, int dim)
 {
     int       i, j;		/* loop idices */
     double    measure;		/* Froebenius norm */

@@ -41,7 +41,10 @@
 // @HEADER
 */
 
-#define TEUCHOS_SHOW_DEPRECATED_WARNINGS 0
+
+// Make deprecated warnings go away for this test.  Comment this define out to
+// see the deprecated warnings!
+#define TEUCHOS_DEPRECATED
 
 
 #include "Teuchos_UnitTestHarness.hpp"

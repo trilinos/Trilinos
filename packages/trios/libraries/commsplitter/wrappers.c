@@ -12,6 +12,8 @@
 #include "commsplitter.h"
 
 
+#define COMMSPLITTER_PATH_MAX 1024
+
 
 #define SUBSTITUTE_COMM \
 {\
@@ -41,7 +43,7 @@ static char *get_exe_name(char *pathname)
 
 static char *get_app_pathname_from_proc(void)
 {
-    int exelen, bufsize=PATH_MAX;
+    int exelen, bufsize=COMMSPLITTER_PATH_MAX;
     char *buf = NULL;
 
     buf = malloc(bufsize);
@@ -50,7 +52,7 @@ static char *get_app_pathname_from_proc(void)
         PMPI_Abort(MPI_COMM_WORLD, -1);
     }
 
-    exelen = readlink("/proc/self/exe", buf, PATH_MAX);
+    exelen = readlink("/proc/self/exe", buf, COMMSPLITTER_PATH_MAX);
     if (exelen == -1) {
         free(buf);
     } else {
@@ -71,10 +73,10 @@ static void get_app_args_from_proc(int *argc, char **argv, int max_args)
     *argc   = 0;
     *argv = NULL;
 
-    buf = malloc(PATH_MAX);
+    buf = malloc(COMMSPLITTER_PATH_MAX);
     f = fopen("/proc/self/cmdline", "r");
     if (f != NULL) {
-        if (fread(buf, 1, PATH_MAX, f) > 0) {
+        if (fread(buf, 1, COMMSPLITTER_PATH_MAX, f) > 0) {
             arg = buf;
             while(*arg != '\0') {
                 argv[i] = strdup(arg);

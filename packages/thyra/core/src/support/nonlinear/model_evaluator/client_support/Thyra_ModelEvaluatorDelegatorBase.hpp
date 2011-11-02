@@ -225,7 +225,7 @@ private: // Data members
     = std::string(CLASS_NAME)+"<"+Teuchos::ScalarTraits<Scalar>::name()+">"; \
   const std::string blahblah_classFuncNameStr \
     = blahblah_classNameStr+"::evalModel(...)"; \
-  TEUCHOS_FUNC_TIME_MONITOR(blahblah_classFuncNameStr); \
+  THYRA_FUNC_TIME_MONITOR(blahblah_classFuncNameStr); \
   \
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &blahblah_outArgs = (OUTARGS); \
   \

@@ -76,7 +76,7 @@ APPEND_SET(SOURCES
 IF (${PACKAGE_NAME}_ENABLE_Portals)
   APPEND_SET(SOURCES common/nnti_ptls.cpp)
 ELSEIF (${PACKAGE_NAME}_ENABLE_InfiniBand)
-  APPEND_SET(SOURCES common/nnti_ib.c)
+  APPEND_SET(SOURCES common/nnti_ib.cpp)
 ELSEIF (${PACKAGE_NAME}_ENABLE_LUC)
   APPEND_SET(SOURCES common/nnti_luc.cpp)
 ELSEIF (${PACKAGE_NAME}_ENABLE_Gemini)

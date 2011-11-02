@@ -7,10 +7,12 @@
 
 
 /* Find eigenvalues of 2x2 symmetric system by solving quadratic. */
-void      evals2(H, eval1, eval2)
-double    H[2][2];		/* symmetric matrix for eigenvalues */
-double   *eval1;		/* smallest eigenvalue */
-double   *eval2;		/* middle eigenvalue */
+void 
+evals2 (
+    double H[2][2],		/* symmetric matrix for eigenvalues */
+    double *eval1,		/* smallest eigenvalue */
+    double *eval2		/* middle eigenvalue */
+)
 {
     double    M[2][2];		/* normalized version of matrix */
     double    b, c;		/* coefficents of cubic equation */
@@ -48,11 +50,13 @@ double   *eval2;		/* middle eigenvalue */
 
 
 /* Solve for eigenvector of SPD 2x2 matrix, with given eigenvalue. */
-void      eigenvec2(A, eval, evec, res)
-double    A[2][2];		/* matrix */
-double    eval;			/* eigenvalue */
-double    evec[2];		/* eigenvector returned */
-double   *res;			/* normalized residual */
+void 
+eigenvec2 (
+    double A[2][2],		/* matrix */
+    double eval,			/* eigenvalue */
+    double evec[2],		/* eigenvector returned */
+    double *res			/* normalized residual */
+)
 {
     double    norm;		/* norm of eigenvector */
     double    res1, res2;	/* components of residual vector */

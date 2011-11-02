@@ -8,12 +8,14 @@
 #include "structs.h"
 
 /* Print out subgraph in matrix-market format. */
-void      mm_out(graph, nvtxs, using_ewgts, tag, file_name)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vtxs in graph */
-int       using_ewgts;		/* Are edges weighted? */
-char     *tag;			/* message to include */
-char     *file_name;		/* output file name if not null */
+void 
+mm_out (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vtxs in graph */
+    int using_ewgts,		/* Are edges weighted? */
+    char *tag,			/* message to include */
+    char *file_name		/* output file name if not null */
+)
 {
     FILE     *file;		/* output file */
     int       nedges;		/* number of edges in graph */

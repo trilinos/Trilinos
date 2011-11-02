@@ -8,15 +8,30 @@
 #include	"structs.h"
 #include        "smalloc.h"
 
-static void free2d();
+/* Free the space used in the bpmatch routines. */
+static void 
+free2d (double *vals[4][MAXSETS], int *indices[4][MAXSETS])
+{
+    sfree(vals[0][1]);
+    sfree(vals[0][2]);
+    sfree(vals[0][3]);
+    sfree(vals[1][2]);
 
-void      map2d(graph, xvecs, nvtxs, sets, goal, vwgt_max)
-struct vtx_data **graph;	/* data structure with vertex weights */
-double  **xvecs;		/* vectors to partition */
-int       nvtxs;		/* number of vertices */
-int    *sets;			/* set each vertex gets assigned to */
-double   *goal;			/* desired set sizes */
-int       vwgt_max;		/* largest vertex weight */
+    sfree(indices[0][1]);
+    sfree(indices[0][2]);
+    sfree(indices[0][3]);
+    sfree(indices[1][2]);
+}
+
+void 
+map2d (
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    double **xvecs,		/* vectors to partition */
+    int nvtxs,		/* number of vertices */
+    int *sets,			/* set each vertex gets assigned to */
+    double *goal,			/* desired set sizes */
+    int vwgt_max		/* largest vertex weight */
+)
 {
     extern int DEBUG_BPMATCH;	/* turn on debuging for bipartite matching */
     extern int N_VTX_MOVES;	/* total number of vertex moves */
@@ -61,20 +76,3 @@ int       vwgt_max;		/* largest vertex weight */
 }
 
 
-/* Free the space used in the bpmatch routines. */
-static void free2d(vals, indices)
-double   *vals[4][MAXSETS];
-int      *indices[4][MAXSETS];
-{
-
-
-    sfree(vals[0][1]);
-    sfree(vals[0][2]);
-    sfree(vals[0][3]);
-    sfree(vals[1][2]);
-
-    sfree(indices[0][1]);
-    sfree(indices[0][2]);
-    sfree(indices[0][3]);
-    sfree(indices[1][2]);
-}

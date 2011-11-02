@@ -61,7 +61,8 @@ StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
   sgParams.validateParameters(*getValidSGParameters(),0);
 
   sgSolverParams = 
-    Teuchos::rcp(&(sgParams.sublist("SG Solver Parameters")),false);
+    // Teuchos::rcp(&(sgParams.sublist("SG Solver Parameters")),false);
+    Teuchos::rcp(new Teuchos::ParameterList(sgParams.sublist("SG Solver Parameters")));
 
   // Get SG expansion type
   std::string sg_type = sgParams.get("SG Method", "Direct");
@@ -180,12 +181,6 @@ createSGModel(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
 	noxParams.sublist("Direction").sublist("Newton");
       Teuchos::ParameterList& noxstratlsParams = 
 	newtonParams.sublist("Stratimikos Linear Solver");
-
-      Teuchos::RCP<const Teuchos::ParameterList> ortho_params = 
-	Teuchos::rcp(new Teuchos::ParameterList);
-      noxstratlsParams.sublist("Stratimikos").sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("GCRODR").set("Orthogonalization Parameters", ortho_params);
-
-
       Teuchos::ParameterList& mpbdParams = 
 	mpParams->sublist("MPBD Linear Solver");
       mpbdParams.sublist("Deterministic Solver Parameters") = 

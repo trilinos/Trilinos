@@ -120,7 +120,7 @@ void ThetaStepper<Scalar>::setInterpolator(
   const RCP<InterpolatorBase<Scalar> >& interpolator
   )
 {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(is_null(interpolator));
 #endif
   interpolator_ = interpolator;
@@ -341,7 +341,7 @@ void ThetaStepper<Scalar>::setInitialCondition(
   RCP<const Thyra::VectorBase<Scalar> >
     x_init = initialCondition.get_x();
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
@@ -560,7 +560,7 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
     *out << "\nt_ = " << t_ << std::endl;
   }
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
 
   if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
     *out << "\nChecking to make sure that solution and the interpolated solution are the same! ...\n";
@@ -610,7 +610,7 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   // 2007/07/25: rabartl: ToDo: Move the above test into a helper function so
   // that it can be used from lots of different places!
 
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out
@@ -674,11 +674,11 @@ void ThetaStepper<Scalar>::addPoints(
 
   initialize_();
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     time_vec.size() == 0, std::logic_error,
     "Error, addPoints called with an empty time_vec array!\n");
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -755,7 +755,7 @@ void ThetaStepper<Scalar>::getPoints(
   typename DataStore<Scalar>::DataStoreVector_t ds_nodes;
   typename DataStore<Scalar>::DataStoreVector_t ds_out;
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(!haveInitialCondition_);
   TEUCHOS_TEST_FOR_EXCEPT( 0 == x_vec );
 #endif
@@ -781,7 +781,7 @@ void ThetaStepper<Scalar>::getPoints(
     }
     DataStore<Scalar> ds_temp;
     Scalar dt = t_ - t_old_;
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT(
       !Thyra::testRelErr(
         "dt", dt, "dt_", dt_,
@@ -1068,11 +1068,11 @@ void ThetaStepper<Scalar>::initialize_()
   TEUCHOS_TEST_FOR_EXCEPT(is_null(solver_));
   TEUCHOS_TEST_FOR_EXCEPT(!haveInitialCondition_);
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   THYRA_ASSERT_VEC_SPACES(
     "Rythmos::ThetaStepper::setInitialCondition(...)",
     *x_->space(), *model_->get_x_space() );
-#endif // RYTHMOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 
   if ( is_null(interpolator_) ) {
     // If an interpolator has not been explicitly set, then just create

@@ -7,14 +7,8 @@
 #include "structs.h"
 
 /* Check an eigenpair of A by direct multiplication.  */
-double    checkeig(err, A, y, n, lambda, vwsqrt, work)
-double   *err;
-struct vtx_data **A;
-double   *y;
-int       n;
-double    lambda;
-double   *vwsqrt;
-double   *work;
+double 
+checkeig (double *err, struct vtx_data **A, double *y, int n, double lambda, double *vwsqrt, double *work)
 {
     double    resid;
     double    normy;

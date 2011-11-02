@@ -94,11 +94,11 @@ public:
   static void execute( size_type work_count ,
                        const FunctorType & functor )
   {
-    DeviceFerry::set_dispatch_functor();
+    DeviceFerry::memory_space::set_dispatch_functor();
 
     ParallelFor driver( functor );
 
-    DeviceFerry::clear_dispatch_functor();
+    DeviceFerry::memory_space::clear_dispatch_functor();
     
     ParallelFor *tmp_driver = &driver;
     

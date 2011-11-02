@@ -217,7 +217,7 @@ SimpleIntegrationControlStrategy<Scalar>::resetIntegrationControlStrategy(
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT(integrationTimeDomain.length() > ST::zero());
 #endif
   integrationTimeDomain_ = integrationTimeDomain;
@@ -228,7 +228,7 @@ SimpleIntegrationControlStrategy<Scalar>::resetIntegrationControlStrategy(
   }
   else {
     if (fixed_dt_ < ST::zero()) {
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
       TEUCHOS_ASSERT(numTimeSteps_ > 0);
 #endif
       fixed_dt_ = integrationTimeDomain_.length()/numTimeSteps_;
@@ -248,7 +248,7 @@ SimpleIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT(integrationTimeDomain_.length() > ST::zero());
 #endif
   

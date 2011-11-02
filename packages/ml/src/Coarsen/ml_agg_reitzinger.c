@@ -1798,7 +1798,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
   /* solution is known analytically. This algorithm will be described */
   /* in more detail in an upcoming paper for copper mtn (3/02).       */
 
-  int i, j, max_nz_per_row = 1;
+  int i, j, max_nz_per_row = 1, min_nz_per_row=1e6;
   struct ml_linked_list **Trecorder;
   struct ML_CSR_MSRdata *Pn, *SPn, *Tfine, *Tcoarse, *Pe;
   double thesign;
@@ -2020,8 +2020,11 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
       }
     }
     Pe->rowptr[i+1] = Pnzcount;
-    if (Pe->rowptr[i+1] - Pe->rowptr[i] > max_nz_per_row)
-      max_nz_per_row =  Pe->rowptr[i+1] - Pe->rowptr[i];
+    j = Pe->rowptr[i+1] - Pe->rowptr[i];
+    if (j > max_nz_per_row)
+      max_nz_per_row =  j;
+    if (j < min_nz_per_row && j > 0)
+      min_nz_per_row =  j;
   }
 
   Pe_mat->outvec_leng = Tfine_mat->outvec_leng;
@@ -2044,6 +2047,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
    ML_Operator_Set_Getrow(Pe_mat, Tfine_mat->outvec_leng, CSR_getrow);
    Pe_mat->getrow->Nrows = Tfine_mat->outvec_leng;
    Pe_mat->max_nz_per_row = max_nz_per_row;
+   Pe_mat->min_nz_per_row = min_nz_per_row;
    Pe_mat->N_nonzeros     = Pnzcount;
 
    ML_Operator_Set_ApplyFuncData(Tcoarse_mat,Pn_mat->invec_leng, Trowcount,
@@ -2052,6 +2056,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
    ML_Operator_Set_Getrow(Tcoarse_mat, Trowcount, CSR_getrow);
    Tcoarse_mat->getrow->Nrows = Trowcount;
    Tcoarse_mat->max_nz_per_row = 2;
+   /*FIXME min_nz_per_row could be 1 or 2 ...*/
    Tcoarse_mat->N_nonzeros     = Tcoarse->rowptr[Trowcount];
 
   ml_clean_Trecorder(&Trecorder,Pn_mat->outvec_leng);

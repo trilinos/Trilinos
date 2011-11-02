@@ -18,8 +18,6 @@
 #include "Galeri_CrsMatrices.h"
 #endif
 
-using namespace std;
-
 namespace MLAPI {
 
 // ====================================================================== 

@@ -56,7 +56,8 @@
 #include "elb_loadbal_const.h"
 #include "elb_output_const.h"
 
-extern void add_to_log(const char *name);
+#include "add_to_log.h"
+
 /* Local function prototypes */
 void print_usage(void);
 
@@ -572,7 +573,7 @@ int main (int argc, char *argv[])
   /* Get ending time */
   end_time = get_time();
   printf("The entire load balance took %fs\n", end_time-start_time);
-  add_to_log(argv[0]);
+  add_to_log(argv[0], end_time-start_time);
   return 0;
 }
 

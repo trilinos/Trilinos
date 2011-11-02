@@ -5,8 +5,7 @@
 
 #include "f2c.h"
 
-doublereal pythag_(a, b)
-doublereal *a, *b;
+doublereal pythag_(doublereal *a, doublereal *b)
 {
     /* System generated locals */
     doublereal ret_val, d__1, d__2, d__3;

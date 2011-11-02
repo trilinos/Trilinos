@@ -9,12 +9,16 @@
 #include "smalloc.h"
 
 
-int       input_geom(fingeom, geomname, nvtxs, igeom, x, y, z)
-FILE     *fingeom;		/* geometry input file */
-char     *geomname;		/* name of geometry file */
-int       nvtxs;		/* number of coordinates to read */
-int      *igeom;		/* dimensionality of geometry */
-float   **x, **y, **z;		/* coordiates of vertices */
+int 
+input_geom (
+    FILE *fingeom,		/* geometry input file */
+    char *geomname,		/* name of geometry file */
+    int nvtxs,		/* number of coordinates to read */
+    int *igeom,		/* dimensionality of geometry */
+    float **x,
+    float **y,
+    float **z		/* coordiates of vertices */
+)
 {
     extern int CHECK_INPUT;	/* print any warning messages? */
     extern int DEBUG_INPUT;	/* echo that read was successful? */
@@ -25,7 +29,7 @@ float   **x, **y, **z;		/* coordiates of vertices */
     int       line_num;		/* counts input lines in file */
     int       end_flag;		/* return conditional */
     int       ndims;		/* number of values in an input line */
-    int       i;		/* loop counter */
+    int       i=0;		/* loop counter */
     double   read_val();
 
     if (DEBUG_TRACE > 0) {

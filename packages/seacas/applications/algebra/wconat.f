@@ -64,7 +64,7 @@ C   --   NODIX(i) - IN - the zoom mesh index for each node (iff NEWNOD)
 C   --   LNSCR    - IN - connectivity scratch array
 C   --   ATRSCR   - IN - attribute scratch array
 
-      include 'params.blk'
+      include 'exodusII.inc'
 
       INTEGER NDBOUT
       INTEGER NUMELB

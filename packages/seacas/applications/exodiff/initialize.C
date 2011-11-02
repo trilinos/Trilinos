@@ -138,9 +138,7 @@ void ExoII_Read::Get_Init_Data()
   if (err > 0 && !specs.quiet_flag)
     std::cout << "ExoII_Read::Get_Init_Data(): WARNING: was issued, number = "
 	      << err << std::endl;
-  if (dimension < 1 || dimension > 3 ||
-      num_nodes < 0 || num_elmts < 0 || num_elmt_blocks < 0 ||
-      num_node_sets < 0 || num_side_sets < 0) {
+  if (dimension < 1 || dimension > 3 || num_elmt_blocks < 0 || num_node_sets < 0 || num_side_sets < 0) {
     std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Init data appears corrupt:"
 	      << std::endl
 	      << "         dimension = "       << dimension       << std::endl

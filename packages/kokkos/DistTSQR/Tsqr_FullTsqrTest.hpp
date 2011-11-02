@@ -103,6 +103,7 @@ namespace TSQR {
       //! Instantiate and return a (full) Tsqr instance.
       static Teuchos::RCP<tsqr_type>
       getTsqr (const Teuchos::RCP<Teuchos::ParameterList>& testParams, 
+	       const Teuchos::RCP<node_type>& node,
 	       const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
       {
 	using Teuchos::ParameterList;
@@ -112,20 +113,24 @@ namespace TSQR {
 	using Teuchos::rcp;
 
 	const size_t cacheSizeHint = testParams->get<size_t> ("cacheSizeHint");
-	//const int numCores = testParams->get<int> ("numCores");
+	//const int numTasks = testParams->get<int> ("numTasks");
 
-	//RCP<ParameterList> tsqrParams = parameterList ("Intranode TSQR");
-	//tsqrParams->set ("cacheSizeHint", cacheSizeHint);
-	//tsqrParams->set ("numCores", numCores);
+	//RCP<ParameterList> tsqrParams = parameterList ("NodeTsqr");
+	//tsqrParams->set ("Cache Size Hint", cacheSizeHint);
+	//tsqrParams->set ("Num Tasks", numCores);
 
+	// TODO (mfh 21 Oct 2011) Some node_tsqr_type classes need a
+	// Kokkos Node instance.  SequentialTsqr doesn't, so this code
+	// should be fine for now.
+	(void) node;
 	RCP<node_tsqr_type> seqTsqr = rcp (new node_tsqr_type (cacheSizeHint));
 
 	RCP<TeuchosMessenger<scalar_type> > scalarMess =
 	  rcp (new TeuchosMessenger<scalar_type> (comm));
 	RCP<MessengerBase<scalar_type> > scalarMessBase = 
 	  rcp_implicit_cast<MessengerBase<scalar_type> > (scalarMess);
-	RCP<dist_tsqr_type> distTsqr = 
-	  rcp (new dist_tsqr_type (scalarMessBase));
+	RCP<dist_tsqr_type> distTsqr = rcp (new dist_tsqr_type);
+	distTsqr->init (scalarMessBase);
 
 	return rcp (new tsqr_type (seqTsqr, distTsqr));
       }
@@ -143,7 +148,7 @@ namespace TSQR {
       ///   updated random seed.
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-	   const Teuchos::RCP<const node_type>& node,
+	   const Teuchos::RCP<node_type>& node,
 	   const Teuchos::RCP<Teuchos::ParameterList>& testParams,
 	   std::vector<int>& randomSeed)
       {
@@ -165,7 +170,7 @@ namespace TSQR {
 	const int numProcs = Teuchos::size (*comm);
 
 	// Construct TSQR implementation instance.
-	RCP<tsqr_type> tsqr = getTsqr (testParams, comm);
+	RCP<tsqr_type> tsqr = getTsqr (testParams, node, comm);
 
 	// Fetch test parameters from the input parameter list.
 	const ordinal_type numRowsLocal = testParams->get<ordinal_type> ("numRowsLocal");
@@ -268,14 +273,12 @@ namespace TSQR {
 	typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 	if (testFactorExplicit)
 	  {
-	    // Kokkos::MultiVector wants a non-const Node, for some reason.
-	    KMV A_copy_view (rcp_const_cast<node_type> (node));
+	    KMV A_copy_view (node);
 	    A_copy_view.initializeValues (static_cast<size_t> (A_copy.nrows()), 
 					  static_cast<size_t> (A_copy.ncols()), 
 					  arcp (A_copy.get(), 0, A_copy.nrows()*A_copy.ncols(), false), // non-owning ArrayRCP
 					  static_cast<size_t> (A_copy.lda()));
-	    // Kokkos::MultiVector wants a non-const Node, for some reason.
-	    KMV Q_view (rcp_const_cast<node_type> (node));
+	    KMV Q_view (node);
 	    Q_view.initializeValues (static_cast<size_t> (Q_local.nrows()), 
 				     static_cast<size_t> (Q_local.ncols()),
 				     arcp (Q_local.get(), 0, Q_local.nrows()*Q_local.ncols(), false), // non-owning ArrayRCP
@@ -323,8 +326,7 @@ namespace TSQR {
 	// column rank.
 	if (testRankRevealing)
 	  {
-	    // Kokkos::MultiVector wants a non-const Node, for some reason.
-	    KMV Q_view (rcp_const_cast<node_type> (node));
+	    KMV Q_view (node);
 	    Q_view.initializeValues (static_cast<size_t> (Q_local.nrows()), 
 				     static_cast<size_t> (Q_local.ncols()),
 				     arcp (Q_local.get(), 0, Q_local.nrows()*Q_local.ncols(), false), // non-owning ArrayRCP
@@ -525,7 +527,7 @@ namespace TSQR {
 
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-	   const Teuchos::RCP<const node_type>& node,
+	   const Teuchos::RCP<node_type>& node,
 	   const Teuchos::RCP<Teuchos::ParameterList>& testParams, 
 	   std::vector<int>& randomSeed);
     };
@@ -540,7 +542,7 @@ namespace TSQR {
 
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-	   const Teuchos::RCP<const node_type>& node,
+	   const Teuchos::RCP<node_type>& node,
 	   const Teuchos::RCP<Teuchos::ParameterList>& testParams, 
 	   std::vector<int>& randomSeed)
       {
@@ -561,7 +563,7 @@ namespace TSQR {
 
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >&,
-	   const Teuchos::RCP<const node_type>&,
+	   const Teuchos::RCP<node_type>&,
 	   const Teuchos::RCP<Teuchos::ParameterList>&, 
 	   std::vector<int>&)
       {
@@ -693,7 +695,7 @@ namespace TSQR {
       ///   constant default value (if you want the same results each
       ///   time; not "random" but reproducible).
       FullTsqrVerifierCaller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-			      const Teuchos::RCP<const node_type>& node,
+			      const Teuchos::RCP<node_type>& node,
 			      const std::vector<int>& randomSeed) :
 	comm_ (comm), node_ (node), randomSeed_ (validateRandomSeed (randomSeed))
       {}
@@ -721,7 +723,7 @@ namespace TSQR {
       ///
       /// \param node [in] Kokkos Node instance.
       FullTsqrVerifierCaller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-			      const Teuchos::RCP<const node_type>& node) :
+			      const Teuchos::RCP<node_type>& node) :
 	comm_ (comm),
 	node_ (node),
 	randomSeed_ (defaultRandomSeed ())
@@ -764,7 +766,7 @@ namespace TSQR {
       Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
       //! Kokkos Node instance.
-      Teuchos::RCP<const node_type> node_;
+      Teuchos::RCP<node_type> node_;
 
       /// \brief The seed for LAPACK's pseudorandom number generator.
       /// 

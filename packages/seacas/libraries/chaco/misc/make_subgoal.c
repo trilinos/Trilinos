@@ -5,16 +5,17 @@
 /* Use same ratios as original goals, but adjust based on set sizes. */
 /* Note: mesh stuff only works for division into two sets. */
 
-void      make_subgoal(goal, subgoal, nsets, cube_or_mesh, nsets_tot,
-		                 mesh_dims, set, sub_vwgt_sum)
-double   *goal;			/* goals for sets */
-double   *subgoal;		/* goals for subset of sets */
-int       nsets;		/* number of subsets in one partition */
-int       cube_or_mesh;		/* 0=> hypercube, d=> d-dimensional mesh */
-int       nsets_tot;		/* total number of sets to divide into */
-int       mesh_dims[3];		/* shape of mesh */
-int       set;			/* which set am I in? */
-double    sub_vwgt_sum;		/* sum of subgraph vertex weights */
+void 
+make_subgoal (
+    double *goal,			/* goals for sets */
+    double *subgoal,		/* goals for subset of sets */
+    int nsets,		/* number of subsets in one partition */
+    int cube_or_mesh,		/* 0=> hypercube, d=> d-dimensional mesh */
+    int nsets_tot,		/* total number of sets to divide into */
+    int mesh_dims[3],		/* shape of mesh */
+    int set,			/* which set am I in? */
+    double sub_vwgt_sum		/* sum of subgraph vertex weights */
+)
 {
     double    tweight;		/* total weight among all subgoals */
     double    ratio;		/* scaling factor */

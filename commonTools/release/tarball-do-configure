@@ -5,30 +5,102 @@ EXTRA_ARGS=$@
 PROJECT_NAME=Trilinos
 SOURCE_DIR=../$PROJECT_NAME
 
+NETCDF_DIR=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0
+BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost-1.46.1
+MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.2.2
+
+#this is also needed to build pytrilinos not just configure
+export PYTHONPATH="$MPI4PY_DIR:/home/trilinos/tpl/gcc4.1.2/numpy1.4.0/lib64/python2.4/site-packages"
+
 rm -fr CMakeCache.txt CMakeFiles/
 
+#fake a dakota for configuring
+#this is a horrible horrible hack that is 
+#both sick AND wrong, but here we are.
+DAKOTA_DIR=$SOURCE_DIR/packages/TriKota/Dakota
+mkdir $DAKOTA_DIR
+mkdir $DAKOTA_DIR/src
+touch $DAKOTA_DIR/src/CMakeLists.txt
+echo "add_subdirectory(src)" > $DAKOTA_DIR/CMakeLists.txt
+
 cmake \
--D CMAKE_CXX_COMPILER:FILEPATH=g++ \
--D CMAKE_C_COMPILER:FILEPATH=gcc \
--D CMAKE_Fortran_COMPILER:FILEPATH=gfortran \
--D HAVE_GCC_ABI_DEMANGLE:BOOL=ON \
--D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
--D DART_TESTING_TIMEOUT:STRING=600 \
+-D TPL_ENABLE_MPI=ON \
+  -D MPI_BASE_DIR:PATH=/home/trilinos/bin \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 -D BUILD_SHARED_LIBS=ON \
--D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
--D Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON \
--D Trilinos_ENABLE_Optika=OFF \
--D Trilinos_ENABLE_TESTS:BOOL=ON \
--D Boost_INCLUDE_DIRS=/Users/bmpersc/lib/boost_1_38_0 \
--DNetcdf_LIBRARY_DIRS=/Users/bmpersc/lib/netcdf-4.0/lib \
--DNetcdf_INCLUDE_DIRS=/Users/bmpersc/lib/netcdf-4.0/include \
--D Trilinos_ENABLE_TriKota:BOOL=OFF \
+ \
+-DTrilinos_ENABLE_Amesos=ON \
+-DTrilinos_ENABLE_Amesos2=ON \
+-DTrilinos_ENABLE_Anasazi=ON \
+-DTrilinos_ENABLE_AztecOO=ON \
+-DTrilinos_ENABLE_Belos=ON \
+-DTrilinos_ENABLE_CTrilinos=ON \
+-DTrilinos_ENABLE_Didasko=ON \
+-DTrilinos_ENABLE_Epetra=ON \
+-DTrilinos_ENABLE_EpetraExt=ON \
+-DTrilinos_ENABLE_FEI=ON \
+-DTrilinos_ENABLE_ForTrilinos=ON \
+-DTrilinos_ENABLE_Galeri=ON \
+-DTrilinos_ENABLE_GlobiPack=ON \
+-DTrilinos_ENABLE_Ifpack=ON \
+-DTrilinos_ENABLE_Ifpack2=ON \
+-DTrilinos_ENABLE_Intrepid=ON \
+-DTrilinos_ENABLE_Isorropia=ON \
+-DTrilinos_ENABLE_Kokkos=ON \
+-DTrilinos_ENABLE_Komplex=ON \
+-DTrilinos_ENABLE_Mesquite=ON \
+-DTrilinos_ENABLE_ML=ON \
+-DTrilinos_ENABLE_Moertel=ON \
+-DTrilinos_ENABLE_MOOCHO=ON \
+-DTrilinos_ENABLE_NOX=ON \
+-DTrilinos_ENABLE_Optika=ON \
+-DTrilinos_ENABLE_OptiPack=ON \
+-DTrilinos_ENABLE_Pamgen=ON \
+-DTrilinos_ENABLE_Phalanx=ON \
+-DTrilinos_ENABLE_Piro=ON \
+-DTrilinos_ENABLE_Pliris=ON \
+-DTrilinos_ENABLE_PyTrilinos=ON \
+-DTrilinos_ENABLE_RTOp=ON \
+-DTrilinos_ENABLE_Rythmos=ON \
+-DTrilinos_ENABLE_Sacado=ON \
+-DTrilinos_ENABLE_SEACAS=ON \
+-DTrilinos_ENABLE_Shards=ON \
+-DTrilinos_ENABLE_STK=ON \
+-DTrilinos_ENABLE_Stokhos=ON \
+-DTrilinos_ENABLE_Stratimikos=ON \
+-DTrilinos_ENABLE_Sundance=ON \
+-DTrilinos_ENABLE_Teko=ON \
+-DTrilinos_ENABLE_Teuchos=ON \
+-DTrilinos_ENABLE_ThreadPool=ON \
+-DTrilinos_ENABLE_Thyra=ON \
+-DTrilinos_ENABLE_Tpetra=ON \
+-DTrilinos_ENABLE_TriKota=ON \
+-DTrilinos_ENABLE_TrilinosCouplings=ON \
+-DTrilinos_ENABLE_Triutils=ON \
+-DTrilinos_ENABLE_Zoltan=ON \
+ \
+-D TPL_ENABLE_MATLAB=OFF \
+ \
+-D Netcdf_INCLUDE_DIRS=$NETCDF_DIR/include \
+-D Netcdf_LIBRARY_DIRS=$NETCDF_DIR/lib \
+-D MPI4PY_INCLUDE_DIR=$MPI4PY_DIR/mpi4py/include \
+-D Boost_INCLUDE_DIRS=$BOOST_DIR/include \
+-D BoostLib_INCLUDE_DIRS=$BOOST_DIR/include \
+-D BoostLib_LIBRARY_DIRS=$BOOST_DIR/lib \
+ \
+-D TriKota_ENABLE_DakotaCMake=ON \
+ \
 $EXTRA_ARGS \
 $SOURCE_DIR
 
+#remove the faked dakota
+rm -r $DAKOTA_DIR
+
+
+#generate the tarball if configure succeeded
 if [ $? == 0 ]; then
   make package_source
 else
   echo "Configure failed no tarballs created."
 fi
+

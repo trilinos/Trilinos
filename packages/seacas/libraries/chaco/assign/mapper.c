@@ -8,19 +8,20 @@
 #include	"structs.h"
 #include "smalloc.h"
 
-void      mapper(graph, xvecs, nvtxs, active, sets, ndims, cube_or_mesh, nsets,
-		           mediantype, goal, vwgt_max)
-struct vtx_data **graph;	/* data structure with vertex weights */
-double  **xvecs;		/* continuous indicator vectors */
-int       nvtxs;		/* number of vtxs in graph */
-int      *active;		/* space for nmyvals ints */
-int      *sets;			/* returned processor assignment for my vtxs */
-int       ndims;		/* number of dimensions being divided into */
-int       cube_or_mesh;		/* 0 => hypercube, d => d-dimensional mesh */
-int       nsets;		/* number of sets to divide into */
-int       mediantype;		/* type of eigenvector partitioning to use */
-double   *goal;			/* desired set sizes */
-int       vwgt_max;		/* largest vertex weight */
+void 
+mapper (
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    double **xvecs,		/* continuous indicator vectors */
+    int nvtxs,		/* number of vtxs in graph */
+    int *active,		/* space for nmyvals ints */
+    int *sets,			/* returned processor assignment for my vtxs */
+    int ndims,		/* number of dimensions being divided into */
+    int cube_or_mesh,		/* 0 => hypercube, d => d-dimensional mesh */
+    int nsets,		/* number of sets to divide into */
+    int mediantype,		/* type of eigenvector partitioning to use */
+    double *goal,			/* desired set sizes */
+    int vwgt_max		/* largest vertex weight */
+)
 {
     double    temp_goal[2];	/* combined set goals if using option 1. */
     double    wbelow;		/* weight of vertices with negative values */

@@ -12,9 +12,6 @@
 #include <algorithm>
 #include "float.h"
 
-
-using namespace std;
-
 // ============ //
 // private data //
 // ============ //
@@ -80,8 +77,8 @@ inline static void ML_multiply_all(ML_Operator* left, ML_Operator* right,
   
   if (n != right->invec_leng || n_rows != right->getrow->Nrows)
   {
-    cerr << "Error: non-comparible operators" << endl;
-    cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+    std::cerr << "Error: non-comparible operators" << std::endl;
+    std::cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
     exit(EXIT_FAILURE);
   }
   
@@ -301,8 +298,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   // scalar PDE case.                                        //  
 
   if (Dinv != 0 || Dinv_size != -1) {
-    cerr << "Error: Static data Dinv is not null or Dinv_size is wrong!" << endl;
-    cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+    std::cerr << "Error: Static data Dinv is not null or Dinv_size is wrong!" << std::endl;
+    std::cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -481,8 +478,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   for (int i = 0 ; i < NComputedOmegas+MaxGhost ; ++i) Numerator[i] = 0.;
   for (int i = 0 ; i < NComputedOmegas+MaxGhost ; ++i) Denominator[i] = 0.;
 
-  vector<double> tmp(n_0+MaxGhost);
-  vector<double> ColBasedOmega(n_0+ MaxGhost);
+  std::vector<double> tmp(n_0+MaxGhost);
+  std::vector<double> ColBasedOmega(n_0+ MaxGhost);
 
   for (int i = 0 ; i < n_0+MaxGhost ; ++i) tmp[i] = 0.;
   for (int i = 0 ; i < n_0+MaxGhost ; ++i) ColBasedOmega[i] = 0.;
@@ -533,8 +530,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   default:
     // should never be here
-    cerr << "Incorrect parameter (" << ag->minimizing_energy << ")" << endl;
-    cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+    std::cerr << "Incorrect parameter (" << ag->minimizing_energy << ")" << std::endl;
+    std::cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -553,13 +550,13 @@ fp = fopen("colomega","w");
 #ifdef EMIN_IN_PAPER
 fprintf(fp,"%20.13e\n",ColBasedOmega[i]);
 #endif
-    double& val = ColBasedOmega[i];
-    if (val < 0.0) {
-      val = 0.0;
+    double& locval = ColBasedOmega[i];
+    if (locval < 0.0) {
+      locval = 0.0;
       ++zero_local;
     }
-    if (val < min_local) min_local = val;
-    if (val > max_local) max_local = val;
+    if (locval < min_local) min_local = locval;
+    if (locval > max_local) max_local = locval;
   }
 #ifdef EMIN_IN_PAPER
 fclose(fp);
@@ -572,13 +569,13 @@ fclose(fp);
   double zero_all = ML_gsum_int(zero_local, P0->comm);
 
   if (ML_Get_PrintLevel() > 5 && P0->comm->ML_mypid == 0) { 
-    cout << endl;
-    cout << "Prolongator Smoothing: Using energy minimization (scheme = " 
-         << ag->minimizing_energy << ")" << endl;
-    cout << "Damping parameter: min = " << min_all <<  ", max = " << max_all 
-         << " (" << zero_all << " zeros out of " << Nsubset_tot << ")" << endl;
-    cout << "Dropping tolerance for DinvAP_0 = " << dropping << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << "Prolongator Smoothing: Using energy minimization (scheme = " 
+         << ag->minimizing_energy << ")" << std::endl;
+    std::cout << "Damping parameter: min = " << min_all <<  ", max = " << max_all 
+         << " (" << zero_all << " zeros out of " << Nsubset_tot << ")" << std::endl;
+    std::cout << "Dropping tolerance for DinvAP_0 = " << dropping << std::endl;
+    std::cout << std::endl;
   }
 
   //  Stick the Omegas in their proper column (if they have been compressed).
@@ -879,8 +876,8 @@ void ML_multiply_all_vscale(ML_Operator* left, ML_Operator* right,
   
   if (n != right->invec_leng || n_rows != right->getrow->Nrows)
     {
-      cerr << "Error: non-comparible operators" << endl;
-      cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+      std::cerr << "Error: non-comparible operators" << std::endl;
+      std::cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
       exit(EXIT_FAILURE);
     }
   
@@ -1144,7 +1141,7 @@ void ML_Enforce_Sparsity(ML_Operator * A, struct ML_CSR_MSRdata *Pattern)
       Prow_end = Pattern->rowptr[i+1];
       k = Prow_start;
 		
-      //		if(i == 63) { cout << "Arow_start = " << Arow_start << ".  Arow_end = " << Arow_end << endl; cout << "Prow_start = " << Prow_start << ".  Prow_end = " << Prow_end << endl; } 
+      //		if(i == 63) { std::cout << "Arow_start = " << Arow_start << ".  Arow_end = " << Arow_end << std::endl; std::cout << "Prow_start = " << Prow_start << ".  Prow_end = " << Prow_end << std::endl; } 
 
 		
       for(int j = Arow_start; j < Arow_end; j++)
@@ -1152,7 +1149,7 @@ void ML_Enforce_Sparsity(ML_Operator * A, struct ML_CSR_MSRdata *Pattern)
 	  //traverse Pattern until you reach or go past this entry
 	  Acurrent_col = Acsr_data->columns[j];
 			
-	  //			if(i == 63) { cout << "j = " << j << ".  Acurrent_col = " << Acurrent_col << endl; }
+	  //			if(i == 63) { std::cout << "j = " << j << ".  Acurrent_col = " << Acurrent_col << std::endl; }
 			
 	  zero_flag = 0;
 	  if(0)	//dumb loop.  assumes colun entries aren't sorted
@@ -1175,7 +1172,7 @@ void ML_Enforce_Sparsity(ML_Operator * A, struct ML_CSR_MSRdata *Pattern)
 		{
 		  Pcurrent_col = Pattern->columns[m];
 					
-		  //					if(i == 63) { cout << "m = " << m << ".  Pcurrent_col = " << Pcurrent_col << endl; }
+		  //					if(i == 63) { std::cout << "m = " << m << ".  Pcurrent_col = " << Pcurrent_col << std::endl; }
 				
 		  //If this entry exists in Pattern, keep it
 		  if(Pcurrent_col == Acurrent_col)
@@ -1183,11 +1180,11 @@ void ML_Enforce_Sparsity(ML_Operator * A, struct ML_CSR_MSRdata *Pattern)
 		      //if we've reached the end of the row in Pattern, zero the rest of row i in A
 		      if(m == (Prow_end-1) )
 			{	zero_flag = 1; 
-			//							if(i == 63) { cout << "Here 1" << endl;}
+			//							if(i == 63) { std::cout << "Here 1" << std::endl;}
 			break; }
 		      else
 			{	k = m+1; 
-			//							if(i == 63) { cout << "Here 2" << endl;}
+			//							if(i == 63) { std::cout << "Here 2" << std::endl;}
 			break;	}
 		    }
 		  //If it doesn't, zero it out
@@ -1195,16 +1192,16 @@ void ML_Enforce_Sparsity(ML_Operator * A, struct ML_CSR_MSRdata *Pattern)
 		    {	
 		      Acsr_data->values[j] = 0.0; 
 		      k = m; 
-		      //						if(i == 63) { cout << "Here 3" << endl; }
+		      //						if(i == 63) { std::cout << "Here 3" << std::endl; }
 		      break;	
 		    }
 		  else if( Acurrent_col > Pcurrent_col)
 		    {
 	
-		      //						if(i == 63) { cout << "Here 4" << endl; }
+		      //						if(i == 63) { std::cout << "Here 4" << std::endl; }
 		      if(m == (Prow_end-1) )
 			{
-			  //							if(i == 63) { cout << "Here 5" << endl; }
+			  //							if(i == 63) { std::cout << "Here 5" << std::endl; }
 			  zero_flag = 1; 
 			  j--;
 			  break; 
@@ -1219,11 +1216,11 @@ void ML_Enforce_Sparsity(ML_Operator * A, struct ML_CSR_MSRdata *Pattern)
 				//if we've reached the end of the row in Pattern, zero the rest of row i in A
 	      if(zero_flag == 1)
 		{
-		  //					if(i == 63) {cout << "Here 6" << endl;}
+		  //					if(i == 63) {cout << "Here 6" << std::endl;}
 		  for(j = j+1; j < Arow_end; j++)
 		    {	
 		      Acsr_data->values[j] = 0.0; 
-		      //						if(i == 63) { cout << "j = " << j << endl;}
+		      //						if(i == 63) { std::cout << "j = " << j << std::endl;}
 		    }
 		  break;
 		}
@@ -1525,11 +1522,11 @@ printf("these guys are %e  %d   %e\n",t_final,num_steps,DinvA->lambda_max);
 
 	  //print out row "point" from Atilde
 	  struct ML_CSR_MSRdata * AtildeCSRdata = (struct ML_CSR_MSRdata *) Atilde->data;
-	  cout << endl << "Dimension:  " << Dimen << endl;
-	  cout << "Atilde at point (" << x << "," << y << ") is ..." << endl;
+	  std::cout << std::endl << "Dimension:  " << Dimen << std::endl;
+	  std::cout << "Atilde at point (" << x << "," << y << ") is ..." << std::endl;
 	  for(int j = (AtildeCSRdata->rowptr[point]); j < (AtildeCSRdata->rowptr[point + 1]); j++)
-	    {  	cout << "(" << point << "," << AtildeCSRdata->columns[j] << ")  = " << (AtildeCSRdata->values[j]) << endl; }
-	  cout << endl;
+	    {  	std::cout << "(" << point << "," << AtildeCSRdata->columns[j] << ")  = " << (AtildeCSRdata->values[j]) << std::endl; }
+	  std::cout << std::endl;
 	}
 		
       //Apply Drop Tolerance
@@ -1663,11 +1660,11 @@ printf("these guys are %e  %d   %e\n",t_final,num_steps,DinvA->lambda_max);
 	  int point = (x - 1)*Dimen + y;
 
 	  //print out row "point" from AtildeNew
-	  cout << endl << "Dimension:  " << Dimen << endl;
-	  cout << "Atilde at point (" << x << "," << y << ") is ..." << endl;
-	  for(int j = (AtildeNewCSRdata->rowptr[point]); j < (AtildeNewCSRdata->rowptr[point + 1]); j++)
-	    {  	cout << "(" << point << "," << AtildeNewCSRdata->columns[j] << ")  = " << (AtildeNewCSRdata->values[j]) << endl; }
-	  cout << endl;
+	  std::cout << std::endl << "Dimension:  " << Dimen << std::endl;
+	  std::cout << "Atilde at point (" << x << "," << y << ") is ..." << std::endl;
+	  for(int jj = (AtildeNewCSRdata->rowptr[point]); jj < (AtildeNewCSRdata->rowptr[point + 1]); jj++)
+	    {  	std::cout << "(" << point << "," << AtildeNewCSRdata->columns[jj] << ")  = " << (AtildeNewCSRdata->values[jj]) << std::endl; }
+	  std::cout << std::endl;
 	}
 		
       ML_free(g);  ML_free(Ag); ML_free(AgMod);
@@ -1741,7 +1738,7 @@ void ML_Satisfy_Constraints(ML_Operator *Update, ML_Operator *Pattern, double *B
 	    {	NQlocal[j] = 0.0; }
 	}
 	
-      //if(i == 3) {for(j = 0; j < NullDim; j++) cout << NQlocal[j] << endl; }
+      //if(i == 3) {for(j = 0; j < NullDim; j++) std::cout << NQlocal[j] << std::endl; }
 	
       //We use the sparsity pattern for this node to decide which entries of the NullSpace vectors to use
       //	We assume a unifrom sparsity pattern for each dof on a node
@@ -1793,7 +1790,7 @@ void ML_Satisfy_Constraints(ML_Operator *Update, ML_Operator *Pattern, double *B
       DGEMM_F77(&NN, &NN, &length,      &oneInt,     &NullDim,   &NegOne, &(Bonelocal[0]), &length, &(BNQlocal[0]), &NullDim, &zero, &(Updatelocal[0]), &length);
 
 		
-      //if(i == 3) {for(j = 0; j < length; j++) cout << Updatelocal[j] << endl; }
+      //if(i == 3) {for(j = 0; j < length; j++) std::cout << Updatelocal[j] << std::endl; }
 		
       //Here we do something tricky.  We insert the new values in Updatelocal into Pattern
       //Pattern is already an MLOperator, so it doesn't use any more space.  The values 
@@ -1839,7 +1836,7 @@ int ML_AGG_Gen_Prolongator_MandelMinEnergy(ML *ml,int level, int clevel, void *d
   int UseODEStrength = 1;
 
   if ( ml->comm->ML_nprocs > 1 )
-    {	cerr << "ML_AGG_Gen_Prolongator_MinEnergy only works in serial" << endl;   exit(EXIT_FAILURE); }
+    {std::cerr << "ML_AGG_Gen_Prolongator_MinEnergy only works in serial" << std::endl;   exit(EXIT_FAILURE); }
 	
   int         Ncoarse;
   ML_Operator **prev_P_tentatives;
@@ -1870,9 +1867,9 @@ int ML_AGG_Gen_Prolongator_MandelMinEnergy(ML *ml,int level, int clevel, void *d
   Bzero =  (double *) ML_allocate(sizeof(double)*(NullDim*Amat->outvec_leng));
   if(ag->nullspace_vect == NULL) {
     if (NullDim != numPDEs) {
-       cerr << "Null space not given but nullspace dimension not equal to the " <<endl;
-       cerr << "number of PDEs: " << NullDim << " vs. "  << numPDEs << ". Cannot set default null space!" << endl;
-       cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+       std::cerr << "Null space not given but nullspace dimension not equal to the " <<std::endl;
+       std::cerr << "number of PDEs: " << NullDim << " vs. "  << numPDEs << ". Cannot set default null space!" << std::endl;
+       std::cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
        exit(EXIT_FAILURE);
     }
 
@@ -2154,7 +2151,7 @@ exit(1);
   ML_Satisfy_Constraints(rk, sparsity_pattern, ag->nullspace_vect, BtBinv, F, numPDEs, numDOFs, numNodes, NullDim);
 
   resid = ML_MaxEntry(rk);
-  cout << printf("Iteration 0 ------ Max(Abs( R ) = %f", resid) << endl;
+  std::cout << printf("Iteration 0 ------ Max(Abs( R ) = %f", resid) << std::endl;
 
   //Begin CG iterations to minimize the energy of P
   i = 1;
@@ -2169,8 +2166,8 @@ exit(1);
       //we are really "passing" zk and rk to multiply_all.
       ML_multiply_all_vscale(rk, rk, &(InnerProd[0]), diagonal_local);	
       newsum = 0.0;
-      for(int j = 0; j < Ncoarse; j++)
-	{	newsum += InnerProd[j]; }	
+      for(int jj = 0; jj < Ncoarse; jj++)
+	{	newsum += InnerProd[jj]; }	
 
       //pk = zk;
       if(i == 1)
@@ -2184,8 +2181,8 @@ exit(1);
 	}
       oldsum = newsum;	
 	
-      //	cout << "newsum = " << newsum << endl;
-      //	cout << "pk(1,1) = " << ((struct ML_CSR_MSRdata *) pk->data)->values[0] << endl;
+      //	cout << "newsum = " << newsum << std::endl;
+      //	cout << "pk(1,1) = " << ((struct ML_CSR_MSRdata *) pk->data)->values[0] << std::endl;
 
       //ap = Amat*pk
       if(i > 1)
@@ -2208,8 +2205,8 @@ exit(1);
       //same size, so InnerProd will just be written over.
       ML_multiply_all(pk, ap, &(InnerProd[0])); 
       alphak = 0.0;
-      for(int j = 0; j < Ncoarse; j++)
-	{	alphak += InnerProd[j]; }
+      for(int jj = 0; jj < Ncoarse; jj++)
+	{	alphak += InnerProd[jj]; }
       //	ML_Operator_Print(pk,"pk1");
       //	ML_Operator_Print(ap,"ap1");
       alphak = newsum/alphak;
@@ -2224,7 +2221,7 @@ exit(1);
       ML_Operator_Add(rk, ap, rk, ML_CSR_MATRIX, -alphak);
 	
       resid = ML_MaxEntry(rk);
-      cout << printf("Iteration %d ------ Max(Abs( R )) = %f", i, resid) << endl;
+      std::cout << printf("Iteration %d ------ Max(Abs( R )) = %f", i, resid) << std::endl;
       i++;
     }
 

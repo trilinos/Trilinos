@@ -48,9 +48,9 @@ C   --Common Variables:
 C   --   Uses QAINFO of /PROGQA/
 C   --   Uses NDBIN, NDBOUT of /DBASE/
 
-      include 'params.blk'
-      include 'progqa.blk'
-      include 'dbase.blk'
+      include 'exodusII.inc'
+      include 'ag_progqa.blk'
+      include 'ag_dbase.blk'
 
       CHARACTER*256 INLINE
       CHARACTER*256 STR

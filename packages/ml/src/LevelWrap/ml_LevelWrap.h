@@ -114,6 +114,9 @@ namespace ML_Epetra
   
     //! Returns the Epetra_Map object associated with the range of this operator.
     const Epetra_Map& OperatorRangeMap() const {return(A0_->OperatorRangeMap());};
+
+    //! Returns the A1 matrix
+    Teuchos::RCP<Epetra_CrsMatrix> GetA1() const {return A1_;}
     //@}
 
 

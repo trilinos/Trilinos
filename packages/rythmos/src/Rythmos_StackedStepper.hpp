@@ -595,9 +595,7 @@ StackedStepper<Scalar>::takeStep(
      );
   this->setupSpaces_();
 
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:StackedStepper::takeStep");
-#endif
+  RYTHMOS_FUNC_TIME_MONITOR("Rythmos:StackedStepper::takeStep");
   
   if (Teuchos::is_null(stackedStepperStepStrategy_)) {
     stackedStepperStepStrategy_ = defaultStackedStepperStepStrategy<Scalar>();

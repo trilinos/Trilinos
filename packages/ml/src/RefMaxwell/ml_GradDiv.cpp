@@ -15,7 +15,6 @@
 #include "EpetraExt_RowMatrixOut.h"
 #include "ml_ifpack_epetra_wrap.h"
 
-using namespace std;
 using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;

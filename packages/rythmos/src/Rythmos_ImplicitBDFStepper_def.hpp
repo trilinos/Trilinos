@@ -287,9 +287,7 @@ template<class Scalar>
 Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
 {
   
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos::ImplicitBDFStepper::takeStep");
-#endif
+  RYTHMOS_FUNC_TIME_MONITOR("Rythmos::ImplicitBDFStepper::takeStep");
   
   using Teuchos::as;
   using Teuchos::incrVerbLevel;
@@ -555,9 +553,7 @@ void ImplicitBDFStepper<Scalar>::getPoints(
     return;
   }
   TEUCHOS_ASSERT(isInitialized_);
-#ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos::ImplicitBDFStepper::getPoints");
-#endif
+  RYTHMOS_FUNC_TIME_MONITOR("Rythmos::ImplicitBDFStepper::getPoints");
   if (x_vec)
     x_vec->clear();
   if (xdot_vec)
@@ -849,7 +845,7 @@ void ImplicitBDFStepper<Scalar>::interpolateSolution_(
   typedef std::numeric_limits<Scalar> NL;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     !isInitialized_,std::logic_error,
     "Error, attempting to call interpolateSolution before initialization!\n");
@@ -1109,7 +1105,7 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-#ifdef RYTHMOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(ST::isnaninf(hh_));
 #endif  
 

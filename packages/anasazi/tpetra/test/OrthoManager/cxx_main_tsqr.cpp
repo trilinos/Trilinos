@@ -202,9 +202,7 @@ getOrthoManager (const std::string& ortho,
   else if (ortho == "TSQR" || ortho == "Tsqr" || ortho == "tsqr") {
     typedef TsqrMatOrthoManager<scalar_type, MV, OP> ortho_type;
     const std::string label("Anasazi");
-    Teuchos::RCP<const Teuchos::ParameterList> params = 
-      ortho_type::getDefaultParameters();
-    return rcp (new ortho_type (params, label, M));
+    return rcp (new ortho_type (label, M));
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 

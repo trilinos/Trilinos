@@ -238,37 +238,28 @@ namespace stk
       unsigned foundBad=0;
       jac_data_map jac_data;
 
-      std::cout << "tmp GeometryVerifier 1" << std::endl;
-
       stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
         meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >("coordinates");
 
       mesh::Selector select_owned( meta.locally_owned_part() );
-      std::cout << "tmp GeometryVerifier 2 meta.element_rank() = " << meta.element_rank() << std::endl;
-
       const std::vector<mesh::Bucket*> & buckets = bulk.buckets( meta.element_rank() );
 
-      std::cout << "tmp GeometryVerifier 2a" << std::endl;
-      for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
+      //for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
+      const stk::mesh::PartVector & all_parts = meta.get_parts();
+      for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) 
         {
-          if ( select_owned( **ik ) ) {
-      std::cout << "tmp GeometryVerifier 2b" << std::endl;
+          stk::mesh::Part * part = *ip;
 
-            const mesh::Bucket & bucket = **ik ;
+          if ( stk::mesh::is_auto_declared_part(*part) )
+            continue;
 
-      std::cout << "tmp GeometryVerifier 2c" << std::endl;
-            const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+          const CellTopologyData * const part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*part);
+          //std::cout << "P[" << p_rank << "] part = " << part->name() << " part_cell_topo_data= " << part_cell_topo_data << " topo-name= "
+          //          << (part_cell_topo_data ? part_cell_topo_data->name : "null") << std::endl;
 
-            std::cout << "tmp GeometryVerifier 2d " << stk::mesh::fem::get_cell_topology(bucket).getName() << std::endl;
-
-            std::cout << "tmp GeometryVerifier 2d " << bucket_cell_topo_data << " " <<  std::endl;
-            std::cout << "tmp GeometryVerifier 2d " << bucket.size() << std::endl;
-            std::cout << "tmp GeometryVerifier 2d " << bucket_cell_topo_data->name << " " <<  std::endl;
-            jac_data[bucket_cell_topo_data->name] = jacData();
-      std::cout << "tmp GeometryVerifier 2e" << std::endl;
-          }
+          if (part_cell_topo_data)
+            jac_data[part_cell_topo_data->name] = jacData();
         }
-      std::cout << "tmp GeometryVerifier 3" << std::endl;
 
       for (unsigned ipass = 0; ipass < 1; ipass++)
         {
@@ -298,21 +289,20 @@ namespace stk
 
               if (0) { std::cout << "number_elems= " << number_elems << std::endl;}
 
-              std::cout << "tmp GeometryVerifier 4" << std::endl;
-
               CellTopology cell_topo(bucket_cell_topo_data);
               double volEqui = getEquiVol(cell_topo);
               unsigned numCells = number_elems;
               unsigned numNodes = cell_topo.getNodeCount();
               unsigned spaceDim = cell_topo.getDimension();
+              //unsigned spatialDimMeta = stk::mesh::fem::FEMMetaData::get(bulk).spatial_dimension();
 
               // Rank-3 array with dimensions (C,N,D) for the node coordinates of 3 traingle cells
               FieldContainer<double> cellNodes(numCells, numNodes, spaceDim);
-
               PerceptMesh::fillCellNodes(bucket,  coord_field, cellNodes, spaceDim);
 
-              // get min/max edge length
+              FieldContainer<double> volume(numCells);
 
+              // get min/max edge length
               FieldContainer<double> elem_min_edge_length(number_elems);
               FieldContainer<double> elem_max_edge_length(number_elems);
               PerceptMesh::findMinMaxEdgeLength(bucket, *coord_field, elem_min_edge_length, elem_max_edge_length);
@@ -323,55 +313,56 @@ namespace stk
 
               DefaultCubatureFactory<double> cubFactory;                                              // create cubature factory
               unsigned cubDegree = 2;                                                                      // set cubature degree, e.g. 2
-              Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(cell_topo, cubDegree);         // create default cubature
+              Teuchos::RCP<Cubature<double> > myCub;
+              bool hasGoodTopo = true;
+              try {
+                myCub = cubFactory.create(cell_topo, cubDegree);         // create default cubature
+              }
+              catch(...)
+                {
+                  if (!p_rank)
+                    std::cout << "WARNING: mesh contains elements that Intrepid doesn't support for quadrature, cell_topo= " << cell_topo.getName() << std::endl;
+                  //continue;
+                  hasGoodTopo = false;
+                }
 
-              unsigned numCubPoints = myCub->getNumPoints();                                               // retrieve number of cubature points
-
-              FieldContainer<double> cub_points(numCubPoints, spaceDim);
-              FieldContainer<double> cub_weights(numCubPoints);
-
-              // Rank-4 array (C,P,D,D) for the Jacobian and its inverse and Rank-2 array (C,P) for its determinant
+              FieldContainer<double> jacobian_det(numCells, 1);
+              unsigned numCubPoints = 1;
               FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
-              FieldContainer<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
-              FieldContainer<double> jacobian_det(numCells, numCubPoints);
 
-              myCub->getCubature(cub_points, cub_weights);                                          // retrieve cubature points and weights
-              if (0 && numCells == 27)
+              if (hasGoodTopo)
                 {
-                  std::cout << " cell_topo= " << cell_topo.getName() << std::endl;
-                  std::cout << " cub_points= " << cub_points << std::endl;
-                  std::cout << " cub_weights= " << cub_weights << std::endl;
+                  numCubPoints = myCub->getNumPoints();                                               // retrieve number of cubature points
+
+                  FieldContainer<double> cub_points(numCubPoints, spaceDim);
+                  FieldContainer<double> cub_weights(numCubPoints);
+
+                  // Rank-4 array (C,P,D,D) for the Jacobian and its inverse and Rank-2 array (C,P) for its determinant
+                  //FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
+                  jacobian.resize(numCells, numCubPoints, spaceDim, spaceDim);
+                  FieldContainer<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
+                  //FieldContainer<double> jacobian_det(numCells, numCubPoints);
+                  jacobian_det.resize(numCells, numCubPoints);
+
+                  myCub->getCubature(cub_points, cub_weights);                                          // retrieve cubature points and weights
+
+                  // Methods to compute cell Jacobians, their inverses and their determinants
+
+                  CellTools<double>::setJacobian(jacobian, cub_points, cellNodes, cell_topo);           // compute cell Jacobians
+                  CellTools<double>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
+                  CellTools<double>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
+
+                  FieldContainer<double> weightedMeasure(numCells, numCubPoints);
+
+                  FieldContainer<double> onesLeft(numCells,  numCubPoints);
+                  onesLeft.initialize(1.0);
+
+                  // compute weighted measure
+                  FunctionSpaceTools::computeCellMeasure<double>(weightedMeasure, jacobian_det, cub_weights);
+
+                  // integrate to get volume
+                  FunctionSpaceTools::integrate<double>(volume, onesLeft, weightedMeasure,  COMP_BLAS);
                 }
-
-              // Methods to compute cell Jacobians, their inverses and their determinants
-
-              CellTools<double>::setJacobian(jacobian, cub_points, cellNodes, cell_topo);           // compute cell Jacobians
-              CellTools<double>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
-              CellTools<double>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
-
-              FieldContainer<double> weightedMeasure(numCells, numCubPoints);
-
-              std::cout << "tmp GeometryVerifier 5" << std::endl;
-
-              FieldContainer<double> onesLeft(numCells,  numCubPoints);
-              onesLeft.initialize(1.0);
-
-              FieldContainer<double> volume(numCells);
-
-              // compute weighted measure
-              FunctionSpaceTools::computeCellMeasure<double>(weightedMeasure, jacobian_det, cub_weights);
-              if (0 && numCells == 27)
-                {
-                  std::cout << "cellNodes=\n " << cellNodes << std::endl;
-                  std::cout << "jacobian_det=\n " << jacobian_det << std::endl;
-                  std::cout << "weightedMeasure=\n " << weightedMeasure << std::endl;
-                  stk::percept::Util::pause();
-                }
-
-              // integrate to get volume
-              FunctionSpaceTools::integrate<double>(volume, onesLeft, weightedMeasure,  COMP_BLAS);
-
-              std::cout << "tmp GeometryVerifier 6" << std::endl;
 
               jacData& jdata = jac_data[cell_topo.getName()];
               jdata.numEle += numCells;
@@ -388,9 +379,8 @@ namespace stk
 
                   for (unsigned iCubPt = 0; iCubPt < numCubPoints; iCubPt++)
                     {
-
                       double jacDet = jacobian_det(iCell, iCubPt);
-                      if (jacDet < m_badJacobian)
+                      if (hasGoodTopo && jacDet < m_badJacobian)
                         {
                           ++foundBad;
                         }
@@ -408,12 +398,10 @@ namespace stk
 
                       if (ipass == 0)
                         {
-                          //if (bucket_shardsId==27) std::cout << "rank= " << bulk.parallel_rank() << " jacDet= " << jacDet << std::endl;
-
                           jdata.jac.registerValue(elem.identifier(), jacDet);
                           jdata.QM_1.registerValue(elem.identifier(),  quality_measure_1);
                           jdata.QM_2.registerValue(elem.identifier(),  quality_measure_2);
-                        }// if ipass==0
+                        }
                     }
                 }
 
@@ -508,8 +496,11 @@ namespace stk
       if (!p_rank && printTable)
         //if (printTable)
         {
-          std::cout << "P[" << p_rank << "] " << table;
-          //std::cout << table;
+          std::cout << "P[" << p_rank << "] Explanation: JacDet=det(element jacobian), QM1=min(element edge length)/(elemement vol)^(1/dim), QM2=min(element edge length)/max(element edge length)\n" 
+                    << " NOTE: QM1 is normalized to 1 for ideally shaped elements, < 1 or > 1 values signify badly shaped elements\n"
+                    << " NOTE: QM2 is small for badly shaped elements, normalized to 1 for ideally shaped elements\n"
+                    << std::endl;
+          std::cout << table;
         }
 
       return (foundBad > 0);

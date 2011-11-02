@@ -6,21 +6,22 @@
 #include	"structs.h"
 #include	"defs.h"
 
-void      bucketsortsv(graph, nvtxs, lbuckets, rbuckets, llistspace, rlistspace,
-                 ldvals, rdvals, sets, maxdval, parity, bspace, list_length)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices */
-struct bilist **lbuckets;	/* array of lists for bucket sort */
-struct bilist **rbuckets;	/* array of lists for bucket sort */
-struct bilist *llistspace;	/* list data structure for each vertex */
-struct bilist *rlistspace;	/* list data structure for each vertex */
-int      *ldvals;		/* d-values for each vertex for removing */
-int      *rdvals;		/* d-values for each vertex for removing */
-int    *sets;			/* processor each vertex is assigned to */
-int       maxdval;		/* maximum possible dvalue for a vertex */
-int       parity;		/* work in forward or backward direction? */
-int      *bspace;		/* indices for randomly ordering vtxs */
-int       list_length;		/* number of values in bspace to work with */
+void 
+bucketsortsv (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices */
+    struct bilist **lbuckets,	/* array of lists for bucket sort */
+    struct bilist **rbuckets,	/* array of lists for bucket sort */
+    struct bilist *llistspace,	/* list data structure for each vertex */
+    struct bilist *rlistspace,	/* list data structure for each vertex */
+    int *ldvals,		/* d-values for each vertex for removing */
+    int *rdvals,		/* d-values for each vertex for removing */
+    int *sets,			/* processor each vertex is assigned to */
+    int maxdval,		/* maximum possible dvalue for a vertex */
+    int parity,		/* work in forward or backward direction? */
+    int *bspace,		/* indices for randomly ordering vtxs */
+    int list_length		/* number of values in bspace to work with */
+)
 {
     extern int KL_RANDOM;	/* use randomness in KL? */
     extern int KL_UNDO_LIST;	/* only sort vertices who have moved. */

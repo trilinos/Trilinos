@@ -8,13 +8,15 @@
 #include	"defs.h"
 
 
-void      clear_dvals(graph, nvtxs, ldvals, rdvals, bspace, list_length)
-struct vtx_data **graph;	/* data structure for graph */
-int       nvtxs;		/* number of vtxs in graph */
-int      *ldvals;		/* d-values for each transition */
-int      *rdvals;		/* d-values for each transition */
-int      *bspace;		/* list of activated vertices */
-int       list_length;		/* number of activated vertices */
+void 
+clear_dvals (
+    struct vtx_data **graph,	/* data structure for graph */
+    int nvtxs,		/* number of vtxs in graph */
+    int *ldvals,		/* d-values for each transition */
+    int *rdvals,		/* d-values for each transition */
+    int *bspace,		/* list of activated vertices */
+    int list_length		/* number of activated vertices */
+)
 {
     int      *edges;		/* loops through edge list */
     int       vtx;		/* vertex in bspace */

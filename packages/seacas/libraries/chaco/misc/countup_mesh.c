@@ -9,15 +9,16 @@
 
 /* Print metrics of partition quality. */
 
-void      countup_mesh(graph, nvtxs, assignment, mesh_dims, print_lev, outfile,
-		                 using_ewgts)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vtxs in graph */
-int    *assignment;		/* set number of each vtx (length nvtxs+1) */
-int       mesh_dims[3];		/* extent of mesh in each dimension */
-int       print_lev;		/* level of output */
-FILE     *outfile;		/* output file if not NULL */
-int       using_ewgts;		/* are edge weights being used? */
+void 
+countup_mesh (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vtxs in graph */
+    int *assignment,		/* set number of each vtx (length nvtxs+1) */
+    int mesh_dims[3],		/* extent of mesh in each dimension */
+    int print_lev,		/* level of output */
+    FILE *outfile,		/* output file if not NULL */
+    int using_ewgts		/* are edge weights being used? */
+)
 {
     double   *hopsize;		/* number of hops for each set */
     double   *cutsize;		/* number of cuts for each set */

@@ -262,7 +262,7 @@ ENDMACRO()
 #
 # OUTPUT: Sets Trilinos_DEFAULT_PACKAGES
 #
-# NOTE: This macro is used to cean up the main TRILINOS_CTEST_DRIVER()
+# NOTE: This macro is used to clean up the main TRILINOS_CTEST_DRIVER()
 # macro.
 #
 

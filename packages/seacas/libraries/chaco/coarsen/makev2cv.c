@@ -7,11 +7,13 @@
 #include "structs.h"
 
 
-void      makev2cv(mflag, nvtxs, v2cv)
+void 
+makev2cv (
 /* Construct mapping from original graph vtxs to coarsened graph vtxs. */
-int      *mflag;		/* flag indicating vtx selected or not */
-int       nvtxs;		/* number of vtxs in original graph */
-int      *v2cv;			/* mapping from vtxs to coarsened vtxs */
+    int *mflag,		/* flag indicating vtx selected or not */
+    int nvtxs,		/* number of vtxs in original graph */
+    int *v2cv			/* mapping from vtxs to coarsened vtxs */
+)
 {
     int       i, j;		/* loop counters */
 

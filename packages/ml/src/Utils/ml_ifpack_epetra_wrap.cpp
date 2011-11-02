@@ -37,6 +37,7 @@ namespace ML_Epetra{
   Teuchos::ParameterList IFPACKList=List.sublist("smoother: ifpack list");
 
   /* Parameter-list Options */
+  string PreOrPostSmoother = List.get("smoother: pre or post","both");
   string SmooType = List.get("smoother: type", "Chebyshev");
   if(SmooType=="IFPACK") SmooType=List.get("smoother: ifpack type","Chebyshev");
   int Sweeps = List.get("smoother: sweeps", 3);
@@ -171,7 +172,76 @@ namespace ML_Epetra{
     SmootherP_->Compute();
     return SmootherP_;
   }
+  /**********************************************/
+  /***        Incomplete Factorization        ***/
+  /**********************************************/
+  else if(SmooType == "ILU" || SmooType == "IC" || SmooType == "ILUT"   ||
+	  SmooType == "ICT" || SmooType == "SILU") {
+    const Epetra_RowMatrix* Arow=dynamic_cast<const Epetra_RowMatrix*>(A);
+    double MyLOF=0.0;
+    if(SmooType=="ILUT" || SmooType=="ICT") MyLOF=List.get("smoother: ifpack level-of-fill",1.0);
+    else MyLOF=List.get("smoother: ifpack level-of-fill",0.0);
 
+    int MyIfpackOverlap = List.get("smoother: ifpack overlap", 0);
+    double MyIfpackRT = List.get("smoother: ifpack relative threshold", 1.0);
+    double MyIfpackAT = List.get("smoother: ifpack absolute threshold", 0.0);
+    IFPACKList.set("ILU: sweeps",Sweeps);
+    
+    // Set the fact: LOF options, but only if they're not set already... All this sorcery is because level-of-fill
+    // is an int for ILU and a double for ILUT.  Lovely.
+    if(SmooType=="ILUT" || SmooType=="ICT"){
+	IFPACKList.set("fact: level-of-fill", IFPACKList.get("fact: level-of-fill",MyLOF));
+	IFPACKList.set("fact: ilut level-of-fill", IFPACKList.get("fact: ilut level-of-fill",MyLOF));
+	IFPACKList.set("fact: ict level-of-fill", IFPACKList.get("fact: ict level-of-fill",MyLOF));
+	MyLOF=IFPACKList.get("fact: level-of-fill",MyLOF);
+    }
+    else{
+      IFPACKList.set("fact: level-of-fill", (int) IFPACKList.get("fact: level-of-fill",(int)MyLOF));
+      MyLOF=IFPACKList.get("fact: level-of-fill",(int)MyLOF);
+    }
+    
+    IFPACKList.set("fact: relative threshold", MyIfpackRT);
+    IFPACKList.set("fact: absolute threshold", MyIfpackAT);
+
+    if(verbose && !A->Comm().MyPID()){
+      cout << printMsg << "IFPACK, type=`" << SmooType << "'," << endl
+	   << printMsg << PreOrPostSmoother  << ",overlap=" << MyIfpackOverlap << endl;
+      cout << printMsg << "level-of-fill=" << MyLOF;
+      cout << ",rel. threshold=" << MyIfpackRT
+	   << ",abs. threshold=" << MyIfpackAT << endl;
+    }
+
+    Ifpack Factory;
+    SmootherP_ = Factory.Create(SmooType,const_cast<Epetra_RowMatrix*>(Arow),IfpackOverlap);
+    if (SmootherP_ == 0) return 0;
+    SmootherP_->SetParameters(IFPACKList);
+    SmootherP_->Initialize();
+    SmootherP_->Compute();
+    return SmootherP_;
+  }
+  /**********************************************/
+  /***                  SORa                  ***/
+  /**********************************************/
+  else if(SmooType=="SORa"){
+    const Epetra_RowMatrix* Arow=dynamic_cast<const Epetra_RowMatrix*>(A);
+    if(verbose && !A->Comm().MyPID()){
+      cout << printMsg << "IFPACK/SORa("<<IFPACKList.get("sora: alpha",1.5)<<","<<IFPACKList.get("sora: gamma",1.0)<<")"
+	   << ", sweeps = " <<IFPACKList.get("sora: sweeps",1)<<endl;
+      if(IFPACKList.get("sora: oaz boundaries",false))
+	cout << printMsg << "oaz boundary handling enabled"<<endl;
+      if(IFPACKList.get("sora: use interproc damping",false))
+	cout << printMsg << "interproc damping enabled"<<endl;
+      if(IFPACKList.get("sora: use global damping",false))
+	cout << printMsg << "global damping enabled"<<endl;
+    }
+    Ifpack Factory;
+    SmootherP_ = Factory.Create(SmooType,const_cast<Epetra_RowMatrix*>(Arow),IfpackOverlap);
+    if (SmootherP_ == 0) return 0;
+    SmootherP_->SetParameters(IFPACKList);
+    SmootherP_->Initialize();
+    SmootherP_->Compute();
+    return SmootherP_;
+  }
   else{
     printf("ML_Gen_Smoother_Ifpack_New: Unknown preconditioner\n");
     ML_CHK_ERR(0);

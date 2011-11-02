@@ -120,7 +120,7 @@ namespace {
   // parameters.
   //
   template<class NodeType>
-  Teuchos::RCP<const NodeType>
+  Teuchos::RCP<NodeType>
   getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist, 
 	   const bool debug) 
   {
@@ -206,7 +206,7 @@ namespace {
     typedef NodeType node_type;
 
     static void 
-    benchmark (const Teuchos::RCP<const NodeType>& node,
+    benchmark (const Teuchos::RCP<NodeType>& node,
 	       std::vector<int>&,
 	       const TestParameters& params,
 	       bool& printFieldNames)
@@ -225,7 +225,7 @@ namespace {
     }
 
     static void 
-    verify (const Teuchos::RCP<const NodeType>& node,
+    verify (const Teuchos::RCP<NodeType>& node,
 	    std::vector<int>& seed,
 	    const TestParameters& params,
 	    bool& printFieldNames)
@@ -265,7 +265,7 @@ namespace {
     typedef typename CdrType::node_type node_type;
 
     static void 
-    verify (const Teuchos::RCP<const node_type>& node,
+    verify (const Teuchos::RCP<node_type>& node,
 	    std::vector<int>& seed,
 	    const TestParameters& params,
 	    bool& printFieldNames)
@@ -275,7 +275,7 @@ namespace {
     }
 
     static void 
-    benchmark (const Teuchos::RCP<const node_type>& node,
+    benchmark (const Teuchos::RCP<node_type>& node,
 	       std::vector<int>& seed,
 	       const TestParameters& params,
 	       bool& printFieldNames)
@@ -296,13 +296,13 @@ namespace {
     typedef NodeType node_type;
 
     static void 
-    verify (const Teuchos::RCP<const NodeType>& node,
+    verify (const Teuchos::RCP<NodeType>& node,
 	    std::vector<int>&,
 	    const TestParameters&,
 	    bool& printFieldNames) {}
 
     static void 
-    benchmark (const Teuchos::RCP<const NodeType>& node,
+    benchmark (const Teuchos::RCP<NodeType>& node,
 	       std::vector<int>&,
 	       const TestParameters&,
 	       bool& printFieldNames) {}
@@ -314,7 +314,7 @@ namespace {
   //
   template<class NodeType>
   void
-  runTests (const Teuchos::RCP<const NodeType>& node,
+  runTests (const Teuchos::RCP<NodeType>& node,
 	    const TestParameters& params)
   {
     // This screams for syntactic sugar, but welcome to C++, the land

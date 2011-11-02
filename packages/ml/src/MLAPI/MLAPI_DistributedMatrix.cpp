@@ -19,14 +19,12 @@
 #include "Epetra_FECrsMatrix.h"
 #include <iomanip>
 
-using namespace std;
-
 ostream& MLAPI::DistributedMatrix::
 Print(ostream& os, const bool verbose) const
 {
   int Length = MaxNumEntries();
-  vector<double> Values(Length);
-  vector<int>    Indices(Length);
+  std::vector<double> Values(Length);
+  std::vector<int>    Indices(Length);
 
   if (GetMyPID() == 0) {
 

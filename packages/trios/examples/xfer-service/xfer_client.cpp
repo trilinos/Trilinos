@@ -609,8 +609,8 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
     double time;
     data_array_t array;
     double start_time;
-    FILE *result_fp = stdout;
-    log_level debug_level = LOG_ALL;
+    std::ofstream result_stream;
+    log_level debug_level = LOG_WARN;
     int client_rank, client_size;
 
     /* the array of results (for async experiments) */
@@ -649,15 +649,13 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
     std::vector < nssi_request > reqs(num_reqs);
 
     /* open the result file */
-    result_fp = stdout;
     if (client_rank == 0) {
         if (!args.result_file.empty()) {
-            result_fp = fopen(args.result_file.c_str(), args.result_file_mode.c_str());
-            if (result_fp == NULL) {
+            result_stream.open(args.result_file.c_str());
+            if (!result_stream.is_open()) {
                 log_warn(client_debug_level,
                         "invalid result file:"
                         "defaults to stdout");
-                result_fp = stdout;
             }
         }
     }
@@ -979,7 +977,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
 
         if (client_rank == 0) {
             bool write_header = (i == 0);
-            Trios::WriteTimings(cout, "", timings_desc, timings, write_header);
+            Trios::WriteTimings(result_stream.is_open() ? result_stream : cout, "", timings_desc, timings, write_header);
         }
         timings_desc.clear();
         timings.clear();
@@ -998,7 +996,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
         cout << "experiment complete" << endl;
 
 
-    fclose(result_fp);
+    result_stream.close();
 
     /* sizeof request header */
     log_debug(debug_level, "sizeof(nssi_request_header)=%lu\n",

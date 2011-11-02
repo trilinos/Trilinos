@@ -12,11 +12,13 @@ static int bfsearch();
 
 
 /* Breadth first seach algorithm to find & mark connected components. */
-int       find_comps(graph, nvtxs, mark, vtxlist)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-int    *mark;			/* space for nvtxs+1 ints */
-int      *vtxlist;		/* space for nvtxs ints */
+int 
+find_comps (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    int *mark,			/* space for nvtxs+1 ints */
+    int *vtxlist		/* space for nvtxs ints */
+)
 {
     int       root;		/* vertex to start the dfs */
     int       count;		/* number of vertices seen so far */
@@ -51,12 +53,14 @@ int      *vtxlist;		/* space for nvtxs ints */
 
 /* Breadth first seach algorithm to find & mark connected components. */
 /* Returns list of edges to connect them together. */
-int       find_edges(graph, nvtxs, mark, vtxlist, edges)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices in graph */
-int    *mark;			/* space for nvtxs+1 ints */
-int      *vtxlist;		/* space for nvtxs ints */
-struct edgeslist **edges;	/* list of edges connecting graph */
+int 
+find_edges (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices in graph */
+    int *mark,			/* space for nvtxs+1 ints */
+    int *vtxlist,		/* space for nvtxs ints */
+    struct edgeslist **edges	/* list of edges connecting graph */
+)
 {
     struct edgeslist *newedge;	/* space to add new edge */
     int       root;		/* vertex to start the dfs */
@@ -97,13 +101,15 @@ struct edgeslist **edges;	/* list of edges connecting graph */
 
 
 /* BFS to find connected component */
-static int bfsearch(graph, root, count, mark, vtxlist, comp_num)
-struct vtx_data **graph;	/* graph data structure */
-int       root;			/* start vertex for DFS */
-int      *count;		/* number of vertices in component */
-int    *mark;			/* has vtx been seen? */
-int      *vtxlist;		/* space for storing vtxs to search */
-int       comp_num;		/* current component number */
+static int 
+bfsearch (
+    struct vtx_data **graph,	/* graph data structure */
+    int root,			/* start vertex for DFS */
+    int *count,		/* number of vertices in component */
+    int *mark,			/* has vtx been seen? */
+    int *vtxlist,		/* space for storing vtxs to search */
+    int comp_num		/* current component number */
+)
 {
     int      *iptr;		/* loops through neighbor list */
     int       vtxbeg, vtxend;	/* beginning and end of vertices in vtxlist */

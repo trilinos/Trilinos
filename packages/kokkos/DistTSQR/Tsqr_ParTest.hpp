@@ -89,8 +89,8 @@ namespace TSQR {
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      DistTsqrVerifier (const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
-			const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
+      DistTsqrVerifier (const Teuchos::RCP<MessengerBase<Ordinal> >& ordinalComm,
+			const Teuchos::RCP<MessengerBase<Scalar> >& scalarComm,
 			const std::vector<int>& seed,
 			const std::string& scalarTypeName,
 			std::ostream& out,
@@ -134,8 +134,8 @@ namespace TSQR {
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      DistTsqrVerifier (const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
-			const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
+      DistTsqrVerifier (const Teuchos::RCP<MessengerBase<Ordinal> >& ordinalComm,
+			const Teuchos::RCP<MessengerBase<Scalar> >& scalarComm,
 			const std::string& scalarTypeName,
 			std::ostream& out,
 			std::ostream& err,
@@ -201,7 +201,8 @@ namespace TSQR {
 	  }
 
 	// Set up TSQR implementation.
-	DistTsqr< Ordinal, Scalar > par (scalarComm_);
+	DistTsqr<Ordinal, Scalar> par;
+	par.init (scalarComm_);
 	if (debug_)
 	  {
 	    scalarComm_->barrier();
@@ -218,7 +219,7 @@ namespace TSQR {
 	  {
 	    // Factor the matrix A (copied into R, which will be
 	    // overwritten on output)
-	    typedef typename DistTsqr< Ordinal, Scalar >::FactorOutput 
+	    typedef typename DistTsqr<Ordinal, Scalar>::FactorOutput 
 	      factor_output_type;
 	    factor_output_type factorOutput = par.factor (R.view());
 	    if (debug_)
@@ -546,7 +547,8 @@ namespace TSQR {
 	testProblem (A_local, Q_local, R, numCols);
 
 	// Set up TSQR implementation.
-	DistTsqr< Ordinal, Scalar > par (scalarComm_);
+	DistTsqr<Ordinal, Scalar> par;
+	par.init (scalarComm_);
 
 	// Whether we've printed field names (i.e., column headers)
 	// yet.  Only matters for non-humanReadable output.
@@ -555,7 +557,7 @@ namespace TSQR {
 	if (testFactorImplicit_)
 	  {
 	    std::string timerName ("DistTsqr");
-	    typedef typename DistTsqr< Ordinal, Scalar >::FactorOutput 
+	    typedef typename DistTsqr<Ordinal, Scalar>::FactorOutput 
 	      factor_output_type;
 
 	    // Throw away some number of runs, because some MPI libraries

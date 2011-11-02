@@ -107,9 +107,19 @@ namespace Belos {
     virtual void innerProd( const MV &X, const MV &Y, Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const = 0;
 
 
-    /*! \brief Provides the norm induced by innerProd().
-     */
-    virtual void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >& normvec ) const = 0;
+    /// \brief Compute the norm(s) of the column(s) of X.
+    ///
+    /// The norm computed is the norm induced by the inner product
+    /// defined by \c innerProd().
+    ///
+    /// \param X [in] The multivector whose columns this method will
+    ///   compute norms.
+    ///
+    /// \param normvec [out] On output, normvec[j] is the norm of
+    ///   column j of X.  This method reserves the right to resize
+    ///   normvec if it does not have enough entries, but it may not
+    ///   necessarily resize normvec if it has too many entries.
+    virtual void norm (const MV& X, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec) const = 0;
 
     /// \brief Project X against the (orthogonal) entries of Q
     ///

@@ -16,23 +16,24 @@
 */
 
 
-void      bucketsorts(graph, nvtxs, buckets, listspace, dvals, sets, term_wgts,
-             maxdval, nsets, parity, hops, bspace, list_length, npass, using_ewgts)
-struct vtx_data **graph;	/* graph data structure */
-int       nvtxs;		/* number of vertices */
-struct bilist ****buckets;	/* array of lists for bucket sort */
-struct bilist **listspace;	/* list data structure for each vertex */
-int     **dvals;		/* d-values for each vertex for removing */
-int    *sets;			/* processor each vertex is assigned to */
-float    *term_wgts[];		/* weights for terminal propogation */
-int       maxdval;		/* maximum possible dvalue for a vertex */
-int       nsets;		/* number of sets being divided into */
-int       parity;		/* work in forward or backward direction? */
-int     (*hops)[MAXSETS];	/* hop cost between sets */
-int      *bspace;		/* indices for randomly ordering vtxs */
-int       list_length;		/* number of values in bspace to work with */
-int       npass;		/* which pass through KL is this? */
-int       using_ewgts;		/* are edge weights being used? */
+void 
+bucketsorts (
+    struct vtx_data **graph,	/* graph data structure */
+    int nvtxs,		/* number of vertices */
+    struct bilist ****buckets,	/* array of lists for bucket sort */
+    struct bilist **listspace,	/* list data structure for each vertex */
+    int **dvals,		/* d-values for each vertex for removing */
+    int *sets,			/* processor each vertex is assigned to */
+    float *term_wgts[],		/* weights for terminal propogation */
+    int maxdval,		/* maximum possible dvalue for a vertex */
+    int nsets,		/* number of sets being divided into */
+    int parity,		/* work in forward or backward direction? */
+    int (*hops)[MAXSETS],	/* hop cost between sets */
+    int *bspace,		/* indices for randomly ordering vtxs */
+    int list_length,		/* number of values in bspace to work with */
+    int npass,		/* which pass through KL is this? */
+    int using_ewgts		/* are edge weights being used? */
+)
 {
     extern int KL_RANDOM;	/* use randomness in KL? */
     extern int KL_UNDO_LIST;	/* only sort vertices who have moved. */

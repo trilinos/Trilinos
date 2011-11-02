@@ -8,14 +8,17 @@
 #include "smalloc.h"
 
 
-int       input_graph(fin, inname, start, adjacency, nvtxs, vweights, eweights)
-FILE     *fin;			/* input file */
-char     *inname;		/* name of input file */
-int     **start;		/* start of edge list for each vertex */
-int     **adjacency;		/* edge list data */
-int      *nvtxs;		/* number of vertices in graph */
-int     **vweights;		/* vertex weight list data */
-float   **eweights;		/* edge weight list data */
+int       input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtxs, int **vweights, float **eweights)
+
+/*
+ *  FILE     *fin;	 input file
+ *  char     *inname;	 name of input file
+ *  int     **start;	 start of edge list for each vertex
+ *  int     **adjacency; edge list data
+ *  int      *nvtxs;	 number of vertices in graph 
+ *  int     **vweights;	 vertex weight list data 
+ *  float   **eweights;	 edge weight list data
+ */
 {
     extern FILE *Output_File;   /* output file or null */
     extern int CHECK_INPUT;	/* print warnings or not? */

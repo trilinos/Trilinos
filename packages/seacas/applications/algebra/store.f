@@ -60,10 +60,10 @@ C   --   Uses IDVAR, ISTVAR of /VAR../
 C   --   Uses NDBIN of /DBASE/
 
       PARAMETER (ICURTM = 1, ILSTTM = 2, IONETM = 3)
-      include 'namlen.blk'
-      include 'var.blk'
-      include 'dbase.blk'
-      include 'dbnums.blk'
+      include 'ag_namlen.blk'
+      include 'ag_var.blk'
+      include 'ag_dbase.blk'
+      include 'ag_dbnums.blk'
 
       CHARACTER TYP
       INTEGER NUMELB(*)
