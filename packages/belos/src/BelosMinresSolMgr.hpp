@@ -591,7 +591,7 @@ namespace Belos {
     // Whether we need to recreate the full status test.  We only need
     // to do that if at least one of convTest_ or maxIterTest_ had to
     // be reallocated.
-    bool needToRecreateFullStatusTest = sTest.is_null();
+    bool needToRecreateFullStatusTest = sTest_.is_null();
 
     // Residual status test.  It uses the native residual to determine
     // if convergence was achieved.  Initialize it if we haven't yet
@@ -652,112 +652,120 @@ namespace Belos {
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+
+    if (! parametersSet_) {
+      setParameters (params_);
+    }	
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
 #endif
 
     // We need a problem to solve, else we can't solve it.
+    TEUCHOS_TEST_FOR_EXCEPTION( problem_.is_null(),
+      MinresSolMgrLinearProblemFailure,
+      "Belos::MinresSolMgr::solve(): The linear problem to solve has not been "
+      "set, so the solve() method cannot be called.  You must provide a nonnull "
+      "linear problem to the solver manager, either in its constructor or its "
+      "setProblem() method, before calling solve().");
+
+    // We need a problem to solve, else we can't solve it.
     TEUCHOS_TEST_FOR_EXCEPTION( !problem_->isProblemSet(),
-			MinresSolMgrLinearProblemFailure,
-			"Belos::MinresSolMgr::solve(): The linear problem to "
-			"solve has not been set, so it is not valid to call the "
-			"solve() method.  You should either provide the linear "
-			"problem to the solver manager's constructor, or call "
-			"setProblem() with a non-null linear problem, before "
-			"calling solve()." );
+      MinresSolMgrLinearProblemFailure,
+      "Belos::MinresSolMgr::solve(): The linear problem to solve has not been "
+      "set, so the solve() method cannot be called.  You must call the linear "
+      "problem's setProblem() method before giving it to the solver manager.");
 
     // Reset the status test for this solve.  
     outputTest_->reset();
 
     // The linear problem has this many right-hand sides to solve.
-    // MINRES can solve one at a time, so we solve for each right-hand
-    // side in succession.
+    // MINRES can solve only one at a time, so we solve for each
+    // right-hand side in succession.
     const int numRHS2Solve = MVT::GetNumberVecs (*(problem_->getRHS()));
 
     // Create MINRES iteration object.  Pass along the solver
     // manager's parameters, which have already been validated.
-    RCP< MinresIteration< ScalarType, MV, OP > > minres_iter =
-      rcp (new MinresIter< ScalarType, MV, OP > (problem_, printer_, outputTest_, *params_));
+    typedef MinresIteration<ScalarType, MV, OP> iter_type;
+    RCP<iter_type> minres_iter =
+      rcp (new iter_type (problem_, printer_, outputTest_, *params_));
 
     // The index/indices of the right-hand sides for which MINRES did
-    // _not_ converge.  Hopefully this is empty after the for loop below!
-    // If it is not empty, at least one right-hand side did not converge.
+    // _not_ converge.  Hopefully this is empty after the for loop
+    // below!  If it is not empty, at least one right-hand side did
+    // not converge.
     std::vector<int> notConverged;
     std::vector<int> currentIndices(1);
 
     numIters_ = 0;
 
     // Solve for each right-hand side in turn.
-    for (int currentRHS = 0; currentRHS < numRHS2Solve; ++currentRHS)
-      {
-	// Inform the linear problem of the right-hand side(s) currently
-	// being solved.  MINRES only knows how to solve linear problems
-	// with one right-hand side, so we only include one index, which
-	// is the index of the current right-hand side.
-	currentIndices[0] = currentRHS;
-	problem_->setLSIndex (currentIndices);
+    for (int currentRHS = 0; currentRHS < numRHS2Solve; ++currentRHS) {
+      // Inform the linear problem of the right-hand side(s) currently
+      // being solved.  MINRES only knows how to solve linear problems
+      // with one right-hand side, so we only include one index, which
+      // is the index of the current right-hand side.
+      currentIndices[0] = currentRHS;
+      problem_->setLSIndex (currentIndices);
 
-	// Reset the number of iterations.
-	minres_iter->resetNumIters();
-	// Reset the number of calls that the status test output knows about.
-	outputTest_->resetNumCalls();
-	// Set the new state and initialize the solver.
-	MinresIterationState< ScalarType, MV > newstate;
+      // Reset the number of iterations.
+      minres_iter->resetNumIters();
+      // Reset the number of calls that the status test output knows about.
+      outputTest_->resetNumCalls();
+      // Set the new state and initialize the solver.
+      MinresIterationState< ScalarType, MV > newstate;
 
-	// Get the residual vector for the current linear system
-	// (i.e., for the current right-hand side).
-	
-	newstate.Y = MVT::CloneViewNonConst (*(Teuchos::rcp_const_cast< MV > (problem_->getInitResVec())), currentIndices);
-	minres_iter->initializeMinres (newstate);
+      // Get the residual vector for the current linear system 
+      // (that is, for the current right-hand side).
+      newstate.Y = MVT::CloneViewNonConst (*(rcp_const_cast<MV> (problem_->getInitResVec())), currentIndices);
+      minres_iter->initializeMinres (newstate);
 
-	// Attempt to solve for the solution corresponding to the
-	// current right-hand side.
-	while(1) {
-          try {
-	    minres_iter->iterate();
+      // Attempt to solve for the solution corresponding to the
+      // current right-hand side.
+      while (true) {
+	try {
+	  minres_iter->iterate();
 
-            // First check for convergence
-	    if (convTest_->getStatus() == Passed) {
-	      break;
-	    }
-            // Now check for max # of iterations
-            else if (maxIterTest_->getStatus() == Passed) {
-	      // This right-hand side didn't converge!
-	      notConverged.push_back (currentRHS);
-              break;
-            } else {
-	      // If we get here, we returned from iterate(), but none of
-	      // our status tests Passed.  Something is wrong, and it is
-	      // probably our fault.
-	      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "Belos::MinresSolMgr::solve(): iterations neither"
-                               " converged, nor reached the maximum number of "
-                               "iterations " << maxIters_ << ".  That means someth"
-                               "ing went wrong.");
-	      }
-	  } catch (const std::exception &e) {
-	    printer_->stream(Errors) 
-	      << "Error! Caught std::exception in "
-	      << "MinresIter::iterate() at iteration "
-	      << minres_iter->getNumIters() << std::endl
-	      << e.what() << std::endl;
-	    throw e;
+	  // First check for convergence
+	  if (convTest_->getStatus() == Passed) {
+	    break;
 	  }
-        }
-	
-        // Inform the linear problem that we are finished with the
-        // current right-hand side.  It may or may not have converged,
-        // but we don't try again if the first time didn't work.
-        problem_->setCurrLS();
-    
-        // Get iteration information for this solve: total number of
-        // iterations for all right-hand sides.
-        numIters_ += maxIterTest_->getNumIters();
+	  // Now check for max # of iterations
+	  else if (maxIterTest_->getStatus() == Passed) {
+	    // This right-hand side didn't converge!
+	    notConverged.push_back (currentRHS);
+	    break;
+	  } else {
+	    // If we get here, we returned from iterate(), but none of
+	    // our status tests Passed.  Something is wrong, and it is
+	    // probably our fault.
+	    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+              "Belos::MinresSolMgr::solve(): iterations neither converged, "
+	      "nor reached the maximum number of iterations " << maxIters_ 
+	      << ".  That means something went wrong.");
+	  }
+	} catch (const std::exception &e) {
+	  printer_->stream (Errors) 
+	    << "Error! Caught std::exception in MinresIter::iterate() at "
+	    << "iteration " << minres_iter->getNumIters() << std::endl
+	    << e.what() << std::endl;
+	  throw e;
+	}
       }
+	
+      // Inform the linear problem that we are finished with the
+      // current right-hand side.  It may or may not have converged,
+      // but we don't try again if the first time didn't work.
+      problem_->setCurrLS();
+    
+      // Get iteration information for this solve: total number of
+      // iterations for all right-hand sides.
+      numIters_ += maxIterTest_->getNumIters();
+    }
     
     // Print final summary of the solution process
-    sTest_->print( printer_->stream(FinalSummary) );
+    sTest_->print (printer_->stream (FinalSummary));
 
     // Print timing information, if the corresponding compile-time and
     // run-time options are enabled.
@@ -765,14 +773,16 @@ namespace Belos {
     // Calling summarize() can be expensive, so don't call unless the
     // user wants to print out timing details.  summarize() will do all
     // the work even if it's passed a "black hole" output stream.
-    if (verbosity_ & TimingDetails)
+    if (verbosity_ & TimingDetails) {
       Teuchos::TimeMonitor::summarize (printer_->stream (TimingDetails));
+    }
 #endif // BELOS_TEUCHOS_TIME_MONITOR
  
-    if (notConverged.size() > 0)
+    if (notConverged.size() > 0) {
       return Unconverged;
-    else
+    } else {
       return Converged;
+    }
   }
 
   //  This method requires the solver manager to return a std::string that describes itself.
