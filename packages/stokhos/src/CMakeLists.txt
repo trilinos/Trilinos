@@ -234,6 +234,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_PCE_OrthogPoly.hpp
     sacado/Sacado_PCE_OrthogPolyImp.hpp
     sacado/Sacado_PCE_OrthogPolyTraits.hpp
+    sacado/Sacado_PCE_ScalarTraitsImp.hpp
     sacado/Sacado_ETPCE_OrthogPoly.hpp
     sacado/Sacado_ETPCE_OrthogPolyImp.hpp
     sacado/Sacado_ETPCE_OrthogPolyTraits.hpp

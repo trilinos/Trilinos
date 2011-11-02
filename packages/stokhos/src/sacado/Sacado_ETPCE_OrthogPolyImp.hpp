@@ -200,6 +200,28 @@ evaluate(
 }
 
 template <typename T, typename Storage> 
+template <typename S>
+bool 
+OrthogPolyImpl<T,Storage>::
+isEqualTo(const Expr<S>& x) const {
+  typedef IsEqual<value_type> IE;
+  if (x.size() != this->size()) return false;
+  // Allow expansions to be different if their size is 1 and one
+  // of them is a constant expansion
+  if (expansion_ != x.expansion_) {
+    if (x.size() != 1)
+      return false;
+    if ((expansion_ != const_expansion_) && 
+	(x.expansion_ != const_expansion_))
+      return false;
+  }
+  bool eq = true;
+  for (int i=0; i<this->size(); i++)
+    eq = eq && IE::eval(x.coeff(i), this->coeff(i));
+  return eq;
+}
+
+template <typename T, typename Storage> 
 OrthogPolyImpl<T,Storage>& 
 OrthogPolyImpl<T,Storage>::
 operator=(const typename OrthogPolyImpl<T,Storage>::value_type& v) 

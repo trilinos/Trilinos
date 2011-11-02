@@ -35,6 +35,7 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "Sacado_Traits.hpp"
 #include "Sacado_Handle.hpp"
 
 #include "Stokhos_OrthogPolyExpansion.hpp"
@@ -217,6 +218,9 @@ namespace Sacado {
 
       //! Print approximation in basis
       std::ostream& print(std::ostream& os) const { return th_->print(os); }
+
+      //! Returns whether two PCE objects have the same values
+      template <typename S> bool isEqualTo(const Expr<S>& x) const;
 
       /*!
        * @name Assignment operators

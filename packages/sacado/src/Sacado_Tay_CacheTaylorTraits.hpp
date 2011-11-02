@@ -124,6 +124,83 @@ namespace Sacado {
 	StringName<T>::eval() + " >"; }
   };
 
+  //! Specialization of %IsEqual to Taylor types
+  template <typename T>
+  struct IsEqual< Tay::CacheTaylor<T> > {
+    static bool eval(const Tay::CacheTaylor<T>& x, 
+		     const Tay::CacheTaylor<T>& y) {
+      return x.isEqualTo(y);
+    }
+  };
+
+  //! Specialization of %IsStaticallySized to Taylor types
+  template <typename T>
+  struct IsStaticallySized< Tay::CacheTaylor<T> > {
+    static const bool value = false;
+  };
+
 } // namespace Sacado
+
+// Define Teuchos traits classes
+#ifdef HAVE_SACADO_TEUCHOS
+#include "Teuchos_PromotionTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Sacado_Tay_ScalarTraitsImp.hpp"
+#include "Teuchos_SerializationTraits.hpp"
+
+namespace Teuchos {
+
+  //! Specialization of %Teuchos::PromotionTraits to DFad types
+  template <typename ValueT>
+  struct PromotionTraits< Sacado::Tay::CacheTaylor<ValueT>, 
+			  Sacado::Tay::CacheTaylor<ValueT> > {
+    typedef typename Sacado::Promote< Sacado::Tay::CacheTaylor<ValueT>,
+				      Sacado::Tay::CacheTaylor<ValueT> >::type
+    promote;
+  };
+
+  //! Specialization of %Teuchos::PromotionTraits to DFad types
+  template <typename ValueT, typename R>
+  struct PromotionTraits< Sacado::Tay::CacheTaylor<ValueT>, R > {
+    typedef typename Sacado::Promote< Sacado::Tay::CacheTaylor<ValueT>, R >::type 
+    promote;
+  };
+
+  //! Specialization of %Teuchos::PromotionTraits to DFad types
+  template <typename L, typename ValueT>
+  struct PromotionTraits< L, Sacado::Tay::CacheTaylor<ValueT> > {
+  public:
+    typedef typename Sacado::Promote< L, Sacado::Tay::CacheTaylor<ValueT> >::type 
+    promote;
+  };
+
+  //! Specializtion of %Teuchos::ScalarTraits
+  template <typename ValueT>
+  struct ScalarTraits< Sacado::Tay::CacheTaylor<ValueT> > :
+    public Sacado::Tay::ScalarTraitsImp< Sacado::Tay::CacheTaylor<ValueT> >
+  {};
+
+  //! Specialization of %Teuchos::SerializationTraits
+  template <typename Ordinal, typename ValueT>
+  struct SerializationTraits<Ordinal, Sacado::Tay::CacheTaylor<ValueT> > :
+    public Sacado::Tay::SerializationTraitsImp< Ordinal, 
+						Sacado::Tay::CacheTaylor<ValueT> > 
+  {};
+
+  //! Specialization of %Teuchos::ValueTypeSerializer
+  template <typename Ordinal, typename ValueT>
+  struct ValueTypeSerializer<Ordinal, Sacado::Tay::CacheTaylor<ValueT> > :
+    public Sacado::Tay::SerializerImp< Ordinal, 
+				       Sacado::Tay::CacheTaylor<ValueT>,
+				       ValueTypeSerializer<Ordinal,ValueT> > 
+  {
+    typedef Sacado::Tay::CacheTaylor<ValueT> TayType;
+    typedef ValueTypeSerializer<Ordinal,ValueT> ValueSerializer;
+    typedef Sacado::Tay::SerializerImp< Ordinal,TayType,ValueSerializer> Base;
+    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs) :
+      Base(vs) {}
+  };
+}
+#endif // HAVE_SACADO_TEUCHOS
 
 #endif // SACADO_TAYLOR_DTAYLORTRAITS_HPP

@@ -1805,6 +1805,57 @@ namespace Sacado {
 
 } // namespace Sacado
 
+//-------------------------- Boolean Operators -----------------------
+namespace Sacado {
+
+  namespace Tay {
+
+    template <typename ExprT>
+    bool toBool2(const Expr<ExprT>& x) {
+      bool is_zero = true;
+      for (unsigned int i=0; i<=x.degree(); i++)
+	is_zero = is_zero && (x.coeff(i) == 0.0);
+      return !is_zero;
+    }
+
+  } // namespace Tay
+
+} // namespace Sacado
+
+#define TAY_BOOL_MACRO(OP)						\
+namespace Sacado {							\
+  namespace Tay {							\
+    template <typename ExprT1, typename ExprT2>				\
+    inline bool								\
+    operator OP (const Expr<ExprT1>& expr1,				\
+		 const Expr<ExprT2>& expr2)				\
+    {									\
+      return toBool2(expr1) OP toBool2(expr2);				\
+    }									\
+									\
+    template <typename ExprT2>						\
+    inline bool								\
+    operator OP (const typename Expr<ExprT2>::value_type& a,		\
+		 const Expr<ExprT2>& expr2)				\
+    {									\
+      return a OP toBool2(expr2);					\
+    }									\
+									\
+    template <typename ExprT1>						\
+    inline bool								\
+    operator OP (const Expr<ExprT1>& expr1,				\
+		 const typename Expr<ExprT1>::value_type& b)		\
+    {									\
+      return toBool2(expr1) OP b;					\
+    }									\
+  }									\
+}
+
+TAY_BOOL_MACRO(&&)
+TAY_BOOL_MACRO(||)
+
+#undef TAY_BOOL_MACRO
+
 //-------------------------- I/O Operators -----------------------
 
 namespace Sacado {

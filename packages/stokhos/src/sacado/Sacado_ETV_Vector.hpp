@@ -33,6 +33,7 @@
 
 #ifdef HAVE_STOKHOS_SACADO
 
+#include "Sacado_Traits.hpp"
 #include "Sacado_Handle.hpp"
 #include "Sacado_mpl_apply.hpp"
 
@@ -170,6 +171,17 @@ namespace Sacado {
        * by coeff() or fastAccessCoeff() may change other vector objects.
        */
       void copyForWrite() { th_.makeOwnCopy(); }
+
+      //! Returns whether two ETV objects have the same values
+      template <typename S>
+      bool isEqualTo(const Expr<S>& x) const {
+	typedef IsEqual<value_type> IE;
+	if (x.size() != this->size()) return false;
+	bool eq = true;
+	for (int i=0; i<this->size(); i++)
+	  eq = eq && IE::eval(x.coeff(i), this->coeff(i));
+	return eq;
+      }
 
       /*!
        * @name Assignment operators

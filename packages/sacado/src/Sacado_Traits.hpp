@@ -148,6 +148,12 @@ namespace Sacado {
   //! Base template specification for string names of types
   template <typename T> struct StringName {};
 
+  //! Base template specification for testing equivalence
+  template <typename T> struct IsEqual {};
+
+  //! Base template specification for testing whether type is statically sized
+  template <typename T> struct IsStaticallySized {};
+
   //! Specialization of above classes to builtin types
 #define SACADO_BUILTIN_SPECIALIZATION(t,NAME)		  \
   template <> struct ScalarType< t > {		          \
@@ -170,6 +176,13 @@ namespace Sacado {
   };							  \
   template <> struct StringName< t > {			  \
     static std::string eval() { return NAME; }		  \
+  };							  \
+  template <> struct IsEqual< t > {			  \
+    static bool eval(const t& x, const t& y) {		  \
+      return x == y; }					  \
+  };							  \
+  template <> struct IsStaticallySized< t > {		  \
+    static const bool value = true;			  \
   };
 
   SACADO_BUILTIN_SPECIALIZATION(char,"char")

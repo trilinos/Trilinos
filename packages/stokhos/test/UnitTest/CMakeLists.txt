@@ -204,6 +204,13 @@ ENDIF()
 
 IF(Stokhos_ENABLE_Sacado)
 
+  INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
+
+  SET(UTILS_SOURCES 
+    ${PACKAGE_SOURCE_DIR}/../sacado/test/utils/Sacado_Random.hpp
+    ${PACKAGE_SOURCE_DIR}/../sacado/test/utils/Sacado_RandomImp.hpp
+  )
+
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoPCEUnitTest
@@ -227,7 +234,43 @@ IF(Stokhos_ENABLE_Sacado)
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1
- )
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoPCESerializationTests
+    SOURCES Stokhos_SacadoPCESerializationTests.cpp ${UTILS_SOURCES}
+    ARGS 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoPCECommTests
+    SOURCES Stokhos_SacadoPCECommTests.cpp ${UTILS_SOURCES}
+    ARGS 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoVectorSerializationTests
+    SOURCES Stokhos_SacadoVectorSerializationTests.cpp ${UTILS_SOURCES}
+    ARGS 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoVectorCommTests
+    SOURCES Stokhos_SacadoVectorCommTests.cpp ${UTILS_SOURCES}
+    ARGS 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
 
 ENDIF()
 
