@@ -64,10 +64,16 @@ main (int argc, char *argv[])
 {
   using Teuchos::inOutArg;
   using Teuchos::ParameterList;
+  using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
   using std::endl;
+  typedef double                          ST;
+  typedef Epetra_Operator                 OP;
+  typedef Epetra_MultiVector              MV;
+  typedef Belos::OperatorTraits<ST,MV,OP> OPT;
+  typedef Belos::MultiVecTraits<ST,MV>    MVT;
 
   Belos::Test::MPISession session (inOutArg (argc), inOutArg (argv));
   RCP<const Epetra_Comm> comm = session.getComm ();
@@ -78,9 +84,8 @@ main (int argc, char *argv[])
   // 
   bool verbose = false;
   int frequency = -1;  // how often residuals are printed by solver
-  int numrhs = 1;  // total number of right-hand sides to solve for
-  int blocksize = 1;  // blocksize used by solver
-  int maxiters = -1;  // maximum number of iterations for solver to use
+  int numRHS = 1;  // total number of right-hand sides to solve for
+  int maxIters = 13000;  // maximum number of iterations for solver to use
   std::string filename ("bcsstk14.hb");
   double tol = 1.0e-5; // relative residual tolerance
   
@@ -95,25 +100,26 @@ main (int argc, char *argv[])
 		  "solver.");
   cmdp.setOption ("filename", &filename, "Filename for Harwell-Boeing test "
 		  "matrix.");
-  cmdp.setOption ("num-rhs", &numrhs, "Number of right-hand sides to solve.");
-  cmdp.setOption ("max-iters", &maxiters, "Maximum number of iterations per "
+  cmdp.setOption ("num-rhs", &numRHS, "Number of right-hand sides to solve.");
+  cmdp.setOption ("max-iters", &maxIters, "Maximum number of iterations per "
 		  "linear system (-1 means \"adapt to problem/block size\").");
   if (cmdp.parse (argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
-  if (! verbose) {
-    // In non-verbose mode, override the specified frequency so that
-    // the solver doesn't print intermediate output.
-    frequency = -1;  
-  }
+  Teuchos::oblackholestream blackHole;
+  std::ostream& verbOut = (verbose && MyPID == 0) ? std::cout : blackHole;
+
   //
   // Generate the linear system(s) to solve.
   //
+  verbOut << "Generating the linear system(s) to solve" << endl << endl;
   RCP<Epetra_CrsMatrix> A;
   RCP<Epetra_MultiVector> B, X;
   RCP<Epetra_Map> rowMap;
   try {
-    Belos::createEpetraProblem (comm, filename, rowMap, A, B, X);
+    // This might change the number of right-hand sides, if we read in
+    // a right-hand side from the Harwell-Boeing file.
+    Belos::createEpetraProblem (comm, filename, rowMap, A, B, X, numRHS);
   } catch (std::exception& e) {
     TEUCHOS_TEST_FOR_EXCEPTION (true, std::runtime_error,
 				"Failed to create Epetra problem for matrix "
@@ -121,92 +127,188 @@ main (int argc, char *argv[])
 				"createEpetraProblem() reports the following "
 				"error: " << e.what());
   }
+  //
+  // Compute the initial residual norm of the problem, so we can see
+  // by how much it improved after the solve.
+  //
+  std::vector<double> initialResidualNorms (numRHS);
+  std::vector<double> initialResidualInfNorms (numRHS);
+  Epetra_MultiVector R (*rowMap, numRHS);
+  OPT::Apply (*A, *X, R);
+  MVT::MvAddMv (-1.0, R, 1.0, *B, R); // R := -(A*X) + B.
+  MVT::MvNorm (R, initialResidualNorms);
+  MVT::MvNorm (R, initialResidualInfNorms, Belos::InfNorm);
+  if (verbose) {
+    verbOut << "Initial residual 2-norms:            \t";
+    for (int i = 0; i < numRHS; ++i) {
+      verbOut << initialResidualNorms[i];
+      if (i < numRHS-1) {
+	verbOut << ", ";
+      }
+    }
+    verbOut << endl << "Initial residual Inf-norms:          \t";
+    for (int i = 0; i < numRHS; ++i) {
+      verbOut << initialResidualInfNorms[i];
+      if (i < numRHS-1) {
+	verbOut << ", ";
+      }
+    }
+    verbOut << endl;
+  }
 
-  Teuchos::oblackholestream blackHole;
-  std::ostream& verbOut = (verbose && MyPID == 0) ? std::cout : blackHole;
+  std::vector<double> rhs2Norms (numRHS);
+  std::vector<double> rhsInfNorms (numRHS);
+  MVT::MvNorm (*B, rhs2Norms);
+  MVT::MvNorm (*B, rhsInfNorms, Belos::InfNorm);
+  if (verbose) {
+    verbOut << "Right-hand side 2-norms:             \t";
+    for (int i = 0; i < numRHS; ++i) {
+      verbOut << rhs2Norms[i];
+      if (i < numRHS-1) {
+	verbOut << ", ";
+      }
+    }
+    verbOut << endl << "Right-hand side Inf-norms:           \t";
+    for (int i = 0; i < numRHS; ++i) {
+      verbOut << rhsInfNorms[i];
+      if (i < numRHS-1) {
+	verbOut << ", ";
+      }
+    }
+    verbOut << endl;
+  }
+
+  std::vector<double> initialGuess2Norms (numRHS);
+  std::vector<double> initialGuessInfNorms (numRHS);
+  MVT::MvNorm (*X, initialGuess2Norms);
+  MVT::MvNorm (*X, initialGuessInfNorms, Belos::InfNorm);
+  if (verbose) {
+    verbOut << "Initial guess 2-norms:               \t";
+    for (int i = 0; i < numRHS; ++i) {
+      verbOut << initialGuess2Norms[i];
+      if (i < numRHS-1) {
+	verbOut << ", ";
+      }
+    }
+    verbOut << endl << "Initial guess Inf-norms:             \t";
+    for (int i = 0; i < numRHS; ++i) {
+      verbOut << initialGuessInfNorms[i];
+      if (i < numRHS-1) {
+	verbOut << ", ";
+      }
+    }
+    verbOut << endl;
+  }
+  //
+  // Compute the infinity-norm of A.
+  //
+  const double normOfA = A->NormInf ();
+  verbOut << "||A||_inf:                           \t" << normOfA << endl;
+  //
+  // Compute ||A|| ||X_i|| + ||B_i|| for each right-hand side B_i.
+  //
+  std::vector<double> scaleFactors (numRHS);
+  for (int i = 0; i < numRHS; ++i) {
+    scaleFactors[i] = normOfA * initialGuessInfNorms[i] + rhsInfNorms[i];
+  }
+  if (verbose) {
+    verbOut << "||A||_inf ||X_i||_inf + ||B_i||_inf: \t";
+    for (int i = 0; i < numRHS; ++i) {
+      verbOut << scaleFactors[i];
+      if (i < numRHS-1) {
+	verbOut << ", ";
+      }
+    }
+    verbOut << endl;
+  }
 
   //
   // Solve using Belos
   //
-  typedef double                          ST;
-  typedef Epetra_Operator                 OP;
-  typedef Epetra_MultiVector              MV;
-  typedef Belos::OperatorTraits<ST,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<ST,MV>    MVT;
-  //
-  // *****Construct initial guess and random right-hand-sides *****
-  //
-  if (numrhs != 1) {
-    X = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
-    MVT::MvRandom( *X );
-    B = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
-    OPT::Apply( *A, *X, *B );
-    MVT::MvInit( *X, 0.0 );
-  }
-  //
-  // ********Other information used by block solver***********
-  // *****************(can be user specified)******************
-  //
+  verbOut << endl << "Setting up Belos" << endl;
   const int NumGlobalElements = B->GlobalLength();
-  if (maxiters == -1)
-    maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
-  //
-  ParameterList belosList;
-  belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
-  belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+
+  // Set up Belos solver parameters.
+  RCP<ParameterList> belosList = parameterList ("MINRES");
+  belosList->set ("Maximum Iterations", maxIters);
+  belosList->set ("Convergence Tolerance", tol);
   if (verbose) {
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
-		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
-    if (frequency > 0)
-      belosList.set( "Output Frequency", frequency );
+    belosList->set ("Verbosity", Belos::Errors + Belos::Warnings + 
+		    Belos::IterationDetails + Belos::OrthoDetails +
+		    Belos::FinalSummary + Belos::TimingDetails + Belos::Debug);
+    belosList->set ("Output Frequency", frequency);
   }
-  else
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
+  else {
+    belosList->set ("Verbosity", Belos::Errors + Belos::Warnings);
+  }
+  belosList->set ("Output Stream", rcpFromRef (verbOut));
 
   // Construct an unpreconditioned linear problem instance.
-  Belos::LinearProblem<double,MV,OP> problem (A, X, B);
-  if (! problem.setProblem()) {
+  typedef Belos::LinearProblem<double,MV,OP> prob_type;
+  RCP<prob_type> problem = rcp (new prob_type (A, X, B));
+  if (! problem->setProblem()) {
     verbOut << endl << "ERROR:  Failed to set up Belos::LinearProblem!" << endl;
     return EXIT_FAILURE;
   }
 
   // Create an iterative solver manager.
   RCP<Belos::SolverManager<double,MV,OP> > newSolver
-    = rcp (new Belos::MinresSolMgr<double,MV,OP> (rcpFromRef (problem), 
-						  rcpFromRef (belosList)));
-  // Print out information about problem.
-  verbOut << endl << endl
-	  << "Dimension of matrix: " << NumGlobalElements << endl
-	  << "Number of right-hand sides: " << numrhs << endl
-	  << "Max number of MINRES iterations: " << maxiters << endl
-	  << "Relative residual tolerance: " << tol << endl
-	  << endl;
-  // Solve the linear system.
-  Belos::ReturnType ret = newSolver->solve();
-  //
-  // Compute residual(s) explicitly.  This tests whether the Belos
-  // solver did so correctly.
-  //
-  bool badRes = false;
-  std::vector<double> actual_resids (numrhs);
-  std::vector<double> rhs_norm (numrhs);
-  Epetra_MultiVector resid (A->Map(), numrhs);
-  OPT::Apply (*A, *X, resid);
-  MVT::MvAddMv (-1.0, resid, 1.0, *B, resid); 
-  MVT::MvNorm (resid, actual_resids);
-  MVT::MvNorm (*B, rhs_norm);
+    = rcp (new Belos::MinresSolMgr<double,MV,OP> (problem, belosList));
 
-  verbOut << "---------- Actual Residuals (normalized) ----------" 
+  // Print out information about problem.  Make sure to use the
+  // information as stored in the Belos ParameterList, so that we know
+  // what the solver will do.
+  verbOut << endl
+	  << "Dimension of matrix: " << NumGlobalElements << endl
+	  << "Number of right-hand sides: " << numRHS << endl
+	  << "Max number of MINRES iterations: " 
+	  << belosList->get<int> ("Maximum Iterations") << endl
+	  << "Relative residual tolerance: " 
+	  << belosList->get<double> ("Convergence Tolerance") << endl
+	  << "Output frequency: "
+	  << belosList->get<int> ("Output Frequency") << endl
+	  << endl;
+
+  // Solve the linear system.
+  verbOut << "Solving the linear system" << endl << endl;
+  Belos::ReturnType ret = newSolver->solve();
+  verbOut << "Belos results:" << endl
+	  << "- Number of iterations: " 
+	  << newSolver->getNumIters () << endl
+	  << "- " << (ret == Belos::Converged ? "Converged" : "Not converged")
+	  << endl;
+  //
+  // After the solve, compute residual(s) explicitly.  This tests
+  // whether the Belos solver did so correctly.
+  //
+  std::vector<double> absoluteResidualNorms (numRHS);
+  OPT::Apply (*A, *X, R);
+  MVT::MvAddMv (-1.0, R, 1.0, *B, R); 
+  MVT::MvNorm (R, absoluteResidualNorms);
+
+  std::vector<double> relativeResidualNorms (numRHS);
+  for (int i = 0; i < numRHS; ++i) {
+    relativeResidualNorms[i] = (initialResidualNorms[i] == 0.0) ? 
+      absoluteResidualNorms[i] : 
+      absoluteResidualNorms[i] / initialResidualNorms[i];
+  }
+
+  verbOut << "---------- Computed relative residual norms ----------" 
 	  << endl << endl;
+  bool badRes = false;
   if (verbose) {
-    for (int i = 0; i < numrhs; ++i) {
-      double actRes = actual_resids[i]/rhs_norm[i];
+    for (int i = 0; i < numRHS; ++i) {
+      const double actRes = relativeResidualNorms[i];
       verbOut << "Problem " << i << " : \t" << actRes << endl;
       if (actRes > tol) {
 	badRes = true;
       }
     }
   }
+
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor::summarize (verbOut);
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
   const bool testFailed = (ret != Belos::Converged || badRes);
   if (testFailed) {

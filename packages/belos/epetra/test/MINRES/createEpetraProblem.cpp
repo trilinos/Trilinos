@@ -42,6 +42,13 @@
 #include "createEpetraProblem.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Trilinos_Util.h"
+#include "Epetra_Comm.h"
+#ifdef EPETRA_MPI
+#  include "mpi.h"
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif // EPETRA_MPI
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
@@ -58,7 +65,8 @@ namespace Belos {
 #endif // EPETRA_MPI 
     }
 
-    ~MPISession::MPISession () {
+    MPISession::~MPISession () 
+    {
 #ifdef EPETRA_MPI 
       MPI_Finalize ();
 #endif // EPETRA_MPI 
@@ -67,6 +75,8 @@ namespace Belos {
     Teuchos::RCP<const Epetra_Comm> 
     MPISession::getComm () 
     {
+      using Teuchos::rcp;
+
       if (comm_.is_null()) {
 #ifdef EPETRA_MPI	
 	comm_ = rcp (new Epetra_MpiComm (MPI_COMM_WORLD));	
@@ -76,7 +86,6 @@ namespace Belos {
       }
       return comm_;
     }
-
   } // namespace Test
 
 
@@ -86,7 +95,8 @@ createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
 		     Teuchos::RCP<Epetra_Map>& rowMap,
 		     Teuchos::RCP<Epetra_CrsMatrix>& A,
 		     Teuchos::RCP<Epetra_MultiVector>& B,
-		     Teuchos::RCP<Epetra_MultiVector>& X)
+		     Teuchos::RCP<Epetra_MultiVector>& X,
+		     int& numRHS)
 {
   using Teuchos::inOutArg;
   using Teuchos::ptr;
@@ -143,7 +153,7 @@ createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
 
     // Add rows to the sparse matrix one at a time.
     int NumEntries;
-    for (i = 0; i < NumMyElements; ++i) {
+    for (int i = 0; i < NumMyElements; ++i) {
       row_vals = val + bindx[i];
       col_inds = bindx + bindx[i];
       NumEntries = bindx[i+1] - bindx[i];
@@ -165,12 +175,20 @@ createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
     //
     // Construct the right-hand side and solution multivectors.
     //
-    B = rcp (new Epetra_MultiVector (::Copy, *rowMap, b, NumMyElements, 1));
-    //set_extra_data (rowMap, "B::Map", Teuchos::ptr (B));
-    X = rcp (new Epetra_MultiVector (*rowMap, 1));
+    if (false && b != NULL) {
+      B = rcp (new Epetra_MultiVector (::Copy, *rowMap, b, NumMyElements, 1));
+      numRHS = 1;
+    } else {
+      B = rcp (new Epetra_MultiVector (*rowMap, numRHS));
+      B->Random ();
+    }
+    X = rcp (new Epetra_MultiVector (*rowMap, numRHS));
+    X->PutScalar (0.0);
 
     //set_extra_data (rowMap, "X::Map", Teuchos::ptr (X));
-  } catch (std::exception& e) {
+    //set_extra_data (rowMap, "B::Map", Teuchos::ptr (B));
+  } 
+  catch (std::exception& e) {
     // Free up memory before rethrowing the exception.
     if (update) free(update);
     if (val) free(val);
@@ -179,7 +197,8 @@ createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
     if (xguess) free(xguess);
     if (b) free(b);
     throw e; // Rethrow the exception.
-  } catch (...) { // Epetra sometimes throws an int "object."
+  } 
+  catch (...) { // Epetra sometimes throws an int "object."
     // Free up memory before rethrowing the exception.
     if (update) free(update);
     if (val) free(val);
@@ -192,12 +211,12 @@ createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
 			       "with an unknown error.");
   }
 
-  if (false) {
+  //if (false) {
     //
     // Create workspace
     //
-    Teuchos::set_default_workspace_store (rcp (new Teuchos::WorkspaceStoreInitializeable(static_cast<size_t>(2e+6))));
-  }
+    //Teuchos::set_default_workspace_store (rcp (new Teuchos::WorkspaceStoreInitializeable(static_cast<size_t>(2e+6))));
+  //}
 
   //
   // Free up memory.
@@ -209,3 +228,5 @@ createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
   if (xguess) free(xguess);
   if (b) free(b);
 }
+
+} // namespace Belos

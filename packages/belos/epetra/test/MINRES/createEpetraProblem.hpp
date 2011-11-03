@@ -40,15 +40,10 @@
 //@HEADER
 
 #include "Epetra_config.h"
-#ifdef EPETRA_MPI
-#  include "mpi.h"
-#  include "Epetra_MpiComm.h"
-#else
-#  include "Epetra_SerialComm.h"
-#endif // EPETRA_MPI
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_RCP.hpp"
 
+class Epetra_Comm;
 class Epetra_Map;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
@@ -75,6 +70,7 @@ createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
 		     Teuchos::RCP<Epetra_Map>& rowMap,
 		     Teuchos::RCP<Epetra_CrsMatrix>& A,
 		     Teuchos::RCP<Epetra_MultiVector>& B,
-		     Teuchos::RCP<Epetra_MultiVector>& X);
+		     Teuchos::RCP<Epetra_MultiVector>& X,
+		     int &numRHS); // in/out
 
 } // namespace Belos
