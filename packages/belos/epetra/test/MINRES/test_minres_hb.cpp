@@ -51,13 +51,11 @@
 #include "BelosMinresSolMgr.hpp"
 #include "createEpetraProblem.hpp"
 #include "Trilinos_Util.h"
+#include "Epetra_Comm.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
-#ifdef HAVE_MPI
-#  include <mpi.h>
-#endif // HAVE_MPI
 
 int 
 main (int argc, char *argv[]) 
@@ -75,6 +73,7 @@ main (int argc, char *argv[])
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
 
+  // This calls MPI_Init and MPI_Finalize as necessary.
   Belos::Test::MPISession session (inOutArg (argc), inOutArg (argv));
   RCP<const Epetra_Comm> comm = session.getComm ();
   const int MyPID = comm->MyPID ();
