@@ -55,51 +55,76 @@
 #include "Epetra_Map.h"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#ifdef HAVE_MPI
+#  include <mpi.h>
+#endif // HAVE_MPI
 
-int main(int argc, char *argv[]) {
-  //
-#ifdef EPETRA_MPI	
-  // Initialize MPI	
-  MPI_Init(&argc,&argv); 	
-  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
-  (void)mpiFinalize;
-#endif
-  //
+int 
+main (int argc, char *argv[]) 
+{
+  using Teuchos::inOutArg;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  using std::endl;
+
+  Belos::Test::MPISession session (inOutArg (argc), inOutArg (argv));
+  RCP<const Epetra_Comm> comm = session.getComm ();
+  const int MyPID = comm->MyPID ();
+
   //
-  // Get test parameters from command-line processor
-  //  
-  bool verbose = false, proc_verbose = false;
+  // Parameters to read from command-line processor
+  // 
+  bool verbose = false;
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;  // total number of right-hand sides to solve for
   int blocksize = 1;  // blocksize used by solver
   int maxiters = -1;  // maximum number of iterations for solver to use
-  std::string filename("bcsstk14.hb");
-  double tol = 1.0e-5;  // relative residual tolerance
-
-  Teuchos::CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by MINRES solver.");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+  std::string filename ("bcsstk14.hb");
+  double tol = 1.0e-5; // relative residual tolerance
+  
+  //
+  // Read in command-line arguments
+  //
+  Teuchos::CommandLineProcessor cmdp (false, true);
+  cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
+  cmdp.setOption ("frequency", &frequency, "Solvers frequency for printing "
+		  "residuals (#iters).");
+  cmdp.setOption ("tol", &tol, "Relative residual tolerance used by MINRES "
+		  "solver.");
+  cmdp.setOption ("filename", &filename, "Filename for Harwell-Boeing test "
+		  "matrix.");
+  cmdp.setOption ("num-rhs", &numrhs, "Number of right-hand sides to solve.");
+  cmdp.setOption ("max-iters", &maxiters, "Maximum number of iterations per "
+		  "linear system (-1 means \"adapt to problem/block size\").");
+  if (cmdp.parse (argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
-  if (!verbose)
-    frequency = -1;  // reset frequency if test is not verbose
+  if (! verbose) {
+    // In non-verbose mode, override the specified frequency so that
+    // the solver doesn't print intermediate output.
+    frequency = -1;  
+  }
   //
-  // Get the problem
+  // Generate the linear system(s) to solve.
   //
-  int MyPID;
   RCP<Epetra_CrsMatrix> A;
   RCP<Epetra_MultiVector> B, X;
-  int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
-  if(return_val != 0) return return_val;
-  proc_verbose = ( verbose && (MyPID==0) );
+  RCP<Epetra_Map> rowMap;
+  try {
+    Belos::createEpetraProblem (comm, filename, rowMap, A, B, X);
+  } catch (std::exception& e) {
+    TEUCHOS_TEST_FOR_EXCEPTION (true, std::runtime_error,
+				"Failed to create Epetra problem for matrix "
+				"filename \"" << filename << "\".  "
+				"createEpetraProblem() reports the following "
+				"error: " << e.what());
+  }
+
+  Teuchos::oblackholestream blackHole;
+  std::ostream& verbOut = (verbose && MyPID == 0) ? std::cout : blackHole;
+
   //
   // Solve using Belos
   //
@@ -137,68 +162,60 @@ int main(int argc, char *argv[]) {
   }
   else
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
-  //
+
   // Construct an unpreconditioned linear problem instance.
-  //
-  Belos::LinearProblem<double,MV,OP> problem( A, X, B );
-  bool set = problem.setProblem();
-  if (set == false) {
-    if (proc_verbose)
-      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-    return -1;
+  Belos::LinearProblem<double,MV,OP> problem (A, X, B);
+  if (! problem.setProblem()) {
+    verbOut << endl << "ERROR:  Failed to set up Belos::LinearProblem!" << endl;
+    return EXIT_FAILURE;
   }
-  //
+
   // Create an iterative solver manager.
-  //
-  RCP< Belos::SolverManager<double,MV,OP> > newSolver
-    = rcp( new Belos::MinresSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
-  //
-  // **********Print out information about problem*******************
-  //
-  if (proc_verbose) {
-    std::cout << std::endl << std::endl;
-    std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
-    std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-    std::cout << "Max number of MINRES iterations: " << maxiters << std::endl; 
-    std::cout << "Relative residual tolerance: " << tol << std::endl;
-    std::cout << std::endl;
-  }
-  //
-  // Perform solve
-  //
+  RCP<Belos::SolverManager<double,MV,OP> > newSolver
+    = rcp (new Belos::MinresSolMgr<double,MV,OP> (rcpFromRef (problem), 
+						  rcpFromRef (belosList)));
+  // Print out information about problem.
+  verbOut << endl << endl
+	  << "Dimension of matrix: " << NumGlobalElements << endl
+	  << "Number of right-hand sides: " << numrhs << endl
+	  << "Max number of MINRES iterations: " << maxiters << endl
+	  << "Relative residual tolerance: " << tol << endl
+	  << endl;
+  // Solve the linear system.
   Belos::ReturnType ret = newSolver->solve();
   //
-  // Compute actual residuals.
+  // Compute residual(s) explicitly.  This tests whether the Belos
+  // solver did so correctly.
   //
   bool badRes = false;
-  std::vector<double> actual_resids( numrhs );
-  std::vector<double> rhs_norm( numrhs );
-  Epetra_MultiVector resid(A->Map(), numrhs);
-  OPT::Apply( *A, *X, resid );
-  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
-  MVT::MvNorm( resid, actual_resids );
-  MVT::MvNorm( *B, rhs_norm );
-  if (proc_verbose) {
-    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
-    for ( int i=0; i<numrhs; i++) {
+  std::vector<double> actual_resids (numrhs);
+  std::vector<double> rhs_norm (numrhs);
+  Epetra_MultiVector resid (A->Map(), numrhs);
+  OPT::Apply (*A, *X, resid);
+  MVT::MvAddMv (-1.0, resid, 1.0, *B, resid); 
+  MVT::MvNorm (resid, actual_resids);
+  MVT::MvNorm (*B, rhs_norm);
+
+  verbOut << "---------- Actual Residuals (normalized) ----------" 
+	  << endl << endl;
+  if (verbose) {
+    for (int i = 0; i < numrhs; ++i) {
       double actRes = actual_resids[i]/rhs_norm[i];
-      std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-      if (actRes > tol) badRes = true;
+      verbOut << "Problem " << i << " : \t" << actRes << endl;
+      if (actRes > tol) {
+	badRes = true;
+      }
     }
   }
 
-  if (ret!=Belos::Converged || badRes) {
-    if (proc_verbose)
-      std::cout << std::endl << "End Result: TEST FAILED" << std::endl;	
-    return -1;
+  const bool testFailed = (ret != Belos::Converged || badRes);
+  if (testFailed) {
+    verbOut << endl << "End Result: TEST FAILED" << endl;
+    return EXIT_FAILURE;
+  } else {
+    verbOut << endl << "End Result: TEST PASSED" << endl;
+    return EXIT_SUCCESS;
   }
-  //
-  // Default return value
-  //
-  if (proc_verbose)
-    std::cout << std::endl << "End Result: TEST PASSED" << std::endl;
-  return 0;
-  //
 } // end test_minres_hb.cpp
 
 
