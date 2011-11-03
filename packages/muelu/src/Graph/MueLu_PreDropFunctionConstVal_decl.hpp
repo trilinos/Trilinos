@@ -34,7 +34,7 @@ namespace MueLu {
 
   public:
     // Constructor
-    explicit PreDropFunctionConstVal(const Scalar threshold);
+    explicit PreDropFunctionConstVal(const Scalar threshold = 0.0);
 
     // Destructor
     ~PreDropFunctionConstVal() ;
