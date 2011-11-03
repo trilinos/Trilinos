@@ -8,59 +8,39 @@
 
 \mainpage
 
-\section main_index Index
+@image html muelu2.png
 
-- \ref overview
-- \ref news
-- \ref todo
-- \ref user_guide
-- \ref faq
-- \ref bugs
-- \ref history
-- \ref authors
-- \ref copyright
-- \ref questions
+\section muelu_index Table of Contents
 
-\section overview Overview
+- \ref muelu_overview
+- \ref muelu_authors
+- \ref muelu_copyright
+- \ref muelu_questions
+
+\section muelu_overview Overview
 
 MueLu is a flexible and extensible multigrid solver framework.  It is intended for the research and
 development of new multigrid preconditioning techniques.
 
-\section news News
+\section muelu_authors Authors and Contributors
 
-<ul>
-<li> 2010.09.08: We are now building as a Trilinos package!
-</ul>
+  - Jeremie Gaidamour, Sandia National Labs
+  - Axel Gerstenberger, Sandia National Labs
+  - Jonathan Hu, Sandia National Labs
+  - Chris Siefert, Sandia National Labs
+  - Ray Tuminaro, Sandia National Labs
+  - Tobias Wiesner, Technical University Munich
 
-\section bugs Reporting Bugs and Making Enhancement Requests
+\section muelu_copyright Copyright
 
-  To reports bugs or make enhancement requests, visit the <A HREF="http://software.sandia.gov/bugzilla/">Trilinos Bugzilla (Bug Tracking) Database</A>, and use the following instructions.
-      <UL>
-      <LI>Click on "Enter a new bug report"
-      <LI>Choose "MueLu"
-      <LI>Either login or create a new account
-      <LI>Submit your bug report
-      </UL>
-
-\section history History
-
-
-
-\section authors Authors and Contributors
-
-  - Jeremie Gaidamour, SNL 01416
-  - Axel Gerstenberger, SNL 01416
-  - Jonathan Hu, SNL 01416
-  - Chris Siefert, SNL 01431
-  - Ray Tuminaro, SNL 01416
-
-\section copyright Copyright
+The MueLu copyright is pending.
 
 \verbinclude copyright.txt
 
-\section questions For All Questions and Comments...
+\section muelu_questions For All Questions and Comments...
   
-   Please contact Jonathan Hu (jhu@sandia.gov).
+   Please contact Jeremie Gaidamour (jngaida@sandia.gov), Jonathan Hu (jhu@sandia.gov),
+   or Ray Tuminaro (rstumin@sandia.gov).
 
 */
 

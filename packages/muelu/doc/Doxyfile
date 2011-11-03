@@ -2,4 +2,4 @@
 # This file is used by doxygen for building documentation in the source tree
 #
 @INCLUDE = Doxyfile.options
-INPUT                  = ../xpetra ../src ../gallery ./MueLu_DoxygenDocumentation.hpp
+INPUT                  = ./MueLu_DoxygenDocumentation.hpp ../xpetra ../src ../gallery
