@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -54,7 +52,7 @@ namespace MueLu {
     //! @name Utilities.
     //@{
 
-    RCP <SmootherPrototype> Copy() const ;
+    RCP<SmootherPrototype> Copy() const ;
 
     //@}
 
@@ -69,5 +67,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_GAUSSSEIDELSMOOTHER_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_GAUSSSEIDELSMOOTHER_DECL_HPP
