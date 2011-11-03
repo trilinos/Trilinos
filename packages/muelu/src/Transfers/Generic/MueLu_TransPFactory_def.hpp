@@ -1,118 +1,54 @@
 #ifndef MUELU_TRANSPFACTORY_DEF_HPP
 #define MUELU_TRANSPFACTORY_DEF_HPP
 
-#include <iostream>
-
-#include "Xpetra_CrsOperator.hpp"
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_RFactory.hpp"
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_Utilities.hpp"
+#include "MueLu_TransPFactory_decl.hpp"
 
 namespace MueLu {
 
-  /*!
-    @class TransPFactory class.
-    @brief Factory for building restriction operators.
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TransPFactory(RCP<FactoryBase> PFact)
+    : PFact_(PFact)
+  { }
 
-    This factory currently depends on an underlying matrix-matrix multiply with the identity
-    matrix to do the transpose.  This should probably be fixed at some point.
-  */
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~TransPFactory() {}
+ 
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+    coarseLevel.DeclareInput("P",PFact_.get());
+  }
 
-template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class TransPFactory : public RFactory {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
+    return BuildR(fineLevel,coarseLevel);
+  }
 
-#include "MueLu_UseShortNames.hpp"
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildR(Level & fineLevel, Level & coarseLevel) const {
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+    std::ostringstream buf; buf << coarseLevel.GetLevelID();
+    RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR_"+buf.str()));
+    timer->start(true);
 
-    //! Constructor.
-    TransPFactory(RCP<FactoryBase> PFact = Teuchos::null)
-      : PFact_(PFact)
-    { }
+    Teuchos::OSTab tab(this->getOStream());
+    Teuchos::ParameterList matrixList;
+    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
 
-    //! Destructor.
-    virtual ~TransPFactory() {}
-    //@}
+    //doesn't work -- bug in EpetraExt?
+    //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
+    //      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);
+    //RCP<Operator> R = Utils::TwoMatrixMultiply(P,true,I,false); //doesn't work -- bug in EpetraExt?
+    //      RCP<Operator> R = Utils::TwoMatrixMultiply(I,false,P,true);
 
-    //! Input
-    //@{
+    RCP<Operator> R= Utils2<SC,LO,GO>::Transpose(P,true);
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      coarseLevel.DeclareInput("P",PFact_.get());
-    }
+    coarseLevel.Set("R", R, this);
 
-    //@}
+    timer->stop();
+    MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
-    //! @name Build methods.
-    //@{
-/*
-   FIXME this uses the Tpetra RowMatrixTransposer.  This has revealed a bug somewhere.
-   FIXME so disabling it right now.
-    void BuildR(Level & fineLevel, Level & coarseLevel) {
-
-      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::BuildR"));
-      timer->start(true);
-
-      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
-      RCP<Operator> R = Utils::Transpose(P,true); //true indicated optimize storage
-      coarseLevel.Set("R", R);
-
-      timer->stop();
-      MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
-
-      return true;
-    } //BuildR
-*/
-
-    void Build(Level & fineLevel, Level & coarseLevel) const {
-      return BuildR(fineLevel,coarseLevel);
-    }
-
-    void BuildR(Level & fineLevel, Level & coarseLevel) const {
-
-      std::ostringstream buf; buf << coarseLevel.GetLevelID();
-      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR_"+buf.str()));
-      timer->start(true);
-
-      Teuchos::OSTab tab(this->getOStream());
-      Teuchos::ParameterList matrixList;
-      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
-
-      //doesn't work -- bug in EpetraExt?
-      //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
-      //      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);
-      //RCP<Operator> R = Utils::TwoMatrixMultiply(P,true,I,false); //doesn't work -- bug in EpetraExt?
-      //      RCP<Operator> R = Utils::TwoMatrixMultiply(I,false,P,true);
-
-      RCP<Operator> R= Utils2<SC,LO,GO>::Transpose(P,true);
-
-      coarseLevel.Set("R", R, this);
-
-      timer->stop();
-      MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
-
-    } //BuildR
-
-    //@}
-
-    //! @name Set methods.
-    //@{
-    void UsePtent(bool ToF) {
-      throw(Exceptions::NotImplemented("TransPFactory.UsePtent()")); //TODO
-    }
-    //@}
-
-    //! P Factory
-    RCP<FactoryBase> PFact_;
-
-  }; //class TransPFactory
+  } //BuildR
 
 } //namespace MueLu
 
-#define MUELU_TRANSPFACTORY_SHORT
 #endif // MUELU_TRANSPFACTORY_DEF_HPP

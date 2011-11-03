@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include <iostream>
 
 #include "Xpetra_CrsOperator.hpp"
@@ -75,5 +73,4 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 } //namespace MueLu
 
 #define MUELU_TRANSPFACTORY_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_TRANSPFACTORY_DECL_HPP

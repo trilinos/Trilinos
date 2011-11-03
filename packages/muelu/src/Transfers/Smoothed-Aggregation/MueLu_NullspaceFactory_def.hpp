@@ -1,81 +1,53 @@
 #ifndef MUELU_NULLSPACEFACTORY_DEF_HPP
 #define MUELU_NULLSPACEFACTORY_DEF_HPP
 
-#include "Xpetra_Operator.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Level.hpp"
+#include "MueLu_NullspaceFactory_decl.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class NullspaceFactory : public SingleLevelFactoryBase {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NullspaceFactory(RCP<const FactoryBase> AFact)
+    : AFact_(AFact)
+  { }
 
-#include "MueLu_UseShortNames.hpp"
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~NullspaceFactory() {}
 
-  public:
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+    currentLevel.DeclareInput("A", AFact_.get());
+  }
 
-    //! @name Constructors/Destructors.
-    //@{
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+    RCP<MultiVector> nullspace;
+      
+    Monitor m(*this, "Nullspace factory");
 
-    //! Constructor
-    NullspaceFactory(RCP<const FactoryBase> AFact = Teuchos::null)
-      : AFact_(AFact)
-    { }
+    if (currentLevel.IsAvailable("Nullspace")) {
+      // When a fine nullspace have already been defined by user using Set("Nullspace", ...), we use it.
+      nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace");
+      GetOStream(Runtime1, 0) << "Use user-given nullspace: nullspace dimension=" << nullspace->getNumVectors() << std::endl;
 
-    //! Destructor
-    virtual ~NullspaceFactory() {}
+    } else {
+        
+      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
-    //@}
+      //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
 
-    //! Input
-    //@{
-
-    void DeclareInput(Level &currentLevel) const {
-      currentLevel.DeclareInput("A", AFact_.get());
+      nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1);
+      nullspace->putScalar(1.0);
+      GetOStream(Runtime1, 0) << "Calculate nullspace: nullspace dimension=" << nullspace->getNumVectors() << std::endl;
     }
 
-    //@}
+    if(currentLevel.GetLevelID() != 0)
+      GetOStream(Warnings0, 0) << "NullspaceFactory::Build called for Level " << currentLevel.GetLevelID() << "! Check me!" << std::endl;
 
-    void Build(Level &currentLevel) const {
-      RCP<MultiVector> nullspace;
-      
-      Monitor m(*this, "Nullspace factory");
+    currentLevel.Set("Nullspace", nullspace, this);
 
-      if (currentLevel.IsAvailable("Nullspace")) {
-        // When a fine nullspace have already been defined by user using Set("Nullspace", ...), we use it.
-        nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace");
-        GetOStream(Runtime1, 0) << "Use user-given nullspace: nullspace dimension=" << nullspace->getNumVectors() << std::endl;
-
-      } else {
-        
-        RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
-
-        //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
-
-        nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1);
-        nullspace->putScalar(1.0);
-        GetOStream(Runtime1, 0) << "Calculate nullspace: nullspace dimension=" << nullspace->getNumVectors() << std::endl;
-      }
-
-      if(currentLevel.GetLevelID() != 0)
-        GetOStream(Warnings0, 0) << "NullspaceFactory::Build called for Level " << currentLevel.GetLevelID() << "! Check me!" << std::endl;
-
-      currentLevel.Set("Nullspace", nullspace, this);
-
-    } // Build
-
-  private:
-
-    //! A Factory
-    RCP<const FactoryBase> AFact_;
-
-  }; //class NullspaceFactory
+  } // Build
 
 } //namespace MueLu
 
-#define MUELU_NULLSPACEFACTORY_SHORT
 #endif // MUELU_NULLSPACEFACTORY_DEF_HPP
