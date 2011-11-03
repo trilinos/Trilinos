@@ -33,12 +33,12 @@ namespace panzer {
   public:    
     PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
                  const std::string & element_block_id,
-		 const panzer::CellData cell_data,
+		 const panzer::CellData & cell_data,
 		 const panzer::EquationSetFactory& factory,
 		 const bool build_transient_support);
 
     PhysicsBlock(const panzer::PhysicsBlock & pb,
-                 const panzer::CellData cell_data,
+                 const panzer::CellData & cell_data,
                  const panzer::EquationSetFactory& factory);
 
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
@@ -104,13 +104,13 @@ namespace panzer {
       * passed in by the user. This is useful for creating physics block objects
       * that reside on the boundaries.
       */
-    Teuchos::RCP<PhysicsBlock> copyWithCellData(const panzer::CellData cell_data,
+    Teuchos::RCP<PhysicsBlock> copyWithCellData(const panzer::CellData & cell_data,
                                                 const panzer::EquationSetFactory & factory) const;
 
   protected:
     void initialize(const panzer::InputPhysicsBlock & ipb,
                     const std::string & element_block_id,
-   		    const panzer::CellData cell_data,
+   		    const panzer::CellData & cell_data,
    		    const panzer::EquationSetFactory& factory,
 		    const bool build_transient_support);
 

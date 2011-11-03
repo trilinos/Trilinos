@@ -18,6 +18,7 @@ using Teuchos::rcp;
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_STKClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -79,12 +80,12 @@ namespace panzer {
 	    block != block_ids_to_physics_ids.end(); ++block)
 	 eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
 
-       fmb.buildPhysicsBlocks(block_ids_to_physics_ids,
-                              physics_id_to_input_physics_blocks,
-                              2,workset_size,
-                              eqset_factory,
-			      false,
-                              physics_blocks);
+       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                  physics_id_to_input_physics_blocks,
+                                  2,workset_size,
+                                  eqset_factory,
+		    	          false,
+                                  physics_blocks);
     }
 
     // setup mesh

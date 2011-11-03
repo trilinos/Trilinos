@@ -18,6 +18,7 @@ using Teuchos::rcp;
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_Basis.hpp"
+#include "Panzer_ParameterList_ObjectBuilders.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
@@ -116,12 +117,12 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
-      fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
-                              physics_id_to_input_physics_blocks,
-                              Teuchos::as<int>(mesh->getDimension()), workset_size,
-                              eqset_factory,
-			      false,
-                              physicsBlocks);
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 physics_id_to_input_physics_blocks,
+                                 Teuchos::as<int>(mesh->getDimension()), workset_size,
+                                 eqset_factory,
+			         false,
+                                 physicsBlocks);
     }
 
     // build DOF Manager

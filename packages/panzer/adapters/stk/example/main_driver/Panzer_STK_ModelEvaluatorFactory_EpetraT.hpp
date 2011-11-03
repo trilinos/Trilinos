@@ -28,6 +28,7 @@
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_ResponseUtilities.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
+#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_STK_NOXObserverFactory.hpp"
 #include "Panzer_STK_RythmosObserverFactory_Epetra.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
@@ -146,13 +147,13 @@ namespace panzer_stk {
 
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
-    fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
-			    physics_id_to_input_physics_blocks,
-			    Teuchos::as<int>(mesh->getDimension()),
-			    workset_size,
-			    *eqset_factory,
-			    is_transient,
-			    physicsBlocks);
+    panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+			       physics_id_to_input_physics_blocks,
+			       Teuchos::as<int>(mesh->getDimension()),
+			       workset_size,
+			       *eqset_factory,
+			       is_transient,
+			       physicsBlocks);
 
     // finish building mesh, set required field variables and mesh bulk data
     ////////////////////////////////////////////////////////////////////////

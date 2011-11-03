@@ -28,6 +28,7 @@ using Teuchos::rcp;
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "user_app_RythmosObserver_Epetra.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -102,13 +103,13 @@ namespace panzer {
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
       bool build_transient_support = false;
-      fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
-                              physics_id_to_input_physics_blocks,
-                              Teuchos::as<int>(mesh->getDimension()),
-			      workset_size,
-                              eqset_factory,
-			      build_transient_support,
-                              physicsBlocks);
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 physics_id_to_input_physics_blocks,
+                                 Teuchos::as<int>(mesh->getDimension()),
+		   	         workset_size,
+                                 eqset_factory,
+		   	         build_transient_support,
+                                 physicsBlocks);
 
       // store off info needed for workset construction
       for (std::map<std::string,std::string>::iterator block = 
@@ -391,13 +392,13 @@ namespace panzer {
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
       bool build_transient_support = true;
-      fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
-                              physics_id_to_input_physics_blocks,
-                              Teuchos::as<int>(mesh->getDimension()),
-			      workset_size,
-                              eqset_factory,
-			      build_transient_support,
-                              physicsBlocks);
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 physics_id_to_input_physics_blocks,
+                                 Teuchos::as<int>(mesh->getDimension()),
+			         workset_size,
+                                 eqset_factory,
+			         build_transient_support,
+                                 physicsBlocks);
 
       // store off info needed for workset construction
       for (std::map<std::string,std::string>::iterator block = 

@@ -13,7 +13,7 @@
 panzer::PhysicsBlock::
 PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
              const std::string & element_block_id,
-	     const panzer::CellData cell_data,
+	     const panzer::CellData & cell_data,
 	     const panzer::EquationSetFactory& factory,
 	     const bool build_transient_support) :
   m_physics_id(ipb.physics_block_id),
@@ -28,7 +28,7 @@ PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
 
 panzer::PhysicsBlock::
 PhysicsBlock(const panzer::PhysicsBlock& pb,
-	     const panzer::CellData cell_data,
+	     const panzer::CellData & cell_data,
              const panzer::EquationSetFactory& factory) :
   m_physics_id(pb.m_physics_id),
   m_element_block_id(pb.m_element_block_id),
@@ -42,7 +42,7 @@ PhysicsBlock(const panzer::PhysicsBlock& pb,
 
 void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
                                       const std::string & element_block_id,
-	                              const panzer::CellData cell_data,
+	                              const panzer::CellData & cell_data,
 	                              const panzer::EquationSetFactory& factory,
 				      const bool build_transient_support)
 {
@@ -247,7 +247,7 @@ const panzer::CellData panzer::PhysicsBlock::cellData() const
 }
 
 // *******************************************************************
-Teuchos::RCP<panzer::PhysicsBlock> panzer::PhysicsBlock::copyWithCellData(const panzer::CellData cell_data,
+Teuchos::RCP<panzer::PhysicsBlock> panzer::PhysicsBlock::copyWithCellData(const panzer::CellData & cell_data,
                                                                           const panzer::EquationSetFactory & factory) const
 {
   return Teuchos::rcp(new panzer::PhysicsBlock(*this,cell_data,factory));

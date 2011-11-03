@@ -26,6 +26,7 @@ using Teuchos::rcp;
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -103,12 +104,12 @@ namespace panzer {
 	eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
 
       bool build_transient_support = true;
-      fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
-                              physics_id_to_input_physics_blocks,
-                              Teuchos::as<int>(mesh->getDimension()), workset_size,
-                              eqset_factory,
-			      build_transient_support,
-                              physicsBlocks);
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 physics_id_to_input_physics_blocks,
+                                 Teuchos::as<int>(mesh->getDimension()), workset_size,
+                                 eqset_factory,
+			         build_transient_support,
+                                 physicsBlocks);
     }
 
     // build worksets
@@ -316,12 +317,12 @@ namespace panzer {
 	eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
 
       bool build_transient_support = true;
-      fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
-                              physics_id_to_input_physics_blocks,
-                              Teuchos::as<int>(mesh->getDimension()), workset_size,
-                              eqset_factory,
-			      build_transient_support,
-                              physicsBlocks);
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 physics_id_to_input_physics_blocks,
+                                 Teuchos::as<int>(mesh->getDimension()), workset_size,
+                                 eqset_factory,
+			         build_transient_support,
+                                 physicsBlocks);
     }
 
     // build worksets

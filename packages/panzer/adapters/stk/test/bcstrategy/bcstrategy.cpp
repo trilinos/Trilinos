@@ -25,6 +25,7 @@
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
+#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 
@@ -102,12 +103,12 @@ namespace panzer {
 	   block != block_ids_to_physics_ids.end(); ++block)
 	eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
 
-      fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
-                              physics_id_to_input_physics_blocks,
-                              Teuchos::as<int>(mesh->getDimension()), workset_size,
-                              eqset_factory,
-			      false,
-                              physicsBlocks);
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 physics_id_to_input_physics_blocks,
+                                 Teuchos::as<int>(mesh->getDimension()), workset_size,
+                                 eqset_factory,
+		   	         false,
+                                 physicsBlocks);
     }
 
     // build worksets
