@@ -58,7 +58,7 @@ public:
   }
 
   unsigned rank() const {
-    return m_rank ;
+    return m_field_rank ;
   }
 
   const shards::ArrayDimTag * const * dimension_tags() const {
@@ -94,12 +94,17 @@ public:
   void insert_restriction( const char       * arg_method ,
                            EntityRank         arg_entity_rank ,
                            const Part       & arg_part ,
-                           const unsigned   * arg_stride );
+                           const unsigned   * arg_stride ,
+                           const void*        arg_init_value = NULL);
 
   void verify_and_clean_restrictions( const char       * arg_method ,
                                       const PartVector & arg_all_parts );
 
+  const void* get_initial_value() const;
 
+  void* get_initial_value();
+
+  unsigned get_initial_value_num_bytes() const;
 
   void set_field_states( FieldBase ** field_states);
 
@@ -118,6 +123,8 @@ public:
 
 private:
 
+  void set_initial_value(const void* new_initial_value, unsigned num_scalars, unsigned num_bytes);
+
   FieldRestrictionVector & restrictions();
 
   const std::string            m_name ;                    ///< Name of the field
@@ -127,10 +134,12 @@ private:
   const unsigned               m_ordinal ;                 ///< Ordinal in the field set
   const unsigned               m_num_states ;              ///< Number of states
   const FieldState             m_this_state ;              ///< Field state of this field
-  unsigned                     m_rank ;                    ///< Number of dimensions
+  unsigned                     m_field_rank ;              ///< Number of dimensions
   FieldRestrictionVector       m_dim_map ;                 ///< Only valid on StateNone
   FieldBase                  * m_field_states[ MaximumFieldStates ];
   const shards::ArrayDimTag  * m_dim_tags[ MaximumFieldDimension ];
+  void*                        m_initial_value;
+  unsigned                     m_initial_value_num_bytes;
 
   //disallow copy and default constructors
   FieldBaseImpl();

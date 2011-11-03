@@ -354,7 +354,8 @@ public:
   void declare_field_restriction( FieldBase      & arg_field ,
                                   EntityRank       arg_entity_rank ,
                                   const Part     & arg_part ,
-                                  const unsigned * arg_stride );
+                                  const unsigned * arg_stride ,
+                                  const void*      arg_init_value = NULL );
   /** \} */
 private:
   MetaData( const MetaData & );                ///< \brief  Not allowed
@@ -415,7 +416,8 @@ void verify_parallel_consistency( const MetaData & , ParallelMachine );
 template< class field_type >
 field_type & put_field( field_type & field ,
                         EntityRank  entity_rank ,
-                        const Part & part );
+                        const Part & part ,
+                        const void* init_value = NULL);
 
 /** \brief Declare a field to exist for a given entity type and Part. The
  *         extra unsigned arguments specify the size of a dimension. So,
@@ -426,14 +428,8 @@ template< class field_type >
 field_type & put_field( field_type & field ,
                         EntityRank  entity_rank ,
                         const Part & part ,
-                        unsigned     n1 );
-
-template< class field_type >
-field_type & put_field( field_type & field ,
-                        EntityRank  entity_rank ,
-                        const Part & part ,
                         unsigned     n1 ,
-                        unsigned     n2 );
+                        const void* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -441,7 +437,7 @@ field_type & put_field( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
-                        unsigned     n3 );
+                        const void* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -450,7 +446,7 @@ field_type & put_field( field_type & field ,
                         unsigned     n1 ,
                         unsigned     n2 ,
                         unsigned     n3 ,
-                        unsigned     n4 );
+                        const void* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -460,7 +456,7 @@ field_type & put_field( field_type & field ,
                         unsigned     n2 ,
                         unsigned     n3 ,
                         unsigned     n4 ,
-                        unsigned     n5 );
+                        const void* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -471,7 +467,7 @@ field_type & put_field( field_type & field ,
                         unsigned     n3 ,
                         unsigned     n4 ,
                         unsigned     n5 ,
-                        unsigned     n6 );
+                        const void* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -483,7 +479,20 @@ field_type & put_field( field_type & field ,
                         unsigned     n4 ,
                         unsigned     n5 ,
                         unsigned     n6 ,
-                        unsigned     n7 );
+                        const void* init_value = NULL);
+
+template< class field_type >
+field_type & put_field( field_type & field ,
+                        EntityRank  entity_rank ,
+                        const Part & part ,
+                        unsigned     n1 ,
+                        unsigned     n2 ,
+                        unsigned     n3 ,
+                        unsigned     n4 ,
+                        unsigned     n5 ,
+                        unsigned     n6 ,
+                        unsigned     n7 ,
+                        const void* init_value = NULL);
 /** \} */
 /** \} */
 
@@ -543,7 +552,8 @@ inline
 field_type & put_field(
   field_type & field ,
   EntityRank entity_rank ,
-  const Part & part )
+  const Part & part ,
+  const void* init_value)
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
@@ -552,26 +562,7 @@ field_type & put_field(
 
   Helper::assign( stride );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
-
-  return field ;
-}
-
-template< class field_type >
-inline
-field_type & put_field( field_type &field ,
-                        EntityRank entity_rank ,
-                        const Part &part ,
-                        unsigned    n1 )
-{
-  typedef FieldTraits< field_type > Traits ;
-  typedef typename Traits::Helper   Helper ;
-
-  unsigned stride[8] ;
-
-  Helper::assign( stride , n1 );
-
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -582,16 +573,16 @@ field_type & put_field( field_type &field ,
                         EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
-                        unsigned    n2 )
+                        const void* init_value )
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
 
   unsigned stride[8] ;
 
-  Helper::assign( stride , n1 , n2 );
+  Helper::assign( stride , n1 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -603,16 +594,16 @@ field_type & put_field( field_type &field ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
-                        unsigned    n3 )
+                        const void* init_value )
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
 
   unsigned stride[8] ;
 
-  Helper::assign( stride , n1 , n2 , n3 );
+  Helper::assign( stride , n1 , n2 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -625,16 +616,16 @@ field_type & put_field( field_type &field ,
                         unsigned    n1 ,
                         unsigned    n2 ,
                         unsigned    n3 ,
-                        unsigned    n4 )
+                        const void* init_value )
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
 
   unsigned stride[8] ;
 
-  Helper::assign( stride , n1 , n2 , n3 , n4 );
+  Helper::assign( stride , n1 , n2 , n3 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -648,16 +639,16 @@ field_type & put_field( field_type &field ,
                         unsigned    n2 ,
                         unsigned    n3 ,
                         unsigned    n4 ,
-                        unsigned    n5 )
+                        const void* init_value )
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
 
   unsigned stride[8] ;
 
-  Helper::assign( stride , n1 , n2 , n3 , n4, n5 );
+  Helper::assign( stride , n1 , n2 , n3 , n4 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -672,16 +663,16 @@ field_type & put_field( field_type &field ,
                         unsigned    n3 ,
                         unsigned    n4 ,
                         unsigned    n5 ,
-                        unsigned    n6 )
+                        const void* init_value )
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
 
   unsigned stride[8] ;
 
-  Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6 );
+  Helper::assign( stride , n1 , n2 , n3 , n4, n5 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
 
   return field ;
 }
@@ -697,7 +688,33 @@ field_type & put_field( field_type &field ,
                         unsigned    n4 ,
                         unsigned    n5 ,
                         unsigned    n6 ,
-                        unsigned    n7 )
+                        const void* init_value )
+{
+  typedef FieldTraits< field_type > Traits ;
+  typedef typename Traits::Helper   Helper ;
+
+  unsigned stride[8] ;
+
+  Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6 );
+
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+
+  return field ;
+}
+
+template< class field_type >
+inline
+field_type & put_field( field_type &field ,
+                        EntityRank entity_rank ,
+                        const Part &part ,
+                        unsigned    n1 ,
+                        unsigned    n2 ,
+                        unsigned    n3 ,
+                        unsigned    n4 ,
+                        unsigned    n5 ,
+                        unsigned    n6 ,
+                        unsigned    n7 ,
+                        const void* init_value )
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
@@ -706,7 +723,7 @@ field_type & put_field( field_type &field ,
 
   Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6, n7 );
 
-  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride);
+  MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
 
   return field ;
 }

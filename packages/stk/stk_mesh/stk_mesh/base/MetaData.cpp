@@ -291,7 +291,8 @@ void MetaData::declare_field_restriction(
   FieldBase      & arg_field ,
   EntityRank       arg_entity_rank ,
   const Part     & arg_part ,
-  const unsigned * arg_stride )
+  const unsigned * arg_stride ,
+  const void     * arg_init_value )
 {
   static const char method[] =
     "std::mesh::MetaData::declare_field_restriction" ;
@@ -306,7 +307,8 @@ void MetaData::declare_field_restriction(
       arg_entity_rank,
       arg_part,
       m_part_repo.get_all_parts(),
-      arg_stride
+      arg_stride,
+      arg_init_value
       );
 }
 

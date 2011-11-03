@@ -157,7 +157,7 @@ BucketImpl::DataMap * BucketImpl::get_field_map()
 
 //----------------------------------------------------------------------
 
-void BucketImpl::zero_fields( unsigned i_dst )
+void BucketImpl::initialize_fields( unsigned i_dst )
 {
   const std::vector<FieldBase*> & field_set =
     MetaData::get(m_mesh).get_fields();
@@ -166,8 +166,16 @@ void BucketImpl::zero_fields( unsigned i_dst )
   const DataMap *       i = m_field_map;
   const DataMap * const e = i + field_set.size();
 
-  for ( ; i != e ; ++i ) {
-    if ( i->m_size ) {
+  for (std::vector<FieldBase*>::const_iterator field_iter=field_set.begin() ;
+       i != e ; ++i, ++field_iter ) {
+
+    if (i->m_size == 0) continue;
+
+    const unsigned char* init_val = reinterpret_cast<const unsigned char*>((*field_iter)->get_initial_value());
+    if (init_val != NULL) {
+      memory_copy( p + i->m_base + i->m_size * i_dst , init_val, i->m_size );
+    }
+    else {
       memory_zero( p + i->m_base + i->m_size * i_dst , i->m_size );
     }
   }
@@ -184,7 +192,8 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
   const DataMap *       i = m_field_map;
   const DataMap * const e = i + field_set.size();
 
-  for ( ; i != e ; ++i , ++j ) {
+  for (std::vector<FieldBase*>::const_iterator field_iter=field_set.begin() ;
+       i != e ; ++i , ++j, ++field_iter ) {
 
     if ( i->m_size ) {
       if ( j->m_size ) {
@@ -195,7 +204,14 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
                      s + j->m_base + j->m_size * i_src , i->m_size );
       }
       else {
-        memory_zero( d + i->m_base + i->m_size * i_dst , i->m_size );
+        const unsigned char* init_val = reinterpret_cast<const unsigned char*>((*field_iter)->get_initial_value());
+        if (init_val != NULL) {
+          memory_copy( d + i->m_base + i->m_size * i_dst ,
+                       init_val, i->m_size );
+        }
+        else {
+          memory_zero( d + i->m_base + i->m_size * i_dst , i->m_size );
+        }
       }
     }
   }

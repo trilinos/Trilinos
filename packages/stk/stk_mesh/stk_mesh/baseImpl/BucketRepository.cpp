@@ -475,10 +475,10 @@ BucketRepository::declare_bucket(
 
 //----------------------------------------------------------------------
 
-void BucketRepository::zero_fields( Bucket & k_dst , unsigned i_dst )
+void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
 {
-  TraceIfWatching("stk::mesh::impl::BucketRepository::zero_fields", LOG_BUCKET, &k_dst);
-  k_dst.m_bucketImpl.zero_fields(i_dst);
+  TraceIfWatching("stk::mesh::impl::BucketRepository::initialize_fields", LOG_BUCKET, &k_dst);
+  k_dst.m_bucketImpl.initialize_fields(i_dst);
 }
 
 void BucketRepository::copy_fields( Bucket & k_dst , unsigned i_dst ,

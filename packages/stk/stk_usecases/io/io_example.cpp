@@ -673,6 +673,7 @@ namespace stk_example_io {
 	std::vector<int> elem_side ;
 
 	stk::mesh::Part * const side_block_part = meta.get_part(block->name());
+	stk::mesh::EntityRank side_rank = side_block_part->primary_entity_rank();
 
 	block->get_field_data("ids", side_ids);
 	block->get_field_data("element_side", elem_side);
@@ -685,19 +686,24 @@ namespace stk_example_io {
 	for(size_t is=0; is<side_count; ++is) {
 
 	  stk::mesh::Entity* const elem = bulk.get_entity(element_rank, elem_side[is*2]);
-	  // If NULL, then the element was probably assigned to an
-	  // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
-	  // Hence the '-1' in the following line.
-	  int side_ordinal = elem_side[is*2+1] - 1 ;
 
+	  // If NULL, then the element was probably assigned to an
 	  // element block that appears in the database, but was
 	  // subsetted out of the analysis mesh. Only process if
 	  // non-null.
 	  if (elem != NULL) {
-	    stk::mesh::Entity& side =
-	      stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-	    bulk.change_entity_parts( side, add_parts );
-	    sides[is] = &side;
+	    // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
+	    // Hence the '-1' in the following line.
+	    int side_ordinal = elem_side[is*2+1] - 1 ;
+
+	    stk::mesh::Entity *side = NULL;
+	    if (side_rank == 2) {
+	      side = &stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+	    } else {
+	      side = &stk::mesh::fem::declare_element_edge(bulk, side_ids[is], *elem, side_ordinal);
+	    }
+	    bulk.change_entity_parts( *side, add_parts );
+	    sides[is] = side;
 	  } else {
 	    sides[is] = NULL;
 	  }
