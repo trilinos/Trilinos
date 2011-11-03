@@ -136,22 +136,6 @@ namespace Belos {
     ///   (useful for me, so I can set default parameters).
     static Teuchos::RCP<const Teuchos::ParameterList> defaultParameters();
 
-    /// \brief Validate parameters
-    ///
-    /// Validate the given non-null list of parameters.  Raise
-    /// std::invalid_argument if any provided parameters have invalid
-    /// values.  If any parameters that should be there are not
-    /// provided, fill them in with default values.
-    ///
-    /// \param params [in/out] Non-null smart pointer to parameter list
-    ///
-    /// \note We make this method a public class ("static") method, so
-    ///   you can validate your own list of parameters before creating
-    ///   a MinresSolMgr.
-    ///
-    static void
-    validateParameters (const Teuchos::RCP< Teuchos::ParameterList >& params);
-    
     //! @name Constructors/Destructor
     //@{ 
 
@@ -191,8 +175,8 @@ namespace Belos {
     ///     information is ever written to the output stream)
     ///   - "Timer Label" - an \c std::string to use as a prefix for the timer 
     ///     labels.  Default value: "Belos"
-    MinresSolMgr (const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > > &problem,
-                  const Teuchos::RCP< Teuchos::ParameterList > &params);
+    MinresSolMgr (const Teuchos::RCP<LinearProblem< ScalarType, MV, OP> > &problem,
+                  const Teuchos::RCP<Teuchos::ParameterList> &params);
     
     //! Destructor.
     virtual ~MinresSolMgr() {};
@@ -325,10 +309,20 @@ namespace Belos {
     /// If you reallocate this, sTest_ needs the new RCP.
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
 
-    /// \brief The status test for convergence.
+    /// \brief The combined status test for convergence.
     ///
     /// If you reallocate this, sTest_ needs the new RCP.
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
+
+    /// \brief The implicit (a.k.a. "recursive") residual norm test.
+    ///
+    /// If you reallocate this, convTest_ needs the new RCP.
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > impConvTest_;
+
+    /// \brief The explicit residual norm test.
+    ///
+    /// If you reallocate this, convTest_ needs the new RCP.
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > expConvTest_;
 
     /// \brief The "status test" that handles output.
     ///
@@ -457,6 +451,7 @@ namespace Belos {
 			       "MinresSolMgr: The version of the constructor "
 			       "that takes a LinearProblem to solve was given a "
 			       "null LinearProblem.");
+    setParameters (params);
   }
 
   template<class ScalarType, class MV, class OP>
@@ -464,51 +459,21 @@ namespace Belos {
   MinresSolMgr<ScalarType, MV, OP>::
   validateProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> >& problem) 
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument, 
-		       "MINRES requires a non-null LinearProblem object,"
-		       "which represents the linear problem to solve.");
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(problem->getOperator()), 
-		       std::invalid_argument, 
-		       "MINRES requires a LinearProblem object with a non-null "
-		       "operator.");
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(problem->getRHS()),
-		       std::invalid_argument, 
-		       "MINRES requires a LinearProblem object with a non-null "
-		       "right-hand side.");
-  }
-
-  template<class ScalarType, class MV, class OP>
-  void
-  MinresSolMgr< ScalarType, MV, OP>::
-  validateParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
-  {
-    using Teuchos::Exceptions::InvalidParameterName;
-    using Teuchos::is_null;
-    using Teuchos::ParameterList;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
-    if (params.is_null()) {
-      throw std::logic_error ("MinresSolMgr::validateParameters() requires a "
-			      "non-null input, but was given a null input.  Th"
-			      "is is likely the result of a bug in the impleme"
-			      "ntation of MinresSolMgr.");
-    }
-    // List of default, known-valid parameters.
-    RCP<const ParameterList> defaults = getValidParameters ();
-
-    // Validate parameters' values in params, and add default values
-    // for parameters that are not in params.
-    //
-    // NOTE (mfh 06 Dec 2010) This throws
-    // Teuchos::Exceptions::InvalidParameterName if params has a
-    // parameter that defaults doesn't have (not vice versa).  (That
-    // would mean the user provided "extra" parameters.)  We should
-    // really just let those go through, for the sake of forwards
-    // compatibility.  We could do this by implementing a variant of
-    // validateParametersAndSetDefaults() that ignores parameters in
-    // params that are not in defaults.
-    params->validateParametersAndSetDefaults (*defaults);
+    TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), 
+      MinresSolMgrLinearProblemFailure,
+      "MINRES requires that you have provided a nonnull LinearProblem to the "
+      "solver manager, before you call the solve() method.");
+    TEUCHOS_TEST_FOR_EXCEPTION(problem->getOperator().is_null(),
+      MinresSolMgrLinearProblemFailure,
+      "MINRES requires a LinearProblem object with a non-null operator (the "
+      "matrix A).");
+    TEUCHOS_TEST_FOR_EXCEPTION(problem->getRHS().is_null(),
+      MinresSolMgrLinearProblemFailure,
+      "MINRES requires a LinearProblem object with a non-null right-hand side.");
+    TEUCHOS_TEST_FOR_EXCEPTION( ! problem->isProblemSet(),
+      MinresSolMgrLinearProblemFailure,
+      "MINRES requires that before you give it a LinearProblem to solve, you "
+      "must first call the linear problem's setProblem() method.");
   }
 
   template<class ScalarType, class MV, class OP>
@@ -520,10 +485,12 @@ namespace Belos {
     using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::rcpFromRef;
     using Teuchos::null;
     using Teuchos::is_null;
     using std::string;
     using std::ostream;
+    using std::endl;
 
     RCP<const ParameterList> defaults = getValidParameters ();
 
@@ -585,22 +552,48 @@ namespace Belos {
     //
     // Set up the convergence tests
     //
-    typedef Belos::StatusTestCombo<ScalarType, MV, OP> StatusTestCombo_t;
-    typedef Belos::StatusTestGenResNorm<ScalarType, MV, OP> StatusTestResNorm_t;
+    typedef StatusTestGenResNorm<ScalarType, MV, OP> res_norm_type;
+    typedef StatusTestCombo<ScalarType, MV, OP> combo_type;
+
+    // Do we need to allocate at least one of the implicit or explicit
+    // residual norm convergence tests?
+    const bool allocatedConvergenceTests = 
+      impConvTest_.is_null() || expConvTest_.is_null();
+
+    // Allocate or set the tolerance of the implicit residual norm
+    // convergence test.
+    if (impConvTest_.is_null()) {
+      impConvTest_ = rcp (new res_norm_type (convtol_));
+      impConvTest_->defineResForm (res_norm_type::Implicit, TwoNorm);
+      // TODO (mfh 03 Nov 2011) Allow users to define the type of
+      // scaling (or a custom scaling factor).
+      impConvTest_->defineScaleForm (NormOfInitRes, TwoNorm);
+    } else {
+      impConvTest_->setTolerance (convtol_);
+    }
+
+    // Allocate or set the tolerance of the explicit residual norm
+    // convergence test.
+    if (expConvTest_.is_null()) {
+      expConvTest_ = rcp (new res_norm_type (convtol_));
+      expConvTest_->defineResForm (res_norm_type::Explicit, TwoNorm);
+      // TODO (mfh 03 Nov 2011) Allow users to define the type of
+      // scaling (or a custom scaling factor).
+      expConvTest_->defineScaleForm (NormOfInitRes, TwoNorm);
+    } else {
+      expConvTest_->setTolerance (convtol_);
+    }
 
     // Whether we need to recreate the full status test.  We only need
     // to do that if at least one of convTest_ or maxIterTest_ had to
     // be reallocated.
     bool needToRecreateFullStatusTest = sTest_.is_null();
 
-    // Residual status test.  It uses the native residual to determine
-    // if convergence was achieved.  Initialize it if we haven't yet
-    // done so, otherwise tell it the new convergence tolerance.
-    if (convTest_.is_null()) {
-      convTest_ = rcp (new StatusTestResNorm_t (convtol_, -1));
+    // Residual status test is a combo of the implicit and explicit
+    // convergence tests.
+    if (convTest_.is_null() || allocatedConvergenceTests) {
+      convTest_ = rcp (new combo_type (combo_type::SEQ, impConvTest_, expConvTest_));
       needToRecreateFullStatusTest = true;
-    } else {
-      convTest_->setTolerance (convtol_);
     }
 
     // Maximum number of iterations status test.  It tells the solver to
@@ -623,8 +616,7 @@ namespace Belos {
     // created before, or that its two component tests had to be
     // reallocated.
     if (needToRecreateFullStatusTest) {
-      sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, 
-					   maxIterTest_, convTest_));
+      sTest_ = rcp (new combo_type (combo_type::OR, maxIterTest_, convTest_));
     }
   
     // If necessary, create the status test output class.  This class
@@ -644,6 +636,13 @@ namespace Belos {
 
     // Inform the solver manager that the current parameters were set.
     parametersSet_ = true;
+
+    if (verbosity_ & Debug) {
+      using std::endl;
+
+      std::ostream& dbg = printer_->stream (Debug);
+      dbg << "MINRES parameters:" << endl << params_ << endl;
+    }
   }
 
 
@@ -653,29 +652,19 @@ namespace Belos {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcp_const_cast;
+    using std::endl;
 
     if (! parametersSet_) {
       setParameters (params_);
-    }	
+    } 
+    std::ostream& dbg = printer_->stream (Debug);
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor slvtimer(*timerSolve_);
-#endif
+    Teuchos::TimeMonitor solveTimerMonitor (*timerSolve_);
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
     // We need a problem to solve, else we can't solve it.
-    TEUCHOS_TEST_FOR_EXCEPTION( problem_.is_null(),
-      MinresSolMgrLinearProblemFailure,
-      "Belos::MinresSolMgr::solve(): The linear problem to solve has not been "
-      "set, so the solve() method cannot be called.  You must provide a nonnull "
-      "linear problem to the solver manager, either in its constructor or its "
-      "setProblem() method, before calling solve().");
-
-    // We need a problem to solve, else we can't solve it.
-    TEUCHOS_TEST_FOR_EXCEPTION( !problem_->isProblemSet(),
-      MinresSolMgrLinearProblemFailure,
-      "Belos::MinresSolMgr::solve(): The linear problem to solve has not been "
-      "set, so the solve() method cannot be called.  You must call the linear "
-      "problem's setProblem() method before giving it to the solver manager.");
+    validateProblem (problem_);
 
     // Reset the status test for this solve.  
     outputTest_->reset();
@@ -709,12 +698,15 @@ namespace Belos {
       currentIndices[0] = currentRHS;
       problem_->setLSIndex (currentIndices);
 
+      dbg << "-- Current right-hand side index being solved: " 
+	  << currentRHS << endl;
+
       // Reset the number of iterations.
       minres_iter->resetNumIters();
       // Reset the number of calls that the status test output knows about.
       outputTest_->resetNumCalls();
       // Set the new state and initialize the solver.
-      MinresIterationState< ScalarType, MV > newstate;
+      MinresIterationState<ScalarType, MV> newstate;
 
       // Get the residual vector for the current linear system 
       // (that is, for the current right-hand side).
@@ -729,10 +721,14 @@ namespace Belos {
 
 	  // First check for convergence
 	  if (convTest_->getStatus() == Passed) {
+	    dbg << "---- Converged after " << maxIterTest_->getNumIters() 
+		<< " iterations" << endl;
 	    break;
 	  }
 	  // Now check for max # of iterations
 	  else if (maxIterTest_->getStatus() == Passed) {
+	    dbg << "---- Did not converge after " << maxIterTest_->getNumIters() 
+		<< " iterations" << endl;
 	    // This right-hand side didn't converge!
 	    notConverged.push_back (currentRHS);
 	    break;
@@ -748,8 +744,8 @@ namespace Belos {
 	} catch (const std::exception &e) {
 	  printer_->stream (Errors) 
 	    << "Error! Caught std::exception in MinresIter::iterate() at "
-	    << "iteration " << minres_iter->getNumIters() << std::endl
-	    << e.what() << std::endl;
+	    << "iteration " << minres_iter->getNumIters() << endl
+	    << e.what() << endl;
 	  throw e;
 	}
       }
