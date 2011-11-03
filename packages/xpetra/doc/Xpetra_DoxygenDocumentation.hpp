@@ -8,58 +8,43 @@
 
 \mainpage
 
-\section main_index Index
+@image html xpetra.jpg
 
-- \ref overview
-- \ref news
-- \ref todo
-- \ref user_guide
-- \ref faq
-- \ref bugs
-- \ref history
-- \ref authors
-- \ref copyright
-- \ref questions
+\section main_index Table of Contents
 
-\section overview Overview
+- \ref xpetra_overview
+- \ref xpetra_packagesUsingXpetra
+- \ref xpetra_authors
+- \ref xpetra_copyright
+- \ref xpetra_questions
 
-Xpetra
+\section xpetra_overview Overview
 
-\section news News
+Xpetra a lightweight wrapper to both Epetra and Tpetra.  The Xpetra syntax mirrors that of Tpetra.  Xpetra enables
+algorithm developers to write to a single interface but be able to use either Epetra or Tpetra.
+Xpetra can also be introduced into existing code to allow for gradual migration.
 
-<ul>
-<li> 2010.09.08: We are now building as a Trilinos package!
-</ul>
+\section xpetra_packagesUsingXpetra Packages Currently Using Xpetra
+Xpetra is used by the MueLu and Zoltan2 projects.
 
-\section bugs Reporting Bugs and Making Enhancement Requests
+\section xpetra_authors Authors and Contributors
 
-  To reports bugs or make enhancement requests, visit the <A HREF="http://software.sandia.gov/bugzilla/">Trilinos Bugzilla (Bug Tracking) Database</A>, and use the following instructions.
-      <UL>
-      <LI>Click on "Enter a new bug report"
-      <LI>Choose "Xpetra"
-      <LI>Either login or create a new account
-      <LI>Submit your bug report
-      </UL>
+  - Jeremie Gaidamour, Sandia National Labs
+  - Axel Gerstenberger, Sandia National Labs
+  - Jonathan Hu, Sandia National Labs
+  - Chris Siefert, Sandia National Labs
+  - Ray Tuminaro, Sandia National Labs
+  - Tobias Wiesner, Technical University Munich
 
-\section history History
+\section xpetra_copyright Copyright
 
-
-
-\section authors Authors and Contributors
-
-  - Jeremie Gaidamour, SNL 01416
-  - Axel Gerstenberger, SNL 01416
-  - Jonathan Hu, SNL 01416
-  - Chris Siefert, SNL 01431
-  - Ray Tuminaro, SNL 01416
-
-\section copyright Copyright
+Xpetra has not completed the Sandia copyright process.
 
 \verbinclude copyright.txt
 
-\section questions For All Questions and Comments...
+\section xpetra_questions For All Questions and Comments...
   
-   Please contact Jonathan Hu (jhu@sandia.gov).
+   Please contact Jeremie Gaidamour (jngaida@sandia.gov) or Jonathan Hu (jhu@sandia.gov).
 
 */
 
