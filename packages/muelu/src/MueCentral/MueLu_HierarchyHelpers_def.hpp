@@ -72,7 +72,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & level) const {
-    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherBase; //TODO
+    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherBase2; //TODO
  
     SetFactoryManager SFM(level, factoryManager_);
 
@@ -80,12 +80,12 @@ namespace MueLu {
       smootherFact_->CallBuild(level);
 
       if (level.IsAvailable("PreSmoother", smootherFact_.get())) {
-        RCP<SmootherBase> Pre  = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact_.get());
+        RCP<SmootherBase2> Pre  = level.Get<RCP<SmootherBase2> >("PreSmoother", smootherFact_.get());
         level.Set("PreSmoother", Pre);
       }
 
       if (level.IsAvailable("PostSmoother", smootherFact_.get())) {
-        RCP<SmootherBase> Post = level.Get<RCP<SmootherBase> >("PostSmoother", smootherFact_.get());
+        RCP<SmootherBase2> Post = level.Get<RCP<SmootherBase2> >("PostSmoother", smootherFact_.get());
         level.Set("PostSmoother", Post);
       }
 

@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include "MueLu_SmootherFactoryBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Level.hpp"
@@ -165,6 +163,4 @@ namespace MueLu {
 #define MUELU_SMOOTHERFACTORY_SHORT
 
 //TODO: doc: setup done twice if PostSmoother object != PreSmoother object and no adv. reused capability
-
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_SMOOTHERFACTORY_DECL_HPP

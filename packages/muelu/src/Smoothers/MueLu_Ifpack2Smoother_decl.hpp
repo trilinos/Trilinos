@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #ifdef HAVE_MUELU_IFPACK2
 
 #include "Ifpack2_Factory.hpp"
@@ -165,5 +163,4 @@ namespace MueLu {
 
 #define MUELU_IFPACK2_SMOOTHER_SHORT
 #endif //ifdef HAVE_MUELU_IFPACK2
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_IFPACK2SMOOTHER_DECL_HPP

@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include <Teuchos_TabularOutputter.hpp>
 #include <Teuchos_map.hpp>
 
@@ -39,7 +37,7 @@ namespace MueLu {
 
       void Set(const Key1 & key1, const Key2 & key2, const Value & entry) ;
 
-       const Value & Get(const Key1 & key1, const Key2 & key2) const ;
+      const Value & Get(const Key1 & key1, const Key2 & key2) const ;
 
       Value & Get(const Key1 & key1, const Key2 & key2) ;
 
@@ -61,5 +59,4 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_TWOKEYMAP_DECL_HPP

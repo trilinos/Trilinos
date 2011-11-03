@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 // TODO: PARAMETER LIST NOT TAKE INTO ACCOUNT !!!
 
 #ifdef HAVE_MUELU_AMESOS2
@@ -12,6 +10,7 @@
 #include <Amesos2.hpp>
 
 #include "MueLu_SmootherBase.hpp"
+#include "MueLu_FactoryBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -110,6 +109,4 @@ namespace MueLu {
 #define MUELU_AMESOS2_SMOOTHER_SHORT
 
 #endif // HAVE_MUELU_AMESOS2
-
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_AMESOS2SMOOTHER_DECL_HPP

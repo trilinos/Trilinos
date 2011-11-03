@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include "MueLu_SmootherPrototype.hpp"
 
 #include "MueLu_AmesosSmoother.hpp"
@@ -92,5 +90,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_DIRECT_SOLVER_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_DIRECTSOLVER_DECL_HPP
