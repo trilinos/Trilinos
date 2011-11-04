@@ -113,6 +113,12 @@ namespace Tpetra {
       comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
     }
 
+    //! Node-accepting constructor uses MPI_COMM_WORLD
+    explicit MpiPlatform(const RCP<Kokkos::DefaultNode::DefaultNodeType> &node) {
+      dnode_ = node;
+      comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
+    }
+
     //! Node and MPI_Comm accepting constructor
     MpiPlatform(const RCP<Kokkos::DefaultNode::DefaultNodeType> &node, const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm) {
       dnode_ = node;
