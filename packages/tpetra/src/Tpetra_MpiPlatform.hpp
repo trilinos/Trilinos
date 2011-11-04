@@ -70,7 +70,7 @@ namespace Tpetra {
     }
 
     //! Destructor
-    ~MpiPlatform() {}
+    virtual ~MpiPlatform() {}
 
     //@}
 
@@ -120,7 +120,7 @@ namespace Tpetra {
     }
 
     //! Destructor
-    ~MpiPlatform() {}
+    virtual ~MpiPlatform() {}
 
     //@}
 
