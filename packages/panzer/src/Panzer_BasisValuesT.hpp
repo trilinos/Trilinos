@@ -21,7 +21,8 @@ namespace panzer {
   {
     panzer_basis = b;
     
-    intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(b->name(), b->getDimension());
+    // intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(b->name(), b->getDimension());
+    intrepid_basis = panzer_basis->getIntrepidBasis();
     
     basis_ref = Intrepid::FieldContainer<double>(b->basis_ref->dimension(0),
 						 b->basis_ref->dimension(1));

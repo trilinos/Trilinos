@@ -10,6 +10,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Intrepid_Basis.hpp"
 
+#include "Shards_CellTopology.hpp"
+
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
@@ -24,7 +26,7 @@ namespace panzer {
 
   template <typename ScalarT, typename ArrayT>
     Teuchos::RCP<Intrepid::Basis<ScalarT,ArrayT> >
-    createIntrepidBasis(const std::string type, int cell_dimension) {
+    createIntrepidBasis(const std::string type, int cell_dimension,const Teuchos::RCP<const shards::CellTopology> & cell_topo) {
     
     Teuchos::RCP<Intrepid::Basis<ScalarT,ArrayT> > basis;
     
@@ -53,10 +55,18 @@ namespace panzer {
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_LINE_C1_FEM<ScalarT,ArrayT> );
     }
 
+
     if (Teuchos::is_null(basis)) {
       std::ostringstream s;
       s << "Failed to create basis.  Either the basis type in the input file, \"" << type << "\" is unsupported or we are out of memory!" << std::endl;
       TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
+			 s.str());
+    }
+
+    if((*cell_topo)!=basis->getBaseCellTopology()) {
+      std::ostringstream s;
+      s << "Failed to create basis.  Intrepid basis topology does not match mesh cell topology!";
+      TEUCHOS_TEST_FOR_EXCEPTION((*cell_topo)!=basis->getBaseCellTopology(), std::runtime_error,
 			 s.str());
     }
 

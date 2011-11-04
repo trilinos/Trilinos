@@ -13,8 +13,7 @@ Basis(std::string basis_type, const panzer::IntegrationRule& int_rule) :
   field_basis_name_D1("Grad Basis: " + basis_type),
   field_basis_name_D2("D2 Basis: " + basis_type)
 {
-  //Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > >
-  intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, int_rule.spatial_dimension);
+  intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, int_rule.spatial_dimension,int_rule.topology);
 
   cardinality = intrepid_basis->getCardinality();
   num_cells = int_rule.dl_vector->dimension(0);
