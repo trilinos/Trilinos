@@ -37,46 +37,62 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICEPTHREAD_VALUEVIEW_HPP
-#define KOKKOS_DEVICEPTHREAD_VALUEVIEW_HPP
+#ifndef KOKKOS_DEVICENUMA_HPP
+#define KOKKOS_DEVICENUMA_HPP
 
-#include <Kokkos_ValueView.hpp>
+#include <Kokkos_DeviceHost.hpp>
 
-#include <Kokkos_DevicePthread_macros.hpp>
-#include <impl/Kokkos_ValueView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#define KOKKOS_DEVICE_NUMA  Kokkos::DeviceNUMA
+
+/*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
 namespace Impl {
+class DeviceNUMAWorker ;
+class DeviceNUMAThread ;
+}
+}
 
-template< typename ValueType >
-class ValueDeepCopy< ValueType , DevicePthread , DeviceHost > {
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+
+class DeviceNUMA {
 public:
 
-  static void run( const ValueView< ValueType , DevicePthread > & dst ,
-                   const ValueType & src )
-  { *dst = src ; }
+  /** \brief  On the NUMA device use size_t for indexing */
+  typedef size_t                size_type ;
 
-  static void run( const ValueView< ValueType , DevicePthread >  & dst ,
-                   const ValueView< ValueType , DeviceHost > & src )
-  { *dst = *src ; }
+  /** \brief  The NUMA device uses the Host memory space */
+  typedef HostMemory            memory_space ;
+
+  /** \brief  Default mdarray map is index from right */
+  typedef Impl::MDArrayIndexMapRight  mdarray_map ;
+
+  /*--------------------------------*/
+
+  static void wait_functor_completion() {}
+
+  static void execute( const Impl::DeviceNUMAWorker & );
+
+  /*--------------------------------*/
+  enum UtilizationOptions { FULL ///< Use every core of every node
+                          , MOST ///< Use all but one core of every node
+                          };
+
+  static void initialize( UtilizationOptions );
+  static void finalize();
+
+  static void block();
+  static void unblock();
 };
 
-template< typename ValueType >
-class ValueDeepCopy< ValueType , DeviceHost , DevicePthread > {
-public:
-
-  static void run( ValueType & dst ,
-                   const ValueView< ValueType , DevicePthread >  & src )
-  { dst = *src ; }
-
-  static void run( const ValueView< ValueType , DeviceHost > & dst ,
-                   const ValueView< ValueType , DevicePthread >  & src )
-  { *dst = *src ; }
-};
-
-} // namespace Impl
 } // namespace Kokkos
 
-#endif /* KOKKOS_DEVICEPTHREAD_MDARRAYDEEPCOPY_HPP */
+#include <DeviceNUMA/Kokkos_DeviceNUMA_Impl.hpp>
+#include <DeviceNUMA/Kokkos_DeviceNUMA_For.hpp>
+#include <DeviceNUMA/Kokkos_DeviceNUMA_Reduce.hpp>
+#include <DeviceNUMA/Kokkos_DeviceNUMA_views.hpp>
+
+#endif /* #define KOKKOS_DEVICENUMA_HPP */
 

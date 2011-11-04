@@ -37,46 +37,28 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICEPTHREAD_VALUEVIEW_HPP
-#define KOKKOS_DEVICEPTHREAD_VALUEVIEW_HPP
+#if ! defined( KOKKOS_DEVICE_NUMA ) || \
+    defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
+    defined( KOKKOS_MACRO_DEVICE ) || \
+    defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
+    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
 
-#include <Kokkos_ValueView.hpp>
+#error "Including <Kokkos_DeviceNUMA_macros.hpp> with macros already defined"
 
-#include <Kokkos_DevicePthread_macros.hpp>
-#include <impl/Kokkos_ValueView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#else
 
-namespace Kokkos {
-namespace Impl {
+#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
+#define KOKKOS_MACRO_DEVICE                       Kokkos::DeviceNUMA
+#define KOKKOS_MACRO_DEVICE_MEMORY                Kokkos::HostMemory
+#define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
+#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
+#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr
 
-template< typename ValueType >
-class ValueDeepCopy< ValueType , DevicePthread , DeviceHost > {
-public:
+#if ! defined( KOKKOS_ARRAY_BOUNDS_CHECK )
+#define KOKKOS_MACRO_CHECK( expr )  /* */
+#else
+#define KOKKOS_MACRO_CHECK( expr )  expr
+#endif
 
-  static void run( const ValueView< ValueType , DevicePthread > & dst ,
-                   const ValueType & src )
-  { *dst = src ; }
-
-  static void run( const ValueView< ValueType , DevicePthread >  & dst ,
-                   const ValueView< ValueType , DeviceHost > & src )
-  { *dst = *src ; }
-};
-
-template< typename ValueType >
-class ValueDeepCopy< ValueType , DeviceHost , DevicePthread > {
-public:
-
-  static void run( ValueType & dst ,
-                   const ValueView< ValueType , DevicePthread >  & src )
-  { dst = *src ; }
-
-  static void run( const ValueView< ValueType , DeviceHost > & dst ,
-                   const ValueView< ValueType , DevicePthread >  & src )
-  { *dst = *src ; }
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-#endif /* KOKKOS_DEVICEPTHREAD_MDARRAYDEEPCOPY_HPP */
+#endif
 

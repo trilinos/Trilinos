@@ -66,7 +66,8 @@ GNU | gnu | g++ )
   ;;
 INTEL | intel | icc )
   export CXX="icc"
-  export CXXFLAGS="-Wall"
+  # -xW = use SSE and SSE2 instructions
+  export CXXFLAGS="-Wall -xW"
   export LIB="${LIB} -lstdc++"
   ;;
 #-------------------------------

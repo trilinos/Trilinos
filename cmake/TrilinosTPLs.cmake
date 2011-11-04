@@ -114,6 +114,7 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Cusp            ""    EX
   TBB             ""    EX
   Pthread         ""    SS
+  HWLOC           ""    SS
   BinUtils        ""    SS
   ARPREC          ""    SS
   QD              ""    SS
