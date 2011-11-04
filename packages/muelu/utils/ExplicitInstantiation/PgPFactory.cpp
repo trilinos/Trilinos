@@ -11,7 +11,7 @@ template class MueLu::PgPFactory<double, int, int, Kokkos::DefaultNode::DefaultN
 #ifdef HAVE_MUELU_EI_DOUBLE_INT_LONGLONGINT
 # ifdef HAVE_TEUCHOS_LONG_LONG_INT
 //TODO: to be fixed
-//template class MueLu::PgPFactory<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::PgPFactory<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
 #else
 # warning To compile MueLu with 'long long int' support, please turn on HAVE_TEUCHOS_LONG_LONG_INT
 # endif

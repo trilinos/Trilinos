@@ -391,7 +391,7 @@ private:
     RCP<Teuchos::Array<Scalar> > InnerProd = rcp(new Teuchos::Array<Scalar>(GID2localgid.size(),Teuchos::ScalarTraits<Scalar>::zero()));
 
     /////////////// sum up all values to global
-    Teuchos::reduceAll(*(Op->getRowMap()->getComm()),Teuchos::REDUCE_SUM, Teuchos::as<const GlobalOrdinal>(InnerProd->size()) ,&InnerProd_local[0], &(*InnerProd)[0]);
+    Teuchos::reduceAll(*(Op->getRowMap()->getComm()),Teuchos::REDUCE_SUM, Teuchos::as<int>(InnerProd->size()) ,&InnerProd_local[0], &(*InnerProd)[0]);
 
     return InnerProd;
   }
@@ -441,7 +441,7 @@ private:
     RCP<Teuchos::Array<Scalar> > InnerProd = rcp(new Teuchos::Array<Scalar>(GID2localgid.size(),Teuchos::ScalarTraits<Scalar>::zero()));
 
     /////////////// sum up all values to global
-    Teuchos::reduceAll(*(left->getRowMap()->getComm()),Teuchos::REDUCE_SUM, Teuchos::as<const GlobalOrdinal>(InnerProd->size()) ,&InnerProd_local[0], &(*InnerProd)[0]);
+    Teuchos::reduceAll(*(left->getRowMap()->getComm()),Teuchos::REDUCE_SUM, Teuchos::as<int>(InnerProd->size()) ,&InnerProd_local[0], &(*InnerProd)[0]);
 
     return InnerProd;
   }
@@ -496,8 +496,7 @@ private:
     std::copy(gids.getRawPtr(), gids.getRawPtr() + map.getNodeNumElements(), &sredundant[mynodepos]); // check me
 
     rredundant.resize(map.getGlobalNumElements());
-    GlobalOrdinal numEle = map.getGlobalNumElements();
-    Teuchos::reduceAll(*(map.getComm()),Teuchos::REDUCE_SUM, numEle ,&sredundant[0], &rredundant[0]);
+    Teuchos::reduceAll(*(map.getComm()),Teuchos::REDUCE_SUM, Teuchos::as<int>(map.getGlobalNumElements()) ,&sredundant[0], &rredundant[0]);
   }
 
   //@}
