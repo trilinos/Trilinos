@@ -199,7 +199,7 @@ namespace TSQR {
   // available, LAPACK::GEQRF() calls _GEQRF, which uses _LARFP.
 #ifdef HAVE_LAPACK_CGEQRFP
   template <>
-  LAPACK<int, std::complex<float> >::QR_produces_R_factor_with_nonnegative_diagonal() { return true; }
+  bool LAPACK<int, std::complex<float> >::QR_produces_R_factor_with_nonnegative_diagonal() { return true; }
 #else
 #  ifdef HAVE_LAPACK_CLARFP
   template <>
