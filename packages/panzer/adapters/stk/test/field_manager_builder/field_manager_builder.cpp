@@ -46,6 +46,19 @@ namespace panzer {
 
     panzer::FieldManagerBuilder<int,int> fmb;
 
+    // setup mesh
+    /////////////////////////////////////////////
+    RCP<panzer_stk::STK_Interface> mesh;
+    {
+       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Blocks",2);
+       pl->set("Y Blocks",1);
+       pl->set("X Elements",6);
+       pl->set("Y Elements",4);
+       mesh_factory.setParameterList(pl);
+       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+    }
+
     // setup physic blocks
     /////////////////////////////////////////////
     panzer::InputPhysicsBlock ipb;
@@ -61,6 +74,10 @@ namespace panzer {
        std::map<std::string,std::string> block_ids_to_physics_ids;
        block_ids_to_physics_ids["eblock-0_0"] = "test physics";
        block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+
+       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
+       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
     
        physics_id_to_input_physics_blocks["test physics"] = ipb;
 
@@ -69,24 +86,12 @@ namespace panzer {
 	 eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
 
        panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                  block_ids_to_cell_topo,
                                   physics_id_to_input_physics_blocks,
                                   2,workset_size,
                                   eqset_factory,
 			          false,
                                   physics_blocks);
-    }
-
-    // setup mesh
-    /////////////////////////////////////////////
-    RCP<panzer_stk::STK_Interface> mesh;
-    {
-       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-       pl->set("X Blocks",2);
-       pl->set("Y Blocks",1);
-       pl->set("X Elements",6);
-       pl->set("Y Elements",4);
-       mesh_factory.setParameterList(pl);
-       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
 
     // setup worksets

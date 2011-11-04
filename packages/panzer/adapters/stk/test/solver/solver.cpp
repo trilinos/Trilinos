@@ -96,7 +96,9 @@ namespace panzer {
     {
       std::map<std::string,std::string> block_ids_to_physics_ids;
       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
-      //block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
       
       std::map<std::string,panzer::InputPhysicsBlock> 
         physics_id_to_input_physics_blocks;
@@ -104,6 +106,7 @@ namespace panzer {
   
       bool build_transient_support = false;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 block_ids_to_cell_topo,
                                  physics_id_to_input_physics_blocks,
                                  Teuchos::as<int>(mesh->getDimension()),
 		   	         workset_size,
@@ -385,7 +388,9 @@ namespace panzer {
     {
       std::map<std::string,std::string> block_ids_to_physics_ids;
       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
-      //block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
       
       std::map<std::string,panzer::InputPhysicsBlock> 
         physics_id_to_input_physics_blocks;
@@ -393,6 +398,7 @@ namespace panzer {
   
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 block_ids_to_cell_topo,
                                  physics_id_to_input_physics_blocks,
                                  Teuchos::as<int>(mesh->getDimension()),
 			         workset_size,

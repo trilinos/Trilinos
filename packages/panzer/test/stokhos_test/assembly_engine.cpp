@@ -96,12 +96,16 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   {
     std::map<std::string,std::string> block_ids_to_physics_ids;
     block_ids_to_physics_ids["block_0"] = "test physics";
+
+    std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+    block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
     
     std::map<std::string,panzer::InputPhysicsBlock> 
       physics_id_to_input_physics_blocks;
     physics_id_to_input_physics_blocks["test physics"] = ipb;
 
     panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                               block_ids_to_cell_topo,
                                physics_id_to_input_physics_blocks,
                                Teuchos::as<int>(2), workset_size,
                                eqset_factory,

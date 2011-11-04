@@ -59,30 +59,6 @@ namespace panzer {
     // flexibility to the field manager build in that the DOFManager will be
     // specified in a more flexable and generic way. Onward.... (ECC - 1/13/11)
 
-    /** This builds the physics block objects. In particular a map from the 
-      * element block Id to the physics block is constructed.
-      *
-      * \param[in] block_ids_to_physics_ids A mapping from element block IDs to
-      *                                     physics IDs 
-      * \param[in] physics_id_to_input_physics_blocks This takes the physics IDs and
-      *                                               maps to an input physics block.
-      *                                               Essentially this is used to construct
-      *                                               the physics block object
-      * \param[in] base_cell_dimension What is the dimension of the volume element
-      * \param[in] workset_size Size of volume worksets used in Phalanx assembly
-      * \param[in] eqset_factory User defined factory for building equation sets
-      * \param[in] build_transient_support Tells the equation sets to build evaluators 
-      *                                    for a transient analysis
-      * \param[in,out] physicsBlock A vector of pointers to the physics blocks
-      */
-    void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
-                            const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
-                            const int base_cell_dimension, 
-			    const std::size_t workset_size,
-	                    const panzer::EquationSetFactory & eqset_factory,
-			    const bool build_transient_support,
-                            std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks) const;
-
     /** Setup the volume field managers. This uses the passed in <code>dofManager</code>
       * and sets it for permenant use.
       */

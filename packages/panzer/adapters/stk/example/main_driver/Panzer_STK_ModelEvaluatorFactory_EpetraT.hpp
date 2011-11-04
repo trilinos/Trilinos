@@ -121,6 +121,14 @@ namespace panzer_stk {
     // setup physical mappings and boundary conditions
     std::map<std::string,std::string> block_ids_to_physics_ids;
     panzer::buildBlockIdToPhysicsIdMap(block_ids_to_physics_ids, p.sublist("Block ID to Physics ID Mapping"));
+        
+    // build cell ( block id -> cell topology ) mapping
+    std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+    for(std::map<std::string,std::string>::const_iterator itr=block_ids_to_physics_ids.begin();
+        itr!=block_ids_to_physics_ids.end();++itr) {
+       block_ids_to_cell_topo[itr->first] = mesh->getCellTopology(itr->first);
+       TEUCHOS_ASSERT(block_ids_to_cell_topo[itr->first]!=Teuchos::null);
+    }
     
     std::map<std::string,panzer::InputPhysicsBlock> physics_id_to_input_physics_blocks; 
     panzer::buildInputPhysicsBlocks(physics_id_to_input_physics_blocks, p.sublist("Physics Blocks"));
@@ -148,6 +156,7 @@ namespace panzer_stk {
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
     panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                               block_ids_to_cell_topo,
 			       physics_id_to_input_physics_blocks,
 			       Teuchos::as<int>(mesh->getDimension()),
 			       workset_size,

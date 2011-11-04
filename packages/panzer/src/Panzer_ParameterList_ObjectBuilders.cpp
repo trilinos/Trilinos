@@ -74,6 +74,7 @@ namespace panzer {
   }
 
   void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
+                          const std::map<std::string,Teuchos::RCP<const shards::CellTopology> > & block_id_to_cell_topo,
                           const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
                           const int base_cell_dimension,
                           const std::size_t workset_size,

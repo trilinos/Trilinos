@@ -120,16 +120,21 @@ int main(int argc,char * argv[])
    {
       std::map<std::string,panzer::InputPhysicsBlock> physics_id_to_input_physics_blocks;
       std::map<std::string,std::string> block_ids_to_physics_ids;
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
 
       testInitialzation(ipb, bcs);
 
       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
       block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+
+      block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
+      block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
    
       physics_id_to_input_physics_blocks["test physics"] = ipb; // copying
 
       // build physicsBlocks map
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 block_ids_to_cell_topo,
 			         physics_id_to_input_physics_blocks,
 			         base_cell_dimension, workset_size,
 			         eqset_factory,

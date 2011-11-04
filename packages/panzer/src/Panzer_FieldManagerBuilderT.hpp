@@ -33,47 +33,6 @@ void panzer::FieldManagerBuilder<LO,GO>::print(std::ostream& os) const
 //=======================================================================
 //=======================================================================
 template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
-                                                            const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
-                                                            const int base_cell_dimension,
-							    const std::size_t workset_size,
-	                                                    const panzer::EquationSetFactory & eqset_factory,
-							    const bool build_transient_support,
-                                                            std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks
-                                                            ) const 
-{
-   using Teuchos::RCP;
-   using Teuchos::rcp;
-
-   // loop over all block id physics id pairs
-   std::map<std::string,std::string>::const_iterator itr;
-   for (itr = block_ids_to_physics_ids.begin(); itr!=block_ids_to_physics_ids.end();++itr) {
-      std::string element_block_id = itr->first;
-      std::string physics_block_id = itr->second;
- 
-      const panzer::CellData volume_cell_data(workset_size, base_cell_dimension);
-      
-      // find InputPhysicsBlock that corresponds to a paricular block ID
-      std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_it = 
-            physics_id_to_input_physics_blocks.find(physics_block_id);
-
-      // sanity check: passes only if there is a paricular physics ID
-      TEUCHOS_TEST_FOR_EXCEPTION(ipb_it == physics_id_to_input_physics_blocks.end(),
-			 std::runtime_error,
-			 "Falied to find InputPhysicsBlock for physics id: "
-			 << physics_block_id << "!");
-
-      const panzer::InputPhysicsBlock& ipb = ipb_it->second;
-      RCP<panzer::PhysicsBlock> pb = 
-	rcp(new panzer::PhysicsBlock(ipb, element_block_id, volume_cell_data, eqset_factory, build_transient_support));
-      physicsBlocks.push_back(pb);
-   }
-}
-
-
-//=======================================================================
-//=======================================================================
-template<typename LO, typename GO>
 void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers( 
                                             const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
                                                                        // element block -> vector of worksets
