@@ -108,7 +108,7 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
   for (; bc != bc_worksets.end(); ++bc) {
     std::string element_block_id = bc->first.elementBlockID(); 
     Teuchos::RCP<const panzer::PhysicsBlock> volume_pb = physicsBlocks_map.find(element_block_id)->second;
-    const shards::CellTopology volume_cell_topology = volume_pb->getBaseCellTopology();
+    Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
     int base_cell_dimension = volume_pb->cellData().baseCellDimension();
     
     bc_worksets_[bc->first] = bc->second; 
@@ -130,7 +130,7 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
       
       const panzer::CellData side_cell_data(wkst->second.num_cells,
 					    base_cell_dimension,
-					    wkst->first);      
+					    wkst->first,volume_cell_topology);      
 
       Teuchos::RCP<panzer::PhysicsBlock> side_pb 
             = volume_pb->copyWithCellData(side_cell_data, eqset_factory);

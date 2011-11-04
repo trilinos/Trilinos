@@ -44,7 +44,8 @@ namespace panzer_test_utils {
     
     std::size_t num_cells = 20;
     std::size_t base_cell_dimension = 3;
-    panzer::CellData cd(num_cells, base_cell_dimension);
+    panzer::CellData cd(num_cells, base_cell_dimension,
+                        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >())));
 
     panzer::InputPhysicsBlock ipb;
     {

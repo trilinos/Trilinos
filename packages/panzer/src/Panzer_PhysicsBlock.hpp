@@ -98,7 +98,7 @@ namespace panzer {
     std::string physicsBlockID() const;
     std::string elementBlockID() const;
 
-    const panzer::CellData cellData() const;
+    const panzer::CellData & cellData() const;
 
     /** Build a copy of this physics block object but use the cell_data
       * passed in by the user. This is useful for creating physics block objects

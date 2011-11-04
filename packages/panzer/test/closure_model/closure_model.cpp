@@ -35,10 +35,10 @@ namespace panzer {
     
       const int num_cells = 20;
       const int base_cell_dimension = 3;
-      const panzer::CellData cell_data(num_cells, base_cell_dimension);
+      const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
       const int cubature_degree = 2;      
       Teuchos::RCP<panzer::IntegrationRule> ir = 
-	Teuchos::rcp(new panzer::IntegrationRule(topo,cubature_degree, cell_data));
+	Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
       default_params.set("IR",ir);
       Teuchos::RCP<panzer::Basis> basis = 
 	Teuchos::rcp(new panzer::Basis("Q1", *ir));

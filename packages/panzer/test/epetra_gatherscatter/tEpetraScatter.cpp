@@ -32,8 +32,8 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
    int baseCellDim = 2;
    int cubatureDegree = 2;
    std::string basisType = "Q1";
-   panzer::CellData cellData(numCells,baseCellDim);
-   panzer::IntegrationRule intRule(topo,cubatureDegree,cellData);
+   panzer::CellData cellData(numCells,baseCellDim,topo);
+   panzer::IntegrationRule intRule(cubatureDegree,cellData);
 
    // build basis
    RCP<panzer::Basis> basis = rcp(new panzer::Basis(basisType,intRule));

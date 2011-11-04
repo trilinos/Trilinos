@@ -74,10 +74,10 @@ panzer::buildWorksets(const std::string& block_id,
 
      std::map<int,RCP<panzer::IntegrationRule> > degree_to_int_rule;
      for (std::size_t j = 0; j < ir_degrees.size(); ++j) {
-       const panzer::CellData volume_cell_data(workset_size, base_cell_dimension);
+       const panzer::CellData volume_cell_data(workset_size, base_cell_dimension,blockTopo);
          
        RCP<panzer::IntegrationRule> ir = 
-         rcp(new panzer::IntegrationRule(blockTopo,ir_degrees[j], volume_cell_data));
+         rcp(new panzer::IntegrationRule(ir_degrees[j], volume_cell_data));
 
        degree_to_int_rule[ir_degrees[j]] = ir;
        
@@ -177,10 +177,10 @@ panzer::buildWorksets(const std::string& block_id,
   std::map<int,RCP<panzer::IntegrationRule> > degree_to_int_rule;
   for (std::size_t i = 0; i < ir_degrees.size(); ++i) {
     
-    const panzer::CellData volume_cell_data(workset_size, base_cell_dimension);
+    const panzer::CellData volume_cell_data(workset_size, base_cell_dimension,blockTopo);
       
     RCP<panzer::IntegrationRule> ir = 
-      rcp(new panzer::IntegrationRule(blockTopo,ir_degrees[i], volume_cell_data));
+      rcp(new panzer::IntegrationRule(ir_degrees[i], volume_cell_data));
     
     degree_to_int_rule[ir_degrees[i]] = ir;
 
@@ -330,10 +330,10 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 	 wkst != worksets.end(); ++wkst) {
       
       const panzer::CellData side_cell_data(wkst->second.num_cells, base_cell_dim,
-					    static_cast<int>(wkst->first));
+					    static_cast<int>(wkst->first),blockTopo);
 
       RCP<panzer::IntegrationRule> ir = 
-	rcp(new panzer::IntegrationRule(blockTopo,ir_degrees[i], side_cell_data));
+	rcp(new panzer::IntegrationRule(ir_degrees[i], side_cell_data));
       
       wkst->second.ir_degrees = rcp_ir_degrees;
 

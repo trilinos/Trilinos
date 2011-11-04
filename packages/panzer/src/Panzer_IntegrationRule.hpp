@@ -15,14 +15,9 @@ namespace panzer {
   struct IntegrationRule {
     
     //! if side = -1 then we use the cell volume integration rule.
-    IntegrationRule(const Teuchos::RCP<const shards::CellTopology> & baseTopo, 
-                    int cubature_degree, const panzer::CellData& cell_data);
-
-    //! if side = -1 then we use the cell volume integration rule.
     IntegrationRule(int cubature_degree, const panzer::CellData& cell_data);
 
-    void setup(const Teuchos::RCP<const shards::CellTopology> & baseTopo, 
-               int cubature_degree, const panzer::CellData& cell_data);
+    void setup(int cubature_degree, const panzer::CellData& cell_data);
   
     // Returns true if this Integration rule is for a sideset
     bool isSide();

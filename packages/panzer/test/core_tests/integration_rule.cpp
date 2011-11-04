@@ -10,15 +10,15 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(integration_rule, volume)
   {
-    const int num_cells = 20;
-    const int base_cell_dimension = 3;
-    const panzer::CellData cell_data(num_cells, base_cell_dimension);
-    const int cubature_degree = 2;
-
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
     
-    panzer::IntegrationRule int_rule(topo,cubature_degree, cell_data);
+    const int num_cells = 20;
+    const int base_cell_dimension = 3;
+    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const int cubature_degree = 2;
+
+    panzer::IntegrationRule int_rule(cubature_degree, cell_data);
     
     TEST_ASSERT(cubature_degree == int_rule.cubature_degree);
     TEST_ASSERT(num_cells == int_rule.workset_size);
@@ -37,10 +37,10 @@ namespace panzer {
     const int base_cell_dimension = 3;
     const int cell_local_side_id = 1;
     const panzer::CellData cell_data(num_cells, base_cell_dimension,
-				     cell_local_side_id);
+				     cell_local_side_id,topo);
     const int cubature_degree = 2;
     
-    panzer::IntegrationRule int_rule(topo,cubature_degree, cell_data);
+    panzer::IntegrationRule int_rule(cubature_degree, cell_data);
     
     TEST_ASSERT(cubature_degree == int_rule.cubature_degree);
     TEST_ASSERT(num_cells == int_rule.workset_size);

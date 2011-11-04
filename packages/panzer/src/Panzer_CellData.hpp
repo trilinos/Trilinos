@@ -15,6 +15,7 @@ namespace panzer {
     
   public:
     
+/*
     explicit CellData(std::size_t num_cells, int base_cell_dimension) :
       m_num_cells(num_cells),
       m_dimension(base_cell_dimension),
@@ -31,6 +32,7 @@ namespace panzer {
       m_side(local_side_id),
       m_cell_topo(Teuchos::null)
     { }
+*/
 
     /** Build cell data that uses volume data.  CellTopology is on the
       * volume cells!
@@ -73,12 +75,17 @@ namespace panzer {
     int baseCellDimension() const 
     {return m_dimension;}
     
+    //! Get CellTopology for the base cell.
+    Teuchos::RCP<const shards::CellTopology> getCellTopology() const
+    { return m_cell_topo; }
+
   private:
     std::size_t m_num_cells;
     int m_dimension;
     bool m_is_side;
     int m_side;
       
+ 
     Teuchos::RCP<const shards::CellTopology> m_cell_topo;
   };
 

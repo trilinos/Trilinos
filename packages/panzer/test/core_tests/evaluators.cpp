@@ -137,8 +137,8 @@ namespace panzer {
       std::size_t numCells = 10;
       int baseCellDim = 2;
       int cubatureDegree = 2;
-      panzer::CellData cellData(numCells,baseCellDim);
-      ir = rcp(new IntegrationRule(topo,cubatureDegree,cellData));
+      panzer::CellData cellData(numCells,baseCellDim,topo);
+      ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
       basis = rcp(new Basis(basisType,*ir));
     }
@@ -165,8 +165,8 @@ namespace panzer {
       std::size_t numCells = 10;
       int baseCellDim = 2;
       int cubatureDegree = 2;
-      panzer::CellData cellData(numCells,baseCellDim);
-      ir = rcp(new IntegrationRule(topo,cubatureDegree,cellData));
+      panzer::CellData cellData(numCells,baseCellDim,topo);
+      ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
       basis = rcp(new Basis(basisType,*ir));
     }
@@ -195,8 +195,8 @@ namespace panzer {
       std::size_t numCells = 10;
       int baseCellDim = 2;
       int cubatureDegree = 2;
-      panzer::CellData cellData(numCells,baseCellDim);
-      ir = rcp(new IntegrationRule(topo,cubatureDegree,cellData));
+      panzer::CellData cellData(numCells,baseCellDim,topo);
+      ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
       basis = rcp(new Basis(basisType,*ir));
     }
@@ -229,8 +229,8 @@ namespace panzer {
       std::size_t numCells = 10;
       int baseCellDim = 2;
       int cubatureDegree = 2;
-      panzer::CellData cellData(numCells,baseCellDim);
-      ir = rcp(new IntegrationRule(topo,cubatureDegree,cellData));
+      panzer::CellData cellData(numCells,baseCellDim,topo);
+      ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
       basis = rcp(new Basis(basisType,*ir));
     }

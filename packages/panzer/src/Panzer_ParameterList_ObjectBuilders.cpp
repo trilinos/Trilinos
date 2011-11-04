@@ -74,7 +74,7 @@ namespace panzer {
   }
 
   void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
-                          const std::map<std::string,Teuchos::RCP<const shards::CellTopology> > & block_id_to_cell_topo,
+                          const std::map<std::string,Teuchos::RCP<const shards::CellTopology> > & block_ids_to_cell_topo,
                           const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
                           const int base_cell_dimension,
                           const std::size_t workset_size,
@@ -90,8 +90,16 @@ namespace panzer {
      for (itr = block_ids_to_physics_ids.begin(); itr!=block_ids_to_physics_ids.end();++itr) {
         std::string element_block_id = itr->first;
         std::string physics_block_id = itr->second;
+
+        std::map<std::string,Teuchos::RCP<const shards::CellTopology> >::const_iterator ct_itr
+              = block_ids_to_cell_topo.find(element_block_id);
+        TEUCHOS_TEST_FOR_EXCEPTION(ct_itr==block_ids_to_cell_topo.end(),
+  	  		           std::runtime_error,
+  	          		   "Falied to find CellTopology for element block id: \""
+  		          	   << element_block_id << "\"!");
+        Teuchos::RCP<const shards::CellTopology> cellTopo = ct_itr->second; 
    
-        const panzer::CellData volume_cell_data(workset_size, base_cell_dimension);
+        const panzer::CellData volume_cell_data(workset_size, base_cell_dimension,cellTopo);
         
         // find InputPhysicsBlock that corresponds to a paricular block ID
         std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_it = 
@@ -105,7 +113,7 @@ namespace panzer {
   
         const panzer::InputPhysicsBlock& ipb = ipb_it->second;
         RCP<panzer::PhysicsBlock> pb = 
-  	rcp(new panzer::PhysicsBlock(ipb, element_block_id, volume_cell_data, eqset_factory, build_transient_support));
+    	   rcp(new panzer::PhysicsBlock(ipb, element_block_id, volume_cell_data, eqset_factory, build_transient_support));
         physicsBlocks.push_back(pb);
      }
   }

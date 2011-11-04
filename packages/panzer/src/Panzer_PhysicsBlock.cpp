@@ -241,7 +241,7 @@ std::string panzer::PhysicsBlock::elementBlockID() const
 }
 
 // *******************************************************************
-const panzer::CellData panzer::PhysicsBlock::cellData() const
+const panzer::CellData & panzer::PhysicsBlock::cellData() const
 {
   return m_cell_data;
 }

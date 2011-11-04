@@ -20,7 +20,8 @@ namespace panzer {
     
     int num_cells = 20;
     int cell_dim = 2;
-    panzer::CellData cell_data(num_cells, cell_dim);
+    panzer::CellData cell_data(num_cells, cell_dim,
+                        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >())));
 
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set;
   
@@ -39,7 +40,8 @@ namespace panzer {
     
     int num_cells = 20;
     int cell_dim = 2;
-    panzer::CellData cell_data(num_cells, cell_dim);
+    panzer::CellData cell_data(num_cells, cell_dim,
+                        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >())));
 
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set;
   

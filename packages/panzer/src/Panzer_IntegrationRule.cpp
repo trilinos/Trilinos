@@ -8,17 +8,10 @@
 #include "Panzer_CellData.hpp"
 
 panzer::IntegrationRule::
-IntegrationRule(const Teuchos::RCP<const shards::CellTopology> & baseTopo, 
-                int in_cubature_degree, const panzer::CellData& cell_data) :
-  side(-1)
-{
-   setup(baseTopo,in_cubature_degree,cell_data);
-}
-
-panzer::IntegrationRule::
 IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
   side(-1)
 {
+  /*
   int dim = cell_data.baseCellDimension();
 
   Teuchos::RCP<shards::CellTopology> baseTopo;
@@ -28,18 +21,20 @@ IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
     baseTopo = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
   else if (dim == 1)
     baseTopo = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Line<2> >()));
+  */
 
-  setup(baseTopo,in_cubature_degree,cell_data);
+  setup(in_cubature_degree,cell_data);
 }
 
-void panzer::IntegrationRule::setup(const Teuchos::RCP<const shards::CellTopology> & baseTopo,
-                                    int in_cubature_degree, const panzer::CellData& cell_data)
+void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellData& cell_data)
 {
   cubature_degree = in_cubature_degree ;
   spatial_dimension = cell_data.baseCellDimension();
   workset_size = cell_data.numCells();
   
-  topology = baseTopo;
+  topology = cell_data.getCellTopology();
+  TEUCHOS_TEST_FOR_EXCEPTION(topology==Teuchos::null,std::runtime_error,
+                     "Base topology from cell_data cannot be null!");
   TEUCHOS_TEST_FOR_EXCEPTION(spatial_dimension!=(int) topology->getDimension(), std::runtime_error,
 		     "Spatial dimension from cell_data does not match the cell topology.");
   
