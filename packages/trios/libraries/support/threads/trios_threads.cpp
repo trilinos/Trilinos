@@ -402,7 +402,7 @@ void nthread_yield(void)
 {
 #if defined(HAVE_TRIOS_PTHREAD)
     log_debug(thread_debug_level, "nthread_yield(STUB) - pthread_yield");
-    pthread_yield();
+    pthread_yield_np();
 //#elif defined(HAVE_TRIOS_SCHED_YIELD) && !defined(__LIBCATAMOUNT__)
 //    log_debug(thread_debug_level, "nthread_yield(STUB) - sched_yield");
 //    sched_yield();

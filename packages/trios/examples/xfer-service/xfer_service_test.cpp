@@ -93,7 +93,10 @@ static int print_args(
         out << prefix << " \tio-method        = " << args.io_method_name << std::endl;
         out << prefix << " \tnum-trials        = " << args.num_trials << std::endl;
         out << prefix << " \tnum-reqs         = " << args.num_reqs << std::endl;
-        out << prefix << " \tresult-file      = " << args.result_file << std::endl;
+        out << prefix << " \tlen              = " << args.len << std::endl;
+        out << prefix << " \tvalidate         = " << ((args.validate_flag)?"true":"false") << std::endl;
+        out << prefix << " \tresult-file      = " <<
+                (args.result_file.empty()?"<stdout>":args.result_file) << std::endl;
         out << prefix << " \tresult-file-mode = " << args.result_file_mode << std::endl;
     }
     out << prefix << " \tdebug            = " << args.debug_level << std::endl;
@@ -118,29 +121,30 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
+    MPI_Barrier(MPI_COMM_WORLD);
 
     Teuchos::oblackholestream blackhole;
     std::ostream &out = ( rank == 0 ? std::cout : blackhole );
 
     struct xfer_args args;
 
-    const int num_io_methods = 10;
-    const int io_method_vals[] = {PUSH_SYNC, PUSH_ASYNC,
-            PULL_SYNC, PULL_ASYNC,
-            ROUNDTRIP_SYNC, ROUNDTRIP_ASYNC,
-            GET_SYNC, GET_ASYNC,
-            PUT_SYNC, PUT_ASYNC};
-    const char * io_method_names[] = {"push-sync", "push-async",
-            "pull-sync", "pull-async",
-            "roundtrip-sync", "roundtrip-async",
-            "get-sync", "get-async",
-            "put-sync", "put-async"};
+    const int num_io_methods = 8;
+    const int io_method_vals[] = {
+            XFER_WRITE_ENCODE_SYNC, XFER_WRITE_ENCODE_ASYNC,
+            XFER_WRITE_RDMA_SYNC, XFER_WRITE_RDMA_ASYNC,
+            XFER_READ_ENCODE_SYNC, XFER_READ_ENCODE_ASYNC,
+            XFER_READ_RDMA_SYNC, XFER_READ_RDMA_ASYNC};
+    const char * io_method_names[] = {
+            "write-encode-sync", "write-encode-async",
+            "write-rdma-sync", "write-rdma-async",
+            "read-encode-sync", "read-encode-async",
+            "read-rdma-sync", "read-rdma-async"};
 
 
     // Initialize arguments
     args.len = 1;
     args.delay = 1;
-    args.io_method = PUSH_SYNC;
+    args.io_method = XFER_WRITE_RDMA_SYNC;
     args.debug_level = LOG_WARN;
     args.num_trials = 1;
     args.num_reqs = 1;
@@ -152,6 +156,7 @@ int main(int argc, char *argv[])
     args.server_flag = true;
     args.timeout = 500;
     args.num_retries = 5;
+    args.validate_flag = true;
 
     bool success = true;
 
@@ -193,21 +198,20 @@ int main(int argc, char *argv[])
         parser.setOption("result-file-mode", &args.result_file_mode, "Write mode for the result");
         parser.setOption("server-url", &args.server_url, "URL client uses to find the server");
         parser.setOption("server-url-file", &args.url_file, "File that has URL client uses to find server");
+        //parser.setOption("validate", "no-validate", &args.validate_flag, "Validate the data");
 
         // Set an enumeration command line option for the io_method
 
         parser.setOption("io-method", &args.io_method, num_io_methods, io_method_vals, io_method_names,
                 "I/O Methods for the example: \n"
-                "\t\t\tpush-sync : Send all data with the request, synchronous\n"
-                "\t\t\tpush-async: Send all data with the request - asynchronous\n"
-                "\t\t\tpull-sync : Server-directed pull of data - synchronous\n"
-                "\t\t\tpull-async: Server-directed pull of data - asynchronous\n"
-                "\t\t\troundtrip-sync : Send all data with the request, send back in result - synchronous\n"
-                "\t\t\troundtrip-async: Send all data with the request, send back in result - asynchronous\n"
-                "\t\t\tget-sync : Server-directed pull of data, send back in result - synchronous\n"
-                "\t\t\tget-async: Server-directed pull of data, send back in result - asynchronous\n"
-                "\t\t\tput-sync : Send all data with the request, server-directed put back of data - synchronous\n"
-                "\t\t\tput-async: Send all data with the request, server-directed put back of data - asynchronous");
+                "\t\t\twrite-encode-sync : Write data through the RPC args, synchronous\n"
+                "\t\t\twrite-encode-async: Write data through the RPC args - asynchronous\n"
+                "\t\t\twrite-rdma-sync : Write data using RDMA (server pulls) - synchronous\n"
+                "\t\t\twrite-rdma-async: Write data using RDMA (server pulls) - asynchronous\n"
+                "\t\t\tread-encode-sync : Read data through the RPC result - synchronous\n"
+                "\t\t\tread-encode-async: Read data through the RPC result - asynchronous\n"
+                "\t\t\tread-rdma-sync : Read data using RDMA (server puts) - synchronous\n"
+                "\t\t\tread-rdma-async: Read data using RDMA (server puts) - asynchronous");
 
 
 
@@ -255,9 +259,14 @@ int main(int argc, char *argv[])
 
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
 
+
+    std::cout << rank << ": Finished processing arguments, success=" << success << std::endl;
+
+
     if (!success) {
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
+
 
     log_level debug_level = args.debug_level;
 
@@ -359,7 +368,7 @@ int main(int argc, char *argv[])
                 urlfile << args.server_url.c_str() << std::endl;
             }
             urlfile.close();
-            log_debug(LOG_ALL, "Wrote url to file %s", args.url_file.c_str());
+            log_debug(debug_level, "Wrote url to file %s", args.url_file.c_str());
         }
     }
 
