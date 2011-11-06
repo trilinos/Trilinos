@@ -85,9 +85,30 @@ namespace MueLu {
       }
     }
 
+
+    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid, RCP<std::vector<GlobalOrdinal> > globalamalblockids) const {
+      globalamalblockid2myrowid_ = globalamalblockid2myrowid;
+      globalamalblockids_ = globalamalblockids;
+    }
+
+    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& GetAmalgamationParams() const {
+      return globalamalblockid2myrowid_;
+    }
+
+
   private:
 
     RCP<const CrsGraph> graph_;
+
+    //! @name amalgamation information variables
+    //@{
+
+    /// map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
+    mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;
+    /// vector with global block ids for amalagamated matrix on current proc
+    mutable RCP<std::vector<GlobalOrdinal> > globalamalblockids_; // TODO remove me
+
+    //@}
 
   };
 
