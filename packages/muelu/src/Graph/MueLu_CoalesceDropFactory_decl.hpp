@@ -2,6 +2,8 @@
 #define MUELU_COALESCEDROPFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_CrsGraphFactory.hpp"
 
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
@@ -62,6 +64,8 @@ namespace MueLu {
     //@}
 
     void Build(Level &currentLevel) const ; // Build
+
+    void Amalgamate(const RCP<Operator>& A, RCP<Graph>& graph) const; // Amalgamate
 
   private:
     //! A Factory

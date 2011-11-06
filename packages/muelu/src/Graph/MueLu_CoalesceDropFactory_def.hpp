@@ -2,6 +2,8 @@
 #define MUELU_COALESCEDROPFACTORY_DEF_HPP
 
 #include "Xpetra_Operator.hpp"
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_CrsGraphFactory.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
