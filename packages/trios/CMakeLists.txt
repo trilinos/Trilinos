@@ -17,7 +17,7 @@ PACKAGE_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 # B) Set up package-specific options
 #
 
-# Checks for various types of timers
+# Various Trios checks
 INCLUDE(TriosProbeTimers)
 # Checks for a supported interconnect
 INCLUDE(TriosProbeNetwork)

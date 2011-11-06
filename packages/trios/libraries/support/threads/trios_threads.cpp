@@ -400,13 +400,13 @@ nthread_id_t nthread_self(void)
 
 void nthread_yield(void)
 {
-#if defined(HAVE_TRIOS_PTHREAD_YIELD_NP)
-    log_debug(thread_debug_level, "nthread_yield(STUB) - pthread_yield_np");
-    pthread_yield_np();
-#elif defined(HAVE_TRIOS_PTHREAD_YIELD)
+#if defined(HAVE_TRIOS_PTHREAD_YIELD)
     log_debug(thread_debug_level, "nthread_yield(STUB) - pthread_yield");
     pthread_yield();
-#elif defined(HAVE_TRIOS_SCHED_YIELD) && !defined(__LIBCATAMOUNT__)
+#elif defined (HAVE_TRIOS_PTHREAD_YIELD_NP)
+    log_debug(thread_debug_level, "nthread_yield(STUB) - pthread_yield_np");
+    pthread_yield_np();
+#elif defined(HAVE_TRIOS_SCHED_YIELD)
     log_debug(thread_debug_level, "nthread_yield(STUB) - sched_yield");
     sched_yield();
 #else
