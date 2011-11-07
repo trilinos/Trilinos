@@ -5,13 +5,13 @@
 
 #include "MueLu_Amesos2Smoother_def.hpp"
 
-#ifdef HAVE_MUELU_EI_DOUBLE_INT_INT
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
 template class MueLu::Amesos2Smoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
 #else
 #error
 #endif
 
-#ifdef HAVE_MUELU_EI_DOUBLE_INT_LONGLONGINT
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
 # ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template class MueLu::Amesos2Smoother<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
 #else

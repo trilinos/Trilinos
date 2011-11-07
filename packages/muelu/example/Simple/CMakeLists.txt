@@ -48,4 +48,11 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
       )
   ENDIF()
 
+  #Simple-Tpetra
+  PACKAGE_ADD_EXECUTABLE(
+    Simple-Tpetra
+    SOURCES Simple-Tpetra.cpp
+    DEPLIBS muelu muelu-xpetra muelu-adapters
+    )
+
 ENDIF()

@@ -24,35 +24,35 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
 
 # Explicit instantiation options:
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
-# - MueLu_ENABLE_EI_DOUBLE_INT_INT         (= ON by default)
-# - MueLu_ENABLE_EI_DOUBLE_INT_LONGLONGINT (= ON by default if TEUCHOS_ENABLE_LONG_LONG_INT enabled)
+# - MueLu_INST_DOUBLE_INT_INT         (= ON by default)
+# - MueLu_INST_DOUBLE_INT_LONGLONGINT (= ON by default if TEUCHOS_ENABLE_LONG_LONG_INT enabled)
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
   # <double, int, int>
   # Examples and tests need at least this one
   ADD_OPTION_AND_DEFINE(
-    ${PACKAGE_NAME}_ENABLE_EI_DOUBLE_INT_INT
-    HAVE_${PACKAGE_NAME_UC}_EI_DOUBLE_INT_INT
+    ${PACKAGE_NAME}_INST_DOUBLE_INT_INT
+    HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_INT
     "Enable the use of explicit template instantiation with <double, int, int>."
     ON
     )
   IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS) 
-    IF (NOT ${PACKAGE_NAME}_ENABLE_EI_DOUBLE_INT_INT)
-      MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the option MueLu_ENABLE_EI_DOUBLE_INT_INT or disable examples and tests.")
+    IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
+      MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the option MueLu_INST_DOUBLE_INT_INT or disable examples and tests.")
     ENDIF()
   ENDIF()
 
   # <double, int, long long int>
   IF(Teuchos_ENABLE_LONG_LONG_INT)
-    SET(${PACKAGE_NAME}_ENABLE_EI_DOUBLE_INT_LONGLONGINT_DEFAULT ON)
+    SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT ON)
   ELSE()
-    SET(${PACKAGE_NAME}_ENABLE_EI_DOUBLE_INT_LONGLONGINT_DEFAULT OFF)
+    SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT OFF)
   ENDIF()
   ADD_OPTION_AND_DEFINE(
-    ${PACKAGE_NAME}_ENABLE_EI_DOUBLE_INT_LONGLONGINT
-    HAVE_${PACKAGE_NAME_UC}_EI_DOUBLE_INT_LONGLONGINT
+    ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT
+    HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGLONGINT
     "Enable the use of explicit template instantiation with <double, int, long long int>."
-    ${${PACKAGE_NAME}_ENABLE_EI_DOUBLE_INT_LONGLONGINT_DEFAULT}
+    ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT}
     )
 
 ENDIF()
