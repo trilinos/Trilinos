@@ -32,6 +32,7 @@ template <typename Ordinal>
 
   return tcommPtr;
 }
+#endif
 
 // Given a list of global IDs and their assigned parts, return
 // a list of all the global IDs that are mine.  Assumption is that 
@@ -101,9 +102,6 @@ template <typename GID, typename LNO, typename EXTRA>
 
   return imports.size();
 }
-
-
-#endif
 
 }//namespace Zoltan2
 

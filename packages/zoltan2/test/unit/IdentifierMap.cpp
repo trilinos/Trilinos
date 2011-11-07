@@ -251,12 +251,15 @@ int main(int argc, char *argv[])
   //////////////////////////////////////////////////////////
   //  Ids are non-consecutive ordinals.
 
-  long base = 10000 * rank;
+  long base1 = 10000 * rank;
+  long base2 = base1 + 5000;
   int fail = 0;
+  long base = base1;
 
   for (int i=0; i < numLocalObjects; i++){
     gids[i] = base + i;   
     lids[i] = i;
+    if (i == numLocalObjects/2) base = base2;
   }
 
   typedef IdentifierMap<int, long, int, long> mapLongGids_t;

@@ -234,9 +234,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
   Teuchos::GlobalMPISession session(&argc, &argv);
-#endif
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 
