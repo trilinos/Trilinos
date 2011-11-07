@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include <assert.h>
 #include <math.h>
 #include <vector>
@@ -31,22 +29,21 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    LeftoverAggregationAlgorithm()
-    ;
+    LeftoverAggregationAlgorithm();
 
     //! Destructor.
-    virtual ~LeftoverAggregationAlgorithm() ;
+    virtual ~LeftoverAggregationAlgorithm() { }
 
     //@}
 
     //! @name Set/get methods.
     //@{
 
-    void SetMinNodesPerAggregate(int minNodesPerAggregate) ;
-    void SetPhase3AggCreation(double phase3AggCreation) ;
+    void SetMinNodesPerAggregate(int minNodesPerAggregate) { minNodesPerAggregate_ = minNodesPerAggregate; }
+    void SetPhase3AggCreation(double phase3AggCreation) { phase3AggCreation_ = phase3AggCreation; }
 
-    double GetPhase3AggCreation() const ;
-    int GetMinNodesPerAggregate() const ;
+    double GetPhase3AggCreation() const { return phase3AggCreation_; }
+    int GetMinNodesPerAggregate() const { return minNodesPerAggregate_; }
 
     // TODO: Set/GetGraphName
     //@}
@@ -272,5 +269,4 @@ namespace MueLu {
 //      graphName_("UC_CleanUp")
 
 #define MUELU_LEFTOVERAGGREGATIONALGORITHM_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_LEFTOVERAGGREGATIONALGORITHM_DECL_HPP

@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include <Teuchos_Utils.hpp>
 
 #include "MueLu_Exceptions.hpp"
@@ -50,25 +48,27 @@ namespace MueLu {
     ;
 
     //! Destructor.
-    virtual ~UCAggregationFactory() ;
+    virtual ~UCAggregationFactory() { }
+
     //@}
 
     //! @name Set/get methods.
     //@{
 
     // Options algo1
-    void SetOrdering(Ordering ordering) ;
-    void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) ;
-    Ordering GetOrdering() const ;
-    int GetMaxNeighAlreadySelected() const ;
+    void SetOrdering(Ordering ordering) { algo1_.SetOrdering(ordering); }
+    void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { algo1_.SetMaxNeighAlreadySelected(maxNeighAlreadySelected); }
+    Ordering GetOrdering() const { return algo1_.GetOrdering(); }
+    int GetMaxNeighAlreadySelected() const { return algo1_.GetMaxNeighAlreadySelected(); }
 
     // Options algo2
-    void SetPhase3AggCreation(double phase3AggCreation);
-    double GetPhase3AggCreation() const ;
+    void SetPhase3AggCreation(double phase3AggCreation) { algo2_.SetPhase3AggCreation(phase3AggCreation); }
+    double GetPhase3AggCreation() const { return algo2_.GetPhase3AggCreation(); }
 
     // Options shared algo1 and algo2
-    void SetMinNodesPerAggregate(int minNodesPerAggregate) ;
-    int GetMinNodesPerAggregate() const ;
+    void SetMinNodesPerAggregate(int minNodesPerAggregate) { algo1_.SetMinNodesPerAggregate(minNodesPerAggregate); algo2_.SetMinNodesPerAggregate(minNodesPerAggregate); }
+    int GetMinNodesPerAggregate() const { return algo1_.GetMinNodesPerAggregate(); TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, ""); }
+
     //@}
 
     //! Input
@@ -105,5 +105,4 @@ namespace MueLu {
 // - base class for algorithm and options forward to algorithm as parameter list
 
 #define MUELU_UCAGGREGATIONFACTORY_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_UCAGGREGATIONFACTORY_DECL_HPP

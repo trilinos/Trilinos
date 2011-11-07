@@ -1,10 +1,5 @@
-#include "MueLu_Aggregates_def.hpp"
-#define MUELU_AGGREGATES_DECL_HPP
-
 #ifndef MUELU_AGGREGATES_DECL_HPP
 #define MUELU_AGGREGATES_DECL_HPP
-
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
 
 #include <Teuchos_Describable.hpp>
 
@@ -39,7 +34,7 @@
    useful to have a secondary structure which would be a rectangular CrsGraph 
    where rows (or vertices) correspond to aggregates and colunmns (or edges) 
    correspond to nodes. While not strictly necessary, it might be convenient.
-*****************************************************************************/
+****************************************************************************/
 
 namespace MueLu {
 
@@ -51,23 +46,23 @@ namespace MueLu {
   public:
      
     Aggregates(const Graph & graph);
-    virtual ~Aggregates() ;
+    virtual ~Aggregates() { }
      
-    inline LO GetNumAggregates() const           ; // rename GetNumLocal ?
-    inline void SetNumAggregates(LO nAggregates) ;
-    inline RCP<LOVector> & GetVertex2AggId()     ; // LocalOrdinal because it's an array of local id
-    inline RCP<LOVector> & GetProcWinner()       ;
-    inline bool IsRoot(LO i) const               ; // Local
-    inline void SetIsRoot(LO i, bool value=true) ; // Local
-     
-    inline const RCP<const Xpetra::Map<LO,GO> > GetMap() const ;
+    LO GetNumAggregates() const           { return nAggregates_;        } // rename GetNumLocal ?
+    void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
+    RCP<LOVector> & GetVertex2AggId()     { return vertex2AggId_;       } // LocalOrdinal because it's an array of local id
+    RCP<LOVector> & GetProcWinner()       { return procWinner_;         }
+    bool IsRoot(LO i) const               { return isRoot_[i];          } // Local
+    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } // Local
+    
+    const RCP<const Xpetra::Map<LO,GO> > GetMap() const { return vertex2AggId_->getMap(); }
 
     /*! @brief Compute sizes of all the aggregates.
 
     - FIXME Is this dangerous, i.e., could the user change this?
     */
     Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const
-    ; //ComputeAggSizes
+      ; //ComputeAggSizes
 
     /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
 
@@ -83,18 +78,33 @@ namespace MueLu {
      
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const ;; //class Aggregates
+    void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
 
-    // Constructors to create aggregates.
-    template <class LocalOrdinal ,
-              class GlobalOrdinal,
-              class Node         ,
-              class LocalMatOps>
-    Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const MueLu::Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & graph)
-    ;
+  private:
+    LO   nAggregates_;              /* Number of aggregates on this processor  */
+    
+    RCP<LOVector> vertex2AggId_;    /* vertex2AggId[k] gives a local id        */
+                                    /* corresponding to the aggregate to which */
+                                    /* local id k has been assigned.  While k  */
+    RCP<LOVector> procWinner_;      /* is the local id on my processor (MyPID),*/
+                                    /* vertex2AggId[k] is the local id on the  */
+                                    /* processor which actually owns the       */
+                                    /* aggregate. This owning processor has id */
+                                    /* given by procWinner[k].                 */
 
-  } //namespace MueLu
+    Teuchos::ArrayRCP<bool> isRoot_;/* IsRoot[i] indicates whether vertex i  */
+                                    /* is a root node.                       */
+
+    //! Array of sizes of each local aggregate.
+    mutable Teuchos::ArrayRCP<LO> aggregateSizes_;
+
+    //! Get global number of aggregates
+    // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
+    GO GetNumGlobalAggregates() const;
+
+  };
+
+} //namespace MueLu
 
 #define MUELU_AGGREGATES_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_AGGREGATES_DECL_HPP

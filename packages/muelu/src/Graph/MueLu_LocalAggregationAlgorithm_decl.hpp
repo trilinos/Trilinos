@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
@@ -83,30 +81,29 @@ namespace MueLu {
     typedef GO global_size_t; //TODO
     typedef LO my_size_t; //TODO
 
-
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
-    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact=Teuchos::null)
+    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact = Teuchos::null)
     ;
 
     //! Destructor.
-    virtual ~LocalAggregationAlgorithm() ;
+    virtual ~LocalAggregationAlgorithm() { }
 
     //@}
 
     //! @name Set/get methods.
     //@{
 
-    void SetOrdering(Ordering ordering)                          ;
-    void SetMinNodesPerAggregate(int minNodesPerAggregate)       ;
-    void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) ;
+    void SetOrdering(Ordering ordering)                          { ordering_                = ordering;                }
+    void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
+    void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
     
-    Ordering GetOrdering()                const ;
-    int      GetMinNodesPerAggregate()    const ;
-    int      GetMaxNeighAlreadySelected() const ;
+    Ordering GetOrdering()                const { return ordering_;                }
+    int      GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
+    int      GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
 
     //@}
 
@@ -144,5 +141,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_LOCALAGGREGATIONALGORITHM_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_LOCALAGGREGATIONALGORITHM_DECL_HPP

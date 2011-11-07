@@ -5,8 +5,6 @@
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_CrsGraphFactory.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include "Xpetra_Operator.hpp"
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -15,10 +13,6 @@
 #include "MueLu_PreDropFunctionBaseClass.hpp"
 
 namespace MueLu {
-
-  static const std::string color_esc = "\x1b[";
-  static const std::string color_std = "39;49;00m";
-  static const std::string color_purple = "35m";
 
   /*!
     @class CoalesceDropFactory
@@ -45,7 +39,8 @@ namespace MueLu {
     ;
 
     //! Destructor
-    virtual ~CoalesceDropFactory() ;
+    virtual ~CoalesceDropFactory() { }
+
     //@}
 
     //! Input
@@ -85,5 +80,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_COALESCEDROPFACTORY_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_COALESCEDROPFACTORY_DECL_HPP

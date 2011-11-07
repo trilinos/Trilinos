@@ -1,49 +1,23 @@
 #ifndef MUELU_PREDROPFUNCTIONCONSTVAL_DEF_HPP
 #define MUELU_PREDROPFUNCTIONCONSTVAL_DEF_HPP
 
-/*
- * MueLu_PreDrop.hpp
- *
- *  Created on: Oct 26, 2011
- *      Author: agerste
- */
+#include <Xpetra_CrsGraphFactory.hpp>
 
-#include "Xpetra_Operator.hpp"
-#include "Xpetra_CrsGraphFactory.hpp"
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
-#include "MueLu_PreDropFunctionBaseClass.hpp"
+#include "MueLu_PreDropFunctionConstVal_decl.hpp"
 
 namespace MueLu {
 
-  /*!
-   * Example implementation for dropping values smaller then a constant threshold
-   *
-   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class PreDropFunctionConstVal : public MueLu::PreDropFunctionBaseClass<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  PreDropFunctionConstVal<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PreDropFunctionConstVal(const Scalar threshold)
+    : threshold_(threshold) { }
 
-#include "MueLu_UseShortNames.hpp"
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<MueLu::Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > PreDropFunctionConstVal<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Drop(RCP<Operator> A) {
 
-    Scalar threshold_;
+    RCP<CrsGraph> Xgraph = Xpetra::CrsGraphFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(A->getRowMap(), 1);
 
-  public:
-    /// Constructor
-    explicit PreDropFunctionConstVal(const Scalar threshold)
-    : threshold_(threshold) {}
-    /// Destructor
-    ~PreDropFunctionConstVal() {}
-
-    /// Drop
-    RCP<Graph> Drop(RCP<Operator> A) {
-
-      RCP<CrsGraph> Xgraph = Xpetra::CrsGraphFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(A->getRowMap(), 1);
-
-      // loop over local rows
-      for(size_t row=0; row<A->getNodeNumRows(); row++)
+    // loop over local rows
+    for(size_t row=0; row<A->getNodeNumRows(); row++)
       {
         size_t nnz = A->getNumEntriesInLocalRow(row);
 
@@ -67,15 +41,13 @@ namespace MueLu {
         Xgraph->insertGlobalIndices(A->getRowMap()->getGlobalElement(row), indout.view(0,indout.size()));
       }
 
-      Xgraph->fillComplete(A->getDomainMap(), A->getRangeMap());
+    Xgraph->fillComplete(A->getDomainMap(), A->getRangeMap());
 
-      return rcp(new Graph(Xgraph, "Graph of A"));
-      // dummy implementation, returns just the original graph
-      return rcp(new Graph(A->getCrsGraph(), "Graph of A"));
-    }
-  };
+    return rcp(new Graph(Xgraph, "Graph of A"));
+    // dummy implementation, returns just the original graph
+    return rcp(new Graph(A->getCrsGraph(), "Graph of A"));
+  }
 
 }
 
-#define MUELU_PREDROPFUNCTIONCONSTVAL_SHORT
 #endif // MUELU_PREDROPFUNCTIONCONSTVAL_DEF_HPP

@@ -1,186 +1,91 @@
 #ifndef MUELU_AGGREGATES_DEF_HPP
 #define MUELU_AGGREGATES_DEF_HPP
 
-#include <Teuchos_Describable.hpp>
-
-#include <Xpetra_VectorFactory.hpp>
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
-#include "MueLu_Graph.hpp"
-#include "MueLu_Utilities.hpp"
-
-#define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
-                                 /* any aggregate.                          */
-
-#define MUELU_UNASSIGNED    -1   /* indicates a vertex is not yet claimed   */
-                                 /* by a processor during aggregation.      */
-                                 /* Note, it is possible at                 */
-                                 /* this stage that some processors may have*/
-                                 /* claimed their copy of a vertex for one  */
-                                 /* of their aggregates.  However, some     */
-                                 /* arbitration still needs to occur.       */
-                                 /* The corresponding procWinner[]'s remain */
-                                 /* as MUELU_UNASSIGNED until               */
-                                 /* ArbitrateAndCommunicate() is            */
-                                 /* invoked to arbitrate.                   */
-
-/***************************************************************************** 
-   Structure holding aggregate information. Right now, nAggregates, IsRoot,
-   Vertex2AggId, procWinner are populated.  This allows us to look at a node
-   and determine the aggregate to which it has been assigned and the id of the 
-   processor that owns this aggregate. It is not so easy to determine vertices
-   within the kth aggregate or the size of the kth aggregate. Thus, it might be
-   useful to have a secondary structure which would be a rectangular CrsGraph 
-   where rows (or vertices) correspond to aggregates and colunmns (or edges) 
-   correspond to nodes. While not strictly necessary, it might be convenient.
-*****************************************************************************/
+#include "MueLu_Aggregates_decl.hpp"
 
 namespace MueLu {
 
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class Aggregates : public BaseClass {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const Graph & graph) {
+    nAggregates_  = 0;
+    
+    vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
+    vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
+    
+    procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
+    procWinner_->putScalar(MUELU_UNASSIGNED);
+    
+    isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements());
+    for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
+      isRoot_[i] = false;
+  }
 
-#include "MueLu_UseShortNamesOrdinal.hpp"
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  Teuchos::ArrayRCP<LocalOrdinal>  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateSizes() const {
+    if (aggregateSizes_ == Teuchos::null)
+      {
+        aggregateSizes_ = Teuchos::ArrayRCP<LO>(nAggregates_);
+        int myPid = vertex2AggId_->getMap()->getComm()->getRank();
+        Teuchos::ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
+        Teuchos::ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
+        LO size = procWinner.size();
 
-  public:
-     
-    Aggregates(const Graph & graph);
-    virtual ~Aggregates() {}
-     
-    inline LO GetNumAggregates() const           { return nAggregates_;        } // rename GetNumLocal ?
-    inline void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
-    inline RCP<LOVector> & GetVertex2AggId()     { return vertex2AggId_;       } // LocalOrdinal because it's an array of local id
-    inline RCP<LOVector> & GetProcWinner()       { return procWinner_;         }
-    inline bool IsRoot(LO i) const               { return isRoot_[i];          } // Local
-    inline void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } // Local
-     
-    inline const RCP<const Xpetra::Map<LO,GO> > GetMap() const { return vertex2AggId_->getMap(); }
-
-    /*! @brief Compute sizes of all the aggregates.
-
-    - FIXME Is this dangerous, i.e., could the user change this?
-    */
-    Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const
-    {
-      if (aggregateSizes_ == Teuchos::null)
-        {
-          aggregateSizes_ = Teuchos::ArrayRCP<LO>(nAggregates_);
-          int myPid = vertex2AggId_->getMap()->getComm()->getRank();
-          Teuchos::ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
-          Teuchos::ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
-          LO size = procWinner.size();
-
-          for (LO i = 0; i < nAggregates_; ++i) aggregateSizes_[i] = 0;
-          for (LO k = 0; k < size; ++k ) {
-            if (procWinner[k] == myPid) aggregateSizes_[vertex2AggId[k]]++;
-          }
-        }
-
-      return aggregateSizes_;
-    } //ComputeAggSizes
-
-    /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
-
-    @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
-    */
-    void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const {
-      int myPid = vertex2AggId_->getMap()->getComm()->getRank();
-      ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
-      ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
-
-      ArrayRCP<LO> aggSizes = ComputeAggregateSizes();
-      LO t=0;
-      for (typename ArrayRCP<ArrayRCP<LO> >::iterator a2r=aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r)
-        *a2r = ArrayRCP<LO>(aggSizes[t++]);
-      ArrayRCP< LO > numDofs(nAggregates_,0);  //Track how many DOFS have been recorded so far
-      //for each each aggregate in aggToRowMap.
-      LO size = procWinner.size();
-      for (LO k = 0; k < size; ++k ) {
-        LO myAgg = vertex2AggId[k];
-        if (procWinner[k] == myPid) {
-          aggToRowMap[ myAgg ][ numDofs[myAgg] ] = k;
-          ++(numDofs[myAgg]);
+        for (LO i = 0; i < nAggregates_; ++i) aggregateSizes_[i] = 0;
+        for (LO k = 0; k < size; ++k ) {
+          if (procWinner[k] == myPid) aggregateSizes_[vertex2AggId[k]]++;
         }
       }
 
-    } //AggregateToRowMap
+    return aggregateSizes_;
+  } //ComputeAggSizes
 
-    //! @name Overridden from Teuchos::Describable 
-    //@{
-     
-    //! Return a simple one-line description of this object.
-    std::string description() const {
-      std::ostringstream out;
-      out << BaseClass::description();
-      out << "{nGlobalAggregates = " << GetNumGlobalAggregates() << "}";
-      return out.str();
-    }
-     
-    //! Print the object with some verbosity level to an FancyOStream object.
-    //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const {
-    void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const {
-      MUELU_DESCRIBE;
-      
-      if (verbLevel & Statistics0) {
-        out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  void  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > &aggToRowMap) const {
+    int myPid = vertex2AggId_->getMap()->getComm()->getRank();
+    ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
+    ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
+
+    ArrayRCP<LO> aggSizes = ComputeAggregateSizes();
+    LO t=0;
+    for (typename ArrayRCP<ArrayRCP<LO> >::iterator a2r=aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r)
+      *a2r = ArrayRCP<LO>(aggSizes[t++]);
+    ArrayRCP< LO > numDofs(nAggregates_,0);  //Track how many DOFS have been recorded so far
+    //for each each aggregate in aggToRowMap.
+    LO size = procWinner.size();
+    for (LO k = 0; k < size; ++k ) {
+      LO myAgg = vertex2AggId[k];
+      if (procWinner[k] == myPid) {
+        aggToRowMap[ myAgg ][ numDofs[myAgg] ] = k;
+        ++(numDofs[myAgg]);
       }
+    }
+
+  } //AggregateToRowMap
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  std::string Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
+    std::ostringstream out;
+    out << BaseClass::description();
+    out << "{nGlobalAggregates = " << GetNumGlobalAggregates() << "}";
+    return out.str();
+  }
+     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  void Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+    MUELU_DESCRIBE;
       
+    if (verbLevel & Statistics0) {
+      out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
     }
-    //@}
+  }
 
-  private:
-    LO   nAggregates_;              /* Number of aggregates on this processor  */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  GlobalOrdinal Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNumGlobalAggregates() const {
+    LO nAggregates = GetNumAggregates();
+    GO nGlobalAggregates; sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
+    return nGlobalAggregates;
+  }
     
-    RCP<LOVector> vertex2AggId_;    /* vertex2AggId[k] gives a local id        */
-                                    /* corresponding to the aggregate to which */
-                                    /* local id k has been assigned.  While k  */
-    RCP<LOVector> procWinner_;      /* is the local id on my processor (MyPID),*/
-                                    /* vertex2AggId[k] is the local id on the  */
-                                    /* processor which actually owns the       */
-                                    /* aggregate. This owning processor has id */
-                                    /* given by procWinner[k].                 */
+} //namespace MueLu
 
-    Teuchos::ArrayRCP<bool> isRoot_;/* IsRoot[i] indicates whether vertex i  */
-                                    /* is a root node.                       */
-
-    //! Array of sizes of each local aggregate.
-    mutable Teuchos::ArrayRCP<LO> aggregateSizes_;
-
-    //! Get global number of aggregates
-    // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
-    GO GetNumGlobalAggregates() const {
-      LO nAggregates = GetNumAggregates();
-      GO nGlobalAggregates; sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
-      return nGlobalAggregates;
-    }
-    
-  }; //class Aggregates
-
-    // Constructors to create aggregates.
-    template <class LocalOrdinal ,
-              class GlobalOrdinal,
-              class Node         ,
-              class LocalMatOps>
-    Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const MueLu::Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & graph)
-    {
-   
-      nAggregates_  = 0;
-    
-      vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
-      vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
-    
-      procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
-      procWinner_->putScalar(MUELU_UNASSIGNED);
-    
-      isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements());
-      for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
-        isRoot_[i] = false;
-
-    }
-
-  } //namespace MueLu
-
-#define MUELU_AGGREGATES_SHORT
 #endif // MUELU_AGGREGATES_DEF_HPP

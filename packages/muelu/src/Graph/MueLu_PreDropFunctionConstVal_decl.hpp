@@ -2,16 +2,6 @@
 #define MUELU_PREDROPFUNCTIONCONSTVAL_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
-/*
- * MueLu_PreDrop.hpp
- *
- *  Created on: Oct 26, 2011
- *      Author: agerste
- */
-
 #include "Xpetra_Operator.hpp"
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -30,21 +20,24 @@ namespace MueLu {
 
 #include "MueLu_UseShortNames.hpp"
 
-    Scalar threshold_;
-
   public:
+
     // Constructor
     explicit PreDropFunctionConstVal(const Scalar threshold = 0.0);
 
     // Destructor
-    ~PreDropFunctionConstVal() ;
+    virtual ~PreDropFunctionConstVal() { }
 
     // Drop
     RCP<Graph> Drop(RCP<Operator> A) ;
+
+  private:
+
+    Scalar threshold_;
+
   };
 
 }
 
 #define MUELU_PREDROPFUNCTIONCONSTVAL_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_PREDROPFUNCTIONCONSTVAL_DECL_HPP

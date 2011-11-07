@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION // Otherwise, class will be declared twice because _decl.hpp file also have the class definition (FIXME)
-
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>
@@ -55,10 +53,11 @@ namespace MueLu {
     UCAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap)
     ;
 
-    ~UCAggregationCommHelper() ;
+    ~UCAggregationCommHelper() { }
 
-    void ArbitrateAndCommunicate(Vector &weights, Aggregates &aggregates, const bool perturb) const
-    ;
+    void ArbitrateAndCommunicate(Vector &weights, Aggregates &aggregates, const bool perturb) const {
+      ArbitrateAndCommunicate(weights, *aggregates.GetProcWinner(), &*aggregates.GetVertex2AggId(), perturb);
+    }
 
     //
     // For each GlobalId associated with weight.getMap():
@@ -157,5 +156,4 @@ namespace MueLu {
 // - companion == aggregates.GetVertex2AggId() == local aggregate ID -> LocalOrdinal
 
 #define MUELU_UCAGGREGATIONCOMMHELPER_SHORT
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
 #endif // MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP

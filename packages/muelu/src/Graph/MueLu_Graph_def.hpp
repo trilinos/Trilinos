@@ -1,118 +1,73 @@
 #ifndef MUELU_GRAPH_DEF_HPP
 #define MUELU_GRAPH_DEF_HPP
 
-#include <Xpetra_ConfigDefs.hpp>
-#include <Xpetra_CrsGraph.hpp>
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
-#include "MueLu_Exceptions.hpp"
-
-/******************************************************************************
-   MueLu representation of a graph.
-******************************************************************************/
+#include "MueLu_Graph_decl.hpp"
 
 namespace MueLu {
 
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class Graph 
-    : public BaseClass {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  Teuchos::ArrayView<const LocalOrdinal> Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getNeighborVertices(LocalOrdinal v) const { 
+    Teuchos::ArrayView<const LocalOrdinal> neighborVertices;
+    graph_->getLocalRowView(v, neighborVertices); 
+    return neighborVertices;
+  }
 
-#include "MueLu_UseShortNamesOrdinal.hpp"
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  void Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid, RCP<std::vector<GlobalOrdinal> > globalamalblockids) const {
+    globalamalblockid2myrowid_ = globalamalblockid2myrowid;
+    globalamalblockids_ = globalamalblockids;
+  }
 
-  public:
-
-    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) { 
-      //setObjectLabel(objectLabel); 
-    }
-    virtual ~Graph() {}
-    
-    inline size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
-    inline size_t GetNodeNumEdges()    const { return graph_->getNodeNumEntries(); }
-    
-    inline Xpetra::global_size_t GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
-
-    inline const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
-    inline const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
-    inline const RCP<const Map> GetImportMap() const { return graph_->getColMap(); }
-
-    //! Return the list of vertices adjacent to the vertex 'v'
-    inline Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const { 
-      Teuchos::ArrayView<const LocalOrdinal> neighborVertices;
-      graph_->getLocalRowView(v, neighborVertices); 
-      return neighborVertices;
-    }
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetAmalgamationParams() const {
+    return globalamalblockid2myrowid_;
+  }
 
 #ifdef MUELU_UNUSED
-    size_t GetNodeNumGhost() const { 
-      /*
-        Ray's comments about nGhost:
-        Graph->NGhost == graph_->RowMatrixColMap()->NumMyElements() - graph_->OperatorDomainMap()->NumMyElements()
-        is basically right. But we've had some issues about how epetra handles empty columns.
-        Probably worth discussing this with Jonathan and Chris to see if this is ALWAYS right. 
-      */
-      size_t nGhost = graph_->getColMap()->getNodeNumElements() - graph_->getDomainMap()->getNodeNumElements();
-      if (nGhost < 0) nGhost = 0; // FIXME: size_t is unsigned.
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  size_t Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNodeNumGhost() const { 
+    /*
+      Ray's comments about nGhost:
+      Graph->NGhost == graph_->RowMatrixColMap()->NumMyElements() - graph_->OperatorDomainMap()->NumMyElements()
+      is basically right. But we've had some issues about how epetra handles empty columns.
+      Probably worth discussing this with Jonathan and Chris to see if this is ALWAYS right. 
+    */
+    size_t nGhost = graph_->getColMap()->getNodeNumElements() - graph_->getDomainMap()->getNodeNumElements();
+    if (nGhost < 0) nGhost = 0; // FIXME: size_t is unsigned.
       
-      return nGhost;
-    }
+    return nGhost;
+  }
 #endif
 
-    /// Return a simple one-line description of this object.
-    std::string description() const {
-      return "MueLu.description()";
+  /// Return a simple one-line description of this object.
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  std::string Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
+    return "MueLu.description()";
+  }
+
+  //! Print the object with some verbosity level to an FancyOStream object.
+  //using MueLu::Describable::describe; // overloading, not hiding
+  //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  void Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+    MUELU_DESCRIBE;
+
+    if (verbLevel & Parameters0) {
+      //out0 << "Prec. type: " << type_ << std::endl;
     }
 
-    //! Print the object with some verbosity level to an FancyOStream object.
-    //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
-      MUELU_DESCRIBE;
-
-      if (verbLevel & Parameters0) {
-        //out0 << "Prec. type: " << type_ << std::endl;
-      }
-
-      if (verbLevel & Parameters1) {
-        //out0 << "Linear Algebra: " << toString(lib_) << std::endl;
-        //out0 << "PrecType: " << type_ << std::endl;
-        //out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
-        //out0 << "Overlap: " << overlap_ << std::endl;
-      }
-
-      if (verbLevel & Debug) {
-        graph_->describe(out0, Teuchos::VERB_EXTREME);
-      }
+    if (verbLevel & Parameters1) {
+      //out0 << "Linear Algebra: " << toString(lib_) << std::endl;
+      //out0 << "PrecType: " << type_ << std::endl;
+      //out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      //out0 << "Overlap: " << overlap_ << std::endl;
     }
 
-
-    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid, RCP<std::vector<GlobalOrdinal> > globalamalblockids) const {
-      globalamalblockid2myrowid_ = globalamalblockid2myrowid;
-      globalamalblockids_ = globalamalblockids;
+    if (verbLevel & Debug) {
+      graph_->describe(out0, Teuchos::VERB_EXTREME);
     }
-
-    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& GetAmalgamationParams() const {
-      return globalamalblockid2myrowid_;
-    }
-
-
-  private:
-
-    RCP<const CrsGraph> graph_;
-
-    //! @name amalgamation information variables
-    //@{
-
-    /// map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
-    mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;
-    /// vector with global block ids for amalagamated matrix on current proc
-    mutable RCP<std::vector<GlobalOrdinal> > globalamalblockids_; // TODO remove me
-
-    //@}
-
-  };
+  }
 
 }
 
-#define MUELU_GRAPH_SHORT
 #endif // MUELU_GRAPH_DEF_HPP
