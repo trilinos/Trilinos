@@ -107,7 +107,7 @@ print "REPO_DIR: +" + REPO_DIR + "+"
 #
 CMAKE_DIR = TOOLS_DIR + "/cmake-TDD"
 
-TDD_CMAKE_INSTALLER_TYPE = "dev"
+TDD_CMAKE_INSTALLER_TYPE = "release"
 if "TDD_CMAKE_INSTALLER_TYPE" in os.environ:
   TDD_CMAKE_INSTALLER_TYPE = os.environ["TDD_CMAKE_INSTALLER_TYPE"]
 
@@ -140,9 +140,6 @@ else:
 
 if installMasterCMake:
 
-  if os.path.exists(CMAKE_DIR):
-    shutil.rmtree(CMAKE_DIR)
-
   cmnd =  sys.executable + " " \
     + REPO_DIR+"/cmake/python/download-cmake.py" \
     + " --skip-detect" \
@@ -152,10 +149,14 @@ if installMasterCMake:
   if TDD_HTTP_PROXY:
     cmnd += " --http-proxy="+TDD_HTTP_PROXY
 
-  echoRunSysCmnd( cmnd,
-    timeCmnd = True,
-    workingDir = TOOLS_DIR \
-    )
+  try:
+    echoRunSysCmnd( cmnd,
+      timeCmnd = True,
+      workingDir = TOOLS_DIR \
+      )
+  except Exception, e:
+    print "WARNING! The following command failed!\n"+cmnd
+    print "However, not updating CMake is not the end of the world!"
 
 
 # Find ctest under CMAKE_DIR:
