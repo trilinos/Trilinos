@@ -69,6 +69,8 @@ SET(CTEST_TEST_TYPE EXPERIMENTAL)
 
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 
+SET( EXTRA_EXCLUDE_PACKAGES TrilinosFramework Stokhos Piro FEApp)
+
 #
 # Set the rest of the system-specific options and run the dashboard build/test
 #
