@@ -40,21 +40,26 @@
 #include "Rythmos_RampingIntegrationControlStrategy.hpp"
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
+#include "Rythmos_CompositeIntegrationObserver.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include "Rythmos_IntegratorBuilder.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Piro_RythmosNOX_RowSumUpdater.hpp"
 
 #ifdef Piro_ENABLE_NOX
 #  include "Thyra_NonlinearSolver_NOX.hpp"
 #endif
 
+#include "Thyra_ScaledModelEvaluator.hpp"
+
 template <typename Scalar>
-Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
-                          Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model_,
-                          Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer ) :
-  appParams(appParams_),
-  model(model_)
+Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> in_appParams,
+                          Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > in_model,
+                          Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > in_observer) :
+  appParams(in_appParams),
+  model(in_model),
+  observer(in_observer)
 {
   //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
 
@@ -134,14 +139,50 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
 #else
 	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,"Requested NOX solver for a Rythmos Transient solve, Trilinos was not built with NOX enabled.  Please rebuild Trilinos or use the native Rythmos nonlinear solver.");
 #endif
+
+	// Check for model scaling, if it should be scaled, wrap the
+	// model with a scaled model evaluator and register
+	// appropriate observer to compute/update the scaling
+	if (rythmosPL->get("Scaling", "None") == "Row Sum") {
+	  
+	  RCP< ::Thyra::VectorBase<Scalar> > scale_vec = 
+	    ::Thyra::createMember(model->get_f_space());
+
+	  ::Thyra::V_S(scale_vec.ptr(),1.0);
+
+	  // Create thyra scaled model evaluator
+	  const RCP< ::Thyra::ScaledModelEvaluator<Scalar> > scaled_model = 
+	    rcp(new ::Thyra::ScaledModelEvaluator<Scalar>);
+	  scaled_model->initialize(Teuchos::rcp_static_cast<const Thyra::ModelEvaluator<Scalar> >(model));
+	  scaled_model->set_f_scaling(scale_vec);
+	  model = scaled_model;
+
+	  // Create the observer to trigger updating the scaling
+	  // vector
+	  RCP<Piro::RythmosNOXRowSumUpdaterObserver<Scalar> > rythmos_row_sum_updater_observer = 
+	    rcp(new Piro::RythmosNOXRowSumUpdaterObserver<Scalar>);
+	  rythmos_row_sum_updater_observer->set_f_scaling(scale_vec);
+
+	  RCP<Rythmos::CompositeIntegrationObserver<Scalar> > rythmos_comp_observer = 
+	    rcp(new Rythmos::CompositeIntegrationObserver<Scalar>);
+	  
+	  rythmos_comp_observer->addObserver(rythmos_row_sum_updater_observer);
+
+	  // Add in any user registered observers
+	  if (nonnull(observer))
+	    rythmos_comp_observer->addObserver(observer);
+
+	  observer = rythmos_comp_observer;
+	}
+
       }
 
       if (stepperType == "Backward Euler") {
-        fwdStateStepper = Rythmos::backwardEulerStepper<double> (model, fwdTimeStepSolver);
+        fwdStateStepper = Rythmos::backwardEulerStepper<Scalar> (model, fwdTimeStepSolver);
 	fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
       }
       else if (stepperType == "Explicit RK") {
-        fwdStateStepper = Rythmos::explicitRKStepper<double>(model);
+        fwdStateStepper = Rythmos::explicitRKStepper<Scalar>(model);
 	fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
       }
       else if (stepperType == "BDF") {
@@ -150,7 +191,7 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
         Teuchos::RCP<Teuchos::ParameterList> BDFStepControlPL =
           Teuchos::sublist(BDFparams,"Step Control Settings");
 
-        fwdStateStepper = Teuchos::rcp( new Rythmos::ImplicitBDFStepper<double>(model,fwdTimeStepSolver,BDFparams) );
+        fwdStateStepper = Teuchos::rcp( new Rythmos::ImplicitBDFStepper<Scalar>(model,fwdTimeStepSolver,BDFparams) );
         fwdStateStepper->setInitialCondition(model->getNominalValues());
 
       }
@@ -486,5 +527,15 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
   validPL->set<std::string>("Name", "", "");
   validPL->set<bool>("Invert Mass Matrix", false, "");
   validPL->set<std::string>("Stepper Method", "", "");
+
+
+  Teuchos::setStringToIntegralParameter<int>(
+    "Scaling",
+    "None",
+    "Determines of a function scaling should be applied to model evaluator",
+    Teuchos::tuple<std::string>("None","Row Sum"),
+    validPL.get()
+    );
+
   return validPL;
 }

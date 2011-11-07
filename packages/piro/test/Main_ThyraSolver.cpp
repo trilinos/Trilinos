@@ -127,6 +127,8 @@ int main(int argc, char *argv[]) {
           sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
       }
       else if (solver=="Rythmos") {
+	piroParams->sublist("Rythmos").set("Scaling", "Row Sum");
+	piroParams->sublist("Rythmos").set("Nonlinear Solver Type", "NOX");
         stratParams = Teuchos::rcp(&(piroParams->sublist("Rythmos").sublist("Stratimikos")),false);
       }
       Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
