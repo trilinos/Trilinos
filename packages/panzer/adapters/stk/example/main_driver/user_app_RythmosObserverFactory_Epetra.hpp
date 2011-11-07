@@ -12,7 +12,7 @@ namespace user_app {
     
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			 const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
+			 const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
 			 const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) const
     {
       Teuchos::RCP<user_app::RythmosObserver_Epetra> observer = Teuchos::rcp(new user_app::RythmosObserver_Epetra(mesh,dof_manager,lof));

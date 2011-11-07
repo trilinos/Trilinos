@@ -18,7 +18,7 @@ namespace user_app {
   public:
     
     NOXObserver_EpetraToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			       const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
+			       const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
 			       const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) :
       m_mesh(mesh),
       m_dof_manager(dof_manager),

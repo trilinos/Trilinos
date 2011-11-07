@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
       // assert (num_g == 1);  // for now only solution is returned
 
       // Solution vector is returned as extra respons vector
-      RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*physics->get_x_space());
+      Teuchos::RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*physics->get_x_space());
       for(std::size_t i=0;i<rLibrary->getLabeledResponseCount();i++)
          outArgs.set_g(i,Teuchos::null);
       outArgs.set_g(rLibrary->getLabeledResponseCount(),gx);
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
    
          // set up response out args
          for(int i=0;i<respOutArgs.Ng();i++) {
-            RCP<Thyra::VectorBase<double> > response = Thyra::createMember(*physics->get_g_space(i));
+	   Teuchos::RCP<Thyra::VectorBase<double> > response = Thyra::createMember(*physics->get_g_space(i));
             respOutArgs.set_g(i,response);
          }
    
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
    
          // loop over out args for printing
          for(int i=0;i<respOutArgs.Ng();i++) {
-            RCP<Thyra::VectorBase<double> > response = respOutArgs.get_g(i);
+	   Teuchos::RCP<Thyra::VectorBase<double> > response = respOutArgs.get_g(i);
 
             TEUCHOS_ASSERT(response!=Teuchos::null); // should not be null!
 

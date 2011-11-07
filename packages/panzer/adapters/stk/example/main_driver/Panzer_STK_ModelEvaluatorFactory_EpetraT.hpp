@@ -281,7 +281,7 @@ namespace panzer_stk {
       p_0->push_back("viscosity");
       p_names.push_back(p_0);
     }
-    RCP<panzer::ModelEvaluator_Epetra> ep_me = 
+    Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me = 
       Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,ep_lof, p_names, is_transient));
 
     // Setup initial conditions
@@ -326,7 +326,7 @@ namespace panzer_stk {
     }
    
     // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
-    RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);
     std::string solver = solncntl_params.get<std::string>("Piro Solver");
     {
       *strat_params = solncntl_params.sublist("NOX").sublist("Direction").
@@ -390,16 +390,16 @@ namespace panzer_stk {
     }
     #endif
     linearSolverBuilder.setParameterList(strat_params);
-    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
     // Build Thyra Model Evluator
-    RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me = 
+    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me = 
       Thyra::epetraModelEvaluator(ep_me,lowsFactory);
     
     m_physics_me = thyra_me;
 
-    RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params));
-    RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
+    Teuchos::RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params));
+    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
     if (solver=="NOX") {
       Teuchos::RCP<const panzer_stk::NOXObserverFactory> observer_factory = 
 	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
