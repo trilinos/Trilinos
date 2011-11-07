@@ -8,7 +8,7 @@ for i in LO-GO-NO-LMO SC-LO-GO-NO-LMO
   
   for className in `cat $classList`
     do
-    cat $tmpl | sed "s/\$TMPL_CLASS/$className/g" > $className.cpp
+    cat $tmpl | sed "s/\$TMPL_CLASS/$className/g" > MueLu_$className.cpp
   done
 
 done
