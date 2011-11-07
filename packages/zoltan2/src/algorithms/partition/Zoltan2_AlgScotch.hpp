@@ -7,7 +7,11 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 
 #ifdef HAVE_SCOTCH
+#ifndef HAVE_MPI
+#include "scotch.h"
+#else
 #include "ptscotch.h"
+#endif
 #endif
 
 ////////////////////////////////////////////////////////////////////////
@@ -42,9 +46,13 @@ int AlgPTScotch(
   typedef typename Adapter::scalar_t scalar_t;
 
   HELLO;
+// TODO - either don't compile for serial builds, or
+//    perform a serial scotch algorithm here
+//
   int ierr = 0;
   int me = comm->getRank();
 
+#ifdef HAVE_MPI
   if (sizeof(lno_t) != sizeof(SCOTCH_Num) || 
       sizeof(gno_t) != sizeof(SCOTCH_Num)) {
     cout << "Incompatible Scotch build." << endl;
@@ -163,7 +171,9 @@ cout << me << " KDDKDD vertlocnbr = " << vertlocnbr
                                               //      instead of cast.
                (lid_t *) NULL,                // TODO Use User's LIDs
                parts);
-
+#else
+  // solve a serial problem, or don't compile for !HAVE_MPI
+#endif  // HAVE_MPI
   if (me == 0) cout << " done." << endl;
 
   // Clean up Zoltan2

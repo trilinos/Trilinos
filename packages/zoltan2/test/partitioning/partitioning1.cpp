@@ -28,8 +28,13 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // Eventually want to use Teuchos unit tests to vary z2TestLO and
 // GO.  For now, we set them at compile time.
+#ifdef HAVE_TPL64
+typedef long z2TestLO;
+typedef long z2TestGO;
+#else
 typedef int z2TestLO;
 typedef int z2TestGO;
+#endif
 typedef double Scalar;
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
@@ -37,12 +42,15 @@ typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 
 typedef Zoltan2::XpetraCrsMatrixInput<SparseMatrix> SparseMatrixAdapter;
 
+// TODO: Handle !HAVE_MPI, or write a different test for serial case.
+//  For now this test and the classes is uses pass if !HAVE_MPI
 /////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
 {
   std::string inputFile = "";            // Matrix Market file to read
   std::string outputFile = "";           // Matrix Market file to write
   bool verbose = false;                  // Verbosity of output
+  int testReturn = 0;
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
@@ -102,7 +110,11 @@ int main(int narg, char** arg)
   Teuchos::ParameterList params;
   params.set("APPROACH", "PARTITION");
   params.set("METHOD", "GRAPH");
+#ifdef HAVE_MPI
+  params.set("GRAPH_PACKAGE", "SCOTCH");
+#else
   params.set("GRAPH_PACKAGE", "PTSCOTCH");
+#endif
 
   ////// Create an input adapter for the Tpetra matrix.
   SparseMatrixAdapter adapter(origMatrix);
@@ -110,6 +122,8 @@ int main(int narg, char** arg)
   ////// Create and solve partitioning problem
   Zoltan2::PartitioningProblem<SparseMatrixAdapter> problem(&adapter, &params);
   problem.solve();
+
+#ifdef HAVE_MPI
   problem.redistribute();
 
   ////// Basic metric checking
@@ -173,7 +187,6 @@ int main(int narg, char** arg)
 
   ////// Verify that redistribution is "correct"; perform matvec with 
   ////// original and redistributed matrices/vectors and compare norms.
-  int testReturn = 0;
 
   origMatrix->apply(*origVector, *origProd);
 
@@ -181,6 +194,7 @@ int main(int narg, char** arg)
   origNorm = origProd->norm2();
   if (me == 0)
     cout << "Norm of Original matvec prod:  " << origNorm << endl;
+#endif
 
   if (me == 0) {
     if (testReturn)
