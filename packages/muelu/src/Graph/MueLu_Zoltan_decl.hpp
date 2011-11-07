@@ -41,7 +41,7 @@ namespace MueLu {
     ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact = Teuchos::null);
 
     //! Destructor
-    virtual ~ZoltanInterface();
+    virtual ~ZoltanInterface() { }
     //@}
 
     //! @name Input
