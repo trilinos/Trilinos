@@ -8,6 +8,8 @@
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"
 
+#include "MueLu_FactoryBase.hpp"
+
 // Note: DirectSolver is a SmootherPrototype that cannot be turned into a smoother using Setup().
 //       When this prototype is cloned using Copy(), the clone is an Amesos or an Amesos2 smoother.
 //       The clone can be used as a smoother after calling Setup().

@@ -1,7 +1,12 @@
 #ifndef MUELU_DIRECTSOLVER_DEF_HPP
 #define MUELU_DIRECTSOLVER_DEF_HPP
 
+#include <Xpetra_Utils.hpp>
+
 #include "MueLu_DirectSolver_decl.hpp"
+
+#include "MueLu_Exceptions.hpp"
+#include "MueLu_Level.hpp"
 
 namespace MueLu {
 
