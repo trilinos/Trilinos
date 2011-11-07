@@ -10,7 +10,7 @@ namespace MueLu {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact = Teuchos::null)
+  ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact)
     : AFact_(AFact) {
 
     Zoltan_Initialize(0, NULL, &zoltanVersion_);
