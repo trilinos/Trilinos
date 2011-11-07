@@ -29,6 +29,7 @@ namespace MueLu {
             class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class ZoltanInterface : public BaseClass {
 
+    typedef double Scalar; // FIXME
 #include "MueLu_UseShortNames.hpp"
 
   public:
