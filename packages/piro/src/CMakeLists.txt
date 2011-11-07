@@ -58,6 +58,10 @@ IF (Piro_ENABLE_Rythmos)
   APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
 ENDIF()
 
+IF (Piro_ENABLE_Rythmos AND Piro_ENABLE_NOX) 
+  APPEND_SET(HEADERS Piro_RythmosNOX_RowSumUpdater.hpp)
+ENDIF()
+
 # Optional StochasticGalerkin capability, depending upon Stokhos and NOX
 IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX) 
   APPEND_SET(HEADERS Piro_Epetra_StokhosNOXObserver.hpp
