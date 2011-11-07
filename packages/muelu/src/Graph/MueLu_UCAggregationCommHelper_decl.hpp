@@ -50,8 +50,7 @@ namespace MueLu {
     //
   public:
 
-    UCAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap)
-    ;
+    UCAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap);
 
     ~UCAggregationCommHelper() { }
 
@@ -117,8 +116,7 @@ namespace MueLu {
     //                                    its MyPid, the corresponding companion
     //                                    is not altered.
     //
-    void ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const
-    ; //ArbitrateAndCommunicate(Vector&, LOVector &, LOVector *, const bool) const
+    void ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const; //ArbitrateAndCommunicate(Vector&, LOVector &, LOVector *, const bool) const
 
     // Redistribute data in source to dest where both source and dest might have 
     // multiple copies of the same global id across many processors. The source
@@ -143,8 +141,7 @@ namespace MueLu {
     //                              values associated with the same GlobalId are
     //                              combined into a unique value on all processors.
     //
-    void NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const
-    ;
+    void NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const;
    
   };
 

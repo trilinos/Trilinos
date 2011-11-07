@@ -24,36 +24,34 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    MergedSmoother(ArrayRCP<RCP<SmootherPrototype> > & smootherList, bool verbose=false)
-    ;
+    MergedSmoother(ArrayRCP<RCP<SmootherPrototype> > & smootherList, bool verbose=false);
     
     //! Copy constructor (performs a deep copy of input object)
-    MergedSmoother(const MergedSmoother& src) 
-    ;
+    MergedSmoother(const MergedSmoother& src);
 
     //! Copy method (performs a deep copy of input object)
     // TODO: Copy() should be virtual (if a subclass of MergedSmoother is created later) ?
-    RCP<SmootherPrototype> Copy() const ;
+    RCP<SmootherPrototype> Copy() const;
 
     //! Destructor
-    virtual ~MergedSmoother() ;
+    virtual ~MergedSmoother();
     //@}
 
     //! @name Set/Get methods
     //@{
 
-    void StandardOrder() ;
-    void ReverseOrder()  ;
+    void StandardOrder();
+    void ReverseOrder();
  
-    bool GetReverseOrder() const ; // TODO: GetOrder() is a better name (+ enum to define order)
+    bool GetReverseOrder() const; // TODO: GetOrder() is a better name (+ enum to define order)
 
     // UNUSED // TODO: GetSmoother() do not take into account the reverseOrder option. Might be confusing... To be changed in MueMat too
-    // const SmootherPrototype & GetSmoother(size_type Smoother) const ;
+    // const SmootherPrototype & GetSmoother(size_type Smoother) const;
 
-    //  TODO  const ArrayRCP<const RCP<const SmootherPrototype> > & GetSmootherList() const ;
-    const ArrayRCP<const RCP<SmootherPrototype> > /* & */ GetSmootherList() const ;
+    //  TODO  const ArrayRCP<const RCP<const SmootherPrototype> > & GetSmootherList() const;
+    const ArrayRCP<const RCP<SmootherPrototype> > /* & */ GetSmootherList() const;
 
-    // UNUSED size_type GetNumSmoothers() const ;
+    // UNUSED size_type GetNumSmoothers() const;
     //@}
 
     void DeclareInput(Level &currentLevel) const;
@@ -62,7 +60,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Set up. */
-    void Setup(Level &level) ;
+    void Setup(Level &level);
 
     /*! @brief Apply
 
@@ -72,19 +70,17 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero
     */
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
-    ;
+    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
       
     //@}
     
     //! @name Utilities.
     //@{
-    void Print(std::string prefix) const ;
+    void Print(std::string prefix) const;
 
-    void CopyParameters(RCP<SmootherPrototype> src) // TODO: wrong prototype. We do not need an RCP here.
-    ;
+    void CopyParameters(RCP<SmootherPrototype> src); // TODO: wrong prototype. We do not need an RCP here.
   
-    ArrayRCP<RCP<SmootherPrototype> > SmootherListDeepCopy(const ArrayRCP<const RCP<SmootherPrototype> >& srcSmootherList) ;
+    ArrayRCP<RCP<SmootherPrototype> > SmootherListDeepCopy(const ArrayRCP<const RCP<SmootherPrototype> >& srcSmootherList);
 
     //@}
 

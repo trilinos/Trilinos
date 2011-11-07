@@ -37,25 +37,25 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact = Teuchos::null) ;
+    ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact = Teuchos::null);
 
     //! Destructor
-    virtual ~ZoltanInterface() ;
+    virtual ~ZoltanInterface();
     //@}
 
     //! @name Input
     //@{
-    void DeclareInput(Level & level) const ;
+    void DeclareInput(Level & level) const;
     //@}
 
     //! @name Set / Get methods.
     //@{
-    void SetNumberOfPartitions(GO const numPartitions) ;
+    void SetNumberOfPartitions(GO const numPartitions);
     //@}
 
     //! @name Build methods.
     //@{
-    void Build(Level &level) ; //Build()
+    void Build(Level &level); //Build()
 
     //@}
 
@@ -69,7 +69,7 @@ namespace MueLu {
     @param data (in) void pointer to an Xpetra::Operator.
     @param ierr (out) error code.
     */
-    static int GetLocalNumberOfRows(void *data, int *ierr) ;
+    static int GetLocalNumberOfRows(void *data, int *ierr);
 
     /*! Callback function that returns the local number of nonzeros in the matrix. Required by Zoltan.
 
@@ -80,15 +80,14 @@ namespace MueLu {
     @param ierr (out) error code
     */
     static void GetLocalNumberOfNonzeros(void *data, int NumGidEntries, int NumLidEntries, ZOLTAN_ID_PTR gids,
-                                         ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr)
-      ; //GetLocalNumberOfNonzeros()
+                                         ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr); //GetLocalNumberOfNonzeros()
 
     /*! Callback function that returns the problem dimension. Required by Zoltan.
 
     @param data (in) void pointer to integer dimension
     @param ierr (out) error code
     */
-    static int GetProblemDimension(void *data, int *ierr) ;
+    static int GetProblemDimension(void *data, int *ierr);
 
 
     /*! Callback function that returns the problem dimension. Required by Zoltan.
@@ -100,8 +99,7 @@ namespace MueLu {
     TODO -- should I return a view of the coordinates instead of copying them?
     */
     static void GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs, 
-                                   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr)
-      ; //GetProblemGeometry
+                                   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr); //GetProblemGeometry
 
     //@}
 

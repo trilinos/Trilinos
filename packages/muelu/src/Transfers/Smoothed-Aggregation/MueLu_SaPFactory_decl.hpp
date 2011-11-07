@@ -37,11 +37,10 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    SaPFactory(RCP<PFactory> InitialPFact = Teuchos::null, RCP<SingleLevelFactoryBase> AFact = Teuchos::null)
-      ;
+    SaPFactory(RCP<PFactory> InitialPFact = Teuchos::null, RCP<SingleLevelFactoryBase> AFact = Teuchos::null);
   
     //! Destructor.
-    virtual ~SaPFactory() ;
+    virtual ~SaPFactory();
   
     //@}
 
@@ -49,27 +48,27 @@ namespace MueLu {
     //@{
 
     //! Set prolongator smoother damping factor.
-    void SetDampingFactor(Scalar dampingFactor) ;
+    void SetDampingFactor(Scalar dampingFactor);
 
     //! Change view of diagonal.
-    void SetDiagonalView(std::string const& diagView) ;
+    void SetDiagonalView(std::string const& diagView);
     //@}
 
     //! @name Get methods.
     //@{
 
     //! Returns prolongator smoother damping factor.
-    Scalar GetDampingFactor() ;
+    Scalar GetDampingFactor();
 
     //! Returns current view of diagonal.
-    std::string GetDiagonalView() ;
+    std::string GetDiagonalView();
 
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const ;
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
 
@@ -82,9 +81,9 @@ namespace MueLu {
       Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
       //FIXME what does the return code mean (unclear in MueMat)?
       */
-    void Build(Level& fineLevel, Level &coarseLevel) const ;
+    void Build(Level& fineLevel, Level &coarseLevel) const;
 
-    void BuildP(Level &fineLevel, Level &coarseLevel) const ; //Build()
+    void BuildP(Level &fineLevel, Level &coarseLevel) const; //Build()
 
     //@}
 

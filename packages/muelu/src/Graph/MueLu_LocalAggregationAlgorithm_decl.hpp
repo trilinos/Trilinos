@@ -86,8 +86,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact = Teuchos::null)
-    ;
+    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact = Teuchos::null);
 
     //! Destructor.
     virtual ~LocalAggregationAlgorithm() { }
@@ -111,8 +110,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Local aggregation. */
-    void CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const
-    ; // CoarsenUncoupled
+    void CoarsenUncoupled(Graph const & graph, Aggregates & aggregates) const; // CoarsenUncoupled
 
   private:
     //! Aggregation options (TODO: Teuchos::ParameterList?)
@@ -127,12 +125,10 @@ namespace MueLu {
       @param list On input, a bunch of integers. On output, the same integers in a different order
       that is determined randomly.
     */
-    void RandomReorder(Teuchos::ArrayRCP<LO> list) const
-    ; 
+    void RandomReorder(Teuchos::ArrayRCP<LO> list) const; 
 
     /*! @brief Generate a random number in the range [min, max] */
-    int RandomOrdinal(int min, int max) const
-    ;
+    int RandomOrdinal(int min, int max) const;
 
     //@}
   

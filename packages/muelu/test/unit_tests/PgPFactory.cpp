@@ -225,7 +225,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_NonStandardMaps)
   Scalar b = -1.9;
   Scalar c = -0.1;
 
-  for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+  for (LocalOrdinal i = 0; i < NumMyElements; ++i)
     {
       if (MyGlobalElements[i] == nIndexBase)
         {
@@ -262,7 +262,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_NonStandardMaps)
                               Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
                               Teuchos::tuple<Scalar>(a) );
 
-    } //for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+    } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
 
 
   mtx->fillComplete(map,map);

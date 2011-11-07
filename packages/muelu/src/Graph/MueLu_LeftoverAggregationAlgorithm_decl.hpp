@@ -227,8 +227,7 @@ namespace MueLu {
     Note: procWinners is also set to MyPid() by ArbitrateAndCommunicate()
     for any nonshared gid's with a nonzero weight.
     */
-    void AggregateLeftovers(Graph const &graph, Aggregates &aggregates) const
-    ; //AggregateLeftovers
+    void AggregateLeftovers(Graph const &graph, Aggregates &aggregates) const; //AggregateLeftovers
 
       //@}
 
@@ -240,13 +239,11 @@ namespace MueLu {
       Candidates are vertices not adjacent to already aggregated vertices.
       */
     void RootCandidates(my_size_t nVertices, ArrayView<const LO> & vertex2AggId, Graph const &graph,
-                        ArrayRCP<LO> &candidates, my_size_t &nCandidates, global_size_t &nCandidatesGlobal) const
-    ; //RootCandidates
+                        ArrayRCP<LO> &candidates, my_size_t &nCandidates, global_size_t &nCandidatesGlobal) const; //RootCandidates
 
       //! @brief Attempt to clean up aggregates that are too small.
     int RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                        RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const
-    ; //RemoveSmallAggs
+                        RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const; //RemoveSmallAggs
   
     //@}
 

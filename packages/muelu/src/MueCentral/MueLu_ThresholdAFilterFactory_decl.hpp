@@ -37,17 +37,16 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    ThresholdAFilterFactory(const std::string& ename, const FactoryBase* fac, const Scalar threshold)
-    ;
+    ThresholdAFilterFactory(const std::string& ename, const FactoryBase* fac, const Scalar threshold);
 
     //! Destructor.
-    virtual ~ThresholdAFilterFactory() ;
+    virtual ~ThresholdAFilterFactory();
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
@@ -55,7 +54,7 @@ namespace MueLu {
     //! @name Build methods.
 
     //! Build an object with this factory.
-    void Build(Level & currentLevel) const ;
+    void Build(Level & currentLevel) const;
 
     //@}
 

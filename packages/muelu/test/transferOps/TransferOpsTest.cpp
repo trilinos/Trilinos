@@ -90,7 +90,7 @@ Teuchos::RCP<Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> > TriDiag(
   Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
   timer->start(true);
 
-  for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+  for (LocalOrdinal i = 0; i < NumMyElements; ++i)
     {
       if (MyGlobalElements[i] == 0)
         {
@@ -127,7 +127,7 @@ Teuchos::RCP<Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> > TriDiag(
                               Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
                               Teuchos::tuple<Scalar>(a) );
 
-    } //for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+    } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
 
     timer->stop();
 

@@ -72,11 +72,10 @@ namespace MueLu {
 
         See also Ifpack_PointRelaxation, Ifpack_Chebyshev, Ifpack_ILU.
     */
-    IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null) //TODO: empty paramList valid for Ifpack??
-    ;
+    IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null); //TODO: empty paramList valid for Ifpack??
 
     //! Destructor
-    virtual ~IfpackSmoother() ;
+    virtual ~IfpackSmoother();
 
     //@}
 
@@ -85,10 +84,10 @@ namespace MueLu {
     //@{
 
     //! Set smoother parameters
-    void SetParameters(Teuchos::ParameterList const & paramList) ;
+    void SetParameters(Teuchos::ParameterList const & paramList);
 
     //! Get smoother parameters
-    Teuchos::ParameterList const & GetParameters() ;
+    Teuchos::ParameterList const & GetParameters();
 
     //JG: I'm not sure if it's a good idea to provide Get/Set NIts (for code maintainability)
     
@@ -100,21 +99,21 @@ namespace MueLu {
     //        Note:  This can be called after the preconditioner is set up, i.e., after
     //        calling IfpackSmoother::Setup().
     //     */
-    //     void SetNIts(LO const &nIts) ;
+    //     void SetNIts(LO const &nIts);
     //
     //     /*! @brief Get the number of smoothing sweeps.
     //
     //        If the smoother is relaxation, this returns the number of sweeps.
     //        If the smoother is Chebyshev, this returns the polynomial degree.
     //     */
-    //     LO GetNIts() ;
+    //     LO GetNIts();
 
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
@@ -126,7 +125,7 @@ namespace MueLu {
         This creates the underlying Ifpack smoother object, copies any parameter list options
         supplied to the constructor to the Ifpack object, and computes the preconditioner.
     */
-    void Setup(Level &currentLevel) ;
+    void Setup(Level &currentLevel);
 
     /*! @brief Apply the preconditioner.
 
@@ -136,14 +135,14 @@ namespace MueLu {
         @param B right-hand side
         @param InitialGuessIsZero (optional) If false, some work can be avoided.  Whether this actually saves any work depends on the underlying Ifpack implementation.
     */
-    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const ;
+    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
 
     //@}
 
     //! @name Utilities
     //@{
 
-    RCP<SmootherPrototype> Copy() const ;
+    RCP<SmootherPrototype> Copy() const;
 
     //@}
 
@@ -151,7 +150,7 @@ namespace MueLu {
     //@{
     
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
     
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding

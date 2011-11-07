@@ -202,6 +202,6 @@ namespace Xpetra {
 namespace XpetraExamples {
 }
 
-#define XPETRA_ERR_CHECK(arg) { int r = arg; if (r < 0) { std::cout << "r = " << r << std::endl; assert(r>=0); } ; }; // TODO: throw exceptions
+#define XPETRA_ERR_CHECK(arg) { int r = arg; if (r < 0) { std::cout << "r = " << r << std::endl; assert(r>=0); }; }; // TODO: throw exceptions
 
 #endif // XPETRA_CONFIGDEFS_HPP

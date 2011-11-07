@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
   delete A;
 
 #ifdef HAVE_MPI
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
 
   return(EXIT_SUCCESS);

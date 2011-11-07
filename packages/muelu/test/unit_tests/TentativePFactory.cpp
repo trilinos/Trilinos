@@ -246,7 +246,7 @@ namespace MueLuTests {
     Scalar b = -1.0;
     Scalar c = -1.0;
 
-    for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+    for (LocalOrdinal i = 0; i < NumMyElements; ++i)
       {
         if (MyGlobalElements[i] == nIndexBase)
           {
@@ -283,7 +283,7 @@ namespace MueLuTests {
                                 Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
                                 Teuchos::tuple<Scalar>(a) );
 
-      } //for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+      } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
 
 
     mtx->fillComplete(map,map);

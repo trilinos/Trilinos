@@ -226,7 +226,7 @@ namespace MueLu {
       ArrayRCP<LO> candidates = Teuchos::arcp<LO>(nVertices+1);
 
       double priorThreshold = 0.;
-      for (int kkk = 0 ; kkk < MUELU_PHASE4BUCKETS; kkk++) {
+      for (int kkk = 0; kkk < MUELU_PHASE4BUCKETS; kkk++) {
 
         {
           ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
@@ -245,7 +245,7 @@ namespace MueLu {
           ArrayRCP<LO>     vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
           ArrayRCP<double> weights      = distWeights->getDataNonConst(0);
 
-          for (int k = 0; k < nCandidates ; k++ ) { 
+          for (int k = 0; k < nCandidates; k++ ) { 
             int i = candidates[k];                  
             if ((vertex2AggId[i] == MUELU_UNAGGREGATED) && (fabs(temp[i])  < threshold)) {
               // Note: priorThreshold <= fabs(temp[i]) <= 1
@@ -330,7 +330,7 @@ namespace MueLu {
     //{
     ArrayRCP<const LO> vertex2AggIdCst = aggregates.GetVertex2AggId()->getData(0);
 
-    for (int i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
+    for (int i = nVertices; i < exp_nRows;  i++) RowPtr[i-nVertices] = 0;
     for (int i = 0; i < nVertices;  i++) {
 
       // neighOfINode is the neighbor node list of node 'iNode'.
@@ -347,7 +347,7 @@ namespace MueLu {
     //     b) Convert RowPtr[i] to point to 1st first nnz spot in row i.
 
     int iSum = 0, iTemp;
-    for (int i = nVertices; i < exp_nRows ;  i++) {
+    for (int i = nVertices; i < exp_nRows;  i++) {
       iTemp = RowPtr[i-nVertices];
       RowPtr[i-nVertices] = iSum;
       iSum += iTemp;

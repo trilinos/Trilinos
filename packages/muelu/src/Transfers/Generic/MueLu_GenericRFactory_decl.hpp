@@ -37,26 +37,25 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    GenericRFactory(RCP<PFactory> PFact = Teuchos::null)
-    ;
+    GenericRFactory(RCP<PFactory> PFact = Teuchos::null);
 
     //! Destructor.
-    virtual ~GenericRFactory() ;
+    virtual ~GenericRFactory();
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const ;
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
 
     //! @name Build methods.
     //@{
 
-    void Build(Level & fineLevel, Level & coarseLevel) const ;
+    void Build(Level & fineLevel, Level & coarseLevel) const;
 
-    void BuildR(Level & fineLevel, Level & coarseLevel) const ; //BuildR
+    void BuildR(Level & fineLevel, Level & coarseLevel) const; //BuildR
 
     //@}
 

@@ -35,8 +35,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null)
-    ;
+    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null);
 
     //! Destructor
     virtual ~CoalesceDropFactory() { }
@@ -46,19 +45,19 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     /// set fixed block size
-    void SetFixedBlockSize(GO blksize) ;
+    void SetFixedBlockSize(GO blksize);
 
     /// set predrop function
-    void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &predrop) ;
+    void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &predrop);
 
     // todo: method that takes a block map...
 
     //@}
 
-    void Build(Level &currentLevel) const ; // Build
+    void Build(Level &currentLevel) const; // Build
 
     void Amalgamate(const RCP<Operator>& A, RCP<Graph>& graph) const; // Amalgamate
 

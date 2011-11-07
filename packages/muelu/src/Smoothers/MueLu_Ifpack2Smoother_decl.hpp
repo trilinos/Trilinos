@@ -69,29 +69,28 @@ namespace MueLu {
 
     See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT.
     */
-    Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null) //TODO: empty paramList valid for Ifpack??
-    ;
+    Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null); //TODO: empty paramList valid for Ifpack??
 
     //! Destructor
-    virtual ~Ifpack2Smoother() ;
+    virtual ~Ifpack2Smoother();
 
     //@}
 
     //! @name Set/Get methods
     //@{
 
-   //! Set smoother parameters
-    void SetParameters(Teuchos::ParameterList const & paramList) ;
+    //! Set smoother parameters
+    void SetParameters(Teuchos::ParameterList const & paramList);
 
     //! Get smoother parameters
-    Teuchos::ParameterList const & GetParameters() ;
+    Teuchos::ParameterList const & GetParameters();
 
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
@@ -105,7 +104,7 @@ namespace MueLu {
 
     TODO The eigenvalue estimate should come from A_, not the Ifpack2 parameter list.
     */
-    void Setup(Level &currentLevel) ;
+    void Setup(Level &currentLevel);
 
     /*! @brief Apply the preconditioner.
 
@@ -115,15 +114,14 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero (optional) If false, some work can be avoided. Whether this actually saves any work depends on the underlying Ifpack2 implementation.
     */
-    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
-    ;
+    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
 
     //@}
 
     //! @name Utilities
     //@{
 
-    RCP<SmootherPrototype> Copy() const ;
+    RCP<SmootherPrototype> Copy() const;
 
     //@}
 
@@ -131,12 +129,12 @@ namespace MueLu {
     //@{
     
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
     
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const 
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     //@}
 

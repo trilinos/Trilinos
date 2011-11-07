@@ -69,18 +69,17 @@ namespace MueLu {
 
     */
 
-    AmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null)
-    ;
+    AmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null);
 
     //! Destructor
-    virtual ~AmesosSmoother() ;
+    virtual ~AmesosSmoother();
 
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
@@ -91,7 +90,7 @@ namespace MueLu {
       This creates the underlying Amesos solver object according to the parameter list options passed into the
       AmesosSmoother constructor.  This includes doing a numeric factorization of the matrix.
     */
-    void Setup(Level &currentLevel) ;
+    void Setup(Level &currentLevel);
 
     /*! @brief Apply the direct solver.
 
@@ -101,22 +100,21 @@ namespace MueLu {
         @param B right-hand side
         @param InitialGuessIsZero This option has no effect with this smoother
     */
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero = false) const
-    ;
+    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero = false) const;
 
     //@}
 
-    RCP<SmootherPrototype> Copy() const ;
+    RCP<SmootherPrototype> Copy() const;
     
     //! @name Overridden from Teuchos::Describable 
     //@{
     
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
     
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     //@}
 

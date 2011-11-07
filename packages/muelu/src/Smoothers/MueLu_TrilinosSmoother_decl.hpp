@@ -31,18 +31,17 @@ namespace MueLu {
     //@{
 
     //! @brief Constructor
-    TrilinosSmoother(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null)
-    ;
+    TrilinosSmoother(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null);
     
     //! Destructor
-    virtual ~TrilinosSmoother() ;
+    virtual ~TrilinosSmoother();
     
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
@@ -50,20 +49,20 @@ namespace MueLu {
     //@{
 
     //! TrilinosSmoother cannot be turned into a smoother using Setup(). Setup() always returns a RuntimeError exception.
-    void Setup(Level &currentLevel) ;
+    void Setup(Level &currentLevel);
 
     //! TrilinosSmoother cannot be applied. Apply() always returns a RuntimeError exception.
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const ;
+    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
 
     //@}
 
     //! When this prototype is cloned using Copy(), the clone is an Ifpack or an Ifpack2 smoother.
-    RCP<SmootherPrototype> Copy() const ;
+    RCP<SmootherPrototype> Copy() const;
 
     //! Convert an Ifpack2 preconditioner name to Ifpack
     // As a temporary solution.
     // See https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c5 for what I proposed to do
-    static std::string Ifpack2ToIfpack1Type(std::string const & type) ;
+    static std::string Ifpack2ToIfpack1Type(std::string const & type);
 
     //! Convert an Ifpack2 parameter list to Ifpack
     // As a temporary solution.
@@ -75,18 +74,18 @@ namespace MueLu {
       ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
       ifpackList.set("chebyshev: zero starting solution", false);
     */
-    static Teuchos::ParameterList Ifpack2ToIfpack1Param(Teuchos::ParameterList const & ifpack2List) ;
+    static Teuchos::ParameterList Ifpack2ToIfpack1Param(Teuchos::ParameterList const & ifpack2List);
 
     //! @name Overridden from Teuchos::Describable 
     //@{
     
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
     
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     //@}
 

@@ -39,35 +39,34 @@ namespace MueLu {
     /*! @brief Constructor.
       \param AggregationFact -- (optional) factory that creates aggregates.
     */
-    TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null)
-      ;
+    TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
     
     //! Destructor.
-    virtual ~TentativePFactory() ;
+    virtual ~TentativePFactory();
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level & fineLevel, Level & coarseLevel) const ;
+    void DeclareInput(Level & fineLevel, Level & coarseLevel) const;
 
     //@}
 
     //! @name Set/Get methods.
     //@{
 
-    void TentativeWithQR(bool value) ;
+    void TentativeWithQR(bool value);
 
-    bool TentativeWithQR() ;
+    bool TentativeWithQR();
 
     //@}
 
     //! @name Build methods.
     //@{
 
-    void Build(Level & fineLevel, Level & coarseLevel) const ;
+    void Build(Level & fineLevel, Level & coarseLevel) const;
 
-    void BuildP(Level & fineLevel, Level & coarseLevel) const ;
+    void BuildP(Level & fineLevel, Level & coarseLevel) const;
 
     //@}
 
@@ -115,8 +114,7 @@ namespace MueLu {
       - FIXME There is no attempt to detect if the aggregate is too small to support the NS.
     */
      void MakeTentative(const Operator& fineA, const Aggregates& aggregates, const MultiVector & fineNullspace, //-> INPUT
-                        RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const                   //-> OUTPUT 
-    ; //MakeTentative()
+                        RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const;                  //-> OUTPUT
 
     //@}
 

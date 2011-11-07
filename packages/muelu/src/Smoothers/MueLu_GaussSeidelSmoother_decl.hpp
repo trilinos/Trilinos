@@ -21,16 +21,16 @@ namespace MueLu {
     //! @name Constructors/Destructors
     //@{
 
-    GaussSeidelSmoother(LO sweeps = 1, SC omega = 1.0) ;
+    GaussSeidelSmoother(LO sweeps = 1, SC omega = 1.0);
 
-    virtual ~GaussSeidelSmoother() ;
+    virtual ~GaussSeidelSmoother();
 
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
@@ -38,21 +38,21 @@ namespace MueLu {
     //@{
 
     //! Set up the smoother. (Right now, just grab A from the Level.)
-    void Setup(Level & level) ;
+    void Setup(Level & level);
 
     /*! Solve A*x = b approximately with the smoother.
       @param x  unknown vector
       @param b  right-hand side
       @param InitialGuessIsZero if true, indicates that x is zero, and that some flops might be avoided
     */
-    void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero = false) const ; // Apply ()
+    void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero = false) const; // Apply ()
     
     //@}
 
     //! @name Utilities.
     //@{
 
-    RCP<SmootherPrototype> Copy() const ;
+    RCP<SmootherPrototype> Copy() const;
 
     //@}
 

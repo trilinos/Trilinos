@@ -77,14 +77,13 @@ namespace MueLu {
 
   public:
 
-    TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager)
-      ;
+    TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager);
 
-    virtual ~TopRAPFactory() ;
+    virtual ~TopRAPFactory();
 
-    void DeclareInput(Level & fineLevel, Level & coarseLevel) const ;
+    void DeclareInput(Level & fineLevel, Level & coarseLevel) const;
 
-    void Build(Level & fineLevel, Level & coarseLevel) const ;
+    void Build(Level & fineLevel, Level & coarseLevel) const;
 
   private:
     RCP<const FactoryManagerBase> factoryManager_;
@@ -99,14 +98,13 @@ namespace MueLu {
 
   public:
 
-    TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string & varName)
-      ;
+    TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string & varName);
 
-    virtual ~TopSmootherFactory() ;
+    virtual ~TopSmootherFactory();
 
-    void DeclareInput(Level & level) const ;
+    void DeclareInput(Level & level) const;
 
-    void Build(Level & level) const ;
+    void Build(Level & level) const;
 
   private:
     RCP<const FactoryManagerBase> factoryManager_;

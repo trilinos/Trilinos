@@ -29,9 +29,9 @@ namespace MueLu {
     //!@nameConstructors/Destructors.
     //@{
 
-    SmootherPrototype() ;
+    SmootherPrototype();
 
-    virtual ~SmootherPrototype() ;
+    virtual ~SmootherPrototype();
 
     //@}
 
@@ -55,11 +55,11 @@ namespace MueLu {
     //@{
 
     //! Get the state of a smoother prototype.
-    bool IsSetup() const ;
+    bool IsSetup() const;
     
     //! Set the state of a smoother prototype.
     // Developpers: this method must be called by our Setup() method.
-    void IsSetup(bool const &ToF) ;
+    void IsSetup(bool const &ToF);
     
     //@}
 

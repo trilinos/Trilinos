@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
   int mypid = comm->getRank();
 
   if (mypid  == 0) std::cout << "Host and Process Ids for tasks" << std::endl;
-  for (int i = 0; i <comm->getSize() ; i++) {
+  for (int i = 0; i <comm->getSize(); i++) {
     if (i == mypid ) {
       char buf[80];
       char hostname[80];

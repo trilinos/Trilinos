@@ -16,12 +16,12 @@ namespace MueLu {
   public:
     
     //! Destructor.
-    virtual ~Describable() ;
+    virtual ~Describable();
 
     //! @name MueLu Describe
     //@{
 
-    virtual void describe(Teuchos::FancyOStream &out_arg, const VerbLevel verbLevel = Default) const ;
+    virtual void describe(Teuchos::FancyOStream &out_arg, const VerbLevel verbLevel = Default) const;
 
     //@}
 
@@ -29,10 +29,10 @@ namespace MueLu {
     //@{
     
     //! Return a simple one-line description of this object.
-    virtual std::string description() const ;
+    virtual std::string description() const;
     
     //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const ;
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
     //@}
 

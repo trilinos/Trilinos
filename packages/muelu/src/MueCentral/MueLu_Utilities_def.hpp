@@ -821,7 +821,7 @@ namespace MueLu {
    
     int mypid = comm->getRank();
    
-    for (int i = 0; i <comm->getSize() ; i++) {
+    for (int i = 0; i <comm->getSize(); i++) {
       if (i == mypid ) {
         char buf[80];
         char hostname[80];

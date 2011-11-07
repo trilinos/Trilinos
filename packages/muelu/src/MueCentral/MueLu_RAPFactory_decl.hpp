@@ -22,37 +22,36 @@ namespace MueLu {
     //@{ Constructors/Destructors.
   /*RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null)
     : PFact_(PFact), RFact_(RFact),
-      implicitTranspose_(false) ;*/
+      implicitTranspose_(false);*/
 
-    RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null)
-      ;
+    RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null);
 
-    virtual ~RAPFactory() ;
+    virtual ~RAPFactory();
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const ;
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
 
     //@{ Build methods.
-    void Build(Level &fineLevel, Level &coarseLevel) const ;
+    void Build(Level &fineLevel, Level &coarseLevel) const;
     //@}
 
-    void SetImplicitTranspose(bool const &implicit) ;
+    void SetImplicitTranspose(bool const &implicit);
 
     //@{ Handling of user-defined transfer factories
 
     //! add transfer factory in the end of list of transfer factories in RAPFactory
     //! Transfer factories are derived from TwoLevelFactoryBase and project some data from the fine level to the next coarser level
-    void AddTransferFactory(const RCP<FactoryBase>& factory) ;
+    void AddTransferFactory(const RCP<FactoryBase>& factory);
 
     // TODO add a function to remove a specific transfer factory?
 
     //! returns number of transfer factories
-    size_t NumTransferFactories() const ;
+    size_t NumTransferFactories() const;
 
     //@}
 private:

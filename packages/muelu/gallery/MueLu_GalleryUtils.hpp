@@ -51,7 +51,7 @@ namespace MueLu {
 
         delta_x = lx / (nx - 1);
 
-        for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i) {
+        for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
           ix = MyGlobalElements[i];
           Coord[0][i] = delta_x * ix;
         }
@@ -66,7 +66,7 @@ namespace MueLu {
         delta_x = lx / (nx - 1);
         delta_y = ly / (ny - 1);
 
-        for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+        for (LocalOrdinal i = 0; i < NumMyElements; ++i)
         {
           ix = MyGlobalElements[i] % nx;
           iy = (MyGlobalElements[i] - ix) / nx;
@@ -87,7 +87,7 @@ namespace MueLu {
         delta_y = ly / (ny - 1);
         delta_z = lz / (nz - 1);
 
-        for (LocalOrdinal i = 0 ; i < NumMyElements ; i++)
+        for (LocalOrdinal i = 0; i < NumMyElements; i++)
         {
           GlobalOrdinal ixy = MyGlobalElements[i] % (nx * ny);
           iz = (MyGlobalElements[i] - ixy) / (nx * ny);

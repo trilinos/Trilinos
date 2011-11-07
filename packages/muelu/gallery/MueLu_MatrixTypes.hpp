@@ -111,7 +111,7 @@ namespace MueLu {
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
 
-      for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i) {
+      for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
           mtx->insertGlobalValues(MyGlobalElements[i],
                                   Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
                                   Teuchos::tuple<Scalar>(a) );
@@ -160,7 +160,7 @@ namespace MueLu {
       RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
       timer->start(true);
 
-      for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+      for (LocalOrdinal i = 0; i < NumMyElements; ++i)
         {
           if (MyGlobalElements[i] == 0)
             {
@@ -205,7 +205,7 @@ namespace MueLu {
             std::cout << MemUtils::PrintMemoryUsage() << std::endl;
           }
 */
-        } //for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
+        } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
 
         timer->stop();
         //MemUtils::ReportTimeAndMemory(*timer, *comm);
@@ -266,7 +266,7 @@ namespace MueLu {
       //    e
       //  b a c
       //    d
-      for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i) 
+      for (LocalOrdinal i = 0; i < NumMyElements; ++i) 
         {
           GlobalOrdinal NumEntries = 0;
           GetNeighboursCartesian2d(MyGlobalElements[i], nx, ny, 
@@ -338,7 +338,7 @@ namespace MueLu {
       //  z3  e  z4
       //   b  a  c
       //  z1  d  z2
-      for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i) 
+      for (LocalOrdinal i = 0; i < NumMyElements; ++i) 
         {
           GlobalOrdinal NumEntries = 0;
           left = right = lower = upper = -1;  //FIXME JJH: I don't remember why the next lines are commented out....
@@ -445,7 +445,7 @@ namespace MueLu {
       //    z1  d  z2
       //        dd
   
-      for (GlobalOrdinal i = 0 ; i < NumMyElements ; ++i) 
+      for (GlobalOrdinal i = 0; i < NumMyElements; ++i) 
         {
           GlobalOrdinal NumEntries = 0;
           GetNeighboursCartesian2d(MyGlobalElements[i], nx, ny, left, right, lower, upper,
@@ -563,7 +563,7 @@ namespace MueLu {
       //    d
       // + f below and g above
   
-      for (GlobalOrdinal i = 0 ; i < NumMyElements ; ++i) 
+      for (GlobalOrdinal i = 0; i < NumMyElements; ++i) 
         {
           GlobalOrdinal NumEntries = 0;
           GetNeighboursCartesian3d(MyGlobalElements[i], nx, ny, nz,
@@ -655,7 +655,7 @@ namespace MueLu {
       //   d  b  d
       //   e  d  e
 
-      for (GlobalOrdinal i = 0 ; i < NumMyElements ; ++i) 
+      for (GlobalOrdinal i = 0; i < NumMyElements; ++i) 
         {
           GlobalOrdinal NumEntries = 0;
           // First process the middle plane and figure out the
@@ -706,7 +706,7 @@ namespace MueLu {
           mtx->insertGlobalValues(MyGlobalElements[i],
                                   Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
                                   Teuchos::tuple<Scalar>(a) );
-        } //for (GlobalOrdinal i = 0 ; i < NumMyElements ; ++i) 
+        } //for (GlobalOrdinal i = 0; i < NumMyElements; ++i) 
       mtx->fillComplete();
 
       return mtx;

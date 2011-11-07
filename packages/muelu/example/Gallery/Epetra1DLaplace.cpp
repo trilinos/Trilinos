@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
   std::cout << myRank << ": " << "Memory after FillComplete(): " << PrintMemoryUsage() << std::endl;
 
 #ifdef HAVE_MPI
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
 
   return ierr;

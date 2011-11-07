@@ -84,31 +84,29 @@ namespace MueLu {
     */
     //Note: Teuchos::null as parameter allowed (= no smoother) but must be explicitly defined (no parameter default value)
     //Note: precondition: input smoother must not be Setup()
-    SmootherFactory(RCP<SmootherPrototype> preAndPostSmootherPrototype)
-    ;
+    SmootherFactory(RCP<SmootherPrototype> preAndPostSmootherPrototype);
 
-    SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype)
-    ;
+    SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype);
 
-    virtual ~SmootherFactory() ;
+    virtual ~SmootherFactory();
     //@}
 
     //! @name Set/Get methods.
     //@{
 
     //! Set smoother prototypes.
-    void SetSmootherPrototypes(RCP<SmootherPrototype> preAndPostSmootherPrototype) ;
+    void SetSmootherPrototypes(RCP<SmootherPrototype> preAndPostSmootherPrototype);
 
     //! Set smoother prototypes.
-    void SetSmootherPrototypes(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype) ;
+    void SetSmootherPrototypes(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype);
     
     //! Get smoother prototypes.
-    void GetSmootherPrototypes(RCP<SmootherPrototype> & preSmootherPrototype, RCP<SmootherPrototype> & postSmootherPrototype) const ;
+    void GetSmootherPrototypes(RCP<SmootherPrototype> & preSmootherPrototype, RCP<SmootherPrototype> & postSmootherPrototype) const;
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
@@ -131,9 +129,9 @@ namespace MueLu {
     the Setup() phase is also done only once when parameters
     don't change the result of the setup computation.
     */
-    void Build(Level& currentLevel) const ;
+    void Build(Level& currentLevel) const;
     
-    void BuildSmoother(Level & currentLevel, PreOrPost const preOrPost = BOTH) const ; // Build()
+    void BuildSmoother(Level & currentLevel, PreOrPost const preOrPost = BOTH) const; // Build()
     
     //@}
 
@@ -142,11 +140,11 @@ namespace MueLu {
     //@{
     
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
     
     //! Print the object with some verbosity level to an FancyOStream object.
     using MueLu::Describable::describe; // overloading, not hiding
-    void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+    void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     //@}
 

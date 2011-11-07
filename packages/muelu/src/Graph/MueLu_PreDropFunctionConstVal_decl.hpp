@@ -29,7 +29,7 @@ namespace MueLu {
     virtual ~PreDropFunctionConstVal() { }
 
     // Drop
-    RCP<Graph> Drop(RCP<Operator> A) ;
+    RCP<Graph> Drop(RCP<Operator> A);
 
   private:
 

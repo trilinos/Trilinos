@@ -29,28 +29,28 @@ namespace MueLu {
     
   public:
     
-    VerboseObject() ;
+    VerboseObject();
 
     //! Destructor.
-    virtual ~VerboseObject() ;
+    virtual ~VerboseObject();
 
     //! Get the verbosity level
-    VerbLevel GetVerbLevel() const ;
+    VerbLevel GetVerbLevel() const;
   
     //! Set the verbosity level
-    void SetVerbLevel(const VerbLevel verbLevel) ;
+    void SetVerbLevel(const VerbLevel verbLevel);
 
     //! Get proc rank used for printing (do not use this information for any other purpose)
-    int GetProcRankVerbose() const ;
+    int GetProcRankVerbose() const;
 
     //! Find out whether we need to print out information for a specific message type.
     /*! This method is used to determine whether computations are necessary for this message type. */
-    bool IsPrint(MsgType type, int thisProcRankOnly = -1) const ;
+    bool IsPrint(MsgType type, int thisProcRankOnly = -1) const;
 
     //! Get an output stream for outputting the input message type.
-    Teuchos::FancyOStream & GetOStream(MsgType type, int thisProcRankOnly = -1) const ;
+    Teuchos::FancyOStream & GetOStream(MsgType type, int thisProcRankOnly = -1) const;
 
-    Teuchos::FancyOStream & GetBlackHole() const ;
+    Teuchos::FancyOStream & GetBlackHole() const;
 
   private:
     VerbLevel verbLevel_;

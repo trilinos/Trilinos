@@ -61,20 +61,19 @@ namespace MueLu {
 
     - FIXME Is this dangerous, i.e., could the user change this?
     */
-    Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const
-      ; //ComputeAggSizes
+    Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const; //ComputeAggSizes
 
     /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
 
     @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
     */
-    void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const ; //AggregateToRowMap
+    void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMap
 
     //! @name Overridden from Teuchos::Describable 
     //@{
      
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
      
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding

@@ -36,27 +36,27 @@ namespace MueLu {
     //@{
 
     //!
-    FactoryManager(const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null) ;
+    FactoryManager(const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null);
     
     //! Destructor.
-    virtual ~FactoryManager() ;
+    virtual ~FactoryManager();
 
     //@}
 
     //@{ Get/Set functions.
 
     //! Set Factory
-    void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) ;
+    void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
 
     //! Get Factory
-    const RCP<const FactoryBase> & GetFactory(const std::string & varName) const ;
+    const RCP<const FactoryBase> & GetFactory(const std::string & varName) const;
 
     //!
-    const RCP<const FactoryBase> & GetDefaultFactory(const std::string & varName) const ;
+    const RCP<const FactoryBase> & GetDefaultFactory(const std::string & varName) const;
 
     //@}
 
-    void Clean() const ;
+    void Clean() const;
 
   private:
     
@@ -67,10 +67,10 @@ namespace MueLu {
     //! Add a factory to the default factory list and return it. This helper function is used by GetDefaultFactory()
     //TODO factory->setObjectLabel("Default " + varName + "Factory");
 
-    const RCP<const FactoryBase> & SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const ;
+    const RCP<const FactoryBase> & SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const;
 
     //! Test if factoryTable_[varName] exists
-    static bool IsAvailable(const std::string & varName, const std::map<std::string, RCP<const FactoryBase> > & factoryTable) ;
+    static bool IsAvailable(const std::string & varName, const std::map<std::string, RCP<const FactoryBase> > & factoryTable);
 
     //
     // Data structures

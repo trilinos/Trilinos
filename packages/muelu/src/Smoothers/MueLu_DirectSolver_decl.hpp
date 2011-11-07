@@ -34,18 +34,17 @@ namespace MueLu {
 
     //! @brief Constructor
     //! Note: only parameters shared by Amesos and Amesos2 should be used for type and paramList (example: type= "Klu", "Superlu", paramList = <empty>) .
-    DirectSolver(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null)
-    ;
+    DirectSolver(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null);
     
     //! Destructor
-    virtual ~DirectSolver() ;
+    virtual ~DirectSolver();
     
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
@@ -53,24 +52,23 @@ namespace MueLu {
     //@{
 
     //! DirectSolver cannot be turned into a smoother using Setup(). Setup() always returns a RuntimeError exception.
-    void Setup(Level &currentLevel) ;
+    void Setup(Level &currentLevel);
 
     //! DirectSolver cannot be applied. Apply() always returns a RuntimeError exception.
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
-    ;
+    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
 
     //@}
 
     //! When this prototype is cloned using Copy(), the clone is an Amesos or an Amesos2 smoother.
-    RCP<SmootherPrototype> Copy() const ;
+    RCP<SmootherPrototype> Copy() const;
 
     //! @name Overridden from Teuchos::Describable 
     //@{
     
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
     
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     //@}
 

@@ -18,21 +18,21 @@ namespace MueLu {
   class LinkedList {
 
   public:    
-    LinkedList() ;
+    LinkedList();
 
-    ~LinkedList() ;
+    ~LinkedList();
 
-    bool IsEmpty() ;
+    bool IsEmpty();
 
-    void Add(int iNode) ;
+    void Add(int iNode);
 
-    int Pop() ;
+    int Pop();
 
   private:
     MueLu_Node *nodeHead;
     MueLu_Node *nodeTail;
 
-    void DeleteHead() ;
+    void DeleteHead();
 
   };
 

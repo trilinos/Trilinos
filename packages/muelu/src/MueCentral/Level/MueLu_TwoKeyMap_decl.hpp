@@ -33,25 +33,25 @@ namespace MueLu {
 
     public:
 
-      TwoKeyMap() ;
+      TwoKeyMap();
 
-      void Set(const Key1 & key1, const Key2 & key2, const Value & entry) ;
+      void Set(const Key1 & key1, const Key2 & key2, const Value & entry);
 
-      const Value & Get(const Key1 & key1, const Key2 & key2) const ;
+      const Value & Get(const Key1 & key1, const Key2 & key2) const;
 
-      Value & Get(const Key1 & key1, const Key2 & key2) ;
+      Value & Get(const Key1 & key1, const Key2 & key2);
 
-      void Remove(const Key1 & key1, const Key2 & key2) ;
+      void Remove(const Key1 & key1, const Key2 & key2);
 
-      bool IsKey(const Key1 & key1, const Key2 & key2) const ;
+      bool IsKey(const Key1 & key1, const Key2 & key2) const;
 
       //TODO: GetKeyList and GetKey2List looks expensive. Also return by value a vector...
 
-      std::vector<Key1> GetKeyList() const ;
+      std::vector<Key1> GetKeyList() const;
 
-      std::vector<Key2> GetKey2List(const Key1 & key1) const ;
+      std::vector<Key2> GetKey2List(const Key1 & key1) const;
 
-      void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+      void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     };
 

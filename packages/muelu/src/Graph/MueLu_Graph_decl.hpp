@@ -39,7 +39,7 @@ namespace MueLu {
     const RCP<const Map> GetImportMap() const { return graph_->getColMap(); }
 
     //! Return the list of vertices adjacent to the vertex 'v'
-    Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const ;
+    Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
 
     //!
     void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid, RCP<std::vector<GlobalOrdinal> > globalamalblockids) const;
@@ -48,15 +48,15 @@ namespace MueLu {
     RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& GetAmalgamationParams() const;
 
 #ifdef MUELU_UNUSED
-    size_t GetNodeNumGhost() const ;
+    size_t GetNodeNumGhost() const;
 #endif
 
     /// Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
 
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;;
+    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
   private:

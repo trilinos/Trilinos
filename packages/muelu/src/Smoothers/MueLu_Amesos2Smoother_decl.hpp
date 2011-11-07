@@ -39,17 +39,16 @@ namespace MueLu {
       Creates a MueLu interface to the direct solvers in the Amesos2 package.
       If you are using type=="", then either SuperLU or KLU2 are used by default.
     */
-    Amesos2Smoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null)
-    ;
+    Amesos2Smoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null);
 
     //! Destructor
-    virtual ~Amesos2Smoother() ;
+    virtual ~Amesos2Smoother();
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
@@ -60,7 +59,7 @@ namespace MueLu {
       This creates the underlying Amesos2 solver object according to the parameter list options passed into the
       Amesos2Smoother constructor.  This includes doing a numeric factorization of the matrix.
     */
-    void Setup(Level &currentLevel) ;
+    void Setup(Level &currentLevel);
 
     /*! @brief Apply the direct solver.
     Solves the linear system <tt>AX=B</tt> using the constructed solver.
@@ -68,21 +67,20 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero This option has no effect.
     */
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const
-    ;
+    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
     //@}
 
-    RCP<SmootherPrototype> Copy() const ;
+    RCP<SmootherPrototype> Copy() const;
 
     //! @name Overridden from Teuchos::Describable 
     //@{
     
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
     
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const ;
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     //@}
 

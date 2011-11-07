@@ -54,11 +54,10 @@ public:
   /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
    */
-  PgPFactory(RCP<PFactory> InitialPFact = Teuchos::null, RCP<SingleLevelFactoryBase> AFact = Teuchos::null)
-    ;
+  PgPFactory(RCP<PFactory> InitialPFact = Teuchos::null, RCP<SingleLevelFactoryBase> AFact = Teuchos::null);
 
   //! Destructor.
-  virtual ~PgPFactory() ;
+  virtual ~PgPFactory();
 
   //@}
 
@@ -66,24 +65,24 @@ public:
   //@{
 
   //! Change view of diagonal.
-  void SetDiagonalView(std::string const& diagView) ;
+  void SetDiagonalView(std::string const& diagView);
 
   //! Set minimization mode (L2NORM for cheapest, ANORM more expensive, DINVANORM = default, ATDINVTPLUSDINVANORM most expensive method)
-  inline void SetMinimizationMode(MinimizationNorm minnorm) ;
+  inline void SetMinimizationMode(MinimizationNorm minnorm);
   //@}
 
   //! @name Get methods.
   //@{
 
   //! Returns current view of diagonal.
-  std::string GetDiagonalView() ;
+  std::string GetDiagonalView();
 
   //@}
 
   //! Input
   //@{
 
-  void DeclareInput(Level &fineLevel, Level &coarseLevel) const ;
+  void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
   //@}
 
   //! @name Build methods.
@@ -94,9 +93,9 @@ public:
 
       Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
    */
-  void Build(Level& fineLevel, Level &coarseLevel) const ;
+  void Build(Level& fineLevel, Level &coarseLevel) const;
 
-  void BuildP(Level &fineLevel, Level &coarseLevel) const ;
+  void BuildP(Level &fineLevel, Level &coarseLevel) const;
 
   //@}
 
@@ -115,8 +114,7 @@ private:
   //! @param[in] const RCP<Operator>& DinvAPtent: scaled product of A and Ptent
   //! @param[in] const ArrayRCP<Scalar>& diagA: diagonal of matrix A
   //! @param[out] ArrayRCP<Scalar>& RowBasedOmegas: vector of row based omegas
-  void ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA, Teuchos::ArrayRCP<Scalar>& RowBasedOmegas) const
-  ;
+  void ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA, Teuchos::ArrayRCP<Scalar>& RowBasedOmegas) const;
 
 
   //! @brief Transform column based omegas to row based omegas
@@ -129,29 +127,23 @@ private:
   //! @param[in] const map<GlobalOrdinal,GlobalOrdinal>& GID2localgid: maps global IDs to local (=global) ids of ColBasedOmegas
   //! @param[in] const RCP<const Operator>& Op: operator with information how to transform col based data to row based data
   //! @param[out] ArrayRCP<Scalar>& RowBasedOmegas: vector of row based omegas
-  void TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid, const RCP<const Operator>& Op, Teuchos::ArrayRCP<Scalar>& RowBasedOmegas) const
-  ;
+  void TransformCol2RowBasedOmegas(const RCP<Teuchos::ArrayRCP<Scalar> >& ColBasedOmegas, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid, const RCP<const Operator>& Op, Teuchos::ArrayRCP<Scalar>& RowBasedOmegas) const;
 
-  RCP<Teuchos::Array<Scalar> > MultiplySelfAll(const RCP<Operator>& Op, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid) const
-  ;
+  RCP<Teuchos::Array<Scalar> > MultiplySelfAll(const RCP<Operator>& Op, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid) const;
 
 
-  RCP<Teuchos::Array<Scalar> > MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid) const
-  ;
+  RCP<Teuchos::Array<Scalar> > MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid) const;
 
 
   /*Teuchos::RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >*/
-  void BuildLocalReplicatedColMap(const RCP<Operator>& DinvAP0,std::map<GlobalOrdinal, GlobalOrdinal>& GID2localgid) const
-  ;
+  void BuildLocalReplicatedColMap(const RCP<Operator>& DinvAP0,std::map<GlobalOrdinal, GlobalOrdinal>& GID2localgid) const;
 
   //! @name helper function for allreducing a Xpetra::Map
   //@{
 
-  GlobalOrdinal FindMyPos(size_t nummyelements, const Teuchos::Comm<int>& comm) const
-  ;
+  GlobalOrdinal FindMyPos(size_t nummyelements, const Teuchos::Comm<int>& comm) const;
 
-  void reduceAllXpetraMap(Teuchos::Array<GlobalOrdinal>& rredundant, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
-  ;
+  void reduceAllXpetraMap(Teuchos::Array<GlobalOrdinal>& rredundant, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const;
 
   //@}
 

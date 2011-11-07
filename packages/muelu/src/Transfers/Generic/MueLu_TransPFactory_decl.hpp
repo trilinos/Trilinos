@@ -32,17 +32,16 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     //@{
 
     //! Constructor.
-    TransPFactory(RCP<FactoryBase> PFact = Teuchos::null)
-    ;
+    TransPFactory(RCP<FactoryBase> PFact = Teuchos::null);
 
     //! Destructor.
-    virtual ~TransPFactory() ;
+    virtual ~TransPFactory();
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const ;
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
 
@@ -51,18 +50,18 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 /*
    FIXME this uses the Tpetra RowMatrixTransposer.  This has revealed a bug somewhere.
    FIXME so disabling it right now.
-    void BuildR(Level & fineLevel, Level & coarseLevel) ; //BuildR
+    void BuildR(Level & fineLevel, Level & coarseLevel); //BuildR
 */
 
-    void Build(Level & fineLevel, Level & coarseLevel) const ;
+    void Build(Level & fineLevel, Level & coarseLevel) const;
 
-    void BuildR(Level & fineLevel, Level & coarseLevel) const ; //BuildR
+    void BuildR(Level & fineLevel, Level & coarseLevel) const; //BuildR
 
     //@}
 
     //! @name Set methods.
     //@{
-    void UsePtent(bool ToF) ;
+    void UsePtent(bool ToF);
     //@}
 
     //! P Factory

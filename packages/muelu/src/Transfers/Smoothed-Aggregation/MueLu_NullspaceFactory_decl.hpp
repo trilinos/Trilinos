@@ -22,22 +22,21 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    NullspaceFactory(RCP<const FactoryBase> AFact = Teuchos::null)
-    ;
+    NullspaceFactory(RCP<const FactoryBase> AFact = Teuchos::null);
 
     //! Destructor
-    virtual ~NullspaceFactory() ;
+    virtual ~NullspaceFactory();
 
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const ;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
-    void Build(Level &currentLevel) const ; // Build
+    void Build(Level &currentLevel) const; // Build
 
   private:
 

@@ -46,7 +46,7 @@ Epetra_CrsMatrix* TridiagMatrix(const Epetra_Map* Map, const double a, const dou
   std::vector<int> Indices(2);
   int NumEntries;
 
-  for (int i = 0 ; i < NumMyElements ; ++i)
+  for (int i = 0; i < NumMyElements; ++i)
   {
     if (MyGlobalElements[i] == 0)
     {
@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
 
 
 #ifdef HAVE_MPI
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
 
   return 0;
