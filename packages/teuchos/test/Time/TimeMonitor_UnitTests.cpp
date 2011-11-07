@@ -121,7 +121,7 @@ namespace Teuchos {
     TEST_INEQUALITY(substr_i, std::string::npos);
 
     // This sets up for the next unit test.
-    TimeMonitor::clearTimers ();
+    TimeMonitor::clearCounters ();
   }
 
   //
@@ -146,7 +146,7 @@ namespace Teuchos {
     TEST_INEQUALITY(substr_inner_i, std::string::npos);
 
     // This sets up for the next unit test.
-    TimeMonitor::clearTimers ();
+    TimeMonitor::clearCounters ();
   }
 
   //
@@ -246,7 +246,7 @@ namespace Teuchos {
     TEST_INEQUALITY(substr_i, std::string::npos);
 
     // This sets up for the next unit test.
-    TimeMonitor::clearTimers ();
+    TimeMonitor::clearCounters ();
   }  
 
   //
@@ -307,7 +307,7 @@ namespace Teuchos {
     TEST_EQUALITY(substr_i, std::string::npos);
 
     // This sets up for the next unit test.
-    TimeMonitor::clearTimers ();
+    TimeMonitor::clearCounters ();
   }
 
 
@@ -392,7 +392,7 @@ namespace Teuchos {
     TEST_EQUALITY(substr_i, std::string::npos);
 
     // This sets up for the next unit test (if there is one).
-    TimeMonitor::clearTimers ();
+    TimeMonitor::clearCounters ();
   }
 
 
