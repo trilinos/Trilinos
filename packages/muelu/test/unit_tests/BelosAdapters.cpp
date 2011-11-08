@@ -202,7 +202,7 @@ namespace MueLuTests {
       typedef Belos::OperatorT<MV>    OP;
       
       // Construct a Belos LinearProblem object
-      RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>    (p->GetA()));
+      RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(p->GetA()));
       RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(p->GetH()));
       
       //X, B

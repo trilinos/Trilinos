@@ -84,8 +84,8 @@ int main(int argc, char *argv[]) {
   // Solve Ax = b
   //
 
-  RCP<Vector> X = VectorFactory::Build(map, 1);
-  RCP<Vector> B = VectorFactory::Build(map, 1);
+  RCP<Vector> X = VectorFactory::Build(map);
+  RCP<Vector> B = VectorFactory::Build(map);
   
   X->putScalar((Scalar) 0.0);
   B->setSeed(846930886); B->randomize();

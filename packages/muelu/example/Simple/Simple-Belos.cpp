@@ -103,34 +103,25 @@ int main(int argc, char *argv[]) {
   H->Setup(M); //Should be instead: H->Setup();
 
   //
-  // Solve Ax = b
+  // Solve Ax = b using AMG as a preconditioner in Belos
   //
 
-  RCP<Vector> X = VectorFactory::Build(map, 1);
-  RCP<Vector> B = VectorFactory::Build(map, 1);
-  
+  // Define RHS / LHS
+  RCP<Vector> X = VectorFactory::Build(map);
+  RCP<Vector> B = VectorFactory::Build(map);
   X->putScalar((Scalar) 0.0);
   B->setSeed(846930886); B->randomize();
 
-//   // Use AMG directly as an iterative solver (not as a preconditionner)
-//   int nIts = 9;
-
-//   H->Iterate(*B, nIts, *X);
-
-//   // Print relative residual norm
-//   ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
-//   if (comm->getRank() == 0)
-//     std::cout << "||Residual|| = " << residualNorms << std::endl;
-
-  // Use AMG as a preconditioner in Belos
+  // Operator and Multivector type that will be used with Belos
   typedef MultiVector          MV;
   typedef Belos::OperatorT<MV> OP;
-  
-  // Construct a Belos LinearProblem object
-  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO>(A));    // Turns a Xpetra::Operator object into a Belos operator
-  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
 
-  RCP< Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(belosOp, X, B));
+  // Define Operator and Preconditioner
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Operator object into a Belos operator
+  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
+
+  // Construct a Belos LinearProblem object
+  RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
   belosProblem->setLeftPrec(belosPrec);
     
   bool set = belosProblem->setProblem();
@@ -139,17 +130,16 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
     
-  // Create an iterative solver manager.
-
   // Belos parameter list
-  int maxiters = 10;
+  int maxIts = 10;
   double tol = 1e-4;
   Teuchos::ParameterList belosList;
-  belosList.set("Maximum Iterations",    maxiters);  // Maximum number of iterations allowed
-  belosList.set("Convergence Tolerance", tol);       // Relative convergence tolerance requested
+  belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
+  belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
   belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
 
-  RCP< Belos::SolverManager<SC,MV,OP> > solver = rcp(new Belos::BlockCGSolMgr<SC,MV,OP>(belosProblem, rcp(&belosList,false)));
+  // Create an iterative solver manager
+  RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
     
   // Perform solve
   Belos::ReturnType ret = solver->solve();
@@ -162,10 +152,10 @@ int main(int argc, char *argv[]) {
   bool badRes = false;
   std::vector<SC> actual_resids(numrhs);
   std::vector<SC> rhs_norm(numrhs);
-  RCP<MultiVector> resid = MultiVectorFactory::Build(map,numrhs); 
+  RCP<MultiVector> resid = MultiVectorFactory::Build(map, numrhs); 
 
-  typedef Belos::OperatorTraits<SC,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<SC,MV>    MVT;
+  typedef Belos::OperatorTraits<SC, MV, OP> OPT;
+  typedef Belos::MultiVecTraits<SC, MV>     MVT;
     
   OPT::Apply(*belosOp, *X, *resid);
   MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
@@ -174,7 +164,7 @@ int main(int argc, char *argv[]) {
   std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
   for (int i = 0; i < numrhs; i++) {
     SC actRes = actual_resids[i]/rhs_norm[i];
-    std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+    std::cout <<"Problem " << i << " : \t" << actRes <<std::endl;
     if (actRes > tol) { badRes = true; }
   }
 
@@ -187,3 +177,6 @@ int main(int argc, char *argv[]) {
 
   return EXIT_SUCCESS;
 }
+
+//TODO: check results
+//TODO: rename rhs_norm etc. and simplify computation of residual

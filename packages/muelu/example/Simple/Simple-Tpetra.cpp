@@ -1,5 +1,10 @@
 #include <iostream>
 
+#include <Tpetra_Map.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_MultiVector.hpp>
+
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 
@@ -10,13 +15,16 @@
 #include <MueLu_UseDefaultTypes.hpp>  // => Scalar=double, LocalOrdinal=int, GlobalOrdinal=int
 #include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
+#ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+#endif
 
 int main(int argc, char *argv[]) {
+
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp; //
 
@@ -33,25 +41,19 @@ int main(int argc, char *argv[]) {
 
   GlobalOrdinal numGlobalElements = 256;         // problem size
 
-#ifdef HAVE_MUELU_TPETRA
-  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra; // linear algebra library
-#else
-  Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-#endif
-
   //
   // Construct the problem
   //
 
   // Construct a Map that puts approximately the same number of equations on each processor
-  RCP<const Map> map = MapFactory::createUniformContigMap(lib, numGlobalElements, comm);
+  RCP<const Tpetra::Map<LO, GO, NO> > map = Tpetra::createUniformContigMap<LO, GO>(numGlobalElements, comm);
 
   // Get update list and number of local equations from newly created map.
   const size_t numMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<Operator> A = rcp(new CrsOperator(map, 3));
+  RCP<Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > A = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NO, LMO>(map, 3));
 
   // Add rows one-at-a-time
   for (size_t i = 0; i < numMyElements; i++) {
@@ -79,8 +81,12 @@ int main(int argc, char *argv[]) {
   // Construct a multigrid preconditioner
   //
 
+  // Turns a Tpetra::CrsMatrix into a MueLu::Operator
+  RCP<Xpetra::CrsMatrix<SC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::TpetraCrsMatrix<SC, LO, GO, NO, LMO>(A)); //TODO: should not be needed
+  RCP<Xpetra::Operator <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsOperator<SC, LO, GO, NO, LMO>(mueluA_));
+
   // Multigrid Hierarchy
-  RCP<Hierarchy> H = rcp(new Hierarchy(A));
+  RCP<Hierarchy> H = rcp(new Hierarchy(mueluA));
   H->setVerbLevel(Teuchos::VERB_HIGH);
 
   // Multigrid setup phase (using default parameters)
@@ -92,41 +98,56 @@ int main(int argc, char *argv[]) {
   smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
   smootherParamList.set("relaxation: sweeps", (LO) 1);
   smootherParamList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype> smooProto = rcp(new TrilinosSmoother(lib, "RELAXATION", smootherParamList));
+  RCP<SmootherPrototype> smooProto = rcp(new TrilinosSmoother(Xpetra::UseTpetra, "RELAXATION", smootherParamList));
   RCP<SmootherFactory>   smooFact  = rcp(new SmootherFactory(smooProto));
   M.SetFactory("Smoother", smooFact);
 
   H->Setup(M); //Should be instead: H->Setup();
 
   //
-  // Solve Ax = b
+  // Define RHS / LHS
   //
 
-  RCP<Vector> X = VectorFactory::Build(map, 1);
-  RCP<Vector> B = VectorFactory::Build(map, 1);
+  RCP<Tpetra::Vector<SC, LO, GO, NO> > X = Tpetra::createVector<SC, LO, GO, NO>(map);
+  RCP<Tpetra::Vector<SC, LO, GO, NO> > B = Tpetra::createVector<SC, LO, GO, NO>(map);
   
   X->putScalar((Scalar) 0.0);
-  B->setSeed(846930886); B->randomize();
+  Teuchos::ScalarTraits<Scalar>::seedrandom(846930886); B->randomize();
 
-//   // Use AMG directly as an iterative solver (not as a preconditionner)
-//   int nIts = 9;
+#ifndef HAVE_MUELU_BELOS
 
-//   H->Iterate(*B, nIts, *X);
+  //
+  // Use AMG directly as an iterative solver (not as a preconditionner)
+  //
 
-//   // Print relative residual norm
-//   ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
-//   if (comm->getRank() == 0)
-//     std::cout << "||Residual|| = " << residualNorms << std::endl;
+  int nIts = 9;
 
-  // Use AMG as a preconditioner in Belos
-  typedef MultiVector          MV;
-  typedef Belos::OperatorT<MV> OP;
-  
+  RCP<MueLu::Vector<LO, GO, NO> > mueluX = rcp(new MueLu::Vector<LOG, GO, NO>(X));
+  RCP<MueLu::Vector<LO, GO, NO> > mueluB = rcp(new MueLu::Vector<LOG, GO, NO>(B));
+
+  H->Iterate(*mueluB, nIts, *mueluX);
+
+  // Print relative residual norm
+  ST::magnitudeType residualNorms = Utils::ResidualNorm(*mueluA, *mueluX, *mueluB)[0];
+  if (comm->getRank() == 0)
+    std::cout << "||Residual|| = " << residualNorms << std::endl;
+
+#else // HAVE_MUELU_BELOS
+
+  //
+  // Solve Ax = b using AMG as a preconditioner in Belos
+  //
+
+  // Operator and Multivector type that will be used with Belos
+  typedef Tpetra::MultiVector<SC, LO, GO, NO> MV;
+  typedef Belos::OperatorT<MV>                OP;
+
+  // Define Operator and Preconditioner
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(mueluA)); // Turns a Xpetra::Operator object into a Belos operator
+  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));       // Turns a MueLu::Hierarchy object into a Belos operator
+
   // Construct a Belos LinearProblem object
-  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO>(A));    // Turns a Xpetra::Operator object into a Belos operator
-  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
-
-  RCP< Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(belosOp, X, B));
+  RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
   belosProblem->setLeftPrec(belosPrec);
     
   bool set = belosProblem->setProblem();
@@ -135,17 +156,16 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
     
-  // Create an iterative solver manager.
-
   // Belos parameter list
-  int maxiters = 10;
+  int maxIts = 10;
   double tol = 1e-4;
   Teuchos::ParameterList belosList;
-  belosList.set("Maximum Iterations",    maxiters);  // Maximum number of iterations allowed
-  belosList.set("Convergence Tolerance", tol);       // Relative convergence tolerance requested
+  belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
+  belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
   belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
 
-  RCP< Belos::SolverManager<SC,MV,OP> > solver = rcp(new Belos::BlockCGSolMgr<SC,MV,OP>(belosProblem, rcp(&belosList,false)));
+  // Create an iterative solver manager
+  RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
     
   // Perform solve
   Belos::ReturnType ret = solver->solve();
@@ -158,10 +178,10 @@ int main(int argc, char *argv[]) {
   bool badRes = false;
   std::vector<SC> actual_resids(numrhs);
   std::vector<SC> rhs_norm(numrhs);
-  RCP<MultiVector> resid = MultiVectorFactory::Build(map,numrhs); 
+  RCP<Tpetra::MultiVector<SC, LO, GO, NO> > resid = Tpetra::createMultiVector<SC, LO, GO, NO>(map, numrhs); 
 
-  typedef Belos::OperatorTraits<SC,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<SC,MV>    MVT;
+  typedef Belos::OperatorTraits<SC, MV, OP> OPT;
+  typedef Belos::MultiVecTraits<SC, MV>     MVT;
     
   OPT::Apply(*belosOp, *X, *resid);
   MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
@@ -170,7 +190,7 @@ int main(int argc, char *argv[]) {
   std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
   for (int i = 0; i < numrhs; i++) {
     SC actRes = actual_resids[i]/rhs_norm[i];
-    std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+    std::cout <<"Problem " << i << " : \t" << actRes <<std::endl;
     if (actRes > tol) { badRes = true; }
   }
 
@@ -180,6 +200,8 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+
+#endif // HAVE_MUELU_BELOS
 
   return EXIT_SUCCESS;
 }
