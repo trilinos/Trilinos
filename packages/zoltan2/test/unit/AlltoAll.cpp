@@ -13,7 +13,6 @@
 // TODO: doxygen comments
 //     make this a real unit test that gives helpful information if it fails
 //     and uses different template values
-//     make this work if !HAVE_MPI
 
 #include <iostream>
 #include <algorithm>
@@ -32,7 +31,6 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-
   Teuchos::RCP<const Teuchos::Comm<int> > comm = 
     Teuchos::DefaultComm<int>::getComm();
 

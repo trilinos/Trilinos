@@ -13,11 +13,11 @@
 /* define if we have the ParMETIS library*/
 #cmakedefine HAVE_PARMETIS
 
-/* define if we have the PtScotch library*/
-#cmakedefine HAVE_PTSCOTCH
-
-/* define if we have the CCOLAMD library*/
-#cmakedefine HAVE_CCOLAMD
+/* define if we have built Zoltan2 with 64-bit
+ * third party libraries.  Needed by tests
+ * which use third party libraries.
+ */
+#cmakedefine HAVE_TPL64
 
 /* define if malloc.h has mallinfo() and you 
  * want to build Zoltan_Mallinfo.cpp.

@@ -49,10 +49,6 @@ void AlltoAll(const Comm<int> &comm,
 
   if (count == 0) return;   // count is the same on all procs
 
-  Array<RCP<CommRequest> > req(nprocs-1);
-
-  // Create a T-aligned receive buffer.
-
   T *ptr = NULL;
   Z2_SYNC_MEMORY_ALLOC(comm, env, T, ptr, nprocs * count);
 
@@ -64,9 +60,11 @@ void AlltoAll(const Comm<int> &comm,
     inBuf.get()[offset] = sendBuf.getRawPtr()[offset];
   }
 
+#ifdef HAVE_MPI
   // Post receives
 
   RCP<CommRequest> r;
+  Array<RCP<CommRequest> > req(nprocs-1);
 
   for (int p=0; p < nprocs; p++){
     if (p != rank){
@@ -104,6 +102,7 @@ void AlltoAll(const Comm<int> &comm,
     catch (const std::exception &e)
       Z2_THROW_OUTSIDE_ERROR(env, e);
   }
+#endif
 
   recvBuf = inBuf;
 }
@@ -155,6 +154,7 @@ void AlltoAllv(const Comm<int> &comm,
     in[i] = out[i];
   }
 
+#ifdef HAVE_MPI
   // Post receives
 
   RCP<CommRequest> r;
@@ -204,6 +204,7 @@ void AlltoAllv(const Comm<int> &comm,
     catch(const std::exception &e)
       Z2_THROW_OUTSIDE_ERROR(env, e);
   }
+#endif
 
   recvBuf = inBuf;
 }

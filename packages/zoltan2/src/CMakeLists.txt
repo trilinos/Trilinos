@@ -9,6 +9,9 @@ SET(CURRENT_PACKAGE ZOLTAN2)
 CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
 
+ASSERT_DEFINED(TPL_ENABLE_MPI)
+SET(HAVE_MPI TPL_ENABLE_MPI)
+
 ASSERT_DEFINED(${PACKAGE_NAME}_HAVE_MALLINFO)
 SET(HAVE_MALLINFO ${${PACKAGE_NAME}_HAVE_MALLINFO})
 
@@ -24,6 +27,15 @@ SET(HAVE_PATOH ${${PACKAGE_NAME}_ENABLE_PaToH})
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Scotch)
 SET(HAVE_SCOTCH ${${PACKAGE_NAME}_ENABLE_Scotch})
 
+#
+# If linking with 64-bit TPLs, include
+# Zoltan2_HAVE_TPL64::BOOL=ON
+# in cmake configuration parameters
+#
+# The default is 32-bit third party libraries
+#
+ASSERT_DEFINED(${PACKAGE_NAME}_HAVE_TPL64)
+SET(HAVE_TPL64 ${${PACKAGE_NAME}_HAVE_TPL64})
 
 #
 # B) Define the header and source files (and include directories)

@@ -32,24 +32,14 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Scotch
   "Scotch is present"
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PTScotch
-  HAVE_PTSCOTCH
-  "PTScotch is present"
-  OFF )
-
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_NEMESIS
-  HAVE_NEMESIS
-  "Nemesis/Exodus is present"
-  OFF )
-
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_HUND
-  HAVE_HUND
-  "HUND is present"
-  OFF )
-
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_HAVE_MALLINFO
   HAVE_MALLINFO
   "malloc.h supports mallinfo()"
+  OFF )
+
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_HAVE_TPL64
+  HAVE_TPL64
+  "64-bit third-party libraries are present"
   OFF )
 
 # 
