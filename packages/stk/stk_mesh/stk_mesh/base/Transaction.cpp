@@ -1,3 +1,4 @@
+#if 0
 /*------------------------------------------------------------------------*/
 /*                 Copyright 2010 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
@@ -411,4 +412,4 @@ void Transaction::remove_entity_from_bucket ( Entity &e , BucketList &buckets )
 
 }
 }
-
+#endif

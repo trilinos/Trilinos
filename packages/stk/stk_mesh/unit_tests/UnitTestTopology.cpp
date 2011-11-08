@@ -27,7 +27,6 @@
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Transaction.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
 
 #include <stk_mesh/baseImpl/BucketImpl.hpp>

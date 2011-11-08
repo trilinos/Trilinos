@@ -43,21 +43,6 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, ValueTy
     m_high_end_itr(high_end_itr)
   {}
 
-  TwoLevelIterator(const self& rhs) :
-    m_high_itr(rhs.m_high_itr),
-    m_low_itr(rhs.m_low_itr),
-    m_high_end_itr(rhs.m_high_end_itr)
-  {}
-
-  self& operator=(const self& rhs)
-  {
-    m_high_itr     = rhs.m_high_itr;
-    m_low_itr      = rhs.m_low_itr;
-    m_high_end_itr = rhs.m_high_end_itr;
-
-    return *this;
-  }
-
   bool operator==(const self& rhs) const
   {
     return (m_high_itr == rhs.m_high_itr && m_low_itr == rhs.m_low_itr);

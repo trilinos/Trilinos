@@ -28,7 +28,6 @@
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Transaction.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
@@ -88,7 +87,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
   // Create two scalar fields, temperature and volume. Put temperature
   // on all the nodes and put volume on all the elements.
   unsigned number_of_states = 4;
-  
+
   ScalarFieldType & temperature =
     meta.declare_field < ScalarFieldType > ( "temperature" , number_of_states );
   ScalarFieldType & volume =
@@ -407,7 +406,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
 
   const int spatial_dimension = 3;
   FEMMetaData meta( spatial_dimension );
-  
+
   BulkData bulk ( FEMMetaData::get_meta_data(meta) , pm , 100 );
   std::vector<Part *>  add_part4;
 

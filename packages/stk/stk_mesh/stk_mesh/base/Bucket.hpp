@@ -25,6 +25,7 @@
 #include <stk_mesh/base/Entity.hpp>
 
 #include <boost/iterator/transform_iterator.hpp>
+#include <boost/iterator/indirect_iterator.hpp>
 
 //----------------------------------------------------------------------
 
@@ -68,174 +69,6 @@ bool has_superset( const Bucket & ,  const unsigned & ordinal );
  */
 bool has_superset( const Bucket & , const PartVector & );
 
-//----------------------------------------------------------------------
-/** \brief  A random access iterator for a
- *  \ref stk::mesh::Bucket "bucket" that dereferences to a
- *  \ref stk::mesh::Entity "entity" reference.
- */
-class BucketIterator : public std::iterator<std::random_access_iterator_tag,Entity&, ptrdiff_t, Entity*, Entity& > {
-private:
-  const Bucket * m_bucket_ptr;
-  size_t         m_current_entity;
-
-  inline Entity & entity( const size_t ) const ;
-
-  template< class field_type >
-    friend
-    typename FieldTraits< field_type >::data_type *
-    field_data( const field_type & f , const BucketIterator &i );
-
-  template< class field_type > friend struct BucketArray ;
-
-public:
-
-  /** \brief Constructor
-    * \param bucket_ptr \ref stk::mesh::Bucket "bucket" pointer
-    * \param offset int
-    */
-  template< typename intType >
-  BucketIterator(const Bucket * const bucket_ptr, intType offset) {
-    m_bucket_ptr = bucket_ptr;
-    m_current_entity = offset;
-  }
-
-  /** \brief Default constructor */
-  BucketIterator() {
-    m_bucket_ptr = NULL;
-    m_current_entity = 0;
-  }
-
-  /** \brief Copy Constructor */
-  BucketIterator(const BucketIterator &i) {
-    m_bucket_ptr = i.m_bucket_ptr;
-    m_current_entity = i.m_current_entity;
-  }
-
-  /** \brief Assignment operator */
-  BucketIterator & operator=(const BucketIterator &i) {
-    m_bucket_ptr = i.m_bucket_ptr;
-    m_current_entity = i.m_current_entity;
-    return *this;
-  }
-
-  /** \brief Dereference operator
-    * \return \ref stk::mesh::Entity "entity" reference
-   */
-  inline Entity & operator*() const { return entity(0); }
-
-  /** \brief Pointer operator
-    * \return \ref stk::mesh::Entity "entity" pointer
-   */
-  inline Entity * operator->() const { return & entity(0); }
-
-  /** \brief Pre increment */
-  inline BucketIterator & operator++() {
-    ++m_current_entity;
-    return *this;
-  }
-
-  /** \brief Pre decrement */
-  inline BucketIterator & operator--() {
-    --m_current_entity;
-    return *this;
-  }
-
-  /** \brief Post increment */
-  inline BucketIterator operator++(int) {
-    BucketIterator temp = *this;
-    ++m_current_entity;
-    return temp;
-  }
-
-  /** \brief Post decrement */
-  inline BucketIterator operator--(int) {
-    BucketIterator temp = *this;
-    --m_current_entity;
-    return temp;
-  }
-
-  /** \brief Less than */
-  inline bool operator<(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator < given iterator from different bucket");
-    return (m_current_entity < i.m_current_entity);
-  }
-
-  /** \brief Less than equal to */
-  inline bool operator<=(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator <= given iterator from different bucket");
-    return (m_current_entity <= i.m_current_entity);
-  }
-
-  /** \brief Greater than  */
-  inline bool operator>(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator > given iterator from different bucket");
-    return (m_current_entity > i.m_current_entity);
-  }
-
-  /** \brief Greater than equal to */
-  inline bool operator>=(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator >= given iterator from different bucket");
-    return (m_current_entity >= i.m_current_entity);
-  }
-
-  /** \brief Equal to */
-  inline bool operator==(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator == given iterator from different bucket");
-    return (m_current_entity == i.m_current_entity);
-  }
-
-  /** \brief Not equal */
-  inline bool operator!=(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator != given iterator from different bucket");
-    return (m_current_entity != i.m_current_entity);
-  }
-
-  inline BucketIterator & operator+=(int n) {
-    m_current_entity += n;
-    return *this;
-  }
-
-  inline BucketIterator & operator-=(int n) {
-    m_current_entity -= n;
-    return *this;
-  }
-
-  inline BucketIterator operator+(int n) const {
-    return BucketIterator(m_bucket_ptr, m_current_entity + n);
-  }
-
-  inline BucketIterator operator-(int n) const {
-    return BucketIterator(m_bucket_ptr, m_current_entity - n);
-  }
-
-  /** \brief Distance between iterators */
-  inline ptrdiff_t operator-(const BucketIterator &i) const {
-    ThrowAssertMsg(m_bucket_ptr == i.m_bucket_ptr,
-                   "operator - given iterator from different bucket");
-    return static_cast<ptrdiff_t>(m_current_entity - i.m_current_entity);
-  }
-
-  template< typename intType >
-  inline Entity & operator[]( const intType & n ) const { return entity(n); }
-
-}; // class BucketIterator
-
-struct To_Ptr : std::unary_function<Entity&, Entity*>
-{
-  Entity* operator()(Entity& entity) const
-  {
-    return &entity;
-  }
-};
-
-// Sometimes, we want a bucket-iterator to dereference to an Entity*
-typedef boost::transform_iterator<To_Ptr, BucketIterator> BucketPtrIterator;
 
 //----------------------------------------------------------------------
 /** \brief  A container for the \ref stk_mesh_field_data "field data"
@@ -257,13 +90,13 @@ public:
   //--------------------------------
   // Container-like types and methods:
 
-  typedef BucketIterator iterator ;
+  typedef boost::indirect_iterator<Entity**,Entity&> iterator ;
 
   /** \brief Beginning of the bucket */
-  inline iterator begin() const { return iterator(this,(size_t)0); }
+  inline iterator begin() const { return iterator(m_bucketImpl.begin()); }
 
   /** \brief End of the bucket */
-  inline iterator end() const { return iterator(this,size()); }
+  inline iterator end() const { return iterator(m_bucketImpl.end()); }
 
   /** \brief  Number of entities associated with this bucket */
   size_t size() const { return m_bucketImpl.size() ; }
@@ -378,23 +211,24 @@ lower_bound( std::vector<Bucket*> & v , const unsigned * key )
 
 /** \} */
 
+struct To_Ptr : std::unary_function<Entity&, Entity*>
+{
+  Entity* operator()(Entity& entity) const
+  {
+    return &entity;
+  }
+};
+
+// Sometimes, we want a bucket-iterator to dereference to an Entity*
+typedef boost::transform_iterator<To_Ptr, Bucket::iterator> BucketPtrIterator;
+
+typedef Bucket::iterator BucketIterator;
+
 } // namespace mesh
 } // namespace stk
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-
-namespace stk {
-namespace mesh {
-
-inline Entity & BucketIterator::entity( const size_t i ) const
-{
-  ThrowAssert( m_bucket_ptr );
-  return (*m_bucket_ptr)[ m_current_entity + i ] ;
-}
-
-}
-}
 
 #endif
 

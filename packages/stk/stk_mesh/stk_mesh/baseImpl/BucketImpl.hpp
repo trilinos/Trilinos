@@ -108,6 +108,9 @@ class BucketImpl {
     return first_bucket_in_family() == other_bucket.first_bucket_in_family();
   }
 
+  Entity** begin() const { return m_entities; }
+  Entity** end() const { return m_entities + m_size; }
+
   private:
   BucketImpl();
 

@@ -113,9 +113,9 @@ unsigned field_data_size( const FieldBase & f , const Entity & e )
 template< class field_type >
 inline
 typename FieldTraits< field_type >::data_type *
-field_data( const field_type & f , const Bucket::iterator &i ) 
+field_data( const field_type & f , const Bucket::iterator i )
 {
-  return i.m_bucket_ptr->field_data( f, *i );
+  return field_data(f,*i);
 }
 
 
@@ -178,7 +178,7 @@ public:
     const Bucket          & b = e.bucket();
     if (b.field_data_size(f)) {
       array_type::assign_stride(
-          (ScalarType*)(b.field_data_location(f, e ) ), 
+          (ScalarType*)(b.field_data_location(f, e ) ),
           b.field_data_stride(f)
           );
     }
@@ -189,19 +189,19 @@ public:
 //----------------------------------------------------------------------
 /** \brief Implement ArrayDimTag for the entity count dimension
  *         of a BucketArray.
- * 
+ *
  *  \ref stk_mesh_field_data "array field data" obtained from a
  *  \ref stk::mesh::Bucket "bucket".
- */ 
+ */
 struct EntityDimension : public shards::ArrayDimTag {
-   
+
   const char * name() const ;
-   
+
   static const EntityDimension & tag(); ///< Singleton
- 
-private: 
-  EntityDimension() {} 
-  EntityDimension( const EntityDimension & ); 
+
+private:
+  EntityDimension() {}
+  EntityDimension( const EntityDimension & );
   EntityDimension & operator = ( const EntityDimension & );
 };
 
@@ -212,7 +212,7 @@ private:
 template< typename ScalarType >
 struct BucketArray< Field<ScalarType,void,void,void,void,void,void,void> >
   : public
-shards::Array<ScalarType,shards::FortranOrder,EntityDimension,void,void,void,void,void,void> 
+shards::Array<ScalarType,shards::FortranOrder,EntityDimension,void,void,void,void,void,void>
 {
 #ifndef DOXYGEN_COMPILE
 private:
@@ -225,7 +225,7 @@ public:
 
   typedef Field<ScalarType,void,void,void,void,void,void,void> field_type ;
   typedef
-  shards::Array<ScalarType,shards::FortranOrder,EntityDimension,void,void,void,void,void,void> 
+  shards::Array<ScalarType,shards::FortranOrder,EntityDimension,void,void,void,void,void,void>
   array_type ;
 
   BucketArray( const field_type & f , const Bucket & k )
@@ -238,14 +238,14 @@ public:
   }
 
   BucketArray( const field_type & f,
-               const Bucket::iterator & i,
-               const Bucket::iterator & j) 
+               const Bucket::iterator i,
+               const Bucket::iterator j)
   {
     const ptrdiff_t n = j - i ;
 
-    if ( i.m_bucket_ptr->field_data_size(f) && 0 < n ) {
+    if ( i->bucket().field_data_size(f) && 0 < n ) {
       array_type::assign(
-        (ScalarType*)( i.m_bucket_ptr->field_data_location( f, *i ) ),
+        (ScalarType*)( i->bucket().field_data_location( f, *i ) ),
         (typename array_type::size_type) n );
     }
   }
@@ -289,14 +289,14 @@ public:
   }
 
   BucketArray( const field_type & f,
-               const Bucket::iterator & i,
-               const Bucket::iterator & j) 
+               const Bucket::iterator i,
+               const Bucket::iterator j)
   {
     const ptrdiff_t distance = j - i ;
 
     if ( 0 < distance ) {
 
-      const Bucket          & b  = * i.m_bucket_ptr ;
+      const Bucket          & b  = i->bucket();
 
       if ( b.field_data_size(f) ) {
         array_type::assign_stride(
