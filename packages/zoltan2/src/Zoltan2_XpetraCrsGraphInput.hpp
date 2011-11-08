@@ -49,10 +49,6 @@ public:
   typedef Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t> xtgraph_t;
   typedef Xpetra::EpetraCrsGraph xegraph_t;
 
-  /*! Name of input adapter type   TODO make this a trait
-   */
-  std::string inputAdapterName()const {return std::string("XpetraCrsGraph");}
-
   /*! Destructor
    */
   ~XpetraCrsGraphInput() { }
@@ -224,6 +220,19 @@ public:
       nextWgt += nnbors * edgeWeightDim_;
     }
   }
+  ////////////////////////////////////////////////////
+  // The InputAdapter interface.
+  ////////////////////////////////////////////////////
+
+  std::string inputAdapterName()const {
+    return std::string("XpetraVector");}
+
+  bool haveLocalIds() const { return true;}
+
+  bool haveConsecutiveLocalIds(size_t &base) const{
+    base = base_;
+    return true;
+  }
 
   ////////////////////////////////////////////////////
   // The GraphInput interface.
@@ -239,20 +248,6 @@ public:
    */
   global_size_t getGlobalNumVertices() const { 
     return rowMap_->getGlobalNumElements(); 
-  }
-
-  /*! Return whether input adapter wants to use local IDs.
-   */
-
-  bool haveLocalIds() const {return true;}
-
-  /*! Return whether local ids are consecutive and if so the base.
-   */
-
-  bool haveConsecutiveLocalIds (size_t &base) const
-  {
-    base = static_cast<size_t>(base_);
-    return true;
   }
 
   /*! Returns the number edges on this process.

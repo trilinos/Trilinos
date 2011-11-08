@@ -36,7 +36,12 @@ namespace Zoltan2 {
     The user must have previously defined traits for their vector 
     data structure, supplying Zoltan2 mainly with their data types.
  
- TODO: weights and coordinates
+    TODO: weights and coordinates
+    TODO: There is no reason that we could not use MultiVectorInput
+     to represent Vector also.  Right now we have two different
+     input adapters.  Do we want to have MultiVectorInput only, or
+     would this be confusing to people with single vector input who
+     want to derive from MultiVectorInput.
 */
 
 template <typename User>

@@ -56,10 +56,6 @@ public:
   // TODO - add this value to the traits.
   enum InputAdapterType inputAdapterType() {return XpetraCrsMatrixAdapterType;}
 
-  /*! Name of input adapter type
-   */
-  std::string inputAdapterName()const {return std::string("XpetraCrsMatrix");}
-
   /*! Destructor
    */
   ~XpetraCrsMatrixInput() { }
@@ -103,6 +99,20 @@ public:
   };
 
   ////////////////////////////////////////////////////
+  // The InputAdapter interface.
+  ////////////////////////////////////////////////////
+
+  std::string inputAdapterName()const {
+    return std::string("XpetraVector");}
+
+  bool haveLocalIds() const { return true;}
+
+  bool haveConsecutiveLocalIds(size_t &base) const{
+    base = base_;
+    return true;
+  }
+
+  ////////////////////////////////////////////////////
   // The MatrixInput interface.
   ////////////////////////////////////////////////////
 
@@ -116,20 +126,6 @@ public:
    */
   global_size_t getGlobalNumRows() const { 
     return matrix_->getGlobalNumRows();
-  }
-
-  /*! Return whether input adapter wants to use local IDs.
-   */
-
-  bool haveLocalIds() const {return true;}
-
-  /*! Return whether local ids are consecutive and if so the base.
-   */
-
-  bool haveConsecutiveLocalIds (size_t &base) const
-  {
-    base = static_cast<size_t>(base_);
-    return true;
   }
 
   /*! Returns the number columns on this process.
@@ -257,7 +253,7 @@ public:
     RCP<const User> inPtr = rcp(&in, false);
 
     RCP<User> outPtr = XpetraTraits<User>::doImport(
-     inPtr, gsum, lsum, importList.getRawPtr(), base_, comm);
+     inPtr, lsum, importList.getRawPtr(), base_);
 
     out = outPtr.get();
     outPtr.release();

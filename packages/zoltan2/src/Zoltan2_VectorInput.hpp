@@ -84,7 +84,7 @@ public:
        \return The number of ids in the Ids list.
    */
 
-  virtual lno_t getVectorView(gid_t *&Ids,  *&localIds,
+  virtual lno_t getVectorView(gid_t *&Ids,  lid_t *&localIds,
      scalar_t *&element, scalar_t *&wgts) const = 0;
 
   /*! Given a new mapping of vertex elements to processes,
@@ -95,7 +95,7 @@ public:
    *  TODO   documentation
    */
   int applyPartitioningSolution(User &in, User *&out,
-    int numIds, int numParts, gid_t *gid,  *lid, int *partition) 
+    int numIds, int numParts, gid_t *gid, lid_t *lid, int *partition) 
   {
     return 0;
   } 

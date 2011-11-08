@@ -22,7 +22,7 @@
 #include <sstream>
 #include <vector>
 #include <iostream>
-#include <TestAdapters.hpp>
+#include <AdaptersForTests.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ArrayView.hpp>

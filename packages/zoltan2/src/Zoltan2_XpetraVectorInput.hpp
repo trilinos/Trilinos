@@ -8,7 +8,8 @@
 
 /*! \file Zoltan2_XpetraVectorInput.hpp
 
-    \brief An input adapter for a Xpetra::Vector.
+    \brief An input adapter for a Xpetra::Vector, Epetra_Vector and 
+            Tpetra::Vector.
 */
 
 #ifndef _ZOLTAN2_XPETRAVECTORINPUT_HPP_
@@ -16,7 +17,6 @@
 
 #include <Xpetra_EpetraVector.hpp>
 #include <Xpetra_TpetraVector.hpp>
-#include <Xpetra_Vector.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
@@ -25,7 +25,7 @@ namespace Zoltan2 {
 
 //////////////////////////////////////////////////////////////////////////////
 /*! Zoltan2::XpetraVectorInput
-    \brief Provides access for Zoltan2 to Xpetra::Vector 
+    \brief Provides access for Zoltan2 to an Xpetra::Vector .
 
     The template parameter is the user's input object: 
      Epetra_Vector
@@ -44,7 +44,11 @@ public:
   typedef typename InputAdapter<User>::gid_t    gid_t;
   typedef typename InputAdapter<User>::node_t   node_t;
 
-  typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> xvector_t;
+  typedef Xpetra::Vector<
+    scalar_t, lno_t, gno_t, node_t> x_vector_t;
+  typedef Xpetra::TpetraVector<
+    scalar_t, lno_t, gno_t, node_t> xt_vector_t;
+  typedef Xpetra::EpetraVector xe_vector_t;
 
   /*! Destructor
    */
@@ -56,7 +60,8 @@ public:
   XpetraVectorInput(const RCP<const User> &invector):
     invector_(invector), 
     vector_(),
-    Map_(),
+    map_(),
+    env_(),
     base_()
   {
     vector_ = XpetraTraits<User>::convertToXpetra(invector);
@@ -71,9 +76,9 @@ public:
   std::string inputAdapterName()const {
     return std::string("XpetraVector");}
 
-  bool haveLocalIds() { return true;}
+  bool haveLocalIds() const { return true;}
 
-  bool haveConsecutiveLocalIds(size_t &base){
+  bool haveConsecutiveLocalIds(size_t &base) const{
     base = base_;
     return true;
   }
@@ -90,12 +95,25 @@ public:
     const lid_t *&localIds, const scalar_t *&elements, 
     const scalar_t *&wgts) const
   {
-    ArrayRCP<const scalar_t> data = vector_>getData();
-    ArrayView<const gid_t> gids = map->getNodeElementList();
+    if (map_->lib() == Xpetra::UseTpetra){
+      RCP<xt_vector_t> tvector =
+        rcp_implicit_cast<xt_vector_t>(vector_);
+      ArrayRCP<const scalar_t> data = tvector->getData(0);
+      elements = data->get();
+    }
+    else if (map_->lib() == Xpetra::UseEpetra){
+      RCP<xe_vector_t> evector =
+        rcp_implicit_cast<xe_vector_t>(vector_);
+      ArrayRCP<const scalar_t> data = evector->getData(0);
+      elements = data->get();
+    }
+    else{
+      throw std::logic_error("invalid underlying lib");
+    }
 
+    ArrayView<const gid_t> gids = map_->getNodeElementList();
     Ids = gids->getRawPtr();
     localIds = NULL;  // Implies 0 through numElements-1
-    elements = data->get();`
     wgts = NULL; // Not implemented
   }
 
@@ -106,7 +124,7 @@ public:
   /*! Access to xpetra vector
    */
 
-  const RCP<const xvector_t> &getVector() const
+  const RCP<const x_vector_t> &getVector() const
   {
     return vector_;
   }
@@ -114,9 +132,6 @@ public:
   /*! Apply a partitioning solution to the vector.
    *   Every gid that was belongs to this process must
    *   be on the list, or the Import will fail.
-   *  TODO - not done yet
-   *
-   *   TODO : params etc
    */
   void applyPartitioningSolution(const User &in, User *&out,
     lno_t numIds, lno_t numParts, 
@@ -131,8 +146,7 @@ public:
     ArrayRCP<int> dummyOut;
     size_t numNewRows;
 
-    // Get default communicator.  Teuchos::Comm should not be in this
-    // interface   TODO
+    const RCP<const Comm<int> > comm = map_->getComm(); 
 
     try{
       numNewRows = convertPartitionListToImportList<gid_t, lno_t, lno_t>(
@@ -142,14 +156,23 @@ public:
       Z2_THROW_ZOLTAN2_ERROR(env, e);
     }
 
-    // TODO - do the imports
+    RCP<const User> inPtr = rcp(&in, false);
+    gno_t globalNumElts = invector_->getGlobalLength();
+    lno_t localNumElts = numNewRows;
+
+    RCP<User> outPtr = XpetraTraits<User>::doImport(
+     inPtr, localNumElts, importList->get(), base_);
+
+    out = outPtr.get();
+    outPtr.release();
    }
 
 private:
 
   RCP<const User> invector_;
-  RCP<const xvector_t> vector_;
+  RCP<const x_vector_t> vector_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > map_;
+  RCP<Environment> env_;
   lno_t base_;
 
 };

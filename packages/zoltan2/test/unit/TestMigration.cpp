@@ -10,8 +10,9 @@
 // Test migration of a Tpetra::CrsMatrix with through the input adapter.
 //
 // For now testing that it compiles.  TODO - test that it's correct. 
+//  TODO - migration test should be part of XpetraInputAdapters test
 
-#include <TestAdapters.hpp>
+#include <AdaptersForTests.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_RCP.hpp>
