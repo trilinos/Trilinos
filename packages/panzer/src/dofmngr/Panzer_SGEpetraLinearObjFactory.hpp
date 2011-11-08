@@ -102,6 +102,10 @@ public:
    Teuchos::RCP<const Stokhos::OrthogPolyExpansion<int,double> > getExpansion() const
    { return expansion_; }
 
+   //! Accessor for the expansion object.
+   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > getExpansion()
+   { return expansion_; }
+
    //! Set Orthog poly for this object, this serves as a template for converting vectors to block vectors
    void setVectorOrthogPolyMaster(const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> & vecOrthogPoly)
    { vecOrthogPoly_ = vecOrthogPoly; }
