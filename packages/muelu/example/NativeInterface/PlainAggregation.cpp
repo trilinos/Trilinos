@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
   // Coarse grid correction
-  RCP<SmootherPrototype> coarseSolverPrototype = rcp( new DirectSolver(lib) );
+  RCP<SmootherPrototype> coarseSolverPrototype = rcp( new DirectSolver() );
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
 
   // 

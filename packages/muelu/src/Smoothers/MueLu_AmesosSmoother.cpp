@@ -50,8 +50,7 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
   }
 
-  void AmesosSmoother::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const
-  {
+  void AmesosSmoother::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
 
     Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
@@ -69,7 +68,6 @@ namespace MueLu {
     linearProblem_->SetLHS(0);
     linearProblem_->SetRHS(0);
   }
-
 
   RCP<MueLu::SmootherPrototype<double,int,int> > AmesosSmoother::Copy() const {
     return rcp( new AmesosSmoother(*this) );

@@ -2,6 +2,7 @@
 #define MUELU_DIRECTSOLVER_DEF_HPP
 
 #include <Xpetra_Utils.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_DirectSolver_decl.hpp"
 
@@ -11,80 +12,87 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DirectSolver(const Xpetra::UnderlyingLib lib, std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact)
-    : lib_(lib), type_(type), paramList_(paramList), AFact_(AFact)
-  { 
-    TEUCHOS_TEST_FOR_EXCEPTION(lib_ != Xpetra::UseTpetra && lib_ != Xpetra::UseEpetra, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
-  }
-    
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~DirectSolver() {}
+  DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DirectSolver(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact)
+    : type_(type), paramList_(paramList), AFact_(AFact)
+  { }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get());
+    currentLevel.DeclareInput("A", AFact_.get()); // TODO: also call Amesos or Amesos2::DeclareInput?
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::DirectSolver::Setup(): DirectSolver objects are only prototypes and DirectSolver::Setup() cannot be called. Use Copy() to create an Amesos or Amesos2 smoother.");
+    //Monitor m(*this, "Setup Smoother");
+    if (SmootherPrototype::IsSetup() == true) VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
+    TEUCHOS_TEST_FOR_EXCEPTION(s_ != Teuchos::null, Exceptions::RuntimeError, "IsSetup() == false but s_ != Teuchos::null. This does not make sense");
+
+    Xpetra::UnderlyingLib lib = currentLevel.Get< RCP<Operator> >("A", AFact_.get())->getRowMap()->lib();
+
+    if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_IFPACK2
+      s_ = rcp( new Amesos2Smoother(type_, paramList_, AFact_) );
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Tpetra matrices. Compile MueLu with Amesos2");
+#endif
+    } else if (lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_IFPACK
+      s_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_, AFact_);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos"); // add Amesos2 to the msg when support for Amesos2+Epetra is implemented.
+#endif
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
+    }
+    
+    TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "");
+
+    s_->Setup(currentLevel);
+
+    SmootherPrototype::IsSetup(true);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::DirectSolver::Apply(): Setup() has not been called");
+  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
+    TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "IsSetup() == true but s_ == Teuchos::null. This does not make sense");
+
+    s_->Apply(X, B, InitialGuessIsZero);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
-    if (lib_ == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_AMESOS2
-      return rcp( new Amesos2Smoother(type_, paramList_, AFact_) );
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Tpetra matrices. Compile MueLu with Amesos2");
-#endif
-    } else if (lib_ == Xpetra::UseEpetra) {
-      //#if defined(HAVE_MUELU_AMESOS2)
-      // return rcp( new Amesos2Smoother(type_, paramList_, AFact_) ); TODO: Amesos2 can also handle Epetra matrices but Amesos2Smoother can't for the moment.
-      //#elif 
-
-#if defined(HAVE_MUELU_AMESOS)
-      return MueLu::GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_, AFact_);
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos"); // add Amesos2 to the msg when done.
-      return Teuchos::null;
-#endif
-
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib_ != UseTpetra && lib_ != UseEpetra");
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "");
+    return rcp( new DirectSolver(*this) );
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
     std::ostringstream out;
     out << SmootherPrototype::description();
-    out << "{lib = " << toString(lib_) << ", type = " << type_ << "}";
+    out << "{type = " << type_ << "}";
     return out.str();
   }
     
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+    //TODO
+    //     if (s_ != Teuchos::null) {
+    //       // Teuchos::OSTab tab2(out);
+    //       s_->print(out, verbLevel);
+    //     }
+    
+    //     if (verbLevel & Debug) {
     MUELU_DESCRIBE;
-
+    
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << std::endl;
     }
-      
+    
     if (verbLevel & Parameters1) { 
-      out0 << "Linear Algebra: " << toString(lib_) << std::endl;
-      out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab3(out); out << paramList_; }
     }
-      
-    if (verbLevel & Debug) {
+
+    if (verbLevel & Debug) {    
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
     }
   }

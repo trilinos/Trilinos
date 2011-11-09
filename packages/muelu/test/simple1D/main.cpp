@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
 
-  RCP<SmootherPrototype> coarseProto = rcp( new DirectSolver(xpetraParameters.GetLib()) );
+  RCP<SmootherPrototype> coarseProto = rcp( new DirectSolver() );
   SmootherFactory coarseSolveFact(coarseProto);
   H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 

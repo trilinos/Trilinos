@@ -2,13 +2,12 @@
 #define MUELU_DIRECTSOLVER_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-
 #include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_FactoryBase.hpp"
 
+//TODO
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"
-
-#include "MueLu_FactoryBase.hpp"
 
 // Note: DirectSolver is a SmootherPrototype that cannot be turned into a smoother using Setup().
 //       When this prototype is cloned using Copy(), the clone is an Amesos or an Amesos2 smoother.
@@ -34,10 +33,10 @@ namespace MueLu {
 
     //! @brief Constructor
     //! Note: only parameters shared by Amesos and Amesos2 should be used for type and paramList (example: type= "Klu", "Superlu", paramList = <empty>) .
-    DirectSolver(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null);
+    DirectSolver(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null);
     
     //! Destructor
-    virtual ~DirectSolver();
+    virtual ~DirectSolver() { }
     
     //@}
 
@@ -73,8 +72,10 @@ namespace MueLu {
     //@}
 
   private:
-    //! Tpetra or Epetra?
-    Xpetra::UnderlyingLib lib_;
+
+    //
+    // Parameters
+    //
 
     //! amesos1/2-specific key phrase that denote smoother type
     std::string type_;
@@ -84,6 +85,13 @@ namespace MueLu {
 
     //! A Factory
     RCP<FactoryBase> AFact_;
+
+    //
+    // Underlying Smoother
+    //
+
+    //! Smoother
+    RCP<SmootherPrototype> s_;
 
   }; // class DirectSolver
 

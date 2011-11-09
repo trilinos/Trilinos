@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList amesosList;
   amesosList.set("PrintTiming",true);
-  RCP<DirectSolver> coarseProto = rcp( new DirectSolver(lib, "", amesosList) );
+  RCP<DirectSolver> coarseProto = rcp( new DirectSolver("", amesosList) );
   SmootherFactory coarseSolveFact(coarseProto);
 
   //SmootherFactory coarseSolveFact(smooProto);    //JJH lazy man's way to have a one-level method with smoother
