@@ -38,9 +38,12 @@
 #define USE_RDMA_EVENTS
 #undef USE_RDMA_EVENTS
 
-#define USE_FMA
+#undef USE_RDMA_FENCE
+#define USE_RDMA_FENCE
+
+//#define USE_FMA
 //#define USE_RDMA
-//#define USE_MIXED
+#define USE_MIXED
 
 /* mode 1 - client uses GNI params from ALPS to create a Commumnication Domain and attach to it */
 //#define USE_ALPS_PTAG
@@ -369,10 +372,10 @@ static void close_all_conn(void);
 //static void print_put_buf(void *buf, uint32_t size);
 static void print_raw_buf(void *buf, uint32_t size);
 
-static int set_rdma_type(
-        gni_post_descriptor_t *pd);
 static uint16_t get_dlvr_mode_from_env();
 static int set_dlvr_mode(
+        gni_post_descriptor_t *pd);
+static int set_rdma_mode(
         gni_post_descriptor_t *pd);
 
 static int server_req_queue_init(
@@ -1362,6 +1365,7 @@ NNTI_result_t NNTI_gni_put (
 #endif
 
     set_dlvr_mode(&gni_mem_hdl->post_desc);
+    set_rdma_mode(&gni_mem_hdl->post_desc);
 
     gni_mem_hdl->post_desc.local_addr            =src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf+src_offset;
     gni_mem_hdl->post_desc.local_mem_hndl.qword1 =src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
@@ -1469,6 +1473,7 @@ NNTI_result_t NNTI_gni_get (
 #endif
 
     set_dlvr_mode(&gni_mem_hdl->post_desc);
+    set_rdma_mode(&gni_mem_hdl->post_desc);
 
     gni_mem_hdl->post_desc.local_addr            =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf+dest_offset;
     gni_mem_hdl->post_desc.local_mem_hndl.qword1 =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
@@ -2026,7 +2031,8 @@ static void send_ack (
 #error Must define an RDMA method - USE_FMA or USE_RDMA or USE_MIXED
 #endif
 
-    set_dlvr_mode(&gni_mem_hdl->post_desc);
+    set_dlvr_mode(&gni_mem_hdl->wc_post_desc);
+    set_rdma_mode(&gni_mem_hdl->wc_post_desc);
 
     gni_mem_hdl->wc_post_desc.local_addr     =(uint64_t)&gni_mem_hdl->wc;
     gni_mem_hdl->wc_post_desc.local_mem_hndl =gni_mem_hdl->wc_mem_hdl;
@@ -3814,6 +3820,13 @@ static int set_dlvr_mode(
 //    log_debug(LOG_ALL, "pd->dlvr_mode=%X", pd->dlvr_mode);
 }
 
+static int set_rdma_mode(
+        gni_post_descriptor_t *pd)
+{
+#if defined(USE_RDMA_FENCE)
+    pd->rdma_mode=GNI_RDMAMODE_FENCE;
+#endif
+}
 
 static int post_wait(
         gni_cq_handle_t cq_hdl,
@@ -3887,6 +3900,7 @@ static int reset_req_index(
     post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT;
 
     set_dlvr_mode(&post_desc);
+    set_rdma_mode(&post_desc);
 
     post_desc.local_addr     =value_before_reset_addr;
     post_desc.local_mem_hndl =value_before_reset_mem_hdl;
@@ -3950,6 +3964,7 @@ static int fetch_add_buffer_offset(
     post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT;
 
     set_dlvr_mode(&post_desc);
+    set_rdma_mode(&post_desc);
 
     post_desc.local_addr     =local_req_queue_attrs->req_index_addr;
     post_desc.local_mem_hndl =local_req_queue_attrs->req_index_mem_hdl;
@@ -4059,6 +4074,7 @@ static int send_req(
 #endif
 
     set_dlvr_mode(&post_desc);
+    set_rdma_mode(&post_desc);
 
     post_desc.local_addr           =reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf;
     post_desc.local_mem_hndl.qword1=reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
@@ -4122,6 +4138,7 @@ static int send_wc(
 #endif
 
     set_dlvr_mode(&gni_mem_hdl->post_desc);
+    set_rdma_mode(&gni_mem_hdl->post_desc);
 
     gni_mem_hdl->post_desc.local_addr     =(uint64_t)&gni_mem_hdl->wc;
     gni_mem_hdl->post_desc.local_mem_hndl =gni_mem_hdl->wc_mem_hdl;
@@ -4233,6 +4250,7 @@ static int send_unblock(
         post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
 
         set_dlvr_mode(&post_desc);
+        set_rdma_mode(&post_desc);
 
         post_desc.remote_mem_hndl=conn->queue_remote_attrs.client.unblock_mem_hdl;
         ptr32=(uint32_t*)&post_desc.cqwrite_value;
