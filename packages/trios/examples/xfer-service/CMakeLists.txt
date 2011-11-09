@@ -48,10 +48,16 @@ SET(TESTNAMES
 
 
 foreach (testname ${TESTNAMES})
+  
+  SET(DEFAULT_ARGS "--io-method=${testname} ")
+  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file=${testname}-result.out ")
+  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file-mode=a ")
+  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --num-trials=5 ")
+  
   PACKAGE_ADD_TEST(
     XferServiceTest
     NAME XferService_${testname}
-    ARGS "--io-method=${testname} ${EXTRA_TEST_ARGS}"
+    ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"
     COMM serial mpi
     NUM_MPI_PROCS 2)
   
