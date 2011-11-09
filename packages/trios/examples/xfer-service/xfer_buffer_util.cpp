@@ -40,7 +40,7 @@ void xfer_init_data_array(const unsigned int seed, data_array_t *array)
 /**
  * Compare two arrays.  If they are equal, return 0.
  */
-int xfer_compare_data_arrays(data_array_t *arr1, data_array_t *arr2)
+int xfer_compare_data_arrays(const data_array_t *arr1, const data_array_t *arr2)
 {
     if (arr1->data_array_t_len != arr2->data_array_t_len)
         return -1;

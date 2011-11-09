@@ -85,7 +85,7 @@ log_level client_debug_level = LOG_UNDEFINED;
 
 /* prototype for a function to initialize buffers */
 extern void xfer_init_data_array(const unsigned int seed, data_array_t *array);
-extern int xfer_compare_data_arrays(data_array_t *arr1, data_array_t *arr2);
+extern int xfer_compare_data_arrays(const data_array_t *arr1, const data_array_t *arr2);
 
 
 
