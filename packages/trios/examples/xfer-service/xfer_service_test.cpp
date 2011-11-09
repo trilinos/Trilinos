@@ -48,6 +48,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include "Trios_config.h"
 #include "Trios_nssi_client.h"
+#include "Trios_nssi_xdr.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -75,7 +76,7 @@ int xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm c
 /* -------------- private methods -------------------*/
 
 
-static int print_args(
+int print_args(
         std::ostream &out,
         const struct xfer_args &args,
         const char *prefix)
@@ -157,6 +158,7 @@ int main(int argc, char *argv[])
     args.timeout = 500;
     args.num_retries = 5;
     args.validate_flag = true;
+    args.server_url = "";
 
     bool success = true;
 
@@ -259,8 +261,7 @@ int main(int argc, char *argv[])
 
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
 
-
-    std::cout << rank << ": Finished processing arguments, success=" << success << std::endl;
+    log_debug(args.debug_level, "%d: Finished processing arguments", rank);
 
 
     if (!success) {
@@ -273,7 +274,7 @@ int main(int argc, char *argv[])
     // Communicator used for both client and server (may split if using client and server)
     MPI_Comm comm;
 
-    std::cout << rank << "/" << np << ": Starting Xfer_Service_Test" << std::endl;
+    log_debug(debug_level, "%d: Starting xfer-service test", rank);
 
     /**
      * Since this test can be run as a server, client, or both, we need to play some fancy
@@ -327,6 +328,7 @@ int main(int argc, char *argv[])
     nssi_get_url(NSSI_DEFAULT_TRANSPORT, &my_url[0], NSSI_URL_LEN);
 
     // Broadcast the server URL to all the clients
+    args.server_url.resize(NSSI_URL_LEN, '\0');
     if (args.server_flag && args.client_flag) {
         args.server_url = my_url;
         MPI_Bcast(&args.server_url[0], args.server_url.size(), MPI_CHAR, 0, MPI_COMM_WORLD);
