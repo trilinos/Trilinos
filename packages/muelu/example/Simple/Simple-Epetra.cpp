@@ -5,6 +5,12 @@
 #include <Epetra_Vector.h>
 #include <Epetra_MultiVector.h>
 
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 
@@ -32,7 +38,7 @@ int main(int argc, char *argv[]) {
   // MPI initialization using Teuchos
   //
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
   Epetra_MpiComm comm(MPI_COMM_WORLD);
 #else
@@ -212,7 +218,7 @@ int main(int argc, char *argv[]) {
 #endif // HAVE_MUELU_BELOS
 
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
