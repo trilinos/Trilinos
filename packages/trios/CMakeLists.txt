@@ -19,7 +19,10 @@ PACKAGE_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 # Checks for various types of timers
 INCLUDE(TriosProbeTimers)
+# Checks for a supported interconnect
 INCLUDE(TriosProbeNetwork)
+# Checks for differences in Pthread implementations
+INCLUDE(TriosProbeThreads)
 
 IF (TPL_ENABLE_Netcdf)
   ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_NETCDF_SERVICE
@@ -45,10 +48,10 @@ ADD_OPTION_AND_DEFINE( ${PACKAGE_NAME}_ENABLE_TRACING
 IF (${PACKAGE_NAME}_ENABLE_Portals OR
     ${PACKAGE_NAME}_ENABLE_CrayPortals OR
     ${PACKAGE_NAME}_ENABLE_InfiniBand OR
-    ${PACKAGE_NAME}_ENABLE_Gemini OR 
+    ${PACKAGE_NAME}_ENABLE_Gemini OR
     ${PACKAGE_NAME}_ENABLE_LUC)
 
-  SET(${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT 1)        
+  SET(${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT 1)
 ELSE()
   SET(${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT 0)
 ENDIF()
@@ -98,7 +101,7 @@ PACKAGE_POSTPROCESS()
 
 
 # Install cmake scripts so others can use them
-INSTALL(FILES 
+INSTALL(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/TriosProcessXDR.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/UseTrios.cmake
   DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PACKAGE_NAME}"
