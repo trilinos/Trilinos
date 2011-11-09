@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #      - Test for Belos disabled
 
 IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
-
+  
   #Simple
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Simple
@@ -49,17 +49,21 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
   ENDIF()
 
   #Simple-Tpetra
-  PACKAGE_ADD_EXECUTABLE(
-    Simple-Tpetra
-    SOURCES Simple-Tpetra.cpp
-    DEPLIBS muelu muelu-xpetra muelu-adapters
-    )
+  IF(${PACKAGE_NAME}_ENABLE_Tpetra)
+    PACKAGE_ADD_EXECUTABLE(
+      Simple-Tpetra
+      SOURCES Simple-Tpetra.cpp
+      DEPLIBS muelu muelu-xpetra muelu-adapters
+      )
+  ENDIF()
 
   #Simple-Epetra
-  PACKAGE_ADD_EXECUTABLE(
-    Simple-Epetra
-    SOURCES Simple-Epetra.cpp
-    DEPLIBS muelu muelu-xpetra muelu-adapters
-    )
+  IF(${PACKAGE_NAME}_ENABLE_Epetra)
+    PACKAGE_ADD_EXECUTABLE(
+      Simple-Epetra
+      SOURCES Simple-Epetra.cpp
+      DEPLIBS muelu muelu-xpetra muelu-adapters
+      )
+  ENDIF()
 
 ENDIF()
