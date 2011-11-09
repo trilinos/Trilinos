@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
         parser.setOption("result-file-mode", &args.result_file_mode, "Write mode for the result");
         parser.setOption("server-url", &args.server_url, "URL client uses to find the server");
         parser.setOption("server-url-file", &args.url_file, "File that has URL client uses to find server");
-        //parser.setOption("validate", "no-validate", &args.validate_flag, "Validate the data");
+        parser.setOption("validate", "no-validate", &args.validate_flag, "Validate the data");
 
         // Set an enumeration command line option for the io_method
 
