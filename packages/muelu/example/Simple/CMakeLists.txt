@@ -49,7 +49,7 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
   ENDIF()
 
   #Simple-Tpetra
-  IF(${PACKAGE_NAME}_ENABLE_Tpetra)
+  IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     PACKAGE_ADD_EXECUTABLE(
       Simple-Tpetra
       SOURCES Simple-Tpetra.cpp
@@ -58,7 +58,7 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra OR ${PACKAGE_NAME}_ENABLE_Epetra)
   ENDIF()
 
   #Simple-Epetra
-  IF(${PACKAGE_NAME}_ENABLE_Epetra)
+  IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Amesos)
     PACKAGE_ADD_EXECUTABLE(
       Simple-Epetra
       SOURCES Simple-Epetra.cpp
