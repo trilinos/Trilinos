@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
   }
     
   // Belos parameter list
-  int maxIts = 10;
+  int maxIts = 20;
   double tol = 1e-4;
   Teuchos::ParameterList belosList;
   belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed

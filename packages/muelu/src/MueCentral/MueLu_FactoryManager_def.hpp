@@ -41,7 +41,7 @@ namespace MueLu {
           
       //if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory())); will need some work
       if (varName == "A")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
-      //if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp (new NoFactoryOr("A", rcp(new RAPFactory()))));
+      //if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp (new NoFactoryOr("A", rcp(new RAPFactory()))));
 
       if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
@@ -55,9 +55,9 @@ namespace MueLu {
       if (varName == "PostSmoother")  return GetFactory("Smoother");
       if (varName == "Smoother")      return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new GaussSeidelSmoother()))));
         
-      if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new GaussSeidelSmoother()))));
+      if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()))));
 
-      //TO BE FIX: cannot use TrilinosSmoother or DirectSolver here, because need to know the lin alg. lib.
+      //TO BE FIX: cannot use TrilinosSmoother here, because need to know the lin alg. lib.
 
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
     }

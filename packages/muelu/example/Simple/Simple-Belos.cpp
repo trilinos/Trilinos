@@ -100,11 +100,6 @@ int main(int argc, char *argv[]) {
   RCP<SmootherFactory>   smooFact  = rcp(new SmootherFactory(smooProto));
   M.SetFactory("Smoother", smooFact);
 
-#undef IF_YOU_TURN_ME_OFF_BELOS_IS_NOT_CONVERGING
-#ifdef IF_YOU_TURN_ME_OFF_BELOS_IS_NOT_CONVERGING
-  M.SetFactory("CoarseSolver", smooFact);
-#endif
-
   H->Setup(M); //Should be instead: H->Setup();
 
   //
@@ -136,12 +131,11 @@ int main(int argc, char *argv[]) {
   }
     
   // Belos parameter list
-  int maxIts = 100;
+  int maxIts = 20;
   double tol = 1e-4;
   Teuchos::ParameterList belosList;
   belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
   belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-  //belosList.set("Output Frequency",      1);      // output frequency
   belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
 
   // Create an iterative solver manager
