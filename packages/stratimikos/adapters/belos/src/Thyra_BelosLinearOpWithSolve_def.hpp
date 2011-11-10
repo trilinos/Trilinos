@@ -382,6 +382,31 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
       else {
         tmpPL->set("Convergence Tolerance", defaultTol_);
       }
+      // Many Belos solvers (especially the GMRES variants) define
+      // both "Implicit Residual Scaling" and "Explicit Residual
+      // Scaling" options.
+      //
+      // "Implicit" means "the left-preconditioned approximate
+      // a.k.a. 'recursive' residual as computed by the Krylov
+      // method."
+      // 
+      // "Explicit" means ||B - A*X||, the unpreconditioned, "exact"
+      // residual.
+      //
+      // Belos' GMRES implementations chain these two tests in
+      // sequence.  Implicit comes first, and explicit is not
+      // evaluated unless implicit passes.  In some cases (e.g., no
+      // left preconditioner), GMRES _only_ uses the implicit tests.
+      // This means that only setting "Explicit Residual Scaling"
+      // won't change the solver's behavior.  Stratimikos tends to
+      // prefer using a right preconditioner, in which case setting
+      // only the "Explicit Residual Scaling" argument has no effect.
+      // Furthermore, if "Explicit Residual Scaling" is set to
+      // something other than the default (initial residual norm),
+      // without "Implicit Residual Scaling" getting the same setting,
+      // then the implicit residual test will be using a radically
+      // different scaling factor than the user wanted.
+      tmpPL->set("Implicit Residual Scaling", "Norm of RHS");
       tmpPL->set("Explicit Residual Scaling", "Norm of RHS");
     }
     else if (solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL, SOLVE_MEASURE_NORM_INIT_RESIDUAL)) {
@@ -391,6 +416,11 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
       else {
         tmpPL->set("Convergence Tolerance", defaultTol_);
       }
+      // NOTE (mfh 09 Nov 2011): Perhaps we should make the implicit
+      // scaling method "Norm of Preconditioned Initial Residual" if
+      // we are solving with a left preconditioner -- or perhaps we
+      // shouldn't.
+      tmpPL->set("Implicit Residual Scaling", "Norm of Initial Residual");
       tmpPL->set("Explicit Residual Scaling", "Norm of Initial Residual");
     }
     else {
