@@ -174,3 +174,4 @@ int main(int argc, char *argv[]) {
 
 //TODO: check results
 //TODO: rename rhs_norm etc. and simplify computation of residual
+//TODO: output in parallel
