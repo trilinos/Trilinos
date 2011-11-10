@@ -89,6 +89,12 @@ SET(PROJECT_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
 SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
 # Above, we put these in the cache so we can grep them out
 
+SET(${PROJECT_NAME}_TRIBITS_DIR "${PROJECT_HOME_DIR}/cmake/tribits"
+  CACHE PATH
+  "The base directory pointing to the TriBITS system files."
+  )
+MARK_AS_ADVANCED(${PROJECT_NAME}_TRIBITS_DIR)
+
 MESSAGE("-- " "TRILINOS_HOME_DIR = ${TRILINOS_HOME_DIR}")
 MESSAGE("-- " "TRILINOS_BUILD_DIR = ${TRILINOS_BUILD_DIR}")
 MESSAGE("-- " "CMAKE_VERSION = ${CMAKE_VERSION}")
@@ -100,10 +106,12 @@ ENDIF()
 SET( CMAKE_MODULE_PATH
    ${TRILINOS_HOME_DIR}
    ${TRILINOS_HOME_DIR}/cmake
-   ${TRILINOS_HOME_DIR}/cmake/utils
-   ${TRILINOS_HOME_DIR}/cmake/package_arch
-   ${TRILINOS_HOME_DIR}/cmake/config_tests
+   ${TRILINOS_HOME_DIR}/cmake/tribits/utils
+   ${TRILINOS_HOME_DIR}/cmake/tribits/package_arch
+   ${TRILINOS_HOME_DIR}/cmake/tribits/config_tests
    )
+
+MESSAGE("CMAKE_MODULE_PATH='${CMAKE_MODULE_PATH}'")
 
 #any overrides that we have for CMake functions
 INCLUDE(CMakeOverrides)

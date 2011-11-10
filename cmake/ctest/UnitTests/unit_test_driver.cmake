@@ -67,11 +67,12 @@
 
 #MESSAGE("CTEST_SCRIPT_DIRECTORY = ${CTEST_SCRIPT_DIRECTORY}")
 
-SET( CMAKE_MODULE_PATH
-  "${CTEST_SCRIPT_DIRECTORY}/.."
-  "${CTEST_SCRIPT_DIRECTORY}/../../utils"
-  )
+SET(Trilinos_TRIBITS_DIR $ENV{Trilinos_TRIBITS_DIR})
 
+SET( CMAKE_MODULE_PATH
+  "${Trilinos_TRIBITS_DIR}/utils"  # To find general support macros
+  "${CTEST_SCRIPT_DIRECTORY}/.."   # To find TrilinosCMakeCoreDriver.cmake
+  )
 
 #
 # Includes
@@ -96,7 +97,7 @@ SET(CTEST_GENERATE_DEPS_XML_OUTPUT_FILE TRUE)
 SET(CTEST_WIPE_CACHE FALSE)
 
 SET(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/../../..")
-SET(Trilinos_DEPS_HOME_DIR "${CTEST_SOURCE_DIRECTORY}/cmake/DependencyUnitTests/MockTrilinos")
+SET(Trilinos_DEPS_HOME_DIR "${Trilinos_TRIBITS_DIR}/package_arch/UnitTests/MockTrilinos")
 GET_FILENAME_COMPONENT(PWD . REALPATH)
 SET(CTEST_BINARY_DIRECTORY "${PWD}")
 

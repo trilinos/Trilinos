@@ -3,6 +3,9 @@ INCLUDE(PackageAddAdvancedTest)
 
 INCLUDE(ParseVariableArguments)
 
+SET(MOCK_TRILINOS_DIR ${Trilinos_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
+
+
 #
 # Unit tests for just creating the depencency XML files
 #
@@ -27,7 +30,7 @@ FUNCTION(CREATE_DEPENCENCY_XML_DUMP_TEST_CASE TEST_NAME)
       ARGS
         -DPROJECT_NAME=Trilinos
         -DTrilinos_CMAKE_DIR=${TRILINOS_HOME_DIR}/cmake
-        -DTrilinos_DEPS_HOME_DIR:PATH=${TRILINOS_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos
+        -DTrilinos_DEPS_HOME_DIR:PATH=${MOCK_TRILINOS_DIR}
         -DTrilinos_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR=${TEST_OUTPUT_DIR}
         ${PARSE_ARGS}
         -P ${TRILINOS_HOME_DIR}/cmake/package_arch/PackageArchDumpDepsXmlScript.cmake
@@ -95,7 +98,7 @@ FUNCTION(CREATE_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
     OVERALL_WORKING_DIRECTORY TEST_NAME
     TEST_0 CMND ${CMAKE_COMMAND}
       ARGS
-        -DTrilinos_DEPS_HOME_DIR:PATH=${TRILINOS_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos
+        -DTrilinos_DEPS_HOME_DIR:PATH=${MOCK_TRILINOS_DIR}
         -DTrilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON
         -DTrilinos_DEPS_XML_OUTPUT_FILE:STRING=
         -DTrilinos_DEPS_HTML_OUTPUT_FILE:STRING=

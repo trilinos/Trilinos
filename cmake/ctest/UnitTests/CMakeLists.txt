@@ -9,6 +9,9 @@ ADVANCED_SET(Trilinos_CTEST_COMMAND ctest CACHE STRING
   "CTest executable used to drive unit tests")
 
 
+SET(MOCK_TRILINOS_DIR ${Trilinos_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
+
+
 FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
 
   #MESSAGE("CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE: ${TEST_CASE} ${ARGN}")
@@ -65,9 +68,10 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
   SET(TEST_BLOCKS ${TEST_BLOCKS}
     TEST_${TEST_IDX} CMND env
       ARGS
-        Trilinos_PACKAGES_FILE=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake/TrilinosPackages.cmake
-        Trilinos_EXTRAREPOS_FILE=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake/ExtraExternalRepositories.cmake
-        Trilinos_SOURCE_DIRECTORY=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos
+        Trilinos_TRIBITS_DIR=${Trilinos_TRIBITS_DIR}
+        Trilinos_PACKAGES_FILE=${MOCK_TRILINOS_DIR}/cmake/TrilinosPackages.cmake
+        Trilinos_EXTRAREPOS_FILE=${MOCK_TRILINOS_DIR}/cmake/ExtraExternalRepositories.cmake
+        Trilinos_SOURCE_DIRECTORY=${MOCK_TRILINOS_DIR}
         CTEST_DEPENDENCY_HANDLING_UNIT_TESTING=ON
         #CTEST_DO_UPDATES=OFF
         CTEST_DO_SUBMIT=OFF
@@ -137,10 +141,10 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra 8"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 15"
     "Procesing current package Teuchos: libs='ON', tests=''"
-    "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
+    "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${MOCK_TRILINOS_DIR}/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
     "Procesing current package Epetra: libs='ON', tests=''"
     "Procesing current package Thyra: libs='ON', tests='ON'"
-    "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_EpetraExt:BOOL=.-DTrilinos_ENABLE_Thyra:BOOL=ON'"
+    "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${MOCK_TRILINOS_DIR}/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_EpetraExt:BOOL=.-DTrilinos_ENABLE_Thyra:BOOL=ON'"
     "Procesing current package Stokhos: libs='OFF', tests=''"
     "Procesing current package Isorropia: libs='', tests=''"
   )

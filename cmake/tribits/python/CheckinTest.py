@@ -78,7 +78,12 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 # Load some default dependencies for some unit tests
-trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
+trilinosDependenciesCache = None
+def getDefaultTrilinosDependenices():
+#  global trilinosDependenciesCache
+#  if not trilinosDependenciesCache:
+#    trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
+  return trilinosDependenciesCache
 
 # Set the official eg/git versions!
 g_officialEgVersion = "1.7.0.4"
@@ -251,12 +256,12 @@ def assertPackageNames(optionName, packagesListStr):
   if not packagesListStr:
     return
   for packageName in packagesListStr.split(','):
-    if trilinosDependencies.packageNameToID(packageName) == -1:
+    if getDefaultTrilinosDependenices().packageNameToID(packageName) == -1:
       validPackagesListStr = ""
-      for i in range(trilinosDependencies.numPackages()):
+      for i in range(getDefaultTrilinosDependenices().numPackages()):
         if validPackagesListStr != "":
           validPackagesListStr += ", "
-        validPackagesListStr += trilinosDependencies.getPackageByID(i).packageName
+        validPackagesListStr += getDefaultTrilinosDependenices().getPackageByID(i).packageName
       raise Exception("Error, invalid package name "+packageName+" in " \
         +optionName+"="+packagesListStr \
         +".  The valid package names include: "+validPackagesListStr)
@@ -516,7 +521,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
   :
 
   if not trilinosDependenciesLocal:
-    trilinosDependenciesLocal = trilinosDependencies
+    trilinosDependenciesLocal = getDefaultTrilinosDependenices()
 
   modifiedFilesList = extractFilesListMatchingPattern(
     updateOutputStr.split('\n'), reModifiedFiles )
@@ -998,7 +1003,7 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   if verbose:
     print "\nFiltering the set of enabled packages according to allowed package types ..."
   origEnablePackagesList = enablePackagesList[:]
-  enablePackagesList = trilinosDependencies.filterPackageNameList(
+  enablePackagesList = getDefaultTrilinosDependenices().filterPackageNameList(
     enablePackagesList, validPackageTypesList, verbose)
 
   if verbose:
@@ -1628,8 +1633,8 @@ def checkinTest(inOptions):
     trilinosDepsXmlFile = trilinosDepsXmlFileOverride
 
 
-  global trilinosDependencies
-  trilinosDependencies = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFile)
+  global trilinosDependenciesCache
+  trilinosDependenciesCache = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFile)
 
   assertPackageNames("--enable-packages", inOptions.enablePackages)
   assertPackageNames("--disable-packages", inOptions.disablePackages)

@@ -305,14 +305,16 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   # to fix this so that the dependency files will get created and
   # checked in correctly.  I will look into this later.
 
+  SET(DEPENDENCIES_DIR ${${PROJECT_NAME}_PACKAGE_DEPS_FILES_DIR})
+
   ADVANCED_SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/${DEPENDENCIES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}"
     CACHE STRING
     "Output XML file containing ${PROJECT_NAME} dependenices used by tools (if not empty)." )
   
   IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
     SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
+      "${CMAKE_CURRENT_SOURCE_DIR}/${DEPENDENCIES_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
   ELSE()
     SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
@@ -323,7 +325,7 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   
   IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
     SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
+      "${CMAKE_CURRENT_SOURCE_DIR}/${DEPENDENCIES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
   ELSE()
     SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
@@ -649,7 +651,7 @@ MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
     MESSAGE("Dumping the HTML dependencies webpage file ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} ..." )
     EXECUTE_PROCESS(
       COMMAND ${PYTHON_EXECUTABLE}
-        ${PROJECT_HOME_DIR}/cmake/python/dump-package-dep-table.py
+        ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_PYTHON_SCRIPTS_DIR}/dump-package-dep-table.py
         --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
         --output-html-deps-file=${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} )
   ENDIF()
@@ -663,7 +665,7 @@ MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
     MESSAGE("Dumping the CDash XML dependencies file ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} ..." )
     EXECUTE_PROCESS(
       COMMAND ${PYTHON_EXECUTABLE}
-        ${PROJECT_HOME_DIR}/cmake/python/dump-cdash-deps-xml-file.py
+        ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_PYTHON_SCRIPTS_DIR}/dump-cdash-deps-xml-file.py
         --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
         --output-cdash-deps-xml-file=${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} )
   ENDIF()
@@ -1425,7 +1427,7 @@ MACRO(PACKAGE_ARCH_ADD_DASHBOARD_TARGET)
       COMMAND env ${EXPR_CMND_ARGS}
         ${PROJECT_NAME}_PACKAGES=${${PROJECT_NAME}_ENABLED_PACKAGES_LIST}
         ${CMAKE_CTEST_COMMAND} ${${PROJECT_NAME}_DASHBOARD_CTEST_ARGS} -S
-          ${PROJECT_HOME_DIR}/cmake/ctest/experimental_build_test.cmake || echo
+          ${PROJECT_HOME_DIR}/cmake/ctest1/experimental_build_test.cmake || echo
   
       # 2009/07/05: rabartl: Above, I added the ending '|| echo' to always make
       # the command pass so that 'make will not stop and avoid this last command

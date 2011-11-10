@@ -72,8 +72,8 @@ MESSAGE("${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR = ${${PROJECT_NAME}
 # Get the utility CMake code that can determine the dependencies
 
 SET( CMAKE_MODULE_PATH
-  "${${PROJECT_NAME}_CMAKE_DIR}/utils"
-  "${${PROJECT_NAME}_CMAKE_DIR}/package_arch"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_UTILS_DIR}"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_PACKAGE_ARCH_DIR}"
   )
 
 INCLUDE(PackageArchGlobalMacros)

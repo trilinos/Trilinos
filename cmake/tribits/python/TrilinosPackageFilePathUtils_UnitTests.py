@@ -241,12 +241,6 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
 
     self.assertEqual(
       getCmndOutput(getScriptBaseDir()+"/get-trilinos-packages-from-files-list.py" \
-        " --files-list-file=modifiedFiles.txt", True),
-      "ALL_PACKAGES;TrilinosFramework;Thyra"
-      )
-
-    self.assertEqual(
-      getCmndOutput(getScriptBaseDir()+"/get-trilinos-packages-from-files-list.py" \
         " --files-list-file=modifiedFiles.txt --deps-xml-file="+testingTrilinosDepsXmlInFile,
         True),
       "ALL_PACKAGES;TrilinosFramework;ThyraCoreLibs;Thyra"

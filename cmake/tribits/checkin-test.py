@@ -70,7 +70,14 @@ import sys
 import os
 import traceback
 
-scriptsDir = os.path.abspath(os.path.dirname(sys.argv[0]))+"/cmake/python"
+
+# Get the location of the scripts directory whether from a sym link or the
+# actual
+
+checkinTestFilePath = os.path.abspath(sys.argv[0])
+checkinTestFileRealPath = os.path.realpath(checkinTestFilePath)
+scriptsDir = os.path.dirname(checkinTestFileRealPath)+"/python"
+print "scriptsDir='"+scriptsDir+"'"
 sys.path.insert(0, scriptsDir)
 
 from GeneralScriptSupport import *

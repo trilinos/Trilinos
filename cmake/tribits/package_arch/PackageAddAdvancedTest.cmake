@@ -558,7 +558,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
     "# Test invocation\n"
     "#\n"
     "\n"
-    "SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/utils)\n"
+    "SET(CMAKE_MODULE_PATH ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_UTILS_DIR})\n"
     "\n"
     "INCLUDE(DriveAdvancedTest)\n"
     "\n"
