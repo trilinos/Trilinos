@@ -180,6 +180,11 @@ void Multiply(
     //now insert all of the nonzero positions into the result matrix.
     insert_matrix_locations(crsgraphbuilder, C);
 
+
+    if (call_FillComplete_on_result) {
+      C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
+      call_FillComplete_on_result = false;
+    }
   }
 
   //Now call the appropriate method to perform the actual multiplication.
