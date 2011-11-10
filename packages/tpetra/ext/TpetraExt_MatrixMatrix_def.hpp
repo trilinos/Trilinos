@@ -409,6 +409,19 @@ void mult_A_B(
 
   size_t C_row_i_length, i, j, k;
 
+  // Run through all the hash table lookups once and for all
+  Array<LocalOrdinal> Acol2Brow(Aview.colMap->getNodeNumElements());
+  if(Aview.colMap->isSameAs(*Bview.rowMap)){
+    // Maps are the same: Use local IDs as the hash
+    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex();i<=Aview.colMap->getMaxLocalIndex();i++)
+      Acol2Brow[i]=i;				
+  }
+  else {
+    // Maps are not the same:  Use the map's hash
+    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex();i<=Aview.colMap->getMaxLocalIndex();i++)
+      Acol2Brow[i]=Bview.rowMap->getLocalElement(Aview.colMap->getGlobalElement(i));
+  }
+
   //To form C = A*B we're going to execute this expression:
   //
   // C(i,j) = sum_k( A(i,k)*B(k,j) )
@@ -440,8 +453,10 @@ void mult_A_B(
     //as we stride across B(k,:) we're calculating updates for row i of the
     //result matrix C.
 
+
+
     for(k=OrdinalTraits<size_t>::zero(); k<Aview.numEntriesPerRow[i]; ++k) {
-      LocalOrdinal Ak = Bview.rowMap->getLocalElement(Aview.colMap->getGlobalElement(Aindices_i[k]));
+      LocalOrdinal Ak=Acol2Brow[Aindices_i[k]];
       Scalar Aval = onlyCalculateStructure ? Teuchos::as<Scalar>(0) : Aval_i[k];
 
       ArrayView<const LocalOrdinal> Bcol_inds = Bview.indices[Ak];
