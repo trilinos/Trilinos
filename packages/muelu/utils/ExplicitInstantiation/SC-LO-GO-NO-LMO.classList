@@ -1,16 +1,15 @@
-Amesos2Smoother
+#Amesos2Smoother
 CoalesceDropFactory
 DirectSolver
 FactoryManager
 GaussSeidelSmoother
 GenericRFactory
 Hierarchy
-HierarchyHelpers
-Ifpack2Smoother
+#HierarchyHelpers
+#Ifpack2Smoother
 MergedSmoother
 NullspaceFactory
 PgPFactory
-PreDropFunctionBaseClass
 PreDropFunctionConstVal
 RAPFactory
 SaPFactory
@@ -20,4 +19,4 @@ TentativePFactory
 ThresholdAFilterFactory
 TransPFactory
 TrilinosSmoother
-Utilities
+#Utilities
