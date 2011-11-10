@@ -5,15 +5,15 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # Executables
 #
 
-IF(( ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos) OR 
-    (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
+IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR 
+    (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
   
   #Simple
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Simple
     SOURCES Simple.cpp
     DEPLIBS muelu muelu-xpetra
-    NUM_MPI_PROCS 4
+    NUM_MPI_PROCS 1
     COMM serial mpi
     )
 
@@ -23,7 +23,7 @@ IF(( ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACK
       Simple-LongInt
       SOURCES Simple-LongInt.cpp
       DEPLIBS muelu muelu-xpetra
-      NUM_MPI_PROCS 4
+      NUM_MPI_PROCS 1
       COMM serial mpi
       )
   ENDIF()
@@ -33,7 +33,7 @@ IF(( ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACK
     Simple-Templated
     SOURCES Simple-Templated.cpp
     DEPLIBS muelu muelu-xpetra
-    NUM_MPI_PROCS 4
+    NUM_MPI_PROCS 1
     COMM serial mpi
     )
 
@@ -42,32 +42,34 @@ IF(( ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACK
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       Simple-Belos
       SOURCES Simple-Belos.cpp
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      DEPLIBS muelu muelu-xpetra muelu-adapters
-      )
-  ENDIF()
-
-  #Simple-Tpetra
-  IF(${PACKAGE_NAME}_ENABLE_Tpetra)
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      Simple-Tpetra
-      SOURCES Simple-Tpetra.cpp
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      DEPLIBS muelu muelu-xpetra muelu-adapters
-      )
-  ENDIF()
-
-  #Simple-Epetra
-  IF(${PACKAGE_NAME}_ENABLE_Epetra)
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      Simple-Epetra
-      SOURCES Simple-Epetra.cpp
-      NUM_MPI_PROCS 4
+      NUM_MPI_PROCS 1
       COMM serial mpi
       DEPLIBS muelu muelu-xpetra muelu-adapters
       )
   ENDIF()
 
 ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+  #Simple-Tpetra
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Simple-Tpetra
+    SOURCES Simple-Tpetra.cpp
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    DEPLIBS muelu muelu-xpetra muelu-adapters
+    )
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)
+  #Simple-Epetra
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Simple-Epetra
+    SOURCES Simple-Epetra.cpp
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    DEPLIBS muelu muelu-xpetra muelu-adapters
+    )
+ENDIF()
+
+#TODO: NUM_MPI_PROCS->4
