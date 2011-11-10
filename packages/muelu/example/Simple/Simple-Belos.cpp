@@ -35,11 +35,14 @@ int main(int argc, char *argv[]) {
   // Parameters
   //
 
-  GlobalOrdinal numGlobalElements = 256;         // problem size
+// problem size
+  GlobalOrdinal numGlobalElements = 256;
 
-#ifdef HAVE_MUELU_TPETRA
-  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra; // linear algebra library
-#else
+  // linear algebra library
+  // this example require Tpetra+Ifpack2+Amesos2 or Epetra+Ifpack+Amesos
+#if   defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
+  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra; 
+#elif defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)  && defined(HAVE_MUELU_AMESOS)
   Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
 #endif
 
