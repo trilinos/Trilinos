@@ -4,7 +4,8 @@
 #include <Kokkos_DefaultNode.hpp>
 
 ////////////////////////////////////////////////////////////////////////
-#define HELLO std::cout << "Hello from " << __func__ << std::endl
+//define HELLO std::cout << "Hello from " << __func__ << std::endl
+#define HELLO 
 
 #define Z2CLASS_TEMPLATE \
         typename Scalar=float, \

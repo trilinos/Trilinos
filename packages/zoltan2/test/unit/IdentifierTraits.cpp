@@ -23,6 +23,7 @@
 
 using namespace std;
 
+// TODO - add answers to check_traits to verify the results
 template <typename T> 
 void check_traits(T &val, T &compval)
 {
@@ -34,7 +35,7 @@ void check_traits(T &val, T &compval)
   std::cout << "Hash key (unique): " << k << std::endl;
   std::cout << "Int hash code (non-unique): " << id::hashCode(val) << std::endl;
   std::cout << "Is Teuchos hash key type: " << id::isHashKeyType() << std::endl;
-  std::cout << "Is Teuchos Global Ordinal: " << id::isGlobalOrdinalType() << std::endl;
+  std::cout << "Is Teuchos Global Ordinal: " << id::isGlobalOrdinal() << std::endl;
   std::cout << "Is Teuchos Packet type: " << id::isPacketType() << std::endl;
   std::cout << "Equal to self: " << id::equal(val, val) << std::endl;
   std::cout << "Equal to other: " << id::equal(val, compval) << std::endl;
@@ -60,8 +61,10 @@ int main(int argc, char *argv[])
     long int li_other=11024;
     long unsigned int lui =1024;
     long unsigned int lui_other =11024;
+#ifdef HAVE_LONG_LONG
     long long int lli = 3000000000;
     long long int lli_other = 3102400000000;
+#endif
     std::pair<int, int> pairVals(1024, 1024);
     std::pair<int, int> pairVals_other(1024, 11024);
 
@@ -71,7 +74,9 @@ int main(int argc, char *argv[])
     check_traits(ui, ui_other);
     check_traits(li, li_other);
     check_traits(lui, lui_other);
+#ifdef HAVE_LONG_LONG
     check_traits(lli, lli_other);
+#endif
     check_traits(pairVals, pairVals_other);
 
     std::cout << "PASS" << std::endl;

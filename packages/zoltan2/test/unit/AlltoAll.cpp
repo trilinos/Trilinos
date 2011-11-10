@@ -13,7 +13,6 @@
 // TODO: doxygen comments
 //     make this a real unit test that gives helpful information if it fails
 //     and uses different template values
-//     make this work if !HAVE_MPI
 
 #include <iostream>
 #include <algorithm>
@@ -32,7 +31,6 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-
   Teuchos::RCP<const Teuchos::Comm<int> > comm = 
     Teuchos::DefaultComm<int>::getComm();
 
@@ -55,7 +53,7 @@ int main(int argc, char *argv[])
   
     int *sendBuf = new int [2*nprocs];
     
-    Teuchos::ArrayView<int> sendBufView(sendBuf, 2*nprocs);
+    Teuchos::ArrayView<const int> sendBufView(sendBuf, 2*nprocs);
   
     for (int i=0, j=1; i < 2*nprocs ; i+=2,j++){
       sendBuf[i] = j*10;
@@ -90,7 +88,8 @@ int main(int argc, char *argv[])
   
     std::pair<int, int> *outBufPair = new std::pair<int, int> [nprocs];
 
-    Teuchos::ArrayView< std::pair<int, int> > sendBufPair(outBufPair, nprocs);
+    Teuchos::ArrayView< const std::pair<int, int> > sendBufPair(
+      outBufPair, nprocs);
   
     for (int i=0,j=1; i < nprocs ; i++,j++){
       outBufPair[i].first = j*10;
@@ -130,11 +129,9 @@ int main(int argc, char *argv[])
       outMsgSizes[p] = myMsgSizeBase + p;
       totalOut += outMsgSizes[p];
     }
-
-    Teuchos::ArrayView<int> sendCount(outMsgSizes, nprocs);
+    Teuchos::ArrayView<const int> sendCount(outMsgSizes, nprocs);
   
     int *outBuf = new int [totalOut];
-    Teuchos::ArrayView<int> sendBuf(outBuf, totalOut);
   
     int *out = outBuf;
     for (int p=0; p < nprocs; p++){
@@ -142,6 +139,7 @@ int main(int argc, char *argv[])
         *out++ = p+rank;
       }
     }
+    Teuchos::ArrayView<const int> sendBuf(outBuf, totalOut);
   
     Teuchos::ArrayRCP<int> recvCount;
     Teuchos::ArrayRCP<int> recvBuf;
@@ -181,11 +179,9 @@ int main(int argc, char *argv[])
       outMsgSizes[p] = myMsgSizeBase + p;
       totalOut += outMsgSizes[p];
     }
-
-    Teuchos::ArrayView<int> sendCount(outMsgSizes, nprocs);
+    Teuchos::ArrayView<const int> sendCount(outMsgSizes, nprocs);
   
     std::vector<float> *outBuf = new std::vector<float> [totalOut];
-    Teuchos::ArrayView<std::vector<float> > sendBuf(outBuf, totalOut);
   
     std::vector<float> *out = outBuf;
     for (int p=0; p < nprocs; p++){
@@ -195,6 +191,7 @@ int main(int argc, char *argv[])
         (*out).push_back(p+rank + 0.5);
       }
     }
+    Teuchos::ArrayView<const std::vector<float> > sendBuf(outBuf, totalOut);
   
     Teuchos::ArrayRCP<int> recvCount;
     Teuchos::ArrayRCP<std::vector<float> > recvBuf;

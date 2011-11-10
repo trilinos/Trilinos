@@ -33,12 +33,14 @@ typedef size_t global_size_t;
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_Comm.hpp>
 
 namespace Zoltan2{
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_implicit_cast;
+using Teuchos::rcp_dynamic_cast;
 using Teuchos::Array;
 using Teuchos::ArrayRCP;
 using Teuchos::arcp;

@@ -1,8 +1,10 @@
 INCLUDE(PackageAddExecutableAndTest)
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Partitioning1
-  SOURCES partitioning1.cpp
+  SOURCES useMueLuGallery.hpp partitioning1.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS 

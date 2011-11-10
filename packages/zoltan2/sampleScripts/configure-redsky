@@ -1,11 +1,14 @@
 #!/bin/bash
-# configure zoltan2 on glory to include scotch
+# configure zoltan2 on redsky to include scotch
 #
-# module switch mpi mpi/mvapich-1.1_intel-11.1-f064-c064
+# using default modules:
+#  2) compilers/intel-11.1-f064-c064
+#  4) mpi/openmpi-1.4.3_oobpr_intel-11.1-f064-c064
 #
 SRCDIR=/home/lriesen/projects/Trilinos
-CMAKE=/home/lriesen/projects/cmake-2.8.6/bin
-SCOTCH=/home/lriesen/projects/scotch_5.1.12
+CMAKE=/home/lriesen/local/bin
+SCOTCH=/home/lriesen/software/scotch_5.1.12-64
+LAPACK=/home/lriesen/software/lapack-3.2
 
 # Clean up the mess from previous configurations.
 

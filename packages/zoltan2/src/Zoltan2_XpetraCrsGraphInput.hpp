@@ -17,24 +17,11 @@
 #include <Xpetra_EpetraCrsGraph.hpp>
 #include <Xpetra_TpetraCrsGraph.hpp>
 #include <Zoltan2_GraphInput.hpp>
+#include <Zoltan2_XpetraTraits.hpp>
 
 namespace Zoltan2 {
 
-// Specialization of InputTraits for Xpetra matrices.
-template <typename LocalOrdinal,
-          typename GlobalOrdinal,
-          typename Node>
-struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
-{
-  typedef float         scalar_t;
-  typedef LocalOrdinal  lno_t;
-  typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal  lid_t;
-  typedef GlobalOrdinal gid_t;
-  typedef Node          node_t;
-};
-
-
+/////////////////////////////////////////////////////////////////////////////
 /*! Zoltan2::XpetraCrsGraphInput
     \brief Provides access for Zoltan2 to Xpetra::CrsGraph data.
 
@@ -43,8 +30,7 @@ struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
                 objects that are not FillCompleted.
 
     The template parameter is the user's input object - an Epetra
-    graph or a templated Tpetra graph (through sub classes 
-    EpetraCrsGraphInput or TpetraCrsGraphInput respectively), 
+    graph or a templated Tpetra graph 
     or a templated Xpetra::CrsGraph.
 */
 
@@ -60,6 +46,8 @@ public:
   typedef typename InputAdapter<User>::gid_t    gid_t;
   typedef typename InputAdapter<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
+  typedef Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t> xtgraph_t;
+  typedef Xpetra::EpetraCrsGraph xegraph_t;
 
   /*! Name of input adapter type   TODO make this a trait
    */
@@ -69,13 +57,19 @@ public:
    */
   ~XpetraCrsGraphInput() { }
 
-  /*! Constructor with a Xpetra::CrsGraph
+  /*! Constructor
    */
-  XpetraCrsGraphInput(const RCP<const xgraph_t> &graph):
-    graph_(graph), rowMap_(), colMap_(), edgeOffsets_(),
+  XpetraCrsGraphInput(const RCP<const User> &ingraph):
+    ingraph_(ingraph),
+    graph_(),
+    rowMap_(), colMap_(), edgeOffsets_(),
     vtxWeightDim_(0), edgeWeightDim_(0), coordinateDim_(0),
     edgeWgt_(), vertexWgt_(), xyz_()
   {
+    cout << __func__ << " getting Traits from "
+         << InputTraits<User>::name() << endl;
+
+    graph_ = XpetraTraits<User>::convertToXpetra(ingraph);
     makeOffsets();
   }
 
@@ -383,9 +377,14 @@ public:
   /*! Access to xpetra graph 
    */ 
    
-  RCP<const xgraph_t> getGraph() const
+  RCP<const xgraph_t> getXpetraGraph() const
   {
     return graph_;
+  }
+
+  RCP<const User> getUserGraph() const
+  {
+    return ingraph_;
   }
 
 
@@ -399,6 +398,7 @@ public:
 private:
 
 
+  RCP<const User > ingraph_;
   RCP<const xgraph_t > graph_;
   RCP<const Xpetra::Map<lid_t, gid_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lid_t, gid_t, node_t> > colMap_;

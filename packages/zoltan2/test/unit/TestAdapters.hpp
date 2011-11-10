@@ -28,10 +28,6 @@
 #include <MatrixMarket_Tpetra.hpp>
 #include <Xpetra_EpetraUtils.hpp>
 
-#include <Zoltan2_EpetraCrsGraphInput.hpp>
-#include <Zoltan2_TpetraCrsGraphInput.hpp>
-#include <Zoltan2_EpetraCrsMatrixInput.hpp>
-#include <Zoltan2_TpetraCrsMatrixInput.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_XpetraCrsGraphInput.hpp>
 
@@ -46,8 +42,11 @@
 #include <MueLu_GalleryParameters.hpp>
 
 
+#ifdef HAVE_MPI
+
 #define TEST_FAIL_AND_THROW(comm, ok, s){ \
-int gval, lval=( (ok) ? 0 : 1);       \
+int lval=( (ok) ? 0 : 1);       \
+int gval = 0;    \
 Teuchos::reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
 if (gval){ \
   throw std::runtime_error(std::string(s)); \
@@ -55,7 +54,8 @@ if (gval){ \
 }
 
 #define TEST_FAIL_AND_EXIT(comm, ok, s, code){ \
-int gval, lval=( (ok) ? 0 : 1);       \
+int lval=( (ok) ? 0 : 1);       \
+int gval = 0;    \
 Teuchos::reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
 if (gval){ \
   if ((comm).getRank() == 0){\
@@ -66,18 +66,37 @@ if (gval){ \
 } \
 }
 
+#else
+
+#define TEST_FAIL_AND_THROW(comm, ok, s) \
+if (!ok){ \
+  throw std::runtime_error(std::string(s)); \
+} 
+
+#define TEST_FAIL_AND_EXIT(comm, ok, s, code) \
+if (!ok){ \
+  std::cerr << "Error: " << s << std::endl;\
+  std::cout << "FAIL" << std::endl;\
+  exit(code);\
+} 
+
+#endif
+
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::ArrayView;
 using Teuchos::Array;
 using Teuchos::Comm;
 using Teuchos::rcp_implicit_cast;
+using Teuchos::rcp_const_cast;
 using Teuchos::rcp;
 
 template <Z2CLASS_TEMPLATE>
 class TestAdapters{
 
 private:
+    typedef Epetra_CrsMatrix ecrsMatrix_t;
+    typedef Epetra_CrsGraph ecrsGraph_t;
     typedef Tpetra::CrsMatrix<Scalar, LNO, GNO> tcrsMatrix_t;
     typedef Xpetra::CrsMatrix<Scalar, LNO, GNO> xcrsMatrix_t;
     typedef Xpetra::TpetraCrsMatrix<Scalar, LNO, GNO> xtcrsMatrix_t;
@@ -85,10 +104,10 @@ private:
     typedef Xpetra::CrsGraph<LNO, GNO> xcrsGraph_t;
     typedef Tpetra::Map<LNO, GNO> map_t;
 
-    typedef Zoltan2::EpetraCrsGraphInput<Epetra_CrsGraph> EpetraCrsGraphInput;
-    typedef Zoltan2::EpetraCrsMatrixInput<Epetra_CrsMatrix> EpetraCrsMatrixInput;
-    typedef Zoltan2::TpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
-    typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
+    typedef Zoltan2::XpetraCrsGraphInput<ecrsGraph_t> EpetraCrsGraphInput;
+    typedef Zoltan2::XpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
+    typedef Zoltan2::XpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
+    typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
     typedef Zoltan2::XpetraCrsGraphInput<xcrsGraph_t> XpetraCrsGraphInput;
     typedef Zoltan2::XpetraCrsMatrixInput<xcrsMatrix_t> XpetraCrsMatrixInput;
 
@@ -246,7 +265,8 @@ public:
       if (tmi_.is_null()){
         if (M_.is_null())
           createMatrix();
-        tmi_ = rcp(new TpetraCrsMatrixInput(M_));
+        tmi_ = rcp(new TpetraCrsMatrixInput(
+          rcp_const_cast<const tcrsMatrix_t>(M_)));
       }
       return tmi_;
     }
@@ -313,7 +333,8 @@ public:
         if (DestroyM)
           M_.release();
         
-        tmi_64_ = rcp(new TpetraCrsMatrixInput(newM64));
+        tmi_64_ = rcp(new TpetraCrsMatrixInput(
+          rcp_const_cast<const tcrsMatrix_t>(newM64)));
       }
       return tmi_64_;
     }
@@ -324,7 +345,8 @@ public:
         if (xM_.is_null())
           createMatrix();
 
-        xmi_ = rcp(new XpetraCrsMatrixInput(xM_));
+        xmi_ = rcp(new XpetraCrsMatrixInput(
+          rcp_const_cast<const xcrsMatrix_t>(xM_)));
       }
       return xmi_;
     }
@@ -349,6 +371,8 @@ template <>
 class TestAdapters<double,int,int,int,int,Kokkos::DefaultNode::DefaultNodeType>
 {
 private:
+    typedef Epetra_CrsMatrix ecrsMatrix_t;
+    typedef Epetra_CrsGraph ecrsGraph_t;
     typedef Tpetra::CrsMatrix<double, int, int> tcrsMatrix_t;
     typedef Xpetra::CrsMatrix<double, int, int> xcrsMatrix_t;
     typedef Xpetra::TpetraCrsMatrix<double, int, int> xtcrsMatrix_t;
@@ -356,10 +380,10 @@ private:
     typedef Xpetra::CrsGraph<int, int> xcrsGraph_t;
     typedef Tpetra::Map<int, int> map_t;
 
-    typedef Zoltan2::EpetraCrsGraphInput<Epetra_CrsGraph> EpetraCrsGraphInput;
-    typedef Zoltan2::EpetraCrsMatrixInput<Epetra_CrsMatrix> EpetraCrsMatrixInput;
-    typedef Zoltan2::TpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
-    typedef Zoltan2::TpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
+    typedef Zoltan2::XpetraCrsGraphInput<ecrsGraph_t> EpetraCrsGraphInput;
+    typedef Zoltan2::XpetraCrsMatrixInput<ecrsMatrix_t> EpetraCrsMatrixInput;
+    typedef Zoltan2::XpetraCrsGraphInput<tcrsGraph_t> TpetraCrsGraphInput;
+    typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> TpetraCrsMatrixInput;
     typedef Zoltan2::XpetraCrsGraphInput<xcrsGraph_t> XpetraCrsGraphInput;
     typedef Zoltan2::XpetraCrsMatrixInput<xcrsMatrix_t> XpetraCrsMatrixInput;
 
@@ -521,7 +545,7 @@ public:
         RCP<EpetraCrsGraphInput> graphAdapter = 
           getEpetraCrsGraphInputAdapter();
 
-        RCP<const Epetra_CrsGraph> egraph = graphAdapter->getGraph();
+        RCP<const Epetra_CrsGraph> egraph = graphAdapter->getUserGraph();
 
         RCP<Epetra_CrsMatrix> matrix = rcp(
           new Epetra_CrsMatrix(Copy, *egraph));
@@ -547,7 +571,9 @@ public:
         }
         matrix->FillComplete();
 
-        emi_ = rcp(new EpetraCrsMatrixInput(matrix));
+        RCP<const Epetra_CrsMatrix> m = rcp_const_cast<const Epetra_CrsMatrix>(matrix);
+
+        emi_ = rcp(new EpetraCrsMatrixInput(m));
       }
       return emi_;
     }
@@ -568,7 +594,8 @@ public:
       if (tmi_.is_null()){
         if (M_.is_null())
           createMatrix();
-        tmi_ = rcp(new TpetraCrsMatrixInput(M_));
+        tmi_ = rcp(new TpetraCrsMatrixInput(
+          rcp_const_cast<const tcrsMatrix_t>(M_)));
       }
       return tmi_;
     }
@@ -579,7 +606,8 @@ public:
         if (xM_.is_null())
           createMatrix();
 
-        xmi_ = rcp(new XpetraCrsMatrixInput(xM_));
+        xmi_ = rcp(new XpetraCrsMatrixInput(
+          rcp_const_cast<const xcrsMatrix_t>(xM_)));
       }
       return xmi_;
     }

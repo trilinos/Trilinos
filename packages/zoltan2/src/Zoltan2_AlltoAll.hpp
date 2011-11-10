@@ -40,18 +40,14 @@ namespace Zoltan2
 template <typename T, typename LNO>
 void AlltoAll(const Comm<int> &comm,
               Zoltan2::Environment &env,
-              const ArrayView<T> &sendBuf,  // input
-              LNO count,                             // input
+              const ArrayView<const T> &sendBuf,  // input
+              LNO count,                          // input
               ArrayRCP<T> &recvBuf)         // output - allocated here
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
 
   if (count == 0) return;   // count is the same on all procs
-
-  Array<RCP<CommRequest> > req(nprocs-1);
-
-  // Create a T-aligned receive buffer.
 
   T *ptr = NULL;
   Z2_SYNC_MEMORY_ALLOC(comm, env, T, ptr, nprocs * count);
@@ -64,9 +60,11 @@ void AlltoAll(const Comm<int> &comm,
     inBuf.get()[offset] = sendBuf.getRawPtr()[offset];
   }
 
+#ifdef HAVE_MPI
   // Post receives
 
   RCP<CommRequest> r;
+  Array<RCP<CommRequest> > req(nprocs-1);
 
   for (int p=0; p < nprocs; p++){
     if (p != rank){
@@ -104,6 +102,7 @@ void AlltoAll(const Comm<int> &comm,
     catch (const std::exception &e)
       Z2_THROW_OUTSIDE_ERROR(env, e);
   }
+#endif
 
   recvBuf = inBuf;
 }
@@ -119,8 +118,8 @@ void AlltoAll(const Comm<int> &comm,
 template <typename T, typename LNO>
 void AlltoAllv(const Comm<int> &comm,
               Zoltan2::Environment &env,  
-              const ArrayView<T> &sendBuf,      // input
-              const ArrayView<LNO> &sendCount,  // input
+              const ArrayView<const T> &sendBuf,      // input
+              const ArrayView<const LNO> &sendCount,  // input
               ArrayRCP<T> &recvBuf,      // output, allocated here
               ArrayRCP<LNO> &recvCount)  // output, allocated here
 {
@@ -149,12 +148,13 @@ void AlltoAllv(const Comm<int> &comm,
   ArrayRCP<T> inBuf(ptr, 0, totalIn, true);
 
   T *in = inBuf.get() + offsetIn;           // Copy self messages
-  T *out = sendBuf.getRawPtr() + offsetOut;
+  const T *out = sendBuf.getRawPtr() + offsetOut;
 
   for (LNO i=0; i < recvCount[rank]; i++){
     in[i] = out[i];
   }
 
+#ifdef HAVE_MPI
   // Post receives
 
   RCP<CommRequest> r;
@@ -204,6 +204,7 @@ void AlltoAllv(const Comm<int> &comm,
     catch(const std::exception &e)
       Z2_THROW_OUTSIDE_ERROR(env, e);
   }
+#endif
 
   recvBuf = inBuf;
 }
@@ -356,8 +357,8 @@ template <typename T, typename LNO>
 template <typename T, typename LNO>
 void AlltoAllv(const Comm<int>     &comm,
   Zoltan2::Environment &env,
-  const ArrayView<std::vector<T> > &sendBuf,
-  const ArrayView<LNO>             &sendCount,
+  const ArrayView<const std::vector<T> > &sendBuf,
+  const ArrayView<const LNO>             &sendCount,
   ArrayRCP<std::vector<T> >        &recvBuf,
   ArrayRCP<LNO>                    &recvCount,
   LNO            vLen=0)      // set if all vectors are the same length
@@ -386,7 +387,7 @@ void AlltoAllv(const Comm<int>     &comm,
   T *buf = NULL;
   Z2_SYNC_MEMORY_ALLOC(comm, env, T, buf, totalSendSize/sizeof(T));
 
-  std::vector<T> *vptr = sendBuf.getRawPtr();
+  const std::vector<T> *vptr = sendBuf.getRawPtr();
 
   char *charBuf = reinterpret_cast<char *>(buf);
 
@@ -442,15 +443,15 @@ void AlltoAllv(const Comm<int>     &comm,
 
   buf = recvT.get();
   charBuf = reinterpret_cast<char *>(buf);
-  vptr = inVectors;
+  std::vector<T> *inv = inVectors;
 
   for (int p=0; p < nprocs; p++){
     if (recvSize[p] > 0){
       LNO bytecount = recvSize[p] * sizeof(T);
-      deserialize<T, LNO>(bytecount, charBuf, vectorCount[p], vptr, vLen);
+      deserialize<T, LNO>(bytecount, charBuf, vectorCount[p], inv, vLen);
 
       charBuf += bytecount;
-      vptr += vectorCount[p];
+      inv += vectorCount[p];
     }
   }
 

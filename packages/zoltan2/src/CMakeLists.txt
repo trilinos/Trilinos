@@ -9,6 +9,9 @@ SET(CURRENT_PACKAGE ZOLTAN2)
 CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
 
+ASSERT_DEFINED(TPL_ENABLE_MPI)
+SET(HAVE_MPI TPL_ENABLE_MPI)
+
 ASSERT_DEFINED(${PACKAGE_NAME}_HAVE_MALLINFO)
 SET(HAVE_MALLINFO ${${PACKAGE_NAME}_HAVE_MALLINFO})
 
@@ -24,6 +27,15 @@ SET(HAVE_PATOH ${${PACKAGE_NAME}_ENABLE_PaToH})
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Scotch)
 SET(HAVE_SCOTCH ${${PACKAGE_NAME}_ENABLE_Scotch})
 
+#
+# If linking with 64-bit TPLs, include
+# Zoltan2_HAVE_TPL64::BOOL=ON
+# in cmake configuration parameters
+#
+# The default is 32-bit third party libraries
+#
+ASSERT_DEFINED(${PACKAGE_NAME}_HAVE_TPL64)
+SET(HAVE_TPL64 ${${PACKAGE_NAME}_HAVE_TPL64})
 
 #
 # B) Define the header and source files (and include directories)
@@ -54,14 +66,13 @@ APPEND_SET(HEADERS
       Zoltan2_AlltoAll.hpp
       Zoltan2_DebugManager.hpp
       Zoltan2_Environment.hpp
-      Zoltan2_EpetraCrsGraphInput.hpp
-      Zoltan2_EpetraCrsMatrixInput.hpp
       Zoltan2_Exceptions.hpp
       Zoltan2_GraphInput.hpp
       Zoltan2_GraphModel.hpp
       Zoltan2_IdentifierMap.hpp
       Zoltan2_IdentifierTraits.hpp
       Zoltan2_InputAdapter.hpp
+      Zoltan2_InputTraits.hpp
       Zoltan2_MatrixInput.hpp
       Zoltan2_Memory.hpp
       Zoltan2_Model.hpp
@@ -72,8 +83,6 @@ APPEND_SET(HEADERS
       Zoltan2_Solution.hpp
       Zoltan2_Standards.hpp
       Zoltan2_TemplateMacros.hpp
-      Zoltan2_TpetraCrsGraphInput.hpp
-      Zoltan2_TpetraCrsMatrixInput.hpp
       Zoltan2_Util.hpp
       Zoltan2_XpetraCrsGraphInput.hpp
       Zoltan2_XpetraCrsMatrixInput.hpp

@@ -16,25 +16,15 @@
 
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
+#include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_MatrixInput.hpp>
+#include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_Util.hpp>
+#include <Zoltan2_Standards.hpp>
 
 namespace Zoltan2 {
 
-// Specialization of InputTraits for Xpetra matrices.
-template <typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          typename Node>
-struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-{
-  typedef Scalar        scalar_t;
-  typedef LocalOrdinal  lno_t;
-  typedef GlobalOrdinal gno_t;
-  typedef LocalOrdinal  lid_t;
-  typedef GlobalOrdinal gid_t;
-  typedef Node          node_t;
-};
-
+//////////////////////////////////////////////////////////////////////////////
 /*! Zoltan2::XpetraCrsMatrixInput
     \brief Provides access for Zoltan2 to Xpetra::CrsMatrix data.
 
@@ -42,8 +32,7 @@ struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
                 objects that are not FillCompleted.
 
     The template parameter is the user's input object - an Epetra
-    matrix or a templated Tpetra matrix (through sub classes
-    EpetraCrsMatrixInput or TpetraCrsMatrixInput respectively),
+    matrix or a templated Tpetra matrix 
     or a templated Xpetra::CrsMatrix.
 */
 
@@ -58,7 +47,11 @@ public:
   typedef typename InputAdapter<User>::gid_t    gid_t;
   typedef typename InputAdapter<User>::node_t   node_t;
 
+  typedef Epetra_CrsMatrix ematrix_t;
+  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tmatrix_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
+  typedef Xpetra::TpetraCrsMatrix<scalar_t, lno_t, gno_t, node_t> xtmatrix_t;
+  typedef Xpetra::EpetraCrsMatrix xematrix_t;
 
   // TODO - add this value to the traits.
   enum InputAdapterType inputAdapterType() {return XpetraCrsMatrixAdapterType;}
@@ -73,33 +66,41 @@ public:
 
   /*! Constructor   
    */
-  XpetraCrsMatrixInput(const RCP<const xmatrix_t> &matrix):
-    matrix_(matrix), rowMap_(), colMap_(), base_(), offset_(), columnIds_()
+  // Constructor 
+  XpetraCrsMatrixInput(const RCP<const User> &inmatrix):
+    inmatrix_(inmatrix), 
+    matrix_(),
+    rowMap_(),
+    colMap_(),
+    base_(),
+    offset_(),
+    columnIds_()
   {
-   rowMap_ = matrix_->getRowMap();
-   colMap_ = matrix_->getColMap();
-   base_ = rowMap_->getIndexBase();
+    matrix_ = XpetraTraits<User>::convertToXpetra(inmatrix);
+    rowMap_ = matrix_->getRowMap();
+    colMap_ = matrix_->getColMap();
+    base_ = rowMap_->getIndexBase();
 
-   size_t nrows = matrix_->getNodeNumRows();
-   size_t nnz = matrix_->getNodeNumEntries();
-
-   offset_.resize(nrows+1, lid_t(0));
-   columnIds_.resize(nnz);
-   ArrayView<const lid_t> indices;
-   ArrayView<const scalar_t> nzs;
-   lid_t next = 0;
-   for (size_t i=0; i < nrows; i++){
-     lid_t row = i + base_;
-     lid_t nnz = matrix_->getNumEntriesInLocalRow(row);
-     matrix_->getLocalRowView(row, indices, nzs);
-     for (lid_t j=0; j < nnz; j++){
-       // TODO - this will be slow
-       //   Is it possible that global columns ids might be stored in order?
-       columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
-     }
-     offset_[i+1] = offset_[i] + nnz;
-   } 
-  }
+    size_t nrows = matrix_->getNodeNumRows();
+    size_t nnz = matrix_->getNodeNumEntries();
+ 
+    offset_.resize(nrows+1, lid_t(0));
+    columnIds_.resize(nnz);
+    ArrayView<const lid_t> indices;
+    ArrayView<const scalar_t> nzs;
+    lid_t next = 0;
+    for (size_t i=0; i < nrows; i++){
+      lid_t row = i + base_;
+      lid_t nnz = matrix_->getNumEntriesInLocalRow(row);
+      matrix_->getLocalRowView(row, indices, nzs);
+      for (lid_t j=0; j < nnz; j++){
+        // TODO - this will be slow
+        //   Is it possible that global columns ids might be stored in order?
+        columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
+      }
+      offset_[i+1] = offset_[i] + nnz;
+    } 
+  };
 
   ////////////////////////////////////////////////////
   // The MatrixInput interface.
@@ -217,14 +218,61 @@ public:
     return nrows;
   }
 
+  ////////////////////////////////////////////////////
+  // End of MatrixInput interface.
+  ////////////////////////////////////////////////////
+
+  /*! Apply a partitioning solution to the matrix.
+   *   Every gid that was belongs to this process must
+   *   be on the list, or the Import will fail.
+   *
+   *   TODO : params etc
+   */
+  void applyPartitioningSolution(const User &in, User *&out,
+    const Teuchos::Comm<int> &comm,
+    lno_t numIds, lno_t numParts, 
+    const gid_t *gid, const lid_t *lid, const lno_t *partition)
+  { 
+    // Get an import list
+
+    ArrayView<const gid_t> gidList(gid, numIds);
+    ArrayView<const lno_t> partList(partition, numIds);
+    ArrayView<const lno_t> dummyIn;
+    ArrayRCP<gid_t> importList;
+    ArrayRCP<int> dummyOut;
+    size_t numNewRows;
+
+    try{
+      numNewRows = convertPartitionListToImportList<gid_t, lno_t, lno_t>(
+        comm, partList, gidList, dummyIn, importList, dummyOut);
+    }
+    catch (std::exception &e){
+      Z2_THROW_ZOLTAN2_ERROR(env, e);
+    }
+
+    gno_t lsum = numNewRows;
+    gno_t gsum = 0;
+    Teuchos::reduceAll<int, gno_t>(comm, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);
+
+    RCP<const User> inPtr = rcp(&in, false);
+
+    RCP<User> outPtr = XpetraTraits<User>::doImport(
+     inPtr, gsum, lsum, importList.getRawPtr(), base_, comm);
+
+    out = outPtr.get();
+    outPtr.release();
+  }
+
 private:
 
+  RCP<const User> inmatrix_;
   RCP<const xmatrix_t> matrix_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
   lno_t base_;
   ArrayRCP<lno_t> offset_;
   ArrayRCP<gno_t> columnIds_;
+
 };
   
 }  //namespace Zoltan2

@@ -34,16 +34,16 @@ void eraseMallocCount();
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING
 
-#define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, nbytes){ \
+#define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num){ \
   datatype *ptrname = NULL; \
-  if (nbytes) \
-    ptrname = new datatype [nbytes]; \
+  if ((num) >= 1) \
+    ptrname = new datatype [num]; \
 }
 
-#define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, nbytes){ \
+#define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num){ \
   datatype *ptrname = NULL; \
-  if (nbytes) \
-    ptrname = new datatype [nbytes]; \
+  if ((num) >= 1) \
+    ptrname = new datatype [num]; \
 }
 
 #else
@@ -51,12 +51,14 @@ void eraseMallocCount();
 /*! Allocate memory followed by a global check of success.
 
     All throw an error if any failed.
+    TODO - more macros for allocation of single object
+           for allocation of const object
  */
 
 #define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) {\
   ptrname = NULL; \
   int fail = 0, gfail=0; \
-  if ((num) > 0){ \
+  if ((num) >= 1){ \
     ptrname = new datatype [num]; \
     if (!ptrname) fail = 1;  \
   } \
@@ -76,14 +78,14 @@ void eraseMallocCount();
 
 #define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) { \
   ptrname = NULL; \
-  if ((num) > 0) {\
+  if ((num) >= 1) {\
     ptrname = new datatype [num]; \
-    if (!ptrname) { \
-      std::ostringstream _msg;  \
-      _msg << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
-      (env).dbg_->error(_msg.str()); \
-      throw std::bad_alloc(); \
-    } \
+  } \
+  if ((num) && !ptrname) { \
+    std::ostringstream _msg;  \
+    _msg << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
+    (env).dbg_->error(_msg.str()); \
+    throw std::bad_alloc(); \
   } \
 }
 
