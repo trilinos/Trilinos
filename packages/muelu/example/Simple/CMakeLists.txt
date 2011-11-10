@@ -13,7 +13,7 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     Simple
     SOURCES Simple.cpp
     DEPLIBS muelu muelu-xpetra
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 4
     COMM serial mpi
     )
 
@@ -23,7 +23,7 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       Simple-LongInt
       SOURCES Simple-LongInt.cpp
       DEPLIBS muelu muelu-xpetra
-      NUM_MPI_PROCS 1
+      NUM_MPI_PROCS 4
       COMM serial mpi
       )
   ENDIF()
@@ -33,7 +33,7 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     Simple-Templated
     SOURCES Simple-Templated.cpp
     DEPLIBS muelu muelu-xpetra
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 4
     COMM serial mpi
     )
 
@@ -42,7 +42,7 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       Simple-Belos
       SOURCES Simple-Belos.cpp
-      NUM_MPI_PROCS 1
+      NUM_MPI_PROCS 4
       COMM serial mpi
       DEPLIBS muelu muelu-xpetra muelu-adapters
       )
@@ -55,7 +55,7 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Simple-Tpetra
     SOURCES Simple-Tpetra.cpp
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 4
     COMM serial mpi
     DEPLIBS muelu muelu-xpetra muelu-adapters
     )
@@ -66,7 +66,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Simple-Epetra
     SOURCES Simple-Epetra.cpp
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 4
     COMM serial mpi
     DEPLIBS muelu muelu-xpetra muelu-adapters
     )

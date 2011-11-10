@@ -77,7 +77,7 @@ namespace MueLuTests {
             smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
             smootherParamList.set("relaxation: sweeps", (LO) 1);
             smootherParamList.set("relaxation: damping factor", (SC) 1.0);
-            RCP<SmootherPrototype> smooProto = rcp(new TrilinosSmoother(lib_, "RELAXATION", smootherParamList));
+            RCP<SmootherPrototype> smooProto = rcp(new TrilinosSmoother("RELAXATION", smootherParamList));
             RCP<SmootherFactory>   smooFact  = rcp(new SmootherFactory(smooProto));
             Acfact->setVerbLevel(Teuchos::VERB_HIGH);
       

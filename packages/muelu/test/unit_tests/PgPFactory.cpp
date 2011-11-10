@@ -90,7 +90,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_nonsymExample)
   smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
   smootherParamList.set("relaxation: sweeps", (LO) 1);
   smootherParamList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother(lib, "RELAXATION", smootherParamList) );
+  RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
@@ -302,7 +302,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_NonStandardMaps)
   smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
   smootherParamList.set("relaxation: sweeps", (LO) 1);
   smootherParamList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother(lib, "RELAXATION", smootherParamList) );
+  RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
@@ -435,7 +435,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_EpetraVsTpetra)
       smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
       smootherParamList.set("relaxation: sweeps", (LO) 1);
       smootherParamList.set("relaxation: damping factor", (SC) 1.0);
-      RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother(lib, "RELAXATION", smootherParamList) );
+      RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
       RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
       Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 

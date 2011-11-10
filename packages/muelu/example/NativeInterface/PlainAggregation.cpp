@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
   smootherParamList.set("relaxation: sweeps", (LO) 1);
   smootherParamList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype> smootherPrototype     = rcp( new TrilinosSmoother(lib, "RELAXATION", smootherParamList) );
+  RCP<SmootherPrototype> smootherPrototype     = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
   // Coarse grid correction

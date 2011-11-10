@@ -2,6 +2,8 @@
 #define MUELU_FACTORYMANAGER_DEF_HPP
 
 #include "MueLu_FactoryManager_decl.hpp"
+
+#include <Teuchos_ParameterList.hpp>
  
 namespace MueLu {
 
@@ -53,8 +55,16 @@ namespace MueLu {
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")   return GetFactory("Smoother");
       if (varName == "PostSmoother")  return GetFactory("Smoother");
-      if (varName == "Smoother")      return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new GaussSeidelSmoother()))));
-        
+      
+      //if (varName == "Smoother")    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new GaussSeidelSmoother()))));
+      if (varName == "Smoother") {
+        Teuchos::ParameterList smootherParamList;
+        smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
+        smootherParamList.set("relaxation: sweeps", (LO) 1);
+        smootherParamList.set("relaxation: damping factor", (SC) 1.0);
+        return SetAndReturnDefaultFactory(varName, rcp( new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", smootherParamList)))));
+      }
+
       if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()))));
 
       //TO BE FIX: cannot use TrilinosSmoother here, because need to know the lin alg. lib.

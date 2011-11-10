@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     ifpackList.set("chebyshev: zero starting solution", true);
   }
 
-  smooProto = rcp( new TrilinosSmoother(lib, ifpackType, ifpackList) );
+  smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
   RCP<SmootherFactory> SmooFact;
   if (maxLevels > 1) 
     SmooFact = rcp( new SmootherFactory(smooProto) );

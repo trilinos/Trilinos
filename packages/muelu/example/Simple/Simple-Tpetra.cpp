@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   // Parameters
   //
 
-  GlobalOrdinal numGlobalElements = 256;         // problem size
+  GlobalOrdinal numGlobalElements = 256; // problem size
 
   //
   // Construct the problem
@@ -92,15 +92,6 @@ int main(int argc, char *argv[]) {
   // Multigrid setup phase (using default parameters)
   FactoryManager M;                         // -
   M.SetFactory("A", rcp(new RAPFactory())); // TODO: to be remove, but will require some work
-
-  // I need a sym. smoother here.
-  Teuchos::ParameterList smootherParamList;
-  smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  smootherParamList.set("relaxation: sweeps", (LO) 1);
-  smootherParamList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype> smooProto = rcp(new TrilinosSmoother(Xpetra::UseTpetra, "RELAXATION", smootherParamList));
-  RCP<SmootherFactory>   smooFact  = rcp(new SmootherFactory(smooProto));
-  M.SetFactory("Smoother", smooFact);
 
   H->Setup(M); //Should be instead: H->Setup();
 

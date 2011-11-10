@@ -31,10 +31,10 @@ namespace MueLu {
     //@{
 
     //! @brief Constructor
-    TrilinosSmoother(const Xpetra::UnderlyingLib lib, std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null);
+    TrilinosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null);
     
     //! Destructor
-    virtual ~TrilinosSmoother();
+    virtual ~TrilinosSmoother() { }
     
     //@}
 
@@ -90,8 +90,6 @@ namespace MueLu {
     //@}
 
   private:
-    //! Tpetra or Epetra?
-    Xpetra::UnderlyingLib lib_;
 
     //! ifpack1/2-specific key phrase that denote smoother type
     std::string type_;
@@ -104,6 +102,13 @@ namespace MueLu {
 
     //! A Factory
     RCP<FactoryBase> AFact_;
+
+    //
+    // Underlying Smoother
+    //
+
+    //! Smoother
+    RCP<SmootherPrototype> s_;
 
   }; // class TrilinosSmoother
 

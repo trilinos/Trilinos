@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
   ifpackType = "RELAXATION";
   ifpackList.set("relaxation: type", "Gauss-Seidel");
 
-  smooProto = Teuchos::rcp( new TrilinosSmoother(Xpetra::UseEpetra,ifpackType, ifpackList) );
+  smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
   RCP<SmootherFactory> SmooFact;
   if (maxLevels > 1)
     SmooFact = rcp( new SmootherFactory(smooProto) );
