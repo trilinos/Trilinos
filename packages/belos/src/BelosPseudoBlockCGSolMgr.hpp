@@ -500,17 +500,35 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
 
   // Check for a change in scaling, if so we need to build new residual tests.
   bool newResTest = false;
-  if (params->isParameter("Residual Scaling")) {
-    std::string tempResScale = Teuchos::getParameter<std::string>( *params, "Residual Scaling" );
+  {
+    // "Residual Scaling" is the old parameter name; "Implicit
+    // Residual Scaling" is the new name.  We support both options for
+    // backwards compatibility.
+    std::string tempResScale = resScale_;
+    bool implicitResidualScalingName = false;
+    if (params->isParameter ("Residual Scaling")) {
+      tempResScale = params->get<std::string> ("Residual Scaling");
+    } 
+    else if (params->isParameter ("Implicit Residual Scaling")) {
+      tempResScale = params->get<std::string> ("Implicit Residual Scaling");
+      implicitResidualScalingName = true;
+    }
 
     // Only update the scaling if it's different.
     if (resScale_ != tempResScale) {
       Belos::ScaleType resScaleType = convertStringToScaleType( tempResScale );
       resScale_ = tempResScale;
 
-      // Update parameter in our list and residual tests
-      params_->set("Residual Scaling", resScale_);
-      if (convTest_ != Teuchos::null) {
+      // Update parameter in our list and residual tests, using the
+      // given parameter name.
+      if (implicitResidualScalingName) {
+	params_->set ("Implicit Residual Scaling", resScale_);
+      } 
+      else {
+	params_->set ("Residual Scaling", resScale_); 
+      }
+
+      if (! convTest_.is_null()) {
         try {
           convTest_->defineScaleForm( resScaleType, Belos::TwoNorm );
         }
