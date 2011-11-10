@@ -24,6 +24,7 @@ INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
 INCLUDE_DIRECTORIES(${DIR}/Graph)
+INCLUDE_DIRECTORIES(${DIR}/../utils/ForwardDeclaration)
 
 SET(HEADERS "")
 APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
@@ -81,3 +82,4 @@ PACKAGE_ADD_LIBRARY(
 #MESSAGE("INCLUDE_DIRECTORIES = ")
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
+ 

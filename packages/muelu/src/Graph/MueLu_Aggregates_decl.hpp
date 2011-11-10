@@ -1,14 +1,13 @@
 #ifndef MUELU_AGGREGATES_DECL_HPP
 #define MUELU_AGGREGATES_DECL_HPP
 
-#include <Teuchos_Describable.hpp>
-
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_Graph.hpp"
-#include "MueLu_Utilities.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+
+#include "MueLu_Graph_fwd.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
@@ -40,7 +39,7 @@ namespace MueLu {
 
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class Aggregates : public BaseClass {
-
+#undef MUELU_AGGREGATES_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:

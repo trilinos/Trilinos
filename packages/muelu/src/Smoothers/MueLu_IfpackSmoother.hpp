@@ -1,18 +1,20 @@
 #ifndef MUELU_IFPACKSMOOTHER_HPP
 #define MUELU_IFPACKSMOOTHER_HPP
 
+#include <Xpetra_Operator.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 
 #ifdef HAVE_MUELU_IFPACK
 
-#include <Ifpack.h>
-
-#include <Epetra_CrsMatrix.h>
-
-#include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Utilities.hpp"
+
+#include "MueLu_Exceptions.hpp"
+
+class Ifpack_Preconditioner;
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -20,17 +22,16 @@ namespace MueLu {
     @class IfpackSmoother
     @brief Class that encapsulates Ifpack smoothers.
     
-    This class creates an Ifpack preconditioner factory.  The factory creates a smoother based on the
-    type and ParameterList passed into the constructor.  See the constructor for more information.
+    This class creates an Ifpack preconditioner factory. The factory creates a smoother based on the
+    type and ParameterList passed into the constructor. See the constructor for more information.
   */
-  class IfpackSmoother : public SmootherPrototype<double,int,int>
-  {
-
+  class IfpackSmoother : public SmootherPrototype<double,int,int> {
     typedef double Scalar;
     typedef int    LocalOrdinal;
     typedef int    GlobalOrdinal;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
     typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+#undef MUELU_IFPACKSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -40,37 +41,37 @@ namespace MueLu {
 
     /*! @brief Constructor
 
-        The options passed into IfpackSmoother are those given in the Ifpack user's manual.
+    The options passed into IfpackSmoother are those given in the Ifpack user's manual.
 
-        @param type smoother type
-        @param list options for the particular smoother (e.g., fill factor or damping parameter)
+    @param type smoother type
+    @param list options for the particular smoother (e.g., fill factor or damping parameter)
 
-        Here is how to select some of the most common smoothers.
+    Here is how to select some of the most common smoothers.
 
-         - Gauss-Seidel
-            - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
-            - parameter list options
-                - <tt>relaxation: type</tt> = <tt>Gauss-Seidel</tt>
-                - <tt>relaxation: damping factor</tt>
-         - symmetric Gauss-Seidel
-            - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
-            - parameter list options
-                - <tt>relaxation: type</tt> = <tt>symmetric Gauss-Seidel</tt>
-                - <tt>relaxation: damping factor</tt>
-         - Chebyshev
-            - <tt>type</tt> = <tt>Chebyshev</tt>
-            - parameter list options
-                - <tt>chebyshev: ratio eigenvalue</tt>
-                - <tt>chebyshev: min eigenvalue</tt>
-                - <tt>chebyshev: max eigenvalue</tt>
-                - <tt>chebyshev: degree</tt>
-                - <tt>chebyshev: zero starting solution</tt> (defaults to <tt>true</tt>)
-         - ILU
-            - <tt>type</tt> = <tt>ILU</tt>
-            - parameter list options
-                - <tt>fact: level-of-fill</tt>
+    - Gauss-Seidel
+    - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
+    - parameter list options
+    - <tt>relaxation: type</tt> = <tt>Gauss-Seidel</tt>
+    - <tt>relaxation: damping factor</tt>
+    - symmetric Gauss-Seidel
+    - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
+    - parameter list options
+    - <tt>relaxation: type</tt> = <tt>symmetric Gauss-Seidel</tt>
+    - <tt>relaxation: damping factor</tt>
+    - Chebyshev
+    - <tt>type</tt> = <tt>Chebyshev</tt>
+    - parameter list options
+    - <tt>chebyshev: ratio eigenvalue</tt>
+    - <tt>chebyshev: min eigenvalue</tt>
+    - <tt>chebyshev: max eigenvalue</tt>
+    - <tt>chebyshev: degree</tt>
+    - <tt>chebyshev: zero starting solution</tt> (defaults to <tt>true</tt>)
+    - ILU
+    - <tt>type</tt> = <tt>ILU</tt>
+    - parameter list options
+    - <tt>fact: level-of-fill</tt>
 
-        See also Ifpack_PointRelaxation, Ifpack_Chebyshev, Ifpack_ILU.
+    See also Ifpack_PointRelaxation, Ifpack_Chebyshev, Ifpack_ILU.
     */
     IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null); //TODO: empty paramList valid for Ifpack??
 
@@ -122,18 +123,18 @@ namespace MueLu {
 
     /*! @brief Set up the smoother.
 
-        This creates the underlying Ifpack smoother object, copies any parameter list options
-        supplied to the constructor to the Ifpack object, and computes the preconditioner.
+    This creates the underlying Ifpack smoother object, copies any parameter list options
+    supplied to the constructor to the Ifpack object, and computes the preconditioner.
     */
     void Setup(Level &currentLevel);
 
     /*! @brief Apply the preconditioner.
 
-        Solves the linear system <tt>AX=B</tt> using the constructed smoother.
+    Solves the linear system <tt>AX=B</tt> using the constructed smoother.
 
-        @param X initial guess
-        @param B right-hand side
-        @param InitialGuessIsZero (optional) If false, some work can be avoided.  Whether this actually saves any work depends on the underlying Ifpack implementation.
+    @param X initial guess
+    @param B right-hand side
+    @param InitialGuessIsZero (optional) If false, some work can be avoided.  Whether this actually saves any work depends on the underlying Ifpack implementation.
     */
     void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
 
@@ -197,6 +198,6 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_IFPACK_SMOOTHER_SHORT
+#define MUELU_IFPACKSMOOTHER_SHORT
 #endif // ifdef HAVE_MUELU_IFPACK
 #endif // MUELU_IFPACKSMOOTHER_HPP

@@ -38,6 +38,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -49,6 +50,9 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_PreDropFunctionConstVal.hpp"
+#include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
 
 //
 #include "MueLu_UseDefaultTypes.hpp"
@@ -67,6 +71,7 @@
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP;
+  using Teuchos::rcp;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);

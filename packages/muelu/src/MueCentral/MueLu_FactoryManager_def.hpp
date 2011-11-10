@@ -4,6 +4,20 @@
 #include "MueLu_FactoryManager_decl.hpp"
 
 #include <Teuchos_ParameterList.hpp>
+
+// Headers for factories used by default:
+#include "MueLu_NoFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_SaPFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_TransPFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
+//#include "MueLu_GaussSeidelSmoother.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
+#include "MueLu_DirectSolver.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
  
 namespace MueLu {
 

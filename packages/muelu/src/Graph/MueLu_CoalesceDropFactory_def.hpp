@@ -3,6 +3,10 @@
 
 #include "MueLu_CoalesceDropFactory_decl.hpp"
 
+#include "MueLu_Level.hpp"
+#include "MueLu_Graph.hpp"
+#include "MueLu_PreDropFunctionBaseClass.hpp"
+
 namespace MueLu {
 
   static const std::string color_esc = "\x1b[";

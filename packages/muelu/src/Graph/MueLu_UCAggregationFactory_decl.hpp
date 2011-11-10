@@ -2,16 +2,13 @@
 #define MUELU_UCAGGREGATIONFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-
-#include <Teuchos_Utils.hpp>
-
-#include "MueLu_Exceptions.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Aggregates.hpp"
+#include "MueLu_UCAggregationFactory_fwd.hpp"
 
 #include "MueLu_LocalAggregationAlgorithm.hpp"
 #include "MueLu_LeftoverAggregationAlgorithm.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 
@@ -37,6 +34,7 @@ namespace MueLu {
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class UCAggregationFactory : public SingleLevelFactoryBase {
+#undef MUELU_UCAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:

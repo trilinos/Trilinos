@@ -3,24 +3,24 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
+#include "MueLu_PFactory_fwd.hpp"
+
+#include "MueLu_Level_fwd.hpp"
 
 namespace MueLu {
 
-  class Level;
+  /*!
+    @class PFactory
+    @brief Factory that provides an interface for a concrete implementation of a prolongation operator.
 
-/*!
-  @class PFactory
-  @brief Factory that provides an interface for a concrete implementation of a prolongation operator.
+    For a concrete implementation the user has to overwrite the virtual Build method.
+  */
 
-  For a concrete implementation the user has to overwrite the virtual Build method.
-*/
-
-class PFactory : public TwoLevelFactoryBase {
-
+  class PFactory : public TwoLevelFactoryBase {
 
   protected:
 
-     bool restrictionMode_;  //< true, if PFactory is used for generating the restriction operator
+    bool restrictionMode_;  //< true, if PFactory is used for generating the restriction operator
 
   public:
     //! @name Constructors/Destructors.
@@ -52,15 +52,16 @@ class PFactory : public TwoLevelFactoryBase {
 
     /// switch prolongator factory to restriction mode
     /// if set to true, the prolongation factory generates a restriciton operator instead of a prolongation operator
-    void setRestrictionMode(bool bRestrictionMode = false)    {
-        restrictionMode_ = bRestrictionMode;
+    void setRestrictionMode(bool bRestrictionMode = false) {
+      restrictionMode_ = bRestrictionMode;
     }
 
     /// returns restrictionMode flag
     bool isRestrictionModeSet() { return restrictionMode_; }
 
     //@}
-}; //class PFactory
+
+  }; //class PFactory
 
 } //namespace MueLu
 

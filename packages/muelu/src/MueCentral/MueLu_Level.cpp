@@ -1,4 +1,8 @@
+#include <Teuchos_TabularOutputter.hpp>
+
 #include "MueLu_Level.hpp"
+
+#include "MueLu_FactoryManagerBase.hpp"
 
 #undef HEAVY_DEBUG_OUTPUT
 

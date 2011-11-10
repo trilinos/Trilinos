@@ -30,6 +30,10 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_TransPFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
 
 // Belos
 #ifdef HAVE_MUELU_BELOS

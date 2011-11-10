@@ -9,6 +9,7 @@
 #include <MueLu.hpp>
 
 #include <MueLu_TrilinosSmoother.hpp> //TODO: remove
+#include <MueLu_RAPFactory.hpp> //TMP
 
 // Header files defining default types for template parameters.
 // These headers must be included after other MueLu/Xpetra headers.

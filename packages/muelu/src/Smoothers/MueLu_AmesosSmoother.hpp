@@ -1,23 +1,22 @@
 #ifndef MUELU_AMESOSSMOOTHER_HPP
 #define MUELU_AMESOSSMOOTHER_HPP
 
+#include <Xpetra_Operator.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 
 #ifdef HAVE_MUELU_AMESOS
 
-#include <Amesos_config.h>
-#include <Amesos.h>
-#include <Amesos_BaseSolver.h>
-#include <Epetra_LinearProblem.h>
-
-#include <Xpetra_Operator.hpp>
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_Exceptions.hpp"
+
+#include <MueLu_Exceptions.hpp>
+
+class Epetra_LinearProblem;
+class Amesos_BaseSolver;
+
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -36,6 +35,7 @@ namespace MueLu {
     typedef int    GlobalOrdinal;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
     typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+#undef MUELU_AMESOSSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -163,7 +163,7 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_AMESOS_SMOOTHER_SHORT
+#define MUELU_AMESOSSMOOTHER_SHORT
 
 #endif // HAVE_MUELU_AMESOS
 #endif // MUELU_AMESOSSMOOTHER_HPP

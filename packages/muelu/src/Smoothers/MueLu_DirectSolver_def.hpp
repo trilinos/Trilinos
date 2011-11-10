@@ -9,6 +9,9 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Level.hpp"
 
+#include "MueLu_Amesos2Smoother.hpp"
+#include "MueLu_AmesosSmoother.hpp"
+
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -99,5 +102,4 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_DIRECT_SOLVER_SHORT
 #endif // MUELU_DIRECTSOLVER_DEF_HPP

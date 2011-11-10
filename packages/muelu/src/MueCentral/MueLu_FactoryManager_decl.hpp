@@ -2,34 +2,25 @@
 #define MUELU_FACTORYMANAGER_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-
-#include <map>
-
-#include <Xpetra_Operator.hpp>
-
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_SmootherFactoryBase.hpp" //TODO:remove
-#include "MueLu_SmootherBase.hpp"
-
+#include "MueLu_FactoryManager_fwd.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 
-// Headers for factories used by default:
-#include "MueLu_NoFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_NullspaceFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_SmootherFactory.hpp"
-//#include "MueLu_GaussSeidelSmoother.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_DirectSolver.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
- 
+#include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_SaPFactory_fwd.hpp"
+#include "MueLu_RAPFactory_fwd.hpp"
+#include "MueLu_NullspaceFactory_fwd.hpp"
+#include "MueLu_TransPFactory_fwd.hpp"
+#include "MueLu_SmootherFactory_fwd.hpp"
+#include "MueLu_TrilinosSmoother_fwd.hpp"
+#include "MueLu_DirectSolver_fwd.hpp"
+#include "MueLu_UCAggregationFactory_fwd.hpp"
+#include "MueLu_CoalesceDropFactory_fwd.hpp"
+
 namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class FactoryManager : public FactoryManagerBase {
+#undef MUELU_FACTORYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"
       
   public:

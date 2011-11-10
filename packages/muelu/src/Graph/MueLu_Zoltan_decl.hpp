@@ -4,17 +4,12 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
+#include <zoltan_cpp.h>
 
-#include "zoltan_cpp.h"
+#include "MueLu_BaseClass.hpp"
+#include "Muelu_Zoltan_fwd.hpp"
 
-#include "Xpetra_Operator.hpp"
-#include "Xpetra_MultiVector.hpp"
-#include "Xpetra_VectorFactory.hpp"
-#include "Xpetra_Map.hpp"
-
-#include "MueLu_Level.hpp"
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_Utilities.hpp"
+#include "MueLu_Level_fwd.hpp"
 
 namespace MueLu {
 
@@ -30,6 +25,7 @@ namespace MueLu {
   class ZoltanInterface : public BaseClass {
 
     typedef double Scalar; // FIXME
+#undef MUELU_ZOLTAN_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:

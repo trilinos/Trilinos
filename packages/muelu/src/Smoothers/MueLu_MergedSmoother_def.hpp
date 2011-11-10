@@ -2,6 +2,7 @@
 #define MUELU_MERGEDSMOOTHER_DEF_HPP
 
 #include "MueLu_MergedSmoother_decl.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 

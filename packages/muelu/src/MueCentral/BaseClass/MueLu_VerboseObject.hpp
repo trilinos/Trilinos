@@ -1,13 +1,13 @@
 #ifndef MUELU_VERBOSEOBJECT_HPP
 #define MUELU_VERBOSEOBJECT_HPP
 
+#include "MueLu_ConfigDefs.hpp"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
 #include <Teuchos_VerboseObject.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_VerbosityLevel.hpp"
 
 namespace MueLu {

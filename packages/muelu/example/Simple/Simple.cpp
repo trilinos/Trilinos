@@ -3,6 +3,8 @@
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 
+#include "MueLu_RAPFactory.hpp" //TMP
+
 // Header files defining default types for template parameters.
 // These headers must be included after other MueLu/Xpetra headers.
 #include <MueLu_UseDefaultTypes.hpp>  // => Scalar=double, LocalOrdinal=int, GlobalOrdinal=int

@@ -26,46 +26,50 @@ typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 typedef MueLu::UCAggregationCommHelper<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UCAggregationCommHelper;
 #endif
 
-#ifdef MUELU_LEVEL_SHORT
-typedef MueLu::Level Level;
-#endif
-
-#ifdef MUELU_DEFAULTFACTORYHANDLER_SHORT
-typedef MueLu::FactoryManagerBase FactoryManagerBase;
-#endif
-
-#ifdef MUELU_TWOLEVELFACTORY_SHORT
+#ifdef MUELU_TWOLEVELFACTORYBASE_SHORT
 typedef MueLu::TwoLevelFactoryBase TwoLevelFactoryBase;
 #endif
 
-#ifdef MUELU_SINGLELEVELFACTORY_SHORT
-typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
-#endif
-
-#ifdef MUELU_FACTORYBASE_SHORT
-typedef MueLu::FactoryBase FactoryBase;
-#endif
-
 #ifdef MUELU_PRFACTORY_SHORT
-typedef MueLu::PRFactory PRFactory;
-#endif
-
-#ifdef MUELU_PFACTORY_SHORT
-typedef MueLu::PFactory PFactory;
+typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
 #endif
 
 #ifdef MUELU_RFACTORY_SHORT
 typedef MueLu::RFactory RFactory;
 #endif
 
-#ifdef MUELU_AMESOS_SMOOTHER_SHORT
+#ifdef MUELU_AMESOSSMOOTHER_SHORT
 typedef MueLu::AmesosSmoother AmesosSmoother;
 #endif
 
-#ifdef MUELU_IFPACK_SMOOTHER_SHORT
+#ifdef MUELU_IFPACKSMOOTHER_SHORT
 typedef MueLu::IfpackSmoother IfpackSmoother;
 #endif
 
 #ifdef MUELU_ZOLTANINTERFACE_SHORT
 typedef MueLu::ZoltanInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ZoltanInterface;
+#endif
+
+#ifdef MUELU_FACTORYBASE_SHORT
+typedef MueLu::FactoryBase FactoryBase;
+#endif
+
+#ifdef MUELU_FACTORYMANAGERBASE_SHORT
+typedef MueLu::FactoryManagerBase FactoryManagerBase;
+#endif
+
+#ifdef MUELU_LEVEL_SHORT
+typedef MueLu::Level Level;
+#endif
+
+#ifdef MUELU_PFACTORY_SHORT
+typedef MueLu::PFactory PFactory;
+#endif
+
+#ifdef MUELU_SINGLELEVELFACTORYBASE_SHORT
+typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
+#endif
+
+#ifdef MUELU_TWOKEYMAP_SHORT
+typedef MueLu::TwoKeyMap TwoKeyMap;
 #endif

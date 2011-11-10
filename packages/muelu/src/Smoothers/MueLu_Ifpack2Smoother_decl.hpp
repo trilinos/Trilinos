@@ -1,17 +1,18 @@
 #ifndef MUELU_IFPACK2SMOOTHER_DECL_HPP
 #define MUELU_IFPACK2SMOOTHER_DECL_HPP
 
+#include <Xpetra_Operator.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Ifpack2Smoother_fwd.hpp"
 
 #ifdef HAVE_MUELU_IFPACK2
-
 #include "Ifpack2_Factory.hpp"
 
-#include "MueLu_VerboseObject.hpp"
-#include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Utilities.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -27,7 +28,7 @@ namespace MueLu {
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class Ifpack2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
-
+#undef MUELU_IFPACK2SMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -159,6 +160,6 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_IFPACK2_SMOOTHER_SHORT
+#define MUELU_IFPACK2SMOOTHER_SHORT
 #endif //ifdef HAVE_MUELU_IFPACK2
 #endif // MUELU_IFPACK2SMOOTHER_DECL_HPP

@@ -20,7 +20,9 @@
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
-// Aggregation
+// MueLu
+#include "MueLu_Graph.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"

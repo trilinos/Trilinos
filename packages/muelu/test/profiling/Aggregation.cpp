@@ -16,6 +16,9 @@
 #include "MueLu_Hierarchy.hpp"
 
 #include "MueLu_Utilities.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_FactoryManager.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
 
 #include "MueLu_Exceptions.hpp"
 

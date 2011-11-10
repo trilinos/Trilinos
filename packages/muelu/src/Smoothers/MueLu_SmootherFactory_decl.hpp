@@ -2,11 +2,13 @@
 #define MUELU_SMOOTHERFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_SmootherFactory_fwd.hpp"
 
 #include "MueLu_SmootherFactoryBase.hpp"
-#include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Exceptions.hpp"
+
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_SmootherPrototype_fwd.hpp"
+#include "MueLu_SmootherBase_fwd.hpp"
 
 namespace MueLu {
 
@@ -37,7 +39,7 @@ namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class SmootherFactory : public SmootherFactoryBase {
-
+#undef MUELU_SMOOTHERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -158,7 +160,6 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_SMOOTHERFACTORY_SHORT
-
 //TODO: doc: setup done twice if PostSmoother object != PreSmoother object and no adv. reused capability
+#define MUELU_SMOOTHERFACTORY_SHORT
 #endif // MUELU_SMOOTHERFACTORY_DECL_HPP

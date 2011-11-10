@@ -1,13 +1,16 @@
 #ifndef MUELU_NEEDS_HPP
 #define MUELU_NEEDS_HPP
 
+#include <string>
 #include <Teuchos_ParameterEntry.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
+
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_TwoKeyMap.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
 
 namespace MueLu {
   

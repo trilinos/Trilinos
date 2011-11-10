@@ -1,15 +1,13 @@
 #ifndef MUELU_LEVEL_HPP
 #define MUELU_LEVEL_HPP
 
-#include <iostream>
-#include <sstream>
-
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Exceptions.hpp"
+#include "MueLu_BaseClass.hpp"
+
 #include "MueLu_Needs.hpp"
-#include "MueLu_FactoryBase.hpp"
 #include "MueLu_NoFactory.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
+
+#include "MueLu_FactoryManagerBase_fwd.hpp"
 
 namespace MueLu {
 
@@ -225,5 +223,4 @@ namespace MueLu {
 
 //TODO: Caps should not matter
 
-#define MUELU_LEVEL_SHORT
 #endif // MUELU_LEVEL_HPP

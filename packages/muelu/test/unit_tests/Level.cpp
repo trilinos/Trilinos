@@ -3,8 +3,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Version.hpp"
 
-
-
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_NoFactory.hpp"
@@ -12,6 +10,8 @@
 #include "MueLu_TestHelpers.hpp"
 
 #include "MueLu_Level.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"

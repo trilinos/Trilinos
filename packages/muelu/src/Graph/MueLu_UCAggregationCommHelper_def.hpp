@@ -1,13 +1,17 @@
 #ifndef MUELU_UCAGGREGATIONCOMMHELPER_DEF_HPP
 #define MUELU_UCAGGREGATIONCOMMHELPER_DEF_HPP
 
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_ExportFactory.hpp>
+
 #include "MueLu_UCAggregationCommHelper_decl.hpp"
 
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UCAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap)
-  {
+  UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UCAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap) {
     import_ = ImportFactory::Build(uniqueMap, nonUniqueMap);
     tempVec_ = VectorFactory::Build(uniqueMap,false); //zeroed out before use
     numMyWinners_ = 0;
@@ -16,8 +20,7 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  void UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const
-  {
+  void UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const {
     const RCP<const Map> weightMap = weight_.getMap();
     const size_t nodeNumElements = weightMap->getNodeNumElements();
     const RCP<const Teuchos::Comm<int> > & comm = weightMap->getComm();
@@ -417,8 +420,7 @@ namespace MueLu {
   } //ArbitrateAndCommunicate(Vector&, LOVector &, LOVector *, const bool) const
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  void UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const
-  {
+  void UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const {
     tempVec_->putScalar(0.);
      
     try
@@ -437,3 +439,4 @@ namespace MueLu {
 }
 
 #endif // MUELU_UCAGGREGATIONCOMMHELPER_DEF_HPP
+

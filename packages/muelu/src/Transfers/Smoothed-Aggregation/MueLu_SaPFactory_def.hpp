@@ -1,7 +1,15 @@
 #ifndef MUELU_SAPFACTORY_DEF_HPP
 #define MUELU_SAPFACTORY_DEF_HPP
 
+#include <Xpetra_Operator.hpp>
+
 #include "MueLu_SaPFactory_decl.hpp"
+
+#include "MueLu_Level.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_Utilities.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -61,7 +69,7 @@ namespace MueLu {
     RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
 
     if(restrictionMode_)
-      A = Utils2<Scalar,LocalOrdinal,GlobalOrdinal>::Transpose(A,true); // build transpose of A explicitely
+      A = Utils2::Transpose(A,true); // build transpose of A explicitely
 
     //Build final prolongator
     RCP<Operator> finalP; // output
@@ -148,7 +156,7 @@ namespace MueLu {
     else
       {
         // prolongation factory is in restriction mode
-        RCP<Operator> R = Utils2<SC,LO,GO>::Transpose(finalP,true); // use Utils2 -> specialization for double
+        RCP<Operator> R = Utils2::Transpose(finalP,true); // use Utils2 -> specialization for double
         coarseLevel.Set("R", R, this);
       }
 

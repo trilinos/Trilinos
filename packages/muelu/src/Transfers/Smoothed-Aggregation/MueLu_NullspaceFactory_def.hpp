@@ -2,6 +2,7 @@
 #define MUELU_NULLSPACEFACTORY_DEF_HPP
 
 #include "MueLu_NullspaceFactory_decl.hpp"
+#include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {

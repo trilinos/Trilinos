@@ -1,22 +1,16 @@
 #ifndef MUELU_SAPFACTORY_DECL_HPP
 #define MUELU_SAPFACTORY_DECL_HPP
 
+#include <string>
+
 #include "MueLu_ConfigDefs.hpp"
-
-#include <iostream>
-
-#include <Xpetra_Map.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsOperator.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
-
 #include "MueLu_PFactory.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_MatrixFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
-#include "MueLu_Exceptions.hpp"
+#include "MueLu_SaPFactory_fwd.hpp"
+
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_SingleLevelFactoryBase_fwd.hpp"
+#include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -27,6 +21,7 @@ namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class SaPFactory : public PFactory {
+#undef MUELU_SAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -97,8 +92,8 @@ namespace MueLu {
   private:
 
     //! Input factories
-    RCP<PFactory> initialPFact_;        //! Ptentative Factory
-    RCP<SingleLevelFactoryBase> AFact_; //! A Factory
+    RCP<PFactory> initialPFact_; //! Ptentative Factory
+    RCP<FactoryBase> AFact_;     //! A Factory
     
     //! Factory parameters
     Scalar dampingFactor_;

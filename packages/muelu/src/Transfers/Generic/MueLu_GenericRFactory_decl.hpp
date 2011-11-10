@@ -1,8 +1,6 @@
 #ifndef MUELU_GENERICRFACTORY_DECL_HPP
 #define MUELU_GENERICRFACTORY_DECL_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-
 /*
  * MueLu_GenericRFactory.hpp
  *
@@ -10,15 +8,12 @@
  *      Author: tobias
  */
 
-#include <iostream>
-
-#include "Xpetra_CrsOperator.hpp"
-
-#include "MueLu_Level.hpp"
-#include "MueLu_PFactory.hpp"
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_RFactory.hpp"
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_Utilities.hpp"
+#include "MueLu_GenericRFactory_fwd.hpp"
+
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_PFactory_fwd.hpp"
 
 namespace MueLu {
 
@@ -29,7 +24,7 @@ namespace MueLu {
 
   template < class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
   class GenericRFactory : public RFactory {
-
+#undef MUELU_GENERICRFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:

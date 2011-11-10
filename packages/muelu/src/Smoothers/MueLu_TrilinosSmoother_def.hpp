@@ -3,6 +3,11 @@
 
 #include "MueLu_TrilinosSmoother_decl.hpp"
 
+#include "MueLu_Level.hpp"
+#include "MueLu_IfpackSmoother.hpp"
+#include "MueLu_Ifpack2Smoother.hpp"
+#include "MueLu_Exceptions.hpp"
+
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

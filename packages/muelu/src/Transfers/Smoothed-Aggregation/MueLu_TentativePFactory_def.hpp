@@ -1,7 +1,12 @@
 #ifndef MUELU_TENTATIVEPFACTORY_DEF_HPP
 #define MUELU_TENTATIVEPFACTORY_DEF_HPP
 
+#include <Teuchos_LAPACK.hpp>
+
 #include "MueLu_TentativePFactory_decl.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_Monitor.hpp"
+#include "MueLu_Memory.hpp"
 
 namespace MueLu {
 

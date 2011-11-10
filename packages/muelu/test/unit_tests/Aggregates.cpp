@@ -5,6 +5,7 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_Aggregates.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"

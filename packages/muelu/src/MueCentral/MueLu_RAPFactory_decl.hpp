@@ -1,27 +1,30 @@
 #ifndef MUELU_RAPFACTORY_DECL_HPP
 #define MUELU_RAPFACTORY_DECL_HPP
 
-#include "MueLu_ConfigDefs.hpp"
+#include <Xpetra_Operator.hpp>
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_Utilities.hpp"
+#include "MueLu_RAPFactory_fwd.hpp"
+
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
-/*!
-  @class RAPFactory class.
-  @brief Factory for building coarse matrices.
-*/
+  /*!
+    @class RAPFactory class.
+    @brief Factory for building coarse matrices.
+  */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
   class RAPFactory : public TwoLevelFactoryBase {
-
+#undef MUELU_RAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
     //@{ Constructors/Destructors.
-  /*RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null)
-    : PFact_(PFact), RFact_(RFact),
+    /*RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null)
+      : PFact_(PFact), RFact_(RFact),
       implicitTranspose_(false);*/
 
     RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null);
@@ -54,22 +57,22 @@ namespace MueLu {
     size_t NumTransferFactories() const;
 
     //@}
-private:
-  //! P Factory
-  RCP<FactoryBase> PFact_;
+  private:
+    //! P Factory
+    RCP<FactoryBase> PFact_;
 
-  //! R Factory
-  RCP<FactoryBase> RFact_;
+    //! R Factory
+    RCP<FactoryBase> RFact_;
   
-  //! A Factory
-  RCP<FactoryBase> AFact_;
+    //! A Factory
+    RCP<FactoryBase> AFact_;
 
-  //! list of user-defined transfer Factories
-  std::vector<RCP<FactoryBase> > TransferFacts_;
+    //! list of user-defined transfer Factories
+    std::vector<RCP<FactoryBase> > TransferFacts_;
 
-  bool implicitTranspose_;
+    bool implicitTranspose_;
 
-}; //class RAPFactory
+  }; //class RAPFactory
 
 } //namespace MueLu
 

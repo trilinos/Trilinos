@@ -5,8 +5,9 @@
  *      Author: tobias
  */
 
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
-#include "Teuchos_UnitTestHarness.hpp"
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Version.hpp"
@@ -15,6 +16,11 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
+
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 

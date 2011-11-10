@@ -5,8 +5,8 @@
  *      Author: wiesner
  */
 
-#ifndef MUELU_SEGREGATIONAFILTERFACTORY_HPP_
-#define MUELU_SEGREGATIONAFILTERFACTORY_HPP_
+#ifndef MUELU_SEGREGATIONAFILTERFACTORY_HPP
+#define MUELU_SEGREGATIONAFILTERFACTORY_HPP
 
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_RCP.hpp>
@@ -34,7 +34,7 @@ namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class SegregationAFilterFactory : public SingleLevelFactoryBase {
-
+#undef MUELU_SEGREGATIONAFILTERFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"
 
     typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
@@ -172,5 +172,4 @@ namespace MueLu {
 }
 
 #define MUELU_SEGREGATIONAFILTERFACTORY_SHORT
-
-#endif /* MUELU_SEGREGATIONAFILTERFACTORY_HPP_ */
+#endif // MUELU_SEGREGATIONAFILTERFACTORY_HPP

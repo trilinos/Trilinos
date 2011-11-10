@@ -1,5 +1,5 @@
-#ifndef MUELU_SMOOTHERPROTOTYPE_HPP
-#define MUELU_SMOOTHERPROTOTYPE_HPP
+#ifndef MUELU_ADVSMOOTHERPROTOTYPE_HPP
+#define MUELU_ADVSMOOTHERPROTOTYPE_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherPrototype.hpp"
@@ -19,7 +19,7 @@ namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class AdvSmootherPrototype : public SmootherPrototypex<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-
+#undef MUELU_ADVSMOOTHERPROTOTYPE_HPP
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -60,6 +60,6 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_SMOOTHERPROTOTYPE_SHORT
+#define MUELU_ADVSMOOTHERPROTOTYPE_SHORT
 
-#endif //ifndef MUELU_SMOOTHERPROTOTYPE_HPP
+#endif //ifndef MUELU_ADVSMOOTHERPROTOTYPE_HPP

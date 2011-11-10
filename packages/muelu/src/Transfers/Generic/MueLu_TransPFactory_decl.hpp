@@ -1,16 +1,14 @@
 #ifndef MUELU_TRANSPFACTORY_DECL_HPP
 #define MUELU_TRANSPFACTORY_DECL_HPP
 
+#include <Xpetra_Operator.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
-
-#include <iostream>
-
-#include "Xpetra_CrsOperator.hpp"
-
-#include "MueLu_Level.hpp"
 #include "MueLu_RFactory.hpp"
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_Utilities.hpp"
+#include "MueLu_TransPFactory_fwd.hpp"
+
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -24,7 +22,7 @@ namespace MueLu {
 
 template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class TransPFactory : public RFactory {
-
+#undef MUELU_TRANSPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:

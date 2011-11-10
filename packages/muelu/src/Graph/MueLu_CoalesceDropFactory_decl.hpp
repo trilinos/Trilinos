@@ -1,16 +1,17 @@
 #ifndef MUELU_COALESCEDROPFACTORY_DECL_HPP
 #define MUELU_COALESCEDROPFACTORY_DECL_HPP
 
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
-#include "Xpetra_MapFactory.hpp"
-#include "Xpetra_CrsGraphFactory.hpp"
-
-#include "Xpetra_Operator.hpp"
-
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
-#include "MueLu_PreDropFunctionBaseClass.hpp"
+#include "MueLu_CoalesceDropFactory_fwd.hpp"
+
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_PreDropFunctionBaseClass_fwd.hpp"
 
 namespace MueLu {
 
@@ -26,7 +27,7 @@ namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class CoalesceDropFactory : public SingleLevelFactoryBase {
-
+#undef MUELU_COALESCEDROPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:

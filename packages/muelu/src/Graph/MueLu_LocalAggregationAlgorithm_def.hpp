@@ -1,7 +1,16 @@
 #ifndef MUELU_LOCALAGGREGATIONALGORITHM_DEF_HPP
 #define MUELU_LOCALAGGREGATIONALGORITHM_DEF_HPP
 
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_CommHelpers.hpp>
+
 #include "MueLu_LocalAggregationAlgorithm_decl.hpp"
+
+#include "MueLu_Graph.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_LinkedList.hpp"
+#include "MueLu_Exceptions.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 

@@ -1,13 +1,11 @@
 #ifndef MUELU_GRAPH_DECL_HPP
 #define MUELU_GRAPH_DECL_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-
-#include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_CrsGraph.hpp>
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_Exceptions.hpp"
+#include "MueLu_Graph_fwd.hpp"
 
 /******************************************************************************
    MueLu representation of a graph.
@@ -18,7 +16,7 @@ namespace MueLu {
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class Graph 
     : public BaseClass {
-
+#undef MUELU_GRAPH_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:

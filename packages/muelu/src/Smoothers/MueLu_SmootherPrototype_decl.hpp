@@ -2,7 +2,7 @@
 #define MUELU_SMOOTHERPROTOTYPE_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-
+#include "MueLu_SmootherPrototype_fwd.hpp"
 #include "MueLu_SmootherBase.hpp"
 
 namespace MueLu {
@@ -22,7 +22,7 @@ namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class SmootherPrototype : public SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-
+#undef MUELU_SMOOTHERPROTOTYPE_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:

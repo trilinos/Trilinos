@@ -1,13 +1,13 @@
 #ifndef MUELU_PREDROPFUNCTIONBASECLASS_DECL_HPP
 #define MUELU_PREDROPFUNCTIONBASECLASS_DECL_HPP
 
+#include <Xpetra_Operator.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
+//#include TODO base class
+#include "MueLu_PreDropFunctionBaseClass_fwd.hpp"
 
-#include "Xpetra_Operator.hpp"
-
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
+#include "MueLu_Graph_fwd.hpp"
 
 namespace MueLu {
 
@@ -17,7 +17,7 @@ namespace MueLu {
    */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class PreDropFunctionBaseClass {
-
+#undef MUELU_PREDROPFUNCTIONBASECLASS_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:

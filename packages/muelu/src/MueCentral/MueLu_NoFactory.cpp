@@ -7,6 +7,8 @@
 
 #include "MueLu_NoFactory.hpp"
 
+#include "MueLu_Exceptions.hpp"
+
 namespace MueLu {
 
   NoFactory::NoFactory() { }

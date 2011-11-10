@@ -1,8 +1,6 @@
 #ifndef MUELU_THRESHOLDAFILTERFACTORY_DECL_HPP
 #define MUELU_THRESHOLDAFILTERFACTORY_DECL_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-
 /*
  * MueLu_ThresholdAFilterFactory.hpp
  *
@@ -10,14 +8,9 @@
  *      Author: tobias
  */
 
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
-#include "MueLu_Exceptions.hpp"
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 
 namespace MueLu {
 
@@ -29,7 +22,7 @@ namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class ThresholdAFilterFactory : public SingleLevelFactoryBase {
-
+#undef MUELU_THRESHOLDAFILTERFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -59,9 +52,9 @@ namespace MueLu {
     //@}
 
   private:
-    std::string         varName_;   ///< name of input and output variable
-    const FactoryBase*  factory_;   ///< generating factory of input variable
-    const Scalar        threshold_; ///< threshold parameter
+    std::string        varName_;   ///< name of input and output variable
+    const FactoryBase* factory_;   ///< generating factory of input variable
+    const Scalar       threshold_; ///< threshold parameter
 
 
   }; // class ThresholdAFilterFactory

@@ -1,7 +1,13 @@
 #ifndef MUELU_TWOKEYMAP_DEF_HPP
 #define MUELU_TWOKEYMAP_DEF_HPP
 
+#include <Teuchos_TabularOutputter.hpp>
+
+#include <Xpetra_Operator.hpp>
+
 #include <MueLu_TwoKeyMap_decl.hpp>
+
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
   namespace UTILS {

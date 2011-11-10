@@ -14,6 +14,8 @@
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 
+#include "MueLu_RAPFactory.hpp" //TMP
+
 #include <MueLu_TrilinosSmoother.hpp> //TODO: remove
 
 // Header files defining default types for template parameters.

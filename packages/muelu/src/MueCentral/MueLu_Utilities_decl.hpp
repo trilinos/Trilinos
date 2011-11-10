@@ -4,13 +4,13 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_TypeTraits.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_Utils.hpp>
+//#include <Teuchos_OrdinalTraits.hpp>
+//#include <Teuchos_TypeTraits.hpp>
+//#include <Teuchos_Comm.hpp>
+//#include <Teuchos_DefaultComm.hpp>
+//#include <Teuchos_Utils.hpp>
 
-#include <Xpetra_Map.hpp>
+//#include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_OperatorFactory.hpp>
@@ -87,7 +87,7 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
   class Utils {
-    
+#undef MUELU_UTILITIES_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:

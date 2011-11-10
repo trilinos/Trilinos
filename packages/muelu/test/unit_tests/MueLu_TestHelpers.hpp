@@ -20,8 +20,10 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_FactoryManager.hpp"
 
 #include "MueLu_IfpackSmoother.hpp"
+#include "MueLu_Level.hpp"
 
 // Gallery
 #include "MueLu_MatrixFactory.hpp"

@@ -1,14 +1,13 @@
 #ifndef MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
 #define MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
 
+#include <Xpetra_Import.hpp>
+#include <Xpetra_Vector.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
-
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_ImportFactory.hpp>
-#include <Xpetra_ExportFactory.hpp>
-#include <Xpetra_MapFactory.hpp>
-
 #include "MueLu_BaseClass.hpp"
+#include "MueLu_UCAggregationCommHelper_fwd.hpp"
+
 #include "MueLu_Aggregates.hpp"
 
 namespace MueLu {
@@ -17,6 +16,7 @@ namespace MueLu {
   class UCAggregationCommHelper : public BaseClass {
 
     typedef double Scalar; // Scalar type only used for weight: always a double.
+#undef MUELU_UCAGGREGATIONCOMMHELPER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   private:

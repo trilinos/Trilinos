@@ -3,6 +3,8 @@
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 
+#include <MueLu_RAPFactory.hpp> //TMP
+
 // Define default template types
 typedef double Scalar;
 typedef int    LocalOrdinal;

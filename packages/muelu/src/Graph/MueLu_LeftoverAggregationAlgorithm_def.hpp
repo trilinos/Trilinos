@@ -3,6 +3,13 @@
 
 #include "MueLu_LeftoverAggregationAlgorithm_decl.hpp"
 
+#include "MueLu_Aggregates_decl.hpp" // MUELU_UNASSIGNED macro
+#include "MueCentral/MueLu_Utilities_decl.hpp" // sumAll macro
+#include "MueLu_Graph.hpp"
+#include "MueLu_UCAggregationCommHelper.hpp"
+#include "MueLu_Exceptions.hpp"
+#include "MueLu_Monitor.hpp"
+
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     

@@ -22,10 +22,14 @@
 #include <Xpetra_Parameters.hpp>
 
 #include "MueLu_Hierarchy.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_TransPFactory.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
+#include "MueLu_SmootherFactory.hpp"
 
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"

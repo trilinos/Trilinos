@@ -2,8 +2,16 @@
 
 #ifdef HAVE_MUELU_AMESOS
 
+#include <Epetra_LinearProblem.h>
+
+#include <Amesos_config.h>
+#include <Amesos.h>
+#include <Amesos_BaseSolver.h>
+
 #include "MueLu_AmesosSmoother.hpp"
 
+#include "MueLu_Level.hpp"
+#include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {

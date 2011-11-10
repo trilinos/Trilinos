@@ -2,13 +2,8 @@
 #define MUELU_TWOKEYMAP_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-
-#include <Teuchos_TabularOutputter.hpp>
-#include <Teuchos_map.hpp>
-
-#include "MueLu_Exceptions.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_FactoryBase.hpp"
+#include "MueLu_TwoKeyMap_fwd.hpp"
 
 namespace MueLu {
   namespace UTILS {
@@ -59,4 +54,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
+#define MUELU_TWOKEYMAP_SHORT
 #endif // MUELU_TWOKEYMAP_DECL_HPP

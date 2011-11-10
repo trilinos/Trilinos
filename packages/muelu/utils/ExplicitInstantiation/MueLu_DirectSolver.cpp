@@ -4,8 +4,6 @@
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
 template class MueLu::DirectSolver<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-#else
-#error
 #endif
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT

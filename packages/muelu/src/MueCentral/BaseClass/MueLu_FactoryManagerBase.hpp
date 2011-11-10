@@ -6,8 +6,9 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 
+#include "MueLu_FactoryBase_fwd.hpp"
+
 namespace MueLu {
-  class FactoryBase;
 
   //! Class that provides default factories within Needs class.
   class FactoryManagerBase : public BaseClass {

@@ -2,6 +2,7 @@
 #define MUELU_RAPFACTORY_DEF_HPP
 
 #include "MueLu_RAPFactory_decl.hpp"
+#include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Memory.hpp"
 

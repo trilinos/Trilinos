@@ -1,7 +1,10 @@
 #ifndef MUELU_TRANSPFACTORY_DEF_HPP
 #define MUELU_TRANSPFACTORY_DEF_HPP
 
+#include <Teuchos_Time.hpp>
+
 #include "MueLu_TransPFactory_decl.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -40,7 +43,7 @@ namespace MueLu {
     //RCP<Operator> R = Utils::TwoMatrixMultiply(P,true,I,false); //doesn't work -- bug in EpetraExt?
     //      RCP<Operator> R = Utils::TwoMatrixMultiply(I,false,P,true);
 
-    RCP<Operator> R= Utils2<SC,LO,GO>::Transpose(P,true);
+    RCP<Operator> R = Utils2::Transpose(P,true);
 
     coarseLevel.Set("R", R, this);
 

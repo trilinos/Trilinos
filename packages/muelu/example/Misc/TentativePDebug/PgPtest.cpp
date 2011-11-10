@@ -23,11 +23,14 @@
 #include <Xpetra_Parameters.hpp>
 
 #include "MueLu_Hierarchy.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
+#include "MueLu_SmootherFactory.hpp"
 
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"
@@ -54,6 +57,7 @@
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP;
+  using Teuchos::rcp;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);

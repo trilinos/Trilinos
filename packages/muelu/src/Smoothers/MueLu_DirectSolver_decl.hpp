@@ -2,12 +2,13 @@
 #define MUELU_DIRECTSOLVER_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_FactoryBase.hpp"
+#include "MueLu_DirectSolver_fwd.hpp"
 
-//TODO
-#include "MueLu_AmesosSmoother.hpp"
-#include "MueLu_Amesos2Smoother.hpp"
+#include "MueLu_SmootherPrototype.hpp"
+
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Amesos2Smoother_fwd.hpp"
+#include "MueLu_AmesosSmoother_fwd.hpp"
 
 // Note: DirectSolver is a SmootherPrototype that cannot be turned into a smoother using Setup().
 //       When this prototype is cloned using Copy(), the clone is an Amesos or an Amesos2 smoother.
@@ -21,13 +22,12 @@ namespace MueLu {
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class DirectSolver : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
-  {
-    
+  class DirectSolver : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+#undef MUELU_DIRECTSOLVER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
-
+    
     //! @name Constructors / destructors
     //@{
 
@@ -97,5 +97,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_DIRECT_SOLVER_SHORT
+#define MUELU_DIRECTSOLVER_SHORT
 #endif // MUELU_DIRECTSOLVER_DECL_HPP

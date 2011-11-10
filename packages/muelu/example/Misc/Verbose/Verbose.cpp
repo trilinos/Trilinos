@@ -25,6 +25,7 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_IfpackSmoother.hpp"
+#include "MueLu_SmootherFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"

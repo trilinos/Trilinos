@@ -1,23 +1,22 @@
 #ifndef MUELU_LEFTOVERAGGREGATIONALGORITHM_DECL_HPP
 #define MUELU_LEFTOVERAGGREGATIONALGORITHM_DECL_HPP
 
+#include <Xpetra_VectorFactory.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
-
-#include <assert.h>
-#include <math.h>
-#include <vector>
-
-#include "MueLu_Exceptions.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_Aggregates.hpp"
-#include "MueLu_Monitor.hpp"
+#include "MueLu_LeftoverAggregationAlgorithm_fwd.hpp"
 
-#include "MueLu_UCAggregationCommHelper.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_Graph_fwd.hpp"
+
+#include "MueLu_UCAggregationCommHelper_fwd.hpp"
 
 namespace MueLu {
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class LeftoverAggregationAlgorithm : public BaseClass {
+#undef MUELU_LEFTOVERAGGREGATIONALGORITHM_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
     typedef GO global_size_t; //TODO

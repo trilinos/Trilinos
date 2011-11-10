@@ -4,9 +4,12 @@
 
 // MueLu
 #include "MueLu.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_RAPFactory.hpp"
 
 // Define template parameters
 #include "MueLu_UseDefaultTypes.hpp"

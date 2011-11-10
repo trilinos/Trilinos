@@ -2,8 +2,14 @@
 #define MUELU_AMESOS2SMOOTHER_DEF_HPP
 
 #ifdef HAVE_MUELU_AMESOS2
+#include <Xpetra_Operator.hpp>
+
+#include <Amesos2_config.h>
+#include <Amesos2.hpp>
+
 #include "MueLu_Amesos2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {

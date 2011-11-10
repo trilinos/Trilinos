@@ -5,15 +5,15 @@
  *      Author: wiesner
  */
 
-#ifndef MUELU_SEGREGATIONATRANSFERFACTORY_HPP_
-#define MUELU_SEGREGATIONATRANSFERFACTORY_HPP_
-
+#ifndef MUELU_SEGREGATIONATRANSFERFACTORY_HPP
+#define MUELU_SEGREGATIONATRANSFERFACTORY_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_Utilities.hpp"
+//#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 /*!
@@ -22,7 +22,7 @@ namespace MueLu {
 */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
   class SegregationATransferFactory : public TwoLevelFactoryBase {
-
+#undef MUELU_SEGREGATIONATRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
     typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
@@ -126,4 +126,4 @@ private:
 
 #define MUELU_SEGREGATIONATRANSFERFACTORY_SHORT
 
-#endif /* MUELU_SEGREGATIONATRANSFERFACTORY_HPP_ */
+#endif // MUELU_SEGREGATIONATRANSFERFACTORY_HPP

@@ -1,12 +1,15 @@
 #ifndef MUELU_TRILINOSSMOOTHER_DECL_HPP
 #define MUELU_TRILINOSSMOOTHER_DECL_HPP
 
-#include "MueLu_ConfigDefs.hpp"
+#include <Xpetra_Operator.hpp>
 
+#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_TrilinosSmoother_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 
-#include "MueLu_IfpackSmoother.hpp"
-#include "MueLu_Ifpack2Smoother.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_IfpackSmoother_fwd.hpp"
+#include "MueLu_Ifpack2Smoother_fwd.hpp"
 
 // Note: TrilinosSmoother is a SmootherPrototype that cannot be turned into a smoother using Setup().
 //       When this prototype is cloned using Copy(), the clone is an Ifpack or an Ifpack2 smoother.
@@ -22,7 +25,7 @@ namespace MueLu {
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class TrilinosSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
-    
+#undef MUELU_TRILINOSSMOOTHER_SHORT    
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -114,5 +117,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_TRILINOS_SMOOTHER_SHORT
+#define MUELU_TRILINOSSMOOTHER_SHORT
 #endif // MUELU_TRILINOSSMOOTHER_DECL_HPP

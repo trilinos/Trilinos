@@ -2,17 +2,18 @@
 #define MUELU_AMESOS2SMOOTHER_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-
-// TODO: PARAMETER LIST NOT TAKE INTO ACCOUNT !!!
+#include "MueLu_Amesos2Smoother_fwd.hpp"
 
 #ifdef HAVE_MUELU_AMESOS2
-#include <Amesos2_config.h>
-#include <Amesos2.hpp>
+#include <Teuchos_ParameterList.hpp>
 
-#include "MueLu_SmootherBase.hpp"
-#include "MueLu_FactoryBase.hpp"
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_MultiVector.hpp>
+
 #include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_Utilities.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
+namespace Amesos2 { template<class OP, class MV> class Solver; }
 
 namespace MueLu {
 
@@ -27,7 +28,7 @@ namespace MueLu {
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class Amesos2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
-    
+#undef MUELU_AMESOS2SMOOTHER_SHORT    
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -104,7 +105,8 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_AMESOS2_SMOOTHER_SHORT
-
+#define MUELU_AMESOS2SMOOTHER_SHORT
 #endif // HAVE_MUELU_AMESOS2
 #endif // MUELU_AMESOS2SMOOTHER_DECL_HPP
+
+// TODO: PARAMETER LIST NOT TAKE INTO ACCOUNT !!!

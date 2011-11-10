@@ -10,13 +10,18 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_AmesosSmoother.hpp"
+#include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
 
-TEUCHOS_UNIT_TEST(Hierarchy,Constructor)
+TEUCHOS_UNIT_TEST(Hierarchy, Constructor)
 {
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -26,7 +31,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Constructor)
 
 } //Constructor
 
-TEUCHOS_UNIT_TEST(Hierarchy,SetAndGetLevel)
+TEUCHOS_UNIT_TEST(Hierarchy, SetAndGetLevel)
 {
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -39,7 +44,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetAndGetLevel)
 
 }//SetAndGetLevel
 
-TEUCHOS_UNIT_TEST(Hierarchy,GetNumLevels)
+TEUCHOS_UNIT_TEST(Hierarchy, GetNumLevels)
 {
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -55,7 +60,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,GetNumLevels)
 
 }//GetNumLevels
 
-TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
+TEUCHOS_UNIT_TEST(Hierarchy, FillHierarchy_NoFactoriesGiven)
 {
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -65,7 +70,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 
   Hierarchy H;
   RCP<Level> & levelOne = H.GetLevel();
-  levelOne->Set("A",A);
+  levelOne->Set("A", A);
 
   out << "Providing no factories to FillHierarchy." << std::endl;
   //  H.FillHierarchy(); TODO
@@ -73,7 +78,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 } // FillHierarchy_NoFactoriesGiven
 
 
-TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
+TEUCHOS_UNIT_TEST(Hierarchy, FillHierarchy_BothFactories)
 {
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -91,11 +96,11 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 
   out << "Providing both factories to FillHierarchy." << std::endl;
 
-  H.FillHierarchy(*PFact,*RFact, AcFact);
+  H.FillHierarchy(*PFact, *RFact, AcFact);
 
 } //FillHierarchy_BothFactories
 
-TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
+TEUCHOS_UNIT_TEST(Hierarchy, SetSmoothers)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
@@ -111,21 +116,21 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   H.AddLevel(levelTwo);
 
   // TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
-  // TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(),"Ifpack: Gauss-Seidel");
+  // TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(), "Ifpack: Gauss-Seidel");
   
 #ifdef HAVE_MUELU_IFPACK
 
   RCP<SmootherPrototype> smooProto = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Jacobi");
   RCP<SmootherFactory> smooFactory = rcp(new SmootherFactory(smooProto));
   H.SetSmoothers(*smooFactory, 0, 1);
-  // JGTODO TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PreSmoother", smooFactory)->GetType(),"Ifpack: Jacobi");
-  // JGTODO TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PostSmoother", smooFactory)->GetType(),"Ifpack: Jacobi");
+  // JGTODO TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PreSmoother", smooFactory)->GetType(), "Ifpack: Jacobi");
+  // JGTODO TEST_EQUALITY(H.GetLevel(1)->Get< RCP<SmootherBase> >("PostSmoother", smooFactory)->GetType(), "Ifpack: Jacobi");
 #endif
 
     }
 } //SetSmoothers
 
-TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
+TEUCHOS_UNIT_TEST(Hierarchy, SetCoarsestSolver1)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
@@ -155,20 +160,20 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver1)
 
   H.SetCoarsestSolver(SmooFactory);
 
-  RCP<SmootherBase>  preSmoo,postSmoo;
+  RCP<SmootherBase>  preSmoo, postSmoo;
   preSmoo = levelOne->Get< RCP<SmootherBase> >("PreSmoother", &SmooFactory);
   TEST_INEQUALITY(preSmoo, Teuchos::null);
-  //JGTODO  TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel");
-  postSmoo = levelOne->Get< RCP<SmootherBase> >("PostSmoother",&SmooFactory);
+  //JGTODO  TEST_EQUALITY(preSmoo->GetType(), "Ifpack: Gauss-Seidel");
+  postSmoo = levelOne->Get< RCP<SmootherBase> >("PostSmoother", &SmooFactory);
 
   TEST_INEQUALITY(postSmoo, Teuchos::null);
-  //JGTODO  TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel");
+  //JGTODO  TEST_EQUALITY(postSmoo->GetType(), "Ifpack: Gauss-Seidel");
 
 #endif
     }
 } //SetCoarsestSolver
 
-TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
+TEUCHOS_UNIT_TEST(Hierarchy, SetCoarsestSolver2)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
@@ -195,13 +200,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
   //JG FIXME
   levelOne->SetFactoryManager(Teuchos::null);
 
-  H.SetCoarsestSolver(SmooFactory,MueLu::PRE);
+  H.SetCoarsestSolver(SmooFactory, MueLu::PRE);
 
   RCP<SmootherBase> preSmoo;
   preSmoo = levelOne->Get< RCP<SmootherBase> >("PreSmoother", &SmooFactory);
 
   TEST_INEQUALITY(preSmoo, Teuchos::null);
-  //JGTODO  TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel");
+  //JGTODO  TEST_EQUALITY(preSmoo->GetType(), "Ifpack: Gauss-Seidel");
 
   TEST_EQUALITY(levelOne->IsAvailable("PostSmoother"), false);
 
@@ -209,7 +214,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver2)
     }
 } //SetCoarsestSolver
 
-TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
+TEUCHOS_UNIT_TEST(Hierarchy, SetCoarsestSolver3)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
@@ -236,7 +241,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
   //JG FIXME
   levelOne->SetFactoryManager(Teuchos::null);
 
-  H.SetCoarsestSolver(SmooFactory,MueLu::POST);
+  H.SetCoarsestSolver(SmooFactory, MueLu::POST);
 
   TEST_EQUALITY(levelOne->IsAvailable("PreSmoother"), false);
 
@@ -244,12 +249,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver3)
   postSmoo = levelOne->Get< RCP<SmootherBase> >("PostSmoother", &SmooFactory);
 
   TEST_INEQUALITY(postSmoo, Teuchos::null);
-  //JG TODO  TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel");
+  //JG TODO  TEST_EQUALITY(postSmoo->GetType(), "Ifpack: Gauss-Seidel");
 #endif
     }
 } //SetCoarsestSolver
 
-TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
+TEUCHOS_UNIT_TEST(Hierarchy, FullPopulate_NoArgs)
 {
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -261,7 +266,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
   //TODO  H.FullPopulate();
 } //FullPopulate
 
-TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
+TEUCHOS_UNIT_TEST(Hierarchy, FullPopulate_AllArgs)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
@@ -280,12 +285,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 #ifdef HAVE_MUELU_IFPACK
   RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
-  H.FullPopulate(*PFact, *RFact, *AcFact, *SmooFact,0,2);
+  H.FullPopulate(*PFact, *RFact, *AcFact, *SmooFact, 0, 2);
 #endif
     }
 } //FullPopulate
 
-TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_KeepAggregates)
+TEUCHOS_UNIT_TEST(Hierarchy, FullPopulate_KeepAggregates)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
@@ -312,18 +317,18 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_KeepAggregates)
   RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
 
-  H.GetLevel(0)->Keep("Aggregates",UCAggFact.get()); // not working since no FactoryManager available
-  H.FullPopulate(*PFact, *RFact, *AcFact, *SmooFact,0,2);
+  H.GetLevel(0)->Keep("Aggregates", UCAggFact.get()); // not working since no FactoryManager available
+  H.FullPopulate(*PFact, *RFact, *AcFact, *SmooFact, 0, 2);
 #endif
 
   for (LocalOrdinal l=0; l<H.GetNumLevels()-1;l++) {
-    TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates",UCAggFact.get()),true);
+    TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates", UCAggFact.get()), true);
   }
 
     }
 } //FullPopulate_KeepAggregates
 
-TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
+TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
@@ -335,19 +340,19 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
   RCP<const Map > map = Op->getRowMap();
 
-  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
+  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
   nullSpace->putScalar( (SC) 1.0);
   Teuchos::Array<ST::magnitudeType> norms(1);
   nullSpace->norm1(norms);
 
-  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
+  MueLu::Hierarchy<SC, LO, GO, NO, LMO> H;
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
   RCP<MueLu::Level> Finest = H.GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
-  Finest->Set("NullSpace",nullSpace);
-  Finest->Set("A",Op);
+  Finest->Set("NullSpace", nullSpace);
+  Finest->Set("A", Op);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
@@ -372,38 +377,38 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 
   Teuchos::ParameterList status;
   int maxLevels = 5;
-  status = H.FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
+  status = H.FullPopulate(*Pfact, *Rfact, *Acfact, *SmooFact, 0, maxLevels);
   out  << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(out,Teuchos::ParameterList::PrintOptions().indent(2));
+  status.print(out, Teuchos::ParameterList::PrintOptions().indent(2));
 
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
   Teuchos::ParameterList amesosList;
-  RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
+  RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu", amesosList) );
   SmootherFactory coarseSolveFact(coarseProto);
-  H.SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  H.SetCoarsestSolver(coarseSolveFact, MueLu::PRE);
 
-  RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
-  RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
+  RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(map, 1);
 
   X->setSeed(846930886);
   X->randomize();
-  //Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  //Op->apply(*X, *RHS, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
 
   X->norm2(norms);
   X->scale(1/norms[0]);
   X->norm2(norms);
-  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+  out << "||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
   RHS->putScalar( (SC) 0.0);
 
   int iterations=10;
-  H.Iterate(*RHS,iterations,*X);
+  H.Iterate(*RHS, iterations, *X);
 
   X->norm2(norms);
-  out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(ios::fixed) <<
+  out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(std::ios::fixed) <<
     std::setprecision(10) << norms[0] << std::endl;
 
-  norms = Utils::ResidualNorm(*Op,*X,*RHS);
+  norms = Utils::ResidualNorm(*Op, *X, *RHS);
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
   TEST_EQUALITY(norms[0]<1e-10, true);
 
@@ -412,7 +417,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
     }
 } //Iterate
 
-TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
+TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
@@ -424,19 +429,19 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
   RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
   RCP<const Map > map = Op->getRowMap();
 
-  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
+  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
   nullSpace->putScalar( (SC) 1.0);
   Teuchos::Array<ST::magnitudeType> norms(1);
   nullSpace->norm1(norms);
 
-  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
+  MueLu::Hierarchy<SC, LO, GO, NO, LMO> H;
   H.SetImplicitTranspose(true);
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
   RCP<MueLu::Level> Finest = H.GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",Op);
-  Finest->Set("Nullspace",nullSpace);
+  Finest->Set("A", Op);
+  Finest->Set("Nullspace", nullSpace);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   UCAggFact->SetMinNodesPerAggregate(3);
@@ -460,38 +465,38 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
 
   Teuchos::ParameterList status;
   int maxLevels = 5;
-  status = H.FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
+  status = H.FullPopulate(*Pfact, *Rfact, *Acfact, *SmooFact, 0, maxLevels);
   out  << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(out,Teuchos::ParameterList::PrintOptions().indent(2));
+  status.print(out, Teuchos::ParameterList::PrintOptions().indent(2));
 
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
   Teuchos::ParameterList amesosList;
-  RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
+  RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu", amesosList) );
   SmootherFactory coarseSolveFact(coarseProto);
-  H.SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  H.SetCoarsestSolver(coarseSolveFact, MueLu::PRE);
 
-  RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
-  RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
+  RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(map, 1);
 
   X->setSeed(846930886);
   X->randomize();
-  //Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  //Op->apply(*X, *RHS, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
 
   X->norm2(norms);
   X->scale(1/norms[0]);
   X->norm2(norms);
-  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+  out << "||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
   RHS->putScalar( (SC) 0.0);
 
   int iterations=10;
-  H.Iterate(*RHS,iterations,*X);
+  H.Iterate(*RHS, iterations, *X);
 
   X->norm2(norms);
-  out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(ios::fixed) <<
+  out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(std::ios::fixed) <<
     std::setprecision(10) << norms[0] << std::endl;
 
-  norms = Utils::ResidualNorm(*Op,*X,*RHS);
+  norms = Utils::ResidualNorm(*Op, *X, *RHS);
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
   TEST_EQUALITY(norms[0]<1e-10, true);
 

@@ -3,7 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_FactoryBase.hpp"
-#include "MueLu_Exceptions.hpp"
 #include "MueLu_Level.hpp"
 
 namespace MueLu {

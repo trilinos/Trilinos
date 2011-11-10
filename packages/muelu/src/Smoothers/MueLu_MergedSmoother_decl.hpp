@@ -2,9 +2,8 @@
 #define MUELU_MERGEDSMOOTHER_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-
+#include "MueLu_MergedSmoother_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -13,7 +12,7 @@ namespace MueLu {
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class MergedSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
-
+#undef MUELU_MERGEDSMOOTHER_SHORT    
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -100,5 +99,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_MERGED_SMOOTHER_SHORT
+#define MUELU_MERGEDSMOOTHER_SHORT
 #endif // MUELU_MERGEDSMOOTHER_DECL_HPP

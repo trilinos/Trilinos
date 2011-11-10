@@ -1,14 +1,13 @@
 #ifndef MUELU_HIERARCHYHELPERS_DECL_HPP
 #define MUELU_HIERARCHYHELPERS_DECL_HPP
 
-#include <Teuchos_RCP.hpp>
-
 #include "MueLu_ConfigDefs.hpp"
-
+#include "MueLu_HierarchyHelpers_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_Level.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
+
+#include "MueLu_Level_fwd.hpp"
 
 namespace MueLu {
 
@@ -113,5 +112,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_HIERARCHY_HELPERS_SHORT
+#define MUELU_HIERARCHYHELPERS_SHORT
 #endif // MUELU_HIERARCHYHELPERS_DECL_HPP

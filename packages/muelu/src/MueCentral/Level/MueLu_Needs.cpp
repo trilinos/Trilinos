@@ -1,3 +1,5 @@
+#include <Teuchos_TabularOutputter.hpp>
+
 #include "MueLu_Needs.hpp"
 
 namespace MueLu {

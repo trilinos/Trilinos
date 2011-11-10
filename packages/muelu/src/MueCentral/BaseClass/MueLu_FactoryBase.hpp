@@ -4,16 +4,16 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 
-namespace MueLu {
-  class Level;
+#include "MueLu_Level_fwd.hpp"
 
-  static int generateUniqueFactoryId()
-  {
+namespace MueLu {
+
+  static int generateUniqueFactoryId() {
     static int i = 0;
     ++i;
     return i;
   }
-
+  
   //! Base class for factories (e.g., R, P, and A_coarse).
   class FactoryBase : public BaseClass {
 
@@ -22,7 +22,7 @@ namespace MueLu {
 
     //! Constructor.
     FactoryBase()
-    : id_(MueLu::generateUniqueFactoryId())
+      : id_(MueLu::generateUniqueFactoryId())
     { }
 
     //! Destructor.

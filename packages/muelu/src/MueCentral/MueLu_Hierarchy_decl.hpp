@@ -1,20 +1,26 @@
 #ifndef MUELU_HIERARCHY_DECL_HPP
 #define MUELU_HIERARCHY_DECL_HPP
 
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
-
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_Hierarchy_fwd.hpp"
+
 #include "MueLu_Types.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Monitor.hpp"
 
-#include "MueLu_FactoryManager.hpp"
-
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_SmootherFactory.hpp"
-
-#include "MueLu_HierarchyHelpers.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_FactoryManager_fwd.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_TwoLevelFactoryBase_fwd.hpp"
+#include "MueLu_PFactory_fwd.hpp"
+#include "MueLu_RFactory_fwd.hpp"
+#include "MueLu_SmootherFactoryBase_fwd.hpp"
+#include "MueLu_SmootherFactory_fwd.hpp"
+#include "MueLu_SmootherBase_fwd.hpp"
+#include "MueLu_HierarchyHelpers_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
   /*!
@@ -29,7 +35,7 @@ namespace MueLu {
   */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps> //TODO: or BlockSparseOp ?
   class Hierarchy : public BaseClass {
-
+#undef MUELU_HIERARCHY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:

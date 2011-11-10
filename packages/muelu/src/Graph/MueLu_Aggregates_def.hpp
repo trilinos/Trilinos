@@ -2,6 +2,8 @@
 #define MUELU_AGGREGATES_DEF_HPP
 
 #include "MueLu_Aggregates_decl.hpp"
+#include "MueLu_Graph.hpp"
+#include "MueLu_Utilities_decl.hpp" // sumAll
 
 namespace MueLu {
 

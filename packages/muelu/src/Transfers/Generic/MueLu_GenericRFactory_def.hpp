@@ -1,8 +1,13 @@
 #ifndef MUELU_GENERICRFACTORY_DEF_HPP
 #define MUELU_GENERICRFACTORY_DEF_HPP
 
+#include <Xpetra_Operator.hpp>
+
 #include "MueLu_GenericRFactory_decl.hpp"
+
+#include "MueLu_PFactory.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Memory.hpp"
 
 namespace MueLu {
 

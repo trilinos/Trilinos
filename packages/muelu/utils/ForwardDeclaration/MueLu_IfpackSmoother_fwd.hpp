@@ -1,0 +1,12 @@
+#ifndef MUELU_IFPACKSMOOTHER_FWD_HPP
+#define MUELU_IFPACKSMOOTHER_FWD_HPP
+
+namespace MueLu {
+  class IfpackSmoother;
+}
+
+#ifndef MUELU_IFPACKSMOOTHER_SHORT
+#define MUELU_IFPACKSMOOTHER_SHORT
+#endif
+
+#endif // MUELU_IFPACKSMOOTHER_FWD_HPP

@@ -4,6 +4,7 @@
 
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_PreDropFunctionConstVal.hpp"
+#include "MueLu_Graph.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"

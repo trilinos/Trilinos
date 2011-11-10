@@ -2,6 +2,11 @@
 #define MUELU_PGPFACTORY_DEF_HPP
 
 #include "MueLu_PgPFactory_decl.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_Utilities.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -53,7 +58,7 @@ namespace MueLu {
 
     /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
     if(restrictionMode_)
-      A = Utils2<Scalar,LocalOrdinal,GlobalOrdinal>::Transpose(A,true); // build transpose of A explicitely
+      A = Utils2::Transpose(A,true); // build transpose of A explicitely
 
     Monitor m(*this, "prolongator smoothing (PG-AMG)");
 
@@ -96,7 +101,7 @@ namespace MueLu {
     else
       {
         // prolongation factory is in restriction mode
-        RCP<Operator> R = Utils2<SC,LO,GO>::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
+        RCP<Operator> R = Utils2::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
         coarseLevel.Set("R", R, this);
       }
 

@@ -3,6 +3,10 @@
 
 #include "MueLu_SmootherFactory_decl.hpp"
 
+#include "MueLu_Level.hpp"
+#include "MueLu_Exceptions.hpp"
+#include "MueLu_SmootherPrototype.hpp"
+
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

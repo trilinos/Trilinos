@@ -2,21 +2,12 @@
 #define MUELU_LOCALAGGREGATIONALGORITHM_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
+#include "MueLu_LocalAggregationAlgorithm_fwd.hpp"
 
-#include <assert.h>
-#include <stdio.h>
-#include <math.h>
-#include <vector>
-
-#include <iostream>
-
-#include "MueLu_FactoryBase.hpp"
-#include "MueLu_Aggregates.hpp"
-#include "MueLu_Exceptions.hpp"
-
-#include "MueLu_LinkedList.hpp"
-
-#include "MueLu_Monitor.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_Graph_fwd.hpp"
 
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
@@ -76,6 +67,7 @@ namespace MueLu {
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class LocalAggregationAlgorithm : public BaseClass {
+#undef MUELU_LOCALAGGREGATIONALGORITHM_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
     typedef GO global_size_t; //TODO

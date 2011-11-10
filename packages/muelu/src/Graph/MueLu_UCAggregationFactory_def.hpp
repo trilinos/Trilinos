@@ -2,6 +2,11 @@
 #define MUELU_UCAGGREGATIONFACTORY_DEF_HPP
 
 #include "MueLu_UCAggregationFactory_decl.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_Graph.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_Monitor.hpp"
+#include "MueLu_Memory.hpp"
 
 namespace MueLu {
 

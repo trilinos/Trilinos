@@ -1,6 +1,8 @@
 #ifndef MUELU_UTILITIES_DEF_HPP
 #define MUELU_UTILITIES_DEF_HPP
 
+#include <Teuchos_DefaultComm.hpp>
+
 #include <MueLu_Utilities_decl.hpp>
 
 // MPI helper

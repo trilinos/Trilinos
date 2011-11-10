@@ -3,6 +3,8 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_TestHelpersSmoothers.hpp"
 
+#include "MueLu_Utilities.hpp"
+
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
