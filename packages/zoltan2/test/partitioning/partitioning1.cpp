@@ -1,4 +1,6 @@
+#ifdef HAVE_MPI
 #include <mpi.h>
+#endif
 #include <iostream>
 #include <limits>
 #include <Teuchos_ParameterList.hpp>
