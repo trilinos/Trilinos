@@ -332,3 +332,11 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    ImplicitBDFStepperRampingStepControl_UnitTest
+    SOURCES Rythmos_ImplicitBDFStepperRampingStepControl_UnitTest.cpp Rythmos_UnitTest.cpp
+    DEPLIBS rythmos_test_models
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
