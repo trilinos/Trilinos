@@ -1611,11 +1611,11 @@ def checkinTest(inOptions):
       # There are extra repos so we need to build a new list of Trilinos packages
       # to include the add-on packages.
       cmnd = "cmake -DPROJECT_NAME=Trilinos" \
-       +" -DTrilinos_CMAKE_DIR="+inOptions.trilinosSrcDir+"/cmake" \
+       +" -DTrilinos_TRIBITS_DIR="+inOptions.trilinosSrcDir+"/cmake/tribits" \
        +" -DTrilinos_DEPS_HOME_DIR="+inOptions.trilinosSrcDir \
        +" -DTrilinos_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR="+baseTestDir \
        +" -DTrilinos_EXTRA_REPOSITORIES="+inOptions.extraRepos \
-       +" -P "+inOptions.trilinosSrcDir+"/cmake/package_arch/PackageArchDumpDepsXmlScript.cmake"
+       +" -P "+inOptions.trilinosSrcDir+"/cmake/tribits/package_arch/PackageArchDumpDepsXmlScript.cmake"
       echoRunSysCmnd(cmnd,
         workingDir=baseTestDir,
         outFile=baseTestDir+"/"+getTrilinosDependenciesXmlGenerateOutputFileName(),

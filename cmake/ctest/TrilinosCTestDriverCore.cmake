@@ -402,7 +402,7 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
 
   EXECUTE_PROCESS(
     COMMAND ${PYTHON_EXECUTABLE}
-      ${TRILINOS_CMAKE_DIR}/python/get-trilinos-packages-from-files-list.py
+      ${TRILINOS_CMAKE_DIR}/tribits/python/get-trilinos-packages-from-files-list.py
       --files-list-file=${MODIFIED_FILES_FILE_NAME}
       --deps-xml-file=${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}
     OUTPUT_VARIABLE MODIFIED_PACKAGES_LIST

@@ -53,9 +53,12 @@
 # ************************************************************************
 # @HEADER
 
+MESSAGE("PROJECT_NAME = ${PROJECT_NAME}")
+MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
+
 SET( CMAKE_MODULE_PATH
-  "${PACKAGE_ARCH_SOURCE_DIR}"
-  "${PACKAGE_ARCH_SOURCE_DIR}/../utils"  # ToDo: Change utils to be under package_arch!
+  "${${PROJECT_NAME}_TRIBITS_DIR}/utils"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch"
   )
 
 INCLUDE(MessageWrapper)
