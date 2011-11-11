@@ -18,7 +18,7 @@
 
 #ifdef SHOW_LINUX_MEMINFO
 extern "C"{
-char *meminfo=NULL;
+static char *meminfo=NULL;
 extern void Zoltan_get_linux_meminfo(char *msg, char **result);
 }
 #endif

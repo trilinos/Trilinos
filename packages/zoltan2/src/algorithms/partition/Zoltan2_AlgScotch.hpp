@@ -16,7 +16,7 @@
 
 #ifdef SHOW_LINUX_MEMINFO
 extern "C"{
-char *meminfo=NULL;
+static char *z2_meminfo=NULL;
 extern void Zoltan_get_linux_meminfo(char *msg, char **result);
 }
 #endif
@@ -202,11 +202,11 @@ int AlgPTScotch(
                parts);
 #ifdef SHOW_LINUX_MEMINFO
   if (me==0){
-    Zoltan_get_linux_meminfo("After creating solution", &meminfo);
-    if (meminfo){
-      std::cout << "Rank " << me << ": " << meminfo << std::endl;
-      free(meminfo);
-      meminfo=NULL;
+    Zoltan_get_linux_meminfo("After creating solution", &z2_meminfo);
+    if (z2_meminfo){
+      std::cout << "Rank " << me << ": " << z2_meminfo << std::endl;
+      free(z2_meminfo);
+      z2_meminfo=NULL;
     }
   }
 #endif
@@ -216,8 +216,9 @@ int AlgPTScotch(
   //TODO if (vwtdim) delete [] velotab;
   //TODO if (ewtdim) delete [] edlotab;
 
-  return ierr;
+#endif // HAVE_MPI
 #endif // HAVE_SCOTCH
+  return ierr;
 }
 
 }
