@@ -41,6 +41,7 @@ cmake \
 -D Zoltan2_HAVE_MALLINFO:BOOL=ON \
 -D Zoltan2_HAVE_TPL64:BOOL=ON \
 -D Zoltan2_ENABLE_Scotch:BOOL=ON \
+-D Zoltan_ENABLE_Scotch:BOOL=ON \
 -D Scotch_INCLUDE_DIRS:FILEPATH="/home/lriesen/local/system/scotch_5.1.12-64/include" \
 -D Scotch_LIBRARY_DIRS:FILEPATH="/home/lriesen/local/system/scotch_5.1.12-64/lib" \
 -D Scotch_LIBRARY_NAMES:STRING="ptscotch;ptscotcherr;ptscotcherrexit" \
