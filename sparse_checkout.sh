@@ -1,0 +1,1 @@
+cmake/tribits/common_tools/git/sparse_checkout.sh
