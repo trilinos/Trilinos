@@ -23,3 +23,15 @@
  * want to build Zoltan_Mallinfo.cpp.
  */
 #cmakedefine HAVE_MALLINFO
+
+/* define to turn on runtime display of
+ * total memory committed at points throughout
+ * the execution of zoltan2
+ */
+#cmakedefine SHOW_LINUX_MEMINFO
+
+/* define to turn on runtime display of
+ * maximum memory used by scotch
+ * (requires a hack to the scotch library)
+ */
+#cmakedefine SHOW_SCOTCH_HIGH_WATER_MARK

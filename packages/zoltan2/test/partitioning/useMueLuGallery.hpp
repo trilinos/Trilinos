@@ -35,7 +35,7 @@ useMueLuGallery(
   int zdim=10;
   std::string matrixType("Laplace3D");
 
-  Teuchos::CommandLineProcessor clp(false, false);
+  Teuchos::CommandLineProcessor clp(false, true);
   clp.setOption("x", &xdim, 
                 "number of gridpoints in X dimension for "
                 "mesh used to generate matrix.");
