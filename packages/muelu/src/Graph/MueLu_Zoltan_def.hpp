@@ -5,6 +5,7 @@
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
 #include "MueLu_Zoltan_decl.hpp"
+#include "MueLu_Level.hpp"
 
 namespace MueLu {
 
