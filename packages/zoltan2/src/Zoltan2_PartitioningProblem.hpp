@@ -7,6 +7,9 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 
 #include <Zoltan2_GraphModel.hpp>
+#ifdef HAVE_OVIS
+#include <ovis.h>
+#endif
 
 /*! \file Zoltan2_PartitioningProblem.hpp
 
@@ -98,6 +101,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
 //  cout << __func__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 
 //       << this->inputAdapter_->inputAdapterName() << endl;
+
+#ifdef HAVE_OVIS
+  ovis_enabled(this->comm_->getRank());
+#endif
 
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:

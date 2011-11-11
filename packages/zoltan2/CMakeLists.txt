@@ -32,6 +32,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Scotch
   "Scotch is present"
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_OVIS
+  HAVE_OVIS
+  "Ovis is present"
+  OFF )
+
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_HAVE_MALLINFO
   HAVE_MALLINFO
   "malloc.h supports mallinfo()"

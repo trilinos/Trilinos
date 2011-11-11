@@ -13,6 +13,9 @@
 /* define if we have the ParMETIS library*/
 #cmakedefine HAVE_PARMETIS
 
+/* define if we have the Ovis library*/
+#cmakedefine HAVE_OVIS
+
 /* define if we have built Zoltan2 with 64-bit
  * third party libraries.  Needed by tests
  * which use third party libraries.
