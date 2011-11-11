@@ -22,7 +22,7 @@
 #include <sstream>
 #include <vector>
 #include <iostream>
-#include <TestAdapters.hpp>
+#include <AdaptersForTests.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -30,10 +30,6 @@
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierTraits.hpp>
-
-#ifdef HAVE_MPI
-#include <Teuchos_MPISession.hpp>
-#endif
 
 using namespace std;
 using Teuchos::RCP;
@@ -234,9 +230,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
   Teuchos::GlobalMPISession session(&argc, &argv);
-#endif
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 

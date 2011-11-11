@@ -54,18 +54,9 @@ enum InputAdapterType {
   XpetraCrsMatrixAdapterType  // Special case for performance with Epetra/Tpetra
 };
 
-template <typename User>
 class InputAdapter {
 private:
 public:
-
-  typedef User user_t;
-  typedef typename InputTraits<User>::scalar_t scalar_t;
-  typedef typename InputTraits<User>::lno_t    lno_t;
-  typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::lid_t    lid_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
-  typedef typename InputTraits<User>::node_t   node_t;
 
   // Return enumerated InputAdapterType for the input adapter.
   // This function is implemented in the MatrixAdapter, GraphAdapter,

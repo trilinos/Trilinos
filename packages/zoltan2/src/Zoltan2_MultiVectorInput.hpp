@@ -36,21 +36,26 @@ namespace Zoltan2 {
     The user must have previously defined traits for their vector 
     data structure, supplying Zoltan2 mainly with their data types.
  
- TODO: weights and coordinates
+    TODO: weights and coordinates
+    TODO: There is no reason that we could not use MultiVectorInput
+     to represent Vector also.  Right now we have two different
+     input adapters.  Do we want to have MultiVectorInput only, or
+     would this be confusing to people with single vector input who
+     want to derive from MultiVectorInput.
 */
 
 template <typename User>
-  class MultiVectorInput : public InputAdapter<User> {
+  class MultiVectorInput : public InputAdapter {
 private:
 
 public:
 
-  typedef typename InputAdapter<User>::scalar_t scalar_t;
-  typedef typename InputAdapter<User>::lno_t    lno_t;
-  typedef typename InputAdapter<User>::gno_t    gno_t;
-  typedef typename InputAdapter<User>::lid_t    lid_t;
-  typedef typename InputAdapter<User>::gid_t    gid_t;
-  typedef typename InputAdapter<User>::node_t   node_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::lno_t    lno_t;
+  typedef typename InputTraits<User>::gno_t    gno_t;
+  typedef typename InputTraits<User>::lid_t    lid_t;
+  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::node_t   node_t;
 
   enum InputAdapterType inputAdapterType() {return MultiVectorAdapterType;}
 
@@ -90,8 +95,9 @@ public:
        \return The number of ids in the Ids list.
    */
 
-  virtual lno_t getMultiVectorView(int i, gid_t *&Ids, lid_t *&localIds,
-     scalar_t *&element, scalar_t *&wgts) const = 0;
+  virtual size_t getMultiVectorView(int i, const gid_t *&Ids, 
+     const lid_t *&localIds, const scalar_t *&element, 
+     const scalar_t *&wgts) const = 0;
 
   /*! Given a new mapping of multi vertex elements to processes,
    *    create a new multi vertex with this mapping, and migrate
@@ -100,8 +106,9 @@ public:
    *    use it redistribute your multi vector. 
    *  TODO   documentation
    */
-  int applyPartitioningSolution(User &in, User *&out,
-    int numIds, int numParts, gid_t *gid, lid_t *lid, int *partition) 
+  size_t applyPartitioningSolution(User &in, User *&out,
+    int numIds, int numParts, const gid_t *gid, 
+    const lid_t *lid, const int *partition) 
   {
     return 0;
   } 

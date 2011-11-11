@@ -14,10 +14,10 @@
 #ifndef _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
 #define _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
 
-#include <Xpetra_EpetraCrsGraph.hpp>
-#include <Xpetra_TpetraCrsGraph.hpp>
+#include <Xpetra_CrsGraph.hpp>
 #include <Zoltan2_GraphInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_Util.hpp>
 
 namespace Zoltan2 {
 
@@ -39,19 +39,13 @@ class XpetraCrsGraphInput : public GraphInput<User> {
 
 public:
 
-  typedef typename InputAdapter<User>::scalar_t scalar_t;
-  typedef typename InputAdapter<User>::lno_t    lno_t;
-  typedef typename InputAdapter<User>::gno_t    gno_t;
-  typedef typename InputAdapter<User>::lid_t    lid_t;
-  typedef typename InputAdapter<User>::gid_t    gid_t;
-  typedef typename InputAdapter<User>::node_t   node_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::lno_t    lno_t;
+  typedef typename InputTraits<User>::gno_t    gno_t;
+  typedef typename InputTraits<User>::lid_t    lid_t;
+  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
-  typedef Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t> xtgraph_t;
-  typedef Xpetra::EpetraCrsGraph xegraph_t;
-
-  /*! Name of input adapter type   TODO make this a trait
-   */
-  std::string inputAdapterName()const {return std::string("XpetraCrsGraph");}
 
   /*! Destructor
    */
@@ -60,19 +54,41 @@ public:
   /*! Constructor
    */
   XpetraCrsGraphInput(const RCP<const User> &ingraph):
-    ingraph_(ingraph),
-    graph_(),
-    rowMap_(), colMap_(), edgeOffsets_(),
+    base_(), ingraph_(ingraph), graph_(), comm_() ,
+    offs_(), eids_()
+#if 0
+    ,rowMap_(), colMap_(), edgeOffsets_(),
     vtxWeightDim_(0), edgeWeightDim_(0), coordinateDim_(0),
     edgeWgt_(), vertexWgt_(), xyz_()
+#endif
   {
-    cout << __func__ << " getting Traits from "
-         << InputTraits<User>::name() << endl;
-
     graph_ = XpetraTraits<User>::convertToXpetra(ingraph);
+    base_ = graph_->getIndexBase();
+    comm_ = graph_->getComm();
+    size_t nvtx = graph_->getNodeNumRows();
+    size_t nedges = graph_->getNodeNumEntries();
+    lno_t *offs=NULL;
+    gid_t *eids=NULL;
+    Environment env;
+    Z2_ASYNC_MEMORY_ALLOC(*comm_, env, lno_t, offs, nvtx+1);
+    Z2_ASYNC_MEMORY_ALLOC(*comm_, env, gid_t, eids, nedges);
+    offs[0] = 0;
+    for (lno_t v=0; v < nvtx; v++){
+      ArrayView<const lno_t> nbors;
+      graph_->getLocalRowView(v, nbors);
+      offs[v+1] = offs[v] + nbors.size();
+      for (lno_t e=offs[v], i=0; e < offs[v+1]; e++)
+        eids[e] = nbors[i++];
+    }
+
+    offs_ = arcp(offs,0,nvtx+1);
+    eids_ = arcp(eids,0,nedges);
+#if 0
     makeOffsets();
+#endif
   }
 
+#if 0
   /* Provide optional vertex coordinates.
    *  \param lid  The vertex local id.
    *  \param xyz The coordinates(s) associated with the corresponding vertex
@@ -224,6 +240,34 @@ public:
       nextWgt += nnbors * edgeWeightDim_;
     }
   }
+#endif
+
+  /*! Access to xpetra graph 
+   */ 
+   
+  RCP<const xgraph_t> getXpetraGraph() const
+  {
+    return graph_;
+  }
+
+  RCP<const User> getUserGraph() const
+  {
+    return ingraph_;
+  }
+
+  ////////////////////////////////////////////////////
+  // The InputAdapter interface.
+  ////////////////////////////////////////////////////
+
+  std::string inputAdapterName()const {
+    return std::string("XpetraCrsGraph");}
+
+  bool haveLocalIds() const { return true;}
+
+  bool haveConsecutiveLocalIds(size_t &base) const{
+    base = base_;
+    return true;
+  }
 
   ////////////////////////////////////////////////////
   // The GraphInput interface.
@@ -232,27 +276,13 @@ public:
   /*! Returns the number vertices on this process.
    */
   size_t getLocalNumVertices() const { 
-    return rowMap_->getNodeNumElements(); 
+    return graph_->getNodeNumRows(); 
   }
 
   /*! Returns the number vertices in the entire graph.
    */
   global_size_t getGlobalNumVertices() const { 
-    return rowMap_->getGlobalNumElements(); 
-  }
-
-  /*! Return whether input adapter wants to use local IDs.
-   */
-
-  bool haveLocalIds() const {return true;}
-
-  /*! Return whether local ids are consecutive and if so the base.
-   */
-
-  bool haveConsecutiveLocalIds (size_t &base) const
-  {
-    base = static_cast<size_t>(base_);
-    return true;
+    return graph_->getGlobalNumRows(); 
   }
 
   /*! Returns the number edges on this process.
@@ -268,6 +298,7 @@ public:
     return graph_->getGlobalNumEntries();
   }
 
+#if 0
   /*! Returns the number weights supplied for each vertex.
    */
   int getVertexWeightDim() const { 
@@ -285,125 +316,85 @@ public:
   int getCoordinateDim() const { 
     return coordinateDim_;
   }
-
-  /*! Get the list of vertex IDs and their weights.
-   */
-  void getVertexListCopy(std::vector<gid_t> &ids, 
-    std::vector<lid_t> &localIDs, std::vector<scalar_t> &xyz,
-    std::vector<scalar_t> &wgt) const
-  {
-    // Global IDs are in local ID order, so we omit localIDs
-    // TODO: For Tpetra and Epetra maps, are the GIDs always
-    //    in local ID order?  From looking at the source it
-    //    seems to be true.  But not positive.
-    localIDs.clear();
-
-    size_t numVtx = this->getLocalNumVertices();
-    int nweights = vtxWeightDim_ * numVtx;
-    wgt.resize(nweights); 
-
-    if (nweights){
-      scalar_t *wTo = &wgt[0];
-      const scalar_t *wFrom = &vertexWgt_[0];
-      memcpy(wTo, wFrom, sizeof(scalar_t) * nweights);
-    }
-
-    ids.resize(numVtx);
-    for (unsigned i=0; i < rowMap_->getNodeNumElements(); i++){
-      ids[i] =  rowMap_->getGlobalElement(i);
-    }
-
-    int ncoords = coordinateDim_ * numVtx;
-    xyz.resize(ncoords);
-
-    if (ncoords){
-      scalar_t *cTo = &xyz[0];
-      const scalar_t *cFrom = &xyz_[0];
-      memcpy(cTo, cFrom, sizeof(scalar_t) * ncoords);
-    }
-  }
+#endif
 
   /*! Return a read only view of the data.
    */
-  lid_t getVertexListView(const gid_t *&ids, const lid_t *& localIDs,
-      const scalar_t *& xyz, const scalar_t *&wgts)
+  size_t getVertexListView(const gid_t *&ids,
+    const lid_t *&localIds,
+    const lno_t *&offsets, const gid_t *& edgeId) const
   {
     // TODO we need to verify that gids are actually stored
     //   in lid order
-    int nvtx = this->getLocalNumVertices();
-    ids = rowMap_->getNodeElementList().getRawPtr();
-    localIDs = NULL;   // because haveConsecutiveLocalIds() == true
-    xyz = &xyz_[0];
-    wgts = &vertexWgt_[0];
+    size_t nvtx = getLocalNumVertices();
+    ids = edgeId = NULL;
+    localIds = NULL;  // implied to be consecutive 
+    offsets = NULL;
+
+    if (nvtx){
+      ids = graph_->getRowMap()->getNodeElementList().getRawPtr();
+      offsets = offs_.getRawPtr();
+      edgeId = eids_.getRawPtr();
+    }
+    
     return nvtx;
   }
 
-  /*! Return a copy of the edge IDs and edge weights for a vertex.
+  /*! Repartition a graph that has the same structure as
+   *   the graph that instantiated this input adapter.
    */
-  void getVertexEdgeCopy(gid_t vtxId, lid_t localId, 
-    std::vector<gid_t> &edgeId, std::vector<scalar_t> &wgts) const
+  size_t applyPartitioningSolution(const User &in, User *&out,
+    lno_t numIds, lno_t numParts, const gid_t *gid, 
+    const lid_t *lid, const lno_t *partition)
   {
-    size_t nvtx = this->getLocalNumVertices();
+    // Get an import list
+    Zoltan2::Environment env;
+    ArrayView<const gid_t> gidList(gid, numIds);
+    ArrayView<const lno_t> partList(partition, numIds);
+    ArrayView<const lno_t> dummyIn;
+    ArrayRCP<gid_t> importList;
+    ArrayRCP<int> dummyOut;
+    size_t numNewVtx;
+    const RCP<const Comm<int> > comm = graph_->getComm();
 
-    if (localId < base_ || localId >= base_+nvtx)
-      throw std::runtime_error("invalid local vertex ID");
-
-    edgeId.clear();
-    wgts.clear();
-
-    ArrayView<const lno_t> nbors;
-    graph_->getLocalRowView(localId, nbors);
-    size_t nedges = nbors.size();
-
-    if (nedges > 0){
-      edgeId.resize(nedges);
-      for (unsigned i=0; i < nedges; i++){
-        edgeId[i] = colMap_->getGlobalElement(nbors[i]);
-      }
-
-      if (edgeWeightDim_ > 0){
-        int offset = edgeOffsets_[localId-base_] * edgeWeightDim_;
-        const scalar_t *fromWgt = &edgeWgt_[offset];
-        wgts.resize(edgeWeightDim_ * nedges);
-        scalar_t *toWgt = &wgts[0];
-        memcpy(toWgt, fromWgt, sizeof(scalar_t) * edgeWeightDim_ * nedges);
-      }
-      else{
-        wgts.clear();
-      }
+    try{
+      numNewVtx = convertPartitionListToImportList<gid_t, lno_t, lno_t>(
+        *comm, partList, gidList, dummyIn, importList, dummyOut);
     }
+    catch (std::exception &e){
+      Z2_THROW_ZOLTAN2_ERROR(env, e);
+    }
+
+    gno_t lsum = numNewVtx;
+    gno_t gsum = 0;
+    Teuchos::reduceAll<int, gno_t>(
+      *comm_, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);
+
+    RCP<const User> inPtr = rcp(&in, false);
+
+    RCP<const User> outPtr = XpetraTraits<User>::doMigration(
+     inPtr, lsum, importList.getRawPtr(), base_);
+
+    out = const_cast<User *>(outPtr.get());
+    outPtr.release();
+    return numNewVtx;
   }
-
-  /*! Access to xpetra graph 
-   */ 
-   
-  RCP<const xgraph_t> getXpetraGraph() const
-  {
-    return graph_;
-  }
-
-  RCP<const User> getUserGraph() const
-  {
-    return ingraph_;
-  }
-
-
-  /*! Return pointers to the edge IDs and edge weights for a vertex.
-   *      The edges are available as local IDs only at this point
-   *      so this is not defined.  TODO explain better.
-   */
-  //int getVertexEdgeView(gid_t vtxId, lid_t localId, 
-  //  const gid_t *&edgeId, const scalar_t *&wgts) const{}
 
 private:
 
-
+  lid_t base_;
   RCP<const User > ingraph_;
   RCP<const xgraph_t > graph_;
+  RCP<const Comm<int> > comm_;
+
+  // FOR NOW  TODO - how to manage these buffers?
+  ArrayRCP<const lno_t> offs_;
+  ArrayRCP<const gid_t> eids_;
+
+#if 0
   RCP<const Xpetra::Map<lid_t, gid_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lid_t, gid_t, node_t> > colMap_;
   std::vector<int> edgeOffsets_; 
-  lid_t base_;
 
   int vtxWeightDim_;
   int edgeWeightDim_;
@@ -423,6 +414,7 @@ private:
       edgeOffsets_[i+1] = edgeOffsets_[i] + graph_->getNumEntriesInLocalRow(i);
     }
   }
+#endif
 };
   
 }  //namespace Zoltan2

@@ -36,18 +36,14 @@ void eraseMallocCount();
 
 #define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num){ \
   datatype *ptrname = NULL; \
-  if ((num) > 1) \
+  if ((num) >= 1) \
     ptrname = new datatype [num]; \
-  else if ((num) > 0) \
-    ptrname = new datatype; \
 }
 
 #define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num){ \
   datatype *ptrname = NULL; \
-  if ((num) > 1) \
+  if ((num) >= 1) \
     ptrname = new datatype [num]; \
-  else if ((num) > 0) \
-    ptrname = new datatype; \
 }
 
 #else
@@ -55,17 +51,15 @@ void eraseMallocCount();
 /*! Allocate memory followed by a global check of success.
 
     All throw an error if any failed.
+    TODO - more macros for allocation of single object
+           for allocation of const object
  */
 
 #define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) {\
   ptrname = NULL; \
   int fail = 0, gfail=0; \
-  if ((num) > 1){ \
+  if ((num) >= 1){ \
     ptrname = new datatype [num]; \
-    if (!ptrname) fail = 1;  \
-  } \
-  else if ((num) == 1) { \
-    ptrname = new datatype; \
     if (!ptrname) fail = 1;  \
   } \
   Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
@@ -84,11 +78,8 @@ void eraseMallocCount();
 
 #define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) { \
   ptrname = NULL; \
-  if ((num) > 1) {\
+  if ((num) >= 1) {\
     ptrname = new datatype [num]; \
-  } \
-  else if ((num) == 1){ \
-    ptrname = new datatype; \
   } \
   if ((num) && !ptrname) { \
     std::ostringstream _msg;  \
