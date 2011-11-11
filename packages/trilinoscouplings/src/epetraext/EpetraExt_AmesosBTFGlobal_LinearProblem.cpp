@@ -44,6 +44,9 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Isorropia_Epetra.hpp>
+#include <Isorropia_EpetraCostDescriber.hpp>
+#include <Isorropia_EpetraRedistributor.hpp>
+#include <Isorropia_EpetraPartitioner.hpp>
 
 using std::vector;
 
@@ -207,16 +210,29 @@ operator()( OriginalTypeRef orig )
 	
     // Compute block adjacency graph for partitioning.
     std::vector<double> weight;
-    Teuchos::RCP<Epetra_CrsGraph> blkGraph;
     EpetraExt::BlockAdjacencyGraph adjGraph;
-    blkGraph = adjGraph.compute( const_cast<Epetra_CrsGraph&>(tNewSerialMatrixT.Graph()), 
-							numBlocks_, blockPtr_, weight, verbose_);
-    Epetra_Vector rowWeights( View, blkGraph->Map(), &weight[0] );
-    
+    Teuchos::RCP<const Epetra_CrsGraph> blkGraph =
+      adjGraph.compute( const_cast<Epetra_CrsGraph&>(tNewSerialMatrixT.Graph()), 
+                                                     numBlocks_, blockPtr_, weight, verbose_);
+
+    // Get row weights for rebalancing the graph.
+    Teuchos::RCP<const Epetra_Vector> rowWeights = Teuchos::rcp( new Epetra_Vector( View, blkGraph->Map(), &weight[0] ) );
+
+    // Create the cost describer object for Isorropia, pass in row weights.
+    Teuchos::RCP<Isorropia::Epetra::CostDescriber> costPtr = 
+      Teuchos::rcp( new Isorropia::Epetra::CostDescriber() );
+    costPtr->setVertexWeights(rowWeights);
+   
+    // Create the partitioner object, pass in original graph, cost describer, and empty parameter list.
+    Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
+      Teuchos::rcp(new Isorropia::Epetra::Partitioner(blkGraph, costPtr));
+
+    // Create the redistributor object.
+    Isorropia::Epetra::Redistributor rd(partitioner);
+
     // Call Isorropia to rebalance this graph.
-    Teuchos::RCP<Epetra_CrsGraph> balancedGraph =
-      Isorropia::Epetra::create_balanced_copy( *blkGraph, rowWeights );
-    
+    Teuchos::RCP<Epetra_CrsGraph> balancedGraph = rd.redistribute( *blkGraph );
+ 
     int myNumBlkRows = balancedGraph->NumMyRows();    
     
     //std::vector<int> myGlobalElements(nGlobal);

@@ -48,7 +48,7 @@ operator()( OriginalTypeRef orig )
 
   try {
     NewGraph_ =
-      Isorropia::Epetra::create_balanced_copy( orig, partitionList_);
+      Teuchos::rcp( Isorropia::Epetra::createBalancedCopy( orig, partitionList_) );
   }
   catch(std::exception& e) {
     std::cout << "Isorropia::create_balanced_copy threw exception '" << e.what() << "' on proc " << orig.Comm().MyPID() << std::endl;
