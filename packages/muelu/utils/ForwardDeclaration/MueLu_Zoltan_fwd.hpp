@@ -2,7 +2,7 @@
 #define MUELU_ZOLTAN_FWD_HPP
 
 namespace MueLu {       
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class ZoltanInterface;
 }
 

@@ -4,8 +4,11 @@
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
+#include <Teuchos_Utils.hpp>
+
 #include "MueLu_Zoltan_decl.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 
@@ -41,11 +44,11 @@ namespace MueLu {
     // One can skip this step if the IDs are just single ints.
     int rv;
     if ((rv=zoltanObj_->Set_Param("num_gid_entries", "1")) != ZOLTAN_OK )
-      throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'num_gid_entries' returned error code " + toString(rv)));
+      throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'num_gid_entries' returned error code " + Teuchos::toString(rv)));
     if ( (rv=zoltanObj_->Set_Param("num_lid_entries", "0") ) != ZOLTAN_OK )
-      throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'num_lid_entries' returned error code " + toString(rv)));
+      throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'num_lid_entries' returned error code " + Teuchos::toString(rv)));
     if ( (rv=zoltanObj_->Set_Param("obj_weight_dim", "1") ) != ZOLTAN_OK )
-      throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'obj_weight_dim' returned error code " + toString(rv)));
+      throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'obj_weight_dim' returned error code " + Teuchos::toString(rv)));
 
     RCP<Operator> A = level.Get< RCP<Operator> >("A",AFact_.get());
     RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("coordinates",MueLu::NoFactory::get());

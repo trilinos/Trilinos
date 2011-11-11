@@ -4,12 +4,16 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-#include <Teuchos_MpiComm.hpp>       //TODO: fwd decl.
-#include <Teuchos_OpaqueWrapper.hpp> //TODO: fwd decl.
+#include <Teuchos_DefaultMpiComm.hpp> //TODO: fwd decl.
+#include <Teuchos_OpaqueWrapper.hpp>  //TODO: fwd decl.
+
 #include <zoltan_cpp.h>
 
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_VectorFactory.hpp>
+
 #include "MueLu_BaseClass.hpp"
-#include "Muelu_Zoltan_fwd.hpp"
+#include "MueLu_Zoltan_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
