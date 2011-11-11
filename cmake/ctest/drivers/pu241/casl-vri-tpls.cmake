@@ -3,6 +3,7 @@
 # VRI software that does *not* depend on the C++ (GCC or Intel) compiler used.
 #
 
+SET(TPL_ENABLE_BinUtils  ON  CACHE BOOL "")
 SET(TPL_ENABLE_JDK  ON  CACHE BOOL "")
 SET(TPL_ENABLE_OpenSSL ON  CACHE BOOL "")
 SET(TPL_ENABLE_Zlib  ON  CACHE BOOL "")
