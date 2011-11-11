@@ -1,6 +1,8 @@
 #ifndef MUELU_HIERARCHY_DECL_HPP
 #define MUELU_HIERARCHY_DECL_HPP
 
+#include <Teuchos_ParameterList.hpp>
+
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 

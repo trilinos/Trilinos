@@ -1,6 +1,7 @@
 #ifndef MUELU_TRANSPFACTORY_DEF_HPP
 #define MUELU_TRANSPFACTORY_DEF_HPP
 
+#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Time.hpp>
 
 #include "MueLu_TransPFactory_decl.hpp"

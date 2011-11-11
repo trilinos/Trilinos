@@ -5,6 +5,8 @@
 
 #ifdef HAVE_MUELU_IFPACK2
 
+#include <Teuchos_ParameterList.hpp>
+
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"

@@ -1,6 +1,8 @@
 #ifndef MUELU_IFPACKSMOOTHER_HPP
 #define MUELU_IFPACKSMOOTHER_HPP
 
+#include <Teuchos_ParameterList.hpp>
+
 #include <Xpetra_Operator.hpp>
 
 #include "MueLu_ConfigDefs.hpp"

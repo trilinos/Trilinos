@@ -1,6 +1,8 @@
 #ifndef MUELU_DIRECTSOLVER_DECL_HPP
 #define MUELU_DIRECTSOLVER_DECL_HPP
 
+#include <Teuchos_ParameterList.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 

@@ -1,6 +1,8 @@
 #ifndef MUELU_TRILINOSSMOOTHER_DECL_HPP
 #define MUELU_TRILINOSSMOOTHER_DECL_HPP
 
+#include <Teuchos_ParameterList.hpp>
+
 #include <Xpetra_Operator.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
