@@ -68,7 +68,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   XpetraMatrixAdapter
   SOURCES XpetraMatrixAdapter.cpp UserInputForTests.hpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -77,7 +77,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   XpetraGraphAdapter
   SOURCES XpetraGraphAdapter.cpp UserInputForTests.hpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -86,7 +86,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   XpetraVectorAdapter
   SOURCES XpetraVectorAdapter.cpp UserInputForTests.hpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -95,7 +95,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   XpetraMultiVectorAdapter
   SOURCES XpetraMultiVectorAdapter.cpp UserInputForTests.hpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -104,7 +104,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   GraphModel
   SOURCES GraphModel.cpp AdaptersForTests.hpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )

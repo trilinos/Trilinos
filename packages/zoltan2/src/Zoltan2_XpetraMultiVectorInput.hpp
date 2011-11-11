@@ -161,7 +161,6 @@ public:
     }
 
     RCP<const User> inPtr = rcp(&in, false);
-    gno_t globalNumElts = vector_->getGlobalLength();
     lno_t localNumElts = numNewRows;
 
     RCP<const User> outPtr = XpetraTraits<User>::doMigration(
