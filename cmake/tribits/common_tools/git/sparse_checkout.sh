@@ -4,7 +4,7 @@
 # checkout of directories.  For example:
 #
 #   $ cd Trilinos
-#   $ ./sparse_checkout.sh doc packages
+#   $ ./sparse_checkout.sh doc/ packages/
 #   $ ls
 #
 # should return just 'sparse_checkout.sh',
@@ -26,6 +26,12 @@
 #
 # b) Git will keep directories not listed if there are symbolic links
 # needed to support files in directories that are listed.
+#
+# c) Sparse checkout is only supported in git 1.7 and later.
+#
+# d) Early versions of git 1.7.x require that directory names end with '/'
+# such as 'doc/' instead of 'doc'.  Later versions of git do not require the
+# trailing '/'.
 
 DIRS_FILES_LIST=$@
 
@@ -50,8 +56,13 @@ else
   git config core.sparsecheckout true
   
   # Set up the list of dirs/files for sparse checkout to keep
-  echo cmake/tribits/common_tools/git/sparse_checkout.sh > $SC_FILE
-  echo sparse_checkout.sh >> $SC_FILE
+  echo > $SC_FILE
+  if [ -e cmake/tribits/common_tools/git/sparse_checkout.sh ] ; then
+    echo cmake/tribits/common_tools/git/sparse_checkout.sh >> $SC_FILE
+  fi
+  if [ -e sparse_checkout.sh ] ; then
+    echo sparse_checkout.sh >> $SC_FILE
+  fi
   for dir_or_file in $DIRS_FILES_LIST ; do
     echo "File/directory to keep: $dir_or_file";
     echo $dir_or_file >> $SC_FILE
