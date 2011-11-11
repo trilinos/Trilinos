@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   // custom parameters
-  LO maxLevels = 4;
+  LO maxLevels = 2;
 
   GO maxCoarseSize=1; //FIXME clp doesn't like long long int
   std::string aggOrdering = "natural";
@@ -202,13 +202,13 @@ int main(int argc, char *argv[]) {
   RCP<Level> coarseLevel = H->GetLevel(1);
   coarseLevel->print(*out);
 
-  RCP<Level> coarseLevel2 = H->GetLevel(2);
+  /*RCP<Level> coarseLevel2 = H->GetLevel(2);
   coarseLevel2->print(*out);
   RCP<MultiVector> nsp2 = coarseLevel2->Get<RCP<MultiVector> >("Nullspace",nspFact.get());
   nsp2->describe(*out,Teuchos::VERB_EXTREME);
 
   RCP<Level> coarseLevel3 = H->GetLevel(3);
-  coarseLevel3->print(*out);
+  coarseLevel3->print(*out);*/
 
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);

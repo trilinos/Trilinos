@@ -35,11 +35,13 @@ namespace MueLu {
 
     // pre-dropping
     RCP<Graph> graph;
-    if (predrop_ == Teuchos::null) {
-      graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
-    } else {
+    //if (predrop_ == Teuchos::null) {
+      //graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
+      Amalgamate(A, graph);
+    /*} else {
+      //FIXME predropping does not fit to amalgamation routine
       graph = predrop_->Drop(A);
-    }
+    }*/
 
     // coalesce
 
@@ -52,7 +54,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amalgamate(const RCP<Operator>& A, RCP<Graph>& graph) const {
 
-    int nUnamalgamatedBlockSize = 3; // TODO fix me, change me to BlkSize???
+    int nUnamalgamatedBlockSize = 2; // TODO fix me, change me to BlkSize???
     int nPDE = 2; // TODO fix me, find something smart to switch BlkSize from 2 (finest level) to 3 (all other levels...)
 
     // map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
@@ -168,9 +170,13 @@ namespace MueLu {
 
     crsGraph->fillComplete(amal_map,amal_map);
 
-    graph = rcp(new Graph(A->getCrsGraph()/*crsGraph*/, "amalgamated graph of A")); // TODO change me
+    std::cout << "amalgamated graph: rows=" << crsGraph->getRowMap()->getGlobalNumElements() << std::endl;
+
+    graph = rcp(new Graph(/*A->getCrsGraph()*/crsGraph, "amalgamated graph of A")); // TODO change me
 
     // store information in Graph object for unamalgamation of vectors
+    std::cout << "GLOBALAMALBLOCKID2MYROWID" << std::endl;
+    std::cout << globalamalblockid2myrowid << std::endl;
     graph->SetAmalgamationParams(globalamalblockid2myrowid, globalamalblockids);
     // TODO return graph...
     //graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));

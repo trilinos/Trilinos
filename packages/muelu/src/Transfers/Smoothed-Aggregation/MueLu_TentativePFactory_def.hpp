@@ -68,12 +68,16 @@ namespace MueLu {
     const size_t NSDim = fineNullspace.getNumVectors();
     GO nCoarseDofs = numAggs*NSDim;
     // Compute array of aggregate sizes.
-    ArrayRCP<LO> aggSizes  = aggregates.ComputeAggregateSizes();
-
+//#if OLD
+//    ArrayRCP<LO> aggSizes  = aggregates.ComputeAggregateSizes(); // TODO: we need a aggSizes with fullsize (=number of dofs of each aggregate, instead of number of nodes)
+//#else
+    ArrayRCP<LO> aggSizes  = aggregates.ComputeAggregateSizes2(); // TODO: we need a aggSizes with fullsize
+//#endif
     // Calculate total #dofs in local aggregates, find size of the largest aggregate.
     LO maxAggSize=0;
     LO numDofsInLocalAggs=0;
     for (typename Teuchos::ArrayRCP<LO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i) {
+      std::cout << "AggSize=" << *i << std::endl;
       if (*i > maxAggSize) maxAggSize = *i;
       numDofsInLocalAggs += *i;
     }
@@ -81,8 +85,11 @@ namespace MueLu {
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
     // aggToRowMap[i][j] is the jth DOF in aggregate i
     ArrayRCP< ArrayRCP<LO> > aggToRowMap(numAggs);
-
-    aggregates.ComputeAggregateToRowMap(aggToRowMap);
+//#if OLD
+//    aggregates.ComputeAggregateToRowMap(aggToRowMap);
+//#else
+    aggregates.ComputeAggregateToRowMap2(aggToRowMap);
+//#endif
 
     // Create the numbering for the new row map for Ptent as follows:
     // convert LIDs in aggToRowmap to GIDs, put them in an ArrayView,
@@ -231,6 +238,15 @@ namespace MueLu {
               localQR[j* myAggSize + k] = fineNS[j][ aggToRowMap[agg][k] ];
             }
             catch(...) {
+              std::cout << "length of fine level nsp: " << fineNullspace.getGlobalLength() << std::endl;
+              std::cout << "length of fine level nsp w overlap: " << fineNullspaceWithOverlap->getGlobalLength() << std::endl;
+              std::cout << "(loacl?) aggId=" << agg << std::endl;
+              std::cout << "aggSize=" << myAggSize << std::endl;
+              std::cout << "agg DOF=" << k << std::endl;
+              std::cout << "NS vector j=" << j << std::endl;
+              std::cout << "j*myAggSize + k = " << j*myAggSize + k << std::endl;
+              std::cout << "aggToRowMap["<<agg<<"][" << k << "] = " << aggToRowMap[agg][k] << std::endl;
+              std::cout << "fineNS...=" << fineNS[j][ aggToRowMap[agg][k] ] << std::endl;
               std::cerr << "caught an error!" << std::endl;
             }
           } //for (LO k=0 ...

@@ -19,7 +19,7 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetAmalgamationParams() const {
+  RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetAmalgamationParams() const {
     return globalamalblockid2myrowid_;
   }
 

@@ -45,7 +45,7 @@ namespace MueLu {
     void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid, RCP<std::vector<GlobalOrdinal> > globalamalblockids) const;
 
     //!
-    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& GetAmalgamationParams() const;
+    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetAmalgamationParams() const;
 
 #ifdef MUELU_UNUSED
     size_t GetNodeNumGhost() const;

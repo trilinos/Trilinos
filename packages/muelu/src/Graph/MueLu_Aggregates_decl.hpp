@@ -63,11 +63,23 @@ namespace MueLu {
     */
     Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const; //ComputeAggSizes
 
+    Teuchos::ArrayRCP<LO> ComputeAggregateSizes2() const; //ComputeAggSizes2
+
     /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
 
     @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
+
+    This routine only works for DOF = NODE (i.e. 1 DOF per node)
     */
     void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMap
+
+    /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
+
+    @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
+
+    This routine makes use of the amalgamation routine and should be able to handle #DOFs per node > 1
+    */
+    void ComputeAggregateToRowMap2(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMap
 
     //! @name Overridden from Teuchos::Describable 
     //@{
@@ -78,6 +90,11 @@ namespace MueLu {
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
+
+    //! Set amalagamation routine (needed for ComputeAggregateToRowMap)
+    void SetAmalgamationInformation(const RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& globalamalblockid2myrowid) const {
+      globalamalblockid2myrowid_ = globalamalblockid2myrowid;
+    };
 
   private:
     LO   nAggregates_;              /* Number of aggregates on this processor  */
@@ -100,6 +117,11 @@ namespace MueLu {
     //! Get global number of aggregates
     // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
     GO GetNumGlobalAggregates() const;
+
+    //! amalgamation information (from graph)
+    //! map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
+    mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;
+
 
   };
 

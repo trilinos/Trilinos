@@ -40,6 +40,11 @@ namespace MueLu {
     algo1_.CoarsenUncoupled(*graph, *aggregates);
     algo2_.AggregateLeftovers(*graph, *aggregates);
 
+    // transfer amalgamation information from graph to aggregates
+    std::cout << "SetAmalgamationInfo" << std::endl;
+    std::cout <<  graph->GetAmalgamationParams() << std::endl;
+    aggregates->SetAmalgamationInformation(graph->GetAmalgamationParams());
+
     // Level Set
     currentLevel.Set("Aggregates", aggregates, this);
 
