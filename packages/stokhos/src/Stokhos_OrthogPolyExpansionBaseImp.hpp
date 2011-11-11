@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stokhos_DenseDirectDivisionExpansionStrategy.hpp"
+#include "Stokhos_SPDDenseDirectDivisionExpansionStrategy.hpp"
+#include "Stokhos_MeanBasedDivisionExpansionStrategy.hpp"
+
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Stokhos_DynamicArrayTraits.hpp"
@@ -34,11 +38,31 @@ template <typename ordinal_type, typename value_type, typename node_type>
 Stokhos::OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::
 OrthogPolyExpansionBase(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
-  const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_) :
+  const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_,
+  const Teuchos::RCP<Teuchos::ParameterList>& params_) :
   basis(basis_),
   Cijk(Cijk_),
+  params(params_),
   sz(basis->size())
 {
+  if (params == Teuchos::null)
+    params = Teuchos::rcp(new Teuchos::ParameterList);
+
+  // Create division strategy
+  std::string name = params->get("Division Strategy", "Dense Direct");
+  if (name == "Dense Direct")
+    division_strategy = 
+      Teuchos::rcp(new DenseDirectDivisionExpansionStrategy<ordinal_type,value_type,node_type>(this->basis, this->Cijk));
+  else if (name == "SPD Dense Direct")
+    division_strategy = 
+      Teuchos::rcp(new SPDDenseDirectDivisionExpansionStrategy<ordinal_type,value_type,node_type>(this->basis, this->Cijk));
+  else if (name == "Mean-Based")
+    division_strategy =
+      Teuchos::rcp(new MeanBasedDivisionExpansionStrategy<ordinal_type,value_type,node_type>());
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error,
+      "Invalid division strategy name" << name);
 }
 
 template <typename ordinal_type, typename value_type, typename node_type> 
@@ -231,6 +255,16 @@ timesEqual(
   else {
     cc[0] *= xc[0];
   }
+}
+
+template <typename ordinal_type, typename value_type, typename node_type> 
+void
+Stokhos::OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::
+divideEqual(
+  Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+  const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type >& x)
+{
+  division_strategy->divide(c, 1.0, c, x, 0.0);
 }
 
 template <typename ordinal_type, typename value_type, typename node_type>
@@ -506,6 +540,27 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 
   for (ordinal_type i=0; i<pc; i++)
     cc[i] = ca[i]*b;
+}
+
+template <typename ordinal_type, typename value_type, typename node_type>
+void
+Stokhos::OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::
+divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
+       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
+{
+  division_strategy->divide(c, 1.0, a, b, 0.0);
+}
+
+template <typename ordinal_type, typename value_type, typename node_type>
+void
+Stokhos::OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::
+divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+       const value_type& a, 
+       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
+{
+  Stokhos::OrthogPolyApprox<ordinal_type,value_type> aa(b.basis(), 1, &a);
+  division_strategy->divide(c, 1.0, aa, b, 0.0);
 }
 
 template <typename ordinal_type, typename value_type, typename node_type>

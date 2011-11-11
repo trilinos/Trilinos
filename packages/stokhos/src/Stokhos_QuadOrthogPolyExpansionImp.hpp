@@ -39,10 +39,9 @@ QuadOrthogPolyExpansion(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
   const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_,
   const Teuchos::RCP<const Quadrature<ordinal_type, value_type> >& quad_,
-  bool use_quad_for_times_) :
-  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>(basis_, Cijk_),
+  const Teuchos::RCP<Teuchos::ParameterList>& params_) :
+  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>(basis_, Cijk_, params_),
   quad(quad_),
-  use_quad_for_times(use_quad_for_times_),
   sz(this->basis->size()),
   blas(),
   quad_points(quad->getQuadPoints()),
@@ -61,6 +60,12 @@ QuadOrthogPolyExpansion(
       qv[qp*sz+i] = quad_values[qp][i];
       sqv[qp*sz+i] = quad_values[qp][i]/norms[i];
     }
+
+  Teuchos::RCP<Teuchos::ParameterList> params = params_;
+  if (params == Teuchos::null)
+    params = Teuchos::rcp(new Teuchos::ParameterList);
+  use_quad_for_times = params->get("Use Quadrature for Times", false);
+  use_quad_for_division = params->get("Use Quadrature for Division", true);
 }
 
 template <typename ordinal_type, typename value_type, typename node_type> 
@@ -442,8 +447,12 @@ divideEqual(
     for (ordinal_type i=0; i<p; i++)
       cc[i] /= xc[0];
   }
-  else
-    binary_op(div_quad_func(), c, c, x);
+  else {
+    if (use_quad_for_division)
+      binary_op(div_quad_func(), c, c, x);
+    else
+      OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::divideEqual(c, x);
+  }
 }
 
 template <typename ordinal_type, typename value_type, typename node_type>
@@ -501,8 +510,12 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     for (ordinal_type i=0; i<pc; i++)
       cc[i] = ca[i]/cb[0];
   }
-  else
-    binary_op(div_quad_func(), c, a, b);
+  else {
+    if (use_quad_for_division)
+      binary_op(div_quad_func(), c, a, b);
+    else
+      OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::divide(c, a, b);
+  }
 }
 
 template <typename ordinal_type, typename value_type, typename node_type>
@@ -512,7 +525,10 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
        const value_type& a, 
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
-  binary_op(div_quad_func(), c, a, b);
+  if (use_quad_for_division)
+    binary_op(div_quad_func(), c, a, b);
+  else
+    OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::divide(c, a, b);
 }
 
 template <typename ordinal_type, typename value_type, typename node_type>

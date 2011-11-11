@@ -201,7 +201,7 @@ namespace Sacado {
       //@{
 
       //! Get basis
-      Teuchos::RCP<basis_type> basis() const { return th->basis(); }
+      Teuchos::RCP<const basis_type> basis() const { return th->basis(); }
 
       //! Get expansion
       Teuchos::RCP<expansion_type> expansion() const { return expansion_; }
