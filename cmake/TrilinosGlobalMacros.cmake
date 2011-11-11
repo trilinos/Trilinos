@@ -67,8 +67,8 @@
 MACRO(TRILINOS_SETUP_TESTING_SUPPORT)
 
   CONFIGURE_FILE(
-    ${Trilinos_SOURCE_DIR}/cmake/ctest/CTestCustom.ctest.in
-    ${Trilinos_BINARY_DIR}/CTestCustom.ctest
+    ${${PROJECT_NAME}_TRIBITS_DIR}/ctest/CTestCustom.ctest.in
+    ${${PROJECT_NAME}_BINARY_DIR}/CTestCustom.ctest
     )
 
 ENDMACRO()
