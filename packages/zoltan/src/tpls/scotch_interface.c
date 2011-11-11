@@ -727,7 +727,13 @@ int Zoltan_Scotch(
 #ifdef ZOLTAN_PTSCOTCH
   if (IS_GLOBAL_GRAPH(gr.graph_type)) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
+/* KDDKDD DO NOT COMMIT 
     if (SCOTCH_dgraphMap(&grafdat, &archdat, &stradat, prt.part) != 0) {
+*/
+    printf("KDDKDD CALLING SCOTCH_dgraphPart\n");
+
+    if (SCOTCH_dgraphPart(&grafdat, num_part, &stradat, prt.part) != 0) {
+/* KDDKDD DO NOT COMMIT */
       SCOTCH_archExit(&archdat);
       ZOLTAN_FREE(&goal_sizes);
       SCOTCH_dgraphExit(&grafdat);
@@ -917,6 +923,9 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
           call assumes the global numbers are consectutive across processes
      */
 
+{int kddrank;MPI_Comm_rank(comm, &kddrank);
+printf("%d KDDKDD vertlocnbr = %d edgelocnbr = %d\n", kddrank, gr->num_obj, edgelocnbr);
+}
     if (SCOTCH_dgraphBuild (dgrafptr, 0, (SCOTCH_Num)gr->num_obj, (SCOTCH_Num)gr->num_obj, 
                             gr->xadj, gr->xadj + 1,
                               gr->vwgt, NULL,edgelocnbr, edgelocnbr, gr->adjncy, NULL, gr->ewgts) != 0) {
