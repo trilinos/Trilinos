@@ -473,7 +473,7 @@ public:
     {
       if (eM_.is_null()){
         RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
-        RCP<Epetra_CrsMatrix> eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
+        eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
 
         size_t maxRow = M_->getNodeMaxNumRowEntries();
         int nrows = egraph->NumMyRows();
@@ -501,9 +501,11 @@ public:
 
     RCP<Epetra_Vector> getEpetraVector() 
     { 
-      RCP<Epetra_MultiVector> emv = getEpetraMultiVector(1);
-      Epetra_Vector *&ev = (*emv)(0);
-      return rcp(ev);
+      RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
+      RCP<Epetra_Vector> V = 
+        rcp(new Epetra_Vector(egraph->RowMap()));
+      V->Random();
+      return V;
     }
 
     RCP<Epetra_MultiVector> getEpetraMultiVector(int nvec) 

@@ -14,6 +14,8 @@
 //
 // TODO - a real test would figure out if the migrated objects are
 // the same as the original, here we just look at them on stdout.
+// TODO look at number of diagonals and max number of entries in
+//   Tpetra and Xpetra migrated graphs.  They're garbage.
 
 #include <string>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -22,7 +24,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Comm.hpp>
-#include "Teuchos_VerboseObject.hpp"
+#include <Teuchos_VerboseObject.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
@@ -46,7 +48,7 @@ using Teuchos::Comm;
 
 template <typename LNO, typename GNO, typename NODE>
   ArrayRCP<GNO> roundRobinMap(
-    const RCP<const Tpetra::Map<LNO, GNO, NODE> > &m)
+    const RCP<const Xpetra::Map<LNO, GNO, NODE> > &m)
 {
   const RCP<const Comm<int> > &comm = m->getComm();
   int proc = comm->getRank();
@@ -97,22 +99,34 @@ int main(int argc, char *argv[])
 
   typedef UserInputForTests<scalar_t, lno_t, gno_t> uinput_t;
   typedef Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> tmatrix_t;
+  typedef Tpetra::CrsGraph<lno_t,gno_t,node_t> tgraph_t;
   typedef Tpetra::Vector<scalar_t,lno_t,gno_t,node_t> tvector_t;
   typedef Tpetra::MultiVector<scalar_t,lno_t,gno_t,node_t> tmvector_t;
+  typedef Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> xmatrix_t;
+  typedef Xpetra::CrsGraph<lno_t,gno_t,node_t> xgraph_t;
+  typedef Xpetra::Vector<scalar_t,lno_t,gno_t,node_t> xvector_t;
+  typedef Xpetra::MultiVector<scalar_t,lno_t,gno_t,node_t> xmvector_t;
+  typedef Xpetra::TpetraMap<lno_t,gno_t,node_t> xtmap_t;
 
-  // Create an object that can give us test input.
+  // Create object that can give us test Tpetra and Xpetra input.
 
   RCP<uinput_t> uinput;
 
   try{
-    uinput = rcp(new uinput_t(4, 4, 4, comm));
+    uinput = rcp(new uinput_t(std::string("../data/simple.mtx"), comm));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
   }
 
-    /////////////////////////////////////////////////////////////////
-    // XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> > 
+  /////////////////////////////////////////////////////////////////
+  //   Tpetra::CrsMatrix
+  //   Tpetra::CrsGraph
+  //   Tpetra::Vector
+  //   Tpetra::MultiVector
+  /////////////////////////////////////////////////////////////////
+
+  // XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> > 
   {
     RCP<tmatrix_t> M;
   
@@ -125,31 +139,36 @@ int main(int argc, char *argv[])
     }
   
     if (rank== 0)
-      std::cout << "Original matrix" << std::endl;
+      std::cout << "Original Tpetra matrix" << std::endl;
   
-    Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::VerboseObjectBase::getDefaultOStream();
-    Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
     M->describe(*out,v);
-  
+
+    RCP<const xtmap_t> xmap(new xtmap_t(M->getRowMap()));
+
     ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(M->getRowMap());
+      roundRobinMap<lno_t,gno_t,node_t>(xmap);
   
     gno_t localNumRows = newRowIds.size();
     gno_t base = M->getIndexBase();
   
-    RCP<tmatrix_t> newM = Zoltan2::XpetraTraits<tmatrix_t>::doImport(
-      rcp_const_cast<const tmatrix_t>(M),
-      localNumRows, newRowIds.getRawPtr(), base);
-  
+    RCP<const tmatrix_t> newM;
+    try{
+      newM = Zoltan2::XpetraTraits<tmatrix_t>::doMigration(
+        rcp_const_cast<const tmatrix_t>(M),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<tmatrix_t>::doMigration ")+e.what(), 1);
+    }
+
     if (rank== 0)
-      std::cout << "Migrated matrix" << std::endl;
+      std::cout << "Migrated Tpetra matrix" << std::endl;
   
     newM->describe(*out,v);
   }
 
-    /////////////////////////////////////////////////////////////////
-    // XpetraTraits<Tpetra::CrsGraph<scalar_t, lno_t, gno_t, node_t> > 
+  // XpetraTraits<Tpetra::CrsGraph<scalar_t, lno_t, gno_t, node_t> > 
   {
     RCP<tgraph_t> G;
   
@@ -162,31 +181,38 @@ int main(int argc, char *argv[])
     }
   
     if (rank== 0)
-      std::cout << "Original graph" << std::endl;
+      std::cout << "Original Tpetra graph" << std::endl;
   
     Teuchos::RCP<Teuchos::FancyOStream>
       out = Teuchos::VerboseObjectBase::getDefaultOStream();
     Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
     G->describe(*out,v);
   
+    RCP<const xtmap_t> xmap(new xtmap_t(G->getRowMap()));
     ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(G->getRowMap());
+      roundRobinMap<lno_t,gno_t,node_t>(xmap);
   
     gno_t localNumRows = newRowIds.size();
     gno_t base = G->getIndexBase();
   
-    RCP<tgraph_t> newG = Zoltan2::XpetraTraits<tgraph_t>::doImport(
-      rcp_const_cast<const tgraph_t>(G),
-      localNumRows, newRowIds.getRawPtr(), base);
+    RCP<const tgraph_t> newG;
+    try{
+      newG = Zoltan2::XpetraTraits<tgraph_t>::doMigration(
+        rcp_const_cast<const tgraph_t>(G),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<tgraph_t>::doMigration ")+e.what(), 1);
+    }
   
     if (rank== 0)
-      std::cout << "Migrated graph" << std::endl;
+      std::cout << "Migrated Tpetra graph" << std::endl;
   
     newG->describe(*out,v);
   }
 
-    /////////////////////////////////////////////////////////////////
-    // XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t>> 
+  // XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t>> 
   {
     RCP<tvector_t> V;
   
@@ -199,28 +225,35 @@ int main(int argc, char *argv[])
     }
   
     if (rank== 0)
-      std::cout << "Original vector" << std::endl;
+      std::cout << "Original Tpetra vector" << std::endl;
   
     V->describe(*out,v);
   
+    RCP<const xtmap_t> xmap(new xtmap_t(V->getMap()));
     ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(V->getMap());
+      roundRobinMap<lno_t,gno_t,node_t>(xmap);
   
     gno_t localNumRows = newRowIds.size();
     gno_t base = V->getMap()->getIndexBase();
   
-    RCP<tvector_t> newV = Zoltan2::XpetraTraits<tvector_t>::doImport(
-      rcp_const_cast<const tvector_t>(V),
-      localNumRows, newRowIds.getRawPtr(), base);
+    RCP<const tvector_t> newV;
+    try{
+      newV = Zoltan2::XpetraTraits<tvector_t>::doMigration(
+        rcp_const_cast<const tvector_t>(V),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<tvector_t>::doMigration ")+e.what(), 1);
+    }
   
     if (rank== 0)
-      std::cout << "Migrated vector" << std::endl;
+      std::cout << "Migrated Tpetra vector" << std::endl;
   
     newV->describe(*out,v);
   }
 
-    /////////////////////////////////////////////////////////////////
-    // XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>> 
+  // XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>> 
   {
     RCP<tmvector_t> MV;
   
@@ -233,7 +266,178 @@ int main(int argc, char *argv[])
     }
   
     if (rank== 0)
-      std::cout << "Original vector" << std::endl;
+      std::cout << "Original Tpetra multivector" << std::endl;
+  
+    MV->describe(*out,v);
+  
+    RCP<const xtmap_t> xmap(new xtmap_t(MV->getMap()));
+    ArrayRCP<gno_t> newRowIds = 
+      roundRobinMap<lno_t,gno_t,node_t>(xmap);
+  
+    gno_t localNumRows = newRowIds.size();
+    gno_t base = MV->getMap()->getIndexBase();
+  
+    RCP<const tmvector_t> newMV;
+    try{
+      newMV = Zoltan2::XpetraTraits<tmvector_t>::doMigration(
+        rcp_const_cast<const tmvector_t>(MV),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<tmvector_t>::doMigration ")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Migrated Tpetra multivector" << std::endl;
+  
+    newMV->describe(*out,v);
+  }
+
+  /////////////////////////////////////////////////////////////////
+  //   Xpetra::CrsMatrix
+  //   Xpetra::CrsGraph
+  //   Xpetra::Vector
+  //   Xpetra::MultiVector
+  /////////////////////////////////////////////////////////////////
+
+  // XpetraTraits<Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> > 
+  {
+    RCP<xmatrix_t> M;
+  
+    try{
+      M = uinput->getXpetraCrsMatrix();
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string("getXpetraCrsMatrix ")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Original Xpetra matrix" << std::endl;
+  
+    M->describe(*out,v);
+  
+    ArrayRCP<gno_t> newRowIds = 
+      roundRobinMap<lno_t,gno_t,node_t>(M->getRowMap());
+  
+    gno_t localNumRows = newRowIds.size();
+    gno_t base = (M->getRowMap())->getIndexBase();
+  
+    RCP<const xmatrix_t> newM;
+    try{
+      newM = Zoltan2::XpetraTraits<xmatrix_t>::doMigration(
+        rcp_const_cast<const xmatrix_t>(M),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<xmatrix_t>::doMigration ")+e.what(), 1);
+    }
+
+    if (rank== 0)
+      std::cout << "Migrated Xpetra matrix" << std::endl;
+  
+    newM->describe(*out,v);
+  }
+
+  // XpetraTraits<Xpetra::CrsGraph<scalar_t, lno_t, gno_t, node_t> > 
+  {
+    RCP<xgraph_t> G;
+  
+    try{
+      G = uinput->getXpetraCrsGraph();
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string("getXpetraCrsGraph ")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Original Xpetra graph" << std::endl;
+  
+    Teuchos::RCP<Teuchos::FancyOStream>
+      out = Teuchos::VerboseObjectBase::getDefaultOStream();
+    Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
+    G->describe(*out,v);
+  
+    ArrayRCP<gno_t> newRowIds = 
+      roundRobinMap<lno_t,gno_t,node_t>(G->getRowMap());
+  
+    gno_t localNumRows = newRowIds.size();
+    gno_t base = G->getIndexBase();
+  
+    RCP<const xgraph_t> newG;
+    try{
+      newG = Zoltan2::XpetraTraits<xgraph_t>::doMigration(
+        rcp_const_cast<const xgraph_t>(G),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<xgraph_t>::doMigration ")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Migrated Xpetra graph" << std::endl;
+  
+    newG->describe(*out,v);
+  }
+
+  // XpetraTraits<Xpetra::Vector<scalar_t, lno_t, gno_t, node_t>> 
+  {
+    RCP<xvector_t> V;
+  
+    try{
+      V = uinput->getXpetraVector();
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string("getXpetraVector")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Original Xpetra vector" << std::endl;
+  
+    V->describe(*out,v);
+  
+    ArrayRCP<gno_t> newRowIds = 
+      roundRobinMap<lno_t,gno_t,node_t>(V->getMap());
+  
+    gno_t localNumRows = newRowIds.size();
+    gno_t base = V->getMap()->getIndexBase();
+  
+    RCP<const xvector_t> newV;
+    try{
+      newV = Zoltan2::XpetraTraits<xvector_t>::doMigration(
+        rcp_const_cast<const xvector_t>(V),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<xvector_t>::doMigration ")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Migrated Xpetra vector" << std::endl;
+  
+    newV->describe(*out,v);
+  }
+
+  // XpetraTraits<Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>> 
+  {
+    RCP<xmvector_t> MV;
+  
+    try{
+      MV = uinput->getXpetraMultiVector(3);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string("getXpetraMultiVector")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Original Xpetra multivector" << std::endl;
   
     MV->describe(*out,v);
   
@@ -243,15 +447,222 @@ int main(int argc, char *argv[])
     gno_t localNumRows = newRowIds.size();
     gno_t base = MV->getMap()->getIndexBase();
   
-    RCP<tmvector_t> newMV = Zoltan2::XpetraTraits<tmvector_t>::doImport(
-      rcp_const_cast<const tmvector_t>(MV),
-      localNumRows, newRowIds.getRawPtr(), base);
+    RCP<const xmvector_t> newMV;
+    try{
+      newMV = Zoltan2::XpetraTraits<xmvector_t>::doMigration(
+        rcp_const_cast<const xmvector_t>(MV),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<xmvector_t>::doMigration ")+e.what(), 1);
+    }
   
     if (rank== 0)
-      std::cout << "Migrated multi vector" << std::endl;
+      std::cout << "Migrated Xpetra multivector" << std::endl;
   
     newMV->describe(*out,v);
   }
+
+  /////////////////////////////////////////////////////////////////
+  //   Epetra_CrsMatrix
+  //   Epetra_CrsGraph
+  //   Epetra_Vector
+  //   Epetra_MultiVector
+  /////////////////////////////////////////////////////////////////
+
+  typedef UserInputForTests<
+    epetra_scalar_t, epetra_lno_t, epetra_gno_t> euinput_t;
+  typedef Epetra_CrsMatrix ematrix_t;
+  typedef Epetra_CrsGraph egraph_t;
+  typedef Epetra_Vector evector_t;
+  typedef Epetra_MultiVector emvector_t;
+  typedef Xpetra::EpetraMap xemap_t;
+  typedef Epetra_BlockMap emap_t;
+
+  // Create object that can give us test Epetra input.
+
+  RCP<euinput_t> euinput;
+
+  try{
+    euinput = rcp(new euinput_t(std::string("../data/simple.mtx"), comm));
+  }
+  catch(std::exception &e){
+    TEST_FAIL_AND_EXIT(*comm, 0, string("epetra input ")+e.what(), 1);
+  }
+
+  // XpetraTraits<Epetra_CrsMatrix> 
+  {
+    RCP<ematrix_t> M;
+  
+    try{
+      M = euinput->getEpetraCrsMatrix();
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string("getEpetraCrsMatrix ")+e.what(), 1);
+    }
+
+    if (rank== 0)
+      std::cout << "Original Epetra matrix" << std::endl;
+  
+    M->Print(std::cout);
+  
+    RCP<const emap_t> emap = Teuchos::rcpFromRef(M->RowMap());
+    RCP<const xemap_t> xmap(new xemap_t(emap));
+
+    ArrayRCP<epetra_gno_t> newRowIds = 
+      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+  
+    epetra_gno_t localNumRows = newRowIds.size();
+    epetra_gno_t base = M->RowMap().IndexBase();
+  
+    RCP<const ematrix_t> newM;
+    try{
+      newM = Zoltan2::XpetraTraits<ematrix_t>::doMigration(
+        rcp_const_cast<const ematrix_t>(M),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<ematrix_t>::doMigration ")+e.what(), 1);
+    }
+
+    if (rank== 0)
+      std::cout << "Migrated Epetra matrix" << std::endl;
+  
+    newM->Print(std::cout);
+  }
+
+  // XpetraTraits<Epetra_CrsGraph> 
+  {
+    RCP<egraph_t> G;
+  
+    try{
+      G = euinput->getEpetraCrsGraph();
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string("getEpetraCrsGraph ")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Original Epetra graph" << std::endl;
+  
+    G->Print(std::cout);
+  
+    RCP<const emap_t> emap = Teuchos::rcpFromRef(G->RowMap());
+    RCP<const xemap_t> xmap(new xemap_t(emap));
+    ArrayRCP<epetra_gno_t> newRowIds = 
+      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+  
+    epetra_gno_t localNumRows = newRowIds.size();
+    epetra_gno_t base = G->IndexBase();
+  
+    RCP<const egraph_t> newG;
+    try{
+      newG = Zoltan2::XpetraTraits<egraph_t>::doMigration(
+        rcp_const_cast<const egraph_t>(G),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<egraph_t>::doMigration ")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Migrated Epetra graph" << std::endl;
+  
+    newG->Print(std::cout);
+  }
+
+  // XpetraTraits<Epetra_Vector>
+  {
+    RCP<evector_t> V;
+  
+    try{
+      V = euinput->getEpetraVector();
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string("getEpetraVector")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Original Epetra vector" << std::endl;
+  
+    V->Print(std::cout);
+  
+    RCP<const emap_t> emap = Teuchos::rcpFromRef(V->Map());
+    RCP<const xemap_t> xmap(new xemap_t(emap));
+    ArrayRCP<epetra_gno_t> newRowIds = 
+      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+  
+    epetra_gno_t localNumRows = newRowIds.size();
+    epetra_gno_t base = V->Map().IndexBase();
+  
+    RCP<const evector_t> newV;
+    try{
+      newV = Zoltan2::XpetraTraits<evector_t>::doMigration(
+        rcp_const_cast<const evector_t>(V),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<evector_t>::doMigration ")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Migrated Epetra vector" << std::endl;
+  
+    newV->Print(std::cout);
+  }
+
+  // XpetraTraits<Epetra_MultiVector>
+  {
+    RCP<emvector_t> MV;
+  
+    try{
+      MV = euinput->getEpetraMultiVector(3);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string("getEpetraMultiVector")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Original Epetra multivector" << std::endl;
+  
+    MV->Print(std::cout);
+  
+    RCP<const emap_t> emap = Teuchos::rcpFromRef(MV->Map());
+    RCP<const xemap_t> xmap(new xemap_t(emap));
+    ArrayRCP<epetra_gno_t> newRowIds = 
+      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+  
+    epetra_gno_t localNumRows = newRowIds.size();
+    epetra_gno_t base = MV->Map().IndexBase();
+  
+    RCP<const emvector_t> newMV;
+    try{
+      newMV = Zoltan2::XpetraTraits<emvector_t>::doMigration(
+        rcp_const_cast<const emvector_t>(MV),
+        localNumRows, newRowIds.getRawPtr(), base);
+    }
+    catch(std::exception &e){
+      TEST_FAIL_AND_EXIT(*comm, 0, 
+        string(" Zoltan2::XpetraTraits<emvector_t>::doMigration ")+e.what(), 1);
+    }
+  
+    if (rank== 0)
+      std::cout << "Migrated Epetra multivector" << std::endl;
+  
+    newMV->Print(std::cout);
+  }
+
+  /////////////////////////////////////////////////////////////////
+  // DONE
+  /////////////////////////////////////////////////////////////////
 
   if (rank==0)
     std::cout << "PASS" << std::endl;
