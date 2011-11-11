@@ -31,10 +31,6 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierTraits.hpp>
 
-#ifdef HAVE_MPI
-#include <Teuchos_MPISession.hpp>
-#endif
-
 using namespace std;
 using Teuchos::RCP;
 using Teuchos::Comm;

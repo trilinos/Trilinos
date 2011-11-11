@@ -37,11 +37,6 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_HAVE_MALLINFO
   "malloc.h supports mallinfo()"
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_HAVE_MPI
-  HAVE_MPI
-  "MPI library is present"
-  OFF )
-
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_HAVE_TPL64
   HAVE_TPL64
   "64-bit third-party libraries are present"
