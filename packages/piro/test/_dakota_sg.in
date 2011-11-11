@@ -15,7 +15,7 @@ interface,
 
 responses,
 	num_least_squares_terms = 1
-	least_squares_data_file = 'dakota_sg_target.txt'
+	calibration_data_file = 'dakota_sg_target.txt' freeform
         analytic_gradients
 	#numerical_gradients
 	no_hessians
