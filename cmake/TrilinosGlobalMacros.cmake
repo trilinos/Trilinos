@@ -86,6 +86,7 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ".gitignore"
     classicMakefile
     ".*.pyc"
+    ${Trilinos_SOURCE_DIR}/cmake/tribits/common_tools/git
     ${Trilinos_SOURCE_DIR}/cmake/CMakeKitwareBacklog.txt
     ${Trilinos_SOURCE_DIR}/cmake/TODO
     ${Trilinos_SOURCE_DIR}/packages/ITAPS
@@ -109,7 +110,6 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/r.*
     ${Trilinos_SOURCE_DIR}/commonTools/scripts
     ${Trilinos_SOURCE_DIR}/commonTools/release
-    ${Trilinos_SOURCE_DIR}/commonTools/git
     ${Trilinos_SOURCE_DIR}/packages/common/DoxyfilePackageTemplate
     ${Trilinos_SOURCE_DIR}/stamp-h.in
     ${Trilinos_SOURCE_DIR}/configure.ac

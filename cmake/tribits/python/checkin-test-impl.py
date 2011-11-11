@@ -98,7 +98,7 @@ In order to do a solid checkin, perform the following recommended workflow
   eg/git documentation).
 
   NOTE: If not installed on your system, the eg script can be found at
-  Trilinos/commonTools/git/eg.  Just add it to your path.
+  Trilinos/cmake/tribits/common_tools/git/eg.  Just add it to your path.
 
 2) Review the changes that you have made to make sure it is safe to push:
 
@@ -107,7 +107,7 @@ In order to do a solid checkin, perform the following recommended workflow
   $ eg diff --name-status origin   # [Optional] Look at the files that have changed
 
   NOTE: The command 'local-stat' is an alias that can be installed with the
-  script Trilinos/commonTools/git/git-config-alias.sh.  It is highly
+  script Trilinos/cmake/tribits/common_tools/git/git-config-alias.sh.  It is highly
   recommended over just a raw 'eg status' or 'eg log' to review commits before
   attempting to test/push commits.
 

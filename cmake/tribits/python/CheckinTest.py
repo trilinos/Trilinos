@@ -232,7 +232,7 @@ def setupAndAssertEgGitVersions(inOptions):
   egWhich = getCmndOutput("which eg", True, False)
   if egWhich == "" or re.match(".+no eg.+", egWhich):
     print "Warning, the eg command is not in your path! ("+egWhich+")"
-    setattr(inOptions, "eg", inOptions.trilinosSrcDir+"/commonTools/git/eg")
+    setattr(inOptions, "eg", os.path.abspath(inOptions.scriptsDir+"/../common_tools/git/eg"))
     print "Setting to default eg in source tree '"+inOptions.eg+"'!"
   else:
     setattr(inOptions, "eg", "eg")
@@ -1565,6 +1565,7 @@ def checkinTest(inOptions):
 
   scriptsDir = getScriptBaseDir()
   #print "\nscriptsDir =", scriptsDir
+  setattr(inOptions, "scriptsDir", scriptsDir)
 
   print "\ntrilinosSrcDir =", inOptions.trilinosSrcDir
 

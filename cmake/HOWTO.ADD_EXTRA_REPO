@@ -51,7 +51,8 @@ by running the script setup-shared-repo.sh as:
 
   $ ssh software.sandia.gov
   $ cd /space/git/<EXTRAREPO>
-  $ $TRILINOS_HOME/commonTools/git/hooks/setup-shared-repo.sh trilinos
+  $ $TRILINOS_HOME/cmake/tribits/common_tools/git/hooks/setup-shared-repo.sh \
+      trilinos
 
 (where TRILINOS_HOME is pointing to some existing clone of the main Trilinos
 repo on SSG).

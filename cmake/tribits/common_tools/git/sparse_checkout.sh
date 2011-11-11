@@ -4,10 +4,10 @@
 # checkout of directories.  For example:
 #
 #   $ cd Trilinos
-#   $ ./commonTools/git/sparse_checkout.sh doc packages
+#   $ ./cmake/tribits/common_tools/git/sparse_checkout.sh doc packages
 #   $ ls
 #
-# should return just 'commonTools/git/sparse_checkout', 'doc' and
+# should return just 'cmake/tribits/common_tools/git/sparse_checkout', 'doc' and
 # 'packages'.
 #
 # After a sparse checkout, commands like 'git status' will run as fast
@@ -35,7 +35,7 @@ git config core.sparsecheckout true
 
 # Set up the list of dirs/files for sparse checkout to keep
 SC_FILE=.git/info/sparse-checkout
-echo commonTools/git/sparse_checkout.sh > $SC_FILE
+echo cmake/tribits/common_tools/git/sparse_checkout.sh > $SC_FILE
 for dir_or_file in $DIRS_FILES_LIST ; do
   echo "File/directory to keep: $dir_or_file";
   echo $dir_or_file >> $SC_FILE

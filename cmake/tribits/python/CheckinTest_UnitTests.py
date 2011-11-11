@@ -887,7 +887,7 @@ class test_checkin_test(unittest.TestCase):
   # entire workflow in order to make sure that raw 'eg' is not used anywhere
   # where it matters.
   def test_do_all_no_eg_installed(self):
-    eg = scriptsDir+"/../DependencyUnitTests/MockTrilinos/commonTools/git/eg"
+    eg = os.path.abspath(scriptsDir+"/../common_tools/git/eg")
     checkin_test_run_case(
       \
       self,
@@ -922,7 +922,7 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "Warning, the eg command is not in your path! .*no eg in .path1:path2:path3.*\n" \
-      "Setting to default eg in source tree '.*/commonTools/git/eg'\n" \
+      "Setting to default eg in source tree '.*/tribits/common_tools/git/eg'\n" \
       ,
       inPathEg=False, egVersion=False
       )
