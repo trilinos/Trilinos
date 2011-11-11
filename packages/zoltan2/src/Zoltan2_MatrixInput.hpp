@@ -15,7 +15,6 @@
 #ifndef _ZOLTAN2_MATRIXINPUT_HPP_
 #define _ZOLTAN2_MATRIXINPUT_HPP_
 
-#include <string>
 #include <Zoltan2_InputAdapter.hpp>
 
 namespace Zoltan2 {
@@ -37,7 +36,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class MatrixInput : public InputAdapter<User> {
+  class MatrixInput : public InputAdapter {
 private:
 
 public:
@@ -74,22 +73,7 @@ public:
    */
   virtual global_size_t getGlobalNumColumns() const = 0;
 
-  /*! Returns list of this process' matrix entries.
-      \param rowIds will on return a list of row global Ids
-      \param localIds can, optionally, on return hold a list of locally
-        relevant values that the process will use to refer to the objects
-        listed in the first list.  If localIds are omitted and
-        haveConsecutiveLocalIds is true, it is assumed that the
-        global Ids are in local Id order.
-      \param rowSize on return will list the number of non-zeros
-        for each row.
-      \param colIds on return will list the global column Ids for
-         the non-zeros for each row.
-   */
-
-  virtual void getRowListCopy(std::vector<gid_t> &rowIds, 
-    std::vector<lid_t> &localIds, std::vector<lno_t> &rowSize,
-    std::vector<gid_t> &colIds) const = 0;
+  // TODO - number of entries in each row, etc.
 
   /*! Sets pointers to this process' matrix entries.
       If this optional call is defined in the adapter, it can save a memory
@@ -132,15 +116,16 @@ public:
    *      InputAdapter had supplied local Ids.
    *  \param partition  A corresponding list of partitions.  gid[i]
    *            has been assigned to partition[i].
-   *  \return   Return 0 on success, non-zero on error.
+   *  \return   Returns the number of Ids in the new partitioning.
    *
    * TODO - A solution needs to be more than a list of partitions, but
    *   also how those partitions map to processes.  For now it's
    *   process "p" gets part "p".
    */
 
-  int applyPartitioningSolution(const User &in, User *out,
-    lno_t numIds, lno_t numParts, gid_t *gid, lid_t *lid, lno_t *partition)
+  size_t applyPartitioningSolution(const User &in, User *&out,
+    lno_t numIds, lno_t numParts, const gid_t *gid, 
+    const lid_t *lid, const lno_t *partition)
   {
     return 0;
   }

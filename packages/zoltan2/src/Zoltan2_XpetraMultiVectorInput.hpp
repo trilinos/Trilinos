@@ -18,6 +18,7 @@
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_MultiVectorInput.hpp>
+#include <Zoltan2_Util.hpp>
 
 namespace Zoltan2 {
 
@@ -35,12 +36,12 @@ template <typename User>
 class XpetraMultiVectorInput : public MultiVectorInput<User> {
 public:
 
-  typedef typename InputAdapter<User>::scalar_t scalar_t;
-  typedef typename InputAdapter<User>::lno_t    lno_t;
-  typedef typename InputAdapter<User>::gno_t    gno_t;
-  typedef typename InputAdapter<User>::lid_t    lid_t;
-  typedef typename InputAdapter<User>::gid_t    gid_t;
-  typedef typename InputAdapter<User>::node_t   node_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::lno_t    lno_t;
+  typedef typename InputTraits<User>::gno_t    gno_t;
+  typedef typename InputTraits<User>::lid_t    lid_t;
+  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::node_t   node_t;
 
   typedef Xpetra::MultiVector<
     scalar_t, lno_t, gno_t, node_t> x_mvector_t;
@@ -87,30 +88,38 @@ public:
   
   size_t getGlobalLength() const {return vector_->getGlobalLength();}
 
-  lno_t getMultiVectorView(int i, const gid_t *&Ids, 
+  size_t getMultiVectorView(int i, const gid_t *&Ids, 
     const lid_t *&localIds, const scalar_t *&elements, 
     const scalar_t *&wgts) const
   {
+    elements = NULL;
     if (map_->lib() == Xpetra::UseTpetra){
-      RCP<xt_mvector_t> tvector = 
-        rcp_implicit_cast<xt_mvector_t>(vector_);
-      ArrayRCP<const scalar_t> data = tvector->getData(i);
-      elements = data->get();
+      const xt_mvector_t *tvector = 
+        dynamic_cast<const xt_mvector_t *>(vector_.get());
+       
+      if (tvector->getLocalLength() > 0){
+        ArrayRCP<const scalar_t> data = tvector->getData(i);
+        elements = data.get();
+      }
     }
     else if (map_->lib() == Xpetra::UseEpetra){
-      RCP<xe_mvector_t> evector = 
-        rcp_implicit_cast<xe_mvector_t>(vector_);
-      ArrayRCP<const scalar_t> data = evector->getData(i);
-      elements = data->get();
+      const xe_mvector_t *evector = 
+        dynamic_cast<const xe_mvector_t *>(vector_.get());
+        
+      if (evector->getLocalLength() > 0){
+        ArrayRCP<const double> data = evector->getData(i);
+        elements = data.get();
+      }
     }
     else{
       throw std::logic_error("invalid underlying lib");
     }
 
     ArrayView<const gid_t> gids = map_->getNodeElementList();
-    Ids = gids->getRawPtr();
+    Ids = gids.getRawPtr();
     localIds = NULL;  // Implies 0 through numElements-1
     wgts = NULL; // Not implemented
+    return gids.size();
   }
 
   ////////////////////////////////////////////////////
@@ -129,12 +138,10 @@ public:
    *   Every gid that was belongs to this process must
    *   be on the list, or the Import will fail.
    */
-  void applyPartitioningSolution(const User &in, User *&out,
+  size_t applyPartitioningSolution(const User &in, User *&out,
     lno_t numIds, lno_t numParts,
     const gid_t *gid, const lid_t *lid, const lno_t *partition)
   {
-    // Get an import list
-
     ArrayView<const gid_t> gidList(gid, numIds);
     ArrayView<const lno_t> partList(partition, numIds);
     ArrayView<const lno_t> dummyIn;
@@ -145,23 +152,25 @@ public:
     const RCP<const Comm<int> > comm = map_->getComm();
 
     try{
+      // Get an import list
       numNewRows = convertPartitionListToImportList<gid_t, lno_t, lno_t>(
-        comm, partList, gidList, dummyIn, importList, dummyOut);
+        *comm, partList, gidList, dummyIn, importList, dummyOut);
     }
     catch (std::exception &e){
       Z2_THROW_ZOLTAN2_ERROR(env, e);
     }
 
     RCP<const User> inPtr = rcp(&in, false);
-    gno_t globalNumElts = invector_->getGlobalLength();
+    gno_t globalNumElts = vector_->getGlobalLength();
     lno_t localNumElts = numNewRows;
 
-    RCP<User> outPtr = XpetraTraits<User>::doImport(
-     inPtr, localNumElts, importList->get(), base_);
+    RCP<const User> outPtr = XpetraTraits<User>::doMigration(
+     inPtr, localNumElts, importList.get(), base_);
 
-    out = outPtr.get();
+    out = const_cast<User *>(outPtr.get());
     outPtr.release();
-   }
+    return numNewRows;
+  }
 
 private:
 
