@@ -35,10 +35,15 @@ if [ "$DIRS_FILES_LIST" == "" ] ; then
 
   echo "Undoing sparse checkout"
 
+  # Get the full tree back
+  echo "*" > $SC_FILE
+  git config core.sparsecheckout true
+  git read-tree --reset -u HEAD
+
+  # Wipe out all traces of sparse checkout support
   rm $SC_FILE
   git config core.sparsecheckout false
-  git read-tree -m -u HEAD
-
+ 
 else
 
   # Tell Git to allow sparse checkout
