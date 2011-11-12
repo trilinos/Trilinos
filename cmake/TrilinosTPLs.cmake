@@ -123,6 +123,7 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   LAPACK          ""    PS
   Boost           ""    SS
   Scotch          ""    SS
+  OVIS            ""    SS
   METIS           ""    TS
   ParMETIS        ""    SS
   PaToH           ""    SS

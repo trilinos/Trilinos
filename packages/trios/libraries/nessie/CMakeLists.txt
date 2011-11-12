@@ -73,7 +73,7 @@ APPEND_SET(SOURCES
   common/nssi_xdr.cpp
 )
 
-IF (${PACKAGE_NAME}_ENABLE_Portals)
+IF (${PACKAGE_NAME}_ENABLE_Portals OR ${PACKAGE_NAME}_ENABLE_CrayPortals)
   APPEND_SET(SOURCES common/nnti_ptls.cpp)
 ELSEIF (${PACKAGE_NAME}_ENABLE_InfiniBand)
   APPEND_SET(SOURCES common/nnti_ib.cpp)

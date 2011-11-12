@@ -338,25 +338,37 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "MINRES"
         ),
       tuple<std::string>(
-        "Performs block and single single-RHS GMRES as well as\n"
-        "flexible GMRES by setting options in the \"Block GMRES\" sublist.",
+        "Block GMRES solver for nonsymmetric linear systems.  It can also solve "
+	"single right-hand side systems, and can also perform Flexible GMRES "
+	"(where the preconditioner may change at every iteration, for example "
+	"for inner-outer iterations), by setting options in the \"Block GMRES\" "
+	"sublist.",
 
-        "GMRES solver that performs single-RHS GMRES on multiple RHSs taking\n"
-        "advantage of operator multi-vector multiplication and the amortization\n"
-        "of global communication.  Individual linear systems are deflated out as\n"
-        "they are solved.",
+        "GMRES solver for nonsymmetric linear systems, that performs single "
+	"right-hand side solves on multiple right-hand sides at once.  It "
+	"exploits operator multivector multiplication in order to amortize "
+        "global communication costs.  Individual linear systems are deflated "
+	"out as they are solved.",
 
-        "CG solver that performs block and single-RHS CG.",
+        "Block CG solver for symmetric (Hermitian in complex arithmetic) "
+	"positive definite linear systems.  It can also solve single "
+	"right-hand-side systems.",
 
-        "CG solver that performs single-RHS CG on multiple RHSs taking\n"
-        "advantage of operator multi-vector multiplication and the amortization\n"
-        "of global communication.  Individual linear systems are deflated out as\n"
-        "they are solved.",
+        "CG solver that performs single right-hand side CG on multiple right-hand "
+	"sides at once.  It exploits operator multivector multiplication in order "
+	"to amortize global communication costs.  Individual linear systems are "
+	"deflated out as they are solved.",
 
-        "GMRES solver that performs subspace recycling between RHS and linear systems.",
-	"CG solver that performs subspace recycling between RHS and linear systems.",
+        "GMRES solver for nonsymmetric linear systems, that performs subspace "
+	"recycling to accelerate convergence for sequences of related linear "
+	"systems.",
 
-        "MINRES solver that performs single-RHS MINRES on multiple RHSs sequentially."
+	"CG solver for symmetric (Hermitian in complex arithmetic) positive "
+	"definite linear systems, that performs subspace recycling to "
+	"accelerate convergence for sequences of related linear systems.",
+
+        "MINRES solver for symmetric indefinite linear systems.  It performs "
+	"single-right-hand-side solves on multiple right-hand sides sequentially."
         ),
       tuple<EBelosSolverType>(
         SOLVER_TYPE_BLOCK_GMRES,

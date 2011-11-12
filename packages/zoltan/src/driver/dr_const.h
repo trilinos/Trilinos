@@ -80,6 +80,10 @@ extern "C" {
 #define ZOLTAN_SCOTCH
 #endif
 
+#ifdef HAVE_OVIS
+#define ZOLTAN_OVIS
+#endif
+
 #ifdef HAVE_GZIP
 #define ZOLTAN_GZIP
 #endif

@@ -382,6 +382,31 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
       else {
         tmpPL->set("Convergence Tolerance", defaultTol_);
       }
+      // Many Belos solvers (especially the GMRES variants) define
+      // both "Implicit Residual Scaling" and "Explicit Residual
+      // Scaling" options.
+      //
+      // "Implicit" means "the left-preconditioned approximate
+      // a.k.a. 'recursive' residual as computed by the Krylov
+      // method."
+      // 
+      // "Explicit" means ||B - A*X||, the unpreconditioned, "exact"
+      // residual.
+      //
+      // Belos' GMRES implementations chain these two tests in
+      // sequence.  Implicit comes first, and explicit is not
+      // evaluated unless implicit passes.  In some cases (e.g., no
+      // left preconditioner), GMRES _only_ uses the implicit tests.
+      // This means that only setting "Explicit Residual Scaling"
+      // won't change the solver's behavior.  Stratimikos tends to
+      // prefer using a right preconditioner, in which case setting
+      // only the "Explicit Residual Scaling" argument has no effect.
+      // Furthermore, if "Explicit Residual Scaling" is set to
+      // something other than the default (initial residual norm),
+      // without "Implicit Residual Scaling" getting the same setting,
+      // then the implicit residual test will be using a radically
+      // different scaling factor than the user wanted.
+      tmpPL->set("Implicit Residual Scaling", "Norm of RHS");
       tmpPL->set("Explicit Residual Scaling", "Norm of RHS");
     }
     else if (solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL, SOLVE_MEASURE_NORM_INIT_RESIDUAL)) {
@@ -391,6 +416,28 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
       else {
         tmpPL->set("Convergence Tolerance", defaultTol_);
       }
+      // Note on scaling: Belos gives an option to scale either by the
+      // (left-)preconditioned initial residual norms, or by the
+      // unpreconditioned initial residual norms.  Usually you want to
+      // scale by the unpreconditioned initial residual norms.  This
+      // is because preconditioning is just an optimization, and you
+      // really want to make ||B - AX|| small, rather than ||M B - M
+      // (A X)||.  If you're measuring ||B - AX|| and scaling by the
+      // initial residual, you should use the unpreconditioned initial
+      // residual to match it.
+      //
+      // Note, however, that the implicit residual test computes
+      // left-preconditioned residuals, if a left preconditioner was
+      // provided.  That's OK because when Belos solvers (at least the
+      // GMRES variants) are given a left preconditioner, they first
+      // check the implicit residuals.  If those converge, they then
+      // check the explicit residuals.  The explicit residual test
+      // does _not_ apply the left preconditioner when computing the
+      // residual.  The implicit residual test is just an optimization
+      // so that Belos doesn't have to compute explicit residuals B -
+      // A*X at every iteration.  This is why we use the same scaling
+      // factor for both the implicit and explicit residuals.
+      tmpPL->set("Implicit Residual Scaling", "Norm of Initial Residual");
       tmpPL->set("Explicit Residual Scaling", "Norm of Initial Residual");
     }
     else {

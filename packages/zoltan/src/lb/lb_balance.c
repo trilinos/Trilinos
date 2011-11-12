@@ -279,6 +279,10 @@ ZOLTAN_ID_PTR gid;
   Zoltan_Drum_Stop_Monitors(zz);
 #endif
 
+#ifdef ZOLTAN_OVIS
+  ovis_enabled(zz->Proc);
+#endif
+
   /* 
    * Compute Max number of array entries per ID over all processors.
    * Compute Max number of return arguments for Zoltan_LB_Balance.

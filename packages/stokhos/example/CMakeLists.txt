@@ -85,6 +85,10 @@ PACKAGE_ADD_EXECUTABLE(
   DEPLIBS stokhos
   )
 
+PACKAGE_COPY_FILES_TO_BINARY_DIR(copySparsityScripts
+      DEST_FILES   animate_slices.py
+      )
+
 PACKAGE_ADD_LIBRARY(
   linear2d_diffusion
   HEADERS twoD_diffusion_ME.hpp
