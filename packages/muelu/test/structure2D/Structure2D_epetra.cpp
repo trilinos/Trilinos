@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   // custom parameters
-  LO maxLevels = 2;
+  LO maxLevels = 5;
 
   GO maxCoarseSize=1; //FIXME clp doesn't like long long int
   std::string aggOrdering = "natural";
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
 
   // build transfer operators
   RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact,nspFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
   //RCP<RFactory> Rfact  = rcp( new GenericRFactory(Pfact));
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Finest->Keep("Aggregates",UCAggFact.get());
-  Finest->Keep("Nullspace",nspFact.get());
+  //Finest->Keep("Nullspace",nspFact.get());
 
   // build level smoothers
   RCP<SmootherPrototype> smooProto;

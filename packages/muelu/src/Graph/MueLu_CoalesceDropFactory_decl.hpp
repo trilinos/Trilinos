@@ -35,7 +35,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null);
+    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
 
     //! Destructor
     virtual ~CoalesceDropFactory() { }
@@ -59,11 +59,15 @@ namespace MueLu {
 
     void Build(Level &currentLevel) const; // Build
 
-    void Amalgamate(const RCP<Operator>& A, RCP<Graph>& graph) const; // Amalgamate
+    void Amalgamate(const RCP<Operator>& A, const LocalOrdinal blocksize, RCP<Graph>& graph) const; // Amalgamate
 
   private:
     //! A Factory
     RCP<const FactoryBase> AFact_;
+
+    //! nullspace factory
+    //! The nullspace dimension is necessary for setting the block size in amalgamation routine
+    RCP<const FactoryBase> nullspaceFact_;
 
     /// blocksize for fixed blocksize setup
     LocalOrdinal blksize_;

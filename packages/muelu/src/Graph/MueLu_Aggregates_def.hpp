@@ -84,7 +84,7 @@ namespace MueLu {
     // length of aggToRowMap should be the number of DOFs (not the number of nodes)
     LO t=0;
     for (typename ArrayRCP<ArrayRCP<LO> >::iterator a2r=aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r) {
-      *a2r = ArrayRCP<LO>(/*aggSizes[t++]*/100); // TODO fix me: this is not enough
+      *a2r = ArrayRCP<LO>(aggSizes[t++]/*100*/); // TODO fix me: this is not enough
     }
 
     // track how many dofs have been recorded so far

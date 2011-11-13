@@ -10,13 +10,14 @@ namespace MueLu {
   static const std::string color_purple = "35m";
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceDropFactory(RCP<const FactoryBase> AFact)
-    : AFact_(AFact), blksize_(1), fixedBlkSize_(true)
+  CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceDropFactory(RCP<const FactoryBase> AFact, RCP<const FactoryBase> nullspaceFact)
+    : AFact_(AFact), nullspaceFact_(nullspaceFact), blksize_(1), fixedBlkSize_(true)
   { }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     currentLevel.DeclareInput("A", AFact_.get());
+    //currentLevel.DeclareInput("Nullspace",  nullspaceFact_.get());
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -32,12 +33,20 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+    //RCP<MultiVector> nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
     // pre-dropping
     RCP<Graph> graph;
     //if (predrop_ == Teuchos::null) {
       //graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
-      Amalgamate(A, graph);
+      LocalOrdinal blockdim = 1;
+      if(currentLevel.GetLevelID() == 0) {
+        blockdim = blksize_;
+      } else {
+        blockdim = 3; //Teuchos::as<LocalOrdinal>(nullspace->getNumVectors()); //FIXME
+      }
+
+      Amalgamate(A, blockdim, graph);
     /*} else {
       //FIXME predropping does not fit to amalgamation routine
       graph = predrop_->Drop(A);
@@ -52,14 +61,14 @@ namespace MueLu {
   } // Build
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amalgamate(const RCP<Operator>& A, RCP<Graph>& graph) const {
+  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amalgamate(const RCP<Operator>& A, const LocalOrdinal blocksize, RCP<Graph>& graph) const {
 
 #if 1
 
     // do amalgamation
-    int nUnamalgamatedBlockSize = blksize_;
+    int nUnamalgamatedBlockSize = blocksize;
 
-    std::cout << "CoalesceDropFactory: nUnamalgamatedBlockSize=" << blksize_ << std::endl;
+    std::cout << "CoalesceDropFactory: nUnamalgamatedBlockSize=" << blocksize << std::endl;
 
     // map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
     RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid;
