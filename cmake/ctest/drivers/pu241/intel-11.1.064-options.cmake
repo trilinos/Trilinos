@@ -1,20 +1,23 @@
 #
-# Core options for Intel 12.0.4 builds
+# Core options for Intel 11.1.064 builds
 #
 
 # Define the core compilers
-SET(INTEL_LIB /opt/intel/Compiler/composerxe-2011.4.191/compiler/lib/intel64)
-SET(INTEL_BIN /opt/intel/Compiler/composerxe-2011.4.191/bin/intel64)
+SET(INTEL_LIB /opt/intel/Compiler/11.1/064/lib/intel64)
+SET(INTEL_BIN /opt/intel/Compiler/11.1/064/bin/intel64)
 # Add rpath for compiler libraries
 # SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${INTEL_LIB}" CACHE STRING "")
 SET(CMAKE_SKIP_RPATH ON BOOL "")
+# Intel 11 not compatible with GCC 4.5.1; in case it is loaded, lock it out
+SET(CMAKE_C_FLAGS   "-gcc-name=/usr/bin/gcc" CACHE STRING "")
+SET(CMAKE_CXX_FLAGS "-gxx-name=/usr/bin/g++" CACHE STRING "")
 
 # this compiler supports BinUtils
 SET(TPL_ENABLE_BinUtils ON CACHE BOOL "")
 
 # Include MKL and TBB; these should match version of Intel compilers being used
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/tbb-12.0.4-options.cmake)
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-12.0.4-options.cmake)
+INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/tbb-11.1.064-options.cmake)
+INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-11.1.064-options.cmake)
 SET(BLAS_INCLUDE_DIRS   ${MKL_IFORT_MODULE_PATH} CACHE PATH "Path to MKL BLAS Fortran modules compatible with Intel fortran")
 SET(LAPACK_INCLUDE_DIRS ${MKL_IFORT_MODULE_PATH} CACHE PATH "Path to MKL LAPACK Fortran modules compatible with Intel fortran")
 
