@@ -57,6 +57,8 @@ namespace MueLu {
     
     const RCP<const Xpetra::Map<LO,GO> > GetMap() const { return vertex2AggId_->getMap(); }
 
+    const RCP<const Xpetra::Map<LO,GO> > GetDofMap() const { return importDofMap_; }
+
     /*! @brief Compute sizes of all the aggregates.
 
     - FIXME Is this dangerous, i.e., could the user change this?
@@ -122,6 +124,7 @@ namespace MueLu {
     //! map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
     mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;
 
+    RCP<const Map> importDofMap_; // dof map for overlapping nullspace
 
   };
 

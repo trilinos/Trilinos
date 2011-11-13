@@ -48,7 +48,7 @@ namespace MueLu {
     void DeclareInput(Level &currentLevel) const;
 
     /// set fixed block size
-    void SetFixedBlockSize(GO blksize);
+    void SetFixedBlockSize(LocalOrdinal blksize);
 
     /// set predrop function
     void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &predrop);
@@ -66,7 +66,7 @@ namespace MueLu {
     RCP<const FactoryBase> AFact_;
 
     /// blocksize for fixed blocksize setup
-    GO blksize_;
+    LocalOrdinal blksize_;
 
     /// are we doing fixed or variable blocks
     bool fixedBlkSize_;

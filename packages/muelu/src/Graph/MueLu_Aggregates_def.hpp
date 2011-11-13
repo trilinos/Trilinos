@@ -18,6 +18,8 @@ namespace MueLu {
     isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements());
     for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
       isRoot_[i] = false;
+
+    importDofMap_ = graph.GetImportDofMap(); // overlapping Dof Map
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
@@ -71,6 +73,8 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateToRowMap2(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > &aggToRowMap) const {
+    std::cout << "PROC: " << vertex2AggId_->getMap()->getComm()->getRank() << " entering ComputeAggreagteToRowMap2" << std::endl;
+
     int myPid = vertex2AggId_->getMap()->getComm()->getRank();
     ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
     ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0); // vector: node 2 aggid
@@ -131,15 +135,15 @@ namespace MueLu {
             GlobalOrdinal gblockid = vertex2AggId_->getMap()->getGlobalElement(lnode);
 
             std::vector<LocalOrdinal> blockdofs = (*globalamalblockid2myrowid_)[gblockid];
-            std::cout << "#dofs for node " << lnode << "=" << blockdofs.size() << std::endl;
+            //std::cout << "#dofs for node " << lnode << "=" << blockdofs.size() << std::endl;
             aggregateSizes_[myAgg] += Teuchos::as<LocalOrdinal>(blockdofs.size());
           }
         }
 
-        for (LO lnode = 0; lnode < size; ++lnode ) {
+        /*for (LO lnode = 0; lnode < size; ++lnode ) {
           LO myAgg = vertex2AggId[lnode];
           std::cout << "lnode=" << lnode << " myAggSize=" << aggregateSizes_[myAgg] << std::endl;
-        }
+        }*/
       //}
 
     return aggregateSizes_;

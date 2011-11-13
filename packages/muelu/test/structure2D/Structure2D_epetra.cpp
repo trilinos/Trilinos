@@ -94,8 +94,25 @@ int main(int argc, char *argv[]) {
   int minPerAgg=3;
   int maxNbrAlreadySelected=0;
 
+  int globalNumDofs = 3402;
+  int nProcs = comm->getSize();
+  int nDofsPerNode = 2;
+
+  int nLocalDofs = (int) globalNumDofs / nProcs;
+  nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
+  int nCumulatedDofs = 0;
+  sumAll(comm,nLocalDofs, nCumulatedDofs);
+  //Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM, 1, nLocalDofs, &nCumulatedDofs );
+
+  if(comm->getRank() == nProcs-1) {
+    nLocalDofs += globalNumDofs - nCumulatedDofs;
+  }
+
+  std::cout << "PROC: " << comm->getRank() << " numLocalDofs=" << nLocalDofs << std::endl;
+
   // read in problem
-  Epetra_Map emap(3402,0,*Xpetra::toEpetra(comm));
+  Epetra_Map emap (globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
+  //Epetra_Map emap(3402,0,*Xpetra::toEpetra(comm));
   Epetra_CrsMatrix * ptrA = 0;
   Epetra_Vector * ptrf = 0;
   Epetra_MultiVector* ptrNS = 0;
@@ -135,9 +152,9 @@ int main(int argc, char *argv[]) {
 
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetVerbLevel(MueLu::Extreme);
-  dropFact->SetFixedBlockSize(2);
-  RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
-  dropFact->SetPreDropFunction(predrop);
+  dropFact->SetFixedBlockSize(nDofsPerNode);
+  //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
+  //dropFact->SetPreDropFunction(predrop);
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
