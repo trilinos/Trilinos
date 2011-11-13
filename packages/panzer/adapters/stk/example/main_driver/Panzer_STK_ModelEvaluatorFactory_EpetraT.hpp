@@ -4,17 +4,8 @@
 #include "Thyra_ModelEvaluator.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
+
 #include "Panzer_config.hpp"
-#include "Panzer_STK_ExodusReaderFactory.hpp"
-#include "Panzer_STK_LineMeshFactory.hpp"
-#include "Panzer_STK_SquareQuadMeshFactory.hpp"
-#include "Panzer_STK_SquareTriMeshFactory.hpp"
-#include "Panzer_STK_CubeHexMeshFactory.hpp"
-#include "Panzer_STK_CubeTetMeshFactory.hpp"
-#include "Panzer_STK_MultiBlockMeshFactory.hpp"
-#include "Panzer_STK_SetupUtilities.hpp"
-#include "Panzer_STK_Utilities.hpp"
-#include "Panzer_STKConnManager.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_BC.hpp"
@@ -30,9 +21,23 @@
 #include "Panzer_ResponseUtilities.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_WorksetContainer.hpp"
+
+#include "Panzer_STK_ExodusReaderFactory.hpp"
+#include "Panzer_STK_LineMeshFactory.hpp"
+#include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SquareTriMeshFactory.hpp"
+#include "Panzer_STK_CubeHexMeshFactory.hpp"
+#include "Panzer_STK_CubeTetMeshFactory.hpp"
+#include "Panzer_STK_MultiBlockMeshFactory.hpp"
+#include "Panzer_STK_SetupUtilities.hpp"
+#include "Panzer_STK_Utilities.hpp"
+#include "Panzer_STK_WorksetFactory.hpp"
+#include "Panzer_STKConnManager.hpp"
 #include "Panzer_STK_NOXObserverFactory.hpp"
 #include "Panzer_STK_RythmosObserverFactory_Epetra.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
+
 #include <vector>
 
 // Piro solver objects
@@ -200,11 +205,22 @@ namespace panzer_stk {
 	 block != block_ids_to_physics_ids.end(); ++block)
       eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
 
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-      volume_worksets = panzer_stk::buildWorksets(*mesh, eb_id_to_ipb, workset_size);
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
 
-    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets  = 
-      panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
+    // get vector of element blocks
+    std::vector<std::string> elementBlocks;
+    mesh->getElementBlockNames(elementBlocks);
+
+    // build volume worksets from container
+    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > volume_worksets;
+    panzer::getVolumeWorksetsFromContainer(*wkstContainer,elementBlocks,volume_worksets);
+
+    // build volume worksets from container
+    std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
+    panzer::getSideWorksetsFromContainer(*wkstContainer,bcs,bc_worksets);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
