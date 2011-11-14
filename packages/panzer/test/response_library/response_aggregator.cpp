@@ -90,8 +90,10 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
      setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
      setupData.worksets_->push_back(*workset);
 
+     panzer::Traits::PED preEvalData;
+
      fm.postRegistrationSetup(setupData);
-     fm.preEvaluate<EvalT>(0);
+     fm.preEvaluate<EvalT>(preEvalData);
      fm.evaluateFields<EvalT>(*workset);
      fm.postEvaluate<EvalT>(0);
   }
