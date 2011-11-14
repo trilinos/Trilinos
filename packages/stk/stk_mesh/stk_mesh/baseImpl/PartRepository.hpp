@@ -40,6 +40,8 @@ public:
   const T * declare_attribute_with_delete( Part & , const T *);
   template<class T>
   const T * declare_attribute_no_delete( Part & , const T *);
+  template<class T>
+  bool remove_attribute( Part & , const T *);
 
 private:
   PartRepository();
@@ -68,6 +70,14 @@ const T *
 PartRepository::declare_attribute_no_delete( Part & p, const T * a )
 {
   return p.m_partImpl.declare_attribute_no_delete<T>( a );
+}
+
+template<class T>
+inline
+bool
+PartRepository::remove_attribute( Part & p, const T * a )
+{
+  return p.m_partImpl.remove_attribute<T>( a );
 }
 
 
