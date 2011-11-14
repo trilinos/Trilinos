@@ -20,19 +20,8 @@
 
 namespace Zoltan2 {
 
-/*! Zoltan2::GraphInput
-    \brief GraphInput defines the interface for input adapters for
+/*!  \brief GraphInput defines the interface for input adapters for
             graphs that may have vertex and edge weight. 
-
-    The Graph accessor methods defined here mimic those of 
-    Tpetra::CrsGraph and Tpetra::Map.
-
-    LID: the type for the application's local Ids
-    GID: the type for the application's global Ids
-    LNO: the integral type that Zoltan2 will use for local counters.
-    GNO: the integral type that Zoltan2 will use for the global 
-      counts and identifiers.  It needs to be large enough for the
-      problem's number of objects.
 */
 
 template <typename User>
@@ -41,35 +30,43 @@ private:
 
 public:
 
+  /*! \brief Data type for weights. */
   typedef typename InputTraits<User>::scalar_t scalar_t;
+
+  /*! \brief Data type for Zoltan2's indices and local counts. */
   typedef typename InputTraits<User>::lno_t    lno_t;
+
+  /*! \brief Data type for Zoltan2's global identifiers and counts. */
   typedef typename InputTraits<User>::gno_t    gno_t;
+
+  /*! \brief The application's local identifier data type. */
   typedef typename InputTraits<User>::lid_t    lid_t;
+
+  /*! \brief The application's global identifier data type. */
   typedef typename InputTraits<User>::gid_t    gid_t;
+
+  /*! \brief The Kokkos node type. */
   typedef typename InputTraits<User>::node_t   node_t;
 
-  // adapterType == GraphAdapterType
-  // Function must return one of Zoltan2's enumerated types in InputAdapter
-  // User should not rewrite this function.
   enum InputAdapterType inputAdapterType() {return GraphAdapterType;}
 
-  /*! Pure virtual destructor
+  /*! \brief Pure virtual destructor
    */
   virtual ~GraphInput() {};
 
-  /*! Returns the number vertices on this process.
+  /*! \brief Returns the number vertices on this process.
    */
   virtual size_t getLocalNumVertices() const = 0;
 
-  /*! Returns the global number vertices.
+  /*! \brief Returns the global number vertices.
    */
   virtual global_size_t getGlobalNumVertices() const = 0;
 
-  /*! Returns the number edges on this process.
+  /*! \brief Returns the number edges on this process.
    */
   virtual size_t getLocalNumEdges() const = 0;
 
-  /*! Returns the global number edges.
+  /*! \brief Returns the global number edges.
    */
   virtual global_size_t getGlobalNumEdges() const = 0;
 
@@ -87,7 +84,7 @@ public:
   virtual int getCoordinateDim() const = 0;
 #endif
 
-  /*! Sets pointers to this process' graph entries.
+  /*! \brief Sets pointers to this process' graph entries.
       \param vertexIds will on return a pointer to vertex global Ids
       \param localIds can, optionally, on return hold a list of locally
         relevant values that the process will use to refer to the objects
@@ -107,7 +104,7 @@ public:
     const lid_t *&localIds, 
     const lno_t *&offsets, const gid_t *& edgeIds) const = 0; 
 
-  /*! Apply the solution to a partitioning problem to an input.  
+  /*! \brief Apply the solution to a partitioning problem to an input.  
    *
    *  This is not a required part of the GraphInput interface.  However
    *  if the PartitioningProblem::redistribute() method is called, it 

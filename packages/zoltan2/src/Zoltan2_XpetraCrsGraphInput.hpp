@@ -21,9 +21,7 @@
 
 namespace Zoltan2 {
 
-/////////////////////////////////////////////////////////////////////////////
-/*! Zoltan2::XpetraCrsGraphInput
-    \brief Provides access for Zoltan2 to Xpetra::CrsGraph data.
+/*!  \brief Provides access for Zoltan2 to Xpetra::CrsGraph data.
 
     TODO -test for memory alloc failure when we resize a vector
     TODO: we assume FillComplete has been called.  We should support
@@ -47,11 +45,11 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
 
-  /*! Destructor
+  /*! \brief Destructor
    */
   ~XpetraCrsGraphInput() { }
 
-  /*! Constructor
+  /*! \brief Constructor
    */
   XpetraCrsGraphInput(const RCP<const User> &ingraph):
     base_(), ingraph_(ingraph), graph_(), comm_() ,
@@ -89,7 +87,7 @@ public:
   }
 
 #if 0
-  /* Provide optional vertex coordinates.
+  /* \brief Provide optional vertex coordinates.
    *  \param lid  The vertex local id.
    *  \param xyz The coordinates(s) associated with the corresponding vertex
    *    local id.  They should be ordered by vertex by coordinate axis.
@@ -131,7 +129,7 @@ public:
     }
   }
 
-  /* Provide optional vertex weights.
+  /* \brief Provide optional vertex weights.
    *  \param lid  The vertex local id.
    *  \param wgts The weight(s) associated with the corresponding vertex
    *    local id.  Weights should be ordered by vertex by weight coordinate.
@@ -171,7 +169,7 @@ public:
     }
   }
 
-  /* Provide optional edge weights.
+  /* \brief Provide optional edge weights.
    *  \param vertexLid  The vertex local id.
    *  \param numNbors   The number of edge weights provided.
    *  \param nborGid    The global vertex id of the neighbor.
@@ -242,7 +240,7 @@ public:
   }
 #endif
 
-  /*! Access to xpetra graph 
+  /*! \brief Access to xpetra graph 
    */ 
    
   RCP<const xgraph_t> getXpetraGraph() const
@@ -279,19 +277,19 @@ public:
     return graph_->getNodeNumRows(); 
   }
 
-  /*! Returns the number vertices in the entire graph.
+  /*! \brief Returns the number vertices in the entire graph.
    */
   global_size_t getGlobalNumVertices() const { 
     return graph_->getGlobalNumRows(); 
   }
 
-  /*! Returns the number edges on this process.
+  /*! \brief Returns the number edges on this process.
    */
   size_t getLocalNumEdges() const { 
     return graph_->getNodeNumEntries();
   }
 
-  /*! Returns the number edges on this entire graph.
+  /*! \brief Returns the number edges on this entire graph.
    *    what about directional edges, count twice?
    */
   global_size_t getGlobalNumEdges() const { 
@@ -318,7 +316,7 @@ public:
   }
 #endif
 
-  /*! Return a read only view of the data.
+  /*! \brief Return a read only view of the data.
    */
   size_t getVertexListView(const gid_t *&ids,
     const lid_t *&localIds,
@@ -340,7 +338,7 @@ public:
     return nvtx;
   }
 
-  /*! Repartition a graph that has the same structure as
+  /*! \brief Repartition a graph that has the same structure as
    *   the graph that instantiated this input adapter.
    */
   size_t applyPartitioningSolution(const User &in, User *&out,

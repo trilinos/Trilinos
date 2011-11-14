@@ -20,66 +20,67 @@
 
 namespace Zoltan2 {
 
-/*! InputAdapter defines methods required by all InputAdapters
+/*! \brief An enum to identify general types of input adapters.
+ */
+enum InputAdapterType {
+  InvalidAdapterType = 0,    /*!< unused value */
+  MatrixAdapterType,    /*!< matrix input */
+  MeshAdapterType,    /*!< mesh input */
+  GraphAdapterType,    /*!< graph input */
+  CoordAdapterType,    /*!< coordinate input */
+  VectorAdapterType,    /*!< vector input*/
+  MultiVectorAdapterType,    /*!< multivector input*/
+  IdAdapterType,    /*!< plain identifier input*/
+  XpetraCrsMatrixAdapterType  /*!< identify Xpetra adapters for better performance */
+};
+
+
+/*! \brief InputAdapter defines methods required by all InputAdapters
  *
- *  About local IDs:
- *    Applications are required to supply unique global IDs for
- *    their objects, such as vertices, coordinates, matrix rows,
+ *  Regarding local IDs:
+ *  - Applications are required to supply unique global IDs for
+ *    their objects, which may be vertices, coordinates, matrix rows,
  *    and so on.
  *
- *    Local IDs are optional.  Local IDs are symbols which are
- *    meaningful to the application and that reference the object.
- *    A local ID may be an array index or a pointer for example.
+ *  - Local IDs are optional.  Local IDs are symbols which are
+ *    meaningful to the application and which reference the object.
+ *    A local ID may be an array index or a pointer, for example.
  *
- *    The impact on input adapter, models and solutions is this:
- *       1. If local IDs are supplied, they must appear in the
+ *  - The impact on input adapter, models and solutions is this:
+ *       - If local IDs are supplied, they must appear in the
  *          solution if the application requests a solution.
- *       2. The "set" methods in the input adapter must accept
+ *       - The "set" methods in the input adapter must accept
  *          local IDs and global IDs, and the application may
  *          use either or both.
- *       3. If local IDs are available, the model should query
+ *       - If local IDs are available and are consecutive integers, 
+            the model should query
  *          the input adapter using local IDs, since normally this 
  *          is more efficient.
  */
-
-enum InputAdapterType {
-  InvalidAdapterType = 0,
-  MatrixAdapterType,
-  MeshAdapterType,
-  GraphAdapterType,
-  CoordAdapterType,
-  VectorAdapterType,
-  MultiVectorAdapterType,
-  IdAdapterType,
-  XpetraCrsMatrixAdapterType  // Special case for performance with Epetra/Tpetra
-};
 
 class InputAdapter {
 private:
 public:
 
-  // Return enumerated InputAdapterType for the input adapter.
-  // This function is implemented in the MatrixAdapter, GraphAdapter,
-  // MeshAdapter, CoordAdapter and IdAdapter subclasses.
-  // Users do not have to implement this function for their adapters
-  // as long as they inherit from one of the subclasses (which they must).
+  /*! \brief Return type of adapter.
+   */
   virtual enum InputAdapterType inputAdapterType() = 0;
 
-  /*! Pure virtual destructor
+  /*! \brief Pure virtual destructor
    */
   virtual ~InputAdapter() {};
 
-  /*! Return a name that identifies the concrete adapter.
-   *  Useful for debugging.
+  /*! \brief Return a name that identifies the concrete adapter.
    */
   virtual std::string inputAdapterName() const = 0;
 
-  /*! Returns true if input adapter uses local Ids for objects.
-   */
+  /*! \brief Returns true if input adapter uses local Ids for objects.  */
   virtual bool haveLocalIds() const = 0;
 
-  /*! Return true if local Ids are consecutive integral
-   *   values and supply the base.  Providing this information
+  /*! \brief Return true if local Ids are consecutive integral
+   *   values and supply the base.  
+   *
+   *  Providing this information
    *   can save memory, making local ID lists unneccesary.
    */
   virtual bool haveConsecutiveLocalIds(size_t &base) const = 0;
