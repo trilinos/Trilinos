@@ -18,6 +18,8 @@ class LinearObjContainer {
 public:
    virtual ~LinearObjContainer() {}
 
+   typedef enum { X=0x1, DxDt=0x2, F=0x4, Mat=0x8} Members;
+
    virtual void initialize() = 0;
 };
 
@@ -91,6 +93,20 @@ public:
                                        LinearObjContainer & ghostContainer) const = 0;
    virtual void ghostToGlobalContainer(const LinearObjContainer & ghostContainer,
                                        LinearObjContainer & container) const = 0;
+
+   /** Initialize container with a specific set of member values.
+     *
+     * \note This will overwrite everything in the container and zero out values
+     *       not requested.
+     */
+   virtual void initializeContainer(int,LinearObjContainer & loc) const = 0;
+
+   /** Initialize container with a specific set of member values.
+     *
+     * \note This will overwrite everything in the container and zero out values
+     *       not requested.
+     */
+   virtual void initializeGhostedContainer(int,LinearObjContainer & loc) const = 0;
 
    //! Use preconstructed scatter evaluators
    template <typename EvalT>

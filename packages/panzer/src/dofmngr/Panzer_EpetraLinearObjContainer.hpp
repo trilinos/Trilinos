@@ -17,7 +17,7 @@ namespace panzer {
 
 class EpetraLinearObjContainer : public LinearObjContainer {
 public:
-   typedef enum { X=0x1, DxDt=0x2, F=0x4, Mat=0x8} Members;
+   typedef LinearObjContainer::Members Members;
 
    virtual void initialize() 
    {
