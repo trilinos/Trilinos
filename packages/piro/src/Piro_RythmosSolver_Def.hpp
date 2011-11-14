@@ -63,8 +63,6 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
   model(in_model),
   observer(in_observer)
 {
-  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
-
   // For dumping default parameters from Rythmos
   {
     //Rythmos::IntegratorBuilder<double> b;
@@ -106,13 +104,7 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
     else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
   }
 
-  const int numTimeSteps = rythmosPL->get("Num Time Steps", 10);
-  const Scalar t_init = 0.0;
   t_final = rythmosPL->get("Final Time", 0.1);
-  
-  const Rythmos::TimeRange<Scalar> fwdTimeRange(t_init, t_final);
-  const Scalar delta_t = t_final / numTimeSteps;
-  *out << "\ndelta_t = " << delta_t;
   
   const std::string stepperType = rythmosPL->get("Stepper Type", "Backward Euler");
   
@@ -237,8 +229,6 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
   {
     RCP<Teuchos::ParameterList>
       integrationControlPL = sublist(rythmosPL, "Rythmos Integration Control", true);
-    //        integrationControlPL->set( "Take Variable Steps", false );
-    //integrationControlPL->set( "Fixed dt", Teuchos::as<double>(delta_t) );
     
     RCP<Rythmos::DefaultIntegrator<Scalar> > defaultIntegrator;
     
@@ -546,7 +536,6 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
   validPL->sublist("Rythmos Builder", false, "");
   
 
-  validPL->set<int>("Num Time Steps", 0, "");
   validPL->set<double>("Final Time", 1.0, "");
   validPL->sublist("Rythmos Stepper", false, "");
   validPL->sublist("Rythmos Integrator", false, "");
@@ -563,8 +552,6 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
   validPL->set<double>("Max State Error", 1.0, "");
   validPL->set<std::string>("Name", "", "");
   validPL->set<bool>("Invert Mass Matrix", false, "");
-  //validPL->set<std::string>("Stepper Method", "", "");
-
 
   Teuchos::setStringToIntegralParameter<int>(
     "Scaling",
