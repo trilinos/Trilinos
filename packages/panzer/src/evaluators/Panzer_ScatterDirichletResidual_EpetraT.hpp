@@ -85,6 +85,19 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   // extract dirichlet counter from container
+   Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
+         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.dirichletData.ghostedCounter,true);
+
+   dirichletCounter_ = epetraContainer->x;
+   TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<GO> GIDs;
@@ -136,6 +149,9 @@ evaluateFields(typename Traits::EvalData workset)
 
             int basisId = basisIdMap[basis];
             (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+
+            // record that you set a dirichlet condition
+            (*dirichletCounter_)[lid] += 1.0;
          }
       }
    }
@@ -210,6 +226,19 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   // extract dirichlet counter from container
+   Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
+         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.dirichletData.ghostedCounter,true);
+
+   dirichletCounter_ = epetraContainer->x;
+   TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<GO> GIDs;
@@ -279,6 +308,7 @@ evaluateFields(typename Traits::EvalData workset)
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
     
             (*r)[lid] = scatterField.val();
+            (*dirichletCounter_)[lid] += 1.0; // mark row as dirichlet
     
             // loop over the sensitivity indices: all DOFs on a cell
             std::vector<double> jacRow(scatterField.size(),0.0);
