@@ -39,6 +39,7 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
+#include <limits>
 
 namespace Rythmos {
 
@@ -121,9 +122,10 @@ template<class Scalar>
 const std::string
 DefaultIntegrator<Scalar>::maxNumTimeSteps_name_ = "Max Number Time Steps";
 
-template<class Scalar>
-const int
-DefaultIntegrator<Scalar>::maxNumTimeSteps_default_ = 10000;
+// replaced in code with std::numeric_limits<int>::max()
+// template<class Scalar>
+// const int
+// DefaultIntegrator<Scalar>::maxNumTimeSteps_default_ = 10000;
 
 
 // Constructors, Initializers, Misc
@@ -132,7 +134,7 @@ DefaultIntegrator<Scalar>::maxNumTimeSteps_default_ = 10000;
 template<class Scalar>
 DefaultIntegrator<Scalar>::DefaultIntegrator()
   :landOnFinalTime_(true),
-   maxNumTimeSteps_(maxNumTimeSteps_default_),
+   maxNumTimeSteps_(std::numeric_limits<int>::max()),
    currTimeStepIndex_(-1)
 {}
 
@@ -220,7 +222,7 @@ void DefaultIntegrator<Scalar>::setParameterList(
   paramList->validateParameters(*getValidParameters());
   this->setMyParamList(paramList);
   maxNumTimeSteps_ = paramList->get(
-    maxNumTimeSteps_name_, maxNumTimeSteps_default_);
+    maxNumTimeSteps_name_, std::numeric_limits<int>::max());
   Teuchos::readVerboseObjectSublist(&*paramList,this);
 }
 
@@ -232,7 +234,7 @@ DefaultIntegrator<Scalar>::getValidParameters() const
   static RCP<const ParameterList> validPL;
   if (is_null(validPL) ) {
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(maxNumTimeSteps_name_, maxNumTimeSteps_default_,
+    pl->set(maxNumTimeSteps_name_, std::numeric_limits<int>::max(),
       "Set the maximum number of integration time-steps allowed."
       );
     Teuchos::setupVerboseObjectSublist(&*pl);
