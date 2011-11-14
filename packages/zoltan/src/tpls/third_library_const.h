@@ -151,8 +151,13 @@ extern "C" {
   #define weighttype SCOTCH_Num
   #define realtype float
   #define MAX_WGT_SUM (SCOTCH_NUMMAX/8)
-  #define TPL_IDX_SPEC SCOTCH_NUMSTRING
-  #define TPL_WGT_SPEC SCOTCH_NUMSTRING
+  #ifdef SCOTCH_NUMSTRING /* SCOTCH_NUMSTRING is only in later Scotch versions */
+    #define TPL_IDX_SPEC SCOTCH_NUMSTRING
+    #define TPL_WGT_SPEC SCOTCH_NUMSTRING
+  #else
+    #define TPL_IDX_SPEC "%d"
+    #define TPL_WGT_SPEC "%d"
+  #endif
   #define TPL_INTEGRAL_WEIGHT
 
 #endif
