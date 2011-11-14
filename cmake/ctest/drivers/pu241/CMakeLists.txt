@@ -137,19 +137,19 @@ ELSE()
       ELSE(INTEL12_BUILD)
 
         TRILINOS_DRIVER_ADD_DASHBOARD(
-          MPI_DEBUG_GCC_CASLDEV
+          MPI_DEBUG_HYBRID11_CASLDEV
           ctest_linux_nightly_mpi_debug_gcc_4.5.1_casl_dev.cmake
           TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
           )
     
         TRILINOS_DRIVER_ADD_DASHBOARD(
-          MPI_RELEASE_GCC_CASLDEV
+          MPI_RELEASE_HYBRID11_CASLDEV
           ctest_linux_nightly_mpi_release_gcc_4.5.1_casl_dev.cmake
           TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
           )
     
         TRILINOS_DRIVER_ADD_DASHBOARD(
-          SERIAL_RELEASE_GCC_CASLDEV
+          SERIAL_RELEASE_HYBRID11_CASLDEV
           ctest_linux_nightly_serial_release_gcc_4.5.1_casl_dev.cmake
           TIMEOUT_MINUTES ${TIMEOUT_MINUTES}
           )

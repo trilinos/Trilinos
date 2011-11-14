@@ -2,6 +2,7 @@
 # Build all Secondary Stable CASL VRI add-on Trilnos packages with GCC 4.5.1 compiler
 #
 
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/hybrid-build-11.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.pu241.gcc.4.5.1.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/SubmitToCaslDev.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/casl-vri-packages-coupled.cmake")
@@ -9,7 +10,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/enable_casl_packages.gcc.mpi.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_RELEASE_GCC_CASLDEV)
+SET(BUILD_DIR_NAME MPI_RELEASE_HYBRID11_CASLDEV)
 #SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
