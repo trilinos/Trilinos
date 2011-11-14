@@ -134,10 +134,15 @@ namespace MueLu {
     if(IsRequested(ename,fac) == true) {
       // data has been requested but never built
       // can we release the dependencies of fac safely?
+
+      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      print(*out);
+
       int cnt = needs_.CountRequestedFactory(fac);
-      if(cnt == 1) {
+      if(cnt == 1 /*&& needs_.NumRequests(ename, fac) == 1*/) {
         // factory is only generating factory of current variable (ename,factory)
         // Release(fac) can be called safely
+        std::cout << "Level::Release(" << factory << ")" << std::endl;
         Release(*fac);
       }
       needs_.Release(ename, fac);

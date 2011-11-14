@@ -8,13 +8,16 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact)
     : aggregatesFact_(aggregatesFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
-      QR_(false) { }
+      QR_(false) {
+    std::cout << "Constructor of PtentFactory: nullspaceFact=" << nullspaceFact.get() << std::endl;
+  }
  
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~TentativePFactory() {}
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
+
     fineLevel.DeclareInput("A", AFact_.get());
     fineLevel.DeclareInput("Aggregates", aggregatesFact_.get());
     fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get());
@@ -33,10 +36,19 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level & fineLevel, Level & coarseLevel) const {
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
     // get data from fine level
     RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
+    std::cout<< "TentativePFactory::Build: before get aggregates" << std::endl;
     RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
+    std::cout<< "TentativePFactory::Build: after get aggregates" << std::endl;
+    fineLevel.print(*out);
+    std::cout<< "TentativePFactory::Build:: before get nullspace" << std::endl;
     RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+
+    std::cout << "TentativePFactory::Build: after get nullspace" << std::endl;
+    fineLevel.print(*out);
 
     Monitor m(*this, "Tentative prolongator");
 

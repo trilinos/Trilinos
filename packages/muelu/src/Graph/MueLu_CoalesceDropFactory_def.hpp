@@ -12,12 +12,21 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceDropFactory(RCP<const FactoryBase> AFact, RCP<const FactoryBase> nullspaceFact)
     : AFact_(AFact), nullspaceFact_(nullspaceFact), blksize_(1), fixedBlkSize_(true)
-  { }
+  {
+    std::cout << "Constructor of CoalesceDropFactory: nullspaceFact=" << nullspaceFact_.get() << std::endl;
+  }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    *out << "CoalesceDropFactory::DeclareInput" << std::endl;
+    currentLevel.print(*out);
+
     currentLevel.DeclareInput("A", AFact_.get());
     //currentLevel.DeclareInput("Nullspace",  nullspaceFact_.get());
+
+    *out << "CoalesceDropFactory::DeclareInput - finish" << std::endl;
+    currentLevel.print(*out);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -35,6 +44,10 @@ namespace MueLu {
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
     //RCP<MultiVector> nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    std::cout << "TentativePFactory::Build: after get nullspace" << std::endl;
+    currentLevel.print(*out);
+
     // pre-dropping
     RCP<Graph> graph;
     //if (predrop_ == Teuchos::null) {
@@ -43,7 +56,7 @@ namespace MueLu {
       if(currentLevel.GetLevelID() == 0) {
         blockdim = blksize_;
       } else {
-        blockdim = 3; //Teuchos::as<LocalOrdinal>(nullspace->getNumVectors()); //FIXME
+        blockdim = 1; //3; //Teuchos::as<LocalOrdinal>(nullspace->getNumVectors()); //FIXME
       }
 
       Amalgamate(A, blockdim, graph);

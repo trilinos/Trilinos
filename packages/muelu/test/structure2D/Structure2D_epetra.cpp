@@ -118,9 +118,9 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector* ptrNS = 0;
 
   std::cout << "Reading matrix market file" << std::endl;
-  EpetraExt::MatrixMarketFileToCrsMatrix("stru2d_A.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
+  EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
+  EpetraExt::MatrixMarketFileToVector("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
+  EpetraExt::MatrixMarketFileToMultiVector( "/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
+  //RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
   //RCP<RFactory> Rfact  = rcp( new GenericRFactory(Pfact));
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
   RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  Finest->Keep("Aggregates",UCAggFact.get());
+  //Finest->Keep("Aggregates",UCAggFact.get());
   //Finest->Keep("Nullspace",nspFact.get());
 
   // build level smoothers
@@ -218,6 +218,9 @@ int main(int argc, char *argv[]) {
 
   RCP<Level> coarseLevel = H->GetLevel(1);
   coarseLevel->print(*out);
+
+  RCP<Level> coarseLevel2 = H->GetLevel(2);
+  coarseLevel2->print(*out);
 
   /*RCP<Level> coarseLevel2 = H->GetLevel(2);
   coarseLevel2->print(*out);
