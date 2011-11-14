@@ -53,10 +53,16 @@
 # ************************************************************************
 # @HEADER
 
-include(ParseVariableArguments)
+INCLUDE(GetCurrentListDir)
+INCLUDE(ParseVariableArguments)
 INCLUDE(SetDefaultAndFromEnv)
 
 SET_DEFAULT_AND_FROM_ENV(TDD_FORCE_CMAKE_INSTALL 1)
+
+# Get this value outside of any functions so it will be the path to
+# *this* file and not the path to the file calling any of these
+# functions.
+GET_CURRENT_LIST_DIR(THIS_SCRIPT_DIR)
 
 #
 # Placeholder for any global setup necessary on all machines...
@@ -95,9 +101,12 @@ function(TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE cmake_type)
     return()
   endif()
 
-  if(NOT TD_BASE_DIR OR NOT TRILINOS_HOME_DIR)
-    message("error: TD_BASE_DIR and TRILINOS_HOME_DIR must be defined before calling this function")
-    return()
+  if(NOT TD_BASE_DIR)
+    message(FATAL_ERROR "TD_BASE_DIR must be defined before calling this function")
+  endif()
+
+  if(NOT TRIBITS_PYTHON_DIR)
+    message(FATAL_ERROR "TRIBITS_PYTHON_DIR must be defined before calling this function")
   endif()
 
   find_program(PYTHON_EXE python)
@@ -114,7 +123,7 @@ function(TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE cmake_type)
     )
 
   add_test(install-cmake-${cmake_type} ${PYTHON_EXE}
-    "${TRILINOS_HOME_DIR}/cmake/python/download-cmake.py"
+    "${TRIBITS_PYTHON_DIR}/download-cmake.py"
     "--skip-detect"
     "--install-dir=${TD_BASE_DIR}/tools/cmake-${cmake_type}"
     "--installer-type=${cmake_type}"
@@ -193,7 +202,7 @@ function(TRILINOS_DRIVER_ADD_DASHBOARD testname scriptname)
     -D scriptname=${scriptname}
     -D TD_BASE_DIR=${TD_BASE_DIR}
     -D testname=${testname}
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../LocateCTestAndRunScript.cmake
+    -P ${THIS_SCRIPT_DIR}/LocateCTestAndRunScript.cmake
     )
 
   # This test that runs the dashboard depends on the test that installs its

@@ -60,19 +60,15 @@ MESSAGE(
  "\n***\n"
  )
 
-# Get the base diretory for the Trilinos source.  We only assume that the
-# CTest script that is being called is under Trilinos/cmake.
-STRING(REGEX MATCH "(.+/Trilinos)/cmake" TRILINOS_CMAKE_DIR
-  "${CTEST_SCRIPT_DIRECTORY}" )
-IF("${TRILINOS_CMAKE_DIR}" STREQUAL "")
-  STRING(REGEX MATCH "(.+)/cmake" TRILINOS_CMAKE_DIR
-    "${CTEST_SCRIPT_DIRECTORY}" )
-ENDIF()
-  
-MESSAGE("TRILINOS_CMAKE_DIR = ${TRILINOS_CMAKE_DIR}")
+# Get the directory containing the TriBITS CMake utilities using this
+# script's location as the reference point.
+SET(TRIBITS_CMAKE_UTILS_DIR "${CTEST_SCRIPT_DIRECTORY}/../../utils")
+GET_FILENAME_COMPONENT(TRIBITS_CMAKE_UTILS_DIR "${TRIBITS_CMAKE_UTILS_DIR}" ABSOLUTE)
+
+MESSAGE("TRIBITS_CMAKE_UTILS_DIR = ${TRIBITS_CMAKE_UTILS_DIR}")
 
 SET( CMAKE_MODULE_PATH
-   "${TRILINOS_CMAKE_DIR}/utils"
+  "${TRIBITS_CMAKE_UTILS_DIR}"
    )
 
 #MESSAGE("CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
@@ -135,14 +131,22 @@ SET_DEFAULT_AND_FROM_ENV( TDD_CTEST_TEST_TYPE Experimental )
 # set this to ON if you need to test something before committing.
 SET_DEFAULT_AND_FROM_ENV( TDD_IN_TESTING_MODE OFF )
 
+#
+# Allow environment variables to override default values for the
+# source, update, and binary directories.
+#
+
 get_filename_component(CTEST_SOURCE_DIRECTORY
   "${CTEST_SCRIPT_DIRECTORY}" ABSOLUTE)
+SET_DEFAULT_AND_FROM_ENV(CTEST_SOURCE_DIRECTORY ${CTEST_SOURCE_DIRECTORY})
 
 get_filename_component(CTEST_UPDATE_DIRECTORY
-  "${CTEST_SCRIPT_DIRECTORY}/../../.." ABSOLUTE)
+  "${CTEST_SCRIPT_DIRECTORY}/../../../.." ABSOLUTE)
+SET_DEFAULT_AND_FROM_ENV(CTEST_UPDATE_DIRECTORY ${CTEST_UPDATE_DIRECTORY})
 
 get_filename_component(CTEST_BINARY_DIRECTORY
-  "${CTEST_SCRIPT_DIRECTORY}/../../../../TDD_BUILD" ABSOLUTE)
+  "${CTEST_SCRIPT_DIRECTORY}/../../../../../TDD_BUILD" ABSOLUTE)
+SET_DEFAULT_AND_FROM_ENV(CTEST_BINARY_DIRECTORY ${CTEST_BINARY_DIRECTORY})
 
 get_filename_component(CTEST_NOTES_FILES
   "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" ABSOLUTE)
