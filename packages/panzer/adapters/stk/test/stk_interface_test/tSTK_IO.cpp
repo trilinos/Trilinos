@@ -135,6 +135,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
 
    out << "write to exodus: 3.0" << std::endl;
    mesh->writeToExodus(3.0);
+   TEST_EQUALITY(mesh->getCurrentStateTime(),3.0); 
 
    out << "assigning 4.5" << std::endl;
    {
@@ -149,6 +150,12 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
 
    out << "write to exodus: 4.5" << std::endl;
    mesh->writeToExodus(4.5);
+   TEST_EQUALITY(mesh->getCurrentStateTime(),4.5); 
+
+   STK_ExodusReaderFactory factory("transient.exo",2);
+   RCP<STK_Interface> mesh_read = factory.buildMesh(MPI_COMM_WORLD);
+   TEST_EQUALITY(mesh_read->getInitialStateTime(),4.5);
+   TEST_EQUALITY(mesh_read->getCurrentStateTime(),0.0); // writeToExodus has not yet been called
 }
 
 RCP<STK_Interface> buildMesh(int xElements,int yElements)
