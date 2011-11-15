@@ -55,11 +55,6 @@
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
-SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
-SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-SET( CTEST_BUILD_FLAGS "-j8 -i" )
-
-SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
 
 #
 # Set the options specific to this build case
@@ -82,5 +77,13 @@ SET( EXTRA_CONFIGURE_OPTIONS
 #
 # Set the rest of the system-specific options and run the dashboard build/test
 #
+
+# Use the scripts repository as the main repository. We do this to avoid getting
+# an archaic master branch on the initial clone for an out of date repository.
+SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../" )
+SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
+SET( CTEST_BUILD_FLAGS "-j8 -i" )
+
+SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
 
 TRILINOS_CTEST_DRIVER()
