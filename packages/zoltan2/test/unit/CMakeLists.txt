@@ -3,12 +3,12 @@ INCLUDE(PackageAddExecutableAndTest)
 # TODO
 # We want to emit "NOTRUN" when a test is skipped
 # for some reason. How do we tell cmake?
-#
+
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS
-  TestAdapters.hpp
+  AdaptersForTests.hpp
 )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -22,13 +22,21 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   IdentifierTraits
-  SOURCES IdentifierTraits.cpp
+  SOURCES IdentifierTraits.cpp 
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  XpetraTraits
+  SOURCES XpetraTraits.cpp UserInputForTests.hpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   AlltoAll
   SOURCES AlltoAll.cpp
@@ -55,30 +63,48 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
-
+ 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  XpetraInputAdapters
-  SOURCES XpetraInputAdapters.cpp TestAdapters.hpp
+  XpetraMatrixAdapter
+  SOURCES XpetraMatrixAdapter.cpp UserInputForTests.hpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  XpetraGraphAdapter
+  SOURCES XpetraGraphAdapter.cpp UserInputForTests.hpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  TestMigration
-  SOURCES TestMigration.cpp TestAdapters.hpp
+  XpetraVectorAdapter
+  SOURCES XpetraVectorAdapter.cpp UserInputForTests.hpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  XpetraMultiVectorAdapter
+  SOURCES XpetraMultiVectorAdapter.cpp UserInputForTests.hpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   GraphModel
-  SOURCES GraphModel.cpp TestAdapters.hpp
+  SOURCES GraphModel.cpp AdaptersForTests.hpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )

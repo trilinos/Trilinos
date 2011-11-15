@@ -1,7 +1,10 @@
 INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
-  data
-  unit
-  partitioning
+data
+partitioning
+scaling
+temp
+unit
+util
   )

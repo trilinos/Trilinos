@@ -23,7 +23,7 @@
 #include <Teuchos_ArrayView.hpp>
 
 #include <Zoltan2_IdentifierMap.hpp>
-#include <TestAdapters.hpp>         // for TEST_FAIL macros
+#include <AdaptersForTests.hpp>
 
 using namespace std;
 using Teuchos::RCP;

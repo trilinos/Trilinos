@@ -8,7 +8,8 @@
 
 /*! \file Zoltan2_XpetraVectorInput.hpp
 
-    \brief An input adapter for a Xpetra::Vector.
+    \brief An input adapter for a Xpetra::Vector, Epetra_Vector and 
+            Tpetra::Vector.
 */
 
 #ifndef _ZOLTAN2_XPETRAVECTORINPUT_HPP_
@@ -16,16 +17,15 @@
 
 #include <Xpetra_EpetraVector.hpp>
 #include <Xpetra_TpetraVector.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_Util.hpp>
 
 namespace Zoltan2 {
 
 //////////////////////////////////////////////////////////////////////////////
 /*! Zoltan2::XpetraVectorInput
-    \brief Provides access for Zoltan2 to Xpetra::Vector 
+    \brief Provides access for Zoltan2 to an Xpetra::Vector .
 
     The template parameter is the user's input object: 
      Epetra_Vector
@@ -37,14 +37,18 @@ template <typename User>
 class XpetraVectorInput : public VectorInput<User> {
 public:
 
-  typedef typename InputAdapter<User>::scalar_t scalar_t;
-  typedef typename InputAdapter<User>::lno_t    lno_t;
-  typedef typename InputAdapter<User>::gno_t    gno_t;
-  typedef typename InputAdapter<User>::lid_t    lid_t;
-  typedef typename InputAdapter<User>::gid_t    gid_t;
-  typedef typename InputAdapter<User>::node_t   node_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::lno_t    lno_t;
+  typedef typename InputTraits<User>::gno_t    gno_t;
+  typedef typename InputTraits<User>::lid_t    lid_t;
+  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::node_t   node_t;
 
-  typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> xvector_t;
+  typedef Xpetra::Vector<
+    scalar_t, lno_t, gno_t, node_t> x_vector_t;
+  typedef Xpetra::TpetraVector<
+    scalar_t, lno_t, gno_t, node_t> xt_vector_t;
+  typedef Xpetra::EpetraVector xe_vector_t;
 
   /*! Destructor
    */
@@ -56,13 +60,22 @@ public:
   XpetraVectorInput(const RCP<const User> &invector):
     invector_(invector), 
     vector_(),
-    Map_(),
+    map_(),
+    env_(),
     base_()
   {
     vector_ = XpetraTraits<User>::convertToXpetra(invector);
     map_ = vector_->getMap();
     base_ = map_->getIndexBase();
   };
+
+  /*! Access to xpetra vector
+   */
+
+  const RCP<const x_vector_t> &getVector() const
+  {
+    return vector_;
+  }
 
   ////////////////////////////////////////////////////
   // The InputAdapter interface.
@@ -71,9 +84,9 @@ public:
   std::string inputAdapterName()const {
     return std::string("XpetraVector");}
 
-  bool haveLocalIds() { return true;}
+  bool haveLocalIds() const { return true;}
 
-  bool haveConsecutiveLocalIds(size_t &base){
+  bool haveConsecutiveLocalIds(size_t &base) const{
     base = base_;
     return true;
   }
@@ -86,39 +99,48 @@ public:
   
   size_t getGlobalLength() const {return vector_->getGlobalLength();}
 
-  lno_t getVectorView(const gid_t *&Ids, 
+  size_t getVectorView(const gid_t *&Ids, 
     const lid_t *&localIds, const scalar_t *&elements, 
     const scalar_t *&wgts) const
   {
-    ArrayRCP<const scalar_t> data = vector_>getData();
-    ArrayView<const gid_t> gids = map->getNodeElementList();
+    elements = NULL;
+    const x_vector_t *vec =  vector_.get();
 
-    Ids = gids->getRawPtr();
+    if (map_->lib() == Xpetra::UseTpetra){
+      const xt_vector_t *tvector = dynamic_cast<const xt_vector_t *>(vec);
+
+      if (tvector->getLocalLength() > 0){
+        // getData hangs if vector length is 0
+        ArrayRCP<const scalar_t> data = tvector->getData(0);
+        elements = data.get();
+      }
+    }
+    else if (map_->lib() == Xpetra::UseEpetra){
+      const xe_vector_t *evector = dynamic_cast<const xe_vector_t *>(vec);
+        
+      if (evector->getLocalLength() > 0){
+        // getData hangs if vector length is 0
+        ArrayRCP<const double> data = evector->getData(0);
+        elements = data.get();
+      }
+    }
+    else{
+      throw std::logic_error("invalid underlying lib");
+    }
+
+    ArrayView<const gid_t> gids = map_->getNodeElementList();
+    Ids = gids.getRawPtr();
     localIds = NULL;  // Implies 0 through numElements-1
-    elements = data->get();`
     wgts = NULL; // Not implemented
-  }
 
-  ////////////////////////////////////////////////////
-  // End of MatrixInput interface.
-  ////////////////////////////////////////////////////
-
-  /*! Access to xpetra vector
-   */
-
-  const RCP<const xvector_t> &getVector() const
-  {
-    return vector_;
+    return getLocalLength();
   }
 
   /*! Apply a partitioning solution to the vector.
    *   Every gid that was belongs to this process must
    *   be on the list, or the Import will fail.
-   *  TODO - not done yet
-   *
-   *   TODO : params etc
    */
-  void applyPartitioningSolution(const User &in, User *&out,
+  size_t applyPartitioningSolution(const User &in, User *&out,
     lno_t numIds, lno_t numParts, 
     const gid_t *gid, const lid_t *lid, const lno_t *partition)
   { 
@@ -131,25 +153,33 @@ public:
     ArrayRCP<int> dummyOut;
     size_t numNewRows;
 
-    // Get default communicator.  Teuchos::Comm should not be in this
-    // interface   TODO
+    const RCP<const Comm<int> > comm = map_->getComm(); 
 
     try{
       numNewRows = convertPartitionListToImportList<gid_t, lno_t, lno_t>(
-        comm, partList, gidList, dummyIn, importList, dummyOut);
+        *comm, partList, gidList, dummyIn, importList, dummyOut);
     }
     catch (std::exception &e){
       Z2_THROW_ZOLTAN2_ERROR(env, e);
     }
 
-    // TODO - do the imports
-   }
+    RCP<const User> inPtr = rcp(&in, false);
+    lno_t localNumElts = numNewRows;
+
+    RCP<const User> outPtr = XpetraTraits<User>::doMigration(
+     inPtr, localNumElts, importList.get(), base_);
+
+    out = const_cast<User *>(outPtr.get());
+    outPtr.release();
+    return numNewRows;
+  }
 
 private:
 
   RCP<const User> invector_;
-  RCP<const xvector_t> vector_;
+  RCP<const x_vector_t> vector_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > map_;
+  RCP<Environment> env_;
   lno_t base_;
 
 };

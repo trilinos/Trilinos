@@ -14,6 +14,27 @@
 #endif
 #endif
 
+#ifdef SHOW_LINUX_MEMINFO
+extern "C"{
+static char *z2_meminfo=NULL;
+extern void Zoltan_get_linux_meminfo(char *msg, char **result);
+}
+#endif
+
+#ifdef SHOW_SCOTCH_HIGH_WATER_MARK
+extern "C"{
+//
+// Scotch keeps track of memory high water mark, but doesn't
+// provide a way to get that number.  So add this function:  
+//   "size_t SCOTCH_getMemoryMax() { return memorymax;}"
+// to src/libscotch/common_memory.c
+// and compile scotch with -DCOMMON_MEMORY_TRACE
+//
+extern size_t SCOTCH_getMemoryMax();
+}
+#endif
+
+
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_Scotch.hpp
 //! \brief Parallel graph partitioning using Scotch.
@@ -70,15 +91,15 @@ int AlgPTScotch(
                                        (comm)->getRawMpiComm());
 
   // Allocate & initialize PTScotch data structure.
-  if (me == 0) cout << __func__ << ": SCOTCH_dgraphAlloc ";
+  //if (me == 0) cout << __func__ << ": SCOTCH_dgraphAlloc ";
   SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph 
-  if (me == 0) cout << " done." << endl;
+  //if (me == 0) cout << " done." << endl;
 
-  if (me == 0) cout << __func__ << ": SCOTCH_dgraphInit ";
+  //if (me == 0) cout << __func__ << ": SCOTCH_dgraphInit ";
   ierr = SCOTCH_dgraphInit(gr, mpicomm);  // TODO Handle non-MPI builds.
   if (ierr) KDD_HANDLE_ERROR;
-  if (me == 0) cout << " done." << endl;
-  
+  //if (me == 0) cout << " done." << endl;
+
   // Get vertex info
   const SCOTCH_Num vertlocnbr = model->getLocalNumVertices();
   const SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in
@@ -121,37 +142,45 @@ int AlgPTScotch(
   //TODO scale weights to SCOTCH_Nums.
 
   // Build PTScotch distributed data structure
-  if (me == 0) cout << __func__ << ": SCOTCH_dgraphBuild ";
+  //if (me == 0) cout << __func__ << ": SCOTCH_dgraphBuild ";
 
-cout << me << " KDDKDD vertlocnbr = " << vertlocnbr 
-     << " edgelocnbr = " << edgelocnbr << endl;
+//cout << me << " KDDKDD vertlocnbr = " << vertlocnbr 
+//     << " edgelocnbr = " << edgelocnbr << endl;
   ierr = SCOTCH_dgraphBuild(gr, baseval, vertlocnbr, vertlocmax, 
                             vertloctab, vendloctab, veloloctab, vlblloctab, 
                             edgelocnbr, edgelocsize, 
                             edgeloctab, edgegsttab, edloloctab);
   if (ierr) KDD_HANDLE_ERROR;
-  if (me == 0) cout << " done." << endl;
+  //if (me == 0) cout << " done." << endl;
 
   // Call partitioning; result returned in partloctab.
   // TODO:  Use SCOTCH_dgraphMap so can include a machine model in partitioning
   const SCOTCH_Num partnbr = comm->getSize();  // TODO read from params later.
   SCOTCH_Num *partloctab = new SCOTCH_Num[vertlocnbr];
 
-  if (me == 0) cout << __func__ << ": SCOTCH_dgraphPart ";
+  //if (me == 0) cout << __func__ << ": SCOTCH_dgraphPart ";
   ierr = SCOTCH_dgraphPart(gr, partnbr, &stratstr, partloctab);
   if (ierr) KDD_HANDLE_ERROR;
-  if (me == 0) cout << " done." << endl;
+  //if (me == 0) cout << " done." << endl;
+
+#ifdef SHOW_SCOTCH_HIGH_WATER_MARK
+  if (me == 0){
+    size_t scotchBytes = SCOTCH_getMemoryMax();
+    std::cout << "Rank " << me << ": Maximum bytes used by Scotch: ";
+    std::cout << scotchBytes << std::endl;
+  }
+#endif
 
   // Clean up PTScotch
-  if (me == 0) cout << __func__ << ": SCOTCH_dgraphExit ";
+  //if (me == 0) cout << __func__ << ": SCOTCH_dgraphExit ";
   SCOTCH_dgraphExit(gr);
   SCOTCH_stratExit(&stratstr);
   if (ierr) KDD_HANDLE_ERROR;
-  if (me == 0) cout << " done." << endl;
+  //if (me == 0) cout << " done." << endl;
 
   // Load answer into the solution.
   // TODO May move getVertexList call above when need weights.
-  if (me == 0) cout << __func__ << ": Load solution ";
+  //if (me == 0) cout << __func__ << ": Load solution ";
   ArrayView<const gno_t> vtxID;
   ArrayView<const scalar_t> xyz;
   ArrayView<const scalar_t> vtxWt;
@@ -171,17 +200,25 @@ cout << me << " KDDKDD vertlocnbr = " << vertlocnbr
                                               //      instead of cast.
                (lid_t *) NULL,                // TODO Use User's LIDs
                parts);
-#else
-  // solve a serial problem, or don't compile for !HAVE_MPI
-#endif  // HAVE_MPI
-  if (me == 0) cout << " done." << endl;
+#ifdef SHOW_LINUX_MEMINFO
+  if (me==0){
+    Zoltan_get_linux_meminfo("After creating solution", &z2_meminfo);
+    if (z2_meminfo){
+      std::cout << "Rank " << me << ": " << z2_meminfo << std::endl;
+      free(z2_meminfo);
+      z2_meminfo=NULL;
+    }
+  }
+#endif
 
+  //if (me == 0) cout << " done." << endl;
   // Clean up Zoltan2
   //TODO if (vwtdim) delete [] velotab;
   //TODO if (ewtdim) delete [] edlotab;
 
-  return ierr;
+#endif // HAVE_MPI
 #endif // HAVE_SCOTCH
+  return ierr;
 }
 
 }

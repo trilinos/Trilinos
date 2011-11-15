@@ -7,29 +7,90 @@
 //
 // ***********************************************************************
 //
-// Basic testing of xpetra and tpetra matrix and graph input adapters
+// Basic testing of xpetra input adapters
 //
-// TODO Test with epetra matrix and graphs.
 
-#include <TestAdapters.hpp>
+#include <AdaptersForTests.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include <string>
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsGraphInput.hpp>
+#include <Zoltan2_XpetraMultiVectorInput.hpp>
+#include <Zoltan2_XpetraVectorInput.hpp>
 
+#if 0
 using namespace std;
 using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
-using Teuchos::OrdinalTraits;
-using Teuchos::ScalarTraits;
+
+typedef double Scalar;
+typedef int LNO;
+typedef long GNO;
+typedef Zoltan2::default_node_t Node;
+
+typedef typename Tpetra::CrsMatrix<Scalar, LNO, GNO, Node> tcrsMatrix_t;
+typedef typename Tpetra::CrsGraph<LNO, GNO, Node> tcrsGraph_t;
+typedef typename Tpetra::Vector<Scalar LNO, GNO, Node> tVector_t;
+typedef typename Tpetra::MultiVector<Scalar LNO, GNO, Node> tMVector_t;
+#endif
+
+int main(int argc, char *argv[])
+{
+#if 0
+  Teuchos::GlobalMPISession session(&argc, &argv);
+  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
+  int rank = session.getRank();
+
+  TestUserInput<Scalar, LNO, GNO, LNO, GNO, Node>
+    inputGenerator(10, 20, 15, comm);
+
+  {
+  // Test Zoltan2::XpetraCrsMatrixInput
+
+    RCP<const tcrsMatrix_t> M = inputGenerator.getTpetraCrsMatrix();
+  
+    Zoltan2:::XpetraCrsMatrixInput<tcrsMatrix_t> adapter(M);
+  
+    size_t base;
+    bool consecutive adapter.haveConsecutiveLocalIds(base);
+  
+    size_t nRows = M->getNodeNumRows();
+    size_t ngRows = M->getGlobalNumRows();
+    size_t nColumns = M->getNodeNumCols();
+    size_t ngColumns = M->getGlobalNumCols();
+  
+    size_t num = input->getLocalNumRows();
+    TEST_FAIL_AND_EXIT(*comm, num==nRows, "getLocalNumRows", 1);
+    num = input->getGlobalNumRows();
+    TEST_FAIL_AND_EXIT(*comm, num==ngRows, "getGlobalNumRows", 1);
+    num = input->getLocalNumColumns();
+    TEST_FAIL_AND_EXIT(*comm, num==nColumns, "getLocalNumColumns", 1);
+    num = input->getGlobalNumColumns();
+    TEST_FAIL_AND_EXIT(*comm, num==ngColumns, "getGlobalNumColumns", 1);
+
+    const GNO *rowIds, *colIds;
+    const LNO *offsets, *localIds;
+
+  }
+
+
+  if (rank == 0)
+    std::cout << "PASS" << std::endl;
+
+  return 0;
+#endif
+}
+
+#if 0
 
 template <typename GraphAdapter, typename Graph>
   void testGraphAdapter(RCP<GraphAdapter > input, RCP<const Graph> g, 
     RCP<const Comm<int> > comm)
 {
   typedef typename GraphAdapter::lid_t LID;
-  typedef typename GraphAdapter::gid_t GID;
+  typedef typename GraphAdapter::GNO GID;
   typedef typename GraphAdapter::lno_t LNO;
   typedef typename GraphAdapter::gno_t GNO;
   typedef typename GraphAdapter::node_t Node;
@@ -54,7 +115,7 @@ template <typename MatrixAdapter, typename Matrix>
 {
   typedef typename MatrixAdapter::scalar_t Scalar;
   typedef typename MatrixAdapter::lid_t LID;
-  typedef typename MatrixAdapter::gid_t GID;
+  typedef typename MatrixAdapter::GNO GID;
   typedef typename MatrixAdapter::lno_t LNO;
   typedef typename MatrixAdapter::gno_t GNO;
   typedef typename MatrixAdapter::node_t Node;
@@ -201,3 +262,4 @@ int main(int argc, char *argv[])
 
   return 0;
 }
+#endif

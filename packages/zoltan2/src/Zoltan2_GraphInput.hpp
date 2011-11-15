@@ -20,59 +20,57 @@
 
 namespace Zoltan2 {
 
-/*! Zoltan2::GraphInput
-    \brief GraphInput defines the interface for input adapters for
+/*!  \brief GraphInput defines the interface for input adapters for
             graphs that may have vertex and edge weight. 
-
-    The Graph accessor methods defined here mimic those of 
-    Tpetra::CrsGraph and Tpetra::Map.
-
-    LID: the type for the application's local Ids
-    GID: the type for the application's global Ids
-    LNO: the integral type that Zoltan2 will use for local counters.
-    GNO: the integral type that Zoltan2 will use for the global 
-      counts and identifiers.  It needs to be large enough for the
-      problem's number of objects.
 */
 
 template <typename User>
-  class GraphInput : public InputAdapter<User> {
+  class GraphInput : public InputAdapter {
 private:
 
 public:
 
-  typedef typename InputAdapter<User>::scalar_t scalar_t;
-  typedef typename InputAdapter<User>::lno_t    lno_t;
-  typedef typename InputAdapter<User>::gno_t    gno_t;
-  typedef typename InputAdapter<User>::lid_t    lid_t;
-  typedef typename InputAdapter<User>::gid_t    gid_t;
-  typedef typename InputAdapter<User>::node_t   node_t;
+  /*! \brief Data type for weights. */
+  typedef typename InputTraits<User>::scalar_t scalar_t;
 
-  // adapterType == GraphAdapterType
-  // Function must return one of Zoltan2's enumerated types in InputAdapter
-  // User should not rewrite this function.
+  /*! \brief Data type for Zoltan2's indices and local counts. */
+  typedef typename InputTraits<User>::lno_t    lno_t;
+
+  /*! \brief Data type for Zoltan2's global identifiers and counts. */
+  typedef typename InputTraits<User>::gno_t    gno_t;
+
+  /*! \brief The application's local identifier data type. */
+  typedef typename InputTraits<User>::lid_t    lid_t;
+
+  /*! \brief The application's global identifier data type. */
+  typedef typename InputTraits<User>::gid_t    gid_t;
+
+  /*! \brief The Kokkos node type. */
+  typedef typename InputTraits<User>::node_t   node_t;
+
   enum InputAdapterType inputAdapterType() {return GraphAdapterType;}
 
-  /*! Pure virtual destructor
+  /*! \brief Pure virtual destructor
    */
   virtual ~GraphInput() {};
 
-  /*! Returns the number vertices on this process.
+  /*! \brief Returns the number vertices on this process.
    */
   virtual size_t getLocalNumVertices() const = 0;
 
-  /*! Returns the global number vertices.
+  /*! \brief Returns the global number vertices.
    */
   virtual global_size_t getGlobalNumVertices() const = 0;
 
-  /*! Returns the number edges on this process.
+  /*! \brief Returns the number edges on this process.
    */
   virtual size_t getLocalNumEdges() const = 0;
 
-  /*! Returns the global number edges.
+  /*! \brief Returns the global number edges.
    */
   virtual global_size_t getGlobalNumEdges() const = 0;
 
+#if 0
   /*! Returns the dimension (0 or greater) of vertex weights.
    */
   virtual int getVertexWeightDim() const = 0;
@@ -84,98 +82,64 @@ public:
   /*! Returns the dimension (0 to 3) of vertex coordinates.
    */
   virtual int getCoordinateDim() const = 0;
+#endif
 
-  /*! Returns list of this process' vertex Ids and their weights.
-      \param Ids will on return hold the list of the global Ids for 
-        each vertex on this process.
+  /*! \brief Sets pointers to this process' graph entries.
+      \param vertexIds will on return a pointer to vertex global Ids
       \param localIds can, optionally, on return hold a list of locally
         relevant values that the process will use to refer to the objects
         listed in the first list.  If localIds are omitted and
         haveConsecutiveLocalIds is true, it is assumed that the
         global Ids are in local Id order.
-      \param xyz can, optionally, on return hold coordinates for the
-        vertices in order by vertex by coordinate.
-      \param wgts can, optionallly, on return hold list of the 
-         weight or weights associated with each vertex.  Weights 
-         are listed by vertex by weight component.  
+      \param offsets is an array of size numVertices + 1.  
+         The edge Ids for vertexId[i] begin at edgeIds[offsets[i]].  
+          The last element of offsets
+          is the size of the edgeIds array.
+      \param edgeIds on return will point to the global edge Ids for
+         for each vertex.
+       \return The number of ids in the vertexIds list.
    */
 
-  virtual void getVertexListCopy(std::vector<gid_t> &Ids, 
-    std::vector<lid_t> &localIds,
-    std::vector<scalar_t> &xyz,
-    std::vector<scalar_t> &wgts) const = 0;
+  virtual size_t getVertexListView(const gid_t *&vertexIds, 
+    const lid_t *&localIds, 
+    const lno_t *&offsets, const gid_t *& edgeIds) const = 0; 
 
-  /*! Sets pointers to this process' vertex Ids and their weights.
-      If this optional call is defined in the adapter, it can save a memory
-      copy of application data.
-      \param Ids will on return point to the list of the global Ids for 
-        each vertex on this process.
-      \param localIds can, optionally, on return point to a list of locally
-        relevant values that the process will use to refer to the objects
-        listed in the first list. If localIds is NULL and
-        haveConsecutiveLocalIds is true, it is assumed that the
-        global Ids are in local ID order.
-      \param xyz will on return point to a list coordinates for
-         each vertex in the Ids list.  Coordinates are listed by 
-         vertex by component.  
-      \param wgts will on return point to a list of the weight or weights 
-         associated with each vertex in the Ids list.  Weights are listed by 
-         vertex by weight component.  
-       \return The number of ids in the Ids list.
+  /*! \brief Apply the solution to a partitioning problem to an input.  
+   *
+   *  This is not a required part of the GraphInput interface.  However
+   *  if the PartitioningProblem::redistribute() method is called, it 
+   *  will use this method to redistribute the data.  If the user has 
+   *  no intention of calling redistribute(), then it is not necessary to 
+   *  define applyPartitioningSolution in the InputAdapter.
+   *
+   *  \param in  An input object with a structure and assignment of
+   *           of global Ids to processes that matches that of the input
+   *           data that instantiated this InputAdapter.
+   *  \param out On return this should point to a newly created object 
+   *            with the specified partitioning.
+   *  \param numIds  The number of ids in the gid and partition lists.
+   *  \param numParts  The global number of partitions.  Partitions are 
+   *     numbered from 0 through numParts-1. 
+   *  \param gid     A list of object global Ids.
+   *  \param lid     A corresponding list of object local Ids, if the
+   *      InputAdapter had supplied local Ids.
+   *  \param partition  A corresponding list of partitions.  gid[i]
+   *            has been assigned to partition[i].
+   *  \return   Returns the number of local Ids in the new partitioning.
+   *
+   * TODO - A solution needs to be more than a list of partitions, but
+   *   also how those partitions map to processes.  For now it's
+   *   process "p" gets part "p".
    */
 
-  lno_t getVertexListView(gid_t *&Ids, lid_t *&localIds,
-     scalar_t *&xyz, scalar_t *&wgts)
-  {
-    Ids = NULL;
-    localIds = NULL;
-    xyz = NULL;
-    wgts = NULL;
-    return 0;
-  }
-
-  /*! Return a list of the edge Ids of the input vertex global ID
-      \param ID  global ID for a vertex on this process
-      \param localID  app's local ID, if any, associated with this vertex
-      \param edgeID on return will contain the list of edge Ids
-      \param wgts on return contains the weights, if any associated with the
-         edges. Weights are listed by edge by weight component.
-   */
-  virtual void getVertexEdgeCopy(gid_t ID, lid_t localID,
-    std::vector<gid_t> &edgeID, std::vector<scalar_t> &wgts) const = 0;
-
-  /*! Obtain a read-only view, if possible, of the edge Ids of the 
-      input vertex.
-      \param ID  global ID for a vertex on this process
-      \param localID  if input adapter supplied local Ids, this
-         is that localID
-      \param edgeID on return will point to the list of edge global Ids.
-      \param wgts on return points to the weights, if any associated with the
-         edges. Weights are listed by edge by weight component.
-      \return The number of ids in the edgeID list.
-   */
-  lno_t getVertexEdgeView(gid_t ID, lid_t localID, gid_t *&edgeID,
-    scalar_t * &wgts) const
-  {
-    edgeID = NULL;
-    return 0;
-  }
-
-  int applyPartitioningSolution(const User &in, User &out,
-    int numIds, int numParts, gid_t *gid, lid_t *lid, int *partition) 
+  size_t applyPartitioningSolution(const User &in, User *&out,
+    lno_t numIds, lno_t numParts, const gid_t *gid, 
+    const lid_t *lid, const lno_t *partition)
   {
     return 0;
   }
-
-  int applyPartitioningSolution(User &in,
-    int numIds, int numParts, gid_t *gid, lid_t *lid, int *partition) 
-  {
-    return 0;
-  } 
- 
-
-};
   
+};
   
 }  //namespace Zoltan2
   

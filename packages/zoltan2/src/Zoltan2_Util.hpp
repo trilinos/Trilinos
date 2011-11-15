@@ -46,7 +46,7 @@ template <typename Ordinal>
 
 template <typename GID, typename LNO, typename EXTRA>
   size_t convertPartitionListToImportList(const Teuchos::Comm<int> &comm, 
-    ArrayView<const int> &part, ArrayView<const GID> &gid, 
+    ArrayView<const LNO> &part, ArrayView<const GID> &gid, 
     ArrayView<const EXTRA> &xtraInfo, 
     ArrayRCP<GID> &imports, ArrayRCP<EXTRA> &newXtraInfo)
 {
