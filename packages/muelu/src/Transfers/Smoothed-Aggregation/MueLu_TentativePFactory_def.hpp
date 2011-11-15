@@ -174,7 +174,10 @@ namespace MueLu {
     //because aggregates can span processors.
     rowMapForPtent = fineA.getRowMap();
 
-    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
+    // FIXME This should really be Xpetra::StaticProfile, but something is causing that to crash.
+    // I have no idea why this is the case. -CMS.
+    //    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
+    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::DynamicProfile));
 
     // Set up storage for the rows of the local Qs that belong to other processors.
     // FIXME This is inefficient and could be done within the main loop below with std::vector's.
@@ -421,6 +424,27 @@ namespace MueLu {
       } //if (targetQvalues->getLocalLength() > 0)
     }
 
+
+    /*
+    //CMS  
+    {
+      char str[80];
+      sprintf(str,"coarseMap.%d.dat",coarseMap->getComm()->getRank());
+      std::ofstream ofs1(str);
+      sprintf(str,"finedomainmap.%d.dat",coarseMap->getComm()->getRank());
+      std::ofstream ofs2(str);
+      RCP<Teuchos::FancyOStream> out1 = rcp(new Teuchos::FancyOStream(rcp(&ofs1,false)));
+      RCP<Teuchos::FancyOStream> out2 = rcp(new Teuchos::FancyOStream(rcp(&ofs2,false)));
+      coarseMap->describe(*out1, Teuchos::VERB_EXTREME);
+      fineA.getDomainMap()->describe(*out2, Teuchos::VERB_EXTREME);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Finalize();
+    exit(1);
+    */
     Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
 
   } //MakeTentative()
