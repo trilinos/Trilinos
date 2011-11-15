@@ -1,21 +1,19 @@
-To Compile and ShyLU
+To Compile ShyLU
 ------------------
 
-1. Compile with Trilinos with the following packages enabled. Zoltan,
-Isorropia, Epetra, EpetraExt, AztecOO, Amesos, Ifpack, ML, Teuchos and Belos.
+1. Compile Trilinos  with the following options
+-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
+-D Trilinos_ENABLE_ShyLU:BOOL=ON
+-D Trilinos_ENABLE_TESTS:BOOL=ON (if you need the tests)
 
-Another option is to compile Trilinos with TrilinosCouplings with Isorropia
-and Belos. This will compile more packages than required by ShyLU, but it is
-an easy way to get started.
-
-2. Copy the file Trilinos/BUILD_DIR/Makefile.export.Trilinos_install to
-ILU/epetra.
-
-3. Run "make" or "make all" to compile the drivers for ShyLU. There is a
+To test hyLU
+------------------
+1. You can use the two drivers in shylu/test,
 AztecOO based driver (shylu_driver.exe) and a Belos based driver
-(shylu_belos_driver.exe).
+(shylu_belos_driver.exe), to test your matrices. To use the different options
+of ShyLU see step 2.
 
-4. Edit ShyLU.xml to set the precondtioner (ShyLU)
+2. Edit ShyLU.xml to set the precondtioner (ShyLU)
 and the matrix market file name.
     Please leave the parameter "Symmetry" as it is. I will end up doing a
     symmetric permutation of an unsymmetric matrix for now.
@@ -35,11 +33,14 @@ and the matrix market file name.
     preconditioner. It is not exposed in the interface yet. I can do that if
     you need to change that.
 
-5. mpirun -n np <driver_name> will solve the linear system from the
-matrix market file with a right hand side that is all ones. This is probably
-the best way to run for now if you have the matrices in a matrix market file. 
+3. mpirun -n np <driver_name> will solve the linear system from the
+matrix market file with a right hand side that is all ones (or the one
+you gave). This is probably
+the way to run for now if you have the matrices in a matrix market file. 
 
-The other option is to use Ifpack_ShyLU as your preconditioner. If
+To use ShyLU
+------------------
+1. To use ShyLU use Ifpack_ShyLU as your preconditioner. If
 you use this interface you need to partition and redistribute the matrix
 before you set the matrix in the preconditioner. Please see the driver for an
 example. (This requirement is because of a known bug in AztecOO)
