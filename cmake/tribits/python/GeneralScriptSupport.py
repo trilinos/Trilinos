@@ -306,7 +306,7 @@ if cmndInterceptsFile:
 g_dumpAllSysCmnds = os.environ.has_key("GENERAL_SCRIPT_SUPPORT_DUMD_COMMANDS")
 
 
-def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False):
+def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None):
   if g_dumpAllSysCmnds:
     print "\nDUMP SYS CMND: " + cmnd + "\n"
   if outFile!=None and rtnOutput==True:
@@ -323,7 +323,8 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False):
     return cmndReturn
   # Else, fall through
   if rtnOutput:
-    child = os.popen(cmnd)
+    child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
+      env=environment).stdout
     data = child.read()
     rtnCode = child.close()
     return (data, rtnCode)
@@ -332,7 +333,7 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False):
     if outFile:
       outFileHandle = open(outFile, 'w')
     rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT,
-      stdout=outFileHandle)
+      stdout=outFileHandle, env=environment)
     return rtnCode
 
 
@@ -341,7 +342,8 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False):
 ######################################
 
 
-def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir=""):
+def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir="",
+  environment=None):
   """Run system command and optionally throw on failure"""
   sys.stdout.flush()
   sys.stderr.flush()
@@ -351,7 +353,7 @@ def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir=""):
       os.chdir(workingDir)
     #rtnCode = subprocess.call(cmnd, shell=True)
     outFileHandle = None
-    rtnCode = runSysCmndInterface(cmnd, outFile)
+    rtnCode = runSysCmndInterface(cmnd, outFile=outFile, environment=environment)
 #    if outFile:
 #       outFileHandle = open(outFile, 'w')
 #    rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT, stdout=outFileHandle)
@@ -366,7 +368,8 @@ def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir=""):
 
 
 def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
-  timeCmnd=False, verbose=True, workingDir="", returnTimeCmnd=False
+  timeCmnd=False, verbose=True, workingDir="", returnTimeCmnd=False,
+  environment=None
   ):
   """Echo command to be run and run command with runSysCmnd()"""
   if verbose:
@@ -380,7 +383,7 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
   t1 = time.time()
   totalTimeMin = -1.0
   try:
-    rtn = runSysCmnd(cmnd, throwExcept, outFile, workingDir)
+    rtn = runSysCmnd(cmnd, throwExcept, outFile, workingDir, environment)
   finally:
     if timeCmnd:
       t2 = time.time()
