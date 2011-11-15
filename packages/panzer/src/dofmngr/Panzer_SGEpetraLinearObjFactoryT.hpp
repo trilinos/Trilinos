@@ -113,8 +113,16 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 }
 
 template <typename Traits,typename LocalOrdinalT>
-void 
-SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
+void SGEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+adjustForDirichletConditions(const LinearObjContainer & localBCRows,
+                             const LinearObjContainer & globalBCRows,
+                             LinearObjContainer & ghostedObjs) const
+{
+   TEUCHOS_ASSERT(false);
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 ::initializeContainer(int mem,LinearObjContainer & loc) const
 {
    bool completed = false;

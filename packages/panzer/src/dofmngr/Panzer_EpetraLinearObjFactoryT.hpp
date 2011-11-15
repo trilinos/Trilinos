@@ -133,6 +133,64 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostEpetraVector(con
    out.Import(in,*importer,Insert);
 }
 
+template <typename Traits,typename LocalOrdinalT>
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::
+adjustForDirichletConditions(const LinearObjContainer & localBCRows,
+                             const LinearObjContainer & globalBCRows,
+                             LinearObjContainer & ghostedObjs) const
+{
+   const EpetraLinearObjContainer & e_localBCRows = Teuchos::dyn_cast<const EpetraLinearObjContainer>(localBCRows); 
+   const EpetraLinearObjContainer & e_globalBCRows = Teuchos::dyn_cast<const EpetraLinearObjContainer>(globalBCRows); 
+   EpetraLinearObjContainer & e_ghosted = Teuchos::dyn_cast<EpetraLinearObjContainer>(ghostedObjs); 
+
+   TEUCHOS_ASSERT(!Teuchos::is_null(e_localBCRows.x));
+   TEUCHOS_ASSERT(!Teuchos::is_null(e_globalBCRows.x));
+   
+   // pull out jacobian and vector
+   Teuchos::RCP<Epetra_CrsMatrix> A = e_ghosted.A;
+   Teuchos::RCP<Epetra_Vector> f = e_ghosted.f;
+
+   const Epetra_Vector & local_bcs  = *(e_localBCRows.x);
+   const Epetra_Vector & global_bcs = *(e_globalBCRows.x);
+
+   TEUCHOS_ASSERT(local_bcs.MyLength()==global_bcs.MyLength());
+   for(int i=0;i<local_bcs.MyLength();i++) {
+      if(global_bcs[i]==0.0)
+         continue;
+
+      int numEntries = 0;
+      double * values = 0;
+      int * indices = 0;
+
+      if(local_bcs[i]==0.0) { 
+         // this boundary condition was NOT set by this processor
+
+         // if they exist put 0.0 in each entry
+         if(!Teuchos::is_null(f))
+            (*f)[i] = 0.0;
+         if(!Teuchos::is_null(A)) {
+            A->ExtractMyRowView(i,numEntries,values,indices);
+            for(int c=0;c<numEntries;c++) 
+               values[c] = 0.0;
+         }
+      }
+      else {
+         // this boundary condition was set by this processor
+
+         double scaleFactor = global_bcs[i];
+
+         // if they exist scale linear objects by scale factor
+         if(!Teuchos::is_null(f))
+            (*f)[i] /= scaleFactor;
+         if(!Teuchos::is_null(A)) {
+            A->ExtractMyRowView(i,numEntries,values,indices);
+            for(int c=0;c<numEntries;c++) 
+               values[c] /= scaleFactor;
+         }
+      }
+   }
+}
+
 // Functions for initalizing a container
 /////////////////////////////////////////////////////////////////////
 

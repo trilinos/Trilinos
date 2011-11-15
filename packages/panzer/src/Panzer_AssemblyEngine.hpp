@@ -34,8 +34,16 @@ namespace panzer {
     
   protected:
       
+    /** Evaluate both Dirichlet and Neumann conditions.
+      *
+      * \param[in] bc_type Type of Dirichlet condition to evaluate
+      * \param[in] input_arguments Get solver parameters (alpha,beta, linear object containers)
+      * \param[in] preEval_loc Linear object container used by Dirichlet conditions for
+      *                        keeping track of rows that have been modified.
+      */
     void evaluateBCs(const panzer::BCType bc_type, 
-		     const panzer::AssemblyEngineInArgs& input_arguments);
+		     const panzer::AssemblyEngineInArgs& input_arguments,
+                     const Teuchos::RCP<LinearObjContainer> preEval_loc=Teuchos::null);
 
   protected:
     

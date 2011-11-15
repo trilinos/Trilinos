@@ -108,6 +108,34 @@ public:
      */
    virtual void initializeGhostedContainer(int,LinearObjContainer & loc) const = 0;
 
+   /** Adjust the residual vector and Jacobian matrix (if they exist) for applied
+     * dirichlet conditions. The adjustment considers if a boundary condition was
+     * set globally and locally and based on that result adjust the ghosted matrix
+     * and residual vector so that when they are summed across processors they resulting
+     * Dirichlet condition is correct.
+     *
+     * \param[in] localBCRows Linear object container uses the X vector to indicate
+     *                        locally set dirichlet conditions. The format is if
+     *                        an entry of the vector is nonzero then it was set
+     *                        as a dirichlet condition.
+     * \param[in] globalBCRows Linear object container uses the X vector to indicate
+     *                         globally set dirichlet conditions. The format is if
+     *                         an entry of the vector is nonzero then it was set
+     *                         as a dirichlet condition.
+     * \param[in,out] ghostedObjs Ghosted linear object container storing the residual and
+     *                            jacobian matrix for any boundary conditions set.
+     *                            The matrix will be modified by zeroing any rows
+     *                            that are set as nonzero in <code>globalBCRows</code> but zero
+     *                            in <code>localBCRows</code> (similarly for the vector). 
+     *                            If a row is nonzero in both <code>localBCRows</code> and
+     *                            <code>globalBCRows</code> then those rows in both the
+     *                            matrix and the residual vector are devided by the corresponding
+     *                            entry in the <code>globalBCRows</code>.
+     */
+   virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
+                                             const LinearObjContainer & globalBCRows,
+                                             LinearObjContainer & ghostedObjs) const = 0;
+
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<PHX::Evaluator<Traits> > buildScatter(const Teuchos::ParameterList & pl) const

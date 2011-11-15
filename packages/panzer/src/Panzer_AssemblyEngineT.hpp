@@ -40,8 +40,9 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   this->evaluateNeumannBCs(in);
 
   // Dirchlet conditions require a global matrix
-  m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_);
   this->evaluateDirichletBCs(in);
+
+  m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_);
 
   return;
 }
@@ -100,7 +101,37 @@ template <typename EvalT,typename LO,typename GO>
 void panzer::AssemblyEngine<EvalT,LO,GO>::
 evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 {
-  this->evaluateBCs(panzer::BCT_Dirichlet, in);
+  // allocate a counter to keep track of where this processor set dirichlet boundary conditions
+  Teuchos::RCP<LinearObjContainer> localCounter = m_lin_obj_factory->buildGhostedLinearObjContainer();
+  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::X,*localCounter); // store counter in X
+  localCounter->initialize();
+     // this has only an X vector. The evaluate BCs will add a one to each row
+     // that has been set as a dirichlet condition on this processor
+
+  // apply dirichlet conditions, make sure to keep track of the local counter
+  this->evaluateBCs(panzer::BCT_Dirichlet, in,localCounter);
+
+  Teuchos::RCP<LinearObjContainer> summedGhostedCounter = m_lin_obj_factory->buildGhostedLinearObjContainer();
+  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::X,*summedGhostedCounter); // store counter in X
+  summedGhostedCounter->initialize();
+
+  // do communication to build summed ghosted counter for dirichlet conditions
+  {
+     Teuchos::RCP<LinearObjContainer> globalCounter = m_lin_obj_factory->buildLinearObjContainer();
+     m_lin_obj_factory->initializeContainer(LinearObjContainer::X,*globalCounter); // store counter in X
+     globalCounter->initialize();
+     m_lin_obj_factory->ghostToGlobalContainer(*localCounter,*globalCounter);
+        // Here we do the reduction across all processors so that the number of times
+        // a dirichlet condition is applied is summed into the global counter
+
+     m_lin_obj_factory->globalToGhostContainer(*globalCounter,*summedGhostedCounter);
+        // finally we move the summed global vector into a local ghosted vector
+        // so that the dirichlet conditions can be applied to both the ghosted
+        // right hand side and the ghosted matrix
+  }
+
+  // adjust ghosted system for boundary conditions
+  m_lin_obj_factory->adjustForDirichletConditions(*localCounter,*summedGhostedCounter,*in.ghostedContainer_);
 }
 
 //===========================================================================
@@ -108,7 +139,8 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 template <typename EvalT,typename LO,typename GO>
 void panzer::AssemblyEngine<EvalT,LO,GO>::
 evaluateBCs(const panzer::BCType bc_type,
-	    const panzer::AssemblyEngineInArgs& in)
+	    const panzer::AssemblyEngineInArgs& in,
+            const Teuchos::RCP<LinearObjContainer> preEval_loc)
 {
 
   {
@@ -153,11 +185,13 @@ evaluateBCs(const panzer::BCType bc_type,
 
 	// Loop over local faces
 	for (std::map<unsigned,PHX::FieldManager<panzer::Traits> >::const_iterator side = bc_fm.begin(); side != bc_fm.end(); ++side) {
-	  
+
+	  // extract field manager for this side  
 	  unsigned local_side_index = side->first;
 	  PHX::FieldManager<panzer::Traits>& local_side_fm = 
 	    const_cast<PHX::FieldManager<panzer::Traits>& >(side->second);
 	  
+          // extract workset for this side: only one workset per face
 	  std::map<unsigned,panzer::Workset>::const_iterator wkst_it = 
 	    bc_wkst.find(local_side_index);
 	  
@@ -166,8 +200,14 @@ evaluateBCs(const panzer::BCType bc_type,
 	  
 	  panzer::Workset& workset = 
 	    const_cast<panzer::Workset&>(wkst_it->second); 
-	  
-	  // We have one workset per face
+
+          // run prevaluate
+          Traits::PED preEvalData;
+          preEvalData.dirichletData.ghostedCounter = preEval_loc;
+
+          local_side_fm.template preEvaluate<EvalT>(preEvalData);
+
+          // build and evaluate fields for the workset: only one workset per face
           workset.ghostedLinContainer = in.ghostedContainer_;
           workset.linContainer = in.container_;
 	  workset.alpha = in.alpha;
@@ -175,6 +215,9 @@ evaluateBCs(const panzer::BCType bc_type,
 	  workset.time = in.time;
 	  
 	  local_side_fm.template evaluateFields<EvalT>(workset);
+
+          // run postevaluate for consistency
+	  local_side_fm.template postEvaluate<EvalT>(NULL);
 	  
 	}
       }

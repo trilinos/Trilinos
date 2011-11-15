@@ -47,6 +47,16 @@ public:
    virtual void ghostToGlobalContainer(const LinearObjContainer & ghostContainer,
                                        LinearObjContainer & container) const;
 
+   /** Adjust the residual vector and Jacobian matrix (if they exist) for applied
+     * dirichlet conditions. The adjustment considers if a boundary condition was
+     * set globally and locally and based on that result adjust the ghosted matrix
+     * and residual vector so that when they are summed across processors they resulting
+     * Dirichlet condition is correct.
+     */
+   virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
+                                             const LinearObjContainer & globalBCRows,
+                                             LinearObjContainer & ghostedObjs) const;
+
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const

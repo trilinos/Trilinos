@@ -108,7 +108,8 @@ evaluateFields(typename Traits::EvalData workset)
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
+         // = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
+         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_Vector> r = epetraContainer->f; 
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -251,7 +252,8 @@ evaluateFields(typename Traits::EvalData workset)
    // Teuchos::RCP<Epetra_CrsMatrix> Jac = workset.jacobian_matrix;
 
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
+         // = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
+         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_Vector> r = epetraContainer->f; 
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer->A;
 
