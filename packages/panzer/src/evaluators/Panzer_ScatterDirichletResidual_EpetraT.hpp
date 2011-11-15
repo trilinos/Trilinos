@@ -152,7 +152,7 @@ evaluateFields(typename Traits::EvalData workset)
             (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
 
             // record that you set a dirichlet condition
-            (*dirichletCounter_)[lid] += 1.0;
+            (*dirichletCounter_)[lid] = 1.0;
          }
       }
    }
@@ -310,7 +310,7 @@ evaluateFields(typename Traits::EvalData workset)
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
     
             (*r)[lid] = scatterField.val();
-            (*dirichletCounter_)[lid] += 1.0; // mark row as dirichlet
+            (*dirichletCounter_)[lid] = 1.0; // mark row as dirichlet
     
             // loop over the sensitivity indices: all DOFs on a cell
             std::vector<double> jacRow(scatterField.size(),0.0);

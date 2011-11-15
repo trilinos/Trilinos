@@ -144,7 +144,7 @@ evaluateFields(typename Traits::EvalData workset)
                (*(*itr)->f)[lid] = field.coeff(stochIndex);
 
             // dirichlet condition application
-            (*dirichletCounter_)[lid] += 1.0;
+            (*dirichletCounter_)[lid] = 1.0;
          }
       }
    }
@@ -318,7 +318,7 @@ evaluateFields(typename Traits::EvalData workset)
             }
 
             // dirichlet condition application
-            (*dirichletCounter_)[lid] += 1.0;
+            (*dirichletCounter_)[lid] = 1.0;
          }
       }
    }
