@@ -132,7 +132,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   setupData.worksets_->push_back(*workset);
   fm->postRegistrationSetup(setupData);
 
-  fm->preEvaluate<EvalType>(0);
+  panzer::Traits::PED preEvalData;
+
+  fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
@@ -248,7 +250,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   setupData.worksets_->push_back(*workset);
   fm->postRegistrationSetup(setupData);
 
-  fm->preEvaluate<EvalType>(0);
+  panzer::Traits::PED preEvalData;
+
+  fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
@@ -364,7 +368,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   setupData.worksets_->push_back(*workset);
   fm->postRegistrationSetup(setupData);
 
-  fm->preEvaluate<EvalType>(0);
+  panzer::Traits::PED preEvalData;
+
+  fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 

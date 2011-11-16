@@ -416,6 +416,25 @@ public:
      */
    Teuchos::RCP<const shards::CellTopology> getCellTopology(const std::string & eBlock) const;
 
+   /** Get the value of the time-stamp the last time this object was written to Exodus (default 0.0)
+     *
+     * \note The initial state time is completely disconnected from the current state time
+     */
+   double getCurrentStateTime() const { return currentStateTime_; }
+
+   /** Get the value of the time-stamp when this object was created (default 0.0)
+     * or when setInitialStateTime was called.
+     *
+     * \note The initial state time is completely disconnected from the current state time
+     */
+   double getInitialStateTime() const { return initialStateTime_; }
+
+   /** Set the value of the initial time-stamp
+     *
+     * \note The initial state time is completely disconnected from the current state time
+     */
+   void setInitialStateTime(double value) { initialStateTime_ = value; }
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -466,7 +485,8 @@ protected:
    unsigned procRank_;
    std::size_t currentLocalId_;
 
-   // Teuchos::RCP<stk::mesh::DefaultFEM> femPtr_;
+   double initialStateTime_; // the time stamp at the time this object was constructed (default 0.0)
+   double currentStateTime_; // the time stamp set by the user when writeToExodus is called (default 0.0)
 
 #ifdef HAVE_IOSS
    // I/O support

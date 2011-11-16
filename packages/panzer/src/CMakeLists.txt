@@ -105,10 +105,7 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_UniqueGlobalIndexer.hpp
   dofmngr/Panzer_EpetraLinearObjFactory.hpp
   dofmngr/Panzer_EpetraLinearObjFactoryT.hpp
-  dofmngr/Panzer_SGEpetraLinearObjFactory.hpp
-  dofmngr/Panzer_SGEpetraLinearObjFactoryT.hpp
   dofmngr/Panzer_EpetraLinearObjContainer.hpp
-  dofmngr/Panzer_SGEpetraLinearObjContainer.hpp
   dofmngr/Panzer_UniqueGlobalIndexerFactory.hpp
   dofmngr/Panzer_DOFManagerFactory.hpp
   dofmngr/Panzer_DOFManagerFactoryT.hpp
@@ -123,8 +120,6 @@ APPEND_SET(HEADERS
   evaluators/Panzer_DOFGradientT.hpp
   evaluators/Panzer_GatherSolution_Epetra.hpp
   evaluators/Panzer_GatherSolution_EpetraT.hpp
-  evaluators/Panzer_GatherSolution_EpetraSG.hpp
-  evaluators/Panzer_GatherSolution_EpetraSGT.hpp
   evaluators/Panzer_GlobalStatistics.hpp
   evaluators/Panzer_GlobalStatisticsT.hpp
   evaluators/Panzer_Integrator_BasisTimesScalar.hpp
@@ -137,16 +132,10 @@ APPEND_SET(HEADERS
   evaluators/Panzer_ScalarToVectorT.hpp
   evaluators/Panzer_ScatterResidual_Epetra.hpp
   evaluators/Panzer_ScatterResidual_EpetraT.hpp
-  evaluators/Panzer_ScatterResidual_EpetraSG.hpp
-  evaluators/Panzer_ScatterResidual_EpetraSGT.hpp
   evaluators/Panzer_ScatterDirichletResidual_Epetra.hpp
   evaluators/Panzer_ScatterDirichletResidual_EpetraT.hpp
-  evaluators/Panzer_ScatterDirichletResidual_EpetraSG.hpp
-  evaluators/Panzer_ScatterDirichletResidual_EpetraSGT.hpp
   evaluators/Panzer_ScatterInitialCondition_Epetra.hpp
   evaluators/Panzer_ScatterInitialCondition_EpetraT.hpp
-  evaluators/Panzer_ScatterInitialCondition_EpetraSG.hpp
-  evaluators/Panzer_ScatterInitialCondition_EpetraSGT.hpp
   evaluators/Panzer_TestScatter.hpp
   evaluators/Panzer_TestScatterT.hpp
   evaluators/Panzer_Sum.hpp
@@ -195,12 +184,30 @@ APPEND_SET(SOURCES
   dofmngr/Panzer_DOFManager.cpp
   dofmngr/Panzer_BlockedDOFManager.cpp
   dofmngr/Panzer_EpetraLinearObjFactory.cpp
-  dofmngr/Panzer_SGEpetraLinearObjFactory.cpp
-  dofmngr/Panzer_SGEpetraLinearObjContainer.cpp
   responses/Panzer_ResponseUtilities.cpp
   responses/Panzer_ResponseFunctional_Aggregator.cpp
   evaluators/Panzer_Constant.cpp
   )
+
+IF(${PACKAGE_NAME}_ENABLE_Stokhos)
+  APPEND_SET(HEADERS
+    dofmngr/Panzer_SGEpetraLinearObjFactory.hpp
+    dofmngr/Panzer_SGEpetraLinearObjFactoryT.hpp
+    dofmngr/Panzer_SGEpetraLinearObjContainer.hpp
+    evaluators/Panzer_GatherSolution_EpetraSG.hpp
+    evaluators/Panzer_GatherSolution_EpetraSGT.hpp
+    evaluators/Panzer_ScatterResidual_EpetraSG.hpp
+    evaluators/Panzer_ScatterResidual_EpetraSGT.hpp
+    evaluators/Panzer_ScatterDirichletResidual_EpetraSG.hpp
+    evaluators/Panzer_ScatterDirichletResidual_EpetraSGT.hpp
+    evaluators/Panzer_ScatterInitialCondition_EpetraSG.hpp
+    evaluators/Panzer_ScatterInitialCondition_EpetraSGT.hpp
+    )
+  APPEND_SET(SOURCES
+    dofmngr/Panzer_SGEpetraLinearObjFactory.cpp
+    dofmngr/Panzer_SGEpetraLinearObjContainer.cpp
+    )
+ENDIF()
 
 #
 # C) Define the targets for package's library(s)

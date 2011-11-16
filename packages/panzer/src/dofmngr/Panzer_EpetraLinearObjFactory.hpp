@@ -40,12 +40,28 @@ public:
 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const 
+   { return buildLinearObjContainer(); }
+
    virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const;
 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const 
+   { return buildGhostedLinearObjContainer(); }
+
    virtual void globalToGhostContainer(const LinearObjContainer & container,
-                                       LinearObjContainer & ghostContainer) const;
+                                       LinearObjContainer & ghostContainer,int) const;
    virtual void ghostToGlobalContainer(const LinearObjContainer & ghostContainer,
-                                       LinearObjContainer & container) const;
+                                       LinearObjContainer & container,int) const;
+
+   /** Adjust the residual vector and Jacobian matrix (if they exist) for applied
+     * dirichlet conditions. The adjustment considers if a boundary condition was
+     * set globally and locally and based on that result adjust the ghosted matrix
+     * and residual vector so that when they are summed across processors they resulting
+     * Dirichlet condition is correct.
+     */
+   virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
+                                             const LinearObjContainer & globalBCRows,
+                                             LinearObjContainer & ghostedObjs) const;
 
    //! Use preconstructed scatter evaluators
    template <typename EvalT>

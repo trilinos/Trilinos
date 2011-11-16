@@ -15,14 +15,21 @@ namespace panzer_stk {
 class STK_Interface;
 
 /** Concrete mesh factory instantiation. This reads
-  * a mesh from an exodus file and builds a STK_Interface object
+  * a mesh from an exodus file and builds a STK_Interface object.
+  *
+  * Also, if a nonzero restart index (the Exodus indices are 1 based) is
+  * specified then this will set the initial state time in the STK_Interface.
+  * However, as prescribed by that interface the currentStateTime is only
+  * set by the writeToExodus call, thus the currentStateTime of the created
+  * STK_Interface object will be zero. It is up to the user to rectify this
+  * when calling writeToExodus.
   */
 class STK_ExodusReaderFactory : public STK_MeshFactory {
 public:
 
    STK_ExodusReaderFactory();
 
-   STK_ExodusReaderFactory(const std::string & fileName);
+   STK_ExodusReaderFactory(const std::string & fileName,int restartIndex=0);
 
    /** Construct a STK_Inteface object described
      * by this factory.

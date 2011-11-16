@@ -294,7 +294,7 @@ int main(int argc,char * argv[])
    out << "WRITE" << std::endl;
 
    // redistribute solution vector
-   linObjFactory->globalToGhostContainer(*container,*ghostCont);
+   linObjFactory->globalToGhostContainer(*container,*ghostCont,panzer::EpetraLinearObjContainer::X | panzer::EpetraLinearObjContainer::DxDt); 
 
    panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ghostCont->x);
    mesh->writeToExodus("output.exo");

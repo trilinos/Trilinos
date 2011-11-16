@@ -18,6 +18,8 @@ class LinearObjContainer {
 public:
    virtual ~LinearObjContainer() {}
 
+   typedef enum { X=0x1, DxDt=0x2, F=0x4, Mat=0x8} Members;
+
    virtual void initialize() = 0;
 };
 
@@ -82,15 +84,75 @@ public:
      */ 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const = 0;
 
+   /** Build a container with all the neccessary linear algebra objects, purely on
+     * the single physics. This gives linear algebra objects that are relevant for a
+     * single physics solve. In many cases this is simply a call to buildLinearObjContainer
+     * however, in a few important cases (for instance in stochastic galerkin methods)
+     * this will return a container for a single instantiation of the physics. This is
+     * the non-ghosted version.
+     */ 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const = 0;
+
    /** Build a container with all the neccessary linear algebra objects. This is
      * the ghosted version.
      */ 
    virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const = 0;
 
+   /** Build a container with all the neccessary linear algebra objects, purely on
+     * the single physics. This gives linear algebra objects that are relevant for a
+     * single physics solve. In many cases this is simply a call to buildGhostedLinearObjContainer
+     * however, in a few important cases (for instance in stochastic galerkin methods)
+     * this will return a container for a single instantiation of the physics. This is
+     * the ghosted version.
+     */ 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const = 0;
+
    virtual void globalToGhostContainer(const LinearObjContainer & container,
-                                       LinearObjContainer & ghostContainer) const = 0;
+                                       LinearObjContainer & ghostContainer,int) const = 0;
    virtual void ghostToGlobalContainer(const LinearObjContainer & ghostContainer,
-                                       LinearObjContainer & container) const = 0;
+                                       LinearObjContainer & container,int) const = 0;
+
+   /** Initialize container with a specific set of member values.
+     *
+     * \note This will overwrite everything in the container and zero out values
+     *       not requested.
+     */
+   virtual void initializeContainer(int,LinearObjContainer & loc) const = 0;
+
+   /** Initialize container with a specific set of member values.
+     *
+     * \note This will overwrite everything in the container and zero out values
+     *       not requested.
+     */
+   virtual void initializeGhostedContainer(int,LinearObjContainer & loc) const = 0;
+
+   /** Adjust the residual vector and Jacobian matrix (if they exist) for applied
+     * dirichlet conditions. The adjustment considers if a boundary condition was
+     * set globally and locally and based on that result adjust the ghosted matrix
+     * and residual vector so that when they are summed across processors they resulting
+     * Dirichlet condition is correct.
+     *
+     * \param[in] localBCRows Linear object container uses the X vector to indicate
+     *                        locally set dirichlet conditions. The format is if
+     *                        an entry of the vector is nonzero then it was set
+     *                        as a dirichlet condition.
+     * \param[in] globalBCRows Linear object container uses the X vector to indicate
+     *                         globally set dirichlet conditions. The format is if
+     *                         an entry of the vector is nonzero then it was set
+     *                         as a dirichlet condition.
+     * \param[in,out] ghostedObjs Ghosted linear object container storing the residual and
+     *                            jacobian matrix for any boundary conditions set.
+     *                            The matrix will be modified by zeroing any rows
+     *                            that are set as nonzero in <code>globalBCRows</code> but zero
+     *                            in <code>localBCRows</code> (similarly for the vector). 
+     *                            If a row is nonzero in both <code>localBCRows</code> and
+     *                            <code>globalBCRows</code> then those rows in both the
+     *                            matrix and the residual vector are devided by the corresponding
+     *                            entry in the <code>globalBCRows</code>.
+     */
+   virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
+                                             const LinearObjContainer & globalBCRows,
+                                             LinearObjContainer & ghostedObjs) const = 0;
 
    //! Use preconstructed scatter evaluators
    template <typename EvalT>

@@ -106,8 +106,8 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, basic)
    for(itr=sgContainer->begin();itr!=sgContainer->end();++itr)
       TEST_NOTHROW(rcp_dynamic_cast<EpetraLinearObjContainer>(*itr));
 
-   la_factory->ghostToGlobalContainer(*ghostedContainer,*container);
-   la_factory->globalToGhostContainer(*container,*ghostedContainer);
+   la_factory->ghostToGlobalContainer(*ghostedContainer,*container,0);
+   la_factory->globalToGhostContainer(*container,*ghostedContainer,0);
 }
 
 TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, initializeContainer)

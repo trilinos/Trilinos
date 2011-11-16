@@ -121,7 +121,8 @@ namespace panzer {
 
     std::vector<panzer::Workset> & worksets = *volume_worksets["eblock-0_0"];
     for(std::size_t ws=0;ws<worksets.size();ws++) {
-       fm->preEvaluate<panzer::Traits::Residual>(0);
+       Traits::PED preEvalData;
+       fm->preEvaluate<panzer::Traits::Residual>(preEvalData);
        fm->evaluateFields<panzer::Traits::Residual>(worksets[ws]);
        fm->postEvaluate<panzer::Traits::Residual>(0);
     }

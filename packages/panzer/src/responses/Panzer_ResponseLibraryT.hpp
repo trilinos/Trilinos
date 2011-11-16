@@ -260,7 +260,9 @@ evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volFieldManagers_[eBlock];
 
     if(fm!=Teuchos::null) {
-       fm->preEvaluate<EvalT>(0);
+       Traits::PED preEvalData;
+
+       fm->preEvaluate<EvalT>(preEvalData);
    
        // Loop over worksets in this element block
        for (std::size_t i = 0; i < w.size(); ++i) {

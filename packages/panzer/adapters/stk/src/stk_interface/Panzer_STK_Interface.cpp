@@ -45,7 +45,7 @@ const std::string STK_Interface::nodesString = "nodes";
 const std::string STK_Interface::edgesString = "edges";
 
 STK_Interface::STK_Interface()
-   : dimension_(0), initialized_(false), currentLocalId_(0)
+   : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0)
 {
    metaData_ = rcp(new stk::mesh::fem::FEMMetaData());
 }
@@ -269,6 +269,7 @@ void STK_Interface::setupTransientExodusFile(const std::string & filename)
 void STK_Interface::writeToExodus(double timestep)
 {
    #ifdef HAVE_IOSS
+      currentStateTime_ = timestep;
       stk::io::process_output_request(*meshData_, *bulkData_, timestep);
    #else 
       TEUCHOS_ASSERT(false);

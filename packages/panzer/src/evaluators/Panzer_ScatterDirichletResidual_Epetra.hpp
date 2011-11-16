@@ -55,6 +55,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -87,6 +89,8 @@ private:
   std::size_t local_side_id_;
 
   ScatterDirichletResidual_Epetra() {}
+
+  Teuchos::RCP<Epetra_Vector> dirichletCounter_;
 };
 
 // **************************************************************
@@ -104,6 +108,8 @@ public:
   
   ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                   const Teuchos::ParameterList& p);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -139,6 +145,8 @@ private:
 
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
+
+  Teuchos::RCP<Epetra_Vector> dirichletCounter_;
 
   ScatterDirichletResidual_Epetra();
 };

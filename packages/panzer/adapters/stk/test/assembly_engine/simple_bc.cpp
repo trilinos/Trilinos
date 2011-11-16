@@ -8,6 +8,7 @@ using Teuchos::rcp;
 
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Panzer_PauseToAttach.hpp"
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -32,43 +33,26 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
-#include <cstdio> // for get char
-
 namespace panzer {
-
-   void pause_to_attach()
-   {
-      MPI_Comm mpicomm = MPI_COMM_WORLD;
-      Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(
-            Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
-      Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-      out.setShowProcRank(true);
-      out.setOutputToRootOnly(-1);
-
-      out << "PID = " << getpid();
-
-      if (comm->getRank() == 0)
-         getchar();
-      comm->barrier();
-   }
 
   void testInitialzation(const panzer_stk::STK_Interface& mesh,
 			 panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
 
+  void testInitialzation_multiblock(const panzer_stk::STK_Interface& mesh,
+			 panzer::InputPhysicsBlock& ipb,
+			 std::vector<panzer::BC>& bcs);
 
 
-  TEUCHOS_UNIT_TEST(field_manager_builder, basic)
+  TEUCHOS_UNIT_TEST(bc_test, basic)
   {
     using Teuchos::RCP;
   
-    // pause_to_attach();
-
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);
     pl->set("X Elements",2);
-    pl->set("Y Elements",2);
+    pl->set("Y Elements",1);
     
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
@@ -171,7 +155,11 @@ namespace panzer {
                                         panzer::EpetraLinearObjContainer::DxDt |
                                         panzer::EpetraLinearObjContainer::F |
                                         panzer::EpetraLinearObjContainer::Mat,*eGlobal);
+    eGlobal->initialize();
+    eGhosted->initialize();
     panzer::AssemblyEngineInArgs input(eGhosted,eGlobal);
+    input.alpha = 0.0;
+    input.beta = 1.0;
 
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
@@ -316,4 +304,252 @@ namespace panzer {
     }
   }
 
-}
+  TEUCHOS_UNIT_TEST(bc_test, multiblock)
+  { 
+    using Teuchos::RCP;
+
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("X Elements",2);
+    pl->set("Y Elements",1);
+    
+    panzer_stk::SquareQuadMeshFactory factory;
+    factory.setParameterList(pl);
+    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    int myRank = Comm->MyPID();
+
+    TEUCHOS_ASSERT(Comm->NumProc()==2);
+
+    panzer::InputPhysicsBlock ipb;
+    std::vector<panzer::BC> bcs;
+    testInitialzation_multiblock(*mesh, ipb, bcs);
+
+    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
+      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+
+    // build physics blocks
+    //////////////////////////////////////////////////////////////
+    const std::size_t workset_size = 20;
+    user_app::MyFactory eqset_factory;
+    user_app::BCFactory bc_factory;
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
+
+    {
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+      block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
+      block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
+        
+      std::map<std::string,panzer::InputPhysicsBlock> 
+        physics_id_to_input_physics_blocks;
+      physics_id_to_input_physics_blocks["test physics"] = ipb;
+  
+       for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
+	    block != block_ids_to_physics_ids.end(); ++block)
+	 eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
+
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 block_ids_to_cell_topo,
+                                 physics_id_to_input_physics_blocks,
+                                 Teuchos::as<int>(mesh->getDimension()), workset_size,
+                                 eqset_factory,
+		   	         false,
+                                 physicsBlocks);
+    }
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
+      volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
+
+    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
+       = panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
+
+   // build DOF Manager
+   /////////////////////////////////////////////////////////////
+ 
+   // build the connection manager 
+    const Teuchos::RCP<panzer::ConnManager<int,int> > 
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+
+    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+         = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
+
+    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
+
+    // setup field manager build
+    /////////////////////////////////////////////////////////////
+ 
+    // Add in the application specific closure model factory
+    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
+      Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
+    user_app::MyModelFactory_TemplateBuilder cm_builder;
+    (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
+
+    Teuchos::ParameterList closure_models("Closure Models");
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+
+    Teuchos::ParameterList user_data("User Data");
+
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+
+    panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
+    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
+    ae_tm.buildObjects(builder);
+    
+    RCP<panzer::EpetraLinearObjContainer> eGhosted 
+       = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(linObjFactory->buildGhostedLinearObjContainer());
+    RCP<panzer::EpetraLinearObjContainer> eGlobal
+       = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(linObjFactory->buildLinearObjContainer());
+    eLinObjFactory->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X |
+                                               panzer::EpetraLinearObjContainer::DxDt |
+                                               panzer::EpetraLinearObjContainer::F |
+                                               panzer::EpetraLinearObjContainer::Mat,*eGhosted);
+    eLinObjFactory->initializeContainer(panzer::EpetraLinearObjContainer::X |
+                                        panzer::EpetraLinearObjContainer::DxDt |
+                                        panzer::EpetraLinearObjContainer::F |
+                                        panzer::EpetraLinearObjContainer::Mat,*eGlobal);
+    eGhosted->initialize();
+    eGlobal->initialize();
+    panzer::AssemblyEngineInArgs input(eGhosted,eGlobal);
+    input.alpha = 0.0;
+    input.beta = 1.0;
+
+    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
+    const Epetra_Vector & f = *eGlobal->f;
+
+    std::vector<int> GIDs;
+    if(myRank==0) {
+       dofManager->getElementGIDs(1,GIDs,"eblock-1_0"); // in eblock-1_0
+
+       int gid = GIDs[3]; // top left corner at block interface
+       int lid = f.Map().LID(gid);
+
+       if(lid>=0)
+          TEST_EQUALITY(f[lid],-3.0);
+    }
+    else if(myRank==1) {
+       dofManager->getElementGIDs(0,GIDs,"eblock-0_0"); // in eblock-0_0
+       int gid = GIDs[2]; // top right corner at block interface
+       int lid = f.Map().LID(gid);
+
+       if(lid>=0)
+          TEST_EQUALITY(f[lid],-3.0);
+    }
+    else 
+       TEUCHOS_ASSERT(false);
+
+    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+
+    const Epetra_CrsMatrix & A = *eGlobal->A;
+
+    if(myRank==0) {
+       dofManager->getElementGIDs(1,GIDs,"eblock-1_0"); // in eblock-1_0
+
+       int gid = GIDs[3]; // top left corner at block interface
+       int lid = f.Map().LID(gid);
+
+       if(lid>=0) {
+          TEST_EQUALITY(f[lid],-3.0);
+   
+          int numEntries = 0;
+          int * indices = 0;
+          double * values = 0;
+          A.ExtractMyRowView(lid,numEntries,values,indices);
+   
+          double sum = 0.0;
+          for(int i=0;i<numEntries;i++) {
+             sum += values[i];
+             if(values[i]!=0.0)
+             {   TEST_EQUALITY(values[i],1.0); } // diag entry should be 0
+             else
+             {   TEST_EQUALITY(values[i],0.0); } // all non diag entries should be 0
+          }
+          TEST_EQUALITY(sum,1.0); // only one entry allowed to be 1
+       }
+    }
+    else if(myRank==1) {
+       dofManager->getElementGIDs(0,GIDs,"eblock-0_0"); // in eblock-0_0
+       int gid = GIDs[2]; // top right corner at block interface
+       int lid = f.Map().LID(gid);
+
+       if(lid>=0) {
+          TEST_EQUALITY(f[lid],-3.0);
+        
+          int numEntries = 0;
+          int * indices = 0;
+          double * values = 0;
+          A.ExtractMyRowView(lid,numEntries,values,indices);
+   
+          double sum = 0.0;
+          for(int i=0;i<numEntries;i++) {
+             sum += values[i];
+             if(values[i]!=0.0)
+             {   TEST_EQUALITY(values[i],1.0); } // diag entry should be 0
+             else
+             {   TEST_EQUALITY(values[i],0.0); } // all non diag entries should be 0
+          }
+          TEST_EQUALITY(sum,1.0); // only one entry allowed to be 1
+       }
+    }
+    else {
+       TEUCHOS_ASSERT(false);
+    }
+  }
+
+  void testInitialzation_multiblock(const panzer_stk::STK_Interface& mesh,
+			 panzer::InputPhysicsBlock& ipb,
+			 std::vector<panzer::BC>& bcs)
+  {
+    panzer::InputEquationSet ies_1;
+    ies_1.name = "Energy";
+    ies_1.basis = "Q1";
+    ies_1.integration_order = 1;
+    ies_1.model_id = "solid";
+    ies_1.prefix = "";
+
+    ipb.physics_block_id = "test physics";
+    ipb.eq_sets.push_back(ies_1);
+
+    // TEMPERATURE BCs
+    {
+      std::size_t bc_id = 0;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "top";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 3.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+		    strategy, p);
+      bcs.push_back(bc);
+    }    
+    {
+      std::size_t bc_id = 1;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "right";
+      std::string element_block_id = "eblock-1_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 5.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+		    strategy, p);
+      bcs.push_back(bc);
+    }   
+  }
+
+} // end panzer
