@@ -30,11 +30,19 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
    SGEpetraLinearObjContainer::CoeffVector coeffContainers;
    for(int i=0;i<expansion_->size();i++) {
       Teuchos::RCP<EpetraLinearObjContainer> eCont = 
-         Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(epetraFact_->buildLinearObjContainer());
+         Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(buildPrimitiveLinearObjContainer());
       coeffContainers.push_back(eCont);
    }
 
    return Teuchos::rcp(new SGEpetraLinearObjContainer(coeffContainers,expansion_));
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<LinearObjContainer> 
+SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
+::buildPrimitiveLinearObjContainer() const
+{
+   return epetraFact_->buildLinearObjContainer();
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -45,7 +53,7 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
    SGEpetraLinearObjContainer::CoeffVector coeffContainers;
    for(int i=0;i<expansion_->size();i++) {
       Teuchos::RCP<EpetraLinearObjContainer> eCont = 
-         Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(epetraFact_->buildGhostedLinearObjContainer());
+         Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(buildPrimitiveGhostedLinearObjContainer());
       coeffContainers.push_back(eCont);
    }
 
@@ -53,9 +61,17 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 }
 
 template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<LinearObjContainer> 
+SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
+::buildPrimitiveGhostedLinearObjContainer() const
+{
+   return epetraFact_->buildGhostedLinearObjContainer();
+}
+
+template <typename Traits,typename LocalOrdinalT>
 void 
 SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
-::globalToGhostContainer(const LinearObjContainer & container,LinearObjContainer & ghostContainer) const
+::globalToGhostContainer(const LinearObjContainer & container,LinearObjContainer & ghostContainer,int mem) const
 {
    bool completed = false;
    try {
@@ -67,7 +83,7 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
       SGEpetraLinearObjContainer::iterator outItr;
       for(inItr=containerSG.begin(),outItr=ghostContainerSG.begin();
           inItr!=containerSG.end();inItr++,outItr++) {
-         epetraFact_->globalToGhostContainer(**inItr,**outItr);
+         epetraFact_->globalToGhostContainer(**inItr,**outItr,mem);
       }
 
       completed = true;
@@ -78,14 +94,14 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
    if(!completed) {
       // this had many perils, primarily that the exception will come
       // from the epetra factory.
-      epetraFact_->globalToGhostContainer(container,ghostContainer);
+      epetraFact_->globalToGhostContainer(container,ghostContainer,mem);
    }
 }
 
 template <typename Traits,typename LocalOrdinalT>
 void 
 SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
-::ghostToGlobalContainer(const LinearObjContainer & ghostContainer, LinearObjContainer & container) const
+::ghostToGlobalContainer(const LinearObjContainer & ghostContainer, LinearObjContainer & container,int mem) const
 {
    bool completed = false;
    try {
@@ -97,7 +113,7 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
       SGEpetraLinearObjContainer::iterator outItr;
       for(inItr=ghostContainerSG.begin(),outItr=containerSG.begin();
           inItr!=ghostContainerSG.end();inItr++,outItr++) {
-         epetraFact_->ghostToGlobalContainer(**inItr,**outItr);
+         epetraFact_->ghostToGlobalContainer(**inItr,**outItr,mem);
       }
 
       completed = true;
@@ -108,7 +124,7 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
    if(!completed) {
       // this had many perils, primarily that the exception will come
       // from the epetra factory.
-      epetraFact_->ghostToGlobalContainer(ghostContainer,container);
+      epetraFact_->ghostToGlobalContainer(ghostContainer,container,mem);
    }
 }
 
@@ -118,7 +134,25 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs) const
 {
-   TEUCHOS_ASSERT(false);
+   bool completed = false;
+   try {
+      SGEpetraLinearObjContainer & ghostContainerSG = Teuchos::dyn_cast<SGEpetraLinearObjContainer>(ghostedObjs);
+   
+      // simply iterate over each deterministic system and run adjustForDirichlet
+      SGEpetraLinearObjContainer::iterator ghostObjsItr;
+      for(ghostObjsItr=ghostContainerSG.begin();ghostObjsItr!=ghostContainerSG.end();ghostObjsItr++)
+         epetraFact_->adjustForDirichletConditions(localBCRows,globalBCRows,**ghostObjsItr);
+
+      completed = true;
+   }
+   catch(const std::bad_cast & bad_cast) { }
+
+   // type was not a SGEpetraLinearObjContainer, try the Epetra type
+   if(!completed) {
+      // this had many perils, primarily that the exception will come
+      // from the epetra factory.
+      epetraFact_->adjustForDirichletConditions(localBCRows,globalBCRows,ghostedObjs);
+   }
 }
 
 template <typename Traits,typename LocalOrdinalT>

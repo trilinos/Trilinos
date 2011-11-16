@@ -84,15 +84,33 @@ public:
      */ 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const = 0;
 
+   /** Build a container with all the neccessary linear algebra objects, purely on
+     * the single physics. This gives linear algebra objects that are relevant for a
+     * single physics solve. In many cases this is simply a call to buildLinearObjContainer
+     * however, in a few important cases (for instance in stochastic galerkin methods)
+     * this will return a container for a single instantiation of the physics. This is
+     * the non-ghosted version.
+     */ 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const = 0;
+
    /** Build a container with all the neccessary linear algebra objects. This is
      * the ghosted version.
      */ 
    virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const = 0;
 
+   /** Build a container with all the neccessary linear algebra objects, purely on
+     * the single physics. This gives linear algebra objects that are relevant for a
+     * single physics solve. In many cases this is simply a call to buildGhostedLinearObjContainer
+     * however, in a few important cases (for instance in stochastic galerkin methods)
+     * this will return a container for a single instantiation of the physics. This is
+     * the ghosted version.
+     */ 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const = 0;
+
    virtual void globalToGhostContainer(const LinearObjContainer & container,
-                                       LinearObjContainer & ghostContainer) const = 0;
+                                       LinearObjContainer & ghostContainer,int) const = 0;
    virtual void ghostToGlobalContainer(const LinearObjContainer & ghostContainer,
-                                       LinearObjContainer & container) const = 0;
+                                       LinearObjContainer & container,int) const = 0;
 
    /** Initialize container with a specific set of member values.
      *

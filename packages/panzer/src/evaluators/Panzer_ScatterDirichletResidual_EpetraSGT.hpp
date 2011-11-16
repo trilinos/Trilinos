@@ -94,7 +94,7 @@ evaluateFields(typename Traits::EvalData workset)
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
    Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
-         = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.linContainer);
+         = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_Vector> r_template = (*sgEpetraContainer->begin())->f;
    const Epetra_BlockMap & map = r_template->Map();
 
@@ -242,7 +242,7 @@ evaluateFields(typename Traits::EvalData workset)
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
    Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
-         = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.linContainer);
+         = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_CrsMatrix> Jac_template = (*sgEpetraContainer->begin())->A;
    const Epetra_BlockMap & map = Jac_template->RowMap();
 

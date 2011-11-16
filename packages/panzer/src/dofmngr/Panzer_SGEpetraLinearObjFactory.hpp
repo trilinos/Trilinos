@@ -44,13 +44,15 @@ public:
 /*************** Linear object factory methods *******************/
 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const;
 
    virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const;
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const;
 
    virtual void globalToGhostContainer(const LinearObjContainer & container,
-                                       LinearObjContainer & ghostContainer) const;
+                                       LinearObjContainer & ghostContainer,int mem) const;
    virtual void ghostToGlobalContainer(const LinearObjContainer & ghostContainer,
-                                       LinearObjContainer & container) const;
+                                       LinearObjContainer & container,int mem) const;
 
    /** Adjust the residual vector and Jacobian matrix (if they exist) for applied
      * dirichlet conditions. The adjustment considers if a boundary condition was

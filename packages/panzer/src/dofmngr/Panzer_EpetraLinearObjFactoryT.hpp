@@ -68,35 +68,45 @@ Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::b
 
 template <typename Traits,typename LocalOrdinalT>
 void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostContainer(const LinearObjContainer & in,
-                                                                          LinearObjContainer & out) const
+                                                                          LinearObjContainer & out,int mem) const
 {
-  using Teuchos::is_null;
+   using Teuchos::is_null;
 
-  const EpetraLinearObjContainer & e_in = Teuchos::dyn_cast<const EpetraLinearObjContainer>(in); 
-  EpetraLinearObjContainer & e_out = Teuchos::dyn_cast<EpetraLinearObjContainer>(out); 
+   typedef EpetraLinearObjContainer ELOC;
+   const EpetraLinearObjContainer & e_in = Teuchos::dyn_cast<const EpetraLinearObjContainer>(in); 
+   EpetraLinearObjContainer & e_out = Teuchos::dyn_cast<EpetraLinearObjContainer>(out); 
   
-  // Operations occur if the GLOBAL container has the correct targets!
-  // Users set the GLOBAL continer arguments
-  if ( !is_null(e_in.x) )
-    globalToGhostEpetraVector(*e_in.x,*e_out.x);
+   // Operations occur if the GLOBAL container has the correct targets!
+   // Users set the GLOBAL continer arguments
+   if ( !is_null(e_in.x) && !is_null(e_out.x) && ((mem & ELOC::X)==ELOC::X))
+     globalToGhostEpetraVector(*e_in.x,*e_out.x);
   
-  if ( !is_null(e_in.dxdt) )
-    globalToGhostEpetraVector(*e_in.dxdt,*e_out.dxdt);
+   if ( !is_null(e_in.dxdt) && !is_null(e_out.dxdt) && ((mem & ELOC::DxDt)==ELOC::DxDt))
+     globalToGhostEpetraVector(*e_in.dxdt,*e_out.dxdt);
+
+   if ( !is_null(e_in.f) && !is_null(e_out.f) && ((mem & ELOC::F)==ELOC::F))
+      globalToGhostEpetraVector(*e_in.f,*e_out.f);
 }
 
 template <typename Traits,typename LocalOrdinalT>
 void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalContainer(const LinearObjContainer & in,
-                                                                          LinearObjContainer & out) const
+                                                                          LinearObjContainer & out,int mem) const
 {
+   using Teuchos::is_null;
+
+   typedef EpetraLinearObjContainer ELOC;
    const EpetraLinearObjContainer & e_in = Teuchos::dyn_cast<const EpetraLinearObjContainer>(in); 
    EpetraLinearObjContainer & e_out = Teuchos::dyn_cast<EpetraLinearObjContainer>(out); 
 
   // Operations occur if the GLOBAL container has the correct targets!
   // Users set the GLOBAL continer arguments
-   if ( !is_null(e_out.f) )
+   if ( !is_null(e_in.x) && !is_null(e_out.x) && ((mem & ELOC::X)==ELOC::X))
+     ghostToGlobalEpetraVector(*e_in.x,*e_out.x);
+
+   if ( !is_null(e_in.f) && !is_null(e_out.f) && ((mem & ELOC::F)==ELOC::F))
      ghostToGlobalEpetraVector(*e_in.f,*e_out.f);
 
-   if ( !is_null(e_out.A) )
+   if ( !is_null(e_in.A) && !is_null(e_out.A) && ((mem & ELOC::Mat)==ELOC::Mat))
      ghostToGlobalEpetraMatrix(*e_in.A,*e_out.A);
 }
 

@@ -22,8 +22,10 @@ template <typename EvalT,typename LO,typename GO>
 void panzer::AssemblyEngine<EvalT,LO,GO>::
 evaluate(const panzer::AssemblyEngineInArgs& in)
 {
+  typedef LinearObjContainer LOC;
+
   // Push solution, x and dxdt into ghosted domain
-  m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_);
+  m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
 
   // *********************
   // Volumetric fill
@@ -42,7 +44,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // Dirchlet conditions require a global matrix
   this->evaluateDirichletBCs(in);
 
-  m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_);
+  m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
   return;
 }
@@ -101,8 +103,10 @@ template <typename EvalT,typename LO,typename GO>
 void panzer::AssemblyEngine<EvalT,LO,GO>::
 evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 {
+  typedef LinearObjContainer LOC;
+
   // allocate a counter to keep track of where this processor set dirichlet boundary conditions
-  Teuchos::RCP<LinearObjContainer> localCounter = m_lin_obj_factory->buildGhostedLinearObjContainer();
+  Teuchos::RCP<LinearObjContainer> localCounter = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
   m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::X,*localCounter); // store counter in X
   localCounter->initialize();
      // this has only an X vector. The evaluate BCs will add a one to each row
@@ -111,20 +115,20 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
   // apply dirichlet conditions, make sure to keep track of the local counter
   this->evaluateBCs(panzer::BCT_Dirichlet, in,localCounter);
 
-  Teuchos::RCP<LinearObjContainer> summedGhostedCounter = m_lin_obj_factory->buildGhostedLinearObjContainer();
+  Teuchos::RCP<LinearObjContainer> summedGhostedCounter = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
   m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::X,*summedGhostedCounter); // store counter in X
   summedGhostedCounter->initialize();
 
   // do communication to build summed ghosted counter for dirichlet conditions
   {
-     Teuchos::RCP<LinearObjContainer> globalCounter = m_lin_obj_factory->buildLinearObjContainer();
+     Teuchos::RCP<LinearObjContainer> globalCounter = m_lin_obj_factory->buildPrimitiveLinearObjContainer();
      m_lin_obj_factory->initializeContainer(LinearObjContainer::X,*globalCounter); // store counter in X
      globalCounter->initialize();
-     m_lin_obj_factory->ghostToGlobalContainer(*localCounter,*globalCounter);
+     m_lin_obj_factory->ghostToGlobalContainer(*localCounter,*globalCounter,LOC::X);
         // Here we do the reduction across all processors so that the number of times
         // a dirichlet condition is applied is summed into the global counter
 
-     m_lin_obj_factory->globalToGhostContainer(*globalCounter,*summedGhostedCounter);
+     m_lin_obj_factory->globalToGhostContainer(*globalCounter,*summedGhostedCounter,LOC::X);
         // finally we move the summed global vector into a local ghosted vector
         // so that the dirichlet conditions can be applied to both the ghosted
         // right hand side and the ghosted matrix

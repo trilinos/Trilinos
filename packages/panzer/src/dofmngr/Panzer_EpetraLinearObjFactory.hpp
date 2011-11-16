@@ -40,12 +40,18 @@ public:
 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const 
+   { return buildLinearObjContainer(); }
+
    virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const;
 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const 
+   { return buildGhostedLinearObjContainer(); }
+
    virtual void globalToGhostContainer(const LinearObjContainer & container,
-                                       LinearObjContainer & ghostContainer) const;
+                                       LinearObjContainer & ghostContainer,int) const;
    virtual void ghostToGlobalContainer(const LinearObjContainer & ghostContainer,
-                                       LinearObjContainer & container) const;
+                                       LinearObjContainer & container,int) const;
 
    /** Adjust the residual vector and Jacobian matrix (if they exist) for applied
      * dirichlet conditions. The adjustment considers if a boundary condition was
