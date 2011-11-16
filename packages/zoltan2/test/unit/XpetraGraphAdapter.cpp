@@ -204,12 +204,12 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Array<lno_t> partitionNum(nvtx,0);  // Migrate all rows to proc 0
+      Array<size_t> partNum(nvtx,0);  // Migrate all rows to proc 0
       tgraph_t *mMigrate = NULL;
       try{
         tGInput->applyPartitioningSolution(*tG, mMigrate,
-          nvtx, nprocs, rowGids.getRawPtr(), rowLids,
-          partitionNum.getRawPtr());
+          nprocs, nvtx, rowGids.getRawPtr(), rowLids,
+          partNum.getRawPtr());
         newG = rcp(mMigrate);
       }
       catch (std::exception &e){
@@ -268,12 +268,12 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Array<lno_t> partitionNum(nvtx,0);  // Migrate all rows to proc 0
+      Array<size_t> partNum(nvtx,0);  // Migrate all rows to proc 0
       xgraph_t *mMigrate =NULL;
        try{
         xGInput->applyPartitioningSolution(*xG, mMigrate, 
-          nvtx, nprocs, rowGids.getRawPtr(), rowLids,
-          partitionNum.getRawPtr());
+          nprocs, nvtx, rowGids.getRawPtr(), rowLids,
+          partNum.getRawPtr());
       }
       catch (std::exception &e){
         fail = 11;
@@ -332,12 +332,12 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Array<lno_t> partitionNum(nvtx,0);  // Migrate all rows to proc 0
+      Array<size_t> partNum(nvtx,0);  // Migrate all rows to proc 0
       egraph_t *mMigrate =NULL;
       try{
         eGInput->applyPartitioningSolution(*eG, mMigrate,
-          nvtx, nprocs, rowGids.getRawPtr(), rowLids,
-          partitionNum.getRawPtr());
+          nprocs, nvtx, rowGids.getRawPtr(), rowLids,
+          partNum.getRawPtr());
       }
       catch (std::exception &e){
         fail = 11;

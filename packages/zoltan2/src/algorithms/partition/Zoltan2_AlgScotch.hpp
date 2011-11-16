@@ -216,7 +216,27 @@ int AlgPTScotch(
   //TODO if (vwtdim) delete [] velotab;
   //TODO if (ewtdim) delete [] edlotab;
 
-#endif // HAVE_MPI
+#else // DO NOT HAVE_MPI
+  // TODO:  Handle serial case with calls to Scotch.
+  // TODO:  For now, assign everything to rank 0 and assume only one part.
+  // TODO:  Can probably use the code above for loading solution,
+  // TODO:  instead of duplicating it here.
+  // TODO
+  // TODO:  Actual logic should call Scotch when number of processes == 1.
+  ArrayView<const gno_t> vtxID;
+  ArrayView<const scalar_t> xyz;
+  ArrayView<const scalar_t> vtxWt;
+  size_t nVtx = model->getVertexList(vtxID, xyz, vtxWt);
+
+  size_t *parts = new size_t[nVtx];
+  for (size_t i = 0; i < nVtx; i++) parts[i] = 0;
+  solution->setPartition((size_t) 1, nVtx,
+               (gid_t *) (vtxID.getRawPtr()), // TODO Use IdentifierMap
+                                              //      instead of cast.
+               (lid_t *) NULL,                // TODO Use User's LIDs
+               parts);
+
+#endif
 #endif // HAVE_SCOTCH
   return ierr;
 }

@@ -198,12 +198,12 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Array<lno_t> partitionNum(vlen,0);  // Migrate all elements to proc 0
+      Array<size_t> partNum(vlen,0);  // Migrate all elements to proc 0
       tvector_t *vMigrate = NULL;
       try{
         tVInput->applyPartitioningSolution(*tV, vMigrate,
-          vlen, nprocs, vtxGids.getRawPtr(), vtxLids,
-          partitionNum.getRawPtr());
+          nprocs, vlen, vtxGids.getRawPtr(), vtxLids,
+          partNum.getRawPtr());
         newV = rcp(vMigrate);
       }
       catch (std::exception &e){
@@ -262,12 +262,12 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Array<lno_t> partitionNum(vlen,0);  // Migrate all elements to proc 0
+      Array<size_t> partNum(vlen,0);  // Migrate all elements to proc 0
       xvector_t *vMigrate =NULL;
        try{
         xVInput->applyPartitioningSolution(*xV, vMigrate, 
-          vlen, nprocs, vtxGids.getRawPtr(), vtxLids,
-          partitionNum.getRawPtr());
+          nprocs, vlen, vtxGids.getRawPtr(), vtxLids,
+          partNum.getRawPtr());
       }
       catch (std::exception &e){
         fail = 11;
@@ -326,12 +326,12 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Array<lno_t> partitionNum(vlen,0);  // Migrate all elements to proc 0
+      Array<size_t> partNum(vlen,0);  // Migrate all elements to proc 0
       evector_t *vMigrate =NULL;
       try{
         eVInput->applyPartitioningSolution(*eV, vMigrate,
-          vlen, nprocs, vtxGids.getRawPtr(), vtxLids,
-          partitionNum.getRawPtr());
+          nprocs, vlen, vtxGids.getRawPtr(), vtxLids,
+          partNum.getRawPtr());
       }
       catch (std::exception &e){
         fail = 11;
