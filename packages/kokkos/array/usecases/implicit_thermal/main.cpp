@@ -54,12 +54,16 @@ int main(int argc, char ** argv)
   int end = 15 ;
   int runs = 1 ;
   int threads = 4;
+  int test_gmres = 0;
 
-  if ( argc == 5) {
+  if ( argc >= 5) {
     beg = atoi(argv[1]);
     end = atoi(argv[2]);
     runs = atoi(argv[3]);
     threads = atoi(argv[4]);
+    if(argc == 6){
+      test_gmres = atoi(argv[5]);
+    }
   }
 
 #ifdef TEST_KOKKOS_HOST
