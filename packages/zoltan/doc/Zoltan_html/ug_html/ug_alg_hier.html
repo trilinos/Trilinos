@@ -15,6 +15,140 @@
 <H2>
 <A NAME="Hier"></A>Hierarchical Partitioning (HIER)</H2>
 
+Hierarchical partitioning refers to a sequence of partitionings,
+where each level in the sequence refines the partitions computed in
+the prevous level.  Zoltan provides two ways to perform hierarchical
+partitioning, one targeted to heterogeneous distributed systems, and
+one targeted to machines with multiple multicore processors.
+<p>
+Partitioning to the hierarchy of a distributed system is described 
+<a href="#HierDist">below</a>.  Employing callbacks to the user at
+each level, Zoltan will balance the problem across platforms of 
+varying capabilities while minimizing communication 
+along slower links.
+<p>
+Partitioning an application to run on a multicore machine, where the
+multicore nodes are expected to be homogeneous in architecture, is
+described in the <a href="#HierMC"> next </a> section.  Using a parameter
+supplied by the application which describes node topology, Zoltan will partition
+the problem to balance computation while minimizing inter-node communication,
+and communication between on-node structures.
+
+<H3>
+<A NAME="HierMC"></A>Hierarchical Partitioning for multicore machines</H2>
+
+With this method, Zoltan computes partitions that balance computation and 
+minimize communication costs on multicore architectures.  
+
+<p>
+Some limitations of this method to note are that Zoltan assumes:
+<ul>
+<li>Each node (processor) of the multicore machine has the same architecture.
+<li>The MPI process ranks are consecutive on the multicore nodes.
+</ul>
+
+<p>
+In particular, if your parameters imply there are 4 MPI processes on each multicore node, Zoltan will assume that processes 0, 1, 2 and 3 are on the same node.  Your system administrator should be able to show you how to ensure that your processes are loaded in this order.
+<p>
+The results shown below emphasize that the benefit to be gained from levels of
+hierarchical partitioning is very dependent on the commmunication patterns 
+of the problem.
+<br>
+<br>
+
+<table border=2 >
+<tr>
+<td>
+<img width=90% src=Structural_MATVEC_Avg_Time.jpg alt="matvec timings"> </td> 
+</tr>
+<tr>
+<td colspan=2>These results show the runtime for matrix vector multiplication
+for some matrices from the <a href=http://www.cise.ufl.edu/research/sparse/matrices/>University of Florida</a> matrix collection. 
+The tests were run on four nodes of the
+<a href=http://www.nersc.gov/users/computational-systems/hopper/>Hopper</a> 
+machine
+at <a href=http://www.nersc.gov>NERSC</a>, a machine composed of dual-socket, dual-die nodes, with each die having 6 cores.
+The graphs were first partitioned once across all 96 processes with
+<a href=http://www.labri.fr/perso/pelegrin/scotch/>PTScotch</a>.  Then, using
+hierarchical partitioning with <I>TOPOLOGY="24"</I>, they were partitioned across the nodes first, then the cores.  Then with <I>TOPOLOGY="2,12"</I> they were partitioned across the nodes, then across the sockets, then into 12 parts.  Finally, with <I>TOPOLOGY="2,2,6"</I> they were partitioned across the nodes, then the sockets, then the dies, and finally partitioned into 6 parts.  (Runtime is normalized to the flat partitioning case.)
+</td>
+</tr>
+</table>
+
+<BR>&nbsp;
+<TABLE WIDTH="100%" NOSAVE >
+<TR>
+<TD VALIGN=TOP><B>Method String:</B></TD>
+<TD><B>HIER</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; HIER_ASSIST</I></TD>
+<TD>Setting this parameter to 1 indicates that the application wishes Zoltan
+to perform hierarchcial partitioning for homogeneous multicore nodes, without requiring the application to supply query functions guiding the partitioning.
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>TOPOLOGY</I></TD>
+<TD>This comma-separated list of integers describes the topology of the multicore node.  For example:
+<BR>"2,8" may refer to a dual-socket processor where each socket has 8 cores.
+<BR>"2,4,6" may refer to a dual-socket, 4-die, 6-core node
+<BR>"16" would refer to a 16-core node
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; HIER_DEBUG_LEVEL</I></TD>
+<TD>
+0 = no debugging output 
+<BR>1 = show hierarchy and MPI ranks for each part at each level
+<BR>2 = in addition, all processes print status information at each level
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+<TD><I>HIER_ASSIST</I> = 1 if <I>TOPOLOGY</I> is defined, 0 otherwise</TD>
+</TR>
+<TR>
+<TD></TD>
+<TD><I>TOPOLOGY</I> has no default value.</TD>
+</TR>
+<TR>
+<TD></TD>
+<TD><I>HIER_DEBUG_LEVEL</I> = 0</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Required Query Functions:</B></TD>
+<TD>There are no query functions required specifically for hierarchical
+partitioning to multicore nodes.  If the application supplies 
+<a href=ug_alg_geom.html>geometric query functions</a> then Zoltan will use
+<a href=ug_alg_rib.html>RIB</a> partitioning at each level, using whatever 
+relevant parameters the application has set.  If the application supplies
+<a href=ug_alg_graph.html>graph query functions</a>, then Zoltan will perform 
+<a href=ug_alg_graph.html>graph partitioning</a> at each level, again using whatever
+relevant graph partitioning parameters the application has set.
+ </TD>
+</TR>
+</TABLE>
+
+
+<H3>
+<A NAME="HierDist"></A>Hierarchical Partitioning for distributed computing</H2>
+
+
 Hierarchical partitioning allows the creation of hybrid partitions,
 computed using combinations of other Zoltan procedures.
 For hierarchical and heterogeneous systems, different choices may be
