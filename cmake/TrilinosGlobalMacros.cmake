@@ -64,7 +64,7 @@
 # Macro that defines Trilinos testing support
 #
 
-MACRO(TRILINOS_SETUP_TESTING_SUPPORT)
+MACRO(TRIBITS_PROJECT_SETUP_TESTING_SUPPORT)
 
   CONFIGURE_FILE(
     ${${PROJECT_NAME}_TRIBITS_DIR}/ctest/CTestCustom.ctest.in
@@ -77,8 +77,10 @@ ENDMACRO()
 #
 # Macro that defines Trilinos packaging options:
 #
+# ToDo: Seprate this into TriBITS general and Trilinos specific.
+#
 
-MACRO(TRILINOS_DEFINE_PACKAGING)
+MACRO(TRIBITS_PROJECT_DEFINE_PACKAGING)
 
   SET(CPACK_SOURCE_IGNORE_FILES
     ${CPACK_SOURCE_IGNORE_FILES}

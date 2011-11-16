@@ -119,8 +119,8 @@ INCLUDE(PackageArchGlobalMacros)
 INCLUDE(PackageArchConstants)
 INCLUDE(${TRILINOS_CMAKE_DIR}/TrilinosVersion.cmake)
 
-INCLUDE(TrilinosFindPythonInterp)
-TRILINOS_FIND_PYTHON()
+INCLUDE(TribitsFindPythonInterp)
+TRIBITS_FIND_PYTHON()
 MESSAGE("PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
 
 #############################

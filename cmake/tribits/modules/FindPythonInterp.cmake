@@ -73,7 +73,7 @@
 #    must be found or the CMake configure will stop immediately.
 #
 
-#MESSAGE("Calling Trilinos version of FindPythonInterp.cmake")
+#MESSAGE("Calling TriBITS version of FindPythonInterp.cmake")
 
 FIND_PROGRAM(PYTHON_EXECUTABLE
   NAMES python2.7 python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5 python
