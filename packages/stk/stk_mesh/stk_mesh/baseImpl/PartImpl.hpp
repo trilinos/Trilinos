@@ -82,6 +82,8 @@ public:
   const T * declare_attribute_with_delete( const T *);
   template<class T>
   const T * declare_attribute_no_delete( const T *);
+  template<class T>
+  bool remove_attribute( const T *);
 
   /** Construct a subset part within a given mesh.
    *  Is used internally by the two 'declare_part' methods.
@@ -130,6 +132,14 @@ const T *
 PartImpl::declare_attribute_no_delete( const T * a )
 {
   return m_attribute.template insert_no_delete<T>( a );
+}
+
+template<class T>
+inline
+bool 
+PartImpl::remove_attribute( const T * a )
+{
+  return m_attribute.template remove<T>( a );
 }
 
 } // namespace impl

@@ -93,6 +93,15 @@ namespace stk {
 
       }
 
+      virtual std::string getFromTopoPartName() { 
+        shards::CellTopology cell_topo(getFromTopology());
+        return cell_topo.getName();
+      }
+      virtual std::string getToTopoPartName() { 
+        shards::CellTopology cell_topo(getToTopology());
+        return cell_topo.getName();
+      }
+
       virtual void doBreak() 
       {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_Enrich_3D::doBreak()");

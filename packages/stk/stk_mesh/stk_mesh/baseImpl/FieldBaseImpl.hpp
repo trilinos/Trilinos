@@ -119,7 +119,7 @@ public:
       FieldState                   arg_this_state
       );
 
-  ~FieldBaseImpl() {}
+  ~FieldBaseImpl();
 
 private:
 

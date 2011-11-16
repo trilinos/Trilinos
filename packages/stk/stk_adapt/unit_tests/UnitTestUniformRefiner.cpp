@@ -964,8 +964,8 @@ namespace stk {
 
             //UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 6 > break_quad_to_tri_6;
             UniformRefiner breaker(eMesh, break_quad_to_tri_6, proc_rank_field);
-            breaker.setIgnoreSideSets(true);
-            breaker.setRemoveOldElements(false);
+            //breaker.setIgnoreSideSets(true);
+            //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
             save_or_diff(eMesh, output_files_loc+"square_quad4_out.e");

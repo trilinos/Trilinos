@@ -91,9 +91,10 @@ namespace stk {
         //assert(entity);
 
         std::string name = entity->name();
+        //std::cout << "tmp srk found  part= " << name << std::endl;
         if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
           {
-            //std::cout << "tmp found omitted part= " << name << std::endl;
+            //std::cout << "tmp srk found omitted part= " << name << std::endl;
             if ( entity->property_exists(std::string("omitted") ) )
               {
                 entity->property_erase(std::string("omitted"));
@@ -609,64 +610,61 @@ namespace stk {
       }
 
       // ========================================================================
-      void process_read_surface_entity_bulk(const Ioss::SideSet* io ,
+      void process_read_surface_entity_bulk(const Ioss::SideSet* sset ,
                                             stk::mesh::BulkData & bulk)
       {
-        assert(io->type() == Ioss::SIDESET);
-        const stk::mesh::fem::FEMMetaData& fem_meta = mesh::fem::FEMMetaData::get(bulk);
-        //const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( meta );
+        assert(sset->type() == Ioss::SIDESET);
 
-        int block_count = io->block_count();
+        const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+        const stk::mesh::fem::FEMMetaData &fem_meta_data = stk::mesh::fem::FEMMetaData::get(meta);
+        const stk::mesh::EntityRank element_rank = fem_meta_data.element_rank();
+
+        int block_count = sset->block_count();
         for (int i=0; i < block_count; i++) {
-          Ioss::SideBlock *block = io->get_block(i);
+          Ioss::SideBlock *block = sset->get_block(i);
           if (stk::io::include_entity(block)) {
             std::vector<int> side_ids ;
             std::vector<int> elem_side ;
 
-            stk::mesh::Part * const fb_part = fem_meta.get_part(block->name());
+            stk::mesh::Part * const side_block_part = meta.get_part(block->name());
+            stk::mesh::EntityRank side_rank = side_block_part->primary_entity_rank();
 
             block->get_field_data("ids", side_ids);
             block->get_field_data("element_side", elem_side);
 
             assert(side_ids.size() * 2 == elem_side.size());
-            stk::mesh::PartVector add_parts( 1 , fb_part );
+            stk::mesh::PartVector add_parts( 1 , side_block_part );
 
             size_t side_count = side_ids.size();
             std::vector<stk::mesh::Entity*> sides(side_count);
             for(size_t is=0; is<side_count; ++is) {
 
+              stk::mesh::Entity* const elem = bulk.get_entity(element_rank, elem_side[is*2]);
 
-#if PERCEPT_ALLOW_PART_RANK_SUBDIM
-              if (0 && fem_meta.element_rank() != fb_part->primary_entity_rank())
-                {
-                  std::cout << "tmp fem_meta.element_rank()= " << fem_meta.element_rank() <<
-                    " fb_part->primary_entity_rank() = " <<  fb_part->primary_entity_rank() << std::endl;
-                }
-              stk::mesh::Entity* const elem = bulk.get_entity(fb_part->primary_entity_rank(), elem_side[is*2]);
-#else
-              stk::mesh::Entity* const elem = bulk.get_entity(fem_meta.element_rank(), elem_side[is*2]);
-#endif
               // If NULL, then the element was probably assigned to an
-              // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
-              // Hence the '-1' in the following line.
-              int side_ordinal = elem_side[is*2+1] - 1 ;
-
               // element block that appears in the database, but was
               // subsetted out of the analysis mesh. Only process if
               // non-null.
               if (elem != NULL) {
-                stk::mesh::Entity& side =
-                  stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+                // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
+                // Hence the '-1' in the following line.
+                int side_ordinal = elem_side[is*2+1] - 1 ;
 
-                bulk.change_entity_parts( side, add_parts );
-                sides[is] = &side;
+                stk::mesh::Entity *side = NULL;
+                if (side_rank == 2) {
+                  side = &stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+                } else {
+                  side = &stk::mesh::fem::declare_element_edge(bulk, side_ids[is], *elem, side_ordinal);
+                }
+                bulk.change_entity_parts( *side, add_parts );
+                sides[is] = side;
               } else {
                 sides[is] = NULL;
               }
             }
 
             const stk::mesh::Field<double, stk::mesh::ElementNode> *df_field =
-              stk::io::get_distribution_factor_field(*fb_part);
+              stk::io::get_distribution_factor_field(*side_block_part);
             if (df_field != NULL) {
               stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
             }

@@ -78,6 +78,18 @@ FieldBaseImpl::FieldBaseImpl(
   }
 }
 
+//----------------------------------------------------------------------
+FieldBaseImpl::~FieldBaseImpl()
+{
+  if (state() == StateNone) {
+    void*& init_val = m_initial_value;
+
+    delete [] reinterpret_cast<char*>(init_val);
+    init_val = NULL;
+  }
+}
+
+//----------------------------------------------------------------------
 const FieldRestrictionVector & FieldBaseImpl::restrictions() const
 { return m_field_states[0]->m_impl.m_dim_map ; }
 

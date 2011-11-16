@@ -6,6 +6,8 @@
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/Util.hpp>
 
+#include <Ioss_NullEntity.h>
+#include <Ioss_SubSystem.h>
 
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
 //#include "Intrepid_Basis.hpp"
@@ -1597,6 +1599,25 @@ namespace stk {
 
     }
 
+    void PerceptMesh::checkForPartsToAvoidWriting()
+    {
+      const stk::mesh::PartVector & parts = getFEM_meta_data()->get_parts();
+      unsigned nparts = parts.size();
+
+      for (unsigned ipart=0; ipart < nparts; ipart++)
+        {
+          stk::mesh::Part& part = *parts[ipart];
+          std::string name = part.name();
+          //std::cout << "tmp srk checkForPartsToAvoidWriting found part= " << name << " s_omit_part= " << s_omit_part << std::endl;
+          if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
+          {
+            //std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
+            const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
+            if (entity) 
+              stk::io::remove_io_part_attribute(part);
+          }
+        }
+    }
 
     void PerceptMesh::writeModel( const std::string& out_filename)
     {
@@ -1606,8 +1627,9 @@ namespace stk {
       
       //std::cout << "tmp dumpElements PerceptMesh::writeModel: " << out_filename << std::endl;
       //dumpElements();
-      
 
+      checkForPartsToAvoidWriting();
+     
       //checkState("writeModel" );
       stk::mesh::fem::FEMMetaData& meta_data = *m_metaData;
       stk::mesh::BulkData& bulk_data = *m_bulkData;

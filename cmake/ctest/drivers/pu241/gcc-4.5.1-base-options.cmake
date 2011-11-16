@@ -1,24 +1,30 @@
-
 #
-# Base options for all hybrid GCC 4.5.1 C/C++ and Intel 12.x Fortran builds
+# Base options for all hybrid GCC 4.5.1 C/C++ and Intel Fortran builds
 #
 
-# Include first to define MKLROOT
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-12.0.4-options.cmake)
-
-# Set up the basic compilers paths
+# Define the core compilers
 SET(TRILINOS_TOOLSET_BASE  /opt/gcc-4.5.1/trilinos-toolset)
-SET(INTEL_COMPILER_BASE  /opt/intel/Compiler/composerxe-2011.4.191)
-# Add rpath for gnu and intel compiler libraries
+# Add rpath for compiler libraries
 SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/lib64" CACHE STRING "")
+# This dicates downstream the intel fortran compiler to be used
+# Include MKL and TBB; these should match version of Intel compilers being used
+IF ("${HYBRIDBUILD_INTEL_VERSION}" STREQUAL "12.0.4")
+  SET(HYBRIDBUILD_INTEL_BIN /opt/intel/Compiler/composerxe-2011.4.191/bin/intel64)
+  INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/tbb-12.0.4-options.cmake)
+  INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-12.0.4-options.cmake)
+ELSE() # IF("${HYBRIDBUILD_INTEL_VERSION}" STREQUAL "11.1.064")
+  SET(HYBRIDBUILD_INTEL_BIN /opt/intel/Compiler/11.1/064/bin/intel64)
+  INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/tbb-11.1.064-options.cmake)
+  INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-11.1.064-options.cmake)
+ENDIF()
+SET(BLAS_INCLUDE_DIRS   ${MKL_IFORT_MODULE_PATH} CACHE PATH "Path to MKL BLAS Fortran modules compatible with Intel fortran")
+SET(LAPACK_INCLUDE_DIRS ${MKL_IFORT_MODULE_PATH} CACHE PATH "Path to MKL LAPACK Fortran modules compatible with Intel fortran")
 
-# Point to path to MKL Fortran modules compatible with GCC 4.5.1 C/C++ calling code
-SET(BLAS_INCLUDE_DIRS  ${MKLROOT}/include/intel64/lp64  CACHE PATH  "")
-SET(LAPACK_INCLUDE_DIRS ${BLAS_INCLUDE_DIRS}  CACHE PATH  "")
-
-# To avoid problem with EpetraExt_inout_test failure in optimized code for
-# hybrid build
+# To avoid problem with EpetraExt_inout_test failure in optimized code for hybrid build
 SET(Epetra_ENABLE_Fortran OFF CACHE BOOL "")
+
+# this compiler supports BinUtils
+SET(TPL_ENABLE_BinUtils ON CACHE BOOL "")
 
 # Point to basic CASL-related TPLs related to the GCC C/C++ 4.5.1 compiler
 SET(PVMLibraries_LIBRARY_DIRS /opt/gcc-4.5.1/tpls/pvm3/lib/LINUX64 CACHE FILEPATH "")
