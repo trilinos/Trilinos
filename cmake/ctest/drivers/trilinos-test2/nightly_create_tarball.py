@@ -183,12 +183,12 @@ def get_options(workingDir):
     help="Enable an MPI build of Trilinos. Default=%default")
   parser.add_option("--mpi-base-path", dest="mpiBaseDir", action="store", default="", 
     help="Sets the base path where we can find the mpi compiler wrappers, run environmnet and headers libraries. Default=%default")
-  parser.add_option("--enable-boost", dest="enableBoost", action="store_true", default=True,
-                    help="Enable the Boost TPL. Default=%default")
+  parser.add_option("--disable-boost", dest="disableBoost", action="store_true", default=False,
+                    help="Disable the Boost TPL. Default=%default")
   parser.add_option("--boost-dir", dest="boostDir", action="store", default="/usr/lib", 
     help="Sets the location of the boost library. Default=%default")
-  parser.add_option("--enable-netcdf", dest="enableNetcdf", action="store_true", default=True,
-                    help="Enable the NetCDF TPL. Default=%default")
+  parser.add_option("--disable-netcdf", dest="disableNetcdf", action="store_true", default=False,
+                    help="Disable the NetCDF TPL. Default=%default")
   parser.add_option("--netcdf-dir", dest="netcdfDir", action="store", default="/usr/lib", 
     help="Sets the location of the netcdf library. Default=%default")
   parser.add_option("--no-dashboard", dest="doDashboardBuild", action="store_false", default=True, 
@@ -260,10 +260,10 @@ def main(package_enable_disable_list, options):
     cmake_configure_options.append(("Trilinos_ENABLE_%s" % package, on_or_off))
 
   cmake_configure_options.append(("Trilinos_ENABLE_EXPLICIT_INSTANTIATION", "ON"))
-  if options.enableBoost:
+  if not options.disableBoost:
     cmake_configure_options.append(("TPL_ENABLE_Boost", "ON"))
     cmake_configure_options.append(("Boost_INCLUDE_DIRS", options.boostDir))
-  if options.enableNetcdf:
+  if not options.disableNetcdf:
     cmake_configure_options.append(("TPL_ENABLE_Netcdf", "ON"))
     cmake_configure_options.append(("Netcdf_LIBRARY_DIRS",
                                    os.path.join(options.netcdfDir, "lib")))
