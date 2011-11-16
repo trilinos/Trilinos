@@ -51,8 +51,8 @@ namespace panzer {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);
-    pl->set("X Elements",4);
-    pl->set("Y Elements",4);
+    pl->set("X Elements",2);
+    pl->set("Y Elements",1);
     
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
@@ -155,7 +155,11 @@ namespace panzer {
                                         panzer::EpetraLinearObjContainer::DxDt |
                                         panzer::EpetraLinearObjContainer::F |
                                         panzer::EpetraLinearObjContainer::Mat,*eGlobal);
+    eGlobal->initialize();
+    eGhosted->initialize();
     panzer::AssemblyEngineInArgs input(eGhosted,eGlobal);
+    input.alpha = 0.0;
+    input.beta = 1.0;
 
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
@@ -415,7 +419,11 @@ namespace panzer {
                                         panzer::EpetraLinearObjContainer::DxDt |
                                         panzer::EpetraLinearObjContainer::F |
                                         panzer::EpetraLinearObjContainer::Mat,*eGlobal);
+    eGhosted->initialize();
+    eGlobal->initialize();
     panzer::AssemblyEngineInArgs input(eGhosted,eGlobal);
+    input.alpha = 0.0;
+    input.beta = 1.0;
 
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     const Epetra_Vector & f = *eGlobal->f;
@@ -443,7 +451,6 @@ namespace panzer {
 
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
 
-    eGlobal->f->Print(out);
     const Epetra_CrsMatrix & A = *eGlobal->A;
 
     if(myRank==0) {
@@ -452,46 +459,48 @@ namespace panzer {
        int gid = GIDs[3]; // top left corner at block interface
        int lid = f.Map().LID(gid);
 
-       if(lid>=0)
+       if(lid>=0) {
           TEST_EQUALITY(f[lid],-3.0);
-
-       int numEntries = 0;
-       int * indices = 0;
-       double * values = 0;
-       A.ExtractMyRowView(lid,numEntries,values,indices);
-
-       double sum = 0.0;
-       for(int i=0;i<numEntries;i++) {
-          sum += values[i];
-          if(values[i]!=0.0)
-          {   TEST_EQUALITY(values[i],1.0); } // diag entry should be 0
-          else
-          {   TEST_EQUALITY(values[i],0.0); } // all non diag entries should be 0
+   
+          int numEntries = 0;
+          int * indices = 0;
+          double * values = 0;
+          A.ExtractMyRowView(lid,numEntries,values,indices);
+   
+          double sum = 0.0;
+          for(int i=0;i<numEntries;i++) {
+             sum += values[i];
+             if(values[i]!=0.0)
+             {   TEST_EQUALITY(values[i],1.0); } // diag entry should be 0
+             else
+             {   TEST_EQUALITY(values[i],0.0); } // all non diag entries should be 0
+          }
+          TEST_EQUALITY(sum,1.0); // only one entry allowed to be 1
        }
-       TEST_EQUALITY(sum,1.0); // only one entry allowed to be 1
     }
     else if(myRank==1) {
        dofManager->getElementGIDs(0,GIDs,"eblock-0_0"); // in eblock-0_0
        int gid = GIDs[2]; // top right corner at block interface
        int lid = f.Map().LID(gid);
 
-       if(lid>=0)
+       if(lid>=0) {
           TEST_EQUALITY(f[lid],-3.0);
-
-       int numEntries = 0;
-       int * indices = 0;
-       double * values = 0;
-       A.ExtractMyRowView(lid,numEntries,values,indices);
-
-       double sum = 0.0;
-       for(int i=0;i<numEntries;i++) {
-          sum += values[i];
-          if(values[i]!=0.0)
-          {   TEST_EQUALITY(values[i],1.0); } // diag entry should be 0
-          else
-          {   TEST_EQUALITY(values[i],0.0); } // all non diag entries should be 0
+        
+          int numEntries = 0;
+          int * indices = 0;
+          double * values = 0;
+          A.ExtractMyRowView(lid,numEntries,values,indices);
+   
+          double sum = 0.0;
+          for(int i=0;i<numEntries;i++) {
+             sum += values[i];
+             if(values[i]!=0.0)
+             {   TEST_EQUALITY(values[i],1.0); } // diag entry should be 0
+             else
+             {   TEST_EQUALITY(values[i],0.0); } // all non diag entries should be 0
+          }
+          TEST_EQUALITY(sum,1.0); // only one entry allowed to be 1
        }
-       TEST_EQUALITY(sum,1.0); // only one entry allowed to be 1
     }
     else {
        TEUCHOS_ASSERT(false);
