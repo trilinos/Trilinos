@@ -70,7 +70,7 @@ SCRIPT_DIR = os.path.dirname(this_path)
 sys.path.insert(0, SCRIPT_DIR+"/../../python")
 from GeneralScriptSupport import *
 
-def invoke_ctest(ctest_exe, script, working_dir, environment = {}):
+def invoke_ctest(ctest_exe, script, working_dir, environment = {}, verbose=False):
   """
   Invokes CTest using the executable given by the ctest_exe argument,
   the script file specified by the script argument, in the working
@@ -87,9 +87,12 @@ def invoke_ctest(ctest_exe, script, working_dir, environment = {}):
     ctest_environ = os.environ.copy()
     # Append additional environment variables to the
     ctest_environ.update(environment)
-  
+
+  cmd = ctest_exe
+  if verbose:
+    cmd = ctest_exe + " -VV"
   CTEST_RESULT = echoRunSysCmnd(
-    ctest_exe + " -S" + " " + script,
+    cmd + " -S" + " " + script,
     throwExcept=False,
     timeCmnd=True,
     workingDir=working_dir,
@@ -106,7 +109,7 @@ def invoke_ctest(ctest_exe, script, working_dir, environment = {}):
   return CTEST_RESULT
 
 
-def run_driver(ctest_directory, repo_directory):
+def run_driver(ctest_directory, repo_directory, ctest_is_verbose=True):
   """
   Run the dashboard driver. The ctest_directory argument specifies
   where the directory that CTest will run over. There should be a
