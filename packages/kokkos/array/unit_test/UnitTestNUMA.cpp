@@ -67,7 +67,7 @@ namespace Test {
 class numa : public ::testing::Test {
   protected:
     static void SetUpTestCase() {
-      Kokkos::DeviceNUMA::initialize( Kokkos::DeviceNUMA::FULL );
+      Kokkos::DeviceNUMA::initialize( Kokkos::DeviceNUMA::DETECT_AND_USE_ALL_CORES );
     }
     static void TearDownTestCase() {
       Kokkos::DeviceNUMA::finalize();
