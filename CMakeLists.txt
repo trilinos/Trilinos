@@ -109,6 +109,7 @@ SET( CMAKE_MODULE_PATH
    ${TRILINOS_HOME_DIR}/cmake/tribits/utils
    ${TRILINOS_HOME_DIR}/cmake/tribits/package_arch
    ${TRILINOS_HOME_DIR}/cmake/tribits/config_tests
+   ${TRILINOS_HOME_DIR}/cmake/tribits/modules
    )
 
 MESSAGE("CMAKE_MODULE_PATH='${CMAKE_MODULE_PATH}'")
@@ -246,11 +247,7 @@ MESSAGE("")
 MESSAGE("Probing the environment ...")
 MESSAGE("")
 
-PACKAGE_ARCH_PRE_SETUP_ENV()
-
-INCLUDE(TrilinosProbeEnv)
-
-PACKAGE_ARCH_POST_SETUP_ENV()
+PACKAGE_ARCH_SETUP_ENV()
 
 
 #
