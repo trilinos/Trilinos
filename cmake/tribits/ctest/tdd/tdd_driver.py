@@ -109,7 +109,7 @@ def invoke_ctest(ctest_exe, script, working_dir, environment = {}, verbose=False
   return CTEST_RESULT
 
 
-def run_driver(ctest_directory, repo_directory, ctest_is_verbose=True):
+def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
   """
   Run the dashboard driver. The ctest_directory argument specifies
   where the directory that CTest will run over. There should be a

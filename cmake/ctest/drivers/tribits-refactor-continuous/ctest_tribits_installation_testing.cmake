@@ -67,7 +67,7 @@ SET(COMPILER_VERSION "GCC-4.1.2")
 SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES Teuchos TrilinosFramework)
+SET(Trilinos_PACKAGES Teuchos Epetra)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_INSTALLATION_DIR=${CMAKE_CURRENT_BINARY_DIR}/../../installation/installed"

@@ -2,13 +2,13 @@ TRILINOS_DRIVER_SETUP()
 
 find_program(PYTHON_EXE python)
 
-#TRILINOS_DRIVER_ADD_DASHBOARD(
-#  TriBITS 
-#  ctest_tribits_refactor.cmake
-#  CTEST_INSTALLER_TYPE release
-#  RUN_SERIAL
-#  TIMEOUT_MINUTES 240
-#)
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  TRIBITS_MPI 
+  ctest_tribits_refactor.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 240
+)
 
 SET(INSTALLATION_DIR "${CMAKE_BINARY_DIR}/../installation/installed")
 SET(INSTALLATION_WORKING_DIR "${CMAKE_BINARY_DIR}/../installation")
