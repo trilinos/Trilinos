@@ -50,6 +50,9 @@ APPEND_SET(HEADERS
   Panzer_ClosureModel_Factory_TemplateManager.hpp
   Panzer_ConfigDefs.hpp
   Panzer_Dimension.hpp
+  Panzer_GlobalData.hpp
+  Panzer_GlobalDataAcceptor.hpp
+  Panzer_GlobalDataAcceptor_DefaultImpl.hpp
   Panzer_EquationSet.hpp
   Panzer_EquationSet_Base.hpp
   Panzer_EquationSet_DefaultImpl.hpp
@@ -74,6 +77,9 @@ APPEND_SET(HEADERS
   Panzer_ModelEvaluator_Epetra.hpp
   Panzer_ModelEvaluator_Factory.hpp
   Panzer_ModelEvaluator_FactoryT.hpp
+  Panzer_OutputStream.hpp
+  Panzer_OutputStream_DefaultImpl.hpp
+  Panzer_ParameterLibraryEvaluationTraits.hpp
   Panzer_ParameterList_ObjectBuilders.hpp
   Panzer_PauseToAttach.hpp
   Panzer_PhysicsBlock.hpp
@@ -168,11 +174,14 @@ APPEND_SET(SOURCES
   Panzer_BCStrategy.cpp
   Panzer_Dimension.cpp
   Panzer_EquationSet_DefaultImpl.cpp
+  Panzer_GlobalData.cpp
+  Panzer_GlobalDataAcceptor_DefaultImpl.cpp
   Panzer_InputEquationSet.cpp
   Panzer_InputPhysicsBlock.cpp
   Panzer_IntegrationRule.cpp
   Panzer_MaterialModelEntry.cpp
   Panzer_ModelEvaluator_Epetra.cpp
+  Panzer_OutputStream_DefaultImpl.cpp
   Panzer_ParameterList_ObjectBuilders.cpp
   Panzer_PhysicsBlock.cpp
   Panzer_String_Utilities.cpp

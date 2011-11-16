@@ -101,3 +101,15 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES zero_sensitivities.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  output_stream
+  SOURCES output_stream.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  global_data_acceptor
+  SOURCES global_data_acceptor.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
