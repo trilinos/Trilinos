@@ -25,7 +25,8 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 		      const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
 		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
 		      bool build_transient_support)
-  : fmb_(fmb)
+  : t_init_(0.0)
+  , fmb_(fmb)
   , responseLibrary_(rLibrary)
   , p_names_(p_names)
   , build_transient_support_(build_transient_support)
@@ -130,7 +131,13 @@ panzer::ModelEvaluator_Epetra::get_x_init() const
 Teuchos::RCP<const Epetra_Vector>
 panzer::ModelEvaluator_Epetra::get_x_dot_init() const
 {
-  return x0_;
+  return x_dot_init_;
+}
+
+double
+panzer::ModelEvaluator_Epetra::get_t_init() const
+{
+  return t_init_;
 }
 
 Teuchos::RCP<Epetra_Operator>
@@ -414,6 +421,11 @@ bool panzer::ModelEvaluator_Epetra::required_basic_g(const OutArgs & outArgs) co
       activeGArgs |= (outArgs.get_g(i)!=Teuchos::null); 
 
    return activeGArgs;
+}
+
+void panzer::ModelEvaluator_Epetra::set_t_init(double t)
+{
+  t_init_ = t;
 }
 
 #ifdef HAVE_STOKHOS
