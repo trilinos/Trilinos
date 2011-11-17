@@ -35,7 +35,20 @@ int AlgRCM(
 
   int ierr= 0;
 
-  HELLO; // Test
+  HELLO;
+
+  // TEST: return the identity permutation.
+  const size_t nVtx = model->getLocalNumVertices();
+  size_t i;
+  for (i=0; i<nVtx; i++){
+    perm[i] = i;
+  }
+
+  // Set solution.
+  solution->SetPermutation(nVtx,
+               (gid_t *) NULL, // TODO
+               (lid_t *) NULL, // TODO
+               perm);
 
   return ierr;
 }
