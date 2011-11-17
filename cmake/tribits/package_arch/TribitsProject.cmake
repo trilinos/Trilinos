@@ -63,6 +63,7 @@ SET(CMAKE_MODULE_PATH
    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch
    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/config_tests
    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/modules
+   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/installation
    )
 
 IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -319,7 +320,7 @@ MACRO(TRIBITS_PROJECT)
     # TEMPORARY: Install a compatibility copy of ${PROJECT_NAME}Config.cmake
     # where was previously installed to warn and load the new file.
     INSTALL(
-      FILES ${${PROJECT_NAME}_SOURCE_DIR}/cmake/TrilinosConfigInclude.cmake
+      FILES ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TrilinosConfigInclude.cmake
       DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
       RENAME TrilinosConfig.cmake
       )
