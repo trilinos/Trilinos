@@ -65,6 +65,9 @@ SET(${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME Extra${PROJECT_NAME}Packages.cmake)
 
 SET(${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME Extra${PROJECT_NAME}TPLs.cmake)
 
+SET(${PROJECT_NAME}_TRIBITS_PROJECT_CALLBACKS_FILE
+  ${PROJECT_NAME}TribitsProjectCallbacks.cmake)
+
 # Directories relative to the TriBITS base directory
 
 SET(TRIBITS_PYTHON_SCRIPTS_DIR "python")
