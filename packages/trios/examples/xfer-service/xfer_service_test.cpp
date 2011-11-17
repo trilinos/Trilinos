@@ -92,7 +92,7 @@ int print_args(
 
     if (args.client_flag) {
         out << prefix << " \tio-method        = " << args.io_method_name << std::endl;
-        out << prefix << " \tnum-trials        = " << args.num_trials << std::endl;
+        out << prefix << " \tnum-trials       = " << args.num_trials << std::endl;
         out << prefix << " \tnum-reqs         = " << args.num_reqs << std::endl;
         out << prefix << " \tlen              = " << args.len << std::endl;
         out << prefix << " \tvalidate         = " << ((args.validate_flag)?"true":"false") << std::endl;
