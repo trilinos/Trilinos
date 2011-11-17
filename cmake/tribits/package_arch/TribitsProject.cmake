@@ -55,15 +55,21 @@
 
 # Define the TriBITS minimum required CMake version
 SET(TRIBITS_CMAKE_MINIMUM_REQUIRED 2.7)
+  
+SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits"
+  CACHE PATH
+  "The base directory pointing to the TriBITS system."
+  )
+MARK_AS_ADVANCED(${PROJECT_NAME}_TRIBITS_DIR)
 
 SET(CMAKE_MODULE_PATH
    ${CMAKE_CURRENT_SOURCE_DIR}
    ${CMAKE_CURRENT_SOURCE_DIR}/cmake
-   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/utils
-   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch
-   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/config_tests
-   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/modules
-   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/installation
+   ${${PROJECT_NAME}_TRIBITS_DIR}/utils
+   ${${PROJECT_NAME}_TRIBITS_DIR}/package_arch
+   ${${PROJECT_NAME}_TRIBITS_DIR}/config_tests
+   ${${PROJECT_NAME}_TRIBITS_DIR}/modules
+   ${${PROJECT_NAME}_TRIBITS_DIR}/installation
    )
 
 IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -120,12 +126,11 @@ MACRO(TRIBITS_PROJECT)
   PRINT_VAR(PROJECT_HOME_DIR)
   PRINT_VAR(PROJECT_BUILD_DIR)
   # Above, we put these in the cache so we can grep them out
-  
-  SET(${PROJECT_NAME}_TRIBITS_DIR "${PROJECT_HOME_DIR}/cmake/tribits"
-    CACHE PATH
-    "The base directory pointing to the TriBITS system files."
-    )
-  MARK_AS_ADVANCED(${PROJECT_NAME}_TRIBITS_DIR)
+
+  SET(${PROJECT_NAME}_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
+  SET(${PROJECT_NAME}_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
+  PRINT_VAR(${PROJECT_NAME}_HOME_DIR)
+  PRINT_VAR(${PROJECT_NAME}_BUILD_DIR)
   
   MESSAGE("-- " "CMAKE_VERSION = ${CMAKE_VERSION}")
   
