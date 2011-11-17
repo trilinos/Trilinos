@@ -53,15 +53,15 @@
 # ************************************************************************
 # @HEADER
 
-FUNCTION(FIND_TRILINOS_INSTALL)
+FUNCTION(FIND_PROJECT_INSTALL)
   IF(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
     IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("Searching for Trilinos installation at ${${PROJECT_NAME}_INSTALLATION_DIR}/include")
+      MESSAGE("Searching for ${PROJECT_NAME} installation at ${${PROJECT_NAME}_INSTALLATION_DIR}/include")
     ENDIF()
-    FIND_PACKAGE(Trilinos REQUIRED HINTS ${${PROJECT_NAME}_INSTALLATION_DIR})
+    FIND_PACKAGE(${PROJECT_NAME} REQUIRED HINTS ${${PROJECT_NAME}_INSTALLATION_DIR})
 
     IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("Found Trilinos installation version ${${PROJECT_NAME}_VERSION} at ${Trilinos_DIR}")
+      MESSAGE("Found ${PROJECT_NAME} installation version ${${PROJECT_NAME}_VERSION} at ${${PROJECT_NAME}_DIR}")
     ENDIF()
 
     #renaming some of the variables so that they do not clash with the variables of the same name.
