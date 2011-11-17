@@ -659,7 +659,7 @@ clp.add_option(
 
 clp.add_option(
   "--trilinos-src-dir", dest="trilinosSrcDir", type="string",
-  default='/'.join(getScriptBaseDir().split("/")[0:-2]),
+  default='/'.join(getScriptBaseDir().split("/")[0:-3]),
   help="The Trilinos source base directory for code to be tested." )
 
 clp.add_option(

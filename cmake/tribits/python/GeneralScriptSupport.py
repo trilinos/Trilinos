@@ -99,7 +99,7 @@ platformStr = rePlatformName.findall(sys.platform)[0]
 
 
 def getScriptBaseDir():
-  return os.path.abspath(os.path.dirname(sys.argv[0]))
+  return os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
 
 
 def getScriptName():
