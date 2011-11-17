@@ -19,7 +19,7 @@ SET(HEADERS
 )
 
 SET(SOURCES
- aprepro.cc apr_util.cc apr_stats.cc apr_init.cc apr_builtin.cc apr_units.cc apr_tokenize.cc
+ apr_aprepro.cc apr_util.cc apr_stats.cc apr_init.cc apr_builtin.cc apr_units.cc apr_tokenize.cc
  apr_scanner.cc  apr_parser.cc 
 )
 
