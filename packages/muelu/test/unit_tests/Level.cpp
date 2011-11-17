@@ -10,6 +10,7 @@
 #include "MueLu_TestHelpers.hpp"
 
 #include "MueLu_Level.hpp"
+#include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 
@@ -60,6 +61,9 @@ namespace MueLuTests {
   {
     Level l;
     
+    RCP<FactoryManager> facManager = rcp(new FactoryManager());
+    l.SetFactoryManager(facManager);
+
     RCP<FactoryBase> factory = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
     
     l.Request("Graph", factory.get());
@@ -73,6 +77,10 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Level, RequestReleaseFactory)
   {
     Level l;
+
+    RCP<FactoryManager> facManager = rcp(new FactoryManager());
+    l.SetFactoryManager(facManager);
+
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
@@ -97,6 +105,10 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Level, KeepFactory)
   {
     Level l;
+
+    RCP<FactoryManager> facManager = rcp(new FactoryManager());
+    l.SetFactoryManager(facManager);
+
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
@@ -128,6 +140,10 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Level, KeepAndBuildFactory)
   {
     Level l;
+
+    RCP<FactoryManager> facManager = rcp(new FactoryManager());
+    l.SetFactoryManager(facManager);
+
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
     l.Set("A", A);
 

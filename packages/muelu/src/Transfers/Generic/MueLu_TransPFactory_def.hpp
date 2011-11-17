@@ -19,7 +19,7 @@ namespace MueLu {
  
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    coarseLevel.DeclareInput("P",PFact_.get());
+    coarseLevel.DeclareInput("P", PFact_.get(), this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

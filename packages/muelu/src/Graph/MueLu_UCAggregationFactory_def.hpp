@@ -21,7 +21,7 @@ namespace MueLu {
   void UCAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     //if(currentLevel.IsAvailable("Aggregates",this)) return; //TODO: Why??????
 
-    currentLevel.DeclareInput("Graph", graphFact_.get()); // we should request data...
+    currentLevel.DeclareInput("Graph", graphFact_.get(), this); // we should request data...
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     

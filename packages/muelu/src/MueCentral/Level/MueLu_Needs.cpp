@@ -15,9 +15,21 @@ namespace MueLu {
 
     // Increment counter
     int currentCount = countTable_.Get(ename, factory);
-    //if (currentCount != -1) { // doesn't matter if counter disabled
     countTable_.Set(ename, factory, ++currentCount);
-    //}
+  } //Request
+
+  void Needs::Request(const std::string & ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
+
+    // Increment counter (called after Request(..,..) has been called, so counter is already incremented
+    if (!requestTable_.IsKey(factory, ename)) {
+      std::map<const FactoryBase*, int> newrequests;
+      newrequests[requestedBy] = 0;
+      requestTable_.Set(factory, ename, newrequests);
+    }
+
+    std::map<const FactoryBase*,int>& requests = requestTable_.Get(factory,ename);
+    int currentCount = requests[requestedBy];
+    requests[requestedBy] = ++currentCount;
 
   } //Request
 
@@ -35,7 +47,28 @@ namespace MueLu {
       if (dataTable_.IsKey(ename, factory))
         dataTable_.Remove(ename, factory);  // Desallocation of the data
     }
+  }
 
+  void Needs::Release(const std::string & ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
+    // Decrement reference counter
+    if (!requestTable_.IsKey(factory, ename)) {
+      std::cout << "STRANGE: " << ename << " gen by " << factory << " is not in the request table any more!" << std::endl;
+      std::cout << "how can this be released?" << std::endl;
+      return;
+    }
+
+    std::map<const FactoryBase*,int>& requests = requestTable_.Get(factory,ename);
+    int currentCount = requests[requestedBy];
+    requests[requestedBy] = --currentCount;
+
+    // Desallocation for requestTable
+    if (currentCount == 0 && IsKept(ename, factory) == false) {
+      int nElementErased = requests.erase(requestedBy);
+      TEUCHOS_TEST_FOR_EXCEPTION(nElementErased != 1, Exceptions::RuntimeError, "cannot remove data");
+
+      if (requests.size() == 0)
+        requestTable_.Remove(factory,ename);
+    }
   } //Release
 
   void Needs::Keep(const std::string & ename, const FactoryBase* factory, bool keep ) {
@@ -82,6 +115,22 @@ namespace MueLu {
     //return countTable_.IsKey(ename, factory);
   }
 
+  bool Needs::IsRequestedBy(const FactoryBase* factory, const std::string & ename, const FactoryBase* requestedBy) const {
+    //if(!IsRequested(ename,factory)) return false;
+    if (requestTable_.IsKey(factory,ename) == false) return false;
+    std::map<const FactoryBase*,int> requests = requestTable_.Get(factory,ename);
+
+    for(std::map<const FactoryBase*,int>::iterator it = requests.begin(); it!=requests.end(); it++) {
+      std::cout << "ISREQUESTEDBY: " << ename << " gen by " << factory << " requested by " << it->first << " " << it->second << " times " << std::endl;
+    }
+
+    if(requests.count(requestedBy) > 0) {
+      if(requests.find(requestedBy)->second > 0) return true;
+      else return false;
+    }
+    return false;
+  }
+
   bool Needs::IsRequestedFactory(const FactoryBase* factory) { //TODO: rename HaveBeenRequested() !!
     std::vector<std::string> ekeys = RequestedKeys();
     for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
@@ -124,6 +173,14 @@ namespace MueLu {
     //FIXME should we return 0 instead of throwing an exception?
     TEUCHOS_TEST_FOR_EXCEPTION(!countTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): " + ename + " not found in countTable_");
     return countTable_.Get(ename, factory);
+  }
+
+  int Needs::NumRequestsBy(const FactoryBase* factory, const std::string & ename, const FactoryBase* requestedBy) const {
+    if(!IsRequested(ename,factory)) return 0;
+
+    std::map<const FactoryBase*,int> requests = requestTable_.Get(factory,ename);
+    if(requests.count(requestedBy)>0) return requests[requestedBy];
+    else return 0;
   }
 
   std::vector<std::string> Needs::RequestedKeys() const {

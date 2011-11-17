@@ -39,6 +39,12 @@ namespace MueLu {
     UTILS::TwoKeyMap<std::string, const FactoryBase*, Teuchos::ParameterEntry> dataTable_;  //<! Stores data associated with a need.
     UTILS::TwoKeyMap<std::string, const FactoryBase*, bool>                    keepTable_;  //<! keep status of a variable
 
+    /// highly experimental data storage type
+    /// primary key: ptr to generating factory
+    /// secondary key: variable name
+    /// value: map: map: requesting factory -> request counter
+    UTILS::TwoKeyMap<const FactoryBase*, std::string, std::map<const FactoryBase*, int> > requestTable_;
+
     //TODO: Key1 = const std::string?
 
   public:
@@ -77,9 +83,11 @@ namespace MueLu {
 
     //! Indicate that an object is needed. This increments the storage counter.
     void Request(const std::string & ename, const FactoryBase* factory); //Request
+    void Request(const std::string & ename, const FactoryBase* factory, const FactoryBase* requestedBy); //Request
 
     //! Decrement the storage counter.
     void Release(const std::string & ename, const FactoryBase* factory); //Release
+    void Release(const std::string & ename, const FactoryBase* factory, const FactoryBase* requestedBy); //Release
 
     //@}
 
@@ -126,6 +134,8 @@ namespace MueLu {
     // Note2: this tells nothing about whether the data actually exists.
     bool IsRequested(const std::string & ename, const FactoryBase* factory) const;
 
+    bool IsRequestedBy(const FactoryBase* factory, const std::string & ename, const FactoryBase* generatedBy) const;
+
     //! Test whether a factory is generating factory of a requested variable in Needs
     bool IsRequestedFactory(const FactoryBase* factory);
 
@@ -140,6 +150,8 @@ namespace MueLu {
     //! @brief Return the number of outstanding requests for a need.
     //!  Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or hasn't been saved.
     int NumRequests(const std::string & ename, const FactoryBase* factory) const;
+
+    int NumRequestsBy(const FactoryBase* factory, const std::string & ename, const FactoryBase* generatedBy) const;
 
     //! @name Helper functions
     //@{
