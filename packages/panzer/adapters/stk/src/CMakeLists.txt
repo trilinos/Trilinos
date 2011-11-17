@@ -40,6 +40,7 @@ APPEND_SET(HEADERS
   stk_interface/Panzer_STK_SquareTriMeshFactory.hpp
   stk_interface/Panzer_STK_ExodusReaderFactory.hpp
   stk_interface/Panzer_STK_CubeHexMeshFactory.hpp
+  stk_interface/Panzer_STK_CubeTetMeshFactory.hpp
   stk_interface/Panzer_STK_MultiBlockMeshFactory.hpp
   stk_interface/Panzer_STK_PeriodicBC_Matcher.hpp
   stk_interface/Panzer_STK_PeriodicBC_MatcherT.hpp
@@ -60,6 +61,7 @@ APPEND_SET(SOURCES
   stk_interface/Panzer_STK_SquareTriMeshFactory.cpp
   stk_interface/Panzer_STK_ExodusReaderFactory.cpp
   stk_interface/Panzer_STK_CubeHexMeshFactory.cpp
+  stk_interface/Panzer_STK_CubeTetMeshFactory.cpp
   stk_interface/Panzer_STK_MultiBlockMeshFactory.cpp
   stk_interface/Panzer_STK_PeriodicBC_Matcher.cpp
   stk_interface/Panzer_STK_PeriodicBC_Parser.cpp

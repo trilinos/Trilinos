@@ -18,8 +18,8 @@ STK_ExodusReaderFactory::STK_ExodusReaderFactory()
    : fileName_(""), restartIndex_(0)
 { }
 
-STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName)
-   : fileName_(fileName), restartIndex_(0)
+STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,int restartIndex)
+   : fileName_(fileName), restartIndex_(restartIndex)
 { }
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const
@@ -105,6 +105,11 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
+
+   if(restartIndex_>0) // process_input_request is a no-op if restartIndex<=0 ... thus there would be no inital time
+      mesh.setInitialStateTime(meshData->m_input_region->get_state_time(restartIndex_));
+   else
+      mesh.setInitialStateTime(0.0); // no initial time to speak, might as well use 0.0
 
    // clean up mesh data object
    delete meshData;

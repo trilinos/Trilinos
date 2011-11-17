@@ -43,6 +43,17 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 2
   CATEGORIES NIGHTLY
   )
+
+PACKAGE_ADD_EXECUTABLE(
+  tCubeTetMeshFactory
+  SOURCES tCubeTetMeshFactory.cpp ${UNIT_TEST_DRIVER}
+  )
+PACKAGE_ADD_TEST(
+  tCubeTetMeshFactory
+  NUM_MPI_PROCS 2
+  CATEGORIES NIGHTLY
+  )
+
 # Above test takes more than 3 minutes to run on pu241 and therefore
 # should not be a *BASIC* test.  It will still run in CI and Nightly
 # testing.

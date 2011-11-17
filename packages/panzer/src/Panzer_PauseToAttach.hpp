@@ -17,7 +17,11 @@ namespace panzer {
     out.setShowProcRank(true);
     out.setOutputToRootOnly(-1);
     
+    comm->barrier();
+
+    // try to get them to print out all at once
     out << "PID = " << getpid() << std::endl;
+
     if (comm->getRank() == 0)
       getchar();
     comm->barrier();

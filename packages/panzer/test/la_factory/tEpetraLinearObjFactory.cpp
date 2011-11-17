@@ -407,6 +407,120 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
    }
 }
 
+TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, adjustDirichlet)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   #else
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+   #endif
+
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcp_dynamic_cast;
+
+   int myRank = eComm->MyPID();
+   int numProc = eComm->NumProc();
+ 
+   typedef EpetraLinearObjContainer ELOC;
+
+   RCP<panzer::UniqueGlobalIndexer<short,int> > indexer 
+         = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
+
+   // setup factory
+   Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,short> > la_factory
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
+
+   RCP<LinearObjContainer> ghosted_0   = la_factory->buildGhostedLinearObjContainer();
+   RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
+   RCP<LinearObjContainer> ghosted_sys = la_factory->buildGhostedLinearObjContainer();
+
+   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_0);
+   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_1);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F | LinearObjContainer::Mat,*ghosted_sys);
+
+   RCP<EpetraLinearObjContainer> e_0   = rcp_dynamic_cast<EpetraLinearObjContainer>(ghosted_0);
+   RCP<EpetraLinearObjContainer> e_1   = rcp_dynamic_cast<EpetraLinearObjContainer>(ghosted_1);
+   RCP<EpetraLinearObjContainer> e_sys = rcp_dynamic_cast<EpetraLinearObjContainer>(ghosted_sys);
+
+   TEST_ASSERT(!Teuchos::is_null(e_0->x));
+   TEST_ASSERT(!Teuchos::is_null(e_1->x));
+   TEST_ASSERT(!Teuchos::is_null(e_sys->f));
+   TEST_ASSERT(!Teuchos::is_null(e_sys->A));
+
+   e_sys->f->PutScalar(-3.0); // put some garbage in the systems
+   e_sys->A->PutScalar(-3.0);
+
+   // there are 3 cases for adjustDirichlet
+   //   1. Local set only for GID
+   //   2. Set on multiple processors
+   //   3. Set remotely
+
+   if(myRank==0) {   
+      // case 0
+      (*(e_0->x))[0] = 1.0; // GID = 0
+      (*(e_1->x))[0] = 1.0; // GID = 0
+
+      // case 1
+      (*(e_0->x))[2] = 1.0; // GID = 2
+      (*(e_1->x))[2] = 2.0; // GID = 2
+
+      // case 2
+      (*(e_1->x))[5] = 2.0; // GID = 5
+   }
+   else if(myRank==1) {
+      // case 0
+      (*(e_0->x))[3] = 1.0; // GID = 9
+      (*(e_1->x))[3] = 1.0; // GID = 9
+
+      // case 1
+      (*(e_0->x))[0] = 1.0; // GID = 2
+      (*(e_1->x))[0] = 2.0; // GID = 2
+
+      // case 2
+      (*(e_1->x))[6] = 2.0; // GID = 4
+   }
+   else 
+      TEUCHOS_ASSERT(false);
+
+   // run test for conditions
+   la_factory->adjustForDirichletConditions(*ghosted_0,*ghosted_1,*ghosted_sys);
+
+   int numEntries = 0;
+   double * values = 0;
+   int * indices = 0;
+
+   if(myRank==0) {   
+      TEST_EQUALITY((*e_sys->f)[0],-3.0);     // case 0
+      e_sys->A->ExtractMyRowView(0,numEntries,values,indices);
+      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0);
+
+      TEST_EQUALITY((*e_sys->f)[2],-3.0/2.0); // case 1
+      e_sys->A->ExtractMyRowView(2,numEntries,values,indices);
+      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0/2.0);
+
+      TEST_EQUALITY((*e_sys->f)[5],0.0);      // case 2
+      e_sys->A->ExtractMyRowView(5,numEntries,values,indices);
+      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],0.0);
+   }
+   else if(myRank==1) {
+      TEST_EQUALITY((*e_sys->f)[3],-3.0);     // case 0
+      e_sys->A->ExtractMyRowView(3,numEntries,values,indices);
+      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0);
+
+      TEST_EQUALITY((*e_sys->f)[0],-3.0/2.0); // case 1
+      e_sys->A->ExtractMyRowView(0,numEntries,values,indices);
+      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0/2.0);
+
+      TEST_EQUALITY((*e_sys->f)[6],0.0);      // case 2
+      e_sys->A->ExtractMyRowView(6,numEntries,values,indices);
+      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],0.0);
+   }
+   else 
+      TEUCHOS_ASSERT(false);
+}
+
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContianer)
 {
    // build global (or serial communicator)

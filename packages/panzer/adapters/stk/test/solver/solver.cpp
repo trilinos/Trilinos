@@ -60,8 +60,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
   
-    // pauseToAttach();
-
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);
@@ -351,8 +349,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(solver, Rythmos_transient)
   {
     using Teuchos::RCP;
-    
-    // pause_to_attach();
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);

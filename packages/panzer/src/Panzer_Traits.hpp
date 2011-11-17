@@ -39,6 +39,8 @@
 
 namespace panzer {
 
+  class LinearObjContainer;
+
   struct Traits : public PHX::TraitsBase {
 
     // ******************************************************************
@@ -115,12 +117,22 @@ namespace panzer {
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
+
     struct SD { 
       Teuchos::RCP< std::vector<panzer::Workset> > worksets_;
     };
     typedef SD SetupData;
+
     typedef panzer::Workset& EvalData;
-    typedef void* PreEvalData;
+
+    struct PED {
+       struct DirichletData {
+          //! Stores information about which global indices were set as dirichlet conditions
+          Teuchos::RCP<LinearObjContainer> ghostedCounter;
+       } dirichletData;
+    };
+    typedef PED& PreEvalData;
+
     typedef void* PostEvalData;
 
   };
