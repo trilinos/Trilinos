@@ -237,8 +237,8 @@ int AlgPTScotch(
                parts);
 
 #endif
-#endif // HAVE_SCOTCH
   return ierr;
+#endif // HAVE_SCOTCH
 }
 
 }
