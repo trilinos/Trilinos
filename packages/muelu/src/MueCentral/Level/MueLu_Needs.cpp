@@ -150,8 +150,10 @@ namespace MueLu {
     for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
       std::vector<const FactoryBase*> ehandles = RequestedFactories(*it);
       for (std::vector<const FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
-        if (*kt == factory) // factory is generating factory of requested variable '*it'
+        if (*kt == factory) { // factory is generating factory of requested variable '*it'
           cnt++;
+          //cnt += NumRequests(*it,factory);
+        }
       }
     }
     return cnt;

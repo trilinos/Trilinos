@@ -91,23 +91,40 @@ int main(int argc, char *argv[]) {
 #endif
 
   // custom parameters
-  LO maxLevels = 4;
+  LO maxLevels = 5;
 
   GO maxCoarseSize=1; //FIXME clp doesn't like long long int
   std::string aggOrdering = "natural";
   int minPerAgg=3;
   int maxNbrAlreadySelected=0;
 
+  int globalNumDofs = 3402;
+  int nProcs = comm->getSize();
+  int nDofsPerNode = 2;
+
+  int nLocalDofs = (int) globalNumDofs / nProcs;
+  nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
+  int nCumulatedDofs = 0;
+  sumAll(comm,nLocalDofs, nCumulatedDofs);
+  //Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM, 1, nLocalDofs, &nCumulatedDofs );
+
+  if(comm->getRank() == nProcs-1) {
+    nLocalDofs += globalNumDofs - nCumulatedDofs;
+  }
+
+  std::cout << "PROC: " << comm->getRank() << " numLocalDofs=" << nLocalDofs << std::endl;
+
   // read in problem
-  Epetra_Map emap(3402,0,*Xpetra::toEpetra(comm));
+  Epetra_Map emap (globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
+  //Epetra_Map emap(3402,0,*Xpetra::toEpetra(comm));
   Epetra_CrsMatrix * ptrA = 0;
   Epetra_Vector * ptrf = 0;
   Epetra_MultiVector* ptrNS = 0;
 
   std::cout << "Reading matrix market file" << std::endl;
-  EpetraExt::MatrixMarketFileToCrsMatrix("stru2d_A.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
+  EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
+  EpetraExt::MatrixMarketFileToVector("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
+  EpetraExt::MatrixMarketFileToMultiVector( "/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
@@ -139,9 +156,9 @@ int main(int argc, char *argv[]) {
 
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetVerbLevel(MueLu::Extreme);
-  dropFact->SetFixedBlockSize(2);
-  RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
-  dropFact->SetPreDropFunction(predrop);
+  dropFact->SetFixedBlockSize(nDofsPerNode);
+  //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
+  //dropFact->SetPreDropFunction(predrop);
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
@@ -166,8 +183,8 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact,nspFact));
+  //RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
   //RCP<RFactory> Rfact  = rcp( new GenericRFactory(Pfact));
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
@@ -175,8 +192,8 @@ int main(int argc, char *argv[]) {
   RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  Finest->Keep("Aggregates",UCAggFact.get());
-  Finest->Keep("Nullspace",nspFact.get());
+  //Finest->Keep("Aggregates",UCAggFact.get());
+  //Finest->Keep("Nullspace",nspFact.get());
 
   // build level smoothers
   RCP<SmootherPrototype> smooProto;
@@ -208,11 +225,14 @@ int main(int argc, char *argv[]) {
 
   RCP<Level> coarseLevel2 = H->GetLevel(2);
   coarseLevel2->print(*out);
+
+  /*RCP<Level> coarseLevel2 = H->GetLevel(2);
+  coarseLevel2->print(*out);
   RCP<MultiVector> nsp2 = coarseLevel2->Get<RCP<MultiVector> >("Nullspace",nspFact.get());
   nsp2->describe(*out,Teuchos::VERB_EXTREME);
 
   RCP<Level> coarseLevel3 = H->GetLevel(3);
-  coarseLevel3->print(*out);
+  coarseLevel3->print(*out);*/
 
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);

@@ -36,7 +36,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null);
+    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
 
     //! Destructor
     virtual ~CoalesceDropFactory() { }
@@ -49,7 +49,7 @@ namespace MueLu {
     void DeclareInput(Level &currentLevel) const;
 
     /// set fixed block size
-    void SetFixedBlockSize(GO blksize);
+    void SetFixedBlockSize(LocalOrdinal blksize);
 
     /// set predrop function
     void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &predrop);
@@ -60,14 +60,18 @@ namespace MueLu {
 
     void Build(Level &currentLevel) const; // Build
 
-    void Amalgamate(const RCP<Operator>& A, RCP<Graph>& graph) const; // Amalgamate
+    void Amalgamate(const RCP<Operator>& A, const LocalOrdinal blocksize, RCP<Graph>& graph) const; // Amalgamate
 
   private:
     //! A Factory
     RCP<const FactoryBase> AFact_;
 
+    //! nullspace factory
+    //! The nullspace dimension is necessary for setting the block size in amalgamation routine
+    RCP<const FactoryBase> nullspaceFact_;
+
     /// blocksize for fixed blocksize setup
-    GO blksize_;
+    LocalOrdinal blksize_;
 
     /// are we doing fixed or variable blocks
     bool fixedBlkSize_;

@@ -1,7 +1,14 @@
 #ifndef MUELU_GRAPH_DECL_HPP
 #define MUELU_GRAPH_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
+#include <Teuchos_ArrayRCP.hpp>
+
+#include <Xpetra_ConfigDefs.hpp>
+
 #include <Xpetra_CrsGraph.hpp>
+#include <Xpetra_MapFactory.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -34,16 +41,23 @@ namespace MueLu {
 
     const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
     const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
-    const RCP<const Map> GetImportMap() const { return graph_->getColMap(); }
+    const RCP<const Map> GetImportMap() const {
+      //std::cout << "Graph::GetImportMap: PROC: " << graph_->getColMap()->getComm()->getRank() << " " << graph_->getColMap()->getNodeNumElements() << "/" << graph_->getColMap()->getGlobalNumElements() << " numCols (maps)" << std::endl;
+      //std::cout << "Graph::GetImportMap: PROC: " << graph_->getColMap()->getComm()->getRank() << " " << graph_->getNodeNumCols() << "/" << graph_->getGlobalNumCols() << " numCols"<< std::endl;
+      return graph_->getColMap();
+    }
+    const RCP<const Map> GetImportDofMap() const;
+
+
 
     //! Return the list of vertices adjacent to the vertex 'v'
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
 
     //!
-    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid, RCP<std::vector<GlobalOrdinal> > globalamalblockids) const;
+    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid,RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2globalrowid) const;
 
     //!
-    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& GetAmalgamationParams() const;
+    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetAmalgamationParams() const;
 
 #ifdef MUELU_UNUSED
     size_t GetNodeNumGhost() const;
@@ -66,8 +80,7 @@ namespace MueLu {
 
     /// map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
     mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;
-    /// vector with global block ids for amalagamated matrix on current proc
-    mutable RCP<std::vector<GlobalOrdinal> > globalamalblockids_; // TODO remove me
+    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid_;
 
     //@}
 
