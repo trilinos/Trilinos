@@ -53,29 +53,36 @@
 # ************************************************************************
 # @HEADER
 
-GET_FILENAME_COMPONENT(_Trilinos_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-GET_FILENAME_COMPONENT(_Trilinos_PREFIX "${_Trilinos_DIR}" PATH)
-SET(Trilinos_DIR "${_Trilinos_PREFIX}/lib/cmake/Trilinos")
-MESSAGE(WARNING "TrilinosConfig.cmake has moved.  "
-  "It now exists at a location under the installation prefix where the "
-  "find_package command looks by default (<prefix>/lib/cmake/Trilinos).  "
-  "This compatibility file exists at the old location (<prefix>/include) "
-  "to present this message and load the file from its new location."
-  "\n"
-  "The find_package() call that loaded this file did so because its "
-  "cached result variable, Trilinos_DIR, is set to\n"
-  "  ${_Trilinos_DIR}\n"
-  "I'm locally setting Trilinos_DIR to\n"
-  "  ${Trilinos_DIR}\n"
-  "and loading TrilinosConfig.cmake from its new location.  "
-  "One may suppress this warning by setting the above value in the cache.  "
-  "However, the application needs modification permanently fix the issue.  "
-  "The find_package() call that loaded this file may have the form\n"
-  "  find_package(Trilinos REQUIRED PATHS \${TRILINOS_PATH}/include)\n"
-  "Change it to the form\n"
-  "  set(CMAKE_PREFIX_PATH \${TRILINOS_PATH} \${CMAKE_PREFIX_PATH})\n"
-  "  find_package(Trilinos REQUIRED)\n"
-  "to find TrilinosConfig.cmake in its new location in future builds "
-  "while still honoring the TRILINOS_PATH option for this application."
-  )
-INCLUDE(${Trilinos_DIR}/TrilinosConfig.cmake)
+FUNCTION(FIND_PROJECT_INSTALL)
+  IF(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
+    IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("Searching for ${PROJECT_NAME} installation at ${${PROJECT_NAME}_INSTALLATION_DIR}/include")
+    ENDIF()
+    FIND_PACKAGE(${PROJECT_NAME} REQUIRED HINTS ${${PROJECT_NAME}_INSTALLATION_DIR})
+
+    IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("Found ${PROJECT_NAME} installation version ${${PROJECT_NAME}_VERSION} at ${${PROJECT_NAME}_DIR}")
+    ENDIF()
+
+    #renaming some of the variables so that they do not clash with the variables of the same name.
+    SET(${PROJECT_NAME}_INSTALLATION_VERSION           ${${PROJECT_NAME}_VERSION}           PARENT_SCOPE)
+    SET(${PROJECT_NAME}_INSTALLATION_INCLUDE_DIRS      ${${PROJECT_NAME}_INCLUDE_DIRS}      PARENT_SCOPE)
+    SET(${PROJECT_NAME}_INSTALLATION_LIBRARY_DIRS      ${${PROJECT_NAME}_LIBRARY_DIRS}      PARENT_SCOPE)
+    SET(${PROJECT_NAME}_INSTALLATION_LIBRARIES         ${${PROJECT_NAME}_LIBRARIES}         PARENT_SCOPE)
+    SET(${PROJECT_NAME}_INSTALLATION_PACKAGE_LIST      ${${PROJECT_NAME}_PACKAGE_LIST}      PARENT_SCOPE)
+    SET(${PROJECT_NAME}_INSTALLATION_BUILD_SHARED_LIBS ${${PROJECT_NAME}_BUILD_SHARED_LIBS} PARENT_SCOPE)
+    SET(${PROJECT_NAME}_INSTALLATION_TPL_INCLUDE_DIRS  ${${PROJECT_NAME}_TPL_INCLUDE_DIRS}  PARENT_SCOPE)
+    SET(${PROJECT_NAME}_INSTALLATION_TPL_LIBRARY_DIRS  ${${PROJECT_NAME}_TPL_LIBRARY_DIRS}  PARENT_SCOPE)
+    SET(${PROJECT_NAME}_INSTALLATION_TPL_LIBRARIES     ${${PROJECT_NAME}_TPL_LIBRARIES}     PARENT_SCOPE)
+
+    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGE_LIST})
+      SET(${TRIBITS_PACKAGE}_INSTALLATION_INCLUDE_DIRS     ${${TRIBITS_PACKAGE}_INCLUDE_DIRS}     PARENT_SCOPE)
+      SET(${TRIBITS_PACKAGE}_INSTALLATION_LIBRARY_DIRS     ${${TRIBITS_PACKAGE}_LIBRARY_DIRS}     PARENT_SCOPE)
+      SET(${TRIBITS_PACKAGE}_INSTALLATION_LIBRARIES        ${${TRIBITS_PACKAGE}_LIBRARIES}        PARENT_SCOPE)
+      SET(${TRIBITS_PACKAGE}_INSTALLATION_TPL_INCLUDE_DIRS ${${TRIBITS_PACKAGE}_TPL_INCLUDE_DIRS} PARENT_SCOPE)
+      SET(${TRIBITS_PACKAGE}_INSTALLATION_TPL_LIBRARY_DIRS ${${TRIBITS_PACKAGE}_TPL_LIBRARY_DIRS} PARENT_SCOPE)
+      SET(${TRIBITS_PACKAGE}_INSTALLATION_TPL_LIBRARIES    ${${TRIBITS_PACKAGE}_TPL_LIBRARIES}    PARENT_SCOPE)
+    ENDFOREACH()
+
+  ENDIF()
+ENDFUNCTION()
