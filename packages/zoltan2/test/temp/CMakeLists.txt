@@ -1,6 +1,6 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  Xpetra 
 #  SOURCES Xpetra.cpp
 #  NUM_MPI_PROCS 4
