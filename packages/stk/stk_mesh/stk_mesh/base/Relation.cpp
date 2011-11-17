@@ -30,14 +30,11 @@ operator << ( std::ostream & s , const Relation & rel )
 
   if ( e ) {
     const MetaData & meta_data = MetaData::get(*e);
-
-    s << meta_data.entity_rank_name( rel.entity_rank() );
     s << "[" << rel.identifier() << "]->" ;
     print_entity_key( s , meta_data , e->key() );
   }
   else {
-    s << rel.entity_rank();
-    s << "[" << rel.identifier() << "]->NULL" ;
+    s << "[" << rel.identifier() << "]->" << rel.entity_rank();
   }
 
   return s ;
@@ -45,25 +42,64 @@ operator << ( std::ostream & s , const Relation & rel )
 
 //----------------------------------------------------------------------
 
+Relation::Relation() :
+  m_raw_relation(),
+  m_attribute(),
+  m_entity(NULL)
+#ifdef STK_BUILT_IN_SIERRA
+  ,
+  m_meshObj(NULL),
+  m_relationType(0)
+#endif
+{}
+
 Relation::Relation( Entity & entity , RelationIdentifier identifier )
   : m_raw_relation( Relation::raw_relation_id( entity.entity_rank() , identifier ) ),
     m_entity( & entity )
+#ifdef STK_BUILT_IN_SIERRA
+  ,
+    m_meshObj(NULL),
+    m_relationType(0)
+#endif
 {}
 
-
-bool Relation::operator < ( const Relation & r ) const
+bool Relation::operator < ( const Relation & rhs ) const
 {
   bool result = false;
 
-  if ( m_raw_relation.value != r.m_raw_relation.value ) {
-    result = m_raw_relation.value < r.m_raw_relation.value ;
+#ifdef STK_BUILT_IN_SIERRA
+  if (m_entity != NULL && rhs.m_entity != NULL) {
+#endif
+    if ( m_raw_relation.value != rhs.m_raw_relation.value ) {
+      result = m_raw_relation.value < rhs.m_raw_relation.value ;
+    }
+    else {
+      const EntityKey lhs_key = m_entity   ? m_entity->key()   : EntityKey() ;
+      const EntityKey rhs_key = rhs.m_entity ? rhs.m_entity->key() : EntityKey() ;
+      result = lhs_key < rhs_key ;
+    }
+    return result ;
+#ifdef STK_BUILT_IN_SIERRA
+  }
+  else if (m_meshObj != NULL && rhs.m_meshObj != NULL) {
+    if ( getDerivedType() < rhs.getDerivedType()) return true;
+    if ( rhs.getDerivedType() < getDerivedType()) return false;
+
+    //derived type equal
+    if ( getRelationType() < rhs.getRelationType() ) return true;
+    if ( rhs.getRelationType() < getRelationType() ) return false;
+
+    //relation type equal
+    return getOrdinal() < rhs.getOrdinal();
   }
   else {
-    const EntityKey lhs = m_entity   ? m_entity->key()   : EntityKey() ;
-    const EntityKey rhs = r.m_entity ? r.m_entity->key() : EntityKey() ;
-    result = lhs < rhs ;
+    // Semantically, these comparisons are the same, but it is still not safe to
+    // compare fmwk and stk relations because the entity-ranks between the two
+    // meshes are not necessarily the same.
+    ThrowRequireMsg(false, "Should not be comparing relations from fmwk and stk sides");
+    return false;
   }
-  return result ;
+#endif
 }
 
 //----------------------------------------------------------------------

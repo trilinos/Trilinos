@@ -15,6 +15,14 @@
 
 #include <stk_mesh/base/EntityKey.hpp>
 
+#ifdef STK_BUILT_IN_SIERRA
+namespace sierra {
+namespace Fmwk {
+class MeshObj;
+}
+}
+#endif
+
 namespace stk {
 namespace mesh {
 
@@ -53,22 +61,7 @@ public:
   ~Relation() {}
 
   /** \brief  Constructor */
-  Relation() : m_raw_relation(), m_attribute(), m_entity(NULL) {}
-
-  /** \brief  Copy Constructor */
-  Relation( const Relation & r )
-    : m_raw_relation( r.m_raw_relation ), m_attribute(r.m_attribute), m_entity(r.m_entity) {}
-
-  /** \brief  Assignment operator */
-  Relation & operator = ( const Relation & r )
-  {
-    if( this != &r ) {
-      m_raw_relation = r.m_raw_relation ;
-      m_attribute    = r.m_attribute ;
-      m_entity       = r.m_entity ;
-    }
-    return *this ;
-  }
+  Relation();
 
   /** \brief  Construct a relation from a referenced entity,
    *          local identifier, kind, and converse flag.
@@ -94,12 +87,11 @@ public:
   Entity * entity() const { return m_entity ; }
 
   /** \brief  Equality operator */
-  bool operator == ( const Relation & r ) const
-    { return m_raw_relation.value == r.m_raw_relation.value && m_entity == r.m_entity ; }
+  bool operator == ( const Relation & r ) const;
 
   /** \brief  Inequality operator */
   bool operator != ( const Relation & r ) const
-    { return m_raw_relation.value != r.m_raw_relation.value || m_entity != r.m_entity ; }
+  { return !(*this == r); }
 
   /** \brief  Ordering operator */
   bool operator < ( const Relation & r ) const ;
@@ -134,9 +126,142 @@ private:
       { value = rhs.value ; return *this ; }
   };
 
-  RawRelationType   m_raw_relation ;
-  mutable attribute_type    m_attribute ;
-  Entity          * m_entity ;
+  RawRelationType        m_raw_relation ;
+  mutable attribute_type m_attribute ;
+  Entity               * m_entity ;
+
+// Issue: Framework supports relation types (parent, child, etc) that STK_Mesh
+// does not support, so these relations will have to be managed by framework
+// until:
+// A) STK_Mesh is rewritten to support these extra relation types
+// B) An extra data-structure is added to manage these relation types and
+// this data structure works together with STK_mesh under the generic API
+// to manage all relation-types.
+// C) We transition to using a mesh that supports everything framework
+// supports and this problem goes away.
+//
+// The problem is that, with framework managing some relations and STK_Mesh
+// managing others, the type of the relation descriptor is different depending
+// on what type of relation you're dealing with. This can be addressed with
+// templates, but this makes the code very ugly. Instead...
+//
+// Solution: Have framework and STK_Mesh use the same type as its relation_descriptor.
+// The code below is designed to make this class compatible with the fmwk
+// Relation class.
+#ifdef STK_BUILT_IN_SIERRA
+ public:
+    /**
+   * Predefined identifiers for mesh object relationship types.
+   */
+  enum RelationType {
+    USES	= 0 ,
+    USED_BY	= 1 ,
+    CHILD	= 2 ,
+    PARENT	= 3 ,
+    EMBEDDED	= 0x00ff , // 4
+    CONTACT	= 0x00ff , // 5
+    AUXILIARY   = 0x00ff
+  };
+
+  enum {
+    POLARITY_MASK       = 0x80,
+    POLARITY_POSITIVE   = 0x80,
+    POLARITY_NEGATIVE   = 0x00,
+    POLARITY_IDENTITY   = 0x80
+  };
+
+  static bool polarity(unsigned orient) {
+    return (orient & POLARITY_MASK) == POLARITY_POSITIVE;
+  }
+
+  static unsigned permutation(unsigned orient) {
+    return orient & ~POLARITY_MASK;
+  }
+
+  /**
+   * Construct filled-out relation.
+   */
+  // Possible states for the entity to be in:
+  //  1) Constructed on the fmwk side. Indicated by having NULL m_entity
+  //  2) Constructed on stk side. Indicated by having NULL m_meshObj
+  //  3) Constructed on stk side, but with fmwk data (like m_meshObj) added on. Indicated by having non-null m_entity and m_meshObj.
+  //  NOTE: (2) relations are NOT comparable with (1) relations!
+  template <class MeshObj>
+  Relation(MeshObj *obj, const unsigned relation_type, const unsigned ordinal, const unsigned Orient = 0)
+    :
+    m_raw_relation( Relation::raw_relation_id( obj->derived_type() , ordinal )), // makes this m_raw_relation forever incomparable with Relations constructed STK-style
+    m_attribute(Orient),
+    m_entity( NULL ),
+
+    m_meshObj(obj),
+    m_relationType(relation_type),
+    m_derivedType(obj->derived_type()) // Needs to be maintained seperately from the rank within m_raw_relation because it may be different!!
+  {}
+
+  sierra::Fmwk::MeshObj *getMeshObj() const {
+    return reinterpret_cast<sierra::Fmwk::MeshObj*>(m_meshObj);
+  }
+
+  void setMeshObj(sierra::Fmwk::MeshObj *object) {
+    m_meshObj = object;
+  }
+
+  RelationType getRelationType() const {
+    return (RelationType) m_relationType;
+  }
+
+  void setRelationType(RelationType relation_type) {
+    m_relationType = (unsigned char) relation_type;
+  }
+
+  RelationIdentifier getOrdinal() const {
+    return identifier();
+  }
+
+  void setOrdinal(RelationIdentifier ordinal) {
+    ThrowAssertMsg(m_entity == NULL, "Cannot call setOrdinal on a relation created on the STK side");
+    m_raw_relation = Relation::raw_relation_id( getDerivedType(), ordinal );
+  }
+
+  attribute_type getOrientation() const {
+    return attribute();
+  }
+
+  void setOrientation(attribute_type orientation) {
+    set_attribute(orientation);
+  }
+
+  unsigned getDerivedType() const {
+    return m_derivedType;
+  }
+
+  void setDerivedType(unsigned derived_type) {
+    m_derivedType = (unsigned char) derived_type;
+  }
+
+  /**
+   * Query polarity of the related mesh object.
+   * A 'true' polarity indicates that the related mesh object is aligned.
+   * For element-edge or face-edge a 'true' polarity indicates that the
+   * nodes of the edge are compatibly ordered with the nodes of the
+   * element or faces.
+   * For element-face a 'true' polarity indicates that the ordering
+   * of face-nodes is compatible with the ordering of element nodes,
+   * i.e. the face's normal defined by a clockwise ordering is outward.
+   */
+  bool polarity() const {
+    return (getOrientation() & POLARITY_MASK) == POLARITY_POSITIVE;
+  }
+
+  unsigned permutation() const {
+    return getOrientation() & ~POLARITY_MASK;
+  }
+
+private:
+  void * m_meshObj;                     ///< A pointer to the related mesh object.
+  unsigned char m_relationType;         ///< Identification of the type of relationship, e.g. USES or USED_BY.
+  unsigned char m_derivedType;          ///< Derived type of related mesh object in a Fmwk-based rank
+#endif
 };
 
 //----------------------------------------------------------------------
@@ -234,6 +359,28 @@ print_relation( std::ostream & , const MetaData & ,
 std::ostream & operator << ( std::ostream & , const Relation & );
 
 /** \} */
+
+inline
+bool Relation::operator == ( const Relation & rhs ) const
+#ifdef STK_BUILT_IN_SIERRA
+{
+  if (m_entity != NULL && rhs.m_entity != NULL) {
+    return m_raw_relation.value == rhs.m_raw_relation.value && m_entity == rhs.m_entity;
+  }
+  else if (m_meshObj != NULL && rhs.m_meshObj != NULL) {
+    return getMeshObj()      == rhs.getMeshObj() &&
+           getRelationType() == rhs.getRelationType() &&
+           getOrdinal()      == rhs.getOrdinal() &&
+           getOrientation()  == rhs.getOrientation();
+  }
+  else {
+    ThrowRequireMsg(false, "Should not be comparing relations from fmwk and stk sides");
+    return false;
+  }
+}
+#else
+{ return m_raw_relation.value == rhs.m_raw_relation.value && m_entity == rhs.m_entity ; }
+#endif
 
 } // namespace mesh
 } // namespace stk
