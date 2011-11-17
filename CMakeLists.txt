@@ -81,35 +81,6 @@ SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
 MESSAGE("-- " "TRILINOS_HOME_DIR = ${TRILINOS_HOME_DIR}")
 MESSAGE("-- " "TRILINOS_BUILD_DIR = ${TRILINOS_BUILD_DIR}")
 
-TRIBITS_PROJECT_DECL(${PROJECT_NAME})
+INCLUDE(TrilinosGlobalMacros) # ToDo: Do automatic include during processing
 
-#
-# C) Set up any project-specific options before the project is configured
-#
-# ToDo: Put these into appropriate call-back macros
-#
-
-INCLUDE(TrilinosGlobalMacros) # Defines call-backs
-
-ADVANCED_SET(Trilinos_DATA_DIR  NOTFOUND
-  CACHE PATH
-  "Path TrilinosData directory to find more tests and other stuff" )
-  
-IF (NOT ${PROJECT_NAME}_ENABLE_Fortran)
-  MESSAGE(
-    "\n***"
-    "\n*** Warning: Setting Trilinos_ENABLE_ForTrilinos=OFF"
-    " because Trilinos_ENABLE_Fortran=OFF!"
-    "\n***\n"
-    )
-  SET(Trilinos_ENABLE_ForTrilinos OFF)
-ENDIF()
-  
-# ToDo: What is this and why is it needed?
-SET(TRILINOS_BUILD_SHARED_LIBS "@BUILD_SHARED_LIBS@")
-
-#
-# D) Finish off the processing of the project
-#
-
-TRIBITS_PROJECT_PROCESS()
+TRIBITS_PROJECT()

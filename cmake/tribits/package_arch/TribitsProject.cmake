@@ -87,7 +87,7 @@ INCLUDE(TimingUtils)
 # ToDo: Give documentation
 #
 
-MACRO(TRIBITS_PROJECT_DECL)
+MACRO(TRIBITS_PROJECT)
 
   #
   # A) Basic top-level TriBITS project stuff
@@ -186,6 +186,9 @@ MACRO(TRIBITS_PROJECT_DECL)
   MESSAGE("")
   
   PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS()
+
+  # Call-back defined by specific project
+  TRIBITS_PROJECT_SETUP_EXTRA_OPTIONS()
   
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
     # Start the global timer
@@ -210,15 +213,6 @@ MACRO(TRIBITS_PROJECT_DECL)
   #
   
   PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
-
-ENDMACRO()
-
-
-#
-# Process the defined TriBITS project
-#
-
-MACRO(TRIBITS_PROJECT_PROCESS)
   
   #
   # D) Apply logic to enable ${PROJECT_NAME} packages and tests
