@@ -52,13 +52,6 @@
 #
 # ************************************************************************
 # @HEADER
-
-# Define the TriBITS minimum required CMake version
-SET(TRIBITS_CMAKE_MINIMUM_REQUIRED 2.7)
-
-CMAKE_POLICY(SET CMP0003 NEW)
-CMAKE_POLICY(SET CMP0007 NEW)
-CMAKE_POLICY(SET CMP0011 NEW)
  
 SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits"
   CACHE PATH
