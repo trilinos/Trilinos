@@ -85,6 +85,8 @@ APPEND_SET(HEADERS
       Zoltan2_MatrixInput.hpp
       Zoltan2_Memory.hpp
       Zoltan2_Model.hpp
+      Zoltan2_OrderingProblem.hpp
+      Zoltan2_OrderingSolution.hpp
       Zoltan2_Parameters.hpp
       Zoltan2_PartitioningProblem.hpp
       Zoltan2_PartitioningSolution.hpp
@@ -98,6 +100,8 @@ APPEND_SET(HEADERS
   )
 
 APPEND_SET(HEADERS
+      algorithms/order/Zoltan2_OrderingAlgorithms.hpp
+      algorithms/order/Zoltan2_AlgRCM.hpp
       algorithms/partition/Zoltan2_PartitioningAlgorithms.hpp
       algorithms/partition/Zoltan2_AlgScotch.hpp
   )
