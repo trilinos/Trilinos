@@ -18,6 +18,13 @@ my $file_in_name  = shift;
 my $file_out_name = shift;
 my $print_file_name = shift;
 my $ignore_files_file = shift;
+if (0) {
+  print "token_file=$token_file\n";
+  print "file_in_name=$file_in_name\n";
+  print "file_out_name=$file_out_name\n";
+  print "print_file_name=$print_file_name\n";
+  print "ignore_files_file=$ignore_files_file\n";
+}
 
 open TOKEN_NAMES_FILE, "<$token_file" || die "The file $token_file could not be opened!";
 my @token_names = <TOKEN_NAMES_FILE>;
