@@ -1,12 +1,12 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 
 #
 # A) Package-specific configuration options
 #
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 
 SET(CURRENT_PACKAGE ShyLU)
@@ -62,7 +62,7 @@ APPEND_SET(SOURCES
   shylu_schur.cpp
   )
 
-PACKAGE_ADD_LIBRARY(shylu
+TRIBITS_ADD_LIBRARY(shylu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

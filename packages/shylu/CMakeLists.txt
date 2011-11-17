@@ -1,18 +1,18 @@
 
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-PACKAGE(ShyLU)
+TRIBITS_PACKAGE(ShyLU)
 
 #
 # B) Set up package-specific options
 #
 
-#ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_METIS
+#TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_METIS
 #  HAVE_METIS
 #  "Metis is present"
 #  OFF )
@@ -24,12 +24,12 @@ PACKAGE(ShyLU)
 
 ADD_SUBDIRECTORY(src)
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-#PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+#TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()
