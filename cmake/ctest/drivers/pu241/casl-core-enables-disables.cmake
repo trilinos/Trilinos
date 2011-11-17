@@ -8,7 +8,7 @@
 #
 
 # Must include first so that it defines Trilinos_EXCLUDE_PACKAGES
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/casl-exclude-trilinos-packages.cmake)
+INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/casl-exclude-trilinos-packages.cmake)
 
 # Put in hard disables for excluded packages
 FOREACH(EXCLUDED_PACKAGE ${Trilinos_EXCLUDE_PACKAGES})

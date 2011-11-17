@@ -26,7 +26,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   baseUnitTests
   SOURCES
     PrimitiveTypeTraits_UnitTests.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi  
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

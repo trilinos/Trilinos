@@ -71,7 +71,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   IterativePreconditionerFactory_test
   SOURCES
     unit_tests/tIterativePreconditionerFactory.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -80,7 +80,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LU2x2InverseOp_test
   SOURCES
     unit_tests/tLU2x2InverseOp.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -89,7 +89,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   StridedEpetraOperator_test
   SOURCES
     unit_tests/tStridedEpetraOperator.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1-4
   )
@@ -98,7 +98,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RequestInterface_test 
   SOURCES
     unit_tests/tRequestInterface.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -107,7 +107,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DiagnosticLinearOp_test 
   SOURCES
     unit_tests/tDiagnosticLinearOp.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -116,7 +116,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DiagonallyScaledPreconditioner 
   SOURCES
     unit_tests/tDiagonallyScaledPreconditioner.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -125,7 +125,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   InverseFactoryOperator 
   SOURCES
     unit_tests/tInverseFactoryOperator.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -134,7 +134,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ProbingFactory
   SOURCES
     unit_tests/tProbingFactory.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -143,7 +143,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DiagonalPreconditionerFactory 
   SOURCES
     unit_tests/tDiagonalPreconditionerFactory.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 2
   )
@@ -152,7 +152,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   StratimikosFactory 
   SOURCES
     unit_tests/tStratimikosFactory.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -161,7 +161,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ExplicitOps 
   SOURCES
     unit_tests/tExplicitOps.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 2
   )

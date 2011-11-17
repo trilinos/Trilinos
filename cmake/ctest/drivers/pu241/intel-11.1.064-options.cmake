@@ -16,8 +16,8 @@ SET(CMAKE_CXX_FLAGS "-gxx-name=/usr/bin/g++" CACHE STRING "")
 SET(TPL_ENABLE_BinUtils ON CACHE BOOL "")
 
 # Include MKL and TBB; these should match version of Intel compilers being used
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/tbb-11.1.064-options.cmake)
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-11.1.064-options.cmake)
+INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/tbb-11.1.064-options.cmake)
+INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-11.1.064-options.cmake)
 SET(BLAS_INCLUDE_DIRS   ${MKL_IFORT_MODULE_PATH} CACHE PATH "Path to MKL BLAS Fortran modules compatible with Intel fortran")
 SET(LAPACK_INCLUDE_DIRS ${MKL_IFORT_MODULE_PATH} CACHE PATH "Path to MKL LAPACK Fortran modules compatible with Intel fortran")
 
@@ -30,5 +30,5 @@ SET(HDF5_INCLUDE_DIRS /opt/intel-11.1.064/tpls/hdf5-1.8.5-patch1/include CACHE F
 
 
 # Including these last to allow override above
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/casl-vri-tpls.cmake)
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/casl-core-enables-disables.cmake)
+INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/casl-vri-tpls.cmake)
+INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/casl-core-enables-disables.cmake)

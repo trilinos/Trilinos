@@ -140,7 +140,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES Stokhos_InterlacedOpUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
           Stokhos_InterlacedTestSupport.hpp
-          ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+          ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 2
@@ -151,7 +151,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES Stokhos_BasisInteractionGraphUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
           Stokhos_InterlacedTestSupport.hpp
-          ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+          ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
@@ -162,7 +162,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES Stokhos_AdaptivityToolsUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
           Stokhos_InterlacedTestSupport.hpp
-          ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+          ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
@@ -173,7 +173,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES Stokhos_BuildColBasisUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
           Stokhos_InterlacedTestSupport.hpp
-          ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+          ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 2
@@ -184,7 +184,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES Stokhos_InterlacedMapUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
           Stokhos_InterlacedTestSupport.hpp
-          ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+          ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 2

@@ -6,7 +6,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.pu241.gcc.4.5.1.cmake"
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/SubmitToTrilinos.cmake")
 
 SET(Trilinos_EXTRAREPOS_FILE
-  "${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/ExtraExternalRepositories.dakota.cmake")
+  "${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/ExtraExternalRepositories.dakota.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
