@@ -1,8 +1,8 @@
-INCLUDE(SubPackageMacros)
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsLibraryMacros)
 
-SUBPACKAGE(Exodiff)
+TRIBITS_SUBPACKAGE(Exodiff)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -14,9 +14,9 @@ SET(SOURCES exoII_read.C  exo_block.C  Specifications.C
 	    create_file.C map.C exo_entity.C FileInfo.C
 	    Tolerance.C   iqsort.C  check.C parsing.C util.C)
 
-PACKAGE_ADD_LIBRARY(exodiff_app_lib SOURCES ${SOURCES} DEPLIBS exodus suplib)
-PACKAGE_ADD_EXECUTABLE(exodiff NOEXEPREFIX NOEXESUFFIX SOURCES exodiff.C  DEPLIBS exodiff_app_lib)
+TRIBITS_ADD_LIBRARY(exodiff_app_lib SOURCES ${SOURCES} DEPLIBS exodus suplib)
+TRIBITS_ADD_EXECUTABLE(exodiff NOEXEPREFIX NOEXESUFFIX SOURCES exodiff.C  DEPLIBS exodiff_app_lib)
 install_executable(exodiff)
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

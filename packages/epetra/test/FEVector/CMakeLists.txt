@@ -1,8 +1,8 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 IF (WIN32 AND BUILD_SHARED_LIBS)
 ELSE()
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     FEVector_test
     SOURCES cxx_main.cpp ExecuteTestProblems.cpp
     DEPLIBS epetratest

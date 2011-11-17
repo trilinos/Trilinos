@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(MultilineSet)
 
 
@@ -20,14 +20,14 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
   ADD_DEFINITIONS(-DHAVE_RYTHMOS_STRATIMIKOS)
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   complicatedExample
   SOURCES ${SOURCES}
   COMM serial mpi
   )
 
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   complicatedExample
   NAME complicatedExample_explicit
   ARGS
@@ -49,7 +49,7 @@ PACKAGE_ADD_TEST(
 ASSERT_DEFINED(Stratimikos_ENABLE_Amesos)
 IF (Stratimikos_ENABLE_Amesos)
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     complicatedExample
     NAME complicatedExample_amesos
     ARGS
@@ -72,7 +72,7 @@ IF (Stratimikos_ENABLE_Amesos)
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_NOX)
   IF (${PACKAGE_NAME}_ENABLE_NOX)
-    PACKAGE_ADD_TEST(
+    TRIBITS_ADD_TEST(
       complicatedExample
       NAME complicatedExample_amesos
       POSTFIX_AND_ARGS_0 nox_bdf
@@ -86,7 +86,7 @@ IF (Stratimikos_ENABLE_Amesos)
       )
   ENDIF()
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_complicatedExample_amesos_CopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Example_complicatedExample_amesos_CopyFiles
     DEST_FILES
       Extra_Amesos_Params.xml
     SOURCE_PREFIX "_"
@@ -99,7 +99,7 @@ ENDIF()
 ASSERT_DEFINED(Stratimikos_ENABLE_AztecOO)
 IF (Stratimikos_ENABLE_AztecOO)
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     complicatedExample
     NAME complicatedExample_aztecoo
     ARGS
@@ -116,7 +116,7 @@ IF (Stratimikos_ENABLE_AztecOO)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_NOX)
   IF (${PACKAGE_NAME}_ENABLE_NOX)
 
-    PACKAGE_ADD_TEST(
+    TRIBITS_ADD_TEST(
       complicatedExample
       NAME complicatedExample_aztecoo
       POSTFIX_AND_ARGS_0 nox
@@ -129,7 +129,7 @@ IF (Stratimikos_ENABLE_AztecOO)
 
   ENDIF()
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_complicatedExample_aztecoo_CopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Example_complicatedExample_aztecoo_CopyFiles
     DEST_FILES
       Extra_AztecOO_Params.xml
     SOURCE_PREFIX "_"
@@ -142,7 +142,7 @@ ENDIF()
 ASSERT_DEFINED(Stratimikos_ENABLE_Belos)
 IF (Stratimikos_ENABLE_Belos)
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     complicatedExample
     NAME complicatedExample_belos
     ARGS
@@ -156,7 +156,7 @@ IF (Stratimikos_ENABLE_Belos)
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_NOX)
   IF (${PACKAGE_NAME}_ENABLE_NOX)
-    PACKAGE_ADD_TEST(
+    TRIBITS_ADD_TEST(
       complicatedExample
       NAME complicatedExample_belos
       POSTFIX_AND_ARGS_0 nox_bdf
@@ -169,7 +169,7 @@ IF (Stratimikos_ENABLE_Belos)
       )
   ENDIF()
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_complicatedExample_belos_CopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Example_complicatedExample_belos_CopyFiles
     DEST_FILES
       Extra_Belos_Params.xml
     SOURCE_PREFIX "_"

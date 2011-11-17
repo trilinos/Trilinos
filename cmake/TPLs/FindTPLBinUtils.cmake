@@ -59,10 +59,10 @@
 #
 
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
 
-TPL_DECLARE_LIBRARIES( BinUtils
+TRIBITS_TPL_DECLARE_LIBRARIES( BinUtils
   REQUIRED_HEADERS link.h bfd.h
   MUST_FIND_ALL_HEADERS
   REQUIRED_LIBS_NAMES bfd iberty

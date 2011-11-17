@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -23,7 +23,7 @@ SET(HAVE_OVIS ${${PACKAGE_NAME}_ENABLE_OVIS})
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zlib)
 SET(HAVE_GZIP ${${PACKAGE_NAME}_ENABLE_Zlib})
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -777,7 +777,7 @@ IF (NOT TPL_ENABLE_MPI)
   SET(DEPLIBS simpi)
 ENDIF()
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   zoltan
   HEADERS ${HEADERS}
   NOINSTALLHEADERS ${NOINSTALLHEADERS}

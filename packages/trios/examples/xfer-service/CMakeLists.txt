@@ -1,6 +1,6 @@
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(TriosProcessXDR)
 
 ############# Special exception for rpcgen extra commas in enum ##########
@@ -22,7 +22,7 @@ TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/xfer_service_args.x)
 
 
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   XferServiceTest
   SOURCES xfer_service_args.c xfer_buffer_util.cpp xfer_server.cpp xfer_service_test.cpp xfer_client.cpp
   DEPLIBS ${DEPLIBS}
@@ -54,7 +54,7 @@ foreach (testname ${TESTNAMES})
   SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file-mode=a ")
   SET(DEFAULT_ARGS "${DEFAULT_ARGS} --num-trials=5 ")
   
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     XferServiceTest
     NAME XferService_${testname}
     ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"

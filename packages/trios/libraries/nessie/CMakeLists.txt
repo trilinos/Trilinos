@@ -1,8 +1,8 @@
 
-INCLUDE(PackageLibraryMacros)
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(TriosProcessXDR)
 
 ############# Process Subdirectories ###################
@@ -117,7 +117,7 @@ APPEND_SET(SOURCES
 
 ############# libnssi ##########################
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
    trios_nssi
    HEADERS ${HEADERS}
    NOINSTALLHEADERS ${NOINSTALLHEADERS}

@@ -1,11 +1,11 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(CURRENT_PACKAGE TEUCHOS)
 CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
@@ -362,7 +362,7 @@ IF (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
     )
 ENDIF()
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   teuchos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

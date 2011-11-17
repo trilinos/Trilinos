@@ -1,14 +1,14 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   read_test
   SOURCES TestTriutilReads.cpp
   COMM serial mpi
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(ReadTestCopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadTestCopyFiles
   DEST_FILES
     bcsstk01.rsa bcsstk01.mtx bcsstk01.triS Diagonal.rua Diagonal.mtx
     Diagonal.TimD fs_183_4.rua fs_183_4.mtx fs_183_4.triU

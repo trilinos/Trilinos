@@ -2,7 +2,7 @@
 # Builds TriKota for a Trilinos bound build
 #
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.pu241.gcc.4.5.1.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.pu241.gcc.4.5.1.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/SubmitToTrilinos.cmake")
 
 SET(Trilinos_EXTRAREPOS_FILE

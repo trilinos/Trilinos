@@ -1,9 +1,9 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LegendreBasisUnitTest
   SOURCES Stokhos_LegendreBasisUnitTest.cpp
   COMM serial mpi
@@ -11,7 +11,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NormalizedLegendreBasisUnitTest
   SOURCES Stokhos_NormalizedLegendreBasisUnitTest.cpp
   COMM serial mpi
@@ -19,7 +19,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   HermiteBasisUnitTest
   SOURCES Stokhos_HermiteBasisUnitTest.cpp
   COMM serial mpi
@@ -27,7 +27,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NormalizedHermiteBasisUnitTest
   SOURCES Stokhos_NormalizedHermiteBasisUnitTest.cpp
   COMM serial mpi
@@ -35,7 +35,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   JacobiBasisUnitTest
   SOURCES Stokhos_JacobiBasisUnitTest.cpp
   COMM serial mpi
@@ -43,7 +43,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  DerivExpansionUnitTest
 #  SOURCES Stokhos_DerivExpansionUnitTest.cpp
 #  COMM serial mpi
@@ -51,7 +51,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #  NUM_MPI_PROCS 1
 #  )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   QuadExpansionUnitTest
   SOURCES Stokhos_QuadExpansionUnitTest.cpp
   COMM serial mpi
@@ -59,7 +59,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   AlgebraicExpansionUnitTest
   SOURCES Stokhos_AlgebraicExpansionUnitTest.cpp
   COMM serial mpi
@@ -67,7 +67,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ConstantExpansionUnitTest
   SOURCES Stokhos_ConstantExpansionUnitTest.cpp
   COMM serial mpi
@@ -77,7 +77,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 IF(TPL_ENABLE_ForUQTK)
  
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ForUQTKExpansionUnitTest
     SOURCES Stokhos_ForUQTKExpansionUnitTest.cpp
     COMM serial mpi
@@ -87,7 +87,7 @@ IF(TPL_ENABLE_ForUQTK)
 
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   StieltjesUnitTest
   SOURCES Stokhos_StieltjesUnitTest.cpp
   COMM serial mpi
@@ -95,7 +95,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LanczosUnitTest
   SOURCES Stokhos_LanczosUnitTest.cpp
   COMM serial mpi
@@ -103,7 +103,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   GramSchmidtUnitTest
   SOURCES Stokhos_GramSchmidtUnitTest.cpp
   COMM serial mpi
@@ -111,7 +111,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Sparse3TensorUnitTest
   SOURCES Stokhos_Sparse3TensorUnitTest.cpp
   COMM serial mpi
@@ -119,7 +119,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ExponentialRandomFieldUnitTest
   SOURCES Stokhos_ExponentialRandomFieldUnitTest.cpp
   COMM serial mpi
@@ -127,7 +127,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixFreeOperatorUnitTest
   SOURCES Stokhos_MatrixFreeOperatorUnitTest.cpp
   COMM serial mpi
@@ -135,7 +135,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   InterlacedOpUnitTest 
   SOURCES Stokhos_InterlacedOpUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
@@ -146,7 +146,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BasisInteractionGraphUnitTest 
   SOURCES Stokhos_BasisInteractionGraphUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
@@ -157,7 +157,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   AdaptivityToolsUnitTest 
   SOURCES Stokhos_AdaptivityToolsUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
@@ -168,7 +168,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BuildColBasisUnitTest 
   SOURCES Stokhos_BuildColBasisUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
@@ -179,7 +179,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   InterlacedMapUnitTest 
   SOURCES Stokhos_InterlacedMapUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
@@ -192,7 +192,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 IF(Stokhos_ENABLE_TriKota)
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SparseGridQuadratureUnitTest
     SOURCES Stokhos_SparseGridQuadratureUnitTest.cpp
     COMM serial mpi
@@ -205,7 +205,7 @@ ENDIF()
 IF(Stokhos_ENABLE_Sacado)
 
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoPCEUnitTest
     SOURCES Stokhos_SacadoPCEUnitTest.cpp Stokhos_SacadoPCEUnitTest.hpp
     COMM serial mpi
@@ -213,7 +213,7 @@ IF(Stokhos_ENABLE_Sacado)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoETPCEUnitTest
     SOURCES Stokhos_SacadoETPCEUnitTest.cpp Stokhos_SacadoPCEUnitTest.hpp
     COMM serial mpi
@@ -221,7 +221,7 @@ IF(Stokhos_ENABLE_Sacado)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoVectorUnitTest
     SOURCES Stokhos_SacadoVectorUnitTest.cpp
     COMM serial mpi
@@ -231,7 +231,7 @@ IF(Stokhos_ENABLE_Sacado)
 
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LogNormalUnitTest
   SOURCES Stokhos_LogNormalUnitTest.cpp
   COMM serial mpi

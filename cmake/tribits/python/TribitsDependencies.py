@@ -201,7 +201,7 @@ class DepStats:
     self.isTestDepChain = isTestDepChain
 
 
-class TrilinosDependencies:
+class TribitsDependencies:
 
 
   def __init__(self):
@@ -646,7 +646,7 @@ def getParentPackage(packageEle):
 def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
   #print "xmlFile =", xmlFile
   packageDepXmlDom = xml.dom.minidom.parse(xmlFile)
-  trilinosDependencies = TrilinosDependencies()
+  trilinosDependencies = TribitsDependencies()
   for ele in packageDepXmlDom.childNodes[0].childNodes:
     if ele.nodeType == ele.ELEMENT_NODE:
       packageName = ele.getAttribute('name')

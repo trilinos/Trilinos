@@ -69,8 +69,8 @@
 # NOTE: Included first to check the version of python!
 #
 
-from TrilinosDependencies import getTrilinosDependenciesFromXmlFile
-from TrilinosDependencies import defaultTrilinosDepsXmlInFile
+from TribitsDependencies import getTrilinosDependenciesFromXmlFile
+from TribitsDependencies import defaultTrilinosDepsXmlInFile
 from GeneralScriptSupport import *
 import time
 

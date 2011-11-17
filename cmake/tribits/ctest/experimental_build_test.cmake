@@ -83,7 +83,7 @@
 #
 # There are a number of other options that you can change as
 # environment varibles.  See the macros SET_DEFAULT_AND_FROM_ENV(...)
-# in the file TrilinosCTestDriverCore.cmake.  One option that you
+# in the file TribitsCTestDriverCore.cmake.  One option that you
 # might want to overridde, for instance is CTEST_BUILD_NAME so that
 # you can insert a special name into the dashboard.
 #
@@ -111,7 +111,7 @@ SET( CMAKE_MODULE_PATH
   "${CTEST_SCRIPT_DIRECTORY}/../utils"
   )
 
-INCLUDE(TrilinosCTestDriverCore)
+INCLUDE(TribitsCTestDriverCore)
 INCLUDE(GetLastDirName)
 
 #

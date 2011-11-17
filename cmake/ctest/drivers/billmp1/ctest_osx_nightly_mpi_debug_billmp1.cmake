@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.billmp1.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.billmp1.gcc.cmake")
 
 #
 # Set the options specific to this build case

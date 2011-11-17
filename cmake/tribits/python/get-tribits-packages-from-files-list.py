@@ -55,14 +55,14 @@
 # ************************************************************************
 # @HEADER
 
-from TrilinosPackageFilePathUtils import *
+from TribitsPackageFilePathUtils import *
 
 
 #
 # Read in the commandline arguments
 #
 
-usageHelp = r"""get-trilinos-packages-from-files-list.py --file=<FILES_LIST_FILE>
+usageHelp = r"""get-tribits-packages-from-files-list.py --file=<FILES_LIST_FILE>
 """
 
 from optparse import OptionParser

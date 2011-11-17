@@ -29,10 +29,10 @@
 # @HEADER
 
 # Include the package macros
-INCLUDE(PackageMacros)
+INCLUDE(TribitsPackageMacros)
 
 # Set the package name
-PACKAGE(PyTrilinos DISABLE_STRONG_WARNINGS)
+TRIBITS_PACKAGE(PyTrilinos DISABLE_STRONG_WARNINGS)
 
 IF(NOT BUILD_SHARED_LIBS)
   MESSAGE(FATAL_ERROR "PyTrilinos can only be built with shared libraries. Building of shared libraries is currently set to OFF. To enable shared libraries please set the cache variable \"BUILD_SHARED_LIBS\" to ON")
@@ -188,18 +188,18 @@ SET(PyTrilinos_INSTALL_PREFIX ${PyTrilinos_DEFAULT_INSTALL_PREFIX}
 ADD_SUBDIRECTORY(src)
 
 # Add the test scripts
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 # Add the example scripts
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # Exclude files for source package.
 #
 
-PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
-PACKAGE_ARCH_EXCLUDE_FILES()
+TRIBITS_EXCLUDE_FILES()
 
 # Execute the package postprocessing
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

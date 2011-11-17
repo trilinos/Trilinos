@@ -10,12 +10,12 @@ Last updated: 2009/01/20
 Adding a new TPL that will be used by one or more Trilinos packages is
 a fairly simple process with the CMake build system.  Let TPLNAME be
 the official name of the TPL that will be used throughout.  Examples
-of TPLNAME include 'Boost', 'BLAS', and 'ParMETIS'.  Let PACKAGE and
+of TPLNAME include 'Boost', 'BLAS', and 'ParMETIS'.  Let TRIBITS_PACKAGE and
 PACKAGE_DIR be the name of a package and its directory name,
 respectively, that the new TPL support will be added to.  Examples of
-(PACKAGE, PACKAGE_DIR) include (Epetra, epetra), and (Teuchos,
+(TRIBITS_PACKAGE, PACKAGE_DIR) include (Epetra, epetra), and (Teuchos,
 teuchos).  See the file Trilinos/TrilinosPackages.cmake for a listing
-of all of the currently defined (PACKAGE, PACKAGE_DIR) pairs.
+of all of the currently defined (TRIBITS_PACKAGE, PACKAGE_DIR) pairs.
 
 
 1) Add TPLNAME to Trilinos/cmake/TrilinosTPLs.cmake:
@@ -40,9 +40,9 @@ For example, if TPLNAME is 'Golden', the new TPL file would be:
 
 The structure of the file FindTPL<TPLNAME>.cmake is:
 
-    INCLUDE(TPLDeclareLibraries)
+    INCLUDE(TribitsTplDeclareLibraries)
     
-    TPL_DECLARE_LIBRARIES( <TPLNAME>
+    TRIBITS_TPL_DECLARE_LIBRARIES( <TPLNAME>
       REQUIRED_HEADERS header1.h header2.h ...
       REQUIRED_LIBS_NAMES lib1 lib2 lib3 ...
       )
@@ -55,7 +55,7 @@ The three different types of TPLs are:
 
 2.c) Header and Library TPLs: For example, see FindTPLParMETIS.cmake
 
-NOTE: The macro TPL_DECLARE_LIBRARIES(...) will automatically add the user
+NOTE: The macro TRIBITS_TPL_DECLARE_LIBRARIES(...) will automatically add the user
 cache variables <TPLNAME>_LIBRARY_DIRS, <TPLNAME>_LIBRARY_NAMES,
 <TPLNAME>_INCLUDE_DIRS, TPL_<TPLNAME>_LIBRARIES, and
 TPL_<TPLNAME>_INCLUDE_DIRS.  The <TPLNAME>_XXX variables are designed to make
@@ -101,13 +101,13 @@ For example, see:
 
 NOTE: The top-level CMake support code will automatically create user cache
 variables for TPLs that exist in the lists [LIB,TEST]_OPTIONAL_DEP_TPLS.  User
-cache variables with the name <PACKAGE>_ENABLE_<TPLNAME> will be created where
-PACKAGE is the name of this package (e.g ML, NOX, EpetraExt, etc.) and TPLNAME
+cache variables with the name <TRIBITS_PACKAGE>_ENABLE_<TPLNAME> will be created where
+TRIBITS_PACKAGE is the name of this package (e.g ML, NOX, EpetraExt, etc.) and TPLNAME
 is the name of the listed dependent TPLs (e.g. BLAS, Boost, ParMETIS).  The
-variable <PACKAGE>_ENABLE_<TPLNAME> will automatically be set to 'ON' if
+variable <TRIBITS_PACKAGE>_ENABLE_<TPLNAME> will automatically be set to 'ON' if
 TPL_ENABLE_<TPLNAME> is set to 'ON' by the user.  Also, regular (non-cache)
 variables will be created with the name HAVE_<UCPACKAGE>_<UCTPLNAME> where
-UCPACKAGE and UCTPLNAME are the respective upper-case names of PACKAGE and
+UCPACKAGE and UCTPLNAME are the respective upper-case names of TRIBITS_PACKAGE and
 TPLNAME.  The variables HAVE_<UCPACKAGE>_<UCTPLNAME> are designed to be used
 as #define macros in PACKAGE_config.h.in (see below).
 
@@ -134,7 +134,7 @@ as for the list LIB_OPTIONAL_DEP_TPLS as described above.
 4) For optional TPLs, add the appropriate TPL define macro to
 packages/PACKAGE_DIR/cmake/PACKAGE_config.h.in:
 
-In order to have the source code in PACKAGE respond to a conditional
+In order to have the source code in TRIBITS_PACKAGE respond to a conditional
 TPL enable, you have to add a #cmakedefine macro to the package's:
 
     PACKAGE_DIR/cmake/PACKAGE_config.h.in

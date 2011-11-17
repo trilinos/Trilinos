@@ -1,16 +1,16 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
    InverseFactoryOperator-Epetra
    SOURCES 
       inverse-factory-operator.cpp
    COMM mpi
    )
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
    StratimikosSolve
    SOURCES 
       stratimikos-solve.cpp
@@ -18,7 +18,7 @@ PACKAGE_ADD_EXECUTABLE(
    )
 
 IF(TPL_ENABLE_MPI)
-   PACKAGE_COPY_FILES_TO_BINARY_DIR(BasicExamples
+   TRIBITS_COPY_FILES_TO_BINARY_DIR(BasicExamples
      SOURCE_FILES 
        simple_example.xml
      SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -26,7 +26,7 @@ IF(TPL_ENABLE_MPI)
      EXEDEPS InverseFactoryOperator-Epetra
      )
    
-   PACKAGE_COPY_FILES_TO_BINARY_DIR(BasicExamples-Strat
+   TRIBITS_COPY_FILES_TO_BINARY_DIR(BasicExamples-Strat
      SOURCE_FILES 
        strat_example.xml
      SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"

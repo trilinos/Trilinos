@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
@@ -10,7 +10,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   # TsqrOrthoManager as soon as I get a chance.
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TSQR)
   IF (${PACKAGE_NAME}_ENABLE_TSQR)
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Tpetra_OrthoManager_Tsqr_test
       SOURCES cxx_main_tsqr.cpp 
       ARGS "--ortho=Basic"

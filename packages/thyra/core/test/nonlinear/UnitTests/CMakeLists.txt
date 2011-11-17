@@ -1,7 +1,7 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultNonlinearSolverBuilder
   SOURCES
     DefaultNonlinearSolverBuilder_UnitTests.cpp
@@ -12,7 +12,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultFiniteDifferenceModelEvaluator
   SOURCES
     DefaultFiniteDifferenceModelEvaluator_UnitTests.cpp
@@ -23,7 +23,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ScaledModelEvaluatorUnitTests
   SOURCES
     ScaledModelEvaluator_UnitTests.cpp

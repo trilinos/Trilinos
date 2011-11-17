@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
@@ -29,7 +29,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 # NOTE: This test currently fails in MPI DEBUG mode (bug 4539)
 IF ( (NOT TPL_ENABLE_MPI) AND (NOT BUILD_TYPE STREQUAL "DEBUG") )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     TestOptions
     NUM_MPI_PROCS 4
     COMM serial mpi
@@ -41,7 +41,7 @@ ELSE()
   SET(${PACKAGE_NAME}_TESTOPTION_SOURCES DoNothing.cpp)
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   TestOptions
   SOURCES ${${PACKAGE_NAME}_TESTOPTION_SOURCES}
   COMM serial mpi

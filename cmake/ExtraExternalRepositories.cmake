@@ -59,7 +59,7 @@
 #
 # Extra repositories must be listed here if they are going to be used in
 # Continuous (CI) or Nightly testing driven through the
-# TrilinosCTestDriverCore.cmake script.
+# TribitsCTestDriverCore.cmake script.
 #
 # The six fields for each extra external repos are:
 #

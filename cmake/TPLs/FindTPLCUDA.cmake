@@ -54,7 +54,7 @@
 # @HEADER
 
 # Check for CUDA support
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
 SET(_CUDA_FAILURE OFF)
 
@@ -108,7 +108,7 @@ ENDIF()
 IF(NOT _CUDA_FAILURE)
   # if we haven't met failure
   macro(PACKAGE_ADD_CUDA_LIBRARY cuda_target)
-    PACKAGE_ADD_LIBRARY(${cuda_target} ${ARGN} CUDALIBRARY)
+    TRIBITS_ADD_LIBRARY(${cuda_target} ${ARGN} CUDALIBRARY)
   endmacro()
   GLOBAL_SET(TPL_CUDA_LIBRARY_DIRS)
   GLOBAL_SET(TPL_CUDA_INCLUDE_DIRS ${CUDA_TOOLKIT_INCLUDE})

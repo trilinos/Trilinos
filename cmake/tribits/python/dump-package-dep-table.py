@@ -80,7 +80,7 @@ Have fun looking through all of the Trilinos dependencies!
 """
 
 
-from TrilinosDependencies import defaultTrilinosDepsXmlInFile, \
+from TribitsDependencies import defaultTrilinosDepsXmlInFile, \
   defaultTrilinosDepsHtmlOutFile
 
 from optparse import OptionParser
@@ -107,7 +107,7 @@ clp.add_option(
 #
 
 
-from TrilinosDependencies import getTrilinosDependenciesFromXmlFile
+from TribitsDependencies import getTrilinosDependenciesFromXmlFile
 
 trilinosDependencies = getTrilinosDependenciesFromXmlFile(
   options.inputXmlDepsFile)

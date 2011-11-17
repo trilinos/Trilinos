@@ -1,4 +1,4 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 # It's not necessary to run these tests in an MPI build ("COMM mpi"),
 # since none of them need to run on more than one MPI process.
@@ -8,7 +8,7 @@ INCLUDE(PackageAddExecutableAndTest)
 
 # Performance and accuracy test suite for TSQR::Combine (which
 # factors cache blocks and combines triangular factors).
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TSQR_Combine
   SOURCES Tsqr_TestCombine.cpp
   COMM serial mpi
@@ -20,7 +20,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 # Performance and accuracy test suite for TSQR::SequentialTsqr
 # (sequential cache-blocked TSQR).
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TSQR_SequentialTsqr
   SOURCES Tsqr_TestSeqTsqr.cpp
   COMM serial mpi
@@ -34,7 +34,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 # performance and accuracy.  It doesn't run any parts of the TSQR
 # algorithm, but it does depend on some TSQR test code (for
 # generating the test matrix and measuring accuracy).
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TSQR_Lapack
   SOURCES Tsqr_TestLapack.cpp
   COMM serial mpi
@@ -50,7 +50,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #
 # Only build TBB-enabled TSQR if (surprise!) TBB is enabled.
 IF (TSQR_ENABLE_Intel_TBB)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TSQR_TbbTsqr
     SOURCES Tsqr_TestTbbTsqr.cpp
     COMM serial mpi
@@ -70,7 +70,7 @@ ENDIF()
 # but it's up to the Kokkos Node implementation to decide what
 # hardware resources to use (e.g., how many CPU cores, how many
 # threads, ...).
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TSQR_KokkosNodeTsqr
   SOURCES Tsqr_TestKokkosNodeTsqr.cpp
   COMM serial mpi

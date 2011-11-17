@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -14,7 +14,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     NOX_ENABLE_Epetra AND NOX_ENABLE_EpetraExt AND
     NOX_ENABLE_Stratimikos AND Stratimikos_ENABLE_AztecOO)
   
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_NonlinearSolver_NOX_2Dsim
     SOURCES EpetraModelEval2DSim.H EpetraModelEval2DSim.C 
             Thyra_NonlinearSolver_NOX_2Dsim.C
@@ -23,7 +23,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     PASS_REGULAR_EXPRESSION "Test passed!"
     )
   
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_2Dsim
     SOURCES EpetraModelEval2DSim.H EpetraModelEval2DSim.C Thyra_2Dsim.C
     COMM serial mpi
@@ -31,7 +31,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     PASS_REGULAR_EXPRESSION "Test passed!"
     )
   
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_RowSumScaling
     SOURCES EpetraModelEval2DSim.H EpetraModelEval2DSim.C Thyra_RowSumScaling.C
     COMM serial mpi

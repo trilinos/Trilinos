@@ -1,8 +1,8 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageAddExecutable)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddExecutable)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MultiVector_UnitTests
   SOURCES
     MultiVector_UnitTests
@@ -15,7 +15,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 SET(TIMING_INSTALLS "")
 
 IF (Kokkos_ENABLE_TBB AND Tpetra_ENABLE_MPI)
-  PACKAGE_ADD_EXECUTABLE(
+  TRIBITS_ADD_EXECUTABLE(
       GEMMTiming_TBB
       SOURCES GEMMTiming_TBB
       COMM mpi
@@ -25,7 +25,7 @@ IF (Kokkos_ENABLE_TBB AND Tpetra_ENABLE_MPI)
 ENDIF()
 
 IF (Kokkos_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
-  PACKAGE_ADD_EXECUTABLE(
+  TRIBITS_ADD_EXECUTABLE(
       GEMMTiming_TPI
       SOURCES GEMMTiming_TPI
       COMM mpi
@@ -35,7 +35,7 @@ IF (Kokkos_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
 ENDIF()
 
 IF (Kokkos_ENABLE_Thrust AND Kokkos_ENABLE_CUDA_DOUBLE AND Tpetra_ENABLE_MPI)
-  PACKAGE_ADD_EXECUTABLE(
+  TRIBITS_ADD_EXECUTABLE(
       GEMMTiming_Thrust
       SOURCES GEMMTiming_Thrust
       COMM mpi

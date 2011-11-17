@@ -1,7 +1,7 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   EpetraLinearOpUnitTests
   SOURCES
     EpetraLinearOp_UnitTests.cpp
@@ -11,7 +11,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   EpetraLinearOpParallelUnitTests
   SOURCES
     EpetraLinearOpParallel_UnitTests.cpp
@@ -21,7 +21,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   EpetraThyraWrappersUnitTests
   SOURCES
     EpetraThyraWrappers_UnitTests.cpp

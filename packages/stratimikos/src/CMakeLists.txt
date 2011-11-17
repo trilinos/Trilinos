@@ -1,12 +1,12 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_InternalConfig.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_InternalConfig.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -70,7 +70,7 @@ ENDIF()
 
 # ToDo: Add other solvers and preconditioners
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   stratimikos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

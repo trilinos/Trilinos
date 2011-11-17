@@ -1,8 +1,8 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 IF(Anasazi_ENABLE_Epetra)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     MVOPTesterThyra_test
     SOURCES cxx_main.cpp
     ARGS -v

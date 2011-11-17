@@ -148,16 +148,16 @@ MACRO(TRIBITS_PROJECT_DEFINE_PACKAGING)
   #removing any packages not enabled from the tarball
   set(ENABLED_FLAG OFF)
   set(INCLUDE_EMPTY TRUE)
-  PACKAGE_ARCH_GET_ENABLED_LIST(${PROJECT_NAME}_PACKAGES ${PROJECT_NAME} ${ENABLED_FLAG} ${INCLUDE_EMPTY} 
+  TRIBITS_GET_ENABLED_LIST(${PROJECT_NAME}_PACKAGES ${PROJECT_NAME} ${ENABLED_FLAG} ${INCLUDE_EMPTY} 
     NON_ENABLED_PACKAGES NUM_NON_ENABLED)
   STRING(REPLACE " " ";" NON_ENABLED_PACKAGES "${NON_ENABLED_PACKAGES}")
 
-  FOREACH(PACKAGE ${NON_ENABLED_PACKAGES})
+  FOREACH(TRIBITS_PACKAGE ${NON_ENABLED_PACKAGES})
     #if the package is the TrilinosFramework we do not want to exclude it from the tarball
     #because that would exclude the cmake directory and the entire build system. So as a
     #special case we do not remove the TrilinosFramework from the tarball
-    IF(NOT ${PACKAGE} STREQUAL "TrilinosFramework")
-      LIST(FIND ${PROJECT_NAME}_PACKAGES ${PACKAGE} PACKAGE_IDX)
+    IF(NOT ${TRIBITS_PACKAGE} STREQUAL "TrilinosFramework")
+      LIST(FIND ${PROJECT_NAME}_PACKAGES ${TRIBITS_PACKAGE} PACKAGE_IDX)
       LIST(GET ${PROJECT_NAME}_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
       
       #checking if we have a relative path to the package's files. Since the exclude is a
@@ -173,7 +173,7 @@ MACRO(TRIBITS_PROJECT_DEFINE_PACKAGING)
       ELSE()
         FIND_PATH(ABSOLUTE_PATH CMakeLists.txt PATHS ${Trilinos_SOURCE_DIR}/packages/${PACKAGE_DIR} NO_DEFAULT_PATH)
         IF("${ABSOLUTE_PATH}" STREQUAL "ABSOLUTE_PATH-NOTFOUND")
-          MESSAGE(AUTHOR_WARNING "Relative path found for disabled package ${PACKAGE} but package was missing a CMakeLists.txt file. This disabled package will likely not be excluded from a source release")
+          MESSAGE(AUTHOR_WARNING "Relative path found for disabled package ${TRIBITS_PACKAGE} but package was missing a CMakeLists.txt file. This disabled package will likely not be excluded from a source release")
         ENDIF()
         SET(CPACK_SOURCE_IGNORE_FILES ${ABSOLUTE_PATH} ${CPACK_SOURCE_IGNORE_FILES})
       ENDIF()
@@ -224,7 +224,7 @@ MACRO(TRIBITS_PROJECT_DEFINE_PACKAGING)
   
   set(ENABLED_FLAG ON)
   set(INCLUDE_EMPTY FALSE)
-  PACKAGE_ARCH_GET_ENABLED_LIST( Trilinos_PACKAGES Trilinos ${ENABLED_FLAG}
+  TRIBITS_GET_ENABLED_LIST( Trilinos_PACKAGES Trilinos ${ENABLED_FLAG}
     ${INCLUDE_EMPTY} ENABLED_PACKAGES NUM_ENABLED)
   string(REPLACE " " ";" ENABLED_PACKAGES "${ENABLED_PACKAGES}")
   

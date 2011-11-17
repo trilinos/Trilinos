@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(MultilineSet)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_
 
 FILE(GLOB SOURCES *.cpp)
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   diagonalTransient
   SOURCES ${SOURCES}
   DEPLIBS rythmos_test_models
@@ -25,7 +25,7 @@ IF (Stratimikos_ENABLE_Amesos)
     STANDARD_PASS_OUTPUT
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_default
     ${STANDARD_TEST_CONFIG}
@@ -35,7 +35,7 @@ IF (Stratimikos_ENABLE_Amesos)
     " --extra-params-file=ExtraParams2.xml"
     " --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM "
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_amesos_base
     ARGS ${ARGS}
@@ -48,7 +48,7 @@ IF (Stratimikos_ENABLE_Amesos)
     "  --num-time-steps=10 "
     "  --verb-level=VERB_MEDIUM "
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_amesos_coeff_s_pi
     ARGS ${ARGS}
@@ -64,7 +64,7 @@ IF (Stratimikos_ENABLE_Amesos)
     " --max-sens-error=1e-6"
     " --dump-final-solutions"
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_amesos_fwd-sens_n16_p4
     ARGS ${ARGS}
@@ -82,7 +82,7 @@ IF (Stratimikos_ENABLE_Amesos)
     " --max-sens-error=1e-6 "
     " --dump-final-solutions "
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_amesos_fwd-sens_n1_p1
     ARGS ${ARGS}
@@ -98,7 +98,7 @@ IF (Stratimikos_ENABLE_Amesos)
     " --max-sens-error=1e-6"
     " --dump-final-solutions"
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_amesos_fwd-sens_n5_p1
     ARGS ${ARGS}
@@ -113,7 +113,7 @@ IF (Stratimikos_ENABLE_Amesos)
     " --dump-final-solutions"
     " --use-BDF"
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_amesos_fwd-BDF-fixed
     ARGS ${ARGS}
@@ -128,7 +128,7 @@ IF (Stratimikos_ENABLE_Amesos)
     " --dump-final-solutions"
     " --use-BDF"
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_amesos_fwd-BDF-variable
     ARGS ${ARGS}
@@ -146,14 +146,14 @@ IF (Stratimikos_ENABLE_Amesos)
     " --dump-final-solutions"
     " --use-BDF"
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_amesos_fwd-sens-BDF
     ARGS ${ARGS}
     ${STANDARD_TEST_CONFIG}
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_Amesos_CopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_Amesos_CopyFiles
     DEST_FILES
       ExtraParams1.xml
       diagonalTransient.amesos.fwd-sens-solve.n16.p4.xml
@@ -186,14 +186,14 @@ IF (Stratimikos_ENABLE_AztecOO)
     " --dump-final-solutions"
     " --use-BDF"
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_aztecoo
     ARGS ${ARGS}
     ${STANDARD_TEST_CONFIG}
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_AztecOO_CopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_AztecOO_CopyFiles
     DEST_FILES
       ExtraParams2.xml
       diagonalTransient_aztecoo.xml
@@ -211,7 +211,7 @@ IF (Stratimikos_ENABLE_Belos)
     " --params-file=diagonalTransient.belos.fwd-BE.n2.p2.xml"
     " --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_EXTREME"
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_belos_BE
     ARGS ${ARGS}
@@ -224,7 +224,7 @@ IF (Stratimikos_ENABLE_Belos)
     " --params-file=diagonalTransient.belos.fwd-IRK.n2.p2.xml"
     " --use-IRK"
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     diagonalTransient
     NAME diagonalTransient_belos_IRK
     ARGS ${ARGS}
@@ -233,7 +233,7 @@ IF (Stratimikos_ENABLE_Belos)
     STANDARD_PASS_OUTPUT
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_Belos_CopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_Belos_CopyFiles
     DEST_FILES
       diagonalTransient.belos.fwd-BE.n2.p2.xml
       diagonalTransient.belos.fwd-IRK.n2.p2.xml

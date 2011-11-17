@@ -37,7 +37,7 @@ set(CMAKE_MODULE_PATH
 set(TRIBITS_PYTHON_DIR "${TRIBITS_ROOT}/python")
 
 include(CTest)
-include(TrilinosDriverSupport)
+include(TribitsDriverSupport)
 
 configure_file(
   ${CMAKE_CURRENT_LIST_DIR}/CTestCustom.cmake.in

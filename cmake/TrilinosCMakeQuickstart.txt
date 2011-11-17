@@ -136,9 +136,9 @@ C) Configuring (Makefile Generator)
 
       and then run it with:
 
-        ./do-configure [OTHER OPTIONS] -DTrilinos_ENABLE_<PACKAGE>=ON
+        ./do-configure [OTHER OPTIONS] -DTrilinos_ENABLE_<TRIBITS_PACKAGE>=ON
 
-      where <PACKAGE> is Epetra, AztecOO, etc. and TRILINOS_HOME is set to the
+      where <TRIBITS_PACKAGE> is Epetra, AztecOO, etc. and TRILINOS_HOME is set to the
       Trilinos source base directory (or your can just give it explicitly).
 
       See Trilinos/sampleScripts/*cmake for real examples.
@@ -192,26 +192,26 @@ C) Configuring (Makefile Generator)
   a) Configuring a package(s) along with all of the packages it can use:
   
       $ ./do-configure \
-         -D Trilinos_ENABLE_<PACKAGE>:BOOL=ON \
+         -D Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
          -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
          -D Trilinos_ENABLE_TESTS:BOOL=ON
   
-    NOTE: This set of arguments allows a user to turn on <PACKAGE> as well as
-    all packages that <PACKAGE> can use.  However, tests and examples will
-    only be turned on for <PACKAGE> (or any other packages specifically
+    NOTE: This set of arguments allows a user to turn on <TRIBITS_PACKAGE> as well as
+    all packages that <TRIBITS_PACKAGE> can use.  However, tests and examples will
+    only be turned on for <TRIBITS_PACKAGE> (or any other packages specifically
     enabled).
   
   b) Configuring Trilinos to test all effects of changing a given package(s):
   
     $ ./do-configure \
-       -D Trilinos_ENABLE_<PACKAGE>:BOOL=ON \
+       -D Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
        -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON \
        -D Trilinos_ENABLE_TESTS:BOOL=ON
   
-    NOTE: The above set of arguments will result in package <PACKAGE> and all
-    packages that depend on <PACKAGE> to be enabled and have all of their
+    NOTE: The above set of arguments will result in package <TRIBITS_PACKAGE> and all
+    packages that depend on <TRIBITS_PACKAGE> to be enabled and have all of their
     tests turned on.  Tests will not be enabled in packages that do not depend
-    on <PACKAGE> in this case.  This speeds up and robustifies pre-checkin
+    on <TRIBITS_PACKAGE> in this case.  This speeds up and robustifies pre-checkin
     testing.
   
   c) Configuring Trilinos to build all stable packages with all tests and
@@ -222,8 +222,8 @@ C) Configuring (Makefile Generator)
          -D Trilinos_ENABLE_TESTS:BOOL=ON
   
     NOTE: Specific packages can be disabled with
-    Trilinos_ENABLE_<PACKAGE>:BOOL=OFF.  This will also disable all packages
-    that depend on <PACKAGE>.
+    Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=OFF.  This will also disable all packages
+    that depend on <TRIBITS_PACKAGE>.
   
     NOTE: All examples are enabled by default when setting
     Trilinos_ENABLE_TESTS:BOOL=ON.
@@ -672,14 +672,14 @@ C) Configuring (Makefile Generator)
   Optional package-specific support for a TPL can be turned off by passing
   into 'cmake':
 
-    -D <PACKAGE>_ENABLE_<TPLNAME>:BOOL=OFF
+    -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>:BOOL=OFF
 
-  where <PACKAGE> is Epetra, NOX etc.  This gives the user full control over
+  where <TRIBITS_PACKAGE> is Epetra, NOX etc.  This gives the user full control over
   what TPLs are supported by which package independently.
 
   Support for an optional TPL can also be turned on implicitly by setting:
 
-    -D <PACKAGE>_ENABLE_<TPLNAME>:BOOL=ON
+    -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>:BOOL=ON
 
   That will result in setting TPL_ENABLE_<TPLNAME>=ON internally (but not set
   in the cache) if TPL_ENABLE_<TPLNAME>=OFF is not already set.
@@ -751,11 +751,11 @@ C) Configuring (Makefile Generator)
 
   To enable/disable deprecated warnings for a single Trilinos package use:
 
-    -D <PACKAGE>_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
+    -D <TRIBITS_PACKAGE>_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
 
   This will override the global behavior set by
-  Trilinos_SHOW_DEPRECATED_WARNINGS for individual packages <PACKAGE>
-  (e.g. <PACKAGE> = Teuchos, Thyra, etc.)
+  Trilinos_SHOW_DEPRECATED_WARNINGS for individual packages <TRIBITS_PACKAGE>
+  (e.g. <TRIBITS_PACKAGE> = Teuchos, Thyra, etc.)
 
 
 (*) Disable update of package dependency information:
@@ -887,33 +887,33 @@ D) Building (Makefile generator)
 
 (*) See all of the targets to build for a package:
 
-     $ make help | grep <PACKAGE>_
+     $ make help | grep <TRIBITS_PACKAGE>_
 
-  (where <PACKAGE> = Teuchos, Epetra, NOX, etc.)
+  (where <TRIBITS_PACKAGE> = Teuchos, Epetra, NOX, etc.)
 
   or:
 
-     $ cd packages/<PACKAGE>
+     $ cd packages/<TRIBITS_PACKAGE>
      $ make help
 
 
 (*) Building all of the targets for a package:
 
-     $ make <PACKAGE>_all
+     $ make <TRIBITS_PACKAGE>_all
 
-  (where <PACKAGE> = Teuchos, Epetra, NOX, etc.)
+  (where <TRIBITS_PACKAGE> = Teuchos, Epetra, NOX, etc.)
 
   or:
 
-    $ cd packages/<PACKAGE>
+    $ cd packages/<TRIBITS_PACKAGE>
     $ make
 
 
 (*) Building all of the libraries for a package:
 
-    $ make <PACKAGE>_libs
+    $ make <TRIBITS_PACKAGE>_libs
 
-  (where <PACKAGE> = Teuchos, Epetra, NOX, etc.)
+  (where <TRIBITS_PACKAGE> = Teuchos, Epetra, NOX, etc.)
 
 
 (*) Building all of the libraries for all enabled Trilinos packages:
@@ -977,14 +977,14 @@ E) Testing with CTest
 
   Running a single package test:
 
-    $ ctest -j4 -R '^<PACKAGE>_'
+    $ ctest -j4 -R '^<TRIBITS_PACKAGE>_'
 
-  (e.g. PACKAGE = Teuchos, Epetra, etc.)
+  (e.g. TRIBITS_PACKAGE = Teuchos, Epetra, etc.)
   (see output in Testing/Temporary/LastTest.log)
 
   or:
 
-    $ cd packages/<PACKAGE>
+    $ cd packages/<TRIBITS_PACKAGE>
     $ ctest -j4
 
 
@@ -1000,16 +1000,16 @@ E) Testing with CTest
   To run the memory tests for just a single package, from the *base* build
   directory, run:
 
-    $ ctest -R '^<PACKAGE>_' -T memcheck
+    $ ctest -R '^<TRIBITS_PACKAGE>_' -T memcheck
 
-  (where <PACKAGE> = Epetra, NOX etc.).
+  (where <TRIBITS_PACKAGE> = Epetra, NOX etc.).
 
   (see the detailed output in
   ./Testing/Temporary/LastDynamicAnalysis_DATE_TIME.log)
 
   NOTE: If you try to run memory tests from any subdirectories, that does not
   seem to work.  You have to run them from the base build directory and then
-  use -R '^<PACKAGE>_' with ctest in order to run your packages tests.
+  use -R '^<TRIBITS_PACKAGE>_' with ctest in order to run your packages tests.
 
 
 (*) Testing using 'make test'
@@ -1089,7 +1089,7 @@ There are a number of options that you can set in the environment to control
 what this script does.  This set of options can be found by doing:
 
   $ grep 'SET_DEFAULT_AND_FROM_ENV(' \
-      Trilinos/cmake/ctest/TrilinosCTestDriverCore.cmake
+      Trilinos/cmake/ctest/TribitsCTestDriverCore.cmake
 
 Currently, this options includes:
 
@@ -1137,7 +1137,7 @@ name you used above) in the Trilinos CDash dashboard.
 NOTE: It is useful to set CTEST_BUILD_NAME to some unique name to make it
 easier to find your results in the CDash dashboard.
 
-NOTE: A number of the defaults set in TrilinosCTestDriverCore.cmake
+NOTE: A number of the defaults set in TribitsCTestDriverCore.cmake
 are overridden from experimental_build_test.cmake (such as
 CTEST_TEST_TYPE=Experimental) so you will want to look at
 experimental_build_test.cmake to see how these are changed.  The
@@ -1148,7 +1148,7 @@ development for experimental builds.
 NOTE: The target 'dashboard' is not directly related to the built-in
 CMake targets 'Experimental*' that run standard dashboards with CTest
 without the custom package-by-package driver in
-TrilinosCTestDriverCore.cmake.  The package-by-package extended CTest
+TribitsCTestDriverCore.cmake.  The package-by-package extended CTest
 driver is more appropriate for Trilinos.
 
 NOTE: Once you configure with -DTrilinos_ENABLE_COVERAGE_TESTING:BOOL=ON, the

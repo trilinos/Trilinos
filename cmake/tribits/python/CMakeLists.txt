@@ -1,10 +1,10 @@
 
-INCLUDE(PackageAddAdvancedTest)
+INCLUDE(TribitsAddAdvancedTest)
 
 
 IF (PYTHON_EXECUTABLE)
 
-  PACKAGE_ADD_ADVANCED_TEST( GeneralScriptSupport_UnitTests
+  TRIBITS_ADD_ADVANCED_TEST( GeneralScriptSupport_UnitTests
     OVERALL_WORKING_DIRECTORY TEST_NAME
     TEST_0 CMND ${PYTHON_EXECUTABLE} 
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/GeneralScriptSupport_UnitTests.py -v
@@ -12,22 +12,22 @@ IF (PYTHON_EXECUTABLE)
     )
 
   IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
-    PACKAGE_ADD_ADVANCED_TEST( TrilinosPackageFilePathUtils_UnitTests
+    TRIBITS_ADD_ADVANCED_TEST( TribitsPackageFilePathUtils_UnitTests
       OVERALL_WORKING_DIRECTORY TEST_NAME
       TEST_0 CMND ${PYTHON_EXECUTABLE} 
-        ARGS ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageFilePathUtils_UnitTests.py -v
+        ARGS ${CMAKE_CURRENT_SOURCE_DIR}/TribitsPackageFilePathUtils_UnitTests.py -v
         PASS_REGULAR_EXPRESSION "OK"
       )
   ENDIF()
 
-  PACKAGE_ADD_ADVANCED_TEST( CheckinTest_UnitTests
+  TRIBITS_ADD_ADVANCED_TEST( CheckinTest_UnitTests
     OVERALL_WORKING_DIRECTORY TEST_NAME
     TEST_0 CMND ${PYTHON_EXECUTABLE} 
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/CheckinTest_UnitTests.py -v
       PASS_REGULAR_EXPRESSION "OK"
     )
 
-  PACKAGE_ADD_ADVANCED_TEST( InstallProgramDriver_UnitTests
+  TRIBITS_ADD_ADVANCED_TEST( InstallProgramDriver_UnitTests
     OVERALL_WORKING_DIRECTORY TEST_NAME
     TEST_0 CMND ${PYTHON_EXECUTABLE} 
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/InstallProgramDriver_UnitTests.py -v

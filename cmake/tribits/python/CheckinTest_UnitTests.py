@@ -439,7 +439,7 @@ g_cmndinterceptsSendFinalEmail = \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
 
 g_cmndinterceptsExtraRepo1ThroughStatusPasses = \
-  "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+  "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
   +g_cmndinterceptsCurrentBranch \
   +g_cmndinterceptsStatusPasses \
   +g_cmndinterceptsStatusPasses
@@ -1194,7 +1194,7 @@ class test_checkin_test(unittest.TestCase):
       "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-default-builds" \
       " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --configure", \
       \
-      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
@@ -1227,7 +1227,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-serial-release --configure", \
       \
-      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
@@ -1305,7 +1305,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--extra-repos=preCopyrightTrilinos --pull --extra-pull-from=somemachine:someotherbranch", \
       \
-      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -3117,7 +3117,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --without-serial-release --pull", \
       \
-      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -3148,7 +3148,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --without-serial-release --pull", \
       \
-      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -3181,7 +3181,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --without-serial-release --pull --extra-pull-from=ssg:master", \
       \
-      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -3216,7 +3216,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --without-serial-release --pull --extra-pull-from=ssg:master", \
       \
-      "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \

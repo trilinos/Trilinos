@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddAdvancedTest)
+INCLUDE(TribitsAddAdvancedTest)
 
 INCLUDE(ParseVariableArguments)
 INCLUDE(AdvancedSet)
@@ -95,7 +95,7 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
     ENDIF()
   ENDIF()
 
-  PACKAGE_ADD_ADVANCED_TEST( ${TEST_CORE_NAME}
+  TRIBITS_ADD_ADVANCED_TEST( ${TEST_CORE_NAME}
     OVERALL_WORKING_DIRECTORY TEST_NAME
     ${TEST_BLOCKS}
     )
@@ -277,7 +277,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of non-enabled packages:  Stokhos Stalix 2"
     "Trilinos_NUM_ENABLED_PACKAGES=24:  Configuring packages!"
     "Procesing current package ExtraPack: libs='ON', tests='ON'"
-    "Configuring PACKAGE='ExtraPack'"
+    "Configuring TRIBITS_PACKAGE='ExtraPack'"
   )
 
 

@@ -1,5 +1,5 @@
   
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TribitsCTestDriverCore.cmake")
 
 #
 # Platform/compiler specific options for brain.sandia.gov using gcc 4.1.2
@@ -7,7 +7,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
-  INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.common.cmake")
+  INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.brain.common.cmake")
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.1.2")
   

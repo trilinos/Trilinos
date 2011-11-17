@@ -1,69 +1,69 @@
 
 #
 # The tests defined here are used to test the dynamic behavior of the
-# CMake/CTest functions PACKAGE_ADD_TEST(...) and
-# PACKAGE_ADD_ADVANCED_TEST(...).  The reason that these tests are defined
+# CMake/CTest functions TRIBITS_ADD_TEST(...) and
+# TRIBITS_ADD_ADVANCED_TEST(...).  The reason that these tests are defined
 # here in Teuchos is so that MPI handling can be taken care of automatically.
 # These tests run extremely fast so they should not be a drain on testing of
 # Teuchos or the rest of Trilinos.
 #
 
 
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(PackageAddAdvancedTest)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddAdvancedTest)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_MPI)
 IF (${PACKAGE_NAME}_ENABLE_MPI)
   ADD_DEFINITIONS(-DHAVE_MPI)
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   GenericDriver
   SOURCES GenericDriver.cpp
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_0
   TEST_0 EXEC GenericDriver
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_TEST( GenericDriver
+TRIBITS_ADD_TEST( GenericDriver
   NAME CTestScripts_simple_pass_regex
   ARGS "\"This is a crazy test!\" 1"
   PASS_REGULAR_EXPRESSION "[^=]This is a crazy test"
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_TEST( GenericDriver
+TRIBITS_ADD_TEST( GenericDriver
   NAME CTestScripts_simple_posfix_and_args_1
   POSTFIX_AND_ARGS_0 test1 "This is a crazy test!" 1
   PASS_REGULAR_EXPRESSION "[^=]This is a crazy test"
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_TEST( GenericDriver
+TRIBITS_ADD_TEST( GenericDriver
   NAME CTestScripts_simple_posfix_and_args_2
   POSTFIX_AND_ARGS_0 test1 "This is a crazy test!" 0
   POSTFIX_AND_ARGS_1 test2 "This is a silly test!" 0
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_TEST( GenericDriver
+TRIBITS_ADD_TEST( GenericDriver
   NAME CTestScripts_will_fail
   POSTFIX_AND_ARGS_0 test1 "This test is supposed to fail!" 1
   WILL_FAIL
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg
   TEST_0 EXEC GenericDriver ARGS "This is a crazy test!" 1
   FINAL_PASS_REGULAR_EXPRESSION "\"This is a crazy test"
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg_no_echo_output
   TEST_0 EXEC GenericDriver ARGS "This is a crazy test!" 0
     NO_ECHO_OUTPUT
@@ -71,14 +71,14 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_return_code
   TEST_0 EXEC GenericDriver ARGS "Dummy msg" 1
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Return code = 1"
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg_out_file
   TEST_0 EXEC GenericDriver ARGS "This is a crazy test!" 5
     OUTPUT_FILE cmnd_1_args_1_print_msg_out_file_outputFile.out
@@ -86,7 +86,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_any_test_0
   TEST_0 EXEC GenericDriver ARGS "Dummy msg" 7
     PASS_ANY
@@ -94,21 +94,21 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_any_overall
   TEST_0 EXEC GenericDriver ARGS "Dummy msg" 7
     PASS_ANY
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_standard_pass_output
   TEST_0 EXEC GenericDriver ARGS "Dummy msg" 7
     STANDARD_PASS_OUTPUT
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test\n\nThis is not the best test" 5
@@ -117,7 +117,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all_compare_1
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test\n\nThis is not the best test" 5
@@ -127,7 +127,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all_compare_2
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test\n\nThis is not the best test" 5
@@ -141,7 +141,7 @@ PACKAGE_ADD_ADVANCED_TEST(
 # because it is interpreted as a char list.  Therefore, I leave it as not 'a'
 # and that is good enough for me.
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg_out_file_no_echo_output
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test!" 5
@@ -151,7 +151,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_message
   TEST_0 EXEC GenericDriver
     ARGS "Dummy msg" 1
@@ -160,7 +160,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_working_directory
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test!" 0
@@ -169,7 +169,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_2_args_1_basic
   TEST_0 EXEC GenericDriver
     ARGS "This is the first test" 3
@@ -180,7 +180,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_2_args_1_check_second_print
   TEST_0 EXEC GenericDriver
     ARGS "This is the first test" 3
@@ -192,7 +192,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_2_fail_fast
   TEST_0 EXEC GenericDriver
     ARGS "This first test will fail" 3
@@ -203,7 +203,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_2_no_fail_fast_print_msg
   TEST_0 EXEC GenericDriver
     ARGS "This first test will fail" 3
@@ -213,7 +213,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_2_no_fail_fast_final_fail
   TEST_0 EXEC GenericDriver
     ARGS "This first test will fail" 3
@@ -229,7 +229,7 @@ ELSE()
   SET(DIFF_COMMAND_STUFF diff ARGS)
 ENDIF()
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_3_args_1_overall_working_directory
   OVERALL_WORKING_DIRECTORY TEST_NAME
   TEST_0 EXEC GenericDriver
@@ -240,7 +240,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_3_args_1_overall_working_directory_working_directory
   OVERALL_WORKING_DIRECTORY TEST_NAME
   TEST_0 EXEC GenericDriver
@@ -257,12 +257,12 @@ PACKAGE_ADD_ADVANCED_TEST(
 
 IF (PERL_EXECUTABLE AND TrilinosFramework_ENABLE_RUNS_FOREVER_TEST)
   
-  PACKAGE_ADD_EXECUTABLE(
+  TRIBITS_ADD_EXECUTABLE(
     RunsForever
     SOURCES RunsForever.cpp
     )
   
-  PACKAGE_ADD_ADVANCED_TEST(
+  TRIBITS_ADD_ADVANCED_TEST(
     CTestScripts_RunsForever
     TEST_0 CMND ${PERL_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/runs_forever.pl
     OVERALL_NUM_MPI_PROCS 1

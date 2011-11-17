@@ -60,7 +60,7 @@
 #dir for the script.
 SET(INSTALLATION_DIR "${CMAKE_CURRENT_BINARY_DIR}/../../installation/installed")
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test2.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.trilinos-test2.gcc.cmake")
 
 #
 # Set the options specific to this build case

@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( MA28
+TRIBITS_TPL_DECLARE_LIBRARIES( MA28
   REQUIRED_LIBS_NAMES "hsl")

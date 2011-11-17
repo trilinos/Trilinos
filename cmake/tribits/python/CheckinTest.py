@@ -69,9 +69,9 @@
 
 from GeneralScriptSupport import *
 
-from TrilinosDependencies import getTrilinosDependenciesFromXmlFile
-from TrilinosDependencies import defaultTrilinosDepsXmlInFile
-from TrilinosPackageFilePathUtils import *
+from TribitsDependencies import getTrilinosDependenciesFromXmlFile
+from TribitsDependencies import defaultTrilinosDepsXmlInFile
+from TribitsPackageFilePathUtils import *
 import time
 import pprint
 
@@ -1615,7 +1615,7 @@ def checkinTest(inOptions):
        +" -DTrilinos_DEPS_HOME_DIR="+inOptions.trilinosSrcDir \
        +" -DTrilinos_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR="+baseTestDir \
        +" -DTrilinos_EXTRA_REPOSITORIES="+inOptions.extraRepos \
-       +" -P "+inOptions.trilinosSrcDir+"/cmake/tribits/package_arch/PackageArchDumpDepsXmlScript.cmake"
+       +" -P "+inOptions.trilinosSrcDir+"/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake"
       echoRunSysCmnd(cmnd,
         workingDir=baseTestDir,
         outFile=baseTestDir+"/"+getTrilinosDependenciesXmlGenerateOutputFileName(),

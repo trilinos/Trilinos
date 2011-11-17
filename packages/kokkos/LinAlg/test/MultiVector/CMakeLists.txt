@@ -1,5 +1,5 @@
-INCLUDE(PackageAddExecutableAndTest)   
-PACKAGE_ADD_EXECUTABLE_AND_TEST(  MultiVector_ComputeTests  
+INCLUDE(TribitsAddExecutableAndTest)   
+TRIBITS_ADD_EXECUTABLE_AND_TEST(  MultiVector_ComputeTests  
   SOURCES 
     MultiVector_ComputeTests.cpp  
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
@@ -8,7 +8,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(  MultiVector_ComputeTests
   STANDARD_PASS_OUTPUT
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
-PACKAGE_ADD_EXECUTABLE_AND_TEST( MultiVector_UnitTests 
+TRIBITS_ADD_EXECUTABLE_AND_TEST( MultiVector_UnitTests 
   SOURCES   
     MultiVector_UnitTests.cpp 
     ${TEUCHOS_STD_UNIT_TEST_MAIN}

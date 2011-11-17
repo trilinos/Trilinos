@@ -250,7 +250,7 @@ def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
     print "*** Running the main dashboards as CTest tests .."
     print "***\n"
     sys.exit(invoke_ctest(CTEST_EXE,
-                           os.path.join(SCRIPT_DIR, "TrilinosDriverDashboard.cmake"),
+                           os.path.join(SCRIPT_DIR, "TribitsDriverDashboard.cmake"),
                            BASE_DIR,
                            {"CTEST_SOURCE_DIRECTORY": ctest_directory}))
     

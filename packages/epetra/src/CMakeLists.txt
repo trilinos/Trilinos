@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -13,7 +13,7 @@ SET(Epetra_HAVE_OMP ${Trilinos_ENABLE_OpenMP})
 # This is the preferred macro to key on, but am keeping the old one for backward compatibility
 SET(EPETRA_HAVE_OMP ${Trilinos_ENABLE_OpenMP})
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(CURRENT_PACKAGE EPETRA)
 CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
@@ -209,7 +209,7 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   epetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

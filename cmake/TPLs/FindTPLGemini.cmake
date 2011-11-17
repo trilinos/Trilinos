@@ -1,5 +1,5 @@
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( Gemini
+TRIBITS_TPL_DECLARE_LIBRARIES( Gemini
   REQUIRED_HEADERS gni_pub.h
   )

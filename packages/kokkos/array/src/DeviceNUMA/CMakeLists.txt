@@ -1,5 +1,5 @@
-INCLUDE(PackageLibraryMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -38,7 +38,7 @@ ENDIF()
 
 #-----------------------------------------------------------------------------
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   kokkosdevicenuma
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

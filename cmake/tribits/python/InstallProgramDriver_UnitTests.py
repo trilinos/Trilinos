@@ -54,7 +54,7 @@
 # @HEADER
 
 #########################################################
-# Unit testing code for TrilinosPackageFilePathUtils.py #
+# Unit testing code for TribitsPackageFilePathUtils.py #
 ######################################################### 
 
 

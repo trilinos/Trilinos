@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
 # Either the MPI compiler wrappers take care of these or the user has to set
 # the explicitly using basic compile flags and Trilinos_EXTRA_LINK_FLAGS.

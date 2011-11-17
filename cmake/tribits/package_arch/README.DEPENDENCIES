@@ -226,7 +226,7 @@ link against a given package's capabilities.
   ${PARENT_PACKAGE_NAME}_LIB_TARGETS
  
     Lists all of the library targets for this package only that are as part of
-    this package added by the PACKAGE_ADD_LIBRARY(...) function.  This is used
+    this package added by the TRIBITS_ADD_LIBRARY(...) function.  This is used
     to define a target called ${PACKAGE_NAME}_libs that is then used in the
     testing system.  If a package has not libraries, then the library targets
     for all of the immediate direct dependent packages will be added.  This is
@@ -235,8 +235,8 @@ link against a given package's capabilities.
   ${PARENT_PACKAGE_NAME}_ALL_TARGETS
  
     Lists all of the targets associated with this package.  This includes all
-    libraries and tests added with PACKAGE_ADD_LIBRARY(...) and
-    PACKAGE_ADD_EXECUTABLE(...).  If this package has no targets (no
+    libraries and tests added with TRIBITS_ADD_LIBRARY(...) and
+    TRIBITS_ADD_EXECUTABLE(...).  If this package has no targets (no
     libraries or executables) this this will have the dependency only on
     ${PARENT_PACKAGE_NAME}_libs.
 

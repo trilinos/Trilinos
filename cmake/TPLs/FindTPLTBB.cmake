@@ -244,16 +244,16 @@
 #   
 #   endif (NOT _TBB_INSTALL_DIR)
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( TBB
+TRIBITS_TPL_DECLARE_LIBRARIES( TBB
   REQUIRED_HEADERS tbb/task_scheduler_init.h
   REQUIRED_LIBS_NAMES "tbb"
   )
 
-# INCLUDE(TPLDeclareLibraries)
+# INCLUDE(TribitsTplDeclareLibraries)
 # 
-# TPL_DECLARE_LIBRARIES( TBB
+# TRIBITS_TPL_DECLARE_LIBRARIES( TBB
 #   REQUIRED_HEADERS tbb/task_scheduler_init.h
 #   REQUIRED_LIBS_NAMES "tbb;tbbmalloc"
 #   )

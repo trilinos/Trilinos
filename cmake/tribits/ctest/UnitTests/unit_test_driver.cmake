@@ -78,7 +78,7 @@ SET( CMAKE_MODULE_PATH
 # Includes
 #
 
-INCLUDE(TrilinosCTestDriverCore)
+INCLUDE(TribitsCTestDriverCore)
 INCLUDE(GetLastDirName)
 
 

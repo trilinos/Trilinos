@@ -1,11 +1,11 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -81,12 +81,12 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   kokkoslinalg
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS kokkos kokkosnodeapi ${KOKKOS_LINALG_CUDALIBS}
   )
 
-PACKAGE_ADD_TEST_DIRECTORIES(examples)
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(examples)
+TRIBITS_ADD_TEST_DIRECTORIES(test)

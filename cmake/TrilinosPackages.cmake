@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE(PackageListHelpers)
+INCLUDE(TribitsListHelpers)
 
 #
 # Define the Trilinos package names, directories, and classification.

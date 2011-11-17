@@ -1,7 +1,7 @@
-INCLUDE(SubPackageMacros)
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsLibraryMacros)
 
-SUBPACKAGE(Supes)
+TRIBITS_SUBPACKAGE(Supes)
 
 INCLUDE(FortranSettings)
 
@@ -27,7 +27,7 @@ SET(SOURCES
 	mem_mgr/mxdel.f	      mem_mgr/mxgive.f	    mem_mgr/mxprnt.f  mem_mgr/myget.f    mem_mgr/myrsrv.f   mem_mgr/srchi.f
 	mem_mgr/mxeror.f      mem_mgr/mxlist.f	    mem_mgr/mxrsrv.f  mem_mgr/mylong.f   mem_mgr/vtable.f)
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
 	supes
 	SOURCES ${SOURCES}
 )
@@ -40,4 +40,4 @@ TARGET_LINK_LIBRARIES(exttest supes)
 TARGET_LINK_LIBRARIES(ffrtest supes)
 TARGET_LINK_LIBRARIES(memtest supes)
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()

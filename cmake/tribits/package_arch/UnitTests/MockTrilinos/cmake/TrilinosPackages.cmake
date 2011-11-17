@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(PackageListHelpers)
+INCLUDE(TribitsListHelpers)
 
 
 # This list is just used for unit testing the dependency handling

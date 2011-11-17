@@ -26,7 +26,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(PackageAddTest)
+INCLUDE(TribitsAddTest)
 
 MACRO(PyTrilinos_MAKE_TEST TEST_NAME)
 
@@ -39,7 +39,7 @@ MACRO(PyTrilinos_MAKE_TEST TEST_NAME)
   ADD_CUSTOM_TARGET(PyTrilinos_${TEST_NAME} ALL
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME}.py)
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     ${PYTHON_EXECUTABLE}
     NOEXEPREFIX
     NOEXESUFFIX

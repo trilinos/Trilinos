@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE(PackageAddTestHelpers)
+INCLUDE(TribitsAddTestHelpers)
 
 
 # Allow for a maximum of 20 (0 through 19) test commands
@@ -66,7 +66,7 @@ SET(PACKAGE_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX 19)
 # EXECUTE_PROCESS(...)
 #
 
-FUNCTION(JOIN_EXEC_PROCESS_SET_ARGS  OUTPUT_STRING_VAR)
+FUNCTION(TRIBITS_JOIN_EXEC_PROCESS_SET_ARGS  OUTPUT_STRING_VAR)
   SET(OUTPUT_STRING "")
   FOREACH(STRING_VAL_RAW ${ARGN})
     # Remove quotes around arguments because CTest does not need them
@@ -82,11 +82,11 @@ ENDFUNCTION()
 
 
 #
-# Unit test helper function for PACKAGE_ADD_ADVANCED_TEST(...) that resets
-# state before calling PACKAGE_ADD_ADVANCED_TEST(...) in unit test mode.
+# Unit test helper function for TRIBITS_ADD_ADVANCED_TEST(...) that resets
+# state before calling TRIBITS_ADD_ADVANCED_TEST(...) in unit test mode.
 #
 
-FUNCTION(PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET)
+FUNCTION(TRIBITS_ADD_ADVANCED_TEST_UNITTEST_RESET)
 
   GLOBAL_SET(PACKAGE_ADD_ADVANCED_TEST_UNITTEST TRUE)
 

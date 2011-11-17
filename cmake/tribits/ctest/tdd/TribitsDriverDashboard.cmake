@@ -56,7 +56,7 @@
 
 MESSAGE(
  "\n***"
- "\n*** TrilinosDriverDashboard.cmake"
+ "\n*** TribitsDriverDashboard.cmake"
  "\n***\n"
  )
 
@@ -222,5 +222,5 @@ else()
 endif()
 
 MESSAGE(
- "\n*** Finished TrilinosDriverDashboard.cmake ***\n"
+ "\n*** Finished TribitsDriverDashboard.cmake ***\n"
  )

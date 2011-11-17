@@ -1,8 +1,8 @@
-INCLUDE(PackageMacros)
+INCLUDE(TribitsPackageMacros)
 
 ADD_SUBDIRECTORY(stk_util)
 
 IF ( TPL_ENABLE_BoostLib )
-  PACKAGE_ADD_TEST_DIRECTORIES(unit_tests)
+  TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
 ENDIF()
 

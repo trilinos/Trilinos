@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE(PackageAddAdvancedTestHelpers)
+INCLUDE(TribitsAddAdvancedTestHelpers)
 
 INCLUDE(AppendStringVar)
 INCLUDE(PrintVar)
@@ -70,7 +70,7 @@ INCLUDE(PrintVar)
 #
 # An advanced test is defined as:
 #
-#   PACKAGE_ADD_ADVANCED_TEST(
+#   TRIBITS_ADD_ADVANCED_TEST(
 #     <testName>
 #     TEST_0 (EXEC <execTarget0> | CMND <cmndExec0>) ...
 #     [TEST_1 (EXEC <execTarget1> | CMND <cmndExec1>) ...]
@@ -152,19 +152,19 @@ INCLUDE(PrintVar)
 #     If specified, selects if the test will be added in serial and/or MPI
 #     mode.  If the COMM argument is missing, the test will be added in both
 #     serial and MPI builds of the code.  See the COMM argument in the script
-#     PACKAGE_ADD_TEST(...) for more details.
+#     TRIBITS_ADD_TEST(...) for more details.
 #
 #   OVERALL_NUM_MPI_PROCS <overallNumProcs>
 #
 #     If specified, gives the default number of processes that each executable
 #     command run on and can also result in the test being exluded all
 #     together based on comparison to MPI_EXEC_MAX_NUMPROCS.  See the COMM
-#     argument in the script PACKAGE_ADD_TEST(...) for more details.
+#     argument in the script TRIBITS_ADD_TEST(...) for more details.
 #
 #   CATEGORIES <category1> <category2> ...
 #
 #     Gives the test categories this test will be added.  See
-#     PACKAGE_ADD_TEST(...) for more details.
+#     TRIBITS_ADD_TEST(...) for more details.
 #
 # Each test command is either package-built test executable or some general
 # command executable and is defined as either:
@@ -174,7 +174,7 @@ INCLUDE(PrintVar)
 #     If specified, then <execTarget> gives the the name of an executable
 #     target that will be run as the command.  The value <execTarget> is same
 #     string that was passed in as the first argument to
-#     PACKAGE_ADD_EXECUTABLE( <execTarget>...) used to define the executable.
+#     TRIBITS_ADD_EXECUTABLE( <execTarget>...) used to define the executable.
 #     If this is an MPI build, then <execTarget> will be run with MPI using
 #     NUM_MPI_PROCS <numProcs> or OVERALL_NUM_MPI_PROCS <overallNumProcs> (if
 #     NUM_MPI_PROCS is not set for this test case).  If the number of maximum
@@ -277,7 +277,7 @@ INCLUDE(PrintVar)
 #     <regex>.  Otherwise, it will be assumed to fail.
 #
 
-FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
+FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nPACKAGE_ADD_ADVANCED_TEST: ${TEST_NAME_IN}\n")
@@ -320,13 +320,13 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
   #
 
   SET(ADD_THE_TEST FALSE)
-  PACKAGE_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
+  TRIBITS_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
   IF (NOT ADD_THE_TEST)
     RETURN()
   ENDIF()
 
   SET(ADD_THE_TEST FALSE)
-  PACKAGE_ADD_TEST_PROCESS_HOST_HOSTTYPE(ADD_THE_TEST)
+  TRIBITS_ADD_TEST_PROCESS_HOST_HOSTTYPE(ADD_THE_TEST)
   IF (NOT ADD_THE_TEST)
     RETURN()
   ENDIF()
@@ -336,7 +336,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
   # and TPL_ENABLE_MPI
   #
 
-  PACKAGE_PROCESS_COMM_ARGS(ADD_SERIAL_TEST  ADD_MPI_TEST  ${PARSE_COMM})
+  TRIBITS_PROCESS_COMM_ARGS(ADD_SERIAL_TEST  ADD_MPI_TEST  ${PARSE_COMM})
   IF (NOT ADD_SERIAL_TEST AND NOT ADD_MPI_TEST)
     RETURN()
   ENDIF()
@@ -397,7 +397,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
     SET(ARGS_STR ${PARSE_ARGS})
     #PRINT_VAR(ARGS_STR)
     #IF (PARSE_ARGS)
-    #  JOIN_EXEC_PROCESS_SET_ARGS( ARGS_STR ${PARSE_ARGS} )
+    #  TRIBITS_JOIN_EXEC_PROCESS_SET_ARGS( ARGS_STR ${PARSE_ARGS} )
     #ENDIF()
 
     IF (PARSE_EXEC)
@@ -408,7 +408,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
           " must be a single name.  To add arguments use ARGS <arg1> <arg2> ...." )
       ENDIF()
 
-      PACKAGE_ADD_TEST_GET_EXE_BINARY_NAME( "${PARSE_EXEC}"
+      TRIBITS_ADD_TEST_GET_EXE_BINARY_NAME( "${PARSE_EXEC}"
         ${PARSE_NOEXEPREFIX} ${PARSE_NOEXESUFFIX} ${PARSE_ADD_DIR_TO_NAME} EXE_BINARY_NAME )
 
       IF (IS_ABSOLUTE ${EXE_BINARY_NAME})
@@ -420,7 +420,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
       IF (NOT PARSE_NUM_MPI_PROCS)
         SET(PARSE_NUM_MPI_PROCS ${PARSE_OVERALL_NUM_MPI_PROCS})
       ENDIF()
-      PACKAGE_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_NUM_MPI_PROCS}" NUM_PROCS_USED)
+      TRIBITS_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_NUM_MPI_PROCS}" NUM_PROCS_USED)
       IF (NUM_PROCS_USED LESS 0)
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE(STATUS "Skipping adding test because NUM_MPI_PROCS ${PARSE_NUM_MPI_PROCS}"
@@ -429,7 +429,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
         SET(ADD_THE_TEST FALSE)
       ENDIF()
 
-      PACKAGE_ADD_TEST_GET_TEST_CMND_ARRAY( TEST_CMND_ARRAY
+      TRIBITS_ADD_TEST_GET_TEST_CMND_ARRAY( TEST_CMND_ARRAY
         "${EXECUTABLE_PATH}" "${NUM_PROCS_USED}" ${ARGS_STR} )
       #PRINT_VAR(TEST_CMND_ARRAY)
 
@@ -442,7 +442,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
       ENDIF()
 
       #This allows us to check if a test is requesting more than MPI_EXEC_MAX_NUMPROCS
-      PACKAGE_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_OVERALL_NUM_MPI_PROCS}" NUM_PROCS_USED)
+      TRIBITS_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_OVERALL_NUM_MPI_PROCS}" NUM_PROCS_USED)
 
       IF (NUM_PROCS_USED LESS 0)
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -461,7 +461,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
 
     ENDIF()
 
-    JOIN_EXEC_PROCESS_SET_ARGS( TEST_CMND_STR "${TEST_CMND_ARRAY}" )
+    TRIBITS_JOIN_EXEC_PROCESS_SET_ARGS( TEST_CMND_STR "${TEST_CMND_ARRAY}" )
     #PRINT_VAR(TEST_CMND_STR)
 
     APPEND_STRING_VAR( TEST_SCRIPT_STR
@@ -600,7 +600,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
       ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}" -P "${TEST_SCRIPT_FILE}"
       )
 
-    PACKAGE_PRIVATE_ADD_TEST_ADD_LABEL_AND_KEYWORDS(${TEST_NAME})
+    TRIBITS_PRIVATE_ADD_TEST_ADD_LABEL_AND_KEYWORDS(${TEST_NAME})
 
     #This if clause will set the number of PROCESSORS to reserve during testing
     #to the number requested for the test.

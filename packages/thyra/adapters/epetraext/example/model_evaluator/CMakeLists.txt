@@ -1,4 +1,4 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
 INCLUDE_DIRECTORIES(
@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ForwardSolveEpetraModelEval2DSim
   SOURCES
     ForwardSolveEpetraModelEval2DSimMain.cpp

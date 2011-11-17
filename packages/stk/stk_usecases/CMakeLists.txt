@@ -1,4 +1,4 @@
-INCLUDE(PackageMacros)
+INCLUDE(TribitsPackageMacros)
 
 ADD_SUBDIRECTORY(util)
 

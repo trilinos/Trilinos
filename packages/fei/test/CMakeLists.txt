@@ -1,5 +1,5 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../)
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_BINARY_DIR}/../base/)
@@ -15,7 +15,7 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../teuchos/src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../teuchos/src)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   fei_test
   SOURCES fei_test.cpp
   ARGS "-d . -test unit_tests"
@@ -26,7 +26,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 IF(FEI_ENABLE_AztecOO)
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(FEITestRemEssBCsCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(FEITestRemEssBCsCopyFiles
     DEST_FILES
     pll_RemEssBCs.Aztec.parameters pll_RemEssBCs.i pll_RemEssBCs.in.1.0
     pll_RemEssBCs.in.3.0 pll_RemEssBCs.in.3.1 pll_RemEssBCs.in.3.2
@@ -36,7 +36,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestRemEssBCsCopyFiles
     NAME remEssBCs
     ARGS "-d ./remEssBCs -i pll_RemEssBCs.i"
@@ -44,7 +44,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestRemEssBCsCopyFiles
     NAME remEssBCs
     ARGS "-d ./remEssBCs -i pll_RemEssBCs.i"
@@ -52,7 +52,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 3
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(FEITestRemEssBCsTrilinosCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(FEITestRemEssBCsTrilinosCopyFiles
     DEST_FILES
     pll_RemEssBCs.Aztec.parameters pll_RemEssBCs.i pll_RemEssBCs.in.1.0
     pll_RemEssBCs.in.3.0 pll_RemEssBCs.in.3.1 pll_RemEssBCs.in.3.2
@@ -62,7 +62,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestRemEssBCsTrilinosCopyFiles
     NAME remEssBCs_Trilinos
     ARGS "-d ./remEssBCs_Trilinos -i pll_RemEssBCs.i"
@@ -70,7 +70,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestRemEssBCsTrilinosCopyFiles
     NAME remEssBCs_Trilinos
     ARGS "-d ./remEssBCs_Trilinos -i pll_RemEssBCs.i"
@@ -78,7 +78,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 3
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(FEITestElemDOFAztecCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(FEITestElemDOFAztecCopyFiles
     DEST_FILES
     elemDOF.i elemDOF.in.1.0 elemDOF.in.2.0 elemDOF.in.2.1
     elemDOF.input elemDOF.soln.elem.correct.1.1.0
@@ -88,7 +88,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestElemDOFAztecCopyFiles
     NAME elemDOF_Aztec
     ARGS "-d ./elemDOF_Aztec -i elemDOF.i"
@@ -96,7 +96,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestElemDOFAztecCopyFiles
     NAME elemDOF_Aztec
     ARGS "-d ./elemDOF_Aztec -i elemDOF.i"
@@ -104,7 +104,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 2
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(FEITestCRLagrange20QuadCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(FEITestCRLagrange20QuadCopyFiles
     DEST_FILES
     lagrange.i lagrange.in.1.0 lagrange.in.2.0 lagrange.in.2.1
     lagrange.in.4.0 lagrange.in.4.1 lagrange.in.4.2 lagrange.in.4.3
@@ -114,7 +114,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRLagrange20QuadCopyFiles
     NAME lagrange_20quad
     ARGS "-d ./cr_lagrange_20quad -i lagrange.i"
@@ -122,7 +122,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
  
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRLagrange20QuadCopyFiles
     NAME lagrange_20quad
     ARGS "-d ./cr_lagrange_20quad -i lagrange.i"
@@ -130,7 +130,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 2
     )
  
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRLagrange20QuadCopyFiles
     NAME lagrange_20quad
     ARGS "-d ./cr_lagrange_20quad -i lagrange.i"
@@ -138,7 +138,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 4
     )
  
-  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRLagrange20QuadAZLSCCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR( FEITestCRLagrange20QuadAZLSCCopyFiles
     DEST_FILES
     lagrange.i lagrange.in.1.0 lagrange.in.2.0 lagrange.in.2.1
     lagrange.in.4.0 lagrange.in.4.1 lagrange.in.4.2 lagrange.in.4.3
@@ -148,7 +148,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRLagrange20QuadAZLSCCopyFiles
     NAME lagrange_20quad_AZ
     ARGS "-d ./cr_lagrange_20quad_AZLSC -i lagrange.i"
@@ -156,7 +156,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRLagrange20QuadAZLSCCopyFiles
     NAME lagrange_20quad_AZ
     ARGS "-d ./cr_lagrange_20quad_AZLSC -i lagrange.i"
@@ -164,7 +164,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 2
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRLagrange20QuadAZLSCCopyFiles
     NAME lagrange_20quad_AZ
     ARGS "-d ./cr_lagrange_20quad_AZLSC -i lagrange.i"
@@ -172,7 +172,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 4
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRLagrage20QuadOldCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR( FEITestCRLagrage20QuadOldCopyFiles
     DEST_FILES
     lagrange.i lagrange.in.1.0 lagrange.in.2.0 lagrange.in.2.1
     lagrange.in.4.0 lagrange.in.4.1 lagrange.in.4.2 lagrange.in.4.3
@@ -182,7 +182,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRLagrage20QuadOldCopyFiles
     NAME lagrange_20quad_old
     ARGS "-d ./cr_lagrange_20quad_old -i lagrange.i"
@@ -190,7 +190,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRLagrage20QuadOldCopyFiles
     NAME lagrange_20quad_old
     ARGS "-d ./cr_lagrange_20quad_old -i lagrange.i"
@@ -198,7 +198,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 2
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRLagrage20QuadOldCopyFiles
     NAME lagrange_20quad_old
     ARGS "-d ./cr_lagrange_20quad_old -i lagrange.i"
@@ -206,7 +206,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 4
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestMultifieldCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR( FEITestMultifieldCopyFiles
     DEST_FILES
     mf.i mf.in.1.0 mf.in.2.0 mf.in.2.1 mf.in.3.0 mf.in.3.1 mf.in.3.2
     mf.input mf.soln.node.correct.1.1.0 parameters.Trilinos
@@ -215,7 +215,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestMultifieldCopyFiles
     NAME multifield
     ARGS "-d ./multifield -i mf.i"
@@ -223,7 +223,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestMultifieldCopyFiles
     NAME multifield
     ARGS "-d ./multifield -i mf.i"
@@ -231,7 +231,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 2
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestMultifieldCopyFiles
     NAME multifield
     ARGS "-d ./multifield -i mf.i"
@@ -239,7 +239,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 3
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestMultifieldVBRCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR( FEITestMultifieldVBRCopyFiles
     DEST_FILES
     mf.i mf.in.1.0 mf.in.2.0 mf.in.2.1 mf.in.3.0 mf.in.3.1 mf.in.3.2
     mf.input mf.soln.node.correct.1.1.0 parameters.Trilinos
@@ -248,7 +248,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestMultifieldVBRCopyFiles
     NAME multifield_vbr
     ARGS "-d ./multifield_vbr -i mf.i"
@@ -256,7 +256,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestMultifieldVBRCopyFiles
     NAME multifield_vbr
     ARGS "-d ./multifield_vbr -i mf.i"
@@ -264,7 +264,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 2
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestMultifieldVBRCopyFiles
     NAME multifield_vbr
     ARGS "-d ./multifield_vbr -i mf.i"
@@ -272,7 +272,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 3
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestMultifieldVBRAZCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR( FEITestMultifieldVBRAZCopyFiles
     DEST_FILES
     mf.i mf.in.1.0 mf.in.2.0 mf.in.2.1 mf.in.3.0 mf.in.3.1 mf.in.3.2
     mf.input mf.soln.node.correct.1.1.0 parameters.Trilinos
@@ -281,7 +281,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestMultifieldVBRAZCopyFiles
     NAME multifield_vbr_az
     ARGS "-d ./multifield_vbr_az -i mf.i"
@@ -289,7 +289,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestMultifieldVBRAZCopyFiles
     NAME multifield_vbr_az
     ARGS "-d ./multifield_vbr_az -i mf.i"
@@ -297,7 +297,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 2
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestMultifieldVBRAZCopyFiles
     NAME multifield_vbr_az
     ARGS "-d ./multifield_vbr_az -i mf.i"
@@ -305,7 +305,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 3
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRMultifieldSlaveCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR( FEITestCRMultifieldSlaveCopyFiles
     DEST_FILES
     mf.i mf.in.1.0 mf.in.2.0 mf.in.2.1 mf.in.3.0 mf.in.3.1 mf.in.3.2
     mf.input mf.soln.node.correct.1.1.0 parameters.Trilinos
@@ -314,7 +314,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRMultifieldSlaveCopyFiles
     NAME multifield_slave
     ARGS "-d ./cr_multifield_slave -i mf.i"
@@ -322,7 +322,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRMultifieldSlaveCopyFiles
     NAME multifield_slave
     ARGS "-d ./cr_multifield_slave -i mf.i"
@@ -330,7 +330,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 2
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRMultifieldSlaveCopyFiles
     NAME multifield_slave
     ARGS "-d ./cr_multifield_slave -i mf.i"
@@ -338,7 +338,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 3
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRSlave20QuadCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR( FEITestCRSlave20QuadCopyFiles
     DEST_FILES
     parameters.Trilinos slave.i slave.in.1.0 slave.in.2.0 slave.in.2.1
     slave.in.4.0 slave.in.4.1 slave.in.4.2 slave.in.4.3 slave.input
@@ -348,7 +348,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-#  PACKAGE_ADD_TEST(
+#  TRIBITS_ADD_TEST(
 #    fei_test FEITestCRSlave20QuadCopyFiles
 #    NAME slave_20quad
 #    ARGS "-d ./cr_slave_20quad -i slave.i"
@@ -356,7 +356,7 @@ IF(FEI_ENABLE_AztecOO)
 #    NUM_MPI_PROCS 1
 #    )
 #
-#  PACKAGE_ADD_TEST(
+#  TRIBITS_ADD_TEST(
 #    fei_test FEITestCRSlave20QuadCopyFiles
 #    NAME slave_20quad
 #    ARGS "-d ./cr_slave_20quad -i slave.i"
@@ -364,7 +364,7 @@ IF(FEI_ENABLE_AztecOO)
 #    NUM_MPI_PROCS 2
 #    )
 #
-#  PACKAGE_ADD_TEST(
+#  TRIBITS_ADD_TEST(
 #    fei_test FEITestCRSlave20QuadCopyFiles
 #    NAME slave_20quad
 #    ARGS "-d ./cr_slave_20quad -i slave.i"
@@ -372,7 +372,7 @@ IF(FEI_ENABLE_AztecOO)
 #    NUM_MPI_PROCS 4
 #    )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRSlave20QuadOldCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR( FEITestCRSlave20QuadOldCopyFiles
     DEST_FILES
     parameters.Trilinos slave.i slave.in.1.0 slave.in.2.0 slave.in.2.1
     slave.in.4.0 slave.in.4.1 slave.in.4.2 slave.in.4.3 slave.input
@@ -382,7 +382,7 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRSlave20QuadOldCopyFiles
     NAME slave_20quad_old
     ARGS "-d ./cr_slave_20quad -i slave.i"
@@ -390,7 +390,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 1
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRSlave20QuadOldCopyFiles
     NAME slave_20quad_old
     ARGS "-d ./cr_slave_20quad -i slave.i"
@@ -398,7 +398,7 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 2
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     fei_test FEITestCRSlave20QuadOldCopyFiles
     NAME slave_20quad_old
     ARGS "-d ./cr_slave_20quad -i slave.i"

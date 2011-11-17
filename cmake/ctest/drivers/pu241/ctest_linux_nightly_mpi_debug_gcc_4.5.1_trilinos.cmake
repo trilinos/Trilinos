@@ -2,7 +2,7 @@
 # Build all Secondary Stable Trilinos packages in core Trilinos with GCC 4.5.1 compiler
 #
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.pu241.gcc.4.5.1.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.pu241.gcc.4.5.1.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/SubmitToTrilinos.cmake")
 
 SET(COMM_TYPE MPI)

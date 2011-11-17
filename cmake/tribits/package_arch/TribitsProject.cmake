@@ -72,8 +72,8 @@ ENDIF()
 # Overrides that we have for CMake functions
 INCLUDE(CMakeOverrides)
 
-INCLUDE(PackageArchConstants)
-INCLUDE(PackageArchGlobalMacros)
+INCLUDE(TribitsConstants)
+INCLUDE(TribitsGlobalMacros)
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
 INCLUDE(TimingUtils)
@@ -139,7 +139,7 @@ MACRO(TRIBITS_PROJECT)
   ENDIF()
 
   
-  PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE()
+  TRIBITS_READ_IN_OPTIONS_FROM_FILE()
 
   #
   # A.1) Run misc unit tests that don't need anything else
@@ -192,7 +192,7 @@ MACRO(TRIBITS_PROJECT)
   MESSAGE("Setting up major user options ...")
   MESSAGE("")
   
-  PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS()
+  TRIBITS_DEFINE_GLOBAL_OPTIONS()
 
   # Call-back defined by specific project
   TRIBITS_PROJECT_SETUP_EXTRA_OPTIONS()
@@ -219,13 +219,13 @@ MACRO(TRIBITS_PROJECT)
   # C) Read in ${PROJECT_NAME} packages and TPLs and process dependencies
   #
   
-  PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
+  TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
   
   #
   # D) Apply logic to enable ${PROJECT_NAME} packages and tests
   #
   
-  PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
+  TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
   
   #
   # E) Stop if asked
@@ -248,7 +248,7 @@ MACRO(TRIBITS_PROJECT)
   MESSAGE("Probing the environment ...")
   MESSAGE("")
   
-  PACKAGE_ARCH_SETUP_ENV()
+  TRIBITS_SETUP_ENV()
   
   #
   # G) Go get the information for all enabled TPLS
@@ -258,7 +258,7 @@ MACRO(TRIBITS_PROJECT)
   MESSAGE("Getting information for all enabled TPLs ...")
   MESSAGE("")
   
-  PACKAGE_ARCH_PROCESS_ENABLED_TPLS()
+  TRIBITS_PROCESS_ENABLED_TPLS()
   
   # OpenMP is similar to a TPL in some respects, but requires only compiler
   # flags to enable
@@ -284,7 +284,7 @@ MACRO(TRIBITS_PROJECT)
   # NOTE: Must come after setting up for testing
   #
   
-  PACKAGE_ARCH_ADD_DASHBOARD_TARGET()
+  TRIBITS_ADD_DASHBOARD_TARGET()
   
   
   #
@@ -295,7 +295,7 @@ MACRO(TRIBITS_PROJECT)
   MESSAGE("Configuring individual enabled ${PROJECT_NAME} packages ...")
   MESSAGE("")
   
-  PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES()
+  TRIBITS_CONFIGURE_ENABLED_PACKAGES()
   
   
   #
@@ -312,9 +312,9 @@ MACRO(TRIBITS_PROJECT)
     AND NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING
     )
   
-    INCLUDE(PackageWritePackageConfig)
+    INCLUDE(TribitsPackageWritePackageConfig)
   
-    PACKAGE_ARCH_WRITE_CONFIG_FILE()
+    TRIBITS_WRITE_CONFIG_FILE()
   
     # TEMPORARY: Install a compatibility copy of ${PROJECT_NAME}Config.cmake
     # where was previously installed to warn and load the new file.
@@ -352,6 +352,6 @@ MACRO(TRIBITS_PROJECT)
       "Total time to configure ${PROJECT_NAME}")
   ENDIF()
   
-  PACKAGE_ARCH_REMIND_ABOUT_UNCOMMITTED_DEPENDENCY_FILES()
+  TRIBITS_REMIND_ABOUT_UNCOMMITTED_DEPENDENCY_FILES()
   
 ENDMACRO()

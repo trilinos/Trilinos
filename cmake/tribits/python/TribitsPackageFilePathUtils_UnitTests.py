@@ -54,11 +54,11 @@
 # @HEADER
 
 #########################################################
-# Unit testing code for TrilinosPackageFilePathUtils.py #
+# Unit testing code for TribitsPackageFilePathUtils.py #
 ######################################################### 
 
 
-from TrilinosPackageFilePathUtils import *
+from TribitsPackageFilePathUtils import *
 import unittest
 
 
@@ -240,7 +240,7 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
       )
 
     self.assertEqual(
-      getCmndOutput(getScriptBaseDir()+"/get-trilinos-packages-from-files-list.py" \
+      getCmndOutput(getScriptBaseDir()+"/get-tribits-packages-from-files-list.py" \
         " --files-list-file=modifiedFiles.txt --deps-xml-file="+testingTrilinosDepsXmlInFile,
         True),
       "ALL_PACKAGES;TrilinosFramework;ThyraCoreLibs;Thyra"

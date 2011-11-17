@@ -1,5 +1,5 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../thyra/core/example/operator_solve)
@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/.
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
 IF (${PACKAGE_NAME}_ENABLE_Belos)
-   PACKAGE_ADD_EXECUTABLE_AND_TEST(
+   TRIBITS_ADD_EXECUTABLE_AND_TEST(
      Belos_GCRODR_strattest 
      SOURCES
        test_belos_gcrodr.cpp
@@ -18,7 +18,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
      )
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   test_single_stratimikos_solver_driver
   SOURCES
     test_single_stratimikos_solver_driver.cpp
@@ -28,7 +28,7 @@ PACKAGE_ADD_EXECUTABLE(
   )
 
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestFourByFourMtx
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestFourByFourMtx
   DEST_FILES FourByFour.mtx
   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/../amesos/test/Test_Basic
   SOURCE_PREFIX "In_"
@@ -36,7 +36,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestFourByFourMtx
   )
 
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestXMLFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestXMLFiles
   DEST_FILES
     FourByFour.xml
     FourByFour.amesos.xml
@@ -55,7 +55,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestXMLFiles
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     test_single_stratimikos_solver_driver
     NAME test_single_stratimikos_solver_driver_amesos
     ARGS 
@@ -71,7 +71,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AztecOO)
 IF (${PACKAGE_NAME}_ENABLE_AztecOO)
 
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     test_single_stratimikos_solver_driver
     NAME test_single_stratimikos_solver_driver_aztecoo_np
     ARGS "--input-file=FourByFour.aztecoo.np.xml --show-timer-summary"
@@ -83,7 +83,7 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF (${PACKAGE_NAME}_ENABLE_Ifpack)
 
-    PACKAGE_ADD_TEST(
+    TRIBITS_ADD_TEST(
       test_single_stratimikos_solver_driver
       NAME test_single_stratimikos_solver_driver_aztecoo_ifpack
       ARGS
@@ -99,7 +99,7 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ML)
   IF (${PACKAGE_NAME}_ENABLE_ML)
 
-    PACKAGE_ADD_TEST(
+    TRIBITS_ADD_TEST(
       test_single_stratimikos_solver_driver
       NAME test_single_stratimikos_solver_driver_aztecoo_ml
       ARGS
@@ -118,7 +118,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos)
 IF (${PACKAGE_NAME}_ENABLE_Belos)
 
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     test_single_stratimikos_solver_driver
     NAME test_single_stratimikos_solver_driver_belos_np
     ARGS "--input-file=FourByFour.belos.np.xml --show-timer-summary"
@@ -130,7 +130,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF (${PACKAGE_NAME}_ENABLE_Ifpack)
 
-    PACKAGE_ADD_TEST(
+    TRIBITS_ADD_TEST(
       test_single_stratimikos_solver_driver
       NAME test_single_stratimikos_solver_driver_belos_ifpack
       ARGS
@@ -145,7 +145,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ML)
   IF (${PACKAGE_NAME}_ENABLE_ML)
 
-    PACKAGE_ADD_TEST(
+    TRIBITS_ADD_TEST(
       test_single_stratimikos_solver_driver
       NAME test_single_stratimikos_solver_driver_belos_ml
       ARGS

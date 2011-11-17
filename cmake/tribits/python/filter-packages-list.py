@@ -55,7 +55,7 @@
 # ************************************************************************
 # @HEADER
 
-from TrilinosPackageFilePathUtils import *
+from TribitsPackageFilePathUtils import *
 
 
 #

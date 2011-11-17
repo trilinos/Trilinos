@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( ARPREC
+TRIBITS_TPL_DECLARE_LIBRARIES( ARPREC
   REQUIRED_HEADERS arprec/mp_real.h
   REQUIRED_LIBS_NAMES arprec
   )

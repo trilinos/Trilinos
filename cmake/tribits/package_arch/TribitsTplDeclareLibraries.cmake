@@ -117,7 +117,7 @@ INCLUDE(ParseVariableArguments)
 #     have the correct list of libraries to link to.
 #
 
-FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
+FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
 
   # Make sure the right name is used
   ASSERT_DEFINED(TPL_ENABLE_${TPL_NAME})
@@ -133,7 +133,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
      )
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("TPL_DECLARE_LIBRARIES: ${TPL_NAME}")
+    MESSAGE("TRIBITS_TPL_DECLARE_LIBRARIES: ${TPL_NAME}")
     PRINT_VAR(PARSE_REQUIRED_HEADERS)
     PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
     PRINT_VAR(TPL_${TPL_NAME}_INCLUDE_DIRS)
@@ -511,7 +511,7 @@ ENDFUNCTION()
 # enabled but will be disabled if all of the parts are not found.
 #
 
-FUNCTION(TPL_TENTATIVELY_ENABLE TPL_NAME)
+FUNCTION(TRIBITS_TPL_TENTATIVELY_ENABLE TPL_NAME)
 
   IF ("${TPL_ENABLE_${TPL_NAME}}" STREQUAL "")
     # The TPL's enable status has not been set so we will tentatively enable

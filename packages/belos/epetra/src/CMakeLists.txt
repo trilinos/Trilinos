@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -45,14 +45,14 @@ IF (${PACKAGE_NAME}_ENABLE_TSQR)
   # library, but we insert a dependency here just to make sure.)  This
   # is a hack to avoid an optional package dependency of Epetra on
   # Teuchos and Kokkos.
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     belosepetra
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
     DEPLIBS belos epetra tpetra kokkos kokkosnodetsqr kokkosdisttsqr
   )
 ELSE ()
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     belosepetra
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}

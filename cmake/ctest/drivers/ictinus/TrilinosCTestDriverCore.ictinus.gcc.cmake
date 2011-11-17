@@ -54,7 +54,7 @@
 # @HEADER
 
   
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TribitsCTestDriverCore.cmake")
 
 #
 # Platform/compiler specific options for ictinus using gcc

@@ -1,16 +1,16 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrix_test
   SOURCES cxx_main.cpp
   ARGS -v
   COMM serial mpi
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(MatrixMatrixCopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(MatrixMatrixCopyFiles
   DEST_FILES
     infileAB infileATBT infileAB2 infiles infileABT infileAB3 infileATB infileATB2
     infile6x4TI6 infileI4x6x4T infilePTxI infileIxPT

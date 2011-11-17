@@ -1,15 +1,15 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Ifpack AND Trilinos_ENABLE_AztecOO)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     GradDiv
     SOURCES cxx_main.cpp
     DEPLIBS epetra epetraext ifpack aztecoo ml
     NUM_MPI_PROCS 1
     )
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(GradDiv_copy
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(GradDiv_copy
   SOURCE_FILES d1.dat
                d0.dat
                facenode.dat

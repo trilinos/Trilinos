@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE(PackageAddTestHelpers)
+INCLUDE(TribitsAddTestHelpers)
 INCLUDE(ParseVariableArguments)
 
 
@@ -66,7 +66,7 @@ INCLUDE(ParseVariableArguments)
 #
 # 1) Source files and destination files have the same name:
 #
-#   PACKAGE_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
+#   TRIBITS_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
 #     SOURCE_FILES file1 file2 ...
 #     [SOURCE_DIR sourceDir]
 #     [DEST_DIR destDir]
@@ -81,7 +81,7 @@ INCLUDE(ParseVariableArguments)
 #
 # 2) Source files have a prefix different from the destination files:
 #
-#   PACKAGE_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
+#   TRIBITS_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
 #     DEST_FILES file1 file2 ...
 #     SOURCE_PREFIX srcPrefix
 #     [SOURCE_DIR sourceDir]
@@ -97,7 +97,7 @@ INCLUDE(ParseVariableArguments)
 #
 # 3) Source files and destination files have completely different names:
 #
-#   PACKAGE_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
+#   TRIBITS_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
 #     SOURCE_FILES sfile1 sfile2 ...
 #     [SOURCE_DIR sourceDir]
 #     DEST_FILES dfile1 dfile2 ...
@@ -149,7 +149,7 @@ INCLUDE(ParseVariableArguments)
 #     to the arguments in the EXEDEPS list. 
 #
 
-FUNCTION(PACKAGE_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
+FUNCTION(TRIBITS_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
 
   #
   # A) Parse input arguments
@@ -166,7 +166,7 @@ FUNCTION(PACKAGE_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
     )
 
   SET(ADD_THE_TEST FALSE)
-  PACKAGE_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
+  TRIBITS_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
   IF (NOT ADD_THE_TEST)
     RETURN()
   ENDIF()

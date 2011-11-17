@@ -50,12 +50,12 @@ Copy the top-level CMakeLists.txt from:
   Trilinos/packages/PACKAGE_DIR/CMakeLists.txt
 
 In the new PACKAGE_DIR/CMakeLists.txt file, change the name of the package in
-the PACKAGE(...) macro to the name of the Trilinos package PACKAGE_NAME.  You
+the TRIBITS_PACKAGE(...) macro to the name of the Trilinos package PACKAGE_NAME.  You
 can also turn on shadowing warnings with 'ENABLE_SHADOWING_WARNINGS' and mark
 the package as being 'CLEANED' (which elevates warnings to errors).  See
 packages/teuchos/CMakeLists.txt for an example.
 
-NOTE: If the name you pass into PACKAGE(...) is not the same as you specified
+NOTE: If the name you pass into TRIBITS_PACKAGE(...) is not the same as you specified
 in the Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS variable mentioned
 above, then you will get an error message telling you this.
 
@@ -145,26 +145,26 @@ NOTE: The top-level CMake support code will automatically create user cache
 variables for packages and TPLs that exist in the lists
 [LIB,TEST]_OPTIONAL_DEP_PACKAGES and [LIB,TEST]_OPTIONAL_DEP_TPLS.  For
 [LIB,TEST]_OPTIONAL_DEP_PACKAGES, user cache variables with the name
-<PACKAGE>_ENABLE_<DEPPACKAGE> will be created where PACKAGE is the name of
+<TRIBITS_PACKAGE>_ENABLE_<DEPPACKAGE> will be created where TRIBITS_PACKAGE is the name of
 this package (i.e. ML, NOX, EpetraExt, etc.) and DEPPACKAGE is the name of the
 listed dependent package.  Also, regular variables will be created with the
 name HAVE_<UCPACKAGE>_<UCDEPPACKAGES> where UCPACKAGE and UCDEPPACKAGES are
-the respective upper-case names of PACKAGE and DEPPACKAGE.  The same applies
+the respective upper-case names of TRIBITS_PACKAGE and DEPPACKAGE.  The same applies
 to the optional TPLs listed in [LIB,TEST]_OPTIONAL_DEP_TPLS.
 
 
 5) Copy and modify the PACKAGE_config.h.in file
 
-Copy the package's autotools-generated <PACKAGE>_config.h.in file from:
+Copy the package's autotools-generated <TRIBITS_PACKAGE>_config.h.in file from:
 
-  Trilinos/packages/PACKAGE_DIR/src/<PACKAGE>_config.h.in
+  Trilinos/packages/PACKAGE_DIR/src/<TRIBITS_PACKAGE>_config.h.in
 
 to:
 
-  Trilinos/packages/PACKAGE_DIR/cmake/<PACKAGE>_config.h.in
+  Trilinos/packages/PACKAGE_DIR/cmake/<TRIBITS_PACKAGE>_config.h.in
 
 You will then to need to manually modify the file
-PACKAGE_DIR/cmake/<PACKAGE>_config.h.in to replace '#undef' with
+PACKAGE_DIR/cmake/<TRIBITS_PACKAGE>_config.h.in to replace '#undef' with
 '#cmakedefine'.  Also use this opportunity to strip out the mess of extra
 macro defines that the package does not need.  Compare the files:
 
@@ -232,7 +232,7 @@ how to do that (see NOINSTALLHEADERS).
 6.b) Specify the name of the library(s) being created
 
 Set the name of the library being created in the macro call
-PACKAGE_ADD_LIBRARY(...).
+TRIBITS_ADD_LIBRARY(...).
 
 NOTE: The nane of this library typically will not need to be listed again in
 any other CMakeLists.txt file as it will become part of the package's offical
@@ -254,10 +254,10 @@ thyra/adapters/epetraext/src/CMakeLists.txt for an example.
 If your package has test-only libraries, then look at how this is
 handled in nox/test/utils/CMakeLists.txt with the library
 'noxtestutils'.  These test-only libraries are designated by passing
-TESTONLY into PACKAGE_ADD_LIBRARY(...).  These libraries are not added
+TESTONLY into TRIBITS_ADD_LIBRARY(...).  These libraries are not added
 to the list of offical package libraries.  Instead, you need
 specifically list the name of the library in your tests/examples
-PACKAGE_ADD_EXECUTABLE(...) function call such as in
+TRIBITS_ADD_EXECUTABLE(...) function call such as in
 nox/test/epetra/NOX_Operators/CMakeLists.txt
 
 
@@ -275,20 +275,20 @@ of how to write the CMakeLists.txt files for tests and examples.
 
 In general, most test/example executables and the accompanying test harness
 test can be added in one shot with the macro
-PACKAGE_ADD_EXECUTABLE_AND_TEST(...).  For cases where you need finer control,
-you can use the separate macros PACKAGE_ADD_EXECUTABLE(...) and
-PACKAGE_ADD_TEST(...).
+TRIBITS_ADD_EXECUTABLE_AND_TEST(...).  For cases where you need finer control,
+you can use the separate macros TRIBITS_ADD_EXECUTABLE(...) and
+TRIBITS_ADD_TEST(...).
 
-To see lots of examples of how to use the macros PACKAGE_ADD_EXECUTABLE(...) 
-PACKAGE_ADD_TEST(...), and PACKAGE_ADD_EXECUTABLE_AND_TEST(...) look at
+To see lots of examples of how to use the macros TRIBITS_ADD_EXECUTABLE(...) 
+TRIBITS_ADD_TEST(...), and TRIBITS_ADD_EXECUTABLE_AND_TEST(...) look at
 examples in the packages teuchos, epetra, epetraext, thyra, and other
 packages.  Don't be lazy, look at working examples in other packages!  Look
 for usage examples, for instance, with:
 
-  $ find . -name CMakeLists.txt -exec grep -nH 'PACKAGE_ADD_EXECUTABLE' {} \;
+  $ find . -name CMakeLists.txt -exec grep -nH 'TRIBITS_ADD_EXECUTABLE' {} \;
 
-Above, replace PACKAGE_ADD_EXECUTABLE with
-PACKAGE_ADD_EXECUTABLE_AND_TEST and PACKAGE_ADD_TEST for all of the
+Above, replace TRIBITS_ADD_EXECUTABLE with
+TRIBITS_ADD_EXECUTABLE_AND_TEST and TRIBITS_ADD_TEST for all of the
 examples of usage.
 
 A few points are worth mentioning:
@@ -306,12 +306,12 @@ depend
 You need to remember to use the ADD_SUBDIRECTORY(...) and related commands to
 add tests and examples after the libraries within a pacakge.
 
-7.c) More advanced tests can be added with PACKAGE_ADD_ADVANCED_TEST(...)
+7.c) More advanced tests can be added with TRIBITS_ADD_ADVANCED_TEST(...)
 
 If you need to add a test that needs to run an executable more than once and
 perform different checks on output files then you can use the CMake function
-PACKAGE_ADD_ADVANCED_TEST(...) to add the test.  This function is documented
-in the file PackageAddAdvancedTest.cmake and examples can be found in:
+TRIBITS_ADD_ADVANCED_TEST(...) to add the test.  This function is documented
+in the file TribitsAddAdvancedTest.cmake and examples can be found in:
 
   packages/teuchos/test/CTestScriptsUnitTests/CMakeLists.txt
   packages/ml/test/ValidateParams/CMakeLists.txt

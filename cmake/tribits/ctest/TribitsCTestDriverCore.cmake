@@ -77,7 +77,7 @@
 
 MESSAGE("")
 MESSAGE("*******************************")
-MESSAGE("*** TrilinosCTestDriverCore ***") 
+MESSAGE("*** TribitsCTestDriverCore ***") 
 MESSAGE("*******************************")
 MESSAGE("")
 
@@ -115,8 +115,8 @@ INCLUDE(SetDefaultAndFromEnv)
 INCLUDE(AssertDefined)
 INCLUDE(AppendSet)
 INCLUDE(AppendStringVar)
-INCLUDE(PackageArchGlobalMacros)
-INCLUDE(PackageArchConstants)
+INCLUDE(TribitsGlobalMacros)
+INCLUDE(TribitsConstants)
 INCLUDE(${TRILINOS_CMAKE_DIR}/TrilinosVersion.cmake)
 
 INCLUDE(TribitsFindPythonInterp)
@@ -245,11 +245,11 @@ ENDMACRO()
 # Select the set of extra Trilinos repositories
 #
 
-MACRO(SETUP_TRILINOS_EXTRAREPOS)
+MACRO(TRIBITS_SETUP_EXTRAREPOS)
 
   MESSAGE("Reading the list of extra repos from ${${PROJECT_NAME}_EXTRAREPOS_FILE} ...")
   INCLUDE(${${PROJECT_NAME}_EXTRAREPOS_FILE})
-  PACKAGE_ARCH_PROCESS_EXTRAREPOS_LISTS() # Sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
+  TRIBITS_PROCESS_EXTRAREPOS_LISTS() # Sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
   SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRA_REPOSITORIES
     "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}")
   #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
@@ -266,7 +266,7 @@ ENDMACRO()
 # macro.
 #
 
-MACRO(SETUP_TRILINOS_PACKAGES)
+MACRO(TRIBITS_SETUP_PACKAGES)
 
   # Here, we must point into the source tree of Trilinos just cloned (or
   # updated) and not the master Trilinos source dir tree for two reasons.
@@ -287,7 +287,7 @@ MACRO(SETUP_TRILINOS_PACKAGES)
   # something.  We don't want a sloppy commit to bring down automated testing.
   SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES ON)
 
-  PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
+  TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
 
   # When we get here, we will have the basic dependency structure set up
   # with only defaults set
@@ -309,17 +309,17 @@ MACRO(ENABLE_USER_SELECTED_PACKAGES)
   IF (NOT Trilinos_PACKAGES_USER_SELECTED)
     SET(Trilinos_ENABLE_ALL_PACKAGES ON)
   ELSE()
-    FOREACH(PACKAGE ${Trilinos_PACKAGES_USER_SELECTED})
-      MESSAGE("Enabling explicitly set package ${PACKAGE} ...")
-      SET(Trilinos_ENABLE_${PACKAGE} ON)
+    FOREACH(TRIBITS_PACKAGE ${Trilinos_PACKAGES_USER_SELECTED})
+      MESSAGE("Enabling explicitly set package ${TRIBITS_PACKAGE} ...")
+      SET(Trilinos_ENABLE_${TRIBITS_PACKAGE} ON)
     ENDFOREACH()
   ENDIF()
 
   # 2) Set extra package enables from Trilinos_ADDITIONAL_PACKAGES
 
-  FOREACH(PACKAGE ${Trilinos_ADDITIONAL_PACKAGES})
-    MESSAGE("Enabling explicitly set package ${PACKAGE} ...")
-    SET(Trilinos_ENABLE_${PACKAGE} ON)
+  FOREACH(TRIBITS_PACKAGE ${Trilinos_ADDITIONAL_PACKAGES})
+    MESSAGE("Enabling explicitly set package ${TRIBITS_PACKAGE} ...")
+    SET(Trilinos_ENABLE_${TRIBITS_PACKAGE} ON)
   ENDFOREACH()
 
 ENDMACRO()
@@ -330,7 +330,7 @@ ENDMACRO()
 # an modified files file.
 #
 
-MACRO(GET_MODIFIED_TRILINOS_FILES  WORKING_DIR_IN  MODIFIED_FILES_FILE_NAME_IN)
+MACRO(TRIBITS_GET_MODIFIED_FILES  WORKING_DIR_IN  MODIFIED_FILES_FILE_NAME_IN)
   SET(CMND_ARGS
     COMMAND "${GIT_EXE}" diff --name-only ORIG_HEAD..HEAD
     WORKING_DIRECTORY "${WORKING_DIR_IN}"
@@ -359,7 +359,7 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
 
   # A.1) Get changes from main Trilinos repo
 
-  GET_MODIFIED_TRILINOS_FILES("${CTEST_SOURCE_DIRECTORY}" "${MODIFIED_FILES_FILE_NAME}")
+  TRIBITS_GET_MODIFIED_FILES("${CTEST_SOURCE_DIRECTORY}" "${MODIFIED_FILES_FILE_NAME}")
 
   # A.2) Get changes from extra repos
 
@@ -379,7 +379,7 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
       SET(EXTRAREPO_MODIFIED_FILES_FILE_NAME
         "${CTEST_BINARY_DIRECTORY}/modifiedFiles.${EXTRAREPO_NAME}.txt")
   
-      GET_MODIFIED_TRILINOS_FILES("${EXTRAREPO_SRC_DIR}" "${EXTRAREPO_MODIFIED_FILES_FILE_NAME}")
+      TRIBITS_GET_MODIFIED_FILES("${EXTRAREPO_SRC_DIR}" "${EXTRAREPO_MODIFIED_FILES_FILE_NAME}")
   
       FILE(STRINGS ${EXTRAREPO_MODIFIED_FILES_FILE_NAME} EXTRAREPO_MODIFIED_FILES_STR)
       SET(EXTRAREPO_FILES_STR "")
@@ -402,7 +402,7 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
 
   EXECUTE_PROCESS(
     COMMAND ${PYTHON_EXECUTABLE}
-      ${TRILINOS_CMAKE_DIR}/tribits/python/get-trilinos-packages-from-files-list.py
+      ${TRILINOS_CMAKE_DIR}/tribits/python/get-tribits-packages-from-files-list.py
       --files-list-file=${MODIFIED_FILES_FILE_NAME}
       --deps-xml-file=${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}
     OUTPUT_VARIABLE MODIFIED_PACKAGES_LIST
@@ -432,23 +432,23 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
   # C) Enable the changed and previously failing packages
   #
 
-  FOREACH(PACKAGE ${MODIFIED_PACKAGES_LIST})
-    #PRINT_VAR(Trilinos_ENABLE_${PACKAGE})
-    ASSERT_DEFINED(Trilinos_ENABLE_${PACKAGE})
-    IF ("${Trilinos_ENABLE_${PACKAGE}}" STREQUAL "")
-      MESSAGE("Enabling modified package: ${PACKAGE}")
-      SET(Trilinos_ENABLE_${PACKAGE} ON)
+  FOREACH(TRIBITS_PACKAGE ${MODIFIED_PACKAGES_LIST})
+    #PRINT_VAR(Trilinos_ENABLE_${TRIBITS_PACKAGE})
+    ASSERT_DEFINED(Trilinos_ENABLE_${TRIBITS_PACKAGE})
+    IF ("${Trilinos_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
+      MESSAGE("Enabling modified package: ${TRIBITS_PACKAGE}")
+      SET(Trilinos_ENABLE_${TRIBITS_PACKAGE} ON)
     ELSE()
-      MESSAGE("Not enabling explicitly disabled modified package: ${PACKAGE}")
+      MESSAGE("Not enabling explicitly disabled modified package: ${TRIBITS_PACKAGE}")
     ENDIF()
   ENDFOREACH()
 
-  FOREACH(PACKAGE ${FAILING_PACKAGES_LIST})
-    IF ("${Trilinos_ENABLE_${PACKAGE}}" STREQUAL "")
-      MESSAGE("Enabling previously failing package: ${PACKAGE}")
-      SET(Trilinos_ENABLE_${PACKAGE} ON)
+  FOREACH(TRIBITS_PACKAGE ${FAILING_PACKAGES_LIST})
+    IF ("${Trilinos_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
+      MESSAGE("Enabling previously failing package: ${TRIBITS_PACKAGE}")
+      SET(Trilinos_ENABLE_${TRIBITS_PACKAGE} ON)
     ELSE()
-      MESSAGE("Not enabling explicitly disabled previously failing package: ${PACKAGE}")
+      MESSAGE("Not enabling explicitly disabled previously failing package: ${TRIBITS_PACKAGE}")
     ENDIF()
   ENDFOREACH()
 
@@ -456,7 +456,7 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
   # D) Print the final status
   #
 
-  PACKAGE_ARCH_PRINT_ENABLED_SE_PACKAGE_LIST(
+  TRIBITS_PRINT_ENABLED_SE_PACKAGE_LIST(
     "\nDirectly modified or failing non-disabled packages that need to be tested" ON FALSE)
 
 ENDMACRO()
@@ -470,9 +470,9 @@ ENDMACRO()
 #
 
 MACRO(DISABLE_EXCLUDED_PACKAGES)
-  FOREACH(PACKAGE ${Trilinos_EXCLUDE_PACKAGES})
-    MESSAGE("Disabling excluded package ${PACKAGE} ...")
-    SET(Trilinos_ENABLE_${PACKAGE} OFF)
+  FOREACH(TRIBITS_PACKAGE ${Trilinos_EXCLUDE_PACKAGES})
+    MESSAGE("Disabling excluded package ${TRIBITS_PACKAGE} ...")
+    SET(Trilinos_ENABLE_${TRIBITS_PACKAGE} OFF)
   ENDFOREACH()
 ENDMACRO()
 
@@ -883,7 +883,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     "\n*** Read in the set of extra repos ..."
     "\n***\n")
 
-  SETUP_TRILINOS_EXTRAREPOS()
+  TRIBITS_SETUP_EXTRAREPOS()
 
   # NOTE: You have to set up the set of extra repos before you can read the
   # Dependencies.cmake files since the extra repos must be cloned first.
@@ -991,7 +991,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # NOTE: You must read the Dependencies.cmake files *after* you have cloned
   # (or updated) all of the code!
 
-  SETUP_TRILINOS_PACKAGES()
+  TRIBITS_SETUP_PACKAGES()
 
   SET(CDASH_SUBPROJECT_XML_FILE
     "${CTEST_BINARY_DIRECTORY}/${Trilinos_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}")
@@ -1025,7 +1025,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SET(Trilinos_ENABLE_EXAMPLES ON)
   SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES ON)
   SET(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
-  PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets Trilinos_NUM_ENABLED_PACKAGES
+  TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets Trilinos_NUM_ENABLED_PACKAGES
 
   
   MESSAGE(
@@ -1098,34 +1098,34 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SET(Trilinos_FAILED_PACKAGES)
   SET(PACKAGE_IDX 0)
   
-  FOREACH(PACKAGE ${Trilinos_PACKAGES})
+  FOREACH(TRIBITS_PACKAGE ${Trilinos_PACKAGES})
 
     MESSAGE("")
-    MESSAGE("${PACKAGE_IDX}) Procesing current package ${PACKAGE}: libs='${Trilinos_ENABLE_${PACKAGE}}', tests='${${PACKAGE}_ENABLE_TESTS}'")
+    MESSAGE("${PACKAGE_IDX}) Procesing current package ${TRIBITS_PACKAGE}: libs='${Trilinos_ENABLE_${TRIBITS_PACKAGE}}', tests='${${TRIBITS_PACKAGE}_ENABLE_TESTS}'")
     MESSAGE("")
 
-    IF (Trilinos_ENABLE_${PACKAGE} AND NOT ${PACKAGE}_ENABLE_TESTS AND
+    IF (Trilinos_ENABLE_${TRIBITS_PACKAGE} AND NOT ${TRIBITS_PACKAGE}_ENABLE_TESTS AND
      NOT CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES
      )
 
-      MESSAGE("Not enabling implicitly enabled package ${PACKAGE} on request!")
+      MESSAGE("Not enabling implicitly enabled package ${TRIBITS_PACKAGE} on request!")
 
-    ELSEIF (Trilinos_ENABLE_${PACKAGE})
+    ELSEIF (Trilinos_ENABLE_${TRIBITS_PACKAGE})
 
-      SET_PROPERTY(GLOBAL PROPERTY SubProject ${PACKAGE})
-      SET_PROPERTY(GLOBAL PROPERTY Label ${PACKAGE})
+      SET_PROPERTY(GLOBAL PROPERTY SubProject ${TRIBITS_PACKAGE})
+      SET_PROPERTY(GLOBAL PROPERTY Label ${TRIBITS_PACKAGE})
    
       #
       # A) Configure the package and its dependent packages
       #
     
-      MESSAGE("Configuring PACKAGE='${PACKAGE}'")
+      MESSAGE("Configuring TRIBITS_PACKAGE='${TRIBITS_PACKAGE}'")
     
-      # Create CONFIGURE_OPTIONS for this PACKAGE
+      # Create CONFIGURE_OPTIONS for this TRIBITS_PACKAGE
       SET( CONFIGURE_OPTIONS
         "-DCTEST_USE_LAUNCHERS:BOOL=${CTEST_USE_LAUNCHERS}"
         "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON"
-        "-DTrilinos_ENABLE_TESTS:BOOL=${${PACKAGE}_ENABLE_TESTS}"
+        "-DTrilinos_ENABLE_TESTS:BOOL=${${TRIBITS_PACKAGE}_ENABLE_TESTS}"
         "-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=${Trilinos_WARNINGS_AS_ERRORS_FLAGS}"
         "-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF"
         )
@@ -1161,11 +1161,11 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       SET(CONFIGURE_OPTIONS ${CONFIGURE_OPTIONS}
         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS} ${EXTRA_CONFIGURE_OPTIONS})
       LIST(APPEND CONFIGURE_OPTIONS # Package enable must be at the very end to override other stuff!
-         "-DTrilinos_ENABLE_${PACKAGE}:BOOL=ON" )
+         "-DTrilinos_ENABLE_${TRIBITS_PACKAGE}:BOOL=ON" )
       MESSAGE("\nCONFIGURE_OPTIONS = '${CONFIGURE_OPTIONS}'")
 
       # Remember this package so we can set its enable to "" next time
-      SET(Trilinos_LAST_CONFIGURED_PACKAGE "${PACKAGE}")
+      SET(Trilinos_LAST_CONFIGURED_PACKAGE "${TRIBITS_PACKAGE}")
 
       #
       # B) Configure the package and its dependent packages
@@ -1194,9 +1194,9 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
         # If the configure failed, add the package to the list
         # of failed packages
         IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
-          MESSAGE("${PACKAGE} FAILED to configure")
-          LIST(APPEND Trilinos_FAILED_LIB_BUILD_PACKAGES ${PACKAGE})
-          LIST(APPEND Trilinos_FAILED_PACKAGES ${PACKAGE})
+          MESSAGE("${TRIBITS_PACKAGE} FAILED to configure")
+          LIST(APPEND Trilinos_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
+          LIST(APPEND Trilinos_FAILED_PACKAGES ${TRIBITS_PACKAGE})
         ELSE()
           # load target properties and test keywords
           CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
@@ -1221,7 +1221,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     
         # Start by trying to build just the libraries for the current package
     
-        SET( CTEST_BUILD_TARGET ${PACKAGE}_libs )
+        SET( CTEST_BUILD_TARGET ${TRIBITS_PACKAGE}_libs )
         MESSAGE("\nBuilding target: '${CTEST_BUILD_TARGET}' ...\n")
         CTEST_BUILD(
           BUILD "${CTEST_BINARY_DIRECTORY}"
@@ -1258,7 +1258,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     
           # Build the ALL target, but append the results to the last build.xml
           SET(CTEST_BUILD_TARGET)
-          MESSAGE("\nBuild ALL target for '${PACKAGE}' ...\n")
+          MESSAGE("\nBuild ALL target for '${TRIBITS_PACKAGE}' ...\n")
           CTEST_BUILD(
             BUILD "${CTEST_BINARY_DIRECTORY}"
             RETURN_VALUE  BUILD_ALL_RETURN_VAL
@@ -1285,12 +1285,12 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
             FOREACH(logfile ${logfiles})
               FILE(REMOVE "${logfile}")
             ENDFOREACH()
-            # Run the tests that match the ${PACKAGE} name 
-            MESSAGE("\nRunning test for package '${PACKAGE}' ...\n")
+            # Run the tests that match the ${TRIBITS_PACKAGE} name 
+            MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}' ...\n")
             CTEST_TEST(
               BUILD "${CTEST_BINARY_DIRECTORY}"
               PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-              INCLUDE_LABEL "^${PACKAGE}$"
+              INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
               #NUMBER_FAILED  TEST_NUM_FAILED
               )
             # See if a 'LastTestsFailed*.log' file exists to determine if there
@@ -1312,10 +1312,10 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
           ENDIF()
   
           IF (CTEST_DO_COVERAGE_TESTING)
-            MESSAGE("\nRunning coverage for package '${PACKAGE}' ...\n")
+            MESSAGE("\nRunning coverage for package '${TRIBITS_PACKAGE}' ...\n")
             CTEST_COVERAGE(
               BUILD "${CTEST_BINARY_DIRECTORY}"
-              LABELS ${PACKAGE}
+              LABELS ${TRIBITS_PACKAGE}
               )
             IF (CTEST_DO_SUBMIT)
               CTEST_SUBMIT( PARTS Coverage )
@@ -1323,25 +1323,25 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
           ENDIF() 
    
           IF (CTEST_DO_MEMORY_TESTING)
-            MESSAGE("\nRunning memory testing for package '${PACKAGE}' ...\n")
+            MESSAGE("\nRunning memory testing for package '${TRIBITS_PACKAGE}' ...\n")
             CTEST_MEMCHECK(
               BUILD "${CTEST_BINARY_DIRECTORY}"
               PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-              INCLUDE_LABEL "^${PACKAGE}$")
+              INCLUDE_LABEL "^${TRIBITS_PACKAGE}$")
             IF (CTEST_DO_SUBMIT)
               CTEST_SUBMIT( PARTS MemCheck )
             ENDIF()
           ENDIF()
   
           IF (BUILD_OR_TEST_FAILED)
-            LIST(APPEND Trilinos_FAILED_PACKAGES ${PACKAGE})
+            LIST(APPEND Trilinos_FAILED_PACKAGES ${TRIBITS_PACKAGE})
           ENDIF()
     
         ELSE()
     
-          MESSAGE("FAILED library build for package '${PACKAGE}'")
-          LIST(APPEND Trilinos_FAILED_LIB_BUILD_PACKAGES ${PACKAGE})
-          LIST(APPEND Trilinos_FAILED_PACKAGES ${PACKAGE})
+          MESSAGE("FAILED library build for package '${TRIBITS_PACKAGE}'")
+          LIST(APPEND Trilinos_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
+          LIST(APPEND Trilinos_FAILED_PACKAGES ${TRIBITS_PACKAGE})
     
         ENDIF()
     
@@ -1354,13 +1354,13 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
 
     ELSE()
 
-      MESSAGE("Package ${PACKAGE} is disabled, skipping configure, build, test ...")
+      MESSAGE("Package ${TRIBITS_PACKAGE} is disabled, skipping configure, build, test ...")
 
     ENDIF()
 
     MATH(EXPR PACKAGE_IDX "${PACKAGE_IDX}+1")
 
-  ENDFOREACH(PACKAGE)
+  ENDFOREACH(TRIBITS_PACKAGE)
   
   IF(Trilinos_FAILED_LIB_BUILD_PACKAGES)
     MESSAGE(

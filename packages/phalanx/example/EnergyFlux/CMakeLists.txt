@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -26,7 +26,7 @@ SET(example_SOURCES
   evaluators/Evaluator_NonlinearSource_Def.hpp
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example
   SOURCES ${example_SOURCES}
   COMM serial mpi
@@ -36,7 +36,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/auxiliary_tests)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_debug_names
   SOURCES auxiliary_tests/Example_DebugNames.cpp 
           AlgebraicTypes.hpp 
@@ -47,7 +47,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "Run has completed successfully!"
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_algebraic_types
   SOURCES auxiliary_tests/Example_AlgebraicTypes.cpp
           AlgebraicTypes.hpp

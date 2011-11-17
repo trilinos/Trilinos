@@ -80,7 +80,7 @@ argument.
 
 For more details on other optional arguments, see the comments at the
 function definition for TRILINOS_DRIVER_ADD_DASHBOARD in
-TrilinosDriverSupport.cmake.
+TribitsDriverSupport.cmake.
 
 WARNING: The name of the build (the first argument, e.g. MPI_OPT)
 should be the same as the name of the build set in the *.cmake driver
@@ -310,7 +310,7 @@ the date-specific subdirectory under:
   ~/T/TDD_BUILD/Testing/Temporary/
 
 Note that you will also find the output from the
-TrilinosCTestDriverCore.cmake script as the test output in:
+TribitsCTestDriverCore.cmake script as the test output in:
 
   T/TDD_BUILD/Testing/Temporary/LastTest_XXX.log
 
