@@ -1,4 +1,4 @@
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -15,7 +15,7 @@ APPEND_SET(HEADERS
 
 APPEND_SET(SOURCES mac.cpp)
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   muelu-adapters
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

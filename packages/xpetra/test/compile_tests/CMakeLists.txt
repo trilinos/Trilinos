@@ -1,9 +1,9 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 SET(SOURCES "main.cpp")
 FILE(GLOB SOURCES "*.cpp")
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   XpetraCompilationTests
   SOURCES ${SOURCES}
   COMM serial mpi

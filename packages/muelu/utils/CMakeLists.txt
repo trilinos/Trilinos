@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -13,7 +13,7 @@ APPEND_GLOB(SOURCES *.cpp)
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   muelu-utils
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

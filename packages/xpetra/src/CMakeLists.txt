@@ -1,6 +1,6 @@
 # CMakeLists inspired by Tpetra/src/CMakeLists.txt
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -40,9 +40,9 @@ CONFIGURE_FILE(
   ${CMAKE_CURRENT_BINARY_DIR}/Xpetra_config.hpp
   )
 
-# Note: cannot use the macro PACKAGE_CONFIGURE_FILE() because 
+# Note: cannot use the macro TRIBITS_CONFIGURE_FILE() because 
 # Xpetra_config.h.in is not in ${PACKAGE_SOURCE_DIR}/cmake
-## PACKAGE_CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Xpetra_config.h)
+## TRIBITS_CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Xpetra_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -97,7 +97,7 @@ APPEND_GLOB(HEADERS */*.hpp)
 #APPEND_GLOB(HEADERS ${DIR}/*/*.cpp)
 #APPEND_GLOB(HEADERS ${DIR}/*/*.hpp)
 
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 # Must glob the binary dir last to get all of the auto-generated headers
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
@@ -108,7 +108,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   muelu-xpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

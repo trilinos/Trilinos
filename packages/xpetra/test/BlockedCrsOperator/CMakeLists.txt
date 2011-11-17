@@ -1,9 +1,9 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 #TODO: re-enable
 # IF (${PACKAGE_NAME}_ENABLE_Epetra)
-#   PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#   TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #     BlockedCrsOperator_UnitTests
 #     SOURCES
 #       BlockedCrsOperator_UnitTests
@@ -12,7 +12,7 @@ INCLUDE(PackageCopyFilesToBinaryDir)
 #     STANDARD_PASS_OUTPUT
 #     )
   
-#   PACKAGE_COPY_FILES_TO_BINARY_DIR(BlockedCrsOperator_UnitTests_copyfiles
+#   TRIBITS_COPY_FILES_TO_BINARY_DIR(BlockedCrsOperator_UnitTests_copyfiles
 #     SOURCE_FILES 
 #       nsjac_test.mm
 #       nslhs_test.mm

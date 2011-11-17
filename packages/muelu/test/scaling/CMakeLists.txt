@@ -10,7 +10,7 @@ ASSERT_DEFINED(
 # Executable
 #
 
-INCLUDE(PackageAddExecutable)
+INCLUDE(TribitsAddExecutable)
 
 #TODO: how to remove that?
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -31,7 +31,7 @@ ELSE()
 ENDIF()
 #TODO: It is actually possible to build and test ScalingTest-Int also when LONG_LONG_INT=ON
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   ${MueLu_ScalingTestName}
   SOURCES ScalingTest.cpp
   COMM serial mpi

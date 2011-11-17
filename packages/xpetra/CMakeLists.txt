@@ -1,7 +1,7 @@
 ADD_SUBDIRECTORY(src)
 
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 MESSAGE("Processing enabled package: ^(;,;)^ (Libs, Tests, Examples)")
 
 # Add directory xpetra/cmake/ to the cmake module search path

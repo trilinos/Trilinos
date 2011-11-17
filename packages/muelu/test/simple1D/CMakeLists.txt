@@ -1,4 +1,4 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -17,7 +17,7 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   )
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
    simple1D
    SOURCES main.cpp
    COMM serial mpi
@@ -27,7 +27,7 @@ PACKAGE_ADD_EXECUTABLE(
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
  IF (${PACKAGE_NAME}_ENABLE_Amesos)
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     simple1D
     NAME "simple1DEpetra"
     ARGS "--linAlgebra=0"
@@ -35,7 +35,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     COMM serial mpi
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     simple1D
     NAME "simple1DEpetra"
     ARGS "--linAlgebra=0"
@@ -49,7 +49,7 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
    IF (${PACKAGE_NAME}_ENABLE_Amesos2)
    
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     simple1D
     NAME "simple1DTpetra"
     ARGS "--linAlgebra=1"
@@ -57,7 +57,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     COMM serial mpi
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     simple1D
     NAME "simple1DTpetra"
     ARGS "--linAlgebra=1"
@@ -68,7 +68,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
    ENDIF()
 ENDIF()
 
-# PACKAGE_ADD_EXECUTABLE_AND_TEST(
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #     amesos2
 #     SOURCES amesos2.cpp
 #     ARGS ""
@@ -77,7 +77,7 @@ ENDIF()
 #   )
 
 
-# PACKAGE_ADD_EXECUTABLE_AND_TEST(
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #     simple1D-mergedSmoo
 #     SOURCES mainMergedSmoo.cpp
 #     ARGS ""

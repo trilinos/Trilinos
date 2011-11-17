@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/utils)
@@ -10,7 +10,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
-#PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
+#TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 
 SET(SOURCES "")
 
@@ -74,7 +74,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   APPEND_SET(SOURCES BelosAdapters.cpp)
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   UnitTests
   SOURCES ${SOURCES}
   COMM serial mpi
@@ -83,7 +83,7 @@ PACKAGE_ADD_EXECUTABLE(
 
 IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     UnitTests
     NAME "UnitTestsEpetra"
     ARGS "--linAlgebra=0"
@@ -92,7 +92,7 @@ IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
     COMM serial mpi
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     UnitTests
     NAME "UnitTestsEpetra"
     ARGS "--linAlgebra=0"
@@ -105,7 +105,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     UnitTests
     NAME "UnitTestsTpetra"
     ARGS "--linAlgebra=1"
@@ -114,7 +114,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     COMM serial mpi
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     UnitTests
     NAME "UnitTestsTpetra"
     ARGS "--linAlgebra=1"

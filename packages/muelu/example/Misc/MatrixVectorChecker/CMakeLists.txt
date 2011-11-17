@@ -1,4 +1,4 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 #######################################################################################
@@ -8,7 +8,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # TODO: IF (Xpetra_ENABLE_Epetra) or IF (Xpetra_ENABLE_Tpetra)
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   MatrixVectorCheckerExample
   SOURCES MatrixVectorCheckerExample.cpp
   COMM serial
@@ -16,7 +16,7 @@ PACKAGE_ADD_EXECUTABLE(
   )
 
 IF (Xpetra_ENABLE_Epetra)
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     MatrixVectorCheckerExample
     #NAME "MatrixVectorChecker Epetra"
     NAME "MatrixVectorChecker"
@@ -28,7 +28,7 @@ IF (Xpetra_ENABLE_Epetra)
 ENDIF()
 
 IF (Xpetra_ENABLE_Tpetra)
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     MatrixVectorCheckerExample
     #NAME "MatrixVectorChecker Epetra"
     NAME "MatrixVectorChecker"
@@ -47,7 +47,7 @@ ENDIF()
 # Note: this example don't use xpetra. Only need Epetra + Galeri.
 IF (${PACKAGE_NAME}_ENABLE_Epetra) 
   IF (${PACKAGE_NAME}_ENABLE_Galeri)
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       read_MatrixMarket
       SOURCES MueLu_read_MatrixMarket.cpp
       COMM serial
@@ -56,6 +56,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
   ENDIF()
 ENDIF()
 
-#PACKAGE_COPY_FILES_TO_BINARY_DIR(read_MatrixMarket_example_copyfiles
+#TRIBITS_COPY_FILES_TO_BINARY_DIR(read_MatrixMarket_example_copyfiles
 #  SOURCE_FILES rgen.m
 #)

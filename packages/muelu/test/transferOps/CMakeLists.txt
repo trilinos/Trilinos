@@ -1,5 +1,5 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -19,7 +19,7 @@ ASSERT_DEFINED(
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos2)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TransferOps
     SOURCES TransferOpsTest.cpp
     ARGS ""
@@ -28,7 +28,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos2)
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Condif2D
     SOURCES Condif2d_test.cpp
     ARGS ""
@@ -37,7 +37,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
   )
 
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Condif2DFiltered
     SOURCES Condif2d_test_with_filter.cpp
     ARGS ""
@@ -45,7 +45,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     DEPLIBS muelu muelu-xpetra muelu-adapters
   )
   
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(Condif2_example_copyfiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Condif2_example_copyfiles
   SOURCE_FILES Condif2Mat.mat Condif2Rhs.mat
   )
 ENDIF()
