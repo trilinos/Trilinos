@@ -13,7 +13,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(Zoltan2_partitioning_copy_files
+PACKAGE_COPY_FILES_TO_BINARY_DIR(partitioning_copy_files
   SOURCE_FILES
     simple.mtx
 )

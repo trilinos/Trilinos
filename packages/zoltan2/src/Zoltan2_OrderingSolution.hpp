@@ -47,7 +47,7 @@ public:
     else     // lids may be NULL
       lids_ = ArrayView<lid_t>(Teuchos::null);
 
-    parts_ = ArrayView<size_t>(perm, length);
+    perm_ = ArrayView<size_t>(perm, length);
   }
 
   //////////////////////////////////////////////
