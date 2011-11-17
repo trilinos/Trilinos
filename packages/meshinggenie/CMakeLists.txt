@@ -1,11 +1,11 @@
-INCLUDE(PackageMacros)
-#INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+#INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-PACKAGE(MeshingGenie)
+TRIBITS_PACKAGE(MeshingGenie)
 
 #
 # B) Set up package-specific options
@@ -16,10 +16,10 @@ PACKAGE(MeshingGenie)
 #
 
 ADD_SUBDIRECTORY(src)
-PACKAGE_ADD_TEST_DIRECTORIES(examples)
+TRIBITS_ADD_TEST_DIRECTORIES(examples)
 
 #
 # D) Do standard postprocessing
 #
 
-#PACKAGE_POSTPROCESS()
+#TRIBITS_PACKAGE_POSTPROCESS()
