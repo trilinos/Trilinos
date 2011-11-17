@@ -60,7 +60,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   void ModelEvaluatorFactory_Epetra<ScalarT>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   {
-    paramList->validateParametersAndSetDefaults(*this->getValidParameters(), 0);
+    paramList->validateParametersAndSetDefaults(*this->getValidParameters());
     this->setMyParamList(paramList);
   }
   
@@ -71,21 +71,31 @@ namespace panzer_stk {
     if (is_null(validPL)) {
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList());
 
-      pl->sublist("Physics Blocks");
-      pl->sublist("Closure Models");
-      pl->sublist("Boundary Conditions");
-      pl->sublist("Solution Control");
-      pl->sublist("Solver Factories");
-      pl->sublist("Mesh");
-      pl->sublist("Initial Conditions");
-      pl->sublist("Output");
-      pl->sublist("Output").set("File Name","panzer.exo");  
-      pl->sublist("Assembly");
-      pl->sublist("Block ID to Physics ID Mapping");
-      pl->sublist("Options");
-      pl->sublist("Volume Responses");
-      pl->sublist("User Data");
-      pl->sublist("User Data").sublist("Panzer Data");
+      pl->sublist("Physics Blocks").disableRecursiveValidation();
+      pl->sublist("Closure Models").disableRecursiveValidation();
+      pl->sublist("Boundary Conditions").disableRecursiveValidation();
+      pl->sublist("Solution Control").disableRecursiveValidation();
+      pl->sublist("Solver Factories").disableRecursiveValidation();
+      pl->sublist("Mesh").disableRecursiveValidation();
+      pl->sublist("Initial Conditions").disableRecursiveValidation();
+      pl->sublist("Output").disableRecursiveValidation();
+      pl->sublist("Output").set("File Name","panzer.exo"); 
+ 
+      // Assembly sublist
+      {
+	Teuchos::ParameterList& p = pl->sublist("Assembly");
+	p.set<std::size_t>("Workset Size", 1);
+	p.set<std::string>("Field Order","");
+	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
+	p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
+	p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
+      }
+
+      pl->sublist("Block ID to Physics ID Mapping").disableRecursiveValidation();
+      pl->sublist("Options").disableRecursiveValidation();
+      pl->sublist("Volume Responses").disableRecursiveValidation();
+      pl->sublist("User Data").disableRecursiveValidation();
+      pl->sublist("User Data").sublist("Panzer Data").disableRecursiveValidation();
      
       validPL = pl;
     }
@@ -144,14 +154,18 @@ namespace panzer_stk {
     
     // extract assembly information
     std::size_t workset_size = assembly_params.get<std::size_t>("Workset Size");
-    std::string field_order  = assembly_params.get<std::string>("Field Order",""); // control nodal ordering of unknown
+    std::string field_order  = assembly_params.get<std::string>("Field Order"); // control nodal ordering of unknown
                                                                                    // global IDs in linear system
 
     Teuchos::RCP<const panzer::EquationSetFactory> eqset_factory = 
       assembly_params.get<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory");
 
+    TEUCHOS_TEST_FOR_EXCEPTION(is_null(eqset_factory), std::logic_error, "Error - You must supply a non-null RCP<panzer::EquationSetFactory> object to the \"Assembly\" sublist! ");
+
     Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
       assembly_params.get<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(is_null(cm_factory), std::logic_error, "Error - You must supply a non-null RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > object to the \"Assembly\" sublist! ");
       
     // this is weird...we are accessing the solution control to determine if things are transient
     // it is backwards!
@@ -246,7 +260,9 @@ namespace panzer_stk {
     /////////////////////////////////////////////////////////////
  
     Teuchos::RCP<const panzer::BCStrategyFactory> bc_factory = 
-      p.sublist("Assembly").get<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory");
+      assembly_params.get<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(is_null(bc_factory), std::logic_error, "Error - You must supply a non-null RCP<panzer::BCStrategyFactory> object to the \"Assembly\" sublist! ");
 
     fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,*eqset_factory,*cm_factory,*bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
