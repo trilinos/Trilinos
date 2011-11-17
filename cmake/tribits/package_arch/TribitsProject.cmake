@@ -213,7 +213,7 @@ MACRO(TRIBITS_PROJECT)
   
   # Find an installed version of ${PROJECT_NAME} for installation testing
   # (the check that we are in installation mode is inside the macro)
-  INCLUDE(TrilinosInstallationTestingMacros)
+  INCLUDE(TribitsInstallationTestingMacros)
   FIND_TRILINOS_INSTALL()
   
   #
@@ -320,7 +320,7 @@ MACRO(TRIBITS_PROJECT)
     # TEMPORARY: Install a compatibility copy of ${PROJECT_NAME}Config.cmake
     # where was previously installed to warn and load the new file.
     INSTALL(
-      FILES ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TrilinosConfigInclude.cmake
+      FILES ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsConfigInclude.cmake
       DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
       RENAME TrilinosConfig.cmake
       )
