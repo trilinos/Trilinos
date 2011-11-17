@@ -8,7 +8,7 @@ INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/closure_model)
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/adapters/stk/test/bcstrategy)
 
 SET(UNIT_TEST_DRIVER
-  ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)
+  ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   model_evaluator
