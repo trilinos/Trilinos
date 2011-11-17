@@ -1,4 +1,4 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -14,7 +14,7 @@ SET(SOURCES
     user_app_ConstantModelT.hpp
     ) 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   closure_model
   SOURCES ${SOURCES} ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1

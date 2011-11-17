@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/equation_set)
@@ -15,7 +15,7 @@ SET(SOURCES
     user_app_BCStrategy_Factory.hpp
     ) 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   bcstrategy
   SOURCES ${SOURCES} ${UNIT_TEST_DRIVER}
   COMM serial mpi

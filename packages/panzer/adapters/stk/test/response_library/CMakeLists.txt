@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -13,7 +13,7 @@ INCLUDE_DIRECTORIES(${TRILINOS_HOME_DIR}/Panzer/panzer/adapters/stk/test/bcstrat
 SET(UNIT_TEST_DRIVER
   ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STK_ResponseLibraryTest
   SOURCES response_library.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi

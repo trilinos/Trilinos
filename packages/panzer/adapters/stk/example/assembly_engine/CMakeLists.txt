@@ -1,4 +1,4 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -10,7 +10,7 @@ SET(ASSEMBLY_EXAMPLE_SOURCES
   assembly_driver.cpp
   )
   
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   assembly_example
   SOURCES ${ASSEMBLY_EXAMPLE_SOURCES}
   COMM serial mpi

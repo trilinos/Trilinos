@@ -1,11 +1,11 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(UNIT_TEST_DRIVER
   ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tEpetraLinearObjFactory
   SOURCES tEpetraLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
   COMM mpi
@@ -13,7 +13,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 IF(${PACKAGE_NAME}_ENABLE_Stokhos)
-   PACKAGE_ADD_EXECUTABLE_AND_TEST(
+   TRIBITS_ADD_EXECUTABLE_AND_TEST(
      tSGEpetraLinearObjFactory
      SOURCES tSGEpetraLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
      COMM mpi

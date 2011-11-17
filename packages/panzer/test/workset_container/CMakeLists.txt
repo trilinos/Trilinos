@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -10,7 +10,7 @@ SET(SOURCES
     workset_container.cpp 
     ) 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   workset_container 
   SOURCES ${SOURCES} ${UNIT_TEST_DRIVER}
   COMM serial mpi

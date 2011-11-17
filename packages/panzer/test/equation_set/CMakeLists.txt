@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -13,7 +13,7 @@ SET(SOURCES
     user_app_EquationSet_EnergyT.hpp
     ) 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   equation_set
   SOURCES ${SOURCES} ${UNIT_TEST_DRIVER}
   COMM serial mpi
