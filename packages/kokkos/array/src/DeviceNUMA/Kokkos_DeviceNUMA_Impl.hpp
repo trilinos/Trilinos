@@ -37,154 +37,196 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICENUMA_IMPL_HPP
-#define KOKKOS_DEVICENUMA_IMPL_HPP
+//----------------------------------------------------------------------------
+// Interfaces always included
+
+#include <DeviceNUMA/Kokkos_DeviceNUMA_Parallel.hpp>
+#include <DeviceNUMA/Kokkos_DeviceNUMA_For.hpp>
+#include <DeviceNUMA/Kokkos_DeviceNUMA_Reduce.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// Partial specializations for the device
+
+#include <Kokkos_DeviceNUMA_macros.hpp>
+
+#if ! defined( KOKKOS_DEVICENUMA_BASICFUNCTORS )
+#define KOKKOS_DEVICENUMA_BASICFUNCTORS
+#include <impl/Kokkos_BasicFunctors_macros.hpp>
+#endif
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_VALUEVIEW_HPP ) && \
+  ! defined( KOKKOS_DEVICENUMA_VALUEVIEW )
+
+#define KOKKOS_DEVICENUMA_VALUEVIEW
+
+#include <impl/Kokkos_ValueView_macros.hpp>
 
 namespace Kokkos {
 namespace Impl {
 
-class DeviceNUMAInternal ;
-
-//----------------------------------------------------------------------------
-/** \brief  Base class for a parallel driver executing on a thread pool. */
-
-class DeviceNUMAWorker {
+template< typename ValueType >
+class ValueDeepCopy< ValueType , DeviceNUMA , DeviceHost > {
 public:
 
-  /** \brief  Virtual method called on threads */
-  virtual void execute_on_thread( DeviceNUMAThread & ) const = 0 ;
+  static void run( const ValueView< ValueType , DeviceNUMA > & dst ,
+                   const ValueType & src )
+  { *dst = src ; }
 
-protected:
-
-  virtual ~DeviceNUMAWorker() {}
-
-  DeviceNUMAWorker() {}
-
-  static DeviceNUMA::size_type work_per_thread( DeviceNUMA::size_type );
-
-private:
-
-  DeviceNUMAWorker( const DeviceNUMAWorker & );
-  DeviceNUMAWorker & operator = ( const DeviceNUMAWorker & );
-
-  friend class DeviceNUMAInternal ;
+  static void run( const ValueView< ValueType , DeviceNUMA >  & dst ,
+                   const ValueView< ValueType , DeviceHost > & src )
+  { *dst = *src ; }
 };
 
-//----------------------------------------------------------------------------
-/** \brief  A thread within the pool. */
-
-class DeviceNUMAThread {
+template< typename ValueType >
+class ValueDeepCopy< ValueType , DeviceHost , DeviceNUMA > {
 public:
 
-  typedef DeviceNUMA::size_type size_type ;
+  static void run( ValueType & dst ,
+                   const ValueView< ValueType , DeviceNUMA >  & src )
+  { dst = *src ; }
 
-  inline size_type rank() const { return m_rank ; }
-
-  /** \brief  This thread waits for each fan-in thread in the barrier.
-   *
-   *  All threads must call this function.
-   *  Entry condition: in the Active   state
-   *  Exit  condition: in the Inactive state
-   */
-  void barrier()
-  {
-    DeviceNUMAThread * const thread_beg = m_fan_begin ;
-    DeviceNUMAThread *       thread     = m_fan_end ;
-
-    while ( thread_beg < thread ) {
-      (--thread)->wait( DeviceNUMAThread::ThreadActive );
-    }
-
-    set( DeviceNUMAThread::ThreadInactive );
-  }
-
-  /** \brief  This thread participates in the fan-in reduction.
-   *
-   *  All threads must call this function.
-   *  Entry condition: in the Active   state
-   *  Exit  condition: in the Inactive state
-   */
-  template< class ReduceTraits >
-  inline
-  void reduce( typename ReduceTraits::value_type & update )
-  {
-    typedef typename ReduceTraits::value_type value_type ;
-
-    // Fan-in reduction of other threads' reduction data.
-    // 1) Wait for source thread to complete its work and
-    //    set its own state to 'Reducing'.
-    // 2) Join source thread reduce data.
-    // 3) Release source thread's reduction data and
-    //    set the source thread's state to 'Inactive' state.
-
-    DeviceNUMAThread * const thread_beg    = m_fan_begin ;
-    DeviceNUMAThread *       thread_source = m_fan_end ;
-
-    while ( thread_beg < thread_source ) {
-      --thread_source ;
-
-      // Wait until the source thread is finished with its work.
-      thread_source->wait( DeviceNUMAThread::ThreadActive );
-
-      // Join the source thread's reduction
-      ReduceTraits::join( update ,
-                          *((const value_type *) thread_source->m_reduce ) );
-
-      thread_source->m_reduce = NULL ;
-      thread_source->set( DeviceNUMAThread::ThreadInactive );
-    }
-
-    if ( m_rank ) {
-      // If this is not the root thread then it will give its
-      // reduction data to another thread.
-      // Set the reduction data and then set the 'Reducing' state.
-      // Wait for the other thread to claim reduction data and
-      // deactivate this thread.
-
-      m_reduce = & update ;
-      set(  DeviceNUMAThread::ThreadReducing );
-      wait( DeviceNUMAThread::ThreadReducing );
-    }
-  }
-
-  void driver();
-
-private:
-
-  ~DeviceNUMAThread() {}
-
-  DeviceNUMAThread()
-    : m_fan_begin( NULL )
-    , m_fan_end(   NULL )
-    , m_rank( 0 )
-    , m_reduce( NULL )
-    , m_state( 0 )
-    {}
-
-  /** \brief States of a worker thread */
-  enum State { ThreadNull = 0    ///<  Does not exist
-             , ThreadTerminating ///<  Exists, termination in progress
-             , ThreadInactive    ///<  Exists, waiting for work
-             , ThreadActive      ///<  Exists, performing work
-             , ThreadReducing    ///<  Exists, waiting for reduction
-             };
-
-  void set(  const State flag ) { m_state = flag ; }
-  void wait( const State flag );
-
-  DeviceNUMAThread    * m_fan_begin ; ///< Begin of thread fan in
-  DeviceNUMAThread    * m_fan_end ;   ///< End of thread fan in
-  long                  m_rank ;      ///< Rank for this thread's work
-  const void * volatile m_reduce ;    ///< Reduction memory
-  long         volatile m_state ;     ///< Thread control flag
-
-  friend class DeviceNUMAInternal ;
+  static void run( const ValueView< ValueType , DeviceHost > & dst ,
+                   const ValueView< ValueType , DeviceNUMA >  & src )
+  { *dst = *src ; }
 };
-
-//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* #define KOKKOS_DEVICENUMA_IMPL_HPP */
+#endif /* #if defined( KOKKOS_VALUEVIEW_HPP ) && ! defined( KOKKOS_DEVICENUMA_VALUEVIEW ) */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_MULTIVECTORVIEW_HPP ) && \
+  ! defined( KOKKOS_DEVICENUMA_MULTIVECTORVIEW )
+
+#define KOKKOS_DEVICENUMA_MULTIVECTORVIEW
+
+#include <impl/Kokkos_MultiVectorView_macros.hpp>
+
+namespace Kokkos {
+namespace Impl {
+
+template< typename ValueType >
+class MultiVectorDeepCopy< ValueType , DeviceNUMA , DeviceHost ,
+                           true /* same memory space */ ,
+                           true /* both are contiguous */ >
+{
+public:
+  static void run( const MultiVectorView< ValueType , DeviceNUMA >  & dst ,
+                   const MultiVectorView< ValueType , DeviceHost > & src )
+  {
+    parallel_for( dst.length() * dst.count() ,
+                  DeepCopyContiguous< ValueType , DeviceNUMA >
+                    ( dst.m_memory.ptr_on_device() ,
+                      src.m_memory.ptr_on_device() ) );
+  }
+};
+
+template< typename ValueType >
+class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceNUMA ,
+                           true /* same memory space */ ,
+                           true /* both are contiguous */ >
+{
+public:
+  static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
+                   const MultiVectorView< ValueType , DeviceNUMA >  & src )
+  {
+    parallel_for( dst.length() * dst.count() ,
+                  DeepCopyContiguous< ValueType , DeviceNUMA >
+                    ( dst.m_memory.ptr_on_device() ,
+                      src.m_memory.ptr_on_device() ) );
+  }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+#endif /* #if defined( KOKKOS_MULTIVECTORVIEW_HPP ) && ! defined( KOKKOS_DEVICENUMA_MULTIVECTORVIEW ) */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_MDARRAYVIEW_HPP ) && \
+  ! defined( KOKKOS_DEVICENUMA_MDARRAYVIEW )
+
+#define KOKKOS_DEVICENUMA_MDARRAYVIEW
+
+#include <impl/Kokkos_MDArrayView_macros.hpp>
+
+namespace Kokkos {
+namespace Impl {
+
+/*------------------------------------------------------------------------*/
+/** \brief  Copy Host to NUMA specialization with same map and contiguous */
+
+template< typename ValueType >
+class MDArrayDeepCopy< ValueType ,
+                       DeviceNUMA  ,
+                       Serial< HostMemory , DeviceNUMA::mdarray_map > ,
+                       true /* Same memory space */ ,
+                       true /* Same map */ ,
+                       true /* Contiguous */ >
+{
+private:
+  typedef Serial< HostMemory , DeviceNUMA::mdarray_map > device_host ;
+public:
+  typedef MDArrayView< ValueType , DeviceNUMA   > dst_type ;
+  typedef MDArrayView< ValueType , device_host > src_type ;
+
+  static void run( const dst_type & dst , const src_type & src )
+  {
+    typedef DeepCopyContiguous<ValueType,DeviceNUMA> functor_type ;
+
+    parallel_for( dst.size() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+  }
+};
+
+
+/** \brief  Copy NUMA to Host specialization with same map and contiguou */
+template< typename ValueType >
+class MDArrayDeepCopy< ValueType ,
+                       Serial< HostMemory , DeviceNUMA::mdarray_map > ,
+                       DeviceNUMA ,
+                       true /* Same memory space */ ,
+                       true /* Same map */ ,
+                       true /* Contiguous */ >
+{
+private:
+  typedef Serial< HostMemory , DeviceNUMA::mdarray_map > device_host ;
+public:
+  typedef MDArrayView< ValueType , device_host > dst_type ;
+  typedef MDArrayView< ValueType , DeviceNUMA >   src_type ;
+
+  static void run( const dst_type & dst , const src_type & src )
+  {
+    typedef DeepCopyContiguous<ValueType,DeviceNUMA> functor_type ;
+
+    parallel_for( dst.size() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+  }
+};
+
+/*------------------------------------------------------------------------*/
+
+} // namespace Impl
+} // namespace Kokkos
+
+#endif /* #if defined( KOKKOS_MDARRAYVIEW_HPP ) && ! defined( KOKKOS_DEVICENUMA_MDARRAYVIEW ) */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#include <Kokkos_DeviceClear_macros.hpp>
+
+
+
 

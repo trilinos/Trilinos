@@ -40,80 +40,17 @@
 /*--------------------------------------------------------------------------*/
 /* Kokkos interfaces */
 
-#include <Kokkos_DeviceNUMA.hpp>
 #include <DeviceNUMA/Kokkos_DeviceNUMA_Internal.hpp>
-
-/*--------------------------------------------------------------------------*/
-/* Standard 'C' Linux libraries */
-#include <pthread.h>
-#include <sched.h>
-#include <errno.h>
 
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
 namespace Impl {
 
-//----------------------------------------------------------------------------
-// Driver for each created pthread
-
-namespace {
-
-void * device_numa_pthread_driver( void * arg )
-{
-  ((DeviceNUMAThread *) arg)->driver();
-  return NULL ;
-}
-
-pthread_mutex_t device_numa_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
-
-}
-
-//----------------------------------------------------------------------------
-// Spawn this thread
-
-bool device_numa_thread_spawn( DeviceNUMAThread * thread )
-{
-  bool result = false ;
-
-  pthread_attr_t attr ;
-  
-  if ( 0 == pthread_attr_init( & attr ) ||
-       0 == pthread_attr_setscope(       & attr, PTHREAD_SCOPE_SYSTEM ) ||
-       0 == pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ) {
-
-    pthread_t pt ;
-
-    result =
-      0 == pthread_create( & pt, & attr, device_numa_pthread_driver, thread );
-  }
-
-  pthread_attr_destroy( & attr );
-
-  return result ;
-}
-
-//----------------------------------------------------------------------------
-// Mutually exclusive locking and unlocking
-
-void device_numa_thread_lock()
-{ pthread_mutex_lock( & device_numa_pthread_mutex ); }
-
-void device_numa_thread_unlock()
-{ pthread_mutex_unlock( & device_numa_pthread_mutex ); }
-
-//----------------------------------------------------------------------------
-// Performance critical function: thread waits while value == *state
-
-void DeviceNUMAThread::wait( const DeviceNUMAThread::State flag )
-{
-  const long value = flag ;
-  while ( value == m_state ) {
-    sched_yield();
-  }
-}
-
-//----------------------------------------------------------------------------
+bool device_numa_thread_spawn( DeviceNUMAThread * ) { return false ; }
+void device_numa_thread_lock() {}
+void device_numa_thread_unlock() {}
+void DeviceNUMAThread::wait( const DeviceNUMAThread::State ) {}
 
 } // namespace Impl
 } // namespace Kokkos

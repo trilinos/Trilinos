@@ -166,6 +166,8 @@ public:
   const T * declare_attribute_with_delete( Part & part, const T * attribute);
   template<class T>
   const T * declare_attribute_no_delete( Part & part, const T * attribute);
+  template<class T>
+  bool remove_attribute( Part & part, const T * attribute);
 
   /** \} */
   //------------------------------------
@@ -776,6 +778,14 @@ MetaData::declare_attribute_no_delete( Part & part , const T * attribute )
 {
   require_not_committed();
   return m_part_repo.declare_attribute_no_delete( part, attribute );
+}
+
+template<class T>
+inline
+bool
+MetaData::remove_attribute( Part & part , const T * attribute )
+{
+  return m_part_repo.remove_attribute(part, attribute);
 }
 
 template<class T>

@@ -157,8 +157,6 @@ namespace stk {
           
         };
 
-      std::string m_fromTopoPartName;
-      std::string m_toTopoPartName;
       stk::mesh::PartVector m_fromParts;
       stk::mesh::PartVector m_toParts;
       const std::string m_appendConvertString; //="_urpconv_"
@@ -178,13 +176,11 @@ namespace stk {
       }
       virtual ~UniformRefinerPatternBase() {}
 
-      // deprecated
       virtual void doBreak()=0;
 
       virtual unsigned getFromTypeKey()=0;
       virtual const CellTopologyData *  getFromTopology()=0;
       virtual const CellTopologyData *  getToTopology()=0;
-
 
       stk::mesh::EntityRank getPrimaryEntityRank() { return m_primaryEntityRank; }
       /// must be provided by derived classes
@@ -229,9 +225,9 @@ namespace stk {
       /// provided by this class
       /// ------------------------------------------------------------------------------------------------------------------------
 
-      /// deprecated
-      const std::string& getFromTopoPartName() { return m_fromTopoPartName; }
-      const std::string& getToTopoPartName() { return m_toTopoPartName; }
+      virtual std::string getFromTopoPartName() =0;
+      virtual std::string getToTopoPartName() =0;
+      virtual std::string getName() { return std::string(); }
 
       stk::mesh::PartVector& getToParts() { return m_toParts; }
       stk::mesh::PartVector& getFromParts() { return m_fromParts; }
@@ -359,6 +355,17 @@ namespace stk {
       virtual unsigned getFromTypeKey() { return fromTopoKey; }
       virtual const CellTopologyData * getFromTopology() { return shards::getCellTopologyData< FromTopology >(); }
       virtual const CellTopologyData * getToTopology() { return shards::getCellTopologyData< ToTopology >(); }
+
+      virtual std::string getFromTopoPartName() { 
+        shards::CellTopology cell_topo(getFromTopology());
+        return cell_topo.getName();
+      }
+      virtual std::string getToTopoPartName() { 
+        shards::CellTopology cell_topo(getToTopology());
+        return cell_topo.getName();
+      }
+
+      virtual std::string getName() { return std::string("UniformRefinerPattern_")+getFromTopoPartName()+"_"+getToTopoPartName(); }
 
       // draw
       /// draw a picture of the element's topology and its refinement pattern (using the "dot" program from AT&T's graphviz program)

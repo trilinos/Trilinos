@@ -7,6 +7,7 @@ namespace test{
   void test_TPI (int beg, int end, int r, int t);
   void test_TBB(int beg, int end, int r, int t);
   void test_Cuda(int beg, int end, int r);
+  void test_NUMA(int beg, int end, int r);
 }
 
 int main(int argc, char ** argv)
@@ -14,7 +15,7 @@ int main(int argc, char ** argv)
   int beg = 4 ;
   int end = 12 ;
   int runs = 3 ;
-  int threads = 8;
+  int threads = 32;
 
   if ( argc == 5) {
     beg = atoi(argv[1]);
@@ -28,6 +29,9 @@ int main(int argc, char ** argv)
 #endif
 #ifdef TEST_KOKKOS_PTHREAD
   test::test_Pthread (beg, end, runs, threads);
+#endif
+#ifdef TEST_KOKKOS_NUMA
+  test::test_NUMA (beg, end, runs);
 #endif
 #ifdef TEST_KOKKOS_TPI
   test::test_TPI (beg, end, runs, threads);

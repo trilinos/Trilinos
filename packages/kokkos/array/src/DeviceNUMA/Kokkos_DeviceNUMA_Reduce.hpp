@@ -65,7 +65,6 @@ private:
   const FunctorType   m_work_functor ;
   const FinalizeType  m_finalize ;
   const size_type     m_work_count ;
-  const size_type     m_work_per_thread ;
 
   // Virtual method defined in DeviceNUMAWorker
   void execute_on_thread( DeviceNUMAThread & this_thread ) const
@@ -75,12 +74,11 @@ private:
     ReduceTraits::init( update );
 
     // Iterate this thread's work
-    size_type iwork = m_work_per_thread * this_thread.rank();
 
-    const size_type work_end =
-      std::min( iwork + m_work_per_thread , m_work_count );
+    const std::pair<size_type,size_type> range =
+      this_thread.work_range( m_work_count );
 
-    for ( ; iwork < work_end ; ++iwork ) {
+    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
       m_work_functor( iwork , update );
     }
 
@@ -100,7 +98,6 @@ private:
     , m_work_functor( functor )
     , m_finalize( finalize )
     , m_work_count( work_count )
-    , m_work_per_thread( DeviceNUMAWorker::work_per_thread( work_count ) )
     {}
 
 public:
@@ -115,7 +112,7 @@ public:
 
     DeviceNUMA::memory_space::clear_dispatch_functor();
 
-    DeviceNUMA::execute( driver );
+    DeviceNUMAWorker::execute( driver );
   }
 };
 
@@ -138,7 +135,8 @@ public:
 
   virtual ~DeviceNUMAMultiFunctorParallelReduceMember() {}
 
-  virtual void execute_on_thread( DeviceNUMA::size_type thread_rank , ValueType & update ) const = 0 ;
+  virtual void execute_on_thread( DeviceNUMAThread & this_thread ,
+                                  ValueType & update ) const = 0 ;
 };
   
 template< class FunctorType , typename ValueType >
@@ -149,27 +147,23 @@ public:
     
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
-  const size_type   m_work_per_thread ;
 
   ~DeviceNUMAMultiFunctorParallelReduceMember() {}
 
   DeviceNUMAMultiFunctorParallelReduceMember(
     const FunctorType & work_functor ,
-    const size_type work_count ,
-    const size_type work_per_thread )
+    const size_type work_count )
     : m_work_functor( work_functor )
     , m_work_count(   work_count )
-    , m_work_per_thread( work_per_thread )
     {}
     
-  void execute_on_thread( size_type thread_rank , ValueType & update ) const
+  void execute_on_thread( DeviceNUMAThread & this_thread ,
+                          ValueType & update ) const
   {
-    // Iterate this thread's work
-    size_type iwork = m_work_per_thread * thread_rank ;
+    const std::pair<size_type,size_type> range =
+      this_thread.work_range( m_work_count );
 
-    const size_type work_end = std::min( iwork + m_work_per_thread , m_work_count );
-
-    for ( ; iwork < work_end ; ++iwork ) {
+    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
       m_work_functor( iwork , update );
     }
   }
@@ -195,15 +189,13 @@ private:
   // Virtual method defined in DeviceNUMAWorker
   void execute_on_thread( Impl::DeviceNUMAThread & this_thread ) const
   {
-    const size_type thread_rank = this_thread.rank();
-
     value_type update ; // This thread's reduction value
 
     ReduceTraits::init( update );
 
     for ( MemberIterator m  = m_member_functors.begin() ;
                          m != m_member_functors.end() ; ++m ) {
-      (*m)->execute_on_thread( thread_rank , update );
+      (*m)->execute_on_thread( this_thread , update );
     }
 
     // Fan-in reduction of other threads' reduction data:
@@ -235,7 +227,7 @@ public:
   {
     typedef Impl::DeviceNUMAMultiFunctorParallelReduceMember<FunctorType,value_type> member_work_type ;
 
-    MemberType * const m = new member_work_type( functor , work_count , Impl::DeviceNUMAWorker::work_per_thread( work_count ) );
+    MemberType * const m = new member_work_type( functor , work_count );
 
     m_member_functors.push_back( m );
   }
@@ -243,7 +235,7 @@ public:
   void execute() const
   {
     DeviceNUMA::memory_space::set_dispatch_functor();
-    DeviceNUMA::execute( *this );
+    DeviceNUMAWorker::execute( *this );
     DeviceNUMA::memory_space::clear_dispatch_functor();
   }
 };
