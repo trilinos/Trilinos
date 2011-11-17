@@ -71,6 +71,7 @@ SET(Trilinos_PACKAGES Teuchos Epetra)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_INSTALLATION_DIR=${CMAKE_CURRENT_BINARY_DIR}/../../installation/installed"
+  "-DTrilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF"
   )
 
 #
