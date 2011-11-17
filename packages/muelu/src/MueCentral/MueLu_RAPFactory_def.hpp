@@ -17,9 +17,9 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    fineLevel.DeclareInput("A", AFact_.get());  // AFact per default Teuchos::null -> default factory for this
-    coarseLevel.DeclareInput("P",PFact_.get()); // transfer operators (from PRFactory, not from PFactory and RFactory!)
-    coarseLevel.DeclareInput("R",RFact_.get()); //TODO: must be request according to (implicitTranspose flag!!!!!
+    fineLevel.DeclareInput("A", AFact_.get(),this);  // AFact per default Teuchos::null -> default factory for this
+    coarseLevel.DeclareInput("P",PFact_.get(),this); // transfer operators (from PRFactory, not from PFactory and RFactory!)
+    coarseLevel.DeclareInput("R",RFact_.get(),this); //TODO: must be request according to (implicitTranspose flag!!!!!
 
     // call DeclareInput of all user-given transfer factories
     std::vector<RCP<FactoryBase> >::const_iterator it;

@@ -20,7 +20,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get());
+    currentLevel.DeclareInput("A", AFact_.get(), this);
+    currentLevel.DeclareInput("Nullspace", NULL, this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -36,6 +37,8 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+
+    RCP<MultiVector> nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", NULL);
 
     // pre-dropping
     RCP<Graph> graph;

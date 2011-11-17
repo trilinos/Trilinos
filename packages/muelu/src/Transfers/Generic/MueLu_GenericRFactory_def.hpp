@@ -36,7 +36,7 @@ namespace MueLu {
     // So we only do request but not release dependencies here!
     coarseLevel.DeclareDependencies(PFact_.get(),true,false);
 
-    coarseLevel.DeclareInput("R", PFact_.get());  // we expect the prolongation operator factory to produce "R" as output
+    coarseLevel.DeclareInput("R", PFact_.get(), this);  // we expect the prolongation operator factory to produce "R" as output
     // call declareInput is called within DeclareInput call
     PFact_->setRestrictionMode(rmode);            // reset restriciton mode flag
   }

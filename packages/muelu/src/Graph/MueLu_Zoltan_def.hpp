@@ -27,7 +27,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & level) const {
-    level.Request("A", AFact_.get());
+    level.DeclareInput("A", AFact_.get()); // use DeclareInput instead of Request!!!
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     

@@ -31,6 +31,7 @@ namespace MueLuTests {
     fineLevel.Set("A", A);
 
     CoalesceDropFactory coalesceDropFact;
+    fineLevel.Request("Graph",&coalesceDropFact);
     coalesceDropFact.Build(fineLevel);
     //FIXME how do we verify that this is correct?
   } //Build

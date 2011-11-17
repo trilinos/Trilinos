@@ -20,9 +20,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-    fineLevel.DeclareInput("A", AFact_.get());
-    fineLevel.DeclareInput("Aggregates", aggregatesFact_.get());
-    fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get());
+
+    fineLevel.DeclareInput("A", AFact_.get(), this);
+    fineLevel.DeclareInput("Aggregates", aggregatesFact_.get(), this);
+    fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

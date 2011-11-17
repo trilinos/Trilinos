@@ -40,8 +40,8 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-      coarseLevel.DeclareInput("P",PtentFact_.get());  // tentative prolongator, needed for finding corresponding coarse level gids
-      fineLevel.DeclareInput("SegAMapExtractor", MueLu::NoFactory::get());
+      coarseLevel.DeclareInput("P",PtentFact_.get(),this);  // tentative prolongator, needed for finding corresponding coarse level gids
+      fineLevel.DeclareInput("SegAMapExtractor", MueLu::NoFactory::get(),this);
     }
 
     //@}
