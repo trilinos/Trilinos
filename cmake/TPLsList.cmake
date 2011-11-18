@@ -118,7 +118,7 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   BinUtils        ""    SS
   ARPREC          ""    SS
   QD              ""    SS
-  MPI             ""    PS
+  MPI             "../cmake/tribits/tpls/FindTPLMPI.cmake"    PS
   BLAS            ""    PS
   LAPACK          ""    PS
   Boost           ""    SS

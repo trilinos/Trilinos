@@ -68,6 +68,9 @@ PROJECT(${PROJECT_NAME} NONE)
 # Read from TrilinosVersion.cmake and write Trilinos_version.h
 SET(${PROJECT_NAME}_USE_TRIBITS_VERSION_SYSTEM TRUE)
 
+# Add support for extra repositories
+SET(${PROJECT_NAME}_SUPPORT_EXTRA_REPOS TRUE)
+
 #
 # B) Pull in the TriBITS system and execute
 #
