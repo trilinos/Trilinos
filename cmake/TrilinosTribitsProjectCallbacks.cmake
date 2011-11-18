@@ -104,6 +104,10 @@ ENDMACRO()
 
 MACRO(TRIBITS_PROJECT_DEFINE_PACKAGING)
 
+  # Automatically update the version file for sierra
+  TRIBITS_CONFIGURE_VERSION_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/${PROJECT_NAME}_version.h)
+
   SET(CPACK_SOURCE_IGNORE_FILES
     ${CPACK_SOURCE_IGNORE_FILES}
     /.git/

@@ -1276,6 +1276,34 @@ ENDFUNCTION()
 
 
 #
+# Macro that takes project specific version varibles and changes them to
+# general form to be used in project configuration.
+#
+
+MACRO(TRIBITS_CONFIGURE_VERSION_FILE  OUTPUT_VERSION_FILE)
+
+  SET_DEFAULT(${PROJECT_NAME}_USE_TRIBITS_VERSION_SYSTEM FALSE)
+
+  IF (${PROJECT_NAME}_USE_TRIBITS_VERSION_SYSTEM)
+
+    # Read the copyright header info
+    FILE(READ "${${PROJECT_NAME}_HOME_DIR}/cmake/Copyright.txt" PROJECT_COPYRIGHT_HEADER)
+    
+    # Read the version variables and translate into standard form
+    INCLUDE(${PROJECT_NAME}Version)
+    SET(PROJECT_MAJOR_VERSION ${${PROJECT_NAME}_MAJOR_VERSION})
+    SET(PROJECT_MAJOR_MINOR_VERSION ${${PROJECT_NAME}_MAJOR_MINOR_VERSION})
+    SET(PROJECT_VERSION_STRING ${${PROJECT_NAME}_VERSION_STRING})
+
+    # Configure the file with everything set
+    CONFIGURE_FILE(${${PROJECT_NAME}_TRIBITS_DIR}/Tribits_version.h.in
+      ${OUTPUT_VERSION_FILE})
+
+  ENDIF()
+
+ENDMACRO()
+
+#
 # Macro that does the final set of package configurations
 #
 

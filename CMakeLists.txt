@@ -53,6 +53,11 @@
 # ************************************************************************
 # @HEADER
 
+
+#
+# A) Define your project name and set up major project options
+#
+
 # Must set the project name as a varaible at very beginning before including anything else
 SET(PROJECT_NAME Trilinos)
 
@@ -60,8 +65,11 @@ SET(PROJECT_NAME Trilinos)
 # an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
+# Read from TrilinosVersion.cmake and write Trilinos_version.h
+SET(${PROJECT_NAME}_USE_TRIBITS_VERSION_SYSTEM TRUE)
+
 #
-# A) Pull in the TriBITS system
+# B) Pull in the TriBITS system and execute
 #
 
 SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch)
@@ -70,8 +78,5 @@ INCLUDE(TribitsProject)
 # CMake requires this be in the top file and not in an include file :-(
 CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
 
-#
-# B) Declare your TriBITS project and do some initial processing
-#
-
+# Do all of the processing for this Tribits project
 TRIBITS_PROJECT()

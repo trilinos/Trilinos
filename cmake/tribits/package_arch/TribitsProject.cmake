@@ -81,6 +81,7 @@ INCLUDE(TribitsGlobalMacros)
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
 INCLUDE(TimingUtils)
+INCLUDE(SetDefault)
 
 
 #
@@ -118,6 +119,7 @@ MACRO(TRIBITS_PROJECT)
       )
   ENDIF()
   
+  STRING(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UC)
   SET(PROJECT_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
   SET(PROJECT_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
   PRINT_VAR(PROJECT_HOME_DIR)
@@ -162,26 +164,17 @@ MACRO(TRIBITS_PROJECT)
   
   INCLUDE(TribitsFindPythonInterp)
   TRIBITS_FIND_PYTHON()
-  MESSAGE("PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+  PRINT_VAR(PYTHON_EXECUTABLE)
   
   #
   # A.3) Set up version file that also sets other options as well
   #
-  # NOTE: ${PROJECT_NAME}Version.cmake must be ready *before* the global options are
+  # NOTE: ${PROJECT_NAME}Version.cmake must be read *before* the global options are
   # read!
   #
-  
-  # Pull in ${PROJECT_NAME} version information and create the version header file.
-  INCLUDE(${PROJECT_NAME}Version)
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}_version.h.in
-    ${PROJECT_NAME}_version.h)
-  
-  # Automatically update the version file for sierra too.
-  IF (NOT WIN32)
-    # Only configure on non-windows system because of the dreaded ^M
-    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}_version.h.in
-      ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/${PROJECT_NAME}_version.h)
-  ENDIF()
+
+  TRIBITS_CONFIGURE_VERSION_FILE(
+    "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}_version.h")
   
   # Since the version header file is now configured the root build
   # dir needs to be on the include path
