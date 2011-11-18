@@ -40,6 +40,7 @@
 #include "exodusII.h"
 #include "stringx.h"
 #include "Specifications.h"
+#include "util.h"
 
 #include <cstdlib>
 #include <cstdio>
@@ -254,9 +255,9 @@ int Create_File(ExoII_Read& file1, ExoII_Read& file2,
     ex_put_all_var_param(out_file_id,
 			 specs.glob_var_names->size(),
 			 specs.node_var_names->size(),
-			 specs.elmt_var_names->size(), &truth_tab[0],
-			 specs.ns_var_names->size(),   &ns_truth_tab[0],
-			 specs.ss_var_names->size(),   &ss_truth_tab[0]);
+			 specs.elmt_var_names->size(), TOPTR(truth_tab),
+			 specs.ns_var_names->size(),   TOPTR(ns_truth_tab),
+			 specs.ss_var_names->size(),   TOPTR(ss_truth_tab));
 
     output_exodus_names(out_file_id, EX_GLOBAL,     specs.glob_var_names);
     output_exodus_names(out_file_id, EX_NODAL,      specs.node_var_names);
@@ -277,7 +278,7 @@ namespace {
 	vars[i] = (char*)((*names)[i].c_str());
 	SMART_ASSERT(vars[i] != 0);
       }
-      ex_put_variable_names(file_id, type, names->size(), &vars[0]);
+      ex_put_variable_names(file_id, type, names->size(), TOPTR(vars));
     }
   }
 

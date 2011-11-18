@@ -56,18 +56,14 @@ private:
 
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
-  const size_type   m_work_per_thread ;
 
   virtual
   void execute_on_thread( Impl::DeviceNUMAThread & this_thread ) const
   {
-    // Iterate this thread's work
-    size_type iwork = m_work_per_thread * this_thread.rank();
+    const std::pair< size_type , size_type > range =
+      this_thread.work_range( m_work_count );
 
-    const size_type work_end =
-      std::min( iwork + m_work_per_thread , m_work_count );
-
-    for ( ; iwork < work_end ; ++iwork ) {
+    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
       m_work_functor( iwork );
     }
 
@@ -79,7 +75,6 @@ private:
     : DeviceNUMAWorker()
     , m_work_functor( functor )
     , m_work_count( work_count )
-    , m_work_per_thread( DeviceNUMAWorker::work_per_thread( work_count ) )
     {}
 
 public:
@@ -93,7 +88,7 @@ public:
 
     DeviceNUMA::memory_space::clear_dispatch_functor();
 
-    DeviceNUMA::execute( driver );
+    DeviceNUMAWorker::execute( driver );
   }
 };
 
@@ -107,47 +102,28 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType >
-class DeviceNUMAMultiFunctorParallelForMember ;
-
-template<>
-class DeviceNUMAMultiFunctorParallelForMember<void> {
-public:
-  DeviceNUMAMultiFunctorParallelForMember() {}
-
-  virtual ~DeviceNUMAMultiFunctorParallelForMember() {}
-
-  virtual void execute_on_thread( DeviceNUMA::size_type thread_rank ) const = 0 ;
-};
-
-template< class FunctorType >
-class DeviceNUMAMultiFunctorParallelForMember
-  : public DeviceNUMAMultiFunctorParallelForMember<void> {
+class DeviceNUMAMultiFunctorParallelForMember : public DeviceNUMAWorker {
 public:
   typedef DeviceNUMA::size_type size_type ;
 
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
-  const size_type   m_work_per_thread ;
 
   ~DeviceNUMAMultiFunctorParallelForMember() {}
 
   DeviceNUMAMultiFunctorParallelForMember(
     const FunctorType & work_functor ,
-    const size_type work_count ,
-    const size_type work_per_thread )
+    const size_type work_count )
     : m_work_functor( work_functor )
     , m_work_count(   work_count )
-    , m_work_per_thread( work_per_thread )
     {}
 
-  void execute_on_thread( size_type thread_rank ) const
+  void execute_on_thread( DeviceNUMAThread & this_thread ) const
   {
-    // Iterate this thread's work
-    size_type iwork = m_work_per_thread * thread_rank ;
+    const std::pair< size_type , size_type > range =
+      this_thread.work_range( m_work_count );
 
-    const size_type work_end = std::min( iwork + m_work_per_thread , m_work_count );
-
-    for ( ; iwork < work_end ; ++iwork ) {
+    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
       m_work_functor( iwork );
     }
   }
@@ -160,9 +136,7 @@ class MultiFunctorParallelFor< DeviceNUMA > : public Impl::DeviceNUMAWorker {
 private:
   typedef DeviceNUMA::size_type size_type ;
   
-  typedef Impl::DeviceNUMAMultiFunctorParallelForMember<void> MemberType ;
-
-  typedef std::vector< MemberType * > MemberContainer ;
+  typedef std::vector< Impl::DeviceNUMAWorker * > MemberContainer ;
 
   typedef MemberContainer::const_iterator MemberIterator ;
 
@@ -171,11 +145,9 @@ private:
   // Virtual method defined in DeviceNUMAWorker
   void execute_on_thread( Impl::DeviceNUMAThread & this_thread ) const
   {
-    const size_type thread_rank = this_thread.rank();
-
     for ( MemberIterator m  = m_member_functors.begin() ;
                          m != m_member_functors.end() ; ++m ) {
-      (*m)->execute_on_thread( thread_rank );
+      (*m)->execute_on_thread( this_thread );
     }
 
     this_thread.barrier();
@@ -199,13 +171,13 @@ public:
     typedef Impl::DeviceNUMAMultiFunctorParallelForMember<FunctorType> member_work_type ;
 
     DeviceNUMA::memory_space::set_dispatch_functor();
-    MemberType * const m = new member_work_type( functor , work_count , Impl::DeviceNUMAWorker::work_per_thread( work_count ) );
+    DeviceNUMAWorker * const m = new member_work_type( functor , work_count );
     DeviceNUMA::memory_space::clear_dispatch_functor();
 
     m_member_functors.push_back( m );
   }
 
-  void execute() const { DeviceNUMA::execute( *this ); }
+  void execute() const { DeviceNUMAWorker::execute( *this ); }
 };
 
 } // namespace Kokkos

@@ -36,13 +36,11 @@
 Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
-
-
 /*
- * xfer_service_test.cpp
+ * injection_service_test.cpp
  *
- *  Created on: Aug 22, 2011
- *      Author: raoldfi
+ *  Created on: Nov 14, 2011
+ *      Author: thkorde
  */
 
 
@@ -54,9 +52,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
-#include <xfer_service_args.h>
-#include "xfer_client.h"
-#include "xfer_debug.h"
+#include <injection_service_args.h>
+#include "injection_test.h"
+#include "injection_debug.h"
 
 
 #include <mpi.h>
@@ -69,8 +67,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 // Prototypes for client and server codes
-int xfer_server_main(MPI_Comm server_comm);
-int xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm client_comm);
+int injection_server_main(struct injection_args &args, MPI_Comm server_comm);
+int injection_client_main (struct injection_args &args, nssi_service &injection_svc, MPI_Comm client_comm);
 
 
 /* -------------- private methods -------------------*/
@@ -78,7 +76,7 @@ int xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm c
 
 int print_args(
         std::ostream &out,
-        const struct xfer_args &args,
+        const struct injection_args &args,
         const char *prefix)
 {
     if (args.client_flag && args.server_flag)
@@ -92,10 +90,8 @@ int print_args(
 
     if (args.client_flag) {
         out << prefix << " \tio-method        = " << args.io_method_name << std::endl;
-        out << prefix << " \tnum-trials       = " << args.num_trials << std::endl;
+        out << prefix << " \tnum-trials        = " << args.num_trials << std::endl;
         out << prefix << " \tnum-reqs         = " << args.num_reqs << std::endl;
-        out << prefix << " \tlen              = " << args.len << std::endl;
-        out << prefix << " \tvalidate         = " << ((args.validate_flag)?"true":"false") << std::endl;
         out << prefix << " \tresult-file      = " <<
                 (args.result_file.empty()?"<stdout>":args.result_file) << std::endl;
         out << prefix << " \tresult-file-mode = " << args.result_file_mode << std::endl;
@@ -116,7 +112,7 @@ int main(int argc, char *argv[])
     int np=1, rank=0;
     int splitrank, splitsize;
     int rc = 0;
-    nssi_service xfer_svc;
+    nssi_service injection_svc;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -127,25 +123,18 @@ int main(int argc, char *argv[])
     Teuchos::oblackholestream blackhole;
     std::ostream &out = ( rank == 0 ? std::cout : blackhole );
 
-    struct xfer_args args;
+    struct injection_args args;
 
-    const int num_io_methods = 8;
+    const int num_io_methods = 2;
     const int io_method_vals[] = {
-            XFER_WRITE_ENCODE_SYNC, XFER_WRITE_ENCODE_ASYNC,
-            XFER_WRITE_RDMA_SYNC, XFER_WRITE_RDMA_ASYNC,
-            XFER_READ_ENCODE_SYNC, XFER_READ_ENCODE_ASYNC,
-            XFER_READ_RDMA_SYNC, XFER_READ_RDMA_ASYNC};
+            INJECTION_EMPTY_REQUEST_SYNC, INJECTION_EMPTY_REQUEST_ASYNC};
     const char * io_method_names[] = {
-            "write-encode-sync", "write-encode-async",
-            "write-rdma-sync", "write-rdma-async",
-            "read-encode-sync", "read-encode-async",
-            "read-rdma-sync", "read-rdma-async"};
+            "empty-request-sync", "empty-request-async"};
 
 
     // Initialize arguments
-    args.len = 1;
     args.delay = 1;
-    args.io_method = XFER_WRITE_RDMA_SYNC;
+    args.io_method = INJECTION_EMPTY_REQUEST_SYNC;
     args.debug_level = LOG_WARN;
     args.num_trials = 1;
     args.num_reqs = 1;
@@ -157,7 +146,6 @@ int main(int argc, char *argv[])
     args.server_flag = true;
     args.timeout = 500;
     args.num_retries = 5;
-    args.validate_flag = true;
     args.server_url = "";
 
     bool success = true;
@@ -191,7 +179,6 @@ int main(int argc, char *argv[])
         parser.setOption("timeout", &args.timeout, "time(ms) to wait for server to respond" );
         parser.setOption("server", "no-server", &args.server_flag, "Run the server" );
         parser.setOption("client", "no-client", &args.client_flag, "Run the client");
-        parser.setOption("len", &args.len, "The number of structures in an input buffer");
         parser.setOption("debug",(int*)(&args.debug_level), "Debug level");
         parser.setOption("logfile", &args.logfile, "log file");
         parser.setOption("num-trials", &args.num_trials, "Number of trials (experiments)");
@@ -200,20 +187,13 @@ int main(int argc, char *argv[])
         parser.setOption("result-file-mode", &args.result_file_mode, "Write mode for the result");
         parser.setOption("server-url", &args.server_url, "URL client uses to find the server");
         parser.setOption("server-url-file", &args.url_file, "File that has URL client uses to find server");
-        parser.setOption("validate", "no-validate", &args.validate_flag, "Validate the data");
 
         // Set an enumeration command line option for the io_method
 
         parser.setOption("io-method", &args.io_method, num_io_methods, io_method_vals, io_method_names,
                 "I/O Methods for the example: \n"
-                "\t\t\twrite-encode-sync : Write data through the RPC args, synchronous\n"
-                "\t\t\twrite-encode-async: Write data through the RPC args - asynchronous\n"
-                "\t\t\twrite-rdma-sync : Write data using RDMA (server pulls) - synchronous\n"
-                "\t\t\twrite-rdma-async: Write data using RDMA (server pulls) - asynchronous\n"
-                "\t\t\tread-encode-sync : Read data through the RPC result - synchronous\n"
-                "\t\t\tread-encode-async: Read data through the RPC result - asynchronous\n"
-                "\t\t\tread-rdma-sync : Read data using RDMA (server puts) - synchronous\n"
-                "\t\t\tread-rdma-async: Read data using RDMA (server puts) - asynchronous");
+                "\t\t\tempty-request-sync : Send an empty request - synchronous\n"
+                "\t\t\tempty-request-async: Send an empty request - asynchronous");
 
 
 
@@ -268,6 +248,7 @@ int main(int argc, char *argv[])
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
+
     if (!args.server_flag && args.client_flag) {
         /* initialize logger */
         if (args.logfile.empty()) {
@@ -302,7 +283,7 @@ int main(int argc, char *argv[])
     // Communicator used for both client and server (may split if using client and server)
     MPI_Comm comm;
 
-    log_debug(debug_level, "%d: Starting xfer-service test", rank);
+    log_debug(debug_level, "%d: Starting injection-service test", rank);
 
     /**
      * Since this test can be run as a server, client, or both, we need to play some fancy
@@ -404,8 +385,8 @@ int main(int argc, char *argv[])
 
 
 
-    // Set the debug level for the xfer service.
-    xfer_debug_level = args.debug_level;
+    // Set the debug level for the injection service.
+    injection_debug_level = args.debug_level;
 
     // Print the arguments after they've all been set.
     args.io_method_name = io_method_names[args.io_method];
@@ -417,7 +398,7 @@ int main(int argc, char *argv[])
      *  In this example, the server is a single process.
      */
     if (args.server_flag && (rank == 0)) {
-        rc = xfer_server_main(comm);
+        rc = injection_server_main(args, comm);
         log_debug(debug_level, "Server is finished");
     }
 
@@ -425,7 +406,7 @@ int main(int argc, char *argv[])
      /**  The parallel client will execute this branch.  The root node, node 0, of the client connects
       *   connects with the server, using the \ref nssi_get_service function.  Then the root
       *   broadcasts the service description to the other clients before starting the main
-      *   loop of the client code by calling \ref xfer_client_main.
+      *   loop of the client code by calling \ref injection_client_main.
       */
     else {
         int i;
@@ -444,11 +425,11 @@ int main(int argc, char *argv[])
             // connect to remote server
             for (i=0; i < args.num_retries; i++) {
                 log_debug(debug_level, "Try to connect to server: attempt #%d", i);
-                rc=nssi_get_service(NSSI_DEFAULT_TRANSPORT, args.server_url.c_str(), args.timeout, &xfer_svc);
+                rc=nssi_get_service(NSSI_DEFAULT_TRANSPORT, args.server_url.c_str(), args.timeout, &injection_svc);
                 if (rc == NSSI_OK)
                     break;
                 else if (rc != NSSI_ETIMEDOUT) {
-                    log_error(xfer_debug_level, "could not get svc description: %s",
+                    log_error(injection_debug_level, "could not get svc description: %s",
                             nssi_err_str(rc));
                     break;
                 }
@@ -461,20 +442,20 @@ int main(int argc, char *argv[])
             if (client_rank == 0) log_debug(debug_level, "Connected to service on attempt %d\n", i);
 
             // Broadcast the service description to the other clients
-            //log_debug(xfer_debug_level, "Bcasting svc to other clients");
-            //MPI_Bcast(&xfer_svc, sizeof(nssi_service), MPI_BYTE, 0, comm);
+            //log_debug(injection_debug_level, "Bcasting svc to other clients");
+            //MPI_Bcast(&injection_svc, sizeof(nssi_service), MPI_BYTE, 0, comm);
 
             log_debug(debug_level, "Starting client main");
             // Start the client code
-            xfer_client_main(args, xfer_svc, comm);
+            injection_client_main(args, injection_svc, comm);
 
 
             MPI_Barrier(comm);
 
             // Tell one of the clients to kill the server
             if (client_rank == 0) {
-                log_debug(debug_level, "%d: Halting xfer service", rank);
-                rc = nssi_kill(&xfer_svc, 0, 5000);
+                log_debug(debug_level, "%d: Halting injection service", rank);
+                rc = nssi_kill(&injection_svc, 0, 5000);
             }
         }
 

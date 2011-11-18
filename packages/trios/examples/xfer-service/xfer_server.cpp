@@ -375,13 +375,13 @@ int xfer_server_main(MPI_Comm server_comm)
     memset(&xfer_svc, 0, sizeof(nssi_service));
 
 
-    log_str=logfile.c_str();
-    if (logfile.c_str()[0]=='\0') {
-        log_str=NULL;
-    }
-    /* initialize and enable logging */
-    logger_init((log_level)verbose, NULL);
-    debug_level = (log_level)verbose;
+//    log_str=logfile.c_str();
+//    if (logfile.c_str()[0]=='\0') {
+//        log_str=NULL;
+//    }
+//    /* initialize and enable logging */
+//    logger_init((log_level)verbose, NULL);
+//    debug_level = (log_level)verbose;
 
 
     /* initialize the nssi service */

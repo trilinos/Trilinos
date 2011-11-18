@@ -178,13 +178,8 @@ int ex_put_variable_param (int exoid,
   }
 
   if ((status = nc_inq_dimid (exoid, DIM_NUM_NODES, &num_nod_dim)) != NC_NOERR) {
-    if (obj_type == EX_NODAL) {
-      exerrval = status;
-      sprintf(errmsg,
-              "Error: failed to locate number of nodes in file id %d", exoid);
-      ex_err("ex_put_variable_param",errmsg,exerrval);
-      return (EX_FATAL);
-    }
+    if (obj_type == EX_NODAL) /* Probably no nodes on this database (e.g., in a parallel run) */
+      return(EX_NOERR);
   }
 
   if ((status = nc_inq_dimid (exoid, DIM_STR_NAME, &dim_str_name)) < 0) {
