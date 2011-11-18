@@ -47,6 +47,7 @@ namespace panzer {
     Teuchos::RCP<const Epetra_Map> get_f_map() const;
     Teuchos::RCP<const Epetra_Vector> get_x_init() const;
     Teuchos::RCP<const Epetra_Vector> get_x_dot_init() const;
+    double get_t_init() const;
     Teuchos::RCP<Epetra_Operator> create_W() const;
     Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
     Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
@@ -56,8 +57,10 @@ namespace panzer {
     OutArgs createOutArgs() const;
     void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
 
-    
     //@}
+
+    /** \brief Set initial time value */
+    void set_t_init(double t);
 
   private:
 
@@ -114,6 +117,7 @@ namespace panzer {
     Teuchos::RCP<const Epetra_Map>   map_x_;
     Teuchos::RCP<Epetra_Vector> x0_;
     Teuchos::RCP<Epetra_Vector> x_dot_init_;
+    double t_init_;
     mutable Teuchos::RCP<Epetra_Vector> dummy_f_;    
     
     // parameters

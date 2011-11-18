@@ -71,6 +71,14 @@ namespace panzer_stk {
     void fillFieldPatternMap(const panzer::DOFManager<int,int> & dofManager, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
+    /** \brief Gets the initial time from either the input parameter list or an exodus file
+     *      
+     * \param [in] transient_ic_params ParameterList that determines where to get the initial time value.
+     * \param [in] mesh STK Mesh database used if the time value should come from the exodus file
+    */
+    double getInitialTime(Teuchos::ParameterList& transient_ic_params,
+			  const panzer_stk::STK_Interface& mesh) const;
+
   private:
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > m_physics_me;
