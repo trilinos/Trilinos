@@ -139,11 +139,11 @@ public:
    *   be on the list, or the Import will fail.
    */
   size_t applyPartitioningSolution(const User &in, User *&out,
-    lno_t numIds, lno_t numParts,
-    const gid_t *gid, const lid_t *lid, const lno_t *partition)
+    size_t numParts, size_t numIds,
+    const gid_t *gid, const lid_t *lid, const size_t *partition)
   {
     ArrayView<const gid_t> gidList(gid, numIds);
-    ArrayView<const lno_t> partList(partition, numIds);
+    ArrayView<const size_t> partList(partition, numIds);
     ArrayView<const lno_t> dummyIn;
     ArrayRCP<gid_t> importList;
     ArrayRCP<int> dummyOut;

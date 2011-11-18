@@ -45,7 +45,6 @@ public:
 
   // Other methods
   virtual void solve() = 0;
-  virtual void redistribute() = 0;
 
 protected:
   RCP<Adapter> inputAdapter_;

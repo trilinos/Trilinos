@@ -95,8 +95,8 @@ public:
    *  TODO   documentation
    */
   size_t applyPartitioningSolution(User &in, User *&out,
-    int numIds, int numParts, const gid_t *gid, 
-    const lid_t *lid, const int *partition) 
+    size_t numParts, size_t numIds,
+    const gid_t *gid, const lid_t *lid, const size_t *partition)
   {
     return 0;
   } 

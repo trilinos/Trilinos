@@ -3,7 +3,8 @@ INCLUDE(AddSubdirectories)
 ADD_SUBDIRECTORIES(
 data
 partitioning
-scaling
+ordering
+#scaling
 temp
 unit
 util

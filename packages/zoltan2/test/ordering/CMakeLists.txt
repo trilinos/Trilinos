@@ -3,8 +3,8 @@ INCLUDE(PackageAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  Partitioning1
-  SOURCES useMueLuGallery.hpp partitioning1.cpp
+  Ordering1
+  SOURCES useMueLuGallery.hpp ordering1.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS 
@@ -13,7 +13,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(partitioning_copy_files
+PACKAGE_COPY_FILES_TO_BINARY_DIR(ordering_copy_files
   SOURCE_FILES
     simple.mtx
 )
