@@ -78,6 +78,7 @@ namespace panzer_stk {
       pl->sublist("Solver Factories").disableRecursiveValidation();
       pl->sublist("Mesh").disableRecursiveValidation();
       pl->sublist("Initial Conditions").disableRecursiveValidation();
+      pl->sublist("Initial Conditions").sublist("Transient Parameters").disableRecursiveValidation();
       pl->sublist("Output").disableRecursiveValidation();
       pl->sublist("Output").set("File Name","panzer.exo"); 
  
@@ -324,6 +325,13 @@ namespace panzer_stk {
       std::string prefix = "Panzer_AssemblyGraph_";
       write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
       prefix = p.sublist("Options").get("Volume Assembly Graph Prefix",prefix);
+      
+      double t_init = 0.0;
+
+      if (is_transient) {
+	t_init = this->getInitialTime(p.sublist("Initial Conditions").sublist("Transient Parameters"), *mesh);
+	ep_me->set_t_init(t_init);
+      }
 
       std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
       panzer::setupInitialConditionFieldManagers(volume_worksets,
@@ -354,7 +362,7 @@ namespace panzer_stk {
       }
 
       if (is_transient)
-	mesh->writeToExodus(0.0);
+	mesh->writeToExodus(t_init);
 
     }
    
@@ -642,6 +650,38 @@ namespace panzer_stk {
 
         rLibrary.reserveLabeledVolumeResponse(label,rid,eBlocks,eTypes);
      }
+  }
+
+  template<typename ScalarT>
+  double ModelEvaluatorFactory_Epetra<ScalarT>::
+  getInitialTime(Teuchos::ParameterList& p,
+		 const panzer_stk::STK_Interface & mesh) const
+  {
+    Teuchos::ParameterList validPL;
+    {
+      Teuchos::setStringToIntegralParameter<int>(
+      "Start Time Type",
+      "From Input File",
+      "Enables or disables SUPG stabilization in the Momentum equation",
+      Teuchos::tuple<std::string>("From Input File","From Exodus File"),
+      &validPL
+      );
+
+      validPL.set<double>("Start Time",0.0);
+    }
+
+    p.validateParametersAndSetDefaults(validPL);
+    
+    std::string t_init_type = p.get<std::string>("Start Time Type");
+    double t_init = 10.0;
+
+    if (t_init_type == "From Input File")
+      t_init = p.get<double>("Start Time");
+
+    if (t_init_type == "From Exodus File")
+      t_init = mesh.getInitialStateTime();
+
+    return t_init;
   }
 
 }
