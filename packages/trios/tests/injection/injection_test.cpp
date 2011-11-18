@@ -53,7 +53,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Teuchos_oblackholestream.hpp"
 
 #include <injection_service_args.h>
-#include "injection_client.h"
+#include "injection_test.h"
 #include "injection_debug.h"
 
 
