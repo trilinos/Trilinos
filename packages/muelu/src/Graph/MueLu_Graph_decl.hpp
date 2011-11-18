@@ -3,14 +3,13 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <Teuchos_ArrayRCP.hpp>
+//#include <Teuchos_ArrayRCP.hpp>
 
 #include <Xpetra_ConfigDefs.hpp>
 
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_MapFactory.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Graph_fwd.hpp"
 

@@ -2,6 +2,7 @@
 #define MUELU_GRAPH_DEF_HPP
 
 #include "MueLu_Graph_decl.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <Teuchos_ParameterEntry.hpp>
+#include "MueLu_VariableContainer.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -45,6 +46,8 @@ namespace MueLu {
     /// value: map: map: requesting factory -> request counter
     UTILS::TwoKeyMap<const FactoryBase*, std::string, std::map<const FactoryBase*, int> > requestTable_;
 
+    UTILS::TwoKeyMap<const FactoryBase*, std::string, RCP<MueLu::VariableContainer> > variableTable_;
+
     //TODO: Key1 = const std::string?
 
   public:
@@ -68,11 +71,21 @@ namespace MueLu {
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
     void Set(const std::string & ename, const T & entry, const FactoryBase* factory) {
+#if OLD
       // Store entry only if data have been requested (or IsKeep)
       if (IsRequested(ename, factory) ||
           IsKept(ename, factory)) {
         dataTable_.Set(ename, factory, Teuchos::ParameterEntry(entry));
       }
+#else
+      // Store entry only if data have been requested (or IsKeep)
+      if (IsRequested(ename, factory) ||
+          IsKept(ename, factory)) {
+        TEUCHOS_TEST_FOR_EXCEPTION(!variableTable_.IsKey(factory, ename), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
+        const Teuchos::RCP<MueLu::VariableContainer> & var = variableTable_.Get(factory,ename);
+        var->SetData( Teuchos::ParameterEntry(entry));
+      }
+#endif
     } //Set
 
     //@}
@@ -98,8 +111,14 @@ namespace MueLu {
     // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
     template <class T>
     const T & Get(const std::string & ename, const FactoryBase* factory) const {
+#if OLD
       TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
       return Teuchos::getValue<T>(dataTable_.Get(ename, factory));
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(!variableTable_.IsKey(factory, ename), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
+      const Teuchos::RCP<MueLu::VariableContainer> & var = variableTable_.Get(factory,ename);
+      return Teuchos::getValue<T>(var->GetData());
+#endif
     }
     
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
@@ -157,9 +176,15 @@ namespace MueLu {
     //@{
 
     //! Returns a vector of strings containing all key names of requested variables
+#if OLD
     std::vector<std::string> RequestedKeys() const;
 
     std::vector<const FactoryBase*> RequestedFactories(const std::string & ename) const;
+#else
+    std::vector<std::string> RequestedKeys(const FactoryBase* factory) const;
+
+    std::vector<const FactoryBase*> RequestedFactories() const;
+#endif
 
     std::string GetType(const std::string & ename, const FactoryBase* factory) const;
 
