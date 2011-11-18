@@ -78,24 +78,18 @@ int main(int argc, char *argv[])
     *out << *input_params << std::endl;
     
     // Add in the application specific equation set factory
-    Teuchos::RCP<const panzer::EquationSetFactory> eqset_factory = 
-      Teuchos::rcp(new user_app::MyFactory);
-    input_params->sublist("Assembly").set("Equation Set Factory", eqset_factory);
+    user_app::MyFactory eqset_factory;
 
     // Add in the application specific closure model factory
-    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
-      Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
     user_app::MyModelFactory_TemplateBuilder cm_builder;
-    (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
-    input_params->sublist("Assembly").set("Closure Model Factory", cm_factory);
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;  
+    cm_factory.buildObjects(cm_builder);
+
+    // Add in the application specific bc factory
+    user_app::BCFactory bc_factory; 
 
     // A GlobalStatistics closure model requires the comm to be set in the user data.
     input_params->sublist("User Data").set("Comm", comm);
-
-    // Add in the application specific bc factory
-    Teuchos::RCP<const panzer::BCStrategyFactory> bc_factory = 
-      Teuchos::rcp(new user_app::BCFactory);
-    input_params->sublist("Assembly").set("BC Factory", bc_factory);
 
     // Add in the application specific observer factories
     {
@@ -113,7 +107,7 @@ int main(int argc, char *argv[])
     {
       panzer_stk::ModelEvaluatorFactory_Epetra<double> me_factory;
       me_factory.setParameterList(input_params);
-      me_factory.buildObjects(comm); 
+      me_factory.buildObjects(comm,eqset_factory,bc_factory,cm_factory); 
       physics = me_factory.getPhysicsModelEvaluator();
       solver = me_factory.getResponseOnlyModelEvaluator();
       rLibrary = me_factory.getResponseLibrary();

@@ -126,10 +126,9 @@ namespace panzer {
     /////////////////////////////////////////////
       
     // Add in the application specific closure model factory
-    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
-      Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
     user_app::STKModelFactory_TemplateBuilder cm_builder;
-    (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
+    cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
@@ -140,8 +139,8 @@ namespace panzer {
     user_data.sublist("Panzer Data").set("DOF Manager", dofManager);
     user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
 
-    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,*cm_factory,closure_models,*elof,user_data);
-    fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,*cm_factory,bc_factory,closure_models,*elof,user_data);
+    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,cm_factory,closure_models,*elof,user_data);
+    fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,cm_factory,bc_factory,closure_models,*elof,user_data);
 
     Teuchos::ParameterList ic_closure_models("Initial Conditions");
     ic_closure_models.sublist("eblock-0_0").sublist("TEMPERATURE").set<double>("Value",3.0);
@@ -152,7 +151,7 @@ namespace panzer {
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
     panzer::setupInitialConditionFieldManagers(volume_worksets,
 					       physics_blocks,
-					       *cm_factory,
+					       cm_factory,
 					       ic_closure_models,
 					       *elof,
 					       user_data,

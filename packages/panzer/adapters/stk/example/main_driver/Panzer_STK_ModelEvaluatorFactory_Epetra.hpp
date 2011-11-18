@@ -16,6 +16,10 @@
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_STK_Interface.hpp"
+#include "Panzer_EquationSet_Factory.hpp"
+#include "Panzer_BCStrategy_Factory.hpp"
+#include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 
 namespace Thyra {
   template<typename ScalarT> class ModelEvaluator;
@@ -34,7 +38,10 @@ namespace panzer_stk {
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
     //@}
 
-    void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+    void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                      const panzer::EquationSetFactory & eqset_factory,
+                      const panzer::BCStrategyFactory & bc_factory,
+                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory);
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
     

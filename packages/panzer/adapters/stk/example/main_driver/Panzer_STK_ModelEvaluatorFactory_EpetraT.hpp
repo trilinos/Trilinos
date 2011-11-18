@@ -104,7 +104,10 @@ namespace panzer_stk {
   }
   
   template<typename ScalarT>
-  void  ModelEvaluatorFactory_Epetra<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+  void  ModelEvaluatorFactory_Epetra<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                                                            const panzer::EquationSetFactory & eqset_factory,
+                                                            const panzer::BCStrategyFactory & bc_factory,
+                                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(this->getParameterList()), std::runtime_error,
 		       "ParameterList must be set before objects can be built!");
@@ -157,17 +160,6 @@ namespace panzer_stk {
     std::size_t workset_size = assembly_params.get<std::size_t>("Workset Size");
     std::string field_order  = assembly_params.get<std::string>("Field Order"); // control nodal ordering of unknown
                                                                                    // global IDs in linear system
-
-    Teuchos::RCP<const panzer::EquationSetFactory> eqset_factory = 
-      assembly_params.get<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(is_null(eqset_factory), std::logic_error, "Error - You must supply a non-null RCP<panzer::EquationSetFactory> object to the \"Assembly\" sublist! ");
-
-    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
-      assembly_params.get<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(is_null(cm_factory), std::logic_error, "Error - You must supply a non-null RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > object to the \"Assembly\" sublist! ");
-      
     // this is weird...we are accessing the solution control to determine if things are transient
     // it is backwards!
     bool is_transient  = solncntl_params.get<std::string>("Piro Solver") == "Rythmos" ? true : false;
@@ -181,7 +173,7 @@ namespace panzer_stk {
 			       physics_id_to_input_physics_blocks,
 			       Teuchos::as<int>(mesh->getDimension()),
 			       workset_size,
-			       *eqset_factory,
+			       eqset_factory,
 			       is_transient,
 			       physicsBlocks);
 
@@ -260,13 +252,8 @@ namespace panzer_stk {
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
-    Teuchos::RCP<const panzer::BCStrategyFactory> bc_factory = 
-      assembly_params.get<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(is_null(bc_factory), std::logic_error, "Error - You must supply a non-null RCP<panzer::BCStrategyFactory> object to the \"Assembly\" sublist! ");
-
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,*eqset_factory,*cm_factory,*bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
 
     // Print Phalanx DAGs
     {
@@ -282,7 +269,7 @@ namespace panzer_stk {
     // build response library
     /////////////////////////////////////////////////////////////
 
-    m_response_library = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>);
+    m_response_library = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer));
     m_response_library->defineDefaultAggregators();
     addVolumeResponses(*m_response_library,*mesh,volume_responses);
 
@@ -295,9 +282,8 @@ namespace panzer_stk {
        Teuchos::ParameterList user_data(p.sublist("User Data"));
        user_data.set<int>("Workset Size",workset_size);
 
-       m_response_library->buildVolumeFieldManagersFromResponses(volume_worksets,
-                                                                 physicsBlocks,
-  					                         *cm_factory,
+       m_response_library->buildVolumeFieldManagersFromResponses(physicsBlocks,
+  					                         cm_factory,
                                                                  p.sublist("Closure Models"),
   					                         *linObjFactory,
   					                         user_data,write_dot_files,prefix);
@@ -336,7 +322,7 @@ namespace panzer_stk {
       std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
       panzer::setupInitialConditionFieldManagers(volume_worksets,
 						 physicsBlocks,
-						 *cm_factory,
+						 cm_factory,
 						 p.sublist("Initial Conditions"),
 						 *linObjFactory,
 						 p.sublist("User Data"),

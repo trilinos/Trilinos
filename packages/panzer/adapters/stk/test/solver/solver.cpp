@@ -29,6 +29,8 @@ using Teuchos::rcp;
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_WorksetContainer.hpp"
+#include "Panzer_STK_WorksetFactory.hpp"
 #include "user_app_RythmosObserver_Epetra.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -80,8 +82,6 @@ namespace panzer {
 
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
-      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>); 
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
@@ -147,11 +147,19 @@ namespace panzer {
 
     // build worksets
     //////////////////////////////////////////////////////////////
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
+
     std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
       volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
 
     const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
        = panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
+
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
+      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer)); 
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
@@ -171,10 +179,9 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
  
     // Add in the application specific closure model factory
-    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
-      Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
     user_app::MyModelFactory_TemplateBuilder cm_builder;
-    (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
+    cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
@@ -186,8 +193,8 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,*linObjFactory,user_data);
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
     // Print Phalanx DAGs
     fmb->writeVolumeGraphvizDependencyFiles("Panzer_Steady-State_", physicsBlocks);
@@ -370,8 +377,6 @@ namespace panzer {
     
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
-      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>); 
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
@@ -439,11 +444,19 @@ namespace panzer {
    
     // build worksets
     //////////////////////////////////////////////////////////////
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
+
     std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
       volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
 
     const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
        = panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
+
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
+      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer)); 
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////

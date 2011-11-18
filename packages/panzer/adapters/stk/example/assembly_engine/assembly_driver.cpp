@@ -209,10 +209,9 @@ int main(int argc,char * argv[])
    out << "SETUP FMB" << std::endl;
  
     // Add in the application specific closure model factory
-    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
-      Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
     user_app::MyModelFactory_TemplateBuilder cm_builder;
-    (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
+    cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
@@ -224,8 +223,8 @@ int main(int argc,char * argv[])
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,*linObjFactory,user_data);
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
    // setup assembly engine
    /////////////////////////////////////////////////////////////
