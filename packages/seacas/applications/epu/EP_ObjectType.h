@@ -35,6 +35,8 @@
 #ifndef ObjectType_H
 #define ObjectType_H
 
+#define TOPTR(x) (x.empty() ? NULL : &x[0])
+
 namespace Excn {
     // Note that these are used as indices into truth table for ELBK, NSET, SSET...
   enum ObjectType {EBLK = 0, NSET = 1, SSET = 2, NODE, ELEM, GLOBAL};
