@@ -42,6 +42,7 @@
 
 #include <Kokkos_DeviceNUMA.hpp>
 #include <impl/Kokkos_MemoryInfo.hpp>
+#include <DeviceNUMA/Kokkos_DeviceNUMA_Internal.hpp>
 
 /*--------------------------------------------------------------------------*/
 /* Standard 'C' libraries */
@@ -53,25 +54,9 @@
 #include <sstream>
 
 /*--------------------------------------------------------------------------*/
-/* Third Party Libraries */
-
-/* Hardware locality library: http://www.open-mpi.org/projects/hwloc/ */
-#include <hwloc.h>
-
-#define  REQURED_HWLOC_API_VERSION  0x000010300
-
-#if HWLOC_API_VERSION < REQUIRED_HWLOC_VERSION
-#error "Requires  http://www.open-mpi.org/projects/hwloc/  Version 1.3 or greater"
-#endif
-
-/*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
 namespace Impl {
-
-void device_numa_thread_lock();
-void device_numa_thread_unlock();
-bool device_numa_thread_spawn( DeviceNUMAThread * );
 
 //----------------------------------------------------------------------------
 
@@ -100,10 +85,9 @@ public:
 
   typedef DeviceNUMA::size_type size_type ;
 
-  hwloc_topology_t      m_host_topology ;
   DeviceNUMAWorkerBlock m_worker_block ;
   size_type             m_node_count ;
-  size_type             m_cpu_per_node ;
+  size_type             m_core_per_node ;
   size_type             m_thread_count ;
   size_type             m_thread_per_node ;
   DeviceNUMAThread      m_thread[ THREAD_COUNT_MAX + 1 ];
@@ -115,12 +99,14 @@ public:
 
   void verify_inactive( const char * const method ) const ;
 
-  void initialize( DeviceNUMA::UtilizationOptions );
+  size_type detect_core_count() const
+  { return m_node_count * m_core_per_node ; }
+
+  void initialize( DeviceNUMA::UtilizationStrategy ,
+                   DeviceNUMA::size_type manually_set_thread_count );
   void finalize();
   void block();
   void unblock();
-
-  bool cpubind( size_type node_rank ) const ;
 
   void execute( const DeviceNUMAWorker & worker );
 
@@ -134,63 +120,21 @@ DeviceNUMAInternal & DeviceNUMAInternal::singleton()
 }
 
 DeviceNUMAInternal::~DeviceNUMAInternal()
-{
-  hwloc_topology_destroy( m_host_topology );
-}
+{}
 
 DeviceNUMAInternal::DeviceNUMAInternal()
+  : m_worker_block()
+  , m_node_count   ( device_numa_node_count() )
+  , m_core_per_node( device_numa_core_per_node() )
+  , m_thread_count ( 0 )
+  , m_thread_per_node( 0 )
 {
-  m_node_count      = 0 ;
-  m_cpu_per_node    = 0 ;
-  m_thread_count    = 0 ;
-  m_thread_per_node = 0 ;
-  m_worker          = NULL ;
+  m_worker = NULL ;
 
-  hwloc_topology_init( & m_host_topology );
-  hwloc_topology_load( m_host_topology );
-
-  const int hwloc_depth =
-    hwloc_get_type_depth( m_host_topology , HWLOC_OBJ_NODE );
-
-  if ( HWLOC_TYPE_DEPTH_UNKNOWN != hwloc_depth ) {
-
-    m_node_count =
-      hwloc_get_nbobjs_by_depth( m_host_topology , hwloc_depth );
-
-    bool ok = 0 < m_node_count ;
-
-    for ( size_type i = 0 ; i < m_node_count && ok ; ++i ) {
-
-      const hwloc_obj_t node =
-        hwloc_get_obj_by_type( m_host_topology , HWLOC_OBJ_NODE , i );
-
-      const size_type count = hwloc_bitmap_weight( node->allowed_cpuset );
-
-      if ( 0 == m_cpu_per_node ) { m_cpu_per_node = count ; }
-
-      ok = count == m_cpu_per_node ;
-    }
-
-    if ( ok ) {
-      ok = cpubind( 0 ); // Bind this master thread
-    }
-
-    if ( ! ok ) {
-      m_cpu_per_node = 0 ;
-      m_node_count = 0 ;
-    }
+  if ( m_node_count && m_core_per_node ) {
+    // Bind this master thread to NUMA node 0
+    device_numa_bind_this_thread_to_node( 0 );
   }
-}
-
-// Bind the current thread to the location for the input thread rank
-
-bool DeviceNUMAInternal::cpubind( DeviceNUMA::size_type node_rank ) const
-{
-  const hwloc_obj_t node =
-    hwloc_get_obj_by_type( m_host_topology, HWLOC_OBJ_NODE, node_rank );
-
-  return -1 != hwloc_set_cpubind( m_host_topology , node->allowed_cpuset ,
-                                  HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
 }
 
 //----------------------------------------------------------------------------
@@ -198,27 +142,39 @@ bool DeviceNUMAInternal::cpubind( DeviceNUMA::size_type node_rank ) const
 
 void DeviceNUMAThread::driver()
 {
-  const DeviceNUMAInternal & pool = DeviceNUMAInternal::singleton();
+  try {
+    const DeviceNUMAInternal & pool = DeviceNUMAInternal::singleton();
 
-  //------------------------------------
-  // this_thread is in the Active state.
-  // The master thread is waiting for this_thread to leave the Active state.
-  //------------------------------------
-  // Migrate myself to the proper NUMA node and run
+    //------------------------------------
+    // this_thread is in the Active state.
+    // The master thread is waiting for this_thread to leave the Active state.
+    //------------------------------------
+    // Migrate myself to the proper NUMA node and run
 
-  if ( pool.cpubind( rank() / pool.m_thread_per_node ) ) {
+    if ( device_numa_bind_this_thread_to_node(m_thread_rank/pool.m_thread_per_node) ) {
 
-    while ( ThreadActive == m_state ) {
+      while ( ThreadActive == m_state ) {
 
-      // When the work is complete the state will be Inactive or Terminate
-      pool.m_worker->execute_on_thread( *this );
+        // When the work is complete the state will be Inactive or Terminate
+        pool.m_worker->execute_on_thread( *this );
 
-      // If this_thread is in the Inactive state then wait for activation.
-      wait( ThreadInactive );
+        // If this_thread is in the Inactive state then wait for activation.
+        wait( ThreadInactive );
+      }
     }
-  }
 
-  set( ThreadNull );
+    set( ThreadNull );
+  }
+  catch( const std::exception & x ) {
+    std::cerr << "Thread " << m_thread_rank << " uncaught exception : "
+              << x.what() << std::endl ;
+    std::terminate();
+  }
+  catch( ... ) {
+    std::cerr << "Thread " << m_thread_rank << " uncaught exception"
+              << std::endl ;
+    std::terminate();
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -241,29 +197,53 @@ void DeviceNUMAInternal::verify_inactive( const char * const method ) const
 }
 
 //----------------------------------------------------------------------------
-// FULL configuration: use every available CPU
-// MOST configuration: use all but one CPU of every NUMA node
 
-void DeviceNUMAInternal::initialize( DeviceNUMA::UtilizationOptions config )
+void DeviceNUMAInternal::initialize(
+  DeviceNUMA::UtilizationStrategy config ,
+  DeviceNUMA::size_type manually_set_thread_count )
 {
   const bool ok_inactive   = 0 == m_thread_count ;
-  const bool ok_query_node = 0 != m_cpu_per_node ;
+  const bool ok_query_node = 0 != m_node_count && 0 != m_core_per_node ;
 
-  bool ok_spawn_threads = ok_inactive && ok_query_node ;
+  //------------------------------------
+
+  if ( ok_inactive ) {
+
+    switch( config ) {
+    case DeviceNUMA::DETECT_AND_USE_ALL_CORES :
+      if ( ok_query_node ) {
+        m_thread_per_node = m_core_per_node ;
+        m_thread_count    = m_node_count * m_thread_per_node ;
+      }
+      break ;
+
+    case DeviceNUMA::DETECT_AND_USE_MOST_CORES :
+      if ( ok_query_node ) {
+        m_thread_per_node = m_core_per_node - 1 ;
+        m_thread_count    = m_node_count * m_thread_per_node ;
+      }
+      break ;
+
+    case DeviceNUMA::MANUALLY_SET_THREAD_COUNT :
+      m_thread_count = manually_set_thread_count ;
+      if ( ok_query_node ) {
+        m_thread_per_node = ( m_thread_count + m_node_count - 1 )
+                            / m_node_count ;
+      }
+      else {
+        m_thread_per_node = m_thread_count ;
+      }
+      break ;
+    default: break ;
+    }
+  }
+
+  bool ok_spawn_threads = ok_inactive && 0 < m_thread_count ;
 
   //------------------------------------
 
   if ( ok_spawn_threads ) {
 
-    switch( config ) {
-    case DeviceNUMA::FULL : m_thread_per_node = m_cpu_per_node ; break ;
-    case DeviceNUMA::MOST : m_thread_per_node = m_cpu_per_node - 1 ; break ;
-    default: break ;
-    }
-
-    m_thread_count = m_node_count * m_thread_per_node ;
-
-    //------------------------------------
     // Initialize thread rank and fan-in / fan-out span of threads
 
     {
@@ -271,8 +251,10 @@ void DeviceNUMAInternal::initialize( DeviceNUMA::UtilizationOptions config )
 
       for ( size_type rank = 0 ; rank < m_thread_count ; ++rank ) {
 
-        m_thread[rank].m_rank      = rank ;
-        m_thread[rank].m_fan_begin = m_thread + count ;
+        m_thread[rank].m_thread_count = m_thread_count ;
+        m_thread[rank].m_thread_rank  = rank ;
+        m_thread[rank].m_thread_reverse_rank = m_thread_count - ( rank + 1 );
+        m_thread[rank].m_fan_begin    = m_thread + count ;
 
         {
           size_type up = 1 ;
@@ -327,7 +309,7 @@ void DeviceNUMAInternal::initialize( DeviceNUMA::UtilizationOptions config )
       msg.append( "Device is already active" );
     }
     else if ( ! ok_query_node ) {
-      msg.append( "Could not query 'hardware locality (hwloc)'" );
+      msg.append( "Could not query NUMA node count or cores per node" );
     }
     else {
       msg.append( "Spawning or cpu-binding the threads" );
@@ -351,9 +333,11 @@ void DeviceNUMAInternal::finalize()
       thread->wait( DeviceNUMAThread::ThreadTerminating );
     }
 
-    thread->m_rank      = 0 ;
-    thread->m_fan_begin = NULL ;
-    thread->m_fan_end   = NULL ;
+    thread->m_thread_count        = 0 ;
+    thread->m_thread_rank         = 0 ;
+    thread->m_thread_reverse_rank = 0 ;
+    thread->m_fan_begin           = NULL ;
+    thread->m_fan_end             = NULL ;
   }
 
   m_thread_count    = 0 ;
@@ -397,18 +381,14 @@ void DeviceNUMAInternal::block()
   while ( thread_beg < thread ) {
     (--thread)->set( DeviceNUMAThread::ThreadActive );
   }
-
-  // All non-root threads are now blocked
 }
-
-//----------------------------------------------------------------------------
 
 void DeviceNUMAInternal::unblock()
 {
   if ( & m_worker_block != m_worker ) {
     std::ostringstream msg ;
     msg << "Kokkos::DeviceNUMA::unblock() FAILED: " ;
-    msg << "Device is not blocked" ;
+    msg << "Device is active" ;
     throw std::runtime_error( msg.str() );
   }
 
@@ -430,13 +410,8 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-DeviceNUMA::size_type
-DeviceNUMAWorker::work_per_thread( DeviceNUMA::size_type work_count )
-{
-  const DeviceNUMA::size_type
-    thread_count = DeviceNUMAInternal::singleton().m_thread_count ;
-  return ( work_count + thread_count - 1 ) / thread_count ;
-}
+void DeviceNUMAWorker::execute( const Impl::DeviceNUMAWorker & worker )
+{ Impl::DeviceNUMAInternal::singleton().execute( worker ); }
 
 //----------------------------------------------------------------------------
 
@@ -451,14 +426,15 @@ void DeviceNUMA::block()
 void DeviceNUMA::unblock()
 { Impl::DeviceNUMAInternal::singleton().unblock(); }
 
-void DeviceNUMA::execute( const Impl::DeviceNUMAWorker & worker )
-{ Impl::DeviceNUMAInternal::singleton().execute( worker ); }
-
 void DeviceNUMA::finalize()
 { Impl::DeviceNUMAInternal::singleton().finalize(); }
 
-void DeviceNUMA::initialize( DeviceNUMA::UtilizationOptions config )
-{ Impl::DeviceNUMAInternal::singleton().initialize( config ); }
+void DeviceNUMA::initialize( DeviceNUMA::UtilizationStrategy config ,
+                             DeviceNUMA::size_type manually_set_thread_count )
+{ Impl::DeviceNUMAInternal::singleton().initialize( config , manually_set_thread_count ); }
+
+DeviceNUMA::size_type DeviceNUMA::detect_core_count()
+{ return Impl::DeviceNUMAInternal::singleton().detect_core_count(); }
 
 /*--------------------------------------------------------------------------*/
 

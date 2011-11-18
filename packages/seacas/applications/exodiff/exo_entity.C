@@ -364,7 +364,7 @@ namespace {
     int count = get_num_entities(file_id, exo_type);
     std::vector<int> ids(count);
 
-    ex_get_ids(file_id, exo_type, &ids[0]);
+    ex_get_ids(file_id, exo_type, TOPTR(ids));
 
     for (int i=0; i<count; i++) {
       if (ids[i] == id)

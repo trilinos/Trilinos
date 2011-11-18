@@ -240,7 +240,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 	      << "\tWrites: current_directory/basename.suf\n"
 	      << "\tReads:  root#o/sub/basename.suf.#p.0 to\n"
 	      << "\t\troot(#o+#p)%#r/sub/basename.suf.#p.#p\n";
-    std::cerr << "\n\t->->-> Send email to seacas-help@sandia.gov for epu support.<-<-<-\n";
+    std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
 

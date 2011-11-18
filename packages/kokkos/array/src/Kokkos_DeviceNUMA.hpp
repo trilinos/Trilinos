@@ -47,15 +47,6 @@
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
-namespace Impl {
-class DeviceNUMAWorker ;
-class DeviceNUMAThread ;
-}
-}
-
-/*--------------------------------------------------------------------------*/
-
-namespace Kokkos {
 
 class DeviceNUMA {
 public:
@@ -71,28 +62,53 @@ public:
 
   /*--------------------------------*/
 
+  /** \brief  The parallel_for or parallel_reduce dispactch of a
+   *          functor may return before the functor completes.
+   *          Wait until all dispatched functors complete.
+   */
   static void wait_functor_completion() {}
 
-  static void execute( const Impl::DeviceNUMAWorker & );
-
   /*--------------------------------*/
-  enum UtilizationOptions { FULL ///< Use every core of every node
-                          , MOST ///< Use all but one core of every node
-                          };
+  /** \brief  If core count detection functionality is available
+   *          return the core count, otherwise return zero.
+   */
+  static size_type detect_core_count(); 
 
-  static void initialize( UtilizationOptions );
+  enum UtilizationStrategy
+    { DETECT_AND_USE_ALL_CORES   ///< Use every core of every node
+    , DETECT_AND_USE_MOST_CORES  ///< Use all but one core of every node
+    , MANUALLY_SET_THREAD_COUNT  ///< Manually specify number of threads
+    };
+
+  /** \brief  Create threads on the numa-host manycore device
+   *          with the given strategy.
+   */
+  static void initialize( UtilizationStrategy ,
+                          size_type manually_set_thread_count = 0 );
+
+  /** \brief  Destroy created threads */
   static void finalize();
 
+  /** \brief  Threads are "spinning" for
+   *          optimal work-spawning performance.
+   *          Block the threads so they do not consume
+   *          resources on the cores.
+   *
+   *  Throw an exception if the device is active or already blocked.
+   */
   static void block();
+
+  /** \brief  Unblock threads and return them to the
+   *          "spinning" and ready-to-work state.
+   *
+   *  Throw an exception if the device is not blocked.
+   */
   static void unblock();
 };
 
 } // namespace Kokkos
 
 #include <DeviceNUMA/Kokkos_DeviceNUMA_Impl.hpp>
-#include <DeviceNUMA/Kokkos_DeviceNUMA_For.hpp>
-#include <DeviceNUMA/Kokkos_DeviceNUMA_Reduce.hpp>
-#include <DeviceNUMA/Kokkos_DeviceNUMA_views.hpp>
 
 #endif /* #define KOKKOS_DEVICENUMA_HPP */
 

@@ -44,10 +44,9 @@
 #include <DeviceNUMA/Kokkos_DeviceNUMA_Internal.hpp>
 
 /*--------------------------------------------------------------------------*/
-/* Standard 'C' Linux libraries */
-#include <pthread.h>
-#include <sched.h>
-#include <errno.h>
+/* Windows libraries */
+#include <windows.h>
+#include <process.h>
 
 /*--------------------------------------------------------------------------*/
 
@@ -59,48 +58,62 @@ namespace Impl {
 
 namespace {
 
-void * device_numa_pthread_driver( void * arg )
+unsigned WINAPI device_numa_winthread_driver( void * arg )
 {
   ((DeviceNUMAThread *) arg)->driver();
-  return NULL ;
+  return 0 ;
 }
 
-pthread_mutex_t device_numa_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
+class ThreadLockWindows {
+private:
+  CRITICAL_SECTION  m_handle ;
 
-}
+  ~ThreadLockWindows()
+  { DeleteCriticalSection( & m_handle ); }
+
+  ThreadLockWindows();
+  { InitializeCriticalSection( & m_handle ); }
+
+  ThreadLockWindows( const ThreadLockWindows & );
+  ThreadLockWindows & operator = ( const ThreadLockWindows & );
+
+public:
+
+  static ThreadLockWindows & singleton();
+
+  void lock()
+  { EnterCriticalSection( & m_handle ); }
+
+  void unlock()
+  { LeaveCriticalSection( & m_handle ); }
+};
+
+ThreadLockWindows & ThreadLockWindows::singleton()
+{ static ThreadLockWindows self ; return self ; }
+
+} // namespace <>
 
 //----------------------------------------------------------------------------
 // Spawn this thread
 
 bool device_numa_thread_spawn( DeviceNUMAThread * thread )
 {
-  bool result = false ;
+  unsigned Win32ThreadID = 0 ;
 
-  pthread_attr_t attr ;
-  
-  if ( 0 == pthread_attr_init( & attr ) ||
-       0 == pthread_attr_setscope(       & attr, PTHREAD_SCOPE_SYSTEM ) ||
-       0 == pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ) {
+  HANDLE handle =
+    _beginthreadex(0,0,device_numa_winthread_driver,(void*)thread, 0, & Win32ThreadID );
 
-    pthread_t pt ;
-
-    result =
-      0 == pthread_create( & pt, & attr, device_numa_pthread_driver, thread );
-  }
-
-  pthread_attr_destroy( & attr );
-
-  return result ;
+  return ! handle ;
 }
 
 //----------------------------------------------------------------------------
 // Mutually exclusive locking and unlocking
 
 void device_numa_thread_lock()
-{ pthread_mutex_lock( & device_numa_pthread_mutex ); }
+{ ThreadLockWindows::singleton().lock(); }
 
 void device_numa_thread_unlock()
-{ pthread_mutex_unlock( & device_numa_pthread_mutex ); }
+{ ThreadLockWindows::singleton().unlock(); }
 
 //----------------------------------------------------------------------------
 // Performance critical function: thread waits while value == *state
@@ -109,7 +122,7 @@ void DeviceNUMAThread::wait( const DeviceNUMAThread::State flag )
 {
   const long value = flag ;
   while ( value == m_state ) {
-    sched_yield();
+    Sleep(0);
   }
 }
 

@@ -22,7 +22,7 @@ export INTEL12_BUILD=1
 
 umask u=rwx,g=rwx,o=
 
-export TDD_PARALLEL_LEVEL=3
+export TDD_PARALLEL_LEVEL=4
 export TDD_CTEST_TEST_TYPE=Nightly
 
 # Submit the outer TDD tests to casl-dev always since these are CASL machines

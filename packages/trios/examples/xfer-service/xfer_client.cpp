@@ -804,9 +804,11 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
                         log_error(client_debug_level, "Validation failed");
                         MPI_Abort(MPI_COMM_WORLD, rc);
                     }
-
-                    free(tmp_array.data_array_t_val);
                 }
+            }
+
+            if (args.validate_flag) {
+                free(tmp_array.data_array_t_val);
             }
 
             break;

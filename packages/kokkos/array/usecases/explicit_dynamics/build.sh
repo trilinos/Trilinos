@@ -48,6 +48,16 @@ TBB | tbb )
   export CXX_SOURCES="${CXX_SOURCES} ../../src/DeviceTBB/*.cpp testTBB.cpp"
   export LIB="${LIB} -ltbb"
   ;;
+NUMA | numa )
+  export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_NUMA"
+  export CXX_SOURCES="${CXX_SOURCES} testNUMA.cpp"
+  export CXX_SOURCES="${CXX_SOURCES} ../../src/DeviceNUMA/Kokkos_DeviceNUMA.cpp"
+  export CXX_SOURCES="${CXX_SOURCES} ../../src/DeviceNUMA/Kokkos_DeviceNUMA_hwloc.cpp"
+  export CXX_SOURCES="${CXX_SOURCES} ../../src/DeviceNUMA/Kokkos_DeviceNUMA_pthread.cpp"
+  export INC_PATH="${INC_PATH} -I${1}/include"
+  export LIB="${LIB} -L${1}/lib -lhwloc -lpthread"
+  shift 1
+  ;;
 #-------------------------------
 #----------- OPTIONS -----------
 OPT | opt | O3 | -O3 )
@@ -85,7 +95,7 @@ then
   ${NVCC} ${NVCCFLAGS} ${INC_PATH} ${NVCC_SOURCES} ;
 fi
 
-echo "Building regular files as: " ${CXX} ${CXXFLAGS}
+echo "Building regular files as: " ${CXX} ${CXXFLAGS} ${INC_PATH} ${LIB}
 
 ${CXX} ${CXXFLAGS} ${INC_PATH} ${TEST_MACRO} -o explicit_dynamics.x main.cpp ${CXX_SOURCES} ${LIB}
 
