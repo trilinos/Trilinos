@@ -19,6 +19,8 @@
 #include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
+#include "Panzer_WorksetContainer.hpp"
+
 namespace panzer {
 
 template <typename TraitsT> class ResponseContainerBase;
@@ -41,7 +43,7 @@ class ResponseLibrary {
 public:
    typedef typename TraitsT::EvalTypes TypeSeq;
 
-   ResponseLibrary(); 
+   ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc); 
 
    /** Asks, does this string correspond to a response type
      * in this library?
@@ -117,7 +119,6 @@ public:
      * is called.
      */
    void buildVolumeFieldManagersFromResponses(
-                        const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                         const Teuchos::ParameterList& closure_models,
@@ -131,6 +132,12 @@ public:
    template <typename EvalT>
    void evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
                                     const panzer::AssemblyEngineInArgs & ae_in,
+                                    const Teuchos::Comm<int> & comm);
+
+   /** Evaluate all the volume field managers of a particular evaluator type.
+     */
+   template <typename EvalT>
+   void evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
                                     const Teuchos::Comm<int> & comm);
 
    /** @} */
@@ -192,8 +199,12 @@ private:
 
    RLDynamicDispatch<TraitsT> dynamicDispatch_;
 
+   Teuchos::RCP<WorksetContainer> wkstContainer_;
+
    //! Maps from a "label"->(ResponseId,List of Element Blocks)
    std::map<std::string,ResponseDescriptor> labeledResponses_;
+
+   ResponseLibrary();  // hide default constructor
 };
 
 }

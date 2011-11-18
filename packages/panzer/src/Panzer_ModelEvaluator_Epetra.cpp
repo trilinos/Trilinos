@@ -392,17 +392,8 @@ evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const Out
       = Teuchos::rcp(new Teuchos::MpiComm<int>(
         Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(map_x_->Comm()).Comm())));
 
-   const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& worksetVec = fmb_->getWorksets();
-  
-   // convert vector of vectors of worksets into a map from block IDs to worksets
-   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > worksets;
-   for(std::size_t i=0;i<worksetVec.size();i++) {
-      std::string blockId = (*worksetVec[i])[0].block_id;
-      worksets[blockId] = worksetVec[i];
-   }
-
    // evaluator responses
-   responseLibrary_->evaluateVolumeFieldManagers<panzer::Traits::Residual>(worksets,ae_inargs,*tComm);
+   responseLibrary_->evaluateVolumeFieldManagers<panzer::Traits::Residual>(ae_inargs,*tComm);
 
    std::vector<Teuchos::RCP<const Response<panzer::Traits> > > responses;
    responseLibrary_->getLabeledVolumeResponses(responses);

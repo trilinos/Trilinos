@@ -18,6 +18,7 @@ using Teuchos::rcp;
 #include "Panzer_Traits.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_ResponseContainer.hpp"
+#include "Panzer_WorksetContainer.hpp"
 
 #include "TestEvaluators.hpp"
 
@@ -57,8 +58,10 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
   fields.push_back("Dog");
   fields.push_back("Horse");
 
+  RCP<WorksetContainer> wkstContainer = Teuchos::rcp(new WorksetContainer);
+
   RCP<ResponseLibrary<Traits> > rLibrary 
-        = Teuchos::rcp(new ResponseLibrary<Traits>());
+        = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer));
   rLibrary->defineDefaultAggregators();
 
   RCP<ResponseContainerBase<Traits> > container

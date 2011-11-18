@@ -24,6 +24,7 @@ using Teuchos::rcp;
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ResponseUtilities.hpp"
 #include "Panzer_RLDynamicDispatch.hpp"
+#include "Panzer_WorksetContainer.hpp"
 
 #include "TestEvaluators.hpp"
 
@@ -68,7 +69,7 @@ TEUCHOS_UNIT_TEST(response_library, test)
   ResponseId dResp  = buildResponse("Dog","Functional");
   ResponseId hResp  = buildResponse("Horse","Functional");
   RCP<ResponseLibrary<Traits> > rLibrary 
-        = Teuchos::rcp(new ResponseLibrary<Traits>());
+        = Teuchos::rcp(new ResponseLibrary<Traits>(Teuchos::rcp(new panzer::WorksetContainer)));
   rLibrary->defineDefaultAggregators();
 
   rLibrary->reserveVolumeResponse<EvalT>(dResp,"block_0");
@@ -216,7 +217,7 @@ TEUCHOS_UNIT_TEST(response_library, dyn_dispatch)
   ResponseId dResp  = buildResponse("Dog","Functional");
   ResponseId hResp  = buildResponse("Horse","Functional");
   RCP<ResponseLibrary<Traits> > rLibrary 
-        = Teuchos::rcp(new ResponseLibrary<Traits>());
+        = Teuchos::rcp(new ResponseLibrary<Traits>(Teuchos::rcp(new panzer::WorksetContainer)));
   rLibrary->defineDefaultAggregators();
 
   rLibrary->reserveVolumeResponse(dResp,"block_0","Residual");

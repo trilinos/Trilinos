@@ -13,6 +13,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
+#include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
@@ -25,6 +26,7 @@ using Teuchos::rcp;
 
 #include "Panzer_ResponseContainer.hpp"
 #include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_WorksetContainer.hpp"
 
 #include "TestEvaluators.hpp"
 
@@ -109,9 +111,15 @@ namespace panzer {
     // setup worksets
     /////////////////////////////////////////////
  
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-      volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
-    
+     std::vector<std::string> validEBlocks;
+     mesh->getElementBlockNames(validEBlocks);
+
+    // build WorksetContainer
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
+ 
     // setup DOF manager
     /////////////////////////////////////////////
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
@@ -133,10 +141,9 @@ namespace panzer {
     /////////////////////////////////////////////
       
     // Add in the application specific closure model factory
-    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
-      Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
     user_app::STKModelFactory_TemplateBuilder cm_builder;
-    (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
+    cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
@@ -156,7 +163,7 @@ namespace panzer {
     ResponseId dResp  = buildResponse("Dog","Functional");
     ResponseId hResp  = buildResponse("Horse","Functional");
     RCP<ResponseLibrary<Traits> > rLibrary 
-          = Teuchos::rcp(new ResponseLibrary<Traits>());
+          = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer));
     rLibrary->defineDefaultAggregators();
   
     out << "reserving responses" << std::endl;
@@ -166,9 +173,8 @@ namespace panzer {
     rLibrary->printVolumeContainers(out);
   
     out << "building VFM" << std::endl;
-    rLibrary->buildVolumeFieldManagersFromResponses(volume_worksets,
-  					       physics_blocks,
-  					       *cm_factory,
+    rLibrary->buildVolumeFieldManagersFromResponses(physics_blocks,
+  					       cm_factory,
                                                closure_models,
   					       *elof,
   					       user_data,true);
@@ -180,7 +186,7 @@ namespace panzer {
 
     out << "evaluating VFM" << std::endl;
     panzer::AssemblyEngineInArgs ae_inargs(loc,loc);
-    rLibrary->evaluateVolumeFieldManagers<EvalT>(volume_worksets,ae_inargs,*tcomm);
+    rLibrary->evaluateVolumeFieldManagers<EvalT>(ae_inargs,*tcomm);
 
     double sum_dog = 0.0;
     double sum_horse = 0.0;
