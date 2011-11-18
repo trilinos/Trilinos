@@ -49,15 +49,15 @@ void AlltoAll(const Comm<int> &comm,
 
   if (count == 0) return;   // count is the same on all procs
 
-  T *ptr = NULL;
-  Z2_SYNC_MEMORY_ALLOC(comm, env, T, ptr, nprocs * count);
-
-  ArrayRCP<T> inBuf(ptr, 0, nprocs * count, true);
+  LNO n = nprocs * count;
+  T *ptr = new T [n]; 
+  Z2_GLOBAL_MEMORY_ASSERTION(env, n, ptr);
+  recvBuf = Teuchos::arcp<T>(ptr, 0, n, true);
 
   // Do self messages
 
   for (LNO i=0, offset = rank*count; i < count; i++, offset++){
-    inBuf.get()[offset] = sendBuf.getRawPtr()[offset];
+    recvBuf.get()[offset] = sendBuf.getRawPtr()[offset];
   }
 
 #ifdef HAVE_MPI
@@ -68,7 +68,7 @@ void AlltoAll(const Comm<int> &comm,
 
   for (int p=0; p < nprocs; p++){
     if (p != rank){
-      ArrayRCP<T> recvBufPtr(inBuf.get() + p*count, 0, count, false);
+      ArrayRCP<T> recvBufPtr(recvBuf.get() + p*count, 0, count, false);
       try{
         r  = Teuchos::ireceive<int, T>(comm, recvBufPtr, p);
       }
@@ -87,24 +87,25 @@ void AlltoAll(const Comm<int> &comm,
   // Do ready sends.
 
   for (int p=0; p < nprocs; p++){
-    if (p != rank)
+    if (p != rank){
       try {
         Teuchos::readySend<int, T>(comm, sendBuf.view(p*count, count), p);
       } 
-      catch (const std::exception &e)
+      catch (std::exception &e){
         Z2_THROW_OUTSIDE_ERROR(env, e);
+      }
+    }
   }
 
   if (req.size() > 0){
     try {
       Teuchos::waitAll<int>(comm, req);
     }
-    catch (const std::exception &e)
+    catch (std::exception &e){
       Z2_THROW_OUTSIDE_ERROR(env, e);
+    }
   }
 #endif
-
-  recvBuf = inBuf;
 }
 
 /*! \brief AlltoAllv sends/receives a variable number of objects to/from all processes.
@@ -129,8 +130,9 @@ void AlltoAllv(const Comm<int> &comm,
   try{
     AlltoAll<LNO, LNO>(comm, env, sendCount, 1, recvCount);
   }
-  catch (const std::exception &e)
+  catch (const std::exception &e){
     Z2_THROW_ZOLTAN2_ERROR(env, e);
+  }
 
   size_t totalIn=0, offsetIn=0, offsetOut=0;
 
@@ -143,11 +145,13 @@ void AlltoAllv(const Comm<int> &comm,
   }
 
   T *ptr = NULL;
-  Z2_SYNC_MEMORY_ALLOC(comm, env, T, ptr, totalIn);
+  if (totalIn){
+    ptr = new T [totalIn]; 
+  }
+  Z2_GLOBAL_MEMORY_ASSERTION(env, totalIn, !totalIn||ptr);
+  recvBuf = Teuchos::arcp<T>(ptr, 0, totalIn, true);
 
-  ArrayRCP<T> inBuf(ptr, 0, totalIn, true);
-
-  T *in = inBuf.get() + offsetIn;           // Copy self messages
+  T *in = recvBuf.get() + offsetIn;           // Copy self messages
   const T *out = sendBuf.getRawPtr() + offsetOut;
 
   for (LNO i=0; i < recvCount[rank]; i++){
@@ -164,7 +168,7 @@ void AlltoAllv(const Comm<int> &comm,
 
   for (int p=0; p < nprocs; p++){
     if (p != rank && recvCount[p] > 0){
-      ArrayRCP<T> recvBufPtr(inBuf.get() + offsetIn, 0, recvCount[p], false);
+      ArrayRCP<T> recvBufPtr(recvBuf.get() + offsetIn, 0, recvCount[p], false);
 
       try{
         r  = Teuchos::ireceive<int, T>(comm, recvBufPtr, p);
@@ -191,8 +195,9 @@ void AlltoAllv(const Comm<int> &comm,
       try{
         Teuchos::readySend<int, T>(comm, sendBuf.view(offsetOut, sendCount[p]), p);
       }
-      catch(const std::exception &e)
+      catch(const std::exception &e){
         Z2_THROW_OUTSIDE_ERROR(env, e);
+      }
     }
     offsetOut += sendCount[p];
   }
@@ -201,12 +206,11 @@ void AlltoAllv(const Comm<int> &comm,
     try{
       Teuchos::waitAll<int>(comm, req);
     }
-    catch(const std::exception &e)
+    catch(const std::exception &e){
       Z2_THROW_OUTSIDE_ERROR(env, e);
+    }
   }
 #endif
-
-  recvBuf = inBuf;
 }
 
 /*! \brief Serialization for std::vector<T>
@@ -366,9 +370,10 @@ void AlltoAllv(const Comm<int>     &comm,
   int nprocs = comm.getSize();
   size_t totalSendSize = 0;
   LNO offset = 0;
+  using Teuchos::is_null;
 
-  LNO *sendSize = NULL;
-  Z2_SYNC_MEMORY_ALLOC(comm, env, LNO, sendSize, nprocs);
+  LNO *sendSize = new LNO [nprocs];
+  Z2_GLOBAL_MEMORY_ASSERTION(env, nprocs, sendSize);
 
   for (int p=0; p < nprocs; p++){
     if (sendCount[p] > 0){
@@ -384,8 +389,13 @@ void AlltoAllv(const Comm<int>     &comm,
     }
   }
 
+  size_t bufSize = totalSendSize/sizeof(T);
+  
   T *buf = NULL;
-  Z2_SYNC_MEMORY_ALLOC(comm, env, T, buf, totalSendSize/sizeof(T));
+  if (bufSize)
+    buf = new T [bufSize];
+  
+  Z2_GLOBAL_MEMORY_ASSERTION(env, bufSize, !bufSize || buf);
 
   const std::vector<T> *vptr = sendBuf.getRawPtr();
 
@@ -400,29 +410,28 @@ void AlltoAllv(const Comm<int>     &comm,
     }
   }
 
-  ArrayView<T> sendTView(buf, totalSendSize/sizeof(T));
-  ArrayView<LNO> sendSizeView(sendSize, nprocs);
   ArrayRCP<T> recvT;
   ArrayRCP<LNO> recvSize;
+  ArrayView<const T> bufView(buf, bufSize);
+  ArrayView<const LNO> sendSizeView(sendSize, nprocs);
 
   try{
-    AlltoAllv<T, LNO>(comm, env, sendTView, sendSizeView, recvT, recvSize);
+    AlltoAllv<T, LNO>(comm, env, bufView, sendSizeView, recvT, recvSize);
   }
-  catch (const std::exception &e)
+  catch (const std::exception &e){
     Z2_THROW_ZOLTAN2_ERROR(env, e);
-
-  if (buf)
-    delete [] buf;
+  }
 
   delete [] sendSize;
+  if (bufSize)
+    delete [] buf;
 
-  LNO *vectorCount = NULL;
-  Z2_SYNC_MEMORY_ALLOC(comm, env, LNO, vectorCount, nprocs);
+  LNO *vectorCount = new LNO [nprocs];
+  Z2_GLOBAL_MEMORY_ASSERTION(env, nprocs, vectorCount);
 
   LNO totalCount = 0;
 
-  buf = recvT.get();
-  charBuf = reinterpret_cast<char *>(buf);
+  charBuf = reinterpret_cast<char *>(recvT.get());
 
   for (int p=0; p < nprocs; p++){
     if (recvSize[p] > 0){
@@ -439,10 +448,11 @@ void AlltoAllv(const Comm<int>     &comm,
   }
 
   std::vector<T> *inVectors = NULL;
-  Z2_SYNC_MEMORY_ALLOC(comm, env, std::vector<T>, inVectors, totalCount);
+  if (totalCount)
+    inVectors = new std::vector<T> [totalCount];
+  Z2_GLOBAL_MEMORY_ASSERTION(env, nprocs, !totalCount || inVectors);
 
-  buf = recvT.get();
-  charBuf = reinterpret_cast<char *>(buf);
+  charBuf = reinterpret_cast<char *>(recvT.get());
   std::vector<T> *inv = inVectors;
 
   for (int p=0; p < nprocs; p++){
@@ -455,8 +465,8 @@ void AlltoAllv(const Comm<int>     &comm,
     }
   }
 
-  recvBuf = ArrayRCP<std::vector<T> >(inVectors, 0, totalCount, true);
-  recvCount = ArrayRCP<LNO>(vectorCount, 0, nprocs, true);
+  recvBuf = Teuchos::arcp(inVectors, 0, totalCount);
+  recvCount = Teuchos::arcp(vectorCount, 0, nprocs);
 }
 
 }                   // namespace Z2

@@ -29,106 +29,98 @@
 
   The LOCAL macros are local.  If the assertion fails, the
   process throws an error.
-
-  The bad_alloc exceptions are thrown in Zoltan2_Memory.hpp.
 */
 
 #include <stdexcept>
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <Zoltan2_Environment.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING
 
-#define Z2_LOCAL_INPUT_ASSERTION(comm, env, s, assertion, level) {}
-#define Z2_LOCAL_BUG_ASSERTION(comm,  env, s, assertion, level) {}
-#define Z2_LOCAL_MEMORY_ASSERTION(comm,  env, requestSize, assertion) {}
-#define Z2_GLOBAL_INPUT_ASSERTION( comm, env, s, assertion, level) {}
-#define Z2_GLOBAL_BUG_ASSERTION( comm, env, s, assertion, level) {}
-#define Z2_GLOBAL_MEMORY_ASSERTION( comm, env, requestSize, assertion) {}
+#define Z2_LOCAL_INPUT_ASSERTION(env, s, assertion, level) {}
+#define Z2_GLOBAL_INPUT_ASSERTION(env, s, assertion, level) {}
+
+#define Z2_LOCAL_BUG_ASSERTION(env, s, assertion, level) {}
+#define Z2_GLOBAL_BUG_ASSERTION(env, s, assertion, level) {}
+
+#define Z2_LOCAL_MEMORY_ASSERTION(env, nobj, assertion) {}
+#define Z2_GLOBAL_MEMORY_ASSERTION(env, nobj , assertion) {}
 
 #else
 
-#define Z2_LOCAL_INPUT_ASSERTION(comm, env, s, assertion, level) { \
-  if (level <= (env).errorCheckLevel_) { \
-    if (!(assertion)){ \
-      std::ostringstream oss; \
-      oss << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
-      (env).dbg_->error(oss.str()); \
-      throw std::runtime_error(oss.str()); \
-    } \
-  } \
-}
+#define Z2_LOCAL_INPUT_ASSERTION(env, s, assertion, level) \
+  if ((level <= (env).errorCheckLevel_) && !(assertion)){ \
+    std::ostringstream assertion_msg; \
+    assertion_msg<<(env).myRank_<<" "<<__FILE__<<","<<__LINE__; \
+    assertion_msg<<", error: "<<s; \
+    throw std::runtime_error(assertion_msg.str()); \
+  }
 
-#define Z2_LOCAL_BUG_ASSERTION( comm, env, s, assertion, level) { \
-  if (level <= (env).errorCheckLevel_) { \
-    if (!(assertion)){ \
-      std::ostringstream oss; \
-      oss << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
-      (env).dbg_->error(oss.str()); \
-      throw std::logic_error(oss.str()); \
-    } \
-  } \
-}
+#define Z2_LOCAL_BUG_ASSERTION(env, s, assertion, level) \
+  if ((level <= (env).errorCheckLevel_) && !(assertion)){ \
+    std::ostringstream assertion_msg; \
+    assertion_msg<<(env).myRank_<<" "<<__FILE__<<","<<__LINE__; \
+    assertion_msg<<", bug: "<<s; \
+    throw std::logic_error(assertion_msg.str()); \
+  }
 
-/*! We always check for success of memory allocation, regardless of ERROR_CHECK_LEVEL.
+/*! Memory assertions are always BASIC_ASSERTION level
  */
-
-#define Z2_LOCAL_MEMORY_ASSERTION( comm, env, requestSize, assertion) { \
+#define Z2_LOCAL_MEMORY_ASSERTION( env, nobj, assertion) { \
   if (!(assertion)){ \
-    std::ostringstream _msg; \
-    _msg << __FILE__ << ", " << __LINE__ << ", size " << requestSize << std::endl; \
-    (env).dbg_->error(_msg.str()); \
+    std::cerr<<(env).myRank_<<" "<<__FILE__<<","<<__LINE__<<","<<nobj<<" objects\n"; \
     throw std::bad_alloc(); \
   } \
 }
 
-#define Z2_GLOBAL_INPUT_ASSERTION( comm, env, s, assertion, level) { \
+#define Z2_GLOBAL_INPUT_ASSERTION( env, s, assertion, level) { \
   if (level <= (env).errorCheckLevel_) {  \
-    int fail = 0, gfail=0;  \
-    if (!(assertion)) fail = 1;  \
-    Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
-    if (gfail > 0){  \
-      std::ostringstream _msg; \
-      if (fail > 0){ \
-        _msg << __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
-        (env).dbg_->error(_msg.str()); \
-      } \
-      throw std::runtime_error(_msg.str()); \
+    int assertion_fail = 0, assertion_gfail=0;  \
+    if (!(assertion)) assertion_fail = 1;  \
+    Teuchos::reduceAll<int, int>(*(env).comm_, \
+      Teuchos::REDUCE_MAX, 1, &assertion_fail, &assertion_gfail); \
+    if (assertion_gfail > 0){  \
+      std::ostringstream assertion_msg; \
+      assertion_msg<<(env).myRank_<<" "<<__FILE__<<","<<__LINE__; \
+      if (assertion_fail > 0) assertion_msg<<", error: "<<s; \
+      else                    assertion_msg<<" exiting"; \
+      throw std::runtime_error(assertion_msg.str()); \
     } \
   } \
 }
 
-#define Z2_GLOBAL_BUG_ASSERTION( comm, env, s, assertion, level) { \
+#define Z2_GLOBAL_BUG_ASSERTION( env, s, assertion, level) { \
   if (level <= (env).errorCheckLevel_) {  \
-    int fail = 0, gfail=0;  \
-    if (!(assertion)) fail = 1;  \
-    Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
-    if (gfail > 0){  \
-      std::ostringstream _msg; \
-      if (fail > 0){ \
-        _msg <<  __FILE__ << ", " << __LINE__ << ", " << s << std::endl; \
-        (env).dbg_->error(_msg.str()); \
-      } \
-      throw std::logic_error(_msg.str()); \
+    int assertion_fail = 0, assertion_gfail=0;  \
+    if (!(assertion)) assertion_fail = 1;  \
+    Teuchos::reduceAll<int, int>(*(env).comm_, \
+      Teuchos::REDUCE_MAX, 1, &assertion_fail, &assertion_gfail); \
+    if (assertion_gfail > 0){  \
+      std::ostringstream assertion_msg; \
+      assertion_msg<<(env).myRank_<<" "<<__FILE__<<","<<__LINE__; \
+      if (assertion_fail > 0) assertion_msg<<", bug: "<<s; \
+      else                    assertion_msg<<" exiting"; \
+      throw std::logic_error(assertion_msg.str()); \
     } \
   } \
 }
 
-/*! We always check for success of memory allocation, regardless of ERROR_CHECK_LEVEL.
+/*! Memory assertions are always BASIC_ASSERTION level
  */
-
-#define Z2_GLOBAL_MEMORY_ASSERTION( comm, env, requestSize, assertion) {\
-  int fail = 0, gfail=0;  \
-  if (!(assertion)) fail = 1;  \
-  Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
-  if (gfail > 0){  \
-    if (fail > 0){ \
-      std::ostringstream _msg; \
-      _msg <<  __FILE__ << ", " << __LINE__ << ", size " << requestSize << std::endl; \
-      (env).dbg_->error(_msg.str()); \
-    } \
+#define Z2_GLOBAL_MEMORY_ASSERTION( env, nobj, assertion) {\
+  int assertion_fail = 0, assertion_gfail=0;  \
+  if (!(assertion)) assertion_fail = 1;  \
+  Teuchos::reduceAll<int, int>(*(env).comm_, \
+      Teuchos::REDUCE_MAX, 1, &assertion_fail, &assertion_gfail); \
+  if (assertion_gfail > 0){  \
+    int me = (env).myRank_; \
+    if (assertion_fail > 0) \
+      std::cerr<<me<<" "<<__FILE__<<","<<__LINE__<<","<<nobj<<" objects\n"; \
+    else \
+      std::cerr<<me<<" "<<__FILE__<<","<<__LINE__<<", exiting"; \
     throw std::bad_alloc(); \
   } \
 }
@@ -138,9 +130,7 @@
 /*! Throw an error returned from outside the Zoltan2 library.
  */
 #define Z2_THROW_OUTSIDE_ERROR(env, e) { \
-   std::ostringstream oss; \
-   oss << __FILE__ << ":" << __LINE__ << " " << e.what() << std::endl; \
-   (env).dbg_->error(oss.str()); \
+  std::cerr<<(env).myRank_<<" "<<__FILE__<<","<<__LINE__<<","<<e.what()<<std::endl; \
   throw e; \
 }
 

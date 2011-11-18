@@ -65,11 +65,18 @@ public:
     comm_ = graph_->getComm();
     size_t nvtx = graph_->getNodeNumRows();
     size_t nedges = graph_->getNodeNumEntries();
-    lno_t *offs=NULL;
-    gid_t *eids=NULL;
     Environment env;
-    Z2_ASYNC_MEMORY_ALLOC(*comm_, env, lno_t, offs, nvtx+1);
-    Z2_ASYNC_MEMORY_ALLOC(*comm_, env, gid_t, eids, nedges);
+
+    size_t n = nvtx + 1;
+    lno_t *offs = new lno_t [n];
+    Z2_LOCAL_MEMORY_ASSERTION(env, n, offs);
+
+    gid_t *eids = NULL;
+    if (nedges){
+      eids = new gid_t [nedges];
+      Z2_LOCAL_MEMORY_ASSERTION(env, nedges, eids);
+    }
+
     offs[0] = 0;
     for (lno_t v=0; v < nvtx; v++){
       ArrayView<const lno_t> nbors;
@@ -79,8 +86,8 @@ public:
         eids[e] = nbors[i++];
     }
 
-    offs_ = arcp(offs,0,nvtx+1);
-    eids_ = arcp(eids,0,nedges);
+    offs_ = arcp(offs, 0, n, true);
+    eids_ = arcp(eids, 0, nedges, true);
 #if 0
     makeOffsets();
 #endif
