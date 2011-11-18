@@ -61,8 +61,8 @@
 # Must set the project name as a varaible at very beginning before including anything else
 SET(PROJECT_NAME Trilinos)
 
-# CMake requires that you declare the project in the top-level file and not in
-# an include file :-(
+# CMake requires that you declare the CMake project in the top-level file and
+# not in an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
 # Read from TrilinosVersion.cmake and write Trilinos_version.h

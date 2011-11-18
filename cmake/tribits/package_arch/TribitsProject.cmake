@@ -53,6 +53,9 @@
 # ************************************************************************
 # @HEADER
  
+
+# Projects that change the location of the source need to consider this in
+# their top-level CMakeLists.txt file
 SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits"
   CACHE PATH
   "The base directory pointing to the TriBITS system."
