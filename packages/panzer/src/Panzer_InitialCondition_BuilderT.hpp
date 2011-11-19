@@ -3,7 +3,7 @@
 
 #include "Teuchos_Assert.hpp"
 
-void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
+void panzer::setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
 						const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 						const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 						const Teuchos::ParameterList& ic_block_closure_models,
@@ -12,9 +12,7 @@ void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuch
 						const bool write_graphviz_file,
 						const std::string& graphviz_file_prefix,
 						std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers)
-
 {
-  
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
   for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
     Teuchos::RCP<panzer::PhysicsBlock> pb = *blkItr;
@@ -39,14 +37,14 @@ void panzer::setupInitialConditionFieldManagers(const std::map<std::string,Teuch
 
     // build the setup data using passed in information
     Traits::SetupData setupData;
-    setupData.worksets_ = volume_worksets.find(blockId)->second;
+    // setupData.worksets_ = volume_worksets.find(blockId)->second;
+    setupData.worksets_ = wkstContainer.getVolumeWorksets(blockId);
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers.push_back(fm);
     
     if (write_graphviz_file)
       fm->writeGraphvizFile(graphviz_file_prefix+"IC_"+blockId);
-
   }
 }
 

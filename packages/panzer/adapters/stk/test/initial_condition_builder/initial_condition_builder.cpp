@@ -14,6 +14,8 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetContainer.hpp"
+#include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
@@ -98,12 +100,19 @@ namespace panzer {
 
     // setup worksets
     /////////////////////////////////////////////
+
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
+
+    // get vector of element blocks
+    std::vector<std::string> elementBlocks;
+    mesh->getElementBlockNames(elementBlocks);
  
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-      volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
-    
-    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
-          = panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
+    // build volume worksets from container
+    std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
+    panzer::getSideWorksetsFromContainer(*wkstContainer,bcs,bc_worksets);
 
     // setup DOF manager
     /////////////////////////////////////////////
@@ -139,7 +148,7 @@ namespace panzer {
     user_data.sublist("Panzer Data").set("DOF Manager", dofManager);
     user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
 
-    fmb.setupVolumeFieldManagers(volume_worksets,physics_blocks,cm_factory,closure_models,*elof,user_data);
+    fmb.setupVolumeFieldManagers(*wkstContainer,physics_blocks,cm_factory,closure_models,*elof,user_data);
     fmb.setupBCFieldManagers(bc_worksets,physics_blocks,eqset_factory,cm_factory,bc_factory,closure_models,*elof,user_data);
 
     Teuchos::ParameterList ic_closure_models("Initial Conditions");
@@ -149,7 +158,7 @@ namespace panzer {
     ic_closure_models.sublist("eblock-1_0").sublist("ION_TEMPERATURE").set<double>("Value",3.0);    
 
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
-    panzer::setupInitialConditionFieldManagers(volume_worksets,
+    panzer::setupInitialConditionFieldManagers(*wkstContainer,
 					       physics_blocks,
 					       cm_factory,
 					       ic_closure_models,

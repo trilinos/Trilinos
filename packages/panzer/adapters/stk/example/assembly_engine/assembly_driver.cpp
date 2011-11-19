@@ -16,6 +16,8 @@ using Teuchos::rcp;
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetContainer.hpp"
+#include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_AssemblyEngine.hpp"
@@ -177,8 +179,16 @@ int main(int argc,char * argv[])
 
    // build worksets
    out << "BUILD WORKSETS" << std::endl;
-   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-         volume_worksets = panzer_stk::buildWorksets(*mesh, eb_id_to_ipb, workset_size);
+
+   Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
+      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+   Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
+
+   std::vector<std::string> elementBlockNames;
+   mesh->getElementBlockNames(elementBlockNames);
+   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > volume_worksets;
+   panzer::getVolumeWorksetsFromContainer(*wkstContainer,elementBlockNames,volume_worksets);
 
    out << "block count = " << volume_worksets.size() << std::endl;
    out << "workset count = " << volume_worksets["eblock-0_0"]->size() << std::endl;
@@ -223,7 +233,7 @@ int main(int argc,char * argv[])
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
    // setup assembly engine

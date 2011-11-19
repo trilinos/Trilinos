@@ -6,6 +6,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_WorksetContainer.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -15,7 +16,7 @@ namespace panzer {
 
   /** \brief Builds PHX::FieldManager objects for inital conditions and registers evaluators. 
 
-  \param[in] volume_worksets Worksets for the corresponding evaluations.
+  \param[in] wkstContainer Worksets for the corresponding evaluations.
   \param[in] physicsBlock PhysicsBlocks created by FieldManagerBuilder.
   \param[in] cm_factory Factory that provides all closure models required by the initial condition evaluation.
   \param[in] closure_models List of closure models for each element block required for initial conditions.
@@ -24,7 +25,7 @@ namespace panzer {
   \param[out] phx_ic_field_managers Allocated PHX::FieldManagers for each element block.
 
   */
-  void setupInitialConditionFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets,
+  void setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
 					  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 					  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 					  const Teuchos::ParameterList& ic_block_closure_models,

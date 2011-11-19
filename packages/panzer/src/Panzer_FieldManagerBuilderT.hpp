@@ -33,9 +33,7 @@ void panzer::FieldManagerBuilder<LO,GO>::print(std::ostream& os) const
 //=======================================================================
 //=======================================================================
 template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers( 
-                                            const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
-                                                                       // element block -> vector of worksets
+void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(WorksetContainer & wkstContainer, 
                                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 					    const Teuchos::ParameterList& closure_models,
@@ -64,7 +62,7 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
 
     // build the setup data using passed in information
     Traits::SetupData setupData;
-    setupData.worksets_ = volume_worksets.find(blockId)->second;
+    setupData.worksets_ = wkstContainer.getVolumeWorksets(blockId);
     fm->postRegistrationSetup(setupData);
 
     // make sure to add the field manager & workset to the list 

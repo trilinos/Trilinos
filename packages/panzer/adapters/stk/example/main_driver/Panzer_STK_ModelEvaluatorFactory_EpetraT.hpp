@@ -217,14 +217,6 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
 
-    // get vector of element blocks
-    std::vector<std::string> elementBlocks;
-    mesh->getElementBlockNames(elementBlocks);
-
-    // build volume worksets from container
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > volume_worksets;
-    panzer::getVolumeWorksetsFromContainer(*wkstContainer,elementBlocks,volume_worksets);
-
     // build volume worksets from container
     std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
     panzer::getSideWorksetsFromContainer(*wkstContainer,bcs,bc_worksets);
@@ -252,7 +244,7 @@ namespace panzer_stk {
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
+    fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
     fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
 
     // Print Phalanx DAGs
@@ -320,7 +312,7 @@ namespace panzer_stk {
       }
 
       std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
-      panzer::setupInitialConditionFieldManagers(volume_worksets,
+      panzer::setupInitialConditionFieldManagers(*wkstContainer,
 						 physicsBlocks,
 						 cm_factory,
 						 p.sublist("Initial Conditions"),

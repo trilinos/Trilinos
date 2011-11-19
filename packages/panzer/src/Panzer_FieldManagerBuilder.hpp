@@ -9,6 +9,7 @@
 #include "Panzer_BC.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
+#include "Panzer_WorksetContainer.hpp"
 
 // Forward Declarations
 namespace panzer {
@@ -62,8 +63,7 @@ namespace panzer {
     /** Setup the volume field managers. This uses the passed in <code>dofManager</code>
       * and sets it for permenant use.
       */
-    void setupVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& volume_worksets, 
-                                                          // element block -> vector of worksets
+    void setupVolumeFieldManagers(WorksetContainer & wkstContainer, 
                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 				  const Teuchos::ParameterList& closure_models,
