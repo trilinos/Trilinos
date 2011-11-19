@@ -22,10 +22,6 @@
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_Standards.hpp>
 
-//
-// TODO: doxygen comments and error handling and timing
-//
-
 namespace Zoltan2
 {
 

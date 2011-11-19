@@ -35,11 +35,6 @@ namespace Zoltan2 {
 
     The template parameter is an Input Adapter.  Input adapters are
     templated on the basic user input type.
-
-    TODO: GraphModel parameters: 
-                    consecutive IDs required
-                    base required
-                    remove self edges
 */
 template <typename Adapter>
 class GraphModel : public Model<Adapter>

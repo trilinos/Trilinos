@@ -12,7 +12,6 @@
 /*! \file Zoltan2_IdentifierMap.hpp
 
     \brief IdentifierMap class.
-   TODO redo memory allocation using Zoltan2_Memory macros.
 */
 
 #include <vector>
@@ -42,11 +41,6 @@ enum TranslationType {
 
 /*! Z2::IdentifierMap
     \brief An IdentifierMap manages a global space of unique object identifiers.
-
-    TODO - trim down comments and code once we get it all straight
-           replace new/delete with memory wrappers
-           exception handling
-           use Kokkos node 
 
     LID  is the data type used by application for local IDs, which are optional.
     GID  is the data type used by application for globls IDs

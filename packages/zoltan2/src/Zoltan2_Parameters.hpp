@@ -124,41 +124,23 @@ enum RangeType {
   NUM_RANGE_TYPES};
 
 enum AssertionLevel {
-  BASIC_ASSERTION,
-  COMPLEX_ASSERTION,
-  DEBUG_MODE_ASSERTION,
+  BASIC_ASSERTION,    /*!< checks that should always be done (user input) */
+  COMPLEX_ASSERTION,  /*!< checks that take extra time (valid input graph?) */
+  DEBUG_MODE_ASSERTION,   /*!< only done when check absolutely everything */
   NUM_ASSERTION_LEVELS};
 
 enum MessageOutputLevel {
-  NO_STATUS,
-  BASIC_STATUS,
-  DETAILED_STATUS,
-  VERBOSE_DETAILED_STATUS,
+  NO_STATUS,                 /*!< don't display status/debug messages */
+  BASIC_STATUS,              /*!< the status at each high level step */
+  DETAILED_STATUS,           /*!< include status at algorithm sub-steps */
+  VERBOSE_DETAILED_STATUS,   /*!< include more detail about sub-steps */
   NUM_STATUS_OUTPUT_LEVELS};
 
 enum MessageSummaryLevel{
-  LOCAL_SUMMARY,
-  GLOBAL_SUMMARY,
+  LOCAL_SUMMARY,              /*!< messages should display local info only */
+  GLOBAL_SUMMARY,             /*!< include global min, max, avg, etc. */
   NUM_STATUS_SUMMARY_LEVELS};
 
-enum RuntimeOutputFlag {  
-  INPUT,
-  MODEL_BUILD,
-  PROBLEM_SETUP,
-  ALGORITHM,
-  SOLUTION_SETUP,
-  SOLUTION_QUALITY,
-  MIGRATION,
-  OUTPUT,
-  OBJECT_STATE,
-  OBJECT_CONTENTS,
-  ALL,
-  RUN_TIME,
-  MEMORY_USED,
-  NUM_PROFILING_FLAGS};
-
-typedef uint32_t runtime_output_flags_t;
-  
 template <typename Integral>
 const std::string IntegerRangeListValidator<Integral>::listDelim_(",");
 

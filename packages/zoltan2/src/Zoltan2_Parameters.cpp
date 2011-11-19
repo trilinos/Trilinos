@@ -75,58 +75,6 @@ void createValidParameterList(Teuchos::ParameterList &pl)
   yesNoNumbers.push_back(0);
   yesNoNumbers.push_back(0);
 
-  // Code components to limit location of debugging, timing and
-  //   memory usage output.
-
-  Array<string> statusComponentsWords;
-  Array<RuntimeOutputFlag> statusComponentsNumbers;
-  Array<string> statusComponentsDoc;
-
-  statusComponentsWords.push_back("input");
-  statusComponentsNumbers.push_back(INPUT);
-  statusComponentsDoc.push_back("input of user data");
-
-  statusComponentsWords.push_back("model");
-  statusComponentsNumbers.push_back(MODEL_BUILD);
-  statusComponentsDoc.push_back("build of combinatorial model");
-
-  statusComponentsWords.push_back("problem");
-  statusComponentsNumbers.push_back(PROBLEM_SETUP);
-  statusComponentsDoc.push_back("setup of problem");
-
-  statusComponentsWords.push_back("algorithm");
-  statusComponentsNumbers.push_back(ALGORITHM);
-  statusComponentsDoc.push_back("execution of algorithm");
-
-  statusComponentsWords.push_back("solution");
-  statusComponentsNumbers.push_back(SOLUTION_SETUP);
-  statusComponentsDoc.push_back("setup of solution");
-
-  statusComponentsWords.push_back("metrics");
-  statusComponentsNumbers.push_back(SOLUTION_QUALITY);
-  statusComponentsDoc.push_back("solution quality metrics");
-
-  statusComponentsWords.push_back("migration");
-  statusComponentsNumbers.push_back(MIGRATION);
-  statusComponentsDoc.push_back("migration of input according to solution");
-
-  statusComponentsWords.push_back("output");
-  statusComponentsNumbers.push_back(OUTPUT);
-  statusComponentsDoc.push_back("output of files");
-
-  statusComponentsWords.push_back("state");
-  statusComponentsNumbers.push_back(OBJECT_STATE);
-  statusComponentsDoc.push_back("brief object state information");
-
-  statusComponentsWords.push_back("contents");
-  statusComponentsNumbers.push_back(OBJECT_CONTENTS);
-  statusComponentsDoc.push_back(
-   "detailed object contents (i.e. matrix or graph)");
-
-  statusComponentsWords.push_back("all");
-  statusComponentsNumbers.push_back(ALL);
-  statusComponentsDoc.push_back("include all code components");
-
   // levels for error checking at run-time
 
   std::ostringstream levels;
@@ -134,7 +82,7 @@ void createValidParameterList(Teuchos::ParameterList &pl)
   levels << COMPLEX_ASSERTION << 
     " - more in-depth checks (i.e. input graph is valid)\n";
   levels << DEBUG_MODE_ASSERTION << 
-    " - check everything regardless of run time\n";
+    " - check everything regardless of the time required\n";
   levels << "(To turn off all run-time checking,";
   levels << " compile with the Z2_OMIT_ALL_ERROR_CHECKING flag.)\n";
   string assertionLevelDoc(levels.str());
