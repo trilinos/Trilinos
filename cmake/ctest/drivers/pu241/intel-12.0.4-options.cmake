@@ -3,6 +3,7 @@
 #
 
 # Define the core compilers
+SET(IFORT_VERSION "12.0.4")
 SET(INTEL_LIB /opt/intel/Compiler/composerxe-2011.4.191/compiler/lib/intel64)
 SET(INTEL_BIN /opt/intel/Compiler/composerxe-2011.4.191/bin/intel64)
 # Add rpath for compiler libraries
