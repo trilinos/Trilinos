@@ -14,7 +14,7 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  void Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid,RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2globalrowid) const {
+  void Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid,RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid) const {
     globalamalblockid2myrowid_ = globalamalblockid2myrowid;
     globalamalblockid2globalrowid_ = globalamalblockid2globalrowid;
   }
@@ -34,7 +34,7 @@ namespace MueLu {
     std::cout << "Graph: GetImportDofMap.nodeMap: PROC: " << nodeMap->getComm()->getRank() << " " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << std::endl;
 
     // build dof map from node map
-    RCP<std::vector<LocalOrdinal> > myDofGIDs = Teuchos::rcp(new std::vector<LocalOrdinal>);
+    RCP<std::vector<GlobalOrdinal> > myDofGIDs = Teuchos::rcp(new std::vector<GlobalOrdinal>);
     for(LocalOrdinal n=0; n<Teuchos::as<LocalOrdinal>(nodeMap->getNodeNumElements()); n++) {
       GlobalOrdinal globalblockid = (GlobalOrdinal) nodeMap->getGlobalElement(n);
 

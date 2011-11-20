@@ -53,7 +53,7 @@ namespace MueLu {
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
 
     //!
-    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid,RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2globalrowid) const;
+    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid,RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid) const;
 
     //!
     RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetAmalgamationParams() const;
