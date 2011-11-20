@@ -12,8 +12,16 @@
 _SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/.*\.sh/\1/g"`
 _TRILINOS_HOME=$_SCRIPT_DIR/../..
 
-# Run the replacements on all of the files found in subdirectories
-$_TRILINOS_HOME/commonTools/refactoring/token-replace-list-r \
-  $_SCRIPT_DIR/tribits-namespace-refactor.20111117.token-list \
-  0 \
-  $_SCRIPT_DIR/tribits-namespace-refactor.20111117.ignore-files-list
+find . -name "CMakeLists.txt" \
+  -exec ~/PROJECTS/Trilinos.base/Trilinos/commonTools/refactoring/token-replace-list.pl \
+    /home/8vt/PROJECTS/Trilinos.base/Trilinos/cmake/refactoring/tribits-namespace-refactor.20111117.token-list \
+   {} {} 0 \
+   /home/8vt/PROJECTS/Trilinos.base/Trilinos/cmake/refactoring/tribits-namespace-refactor.20111117.ignore-files-list \
+   \;
+
+find . -name "*.cmake" \
+  -exec ~/PROJECTS/Trilinos.base/Trilinos/commonTools/refactoring/token-replace-list.pl \
+    /home/8vt/PROJECTS/Trilinos.base/Trilinos/cmake/refactoring/tribits-namespace-refactor.20111117.token-list \
+   {} {} 0 \
+   /home/8vt/PROJECTS/Trilinos.base/Trilinos/cmake/refactoring/tribits-namespace-refactor.20111117.ignore-files-list \
+   \;
