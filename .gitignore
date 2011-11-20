@@ -98,3 +98,6 @@ packages/tpetra/doc/MatrixMatrixReport/atransData/*pdf
 
 rsync.*
 .project
+
+# Repostiory list file for egdist
+.egdist
