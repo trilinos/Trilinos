@@ -42,11 +42,6 @@ enum TranslationType {
 /*! Z2::IdentifierMap
     \brief An IdentifierMap manages a global space of unique object identifiers.
 
-    TODO - trim down comments and code once we get it all straight
-           replace new/delete with memory wrappers
-           exception handling
-           use Kokkos node 
-
     LID  is the data type used by application for local IDs, which are optional.
     GID  is the data type used by application for globls IDs
     LNO  is the data type used by Zoltan2 for local counts and indexes.
@@ -308,13 +303,11 @@ template<typename LID, typename GID, typename LNO, typename GNO>
     return;
   }
 
-  Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
-    "invalid TranslationType", 
+  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid TranslationType", 
     (tt==TRANSLATE_APP_TO_LIB) || (tt==TRANSLATE_LIB_TO_APP), 
     BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
-    "Destination array is too small",
+  Z2_LOCAL_INPUT_ASSERTION(*env_, "Destination array is too small",
     ((tt==TRANSLATE_LIB_TO_APP) && (gid.size() >= gno.size())) || 
      ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= gid.size())),
     BASIC_ASSERTION);
@@ -334,7 +327,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
     if (tt == TRANSLATE_LIB_TO_APP){
       for (teuchos_size_t i=0; i < len; i++){
 
-        Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, "invalid global number", 
+        Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number", 
         (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
 
         gid[i] = myGids_[gno[i] - firstGno];
@@ -371,20 +364,18 @@ template<typename LID, typename GID, typename LNO, typename GNO>
     return;
   }
 
-  Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
-    "invalid TranslationType", 
+  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid TranslationType", 
     (tt==TRANSLATE_LIB_TO_APP) || (tt==TRANSLATE_APP_TO_LIB), 
     BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
-    "Destination array is too small",
-    ((tt==TRANSLATE_LIB_TO_APP) && (lid.size() >= gno.size())) || ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= lid.size())),
+  Z2_LOCAL_INPUT_ASSERTION(*env_, "Destination array is too small",
+    ((tt==TRANSLATE_LIB_TO_APP) && (lid.size() >= gno.size())) || 
+    ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= lid.size())),
     BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
-    "local ID translation is requested but none were provided",
-     haveLocalIds_,
-    BASIC_ASSERTION);
+  Z2_LOCAL_INPUT_ASSERTION(*env_, 
+     "local ID translation is requested but none were provided",
+     haveLocalIds_, BASIC_ASSERTION);
 
   GNO firstGno(0), endGno(0);
   if (gnoDist_.size() > 0){
@@ -397,10 +388,8 @@ template<typename LID, typename GID, typename LNO, typename GNO>
       LNO idx = 0;
       if (gnoDist_.size() > 0) {// gnos are consecutive
 
-        Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
-          "invalid global number", 
-          (gno[i] >= firstGno) && (gno[i] < endGno),
-          BASIC_ASSERTION);
+        Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number", 
+          (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
 
         idx = gno[i] - firstGno;
       }
@@ -453,8 +442,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
 
   bool skipGno = (out_gno.size() == 0);
 
-  Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, 
-    "Destination array is too small", 
+  Z2_LOCAL_INPUT_ASSERTION(*env_, "Destination array is too small", 
     (out_proc.size() >= len) && (skipGno || (out_gno.size() >= len)),
     BASIC_ASSERTION);
 
@@ -509,13 +497,13 @@ template<typename LID, typename GID, typename LNO, typename GNO>
       hashProc.resize(localNumberOfIds_, 0);
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, localNumberOfIds_, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
 
     try{ 
       gidOutBuf.resize(localNumberOfIds_); 
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, localNumberOfIds_, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
 
     for (teuchos_size_t i=0; i < localNumberOfIds_; i++){
       hashProc[i] = IdentifierTraits<GID>::hashCode(myGids_[i]) % numProcs_;
@@ -640,13 +628,13 @@ template<typename LID, typename GID, typename LNO, typename GNO>
       gidOutBuf.resize(numberOfUniqueGids); 
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, numberOfUniqueGids, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
 
     try{ 
       hashProc.resize(numberOfUniqueGids, 0);
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, numberOfUniqueGids, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
   
     LNO idx = 0;
     for (next = gidIndices.begin(); next != gidIndices.end(); ++next, ++idx){
@@ -666,7 +654,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
       gidLocation.resize(numberOfUniqueGids, 0);
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, numberOfUniqueGids, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
   
     idx = 0;
     for (next = gidIndices.begin(); next != gidIndices.end(); ++next, ++idx){
@@ -709,7 +697,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
       gnoOutBuf.resize(total, 0);
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, total, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, total, false); 
   }
 
   if (total > 0){
@@ -727,7 +715,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
           Z2_THROW_OUTSIDE_ERROR(*env_, e);
         }
 
-        Z2_LOCAL_BUG_ASSERTION(*comm_, *env_, "gidToIndex table", 
+        Z2_LOCAL_BUG_ASSERTION(*env_, "gidToIndex table", 
           (index >= 0)&&(index<=indexTotal), BASIC_ASSERTION);
         
         indexProcCurr = firstIndexToProc.upper_bound(index);
@@ -803,10 +791,9 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   numProcs_ = comm_->getSize(); 
   myRank_ = comm_->getRank(); 
 
-  Z2_GLOBAL_INPUT_ASSERTION( *comm_, *env_, 
+  Z2_GLOBAL_INPUT_ASSERTION(*env_, 
            "application global ID type is not supported yet",
-           IdentifierTraits<GID>::is_valid_id_type() == true,
-           BASIC_ASSERTION);
+           IdentifierTraits<GID>::is_valid_id_type() == true, BASIC_ASSERTION);
 
   localNumberOfIds_ = myGids_.size();
 
@@ -830,10 +817,9 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   haveLocalIds_ = (counts[2] > 0);
   globalNumberOfIds_ = counts[3];
 
-  Z2_GLOBAL_INPUT_ASSERTION( *comm_, *env_, 
+  Z2_GLOBAL_INPUT_ASSERTION(*env_, 
        "number of global IDs does not equal number of local IDs",
-      !haveLocalIds_ || (counts[0] == localNumberOfIds_),
-       BASIC_ASSERTION);
+      !haveLocalIds_ || (counts[0] == localNumberOfIds_), BASIC_ASSERTION);
 
   if (haveLocalIds_){   // hash LID to index in LID vector
     // TODO test to see if LIDs are consecutive, to avoid need for
@@ -844,7 +830,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
         p = new id2index_hash_t(localNumberOfIds_);
       }
       catch (const std::exception &e) 
-        Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, localNumberOfIds_, false); 
+        Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
     }
 
     LID *lidPtr = myLids_.get();  // for performance
@@ -991,7 +977,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
         p = new id2index_hash_t(localNumberOfIds_);
       }
       catch (const std::exception &e) 
-        Z2_LOCAL_MEMORY_ASSERTION(*comm_, *env_, localNumberOfIds_, false); 
+        Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
     }
 
     GID *gidPtr = myGids_.get();  // for performance
