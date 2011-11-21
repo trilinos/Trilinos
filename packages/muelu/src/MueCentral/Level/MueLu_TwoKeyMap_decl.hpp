@@ -48,6 +48,9 @@ namespace MueLu {
 
       void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
+      const Teuchos::map<Key2, Value> & Get(const Key1 & key1) const;
+
+      bool IsKey(const Key1 & key1) const;
     };
 
   } // namespace UTILS
