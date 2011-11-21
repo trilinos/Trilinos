@@ -75,7 +75,7 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
       already_declared_fei_field = true;
     }
 
-    std::vector<int> ids(mesh_bulk.bucket_capacity());
+    std::vector<int> ids(buckets[i]->size());
 
     stk::mesh::Bucket::iterator
       iter = buckets[i]->begin(), iter_end = buckets[i]->end();

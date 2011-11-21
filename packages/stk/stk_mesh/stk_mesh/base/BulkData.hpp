@@ -81,12 +81,6 @@ public:
   unsigned parallel_rank()   const { return m_parallel_rank ; }
 
   //------------------------------------
-  /** \brief  Query the upper bound on the number of mesh entities
-   *         that may be associated with a single bucket.
-   */
-  unsigned bucket_capacity() const { return m_bucket_repository.bucket_capacity(); }
-
-  //------------------------------------
   /** \brief  Bulk data has two states:
    *          guaranteed to be parallel synchronized or
    *          modification in progress and may be parallel inconsistent.

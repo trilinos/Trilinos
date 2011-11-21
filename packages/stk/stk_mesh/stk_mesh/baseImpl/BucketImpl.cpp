@@ -34,36 +34,6 @@ void memory_zero( unsigned char * dst , unsigned n )
 } // namespace
 
 //----------------------------------------------------------------------
-BucketImpl::BucketImpl( BulkData        & arg_mesh ,
-                unsigned          arg_entity_rank ,
-                const unsigned  * arg_key ,
-                size_t            arg_alloc_size ,
-                size_t            arg_capacity ,
-                impl::BucketImpl::DataMap * arg_field_map ,
-                Entity         ** arg_entity_array )
-: m_mesh( arg_mesh ) ,
-  m_entity_rank( arg_entity_rank ) ,
-  m_key( arg_key ) ,
-  m_alloc_size( arg_alloc_size ) ,
-  m_capacity( arg_capacity ) ,
-  m_size( 0 ) ,
-  m_bucket() ,
-  m_field_map( arg_field_map ) ,
-  m_entities( arg_entity_array )
-{}
-
-//----------------------------------------------------------------------
-BucketImpl::~BucketImpl()
-{
-  bool this_is_first_bucket_in_family = (bucket_counter() == 0);
-  if (this_is_first_bucket_in_family) {
-    try {
-      std::free( m_field_map );
-    } catch(...) {}
-  }
-}
-
-//----------------------------------------------------------------------
 
 void BucketImpl::update_state()
 {
@@ -75,7 +45,7 @@ void BucketImpl::update_state()
 
     for ( unsigned i = 0 ; i < field_set.size() ; ) {
 
-      DataMap * const tmp = m_field_map + i ;
+      DataMap * const tmp = &m_field_map[0] + i ;
       const FieldBase & field = * field_set[i] ;
       const unsigned num_state = field.number_of_states();
       i += num_state ;
@@ -152,7 +122,7 @@ void BucketImpl::set_first_bucket_in_family( Bucket * first_bucket )
 
 BucketImpl::DataMap * BucketImpl::get_field_map()
 {
-  return m_field_map;
+  return &m_field_map[0];
 }
 
 //----------------------------------------------------------------------
@@ -162,8 +132,8 @@ void BucketImpl::initialize_fields( unsigned i_dst )
   const std::vector<FieldBase*> & field_set =
     MetaData::get(m_mesh).get_fields();
 
-  unsigned char * const p = reinterpret_cast<unsigned char*>(m_entities);
-  const DataMap *       i = m_field_map;
+  unsigned char * const p = &m_field_data[0];
+  const DataMap *       i = &m_field_map[0];
   const DataMap * const e = i + field_set.size();
 
   for (std::vector<FieldBase*>::const_iterator field_iter=field_set.begin() ;
@@ -186,10 +156,10 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
   const std::vector<FieldBase*> & field_set =
     MetaData::get(m_mesh).get_fields();
 
-  unsigned char * const s = reinterpret_cast<unsigned char*>(k_src.m_bucketImpl.m_entities);
-  unsigned char * const d = reinterpret_cast<unsigned char*>(m_entities);
-  const DataMap *       j = k_src.m_bucketImpl.m_field_map;
-  const DataMap *       i = m_field_map;
+  unsigned char * const s = &(k_src.m_bucketImpl.m_field_data[0]);
+  unsigned char * const d = &m_field_data[0];
+  const DataMap *       j = &(k_src.m_bucketImpl.m_field_map[0]);
+  const DataMap *       i = &m_field_map[0];
   const DataMap * const e = i + field_set.size();
 
   for (std::vector<FieldBase*>::const_iterator field_iter=field_set.begin() ;
@@ -215,6 +185,136 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
       }
     }
   }
+}
+
+//----------------------------------------------------------------------
+namespace {
+inline unsigned align( size_t nb )
+{
+  enum { BYTE_ALIGN = 16 };
+  const unsigned gap = nb % BYTE_ALIGN ;
+  if ( gap ) { nb += BYTE_ALIGN - gap ; }
+  return nb ;
+}
+
+const FieldBase::Restriction & empty_field_restriction()
+{
+  static const FieldBase::Restriction empty ;
+  return empty ;
+}
+
+const FieldBase::Restriction & dimension( const FieldBase & field ,
+                                          EntityRank erank ,
+                                          const unsigned num_part_ord ,
+                                          const unsigned part_ord[] )
+{
+  const FieldBase::Restriction & empty = empty_field_restriction();
+  const FieldBase::Restriction * dim = & empty ;
+
+  const std::vector<FieldBase::Restriction> & dim_map = field.restrictions();
+  const std::vector<FieldBase::Restriction>::const_iterator iend = dim_map.end();
+        std::vector<FieldBase::Restriction>::const_iterator ibeg = dim_map.begin();
+
+  for ( PartOrdinal i = 0 ; i < num_part_ord && iend != ibeg ; ++i ) {
+
+    const FieldRestriction restr(erank,part_ord[i]);
+
+    ibeg = std::lower_bound( ibeg , iend , restr );
+
+    if ( (iend != ibeg) && (*ibeg == restr) ) {
+      if ( dim == & empty ) { dim = & *ibeg ; }
+
+      if ( ibeg->not_equal_stride(*dim) ) {
+
+        Part & p_old = MetaData::get(field).get_part( ibeg->part_ordinal() );
+        Part & p_new = MetaData::get(field).get_part( dim->part_ordinal() );
+
+        std::ostringstream msg ;
+        msg << " FAILED WITH INCOMPATIBLE DIMENSIONS FOR " ;
+        msg << field ;
+        msg << " Part[" << p_old.name() ;
+        msg << "] and Part[" << p_new.name() ;
+        msg << "]" ;
+
+        ThrowErrorMsg( msg.str() );
+      }
+    }
+  }
+
+  return *dim ;
+}
+} // namespace
+//----------------------------------------------------------------------
+
+BucketImpl::BucketImpl( BulkData & arg_mesh,
+                        EntityRank arg_entity_rank,
+                        const std::vector<unsigned> & arg_key,
+                        size_t arg_capacity
+                      )
+  : m_mesh(arg_mesh)
+  , m_entity_rank(arg_entity_rank)
+  , m_key(arg_key)
+  , m_capacity(arg_capacity)
+  , m_size(0)
+  , m_bucket(NULL)
+  , m_field_map( m_mesh.mesh_meta_data().get_fields().size()+1)
+  , m_entities(arg_capacity)
+  , m_field_data(0)
+{
+
+  //calculate the size of the field_data
+
+  const std::vector< FieldBase * > & field_set =
+    arg_mesh.mesh_meta_data().get_fields();
+
+  const size_t num_fields = field_set.size();
+
+  size_t field_data_size = 0;
+
+  if (arg_capacity != 0) {
+    for ( size_t i = 0; i<num_fields; ++i) {
+      const FieldBase  & field = * field_set[i] ;
+      unsigned num_bytes_per_entity = 0 ;
+
+      const FieldBase::Restriction & dim =
+        dimension( field, arg_entity_rank, m_key[0]-1, &m_key[1]);
+
+      if ( dim.dimension() ) { // Exists
+
+        const unsigned type_stride = field.data_traits().stride_of ;
+        const unsigned field_rank  = field.rank();
+
+        num_bytes_per_entity = type_stride *
+          ( field_rank ? dim.stride( field_rank - 1 ) : 1 );
+      }
+      m_field_map[i].m_base = field_data_size ;
+      m_field_map[i].m_size = num_bytes_per_entity ;
+      m_field_map[i].m_stride = &dim.stride(0);
+
+      field_data_size += align( num_bytes_per_entity * m_capacity );
+    }
+    m_field_map[ num_fields ].m_base  = field_data_size ;
+    m_field_map[ num_fields ].m_size = 0 ;
+    m_field_map[ num_fields ].m_stride = NULL ;
+  }
+  else { //nil bucket
+
+    FieldBase::Restriction::size_type empty_stride[ MaximumFieldDimension ];
+    Copy<MaximumFieldDimension>( empty_stride , FieldBase::Restriction::size_type(0) );
+
+    for ( size_t i = 0; i<num_fields; ++i) {
+      m_field_map[i].m_base = 0 ;
+      m_field_map[i].m_size = 0 ;
+      m_field_map[i].m_stride = empty_stride;
+    }
+    m_field_map[ num_fields ].m_base   = 0 ;
+    m_field_map[ num_fields ].m_size   = 0 ;
+    m_field_map[ num_fields ].m_stride = NULL ;
+  }
+
+  //allocate space for the fields
+  m_field_data.resize(field_data_size);
+
 }
 
 } // namespace impl

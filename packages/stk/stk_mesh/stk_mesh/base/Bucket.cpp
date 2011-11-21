@@ -192,16 +192,13 @@ bool field_data_valid( const FieldBase & f ,
 
 //----------------------------------------------------------------------
 
-Bucket::Bucket( BulkData        & arg_mesh ,
-                EntityRank        arg_entity_rank ,
-                const unsigned  * arg_key ,
-                size_t            arg_alloc_size ,
-                size_t            arg_capacity ,
-                impl::BucketImpl::DataMap * arg_field_map ,
-                Entity         ** arg_entity_array )
-: m_bucketImpl( arg_mesh, arg_entity_rank, arg_key, arg_alloc_size, arg_capacity, arg_field_map, arg_entity_array )
+Bucket::Bucket( BulkData & arg_mesh ,
+                EntityRank arg_entity_rank,
+                const std::vector<unsigned> & arg_key,
+                size_t arg_capacity
+        )
+  : m_bucketImpl(arg_mesh,arg_entity_rank,arg_key,arg_capacity)
 {}
-
 //----------------------------------------------------------------------
 
 Bucket::~Bucket()

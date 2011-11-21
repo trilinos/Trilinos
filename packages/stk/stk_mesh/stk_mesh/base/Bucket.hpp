@@ -90,7 +90,7 @@ public:
   //--------------------------------
   // Container-like types and methods:
 
-  typedef boost::indirect_iterator<Entity**,Entity&> iterator ;
+  typedef boost::indirect_iterator<Entity*const*,Entity&> iterator ;
 
   /** \brief Beginning of the bucket */
   inline iterator begin() const { return iterator(m_bucketImpl.begin()); }
@@ -183,13 +183,12 @@ private:
   Bucket( const Bucket & );
   Bucket & operator = ( const Bucket & );
 
-  Bucket( BulkData        & arg_mesh ,
-          EntityRank        arg_entity_rank ,
-          const unsigned  * arg_key ,
-          size_t            arg_alloc_size ,
-          size_t            arg_capacity ,
-          impl::BucketImpl::DataMap * arg_field_map ,
-          Entity         ** arg_entity_array );
+  Bucket( BulkData & arg_mesh ,
+          EntityRank arg_entity_rank,
+          const std::vector<unsigned> & arg_key,
+          size_t arg_capacity
+        );
+
 
   friend class ::stk::mesh::BulkData;
 };
