@@ -4,12 +4,19 @@
 #include <Epetra_CrsGraph.h>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
+#include <Zoltan2_Standards.hpp>
 
 #ifndef ZOLTAN2_INPUTTRAITS_HPP
 #define ZOLTAN2_INPUTTRAITS_HPP
 
 namespace Zoltan2{
 
+// Users who do not have templated input may find it convenient to create a:
+// 
+//   Zoltan2UserTypes<float, int, std::pair<int,int>, int, long> UserTypes
+//
+// and use it to instantiate the InputAdapter.
+//
 template <typename scalar, typename lid, typename gid, typename lno, typename gno>
 class Zoltan2UserTypes{
 };
@@ -55,7 +62,7 @@ struct InputTraits<Zoltan2UserTypes<Scalar, LID, GID, LNO, GNO> >
   typedef GNO gno_t;
   typedef LID lid_t;
   typedef GID gid_t;
-  typedef Zoltan2::default_node_type node_t;
+  typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Zoltan2UserTypes";}
 };
 
