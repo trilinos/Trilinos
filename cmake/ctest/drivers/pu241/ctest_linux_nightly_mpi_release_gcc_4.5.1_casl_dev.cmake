@@ -3,7 +3,7 @@
 #
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/hybrid-build-11.cmake")
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.pu241.gcc.4.5.1.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.pu241.gcc.4.5.1.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/SubmitToCaslDev.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/casl-vri-packages-coupled.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/enable_casl_packages.gcc.mpi.cmake")

@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.corrin.msvc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.corrin.msvc.cmake")
 
 #
 # Set the options specific to this build case
