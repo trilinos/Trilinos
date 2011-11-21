@@ -3,8 +3,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-//#include <Teuchos_ArrayRCP.hpp>
-
 #include <Xpetra_ConfigDefs.hpp>
 
 #include <Xpetra_CrsGraph.hpp>
@@ -52,10 +50,17 @@ namespace MueLu {
     //! Return the list of vertices adjacent to the vertex 'v'
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
 
-    //!
+    //! store amalgamation information in MueLu::Graph object
+    //! Both maps use the global block id of the amalgamated matrix as key and store the corresponding
+    //! local row DOF ids and the global row DOF ids.
+    //! The map globalamalblockid2globalrowid is used by MueLu::Graph::GetImportDofMap to generate
+    //! the overlapping DofMap that is needed by the tentative prolongation operator (TentativePFactory).
+    //! The map globalamalblockid2myrowid can be accessed from outside by GetAmalgamationParams and is needed
+    //! by the aggregation algorithm
     void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid,RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid) const;
 
-    //!
+    //! returns amalgamation information globalamalblockid2myrowid
+    //! only valid if SetAmalgamationParams has been used before (i.e. CoalesceDropFactory::Amalgamate is called).
     RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetAmalgamationParams() const;
 
 #ifdef MUELU_UNUSED
@@ -78,8 +83,8 @@ namespace MueLu {
     //@{
 
     /// map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
-    mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;
-    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid_;
+    mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;   //< used by aggregation factory
+    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid_; //< used for building overlapping ImportDofMap
 
     //@}
 

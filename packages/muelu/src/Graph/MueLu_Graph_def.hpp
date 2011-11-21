@@ -31,16 +31,14 @@ namespace MueLu {
 
     RCP<const Map> nodeMap = GetImportMap();  // import node map
 
-    std::cout << "Graph: GetImportDofMap.nodeMap: PROC: " << nodeMap->getComm()->getRank() << " " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << std::endl;
-
     // build dof map from node map
     RCP<std::vector<GlobalOrdinal> > myDofGIDs = Teuchos::rcp(new std::vector<GlobalOrdinal>);
     for(LocalOrdinal n=0; n<Teuchos::as<LocalOrdinal>(nodeMap->getNodeNumElements()); n++) {
       GlobalOrdinal globalblockid = (GlobalOrdinal) nodeMap->getGlobalElement(n);
 
-      if(globalamalblockid2globalrowid_->count(globalblockid)<=0) {
+      /*if(globalamalblockid2globalrowid_->count(globalblockid)<=0) {
         std::cout << "PROC: " << nodeMap->getComm()->getRank() << " globalblockid=" << globalblockid << " count globalamalblockid2globalrowid_=" << globalamalblockid2globalrowid_->count(globalblockid) << std::endl;
-      }
+      }*/
       TEUCHOS_TEST_FOR_EXCEPTION(globalamalblockid2globalrowid_->count(globalblockid)<=0, Exceptions::RuntimeError, "MueLu::Graph::GetImportDofMap: empty global block? Error.");
       std::vector<GlobalOrdinal> myrowGIDs = (*globalamalblockid2globalrowid_)[globalblockid];
       TEUCHOS_TEST_FOR_EXCEPTION(myrowGIDs.size()==0, Exceptions::RuntimeError, "MueLu::Graph::GetImportDofMap: no amalgamation information! Error.");
@@ -54,7 +52,6 @@ namespace MueLu {
     // generate row dof map for amalgamated matrix with same distribution over all procs as row node map
     Teuchos::ArrayRCP<GlobalOrdinal> arr_myDofGIDs = Teuchos::arcp( myDofGIDs );
     Teuchos::RCP<Map> ImportDofMap = MapFactory::Build(nodeMap->lib(), /*arr_myDofGIDs.size()*/ Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGIDs(), nodeMap->getIndexBase(), nodeMap->getComm());
-    std::cout << "Graph: GetImportDofMap.nodeMap: PROC: " << ImportDofMap->getComm()->getRank() << " " << ImportDofMap->getNodeNumElements() << "/" << ImportDofMap->getGlobalNumElements() << std::endl;
     return ImportDofMap;
   }
 
