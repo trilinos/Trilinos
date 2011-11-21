@@ -370,12 +370,17 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr(
 template<class ScalarType, class MV, class OP>
 void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
-  // Create the internal parameter list if ones doesn't already exist.
-  if (params_ == Teuchos::null) {
-    params_ = Teuchos::rcp( new Teuchos::ParameterList(*getValidParameters()) );
-  }
-  else {
-    params->validateParameters(*getValidParameters());
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+
+  RCP<const ParameterList> defaultParams = getValidParameters();
+
+  // Create the internal parameter list if one doesn't already exist.
+  if (params_.is_null()) {
+    params_ = parameterList (*defaultParams);
+  } else {
+    params->validateParameters (*defaultParams);
   }
 
   // Check for maximum number of iterations
@@ -617,8 +622,16 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
       "When convergence information is printed, only show the maximum\n"
       "relative residual norm when the block size is greater than one.");
-    pl->set("Residual Scaling", resScale_default_,
+    pl->set("Implicit Residual Scaling", resScale_default_,
       "The type of scaling used in the residual convergence test.");
+    // We leave the old name as a valid parameter for backwards
+    // compatibility (so that validateParametersAndSetDefaults()
+    // doesn't raise an exception if it encounters "Residual
+    // Scaling").  The new name was added for compatibility with other
+    // solvers, none of which use "Residual Scaling".
+    pl->set("Residual Scaling", resScale_default_,
+	    "The type of scaling used in the residual convergence test.  This "
+	    "name is deprecated; the new name is \"Implicit Residual Scaling\".");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
     //  defaultParams_->set("Restart Timers", restartTimers_);
