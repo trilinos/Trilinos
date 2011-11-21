@@ -45,15 +45,8 @@ namespace MueLu {
 
     // get data from fine level
     RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
-    std::cout<< "TentativePFactory::Build: before get aggregates" << std::endl;
     RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
-    std::cout<< "TentativePFactory::Build: after get aggregates" << std::endl;
-    fineLevel.print(*out);
-    std::cout<< "TentativePFactory::Build:: before get nullspace" << std::endl;
     RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
-
-    std::cout << "TentativePFactory::Build: after get nullspace" << std::endl;
-    fineLevel.print(*out);
 
     Monitor m(*this, "Tentative prolongator");
 
@@ -206,8 +199,8 @@ namespace MueLu {
 
     // FIXME This should really be Xpetra::StaticProfile, but something is causing that to crash.
     // I have no idea why this is the case. -CMS.
-    //    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
-    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::DynamicProfile));
+    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
+    //Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::DynamicProfile));
 
     // Set up storage for the rows of the local Qs that belong to other processors.
     // FIXME This is inefficient and could be done within the main loop below with std::vector's.
