@@ -412,7 +412,7 @@ void mult_A_B(
   Array<Scalar> C_row_i = dwork;
   Array<GlobalOrdinal> C_cols = iwork;
 
-  size_t C_row_i_length, i, j, k;
+  size_t C_row_i_length, j, k;
 
   // Run through all the hash table lookups once and for all
   Array<LocalOrdinal> Acol2Brow(Aview.colMap->getNodeNumElements());
@@ -437,7 +437,7 @@ void mult_A_B(
   bool C_filled = C.isFillComplete();
 
   //loop over the rows of A.
-  for(i=0; i<Aview.numRows; ++i) {
+  for(size_t i=0; i<Aview.numRows; ++i) {
 
     //only navigate the local portion of Aview... (It's probable that we
     //imported more of A than we need for A*B, because other cases like A^T*B 
