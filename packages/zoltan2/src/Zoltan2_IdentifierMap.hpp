@@ -76,6 +76,8 @@ public:
   typedef LID    lid_t;
   typedef GID    gid_t;
 
+  // TODO - we don't need comm - it's in the env.
+
   explicit IdentifierMap( const RCP<const Comm<int> > &comm, 
                           const RCP<Environment > &env, 
                           const ArrayRCP<GID> &gids, 
