@@ -19,6 +19,7 @@ using Teuchos::rcp;
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_WorksetContainer.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -36,6 +37,40 @@ using Teuchos::rcp;
 #include "UnitTest_UniqueGlobalIndexer.hpp"
 
 namespace panzer {
+
+/** Pure virtual base class used to construct 
+  * worksets on volumes and side sets.
+  */
+class TestWorksetFactory : public panzer::WorksetFactoryBase {
+    mutable std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > volume_worksets;
+    mutable std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
+
+public:
+   TestWorksetFactory(const Teuchos::RCP<const shards::CellTopology> & topo,
+                      std::vector<std::size_t> & cellIds,
+                      std::vector<std::size_t> & sideIds,
+                      Intrepid::FieldContainer<double> coords,
+                      panzer::InputPhysicsBlock& ipb,
+                      int workset_size,
+                      std::vector<panzer::BC> & bcs,
+                      int myRank) {
+      volume_worksets["block_0"] = panzer::buildWorksets("block_0",topo,cellIds,coords, ipb, workset_size,2);
+      bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(bcs[myRank],topo,cellIds,sideIds,coords, ipb,2);
+   }
+   virtual ~TestWorksetFactory() {}
+
+   Teuchos::RCP<std::vector<panzer::Workset> >
+   getVolumeWorksets(const std::string & eBlock,
+                     const panzer::InputPhysicsBlock & pb,
+                     std::size_t worksetSize) const
+   { return volume_worksets[eBlock]; }
+
+   Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
+   getSideWorksets(const panzer::BC & bc,
+                 const panzer::InputPhysicsBlock & pb) const
+   { return bc_worksets[bc]; }
+};
+
 
 void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
@@ -73,8 +108,6 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   int myRank = eComm->MyPID();
   int numProc = eComm->NumProc();
 
-  // panzer::pauseToAttach();
-
   RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
   RCP<unit_test::UniqueGlobalIndexer> indexer
         = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
@@ -96,6 +129,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   Teuchos::RCP<const shards::CellTopology> topo = 
       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
+  std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
   {
     std::map<std::string,std::string> block_ids_to_physics_ids;
     block_ids_to_physics_ids["block_0"] = "test physics";
@@ -114,6 +148,10 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
                                eqset_factory,
 			       false,
                                physicsBlocks);
+
+    for(std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
+        block != block_ids_to_physics_ids.end(); ++block)
+       eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
   }
 
   // build worksets
@@ -124,11 +162,10 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   sideIds[0] = (myRank==0) ? 0 : 1;
   indexer->getCoordinates(cellIds[0],coords);
 
-  std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > volume_worksets;
-  volume_worksets["block_0"] = panzer::buildWorksets("block_0",topo,cellIds,coords, ipb, workset_size,2);
-
-  std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
-  bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(bcs[myRank],topo,cellIds,sideIds,coords, ipb,2);
+   Teuchos::RCP<panzer::WorksetFactoryBase> wkstFactory
+      = Teuchos::rcp(new TestWorksetFactory(topo,cellIds,sideIds,coords,ipb,workset_size,bcs,myRank));
+   Teuchos::RCP<panzer::WorksetContainer> wkstContainer
+      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
 
   // build DOF Manager
   /////////////////////////////////////////////////////////////
@@ -153,9 +190,8 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
 
   Teuchos::ParameterList user_data("User Data");
 
-  fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-
-  fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+  fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+  fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
   panzer::AssemblyEngine_TemplateManager<panzer::Traits,short,int> ae_tm;
   panzer::AssemblyEngine_TemplateBuilder<short,int> builder(fmb,linObjFactory);

@@ -245,7 +245,7 @@ namespace panzer_stk {
     /////////////////////////////////////////////////////////////
  
     fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
+    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
 
     // Print Phalanx DAGs
     {

@@ -16,6 +16,7 @@
 #include "Panzer_ConfigDefs.hpp"
 #include "Panzer_STK_ModelEvaluatorFactory_Epetra.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
+#include "Panzer_PauseToAttach.hpp"
 
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_EquationSetFactory.hpp"
@@ -54,11 +55,13 @@ int main(int argc, char *argv[])
     // Parse the command line arguments
     std::string input_file_name = "user_app.xml";
     int exodus_io_num_procs = 0;
+    bool pauseToAttachOn = false;
     {
       Teuchos::CommandLineProcessor clp;
       
       clp.setOption("i", &input_file_name, "User_App input xml filename");
       clp.setOption("exodus-io-num-procs", &exodus_io_num_procs, "Number of processes that can access the file system at the same time to read their portion of a sliced exodus file in parallel.  Defaults to 0 - implies all processes for the run can access the file system at the same time.");
+      clp.setOption("pause-to-attach","disable-pause-to-attach", &pauseToAttachOn, "Call pause to attach, default is off.");
       
       Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = 
 	clp.parse(argc,argv,&std::cerr);
@@ -66,6 +69,9 @@ int main(int argc, char *argv[])
       TEUCHOS_TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL, 
 			 std::runtime_error, "Failed to parse command line!");
     }
+
+    if(pauseToAttachOn)
+       panzer::pauseToAttach();
 
     TEUCHOS_ASSERT(exodus_io_num_procs <= comm->getSize());
     if (exodus_io_num_procs != 0)

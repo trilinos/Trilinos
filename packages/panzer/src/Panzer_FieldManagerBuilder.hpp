@@ -72,8 +72,8 @@ namespace panzer {
 
     /** Build the BC field managers.
       */
-    void setupBCFieldManagers(const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>& bc_worksets,
-                                                          // boundary condition -> map of (side_id,worksets)
+    void setupBCFieldManagers(WorksetContainer & wkstContainer,
+                              const std::vector<panzer::BC> & bcs,
                               const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 	                      const panzer::EquationSetFactory & eqset_factory,
 			      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,

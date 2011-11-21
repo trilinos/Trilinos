@@ -70,21 +70,21 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(WorksetContain
     phx_volume_field_managers_.push_back(fm); 
   }
 }
+
 //=======================================================================
 //=======================================================================
 template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
-                           const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>& bc_worksets,
-                                                       // boundary condition -> map of (side_id,worksets)
-                           const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-	                   const panzer::EquationSetFactory & eqset_factory,
-			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
-                           const panzer::BCStrategyFactory& bc_factory,
-			   const Teuchos::ParameterList& closure_models,
-                           const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
-			   const Teuchos::ParameterList& user_data)
+void panzer::FieldManagerBuilder<LO,GO>::
+setupBCFieldManagers(WorksetContainer & wkstContainer,
+                     const std::vector<panzer::BC> & bcs,
+                     const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+	             const panzer::EquationSetFactory & eqset_factory,
+                     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+                     const panzer::BCStrategyFactory& bc_factory,
+                     const Teuchos::ParameterList& closure_models,
+                     const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
+                     const Teuchos::ParameterList& user_data)
 {
-
   // for convenience build a map (element block id => physics block)
   std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks_map;
   {
@@ -101,30 +101,33 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
   // ***************************
   // BCs
   // ***************************
-  std::map<panzer::BC,Teuchos::RCP<BCFaceWorksetMap>,panzer::LessBC>::const_iterator bc = 
-    bc_worksets.begin();
-  for (; bc != bc_worksets.end(); ++bc) {
-    std::string element_block_id = bc->first.elementBlockID(); 
+  std::vector<panzer::BC>::const_iterator bc;
+  for (bc=bcs.begin(); bc != bcs.end(); ++bc) {
+    std::string element_block_id = bc->elementBlockID(); 
     Teuchos::RCP<const panzer::PhysicsBlock> volume_pb = physicsBlocks_map.find(element_block_id)->second;
     Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
     int base_cell_dimension = volume_pb->cellData().baseCellDimension();
     
-    bc_worksets_[bc->first] = bc->second; 
+    Teuchos::RCP<std::map<unsigned,panzer::Workset> > currentWkst = wkstContainer.getSideWorksets(*bc);
+    if(currentWkst==Teuchos::null) // if there is nothing to do...do nothing!
+       continue;
+
+    bc_worksets_[*bc] = currentWkst;
 
     // Build one FieldManager for each local side workset for each dirichlet bc
     std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
-      bc_field_managers_[bc->first];
+      bc_field_managers_[*bc];
 
     // Loop over local face indices and setup each field manager
     for (std::map<unsigned,panzer::Workset>::const_iterator wkst = 
-	   bc_worksets_[bc->first]->begin(); wkst != bc_worksets_[bc->first]->end();
+	   bc_worksets_[*bc]->begin(); wkst != bc_worksets_[*bc]->end();
 	 ++wkst) {
 
       PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
       
       // register evaluators from strategy
       Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs = 
-	bc_factory.buildBCStrategy(bc->first);
+	bc_factory.buildBCStrategy(*bc);
       
       const panzer::CellData side_cell_data(wkst->second.num_cells,
 					    base_cell_dimension,
