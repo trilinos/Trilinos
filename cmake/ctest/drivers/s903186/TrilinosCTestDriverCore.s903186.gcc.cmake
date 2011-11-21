@@ -54,7 +54,7 @@
 # @HEADER
 
   
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TribitsCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
 # Platform/compiler specific options for s903186 using gcc

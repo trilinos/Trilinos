@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TribitsCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
 # Build Zoltan and all Trilinos packages that have optional or
