@@ -47,6 +47,11 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <assert.h>
 #include <unistd.h>
 
+#if defined(HAVE_TRIOS_SCHED_YIELD)
+#include <sched.h>
+#endif
+
+
 #include "Trios_logger.h"
 #include "Trios_threads.h"
 

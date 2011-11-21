@@ -3,6 +3,7 @@
 #
 
 # Define the core compilers
+SET(IFORT_VERSION "11.1.064")
 SET(INTEL_LIB /opt/intel/Compiler/11.1/064/lib/intel64)
 SET(INTEL_BIN /opt/intel/Compiler/11.1/064/bin/intel64)
 # Add rpath for compiler libraries

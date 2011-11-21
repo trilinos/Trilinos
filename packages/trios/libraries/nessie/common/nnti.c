@@ -17,13 +17,13 @@
 #if defined(HAVE_TRIOS_PORTALS) || defined(HAVE_TRIOS_CRAYPORTALS)
 #include "nnti_ptls.h"
 #endif
-#ifdef HAVE_TRIOS_INFINIBAND
+#if defined(HAVE_TRIOS_INFINIBAND)
 #include "nnti_ib.h"
 #endif
-#ifdef HAVE_TRIOS_LUC
+#if defined(HAVE_TRIOS_LUC)
 #include "nnti_luc.h"
 #endif
-#ifdef HAVE_TRIOS_GEMINI
+#if defined(HAVE_TRIOS_GEMINI)
 #include "nnti_gni.h"
 #endif
 
@@ -79,7 +79,7 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_fini_fn              = NNTI_ptl_fini;
     }
 #endif
-#ifdef HAVE_TRIOS_INFINIBAND
+#if defined(HAVE_TRIOS_INFINIBAND)
     if (trans_id == NNTI_TRANSPORT_IB) {
         available_transports[trans_id].initialized                   = 1;
         available_transports[trans_id].ops.nnti_init_fn              = NNTI_ib_init;
@@ -95,7 +95,7 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_fini_fn              = NNTI_ib_fini;
     }
 #endif
-#ifdef HAVE_TRIOS_LUC
+#if defined(HAVE_TRIOS_LUC)
     if (trans_id == NNTI_TRANSPORT_LUC) {
         available_transports[trans_id].initialized                   = 1;
         available_transports[trans_id].ops.nnti_init_fn              = NNTI_luc_init;
@@ -111,7 +111,7 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_fini_fn              = NNTI_luc_fini;
     }
 #endif
-#ifdef HAVE_TRIOS_GEMINI
+#if defined(HAVE_TRIOS_GEMINI)
     if (trans_id == NNTI_TRANSPORT_GEMINI) {
         available_transports[trans_id].initialized                   = 1;
         available_transports[trans_id].ops.nnti_init_fn              = NNTI_gni_init;
