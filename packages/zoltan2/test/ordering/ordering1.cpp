@@ -205,7 +205,8 @@ int main(int narg, char** arg)
   soln->getPermutation(&checkLength,
            &checkGIDs, &checkLIDs, &checkPerm);
 
-  // TODO
+  // Verify that checkPerm is a permutation
+  testReturn = validatePerm(checkLength, checkPerm);
 
   if (me == 0) {
     if (testReturn)
@@ -214,3 +215,29 @@ int main(int narg, char** arg)
       std::cout << "PASS" << std::endl;
   }
 }
+
+int validatePerm(int n, size_t *perm)
+{
+  int count[n];
+  int status = 0;
+  size_t i;
+
+  for (i=0; i<n; i++)
+    count[i]=0;
+
+  for (i=0; i<n; i++){
+    if ((perm[i]<0) || (perm[i]>=n))
+      status = -1;
+    else
+      count[perm[i]]++;
+  }
+
+  // Each index should occur exactly once (count==1)
+  for (i=0; i<n; i++){
+    if (count[i] != 1)
+      status = -2;
+  }
+
+  return status;
+}
+
