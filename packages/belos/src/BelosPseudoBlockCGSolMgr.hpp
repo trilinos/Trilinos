@@ -248,8 +248,15 @@ namespace Belos {
     // Orthogonalization manager.
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
 
-     // Current parameter list.
+    // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
+
+    /// \brief List of valid parameters and their default values.
+    ///
+    /// This is declared "mutable" because the SolverManager interface
+    /// requires that getValidParameters() be declared const, yet we
+    /// want to create the valid parameter list only on demand.
+    mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
    
     // Default solver values.
     static const MagnitudeType convtol_default_;
@@ -576,11 +583,13 @@ template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
 PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
 {
-  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
-  if (is_null(validPL)) {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+
+  if (validParams_.is_null()) {
     // Set all the valid parameters and their default values.
-    pl= Teuchos::rcp( new Teuchos::ParameterList() );
+    RCP<ParameterList> pl = parameterList ();
     pl->set("Convergence Tolerance", convtol_default_,
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linera system to be declared converged.");
@@ -613,9 +622,9 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
     //  defaultParams_->set("Restart Timers", restartTimers_);
-    validPL = pl;
+    validParams_ = pl;
   }
-  return validPL;
+  return validParams_;
 }
 
 
