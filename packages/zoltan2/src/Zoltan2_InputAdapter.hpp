@@ -30,7 +30,7 @@ enum InputAdapterType {
   CoordAdapterType,    /*!< coordinate input */
   VectorAdapterType,    /*!< vector input*/
   MultiVectorAdapterType,    /*!< multivector input*/
-  IdAdapterType,    /*!< plain identifier input*/
+  IdentifierAdapterType,    /*!< plain identifier input*/
   XpetraCrsMatrixAdapterType  /*!< identify Xpetra adapters for better performance */
 };
 
