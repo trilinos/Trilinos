@@ -1,4 +1,4 @@
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 CONFIGURE_FILE(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/exodusII_cfg.h.in
@@ -21,11 +21,11 @@ SET(HEADERS
   include/exodusII_int.h
 )
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
 	exodus
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
 )
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 

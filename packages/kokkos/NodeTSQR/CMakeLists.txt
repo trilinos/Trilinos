@@ -147,7 +147,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
       )
   ENDIF ()
 
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     kokkosnodetsqr
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
@@ -160,6 +160,6 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   # Our tests test for both performance and numerical accuracy.  They
   # also function as general benchmarks, given the right command-line
   # arguments.
-  PACKAGE_ADD_TEST_DIRECTORIES(test)
+  TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 ENDIF () # ${PACKAGE_NAME}_ENABLE_TSQR

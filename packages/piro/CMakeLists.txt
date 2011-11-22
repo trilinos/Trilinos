@@ -1,11 +1,11 @@
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-PACKAGE(Piro DISABLE_STRONG_WARNINGS)
+TRIBITS_PACKAGE(Piro DISABLE_STRONG_WARNINGS)
 
 #
 # B) Set up package-specific options
@@ -16,10 +16,10 @@ PACKAGE(Piro DISABLE_STRONG_WARNINGS)
 #
 
 ADD_SUBDIRECTORY(src)
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 #
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

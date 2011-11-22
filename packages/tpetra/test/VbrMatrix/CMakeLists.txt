@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 SET(ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/")
 
@@ -9,7 +9,7 @@ IF (SITE STREQUAL "gabriel.sandia.gov")
     "${ARGS} --not-unit-test=VbrMatrix_int_ComplexFloat_FullMatrixComplex_UnitTest")
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   VbrMatrix_UnitTests
   SOURCES
     VbrMatrix_UnitTests
@@ -17,7 +17,7 @@ PACKAGE_ADD_EXECUTABLE(
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetratestlib
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   VbrMatrix_UnitTests
   NAME VbrMatrix_UnitTests1
   ARGS ${ARGS}
@@ -26,7 +26,7 @@ PACKAGE_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   VbrMatrix_UnitTests
   NAME VbrMatrix_UnitTests2
   ARGS ${ARGS}
@@ -35,7 +35,7 @@ PACKAGE_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   VbrMatrix_UnitTests
   NAME VbrMatrix_UnitTests3
   ARGS ${ARGS}

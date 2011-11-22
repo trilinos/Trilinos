@@ -1,7 +1,7 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrix_UnitTests
   SOURCES 
     MatrixMatrix_UnitTests.cpp
@@ -10,7 +10,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS tpetraext tpetrainout
 )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
+TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
 DEST_FILES
 cdt_m.mtx cdt_tce.mtx cdt_d.mtx
 syn1a.mtx syn1b.mtx syn1c.mtx 
@@ -36,7 +36,7 @@ DEST_DIR ${PACKAGE_BINARY_DIR}/test/MatrixMatrix/matrices
 EXEDEPS MatrixMatrix_UnitTests
 )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraMatMatSystemFileCopy
+TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraMatMatSystemFileCopy
 DEST_FILES
 matrixsystems.xml
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix

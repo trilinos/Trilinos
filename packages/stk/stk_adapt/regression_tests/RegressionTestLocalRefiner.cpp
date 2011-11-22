@@ -857,8 +857,8 @@ namespace stk
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
-//         shock_width = 1./50.; //1./25.0;
-//         shock_diff_criterion = 0.1;
+        //         shock_width = 1./50.; //1./25.0;
+        //         shock_diff_criterion = 0.1;
         shock_width = 1./500.; //1./25.0;
         double shock_diff_criterion = 0.1;
 
@@ -876,7 +876,7 @@ namespace stk
             stk::mesh::FieldBase* nodal_refine_field = eMesh.addField("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
 
-            eMesh.delete_side_sets();
+            //eMesh.delete_side_sets();
 
             std::cout << "moving_shock initial number elements= " << eMesh.getNumberElements() << std::endl;
 

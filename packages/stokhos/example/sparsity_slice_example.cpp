@@ -62,6 +62,8 @@ const char *basis_type_names[] = { "hermite", "legendre", "rys" };
 
 int main(int argc, char **argv)
 {
+  int num_k;
+
   try {
 
     // Initialize MPI
@@ -111,12 +113,15 @@ int main(int argc, char **argv)
 
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    int num_k;
     if (full)
       num_k = basis->size();
     else
       num_k = basis->dimension()+1;
     Cijk = basis->computeTripleProductTensor(num_k);
+
+    std::cout << "basis size = " << basis->size() 
+	      << " num nonzero Cijk entries = " << Cijk->num_entries() 
+	      << std::endl;
 
 #ifdef HAVE_MPI
     Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -150,12 +155,8 @@ int main(int argc, char **argv)
       mat.FillComplete();
 
       // Construct file name
-      Teuchos::Array<int> terms = basis->getTerm(k);
       std::stringstream ss;
-      ss << file_base;
-      for (int i=0; i<terms.size(); i++)
-	ss << "_" << terms[i];
-      ss << ".mm";
+      ss << file_base << "_" << k << ".mm";
       std::string file = ss.str();
 
       // Save matrix to file
@@ -167,5 +168,5 @@ int main(int argc, char **argv)
     std::cout << e.what() << std::endl;
   }
 
-  return 0;
+  return num_k;
 }

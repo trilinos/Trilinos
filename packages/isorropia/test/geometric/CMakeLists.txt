@@ -1,9 +1,9 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   test_geometric
   SOURCES test_geometric.cpp
   DEPLIBS isorropia_test_utils
@@ -15,7 +15,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(TestGeometrixCopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(TestGeometrixCopyFiles
   SOURCE_FILES brack_3D.coords hammond_2D.coords simple.coords
   EXEDEPS test_geometric
   )

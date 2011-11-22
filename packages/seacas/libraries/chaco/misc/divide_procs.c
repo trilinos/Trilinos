@@ -13,8 +13,8 @@ divide_procs (
     int architecture,		/* 0 => hypercube, d => d-dimensional mesh */
     int ndims,			/* normal dimension of each cut */
     int ndims_tot,		/* total number of hypercube dimensions */
-    struct set_info *set_info,	/* data for all sets */
-    struct set_info *divide_set,	/* data for set being divided */
+    struct set_info *info_set,	/* data for all sets */
+    struct set_info *divide_set,/* data for set being divided */
     int *subsets,		/* subsets to be created */
     int inert,			/* using inertial method? */
     int *pndims_real,		/* actual ndims for this cut */
@@ -59,7 +59,7 @@ divide_procs (
 
 
 	flag = define_submeshes(nsets_real, architecture, mesh_dims, divide_set,
-		      set_info, subsets, inert, &striping, cut_dirs, hops_special);
+		      info_set, subsets, inert, &striping, cut_dirs, hops_special);
 	if (striping) {
 	    ndims_real = 1;
 	}
@@ -70,7 +70,7 @@ divide_procs (
 	nsets_real = 1 << ndims_real;
 
 	flag = define_subcubes(nsets_real, ndims_tot, ndims_real, divide_set,
-		      set_info, subsets, inert, &striping, hops_special);
+		      info_set, subsets, inert, &striping, hops_special);
 
 	if (striping)
 	    ndims_real = 1;

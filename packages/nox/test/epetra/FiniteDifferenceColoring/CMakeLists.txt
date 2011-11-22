@@ -1,11 +1,11 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt)
   
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     FiniteDifferenceColoring
     SOURCES 
     Example.C
@@ -20,7 +20,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt)
     )
 
   IF (NOX_ENABLE_Isorropia)
-      PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
       FiniteDifferenceIsorropiaColoring
       SOURCES 
       Example_IsorropiaColoring.C

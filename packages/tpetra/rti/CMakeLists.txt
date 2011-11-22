@@ -1,11 +1,11 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-# PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -30,7 +30,7 @@ SET(SOURCES "")
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(HEADERS ${DIR}/*.cpp)
-# PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+# TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 # Must glob the binary dir last to get all of the auto-generated headers
 # SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 # APPEND_GLOB(HEADERS ${DIR}/*.hpp)
@@ -39,11 +39,11 @@ APPEND_GLOB(HEADERS ${DIR}/*.cpp)
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   tpetrarti
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS tpetra
   )
 
-# PACKAGE_ADD_TEST_DIRECTORIES(test)
+# TRIBITS_ADD_TEST_DIRECTORIES(test)

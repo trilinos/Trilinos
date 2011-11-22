@@ -1,6 +1,6 @@
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( InfiniBand
+TRIBITS_TPL_DECLARE_LIBRARIES( InfiniBand
   REQUIRED_HEADERS verbs.h
   REQUIRED_LIBS_NAMES ibverbs
   )

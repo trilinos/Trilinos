@@ -1,4 +1,4 @@
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 INCLUDE(FortranSettings)
 
 INCLUDE_DIRECTORIES(
@@ -16,12 +16,12 @@ SET(HEADERS
   include/exodusII_int.inc
 )
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
 	exodus_for
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
 	DEPLIBS exodus
 )
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 

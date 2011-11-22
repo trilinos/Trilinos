@@ -1,10 +1,10 @@
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddAdvancedTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddAdvancedTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(ParseVariableArguments)
 
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   pamgen_test_driver
   NOEXEPREFIX
   SOURCES
@@ -12,7 +12,7 @@ PACKAGE_ADD_EXECUTABLE(
     ../example/getopts.C
   )
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   pamgen_test_driver_l
   NOEXEPREFIX
   SOURCES
@@ -67,7 +67,7 @@ FUNCTION(PAMGEN_ADD_TEST  FILE_IDX_EXT)
 
   SET( TMP_FILE ${CMAKE_CURRENT_BINARY_DIR}/temp_file${INT_TYPE}_${FILE_IDX_EXT} )
 
-  PACKAGE_ADD_ADVANCED_TEST(
+  TRIBITS_ADD_ADVANCED_TEST(
     run_test_script${INT_TYPE}_${FILE_IDX_EXT}
     TEST_0 EXEC pamgen_test_driver${INT_TYPE} NOEXEPREFIX
       ARGS ${PARSE_ARGS}
@@ -147,7 +147,7 @@ PAMGEN_ADD_TEST( 44 ARGS -f ur.txt -r 0 -n 1 -d 3)
 # Copy the files over for each test
 #
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
   SOURCE_FILES geom_warp2d.txt uded.txt ur.txt  report17.txt report16.txt report15.txt report14.txt report13.txt report12.txt report11.txt report9.txt report10.txt report7.txt report8.txt report6.txt report4.txt report5.txt report3.txt report2.txt report1.txt geom_warp.txt ui2d.txt ui.txt mesh.txt lbrick.txt brick.txt tri.txt tri_proc.txt 2dtri.txt 2dtribis.txt hbrick.txt 3dbj.txt trisect_multi_theta.txt trisect_multi_theta_2d.txt ${RES_FILES}
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_files
   )

@@ -1,6 +1,6 @@
 
-INCLUDE(PackageLibraryMacros)
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddExecutableAndTest)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -25,7 +25,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt)
   APPEND_SET(TESTUTILS_DEPLIBS noxepetra)
 ENDIF()
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   noxtestutils
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

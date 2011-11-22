@@ -23,4 +23,4 @@
 #define MPI_FORTRAN_MANGLING_PATTERNS "_"
 
 /* Version number of package */
-#define VERSION 0.1a9
+#define SIMPI_VERSION 0.1a9

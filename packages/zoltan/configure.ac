@@ -20,7 +20,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(Zoltan_GID_64, 3.3, lriesen@sandia.gov)
+AC_INIT(Zoltan, 3.6, lriesen@sandia.gov)
 
 echo "----------------------------------------"
 echo "Running Zoltan Configure Script"

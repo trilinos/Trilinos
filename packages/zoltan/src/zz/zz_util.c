@@ -413,6 +413,58 @@ char fbuf[64],buf[2048],label[64],value[64],units[64];
   close(f);
 }
 
+/* On a linux node, just get the committed line as a char string.
+ * It's the caller's responsibility to free the result string.
+ */
+void Zoltan_get_linux_meminfo(char *msg, char **result)
+{
+int f, n, got_it;
+size_t fsize, rc;
+char *c=NULL, *next=NULL, *c_end;
+char fbuf[64],buf[2048],label[64],value[64],units[64];
+
+  *result=NULL;
+  f = open("/proc/meminfo", O_RDONLY);
+  if (f == -1) return;
+
+  c = buf;
+  rc = read(f, (void *)c++, 1);
+
+  while ((rc == 1) && (c - buf < 2047)){
+    rc = read(f, (void *)c++, 1);
+  }
+
+  fsize = c-buf-1;
+
+  close(f);
+
+  c = buf;
+  c_end = buf + fsize;
+  got_it=0;
+
+  while( c < c_end){
+    next = strchr(c, '\n');
+    *next = 0;
+    n = sscanf(c, "%s %s %s", label, value, units);
+    if (n == 3){
+      if (strcmp(label, "Committed_AS:") == 0){
+        if (msg != NULL) sprintf(buf,"%s: \t%s \t%s %s\n",msg,label,value,units);
+        else             sprintf(buf,"%s %s %s\n",label,value,units);
+
+        fsize = strlen(buf);
+        got_it=1;
+        break;
+      }
+    }
+    c = next + 1;
+  }
+  if (got_it){
+    c = malloc(strlen(buf) + 1);
+    strcpy(c, buf);
+    *result = c;
+  }
+}
+
 int Zoltan_get_global_id_type(char **name)
 {
   if (name){

@@ -37,8 +37,8 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICEPTHREAD_MDARRAYDEEPCOPY_HPP
-#define KOKKOS_DEVICEPTHREAD_MDARRAYDEEPCOPY_HPP
+#ifndef KOKKOS_DEVICEPTHREAD_VALUEVIEW_HPP
+#define KOKKOS_DEVICEPTHREAD_VALUEVIEW_HPP
 
 #include <Kokkos_ValueView.hpp>
 

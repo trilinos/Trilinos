@@ -1,9 +1,9 @@
 # $Header$
 
 # Required modules
-#INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
+#INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
 
 # Example definitions
 
@@ -16,8 +16,8 @@ ADD_SUBDIRECTORY(my_example)
 # Below this line are subdirectories in epetra/example that are not exposed using autotools
 
 # Linking error
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(C_wrappers EXAMPLE SOURCES c_main.c)
-#PACKAGE_ADD_EXECUTABLE(
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(C_wrappers EXAMPLE SOURCES c_main.c)
+#TRIBITS_ADD_EXECUTABLE(
   #C_wrappers
   #COMM mpi serial  
   #SOURCES c_main.c
@@ -25,8 +25,8 @@ ADD_SUBDIRECTORY(my_example)
   #)
 
 # Requires ifpack, aztecOO
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(Fortran EXAMPLE SOURCES f_main.F)
-#PACKAGE_ADD_EXECUTABLE(
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(Fortran EXAMPLE SOURCES f_main.F)
+#TRIBITS_ADD_EXECUTABLE(
   #Fortran
   #COMM mpi serial  
   #SOURCES f_main.F
@@ -34,8 +34,8 @@ ADD_SUBDIRECTORY(my_example)
   #)
 
 # Must be run on 3 MPI processes
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(ImportExport EXAMPLE SOURCES cxx_main.cpp)
-#PACKAGE_ADD_EXECUTABLE(
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(ImportExport EXAMPLE SOURCES cxx_main.cpp)
+#TRIBITS_ADD_EXECUTABLE(
   #ImportExport
   #COMM mpi serial  
   #SOURCES cxx_main.cpp
@@ -43,8 +43,8 @@ ADD_SUBDIRECTORY(my_example)
   #)
 
 # Requires the first argument to be a Harwell-Boeing matrix file
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(InverseIteration EXAMPLE SOURCES cxx_main.cpp)
-#PACKAGE_ADD_EXECUTABLE(
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(InverseIteration EXAMPLE SOURCES cxx_main.cpp)
+#TRIBITS_ADD_EXECUTABLE(
   #InverseIteration
   #COMM mpi serial  
   #SOURCES cxx_main.cpp
@@ -52,8 +52,8 @@ ADD_SUBDIRECTORY(my_example)
   #)
 
 # Works
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(MapColoring EXAMPLE SOURCES cxx_main.cpp ARGS 100 200)
-#PACKAGE_ADD_EXECUTABLE(
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(MapColoring EXAMPLE SOURCES cxx_main.cpp ARGS 100 200)
+#TRIBITS_ADD_EXECUTABLE(
   #MapColoring
   #COMM mpi serial  
   #SOURCES cxx_main.cpp
@@ -61,8 +61,8 @@ ADD_SUBDIRECTORY(my_example)
   #)
 
 # Includes/linking errors
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(petra_nonlinear EXAMPLE SOURCES cc_main.cc basis.cc ARGS 51)
-#PACKAGE_ADD_EXECUTABLE(
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(petra_nonlinear EXAMPLE SOURCES cc_main.cc basis.cc ARGS 51)
+#TRIBITS_ADD_EXECUTABLE(
   #petra_nonlinear
   #COMM mpi serial  
   #SOURCES cxx_main.cpp

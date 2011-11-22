@@ -1,7 +1,7 @@
-INCLUDE(SubPackageMacros)
-INCLUDE(PackageAddExecutable)
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddExecutable)
 
-SUBPACKAGE(Aprepro)
+TRIBITS_SUBPACKAGE(Aprepro)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -14,9 +14,9 @@ SET(HEADERS "")
 SET(SOURCES ap_builtin.c  ap_stat.c  y.tab.c  ap_util.c  ap_init.c
 	    ap_hash.c     ap_liballoc.c  ap_units.c)
 
-PACKAGE_ADD_LIBRARY(aprepro_app_lib SOURCES ${SOURCES} DEPLIBS suplib)
-PACKAGE_ADD_EXECUTABLE(aprepro NOEXEPREFIX NOEXESUFFIX SOURCES aprepro.c DEPLIBS aprepro_app_lib suplib m)
+TRIBITS_ADD_LIBRARY(aprepro_app_lib SOURCES ${SOURCES} DEPLIBS suplib)
+TRIBITS_ADD_EXECUTABLE(aprepro NOEXEPREFIX NOEXESUFFIX SOURCES aprepro.c DEPLIBS aprepro_app_lib suplib m)
 install_executable(aprepro)
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

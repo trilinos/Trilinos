@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( XDMF
+TRIBITS_TPL_DECLARE_LIBRARIES( XDMF
   REQUIRED_HEADERS XdmfHDF.h
   REQUIRED_LIBS_NAMES xdmf
   )

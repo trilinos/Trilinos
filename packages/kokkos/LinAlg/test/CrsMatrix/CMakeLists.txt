@@ -1,5 +1,5 @@
-INCLUDE(PackageAddExecutableAndTest)   
-PACKAGE_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultMultiply  
+INCLUDE(TribitsAddExecutableAndTest)   
+TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultMultiply  
   SOURCES 
     CrsMatrix_DefaultMultiply.cpp  
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
@@ -9,8 +9,8 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultMultiply
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
-INCLUDE(PackageAddExecutableAndTest)   
-PACKAGE_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_Scale
+INCLUDE(TribitsAddExecutableAndTest)   
+TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_Scale
   SOURCES 
     CrsMatrix_Scale.cpp  
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
@@ -20,7 +20,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_Scale
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests 
+TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests 
   SOURCES   
     CrsMatrix_UnitTests.cpp 
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
@@ -31,7 +31,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests
 ) 
 
 IF (Kokkos_ENABLE_ThreadPool) 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST( CrsMatrix_FirstTouchTPI
+  TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_FirstTouchTPI
     SOURCES   
       CrsMatrix_FirstTouchTPI.cpp
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
@@ -44,7 +44,7 @@ IF (Kokkos_ENABLE_ThreadPool)
 ENDIF (Kokkos_ENABLE_ThreadPool) 
 
 IF (Kokkos_ENABLE_TBB) 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST( CrsMatrix_FirstTouchTBB
+  TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_FirstTouchTBB
     SOURCES   
       CrsMatrix_FirstTouchTBB.cpp
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
@@ -57,7 +57,7 @@ IF (Kokkos_ENABLE_TBB)
 ENDIF (Kokkos_ENABLE_TBB) 
 
 IF (Kokkos_ENABLE_CUSP) 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST( CrsMatrix_CUSP
+  TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_CUSP
     SOURCES   
       CrsMatrix_CUSP.cpp
       ${TEUCHOS_STD_UNIT_TEST_MAIN}

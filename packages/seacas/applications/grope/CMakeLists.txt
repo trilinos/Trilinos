@@ -1,8 +1,8 @@
-INCLUDE(SubPackageMacros)
-INCLUDE(PackageAddExecutable)
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddExecutable)
 INCLUDE(FortranSettings)
 
-SUBPACKAGE(Grope)
+TRIBITS_SUBPACKAGE(Grope)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -19,10 +19,10 @@ SET(SOURCES
    gr_selmap.f gr_wdberr.f gr_ckelb.f  gr_comand.f gr_prelb.f  gr_prglob.f gr_selset.f
    gr_prname.f gr_prqa.f   gr_prvers.f gr_rdelb.f  gr_rdnam1.f gr_rdqa.f   gr_rixint.f)
 
-PACKAGE_ADD_LIBRARY(grope_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-PACKAGE_ADD_EXECUTABLE(grope NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES grope.f DEPLIBS grope_app_lib COMM serial)
+TRIBITS_ADD_LIBRARY(grope_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
+TRIBITS_ADD_EXECUTABLE(grope NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES grope.f DEPLIBS grope_app_lib COMM serial)
 
 install_executable(grope)
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

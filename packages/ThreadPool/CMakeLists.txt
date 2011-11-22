@@ -1,12 +1,12 @@
 
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-PACKAGE(ThreadPool)
+TRIBITS_PACKAGE(ThreadPool)
 
 #
 # B) Set up package-specific options
@@ -37,17 +37,17 @@ IF(HAVE_PTHREAD)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE(STATUS "ADDING THREADPOOL TESTS")
   ENDIF()
-  PACKAGE_ADD_TEST_DIRECTORIES(test test/hpccg test/hhpccg)
+  TRIBITS_ADD_TEST_DIRECTORIES(test test/hpccg test/hhpccg)
 ENDIF()
 
 #
 # Exclude files for source package.
 #
 
-PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 #
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

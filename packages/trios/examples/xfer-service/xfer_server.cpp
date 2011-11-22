@@ -78,7 +78,7 @@ log_level xfer_debug_level = LOG_UNDEFINED;
 
 /* prototype for a function to initialize buffers */
 extern void xfer_init_data_array(const unsigned int seed, data_array_t *array);
-extern int xfer_compare_data_arrays( data_array_t *arr1,  data_array_t *arr2);
+extern int xfer_compare_data_arrays( const data_array_t *arr1,  const data_array_t *arr2);
 
 
 /**
@@ -112,7 +112,7 @@ int xfer_write_encode_srvr(
 
     int nbytes = len*sizeof(data_t);
 
-    log_level debug_level = LOG_ALL;
+    log_level debug_level = xfer_debug_level;
     int rc;
 
     /* process array (nothing to do) */
@@ -127,7 +127,7 @@ int xfer_write_encode_srvr(
         tmp_array.data_array_t_val = (data_t *)malloc(nbytes);
 
         xfer_init_data_array(seed, &tmp_array);
-        rc = xfer_compare_data_arrays(&tmp_array, &args->array);
+        rc = xfer_compare_data_arrays(&tmp_array, const_cast<data_array_t *>(&args->array));
 
         if (rc != 0) {
             log_warn(debug_level, "Unable to validate array");
@@ -164,7 +164,7 @@ int xfer_write_rdma_srvr(
         const NNTI_buffer_t *res_addr)
 {
     int rc = NSSI_OK;
-    log_level debug_level = LOG_ALL;
+    log_level debug_level = xfer_debug_level;
 
     const int len = args->len;
     const long int seed = args->seed;
@@ -240,7 +240,7 @@ int xfer_read_encode_srvr(
         const NNTI_buffer_t *res_addr)
 {
     int rc = NSSI_OK;
-    log_level debug_level = LOG_ALL;
+    log_level debug_level = xfer_debug_level;
 
     const int len = args->len;
     const int seed = args->seed;
@@ -293,7 +293,7 @@ int xfer_read_rdma_srvr(
         const NNTI_buffer_t *res_addr)
 {
     int rc;
-    log_level debug_level = LOG_ALL;
+    log_level debug_level = xfer_debug_level;
 
     const bool validate = args->validate;
     const int seed = args->seed;
@@ -323,7 +323,7 @@ int xfer_read_rdma_srvr(
     }
 
 //    for (int idx=0;idx<len;idx++) {
-//        log_debug(LOG_ALL, "array[%d].int_val=%u ; array[%d].float_val=%f ; array[%d].double_val=%f",
+//        log_debug(debug_level, "array[%d].int_val=%u ; array[%d].float_val=%f ; array[%d].double_val=%f",
 //                idx, array[idx].int_val,
 //                idx, array[idx].float_val,
 //                idx, array[idx].double_val);
@@ -340,7 +340,7 @@ int xfer_read_rdma_srvr(
 
 void make_progress(bool is_idle)
 {
-    log_debug(LOG_ALL, "current_time(%llu) is_idle(%llu)", (uint64_t)trios_get_time_ms(), (uint64_t)is_idle);
+    log_debug(xfer_debug_level, "current_time(%llu) is_idle(%llu)", (uint64_t)trios_get_time_ms(), (uint64_t)is_idle);
 
     return;
 }
@@ -375,13 +375,13 @@ int xfer_server_main(MPI_Comm server_comm)
     memset(&xfer_svc, 0, sizeof(nssi_service));
 
 
-    log_str=logfile.c_str();
-    if (logfile.c_str()[0]=='\0') {
-        log_str=NULL;
-    }
-    /* initialize and enable logging */
-    logger_init((log_level)verbose, NULL);
-    debug_level = (log_level)verbose;
+//    log_str=logfile.c_str();
+//    if (logfile.c_str()[0]=='\0') {
+//        log_str=NULL;
+//    }
+//    /* initialize and enable logging */
+//    logger_init((log_level)verbose, NULL);
+//    debug_level = (log_level)verbose;
 
 
     /* initialize the nssi service */
@@ -409,10 +409,10 @@ int xfer_server_main(MPI_Comm server_comm)
     //        xfer_svc.progress_callback=(uint64_t)make_progress;
     //        xfer_svc.progress_callback_timeout=100;
 
-    log_debug(LOG_ALL, "Starting Server: url = %s", url.c_str());
+    log_debug(xfer_debug_level, "Starting Server: url = %s", url.c_str());
 
     // Tell the NSSI server to output log data
-    //rpc_debug_level = LOG_ALL;
+    //rpc_debug_level = xfer_debug_level;
 
     // start processing requests, the client will send a request to exit when done
     rc = nssi_service_start(&xfer_svc, num_threads);

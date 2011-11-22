@@ -1,8 +1,8 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ImportExport2_UnitTests
   SOURCES
     ImportExport2_UnitTests.cpp

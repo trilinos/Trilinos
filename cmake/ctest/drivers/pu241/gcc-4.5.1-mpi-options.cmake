@@ -4,7 +4,7 @@
 #
 
 # Included first ot define TRILINOS_TOOLSET_BASE and MKLROOT
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/gcc-4.5.1-base-options.cmake)
+INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/gcc-4.5.1-base-options.cmake)
 
 # Point to OpenMPI build with GCC 4.5.1 C/C++ and Intel 12.0.4 Fortran
 SET(MPI_BASE_DIR "${TRILINOS_TOOLSET_BASE}/openmpi-ifort-12.0.4" CACHE PATH "")

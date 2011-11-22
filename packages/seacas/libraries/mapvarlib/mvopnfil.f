@@ -48,6 +48,7 @@ C
       CHARACTER*256 fntpo, fntp2, fntp3, fntp4, filnam, option, errmsg
       character*1   cdum
 C
+      include 'exodusII.inc'
       include 'ex2tp.blk'
       include 'ntpdat.blk'
       include 'tapes.blk'

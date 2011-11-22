@@ -53,8 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( TVMET
+TRIBITS_TPL_DECLARE_LIBRARIES( TVMET
   REQUIRED_HEADERS tvmet/config.h tvmet/Vector.h
   )

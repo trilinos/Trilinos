@@ -1,18 +1,18 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
     
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     bl_gmres_diag
     SOURCES test_bl_gmres_diag.cpp createEpetraProblem.cpp
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     bl_gmres_hb
     SOURCES test_bl_gmres_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -22,7 +22,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     STANDARD_PASS_OUTPUT 
     )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     resolve_gmres_hb
     SOURCES test_resolve_gmres_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -32,7 +32,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     STANDARD_PASS_OUTPUT 
     )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     pseudo_gmres_hb
     SOURCES test_pseudo_gmres_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -40,7 +40,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     STANDARD_PASS_OUTPUT 
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresFiles
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockGmres
     SOURCE_FILES orsirr1.hb fidap036.hb
     EXEDEPS bl_gmres_diag
@@ -49,7 +49,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_pgmres_hb
       SOURCES test_bl_pgmres_hb.cpp createEpetraProblem.cpp
       COMM serial mpi
@@ -60,7 +60,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT 
       )
 
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       pseudo_pgmres_hb
       SOURCES test_pseudo_pgmres_hb.cpp createEpetraProblem.cpp
       COMM serial mpi
@@ -68,7 +68,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT 
       )
 
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_fgmres_hb
       SOURCES test_bl_fgmres_hb.cpp createEpetraProblem.cpp
       COMM serial mpi

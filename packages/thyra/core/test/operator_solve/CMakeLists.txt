@@ -1,10 +1,10 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/example/operator_solve)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SolveStatus_UnitTests
   SOURCES
     SolveStatus_UnitTests.cpp
@@ -14,7 +14,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultSerialDenseLinearOpWithSolveFactory_UnitTests
   SOURCES
     DefaultSerialDenseLinearOpWithSolveFactory_UnitTests.cpp
@@ -24,7 +24,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   test_linear_op_with_solve
   SOURCES test_linear_op_with_solve.cpp
   COMM serial mpi
@@ -37,7 +37,7 @@ ELSE()
   SET(EPS_SCALE 2e+2)
 ENDIF()
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   test_linear_op_with_solve
   NAME test_linear_op_with_solve
   POSTFIX_AND_ARGS_0 n1
@@ -55,7 +55,7 @@ ELSE()
   SET(EPS_SCALE 2e+2)
 ENDIF()
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   test_linear_op_with_solve
   NAME test_linear_op_with_solve
   POSTFIX_AND_ARGS_0 n4
@@ -65,7 +65,7 @@ PACKAGE_ADD_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DelayedLinearOpWithSolveUnitTests
   SOURCES
     DelayedLinearOpWithSolve_UnitTests.cpp
@@ -75,7 +75,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultMultiVectorLinearOpWithSolveUnitTests
   SOURCES
     DefaultMultiVectorLinearOpWithSolve_UnitTests.cpp
@@ -85,7 +85,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultBlockedTriangularLinearOpWithSolveUnitTests
   SOURCES
     DefaultBlockedTriangularLinearOpWithSolve_UnitTests.cpp

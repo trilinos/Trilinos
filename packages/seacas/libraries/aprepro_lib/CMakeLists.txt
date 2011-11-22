@@ -1,7 +1,7 @@
-INCLUDE(SubPackageMacros)
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsLibraryMacros)
 
-SUBPACKAGE(Aprepro_lib)
+TRIBITS_SUBPACKAGE(Aprepro_lib)
 
 SET(APREPRO_VERSION_MAJOR "3")
 SET(APREPRO_VERSION_MINOR "08")
@@ -23,10 +23,10 @@ SET(SOURCES
  apr_scanner.cc  apr_parser.cc 
 )
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
 	aprepro_lib
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
 )
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()

@@ -143,14 +143,7 @@ int ex_put_all_var_param_ext ( int   exoid,
   }
 
   if ((status = nc_inq_dimid (exoid, DIM_NUM_NODES, &num_nod_dim)) != NC_NOERR) {
-    if (vp->num_node > 0) {
-      exerrval = status;
-      sprintf(errmsg,
-              "Error: failed to locate number of nodes in file id %d",
-              exoid);
-      ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
-      goto error_ret;
-    }
+    num_nod_dim = -1; /* There is probably no nodes on this file */
   }
 
   /* Check this now so we can use it later without checking for errors */
@@ -203,7 +196,7 @@ int ex_put_all_var_param_ext ( int   exoid,
       goto error_ret;
   }
 
-  if (vp->num_node > 0) {
+  if (vp->num_node > 0 && num_nod_dim > 0) {
     /*
      * There are two ways to store the nodal variables. The old way *
      * was a blob (#times,#vars,#nodes), but that was exceeding the

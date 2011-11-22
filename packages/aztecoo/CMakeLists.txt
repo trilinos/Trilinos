@@ -1,6 +1,6 @@
 
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 # 
 #   Exception added to deal with fixed form Fortran code on XL
@@ -13,12 +13,12 @@ if("${CMAKE_Fortran_COMPILER_ID}" MATCHES "XL|VisualAge")
 # A) Define the package
 #
 
-PACKAGE(AztecOO)
+TRIBITS_PACKAGE(AztecOO)
 
 #
 # B) Set up package-specific options
 #
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_AZLU
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_AZLU
   HAVE_AZLU
   "Enables the azlu preconditioner.  Requires the y12m TPL."
   "${${PACKAGE_NAME}_ENABLE_y12m}")
@@ -27,7 +27,7 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_y12m AND ${PACKAGE_NAME}_ENABLE_AZLU)
   MESSAGE(FATAL_ERROR "You have enabled the AZLU support in AztecOO with the flag \"AztecOO_ENABLE_AZLU\", but this requires the y12m TPL which is currently disabled.  Please enable this TPL or disable AZLU support.")
 ENDIF()
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   AZ_ENABLE_TIMEMONITOR
   "Add timers to AztecOO GMRES solver."
@@ -40,17 +40,17 @@ ADD_OPTION_AND_DEFINE(
 
 ADD_SUBDIRECTORY(src)
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # Exclude files for source package.
 #
 
-PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
-PACKAGE_ARCH_EXCLUDE_FILES(
+TRIBITS_EXCLUDE_FILES(
   doc/AZ_capture_matrix_howto.txt
   doc/Aztec2.0
   doc/Aztec2.1
@@ -95,4 +95,4 @@ PACKAGE_ARCH_EXCLUDE_FILES(
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

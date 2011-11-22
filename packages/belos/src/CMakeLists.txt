@@ -1,11 +1,11 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 ######################################################################
 ## Package-specific configuration options
 ######################################################################
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 ######################################################################
 ## Define the header and source files (and directories)
@@ -168,14 +168,14 @@ IF (${PACKAGE_NAME}_ENABLE_TSQR)
   # If TSQR support is enabled in Belos, we have to link Belos with
   # the appropriate Kokkos libraries, since TSQR is implemented in
   # Kokkos.
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     belos
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
     DEPLIBS kokkos kokkosnodetsqr kokkosdisttsqr
     )
 ELSE ()
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     belos
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}

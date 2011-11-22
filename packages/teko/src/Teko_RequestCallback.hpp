@@ -51,6 +51,10 @@
 
 namespace Teko {
 
+/** Base class that basically describes a sub
+  * set of functonality for a listener.  The application
+  * should derive off <code>RequestCallback</code>.
+  */
 class RequestCallbackBase {
 public:
    virtual ~RequestCallbackBase() {}
@@ -59,6 +63,11 @@ public:
    virtual void preRequest(const RequestMesg &) = 0;
 };
 
+/** Primary reference point for the application to 
+  * derive off for a request callback. This one 
+  * has a request function that returns the specified
+  * type of data.
+  */
 template <typename DataT>
 class RequestCallback : public RequestCallbackBase {
 public:

@@ -1,6 +1,6 @@
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(PackageAddAdvancedTest)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddAdvancedTest)
 
 ADD_DEFINITIONS(-DUSING_CMAKE)
 
@@ -20,7 +20,7 @@ CREATE_TEST_SOURCELIST( ExoIICTests
   EXTRA_INCLUDE exodusII_test.h
   )
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   ExoIICTests
   SOURCES ${ExoIICTests}
 )
@@ -35,7 +35,7 @@ find_program (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP
 		ENV PATH
 	     )
 	     
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
 	ExoIICTests
 	NAME CreateEdgeFaceWithConcats
 	COMM mpi serial
@@ -43,7 +43,7 @@ PACKAGE_ADD_TEST(
 	ARGS "CreateEdgeFace -pcab -pcset -pvpax"
 )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
 	ExoIICTests
 	NAME ReadEdgeFaceWithConcats
 	COMM mpi serial
@@ -110,10 +110,10 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
   #       when built with shareable libraries on some platforms....
 
   FOREACH ( testName ${cbind_OLDTESTS} )
-    PACKAGE_ADD_EXECUTABLE( ${testName} NOEXEPREFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX DEPLIBS exodus)
+    TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX DEPLIBS exodus)
   ENDFOREACH ( testName )
 
-  PACKAGE_ADD_ADVANCED_TEST(
+  TRIBITS_ADD_ADVANCED_TEST(
    exodus_unit_tests
    TEST_0 CMND /bin/csh ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
 	  OUTPUT_FILE exodus_unit_tests.out

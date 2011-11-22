@@ -12,5 +12,5 @@ SET(Teuchos_ENABLE_DEFAULT_STACKTRACE  OFF  CACHE  BOOL  "")
 SET(STK_ENABLE_BoostLib  OFF  CACHE  BOOL  "")
 
 # Include last so that above override these cache variables
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/gcc-4.5.1-mpi-ss-options.cmake)
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/gcc-4.5.1-debug-options.cmake)
+INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/gcc-4.5.1-mpi-ss-options.cmake)
+INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/gcc-4.5.1-debug-options.cmake)

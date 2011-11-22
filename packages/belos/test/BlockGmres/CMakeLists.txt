@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../MVOPTester)
 
@@ -12,7 +12,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     INCLUDE_DIRECTORIES(../MVOPTester)
 
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_gmres_complex_hb
       SOURCES test_bl_gmres_complex_hb.cpp 
       COMM serial mpi
@@ -23,7 +23,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT 
       )
 
-    PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles
       SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/test/MVOPTester
       SOURCE_FILES mhd1280b.cua mhd1280a.cua
       EXEDEPS bl_gmres_complex_hb

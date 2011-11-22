@@ -1,19 +1,19 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_BINARY_DIR}/../../src)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Thyra_Belos_StatusTest_UnitTests
   SOURCES
     Thyra_Belos_StatusTest_UnitTests.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   test_single_belos_thyra_solver_driver
   SOURCES
     test_single_belos_thyra_solver_driver.cpp
@@ -21,7 +21,7 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   test_single_belos_thyra_solver_driver
   POSTFIX_AND_ARGS_0 FourByFour
     --max-iters=4 --no-use-preconditioner --show-all-tests  --matrix-file=FourByFour.mtx
@@ -51,7 +51,7 @@ IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
   # C++ 2008.  This might point to a problem with Belos but I don't
   # have time to track this down right now.
   
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     test_single_belos_thyra_solver_driver
     POSTFIX_AND_ARGS_0 nos1_bs8
       --no-use-preconditioner --show-all-tests --num-rhs=8 --block-size=8
@@ -63,7 +63,7 @@ IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
 
 ENDIF()
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyBelosTestFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBelosTestFiles
   DEST_FILES
     bcsstk01.mtx                              
     bcsstk02.mtx                              

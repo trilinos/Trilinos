@@ -93,6 +93,9 @@ double sparsedot(double* u, int* u_ind, int u_len,
   return(result);
 }
 
+
+
+
 //kernel method for computing the local portion of C = A*B
 int mult_A_B(CrsMatrixStruct& Aview,
 	     CrsMatrixStruct& Bview,
@@ -117,13 +120,17 @@ int mult_A_B(CrsMatrixStruct& Aview,
   int C_numCols_import = C_lastCol_import - C_firstCol_import + 1;
 
   if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
+
+  // Allocate workspace memory
   double* dwork = new double[C_numCols];
   int* iwork = new int[C_numCols];
+  int *c_cols=iwork;
+  double *c_vals=dwork;
+  int *c_index=new int[C_numCols];
 
-  double* C_row_i = dwork;
-  int* C_cols = iwork;
+  int  i, j, k;
+  bool C_filled=C.Filled();
 
-  int C_row_i_length, i, j, k;
 
   //To form C = A*B we're going to execute this expression:
   //
@@ -132,11 +139,25 @@ int mult_A_B(CrsMatrixStruct& Aview,
   //Our goal, of course, is to navigate the data in A and B once, without
   //performing searches for column-indices, etc.
 
-  bool C_filled = C.Filled();
+
+  // Run through all the hash table lookups once and for all
+  int * Acol2Brow=new int[Aview.colMap->NumMyElements()];
+  if(Aview.colMap->SameAs(*Bview.rowMap)){
+    // Maps are the same: Use local IDs as the hash
+    for(int i=0;i<Aview.colMap->NumMyElements();i++)
+      Acol2Brow[i]=i;				
+  }
+  else {
+    // Maps are not the same:  Use the map's hash
+    for(int i=0;i<Aview.colMap->NumMyElements();i++)
+      Acol2Brow[i]=Bview.rowMap->LID(Aview.colMap->GID(i));
+  }
+  
+  // Mark indices as empty w/ -1
+  for(k=0;k<C_numCols;k++) c_index[k]=-1;
 
   //loop over the rows of A.
   for(i=0; i<Aview.numRows; ++i) {
-
     //only navigate the local portion of Aview... (It's probable that we
     //imported more of A than we need for A*B, because other cases like A^T*B 
     //need the extra rows.)
@@ -155,53 +176,142 @@ int mult_A_B(CrsMatrixStruct& Aview,
     //as we stride across B(k,:) we're calculating updates for row i of the
     //result matrix C.
 
-    for(k=0; k<Aview.numEntriesPerRow[i]; ++k) {
-      int Ak = Bview.rowMap->LID(Aview.colMap->GID(Aindices_i[k]));
-      double Aval = Aval_i[k];
+    /* Outline of the revised, ML-inspired algorithm
+ 
+    C_{i,j} = \sum_k A_{i,k} B_{k,j}
 
+    This algorithm uses a "middle product" formulation, with the loop ordering of 
+    i, k, j.  This means we compute a row of C at a time, but compute partial sums of 
+    each entry in row i until we finish the k loop.
+
+    This algorithm also has a few twists worth documenting.  
+
+    1) First off, we compute the Acol2Brow array above.  This array answers the question:
+
+    "Given a LCID in A, what LRID in B corresponds to it?"
+
+    Since this involves LID calls, this is a hash table lookup.  Thus we do this once for every 
+    LCID in A, rather than call LID inside the MMM loop.
+
+    2) The second major twist involves the c_index, c_cols and c_vals arrays.  The arrays c_cols 
+    and c_vals store the *local* column index and values accumulator respectively.  These 
+    arrays are allocated to a size equal to the max number of local columns in C, namely C_numcols.
+    The value c_current tells us how many non-zeros we currently have in this row.
+    
+    So how do we take a LCID and find the right accumulator?  This is where the c_index array
+    comes in.  At the start (and stop) and the i loop, c_index is filled with -1's.  Now 
+    whenever we find a LCID in the k loop, we first loop at c_index[lcid].  If this value is
+    -1 we haven't seen this entry yet.  In which case we add the appropriate stuff to c_cols
+    and c_vals and then set c_index[lcid] to the location of the accumulator (c_current before
+    we increment it).  If the value is NOT -1, this tells us the location in the c_vals/c_cols
+    arrays (namely c_index[lcid]) where our accumulator lives.
+
+    This trick works because we're working with local ids.  We can then loop from 0 to c_current
+    and reset c_index to -1's when we're done, only touching the arrays that have changed.
+    While we're at it, we can switch to the global ids so we can call [Insert|SumInto]GlobalValues.
+    Thus, the effect of this trick is to avoid passes over the index array.
+
+    3) The third major twist involves handling the remote and local components of B separately.
+    (ML doesn't need to do this, because its local ordering scheme is consistent between the local
+    and imported components of B.)  Since they have different column maps, they have inconsistent 
+    local column ids.  This means the "second twist" won't work as stated on both matrices at the 
+    same time.  While this could be handled any number of ways, I have chosen to do the two parts 
+    of B separately to make the code easier to read (and reduce the memory footprint of the MMM).
+    */
+
+    // Local matrix: Zero Current counts for matrix
+    int c_current=0;    
+
+    // Local matrix: Do the "middle product"
+    for(k=0; k<Aview.numEntriesPerRow[i]; ++k) {
+      int Ak=Acol2Brow[Aindices_i[k]];
+      double Aval = Aval_i[k];
+      // We're skipping remote entries on this pass.
+      if(Bview.remote[Ak] || Aval==0) continue;
+      
       int* Bcol_inds = Bview.indices[Ak];
       double* Bvals_k = Bview.values[Ak];
 
-      C_row_i_length = 0;
-
-      if (Bview.remote[Ak]) {
-	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
-	  C_row_i[C_row_i_length] = Aval*Bvals_k[j];
-          C_cols[C_row_i_length++] = bcols_import[Bcol_inds[j]];
+      for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
+	int col=Bcol_inds[j];
+	if(c_index[col]<0){
+	  // We haven't seen this entry before; add it.  (In ML, on
+	  // the first pass, you haven't seen any of the entries
+	  // before, so they are added without the check.  Not sure
+	  // how much more efficient that would be; depends on branch
+	  // prediction.  We've favored code readability here.)
+	  c_cols[c_current]=col;	      
+	  c_vals[c_current]=Aval*Bvals_k[j];
+	  c_index[col]=c_current;
+	  c_current++;
+	}
+	else{ 
+	  // We've already seen this entry; accumulate it.
+	  c_vals[c_index[col]]+=Aval*Bvals_k[j];	    
 	}
       }
-      else {
-	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
-	  C_row_i[C_row_i_length] = Aval*Bvals_k[j];
-          C_cols[C_row_i_length++] = bcols[Bcol_inds[j]];
-	}
-      }
-
-      //
-      //Now put the C_row_i values into C.
-      //
-
-      int err = C_filled ?
-          C.SumIntoGlobalValues(global_row, C_row_i_length, C_row_i, C_cols)
-          :
-          C.InsertGlobalValues(global_row, C_row_i_length, C_row_i, C_cols);
- 
-      if (err < 0) {
-        return(err);
-      }
-      if (err > 0) {
-        if (C_filled) {
-          //C is Filled, and doesn't
-          //have all the necessary nonzero locations.
-          return(err);
-        }
-      }
+    }    
+    // Local matrix: Reset c_index and switch c_cols to GIDs
+    for(k=0; k<c_current; k++){
+      c_index[c_cols[k]]=-1;
+      c_cols[k]=bcols[c_cols[k]]; // Switch from local to global IDs.     
     }
+    // Local matrix: Insert.
+    //
+    // We should check global error results after the algorithm is
+    // through.  It's probably safer just to let the algorithm run all
+    // the way through before doing this, since otherwise we have to
+    // remember to free all allocations carefully.
+    int err = C_filled ?
+      C.SumIntoGlobalValues(global_row,c_current,c_vals,c_cols)
+      :
+      C.InsertGlobalValues(global_row,c_current,c_vals,c_cols);   
+
+    // Remote matrix: Zero current counts again for matrix
+    c_current=0;    
+
+    // Remote matrix: Do the "middle product"
+    for(k=0; k<Aview.numEntriesPerRow[i]; ++k) {
+      int Ak=Acol2Brow[Aindices_i[k]];
+      double Aval = Aval_i[k];
+      // We're skipping local entries on this pass.
+      if(!Bview.remote[Ak] || Aval==0) continue;
+      
+      int* Bcol_inds = Bview.indices[Ak];
+      double* Bvals_k = Bview.values[Ak];
+
+      for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
+	int col=Bcol_inds[j];
+	if(c_index[col]<0){
+	  c_cols[c_current]=col;	      
+	  c_vals[c_current]=Aval*Bvals_k[j];
+	  c_index[col]=c_current;
+	  c_current++;
+	}
+	else{
+	  c_vals[c_index[col]]+=Aval*Bvals_k[j];	    
+	}
+      }
+    }    
+    // Remote matrix: Reset c_index and switch c_cols to GIDs
+    for(k=0; k<c_current; k++){
+      c_index[c_cols[k]]=-1;
+      c_cols[k]=bcols_import[c_cols[k]];      
+    }
+    // Remove matrix: Insert
+    //
+    // See above (on error handling).
+    err = C_filled ?
+      C.SumIntoGlobalValues(global_row,c_current,c_vals,c_cols)
+      :
+      C.InsertGlobalValues(global_row,c_current,c_vals,c_cols);    
   }
+  
 
   delete [] dwork;
   delete [] iwork;
-
+  delete [] c_index;
+  delete [] Acol2Brow;
   return(0);
 }
 
@@ -1073,44 +1183,10 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   //Now import any needed remote rows and populate the Bview struct.
   EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B, Bview) );
 
-  //If the result matrix C is not already FillComplete'd, we will do a
-  //preprocessing step to create the nonzero structure, then call FillComplete,
-  if (!C.Filled()) {
-    CrsWrapper_GraphBuilder crsgraphbuilder(C.RowMap());
-
-    //pass the graph-builder object to the multiplication kernel to fill in all
-    //the nonzero positions that will be used in the result matrix.
-    switch(scenario) {
-    case 1:    EPETRA_CHK_ERR( mult_A_B(Aview, Bview, crsgraphbuilder) );
-      break;
-    case 2:    EPETRA_CHK_ERR( mult_A_Btrans(Aview, Bview, crsgraphbuilder) );
-      break;
-    case 3:    EPETRA_CHK_ERR( mult_Atrans_B(Aview, Bview, crsgraphbuilder) );
-      break;
-    case 4:    EPETRA_CHK_ERR( mult_Atrans_Btrans(Aview, Bview, crsgraphbuilder) );
-      break;
-    }
-
-    //now insert all of the nonzero positions into the result matrix.
-    insert_matrix_locations(crsgraphbuilder, C);
-
-    if (call_FillComplete_on_result) {
-      const Epetra_Map* domainmap =
-        transposeB ? &(B.RangeMap()) : &(B.DomainMap());
-
-      const Epetra_Map* rangemap =
-        transposeA ? &(A.DomainMap()) : &(A.RangeMap());
-
-      EPETRA_CHK_ERR( C.FillComplete(*domainmap, *rangemap) );
-      call_FillComplete_on_result = false;
-    }
-  }
-
-  //Pre-zero the result matrix:
-  C.PutScalar(0.0);
+  // Zero if filled
+  if(C.Filled()) C.PutScalar(0.0);
 
   //Now call the appropriate method to perform the actual multiplication.
-
   CrsWrapper_Epetra_CrsMatrix ecrsmat(C);
 
   switch(scenario) {

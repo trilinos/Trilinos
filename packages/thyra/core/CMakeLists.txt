@@ -1,6 +1,6 @@
-INCLUDE(SubPackageMacros)
+INCLUDE(TribitsSubPackageMacros)
 
-SUBPACKAGE(Core)
+TRIBITS_SUBPACKAGE(Core)
 
 ADD_SUBDIRECTORY(src)
 
@@ -8,8 +8,8 @@ ADD_SUBDIRECTORY(src)
 # can use the same test library without requiring Thyra tests be enabled.
 ADD_SUBDIRECTORY(test/nonlinear/models)
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-PACKAGE_ADD_TEST_DIRECTORIES(example)
+TRIBITS_ADD_TEST_DIRECTORIES(example)
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()

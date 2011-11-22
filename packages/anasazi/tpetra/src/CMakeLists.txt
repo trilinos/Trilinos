@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -39,14 +39,14 @@ APPEND_SET(SOURCES
 # the TSQR libraries.
 #
 IF (${PACKAGE_NAME}_ENABLE_TSQR)
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     anasazitpetra
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
     DEPLIBS anasazi tpetra kokkos kokkosnodetsqr kokkosdisttsqr
     )
 ELSE ()
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     anasazitpetra
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}

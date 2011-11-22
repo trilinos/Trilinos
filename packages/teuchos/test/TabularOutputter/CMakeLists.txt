@@ -1,6 +1,6 @@
 
 # Required modules
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
 IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
@@ -9,7 +9,7 @@ IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   # digits for the scientific notation while the Linux GCC compiler
   # only prints out two.
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TabularOutputterUnitTests
     COMM serial mpi  
     SOURCES

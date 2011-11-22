@@ -728,6 +728,12 @@ int Zoltan_Scotch(
   if (IS_GLOBAL_GRAPH(gr.graph_type)) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
     if (SCOTCH_dgraphMap(&grafdat, &archdat, &stradat, prt.part) != 0) {
+/*  KDDKDD TO COMPARE WITH ZOLTAN2, USE SCOTCH_dgraphPart 
+    KDDKDD INSTEAD OF SCOTCH_dgraphMap .
+
+    printf("KDDKDD CALLING SCOTCH_dgraphPart\n");
+    if (SCOTCH_dgraphPart(&grafdat, num_part, &stradat, prt.part) != 0) {
+*/
       SCOTCH_archExit(&archdat);
       ZOLTAN_FREE(&goal_sizes);
       SCOTCH_dgraphExit(&grafdat);

@@ -581,6 +581,33 @@ namespace stk {
       }
     }
 
+    void remove_io_part_attribute(mesh::Part & part)
+    {
+      const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
+      if (entity == NULL) {
+	std::string msg = "stk::io::remove_io_part_attribute( ";
+	msg += part.name();
+	msg += " ) FAILED:";
+	msg += " io_part_attribute is not defined on this part";
+	throw std::runtime_error( msg );
+      } else {
+	mesh::MetaData & meta = mesh::MetaData::get(part);
+	bool success = meta.remove_attribute(part, entity);
+	if (!success) {
+	  std::string msg = "stk::io::remove_io_part_attribute( ";
+	  msg += part.name();
+	  msg += " ) FAILED:";
+	  msg += " meta.remove_attribute(..) returned failure.";
+	  throw std::runtime_error( msg );
+	}
+
+	if (entity->type() == Ioss::INVALID_TYPE) {
+	  delete entity;
+	}
+
+      }
+    }
+
     /** Determine whether the field is defined on the specified part
      * and should also be associated with a Ioss GroupingEntity for
      * input or output

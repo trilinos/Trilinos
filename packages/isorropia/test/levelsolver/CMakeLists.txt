@@ -1,7 +1,7 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   test_levelsolver
   SOURCES LevelSolver_test.cpp TestUtils.cpp
   COMM serial mpi
@@ -10,7 +10,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetra
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(TestLevelSolverCopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(TestLevelSolverCopyFiles
   SOURCE_FILES M01.mtx M02.mtx P01.p P02.p
   EXEDEPS test_levelsolver
   )

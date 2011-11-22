@@ -1,8 +1,8 @@
 
 # Required modules
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   DefaultMpiComm_UnitTests
   SOURCES
     DefaultMpiComm_UnitTests.cpp
@@ -10,7 +10,7 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   DefaultMpiComm_UnitTests  
   NAME DefaultMpiComm_UnitTests_serial
   ARGS "--teuchos-suppress-startup-banner --show-test-details=ALL --test-serial"
@@ -19,7 +19,7 @@ PACKAGE_ADD_TEST(
   #STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   DefaultMpiComm_UnitTests  
   NAME DefaultMpiComm_UnitTests_mpi1
   ARGS "--teuchos-suppress-startup-banner --show-test-details=ALL"
@@ -28,7 +28,7 @@ PACKAGE_ADD_TEST(
   #STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   DefaultMpiComm_UnitTests  
   NAME DefaultMpiComm_UnitTests_mpi
   ARGS "--teuchos-suppress-startup-banner --show-test-details=ALL"
@@ -39,7 +39,7 @@ PACKAGE_ADD_TEST(
   # 2008/07/16: rabartl: Note: We can't run on more than 4 procs or the char
   # ordinals will overflow for std::complex<double> packet type.
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Comm_test  
   SOURCES Comm_test.cpp
   COMM serial mpi
@@ -47,7 +47,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   ReduceAllAndScatter_test  
   COMM serial mpi  
   SOURCES ReduceAllAndScatter_test.cpp

@@ -1,7 +1,7 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PowerMethodExample
   SOURCES Tpetra_Power_Method
   ARGS 
@@ -9,7 +9,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PowerMethodVbrExample
   SOURCES Tpetra_Power_Method_VbrMatrix
   ARGS 1000
@@ -17,7 +17,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PowerMethodFileExample
   SOURCES Tpetra_Power_Method_From_File
   ARGS
@@ -25,7 +25,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(Tpetra_PowerMethod_CopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_PowerMethod_CopyFiles
   SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockCG
   SOURCE_FILES bcsstk14.hb
   EXEDEPS PowerMethodFileExample

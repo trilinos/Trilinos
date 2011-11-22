@@ -1,13 +1,13 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(../UnitTest)
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
 FILE(GLOB SOURCES *.cpp)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ThetaStepper_UnitTest
   SOURCES ${SOURCES}
   DEPLIBS rythmos_test_models
@@ -15,7 +15,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(Test_ThetaStepper_CopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_ThetaStepper_CopyFiles
   DEST_FILES modelParams.xml implicitEulerParams.xml
   EXEDEPS ThetaStepper_UnitTest
   )

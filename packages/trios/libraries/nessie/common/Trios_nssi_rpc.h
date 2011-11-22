@@ -58,7 +58,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 extern "C" {
 #endif
 
-#ifdef HAVE_TRIOS_PORTALS
+#if defined(HAVE_TRIOS_PORTALS) || defined(HAVE_TRIOS_CRAYPORTALS)
 #define NSSI_DEFAULT_TRANSPORT NSSI_RPC_PTL
 #elif defined(HAVE_TRIOS_INFINIBAND)
 #define NSSI_DEFAULT_TRANSPORT NSSI_RPC_IB

@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( Nemesis
+TRIBITS_TPL_DECLARE_LIBRARIES( Nemesis
   REQUIRED_HEADERS ne_nemesisI.h
   REQUIRED_LIBS_NAMES nemIc
   )

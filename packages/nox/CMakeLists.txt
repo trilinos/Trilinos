@@ -1,12 +1,12 @@
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
 
 #
 # A) Define the package
 #
 
-PACKAGE(NOX)
+TRIBITS_PACKAGE(NOX)
 
 #
 # B) Set up package-specific options
@@ -30,12 +30,12 @@ SET(NOX_ENABLE_MF_default OFF)
 IF(TPL_ENABLE_MF)
   SET(NOX_ENABLE_MF_default ON)
 ENDIF()
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MF
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MF
   HAVE_LOCA_MF
   "Enable Multifario (MF) support in LOCA"
   ${NOX_ENABLE_MF_default} )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   NOX_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors enabled."
   "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
@@ -62,7 +62,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in
 ###################################################
 # Debug build
 ###################################################
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   HAVE_NOX_DEBUG
   "Build with debug code enabled."
   ${Trilinos_ENABLE_DEBUG} )
@@ -149,17 +149,17 @@ ADD_SUBDIRECTORY(src-thyra)
 ADD_SUBDIRECTORY(src-petsc)
 ADD_SUBDIRECTORY(src-loca)
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(examples)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
 
 #
 # Exclude files for source package.
 #
 
-PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
-PACKAGE_ARCH_EXCLUDE_FILES(
+TRIBITS_EXCLUDE_FILES(
   src-loca/python
   test/lapack/LOCA_python
   )
@@ -168,4 +168,4 @@ PACKAGE_ARCH_EXCLUDE_FILES(
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

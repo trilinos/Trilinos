@@ -1,12 +1,12 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
 SET(CURRENT_PACKAGE ANASAZIEPETRA)
-CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+CONFIGURE_FILE("${${PROJECT_NAME}_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}epetra_DLLExportMacro.h)
 
 #
@@ -44,7 +44,7 @@ APPEND_SET(SOURCES
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   anasaziepetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

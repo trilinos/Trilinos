@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( BLAS
+TRIBITS_TPL_DECLARE_LIBRARIES( BLAS
   REQUIRED_LIBS_NAMES "blas blas_win32")

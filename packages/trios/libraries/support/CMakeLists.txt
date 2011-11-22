@@ -1,8 +1,8 @@
 
-INCLUDE(PackageLibraryMacros)
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Package-specific configuration options
@@ -106,7 +106,7 @@ ENDIF (${PACKAGE_NAME}_ENABLE_Pablo)
 
 ########################### TRIOS SUPPORT LIBRARY ###############
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
    trios_support
    HEADERS ${HEADERS}
    NOINSTALLHEADERS ${NOINSTALLHEADERS}

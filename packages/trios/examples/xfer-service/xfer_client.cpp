@@ -85,8 +85,11 @@ log_level client_debug_level = LOG_UNDEFINED;
 
 /* prototype for a function to initialize buffers */
 extern void xfer_init_data_array(const unsigned int seed, data_array_t *array);
-extern int xfer_compare_data_arrays(data_array_t *arr1, data_array_t *arr2);
-
+extern int xfer_compare_data_arrays(const data_array_t *arr1, const data_array_t *arr2);
+extern int print_args(
+        std::ostream &out,
+        const struct xfer_args &args,
+        const char *prefix);
 
 
 
@@ -404,7 +407,6 @@ int xfer_read_rdma(
     int rc = NSSI_OK;
     xfer_read_rdma_args args;
     log_level debug_level = client_debug_level;
-    debug_level = LOG_ALL;
 
     int nbytes;
 
@@ -572,8 +574,14 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
 
     /* open the result file */
     if (client_rank == 0) {
+
         if (!args.result_file.empty()) {
-            result_stream.open(args.result_file.c_str());
+
+            if (args.result_file_mode.compare("a") == 0)
+                result_stream.open(args.result_file.c_str(), fstream::out | fstream::app);
+            else
+                result_stream.open(args.result_file.c_str(), fstream::out);
+
             if (!result_stream.is_open()) {
                 log_warn(client_debug_level,
                         "invalid result file:"
@@ -770,7 +778,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
 
         case XFER_READ_RDMA_SYNC:
         {
-            log_debug(LOG_ALL, "Starting XFER_READ_RDMA_SYNC");
+            log_debug(debug_level, "Starting XFER_READ_RDMA_SYNC");
 
             // initialize the validation array, if necessary
             data_array_t tmp_array;
@@ -796,9 +804,11 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
                         log_error(client_debug_level, "Validation failed");
                         MPI_Abort(MPI_COMM_WORLD, rc);
                     }
-
-                    free(tmp_array.data_array_t_val);
                 }
+            }
+
+            if (args.validate_flag) {
+                free(tmp_array.data_array_t_val);
             }
 
             break;
@@ -892,6 +902,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
 
         if (client_rank == 0) {
             bool write_header = (i == 0);
+            if (result_stream.is_open() && write_header) print_args(result_stream, args, "%");
             Trios::WriteTimings(result_stream.is_open() ? result_stream : cout, "", timings_desc, timings, write_header);
         }
         timings_desc.clear();

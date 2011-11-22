@@ -47,6 +47,11 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <assert.h>
 #include <unistd.h>
 
+#if defined(HAVE_TRIOS_SCHED_YIELD)
+#include <sched.h>
+#endif
+
+
 #include "Trios_logger.h"
 #include "Trios_threads.h"
 
@@ -400,12 +405,15 @@ nthread_id_t nthread_self(void)
 
 void nthread_yield(void)
 {
-#if defined(HAVE_TRIOS_PTHREAD)
+#if defined(HAVE_TRIOS_PTHREAD_YIELD)
     log_debug(thread_debug_level, "nthread_yield(STUB) - pthread_yield");
+    pthread_yield();
+#elif defined (HAVE_TRIOS_PTHREAD_YIELD_NP)
+    log_debug(thread_debug_level, "nthread_yield(STUB) - pthread_yield_np");
     pthread_yield_np();
-//#elif defined(HAVE_TRIOS_SCHED_YIELD) && !defined(__LIBCATAMOUNT__)
-//    log_debug(thread_debug_level, "nthread_yield(STUB) - sched_yield");
-//    sched_yield();
+#elif defined(HAVE_TRIOS_SCHED_YIELD) && !defined(__LIBCATAMOUNT__)
+    log_debug(thread_debug_level, "nthread_yield(STUB) - sched_yield");
+    sched_yield();
 #else
     log_debug(thread_debug_level, "nthread_yield(STUB) - usleep");
     usleep(0);

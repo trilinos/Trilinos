@@ -1,12 +1,12 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageAddAdvancedTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddAdvancedTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(ML_ENABLE_AztecOO)
 ASSERT_DEFINED(ML_ENABLE_Amesos)
 IF(ML_ENABLE_AztecOO AND ML_ENABLE_Amesos)
-  PACKAGE_ADD_EXECUTABLE(
+  TRIBITS_ADD_EXECUTABLE(
     ml_Validate
     SOURCES cxx_main.cpp
     COMM serial mpi
@@ -15,7 +15,7 @@ IF(ML_ENABLE_AztecOO AND ML_ENABLE_Amesos)
   ASSERT_DEFINED(PYTHONINTERP_FOUND)
   IF (PYTHONINTERP_FOUND)
 
-    PACKAGE_ADD_ADVANCED_TEST( ValidateParameters_compareTestOutput
+    TRIBITS_ADD_ADVANCED_TEST( ValidateParameters_compareTestOutput
       COMM serial mpi
       OVERALL_NUM_MPI_PROCS 1  # Should be 1,4,9
       TEST_0 EXEC ml_Validate ARGS input1.xml
@@ -29,7 +29,7 @@ IF(ML_ENABLE_AztecOO AND ML_ENABLE_Amesos)
 
   ENDIF()
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(ValidateParamsCopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(ValidateParamsCopyFiles
     DEST_FILES input1.xml baseline1.txt evaluateCriteria baseline1.txt
     EXEDEPS ml_Validate
     )

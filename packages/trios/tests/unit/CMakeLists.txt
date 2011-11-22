@@ -1,8 +1,8 @@
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageAddTest)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddTest)
 
 #
 #  When adding test directories if you want the test to be distributed
@@ -28,20 +28,20 @@ INCLUDE(PackageAddTest)
 #  ADD_SUBDIRECTORY(ch_brack2_3)
 #ENDIF()
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LoggerTest
   SOURCES LoggerTest.cpp
   COMM serial mpi
 )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TimerTest
   SOURCES TimerTest.c
   COMM serial mpi
 )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SignalTest
   SOURCES SignalTest.c
   COMM serial mpi
@@ -49,7 +49,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 
 IF (TRIOS_ENABLE_TRACING)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TraceTest
     SOURCES TraceTest.c
     COMM serial mpi

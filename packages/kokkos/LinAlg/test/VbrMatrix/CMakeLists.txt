@@ -1,6 +1,6 @@
-INCLUDE(PackageAddExecutableAndTest)   
+INCLUDE(TribitsAddExecutableAndTest)   
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST( VbrMatrix_UnitTests 
+TRIBITS_ADD_EXECUTABLE_AND_TEST( VbrMatrix_UnitTests 
   SOURCES   
     VbrMatrix_DefaultOps.cpp 
     VbrMatrix_UnitTests.cpp 

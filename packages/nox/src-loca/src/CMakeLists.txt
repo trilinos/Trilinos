@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -350,7 +350,7 @@ ENDIF()
 #
 
 IF (NOX_ENABLE_LOCA)
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     loca
     HEADERS ${HEADERS}
     NOINSTALLHEADERS ${NOINSTALLHEADERS}

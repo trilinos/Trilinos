@@ -30,16 +30,16 @@ message("begin loop")
 ctest_submit(FILES 
   ${CTEST_SOURCE_DIRECTORY}/cmake/python/data/CDashSubprojectDependencies.xml)
 
-foreach(PACKAGE ${Trilinos_PACKAGES})
-  set_property(GLOBAL PROPERTY SubProject ${PACKAGE})
-  set_property(GLOBAL PROPERTY Label ${PACKAGE})
-  message("PACKAGE='${PACKAGE}'")
+foreach(TRIBITS_PACKAGE ${Trilinos_PACKAGES})
+  set_property(GLOBAL PROPERTY SubProject ${TRIBITS_PACKAGE})
+  set_property(GLOBAL PROPERTY Label ${TRIBITS_PACKAGE})
+  message("TRIBITS_PACKAGE='${TRIBITS_PACKAGE}'")
   
   # CONFIGURE STEP
   
-  # create CONFIGURE_OPTIONS for this PACKAGE
+  # create CONFIGURE_OPTIONS for this TRIBITS_PACKAGE
   set(CONFIGURE_OPTIONS
-    "-DTrilinos_ENABLE_${PACKAGE}:BOOL=ON"
+    "-DTrilinos_ENABLE_${TRIBITS_PACKAGE}:BOOL=ON"
     "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON"
     "-DTrilinos_ENABLE_TESTS:BOOL=ON")
   foreach(FAILED_PACKAGE ${Trilinos_FAILED_PACKAGES})
@@ -58,7 +58,7 @@ foreach(PACKAGE ${Trilinos_PACKAGES})
   # if the configure failed add the package to the list
   # of failed packages
   if(NOT "${res}" EQUAL "0")
-    list(APPEND FAILED_PACKAGE ${PACKAGE})
+    list(APPEND FAILED_PACKAGE ${TRIBITS_PACKAGE})
   else()
     # load target properties and test keywords
     ctest_read_custom_files(BUILD "${CTEST_BINARY_DIRECTORY}")
@@ -71,14 +71,14 @@ foreach(PACKAGE ${Trilinos_PACKAGES})
   # If configure passed, build and test
   if("${res}" EQUAL "0")
     # set the target to build, build it, and submit it
-    set(CTEST_BUILD_TARGET ${PACKAGE}_libs)
+    set(CTEST_BUILD_TARGET ${TRIBITS_PACKAGE}_libs)
     ctest_build (BUILD "${CTEST_BINARY_DIRECTORY}"
       RETURN_VALUE res  APPEND)
     ctest_submit( PARTS build ) # submit the build
 
     # if the build failed add it to the failed packages
     if(NOT "${res}" EQUAL "0")
-      list(APPEND FAILED_PACKAGE ${PACKAGE})
+      list(APPEND FAILED_PACKAGE ${TRIBITS_PACKAGE})
     else()
       # inside here the build worked
       # Now build ALL target, but append the results to the last build.xml
@@ -88,17 +88,17 @@ foreach(PACKAGE ${Trilinos_PACKAGES})
       # submit the build for all target
       # submit should take a list of things to submit
       ctest_submit( PARTS build )  
-      # now run the tests that match the ${PACKAGE} name
+      # now run the tests that match the ${TRIBITS_PACKAGE} name
       ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}"
-        INCLUDE ${PACKAGE}
+        INCLUDE ${TRIBITS_PACKAGE}
         )
       #ctest_memcheck(BUILD "${CTEST_BINARY_DIRECTORY}"
-      #  KEYWORDS ${PACKAGE})
+      #  KEYWORDS ${TRIBITS_PACKAGE})
       #ctest_coverage(BUILD "${CTEST_BINARY_DIRECTORY}")
       # submit test, memcheck and coverage results
       ctest_submit(PARTS Test)
     endif()
   endif()
-endforeach(PACKAGE)
+endforeach(TRIBITS_PACKAGE)
 
 message("end loop")

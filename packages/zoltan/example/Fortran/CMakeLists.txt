@@ -1,8 +1,8 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   simpleRCB_f90
   SOURCES simpleRCB.f90 zoltanRCBmod.f90
   ARGS 
@@ -10,6 +10,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-4
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(FortranExamplesCopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(FortranExamplesCopyFiles
   SOURCE_FILES mesh.txt 
  )

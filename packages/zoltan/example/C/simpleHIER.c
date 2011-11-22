@@ -70,6 +70,13 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
+  if (numProcs < 4){
+    if (myRank == 0) fprintf(stderr,
+      "ERROR: This test requires at least 4 processes\n");
+    MPI_Finalize();
+    exit(1);
+  }
+
   rc = Zoltan_Initialize(argc, argv, &ver);
 
   if (rc != ZOLTAN_OK){
@@ -107,7 +114,8 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "HIER_DEBUG_LEVEL", "1");
   Zoltan_Set_Param(zz, "LB_METHOD", "HIER");
   Zoltan_Set_Param(zz, "HIER_ASSIST", "1");
-  Zoltan_Set_Param(zz, "PLATFORM_NAME", "glory");
+  Zoltan_Set_Param(zz, "TOPOLOGY", "2,2");
+  Zoltan_Set_Param(zz, "PHG_EDGE_SIZE_THRESHOLD", ".8");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
