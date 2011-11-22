@@ -41,12 +41,13 @@
 #include <WAXSBY.hpp>
 #include <CRSMatVec.hpp>
 #include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_DefaultArithmetic.hpp>
 
 template< typename Scalar , class DeviceType , unsigned N = 1 >
 struct InvMultiVectorScale ;
 
 template< typename Scalar >
-struct MultiVectorScale<Scalar, KOKKOS_MACRO_DEVICE ,1> {
+struct InvMultiVectorScale<Scalar, KOKKOS_MACRO_DEVICE ,1> {
   typedef KOKKOS_MACRO_DEVICE     device_type ;
   typedef Scalar                  value_type ;
   typedef device_type::size_type  size_type ;
@@ -54,7 +55,7 @@ struct MultiVectorScale<Scalar, KOKKOS_MACRO_DEVICE ,1> {
   Kokkos::MultiVectorView<Scalar,device_type> Y ;
   Kokkos::ValueView<Scalar,device_type>     S ;
 
-  MultiVectorScale(
+  InvMultiVectorScale(
     const Kokkos::MultiVectorView<Scalar,device_type> & argY ,
     const Kokkos::ValueView<Scalar,device_type>       & argS )
     : Y( argY ), S( argS ) {}
@@ -133,6 +134,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
   typedef device_type::size_type index_type ;
   typedef Kokkos::MultiVectorView<Scalar , device_type>  scalar_vector;
   typedef Kokkos::MultiVectorView<index_type , device_type>    index_vector;
+  typedef Kokkos::MultiVectorView<Scalar,device_type> MultiVector ;
 
   typedef Kokkos::ValueView<Scalar , device_type>     value;
   typedef Kokkos::ValueView<Scalar , Kokkos::DeviceHost> host_val;
@@ -140,10 +142,10 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
   typedef InvMultiVectorScale< Scalar , device_type , 1 > InvScale ;
 
   struct Norm2 {
-    Value       norm ;
+    value norm;
 
-    Norm2(const Value& argNorm )
-      norm( argNorm )
+    Norm2(value argNorm):
+      norm(argNorm)
       {}
 
     KOKKOS_MACRO_DEVICE_FUNCTION
@@ -168,6 +170,11 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
     int iteration = 0 ;
     
+    value one  = Kokkos::create_value<Scalar , device_type>();
+    value zero = Kokkos::create_value<Scalar , device_type>();
+
+    Kokkos::deep_copy( one,  Scalar( 1 ) );
+    Kokkos::deep_copy( zero, Scalar( 0 ) );
 
     // Solvers' working temporaries:
     scalar_vector r = 
@@ -211,10 +218,10 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
 
     //Q(:, 0) = r ./ beta (elementwise division)
-    Kokkos::parallel_for(rows, InvScale(MultiVector(Q,0), invbeta))
+    Kokkos::parallel_for(rows, InvScale(MultiVector(Q,0), beta));
 
     Kokkos::Impl::Timer wall_clock ;
-    for(int j =1; i<= num_iters; ++j, ++iteration){
+    for(int j =1; j<= num_iters; ++j, ++iteration){
       //Q(:,j) = A * Q(:, j-1)
       CRSMatVec<Scalar,device_type> A_mult_q(
         A_value, A_row , A_offsets , MultiVector(Q, j-1) , MultiVector(Q, j));
@@ -222,7 +229,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
 
       //H(0:j, j-1) = Q(:, 0:j-1)^* Q(:,j)
-      NodeGEMM<Scalar, KOKKOS_MACRO_DEVICE>::GEMM(
+      Kokkos::NodeGEMM<Scalar, KOKKOS_MACRO_DEVICE>::GEMM(
         Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, MultiVector(Q,0, j-1), 
         MultiVector(j), 0.0, MultiVector(H, j-1))
 
@@ -250,6 +257,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     size_t iter_matvec_flops = iteration * ( 2 * A_col.length() );
     size_t iter_total_flops  = iter_waxpby_flops + iter_dot_flops + iter_matvec_flops ;
     return (double) iter_total_flops / ( iter_time * 1.0e6 );
+  }
 };
 
 
