@@ -41,9 +41,29 @@
 #include <WAXSBY.hpp>
 #include <WAXPBY.hpp>
 #include <Dot.hpp>
-#include <Divide.hpp>
 #include <CRSMatVec.hpp>
 #include <impl/Kokkos_Timer.hpp>
+template< typename Scalar , class DeviceType , unsigned N = 1 >
+struct MultiVectorYSAX ;
+
+template< typename Scalar >
+struct MultiVectorYSAX<Scalar, KOKKOS_MACRO_DEVICE ,1> {
+  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef Scalar                  value_type ;
+  typedef device_type::size_type  size_type ;
+
+  Kokkos::MultiVectorView<Scalar,device_type> Y , X ;
+  Kokkos::ValueView<Scalar,device_type>     A ;
+
+  MultiVectorYSAX( const Kokkos::MultiVectorView<Scalar,device_type> & argY ,
+                   const Kokkos::ValueView<Scalar,device_type>     & argA ,
+                   const Kokkos::MultiVectorView<Scalar,device_type> & argX )
+   : Y( argY ), X( argX ), A( argA ) {}
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type iwork ) const
+  { Y(iwork) -= X(iwork) * *A ; }
+};
 
 
 template <class Scalar , class DeviceType >
@@ -61,6 +81,35 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
   typedef Kokkos::ValueView<Scalar , device_type>     value;
   typedef Kokkos::ValueView<Scalar , Kokkos::DeviceHost> host_val;
+  typedef Kokkos::MultiVectorYSAX<  Scalar , device_type , 1 > YSAX ;
+
+  struct Norm2 {
+    MultiVector R ;
+    Value       inv ;
+    size_type   j ;
+
+    Norm2( const MultiVector & argR ,
+              const Value       & argInv ,
+              size_type argJ )
+      : R( argR )
+      , inv( argInv )
+      , j( argJ )
+      {}
+
+    KOKKOS_MACRO_DEVICE_FUNCTION
+    void operator()( Scalar & result ) const
+    {
+      const Scalar value = sqrt( result );
+      R(j,j) = value ;
+      if ( 0 < value ) {
+        *inv = 1.0 / value ;
+      }
+      else {
+        *inv = 0 ;
+      }
+    }
+  };
+
 
   
   // Return megaflops / second for iterations
@@ -69,14 +118,17 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
                      index_vector  & A_row ,
                      index_vector & A_offsets ,
                      scalar_vector & b ,
-                     scalar_vector & x )
+                     scalar_vector & x,
+                     const size_t & num_iters)
   {
     const size_t rows = A_row.length()-1;
 
 
     // Solvers' working temporaries:
-    scalar_vector r = Kokkos::create_labeled_multivector<scalar_vector>("r",rows);
-    scalar_vector Ax = Kokkos::create_labeled_multivector<scalar_vector>("Ax",rows);
+    scalar_vector r = 
+      Kokkos::create_labeled_multivector<scalar_vector>("r",rows);
+    scalar_vector Ax = 
+      Kokkos::create_labeled_multivector<scalar_vector>("Ax",rows);
 
     //Compute initial residual r = b - A*x
 
@@ -85,13 +137,14 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     A_mult_x.apply(); // Ap = A * p
 
     // r = b - Ax
-    Kokkos::parallel_for(rows , WAXSBY<Scalar , device_type>(one , b , one , Ax , r) );
+    Kokkos::parallel_for(
+      rows , WAXSBY<Scalar , device_type>(one , b , one , Ax , r) );
     
     value beta  = Kokkos::create_value<Scalar , device_type>();
     Kokkos::deep_copy( zero, Scalar( 0 ) );
 
     // compute nrom2 of r
-    Kokkos::parallel_reduce(rows, Norm2(beta, r));
+    Kokkos::parallel_reduce(rows, Norm2(r), beta);
 
     Scalar beta_copy;
     Kokkos::deep_copy(beta_copy,beta);
@@ -100,104 +153,48 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       return 0.0;
     }
 
-/*
-    const Scalar tolerance = std::numeric_limits<Scalar>::epsilon();
-    const int maximum_iteration = 200 ;
-    const size_t rows = A_row.length()-1;
+    //Allocate space for basis vectors Q. Q has as many rows as b and m+1 
+    //columns.
+    scalar_vector Q = 
+      Kokkos::create_labeled_multivector<scalar_vector>("Q",rows, num_iters+1);
 
-    value one  = Kokkos::create_value<Scalar , device_type>();
-    value zero = Kokkos::create_value<Scalar , device_type>();
+    //Allocate m+1 by m matrix H, and fill it with zeros.
+    scalar_vector H = Kokkos::create_labeled_multivector<scalar_vector>(
+      "r",
+      num_iters, 
+      num_iters+1);
 
-    Kokkos::deep_copy( one,  Scalar( 1 ) );
-    Kokkos::deep_copy( zero, Scalar( 0 ) );
+    scalar_vector Qjtemp = create_labeled_multivector("Qjtemp", rows, 1);
 
-    // Solvers' working temporaries:
+    //Q(:, 0) = r ./ beta (elementwise division)
+    value invbeta  = Kokkos::create_value<Scalar , device_type>();
+    Kokkos::deep_copy( zero, Scalar( 1/beta_copy ) );
+    Kokkos::parallel_for(rows, Scale(MultiVector(Q,0), invbeta))
+    for(int j =1; i<= num_iters; ++j){
+      //Q(:,j) = A * Q(:, j-1)
+      CRSMatVec<Scalar,device_type> A_mult_q(
+        A_value, A_row , A_offsets , MultiVector(Q, j-1) , MultiVector(Q, j));
+      A_mult_q.apply();
 
-    scalar_vector r = Kokkos::create_labeled_multivector<scalar_vector>("r",rows);
-    scalar_vector p = Kokkos::create_labeled_multivector<scalar_vector>("p",rows);
-    scalar_vector Ap = Kokkos::create_labeled_multivector<scalar_vector>("Ap",rows);
 
-    value rtrans    = Kokkos::create_value<Scalar , device_type>();
-    value ptrans    = Kokkos::create_value<Scalar , device_type>();
-    value oldrtrans = Kokkos::create_value<Scalar , device_type>();  
-    value alpha     = Kokkos::create_value<Scalar , device_type>();          
-    value beta      = Kokkos::create_value<Scalar , device_type>();  
+      //H(0:j, j-1) = Q(:, 0:j-1)^* Q(:,j)
+      NodeGEMM<Scalar, KOKKOS_MACRO_DEVICE>::GEMM(
+        Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, MultiVector(Q,0, j-1), 
+        MultiVector(j), 0.0, MultiVector(H, j-1))
 
-    double normr = 1000; 
-    
-    Kokkos::deep_copy( p , x );
 
-    // create CRSMatVec object for A * p
-    CRSMatVec<Scalar,device_type> A_mult_p(A_value, A_row , A_offsets , p , Ap);
-
-    A_mult_p.apply(); // Ap = A * p
-  
-    // r = b - Ap
-    Kokkos::parallel_for(rows , WAXSBY<Scalar , device_type>(one , b , one , Ap , r) );
-    
-    // p = r
-    Kokkos::deep_copy( p , r );
-
-    int iteration = 0 ;
-
-    Kokkos::Impl::Timer wall_clock ;
-
-    while ( normr > tolerance  && iteration < maximum_iteration )
-    {
-      int k;
-
-      // Iterate 25 times before checking residual to
-      // avoid the device-host synchronization
-      // required by a copy-back of residual data.
-
-      for(k = 0; k < 25 ; k++) 
-      {
-        // Ap = A*p
-        A_mult_p.apply();
-        
-        // ptrans = p • Ap
-        Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(p , Ap) , ptrans );
-
-        // oldrtrans = r • r
-        // alpha = rtrans / ptrans
-        Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(r , r) ,  
-                        Divide<Scalar , device_type>(ptrans,alpha,oldrtrans));
-
-        // x = x + alpha * p 
-        Kokkos::parallel_for(rows , WAXPBY<Scalar , device_type>(one , x , alpha , p , x) );
-    
-        // r = rk - alpha * Ap
-        Kokkos::parallel_for(rows , WAXSBY<Scalar , device_type>(one , r , alpha , Ap , r) );
-
-        // rtrans = r • r
-        // beta = rtrans / oldrtrans
-        Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(r , r) , 
-                        Divide<Scalar , device_type>(oldrtrans , beta, rtrans) );
-                                  
-        // p = r + beta * p
-        Kokkos::parallel_for(rows , WAXPBY<Scalar , device_type>(one , r , beta , p , p) );
+      // Q(:, j) = Q(:, j) - Q(:, 0:j-1) * H(0:j, j-1)
+      for(int i =0; i<j; ++i){
+        Kokkos::parallel_for(
+          rows, YSAX(MultiVector(Q,j), H(i, j-1), MultiVector(Q,i)))
       }
-
-      Scalar check = 0 ;
-      Kokkos::deep_copy(check,oldrtrans);
-
-      iteration += k ;
-      normr = sqrt(check);
-
-//      std::cout<<"Iteration: "<<iteration<<" Residual "<<normr<<std::endl;
+     
+      //H(j, j-1) = norm(Q(:,j),2) 
+      
+      //Q(:,j) = Q(:, j) / H(j, j-1)
+      Kokkos::parallel_for( rows , Scale(MultiVector( Q , j ) , H(j,j-1)));
+       
     }
-
-    const double iter_time = wall_clock.seconds();
-
-    // Compute floating point operations performed during iterations
-
-    size_t iter_waxpby_flops = ( 3 * iteration ) * ( 3 * rows ); // y = a * x + b * y
-    size_t iter_dot_flops    = ( 3 * iteration ) * ( 2 * rows );
-    size_t iter_matvec_flops = iteration * ( 2 * A_offsets.length() );
-    size_t iter_total_flops  = iter_waxpby_flops + iter_dot_flops + iter_matvec_flops ;
-
-    return (double) iter_total_flops / ( iter_time * 1.0e6 );
-  }*/
 };
 
 
