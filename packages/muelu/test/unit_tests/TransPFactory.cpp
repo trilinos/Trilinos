@@ -32,8 +32,8 @@ namespace MueLuTests {
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     // Test of createTwoLevelHierarchy: to be moved...
-    TEST_EQUALITY(fineLevel.GetLevelID(), 1);
-    TEST_EQUALITY(coarseLevel.GetLevelID(), 2);
+    TEST_EQUALITY(fineLevel.GetLevelID(), 0);
+    TEST_EQUALITY(coarseLevel.GetLevelID(), 1);
     //compilation warning TEST_EQUALITY(fineLevel.GetPreviousLevel().get(), NULL);
     //TEST_EQUALITY(coarseLevel.GetPreviousLevel().get(), &fineLevel);
     // --

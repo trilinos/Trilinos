@@ -47,6 +47,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_CoalesceFactory_def.hpp" // check me
 
 // 
 #include "MueLu_UseDefaultTypes.hpp"
@@ -99,8 +100,8 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Reading matrix market file" << std::endl;
   EpetraExt::MatrixMarketFileToCrsMatrix("stru2d_A.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
+  EpetraExt::MatrixMarketFileToVector("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
+  EpetraExt::MatrixMarketFileToMultiVector( "/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
@@ -130,6 +131,7 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   Finest->Set("Nullspace",xNS);
 
+  //RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
   *out << "========================= Aggregate option summary  =========================" << std::endl;

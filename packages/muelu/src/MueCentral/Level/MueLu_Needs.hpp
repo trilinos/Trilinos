@@ -3,6 +3,7 @@
 
 #include <string>
 #include <Teuchos_ParameterEntry.hpp>
+#include "MueLu_VariableContainer.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -11,6 +12,7 @@
 
 #include "MueLu_TwoKeyMap.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_NoFactory.hpp"
 
 namespace MueLu {
   
@@ -21,10 +23,15 @@ namespace MueLu {
     Maintains a list of 'Needs' for a given Level. For example, a restriction factory that
     transposes the tentative prolongator 'Needs' the prolongator factory to save this.
 
-    The data is stored using a variable name and a pointer to the generating factory. The
-    pointer to the generating factory is only used as "key". For the Needs class it doesn't
-    matter if the given factory pointer is valid or not. So the NULL pointer can also be used.
+    The data is stored using a variable name and a pointer to the generating factory. We use
+    a TwoKeyMap object with the pointer to the generating factory as primary key and the variable
+    name as secondary key. The pointer to the generating factory is only used as primary "key".
+    For the Needs class it doesn't matter if the given factory pointer is valid or not.
+    So the NULL pointer can also be used.
 
+    The data itself is stored within a VariableContainer object.
+    The 'Needs' class only provides basic routines for handling the TwoKeyMap object with all
+    VariableContainer objects.
     A reference counter keeps track of the storage and automatically frees the memory if
     the data is not needed any more. In the standard mode, the data first has to be requested
     by calling the Request function. Then the data can be set by calling Set.
@@ -35,9 +42,7 @@ namespace MueLu {
 
   private:
 
-    UTILS::TwoKeyMap<std::string, const FactoryBase*, int>                     countTable_; //<! Stores number of outstanding requests for a need.
-    UTILS::TwoKeyMap<std::string, const FactoryBase*, Teuchos::ParameterEntry> dataTable_;  //<! Stores data associated with a need.
-    UTILS::TwoKeyMap<std::string, const FactoryBase*, bool>                    keepTable_;  //<! keep status of a variable
+    UTILS::TwoKeyMap<const FactoryBase*, std::string, RCP<MueLu::VariableContainer> > dataTable_;
 
     //TODO: Key1 = const std::string?
 
@@ -65,7 +70,9 @@ namespace MueLu {
       // Store entry only if data have been requested (or IsKeep)
       if (IsRequested(ename, factory) ||
           IsKept(ename, factory)) {
-        dataTable_.Set(ename, factory, Teuchos::ParameterEntry(entry));
+        TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory, ename), Exceptions::RuntimeError, "MueLu::Needs::Set(): " + ename + " not found in dataTable_");
+        const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
+        var->SetData( Teuchos::ParameterEntry(entry));
       }
     } //Set
 
@@ -76,10 +83,12 @@ namespace MueLu {
     //@{
 
     //! Indicate that an object is needed. This increments the storage counter.
-    void Request(const std::string & ename, const FactoryBase* factory); //Request
+    //void Request(const std::string & ename, const FactoryBase* factory); //Request
+    void Request(const std::string & ename, const FactoryBase* factory, const FactoryBase* requestedBy = MueLu::NoFactory::get()); //Request
 
     //! Decrement the storage counter.
-    void Release(const std::string & ename, const FactoryBase* factory); //Release
+    //void Release(const std::string & ename, const FactoryBase* factory); //Release
+    void Release(const std::string & ename, const FactoryBase* factory, const FactoryBase* requestedBy = MueLu::NoFactory::get()); //Release
 
     //@}
 
@@ -90,8 +99,9 @@ namespace MueLu {
     // Usage: Level->Get< RCP<Operator> >("A", factoryPtr)
     template <class T>
     const T & Get(const std::string & ename, const FactoryBase* factory) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(ename, factory), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
-      return Teuchos::getValue<T>(dataTable_.Get(ename, factory));
+      TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory, ename), Exceptions::RuntimeError, "MueLu::Needs::Get(): " + ename + " not found in dataTable_");
+      const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
+      return Teuchos::getValue<T>(var->GetData());
     }
     
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
@@ -126,6 +136,8 @@ namespace MueLu {
     // Note2: this tells nothing about whether the data actually exists.
     bool IsRequested(const std::string & ename, const FactoryBase* factory) const;
 
+    bool IsRequestedBy(const FactoryBase* factory, const std::string & ename, const FactoryBase* requestedBy) const;
+
     //! Test whether a factory is generating factory of a requested variable in Needs
     bool IsRequestedFactory(const FactoryBase* factory);
 
@@ -141,13 +153,16 @@ namespace MueLu {
     //!  Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or hasn't been saved.
     int NumRequests(const std::string & ename, const FactoryBase* factory) const;
 
+    int NumRequestsBy(const FactoryBase* factory, const std::string & ename, const FactoryBase* requestedBy) const;
+
     //! @name Helper functions
     //@{
 
     //! Returns a vector of strings containing all key names of requested variables
-    std::vector<std::string> RequestedKeys() const;
 
-    std::vector<const FactoryBase*> RequestedFactories(const std::string & ename) const;
+    std::vector<std::string> RequestedKeys(const FactoryBase* factory) const;
+
+    std::vector<const FactoryBase*> RequestedFactories() const;
 
     std::string GetType(const std::string & ename, const FactoryBase* factory) const;
 

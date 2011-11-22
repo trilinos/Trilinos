@@ -13,16 +13,18 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact)
     : aggregatesFact_(aggregatesFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
-      QR_(false) { }
+      QR_(false) {
+  }
  
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~TentativePFactory() {}
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-    fineLevel.DeclareInput("A", AFact_.get());
-    fineLevel.DeclareInput("Aggregates", aggregatesFact_.get());
-    fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get());
+
+    fineLevel.DeclareInput("A", AFact_.get(), this);
+    fineLevel.DeclareInput("Aggregates", aggregatesFact_.get(), this);
+    fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -38,6 +40,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level & fineLevel, Level & coarseLevel) const {
+    //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
     // get data from fine level
     RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
     RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
@@ -65,14 +69,18 @@ namespace MueLu {
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MakeTentative(const Operator& fineA, const Aggregates& aggregates, const MultiVector & fineNullspace, //-> INPUT
                      RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const                   //-> OUTPUT 
   {
-
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
 
+    // number of aggregates
     GO numAggs = aggregates.GetNumAggregates();
 
+    // dimension of fine level nullspace
     const size_t NSDim = fineNullspace.getNumVectors();
+
+    // number of coarse level dofs (fixed by number of aggregats and nullspace dimension)
     GO nCoarseDofs = numAggs*NSDim;
-    // Compute array of aggregate sizes.
+
+    // Compute array of aggregate sizes (in dofs).
     ArrayRCP<LO> aggSizes  = aggregates.ComputeAggregateSizes();
 
     // Calculate total #dofs in local aggregates, find size of the largest aggregate.
@@ -86,7 +94,6 @@ namespace MueLu {
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
     // aggToRowMap[i][j] is the jth DOF in aggregate i
     ArrayRCP< ArrayRCP<LO> > aggToRowMap(numAggs);
-
     aggregates.ComputeAggregateToRowMap(aggToRowMap);
 
     // Create the numbering for the new row map for Ptent as follows:
@@ -144,7 +151,8 @@ namespace MueLu {
       if (coarseMap->getNodeNumElements() > 0) coarseNS[i] = coarseNullspace->getDataNonConst(i);
 
     // Builds overlapped nullspace.
-    const RCP<const Map> nonUniqueMap = aggregates.GetMap();
+    const RCP<const Map> nonUniqueMap = aggregates.GetDofMap(); // fetch overlapping Dofmap from Aggregates structure
+
     GO nFineDofs = nonUniqueMap->getNodeNumElements();
     const RCP<const Map> uniqueMap    = fineA.getDomainMap(); //FIXME won't work for systems
     RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
@@ -176,8 +184,8 @@ namespace MueLu {
 
     // FIXME This should really be Xpetra::StaticProfile, but something is causing that to crash.
     // I have no idea why this is the case. -CMS.
-    //    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
-    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::DynamicProfile));
+    Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
+    //Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::DynamicProfile));
 
     // Set up storage for the rows of the local Qs that belong to other processors.
     // FIXME This is inefficient and could be done within the main loop below with std::vector's.
@@ -239,6 +247,15 @@ namespace MueLu {
               localQR[j* myAggSize + k] = fineNS[j][ aggToRowMap[agg][k] ];
             }
             catch(...) {
+              std::cout << "length of fine level nsp: " << fineNullspace.getGlobalLength() << std::endl;
+              std::cout << "length of fine level nsp w overlap: " << fineNullspaceWithOverlap->getGlobalLength() << std::endl;
+              std::cout << "(loacl?) aggId=" << agg << std::endl;
+              std::cout << "aggSize=" << myAggSize << std::endl;
+              std::cout << "agg DOF=" << k << std::endl;
+              std::cout << "NS vector j=" << j << std::endl;
+              std::cout << "j*myAggSize + k = " << j*myAggSize + k << std::endl;
+              std::cout << "aggToRowMap["<<agg<<"][" << k << "] = " << aggToRowMap[agg][k] << std::endl;
+              std::cout << "fineNS...=" << fineNS[j][ aggToRowMap[agg][k] ] << std::endl;
               std::cerr << "caught an error!" << std::endl;
             }
           } //for (LO k=0 ...

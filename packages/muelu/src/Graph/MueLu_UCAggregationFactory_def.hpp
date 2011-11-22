@@ -21,7 +21,7 @@ namespace MueLu {
   void UCAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     //if(currentLevel.IsAvailable("Aggregates",this)) return; //TODO: Why??????
 
-    currentLevel.DeclareInput("Graph", graphFact_.get()); // we should request data...
+    currentLevel.DeclareInput("Graph", graphFact_.get(), this); // we should request data...
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
@@ -32,6 +32,9 @@ namespace MueLu {
     //TODO check for reuse of aggregates here
     //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
     //FIXME there ever be more than one graph?
+    //FIXME TAW: The graph is always labeled with "Graph". There can be more than one graph of course
+    //FIXME TAW: We can distinguish them by their factory!
+
     RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("UCAggregationFactory::Build_" + Teuchos::toString(currentLevel.GetLevelID())));
     timer->start(true);
 
@@ -44,6 +47,10 @@ namespace MueLu {
 
     algo1_.CoarsenUncoupled(*graph, *aggregates);
     algo2_.AggregateLeftovers(*graph, *aggregates);
+
+    // transfer amalgamation information from graph to aggregates
+    // note: if matrix has not been amalgamated, the amalgamation information is just Teuchos::null
+    aggregates->SetAmalgamationInformation(graph->GetAmalgamationParams());
 
     // Level Set
     currentLevel.Set("Aggregates", aggregates, this);

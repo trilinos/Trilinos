@@ -32,7 +32,6 @@ APPEND_SET(SOURCES
   TwoKeyMap.cpp
   GenericRFactory.cpp
   ThresholdAFilterFactory.cpp
-
   Smoothers/SmootherFactory.cpp
   Smoothers/MueLu_TestHelpersSmoothers.cpp
   Utilities

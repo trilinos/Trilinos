@@ -49,8 +49,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    fineLevel.DeclareInput("A",AFact_.get());
-    coarseLevel.DeclareInput("P",initialPFact_.get());
+    fineLevel.DeclareInput("A",AFact_.get(),this);
+    coarseLevel.DeclareInput("P",initialPFact_.get(),this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

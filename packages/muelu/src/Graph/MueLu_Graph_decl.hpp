@@ -1,9 +1,13 @@
 #ifndef MUELU_GRAPH_DECL_HPP
 #define MUELU_GRAPH_DECL_HPP
 
-#include <Xpetra_CrsGraph.hpp>
-
 #include "MueLu_ConfigDefs.hpp"
+
+#include <Xpetra_ConfigDefs.hpp>
+
+#include <Xpetra_CrsGraph.hpp>
+#include <Xpetra_MapFactory.hpp>
+
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Graph_fwd.hpp"
 
@@ -23,6 +27,8 @@ namespace MueLu {
 
     Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) { 
       //setObjectLabel(objectLabel); 
+      globalamalblockid2myrowid_ = Teuchos::null;
+      globalamalblockid2globalrowid_ = Teuchos::null;
     }
 
     virtual ~Graph() {}
@@ -34,16 +40,28 @@ namespace MueLu {
 
     const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
     const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
-    const RCP<const Map> GetImportMap() const { return graph_->getColMap(); }
+
+    //! returns overlapping import map (nodes)
+    const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
+
+    //! returns overlapping import map (DOFs)
+    const RCP<const Map> GetImportDofMap() const;
 
     //! Return the list of vertices adjacent to the vertex 'v'
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
 
-    //!
-    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid, RCP<std::vector<GlobalOrdinal> > globalamalblockids) const;
+    //! store amalgamation information in MueLu::Graph object
+    //! Both maps use the global block id of the amalgamated matrix as key and store the corresponding
+    //! local row DOF ids and the global row DOF ids.
+    //! The map globalamalblockid2globalrowid is used by MueLu::Graph::GetImportDofMap to generate
+    //! the overlapping DofMap that is needed by the tentative prolongation operator (TentativePFactory).
+    //! The map globalamalblockid2myrowid can be accessed from outside by GetAmalgamationParams and is needed
+    //! by the aggregation algorithm
+    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid,RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid) const;
 
-    //!
-    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& GetAmalgamationParams() const;
+    //! returns amalgamation information globalamalblockid2myrowid
+    //! only valid if SetAmalgamationParams has been used before (i.e. CoalesceDropFactory::Amalgamate is called).
+    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetAmalgamationParams() const;
 
 #ifdef MUELU_UNUSED
     size_t GetNodeNumGhost() const;
@@ -65,9 +83,8 @@ namespace MueLu {
     //@{
 
     /// map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
-    mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;
-    /// vector with global block ids for amalagamated matrix on current proc
-    mutable RCP<std::vector<GlobalOrdinal> > globalamalblockids_; // TODO remove me
+    mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;   //< used by aggregation factory
+    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid_; //< used for building overlapping ImportDofMap
 
     //@}
 

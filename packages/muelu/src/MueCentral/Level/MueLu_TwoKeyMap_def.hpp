@@ -42,6 +42,14 @@ namespace MueLu {
     }
 
     template <class Key1, class Key2, class Value>
+    const Teuchos::map<Key2, Value> & TwoKeyMap<Key1, Key2, Value>::Get(const Key1 & key1) const {
+      // Get SubMap
+      TEUCHOS_TEST_FOR_EXCEPTION(map_.count(key1) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << key1 << ", *) does not exist.");
+      const SubMap & subMap = map_.find(key1)->second;
+      return subMap;
+    }
+
+    template <class Key1, class Key2, class Value>
     void TwoKeyMap<Key1, Key2, Value>::Remove(const Key1 & key1, const Key2 & key2) {
       // Get SubMap
       TEUCHOS_TEST_FOR_EXCEPTION(map_.count(key1) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Remove(): Key (" << key1 << ", *) does not exist.");
@@ -64,6 +72,13 @@ namespace MueLu {
 
       // True or False according if entry (key1, key2) exists.
       return (subMap.count(key2) == 1);
+    }
+
+    template <class Key1, class Key2, class Value>
+    bool TwoKeyMap<Key1, Key2, Value>::IsKey(const Key1 & key1) const {
+      // Return False if (key1, *) does not exist
+      if (map_.count(key1) != 1) return false;
+      return true;
     }
 
     //TODO: GetKeyList and GetKey2List looks expensive. Also return by value a vector...

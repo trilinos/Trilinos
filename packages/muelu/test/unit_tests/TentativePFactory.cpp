@@ -5,6 +5,7 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
@@ -50,14 +51,18 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel;
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
+    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(/*199*/29);
     fineLevel.Set("A",A);
 
       LO NSdim = 2;
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
       nullSpace->randomize();
       fineLevel.Set("Nullspace",nullSpace);
-      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+
+      RCP<CoalesceDropFactory> amalgFact = rcp(new CoalesceDropFactory(Teuchos::null, Teuchos::null));
+      amalgFact->SetFixedBlockSize(1);
+
+      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(amalgFact));
       UCAggFact->SetMinNodesPerAggregate(3);
       UCAggFact->SetMaxNeighAlreadySelected(0);
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);

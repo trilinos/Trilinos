@@ -22,9 +22,9 @@ namespace MueLu {
     SetFactoryManager SFM2(fineLevel,   factoryManager_);
     SetFactoryManager SFM1(coarseLevel, factoryManager_);
 
-    if (PFact_  != Teuchos::null) coarseLevel.DeclareInput("P", PFact_.get());
-    if (RFact_  != Teuchos::null) coarseLevel.DeclareInput("R", RFact_.get());
-    if (AcFact_ != Teuchos::null) coarseLevel.DeclareInput("A", AcFact_.get());
+    if (PFact_  != Teuchos::null) coarseLevel.DeclareInput("P", PFact_.get(), this);
+    if (RFact_  != Teuchos::null) coarseLevel.DeclareInput("R", RFact_.get(), this);
+    if (AcFact_ != Teuchos::null) coarseLevel.DeclareInput("A", AcFact_.get(), this);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -65,8 +65,8 @@ namespace MueLu {
     SetFactoryManager SFM(level, factoryManager_);
 
     if (smootherFact_ != Teuchos::null) {
-      level.DeclareInput("PreSmoother",  smootherFact_.get());
-      level.DeclareInput("PostSmoother", smootherFact_.get());
+      level.DeclareInput("PreSmoother",  smootherFact_.get(), this);
+      level.DeclareInput("PostSmoother", smootherFact_.get(), this);
     }
   }
 
