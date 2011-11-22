@@ -1,6 +1,8 @@
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddTest)
 INCLUDE(TriosProcessXDR)
 
 ############# Special exception for rpcgen extra commas in enum ##########
@@ -22,7 +24,7 @@ TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/injection_service_args.x)
 
 
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   InjectionTest
   SOURCES injection_service_args.c injection_server.cpp injection_test.cpp injection_client.cpp
   DEPLIBS ${DEPLIBS}
@@ -49,7 +51,7 @@ foreach (testname ${TESTNAMES})
   SET(DEFAULT_ARGS "${DEFAULT_ARGS} --num-trials=5 ")
   SET(DEFAULT_ARGS "${DEFAULT_ARGS} --num-reqs=10 ")
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     InjectionTest
     NAME InjectionTest_${testname}
     ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"
