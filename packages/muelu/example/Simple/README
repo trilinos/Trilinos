@@ -6,8 +6,10 @@ Examples:
  Simple-Templated - In this version, template parameters are explicitly defined.
 
  Simple-Belos     - How to use MueLu as a preconditioner for Belos.
- Simple-Epetra    - How to use MueLu with Epetra.
- Simple-Tpetra    - How to use MueLu with Tpetra.
+ Simple-Epetra    - How to use MueLu with existing Epetra code.
+ Simple-Tpetra    - How to use MueLu with existing Tpetra code.
+ 
+ Simple-AztecOO   - How to use MueLu as a preconditioner for AztecOO.
 
 Usage:
  ./MueLu_Simple.exe
