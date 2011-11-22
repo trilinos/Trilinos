@@ -39,10 +39,65 @@
 
 #include <limits>
 #include <WAXSBY.hpp>
-#include <WAXPBY.hpp>
-#include <Dot.hpp>
 #include <CRSMatVec.hpp>
 #include <impl/Kokkos_Timer.hpp>
+
+template< typename Scalar , class DeviceType , unsigned N = 1 >
+struct InvMultiVectorScale ;
+
+template< typename Scalar >
+struct MultiVectorScale<Scalar, KOKKOS_MACRO_DEVICE ,1> {
+  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef Scalar                  value_type ;
+  typedef device_type::size_type  size_type ;
+
+  Kokkos::MultiVectorView<Scalar,device_type> Y ;
+  Kokkos::ValueView<Scalar,device_type>     S ;
+
+  MultiVectorScale(
+    const Kokkos::MultiVectorView<Scalar,device_type> & argY ,
+    const Kokkos::ValueView<Scalar,device_type>       & argS )
+    : Y( argY ), S( argS ) {}
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type iwork ) const
+  { Y(iwork) /= *S ; }
+};
+
+
+template< typename Scalar , class DeviceType , unsigned N = 1 >
+struct DotSingle;
+
+template< typename Scalar >
+struct DotSingle<Scalar, KOKKOS_MACRO_DEVICE , 1 > {
+  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef Scalar                  value_type ;
+  typedef device_type::size_type  size_type ;
+  typedef Kokkos::MultiVectorView<value_type,device_type> vector_type ;
+
+  vector_type X ;
+
+  DotSingle( const vector_type & argX ) : X( argX ) {}
+
+  DotSingle( const vector_type & argX ,
+             const size_type     argI ) : X( argX , argI ) {}
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type iwork , value_type & update ) const
+  {
+    const Scalar value = X(iwork);
+    update += value * value ;
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join( volatile value_type & update , const volatile value_type & source )
+  { update += source ; }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init( value_type & update )
+  { update = 0 ; }
+};
+
 template< typename Scalar , class DeviceType , unsigned N = 1 >
 struct MultiVectorYSAX ;
 
@@ -81,32 +136,20 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
   typedef Kokkos::ValueView<Scalar , device_type>     value;
   typedef Kokkos::ValueView<Scalar , Kokkos::DeviceHost> host_val;
-  typedef Kokkos::MultiVectorYSAX<  Scalar , device_type , 1 > YSAX ;
+  typedef MultiVectorYSAX<  Scalar , device_type , 1 > YSAX ;
+  typedef InvMultiVectorScale< Scalar , device_type , 1 > InvScale ;
 
   struct Norm2 {
-    MultiVector R ;
-    Value       inv ;
-    size_type   j ;
+    Value       norm ;
 
-    Norm2( const MultiVector & argR ,
-              const Value       & argInv ,
-              size_type argJ )
-      : R( argR )
-      , inv( argInv )
-      , j( argJ )
+    Norm2(const Value& argNorm )
+      norm( argNorm )
       {}
 
     KOKKOS_MACRO_DEVICE_FUNCTION
     void operator()( Scalar & result ) const
     {
-      const Scalar value = sqrt( result );
-      R(j,j) = value ;
-      if ( 0 < value ) {
-        *inv = 1.0 / value ;
-      }
-      else {
-        *inv = 0 ;
-      }
+      *norm = sqrt( result );
     }
   };
 
@@ -164,12 +207,9 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       num_iters, 
       num_iters+1);
 
-    scalar_vector Qjtemp = create_labeled_multivector("Qjtemp", rows, 1);
 
     //Q(:, 0) = r ./ beta (elementwise division)
-    value invbeta  = Kokkos::create_value<Scalar , device_type>();
-    Kokkos::deep_copy( zero, Scalar( 1/beta_copy ) );
-    Kokkos::parallel_for(rows, Scale(MultiVector(Q,0), invbeta))
+    Kokkos::parallel_for(rows, InvScale(MultiVector(Q,0), invbeta))
     for(int j =1; i<= num_iters; ++j){
       //Q(:,j) = A * Q(:, j-1)
       CRSMatVec<Scalar,device_type> A_mult_q(
@@ -190,9 +230,10 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       }
      
       //H(j, j-1) = norm(Q(:,j),2) 
+      Kokkos::parallel_reduce(rows, DotSingle(Q, j), Norm2(H(j,j-1)) );
       
       //Q(:,j) = Q(:, j) / H(j, j-1)
-      Kokkos::parallel_for( rows , Scale(MultiVector( Q , j ) , H(j,j-1)));
+      Kokkos::parallel_for(rows, InvScale(MultiVector(Q, j), H(j, j-1)));
        
     }
 };
