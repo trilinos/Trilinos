@@ -151,7 +151,7 @@ namespace MueLuTests {
         RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
         currentLevel.SetFactoryManager(factoryHandler);
 
-        currentLevel.SetLevelID(1);
+        currentLevel.SetLevelID(0);
       }
       
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
@@ -163,8 +163,8 @@ namespace MueLuTests {
 
         coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
 
-        fineLevel.SetLevelID(1);
-        coarseLevel.SetLevelID(2);
+        fineLevel.SetLevelID(0);
+        coarseLevel.SetLevelID(1);
       }
       
 #ifdef HAVE_MUELU_IFPACK
