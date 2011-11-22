@@ -43,10 +43,10 @@ public:
   {
     std::vector<Relation>::const_iterator i = m_relation.begin();
     std::vector<Relation>::const_iterator e = m_relation.end();
-  
+
     const Relation::raw_relation_id_type hi = Relation::raw_relation_id(1, 0);
     e = std::lower_bound( i , e , hi , LessRelation() );
-  
+
     return PairIterRelation( i , e );
   }
 

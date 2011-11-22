@@ -78,6 +78,9 @@ public:
 
   void internal_sort_bucket_entities();
 
+  void optimize_buckets();
+  void sort_and_optimize_buckets();
+
   void add_entity_to_bucket( Entity & entity, Bucket & bucket )
   {
     bucket.m_bucketImpl.replace_entity( bucket.size() , & entity ) ;

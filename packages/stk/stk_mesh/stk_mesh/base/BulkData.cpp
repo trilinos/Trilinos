@@ -86,7 +86,8 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_parallel_rank( parallel_machine_rank( parallel ) ),
     m_sync_count( 0 ),
     m_sync_state( MODIFIABLE ),
-    m_meta_data_verified( false )
+    m_meta_data_verified( false ),
+    m_optimize_buckets(false)
 {
   create_ghosting( std::string("shared") );
   create_ghosting( std::string("shared_aura") );

@@ -409,7 +409,7 @@ void BucketRepository::internal_sort_bucket_entities()
 
       // Determine offset to the end bucket in this family:
       while ( ek < buckets.size() && ik_vacant != buckets[ek] ) { ++ek ; }
-      ++ek ;
+      if (ek < buckets.size()) ++ek ;
 
       unsigned count = 0 ;
       for ( size_t ik = bk ; ik != ek ; ++ik ) {
@@ -480,6 +480,84 @@ void BucketRepository::internal_sort_bucket_entities()
   }
 }
 
+void BucketRepository::optimize_buckets()
+{
+  TraceIf("stk::mesh::impl::BucketRepository::optimize_buckets", LOG_BUCKET);
+
+  for ( EntityRank entity_rank = 0 ;
+      entity_rank < m_buckets.size() ; ++entity_rank )
+  {
+
+    std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
+
+    std::vector<Bucket*> tmp_buckets;
+
+    size_t begin_family = 0 ; // Offset to first bucket of the family
+    size_t end_family = 0 ; // Offset to end   bucket of the family
+
+    //loop over families
+    for ( ; begin_family < buckets.size() ; begin_family = end_family ) {
+      Bucket * last_bucket_in_family  = buckets[begin_family]->m_bucketImpl.last_bucket_in_family();
+
+      // Determine offset to the end bucket in this family:
+      while ( end_family < buckets.size() && last_bucket_in_family != buckets[end_family] ) { ++end_family ; }
+      if (end_family < buckets.size())  ++end_family ; //increment pass the end
+
+      //only one bucket in the family
+      //go to the next family
+      if (end_family - begin_family == 1) {
+        tmp_buckets.push_back(buckets[begin_family]);
+        continue;
+      }
+
+      std::vector<unsigned> new_key = buckets[begin_family]->m_bucketImpl.key_vector();
+      //index of bucket in family
+      new_key[ new_key[0] ] = 0;
+
+      unsigned new_capacity = 0 ;
+      for ( size_t i = begin_family ; i != end_family ; ++i ) {
+        new_capacity += buckets[i]->m_bucketImpl.capacity();
+      }
+      //new_capacity += m_bucket_capacity;
+
+      Bucket * new_bucket = new Bucket( m_mesh,
+          entity_rank,
+          new_key,
+          new_capacity
+          );
+
+      new_bucket->m_bucketImpl.set_first_bucket_in_family(new_bucket); // Family members point to first bucket
+      new_bucket->m_bucketImpl.set_last_bucket_in_family(new_bucket); // First bucket points to new last bucket
+
+      tmp_buckets.push_back(new_bucket);
+
+      unsigned new_ordinal = 0;
+      for (size_t ik = begin_family; ik != end_family; ++ik) {
+        Bucket & old_bucket = * buckets[ik];
+        for (unsigned old_ordinal=0; old_ordinal < old_bucket.size(); ++old_ordinal) {
+          //increase size of the new_bucket
+          new_bucket->m_bucketImpl.increment_size();
+
+          Entity & entity = old_bucket[old_ordinal];
+
+          //copy field data from old to new
+          copy_fields( *new_bucket, new_ordinal, old_bucket, old_ordinal);
+          m_entity_repo.change_entity_bucket( *new_bucket, entity, new_ordinal);
+          new_bucket->m_bucketImpl.replace_entity( new_ordinal , &entity ) ;
+          internal_propagate_relocation(entity);
+          ++new_ordinal;
+        }
+      }
+
+      for (size_t ik = begin_family; ik != end_family; ++ik) {
+        delete buckets[ik];
+        buckets[ik] = NULL;
+      }
+    }
+
+    buckets.swap(tmp_buckets);
+  }
+}
 //----------------------------------------------------------------------
 
 void BucketRepository::remove_entity( Bucket * k , unsigned i )

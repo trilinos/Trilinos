@@ -253,26 +253,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   bulk2.modification_begin();
   bulk2.declare_entity( edge_rank, rank+1 , no_part );
   bulk2.modification_end();
-
-  const std::vector<Bucket*> & buckets3 = bulk2.buckets( edge_rank );
-
-  std::vector<Bucket*>::const_iterator k3;
-
-  k3 = buckets3.begin();
-
-  Bucket& b3 = **k3;
-  BucketIterator bitr3 = b3.begin();
-
-  Bucket& b2 = **k2;
-  BucketIterator bitr2 = b2.begin();
-
-#ifndef NDEBUG
-  //tests operator != given iterator from different bucket - bucket.hpp
-  STKUNIT_ASSERT_THROW( bitr2 != bitr3 , std::logic_error );
-
-  //tests operator - given iterator from different bucket - bucket.hpp
-  STKUNIT_ASSERT_THROW( bitr2 - bitr3, std::logic_error );
-#endif
 }
 
 STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)

@@ -48,6 +48,8 @@ namespace mesh {
 class BulkData {
 public:
 
+  void optimize_buckets_at_modification_end(bool b) { m_optimize_buckets = b; }
+
   inline static BulkData & get( const Bucket & bucket);
   inline static BulkData & get( const Entity & entity);
   inline static BulkData & get( const Ghosting & ghost);
@@ -412,6 +414,7 @@ private:
   size_t             m_sync_count ;
   BulkDataSyncState  m_sync_state ;
   bool               m_meta_data_verified ;
+  bool               m_optimize_buckets;
 
   /**
    * For all processors sharing an entity, find one to be the new

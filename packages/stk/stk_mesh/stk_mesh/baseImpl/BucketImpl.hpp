@@ -43,6 +43,8 @@ class BucketImpl {
   BulkData & mesh() const { return m_mesh ; }
   unsigned entity_rank() const { return m_entity_rank ; }
   const unsigned * key() const { return &m_key[0] ; }
+  const std::vector<unsigned> & key_vector() const { return m_key; }
+
   std::pair<const unsigned *, const unsigned *>
     superset_part_ordinals() const
     {
@@ -84,7 +86,7 @@ class BucketImpl {
   field_data( const field_type & f , const unsigned & entity_ordinal ) const
   {
     typedef typename FieldTraits< field_type >::data_type * data_p ;
-    return (data_p)(field_data_location_impl(f.mesh_meta_data_ordinal(),entity_ordinal));
+    return reinterpret_cast<data_p>(field_data_location_impl(f.mesh_meta_data_ordinal(),entity_ordinal));
   }
 
   // BucketKey key = ( part-count , { part-ordinals } , counter )
