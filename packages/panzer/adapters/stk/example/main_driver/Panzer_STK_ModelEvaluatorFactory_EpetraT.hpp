@@ -335,8 +335,8 @@ namespace panzer_stk {
 	ghosted_solution.PutScalar(0.0);
 	ghosted_solution.Import(*(eloc->x),*importer,Insert);
 	
-	write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
-			    ghosted_solution);
+	panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
+			                ghosted_solution);
       }
 
       if (is_transient)

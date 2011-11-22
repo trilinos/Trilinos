@@ -54,7 +54,7 @@ namespace user_app {
       ghosted_solution.PutScalar(0.0);
       ghosted_solution.Import(*ep_x,*importer,Insert);
 
-      write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(m_dof_manager),*m_mesh,
+      panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(m_dof_manager),*m_mesh,
 			  ghosted_solution);
       
       m_mesh->writeToExodus(0.0);
