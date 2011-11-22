@@ -103,6 +103,9 @@ namespace Belos {
   /// \brief Inner solver interface.
   /// \author Mark Hoemmen
   ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
+  ///
   /// An "inner solver" wraps an existing linear solver, especially an
   /// iterative solver (such as any of the iterative solvers
   /// implemented in Belos).  InnerSolver is designed especially for
