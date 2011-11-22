@@ -166,6 +166,8 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
   {
     const size_t rows = A_row.length()-1;
 
+    int iteration = 0 ;
+    
 
     // Solvers' working temporaries:
     scalar_vector r = 
@@ -210,7 +212,9 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
     //Q(:, 0) = r ./ beta (elementwise division)
     Kokkos::parallel_for(rows, InvScale(MultiVector(Q,0), invbeta))
-    for(int j =1; i<= num_iters; ++j){
+
+    Kokkos::Impl::Timer wall_clock ;
+    for(int j =1; i<= num_iters; ++j, ++iteration){
       //Q(:,j) = A * Q(:, j-1)
       CRSMatVec<Scalar,device_type> A_mult_q(
         A_value, A_row , A_offsets , MultiVector(Q, j-1) , MultiVector(Q, j));
@@ -236,6 +240,16 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       Kokkos::parallel_for(rows, InvScale(MultiVector(Q, j), H(j, j-1)));
        
     }
+
+    const double iter_time = wall_clock.seconds();
+
+    // Compute floating point operations performed during iterations
+
+    size_t iter_waxpby_flops = ( 3 * iteration ) * ( 3 * rows ); // y = a * x + b * y
+    size_t iter_dot_flops    = ( 3 * iteration ) * ( 2 * rows );
+    size_t iter_matvec_flops = iteration * ( 2 * A_col.length() );
+    size_t iter_total_flops  = iter_waxpby_flops + iter_dot_flops + iter_matvec_flops ;
+    return (double) iter_total_flops / ( iter_time * 1.0e6 );
 };
 
 
