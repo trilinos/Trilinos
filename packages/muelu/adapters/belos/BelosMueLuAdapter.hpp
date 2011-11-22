@@ -47,7 +47,7 @@ namespace Belos {
     MueLuOp(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H) : Hierarchy_(H) {}
     
     //! Destructor.
-    virtual ~MueLuOp() {};
+    virtual ~MueLuOp() {}
     //@}
     
     //! @name Operator application method
@@ -58,7 +58,6 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
-    // Note: throw EpetraOpFailure exceptions as Belos::EpetraOp
     void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
 
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
@@ -123,7 +122,7 @@ namespace Belos {
     
     MueLuOp(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H) : Hierarchy_(H) {}
     
-    virtual ~MueLuOp() {};
+    virtual ~MueLuOp() {}
 
     void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
 

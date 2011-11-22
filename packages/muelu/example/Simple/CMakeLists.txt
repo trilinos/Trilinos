@@ -48,6 +48,18 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       )
   ENDIF()
 
+  #Simple-AztecOO
+  IF(Trilinos_ENABLE_AztecOO) 
+    # Use Trilinos_ENABLE_AztecOO instead of MueLu_ENABLE_AztecOO because this example requires AztecOO but MueLu doesn't.
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Simple-AztecOO
+      SOURCES Simple-AztecOO.cpp
+      NUM_MPI_PROCS 4
+      COMM serial mpi
+      DEPLIBS muelu muelu-xpetra muelu-adapters
+      )
+  ENDIF()
+
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)

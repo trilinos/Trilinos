@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   // Parameters
   //
 
-// problem size
+  // problem size
   GlobalOrdinal numGlobalElements = 256;
 
   // linear algebra library
