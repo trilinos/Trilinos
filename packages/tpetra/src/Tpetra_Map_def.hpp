@@ -109,7 +109,7 @@ namespace Tpetra {
       }
       // REDUCE_MAX will give us the rank ("image ID") of the
       // highest-rank process that DID NOT pass, as well as the
-      // reason.  These will be -1 and 0 if all procs passed
+      // reason.  These will be -1 resp. 0 if all processes passed.
       Teuchos::reduceAll<int,int>(*comm_,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
@@ -126,7 +126,13 @@ namespace Tpetra {
               errPrefix << "logic error. Please contact the Tpetra team.");
         }
       }
-      // numGlobalElements is coherent, but is it valid? this comparison looks funny, but it avoids compiler warnings on unsigned types.
+      // All processes have the same numGlobalElements, but we still
+      // need to check that it is valid.  numGlobalElements must be
+      // positive and not the "invalid" value (GSTI).
+      //
+      // This comparison looks funny, but it avoids compiler warnings
+      // for comparing unsigned integers (numGlobalElements_in is a
+      // global_size_t, which is unsigned).
       TEUCHOS_TEST_FOR_EXCEPTION((numGlobalElements_in < GST1 && numGlobalElements_in != GST0) || numGlobalElements_in == GSTI, std::invalid_argument,
           errPrefix << "numGlobalElements (== " << rootNGE << ") must be >= 0.");
 
@@ -156,9 +162,9 @@ namespace Tpetra {
       numLocalElements_ = as<size_t>(numGlobalElements_ / as<global_size_t>(numImages));
       int remainder = as<int>(numGlobalElements_ % as<global_size_t>(numImages));
 #ifdef HAVE_TEUCHOS_DEBUG
-      // the above code assumes truncation. is that safe?
+      // The above code assumes truncation. Is that safe?
       SHARED_TEST_FOR_EXCEPTION(numLocalElements_ * numImages + remainder != numGlobalElements_,
-          std::logic_error, "Tpetra::Map::constructor(numGlobal,indexBase,platform): GlobalOrdinal does not implement division with truncation."
+          std::logic_error, "Tpetra::Map::constructor(numGlobalElements,indexBase,comm,localOrGlobal,node): GlobalOrdinal does not implement division with truncation."
           << " Please contact Tpetra team.",*comm_);
 #endif
       GlobalOrdinal start_index;
