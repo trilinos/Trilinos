@@ -1,3 +1,8 @@
+// 09/01/2011 5:41 pm
+
+// R1.0: Non-convex domains (sampling + Voronoi meshing + output and testing planar faces + non-convex domains + internal faces)
+
+// Author: Mohamed S. Ebeida 
 
 //@HEADER
 // ************************************************************************
@@ -35,12 +40,12 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Patrick Knupp (pknupp@sandia.gov) 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-// R3.0
+// R5.0
 
 #ifndef MESHING_GENIE_2D_H
 #define MESHING_GENIE_2D_H
@@ -78,6 +83,7 @@ class MeshingGenie_2d
 			double x; double y;
 			Point*     next; // A point could be a list of points
 			PointEdge* edges;
+			size_t num_edges;
 			bool       done; // if true then edge connectivity is constructed
 			bool       on_boundary; 
 		};
@@ -140,10 +146,11 @@ class MeshingGenie_2d
 
 		void get_point_cloud(std::vector<double> &x, std::vector<double> &y);
 
-		void get_CDT_Tessellation(std::vector<double> &x, std::vector<double> &y, std::vector<size_t> &triangles);
+		void get_CDT_Tessellation(std::vector<double> &x, std::vector<double> &y, std::vector< std::vector<size_t> > &elements);
 
 		void get_Voronoi_Tessellation(std::vector<double> &x, std::vector<double> &y, 
-			                          std::vector< std::vector<size_t> > &elements, double min_edge_length, bool generate_side_sets);
+			                          std::vector< std::vector<size_t> > &elements, double min_edge_length, 
+									  bool generate_side_sets, bool split_cracktipcells);
 
 		void get_side_sets(std::vector< std::vector<size_t> > &side_sets){
 			side_sets = _side_sets;
@@ -189,6 +196,8 @@ class MeshingGenie_2d
 
 		int plot_point(std::string file_name, size_t icell, LoopPoint* po);
 
+		int plot_star(std::string file_name, double xo, double yo, size_t icell, Point** neighbors, bool* invalid, int num);
+
 		int plot_tessellation(std::string file_name, bool Voroni);
 
 		// IO Methods
@@ -233,8 +242,7 @@ class MeshingGenie_2d
         };
 
 		int input_translator(std::vector<double> &ExtBound, std::vector< std::vector<double> > &Cracks)
-		{	
-		
+		{			
 			#pragma region check for intersections between cracks and external boundaries
 			std::vector<double> new_boundaries;    
 			std::vector<double> pxv;
@@ -275,6 +283,7 @@ class MeshingGenie_2d
 							pxv.push_back(px);                            
 							pyv.push_back(py);
 						}
+						jj -= 2;
 					}            
 				}
 				int num_intersections(pxv.size());
@@ -349,6 +358,7 @@ class MeshingGenie_2d
 								pxv.push_back(px);                            
 								pyv.push_back(py);								
 							}
+							jj -= 2;
 						}            
 					}
 					int num_intersections(pxv.size());
@@ -401,12 +411,14 @@ class MeshingGenie_2d
 		inline void add_constraint_edge(Point* pi, Point* pj)
 		{
 			#pragma region Add Contained directional edge:
+			if (pi->done || pj->done) return;
+
 			if (pi->edges == 0) 
 			{
 				pi->edges = new PointEdge();
 				pi->edges->edge_other_end = pj;
 				pi->edges->edge_id = 0; // unclassified edge
-				pi->edges->next = 0;				
+				pi->edges->next = 0; pi->num_edges++;			
 			}
 			else
 			{
@@ -420,7 +432,7 @@ class MeshingGenie_2d
 				ed->next = new PointEdge();
 				ed->next->edge_other_end = pj;
 				ed->next->edge_id = 0; // unclassified edge
-				ed->next->next = 0;
+				ed->next->next = 0; pi->num_edges++;
 			}
 
 			if (pj->edges == 0) 
@@ -428,7 +440,7 @@ class MeshingGenie_2d
 				pj->edges = new PointEdge();
 				pj->edges->edge_other_end = pi;
 				pj->edges->edge_id = 0; // unclassified edge
-				pj->edges->next = 0;
+				pj->edges->next = 0; pj->num_edges++;
 			}
 			else
 			{
@@ -442,25 +454,28 @@ class MeshingGenie_2d
 				ed->next = new PointEdge();
 				ed->next->edge_other_end = pi;
 				ed->next->edge_id = 0; // unclassified edge
-				ed->next->next = 0;
+				ed->next->next = 0; pj->num_edges++;
 			}
 			#pragma endregion
-		}
+		};
 		
 		inline void add_constraint_edge(Point* pi, Point* pj, size_t iedge)
 		{
-			#pragma region Add Contained directional edge:			
-			size_t forward_id = generate_edge_id(iedge, true);
-			size_t backward_id = generate_edge_id(iedge, false);
+			#pragma region Add Contained directional edge:
+			
+			if (pi->done || pj->done) return;
+
 			if (pi->edges == 0) 
 			{
+				size_t forward_id = generate_edge_id(iedge, true);
 				pi->edges = new PointEdge();
 				pi->edges->edge_other_end = pj;
 				pi->edges->edge_id = forward_id;
-				pi->edges->next = 0;
+				pi->edges->next = 0; pi->num_edges++;
 			}
 			else
 			{
+				size_t forward_id = generate_edge_id(iedge, true);
 				PointEdge* ed = pi->edges;
 				while (true)
 				{
@@ -471,18 +486,20 @@ class MeshingGenie_2d
 				ed->next = new PointEdge();
 				ed->next->edge_other_end = pj;
 				ed->next->edge_id = forward_id;
-				ed->next->next = 0;
+				ed->next->next = 0; pi->num_edges++;
 			}
-
+			
 			if (pj->edges == 0) 
 			{
+				size_t backward_id = generate_edge_id(iedge, false);
 				pj->edges = new PointEdge();
 				pj->edges->edge_other_end = pi;
 				pj->edges->edge_id = backward_id;
-				pj->edges->next = 0;
+				pj->edges->next = 0; pj->num_edges++;
 			}
 			else
 			{
+				size_t backward_id = generate_edge_id(iedge, false);
 				PointEdge* ed = pj->edges;
 				while (true)
 				{
@@ -493,7 +510,7 @@ class MeshingGenie_2d
 				ed->next = new PointEdge();
 				ed->next->edge_other_end = pi;
 				ed->next->edge_id = backward_id;
-				ed->next->next = 0;
+				ed->next->next = 0; pj->num_edges;
 			}
 			#pragma endregion
 		};
@@ -515,6 +532,52 @@ class MeshingGenie_2d
 			#pragma endregion
 		};
 
+		inline bool oriented_edge_exists(Point* pi, Point* pj, bool &forward)
+		{		
+			#pragma region Check if two points are connected with an edge:
+			if (pi->edges == 0 || pj->edges == 0) return false;
+			
+			PointEdge* ed = pi->edges;
+			size_t edge_index;
+			while (true)
+			{
+				if (ed->edge_other_end == pj) 
+				{
+					if (ed->edge_id == 0) return false;
+					edge_index = (ed->edge_id - 1) >> 1;
+					if (edge_index >= _num_oriented_edges) return false;
+					forward = bool((ed->edge_id - 1) & 1);
+					return true; // a constrained edge
+				}
+
+				if (ed->next == 0 || ed->next == pi->edges) return false;
+				ed = ed->next;
+			}
+			return false;
+			#pragma endregion
+		};
+
+		inline bool boundary_edge_exists(Point* pi, Point* pj)
+		{		
+			#pragma region Check if two points are connected with an edge:
+			if (pi->edges == 0 || pj->edges == 0) return false;
+			
+			PointEdge* ed = pi->edges;
+			while (true)
+			{
+				if (ed->edge_other_end == pj) 
+				{
+					if (ed->edge_id == 0) return false;
+					return true; // a non-oriented edge
+				}
+				if (ed->next == 0 || ed->next == pi->edges) return false;
+				ed = ed->next;
+			}
+			return false;
+			#pragma endregion
+		};
+
+
 		// false means not sure
 		inline bool notconnected_points(Point* pi, Point* pj)
 		{		
@@ -523,24 +586,6 @@ class MeshingGenie_2d
 				
 			bool connected = connected_points(pi, pj);
 			if ((pi->done || pj->done) && !connected) return true;
-
-			if (pi->on_boundary && pj->on_boundary && !connected)
-			{
-				PointEdge* ed = pi->edges;
-				while (ed->edge_id == 0 && ed != 0)
-				{
-					ed = ed->next;
-				}
-				if (ed != 0)
-				{
-					size_t edge_index;
-					bool forward_direction;
-					get_edge_data(ed->edge_id, edge_index, forward_direction);
-					double aa = area_triangle(pj->x, pj->y, ed->edge_other_end->x, ed->edge_other_end->y, pi->x, pi->y);
-					if (forward_direction) aa *= -1; 					
-					if (aa < -1E-10) return true;
-				}
-			}
 			return false;
 			#pragma endregion
 		};
@@ -723,10 +768,6 @@ class MeshingGenie_2d
 		{
 			#pragma region Invalidate Cell Extended in a given direction:
 			size_t icell; get_cell_handle(i, j, icell);
-			if (N) _blue_cells_N[icell] = true;
-			if (W) _blue_cells_W[icell] = true;
-			if (S) _blue_cells_S[icell] = true;
-			if (E) _blue_cells_E[icell] = true;
 			
 			_cell_edge_iter = _cell_first_edge_map.find(icell);
 			if (_cell_edge_iter == _cell_first_edge_map.end())						
@@ -791,16 +832,16 @@ class MeshingGenie_2d
 			#pragma region Retrieve Neighbors Points:						
 
 			// reset _neighbor_points
-			for (size_t ii = 0; ii < _num_neighbor_points; ii++) _neighbor_points[ii] = 0;
+			//for (size_t ii = 0; ii < _num_neighbor_points; ii++) _neighbor_points[ii] = 0;
 
 			size_t jj(0); Point* pj; _num_neighbor_points_dynamic = 0;
 			for (size_t ii = 0; ii < _num_neighbor_cells; ii++)
 			{
 				size_t jcell = icell + _neighbors[ii];
 
-				if (jcell >= _num_cells) continue;				
+				//if (jcell >= _num_cells) continue;				
 
-				if (!_bad_cells[jcell]) continue; 
+				//if (!_bad_cells[jcell]) continue; 
 
 				if (_cell_points[jcell] == 0) continue; // _bad cells due to boundaries								
 
@@ -924,7 +965,7 @@ class MeshingGenie_2d
 				Point* p = new Point();
 				p->x = xx; p->y = yy;
 				p->next = 0; p->edges = 0;
-				p->done = false; p->on_boundary = false;
+				p->done = false; p->on_boundary = false; p->num_edges = 0;
 				Point* q = _cell_points[icell];
 				if (q == 0) _cell_points[icell] = p;
 				else
@@ -1120,10 +1161,11 @@ class MeshingGenie_2d
 			size_t num_in(0);
 			for (size_t ipnt = 0; ipnt < num_poly_pnts; ipnt++)
 			{
-				double area = area_triangle(pp->x, pp->y, x1, y1, x2, y2); 
-				if (area > 1E-10) {pp->u = 1.0; num_in++;}
-				else if (area < -1E-10) pp->u = -1.0;
-				else pp->u = 0.0;
+				if (invalid_triangle(pp->x, pp->y, x1, y1, x2, y2, 1E-10)) pp->u = -1.0;
+				else 
+				{
+					pp->u = 1.0; num_in++;
+				}
 				pp = pp->next;
 			}
 
@@ -1174,9 +1216,29 @@ class MeshingGenie_2d
             return dx * dx + dy * dy;        
         };
 
+		inline bool invalid_triangle(double x1, double y1, double x2, double y2, double x3, double y3, double TOL)
+		{
+			if ((x1 - x3) * (y2 - y3) - (y1 - y3) * (x2 - x3) < -TOL) return true;
+			else return false;
+		};
+
+
+		inline bool ZeroAngle(double x1, double y1, double x2, double y2, double x3, double y3, double TOL)
+		{
+			if ((x3 - x1) * (x2 - x1) < TOL) return false;
+			if ((y3 - y1) * (y2 - y1) < TOL) return false;
+			if (fabs((x3 - x1) * (y2 - y1) - (x2 - x1) * (y3 - y1)) < TOL) return true;
+			else return false;
+		};
+
 		inline double area_triangle(double x1, double y1, double x2, double y2, double x3, double y3)
         {
             return 0.5 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
+        };
+
+		inline double area_parallelogram(double x1, double y1, double x2, double y2, double x3, double y3)
+        {
+            return (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
         };
 
 		inline bool point_in_triangle(double xx, double yy, double x1, double y1, double x2, double y2, double x3, double y3)
@@ -1296,29 +1358,62 @@ class MeshingGenie_2d
 			#pragma endregion
         };
 
+		inline bool incircumcircle(double ax, double ay, double bx, double by, double cx, double cy, double dx, double dy)
+		{
+			#pragma region Incircle test:
+			double adx, ady, bdx, bdy, cdx, cdy;
+			double abdet, bcdet, cadet;
+			double alift, blift, clift;
+	
+			// 6 flops
+			adx = ax - dx;			 
+			ady = ay - dy;			  
+			bdx = bx - dx;
+			bdy = by - dy;
+			cdx = cx - dx;
+			cdy = cy - dy;
+
+			// 18 flops
+			abdet = adx * bdy - bdx * ady;
+			bcdet = bdx * cdy - cdx * bdy;
+			cadet = cdx * ady - adx * cdy;
+			alift = adx * adx + ady * ady;	
+			blift = bdx * bdx + bdy * bdy;
+			clift = cdx * cdx + cdy * cdy;
+
+			// 5 flops
+			if (alift * bcdet + blift * cadet + clift * abdet > 1E-10) return false;
+			
+			return true;
+			#pragma endregion
+		};
+		
+
 		inline bool circumcircle(double x1, double y1, double x2, double y2, double x3, double y3, 
                           double &cx, double &cy, double &cr_sq)
 		{			
 			#pragma region find the circumcircle of three points:			
-			// translate c.s. to (x1,y1)     
+			// translate c.s. to (x1,y1) --> 4 flops
 			x2 -= x1; y2 -= y1;
 			x3 -= x1; y3 -= y1;
 			
-			// calculate (x0p, y0p)    
+			// calculate (x0p, y0p)    --> 3 flops
 			double det(x3 * y2 - x2 * y3);
     
 			if (fabs(det) < 1E-10) {cr_sq = -1.0; return false;} // a degenerate circle			
 
-			det = 1.0 / det;    
+			det = 1.0 / det; // 1 flop   
 
-			double b1, b2;    
+			double b1, b2; // 8 flops
 			b1 = 0.5 * (x3 * x3 + y3 * y3);
 			b2 = 0.5 * (x2 * x2 + y2 * y2);
     
+			// 11 flops
 			cx = (b1 * y2 - b2 * y3) * det;
 			cy = (x3 * b2 - x2 * b1) * det;    
 			cr_sq = cx * cx + cy * cy;
     
+			// 2 flops
 			// shift axes back    
 			cx += x1; cy += y1; 
 			return true;
@@ -1505,18 +1600,21 @@ class MeshingGenie_2d
 			#pragma endregion
 		};
 
-		void create_element(std::list<double> &vxy, std::list<double>::iterator &iter,                             
-			                std::vector<Point*> &element)
+		void create_element(std::list<double> &vxy, std::list<double>::iterator &iter,  
+			                std::vector<bool> &v_on_boundary,
+			                std::vector<Point*> &element, double TOL)
 		{
 			#pragma region create a voronoi cell:
-			element.clear(); Point* q;
-			iter = vxy.begin();
+			element.clear(); Point* q; Point* first_point(0); Point* last_point(0);
+			iter = vxy.begin(); int i(0);
 			while (iter != vxy.end())
 			{
 				double xx = *iter; iter++;
 				double yy = *iter; iter++;
-				get_closest_point(xx, yy, q);								
-				element.push_back(q);
+				get_closest_point(xx, yy, v_on_boundary[i], q, TOL);
+				if (q != first_point && q != last_point) element.push_back(q); i++;
+				if (first_point == 0) first_point = q;
+				else last_point = q;
 			}
 			vxy.clear();
 			#pragma endregion
@@ -1550,12 +1648,11 @@ class MeshingGenie_2d
 			#pragma endregion
 		};
 
-		bool get_closest_point(double xx, double yy, Point* &q)
+		bool get_closest_point(double xx, double yy, bool on_boundary, Point* &q, double TOL)
 		{
 			#pragma region Retrieve Closest Point:
 			q = 0; size_t icell;
 			get_cell_handle(xx, yy, icell);
-			double dmin = 1E-10;
 			bool first(true); Point* p;
 			for (size_t i = 0; i < 9; i++)
 			{
@@ -1563,15 +1660,19 @@ class MeshingGenie_2d
 				if (_cell_nodes[jcell] == 0) continue;
 				if (first) p = _cell_nodes[jcell];
 				double dd = distance_squared(p->x - xx, p->y - yy);
-				if (dd < dmin)
+				if (dd < TOL)
 				{
-					q = p;
-					dmin = dd;
+					if (on_boundary && p->on_boundary) continue;
+					q = p; 
+					if (on_boundary)
+					{
+						q->x = xx; q->y = yy;
+					}
+					return true;
 				}
 				if (p->next != 0) {first = false; p = p->next; i--;}
 				else first = true;
 			}
-			if (q != 0) {return true;}
 
 			q = new Point();
 			q->x = xx; q->y = yy; q->next = 0; q->edges = 0;
@@ -1610,6 +1711,7 @@ class MeshingGenie_2d
         // Data for boundary edges
         size_t                 _num_boundary_edges; // external boundaries
         size_t                 _num_holes_edges;
+		size_t                 _num_oriented_edges;
         std::vector<double> _edges_x1; std::vector<double> _edges_y1;
         std::vector<double> _edges_x2; std::vector<double> _edges_y2;
 
@@ -1623,10 +1725,6 @@ class MeshingGenie_2d
 		size_t              _num_cells, _num_bad_cells, _num_sprinkled;
         bool*               _bad_cells;
 		bool*               _blue_cells;
-		bool*               _blue_cells_N;
-		bool*               _blue_cells_W;
-		bool*               _blue_cells_S;
-		bool*               _blue_cells_E;
 
 		int*                _neighbors;
 		Point**             _cell_points; // inserted points
@@ -1654,5 +1752,6 @@ class MeshingGenie_2d
 };
                                 
 #endif	
+
 
 

@@ -18,7 +18,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #  )
 
 #APPEND_SET(HEADERS MeshingGenie_2d.h)
-APPEND_SET(SOURCES MeshingGenie_2d.cpp)
+APPEND_SET(SOURCES
+	MeshingGenie_2d.cpp
+	MeshingGenie_3d.cpp
+	)
 
 #
 # C) Define the targets for package's library(s)
