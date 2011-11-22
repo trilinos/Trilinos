@@ -46,35 +46,23 @@ buildResponseData(const std::vector<std::string> & fields) const
    return data;
 }
 
-//! Build an evaluator of the set of fields to be aggregated (calculated) together
-template <typename TraitsT>
-Teuchos::RCP<PHX::Evaluator<TraitsT> > 
-ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>::
-buildEvaluator(Teuchos::RCP<ResponseData<TraitsT> > & data, const Teuchos::ParameterList & fix_p) const
-{
-   Teuchos::RCP<ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> > func_data 
-      = Teuchos::rcp_dynamic_cast<ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> >(data);
-
-   Teuchos::ParameterList p(fix_p);
-   p.set("Name","Functional Response");
-   p.set("Response Data",func_data);
-   p.set("Response Aggregator",Teuchos::rcpFromRef(*this));
-   p.set("Response Names",Teuchos::rcpFromRef(func_data->getFields()));
-
-   p.get<int>("Workset Size");  // check to make sure its there!
-
-   // build useful evaluator
-   return Teuchos::rcp(new ResponseScatterEvaluator<panzer::Traits::Residual,panzer::Traits>(p));
-}
-
 //! Build an evaluator ofr the set of fields to be aggregated (calculated) together
 template <typename TraitsT>
 void
 ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>::
-registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,Teuchos::RCP<ResponseData<TraitsT> > & data,
+registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<ResponseData<TraitsT> > & data,
                              const Teuchos::ParameterList & p) const
 {
-   Teuchos::RCP<PHX::Evaluator<TraitsT> > eval = buildEvaluator(data,p);
+   Teuchos::RCP<ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> > func_data 
+      = Teuchos::rcp_dynamic_cast<ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> >(data);
+
+   // build useful evaluator
+   Teuchos::RCP<PHX::Evaluator<TraitsT> > eval = Teuchos::rcp(
+         new ResponseScatterEvaluator<panzer::Traits::Residual,TraitsT>("Functional Response",
+                                                                        data,
+                                                                        Teuchos::rcpFromRef(*this),
+                                                                        func_data->getFields(),
+                                                                        p.get<int>("Workset Size")));
 
    // add and require fields from aggregator constructed evaluator
    fm.template registerEvaluator<panzer::Traits::Residual>(eval);
@@ -86,9 +74,12 @@ registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,Teuchos::RCP<Respon
 template <typename TraitsT>
 void
 ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>::
-evaluateFields(panzer::Workset & wkst,ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> & data,
+evaluateFields(panzer::Workset & wkst,ResponseData<TraitsT> & in_data,
                                            const std::vector<PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> > & fields) const
 {
+   ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> & data 
+         = Teuchos::dyn_cast<ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> >(in_data); // dynamic cast to correct data type
+
    std::vector<typename TraitsT::RealType> & dataVec = data.getData();
 
    TEUCHOS_ASSERT(fields.size()==dataVec.size()); // sanity check

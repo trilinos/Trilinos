@@ -110,7 +110,7 @@ public:
    Teuchos::RCP<ResponseData<TraitsT> > buildResponseData(const std::vector<std::string> & fields) const;
 
    //! Register and build evaluator required by this aggregator and this set of data.
-   virtual void registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,Teuchos::RCP<ResponseData<TraitsT> > & data, 
+   virtual void registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<ResponseData<TraitsT> > & data, 
                                              const Teuchos::ParameterList & p) const;
 
    //! perform global reduction on this set of response data
@@ -118,13 +118,9 @@ public:
 
    //! @}
 
-   //! Build an evaluator of the set of fields to be aggregated (calculated) together
-   Teuchos::RCP<PHX::Evaluator<TraitsT> > buildEvaluator(Teuchos::RCP<ResponseData<TraitsT> > & data,
-                                                         const Teuchos::ParameterList & p) const;
-
-   //! Aggregate fields into a specific data object
-   void evaluateFields(panzer::Workset & wkst,ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> & data,
-                                              const std::vector<PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> > & fields) const;
+   //! Aggregate fields into a data object
+   void evaluateFields(panzer::Workset & wkst,ResponseData<TraitsT> & data,
+                       const std::vector<PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> > & fields) const;
 
    //! Aggregate a set of responses locally
    virtual void aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const;

@@ -54,7 +54,7 @@ public:
    virtual Teuchos::RCP<ResponseData<TraitsT> > buildResponseData(const std::vector<std::string> & fields) const = 0;
 
    //! Register and build evaluator required by this aggregator and this set of data.
-   virtual void registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,Teuchos::RCP<ResponseData<TraitsT> > & data,
+   virtual void registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<ResponseData<TraitsT> > & data,
                                              const Teuchos::ParameterList & p) const = 0;
 
    //! perform global reduction on this set of response data
@@ -62,6 +62,10 @@ public:
 
    //! Aggregate a set of responses locally
    virtual void aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const = 0;
+
+   //! Aggregate fields into a data object
+   virtual void evaluateFields(panzer::Workset & wkst,ResponseData<TraitsT> & data,
+                               const std::vector<PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> > & fields) const = 0;
 };
 
 template <typename EvalT,typename TraitsT>

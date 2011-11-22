@@ -20,16 +20,24 @@ namespace panzer {
   * The input parameter list as the following parameter fields
      "Name": type std::string
      "Response Data": type RCP<panzer::ResponseData<Traits> >
-     "Response Aggregator": type RCP<panzer::ResponseAggregator<Traits> >
+     "Response Aggregator": type RCP<panzer::ResponseAggregator<ScalarT,Traits> >
      "Response Names": type RCP<const std::vector<std::string> >
      "Workset Size": type int
   */
 PHX_EVALUATOR_CLASS(ResponseScatterEvaluator)
   
   Teuchos::RCP<PHX::FieldTag> responseDummyTag_;
-  Teuchos::RCP<panzer::ResponseFunctional_Data<EvalT,Traits> > responseData_;
-  Teuchos::RCP<const panzer::ResponseFunctional_Aggregator<EvalT,Traits> > responseAggregator_;
+  Teuchos::RCP<panzer::ResponseData<Traits> > responseData_;
+  Teuchos::RCP<const panzer::ResponseAggregator<EvalT,Traits> > responseAggregator_;
   std::vector<PHX::MDField<ScalarT,Cell> > responseFields_;
+
+public:
+  //! A constructor with concrete arguments instead of a parameter list.
+  ResponseScatterEvaluator(const std::string & name,
+                           const Teuchos::RCP<panzer::ResponseData<Traits> > & data,
+                           const Teuchos::RCP<const panzer::ResponseAggregator<EvalT,Traits> > & aggregator,
+                           const std::vector<std::string> & responseNames,
+                           int worksetSize);
     
 PHX_EVALUATOR_CLASS_END
 
