@@ -67,7 +67,8 @@ namespace Tpetra {
   : comm_(comm_in)
   , node_(node_in) 
   {
-    // distribute the elements across the nodes so that they are 
+    // The user wants us to distribute the elements across the nodes
+    // so that they are
     // - non-overlapping
     // - contiguous
     // - as evenly distributed as possible
@@ -78,14 +79,19 @@ namespace Tpetra {
     const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid();
     const GlobalOrdinal G1 = Teuchos::OrdinalTraits<GlobalOrdinal>::one();
 
-    std::string errPrefix;
-    errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,indexBase,comm,lOrG): ";
+    std::string errPrefix = Teuchos::typeName(*this) + 
+      "::constructor(numGlobal,indexBase,comm,lOrG): ";
 
     if (lOrG == GloballyDistributed) {
       const int numImages = comm_->getSize();
       const int myImageID = comm_->getRank();
 
-      // check that numGlobalElements,indexBase is equivalent across images
+      // This constructor requires that the given number of global
+      // elements (numGlobalElements) be valid, since this constructor
+      // doesn't compute it.  All processes in the given communicator
+      // must provide the same numGlobalElements and indexBase values.
+      // (We check this by broadcasting Rank 0's values and comparing
+      // with the local values.)
       global_size_t rootNGE = numGlobalElements_in;
       GlobalOrdinal rootIB  = indexBase_in;
       Teuchos::broadcast<int,global_size_t>(*comm_,0,&rootNGE);
@@ -101,8 +107,9 @@ namespace Tpetra {
         localChecks[0] = myImageID;
         localChecks[1] = 2;
       }
-      // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass, as well as the reason
-      // these will be -1 and 0 if all procs passed
+      // REDUCE_MAX will give us the rank ("image ID") of the
+      // highest-rank process that DID NOT pass, as well as the
+      // reason.  These will be -1 and 0 if all procs passed
       Teuchos::reduceAll<int,int>(*comm_,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
