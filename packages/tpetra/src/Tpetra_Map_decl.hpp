@@ -182,10 +182,10 @@ namespace Tpetra {
     //! Returns true if the global index is found in this Map on this node; returns false if it isn't.
     bool isNodeGlobalElement(GlobalOrdinal globalIndex) const;
 
-    //! Returns true if this Map is distributed contiguously; returns false otherwise.
+    //! True if this Map is distributed contiguously, else false.
     bool isContiguous() const;
 
-    //! Returns true if this Map is distributed across more than one node; returns false otherwise.
+    //! True if this Map is distributed across more than one node, else false.
     bool isDistributed() const;
 
     //@}
@@ -193,10 +193,43 @@ namespace Tpetra {
     //! @name Boolean Tests
     //@{ 
 
-    //! Returns true if \c map is compatible with this Map.
+    /// \brief True if and only if \c map is compatible with this Map.
+    ///
+    /// Two Maps are "compatible" if all of the following are true:
+    /// 1. They have the same global number of elements.
+    /// 2. They have the same number of local elements on each process.
+    ///
+    /// Determining #2 requires a reduction.  The reduction uses this
+    /// Map's communicator.  (We assume that the input Map is valid on
+    /// all processes in this Map's communicator.)
+    ///
+    /// Compatibility is useful for determining correctness of certain
+    /// operations, like assigning one MultiVector X to another Y.  If
+    /// X and Y have the same number of columns, and if their Maps are
+    /// compatible, then it is legal to assign X to Y or to assign Y
+    /// to X.
     bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
-    //! Returns true if \c map is identical to this Map.
+    /// \brief True if and only if \c map is identical to this Map.
+    ///
+    /// "Identical" is stronger than "compatible."  Two Maps are
+    /// identical if all of the following are true:
+    /// 1. They have the same min and max global indices.
+    /// 2. They have the same global number of elements.
+    /// 3. They are either both distributed, or both not distributed.
+    /// 4. Their index bases are the same.
+    /// 5. They have the same number of local elements on each process.
+    /// 6. They have the same global indices on each process.
+    ///
+    /// #2 and #5 are exactly "compatibility" (see \c isCompatible()).
+    /// Thus, "identical" includes, but is stronger than,
+    /// "compatible."  
+    ///
+    /// A Map corresponds to a "two-dimensional" or block permutation
+    /// over process ranks and global element indices.  Two Maps with
+    /// different numbers of processes in their communicators cannot
+    /// be compatible, let alone identical.  Two identical Maps
+    /// correspond to the same permutation.
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //@}
@@ -240,30 +273,35 @@ namespace Tpetra {
     // match across all images, and may be assumed to do so
 		Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
-    // Map doesn't need node yet, but it likely will later. In the meantime, passing a Node to Map means that we don't have to 
-    // pass a Node to downstream classes such as MultiVector, Vector, CrsGraph and CrsMatrix
+    // Map doesn't need node yet, but it likely will later. In the
+    // meantime, passing a Node to Map means that we don't have to
+    // pass a Node to downstream classes such as MultiVector, Vector,
+    // CrsGraph and CrsMatrix.
     Teuchos::RCP<Node> node_;
 
-    // The based for global IDs in this Map.
-		GlobalOrdinal indexBase_;
+    //! The index base for global IDs in this Map.
+    GlobalOrdinal indexBase_;
     //! The number of global IDs located in this Map across all nodes.
-		global_size_t numGlobalElements_;
+    global_size_t numGlobalElements_;
     //! The number of global IDs located in this Map on this node.
-		size_t numLocalElements_;
+    size_t numLocalElements_;
     //! The minimum and maximum global IDs located in this Map on this node.
     GlobalOrdinal minMyGID_, maxMyGID_;
     //! The minimum and maximum global IDs located in this Map across all nodes.
     GlobalOrdinal minAllGID_, maxAllGID_;
-    //! Indicates that the range of global indices are contiguous and ordered.
+    //! Whether the range of global indices are contiguous and ordered.
     bool contiguous_;
-    //! Indicates that global indices of the map are non-identically distributed among different nodes.
+    //! Whether this map's global indices are non-identically distributed among different nodes.
     bool distributed_;
     //! A direct mapping from local IDs to global IDs.
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
     //! A mapping from global IDs to local IDs.
     std::map<GlobalOrdinal, LocalOrdinal> glMap_;
-    //! A Directory for looking up nodes for this Map. This directory has an rcp(this,false) and is therefore not allowed to persist beyond
-    //! the lifetime of this Map. Do not under any circumstance pass this outside of the Map.
+    /// \brief A Directory for looking up nodes for this Map. 
+    ///
+    /// This directory has an rcp(this,false) and is therefore not
+    /// allowed to persist beyond the lifetime of this Map. Do not
+    /// under any circumstance pass this outside of the Map.
     Teuchos::RCP< Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
