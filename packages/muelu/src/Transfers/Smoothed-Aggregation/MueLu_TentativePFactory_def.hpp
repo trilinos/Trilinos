@@ -14,7 +14,6 @@ namespace MueLu {
   TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact)
     : aggregatesFact_(aggregatesFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
       QR_(false) {
-    std::cout << "Constructor of PtentFactory: nullspaceFact=" << nullspaceFact.get() << std::endl;
   }
  
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -41,7 +40,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level & fineLevel, Level & coarseLevel) const {
-    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     // get data from fine level
     RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
@@ -71,25 +70,23 @@ namespace MueLu {
                      RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const                   //-> OUTPUT 
   {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
-    std::cout << "PROC: " << comm->getRank() << " entering TentativePFactory " << std::endl;
 
+    // number of aggregates
     GO numAggs = aggregates.GetNumAggregates();
 
+    // dimension of fine level nullspace
     const size_t NSDim = fineNullspace.getNumVectors();
+
+    // number of coarse level dofs (fixed by number of aggregats and nullspace dimension)
     GO nCoarseDofs = numAggs*NSDim;
-    // Compute array of aggregate sizes.
-//#if OLD
-//    ArrayRCP<LO> aggSizes  = aggregates.ComputeAggregateSizes(); // TODO: we need a aggSizes with fullsize (=number of dofs of each aggregate, instead of number of nodes)
-//#else
-    std::cout << "PROC: " << comm->getRank() << " compute AggSizes... " << std::endl;
-    ArrayRCP<LO> aggSizes  = aggregates.ComputeAggregateSizes2(); // TODO: we need a aggSizes with fullsize
-    std::cout << "PROC: " << comm->getRank() << " compute AggSizes finished " << std::endl;
-//#endif
+
+    // Compute array of aggregate sizes (in dofs).
+    ArrayRCP<LO> aggSizes  = aggregates.ComputeAggregateSizes();
+
     // Calculate total #dofs in local aggregates, find size of the largest aggregate.
     LO maxAggSize=0;
     LO numDofsInLocalAggs=0;
     for (typename Teuchos::ArrayRCP<LO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i) {
-      //std::cout << "AggSize=" << *i << std::endl;
       if (*i > maxAggSize) maxAggSize = *i;
       numDofsInLocalAggs += *i;
     }
@@ -97,13 +94,7 @@ namespace MueLu {
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
     // aggToRowMap[i][j] is the jth DOF in aggregate i
     ArrayRCP< ArrayRCP<LO> > aggToRowMap(numAggs);
-//#if OLD
-//    aggregates.ComputeAggregateToRowMap(aggToRowMap);
-//#else
-    std::cout << "PROC: " << comm->getRank() << " compute AggToRowMap " << std::endl;
-    aggregates.ComputeAggregateToRowMap2(aggToRowMap);
-    std::cout << "PROC: " << comm->getRank() << " compute AggToRowMap finished " << std::endl;
-//#endif
+    aggregates.ComputeAggregateToRowMap(aggToRowMap);
 
     // Create the numbering for the new row map for Ptent as follows:
     // convert LIDs in aggToRowmap to GIDs, put them in an ArrayView,
@@ -159,20 +150,14 @@ namespace MueLu {
     for (size_t i=0; i<NSDim; ++i)
       if (coarseMap->getNodeNumElements() > 0) coarseNS[i] = coarseNullspace->getDataNonConst(i);
 
-    std::cout << "PROC: " << comm->getRank() << " before GetDofMap " << std::endl;
-
     // Builds overlapped nullspace.
-    //const RCP<const Map> nonUniqueMap = aggregates.GetMap();  // old
-    const RCP<const Map> nonUniqueMap = aggregates.GetDofMap(); // new
-    //const RCP<const Map> nonUniqueMap = fineA.getColMap(); // new
+    const RCP<const Map> nonUniqueMap = aggregates.GetDofMap(); // fetch overlapping Dofmap from Aggregates structure
+
     GO nFineDofs = nonUniqueMap->getNodeNumElements();
     const RCP<const Map> uniqueMap    = fineA.getDomainMap(); //FIXME won't work for systems
     RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
     RCP<MultiVector> fineNullspaceWithOverlap = MultiVectorFactory::Build(nonUniqueMap,NSDim);
-    std::cout << "PROC: " << comm->getRank() << " before do Import GetDofMap " << std::endl;
     fineNullspaceWithOverlap->doImport(fineNullspace,*importer,Xpetra::INSERT);
-
-    std::cout << "PROC: " << comm->getRank() << " after do Import GetDofMap " << std::endl;
 
     // Pull out the nullspace vectors so that we can have random access.
     // (Question -- do we have to do this?)

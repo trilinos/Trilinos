@@ -18,7 +18,6 @@ namespace MueLu {
   CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceDropFactory(RCP<const FactoryBase> AFact, RCP<const FactoryBase> nullspaceFact)
     : AFact_(AFact), nullspaceFact_(nullspaceFact), blksize_(1), fixedBlkSize_(true)
   {
-    std::cout << "Constructor of CoalesceDropFactory: nullspaceFact=" << nullspaceFact_.get() << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -57,7 +56,11 @@ namespace MueLu {
         blockdim = Teuchos::as<LocalOrdinal>(nullspace->getNumVectors());
       }
 
-      Amalgamate(A, blockdim, graph);
+      if (blockdim > 1) {
+        Amalgamate(A, blockdim, graph);
+      } else {
+        graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
+      }
     /*} else {
       //FIXME predropping does not fit to amalgamation routine
       graph = predrop_->Drop(A);
@@ -167,6 +170,7 @@ namespace MueLu {
       for(LocalOrdinal k=0; k<Teuchos::as<LocalOrdinal>(nnz); k++) {
         TEUCHOS_TEST_FOR_EXCEPTION(A->getColMap()->isNodeLocalElement(indices[k])==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: Problem with columns. Error.");
         GlobalOrdinal gcid = A->getColMap()->getGlobalElement(indices[k]); // global column id
+        // TODO: decide whether to add or skip a matrix entry in resulting graph
         if(vals[k]!=0.0) {  // avoid zeros
           colblocks->push_back(globalrowid2globalamalblockid->find(gcid)->second); // add column block id to column ids of amalgamated matrix
           realnnz++; // increment number of nnz in matrix row
@@ -187,7 +191,6 @@ namespace MueLu {
 
     // store information in Graph object for unamalgamation of vectors
     graph->SetAmalgamationParams(globalamalblockid2myrowid, globalamalblockid2globalrowid);
-
   }
 
 } //namespace MueLu

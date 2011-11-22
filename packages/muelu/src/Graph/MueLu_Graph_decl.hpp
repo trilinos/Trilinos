@@ -27,6 +27,8 @@ namespace MueLu {
 
     Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) { 
       //setObjectLabel(objectLabel); 
+      globalamalblockid2myrowid_ = Teuchos::null;
+      globalamalblockid2globalrowid_ = Teuchos::null;
     }
 
     virtual ~Graph() {}
@@ -38,14 +40,12 @@ namespace MueLu {
 
     const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
     const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
-    const RCP<const Map> GetImportMap() const {
-      //std::cout << "Graph::GetImportMap: PROC: " << graph_->getColMap()->getComm()->getRank() << " " << graph_->getColMap()->getNodeNumElements() << "/" << graph_->getColMap()->getGlobalNumElements() << " numCols (maps)" << std::endl;
-      //std::cout << "Graph::GetImportMap: PROC: " << graph_->getColMap()->getComm()->getRank() << " " << graph_->getNodeNumCols() << "/" << graph_->getGlobalNumCols() << " numCols"<< std::endl;
-      return graph_->getColMap();
-    }
+
+    //! returns overlapping import map (nodes)
+    const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
+
+    //! returns overlapping import map (DOFs)
     const RCP<const Map> GetImportDofMap() const;
-
-
 
     //! Return the list of vertices adjacent to the vertex 'v'
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;

@@ -58,29 +58,44 @@ namespace MueLu {
 
     const RCP<const Xpetra::Map<LO,GO> > GetDofMap() const { return importDofMap_; }
 
+    Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const; //ComputeAggSizesNodes
+
     /*! @brief Compute sizes of all the aggregates.
+
+      returns the number of nodes in each aggregate in an array.
 
     - FIXME Is this dangerous, i.e., could the user change this?
     */
-    Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const; //ComputeAggSizes
+    Teuchos::ArrayRCP<LO> ComputeAggregateSizesNodes() const; //ComputeAggSizesNodes
 
-    Teuchos::ArrayRCP<LO> ComputeAggregateSizes2() const; //ComputeAggSizes2
+    /*! @brief Compute sizes of all the aggregates.
 
-    /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
+      returns the number of DOFs in each aggregate in an array.
 
-    @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
-
-    This routine only works for DOF = NODE (i.e. 1 DOF per node)
+    - FIXME Is this dangerous, i.e., could the user change this?
     */
+    Teuchos::ArrayRCP<LO> ComputeAggregateSizesDofs() const; //ComputeAggSizesDofs
+
+    /*! @brief Compute lookup table that provides DOFs belonging to a given table */
     void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMap
 
     /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
 
     @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
 
-    This routine makes use of the amalgamation routine and should be able to handle #DOFs per node > 1
+    This routine only works for DOF = NODE (i.e. 1 DOF per node)
+
     */
-    void ComputeAggregateToRowMap2(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMap
+    void ComputeAggregateToRowMapNodes(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMapNodes
+
+    /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
+
+    @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
+
+    This routine makes use of the amalgamation routine and should be able to handle #DOFs per node > 1
+    Prerequisite is that globalamalblockid2myrowid_ is set by the amalgamation method.
+    */
+    void ComputeAggregateToRowMapDofs(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMap
 
     //! @name Overridden from Teuchos::Describable 
     //@{
@@ -93,6 +108,9 @@ namespace MueLu {
     void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
 
     //! Set amalagamation routine (needed for ComputeAggregateToRowMap)
+    // This routine is called by MueLu::UCAggregationFactory::Build to transfer the amalgamation
+    // information from MueLu::Graph to MueLu::Aggregates.
+    // If matrix has not been amalgamated, then globalamalblockid2myrowid_ is just null.
     void SetAmalgamationInformation(const RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& globalamalblockid2myrowid) const {
       globalamalblockid2myrowid_ = globalamalblockid2myrowid;
     };

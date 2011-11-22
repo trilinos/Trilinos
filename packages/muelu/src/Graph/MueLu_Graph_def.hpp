@@ -27,18 +27,27 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetImportDofMap() const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(globalamalblockid2globalrowid_==Teuchos::null, Exceptions::RuntimeError, "MueLu::Graph::GetImportDofMap: no amalgamation information! Error.");
+    //TEUCHOS_TEST_FOR_EXCEPTION(globalamalblockid2globalrowid_==Teuchos::null, Exceptions::RuntimeError, "MueLu::Graph::GetImportDofMap: no amalgamation information! Error.");
 
     RCP<const Map> nodeMap = GetImportMap();  // import node map
+
+    // special case: 1 dof per node
+    if(globalamalblockid2myrowid_ == Teuchos::null &&
+       globalamalblockid2globalrowid_ == Teuchos::null) {
+      GetOStream(Debug, 0) << "MueLu::Graph::GetImportDofMap: 1 dof per node -> skip reconstruction of import DOF map!" << std::endl;
+      // no amalgamation information -> we can assume that we have 1 dof per node
+      // just return nodeMap as DOFMap!
+      return nodeMap;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(globalamalblockid2globalrowid_==Teuchos::null, Exceptions::RuntimeError, "MueLu::Graph::GetImportDofMap: insufficient amalgamation information. Error");
+    TEUCHOS_TEST_FOR_EXCEPTION(globalamalblockid2myrowid_==Teuchos::null    , Exceptions::RuntimeError, "MueLu::Graph::GetImportDofMap: insufficient amalgamation information. Error");
 
     // build dof map from node map
     RCP<std::vector<GlobalOrdinal> > myDofGIDs = Teuchos::rcp(new std::vector<GlobalOrdinal>);
     for(LocalOrdinal n=0; n<Teuchos::as<LocalOrdinal>(nodeMap->getNodeNumElements()); n++) {
       GlobalOrdinal globalblockid = (GlobalOrdinal) nodeMap->getGlobalElement(n);
 
-      /*if(globalamalblockid2globalrowid_->count(globalblockid)<=0) {
-        std::cout << "PROC: " << nodeMap->getComm()->getRank() << " globalblockid=" << globalblockid << " count globalamalblockid2globalrowid_=" << globalamalblockid2globalrowid_->count(globalblockid) << std::endl;
-      }*/
       TEUCHOS_TEST_FOR_EXCEPTION(globalamalblockid2globalrowid_->count(globalblockid)<=0, Exceptions::RuntimeError, "MueLu::Graph::GetImportDofMap: empty global block? Error.");
       std::vector<GlobalOrdinal> myrowGIDs = (*globalamalblockid2globalrowid_)[globalblockid];
       TEUCHOS_TEST_FOR_EXCEPTION(myrowGIDs.size()==0, Exceptions::RuntimeError, "MueLu::Graph::GetImportDofMap: no amalgamation information! Error.");
