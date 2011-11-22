@@ -263,15 +263,15 @@ namespace Tpetra {
     //! Perform communication to determine whether this is globally distributed or locally replicated.
     bool checkIsDist() const;
 
-		//! Declared but not defined; do not use.
-		Map(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
+    //! Declared but not defined; do not use.
+    Map(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
-		//! Declared but not defined; do not use.
-		Map<LocalOrdinal,GlobalOrdinal,Node>& operator=(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
+    //! Declared but not defined; do not use.
+    Map<LocalOrdinal,GlobalOrdinal,Node>& operator=(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
     // some of the following are globally coherent: that is, they have been guaranteed to 
     // match across all images, and may be assumed to do so
-		Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
     // Map doesn't need node yet, but it likely will later. In the
     // meantime, passing a Node to Map means that we don't have to
@@ -299,10 +299,10 @@ namespace Tpetra {
     std::map<GlobalOrdinal, LocalOrdinal> glMap_;
     /// \brief A Directory for looking up nodes for this Map. 
     ///
-    /// This directory has an rcp(this,false) and is therefore not
+    /// This directory is a non-owning RCP and is therefore not
     /// allowed to persist beyond the lifetime of this Map. Do not
     /// under any circumstance pass this outside of the Map.
-    Teuchos::RCP< Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
+    Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
 
@@ -349,7 +349,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createUniformContigMapWithNode(global_size_t numElements,
-                                 const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+                                 const Teuchos::RCP< const Teuchos::Comm< int > > &comm, 
+				 const Teuchos::RCP< Node > &node);
 
   /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
 
@@ -360,8 +361,10 @@ namespace Tpetra {
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
-  createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+  createContigMap (global_size_t numElements, 
+		   size_t localNumElements, 
+		   const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
   /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
 
@@ -370,9 +373,11 @@ namespace Tpetra {
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
-                          const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createContigMapWithNode (global_size_t numElements, 
+			   size_t localNumElements, 
+			   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+			   const Teuchos::RCP<Node> &node);
 
   /** \brief Non-member function to create a non-contiguous Map with the default node.
 
@@ -383,9 +388,9 @@ namespace Tpetra {
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
-  createNonContigMap(const ArrayView<const GlobalOrdinal> &elementList,
-                     const RCP<const Teuchos::Comm<int> > &comm);
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+  createNonContigMap (const ArrayView<const GlobalOrdinal> &elementList,
+		      const RCP<const Teuchos::Comm<int> > &comm);
 
   /** \brief Non-member function to create a non-contiguous Map with a user-specified node.
 
@@ -395,9 +400,9 @@ namespace Tpetra {
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createNonContigMapWithNode(const ArrayView<const GlobalOrdinal> &elementList,
-                             const RCP<const Teuchos::Comm<int> > &comm, 
-                             const RCP<Node> &node);
+  createNonContigMapWithNode (const ArrayView<const GlobalOrdinal> &elementList,
+			      const RCP<const Teuchos::Comm<int> > &comm, 
+			      const RCP<Node> &node);
 
   /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
 
@@ -407,21 +412,25 @@ namespace Tpetra {
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createWeightedContigMapWithNode(int thisNodeWeight, global_size_t numElements, 
-                                  const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+  createWeightedContigMapWithNode (int thisNodeWeight, 
+				   global_size_t numElements, 
+				   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+				   const Teuchos::RCP<Node> &node);
 
 } // Tpetra namespace
 
 /** \brief  Returns true if \c map is identical to this map. Implemented in Tpetra::Map::isSameAs().
     \relatesalso Tpetra::Map */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
+bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, 
+		 const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return map1.isSameAs(map2); }
 
 /** \brief Returns true if \c map is not identical to this map. Implemented in Tpetra::Map::isSameAs().
     \relatesalso Tpetra::Map */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
+bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, 
+		 const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return !map1.isSameAs(map2); }
 
 #endif // TPETRA_MAP_DECL_HPP
