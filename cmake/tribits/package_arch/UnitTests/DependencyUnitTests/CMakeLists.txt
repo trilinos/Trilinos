@@ -227,6 +227,21 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableStratimikos_DisableThyra
+  ARGS -D${PROJECT_NAME}_ENABLE_Stratimikos=ON -D${PROJECT_NAME}_ENABLE_Thyra=OFF
+  PASS_REGULAR_EXPRESSION_ALL
+    "Setting subpackage enable Trilinos_ENABLE_ThyraCoreLibs=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "Setting subpackage enable Trilinos_ENABLE_ThyraGoodStuff=OFF because parent package Trilinos_ENABLE_Thyra=OFF" 
+    "Setting subpackage enable Trilinos_ENABLE_ThyraEpetra=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "Setting subpackage enable Trilinos_ENABLE_ThyraEpetraExt=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "Setting subpackage enable Trilinos_ENABLE_ThyraTpetra=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "WARNING: Setting Trilinos_ENABLE_Stratimikos=OFF which was 'ON' because Stratimikos has a required library dependence on disabled package ThyraCoreLibs"
+    "Final set of enabled packages:  0"
+    "Final set of non-enabled packages:  .+ Teuchos .+ Thyra .+ Stratimikos .+"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   EnableEpetra_DisableThyraCoreLibs_EnableAllForwardPackages
   ARGS -D${PROJECT_NAME}_ENABLE_Epetra:BOOL=ON -D${PROJECT_NAME}_ENABLE_ThyraCoreLibs:BOOL=OFF
     -D${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON
