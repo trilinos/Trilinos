@@ -87,23 +87,39 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 # We must locate the source code root directory before processing this
 # file. Once the root directory is located, we can make good guesses
 # at other properties, but this file can be executed outside of the
-# context of a CMake build.
-SET(PROJECT_NAME "$ENV{PROJECT_NAME}")
+# context of a CMake build. 
+#
+# We allow the environment variable TRIBITS_PROJECT_ROOT to locate the
+# root directory. If the variable doesn't exist, we fall back on the
+# default convention.
+SET(TRIBITS_PROJECT_ROOT "$ENV{PROJECT_ROOT}")
+IF(NOT TRIBITS_PROJECT_ROOT)
+  # Fall back on the default convention, in which this file is located at: 
+  #   <root>/cmake/tribits/ctest.
+  IF(NOT CMAKE_CURRENT_LIST_DIR)
+    GET_FILENAME_COMPONENT(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+  ENDIF()
+  SET(TRIBITS_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../..")
+ENDIF()
+
+# Check that the ProjectName.cmake file exists.
+IF(NOT EXISTS "${TRIBITS_PROJECT_ROOT}/cmake/ProjectName.cmake")
+  MESSAGE(FATAL_ERROR
+    "Could not locate ProjectName.cmake.\n"
+    "  TRIBITS_PROJECT_ROOT = ${TRIBITS_PROJECT_ROOT}\n"
+    "  Set the TRIBITS_PROJECT_ROOT environment variable "
+    "to point at the source root.")
+ENDIF()
+
+INCLUDE(${TRIBITS_PROJECT_ROOT}/cmake/ProjectName.cmake)
 IF(NOT PROJECT_NAME)
   MESSAGE(FATAL_ERROR 
     "The project name has not been set!"
-    "Set the PROJECT_NAME environment variable "
-    "to the name of the project being tested.")
+    "  It should be set in ${TRIBITS_PROJECT_ROOT}/cmake/ProjectName.cmake.")
 ENDIF()
 
 # Get the source code root.
-SET(${PROJECT_NAME}_HOME_DIR "$ENV{${PROJECT_NAME}_HOME_DIR}")
-IF(NOT ${PROJECT_NAME}_HOME_DIR)
-  MESSAGE(FATAL_ERROR
-    "The ${PROJECT_NAME} source directory has not been set."
-    "Set the ${PROJECT_NAME}_HOME_DIR environment variable "
-    "to the top level source directory for the project.")
-ENDIF()
+SET(${PROJECT_NAME}_HOME_DIR "${TRIBITS_PROJECT_ROOT}")
 MESSAGE("${PROJECT_NAME}_HOME_DIR=${${PROJECT_NAME}_HOME_DIR}")
 
 SET(${PROJECT_NAME}_CMAKE_DIR "${${PROJECT_NAME}_HOME_DIR}/cmake")
