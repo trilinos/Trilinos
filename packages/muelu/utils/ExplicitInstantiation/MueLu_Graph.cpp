@@ -10,6 +10,6 @@ template class MueLu::Graph<int, int, Kokkos::DefaultNode::DefaultNodeType, Kokk
 # ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template class MueLu::Graph<int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
 # else
-# warning To compile MueLu with 'long long int' support, please turn on HAVE_TEUCHOS_LONG_LONG_INT
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
 # endif
 #endif
