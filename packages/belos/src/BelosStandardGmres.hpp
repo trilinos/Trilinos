@@ -54,6 +54,14 @@ namespace Belos {
   /// \brief Implementation of (Standard) GMRES
   /// \author Mark Hoemmen
   ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
+  /// 
+  /// \note If you are a new Belos user and just want an interface to
+  ///   standard GMRES, use \c PseudoBlockGmresSolMgr.  If you want
+  ///   Flexible GMRES, use \c BlockGmresSolMgr with the appropriate
+  ///   option set.
+  ///
   /// Implementation of the Generalized Minimal Residual (GMRES)
   /// method of Saad and Schultz (1986) for solving nonsymmetric
   /// linear systems.

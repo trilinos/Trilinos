@@ -53,6 +53,9 @@ namespace Belos {
   /// \brief Base for Akx implementations using only abstract operators.
   /// \author Mark Hoemmen
   ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
+  ///
   /// It's not always beneficial or desirable to use a matrix powers
   /// kernel implementation that expensively reorganizes the sparse
   /// matrix and preconditioners.  Also, in some cases, we might only

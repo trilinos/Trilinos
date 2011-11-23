@@ -55,9 +55,12 @@ namespace Belos {
   /// \brief Subclass of Belos::Iteration for GMRES-based solvers
   /// \author Mark Hoemmen
   ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
+  ///
   /// \note Belos already has a GmresIteration subclass of Iteration,
-  /// so we named this class GmresBaseIteration, to indicate that it
-  /// is implemented using GmresBase.
+  ///   so we named this class GmresBaseIteration, to indicate that it
+  ///   is implemented using GmresBase.
   template<class Scalar, class MV, class OP>
   class GmresBaseIteration : public Iteration<Scalar, MV, OP> {
   private:

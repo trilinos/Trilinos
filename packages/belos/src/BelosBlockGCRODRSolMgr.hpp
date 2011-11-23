@@ -965,42 +965,31 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
 	// DGKS orthogonalization manager is to be used, the value of this
 	// parameter will override DGKS's "depTol" parameter.
 	//
-	// Users may supply the orthogonalization manager parameters either
-	// as a sublist, or as an RCP.  We test for both.
+	// Users must supply the orthogonalization manager parameters as a
+	// sublist (supplying it as an RCP<ParameterList> would make the
+	// resulting parameter list not serializable).
+	RCP<ParameterList> orthoParams;
+	{ // The nonmember function returns an RCP<ParameterList>, 
+	  // which is what we want here.
+	  using Teuchos::sublist;
+	  // Abbreviation to avoid typos.
+	  const std::string paramName ("Orthogonalization Parameters");
 
-	RCP<const ParameterList> orthoParams;
-	{
-		bool gotOrthoParams = false;
-		try { // Could it be an RCP?
-			orthoParams =
-			params->get<RCP<const ParameterList> >("Orthogonalization Parameters");
-			gotOrthoParams = true;
-		} 
-		catch (InvalidParameter&) {
-			// We didn't get orthoParams; gotOrthoParams stays false.
-		}
-		if (! gotOrthoParams) {
-			try { // Could it be a sublist?
-				const ParameterList& _orthoParams =
-				  params_->sublist("Orthogonalization Parameters");
-				// A deep copy is the only safe way to ensure that
-				// orthoParams doesn't "go away," since params doesn't
-				// belong to the solution manager and may fall out of
-				// scope.
-				orthoParams = rcp (new ParameterList (_orthoParams));
-				gotOrthoParams = true;
-			} 
-			catch (InvalidParameter&) {
-				// We didn't get orthoParams; gotOrthoParams stays false.
-			}
-		}
-		// We didn't get the parameter list from params, so get a default
-		// parameter list from the OrthoManagerFactory.
-		if (! gotOrthoParams)
-			orthoParams = orthoFactory_.getDefaultParameters (orthoType_);
-		// Update parameter in our list.
-		params_->set ("Orthogonalization Parameters", orthoParams);
+	  try {
+	    orthoParams = sublist (params, paramName, true);
+	  } catch (InvalidParameter&) {
+	    // We didn't get the parameter list from params, so get a
+	    // default parameter list from the OrthoManagerFactory.
+	    // Modify params_ so that it has the default parameter list,
+	    // and set orthoParams to ensure it's a sublist of params_
+	    // (and not just a copy of one).
+	    params_->set (paramName, orthoFactory_.getDefaultParameters (orthoType_));
+	    orthoParams = sublist (params, paramName, true);
+	  }
 	}
+	TEUCHOS_TEST_FOR_EXCEPTION(orthoParams.is_null(), std::logic_error, 
+				   "Failed to get orthogonalization parameters.  "
+				   "Please report this bug to the Belos developers.");
 
 	// Check if the desired orthogonalization method changed, or if the
 	// orthogonalization manager has not yet been instantiated.  If
@@ -1022,7 +1011,6 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP>{
 	// OutputManager (printer_) already be initialized.
 	ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, null, printer_,
 			                  label_, orthoParams);
-	
 
 	//OLDER CONDITIONAL REGENERATION OF OrthoManager
 	/*if (ortho_.is_null() || changedOrthoType)
