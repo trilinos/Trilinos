@@ -17,6 +17,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_Monitor.hpp"
 
 #include "Xpetra_MapExtractorFactory.hpp"
 
