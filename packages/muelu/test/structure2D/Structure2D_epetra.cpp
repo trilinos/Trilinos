@@ -122,9 +122,12 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector* ptrNS = 0;
 
   std::cout << "Reading matrix market file" << std::endl;
-  EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
+  /*EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
   EpetraExt::MatrixMarketFileToVector("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);
+  EpetraExt::MatrixMarketFileToMultiVector( "/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
+  EpetraExt::MatrixMarketFileToCrsMatrix("stru2d_A.txt",emap,emap,emap,ptrA);
+  EpetraExt::MatrixMarketFileToVector("stru2d_b.txt",emap,ptrf);
+  EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
