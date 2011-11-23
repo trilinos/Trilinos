@@ -123,7 +123,7 @@ namespace panzer {
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary =
       Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer));
@@ -343,7 +343,7 @@ namespace panzer {
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
     RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer));
 

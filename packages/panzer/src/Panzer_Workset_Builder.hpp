@@ -28,6 +28,13 @@ namespace panzer {
 		const panzer::InputPhysicsBlock& ipb,
 		std::size_t workset_size,
 		int base_cell_dimension);
+
+  template<typename ArrayT>
+  Teuchos::RCP<std::vector<panzer::Workset> > 
+  buildWorksets(const panzer::PhysicsBlock & physBlk,
+		const std::vector<std::size_t>& local_cell_ids,
+		const ArrayT& vertex_coordinates, 
+		std::size_t workset_size);
   
   template<typename ArrayT>
   Teuchos::RCP<std::map<unsigned,panzer::Workset> >

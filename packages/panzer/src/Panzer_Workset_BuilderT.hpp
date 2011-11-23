@@ -7,6 +7,7 @@
 #include "Panzer_CellData.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
+#include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_Shards_Utilities.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -17,6 +18,21 @@
 #include "Intrepid_CellTools.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_Basis.hpp"
+
+template<typename ArrayT>
+Teuchos::RCP< std::vector<panzer::Workset> > 
+panzer::buildWorksets(const panzer::PhysicsBlock& physBlk,
+		      const std::vector<std::size_t>& local_cell_ids,
+		      const ArrayT& vertex_coordinates, 
+		      std::size_t workset_size)
+{
+   int base_cell_dimension = physBlk.getBaseCellTopology().getDimension();
+
+   // for now a simple call out to old version
+   return buildWorksets(physBlk.elementBlockID(),Teuchos::rcp(new shards::CellTopology(physBlk.getBaseCellTopology())),
+                        local_cell_ids,vertex_coordinates,
+                        physBlk.getInputPhysicsBlock(),workset_size,base_cell_dimension);
+}
 
 template<typename ArrayT>
 Teuchos::RCP< std::vector<panzer::Workset> > 

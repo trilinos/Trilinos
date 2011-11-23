@@ -7,25 +7,28 @@ WorksetContainer::WorksetContainer()
    : worksetSize_(1)
 {}
 
-/** Instantiate a workset object with a specified factory and input physics block
-  * map.
-  *
-  * \param[in] factory Factory to be used for constructing worksets
-  * \param[in] eb_to_ipb Map from "element blocks" to "input physics block" objects
-  */ 
 WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
-                                   const std::map<std::string,InputPhysicsBlock> & ebToIpb,
+                                   const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
                                    std::size_t wkstSz)
-   : wkstFactory_(factory), ebToIpb_(ebToIpb), worksetSize_(wkstSz)
+   : wkstFactory_(factory), worksetSize_(wkstSz)
 {
+   setPhysicsBlockVector(physicsBlocks);
 }
 
 /** Copies the workset factory, the InputPhysicsBlock map, and the workset size, but not constructed
   * worksets.
   */
 WorksetContainer::WorksetContainer(const WorksetContainer & wc)
-   : wkstFactory_(wc.wkstFactory_), ebToIpb_(wc.ebToIpb_), worksetSize_(wc.worksetSize_)
+   : wkstFactory_(wc.wkstFactory_), ebToIpb_(wc.ebToIpb_), ebToPb_(wc.ebToPb_), worksetSize_(wc.worksetSize_)
 {
+}
+
+void WorksetContainer::setPhysicsBlockVector(const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks)
+{
+   for(std::size_t i=0;i<physicsBlocks.size();i++) {
+      ebToIpb_[physicsBlocks[i]->elementBlockID()] = physicsBlocks[i]->getInputPhysicsBlock();
+      ebToPb_[physicsBlocks[i]->elementBlockID()] = physicsBlocks[i];
+   }
 }
 
 /** Clear all allocated worksets, maintain the workset factory and element to physics
@@ -49,6 +52,18 @@ const InputPhysicsBlock & WorksetContainer::lookupInputPhysicsBlock(const std::s
    return itr->second;
 }
 
+//! Look up an input physics block, throws an exception if it can be found.
+const PhysicsBlock & WorksetContainer::lookupPhysicsBlock(const std::string & eBlock) const
+{
+   std::map<std::string,Teuchos::RCP<PhysicsBlock> >::const_iterator itr = ebToPb_.find(eBlock);
+ 
+   TEUCHOS_TEST_FOR_EXCEPTION(itr==ebToPb_.end(),std::logic_error, 
+                      "WorksetContainer::lookupPhysicsBlock no PhysicsBlock object is associated "
+                      "with the element block \""+eBlock+"\".");
+
+   return *itr->second;
+}
+
 //! Access, and construction of volume worksets
 Teuchos::RCP<std::vector<Workset> >  
 WorksetContainer::getVolumeWorksets(const std::string & eBlock)
@@ -57,8 +72,8 @@ WorksetContainer::getVolumeWorksets(const std::string & eBlock)
    VolumeMap::iterator itr = volWorksets_.find(eBlock);
    if(itr==volWorksets_.end()) {
       // couldn't find workset, build it!
-      const InputPhysicsBlock & ipb = lookupInputPhysicsBlock(eBlock);
-      worksetVector = wkstFactory_->getVolumeWorksets(eBlock,ipb,worksetSize_);
+      const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
+      worksetVector = wkstFactory_->getVolumeWorksets(eBlock,pb,worksetSize_);
 
       // store vector for reuse in the future
       volWorksets_[eBlock] = worksetVector;
@@ -110,10 +125,10 @@ void WorksetContainer::allocateVolumeWorksets(const std::vector<std::string> & e
    for(std::size_t i=0;i<eBlocks.size();i++) {
       // couldn't find workset, build it!
       const std::string & eBlock = eBlocks[i];
-      const InputPhysicsBlock & ipb = lookupInputPhysicsBlock(eBlock);
+      const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
 
       // store vector for reuse in the future
-      volWorksets_[eBlock] = wkstFactory_->getVolumeWorksets(eBlock,ipb,worksetSize_);
+      volWorksets_[eBlock] = wkstFactory_->getVolumeWorksets(eBlock,pb,worksetSize_);
    }
 }
 

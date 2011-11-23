@@ -92,6 +92,8 @@ namespace panzer {
     const std::vector<std::string>& getDOFNames() const;
     const std::vector<StrBasisPair>& getProvidedDOFs() const;
     const std::map<std::string,Teuchos::RCP<panzer::Basis> >& getBases() const;
+
+    const panzer::InputPhysicsBlock & getInputPhysicsBlock() const;
     
     const shards::CellTopology getBaseCellTopology() const;
 

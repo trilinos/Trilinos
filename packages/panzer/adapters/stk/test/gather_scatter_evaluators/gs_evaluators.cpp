@@ -98,11 +98,6 @@ namespace panzer {
     eb_id_to_ipb["eblock-0_0"] = ipb;
     eb_id_to_ipb["eblock-1_0"] = ipb;
 
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
-
     // build physics blocks
     //////////////////////////////////////////////////////////////
     user_app::MyFactory eqset_factory;
@@ -130,6 +125,11 @@ namespace panzer {
 			         false,
                                  physicsBlocks);
     }
+
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////

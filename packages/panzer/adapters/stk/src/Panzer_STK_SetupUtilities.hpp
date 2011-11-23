@@ -4,6 +4,7 @@
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_BC.hpp"
+#include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -41,6 +42,19 @@ Teuchos::RCP<std::vector<panzer::Workset> >
 buildWorksets(const panzer_stk::STK_Interface & mesh,
               const std::string & eBlock,
               const panzer::InputPhysicsBlock & ipb, 
+              const std::size_t workset_size);
+
+/** Build volumetric worksets for a STK mesh
+  *
+  * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
+  * \param[in] pb Physics block associated with the element block
+  * \param[in] workset_size The size of each workset measured in the number of elements
+  *
+  * \returns Map relating block IDs to vectors of worksets on that element block.
+  */
+Teuchos::RCP<std::vector<panzer::Workset> >  
+buildWorksets(const panzer_stk::STK_Interface & mesh,
+              const panzer::PhysicsBlock & pb, 
               const std::size_t workset_size);
 
 /** Build boundary condition worksets for a STK mesh

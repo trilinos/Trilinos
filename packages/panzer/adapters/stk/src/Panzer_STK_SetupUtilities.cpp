@@ -73,6 +73,28 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
                                ipb, workset_size, base_cell_dimension);
 }
 
+Teuchos::RCP<std::vector<panzer::Workset> >  
+buildWorksets(const panzer_stk::STK_Interface & mesh,
+              const panzer::PhysicsBlock & pb, 
+              const std::size_t workset_size)
+{
+  using namespace workset_utils;
+
+  std::vector<std::string> element_blocks;
+
+  std::vector<std::size_t> local_cell_ids;
+  Intrepid::FieldContainer<double> cell_vertex_coordinates;
+
+  getIdsAndVertices(mesh, pb.elementBlockID(), local_cell_ids, cell_vertex_coordinates);
+
+  // only build workset if there are elements to worry about
+  // this may be processor dependent, so an element block
+  // may not have elements and thus no contribution
+  // on this processor
+  return panzer::buildWorksets(pb, local_cell_ids, cell_vertex_coordinates,
+                               workset_size);
+}
+
 const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb,

@@ -215,11 +215,7 @@ namespace panzer_stk {
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
-
-    // build volume worksets from container
-    std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets;
-    panzer::getSideWorksetsFromContainer(*wkstContainer,bcs,bc_worksets);
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////

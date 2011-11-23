@@ -221,6 +221,12 @@ panzer::PhysicsBlock::getBases() const
 }
 
 // *******************************************************************
+const panzer::InputPhysicsBlock & panzer::PhysicsBlock::getInputPhysicsBlock() const
+{
+   return m_initializer;
+}
+
+// *******************************************************************
 const shards::CellTopology panzer::PhysicsBlock::getBaseCellTopology() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(m_bases.size() == 0, std::runtime_error,

@@ -9,10 +9,10 @@ namespace panzer_stk {
   */ 
 Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
 getVolumeWorksets(const std::string & eBlock,
-                  const panzer::InputPhysicsBlock & pb,
+                  const panzer::PhysicsBlock & pb,
                   std::size_t worksetSize) const
 {
-   return panzer_stk::buildWorksets(*mesh_, eBlock, pb, worksetSize);
+   return panzer_stk::buildWorksets(*mesh_, pb, worksetSize);
 }
 
 /** Build sets of boundary condition worksets

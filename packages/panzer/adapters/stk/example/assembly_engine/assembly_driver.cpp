@@ -183,7 +183,7 @@ int main(int argc,char * argv[])
    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
+      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
    std::vector<std::string> elementBlockNames;
    mesh->getElementBlockNames(elementBlockNames);
@@ -193,10 +193,6 @@ int main(int argc,char * argv[])
    out << "block count = " << volume_worksets.size() << std::endl;
    out << "workset count = " << volume_worksets["eblock-0_0"]->size() << std::endl;
    
-   out << "BUILD BC WORKSETS" << std::endl;
-   std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> 
-         bc_worksets = panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
-
    // build DOF Manager
    /////////////////////////////////////////////////////////////
  

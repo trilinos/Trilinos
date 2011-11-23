@@ -7,6 +7,7 @@
 
 #include "Panzer_Workset.hpp"
 #include "Panzer_BC.hpp"
+#include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
 
 namespace panzer {
@@ -23,7 +24,7 @@ public:
    virtual
    Teuchos::RCP<std::vector<panzer::Workset> >
    getVolumeWorksets(const std::string & eBlock,
-                     const panzer::InputPhysicsBlock & pb,
+                     const panzer::PhysicsBlock & pb,
                      std::size_t worksetSize) const = 0;
 
    /** Build sets of boundary condition worksets

@@ -47,11 +47,11 @@ public:
      * map.
      *
      * \param[in] factory Factory to be used for constructing worksets
-     * \param[in] eb_to_ipb Map from "element blocks" to "input physics block" objects
+     * \param[in] physicsBlocks Vector of physics blocks
      * \param[in] wkstSz Number of elements in a workset built by this container
      */ 
    WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
-                    const std::map<std::string,InputPhysicsBlock> & ebToIpb,
+                    const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
                     std::size_t wkstSz);
 
    /** Copies the workset factory, the InputPhysicsBlock map, and the workset size,
@@ -70,8 +70,11 @@ public:
    { return wkstFactory_; }
 
    //! The input physics block map
-   void setInputPhysicsBlockMap(const std::map<std::string,InputPhysicsBlock> & ebToIpb)
-   { ebToIpb_ = ebToIpb; }   
+   // void setInputPhysicsBlockMap(const std::map<std::string,InputPhysicsBlock> & ebToIpb)
+   // { ebToIpb_ = ebToIpb; }   
+
+   //! The physics block vector
+   void setPhysicsBlockVector(const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks);
   
    //! get a reference to the input physics block map
    const std::map<std::string,InputPhysicsBlock> & getInputPhysicsBlockMap() const
@@ -92,6 +95,9 @@ public:
 
    //! Look up an input physics block, throws an exception if it can be found.
    const InputPhysicsBlock & lookupInputPhysicsBlock(const std::string & eBlock) const;
+
+   //! Look up an input physics block, throws an exception if it can be found.
+   const PhysicsBlock & lookupPhysicsBlock(const std::string & eBlock) const;
 
    //! Access to volume worksets
    Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
@@ -134,6 +140,7 @@ private:
 
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets
    std::map<std::string,InputPhysicsBlock> ebToIpb_; //! Maps element blocks to input physics block objects
+   std::map<std::string,Teuchos::RCP<PhysicsBlock> > ebToPb_; //! Maps element blocks to input physics block objects
 
    VolumeMap volWorksets_;
    SideMap sideWorksets_;
