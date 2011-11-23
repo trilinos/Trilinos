@@ -1,5 +1,7 @@
 #include "Xpetra_Operator.hpp"
 #include "MueLu_EpetraOperator.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
