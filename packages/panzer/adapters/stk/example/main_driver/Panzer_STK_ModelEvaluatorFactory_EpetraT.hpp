@@ -207,11 +207,6 @@ namespace panzer_stk {
 
     // build worksets
     //////////////////////////////////////////////////////////////
-    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
-    for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
-	 block != block_ids_to_physics_ids.end(); ++block)
-      eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
-
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)

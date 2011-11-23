@@ -92,12 +92,6 @@ namespace panzer {
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
 
-    // build worksets
-    //////////////////////////////////////////////////////////////
-    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
-    eb_id_to_ipb["eblock-0_0"] = ipb;
-    eb_id_to_ipb["eblock-1_0"] = ipb;
-
     // build physics blocks
     //////////////////////////////////////////////////////////////
     user_app::MyFactory eqset_factory;

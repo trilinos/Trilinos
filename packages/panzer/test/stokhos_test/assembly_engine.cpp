@@ -128,8 +128,6 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
 
   Teuchos::RCP<const shards::CellTopology> topo = 
       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-
-  std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
   {
     std::map<std::string,std::string> block_ids_to_physics_ids;
     block_ids_to_physics_ids["block_0"] = "test physics";
@@ -148,10 +146,6 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
                                eqset_factory,
 			       false,
                                physicsBlocks);
-
-    for(std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
-        block != block_ids_to_physics_ids.end(); ++block)
-       eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
   }
 
   // build worksets
@@ -165,7 +159,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
    Teuchos::RCP<panzer::WorksetFactoryBase> wkstFactory
       = Teuchos::rcp(new TestWorksetFactory(topo,cellIds,sideIds,coords,ipb,workset_size,bcs,myRank));
    Teuchos::RCP<panzer::WorksetContainer> wkstContainer
-      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,eb_id_to_ipb,workset_size));
+      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
   // build DOF Manager
   /////////////////////////////////////////////////////////////

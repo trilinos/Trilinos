@@ -89,8 +89,6 @@ namespace panzer {
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 20;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
-
     {
       std::map<std::string,std::string> block_ids_to_physics_ids;
       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
@@ -112,13 +110,6 @@ namespace panzer {
 		   	         build_transient_support,
                                  physicsBlocks);
 
-      // store off info needed for workset construction
-      for (std::map<std::string,std::string>::iterator block = 
-	     block_ids_to_physics_ids.begin();
-	   block != block_ids_to_physics_ids.end(); ++block)
-	eb_id_to_ipb[block->first] = 
-	  physics_id_to_input_physics_blocks[block->second];
-      
     }
 
    // finish building mesh, set required field variables and mesh bulk data
@@ -378,8 +369,6 @@ namespace panzer {
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 20;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
-
     {
       std::map<std::string,std::string> block_ids_to_physics_ids;
       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
@@ -400,14 +389,6 @@ namespace panzer {
                                  eqset_factory,
 			         build_transient_support,
                                  physicsBlocks);
-
-      // store off info needed for workset construction
-      for (std::map<std::string,std::string>::iterator block = 
-	     block_ids_to_physics_ids.begin();
-	   block != block_ids_to_physics_ids.end(); ++block)
-	eb_id_to_ipb[block->first] = 
-	  physics_id_to_input_physics_blocks[block->second];
-      
     }
 
    // finish building mesh, set required field variables and mesh bulk data

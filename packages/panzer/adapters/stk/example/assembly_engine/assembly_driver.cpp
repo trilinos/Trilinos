@@ -118,7 +118,6 @@ int main(int argc,char * argv[])
    panzer::InputPhysicsBlock ipb;
    std::vector<panzer::BC> bcs;
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-   std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
    {
       std::map<std::string,panzer::InputPhysicsBlock> physics_id_to_input_physics_blocks;
       std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -142,11 +141,6 @@ int main(int argc,char * argv[])
 			         eqset_factory,
 			         true,
 			         physicsBlocks);
-
-      for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
-	   block != block_ids_to_physics_ids.end(); ++block)
-	eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
-
    }
 
    // finish building mesh, set required field variables and mesh bulk data

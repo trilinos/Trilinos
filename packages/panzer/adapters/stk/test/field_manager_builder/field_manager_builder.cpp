@@ -66,7 +66,6 @@ namespace panzer {
     panzer::InputPhysicsBlock ipb;
     std::vector<panzer::BC> bcs;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
-    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
     {
        std::map<std::string,panzer::InputPhysicsBlock> 
              physics_id_to_input_physics_blocks;
@@ -82,10 +81,6 @@ namespace panzer {
        block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
     
        physics_id_to_input_physics_blocks["test physics"] = ipb;
-
-       for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
-	    block != block_ids_to_physics_ids.end(); ++block)
-	 eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
 
        panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                   block_ids_to_cell_topo,

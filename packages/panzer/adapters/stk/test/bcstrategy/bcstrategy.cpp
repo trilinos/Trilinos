@@ -91,8 +91,6 @@ namespace panzer {
     user_app::MyFactory eqset_factory;
     user_app::BCFactory bc_factory;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
-
     {
       std::map<std::string,std::string> block_ids_to_physics_ids;
       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
@@ -104,10 +102,6 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
-      for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
-	   block != block_ids_to_physics_ids.end(); ++block)
-	eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
-
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
                                  physics_id_to_input_physics_blocks,
