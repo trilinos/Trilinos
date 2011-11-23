@@ -15,6 +15,47 @@
 
 namespace fei {
 
+
+  /** Lower bound finds the first entry in list that is not less than item.
+      A binary search is used, and list is assumed to be sorted.
+   */
+  template<typename T>
+  inline int lowerBound(const T& item,
+		 const T* list,
+		 int len)
+  {
+    //The correctness of this function is tested in
+    // fei/test_utils/test_misc.cpp, in test_misc::serialtest2().
+
+    if (len < 1) return 0;
+
+    unsigned start = 0;
+    unsigned end = len - 1;
+
+    while(end - start > 23) {
+      unsigned mid = (start + end) >> 1;
+      if (list[mid] < item) start = mid;
+      else end = mid;
+    }
+
+    while (start+7<=end ) {
+      if ( item <= list[start+0] ) return start+0;
+      if ( item <= list[start+1] ) return start+1;
+      if ( item <= list[start+2] ) return start+2;
+      if ( item <= list[start+3] ) return start+3;
+      if ( item <= list[start+4] ) return start+4;
+      if ( item <= list[start+5] ) return start+5;
+      if ( item <= list[start+6] ) return start+6;
+      if ( item <= list[start+7] ) return start+7;
+      start+=8;
+    }
+
+    while (start<=end && item > list[start] ) 
+      start++;
+
+    return(start);
+  }
+
   /** Binary search of a list that's assumed to be sorted.
 
       @param item to be searched for.
@@ -24,43 +65,21 @@ namespace fei {
       @return offset Offset at which item was found, or -1 if not found.
    */
   template<typename T>
-    int binarySearch(const T& item,
+  inline int binarySearch(const T& item,
         const T* list,
         int len)
     {
-      if (len < 2) {
-        if (len < 1) {
-          return(-1);
-        }
-
-        if (list[0] != item) {
-          return(-1);
-        }
-        else {
-          return(0);
-        }
-      }
-
-      unsigned start = 0;
-      unsigned end = len - 1;
-
-      while(end - start > 1) {
-        unsigned mid = (start + end) >> 1;
-        if (list[mid] < item) start = mid;
-        else end = mid;
-      }
-
-      if (list[end] == item) return(end);
-      if (list[start] == item) return(start);
-
-      return(-1);
+      int result = lowerBound(item,list,len);
+      if ( result < len && item == list[result] )
+	return result;
+      return -1;
     }
 
   /** sort the specified array, and move the contents
     of the specified companions array to match the new order.
     This is an implementation of the insertion sort algorithm. */
   template<typename T>
-    void insertion_sort_with_companions(int len, int* array, T* companions)
+  inline void insertion_sort_with_companions(int len, int* array, T* companions)
     {
       int i, j, index;
       T companion;
@@ -80,38 +99,6 @@ namespace fei {
       }
     }
 
-  /** Lower bound finds the first entry in list that is not less than item.
-      A binary search is used, and list is assumed to be sorted.
-   */
-  template<typename T>
-  int lowerBound(const T& item,
-		 const T* list,
-		 int len)
-  {
-    //The correctness of this function is tested in
-    // fei/test_utils/test_misc.cpp, in test_misc::serialtest2().
-
-    if (len < 1) return 0;
-
-    unsigned start = 0;
-    unsigned end = len - 1;
-
-    while(end - start > 1) {
-      unsigned mid = (start + end) >> 1;
-      if (list[mid] < item) start = mid;
-      else end = mid;
-    }
-
-    if (list[end] < item) {
-      return(end+1);
-    }
-
-    if (list[start] < item) {
-      return(end);
-    }
-
-    return(start);
-  }
 
   /** Binary search of a list that's assumed to be sorted.
 
@@ -125,70 +112,23 @@ namespace fei {
       @return offset Offset at which item was found, or -1 if not found.
    */
   template<typename T>
-    int binarySearch(const T& item,
+  inline int binarySearch(const T& item,
 		     const T* list,
 		     int len,
 		     int& insertPoint)
     {
       //The correctness of this function is tested in src/utils/test_Set.C,
       //in the function test_Set::test2.
-
-      if (len < 2) {
-        if (len < 1) {
-          insertPoint = 0;
-          return(-1);
-        }
-
-        if (list[0] < item) {
-          insertPoint = 1;
-          return(-1);
-        }
-        if (item < list[0]) {
-          insertPoint = 0;
-          return(-1);
-        }
-        else {
-          return(0);
-        }
-      }
-
-      unsigned start = 0;
-      unsigned end = len - 1;
-
-      while(end - start > 1) {
-        unsigned mid = (start + end) >> 1;
-        if (list[mid] < item) start = mid;
-        else end = mid;
-      }
-
-      if (list[end] < item) {
-        insertPoint = end+1;
-        return(-1);
-      }
-
-      if (item < list[end]) {
-        if (list[start] < item) {
-          insertPoint = end;
-          return(-1);
-        }
-
-        if (item < list[start]) {
-          insertPoint = start;
-          return(-1);
-        }
-        else {
-          return(start);
-        }
-      }
-      else {
-        return(end);
-      }
+      insertPoint = lowerBound(item,list,len);
+      if ( insertPoint < len && item == list[insertPoint] )
+	return insertPoint;
+      return -1;
     }
 
   /** Binary search of an std::vector that's assumed to be sorted.
    */
   template<typename T>
-    int binarySearch(const T& item, const std::vector<T>& list, int& insertPoint)
+  inline int binarySearch(const T& item, const std::vector<T>& list, int& insertPoint)
     {
       if (list.size() == 0) {
         insertPoint = 0;
@@ -200,7 +140,7 @@ namespace fei {
   /** Binary search of an std::vector that's assumed to be sorted.
    */
   template<typename T>
-    int binarySearch(const T& item, const std::vector<T>& list)
+  inline int binarySearch(const T& item, const std::vector<T>& list)
     {
       if (list.size() == 0) return(-1);
       return( binarySearch(item, &list[0], list.size()) );
@@ -218,63 +158,14 @@ namespace fei {
       (Since 0-based indexing is used, 'end' can't be greater than listLength-1.)
   */
   template<typename T>
-    int binarySearch(const T& item, const T* list, int /*listLength*/,
+  inline int binarySearch(const T& item, const T* list, int /*listLength*/,
 		     int start, int end, int& insertPoint)
     {
-      int length = end - start + 1;
-
-      if (length < 2) {
-        if (length < 1) {
-          insertPoint = start;
-          return(-1);
-        }
-
-        if (list[start] < item) {
-          insertPoint = start+1;
-          return(-1);
-        }
-        if (item < list[start]) {
-          insertPoint = start;
-          return(-1);
-        }
-        else {
-          return(start);
-        }
-      }
-
-      unsigned ustart = start;
-      unsigned uend = end;
-
-      while(uend - ustart > 1) {
-        unsigned mid = (ustart + uend) >> 1;
-        if (list[mid] < item) ustart = mid;
-        else uend = mid;
-      }
-
-      //if list[uend] < item, then insertPoint = end+1
-      if (list[uend] < item) {
-        insertPoint = uend+1;
-        return(-1);
-      }
-
-      if (item < list[uend]) {
-        if (list[ustart] < item) {
-          insertPoint = uend;
-          return(-1);
-        }
-
-        if (item < list[ustart]) {
-          insertPoint = ustart;
-          return(-1);
-        }
-        else {
-          //list[ustart] == item
-          return(ustart);
-        }
-      }
-
-      // list[uend] == item
-      return(uend);
+      int result = binarySearch(item,list+start,end-start+1,insertPoint);
+      if ( result >= 0 )
+	return result+start;
+      insertPoint+= start;
+      return -1;
     }
 
    /** Perform a binary search for each item in a sorted input list.
@@ -288,7 +179,7 @@ namespace fei {
        \param listLength length of input array 'list'
     */
   template<typename T>
-    int binarySearch(int numItems, const T* items, int* offsets,
+  inline int binarySearch(int numItems, const T* items, int* offsets,
 		     const T* list, int listLength)
     {
       int i;
@@ -315,7 +206,7 @@ namespace fei {
       If the item was already present, return -1.
    */
   template<class T>
-    int sortedListInsert(const T& item, std::vector<T>& list)
+  inline int sortedListInsert(const T& item, std::vector<T>& list)
     {
       typename std::vector<T>::iterator iter =
         std::lower_bound(list.begin(), list.end(), item);
@@ -331,7 +222,7 @@ namespace fei {
   /** Insert an item into a sorted list, maintaining sortedness.
    */
   template<class T>
-    int sortedListInsert(const T& item, T*& list, int& len, int& allocLen)
+  inline int sortedListInsert(const T& item, T*& list, int& len, int& allocLen)
     {
       int i, insertPoint = -1;
       int index = binarySearch(item, list, len, insertPoint);
@@ -361,7 +252,7 @@ namespace fei {
   /** Insert an item into a list at a specified position.
    */
   template<class T>
-    int listInsert(const T& item, int offset, T*& list,
+  inline int listInsert(const T& item, int offset, T*& list,
 		   int& usedLength, int& allocatedLength,
 		   int allocChunkSize=200)
     {
@@ -402,7 +293,7 @@ namespace fei {
       @return offset at which item is found, or -1 if not found.
   */
   template<class T>
-    int searchList(const T& item, const T* list, int len)
+  inline int searchList(const T& item, const T* list, int len)
     {
       for(int i=0; i<len; ++i) {
         if (list[i] == item) {
