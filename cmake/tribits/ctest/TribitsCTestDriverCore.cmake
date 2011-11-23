@@ -73,7 +73,7 @@
 # right related CMake files to run but it requires that the client set
 # CTEST_DASHBOARD_ROOT (or override this in the env) before running
 # this script.  The varible CTEST_DASHBOARD_ROOT determines where the
-# Trilinos source code will be cloned to and determines where the
+# project source code will be cloned to and determines where the
 # build directly will be put.
 #
 
@@ -272,7 +272,7 @@ ENDMACRO()
 
 
 #
-# Select the set of extra Trilinos repositories
+# Select the set of extra repositories
 #
 
 MACRO(TRIBITS_SETUP_EXTRAREPOS)
@@ -302,11 +302,11 @@ ENDMACRO()
 
 MACRO(TRIBITS_SETUP_PACKAGES)
 
-  # Here, we must point into the source tree of Trilinos just cloned (or
-  # updated) and not the master Trilinos source dir tree for two reasons.
-  # First, the list of core Trilinos packages may be more recent in what was
-  # checked out.  Second, the extra repos do not even exist in the master
-  # Trilinos source tree.
+  # Here, we must point into the source tree just cloned (or updated)
+  # and not the master source dir tree for two reasons.  First, the
+  # list of core packages may be more recent in what was checked out.
+  # Second, the extra repos do not even exist in the master source
+  # tree.
   IF (NOT ${PROJECT_NAME}_DEPS_HOME_DIR)
     SET(${PROJECT_NAME}_DEPS_HOME_DIR "${CTEST_SOURCE_DIRECTORY}")
   ENDIF()
@@ -360,8 +360,8 @@ ENDMACRO()
 
 
 #
-# Extract the list of changed files for the main Trilinos repo on put into
-# an modified files file.
+# Extract the list of changed files for the main repo on put into an
+# modified files file.
 #
 
 MACRO(TRIBITS_GET_MODIFIED_FILES  WORKING_DIR_IN  MODIFIED_FILES_FILE_NAME_IN)
