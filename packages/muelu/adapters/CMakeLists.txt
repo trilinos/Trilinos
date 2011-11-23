@@ -22,15 +22,19 @@ APPEND_SET(HEADERS
 # Epetra
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
-APPEND_SET(HEADERS
-  epetra/MueLu_EpetraOperator.hpp
-)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
+  
+  APPEND_SET(HEADERS
+    epetra/MueLu_EpetraOperator.hpp
+    )
+  
+  APPEND_SET(SOURCES
+    epetra/MueLu_EpetraOperator.cpp
+    )
 
-APPEND_SET(SOURCES
-  epetra/MueLu_EpetraOperator.cpp
-)
+ENDIF()
 
 #
 #

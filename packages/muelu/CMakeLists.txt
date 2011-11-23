@@ -25,7 +25,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
 # Explicit instantiation options:
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - MueLu_INST_DOUBLE_INT_INT         (= ON by default)
-# - MueLu_INST_DOUBLE_INT_LONGLONGINT (= ON by default if TEUCHOS_ENABLE_LONG_LONG_INT enabled)
+# - MueLu_INST_DOUBLE_INT_LONGLONGINT (= ON by default if TEUCHOS_ENABLE_LONG_LONG_INT enabled) TODO: do not work if Tpetra_ENABLE_EXPLICIT_INSTANTIATION=ON
+# - MueLu_INSTA_COMPLEX_INT_INT       (= ON by default if TEUCHOS_ENABLE_COMPLEX enabled)       TODO: we also need to check Tpetra_COMPLEX if EI of Tpetra=ON
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
   # <double, int, int>
@@ -54,6 +55,19 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Enable the use of explicit template instantiation with <double, int, long long int>."
     ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT}
     )
+
+#   # <complex, int, int>
+#   IF(Teuchos_ENABLE_COMPLEX)
+#     SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT ON)
+#   ELSE()
+#     SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT OFF)
+#   ENDIF()
+#   TRIBITS_ADD_OPTION_AND_DEFINE(
+#     ${PACKAGE_NAME}_INST_COMPLEX_INT_INT
+#     HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT
+#     "Enable the use of explicit template instantiation with <complex, int, int>."
+#     ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT}
+#     )
 
 ENDIF()
 
