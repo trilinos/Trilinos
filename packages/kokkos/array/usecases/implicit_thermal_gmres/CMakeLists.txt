@@ -1,5 +1,6 @@
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TribitsAddOptionAndDefine)
+INCLUDE(TribitsAddExecutable)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -14,10 +15,10 @@ SET(SRCS "main.cpp")
 SET(deplibs "kokkosnodeapi")
 
 IF ( Kokkos_IMPLICIT_THERMAL_GMRES_HOST)
-  MESSAGE(STATUS "Including Host test in Implicit Thermal GMRES usecase."
+  MESSAGE(STATUS "Including Host test in Implicit Thermal GMRES usecase.")
   APPEND_SET(SRCS testHost.cpp)
   APPEND_SET(deplibs kokkosdevicehost)
-ENDIF ( Kokkos_IMPLICIT_THERMAL_GMRES_HOST)
+ENDIF (Kokkos_IMPLICIT_THERMAL_GMRES_HOST)
 
 TRIBITS_ADD_EXECUTABLE(
   mini_test
