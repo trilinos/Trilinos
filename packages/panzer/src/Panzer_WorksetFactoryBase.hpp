@@ -8,7 +8,6 @@
 #include "Panzer_Workset.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_PhysicsBlock.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 
 namespace panzer {
 
@@ -32,7 +31,7 @@ public:
    virtual
    Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
    getSideWorksets(const panzer::BC & bc,
-                 const panzer::InputPhysicsBlock & pb) const = 0;
+                 const panzer::PhysicsBlock & pb) const = 0;
 };
 
 }

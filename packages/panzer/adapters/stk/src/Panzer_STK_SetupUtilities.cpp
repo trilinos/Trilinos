@@ -128,6 +128,14 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
+                const panzer::PhysicsBlock & pb,
+                const panzer::BC & bc)
+{
+   return buildBCWorksets(mesh,pb.getInputPhysicsBlock(),bc);
+}
+
+Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::InputPhysicsBlock & ipb,
                 const panzer::BC & bc)
 {

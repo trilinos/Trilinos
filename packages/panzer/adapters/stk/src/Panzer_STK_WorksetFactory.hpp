@@ -28,7 +28,7 @@ public:
    virtual
    Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
    getSideWorksets(const panzer::BC & bc,
-                 const panzer::InputPhysicsBlock & pb) const;
+                 const panzer::PhysicsBlock & pb) const;
 
 private:
 

@@ -19,14 +19,13 @@ WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> 
   * worksets.
   */
 WorksetContainer::WorksetContainer(const WorksetContainer & wc)
-   : wkstFactory_(wc.wkstFactory_), ebToIpb_(wc.ebToIpb_), ebToPb_(wc.ebToPb_), worksetSize_(wc.worksetSize_)
+   : wkstFactory_(wc.wkstFactory_), ebToPb_(wc.ebToPb_), worksetSize_(wc.worksetSize_)
 {
 }
 
 void WorksetContainer::setPhysicsBlockVector(const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks)
 {
    for(std::size_t i=0;i<physicsBlocks.size();i++) {
-      ebToIpb_[physicsBlocks[i]->elementBlockID()] = physicsBlocks[i]->getInputPhysicsBlock();
       ebToPb_[physicsBlocks[i]->elementBlockID()] = physicsBlocks[i];
    }
 }
@@ -38,18 +37,6 @@ void WorksetContainer::clear()
 {
    volWorksets_.clear();
    sideWorksets_.clear();
-}
-
-//! Look up an input physics block, throws an exception if it can be found.
-const InputPhysicsBlock & WorksetContainer::lookupInputPhysicsBlock(const std::string & eBlock) const
-{
-   std::map<std::string,InputPhysicsBlock>::const_iterator itr = ebToIpb_.find(eBlock);
- 
-   TEUCHOS_TEST_FOR_EXCEPTION(itr==ebToIpb_.end(),std::logic_error, 
-                      "WorksetContainer::lookupInputPhysicsBlock no InputPhysicsBlock object is associated "
-                      "with the element block \""+eBlock+"\".");
-
-   return itr->second;
 }
 
 //! Look up an input physics block, throws an exception if it can be found.
@@ -107,8 +94,8 @@ WorksetContainer::getSideWorksets(const BC & bc)
    if(itr==sideWorksets_.end()) {
       // couldn't find workset, build it!
       const std::string & eBlock = side.eblk_id;
-      const InputPhysicsBlock & ipb = lookupInputPhysicsBlock(eBlock);
-      worksetMap = wkstFactory_->getSideWorksets(bc,ipb);
+      const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
+      worksetMap = wkstFactory_->getSideWorksets(bc,pb);
 
       // store map for reuse in the future
       sideWorksets_[side] = worksetMap;
@@ -139,10 +126,10 @@ void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
       const BC & bc = bcs[i];
       SideId side(bc);
       const std::string & eBlock = bc.elementBlockID();
-      const InputPhysicsBlock & ipb = lookupInputPhysicsBlock(eBlock);
+      const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
 
       // store map for reuse in the future
-      sideWorksets_[side] = wkstFactory_->getSideWorksets(bc,ipb);
+      sideWorksets_[side] = wkstFactory_->getSideWorksets(bc,pb);
    }
 }
 

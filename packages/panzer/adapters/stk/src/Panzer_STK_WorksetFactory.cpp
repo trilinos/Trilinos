@@ -19,7 +19,7 @@ getVolumeWorksets(const std::string & eBlock,
   */
 Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
 getSideWorksets(const panzer::BC & bc,
-              const panzer::InputPhysicsBlock & pb) const
+              const panzer::PhysicsBlock & pb) const
 {
    return panzer_stk::buildBCWorksets(*mesh_,pb,bc);
 }

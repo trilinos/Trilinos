@@ -72,6 +72,11 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb,
                 const std::vector<panzer::BC> & bcs);
 
+Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+buildBCWorksets(const panzer_stk::STK_Interface & mesh,
+                const panzer::PhysicsBlock & pb,
+                const panzer::BC & bc);
+
 /** Build boundary condition worksets for a STK mesh
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
