@@ -53,19 +53,21 @@
 # ************************************************************************
 # @HEADER
 
-
+# Tribits platform-independent test driver.
 #
-# Trilinos platform-independent ctest core driver
+# This script locates the modules it needs to include relative to the
+# source code root directory for the project. By default, this script
+# is assumed to be located at
 #
-# This assumes that the outer CTest script driving this CTest code
-# will always be in a sub-directory of:
+# <project-root>/cmake/tribits/ctest
 #
-#   Trilinos/cmake/ctest
-#
-# which is set to CTEST_SCRIPT_DIRECTORY automatically by CTest.
-#
-# All include and module paths are relative to this assumed directory
-# structure.
+# And uses this assumed directory structure to locate its required
+# CMake modules. However, you can set environment variables to change
+# the default locations:
+# - TRIBITS_PROJECT_ROOT Will tell this script where the source code
+#   resides.
+# - ${PROJECT_NAME}_TRIBITS_DIR Will allow this script to utilize a
+#   different version of Tribits.
 #
 # This script can be run from anywhere by default and will find the
 # right related CMake files to run but it requires that the client set
