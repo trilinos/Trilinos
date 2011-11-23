@@ -186,8 +186,9 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  //RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
+  RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
+  Finest->Keep("Nullspace",nspFact.get());
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact,nspFact));
   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
   //RCP<RFactory> Rfact  = rcp( new GenericRFactory(Pfact));
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
@@ -230,11 +231,11 @@ int main(int argc, char *argv[]) {
   coarseLevel2->print(*out);
 
   /*RCP<Level> coarseLevel2 = H->GetLevel(2);
-  coarseLevel2->print(*out);
+  coarseLevel2->print(*out);*/
   RCP<MultiVector> nsp2 = coarseLevel2->Get<RCP<MultiVector> >("Nullspace",nspFact.get());
   nsp2->describe(*out,Teuchos::VERB_EXTREME);
 
-  RCP<Level> coarseLevel3 = H->GetLevel(3);
+  /*RCP<Level> coarseLevel3 = H->GetLevel(3);
   coarseLevel3->print(*out);*/
 
 
