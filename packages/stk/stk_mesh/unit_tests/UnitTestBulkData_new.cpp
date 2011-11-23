@@ -148,9 +148,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
         cell_to_delete = &*cur_entity;
         break;
       }
-      cur_entity++;
+      ++cur_entity;
     }
-    cur_bucket++;
+    ++cur_bucket;
   }
 
   STKUNIT_ASSERT ( cell_to_delete != NULL );
@@ -488,9 +488,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
           to_send.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
         send_rank++;
       }
-      cur_entity++;
+      ++cur_entity;
     }
-    cur_bucket++;
+    ++cur_bucket;
   }
   bulk.change_ghosting ( ghosting , to_send , empty_vector );
   bulk.modification_end();
@@ -561,11 +561,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
         if ( send_rank == fixture1.comm_size() ) send_rank = 0;
         if ( send_rank != fixture1.comm_rank() )
           to_send.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
-        send_rank++;
+        ++send_rank;
       }
-      cur_entity++;
+      ++cur_entity;
     }
-    cur_bucket++;
+    ++cur_bucket;
   }
 
   stk::mesh::Ghosting &ghosting = bulk1.create_ghosting ( "Ghost 1" );
@@ -610,15 +610,15 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
         if ( send_rank == fixture.comm_size() ) send_rank = 0;
         if ( send_rank != fixture.comm_rank() )
           to_send_unowned.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
-        send_rank++;
+        ++send_rank;
       }
       else
       {
         to_remove_not_ghosted.push_back ( &*cur_entity );
       }
-      cur_entity++;
+      ++cur_entity;
     }
-    cur_bucket++;
+    ++cur_bucket;
   }
 
   stk::mesh::Ghosting &ghosting = bulk.create_ghosting ( "Ghost 1" );
@@ -808,11 +808,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
         if ( send_rank == size ) send_rank = 0;
         if ( send_rank != rank_count )
           add_send.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
-        send_rank++;
+        ++send_rank;
       }
-      cur_entity++;
+      ++cur_entity;
     }
-    cur_bucket++;
+    ++cur_bucket;
   }
 
   std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > new_send ;
