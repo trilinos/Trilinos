@@ -6,3 +6,6 @@
 #
 get_filename_component(CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/../tribits/ctest/TribitsCTestDriverCore.cmake")
+macro(TRILINOS_CTEST_DRIVER)
+  TRIBITS_CTEST_DRIVER()
+endmacro()
