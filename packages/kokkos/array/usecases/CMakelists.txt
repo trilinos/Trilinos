@@ -1,0 +1,11 @@
+INCLUDE(TribitsAddOption)
+TRIBITS_ADD_OPTION(
+  Kokkos_ENABLE_Implicit_Thermal_GMRES
+  "Enable the implicit thermal gmres example
+)
+
+
+IF(Kokkos_ENABLE_Implicit_Thermal_GMRES)
+  ADD_SUBDIRECTORY(implicit_thermal_gmres)
+ENDIF(Kokkos_ENABLE_Implicit_Thermal_GMRES)
+

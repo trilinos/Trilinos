@@ -58,7 +58,6 @@
 #include <Element.hpp>
 #include <CRSMatrixGatherFill.hpp>
 #include <Dirichlet.hpp>
-#include <CG_Solve.hpp>
 #include <driver.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
 

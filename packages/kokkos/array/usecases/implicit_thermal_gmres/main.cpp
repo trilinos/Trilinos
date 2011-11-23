@@ -62,19 +62,19 @@ int main(int argc, char ** argv)
     threads = atoi(argv[4]);
   }
 
-#ifdef TEST_KOKKOS_HOST
+#ifdef IMPLICIT_THERMAL_GMRES_TEST_KOKKOS_HOST
   Test::test_Host(beg, end, runs);
 #endif
-#ifdef TEST_KOKKOS_PTHREAD
+#ifdef IMPLICIT_THERMAL_GMRES_TEST_KOKKOS_PTHREAD
   Test::test_Pthread (beg, end, runs, threads);
 #endif
-#ifdef TEST_KOKKOS_TPI
+#ifdef IMPLICIT_THERMAL_GMRES_TEST_KOKKOS_TPI
   Test::test_TPI (beg, end, runs, threads);
 #endif
-#ifdef TEST_KOKKOS_TBB
+#ifdef IMPLICIT_THERMAL_GMRES_TEST_KOKKOS_TBB
   Test::test_TBB (beg, end, runs, threads);
 #endif
-#ifdef TEST_KOKKOS_CUDA
+#ifdef IMPLICIT_THERMAL_GMRES_TEST_KOKKOS_CUDA
   Test::test_Cuda(beg , end, runs);
 #endif
 

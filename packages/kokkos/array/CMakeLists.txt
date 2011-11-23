@@ -2,6 +2,7 @@ INCLUDE(TribitsLibraryMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 
 ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(usecases)
 
 # No longer needed; Trilinos does this at the top level.
 # IF (Kokkos_ENABLE_MDArray_Cuda)
