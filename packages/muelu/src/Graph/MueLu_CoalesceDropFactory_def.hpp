@@ -138,7 +138,7 @@ namespace MueLu {
 
     // inter processor communication: sum up number of block ids
     GlobalOrdinal num_blockids = 0;
-    Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, cnt_amalRows, &num_blockids );
+    Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, cnt_amalRows, Teuchos::ptr(&num_blockids) );
     // TODO: check me: is num_blockids = map->getGlobalNumElements()/nUnamalgamatedBlockSize???
     // for constant block size we can avoid the communication and just use above formula!
     // for variable block size, this information has to be provided

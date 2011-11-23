@@ -216,7 +216,7 @@ namespace MueLu {
     status.set("total nnz", totalNnz);
     status.set("start level", startLevel);
     status.set("end level", iLevel); //TODO: check if it's actually correct (exit by break vs. end of loop)
-    status.set("operator complexity", ((SC)totalNnz) / fineNnz);
+    status.set("operator complexity", ((double)totalNnz) / fineNnz);
 
     return status;
 
