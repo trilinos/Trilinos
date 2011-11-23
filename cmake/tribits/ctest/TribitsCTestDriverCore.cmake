@@ -84,34 +84,43 @@ MESSAGE("")
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 
-# Must set this *before* reading the following file!
-SET(PROJECT_NAME Trilinos)
-
-# Get the base diretory for the Trilinos source.  We only assume that the
-# CTest script that is being called is under Trilinos/cmake.
-STRING(REGEX MATCH "(.+/Trilinos)/cmake" TRILINOS_CMAKE_DIR
-  "${CTEST_SCRIPT_DIRECTORY}" )
-IF("${TRILINOS_CMAKE_DIR}" STREQUAL "")
-  STRING(REGEX MATCH "(.+)/cmake" TRILINOS_CMAKE_DIR
-    "${CTEST_SCRIPT_DIRECTORY}" )
+# We must locate the source code root directory before processing this
+# file. Once the root directory is located, we can make good guesses
+# at other properties, but this file can be executed outside of the
+# context of a CMake build.
+SET(PROJECT_NAME "$ENV{PROJECT_NAME}")
+IF(NOT PROJECT_NAME)
+  MESSAGE(FATAL_ERROR 
+    "The project name has not been set!"
+    "Set the PROJECT_NAME environment variable "
+    "to the name of the project being tested.")
 ENDIF()
-  
-MESSAGE("TRILINOS_CMAKE_DIR = ${TRILINOS_CMAKE_DIR}")
 
-SET(${PROJECT_NAME}_HOME_DIR "${TRILINOS_CMAKE_DIR}/..")
-MESSAGE("${PROJECT_NAME}_HOME_DIR = ${${PROJECT_NAME}_HOME_DIR}")
+# Get the source code root.
+SET(${PROJECT_NAME}_HOME_DIR "$ENV{${PROJECT_NAME}_HOME_DIR}")
+IF(NOT ${PROJECT_NAME}_HOME_DIR)
+  MESSAGE(FATAL_ERROR
+    "The ${PROJECT_NAME} source directory has not been set."
+    "Set the ${PROJECT_NAME}_HOME_DIR environment variable "
+    "to the top level source directory for the project.")
+ENDIF()
+MESSAGE("${PROJECT_NAME}_HOME_DIR=${${PROJECT_NAME}_HOME_DIR}")
 
-SET(${PROJECT_NAME}_TRIBITS_DIR "${TRILINOS_CMAKE_DIR}/tribits")
+SET(${PROJECT_NAME}_CMAKE_DIR "${${PROJECT_NAME}_HOME_DIR}/cmake")
+MESSAGE("${PROJECT_NAME}_CMAKE_DIR = ${${PROJECT_NAME}_CMAKE_DIR}")
+
+SET(${PROJECT_NAME}_TRIBITS_DIR "$ENV{${PROJECT_NAME}_TRIBITS_DIR}")
+IF(NOT ${PROJECT_NAME}_TRIBITS_DIR)
+  SET(${PROJECT_NAME}_TRIBITS_DIR "${${PROJECT_NAME_CMAKE_DIR}/tribits")
+ENDIF()
 MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
 
 SET( CMAKE_MODULE_PATH
-   "${TRILINOS_CMAKE_DIR}"
-   "${TRILINOS_CMAKE_DIR}/.."
-   "${${PROJECT_NAME}_TRIBITS_DIR}/utils"
-   "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch"
-   )
-
-#MESSAGE("CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+  "${${PROJECT_NAME}_CMAKE_DIR}"
+  "${${PROJECT_NAME}_CMAKE_DIR}/.."
+  "${${PROJECT_NAME}_TRIBITS_DIR}/utils"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch"
+  )
 
 INCLUDE(PrintVar)
 INCLUDE(SetDefaultAndFromEnv)
@@ -120,7 +129,7 @@ INCLUDE(AppendSet)
 INCLUDE(AppendStringVar)
 INCLUDE(TribitsGlobalMacros)
 INCLUDE(TribitsConstants)
-INCLUDE(${TRILINOS_CMAKE_DIR}/TrilinosVersion.cmake)
+INCLUDE(${${PROJECT_NAME}_CMAKE_DIR}/${PROJECT_NAME}Version.cmake)
 
 INCLUDE(TribitsFindPythonInterp)
 TRIBITS_FIND_PYTHON()
@@ -183,7 +192,7 @@ MACRO(CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
 
   #MESSAGE("CLONE_OR_UPDATE_EXTRAREPO: ${EXTRAREPO_NAME_IN} ${EXTRAREPO_REPOURL_IN}")
 
-  SET(EXTRAREPO_SRC_DIR "${Trilinos_SOURCE_DIRECTORY}/${EXTRAREPO_DIR_IN}")
+  SET(EXTRAREPO_SRC_DIR "${${PROJECT_NAME}_SOURCE_DIRECTORY}/${EXTRAREPO_DIR_IN}")
   SET(EXTRAREPO_UPDATE_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.update.out")
   #PRINT_VAR(EXTRAREPO_SRC_DIR)
 
@@ -193,7 +202,7 @@ MACRO(CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
     IF (${EXTRAREPO_REPOTYPE_IN} STREQUAL GIT)
       SET(CMND_ARGS
         COMMAND "${GIT_EXE}" clone "${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
-        WORKING_DIRECTORY "${Trilinos_SOURCE_DIRECTORY}"
+        WORKING_DIRECTORY "${${PROJECT_NAME}_SOURCE_DIRECTORY}"
         OUTPUT_FILE "${EXTRAREPO_UPDATE_OUT_FILE}" )
     ELSEIF (${EXTRAREPO_REPOTYPE_IN} STREQUAL SVN)
       IF (NOT SVN_EXE)
@@ -201,7 +210,7 @@ MACRO(CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
       ENDIF()
       SET(CMND_ARGS
         COMMAND "${SVN_EXE}" checkout "${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
-        WORKING_DIRECTORY "${Trilinos_SOURCE_DIRECTORY}"
+        WORKING_DIRECTORY "${${PROJECT_NAME}_SOURCE_DIRECTORY}"
         OUTPUT_FILE "${EXTRAREPO_UPDATE_OUT_FILE}" )
     ELSE()
       MESSAGE(SEND_ERROR "Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
@@ -250,12 +259,16 @@ ENDMACRO()
 
 MACRO(TRIBITS_SETUP_EXTRAREPOS)
 
-  MESSAGE("Reading the list of extra repos from ${${PROJECT_NAME}_EXTRAREPOS_FILE} ...")
-  INCLUDE(${${PROJECT_NAME}_EXTRAREPOS_FILE})
-  TRIBITS_PROCESS_EXTRAREPOS_LISTS() # Sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
-  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRA_REPOSITORIES
-    "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}")
-  #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
+  IF( EXISTS "${${PROJECT_NAME}_EXTRAREPOS_FILE}" )
+    MESSAGE("Reading the list of extra repos from ${${PROJECT_NAME}_EXTRAREPOS_FILE} ...")
+    INCLUDE(${${PROJECT_NAME}_EXTRAREPOS_FILE})
+    TRIBITS_PROCESS_EXTRAREPOS_LISTS() # Sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
+    SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRA_REPOSITORIES
+      "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}")
+    #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
+  ELSE()
+    MESSAGE("${${PROJECT_NAME}_EXTRAREPOS_FILE} does not exist, skipping extra repositories.")
+  ENDIF()
 
 ENDMACRO()
 
@@ -263,7 +276,7 @@ ENDMACRO()
 #
 # Select the list of packages
 #
-# OUTPUT: Sets Trilinos_DEFAULT_PACKAGES
+# OUTPUT: Sets ${PROJECT_NAME}_DEFAULT_PACKAGES
 #
 # NOTE: This macro is used to clean up the main TRILINOS_CTEST_DRIVER()
 # macro.
@@ -296,7 +309,7 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   # with only defaults set
 
   # Set this to "" so that it can be defined in ENABLE_MODIFIED_PACKAGES_ONLY()
-  SET(Trilinos_ENABLE_ALL_PACKAGES "")
+  SET(${PROJECT_NAME}_ENABLE_ALL_PACKAGES "")
 
 ENDMACRO()
 
@@ -307,22 +320,22 @@ ENDMACRO()
 
 MACRO(ENABLE_USER_SELECTED_PACKAGES)
 
-  # 1) Set the enables for packages already set with Trilinos_PACKAGES_USER_SELECTED
+  # 1) Set the enables for packages already set with ${PROJECT_NAME}_PACKAGES_USER_SELECTED
 
-  IF (NOT Trilinos_PACKAGES_USER_SELECTED)
-    SET(Trilinos_ENABLE_ALL_PACKAGES ON)
+  IF (NOT ${PROJECT_NAME}_PACKAGES_USER_SELECTED)
+    SET(${PROJECT_NAME}_ENABLE_ALL_PACKAGES ON)
   ELSE()
-    FOREACH(TRIBITS_PACKAGE ${Trilinos_PACKAGES_USER_SELECTED})
+    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES_USER_SELECTED})
       MESSAGE("Enabling explicitly set package ${TRIBITS_PACKAGE} ...")
-      SET(Trilinos_ENABLE_${TRIBITS_PACKAGE} ON)
+      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
     ENDFOREACH()
   ENDIF()
 
-  # 2) Set extra package enables from Trilinos_ADDITIONAL_PACKAGES
+  # 2) Set extra package enables from ${PROJECT_NAME}_ADDITIONAL_PACKAGES
 
-  FOREACH(TRIBITS_PACKAGE ${Trilinos_ADDITIONAL_PACKAGES})
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_ADDITIONAL_PACKAGES})
     MESSAGE("Enabling explicitly set package ${TRIBITS_PACKAGE} ...")
-    SET(Trilinos_ENABLE_${TRIBITS_PACKAGE} ON)
+    SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
   ENDFOREACH()
 
 ENDMACRO()
@@ -360,7 +373,7 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
 
   SET(MODIFIED_FILES_FILE_NAME "${CTEST_BINARY_DIRECTORY}/modifiedFiles.txt")
 
-  # A.1) Get changes from main Trilinos repo
+  # A.1) Get changes from main ${PROJECT_NAME} repo
 
   TRIBITS_GET_MODIFIED_FILES("${CTEST_SOURCE_DIRECTORY}" "${MODIFIED_FILES_FILE_NAME}")
 
@@ -369,8 +382,8 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
   SET(EXTRAREPO_IDX 0)
   FOREACH(EXTRAREPO_NAME ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
 
-    LIST(GET Trilinos_EXTRA_REPOSITORIES_DIRS ${EXTRAREPO_IDX} EXTRAREPO_DIR )
-    LIST(GET Trilinos_EXTRA_REPOSITORIES_PACKSTATS ${EXTRAREPO_IDX} EXTRAREPO_PACKSTAT )
+    LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS ${EXTRAREPO_IDX} EXTRAREPO_DIR )
+    LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS ${EXTRAREPO_IDX} EXTRAREPO_PACKSTAT )
  
     # For now, only look for changes if it has packages.  Later, we need to
     # generalize this for the general extra repo case with deeper directory
@@ -436,20 +449,20 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
   #
 
   FOREACH(TRIBITS_PACKAGE ${MODIFIED_PACKAGES_LIST})
-    #PRINT_VAR(Trilinos_ENABLE_${TRIBITS_PACKAGE})
-    ASSERT_DEFINED(Trilinos_ENABLE_${TRIBITS_PACKAGE})
-    IF ("${Trilinos_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
+    #PRINT_VAR(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
+    ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
+    IF ("${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
       MESSAGE("Enabling modified package: ${TRIBITS_PACKAGE}")
-      SET(Trilinos_ENABLE_${TRIBITS_PACKAGE} ON)
+      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
     ELSE()
       MESSAGE("Not enabling explicitly disabled modified package: ${TRIBITS_PACKAGE}")
     ENDIF()
   ENDFOREACH()
 
   FOREACH(TRIBITS_PACKAGE ${FAILING_PACKAGES_LIST})
-    IF ("${Trilinos_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
+    IF ("${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
       MESSAGE("Enabling previously failing package: ${TRIBITS_PACKAGE}")
-      SET(Trilinos_ENABLE_${TRIBITS_PACKAGE} ON)
+      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
     ELSE()
       MESSAGE("Not enabling explicitly disabled previously failing package: ${TRIBITS_PACKAGE}")
     ENDIF()
@@ -466,16 +479,16 @@ ENDMACRO()
 
 
 #
-# B) Exclude disabled packages from from Trilinos_EXCLUDE_PACKAGES
+# B) Exclude disabled packages from from ${PROJECT_NAME}_EXCLUDE_PACKAGES
 #
 # NOTE: These disables need to dominate over the above enables so this code is
 # after all the enable code has run
 #
 
 MACRO(DISABLE_EXCLUDED_PACKAGES)
-  FOREACH(TRIBITS_PACKAGE ${Trilinos_EXCLUDE_PACKAGES})
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
     MESSAGE("Disabling excluded package ${TRIBITS_PACKAGE} ...")
-    SET(Trilinos_ENABLE_${TRIBITS_PACKAGE} OFF)
+    SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} OFF)
   ENDFOREACH()
 ENDMACRO()
 
@@ -589,12 +602,14 @@ ENDMACRO()
 # ToDo: Finish Documentation!
 #
 
-FUNCTION(TRILINOS_CTEST_DRIVER)
+FUNCTION(TRIBITS_CTEST_DRIVER)
 
   INITIALIZE_ERROR_QUEUE()
 
-  SET( CTEST_SOURCE_NAME Trilinos )
-
+  # The name of the source directory. Defaults to project name, but
+  # can be overridden by the environment for cases in which the source
+  # directory name does not match the project name.
+  SET_DEFAULT_AND_FROM_ENV(CTEST_SOURCE_NAME ${PROJECT_NAME})
 
   MESSAGE(
     "\n***\n"
@@ -609,23 +624,23 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # If the test type is set to Experimental though the track is forced
   # to "Experimental" this is so that we can have experimental tests 
   # on branches.
-  IF(Trilinos_TESTING_TRACK)
-    SET(Trilinos_TRACK_DEFAULT ${Trilinos_TESTING_TRACK})
+  IF(${PROJECT_NAME}_TESTING_TRACK)
+    SET(${PROJECT_NAME}_TRACK_DEFAULT ${${PROJECT_NAME}_TESTING_TRACK})
   ELSE()  
-    SET(Trilinos_TRACK_DEFAULT "")
+    SET(${PROJECT_NAME}_TRACK_DEFAULT "")
   ENDIF()
-  print_var(Trilinos_TRACK_DEFAULT)
-  SET_DEFAULT_AND_FROM_ENV(Trilinos_TRACK "${Trilinos_TRACK_DEFAULT}")
+  print_var(${PROJECT_NAME}_TRACK_DEFAULT)
+  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_TRACK "${${PROJECT_NAME}_TRACK_DEFAULT}")
   IF(CTEST_TEST_TYPE STREQUAL "Experimental" OR CTEST_TEST_TYPE STREQUAL "EXPERIMENTAL")
-    SET(Trilinos_TRACK "Experimental")
-    MESSAGE("-- Test type is Experimental. Forcing Trilinos_TRACK to Experimental")
-    PRINT_VAR(Trilinos_TRACK)
+    SET(${PROJECT_NAME}_TRACK "Experimental")
+    MESSAGE("-- Test type is Experimental. Forcing ${PROJECT_NAME}_TRACK to Experimental")
+    PRINT_VAR(${PROJECT_NAME}_TRACK)
   ENDIF()
  
   # The name of the site in the dashboard (almost never need to override this)
   SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
 
-  # The root of the dasbhoard where Trilinos will be cloned and the
+  # The root of the dasbhoard where ${PROJECT_NAME} will be cloned and the
   # BUILD directory will be create (only override for separate testing)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
 
@@ -682,7 +697,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( CTEST_PARALLEL_LEVEL 1 )
 
   # Turn off or change warnings-as-errors flag(s) (i.e. -Werror)
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_WARNINGS_AS_ERRORS_FLAGS "" )
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS "" )
   
   # Do coverage testing or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
@@ -699,62 +714,62 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Submit the results to the dashboard or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
 
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF )
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF )
 
   # List of additional packges that will be enabled over the current set
-  # of all packagess (that would be set by Trilinos_ENABLE_ALL_PACKAGES).
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_ADDITIONAL_PACKAGES "" )
+  # of all packagess (that would be set by ${PROJECT_NAME}_ENABLE_ALL_PACKAGES).
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ADDITIONAL_PACKAGES "" )
 
   # List of packages to not directly process.  NOTE: Listing these packages
   # here will *not* disable the package in the CMake build system.  To do
   # that, you will have to disable them in the variable
   # EXTRA_CONFIGURE_OPTIONS (set in your driver script.
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_EXCLUDE_PACKAGES "" )
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_EXCLUDE_PACKAGES "" )
   
-  IF(Trilinos_REPOSITORY_BRANCH)
-    SET(Trilinos_BRANCH_DEFAULT ${Trilinos_REPOSITORY_BRANCH})
+  IF(${PROJECT_NAME}_REPOSITORY_BRANCH)
+    SET(${PROJECT_NAME}_BRANCH_DEFAULT ${${PROJECT_NAME}_REPOSITORY_BRANCH})
   ELSE()
-    SET(Trilinos_BRANCH_DEFAULT "")
+    SET(${PROJECT_NAME}_BRANCH_DEFAULT "")
   ENDIF()
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_BRANCH "${Trilinos_BRANCH_DEFAULT}" )
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_BRANCH "${${PROJECT_NAME}_BRANCH_DEFAULT}" )
 
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_DEVELOPMENT_MODE "${Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT}" )
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE "${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT}" )
 
   IF(CTEST_TEST_TYPE STREQUAL "Nightly")
-    SET_DEFAULT_AND_FROM_ENV( Trilinos_REPOSITORY_LOCATION "software.sandia.gov:/space/git/nightly/${CTEST_SOURCE_NAME}" )
+    SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_REPOSITORY_LOCATION "software.sandia.gov:/space/git/nightly/${CTEST_SOURCE_NAME}" )
   ELSE()
-    SET_DEFAULT_AND_FROM_ENV( Trilinos_REPOSITORY_LOCATION "software.sandia.gov:/space/git/${CTEST_SOURCE_NAME}" )
+    SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_REPOSITORY_LOCATION "software.sandia.gov:/space/git/${CTEST_SOURCE_NAME}" )
   ENDIF()
 
-  # Selct the Trilinos packages to enable (empty means to select all available)
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_PACKAGES "" )
-  SET(Trilinos_PACKAGES_USER_SELECTED ${Trilinos_PACKAGES})
-  SET(Trilinos_PACKAGES "")
-  # Note: above, we have to keep the name Trilinos_PACKAGES to maintain
+  # Selct the ${PROJECT_NAME} packages to enable (empty means to select all available)
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_PACKAGES "" )
+  SET(${PROJECT_NAME}_PACKAGES_USER_SELECTED ${${PROJECT_NAME}_PACKAGES})
+  SET(${PROJECT_NAME}_PACKAGES "")
+  # Note: above, we have to keep the name ${PROJECT_NAME}_PACKAGES to maintain
   # backward compatibility of this CTest script but we want to let
-  # Trilinos_PACKAGES always be the full set of packages as defined by
+  # ${PROJECT_NAME}_PACKAGES always be the full set of packages as defined by
   # the basic readin process
 
   # Override the location of the base directory where the package dependency
   # related files will be read relative to.  If left "", then this will be reset
   # to CTEST_SORUCE_DIRECTORY.
-  SET_DEFAULT_AND_FROM_ENV(Trilinos_DEPS_HOME_DIR "")
+  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_DEPS_HOME_DIR "")
 
   # Set the file that the extra repos will be read from
   #
   # NOTE: Here, we have no choice but to point into the master
-  # Trilinos source treee because the local Trilinos sources have not
+  # ${PROJECT_NAME} source treee because the local ${PROJECT_NAME} sources have not
   # even been checked out yet!  Unless, of course, we are unit testing
   # in which case we will use whatever has been passed in.
 
-  IF (NOT Trilinos_DEPS_HOME_DIR)
-    SET(Trilinos_EXTRAREPOS_FILE_DEFAULT
-      "${TRILINOS_CMAKE_DIR}/${Trilinos_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+  IF (NOT ${PROJECT_NAME}_DEPS_HOME_DIR)
+    SET(${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT
+      "${${PROJECT_NAME}_CMAKE_DIR}/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
   ELSE()
-    SET(Trilinos_EXTRAREPOS_FILE_DEFAULT
-      "${Trilinos_DEPS_HOME_DIR}/cmake/${Trilinos_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+    SET(${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT
+      "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
   ENDIF()
-  SET_DEFAULT_AND_FROM_ENV(Trilinos_EXTRAREPOS_FILE ${Trilinos_EXTRAREPOS_FILE_DEFAULT})
+  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRAREPOS_FILE ${${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT})
 
   # Select the set of extra external repos to add in packages.
   # These are the same types as CTEST_TEST_TYPE (e.g. 'Continuous' and
@@ -764,13 +779,13 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # If in release mode generally we do not want any external repositories
   # even though the CTEST_TEST_TYPE is set to "Nightly" for most release
   # builds.
-  IF(Trilinos_ENABLE_DEVELOPMENT_MODE)
-    SET(Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT ${CTEST_TEST_TYPE})
+  IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+    SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT ${CTEST_TEST_TYPE})
   ELSE()
-    SET(Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT "None")
+    SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT "None")
   ENDIF()
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
-     "${Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT}" )
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
+     "${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT}" )
 
   # Set as part of CI testing in order to only enable modified packages
   SET_DEFAULT_AND_FROM_ENV( CTEST_ENABLE_MODIFIED_PACKAGES_ONLY OFF )
@@ -822,7 +837,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   ENDIF()
 
   # Set override hook for unit testing
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_SOURCE_DIRECTORY ${CTEST_SOURCE_DIRECTORY} )
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_SOURCE_DIRECTORY ${CTEST_SOURCE_DIRECTORY} )
 
   # Must be set here after CTEST_BINARY_DIRECTORY is set!
   SET(FAILED_PACKAGES_FILE_NAME "${CTEST_BINARY_DIRECTORY}/failedPackages.txt")
@@ -830,7 +845,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # For coverage dashboards, send results to /extended/cdash by default
   IF (CTEST_DO_COVERAGE_TESTING)
     SET_DEFAULT_AND_FROM_ENV( CTEST_DROP_SITE "testing.sandia.gov" )
-    SET_DEFAULT_AND_FROM_ENV( CTEST_DROP_LOCATION "/extended/cdash/submit.php?project=Trilinos" )
+    SET_DEFAULT_AND_FROM_ENV( CTEST_DROP_LOCATION "/extended/cdash/submit.php?project=${PROJECT_NAME}" )
   ENDIF()
 
 
@@ -838,7 +853,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Some platform-independent setup
   #
   
-  INCLUDE("${TRILINOS_CMAKE_DIR}/../CTestConfig.cmake")
+  INCLUDE("${${PROJECT_NAME}_CMAKE_DIR}/../CTestConfig.cmake")
   SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
   SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
   SET(CTEST_USE_LAUNCHERS 1)
@@ -857,7 +872,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     IF(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
       MESSAGE("${CTEST_SOURCE_DIRECTORY} does not exist so setting up for an initial checkout")
       SET( CTEST_CHECKOUT_COMMAND
-        "\"${GIT_EXE}\" clone ${CTEST_UPDATE_ARGS} ${Trilinos_REPOSITORY_LOCATION}" )
+        "\"${GIT_EXE}\" clone ${CTEST_UPDATE_ARGS} ${${PROJECT_NAME}_REPOSITORY_LOCATION}" )
       MESSAGE("CTEST_CHECKOUT_COMMAND='${CTEST_CHECKOUT_COMMAND}'")
     ELSE()
       MESSAGE("${CTEST_SOURCE_DIRECTORY} exists so skipping the initial checkout.")
@@ -898,10 +913,10 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     "\n***\n")
 
   PRINT_VAR(CTEST_TEST_TYPE)
-  PRINT_VAR(Trilinos_TRACK)
+  PRINT_VAR(${PROJECT_NAME}_TRACK)
 
-  IF(Trilinos_TRACK)
-    CTEST_START(${CTEST_TEST_TYPE} TRACK ${Trilinos_TRACK})
+  IF(${PROJECT_NAME}_TRACK)
+    CTEST_START(${CTEST_TEST_TYPE} TRACK ${${PROJECT_NAME}_TRACK})
   ELSE()
     CTEST_START(${CTEST_TEST_TYPE})
   ENDIF()
@@ -928,10 +943,10 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     MESSAGE("CTEST_UPDATE(...) returned '${UPDATE_RETURN_VAL}'")
 
     SET(EXTRAREPO_IDX 0)
-    FOREACH(EXTRAREPO_NAME ${Trilinos_EXTRA_REPOSITORIES})
-      LIST(GET Trilinos_EXTRA_REPOSITORIES_DIRS ${EXTRAREPO_IDX} EXTRAREPO_DIR )
-      LIST(GET Trilinos_EXTRA_REPOSITORIES_REPOTYPES ${EXTRAREPO_IDX} EXTRAREPO_REPOTYPE )
-      LIST(GET Trilinos_EXTRA_REPOSITORIES_REPOURLS ${EXTRAREPO_IDX} EXTRAREPO_REPOURL )
+    FOREACH(EXTRAREPO_NAME ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+      LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS ${EXTRAREPO_IDX} EXTRAREPO_DIR )
+      LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_REPOTYPES ${EXTRAREPO_IDX} EXTRAREPO_REPOTYPE )
+      LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_REPOURLS ${EXTRAREPO_IDX} EXTRAREPO_REPOURL )
       CLONE_OR_UPDATE_EXTRAREPO(${EXTRAREPO_NAME} ${EXTRAREPO_DIR}
         ${EXTRAREPO_REPOTYPE} ${EXTRAREPO_REPOURL})
       MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
@@ -942,11 +957,11 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
 
     SET(GIT_CHECKOUT_RETURN_VAL "0")
 
-    IF(Trilinos_BRANCH AND NOT "${UPDATE_RETURN_VAL}" LESS "0" AND NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
+    IF(${PROJECT_NAME}_BRANCH AND NOT "${UPDATE_RETURN_VAL}" LESS "0" AND NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
 
-      MESSAGE("Doing switch to branch ${Trilinos_BRANCH}")
+      MESSAGE("Doing switch to branch ${${PROJECT_NAME}_BRANCH}")
 
-      EXECUTE_PROCESS(COMMAND ${GIT_EXE} checkout ${Trilinos_BRANCH}
+      EXECUTE_PROCESS(COMMAND ${GIT_EXE} checkout ${${PROJECT_NAME}_BRANCH}
         WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}
         RESULT_VARIABLE GIT_CHECKOUT_RETURN_VAL
         OUTPUT_VARIABLE BRANCH_OUTPUT
@@ -954,7 +969,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       )
 
       IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
-        EXECUTE_PROCESS(COMMAND ${GIT_EXE} checkout --track origin/${Trilinos_BRANCH}
+        EXECUTE_PROCESS(COMMAND ${GIT_EXE} checkout --track origin/${${PROJECT_NAME}_BRANCH}
           WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}
           RESULT_VARIABLE GIT_CHECKOUT_RETURN_VAL
           OUTPUT_VARIABLE BRANCH_OUTPUT
@@ -963,8 +978,8 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       ENDIF()
 
       IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
-        MESSAGE("Switch to branch ${Trilinos_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
-        QUEUE_ERROR("Switch to branch ${Trilinos_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
+        MESSAGE("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
+        QUEUE_ERROR("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
       ENDIF()
       #Apparently the successful branch switch is also written to stderr.
       MESSAGE("${BRANCH_ERROR}")
@@ -997,7 +1012,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   TRIBITS_SETUP_PACKAGES()
 
   SET(CDASH_SUBPROJECT_XML_FILE
-    "${CTEST_BINARY_DIRECTORY}/${Trilinos_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}")
+    "${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}")
   PRINT_VAR(CDASH_SUBPROJECT_XML_FILE)
 
   DISABLE_EXCLUDED_PACKAGES()
@@ -1014,7 +1029,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       "\n*** Determining what packages to enable based on what changed ..."
       "\n***\n")
     ENABLE_MODIFIED_PACKAGES_ONLY()
-    SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
+    SET(${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
   ENDIF()
 
 
@@ -1024,11 +1039,11 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     "\n***"
     )
 
-  SET(Trilinos_ENABLE_TESTS ON)
-  SET(Trilinos_ENABLE_EXAMPLES ON)
-  SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES ON)
+  SET(${PROJECT_NAME}_ENABLE_TESTS ON)
+  SET(${PROJECT_NAME}_ENABLE_EXAMPLES ON)
+  SET(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES ON)
   SET(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
-  TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets Trilinos_NUM_ENABLED_PACKAGES
+  TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
 
   
   MESSAGE(
@@ -1052,13 +1067,13 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       "  Running in regular mode, processing all enabled packages!\n")
   ENDIF()
 
-  IF (Trilinos_NUM_ENABLED_PACKAGES GREATER 0)
+  IF (${PROJECT_NAME}_NUM_ENABLED_PACKAGES GREATER 0)
     MESSAGE(
-      "\nTrilinos_NUM_ENABLED_PACKAGES=${Trilinos_NUM_ENABLED_PACKAGES}:"
+      "\n${PROJECT_NAME}_NUM_ENABLED_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_PACKAGES}:"
       "  Configuring packages!\n")
   ELSE()
     MESSAGE(
-      "\nTrilinos_NUM_ENABLED_PACKAGES=${Trilinos_NUM_ENABLED_PACKAGES}:"
+      "\n${PROJECT_NAME}_NUM_ENABLED_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_PACKAGES}:"
       "  Exiting the script!\n")
     REPORT_QUEUED_ERRORS()
     RETURN()
@@ -1093,27 +1108,27 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   
   MESSAGE(
     "\n***"
-    "\n*** Loop through Trilinos packages to configure, build, and test ..."
+    "\n*** Loop through ${PROJECT_NAME} packages to configure, build, and test ..."
     "\n***")
   
-  SET(Trilinos_LAST_CONFIGURED_PACKAGE)
-  SET(Trilinos_FAILED_LIB_BUILD_PACKAGES)
-  SET(Trilinos_FAILED_PACKAGES)
+  SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
+  SET(${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES)
+  SET(${PROJECT_NAME}_FAILED_PACKAGES)
   SET(PACKAGE_IDX 0)
   
-  FOREACH(TRIBITS_PACKAGE ${Trilinos_PACKAGES})
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
 
     MESSAGE("")
-    MESSAGE("${PACKAGE_IDX}) Procesing current package ${TRIBITS_PACKAGE}: libs='${Trilinos_ENABLE_${TRIBITS_PACKAGE}}', tests='${${TRIBITS_PACKAGE}_ENABLE_TESTS}'")
+    MESSAGE("${PACKAGE_IDX}) Procesing current package ${TRIBITS_PACKAGE}: libs='${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}', tests='${${TRIBITS_PACKAGE}_ENABLE_TESTS}'")
     MESSAGE("")
 
-    IF (Trilinos_ENABLE_${TRIBITS_PACKAGE} AND NOT ${TRIBITS_PACKAGE}_ENABLE_TESTS AND
+    IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} AND NOT ${TRIBITS_PACKAGE}_ENABLE_TESTS AND
      NOT CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES
      )
 
       MESSAGE("Not enabling implicitly enabled package ${TRIBITS_PACKAGE} on request!")
 
-    ELSEIF (Trilinos_ENABLE_${TRIBITS_PACKAGE})
+    ELSEIF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
 
       SET_PROPERTY(GLOBAL PROPERTY SubProject ${TRIBITS_PACKAGE})
       SET_PROPERTY(GLOBAL PROPERTY Label ${TRIBITS_PACKAGE})
@@ -1126,19 +1141,20 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     
       # Create CONFIGURE_OPTIONS for this TRIBITS_PACKAGE
       SET( CONFIGURE_OPTIONS
+	"-D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}"
         "-DCTEST_USE_LAUNCHERS:BOOL=${CTEST_USE_LAUNCHERS}"
-        "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON"
-        "-DTrilinos_ENABLE_TESTS:BOOL=${${TRIBITS_PACKAGE}_ENABLE_TESTS}"
-        "-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=${Trilinos_WARNINGS_AS_ERRORS_FLAGS}"
-        "-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF"
+        "-D${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON"
+        "-D${PROJECT_NAME}_ENABLE_TESTS:BOOL=${${TRIBITS_PACKAGE}_ENABLE_TESTS}"
+        "-D${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS:STRING=${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS}"
+        "-D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=OFF"
         )
       IF (NOT CTEST_GENERATE_DEPS_XML_OUTPUT_FILE)
         LIST(APPEND CONFIGURE_OPTIONS
-        "-DTrilinos_DEPS_XML_OUTPUT_FILE:FILEPATH=")
+        "-D${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE:FILEPATH=")
       ENDIF()
-      IF (Trilinos_ENABLE_SECONDARY_STABLE_CODE)
+      IF (${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE)
         LIST(APPEND CONFIGURE_OPTIONS
-          "-DTrilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON")
+          "-D${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON")
       ENDIF()
       IF (MPI_EXEC_MAX_NUMPROCS)
         LIST(APPEND CONFIGURE_OPTIONS
@@ -1146,29 +1162,29 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       ENDIF()
       IF (CTEST_DO_COVERAGE_TESTING)
         LIST(APPEND CONFIGURE_OPTIONS
-          "-DTrilinos_ENABLE_COVERAGE_TESTING:BOOL=ON")
+          "-D${PROJECT_NAME}_ENABLE_COVERAGE_TESTING:BOOL=ON")
       ENDIF()
       LIST(APPEND CONFIGURE_OPTIONS
-        "-DTrilinos_EXTRAREPOS_FILE:STRING=${Trilinos_EXTRAREPOS_FILE}")
+        "-D${PROJECT_NAME}_EXTRAREPOS_FILE:STRING=${${PROJECT_NAME}_EXTRAREPOS_FILE}")
       LIST(APPEND CONFIGURE_OPTIONS
-        "-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=${Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE}")
-      IF (DEFINED Trilinos_LAST_CONFIGURED_PACKAGE)
+        "-D${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE}")
+      IF (DEFINED ${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
         LIST(APPEND CONFIGURE_OPTIONS
-          "-DTrilinos_ENABLE_${Trilinos_LAST_CONFIGURED_PACKAGE}:BOOL=")
-        SET(Trilinos_LAST_CONFIGURED_PACKAGE)
+          "-D${PROJECT_NAME}_ENABLE_${${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE}:BOOL=")
+        SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
       ENDIF()
-      FOREACH(FAILED_PACKAGE ${Trilinos_FAILED_LIB_BUILD_PACKAGES})
+      FOREACH(FAILED_PACKAGE ${${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES})
         LIST(APPEND CONFIGURE_OPTIONS
-          "-DTrilinos_ENABLE_${FAILED_PACKAGE}:BOOL=OFF")
+          "-D${PROJECT_NAME}_ENABLE_${FAILED_PACKAGE}:BOOL=OFF")
       ENDFOREACH()
       SET(CONFIGURE_OPTIONS ${CONFIGURE_OPTIONS}
         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS} ${EXTRA_CONFIGURE_OPTIONS})
       LIST(APPEND CONFIGURE_OPTIONS # Package enable must be at the very end to override other stuff!
-         "-DTrilinos_ENABLE_${TRIBITS_PACKAGE}:BOOL=ON" )
+         "-D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}:BOOL=ON" )
       MESSAGE("\nCONFIGURE_OPTIONS = '${CONFIGURE_OPTIONS}'")
 
       # Remember this package so we can set its enable to "" next time
-      SET(Trilinos_LAST_CONFIGURED_PACKAGE "${TRIBITS_PACKAGE}")
+      SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE "${TRIBITS_PACKAGE}")
 
       #
       # B) Configure the package and its dependent packages
@@ -1198,13 +1214,13 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
         # of failed packages
         IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
           MESSAGE("${TRIBITS_PACKAGE} FAILED to configure")
-          LIST(APPEND Trilinos_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
-          LIST(APPEND Trilinos_FAILED_PACKAGES ${TRIBITS_PACKAGE})
+          LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
+          LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
         ELSE()
           # load target properties and test keywords
           CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
           # Overridde from this file!
-          INCLUDE("${TRILINOS_CMAKE_DIR}/../CTestConfig.cmake")
+          INCLUDE("${${PROJECT_NAME}_CMAKE_DIR}/../CTestConfig.cmake")
         ENDIF()
       
         # Submit configure results and the notes to the dashboard 
@@ -1337,14 +1353,14 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
           ENDIF()
   
           IF (BUILD_OR_TEST_FAILED)
-            LIST(APPEND Trilinos_FAILED_PACKAGES ${TRIBITS_PACKAGE})
+            LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
           ENDIF()
     
         ELSE()
     
           MESSAGE("FAILED library build for package '${TRIBITS_PACKAGE}'")
-          LIST(APPEND Trilinos_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
-          LIST(APPEND Trilinos_FAILED_PACKAGES ${TRIBITS_PACKAGE})
+          LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
+          LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
     
         ENDIF()
     
@@ -1365,26 +1381,26 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
 
   ENDFOREACH(TRIBITS_PACKAGE)
   
-  IF(Trilinos_FAILED_LIB_BUILD_PACKAGES)
+  IF(${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES)
     MESSAGE(
       "\nFinal set packages that failed to configure or have the libraries build:"
-      " '${Trilinos_FAILED_LIB_BUILD_PACKAGES}'")
+      " '${${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES}'")
   ENDIF()
 
-  IF(Trilinos_FAILED_PACKAGES)
+  IF(${PROJECT_NAME}_FAILED_PACKAGES)
     MESSAGE(
-      "\nFinal set packages that had any failures: '${Trilinos_FAILED_PACKAGES}'")
+      "\nFinal set packages that had any failures: '${${PROJECT_NAME}_FAILED_PACKAGES}'")
   ENDIF()
 
   # Write a file listing the packages that failed.  This will be read in on the next CI
   # iteration since these packages must be enabled
-  FILE(WRITE "${FAILED_PACKAGES_FILE_NAME}" "${Trilinos_FAILED_PACKAGES}\n")
+  FILE(WRITE "${FAILED_PACKAGES_FILE_NAME}" "${${PROJECT_NAME}_FAILED_PACKAGES}\n")
 
   # This is no longer necessary with CMake 2.8.1
   #MESSAGE("\nKill all hanging Zoltan processes ...")
   #EXECUTE_PROCESS(COMMAND killall -s 9 zdrive.exe)
   
-  MESSAGE("\nDone with the incremental building and testing of Trilinos packages!\n")
+  MESSAGE("\nDone with the incremental building and testing of ${PROJECT_NAME} packages!\n")
 
   REPORT_QUEUED_ERRORS()
 
