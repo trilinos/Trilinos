@@ -18,10 +18,23 @@ namespace MueLu {
       Xpetra::EpetraMultiVector       tY(rcpFromRef(Y));
       
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
-      tY.putScalar(0.0);
+      //tY.putScalar(0.0); // if you set tY to zero then also X is set to zero! very strange, but known Aztec behaviour
       
-      Hierarchy_->Iterate(tX, 1, tY, true);
-      
+      // reserve memory for deep copy vectors
+      RCP<Xpetra::EpetraMultiVector> epX = Teuchos::rcp(new EpetraMultiVector(tX.getMap(), tX.getNumVectors())); // oops, we don't have a copy constructor?
+      RCP<Xpetra::EpetraMultiVector> epY = Teuchos::rcp(new EpetraMultiVector(tY.getMap(), tY.getNumVectors()));
+
+      // deep copy of RHS vector
+      epX->update(1.0,tX,0.0);
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      epY->putScalar(0.0);
+
+      // apply one V/W-cycle as preconditioner
+      Hierarchy_->Iterate(*epX, 1, *epY, true);
+
+      // deep copy solution from MueLu to AztecOO
+      tY.update(1.0,*epY,0.0);
     } catch(std::exception& e) {
       //TODO: error msg directly on std::cerr?
       std::cerr << "Caught an exception in MueLu::EpetraOperator::ApplyInverse():" << std::endl 

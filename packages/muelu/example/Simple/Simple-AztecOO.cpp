@@ -115,6 +115,7 @@ int main(int argc, char *argv[]) {
   
   X->PutScalar((Scalar) 0.0);
   B->SetSeed(846930886); B->Random();
+  //B->PutScalar((Scalar) 1.0);
 
   //
   // Solve Ax = b using AMG as a preconditioner in AztecOO

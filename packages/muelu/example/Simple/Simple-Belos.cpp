@@ -106,6 +106,7 @@ int main(int argc, char *argv[]) {
   RCP<Vector> B = VectorFactory::Build(map);
   X->putScalar((Scalar) 0.0);
   B->setSeed(846930886); B->randomize();
+  //B->putScalar((Scalar) 1.0);
 
   // Operator and Multivector type that will be used with Belos
   typedef MultiVector          MV;
