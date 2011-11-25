@@ -231,13 +231,13 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       //H(0:j, j-1) = Q(:, 0:j-1)^* Q(:,j)
       Kokkos::NodeGEMM<Scalar, KOKKOS_MACRO_DEVICE>::GEMM(
         Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, MultiVector(Q,0, j-1), 
-        MultiVector(j), 0.0, MultiVector(H, j-1))
+        MultiVector(j), 0.0, MultiVector(H, j-1));
 
 
       // Q(:, j) = Q(:, j) - Q(:, 0:j-1) * H(0:j, j-1)
       for(int i =0; i<j; ++i){
         Kokkos::parallel_for(
-          rows, YSAX(MultiVector(Q,j), H(i, j-1), MultiVector(Q,i)))
+          rows, YSAX(MultiVector(Q,j), H(i, j-1), MultiVector(Q,i)));
       }
      
       //H(j, j-1) = norm(Q(:,j),2) 
@@ -254,7 +254,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
     size_t iter_waxpby_flops = ( 3 * iteration ) * ( 3 * rows ); // y = a * x + b * y
     size_t iter_dot_flops    = ( 3 * iteration ) * ( 2 * rows );
-    size_t iter_matvec_flops = iteration * ( 2 * A_col.length() );
+    size_t iter_matvec_flops = iteration * ( 2 * A_offsets.length() );
     size_t iter_total_flops  = iter_waxpby_flops + iter_dot_flops + iter_matvec_flops ;
     return (double) iter_total_flops / ( iter_time * 1.0e6 );
   }
