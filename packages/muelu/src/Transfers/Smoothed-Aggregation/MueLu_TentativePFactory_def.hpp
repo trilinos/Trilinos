@@ -240,11 +240,14 @@ namespace MueLu {
         // For each aggregate, extract the corresponding piece of the nullspace and put it in the flat array,
         // "localQR" (in column major format) for the QR routine.
         for (size_t j=0; j<NSDim; ++j) {
+          bool bIsZeroNSColumn = true;
           for (LO k=0; k<myAggSize; ++k) {
             //aggToRowMap[i][k] is the kth DOF in the ith aggregate
             //fineNS[j][n] is the nth entry in the jth NS vector
             try{
-              localQR[j* myAggSize + k] = fineNS[j][ aggToRowMap[agg][k] ];
+              SC nsVal = fineNS[j][ aggToRowMap[agg][k] ]; // extract information from fine level NS
+              localQR[j* myAggSize + k] = nsVal;
+              if (nsVal != 0.0) bIsZeroNSColumn = false;
             }
             catch(...) {
               std::cout << "length of fine level nsp: " << fineNullspace.getGlobalLength() << std::endl;
@@ -259,6 +262,7 @@ namespace MueLu {
               std::cerr << "caught an error!" << std::endl;
             }
           } //for (LO k=0 ...
+          TEUCHOS_TEST_FOR_EXCEPTION(bIsZeroNSColumn == true, Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column. Error.");
         } //for (LO j=0 ...
 
         int intFineNSDim = NSDim;
