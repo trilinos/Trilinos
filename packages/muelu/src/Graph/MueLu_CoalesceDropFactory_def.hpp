@@ -8,6 +8,9 @@
 #include "MueLu_PreDropFunctionBaseClass.hpp"
 #include "MueLu_Monitor.hpp"
 
+#include "Xpetra_VectorFactory.hpp"
+#include "Xpetra_ImportFactory.hpp"
+
 namespace MueLu {
 
   static const std::string color_esc = "\x1b[";
@@ -24,6 +27,8 @@ namespace MueLu {
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     currentLevel.DeclareInput("A", AFact_.get(), this);
     currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(), this);
+    if(fixedBlkSize_ == false && currentLevel.GetLevelID() == 0)
+      currentLevel.DeclareInput("BlockSizeInfo", MueLu::NoFactory::get(), this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -42,7 +47,8 @@ namespace MueLu {
 
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
     RCP<MultiVector> nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
-
+    if(fixedBlkSize_ == false && currentLevel.GetLevelID() == 0)
+      RCP<Vector> blkSizeInfo = currentLevel.Get<RCP<Vector> >("BlockSizeInfo", MueLu::NoFactory::get());
     //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     // pre-dropping
@@ -75,6 +81,22 @@ namespace MueLu {
   } // Build
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  GlobalOrdinal CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GlobalId2GlobalAmalBlockId(GlobalOrdinal gid, const RCP<Operator>& A, const RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector) const {
+
+    // TODO: distinguish by fixed block size and variable block size
+    //GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nUnamalgamatedBlockSize;
+
+    Teuchos::ArrayRCP< Scalar > ovamalblockid_data = globalgid2globalamalblockid_vector->getDataNonConst(0);
+
+    Teuchos::RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > overlappingMap = globalgid2globalamalblockid_vector->getMap();
+
+    LocalOrdinal lid = overlappingMap->getLocalElement(gid);
+
+    GlobalOrdinal amalgid = ovamalblockid_data[lid];
+    return amalgid;
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amalgamate(const RCP<Operator>& A, const LocalOrdinal blocksize, RCP<Graph>& graph) const {
 
     GetOStream(Runtime0, 0) << color_esc << color_purple << "CoalesceDropFactory::Amalgamate()" << color_esc << color_std << " constant blocksize=" << blocksize << std::endl;
@@ -82,26 +104,56 @@ namespace MueLu {
     // do amalgamation
     int nUnamalgamatedBlockSize = blocksize;
 
+    //////////////////////////////
+
+    // test: build row vector with block information
+    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalrowid2globalamalblockid_vector = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRowMap());
+    Teuchos::ArrayRCP< Scalar > vectordata = globalrowid2globalamalblockid_vector->getDataNonConst(0);
+    for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements());i++) {
+      GlobalOrdinal gDofId = A->getColMap()->getGlobalElement(i);
+      GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nUnamalgamatedBlockSize;
+
+      (vectordata)[i] = globalblockid;
+    }
+
+    globalrowid2globalamalblockid_vector->describe(GetOStream(Runtime0, 0), Teuchos::VERB_EXTREME);
+
+    // this vector is meant to be provided.
+
+    // now we have to communicate the ghost elements in this routine
+    RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRowMap(),A->getColMap());
+    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > overlappingblockinformation_vector = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getColMap());
+    overlappingblockinformation_vector->doImport(*globalrowid2globalamalblockid_vector,*importer,Xpetra::INSERT);
+
+    // now we have the overlapping block information
+    overlappingblockinformation_vector->describe(GetOStream(Runtime0, 0), Teuchos::VERB_EXTREME);
+
+    //////////////////////////////
+
+
     // map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
     RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid;
     RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid;
     RCP<std::vector<GlobalOrdinal> > globalamalblockids;
     globalamalblockid2myrowid = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<LocalOrdinal> >);
     globalamalblockid2globalrowid = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >);
-    globalamalblockids = Teuchos::rcp(new std::vector<GlobalOrdinal>);
+    globalamalblockids = Teuchos::rcp(new std::vector<GlobalOrdinal>); // vector of global amal block ids on current processor
     globalamalblockids->empty();
 
     // extract information from overlapping column map of A
     GlobalOrdinal cnt_amalRows = 0;
-    RCP<std::map<GlobalOrdinal,GlobalOrdinal> > globalrowid2globalamalblockid  = Teuchos::rcp(new std::map<GlobalOrdinal, GlobalOrdinal>);
+    //RCP<std::map<GlobalOrdinal,GlobalOrdinal> > globalrowid2globalamalblockid  = Teuchos::rcp(new std::map<GlobalOrdinal, GlobalOrdinal>);
+    //Teuchos::ArrayRCP< Scalar > ovamalblockid = overlappingblockinformation_vector->getDataNonConst(0);
     for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(A->getColMap()->getNodeNumElements());i++) {
       GlobalOrdinal gDofId = A->getColMap()->getGlobalElement(i);
       // fixme for variable block size
 
-      GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nUnamalgamatedBlockSize;
+      //GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nUnamalgamatedBlockSize;
+      //GlobalOrdinal globalblockid =  ovamalblockid[i];
+      GlobalOrdinal globalblockid = GlobalId2GlobalAmalBlockId(gDofId, A, overlappingblockinformation_vector);
 
       // gDofId -> gblockid
-      (*globalrowid2globalamalblockid)[gDofId] = globalblockid;
+      //(*globalrowid2globalamalblockid)[gDofId] = globalblockid;
 
       // gblockid -> gDofId/lDofId
       if(globalamalblockid2myrowid->count(globalblockid) > 0) {
@@ -157,7 +209,8 @@ namespace MueLu {
     for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements());i++) {
       GlobalOrdinal gDofId = A->getRowMap()->getGlobalElement(i);
       // fixme for variable block size
-      GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nUnamalgamatedBlockSize;
+      //GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nUnamalgamatedBlockSize;
+      GlobalOrdinal globalblockid = GlobalId2GlobalAmalBlockId(gDofId, A, overlappingblockinformation_vector);
 
       size_t nnz = A->getNumEntriesInLocalRow(i);
       Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -172,7 +225,9 @@ namespace MueLu {
         GlobalOrdinal gcid = A->getColMap()->getGlobalElement(indices[k]); // global column id
         // TODO: decide whether to add or skip a matrix entry in resulting graph
         if(vals[k]!=0.0) {  // avoid zeros
-          colblocks->push_back(globalrowid2globalamalblockid->find(gcid)->second); // add column block id to column ids of amalgamated matrix
+          //colblocks->push_back(globalrowid2globalamalblockid->find(gcid)->second); // add column block id to column ids of amalgamated matrix
+          GlobalOrdinal globalcolblockid = GlobalId2GlobalAmalBlockId(gcid, A, overlappingblockinformation_vector);
+          colblocks->push_back(globalcolblockid);
           realnnz++; // increment number of nnz in matrix row
         }
       }

@@ -63,6 +63,13 @@ namespace MueLu {
     void Amalgamate(const RCP<Operator>& A, const LocalOrdinal blocksize, RCP<Graph>& graph) const; // Amalgamate
 
   private:
+
+    //! translate global (row/column) id to global amalgamation block id
+    // @param gid (GlobalOrdinal): input global id (row gid or column gid)
+    // @param A: input operator (just used to check the maps for validity)
+    // @param globalgid2globalamalblockid_vector: Xpetra vector which holds block amalgamation gids for all column gids (vector lives on overlapping column map of A!)
+    GlobalOrdinal GlobalId2GlobalAmalBlockId(GlobalOrdinal gid, const RCP<Operator>& A, const RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector) const;
+
     //! A Factory
     RCP<const FactoryBase> AFact_;
 
