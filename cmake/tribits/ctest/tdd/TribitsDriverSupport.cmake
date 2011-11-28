@@ -70,7 +70,7 @@ GET_CURRENT_LIST_DIR(THIS_SCRIPT_DIR)
 # Call this function first at the top of any drivers/MACHINE/CMakeLists.txt
 # file.
 #
-function(TRILINOS_DRIVER_SETUP)
+function(TRIBITS_DRIVER_SETUP)
   #
   # But right now... no global setup required...
   #
@@ -83,11 +83,11 @@ endfunction()
 # Known values of cmake_type are 'min', 'release', 'rc' and 'dev'.
 #
 # This function should be called automatically by
-# TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS after many calls to
-# TRILINOS_DRIVER_ADD_DASHBOARD have collected a list of which flavors
+# TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS after many calls to
+# TRIBITS_DRIVER_ADD_DASHBOARD have collected a list of which flavors
 # of CMake are required to run all the dashboards on this machine.
 #
-function(TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE cmake_type)
+function(TRIBITS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE cmake_type)
 
   set(known 0)
   if("${cmake_type}" STREQUAL "min" OR
@@ -140,7 +140,7 @@ endfunction()
 # Add a test that runs a dashboard script using a known flavor of ctest.
 #
 # Required arguments:
-#  testname - name of the test as it appears on the TrilinosDriver dashboard
+#  testname - name of the test as it appears on the driver dashboard
 #
 #  scriptname - name of the file in CMAKE_CURRENT_SOURCE_DIR to run as
 #               ctest -S script
@@ -153,7 +153,7 @@ endfunction()
 #  [RUN_SERIAL]
 #  [TIMEOUT_MINUTES 180]
 #
-function(TRILINOS_DRIVER_ADD_DASHBOARD testname scriptname)
+function(TRIBITS_DRIVER_ADD_DASHBOARD testname scriptname)
 
   # Uncomment this line to see output of below PARSE_ARGUMENTS:
   #
@@ -171,7 +171,7 @@ function(TRILINOS_DRIVER_ADD_DASHBOARD testname scriptname)
   )
 
   if(NOT "${PARSE_DEFAULT_ARGS}" STREQUAL "")
-    message("warning: unrecognized arguments '${PARSE_DEFAULT_ARGS}' to TRILINOS_DRIVER_ADD_DASHBOARD")
+    message("warning: unrecognized arguments '${PARSE_DEFAULT_ARGS}' to TRIBITS_DRIVER_ADD_DASHBOARD")
   endif()
 
   if(PARSE_CTEST_INSTALLER_TYPE)
@@ -185,15 +185,6 @@ function(TRILINOS_DRIVER_ADD_DASHBOARD testname scriptname)
   else()
     set(timeout_seconds 10800) # 3 hours...
   endif()
-
-  #message("TRILINOS_DRIVER_ADD_DASHBOARD")
-  #message("  binary_dir='${CMAKE_CURRENT_SOURCE_DIR}'")
-  #message("  source_dir='${CMAKE_CURRENT_BINARY_DIR}'")
-  #message("  ctest_type='${ctest_type}'")
-  #message("  scriptname='${scriptname}'")
-  #message("  TD_BASE_DIR='${TD_BASE_DIR}'")
-  #message("  testname='${testname}'")
-  #message("  timeout_seconds='${timeout_seconds}'")
 
   add_test(${testname} ${CMAKE_COMMAND}
     -D binary_dir=${CMAKE_CURRENT_BINARY_DIR}
@@ -227,7 +218,7 @@ function(TRILINOS_DRIVER_ADD_DASHBOARD testname scriptname)
   endif()
 
   set_property(TEST ${testname} PROPERTY
-    FAIL_REGULAR_EXPRESSION "error: TRILINOS_CTEST_DRIVER_ERROR_QUEUE")
+    FAIL_REGULAR_EXPRESSION "error: TRIBITS_CTEST_DRIVER_ERROR_QUEUE")
 
   if(PARSE_PROCESSORS)
     set_property(TEST ${testname} PROPERTY PROCESSORS "${PARSE_PROCESSORS}")
@@ -249,9 +240,9 @@ endfunction()
 # Call this function last at the bottom of any drivers/MACHINE/CMakeLists.txt
 # file. It will add tests as needed to download and install all the right
 # flavors of ctest required to drive the other tests added with
-# TRILINOS_DRIVER_ADD_DASHBOARD.
+# TRIBITS_DRIVER_ADD_DASHBOARD.
 #
-function(TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS)
+function(TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS)
 
   IF (TDD_FORCE_CMAKE_INSTALL STREQUAL 1) 
 
@@ -261,12 +252,12 @@ function(TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS)
       list(REMOVE_DUPLICATES types)
       foreach (type ${types})
         MESSAGE(STATUS "Adding CMake install test ${type}")
-        TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE(${type})
+        TRIBITS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE(${type})
       endforeach()
     else()
       message("warning: no cmake install tests are necessary...")
-      message("  Put calls to TRILINOS_DRIVER_ADD_DASHBOARD")
-      message("  *before* calls to TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS...")
+      message("  Put calls to TRIBITS_DRIVER_ADD_DASHBOARD")
+      message("  *before* calls to TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS...")
     endif()
 
   ELSE()
