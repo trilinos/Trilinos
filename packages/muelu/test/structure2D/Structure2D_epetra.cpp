@@ -157,9 +157,28 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   Finest->Set("Nullspace",xNS);
 
-  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+  /* RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
+  Finest->Keep("Nullspace",nspFact.get());*/
+
+  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(/*Teuchos::null,nspFact*/));
   dropFact->SetVerbLevel(MueLu::Extreme);
-  dropFact->SetFixedBlockSize(nDofsPerNode);
+  //dropFact->SetFixedBlockSize(nDofsPerNode);
+  dropFact->SetVariableBlockSize();
+
+  // setup "variable" block size information
+  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalrowid2globalamalblockid_vector = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getRowMap());
+  Teuchos::ArrayRCP< Scalar > vectordata = globalrowid2globalamalblockid_vector->getDataNonConst(0);
+  for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(Op->getRowMap()->getNodeNumElements());i++) {
+    GlobalOrdinal gDofId = Op->getColMap()->getGlobalElement(i);
+    GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nDofsPerNode;
+    (vectordata)[i] = globalblockid;
+  }
+  Finest->Set("VariableBlockSizeInfo", globalrowid2globalamalblockid_vector);
+
+  //globalrowid2globalamalblockid_vector->describe(GetOStream(Runtime0, 0), Teuchos::VERB_EXTREME);
+
+
+
   //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
   //dropFact->SetPreDropFunction(predrop);
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
@@ -186,9 +205,7 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
-  Finest->Keep("Nullspace",nspFact.get());
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact,nspFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
   //RCP<RFactory> Rfact  = rcp( new GenericRFactory(Pfact));
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
@@ -232,8 +249,8 @@ int main(int argc, char *argv[]) {
 
   /*RCP<Level> coarseLevel2 = H->GetLevel(2);
   coarseLevel2->print(*out);*/
-  RCP<MultiVector> nsp2 = coarseLevel2->Get<RCP<MultiVector> >("Nullspace",nspFact.get());
-  nsp2->describe(*out,Teuchos::VERB_EXTREME);
+  /*RCP<MultiVector> nsp2 = coarseLevel2->Get<RCP<MultiVector> >("Nullspace",nspFact.get());
+  nsp2->describe(*out,Teuchos::VERB_EXTREME);*/
 
   /*RCP<Level> coarseLevel3 = H->GetLevel(3);
   coarseLevel3->print(*out);*/
