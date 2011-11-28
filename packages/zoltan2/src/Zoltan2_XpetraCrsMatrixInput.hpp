@@ -199,9 +199,7 @@ public:
       numNewRows = convertPartitionListToImportList<gid_t, lno_t, lno_t>(
         *comm, partList, gidList, dummyIn, importList, dummyOut);
     }
-    catch (std::exception &e){
-      Z2_THROW_ZOLTAN2_ERROR(env, e);
-    }
+    Z2_FORWARD_EXCEPTIONS;
 
     gno_t lsum = numNewRows;
     gno_t gsum = 0;

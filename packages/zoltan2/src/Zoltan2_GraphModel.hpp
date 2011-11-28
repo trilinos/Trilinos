@@ -216,8 +216,7 @@ public:
     try{
       numLocalVtx_ = input_->getRowListView(vtxIds, lids, offsets, nborIds);
     }
-    catch (std::exception &e)
-      Z2_THROW_ZOLTAN2_ERROR(env_, e);
+    Z2_FORWARD_EXCEPTIONS;
 
     numLocalEdges_ = offsets[numLocalVtx_];
     size_t numOffsets = numLocalVtx_ + 1;
@@ -278,9 +277,7 @@ public:
         edgeGnos_.view(0,numLocalEdges_).getConst();
       rowMap_->getRemoteIndexList(gnoView, procIds_.view(0, numLocalEdges_));
     }
-    catch (std::exception &e){
-      Z2_THROW_ZOLTAN2_ERROR(env_, e);
-    }
+    Z2_FORWARD_EXCEPTIONS;
   }
 
   //!  Destructor

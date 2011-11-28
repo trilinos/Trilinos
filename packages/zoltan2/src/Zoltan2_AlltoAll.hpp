@@ -129,8 +129,7 @@ void AlltoAllv(const Comm<int> &comm,
   try{
     AlltoAll<LNO, LNO>(comm, env, sendCount, 1, recvCount);
   }
-  catch (const std::exception &e)
-    Z2_THROW_ZOLTAN2_ERROR(env, e);
+  Z2_FORWARD_EXCEPTIONS;
 
   size_t totalIn=0, offsetIn=0, offsetOut=0;
 
@@ -408,8 +407,7 @@ void AlltoAllv(const Comm<int>     &comm,
   try{
     AlltoAllv<T, LNO>(comm, env, sendTView, sendSizeView, recvT, recvSize);
   }
-  catch (const std::exception &e)
-    Z2_THROW_ZOLTAN2_ERROR(env, e);
+  Z2_FORWARD_EXCEPTIONS;
 
   if (buf)
     delete [] buf;
