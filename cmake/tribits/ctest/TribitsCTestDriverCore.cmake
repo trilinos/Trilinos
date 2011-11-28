@@ -94,7 +94,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 # We allow the environment variable TRIBITS_PROJECT_ROOT to locate the
 # root directory. If the variable doesn't exist, we fall back on the
 # default convention.
-SET(TRIBITS_PROJECT_ROOT "$ENV{PROJECT_ROOT}")
+SET(TRIBITS_PROJECT_ROOT "$ENV{TRIBITS_PROJECT_ROOT}")
 IF(NOT TRIBITS_PROJECT_ROOT)
   # Fall back on the default convention, in which this file is located at: 
   #   <root>/cmake/tribits/ctest.
