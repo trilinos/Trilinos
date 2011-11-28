@@ -134,8 +134,10 @@
   throw e; \
 }
 
-/*! Throw an error returned from another Zoltan2 method.
- */
-#define Z2_THROW_ZOLTAN2_ERROR(env, e) { throw e; }
+//! Forward an exception back through call stack.
+#define Z2_FORWARD_EXCEPTIONS \
+  catch (std::runtime_error &e) { throw e; } \
+  catch (std::logic_error   &e) { throw e; } \
+  catch (std::bad_alloc     &e) { throw e; } 
    
 #endif

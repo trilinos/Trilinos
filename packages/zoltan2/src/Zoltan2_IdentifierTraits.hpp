@@ -68,9 +68,7 @@ template <typename T>
     ArrayView<const T> sendView = sendBuf(); 
     AlltoAll<T, int>(comm, env, sendView, int(2), recvBuf);
   }
-  catch(std::exception &e){
-    Z2_THROW_ZOLTAN2_ERROR(env, e);
-  }
+  Z2_FORWARD_EXCEPTIONS;
 
   T *minPtr = recvBuf.getRawPtr();
   T *maxPtr = minPtr + 1;
