@@ -10,6 +10,7 @@
 
 #include "Phalanx_FieldManager.hpp"
 
+#include "Panzer_config.hpp"
 #include "Panzer_Response.hpp"
 #include "Panzer_ResponseAggregator_Manager.hpp"
 #include "Panzer_ResponseAggregatorBase.hpp"

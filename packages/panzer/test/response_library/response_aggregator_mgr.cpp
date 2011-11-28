@@ -68,7 +68,7 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
   // panzer::pauseToAttach();
 
   TestBuilder tb;
-  ResponseAggregator_Manager<panzer::Traits> aggMngr;
+  ResponseAggregator_Manager<panzer::Traits> aggMngr(Teuchos::null,Teuchos::null);
   aggMngr.defineAggregatorTypeFromBuilder("Functional_2",tb);
 
   TEST_ASSERT(aggMngr.isAggregator("Functional_2"));

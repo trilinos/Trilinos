@@ -9,7 +9,7 @@ template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                                           const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
                                           const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
-   : wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof)
+   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 

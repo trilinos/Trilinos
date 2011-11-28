@@ -101,8 +101,9 @@ public:
    //! @}
 
    //! Aggregate fields into a data object
+   template <typename FieldT>
    void evaluateFields(panzer::Workset & wkst,ResponseData<TraitsT> & data,
-                       const std::vector<PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> > & fields) const;
+                       const std::vector<FieldT> & fields) const;
 
    //! Aggregate a set of responses locally
    virtual void aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const;
@@ -112,9 +113,25 @@ public:
 // Specialized for panzer::Traits
 class ResponseFunctional_Aggregator_Builder {
 public:
+   void setGlobalIndexer(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi)
+   { globalIndexer_ = ugi; }
+
+   void setLinearObjFactory(const Teuchos::RCP<LinearObjFactory<panzer::Traits> > & lof)
+   { linObjFactory_ = lof; }
+
+   Teuchos::RCP<UniqueGlobalIndexer<int,int> > getGlobalIndexer() const
+   { return globalIndexer_; }
+
+   Teuchos::RCP<LinearObjFactory<panzer::Traits> > getLinearObjFactory() const
+   { return linObjFactory_; }
+
    template <typename EvalT>
    Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > build() const
    { return Teuchos::null; }
+
+private:
+   Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
+   Teuchos::RCP<LinearObjFactory<panzer::Traits> > linObjFactory_;
 };
 
 // declaration so methods are not inlined
@@ -123,6 +140,8 @@ Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > ResponseFunctional_Aggrega
 
 }
 
+#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
 #include "Panzer_ResponseFunctional_AggregatorT.hpp"
+#endif
 
 #endif

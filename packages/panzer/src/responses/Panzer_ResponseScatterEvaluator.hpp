@@ -24,22 +24,33 @@ namespace panzer {
      "Response Names": type RCP<const std::vector<std::string> >
      "Workset Size": type int
   */
-PHX_EVALUATOR_CLASS(ResponseScatterEvaluator)
-  
-  Teuchos::RCP<PHX::FieldTag> responseDummyTag_;
-  Teuchos::RCP<panzer::ResponseData<Traits> > responseData_;
-  Teuchos::RCP<const panzer::ResponseAggregator<EvalT,Traits> > responseAggregator_;
-  std::vector<PHX::MDField<ScalarT,Cell> > responseFields_;
-
+template<typename EvalT, typename Traits,typename AggregatorT>
+class ResponseScatterEvaluator : public PHX::EvaluatorWithBaseImpl<Traits>,
+                                 public PHX::EvaluatorDerived<EvalT, Traits>  { 
 public:
+
   //! A constructor with concrete arguments instead of a parameter list.
   ResponseScatterEvaluator(const std::string & name,
                            const Teuchos::RCP<panzer::ResponseData<Traits> > & data,
-                           const Teuchos::RCP<const panzer::ResponseAggregator<EvalT,Traits> > & aggregator,
+                           const Teuchos::RCP<const AggregatorT> & aggregator,
                            const std::vector<std::string> & responseNames,
                            int worksetSize);
-    
-PHX_EVALUATOR_CLASS_END
+
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& fm);
+
+  void evaluateFields(typename Traits::EvalData d);
+
+private:
+
+  typedef typename EvalT::ScalarT ScalarT;
+
+  Teuchos::RCP<PHX::FieldTag> responseDummyTag_;
+  Teuchos::RCP<panzer::ResponseData<Traits> > responseData_;
+  Teuchos::RCP<const AggregatorT> responseAggregator_;
+  std::vector<PHX::MDField<ScalarT,Cell> > responseFields_;
+
+};
 
 }
 

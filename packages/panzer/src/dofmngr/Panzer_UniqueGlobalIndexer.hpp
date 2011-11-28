@@ -43,28 +43,9 @@ public:
      */
    virtual bool fieldInBlock(const std::string & field, const std::string & block) const = 0;
 
-   /** Get the local element IDs for a paricular element
-     * block.
-     *
-     * \param[in] blockId Block ID
-     *
-     * \returns Vector of local element IDs.
-     */
-   virtual const std::vector<LocalOrdinalT> & getElementBlock(const std::string & blockId) const = 0;
-
    /** Get field numbers associated with a particular element block.
      */
    virtual const std::vector<int> & getBlockFieldNumbers(const std::string & blockId) const = 0;
-
-   /** \brief Get the global IDs for a particular element. This function
-     * overwrites the <code>gids</code> variable.
-     */
-   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint="") const = 0;
-
-
-   /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
-     */
-   virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const = 0;
 
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array.
@@ -83,10 +64,31 @@ public:
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   // virtual const std::vector<int> & 
    virtual const std::pair<std::vector<int>,std::vector<int> > & 
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                                int subcellDim,int subcellId) const = 0;
+
+   // Methods requiring Local or Global OrdinalT
+   ////////////////////////////////////////////////////////////////////////
+
+   /** Get the local element IDs for a paricular element
+     * block.
+     *
+     * \param[in] blockId Block ID
+     *
+     * \returns Vector of local element IDs.
+     */
+   virtual const std::vector<LocalOrdinalT> & getElementBlock(const std::string & blockId) const = 0;
+
+   /** \brief Get the global IDs for a particular element. This function
+     * overwrites the <code>gids</code> variable.
+     */
+   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint="") const = 0;
+
+
+   /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
+     */
+   virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const = 0;
 
    /** Get set of indices owned by this processor
      */
