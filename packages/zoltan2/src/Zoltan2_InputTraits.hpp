@@ -4,6 +4,7 @@
 #include <Epetra_CrsGraph.h>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
+#include <Zoltan2_Standards.hpp>
 
 #ifndef ZOLTAN2_INPUTTRAITS_HPP
 #define ZOLTAN2_INPUTTRAITS_HPP
