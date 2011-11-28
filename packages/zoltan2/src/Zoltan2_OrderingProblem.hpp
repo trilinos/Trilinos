@@ -3,7 +3,8 @@
 #define _ZOLTAN2_ORDERINGPROBLEM_HPP_
 
 #include <Zoltan2_Problem.hpp>
-#include <Zoltan2_OrderingAlgorithms.hpp>
+//#include <Zoltan2_OrderingAlgorithms.hpp> // TODO: Fix include path?
+#include "algorithms/order/Zoltan2_OrderingAlgorithms.hpp"
 #include <Zoltan2_OrderingSolution.hpp>
 
 #include <Zoltan2_GraphModel.hpp>

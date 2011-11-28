@@ -35,11 +35,6 @@ namespace Zoltan2 {
 
     The template parameter is an Input Adapter.  Input adapters are
     templated on the basic user input type.
-
-    TODO: GraphModel parameters: 
-                    consecutive IDs required
-                    base required
-                    remove self edges
 */
 template <typename Adapter>
 class GraphModel : public Model<Adapter>
@@ -224,36 +219,40 @@ public:
     ArrayView<gno_t> av1(const_cast<gno_t *>(vtxIds), numLocalVtx_);
     gnos_ = av1.getConst();  // to make ArrayView<const gno_t>
 
-    lno_t *tmpOffsets = NULL;
-    gno_t *tmpEdges = NULL;
+    ArrayRCP<lno_t> tmpOffsets;
+    ArrayRCP<gno_t> tmpEdges;
     lno_t nSelfEdges = 0;
 
     if (removeSelfEdges) {
 
-      Z2_ASYNC_MEMORY_ALLOC(*comm, *env, lno_t, tmpOffsets, numOffsets);
-      Z2_ASYNC_MEMORY_ALLOC(*comm, *env, gno_t, tmpEdges, numLocalEdges_);
+      lno_t *offArray = new lno_t [numOffsets];
+      Z2_LOCAL_MEMORY_ASSERTION(*env, numOffsets, offArray);
+      gno_t *edArray = new gno_t [numLocalEdges_];
+      Z2_LOCAL_MEMORY_ASSERTION(*env, numLocalEdges_, !numLocalEdges_||edArray);
 
       for (lno_t i=0; i < numLocalVtx_; i++){
 
-        tmpOffsets[i] = offsets[i] - nSelfEdges;
+        offArray[i] = offsets[i] - nSelfEdges;
 
         for (lno_t j = offsets[i]; j < offsets[i+1]; j++) {
           if (gnos_[i] == nborIds[j]) { // self edge; remove it
             nSelfEdges++;
           }
           else {  // Not a self-edge; keep it.
-            tmpEdges[j-nSelfEdges] = nborIds[j];
+            edArray[j-nSelfEdges] = nborIds[j];
           }
         }
       }
       numLocalEdges_ -= nSelfEdges;
-      tmpOffsets[numLocalVtx_] = numLocalEdges_;
+      offArray[numLocalVtx_] = numLocalEdges_;
 
-      if (nSelfEdges == 0){
-        delete [] tmpOffsets;
-        tmpOffsets = NULL;
-        delete [] tmpEdges;
-        tmpEdges= NULL;
+      if (nSelfEdges > 0){
+        tmpOffsets = arcp(offArray, 0, numLocalVtx_+1, true);
+        tmpEdges = arcp(edArray, 0, numLocalEdges_, true);
+      }
+      else{
+        delete [] offArray;
+        if (numLocalEdges_) delete [] edArray;
       }
     }
   
@@ -262,8 +261,8 @@ public:
       edgeGnos_ = arcp(const_cast<gno_t *>(nborIds), 0, numLocalEdges_, false);
     }
     else{
-      offsets_ = arcp(tmpOffsets, 0, numOffsets, true);
-      edgeGnos_ = arcp(tmpEdges, 0, numLocalEdges_, true);
+      offsets_ = tmpOffsets;
+      edgeGnos_ =  tmpEdges;
     }
 
     Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
@@ -360,7 +359,7 @@ public:
   size_t getVertexLocalEdge( lno_t lno, ArrayView<const gno_t> &edgeId,
     ArrayView<const int> &procId, ArrayView<const scalar_t> &wgts) const
   { 
-    Z2_LOCAL_INPUT_ASSERTION(*comm_, *env_, "invalid local id",
+    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid local id",
       lno >= 0 && lno < gnos_.size(), BASIC_ASSERTION);
 
     lno_t thisVtx =  offsets_[lno];

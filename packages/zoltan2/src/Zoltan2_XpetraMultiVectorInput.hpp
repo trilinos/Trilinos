@@ -146,7 +146,7 @@ public:
     ArrayView<const size_t> partList(partition, numIds);
     ArrayView<const lno_t> dummyIn;
     ArrayRCP<gid_t> importList;
-    ArrayRCP<int> dummyOut;
+    ArrayRCP<lno_t> dummyOut;
     size_t numNewRows;
 
     const RCP<const Comm<int> > comm = map_->getComm();

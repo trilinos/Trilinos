@@ -11,20 +11,19 @@
 
 /*! \file Zoltan2_Memory.hpp
 
-  Memory allocation macros.
-
-  If we wanted to do clever memory management, we would do it here.  This
-  would probably require the Zoltan2::Environment object, which is why
-  it is passed.
+  \brief Memory related declarations.
 */
 
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_Array.hpp>
+#include <Teuchos_Ptr.hpp>
 #include <Zoltan2_config.h>
-
 
 namespace Zoltan2{
 
 #ifdef HAVE_MALLINFO
+// Note: Calling Zoltan's meminfo helpers works better
+// on Linux nodes.
 int getAllocatedMemory();
 int mallocCount(std::string label);
 int getMallocCount(std::string label);
@@ -32,64 +31,6 @@ void printMallocCount();
 void eraseMallocCount();
 #endif
 
-#ifdef Z2_OMIT_ALL_ERROR_CHECKING
-
-#define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num){ \
-  datatype *ptrname = NULL; \
-  if ((num) >= 1) \
-    ptrname = new datatype [num]; \
-}
-
-#define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num){ \
-  datatype *ptrname = NULL; \
-  if ((num) >= 1) \
-    ptrname = new datatype [num]; \
-}
-
-#else
-
-/*! Allocate memory followed by a global check of success.
-
-    All throw an error if any failed.
-    TODO - more macros for allocation of single object
-           for allocation of const object
- */
-
-#define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) {\
-  ptrname = NULL; \
-  int fail = 0, gfail=0; \
-  if ((num) >= 1){ \
-    ptrname = new datatype [num]; \
-    if (!ptrname) fail = 1;  \
-  } \
-  Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
-  if (gfail > 0) { \
-    if (fail > 0){ \
-      std::ostringstream _msg;  \
-      _msg << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
-      (env).dbg_->error(_msg.str()); \
-    } \
-    throw std::bad_alloc(); \
-  } \
-}
-
-/*! Allocate memory, throw error if it fails.
- */
-
-#define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) { \
-  ptrname = NULL; \
-  if ((num) >= 1) {\
-    ptrname = new datatype [num]; \
-  } \
-  if ((num) && !ptrname) { \
-    std::ostringstream _msg;  \
-    _msg << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
-    (env).dbg_->error(_msg.str()); \
-    throw std::bad_alloc(); \
-  } \
-}
-
-#endif
 
 } //namespace Zoltan2
 

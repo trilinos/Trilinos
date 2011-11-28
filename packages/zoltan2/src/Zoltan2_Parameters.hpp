@@ -16,10 +16,11 @@
 #include <sstream>
 #include <cctype>
 #include <Teuchos_ParameterEntryValidator.hpp>
+#include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_StrUtils.hpp>
-#include <Teuchos_ParameterEntryValidator.hpp>
-#include <Zoltan2_Standards.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_Array.hpp>
 
 /*! \file Zoltan2_Parameters.hpp
 
@@ -67,75 +68,79 @@ public:
   //Teuchos::ValidStringsList validStringValues() const ;
   ValidStringsList validStringValues() const ;
 
-  void validate( ParameterEntry  const& entry,
+  void validate( Teuchos::ParameterEntry  const& entry,
     std::string const& paramName, std::string const& sublistName
     ) const;
 
   void validateAndModify( std::string const& paramName,
-    std::string const& sublistName, ParameterEntry * entry
+    std::string const& sublistName, Teuchos::ParameterEntry * entry
     ) const;
 }; // end class
 
 // Helpers for IntegralRangeList parameter type
 
 template <typename Integral>
-  bool validIntegralRangeList(const Array<Integral> &vals);
+  bool validIntegralRangeList(const Teuchos::Array<Integral> &vals);
 
 template <typename Integral>
-  bool allValuesAreInRangeList(const Array<Integral> &vals);
+  bool allValuesAreInRangeList(const Teuchos::Array<Integral> &vals);
 
 template <typename Integral>
-  bool allValuesAreInRangeList(const ParameterEntry &e);
+  bool allValuesAreInRangeList(const Teuchos::ParameterEntry &e);
 
 template <typename Integral>
-  bool noValuesAreInRangeList(const Array<Integral> &vals);
+  bool noValuesAreInRangeList(const Teuchos::Array<Integral> &vals);
 
 template <typename Integral>
-  bool noValuesAreInRangeList(const ParameterEntry &e);
+  bool noValuesAreInRangeList(const Teuchos::ParameterEntry &e);
 
 template <typename Integral>
-  bool IsInRangeList(const Integral val, const ParameterEntry &e);
+  bool IsInRangeList(const Integral val, const Teuchos::ParameterEntry &e);
 
 template <typename Integral>
-  bool IsInRangeList(const Integral val, const Array<Integral> &vals);
+  bool IsInRangeList(const Integral val, const Teuchos::Array<Integral> &vals);
 
 template <typename Integral>
-  void printIntegralRangeList(std::ostream &os, Array<Integral> &irl);
+  void printIntegralRangeList(std::ostream &os, Teuchos::Array<Integral> &irl);
 
 // Function declarations
 
-void createValidParameterList(ParameterList &pl);
+void createValidParameterList(Teuchos::ParameterList &pl);
 
 ////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////
 
 // Parameter enumerated types.
+//
+//  If you change these enumerators, change their documentation
+//  in Zoltan2_Parameters.cpp.
+//
 
-enum AssertionLevels{
-  BASIC_ASSERTION,
-  COMPLEX_ASSERTION,
-  DEBUG_MODE_ASSERTION,
-  NUM_ASSERTION_LEVELS};
-
-enum RangeTypes {
+enum RangeType {
   RANGE_INCLUDES_ALL,
   RANGE_IS_EMPTY,
   RANGE_IS_LISTED,
   NUM_RANGE_TYPES};
 
-enum DebugLevels{  // TODO
-  NO_DEBUGGING,
-  MORE_DEBUGGING,
-  MOST_DEBUGGING,
-  NUM_DEBUG_LEVELS};
+enum AssertionLevel {
+  BASIC_ASSERTION,    /*!< checks that should always be done (user input) */
+  COMPLEX_ASSERTION,  /*!< checks that take extra time (valid input graph?) */
+  DEBUG_MODE_ASSERTION,   /*!< only done when check absolutely everything */
+  NUM_ASSERTION_LEVELS};
 
-enum ProfilingLevels{  // TODO - specifiers would be better
-  NO_PROFILING,
-  MORE_PROFILING,
-  MOST_PROFILING,
-  NUM_PROFILING_LEVELS};
-  
+enum MessageOutputLevel {
+  NO_STATUS,                 /*!< don't display status/debug messages */
+  BASIC_STATUS,              /*!< the status at each high level step */
+  DETAILED_STATUS,           /*!< include status at algorithm sub-steps */
+  VERBOSE_DETAILED_STATUS,   /*!< include more detail about sub-steps */
+  NUM_STATUS_OUTPUT_LEVELS};
+
+enum MessageSummaryLevel{
+  LOCAL_SUMMARY,              /*!< messages should display local info only */
+  GLOBAL_SUMMARY,             /*!< include global min, max, avg, etc. */
+  NUM_STATUS_SUMMARY_LEVELS};
+
 template <typename Integral>
 const std::string IntegerRangeListValidator<Integral>::listDelim_(",");
 
@@ -241,7 +246,7 @@ template <typename Integral>
 
 template <typename Integral>
   void IntegerRangeListValidator<Integral>::validate( 
-    ParameterEntry  const& entry,
+    Teuchos::ParameterEntry  const& entry,
     std::string const& paramName, std::string const& sublistName) const
 {
   if (!entry.isType<std::string>()){
@@ -295,16 +300,16 @@ template <typename Integral>
 template <typename Integral>
   void IntegerRangeListValidator<Integral>::validateAndModify( 
     std::string const& paramName, std::string const& sublistName, 
-    ParameterEntry * entry) const
+    Teuchos::ParameterEntry * entry) const
 {
-  typedef typename Array<Integral>::size_type arraySize_t;
+  typedef typename Teuchos::Array<Integral>::size_type arraySize_t;
   if (!entry->isType<std::string>()){
     return;
   }
   
   std::string *sptr=NULL;
   std::string &rangeList = entry->getValue(sptr);
-  Array<Integral> valueList;
+  Teuchos::Array<Integral> valueList;
 
   std::string inValue(rangeList);
 
@@ -382,9 +387,9 @@ template <typename Integral>
 // Helpers for IntegralRangeList parameter type
 
 template <typename Integral>
-  bool validIntegralRangeList(const Array<Integral> &vals)
+  bool validIntegralRangeList(const Teuchos::Array<Integral> &vals)
 {
-  typedef typename Array<Integral>::size_type arraySize_t;
+  typedef typename Teuchos::Array<Integral>::size_type arraySize_t;
   arraySize_t len = vals.size();
   if (len==0)
     return false;
@@ -398,7 +403,7 @@ template <typename Integral>
 }
 
 template <typename Integral>
-  bool allValuesAreInRangeList(const Array<Integral> &vals)
+  bool allValuesAreInRangeList(const Teuchos::Array<Integral> &vals)
 {
   if (!validIntegralRangeList(vals))
     throw std::runtime_error("list is not a valid range list");
@@ -406,18 +411,18 @@ template <typename Integral>
 }
 
 template <typename Integral>
-  bool allValuesAreInRangeList(const ParameterEntry &e)
+  bool allValuesAreInRangeList(const Teuchos::ParameterEntry &e)
 {
-  if (!e.isType<Array<Integral> >())
+  if (!e.isType<Teuchos::Array<Integral> >())
     throw std::runtime_error("Should not call until modified");
 
-  Array<Integral> *valPtr=NULL;
-  Array<Integral> &vals = e.getValue(valPtr);
+  Teuchos::Array<Integral> *valPtr=NULL;
+  Teuchos::Array<Integral> &vals = e.getValue(valPtr);
   return allValuesAreInRangeList(vals);
 }
 
 template <typename Integral>
-  bool noValuesAreInRangeList(const Array<Integral> &vals)
+  bool noValuesAreInRangeList(const Teuchos::Array<Integral> &vals)
 {
   if (!validIntegralRangeList(vals))
     throw std::runtime_error("list is not a valid range list");
@@ -425,13 +430,13 @@ template <typename Integral>
 }
 
 template <typename Integral>
-  bool noValuesAreInRangeList(const ParameterEntry &e)
+  bool noValuesAreInRangeList(const Teuchos::ParameterEntry &e)
 {
-  if (!e.isType<Array<Integral> >())
+  if (!e.isType<Teuchos::Array<Integral> >())
     throw std::runtime_error("Should not call until modified");
 
-  Array<Integral> *valPtr=NULL;
-  Array<Integral> &vals = e.getValue(valPtr);
+  Teuchos::Array<Integral> *valPtr=NULL;
+  Teuchos::Array<Integral> &vals = e.getValue(valPtr);
   return noValuesAreInRangeList(vals);
 }
 
@@ -439,14 +444,14 @@ template <typename Integral>
 // inList(std::vector<Integral> &val, std::vector<bool> &result)
 
 template <typename Integral>
-  bool IsInRangeList(const Integral val, const Array<Integral> &valList)
+  bool IsInRangeList(const Integral val, const Teuchos::Array<Integral> &valList)
 {
   if (allValuesAreInRangeList(valList))
     return true;
   else if (noValuesAreInRangeList(valList))
     return false;
 
-  typename Array<Integral>::const_iterator flag = valList.end();
+  typename Teuchos::Array<Integral>::const_iterator flag = valList.end();
   --flag;
   if (std::binary_search(valList.begin(), flag, val))
     return true;
@@ -455,26 +460,26 @@ template <typename Integral>
 }
 
 template <typename Integral>
-  bool IsInRangeList(const Integral val, const ParameterEntry &e)
+  bool IsInRangeList(const Integral val, const Teuchos::ParameterEntry &e)
 {
-  if (!e.isType<Array<Integral> >())
+  if (!e.isType<Teuchos::Array<Integral> >())
     throw std::runtime_error("Should not call until modified");
 
-  Array<Integral> *valPtr=NULL;
-  Array<Integral> &valList = e.getValue(valPtr);
+  Teuchos::Array<Integral> *valPtr=NULL;
+  Teuchos::Array<Integral> &valList = e.getValue(valPtr);
 
   return IsInRangeList(val, valList);
 } 
 
 template <typename Integral>
-  void printIntegralRangeList(std::ostream &os, Array<Integral> &irl)
+  void printIntegralRangeList(std::ostream &os, Teuchos::Array<Integral> &irl)
 {
   if (Zoltan2::allValuesAreInRangeList(irl))
     os << "all";
   else if (Zoltan2::noValuesAreInRangeList(irl))
     os << "empty";
   else{
-    ArrayView<const Integral> view = 
+    Teuchos::ArrayView<const Integral> view = 
       irl.view(0, irl.size()-1); // skip last value, it's a flag
     os << view;
   }    

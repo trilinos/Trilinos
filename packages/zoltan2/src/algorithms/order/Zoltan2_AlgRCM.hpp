@@ -35,7 +35,23 @@ int AlgRCM(
 
   int ierr= 0;
 
-  HELLO; // Test
+  HELLO;
+
+  // TEST: return the identity permutation.
+  const size_t nVtx = model->getLocalNumVertices();
+  size_t *perm;
+  perm = new size_t[nVtx];
+  for (size_t i=0; i<nVtx; i++){
+    perm[i] = i;
+  }
+
+  // Set solution.
+  solution->setPermutation(nVtx,
+               (gid_t *) NULL, // TODO
+               (lid_t *) NULL, // TODO
+               perm);
+
+  // delete [] perm; // Can't delete perm yet, RCP would help here?
 
   return ierr;
 }

@@ -8,9 +8,8 @@
 
 /*! \file Zoltan2_Environment.hpp
 
-    \brief The declarations for the Environment object.
+    \brief The Environment object, which governs library behavior.
 */
-
 
 #ifndef _ZOLTAN2_ENVIRONMENT_DECL_HPP_
 #define _ZOLTAN2_ENVIRONMENT_DECL_HPP_
@@ -23,102 +22,120 @@
 
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_DebugManager.hpp>
-#include <Zoltan2_Standards.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Comm.hpp>
 
 namespace Zoltan2 {
 
-/*! Zoltan2::Environment
-    \brief The parameters and other information needed at runtime.
+/*!  \brief The parameters and other information needed at runtime.
 
-  This is object is passed to almost every method in the library.  We may want
-  to have a memory manager here as well.
+  This is object is passed to almost every method in the library. It
+  has the problem parameters and the configuration information that governs
+  how the library should behave when reporting status information,
+  testing for errors, and so on.
 */
 
 
 class Environment{
 
-private:
-  /*! The user's parameters
-   */
-  ParameterList params_;
-
-  /*! The parameters, their defaults, their validators,
-   *  and their documentation
-   */
-  ParameterList validParams_;
-
 public:
-  /*! Values needed for quick access
-   */
-  int  myRank_;
-  int  numProcs_;
-  bool printDebugMessages_; // true if this proc prints
-  bool printProfilingMessages_;// true if this proc prints
-  int  errorCheckLevel_;    // how vigilant are we with assertions
-  int  debugDepthLevel_;    // how much info do we write out
-  int  profilingIndicator_;    // how much profiling (should really be
-                           // "what are we profiling", not a level)
-  bool committed_;
-  RCP<const Comm<int> > comm_;
 
-#if 0
-  /*! The node description is not yet implemented.
-   */
-  Kokkos::CUDANodeMemoryModel     gpuNode_;
-  Kokkos::StandardNodeMemoryModel standardNode_;
-  
-  /*! The machine model is not yet implemented.  It will
-      not necessarily be implemented as a ParameterList.
-   */
-  ParameterList machine_;
-#endif
+  // These are accessed directly rather than through get methods
+  // due to the frequency with which we'll be referring to them
+  // all over the code.
 
-  /*! Constructor 
-      Because parameter lists are small, we save a
-      copy of them instead of requiring an RCP.
-   */
-  Environment(ParameterList &prob, 
-    const RCP<const Comm<int> > &comm);
+  int  myRank_;             /*!< mpi rank in original problem */
 
-  /*! Constructor
+  int  numProcs_;           /*!< number of processes in original problem */
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm_; /*!< from original problem */
+
+  Teuchos::RCP<DebugManager> debugOut_;  /*!< output for status messages */
+
+  Teuchos::RCP<DebugManager> timerOut_;  /*!< output for timing messages */
+
+  Teuchos::RCP<DebugManager> memoryOut_; /*!< output for memory usage messages*/
+
+  AssertionLevel errorCheckLevel_; /*!< level of error checking to do */
+
+  /*! \brief Constructor
+   */
+  Environment( Teuchos::ParameterList &problemParams, 
+    const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+
+  /*! \brief Default Constructor
    */
   Environment();
 
-  /*! Destructor */
-  virtual ~Environment();
+  /*! \brief Destructor
+   */
+  ~Environment();
 
-  /*! Copy Constructor */
-  Environment(const Environment &env);
+  /*! \brief Set or reset the application communicator.
+   */
+  void setCommunicator(const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
-  /*! Assignment operator */
-  Environment &operator=(const Environment &env);
+  /*! \brief Set or reset the user parameters.
+   */
+  void setParameters(Teuchos::ParameterList &params);
 
-  /*! Set communicator */
-  void setCommunicator(const RCP<const Comm<int> > &comm);
+  /*! \brief Add to the user parameters.
+   *  User parameters can only be added before calling commitParameters().
+   */
+  void addParameters(Teuchos::ParameterList &params);
 
-  /*! Set or reset the problem parameters*/
-  void setParameters(ParameterList &Params);
-
-  /*! Add and to or replace the existing parameters with these */
-  void addParameters(ParameterList &Params);
-
-  /*! Parameter setting is done, process parameters for use.
-      This should be done in the Problem.
+  /*! \brief Finalize the user's parameters.
+   *  
+   * When commitParameters() is called, the user's parameters are
+   * validated and some are changed from parameter strings to the internal
+   * values that Zoltan2 will use.  For this reason, commitParameters()
+   * should only be called once.
    */
   void commitParameters();
 
-  /*! Get a reference to a read-only copy of the parameters. */
-  const ParameterList &getParameters() const;
+  /*! \brief Returns a reference to the user's parameter list.
+   */
+  const Teuchos::ParameterList &getParams() const { return params_; }
 
-  /*! The debug manager, used by debug statements */
-  RCP<Zoltan2::DebugManager> dbg_;
+  /*! \brief Returns true if the user parameters have been processed.
+   *
+   * The user's parameters are processed in commitParameters(). During
+   * this call they are checked for validity, and some are transformed
+   * to an internal format.  (For example "std::cout" will be transformed
+   * to a pointer to that ostream.)
+   */
+  bool parametersAreCommitted() const { return committed_; }
 
-  // TODO: some kind of a manager for profiling, with
-  //   labels, hierarchy, and so on.
+  /*! \brief Return true if timing was requested.
+   */
+  bool doTiming() const { return timerOut_->getDebugLevel() > NO_STATUS;}
 
+  /*! \brief Return true if debug output was requested.
+   */
+  bool doStatus() const { return timerOut_->getDebugLevel() > NO_STATUS;}
+
+  /*! \brief Return true if memory usage output was requested.
+   */
+  bool doMemoryProfiling() const { 
+    return memoryOut_->getDebugLevel() > NO_STATUS;}
+
+private:
+  /*! \brief The Zoltan2 parameters supplied by the user.
+   */
+  Teuchos::ParameterList params_;
+
+  /*! \brief The list of valid parameters against which to
+   *             check the user parameters.
+   */
+  Teuchos::ParameterList validParams_;
+
+  /*! \brief The user parameters can be validated only once.  True
+   *            if this validation has occured.
+   */
+  bool committed_;
 };
-  
-  
-}  //namespace Zoltan2
-  
+
+}  // namespace Zoltan2
+
 #endif

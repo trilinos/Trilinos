@@ -10,6 +10,10 @@
 
 namespace Zoltan2{
 
+template <typename scalar, typename lid, typename gid, typename lno, typename gno>
+class Zoltan2UserTypes{
+};
+
 template <typename User>
 struct InputTraits {
   // Input Adapter implementations must provide the following typedefs
@@ -38,6 +42,22 @@ struct InputTraits {
   static inline std::string name() {return "InputAdapter";}
 };
 
+// Specialization for generic user input.
+template <typename Scalar,
+          typename LID,
+          typename GID,
+          typename LNO,
+          typename GNO>
+struct InputTraits<Zoltan2UserTypes<Scalar, LID, GID, LNO, GNO> >
+{
+  typedef Scalar        scalar_t;
+  typedef LNO lno_t;
+  typedef GNO gno_t;
+  typedef LID lid_t;
+  typedef GID gid_t;
+  typedef Zoltan2::default_node_t node_t;
+  static inline std::string name() {return "Zoltan2UserTypes";}
+};
 
 // Specialization for Xpetra::CrsMatrix.
 // KDDKDD Do we need specializations for Xpetra::EpetraCrsMatrix and
