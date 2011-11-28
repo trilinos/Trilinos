@@ -532,7 +532,7 @@ ENDMACRO()
 MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
 
   MESSAGE("")
-  MESSAGE("Processing Dependencies.cmake files and buliding internal dependencies graph")
+  MESSAGE("Processing Dependencies.cmake files and building internal dependencies graph")
   MESSAGE("")
 
   SET(${PROJECT_NAME}_SE_PACKAGES)
