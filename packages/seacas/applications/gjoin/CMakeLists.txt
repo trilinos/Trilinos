@@ -18,7 +18,7 @@ SET(SOURCES gj_prtelb.F gj_prtess.F gj_prtnps.F
 	    gj_muness.f gj_offset.f gj_outlog.f gj_renix.f  gj_setsta.f gj_zmfixd.f gj_zmxyz.f)
 
 TRIBITS_ADD_LIBRARY(gjoin_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-TRIBITS_ADD_EXECUTABLE(gjoin NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES gjoin.f DEPLIBS gjoin_app_lib COMM serial)
+TRIBITS_ADD_EXECUTABLE(gjoin NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES gjoin.f DEPLIBS gjoin_app_lib COMM serial mpi)
 
 install_executable(gjoin)
 

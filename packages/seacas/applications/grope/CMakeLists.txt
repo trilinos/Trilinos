@@ -20,7 +20,7 @@ SET(SOURCES
    gr_prname.f gr_prqa.f   gr_prvers.f gr_rdelb.f  gr_rdnam1.f gr_rdqa.f   gr_rixint.f)
 
 TRIBITS_ADD_LIBRARY(grope_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-TRIBITS_ADD_EXECUTABLE(grope NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES grope.f DEPLIBS grope_app_lib COMM serial)
+TRIBITS_ADD_EXECUTABLE(grope NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES grope.f DEPLIBS grope_app_lib COMM serial mpi)
 
 install_executable(grope)
 

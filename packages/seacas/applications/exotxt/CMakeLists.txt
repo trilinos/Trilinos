@@ -16,7 +16,7 @@ SET(SOURCES
    et_wrelb.f   et_wrmap.f   et_wrqa.f)
 
 TRIBITS_ADD_LIBRARY(exotxt_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-TRIBITS_ADD_EXECUTABLE(exotxt NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES exotxt.f DEPLIBS exotxt_app_lib supes suplib exodus_for)
+TRIBITS_ADD_EXECUTABLE(exotxt NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES exotxt.f DEPLIBS exotxt_app_lib supes suplib exodus_for COMM serial mpi)
 install_executable(exotxt)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()

@@ -18,7 +18,7 @@ SET(SOURCES el_check_monot.c      el_elm_info.c   el_exoII_io.c
 	    sort_utils.c          md_timer_getrusage.c  md_wrap_generic_c.c)
 
 TRIBITS_ADD_LIBRARY(nem_spread_app_lib SOURCES ${SOURCES} DEPLIBS exodus nemesis suplib)
-TRIBITS_ADD_EXECUTABLE(nem_spread NOEXEPREFIX NOEXESUFFIX SOURCES pe_exoII_2par_exoII.c DEPLIBS nem_spread_app_lib COMM serial)
+TRIBITS_ADD_EXECUTABLE(nem_spread NOEXEPREFIX NOEXESUFFIX SOURCES pe_exoII_2par_exoII.c DEPLIBS nem_spread_app_lib COMM serial mpi)
 install_executable(nem_spread)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
