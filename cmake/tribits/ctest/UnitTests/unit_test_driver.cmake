@@ -109,4 +109,4 @@ SET(CTEST_COMMAND ${Trilinos_CTEST_COMMAND})
 # Run the build/test/submit driver
 #
 
-TRILINOS_CTEST_DRIVER()
+TRIBITS_CTEST_DRIVER()
