@@ -55,7 +55,7 @@ struct InputTraits<Zoltan2UserTypes<Scalar, LID, GID, LNO, GNO> >
   typedef GNO gno_t;
   typedef LID lid_t;
   typedef GID gid_t;
-  typedef Zoltan2::default_node_type node_t;
+  typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Zoltan2UserTypes";}
 };
 
