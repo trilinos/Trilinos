@@ -35,6 +35,6 @@
 #include "EJ_CodeTypes.h"
 
 void match_node_xyz(RegionVector &part_mesh, double tolerance,
-		    Map &global_node_map, Map &local_node_map);
+		    IdMap &global_node_map, IdMap &local_node_map);
 
 #endif

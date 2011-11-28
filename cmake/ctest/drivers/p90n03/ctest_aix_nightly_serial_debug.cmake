@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.p90n03.xl.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.p90n03.xl.cmake")
 
 #
 # Set the options specific to this build case

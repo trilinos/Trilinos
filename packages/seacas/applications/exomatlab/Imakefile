@@ -1,7 +1,7 @@
 LIBS = $(SUPLIB) $(IOSS) $(EXODUS) $(NEMESIS) $(NETCDF)  
 CXXEXTRA_DEFINES = -I$(INCDIR)/ioss -DNO_MPI 
 
-PROGS=exomatlab2
+PROGS=exomatlab
 
 SRCS = exomatlab.C EML_SystemInterface.C 
 OBJS = $(SRCS:.C=.o)

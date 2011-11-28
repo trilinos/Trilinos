@@ -63,6 +63,12 @@ namespace Belos {
   /// \author Mark Hoemmen
   /// \brief Solver manager for CA-GMRES and standard GMRES.
   ///
+  /// \note If you are a new Belos user and just want standard GMRES,
+  ///   use \c PseudoBlockGmresSolMgr.  If you want Flexible GMRES,
+  ///   use \c BlockGmresSolMgr with the appropriate option set.
+  ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
   template<class Scalar, class MV, class OP>
   class GmresSolMgr : public SolverManager<Scalar, MV, OP> {
   public:

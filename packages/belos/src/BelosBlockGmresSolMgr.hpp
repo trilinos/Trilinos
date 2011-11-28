@@ -80,15 +80,6 @@
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager with flexible Gmres.
 */
 
-/*! \class Belos::BlockGmresSolMgr
- *
- *  \brief The Belos::BlockGmresSolMgr provides a powerful and fully-featured solver manager over the BlockGmres linear solver.
-
- \ingroup belos_solver_framework
-
- \author Heidi Thornquist, Chris Baker, and Teri Barth
-*/
-
 namespace Belos {
   
 //! @name BlockGmresSolMgr Exceptions
@@ -113,7 +104,23 @@ class BlockGmresSolMgrLinearProblemFailure : public BelosError {public:
 class BlockGmresSolMgrOrthoFailure : public BelosError {public:
   BlockGmresSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
+/*! \class BlockGmresSolMgr
+ * \brief Interface to Block GMRES and Flexible GMRES.
+ * \ingroup belos_solver_framework
+ * \author Heidi Thornquist, Chris Baker, and Teri Barth
+ *
+ * This class provides an interface to Block GMRES, for solving linear
+ * systems with one or more right-hand sides.  Our Block GMRES
+ * implementation also has an option (the Boolean "Flexible Gmres"
+ * parameter) to use the Flexible variant of GMRES.  Flexible GMRES
+ * allows the preconditioner (which must be a right preconditioner) to
+ * change from iteration to iteration.
+ *
+ * If you are a new Belos user and just want standard GMRES, use \c
+ * PseudoBlockGmresSolMgr.  If you want Flexible GMRES, use this class
+ * with the "Flexible Gmres" parameter set to true.
+ */
 template<class ScalarType, class MV, class OP>
 class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
     

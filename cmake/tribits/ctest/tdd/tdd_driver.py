@@ -118,9 +118,9 @@ def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
   """
   origDir = os.getcwd()
   try:
-    print "\n*********************************************************"
-    print "***        TrilinosDriver cron_driver.py              ***" 
-    print "*********************************************************\n"
+    print "\n******************************************************************"
+    print "***        Tribits Driver Dashboard tdd_driver.py              ***" 
+    print "******************************************************************\n"
 
     print "\nPWD=\""+os.getcwd()+"\"...\n"
 
@@ -132,7 +132,7 @@ def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
     #
     REPO_DIR = repo_directory
 
-    # BASE_DIR is the parent directory of our containing "Trilinos" source tree,
+    # BASE_DIR is the parent directory of our containing source tree,
     # which we compute relative to TRIBITS_DIR:
     #
     BASE_DIR = os.path.dirname(REPO_DIR)
@@ -243,7 +243,7 @@ def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
     CTEST_VERSION = getCmndOutput(CTEST_EXE+" --version", True, False)
     print "CTEST_VERSION: +" + CTEST_VERSION + "+"
 
-    # Run one TrilinosDriver dashboard for this Trilinos source tree:
+    # Run one driver dashboard for this source tree:
     #
 
     print "\n***"
