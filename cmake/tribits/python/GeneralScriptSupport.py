@@ -227,6 +227,7 @@ class SysCmndInterceptor:
     return self.__interceptedCmndStructList[:]
 
   def doProcessInterceptedCmnd(self, cmnd):
+    #print "doProcessInterceptedCmnd(): cmnd='"+cmnd+"'"
     if self.isFallThroughCmnd(cmnd):
       return False
     if len(self.__interceptedCmndStructList) > 0:
@@ -306,7 +307,9 @@ if cmndInterceptsFile:
 g_dumpAllSysCmnds = os.environ.has_key("GENERAL_SCRIPT_SUPPORT_DUMD_COMMANDS")
 
 
-def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None):
+def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None, \
+  workingDir="" \
+  ):
   if g_dumpAllSysCmnds:
     print "\nDUMP SYS CMND: " + cmnd + "\n"
   if outFile!=None and rtnOutput==True:
@@ -322,19 +325,28 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None):
       writeStrToFile(outFile, cmndOutput)  
     return cmndReturn
   # Else, fall through
-  if rtnOutput:
-    child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
-      env=environment).stdout
-    data = child.read()
-    rtnCode = child.close()
-    return (data, rtnCode)
-  else:
-    outFileHandle = None
-    if outFile:
-      outFileHandle = open(outFile, 'w')
-    rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT,
-      stdout=outFileHandle, env=environment)
-    return rtnCode
+  pwd = None
+  if workingDir:
+    pwd = os.getcwd()
+    os.chdir(workingDir)
+  rtnObject = None
+  try:
+    if rtnOutput:
+      child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
+        env=environment).stdout
+      data = child.read()
+      rtnCode = child.close()
+      rtnObject = (data, rtnCode)
+    else:
+      outFileHandle = None
+      if outFile:
+        outFileHandle = open(outFile, 'w')
+      rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT,
+        stdout=outFileHandle, env=environment)
+      rtnObject = rtnCode
+  finally:
+    if pwd: os.chdir(pwd)
+  return rtnObject
 
 
 ######################################
@@ -348,22 +360,14 @@ def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir="",
   sys.stdout.flush()
   sys.stderr.flush()
   try:
-    if workingDir:
-      pwd = os.getcwd()
-      os.chdir(workingDir)
-    #rtnCode = subprocess.call(cmnd, shell=True)
     outFileHandle = None
-    rtnCode = runSysCmndInterface(cmnd, outFile=outFile, environment=environment)
-#    if outFile:
-#       outFileHandle = open(outFile, 'w')
-#    rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT, stdout=outFileHandle)
+    rtnCode = runSysCmndInterface(cmnd, outFile=outFile, environment=environment,
+      workingDir=workingDir)
   except OSError, e:
     rtnCode = 1 # Just some error code != 0 please!
-  if workingDir:
-    os.chdir(pwd)
   if rtnCode != 0 and throwExcept:
     raise RuntimeError('Error, the command \'%s\' failed with error code %d' \
-                       % (cmnd,rtnCode) )
+      % (cmnd,rtnCode) )
   return rtnCode
 
 
@@ -397,20 +401,13 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
 
 def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir=""):
   """Run a shell command and return its output"""
-  pwd = None
-  if workingDir:
-    pwd = os.getcwd()
-    os.chdir(workingDir)
-  try:
-    (data, err) = runSysCmndInterface(cmnd, rtnOutput=True)
-    if err:
-      if throwOnError:
-        raise RuntimeError, '%s failed w/ exit code %d' % (cmnd, err)
-    if stripTrailingSpaces:
-      return data.rstrip()
-    return data
-  finally:
-    if pwd: os.chdir(pwd)
+  (data, err) = runSysCmndInterface(cmnd, rtnOutput=True, workingDir=workingDir)
+  if err:
+    if throwOnError:
+      raise RuntimeError, '%s failed w/ exit code %d' % (cmnd, err)
+  if stripTrailingSpaces:
+    return data.rstrip()
+  return data
 
 
 def pidStillRunning(pid):
