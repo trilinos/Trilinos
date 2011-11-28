@@ -208,7 +208,8 @@ static void run(int x, int y, int z, PerformanceData & perf )
   // Solve linear sytem
 
   //THIS IS WHAT I'M Going to change
-  perf.solve_mflop_per_sec = GMRES_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X );
+  const size_t num_iters = 50 ;
+  perf.solve_mflop_per_sec = GMRES_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X, num_iters );
 
 #if  PRINT_SAMPLE_OF_SOLUTION
 

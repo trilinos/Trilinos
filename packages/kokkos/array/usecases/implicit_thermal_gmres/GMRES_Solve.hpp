@@ -155,6 +155,8 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     }
   };
 
+  typedef DotSingle< Scalar, device_type > dot_single ;
+
 
   
   // Return megaflops / second for iterations
@@ -164,8 +166,13 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
                      index_vector & A_offsets ,
                      scalar_vector & b ,
                      scalar_vector & x,
-                     const size_t & num_iters)
+                     const size_t num_iters)
   {
+
+    //Value view used for temp stuff.
+    value tmp = Kokkos::create_value<Scalar , device_type>();
+
+
     const size_t rows = A_row.length()-1;
 
     int iteration = 0 ;
@@ -196,7 +203,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     Kokkos::deep_copy( zero, Scalar( 0 ) );
 
     // compute nrom2 of r
-    Kokkos::parallel_reduce(rows, Norm2(r), beta);
+    Kokkos::parallel_reduce(rows, dot_single(r), Norm2(beta) );
 
     Scalar beta_copy;
     Kokkos::deep_copy(beta_copy,beta);
@@ -221,7 +228,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     Kokkos::parallel_for(rows, InvScale(MultiVector(Q,0), beta));
 
     Kokkos::Impl::Timer wall_clock ;
-    for(int j =1; j<= num_iters; ++j, ++iteration){
+    for(size_t j =1; j<= num_iters; ++j, ++iteration){
       //Q(:,j) = A * Q(:, j-1)
       CRSMatVec<Scalar,device_type> A_mult_q(
         A_value, A_row , A_offsets , MultiVector(Q, j-1) , MultiVector(Q, j));
@@ -231,20 +238,20 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       //H(0:j, j-1) = Q(:, 0:j-1)^* Q(:,j)
       Kokkos::NodeGEMM<Scalar, KOKKOS_MACRO_DEVICE>::GEMM(
         Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, MultiVector(Q,0, j-1), 
-        MultiVector(j), 0.0, MultiVector(H, j-1));
-
+        MultiVector(Q,j), 0.0, MultiVector(H, j-1));
 
       // Q(:, j) = Q(:, j) - Q(:, 0:j-1) * H(0:j, j-1)
-      for(int i =0; i<j; ++i){
+      for(size_t i =0; i<j; ++i){
+        Kokkos::deep_copy(tmp, H(i,j-1));
         Kokkos::parallel_for(
-          rows, YSAX(MultiVector(Q,j), H(i, j-1), MultiVector(Q,i)));
+          rows, YSAX(MultiVector(Q,j), tmp, MultiVector(Q,i)));
       }
      
       //H(j, j-1) = norm(Q(:,j),2) 
-      Kokkos::parallel_reduce(rows, DotSingle(Q, j), Norm2(H(j,j-1)) );
-      
+      Kokkos::parallel_reduce(rows, dot_single(Q, j), Norm2(tmp) );
+      Kokkos::deep_copy(H(j,j-1), tmp);
       //Q(:,j) = Q(:, j) / H(j, j-1)
-      Kokkos::parallel_for(rows, InvScale(MultiVector(Q, j), H(j, j-1)));
+      Kokkos::parallel_for(rows, InvScale(MultiVector(Q, j), tmp));
        
     }
 
