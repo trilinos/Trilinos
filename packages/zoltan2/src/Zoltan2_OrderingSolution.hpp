@@ -40,7 +40,12 @@ public:
   {
     HELLO;
 
-    gids_ = ArrayView<gid_t>(gids, length);
+    if (gids != NULL)
+      gids_ = ArrayView<gid_t>(gids, length);
+    else     // gids cannot be NULL
+      gids_ = ArrayView<gid_t>(Teuchos::null);
+      // throw std::logic_error("invalid gids");
+
 
     if (lids != NULL)
       lids_ = ArrayView<lid_t>(lids, length);
