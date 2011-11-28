@@ -1,6 +1,9 @@
 # This file is provided solely for backwards compatibility with
 # existing driver CTest scripts.
 
+# Existing scripts need a value for TRILINOS_CMAKE_DIR.
+set(TRILINOS_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}/../")
+
 #
 # Include the real TriBITS driver script.
 #
