@@ -40,7 +40,7 @@
 
 typedef std::vector<int> IntVector;
 typedef std::vector<double> RealVector;
-typedef std::vector<int> Map;
+typedef std::vector<int> IdMap;
 typedef std::vector<std::pair<std::string, int> > StringIdVector;
 typedef std::vector<std::string> StringVector;
 typedef std::vector<Ioss::Region*> RegionVector;
