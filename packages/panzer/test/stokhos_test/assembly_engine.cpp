@@ -61,13 +61,13 @@ public:
 
    Teuchos::RCP<std::vector<panzer::Workset> >
    getVolumeWorksets(const std::string & eBlock,
-                     const panzer::InputPhysicsBlock & pb,
+                     const panzer::PhysicsBlock & pb,
                      std::size_t worksetSize) const
    { return volume_worksets[eBlock]; }
 
    Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
    getSideWorksets(const panzer::BC & bc,
-                 const panzer::InputPhysicsBlock & pb) const
+                 const panzer::PhysicsBlock & pb) const
    { return bc_worksets[bc]; }
 };
 
