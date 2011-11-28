@@ -16,7 +16,7 @@ SET(SOURCES add_to_log.C  GetLongOpt.C  smart_assert.C  timer.C            token
 	    adler.C       ExodusFile.C  Internals.C     SystemInterface.C  to_string.C)
 
 PACKAGE_ADD_LIBRARY(${CODE}_app_lib SOURCES ${SOURCES} DEPLIBS exodus)
-PACKAGE_ADD_EXECUTABLE(${CODE} NOEXEPREFIX NOEXESUFFIX SOURCES Conjoin.C DEPLIBS ${CODE}_app_lib COMM serial)
+PACKAGE_ADD_EXECUTABLE(${CODE} NOEXEPREFIX NOEXESUFFIX SOURCES Conjoin.C DEPLIBS ${CODE}_app_lib COMM serial mpi)
 install_executable(${CODE})
 
 SUBPACKAGE_POSTPROCESS()

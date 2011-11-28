@@ -15,7 +15,7 @@ SET(SOURCES ExodusFile.C GetLongOpt.C Internals.C ParallelDisks.C
 	SystemInterface.C tokenize.C smart_assert.C add_to_log.C timer.C to_string.C)
 
 PACKAGE_ADD_LIBRARY(epu_lib SOURCES ${SOURCES} DEPLIBS exodus)
-PACKAGE_ADD_EXECUTABLE(epu NOEXEPREFIX NOEXESUFFIX SOURCES epu.C DEPLIBS epu_lib)
+PACKAGE_ADD_EXECUTABLE(epu NOEXEPREFIX NOEXESUFFIX SOURCES epu.C DEPLIBS epu_lib COMM serial mpi)
 install_executable(epu)
 
 SUBPACKAGE_POSTPROCESS()

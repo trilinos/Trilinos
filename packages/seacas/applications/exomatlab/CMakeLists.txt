@@ -14,7 +14,7 @@ SET(HEADERS "")
 SET(SOURCES add_to_log.C  tokenize.C GetLongOpt.C  SystemInterface.C)
 
 PACKAGE_ADD_LIBRARY(exomatlab_app_lib SOURCES ${SOURCES} DEPLIBS Ioss)
-PACKAGE_ADD_EXECUTABLE(exomatlab NOEXEPREFIX NOEXESUFFIX SOURCES exomatlab.C DEPLIBS exomatlab_app_lib COMM serial)
+PACKAGE_ADD_EXECUTABLE(exomatlab NOEXEPREFIX NOEXESUFFIX SOURCES exomatlab.C DEPLIBS exomatlab_app_lib COMM serial mpi)
 install_executable(exomatlab)
 
 SUBPACKAGE_POSTPROCESS()
