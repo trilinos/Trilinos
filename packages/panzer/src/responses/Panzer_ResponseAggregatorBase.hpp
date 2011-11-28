@@ -40,6 +40,42 @@ public:
    //! Is this field contain in the response data
    virtual bool contains(const std::string & field) const = 0;
 
+   //! Get a vector of fields in this data object
+   virtual const std::vector<std::string> & getFields() const = 0;
+
+   //! Set a vector of fields in this data object
+   virtual void setFields(const std::vector<std::string> & fields) = 0;
+};
+
+/** A default implementation that handles basic field string management
+  */
+template <typename TraitsT>
+class ResponseDataDefault : public ResponseData<TraitsT> {
+public:
+   virtual ~ResponseDataDefault() {}
+
+   //! Is this field contain in the response data
+   virtual bool contains(const std::string & field) const
+   { return this->fieldIndex(field)<fields_.size(); }
+   
+   //! Get a vector of fields in this data object
+   virtual const std::vector<std::string> & getFields() const
+   { return fields_; }
+
+   //! Set a vector of fields in this data object
+   virtual void setFields(const std::vector<std::string> & fields) 
+   { fields_ = fields; }
+
+   //! Get field index
+   std::size_t fieldIndex(const std::string & field) const
+   {
+      std::vector<std::string>::const_iterator itr 
+            = std::find(fields_.begin(),fields_.end(),field);
+      return itr-fields_.begin();
+   }
+
+private:
+   std::vector<std::string> fields_; // Storing fields in this data object
 };
 
 template <typename TraitsT>

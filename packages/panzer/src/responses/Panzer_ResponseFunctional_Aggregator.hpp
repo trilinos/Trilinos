@@ -23,7 +23,7 @@ template <typename EvalT,typename TraitsT> class ResponseFunctional_Aggregator;
 
 template <typename TraitsT> 
 class ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> 
-   : public ResponseData<TraitsT> {
+   : public ResponseDataDefault<TraitsT> {
 public:
    ResponseFunctional_Data() {}
 
@@ -34,7 +34,8 @@ public:
    //! Allocate and initialize required storage based on the fields passed in
    virtual void allocateAndInitializeData(const std::vector<std::string> & fields)
    { 
-      fields_ = fields;
+      this->setFields(fields);
+
       data_.resize(fields.size());
       reinitializeData();
    }
@@ -50,30 +51,14 @@ public:
      */
    virtual void fillResponse(const std::string & field,Response<TraitsT> & response) const
    {
-      std::size_t index = fieldIndex(field);
-      TEUCHOS_TEST_FOR_EXCEPTION(index>=fields_.size(),std::logic_error,
+      std::size_t index = this->fieldIndex(field);
+      TEUCHOS_TEST_FOR_EXCEPTION(index>=this->getFields().size(),std::logic_error,
                          "Cannnot find field \""+field+"\" in ReponseFunctional_Data object.");
       response.setValue(data_[index]);
    }
 
-   //! Is this field contain in the response data
-   virtual bool contains(const std::string & field) const
-   { return this->fieldIndex(field)<fields_.size(); }
-
    //! @}
  
-   //! Get field index
-   std::size_t fieldIndex(const std::string & field) const
-   {
-      std::vector<std::string>::const_iterator itr 
-            = std::find(fields_.begin(),fields_.end(),field);
-      return itr-fields_.begin();
-   }
-
-   //! Get vector of strings describing owned fields
-   const std::vector<std::string> & getFields() const
-   { return fields_; }
-
    //! get the vector with data (writable)
    std::vector<typename TraitsT::RealType> & getData() 
    { return data_; }
@@ -83,9 +68,6 @@ public:
    { return data_; }
 
 private:
-   //! what fields this stores
-   std::vector<std::string> fields_;
-
    //! values stored
    std::vector<typename TraitsT::RealType> data_;
 };

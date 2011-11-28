@@ -48,20 +48,16 @@ buildResponseData(const std::vector<std::string> & fields) const
 
 //! Build an evaluator ofr the set of fields to be aggregated (calculated) together
 template <typename TraitsT>
-void
-ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>::
+void ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>::
 registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<ResponseData<TraitsT> > & data,
                              const Teuchos::ParameterList & p) const
 {
-   Teuchos::RCP<ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> > func_data 
-      = Teuchos::rcp_dynamic_cast<ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> >(data);
-
    // build useful evaluator
    Teuchos::RCP<PHX::Evaluator<TraitsT> > eval = Teuchos::rcp(
          new ResponseScatterEvaluator<panzer::Traits::Residual,TraitsT>("Functional Response",
                                                                         data,
                                                                         Teuchos::rcpFromRef(*this),
-                                                                        func_data->getFields(),
+                                                                        data->getFields(),
                                                                         p.get<int>("Workset Size")));
 
    // add and require fields from aggregator constructed evaluator
