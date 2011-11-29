@@ -55,7 +55,7 @@ TEUCHOS_UNIT_TEST( XMLParameterListHelpers, toFromFile )
   writeParameterListToXmlFile(A, "A.xml");
  
   ParameterList B;
-  updateParametersFromXmlFile("A.xml", &B);
+  updateParametersFromXmlFile("A.xml", inoutArg(B));
   out << "\nB:\n"; B.print(out);
   TEST_ASSERT( A == B );
 
