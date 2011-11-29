@@ -57,6 +57,7 @@ typedef Zoltan2::XpetraVectorInput<Vector> VectorAdapter;
 #define epsilon 0.00000001
 
 int validatePerm(int n, size_t *perm)
+// returns 0 if permutation is valid
 {
   std::vector<int> count(n);
   int status = 0;
@@ -74,8 +75,10 @@ int validatePerm(int n, size_t *perm)
 
   // Each index should occur exactly once (count==1)
   for (i=0; i<n; i++){
-    if (count[i] != 1)
+    if (count[i] != 1){
       status = -2;
+      break;
+    }
   }
 
   return status;
@@ -94,10 +97,6 @@ int main(int narg, char** arg)
   RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   int me = comm->getRank();
-
-  if (me==0){ 
-      std::cout << "PASS" << std::endl; // TODO: Fake PASS
-  }
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
