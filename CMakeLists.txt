@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-
 #
 # A) Define your project name and set up major project options
 #
@@ -76,8 +75,7 @@ SET(${PROJECT_NAME}_SUPPORT_EXTRA_REPOS TRUE)
 # B) Pull in the TriBITS system and execute
 #
 
-SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch)
-INCLUDE(TribitsProject)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch/TribitsProject.cmake)
 
 # CMake requires this be in the top file and not in an include file :-(
 CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
