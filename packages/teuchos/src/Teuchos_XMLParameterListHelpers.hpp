@@ -71,8 +71,9 @@ namespace Teuchos {
  */
 TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFile(
   const std::string &xmlFileName,
-  ParameterList *paramList
+  const Ptr<ParameterList> &paramList
   );
+
 
 /** \brief On processor rank = 0, reads XML parameters from a file 
  * and broadcasts them to all other processors. Then updates the 
@@ -90,13 +91,13 @@ TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFile(
  *
  * \relates ParameterList
  */
-
 TEUCHOS_LIB_DLL_EXPORT
 void updateParametersFromXmlFileAndBroadcast(
   const std::string &xmlFileName,
-  ParameterList *paramList,
+  const Ptr<ParameterList> &paramList,
   const Comm<int> &comm
   );
+
 
 /** \brief Reads XML parameters from a file and return them in a new parameter 
  * list.
@@ -107,7 +108,8 @@ void updateParametersFromXmlFileAndBroadcast(
  * \relates ParameterList
  */
 TEUCHOS_LIB_DLL_EXPORT 
-RCP<ParameterList> getParametersFromXmlFile( const std::string &xmlFileName );
+RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName);
+
 
 /** \brief Reads XML parameters from a file and return them in a new parameter 
  * list.
@@ -140,7 +142,7 @@ RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName,
 TEUCHOS_LIB_DLL_EXPORT
 void updateParametersFromXmlString(
   const std::string &xmlStr,
-  ParameterList *paramList
+  const Ptr<ParameterList> &paramList
   );
 
 
@@ -152,7 +154,8 @@ void updateParametersFromXmlString(
  * \relates ParameterList
  */
 TEUCHOS_LIB_DLL_EXPORT
-RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr );
+RCP<ParameterList> getParametersFromXmlString(const std::string &xmlStr);
+
 
 /** \brief Reads XML parameters from a std::string and return them in a new
  * parameter list.
@@ -205,6 +208,45 @@ void writeParameterListToXmlFile(
   const std::string &xmlFileName,
   RCP<const DependencySheet> depSheet=null
   );
+
+
+//
+// Deprecated
+//
+
+
+/** \ingroup Teuchos_Depreicated_grp */
+TEUCHOS_DEPRECATED inline
+void updateParametersFromXmlFile(
+  const std::string &xmlFileName,
+  ParameterList *paramList
+  )
+{
+  updateParametersFromXmlFile(xmlFileName, ptr(paramList));
+}
+
+
+/** \ingroup Teuchos_Depreicated_grp */
+TEUCHOS_DEPRECATED inline
+void updateParametersFromXmlFileAndBroadcast(
+  const std::string &xmlFileName,
+  ParameterList *paramList,
+  const Comm<int> &comm
+  )
+{
+  updateParametersFromXmlFileAndBroadcast(xmlFileName, ptr(paramList), comm);
+}
+
+
+/** \ingroup Teuchos_Depreicated_grp */
+TEUCHOS_DEPRECATED inline
+void updateParametersFromXmlString(
+  const std::string &xmlStr,
+  ParameterList *paramList
+  )
+{
+  updateParametersFromXmlString(xmlStr, ptr(paramList));
+}
 
 
 } // namespace Teuchos

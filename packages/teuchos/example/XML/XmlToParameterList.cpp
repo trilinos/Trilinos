@@ -50,6 +50,9 @@
 
 int main( int argc, char* argv[] )
 {
+  
+  using Teuchos::inoutArg;
+
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
   std::cout << std::endl << Teuchos::Teuchos_Version() << std::endl;
@@ -84,7 +87,7 @@ int main( int argc, char* argv[] )
 
     if(xmlInFileName.length()) {
       std::cout << "\nReading a parameter list from the XML file \""<<xmlInFileName<<"\" ...\n";
-      Teuchos::updateParametersFromXmlFile(xmlInFileName,&paramList);
+      Teuchos::updateParametersFromXmlFile(xmlInFileName, inoutArg(paramList));
       std::cout << "\nParameter list read from the XML file \""<<xmlInFileName<<"\":\n\n";
       paramList.print(std::cout,2,true,true);
     }
@@ -99,7 +102,7 @@ int main( int argc, char* argv[] )
         myfile.close();
       }
       std::cout << "\nUpdating the parameter list given the extra XML std::string:\n\n"<<line<<"\n";
-      Teuchos::updateParametersFromXmlString(line,&paramList);
+      Teuchos::updateParametersFromXmlString(line, inoutArg(paramList));
       std::cout << "\nParameter list after ammending extra XML std::string:\n\n";
       paramList.print(std::cout,2,true,true);
     }

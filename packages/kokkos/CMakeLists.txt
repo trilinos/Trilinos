@@ -47,6 +47,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable Kokkos local linear algebra."
   ON
   )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_Array
   HAVE_KOKKOS_ARRAY
@@ -171,6 +172,7 @@ ENDIF()
 
 IF (Kokkos_ENABLE_Array)
   ADD_SUBDIRECTORY(array)
+  #ADD_SUBDIRECTORY(array_v1)
 ENDIF()
 
 ######################################################################
