@@ -317,6 +317,30 @@ Some other message
     self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
 
 
+################################################################################
+# Test Project name matching.
+################################################################################
+class test_matchProjectName(unittest.TestCase):
+  def test_good_match(self):
+    line = 'SET(PROJECT_NAME TestProject)'
+    match = matchProjectName(line)
+    self.assertEqual(match, 'TestProject')
+    
+  def test_match_with_extra_spaces(self):
+    line = '  set ( PROJECT_NAME   TestProject ) '
+    match = matchProjectName(line)
+    self.assertEqual(match, 'TestProject')
+
+  def test_no_match_wrong_variable(self):
+    line = 'SET(SOME_VAR TestProject)'
+    match = matchProjectName(line)
+    self.assertFalse(match)
+
+  def test_match_with_comment_at_end(self):
+    line = 'Set(PROJECT_NAME TestProject) # This is a comment'
+    match = matchProjectName(line)
+    self.assertEqual(match, 'TestProject')
+
 #############################################################################
 #
 #                     Test checkin-test.py script
@@ -573,8 +597,9 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     
     cmnd = scriptsDir + "/../checkin-test.py" \
+     +" --project-name=Trilinos" \
      +" --no-eg-git-version-check" \
-     +" --trilinos-src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos" \
+     +" --src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos" \
      +" --send-email-to=bogous@somwhere.com" \
      + " " + optionsStr
     # NOTE: Above, we want to turn off the eg/git version tests since we want

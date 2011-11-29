@@ -66,6 +66,8 @@ from GeneralScriptSupport import *
 # Default file locations
 #
 
+# These constants should be considered deprecated, use the functions
+# below instead.
 defaultDepsXmlDirectory = getCompleteFileDirname(__file__) + "/../../dependencies"
 
 defaultTrilinosDepsXmlInFile = defaultDepsXmlDirectory + "/TrilinosPackageDependencies.xml"
@@ -73,6 +75,25 @@ defaultTrilinosDepsXmlInFile = defaultDepsXmlDirectory + "/TrilinosPackageDepend
 defaultTrilinosDepsHtmlOutFile = defaultDepsXmlDirectory + "/TrilinosPackageDependenciesTable.html"
 
 defaultCDashDepsXmlFile = defaultDepsXmlDirectory + "/CDashSubprojectDependencies.xml"
+
+# Use these functions instead of the above constants.
+def getDefaultDepsXmlDirectory(rootDir):
+  return os.path.join(rootDir, 'cmake', 'dependencies')
+
+def getDefaultDepsXmlInFile(rootDir, projectName):
+  return os.path.join(
+    getDefaultDepsXmlDirectory(rootDir),
+    '%sPackageDependencies.xml' % projectName)
+
+def getDefaultDepsHtmlOutFile(rootDir, projectName):
+  return os.path.join(
+    getDefaultDepsXmlDirectory(rootDir),
+    '%sPackageDependenciesTable.html' % projectName)
+
+def getDefaultCDashDepsXmlFile(rootDir):
+  return os.path.join(
+    getDefaultDepsXmlDirectory(rootDir),
+    'CDashSubprojectDependencies.xml')
 
 
 #

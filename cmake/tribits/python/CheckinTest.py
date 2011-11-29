@@ -70,10 +70,12 @@
 from GeneralScriptSupport import *
 
 from TribitsDependencies import getTrilinosDependenciesFromXmlFile
-from TribitsDependencies import defaultTrilinosDepsXmlInFile
+from TribitsDependencies import getDefaultDepsXmlInFile
 from TribitsPackageFilePathUtils import *
 import time
 import pprint
+
+import re
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -90,10 +92,10 @@ g_officialEgVersion = "1.7.0.4"
 g_officialGitVersion = "1.7.0.4"
 
 
-def getGitRepoDir(trilinosSrcDir, gitRepoName):
+def getGitRepoDir(srcDir, gitRepoName):
   if gitRepoName:
-    return trilinosSrcDir+"/"+gitRepoName
-  return trilinosSrcDir
+    return srcDir+"/"+gitRepoName
+  return srcDir
 
 
 def getGitRepoFileExt(gitRepoName):
@@ -246,7 +248,7 @@ def setupAndAssertEgGitVersions(inOptions):
 
 
 def assertGitRepoExists(inOptions, gitRepoName):
-  gitRepoDir = getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
+  gitRepoDir = getGitRepoDir(inOptions.srcDir, gitRepoName)
   if not os.path.os.path.exists(gitRepoDir):
     raise Exception("Error, the specified git repo '"+gitRepoName+"' directory"
       " '"+gitRepoDir+"' does not exist!")
@@ -312,7 +314,7 @@ def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
     cmnd += " && "+inOptions.eg+" rebase --against origin/"+inOptions.currentBranch
   outFileFullPath = os.path.join(baseTestDir, outFile)
   (updateRtn, updateTimings) = echoRunSysCmnd( cmnd,
-    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName),
     outFile=outFileFullPath,
     timeCmnd=True, returnTimeCmnd=True, throwExcept=False
     )
@@ -496,7 +498,7 @@ reModifiedFiles = re.compile(r"^[MAD]\t(.+)$")
 
 
 def getCurrentBranchName(inOptions, baseTestDir):
-  branchesStr = getCmndOutput(inOptions.eg+" branch", workingDir=inOptions.trilinosSrcDir)
+  branchesStr = getCmndOutput(inOptions.eg+" branch", workingDir=inOptions.srcDir)
   for branchName in branchesStr.split('\n'):
     #print "branchName =", branchName
     if branchName[0] == '*':
@@ -509,7 +511,7 @@ def getCurrentBranchName(inOptions, baseTestDir):
 def getCurrentDiffOutput(gitRepoName, inOptions, baseTestDir):
   echoRunSysCmnd(
     inOptions.eg+" diff --name-status origin/"+inOptions.currentBranch,
-    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName),
     outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName(gitRepoName)),
     timeCmnd=True
     )
@@ -548,7 +550,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
       enablePackagesList_inout.append(packageName)
 
 
-def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
+def createConfigureFile(cmakeOptions, baseCmnd, srcDir, configFileName):
 
     doConfigStr = ""
   
@@ -563,8 +565,8 @@ def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
     doConfigStr += \
       "$EXTRA_ARGS"
 
-    if trilinosSrcDir:
-      doConfigStr += " \\\n"+trilinosSrcDir
+    if srcDir:
+      doConfigStr += " \\\n"+srcDir
     
     doConfigStr += "\n"
   
@@ -830,7 +832,7 @@ def analyzeResultsSendEmail(inOptions, buildTestCase,
 
   emailBody += getEnableStatusList(inOptions, enabledPackagesList)
   emailBody += "Hostname: " + getHostname() + "\n"
-  emailBody += "Source Dir: " + inOptions.trilinosSrcDir + "\n"
+  emailBody += "Source Dir: " + inOptions.srcDir + "\n"
   emailBody += "Build Dir: " + os.getcwd() + "\n"
   emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
   if inOptions.extraCmakeOptions:
@@ -1136,7 +1138,7 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
       print "\ncmakeOptions =", cmakeOptions
     
       print "\nCreating base configure file do-configure.base ..."
-      createConfigureFile(cmakeBaseOptions, "cmake", inOptions.trilinosSrcDir,
+      createConfigureFile(cmakeBaseOptions, "cmake", inOptions.srcDir,
         "do-configure.base")
     
       print "\nCreating package-enabled configure file do-configure ..."
@@ -1401,7 +1403,7 @@ def getUserCommitMessageStr(inOptions):
 
   absCommitMsgHeaderFile = inOptions.commitMsgHeaderFile
   if not os.path.isabs(absCommitMsgHeaderFile):
-    absCommitMsgHeaderFile = os.path.join(inOptions.trilinosSrcDir, absCommitMsgHeaderFile)
+    absCommitMsgHeaderFile = os.path.join(inOptions.srcDir, absCommitMsgHeaderFile)
 
   print "\nExtracting commit message subject and header from the file '" \
         +absCommitMsgHeaderFile+"' ...\n"
@@ -1490,7 +1492,7 @@ def getLastCommitMessageStr(inOptions, gitRepoName):
   # Get the raw output from the last current commit log
   rawLogOutput = getCmndOutput(
     inOptions.eg+" cat-file -p HEAD",
-    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName)
     )
 
   return getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)[0]
@@ -1502,7 +1504,7 @@ def getLocalCommitsSummariesStr(inOptions, gitRepoName, appendRepoName):
   rawLocalCommitsStr = getCmndOutput(
     inOptions.eg+" log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
     True,
-    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName)
     )
 
   if gitRepoName and appendRepoName:
@@ -1541,7 +1543,7 @@ def getLocalCommitsSHA1ListStr(inOptions, gitRepoName):
   rawLocalCommitsStr = getCmndOutput(
     inOptions.eg+" log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
     True,
-    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName)
     )
 
   if rawLocalCommitsStr:
@@ -1556,18 +1558,58 @@ def getLocalCommitsExist(inOptions, gitRepoName):
     return True
   return False
 
+def matchProjectName(line):
+  """
+  Attempts to match and return the value of PROJECT_NAME in a line like
+  SET(PROJECT_NAME <name>)
+  If no match can be made, None is returned.
+  """
+  matchRegex = r'\s*[Ss][Ee][Tt]\s*\(\s*PROJECT_NAME\s+([^\)\s]*)\s*\).*'
+  match = re.search(matchRegex, line)
+  if match:
+    return match.group(1)
+  else:
+    return None
 
+def getProjectName(sourceDirectory):
+  """
+  Reads the project name from <root>/cmake/ProjectName.cmake
+  """
+  projectNameFile = os.path.join(sourceDirectory, 'cmake', 'ProjectName.cmake')
+  if not os.path.exists(projectNameFile):
+    raise Exception(
+      "%s is required to exist for a valid Tribits project." % projectNameFile)
+  content = open(projectNameFile, "r")
+  line = content.readline()
+  while line:
+    name = matchProjectName(line)
+    if name:
+      return name
+    line = content.readline()
+  raise Exception(
+    'The file %s does not set the PROJECT_NAME variable. ' +
+    'This is required of any Tribits project.')
+  
+  
 def checkinTest(baseDir, inOptions):
+  """
+  Main function for checkin testing.
+  """
 
+  if inOptions.projectName:
+    projectName = inOptions.projectName
+  else:
+    projectName = getProjectName(inOptions.srcDir)
+  
   print "\n**********************************************"
-  print "*** Performing checkin testing of Trilinos ***"
+  print "*** Performing checkin testing of %s ***" % projectName
   print "**********************************************"
 
   scriptsDir = baseDir
   #print "\nscriptsDir =", scriptsDir
   setattr(inOptions, "scriptsDir", scriptsDir)
 
-  print "\ntrilinosSrcDir =", inOptions.trilinosSrcDir
+  print "\nsrcDir =", inOptions.srcDir
 
   baseTestDir = os.getcwd()
   print "\nbaseTestDir =", baseTestDir
@@ -1611,11 +1653,11 @@ def checkinTest(baseDir, inOptions):
       # There are extra repos so we need to build a new list of Trilinos packages
       # to include the add-on packages.
       cmnd = "cmake -DPROJECT_NAME=Trilinos" \
-       +" -DTrilinos_TRIBITS_DIR="+inOptions.trilinosSrcDir+"/cmake/tribits" \
-       +" -DTrilinos_DEPS_HOME_DIR="+inOptions.trilinosSrcDir \
+       +" -DTrilinos_TRIBITS_DIR="+inOptions.srcDir+"/cmake/tribits" \
+       +" -DTrilinos_DEPS_HOME_DIR="+inOptions.srcDir \
        +" -DTrilinos_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR="+baseTestDir \
        +" -DTrilinos_EXTRA_REPOSITORIES="+inOptions.extraRepos \
-       +" -P "+inOptions.trilinosSrcDir+"/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake"
+       +" -P "+inOptions.srcDir+"/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake"
       echoRunSysCmnd(cmnd,
         workingDir=baseTestDir,
         outFile=baseTestDir+"/"+getTrilinosDependenciesXmlGenerateOutputFileName(),
@@ -1624,9 +1666,8 @@ def checkinTest(baseDir, inOptions):
       print "\nSkipping update of dependencies XML file on request!"
     trilinosDepsXmlFile = baseTestDir+"/"+getTrilinosDependenciesXmlFileName()
   else:
-    # No extra repos so you can just use the default list of Trilinos
-    # packages
-    trilinosDepsXmlFile = defaultTrilinosDepsXmlInFile
+    # No extra repos so you can just use the default list of packages
+    trilinosDepsXmlFile = getDefaultDepsXmlInFile(inOptions.srcDir, projectName)
 
   trilinosDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
   if trilinosDepsXmlFileOverride:
@@ -1775,7 +1816,7 @@ def checkinTest(baseDir, inOptions):
         print "\n3.a."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
         egStatusOutput = getCmndOutput(inOptions.eg+" status", True, throwOnError=False,
-          workingDir=getGitRepoDir(inOptions.trilinosSrcDir,gitRepo.repoName))
+          workingDir=getGitRepoDir(inOptions.srcDir,gitRepo.repoName))
   
         print \
           "\nOutput from 'eg status':\n" + \
@@ -2217,7 +2258,7 @@ def checkinTest(baseDir, inOptions):
               commitAmendRtn = echoRunSysCmnd(
                 inOptions.eg+" commit --amend" \
                 " -F "+os.path.join(baseTestDir, finalCommitEmailBodyFileName),
-                workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepo.repoName),
+                workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoName),
                 outFile=os.path.join(baseTestDir, getFinalCommitOutputFileName(gitRepo.repoName)),
                 timeCmnd=True, throwExcept=False
                 )
@@ -2299,7 +2340,7 @@ def checkinTest(baseDir, inOptions):
             if not debugSkipPush:
               pushRtn = echoRunSysCmnd(
                 inOptions.eg+" push origin "+inOptions.currentBranch,
-                workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepo.repoName),
+                workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoName),
                 outFile=os.path.join(baseTestDir, getPushOutputFileName(gitRepo.repoName)),
                 throwExcept=False, timeCmnd=True )
               didAtLeastOnePush = True

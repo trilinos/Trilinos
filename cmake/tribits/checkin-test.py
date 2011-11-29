@@ -70,6 +70,7 @@ import sys
 import os
 import traceback
 
+from optparse import OptionParser
 
 # Get the location of the scripts directory whether from a sym link or the
 # actual
@@ -80,13 +81,8 @@ scriptsDir = os.path.dirname(checkinTestFileRealPath)+"/python"
 print "scriptsDir='"+scriptsDir+"'"
 sys.path.insert(0, scriptsDir)
 
-# For now, we hard code the project name. Later, we will determine a
-# good way to detect this. The important thing right now is that we're
-# setting this from the top and allowing it to cascade down.
-PROJECT_NAME = "Trilinos"
-print "PROJECT_NAME = %s" % PROJECT_NAME
-
 from GeneralScriptSupport import *
+from CheckinTestImpl import *
 
 #
 # Read in the commandline arguments
@@ -155,8 +151,7 @@ originalStderr = sys.stderr
 try:
   sys.stdout = teeOutput
   sys.stderr = teeOutput
-  from CheckinTestImpl import runProjectTestsWithCommandLineArgs
-  success = runProjectTestsWithCommandLineArgs(PROJECT_NAME, sys.argv[1:])
+  success = runProjectTestsWithCommandLineArgs(sys.argv[1:])
 except Exception:
   success = False
   traceback.print_exc(file=teeOutput)
