@@ -86,7 +86,12 @@ namespace MueLu {
     // pre-dropping
     RCP<Graph> graph;
 
-    if (blockdim > 1 || fixedBlkSize_ == false) {
+    bool bDoAmalgamation = false;
+    if(predrop_ != Teuchos::null)                               bDoAmalgamation = true; // if predropping
+    if(fixedBlkSize_ == false && blkSizeInfo_ != Teuchos::null) bDoAmalgamation = true; // if variable block size
+    if(fixedBlkSize_ == true  && blockdim > 1)                  bDoAmalgamation = true; // constant block size > 1
+
+    if (bDoAmalgamation) {
       Amalgamate(A, blockdim, graph);
     } else {
       graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
