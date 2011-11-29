@@ -1,5 +1,6 @@
 #include <iostream>
 #include <limits>
+#include <vector>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -54,6 +55,31 @@ typedef Zoltan2::XpetraCrsMatrixInput<SparseMatrix> SparseMatrixAdapter;
 typedef Zoltan2::XpetraVectorInput<Vector> VectorAdapter;
 
 #define epsilon 0.00000001
+
+int validatePerm(int n, size_t *perm)
+{
+  std::vector<int> count(n);
+  int status = 0;
+  size_t i;
+
+  for (i=0; i<n; i++)
+    count[i]=0;
+
+  for (i=0; i<n; i++){
+    if ((perm[i]<0) || (perm[i]>=n))
+      status = -1;
+    else
+      count[perm[i]]++;
+  }
+
+  // Each index should occur exactly once (count==1)
+  for (i=0; i<n; i++){
+    if (count[i] != 1)
+      status = -2;
+  }
+
+  return status;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
@@ -214,30 +240,5 @@ int main(int narg, char** arg)
     else
       std::cout << "PASS" << std::endl;
   }
-}
-
-int validatePerm(int n, size_t *perm)
-{
-  int count[n];
-  int status = 0;
-  size_t i;
-
-  for (i=0; i<n; i++)
-    count[i]=0;
-
-  for (i=0; i<n; i++){
-    if ((perm[i]<0) || (perm[i]>=n))
-      status = -1;
-    else
-      count[perm[i]]++;
-  }
-
-  // Each index should occur exactly once (count==1)
-  for (i=0; i<n; i++){
-    if (count[i] != 1)
-      status = -2;
-  }
-
-  return status;
 }
 
