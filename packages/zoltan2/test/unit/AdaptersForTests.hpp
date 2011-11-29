@@ -18,13 +18,12 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <Zoltan2_config.h>
+#include <ErrorHandlingForTests.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_CommHelpers.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Xpetra_EpetraUtils.hpp>
 
@@ -41,46 +40,6 @@
 #include <MueLu_MatrixFactory.hpp>
 #include <MueLu_GalleryParameters.hpp>
 
-
-#ifdef HAVE_MPI
-
-#define TEST_FAIL_AND_THROW(comm, ok, s){ \
-int lval=( (ok) ? 0 : 1);       \
-int gval = 0;    \
-Teuchos::reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
-if (gval){ \
-  throw std::runtime_error(std::string(s)); \
-} \
-}
-
-#define TEST_FAIL_AND_EXIT(comm, ok, s, code){ \
-int lval=( (ok) ? 0 : 1);       \
-int gval = 0;    \
-Teuchos::reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
-if (gval){ \
-  if ((comm).getRank() == 0){\
-    std::cerr << "Error: " << s << std::endl;\
-    std::cout << "FAIL" << std::endl;\
-  } \
-  exit(code);\
-} \
-}
-
-#else
-
-#define TEST_FAIL_AND_THROW(comm, ok, s) \
-if (!ok){ \
-  throw std::runtime_error(std::string(s)); \
-} 
-
-#define TEST_FAIL_AND_EXIT(comm, ok, s, code) \
-if (!ok){ \
-  std::cerr << "Error: " << s << std::endl;\
-  std::cout << "FAIL" << std::endl;\
-  exit(code);\
-} 
-
-#endif
 
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;

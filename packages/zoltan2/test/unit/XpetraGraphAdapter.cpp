@@ -8,9 +8,6 @@
 // ***********************************************************************
 //
 // Basic testing of Zoltan2::XpetraCrsGraphInput 
-//
-//   TODO - we just look at the input adapter on stdout.  We should
-//     check in code that it's correct.
 
 #include <string>
 
@@ -41,28 +38,6 @@ typedef UserInputForTests<scalar_t, lno_t, gno_t> uinput_t;
 typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tgraph_t;
 typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
 typedef Epetra_CrsGraph egraph_t;
-
-int globalFail(RCP<const Comm<int> > &comm, int fail)
-{
-  int gfail=0;
-  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &fail, &gfail);
-  return gfail;
-}
-
-void printFailureCode(RCP<const Comm<int> > &comm, int fail)
-{
-  int rank = comm->getRank();
-  int nprocs = comm->getSize();
-  comm->barrier();
-  for (int p=0; p < nprocs; p++){
-    if (p == rank)
-      std::cout << rank << ": " << fail << std::endl;
-    comm->barrier();
-  }
-  comm->barrier();
-  if (rank==0) std::cout << "FAIL" << std::endl;
-  exit(1);
-}
 
 template <typename L, typename G>
   void printGraph(RCP<const Comm<int> > &comm, L nvtx,
@@ -114,9 +89,6 @@ int verifyInputAdapter(
 
   if (!fail && ia.getGlobalNumVertices() != graph.getGlobalNumRows())
     fail = 5;
-
-std::cout << ia.getLocalNumEdges() << std::endl;
-std::cout << graph.getNodeNumEntries() << std::endl;
 
   if (!fail && ia.getLocalNumEdges() != graph.getNodeNumEntries())
       fail = 6;

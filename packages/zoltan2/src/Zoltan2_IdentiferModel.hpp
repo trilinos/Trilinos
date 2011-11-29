@@ -21,7 +21,7 @@
 namespace Zoltan2 {
 
 /*! Zoltan2::IdentifierModel
-    \brief This provides simple IDs and weights to the Zoltan2 algorithm.
+    \brief This class provides simple IDs and weights to the Zoltan2 algorithm.
 
     The template parameter is an Input Adapter.  Input adapters are
     templated on the basic user input type.
@@ -55,10 +55,6 @@ public:
   /*! Returns the dimension (0 or greater) of identifier weights.
    */
   int getIdentifierWeightDim() const { return 0; }
-
-  /*! Returns the base ID, typically 0 or 1.
-   */
-  gno_t getIndexBase() const {return 0;}
 
   /*! Sets pointers to this process' identifier Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
@@ -162,11 +158,6 @@ public:
   /*! Returns the dimension (0 or greater) of identifier weights.
    */
   int getIdentifierWeightDim() const { return weightDim_; }
-
-  /*! Returns the base ID, typically 0 or 1.
-   *    TODO: base has to be added to the IdentifierMap.
-   */
-  gno_t getIndexBase() const {return 0;}
 
   /*! Sets pointers to this process' identifier Ids and their weights.
       \param Ids will on return point to the list of the global Ids for

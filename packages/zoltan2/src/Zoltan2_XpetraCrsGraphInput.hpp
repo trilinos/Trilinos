@@ -83,7 +83,7 @@ public:
       graph_->getLocalRowView(v, nbors);
       offs[v+1] = offs[v] + nbors.size();
       for (lno_t e=offs[v], i=0; e < offs[v+1]; e++)
-        eids[e] = nbors[i++];
+        eids[e] = graph_->getColMap()->getGlobalElement(nbors[i++]);
     }
 
     offs_ = arcp(offs, 0, n, true);

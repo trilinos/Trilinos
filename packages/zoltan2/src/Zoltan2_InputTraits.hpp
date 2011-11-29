@@ -13,12 +13,12 @@ namespace Zoltan2{
 
 // Users who do not have templated input may find it convenient to create a:
 // 
-//   Zoltan2UserTypes<float, int, std::pair<int,int>, int, long> UserTypes
+//   BasicUserTypes<float, int, std::pair<int,int>, int, long> UserTypes
 //
 // and use it to instantiate the InputAdapter.
 //
 template <typename scalar, typename lid, typename gid, typename lno, typename gno>
-class Zoltan2UserTypes{
+class BasicUserTypes{
 };
 
 template <typename User>
@@ -55,7 +55,7 @@ template <typename Scalar,
           typename GID,
           typename LNO,
           typename GNO>
-struct InputTraits<Zoltan2UserTypes<Scalar, LID, GID, LNO, GNO> >
+struct InputTraits<BasicUserTypes<Scalar, LID, GID, LNO, GNO> >
 {
   typedef Scalar        scalar_t;
   typedef LNO lno_t;
@@ -63,7 +63,7 @@ struct InputTraits<Zoltan2UserTypes<Scalar, LID, GID, LNO, GNO> >
   typedef LID lid_t;
   typedef GID gid_t;
   typedef Zoltan2::default_node_t node_t;
-  static inline std::string name() {return "Zoltan2UserTypes";}
+  static inline std::string name() {return "BasicUserTypes";}
 };
 
 // Specialization for Xpetra::CrsMatrix.

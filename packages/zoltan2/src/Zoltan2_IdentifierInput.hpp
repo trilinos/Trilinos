@@ -53,11 +53,11 @@ public:
 
   /*! Return the number of weights associated with each identifier.
    */
-  virtual int getIdentifierWeightDim() const = 0;
+  virtual int getNumWeights() const = 0;
 
   /*! Return the number of identifiers on this process.
    */
-  virtual size_t getNumberOfIdentifiers() const = 0;
+  virtual size_t getLocalNumIds() const = 0;
 
   /*! Sets pointers to this process' identifiers.
       \param Ids will on return point to the list of the global Ids for 
@@ -69,12 +69,12 @@ public:
         global Ids are in local ID order.
       \param wgts will on return point to a list of the weight or weights 
          associated with each element in the Ids list.  Weights are listed by 
-         element by weight component.   NOT IMPLEMENTED YET
+         identifier by weight component.
        \return The number of ids in the Ids list.
    */
 
-  virtual size_t getIdentifierView(const gid_t *&Ids,  const lid_t *&localIds,
-     const scalar_t *&wgts) const = 0;
+  virtual size_t getIdList(const gid_t *&Ids,  const lid_t *&localIds,
+    const scalar_t *&weights) const = 0;
 
   /*! Given a new mapping of identifiers to partitions,
    *    migrate the identifiers to the new partitions.

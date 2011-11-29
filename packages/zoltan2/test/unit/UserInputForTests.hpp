@@ -19,11 +19,12 @@
 #include <iostream>
 #include <string>
 
+#include <ErrorHandlingForTests.hpp>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Comm.hpp>
-#include <Teuchos_CommHelpers.hpp>
 
 #include <Epetra_Vector.h>
 #include <Epetra_CrsMatrix.h>
@@ -47,46 +48,6 @@
 
 #include <Zoltan2_XpetraTraits.hpp>
 
-
-#ifdef HAVE_MPI
-
-#define TEST_FAIL_AND_THROW(comm, ok, s){ \
-int gval, lval=( (ok) ? 0 : 1);       \
-Teuchos::reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
-if (gval){ \
-  throw std::runtime_error(std::string(s)); \
-} \
-}
-
-#define TEST_FAIL_AND_EXIT(comm, ok, s, code){ \
-int gval, lval=( (ok) ? 0 : 1);       \
-Teuchos::reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
-if (gval){ \
-  if ((comm).getRank() == 0){\
-    std::cerr << "Error: " << s << std::endl;\
-    std::cout << "FAIL" << std::endl;\
-  } \
-  exit(code);\
-} \
-}
-
-#else
-
-#define TEST_FAIL_AND_THROW(comm, ok, s){ \
-if (!ok){ \
-  throw std::runtime_error(std::string(s)); \
-} \
-}
-
-#define TEST_FAIL_AND_EXIT(comm, ok, s, code){ \
-if (!ok){ \
-  std::cerr << "Error: " << s << std::endl;\
-  std::cout << "FAIL" << std::endl;\
-} \
-exit(code);\
-}
-
-#endif
 
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;

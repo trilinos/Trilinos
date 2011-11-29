@@ -68,7 +68,7 @@ public:
    * \param gidsMustBeConsecutive  set to true if the algorithm
    *           or third party library requires consective ids
    *           If necessary the IdentifierMap will map the application's
-   *           global IDs to integral IDs beginning at zero.
+   *           global IDs to consecutive integral IDs beginning at zero.
    */
 
   typedef LNO    lno_t;

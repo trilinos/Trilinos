@@ -31,7 +31,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraTraits
-  SOURCES XpetraTraits.cpp UserInputForTests.hpp
+  SOURCES XpetraTraits.cpp UserInputForTests.hpp ErrorHandlingForTests.hpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -66,7 +66,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
  
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraMatrixAdapter
-  SOURCES XpetraMatrixAdapter.cpp UserInputForTests.hpp
+  SOURCES XpetraMatrixAdapter.cpp UserInputForTests.hpp ErrorHandlingForTests.hpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -75,7 +75,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
  
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraGraphAdapter
-  SOURCES XpetraGraphAdapter.cpp UserInputForTests.hpp
+  SOURCES XpetraGraphAdapter.cpp UserInputForTests.hpp ErrorHandlingForTests.hpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -84,7 +84,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraVectorAdapter
-  SOURCES XpetraVectorAdapter.cpp UserInputForTests.hpp
+  SOURCES XpetraVectorAdapter.cpp UserInputForTests.hpp ErrorHandlingForTests.hpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -93,7 +93,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraMultiVectorAdapter
-  SOURCES XpetraMultiVectorAdapter.cpp UserInputForTests.hpp
+  SOURCES XpetraMultiVectorAdapter.cpp UserInputForTests.hpp ErrorHandlingForTests.hpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -102,7 +102,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   GraphModel
-  SOURCES GraphModel.cpp AdaptersForTests.hpp
+  SOURCES GraphModel.cpp AdaptersForTests.hpp ErrorHandlingForTests.hpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BasicIdentifierAdapter
+  SOURCES BasicIdentifierAdapter.cpp AdaptersForTests.hpp ErrorHandlingForTests.hpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"

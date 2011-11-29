@@ -83,10 +83,6 @@ public:
    */
   int getCoordinateDim() const { return 0; }
 
-  /*! Returns the base ID, typically 0 or 1.
-   */
-  gno_t getIndexBase() const {return 0;}
-
   /*! Sets pointers to this process' vertex Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
         each vertex on this process.
@@ -321,10 +317,6 @@ public:
   {
     return 0;   // TODO
   } 
-
-  gno_t getIndexBase() const
-  {
-  }
 
   size_t getVertexList( ArrayView<const gno_t> &Ids,
     ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const

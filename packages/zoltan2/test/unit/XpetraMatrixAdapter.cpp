@@ -8,9 +8,6 @@
 // ***********************************************************************
 //
 // Basic testing of Zoltan2::XpetraCrsMatrixInput 
-//
-//   TODO - we just look at the input adapter on stdout.  We should
-//     check in code that it's correct.
 
 #include <string>
 
@@ -41,26 +38,6 @@ typedef UserInputForTests<scalar_t, lno_t, gno_t> uinput_t;
 typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tmatrix_t;
 typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
 typedef Epetra_CrsMatrix ematrix_t;
-
-int globalFail(RCP<const Comm<int> > &comm, int fail)
-{
-  int gfail=0;
-  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &fail, &gfail);
-  return gfail;
-}
-
-void printFailureCode(RCP<const Comm<int> > &comm, int fail)
-{
-  int rank = comm->getRank();
-  int nprocs = comm->getSize();
-  comm->barrier();
-  for (int p=0; p < nprocs; p++){
-    if (p == rank)
-      std::cout << rank << ": " << fail << std::endl;
-    comm->barrier();
-  }
-  comm->barrier();
-}
 
 template <typename L, typename G>
   void printMatrix(RCP<const Comm<int> > &comm, L nrows,
