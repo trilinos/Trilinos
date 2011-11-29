@@ -789,7 +789,7 @@ static int create_a_graph()
   if (gid_base > 0 && (numGlobalVertices/2) > gid_base){
     /* half of the vertex gids should be below gid_base, the other half at or above */
     if (myRank == 0){
-      printf("ERROR: When using higher order bits, the global number of vertices must be < %ld\n",
+      printf("ERROR: When using higher order bits, the global number of vertices must be < %lld\n",
                  (gid_base)*2);
     }
     MPI_Finalize();

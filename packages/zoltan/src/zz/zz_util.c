@@ -367,7 +367,7 @@ int f, rc;
   c = buf;
   rc = read(f, (void *)c, 1);
 
-  while ((rc==1) && isdigit(c)){
+  while ((rc==1) && isdigit(*c)){
     ++c;
     rc = read(f, (void *)c, 1);
   }
@@ -464,7 +464,7 @@ void Zoltan_get_linux_meminfo(char *msg, char **result)
 int f, n, got_it;
 size_t fsize, rc;
 char *c=NULL, *next=NULL, *c_end;
-char fbuf[64],buf[2048],label[64],value[64],units[64];
+char buf[2048],label[64],value[64],units[64];
 
   *result=NULL;
   f = open("/proc/meminfo", O_RDONLY);

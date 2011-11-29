@@ -19,6 +19,6 @@ int PMPI_Graph_create ( MPI_Comm comm_old, int nnodes, int *index, int *edges,
                       int reorder, MPI_Comm *comm_graph )
 {
   fprintf(stderr,"%s:%d: NOT IMPLEMENTED\n",__FILE__,__LINE__);
-  return MPI_Abort((MPI_Comm)NULL, MPI_UNDEFINED); 
+  return MPI_Abort((MPI_Comm)0, MPI_UNDEFINED); 
 }
 

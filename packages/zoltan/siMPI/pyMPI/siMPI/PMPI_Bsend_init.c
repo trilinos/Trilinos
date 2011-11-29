@@ -20,6 +20,6 @@ int PMPI_Bsend_init( void *buf, int count, MPI_Datatype datatype, int dest,
 {
   _MPI_COVERAGE();
   fprintf(stderr,"%s:%d: NOT IMPLEMENTED\n",__FILE__,__LINE__);
-  return MPI_Abort((MPI_Comm)NULL, MPI_UNDEFINED); 
+  return MPI_Abort((MPI_Comm)0, MPI_UNDEFINED); 
 }
 
