@@ -61,7 +61,7 @@
 
 
 MACRO(TRIBITS_PROJECT_SETUP_EXTRA_OPTIONS)
-  
+    
   ADVANCED_SET(Trilinos_DATA_DIR  NOTFOUND
     CACHE PATH
     "Path TrilinosData directory to find more tests and other stuff" )
