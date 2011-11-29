@@ -643,6 +643,9 @@ sufficient condition for readiness to push.
 def runProjectTestsWithCommandLineArgs(projectName, commandLineArgs):
   from optparse import OptionParser
 
+  projectNameLower = projectName.lower()
+  projectNameUpper = projectName.upper()
+
   clp = OptionParser(usage=usageHelp)
 
   clp.add_option(
@@ -658,8 +661,9 @@ def runProjectTestsWithCommandLineArgs(projectName, commandLineArgs):
     help="Do not check the versions of eg and git, just trust they are okay.",
     default=True )
 
+  sourceDirArgName = "--%s-src-dir" % projectNameLower
   clp.add_option(
-    "--trilinos-src-dir", dest="trilinosSrcDir", type="string",
+    sourceDirArgName, dest="trilinosSrcDir", type="string",
     default='/'.join(getCompleteFileDirname(__file__).split("/")[0:-3]),
     help="The Trilinos source base directory for code to be tested." )
 
@@ -970,7 +974,7 @@ def runProjectTestsWithCommandLineArgs(projectName, commandLineArgs):
     print "  --eg-git-version-check \\"
   else:
     print "  --no-eg-git-version-check \\"
-  print "  --trilinos-src-dir='"+options.trilinosSrcDir+"' \\"
+  print sourceDirArgName + "='" + options.trilinosSrcDir+"' \\"
   print "  --extra-repos='"+options.extraRepos+"' \\"
   if options.skipDepsUpdate:
     print "  --skip-deps-update \\"
