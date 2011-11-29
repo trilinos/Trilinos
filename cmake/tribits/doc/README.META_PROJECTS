@@ -1,0 +1,60 @@
+
+TriBITS defines a system for building a set of interrelated software.
+
+Important concepts:
+
+1) Project:
+* Defines a CMake PROJECT(...)
+* Defines PROJECT_NAME CMake varaible
+* Points to an ordered set of (internal or external) repositories that define
+  packages etc.
+* Defines a default CDash server and default project name on the server
+  (actually, the project name on the CDash server must be the same as
+  ${PROJECT_NAME})
+* Files:
+    CMakeLists.txt
+    CTestConfig.cmake
+    ProjectName.cmake
+    cmake/
+      tribts/  # [optional] Could just be installed
+
+2) Repository (Collection):
+* Defines a CMake variable specific to the collection refered to the
+  in the varaible REPOSITORY_NAME.
+* Defines the base source and binary directories for the repostory:
+  (e.g. Trilinos_HOME_DIR and Trilinos_BUILD_DIR which may *not* be the
+  same as ${PROJECT_NAME}_HOME_DIR and ${PROJECT_NAME}_BUILD_DIR).
+* Contains files that contribute to the build and or tests for a partent
+  project
+* [Optional] Defines a list of add-on packages and and TPLs
+* [Optional] Points to one ore more other VC repositories
+* [Optional] Defines a common set of initializations and other
+  hooks.
+* Files:
+    PackagesList.cmake
+    TPLsList.cmake
+    Copyright.txt  # [Optional] Only needed if creating header file
+    Version.cmake  # [Optional] Only needed if defining own versioning
+    cmake/
+       TribitsCallBackA.cmake # [Optional] Only included once
+       TribitsCallBackB.cmake # [Optional] Only included once
+       TribitsCallBackC.cmake # [Optional] Only included once
+       ...
+
+3) Package:
+* Defines a set of libraries and/or headers and/or executables and/or tests,
+  cmake build targets for building these, and publishes the list of header
+  directories and libraries that are created (along with CMake dependencies).
+* Defines dependenices on upstream TPLs and/or other packages by just 
+  naming the depencenices.
+* Publishes a list of header file include paths and/or libraries
+* Installs an XXXConfig.cmake file that provides the list of this info 
+
+4) TPL:
+* Defines a set of pre-built libraries and/or executables
+* Publishes the include directories and/or libraries and/or executables
+  provided by the TPL
+
+NOTES:
+* A Project and a Repository can be one in the same.  That is a project can
+  provide a set of packages and initializations.
