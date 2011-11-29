@@ -522,7 +522,7 @@ GRAPH_DATA *send_graph;
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, count_tag, 1);
 
-      num = get_line_ints(buf, bufsize, vals);
+      num = get_line_ints(buf, num, vals);
 
       if (num < 2) input_file_error(numProcs, count_tag, 1);
 
