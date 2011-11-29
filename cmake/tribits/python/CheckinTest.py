@@ -1557,13 +1557,13 @@ def getLocalCommitsExist(inOptions, gitRepoName):
   return False
 
 
-def checkinTest(inOptions):
+def checkinTest(baseDir, inOptions):
 
   print "\n**********************************************"
   print "*** Performing checkin testing of Trilinos ***"
   print "**********************************************"
 
-  scriptsDir = getScriptBaseDir()
+  scriptsDir = baseDir
   #print "\nscriptsDir =", scriptsDir
   setattr(inOptions, "scriptsDir", scriptsDir)
 

@@ -56,8 +56,8 @@
 # @HEADER
 
 """
-Script for doing checkin testing of Trilinos.  Please run checkin-test.py -h
-for details
+Script for doing checkin testing of a TriBITS built project.  Please run
+checkin-test.py -h for details
 """
 
 
@@ -79,6 +79,12 @@ checkinTestFileRealPath = os.path.realpath(checkinTestFilePath)
 scriptsDir = os.path.dirname(checkinTestFileRealPath)+"/python"
 print "scriptsDir='"+scriptsDir+"'"
 sys.path.insert(0, scriptsDir)
+
+# For now, we hard code the project name. Later, we will determine a
+# good way to detect this. The important thing right now is that we're
+# setting this from the top and allowing it to cascade down.
+PROJECT_NAME = "Trilinos"
+print "PROJECT_NAME = %s" % PROJECT_NAME
 
 from GeneralScriptSupport import *
 
@@ -102,23 +108,62 @@ showDefaultsOpt = len( set(cmndLineArgs) & set(("--show-defaults", "dummy")) ) >
 # Forward the options but tee the output
 #
 
+class WritableTee(object):
+  """
+  Object that directs all calls to its write method to stdout as well
+  as a file. This is to be used as a simple replacement for the Unix
+  tee command.
+  """
+  def __init__(self, outputfile):
+    """ Constructor takes a file-like object to write output to."""
+    self._realstdout = sys.stdout
+    self._outputfile = outputfile
+
+  def _safe_outputfile_method(self, methodname, *args):
+    """
+    Calls the method specified by methodname with the given args on
+    the internal file object if it is non-null.
+    """
+    if self._outputfile is not None:
+      if hasattr(self._outputfile, methodname):
+        method = getattr(self._outputfile, methodname)
+        if method and callable(method):
+          method(*args)
+
+  def write(self, data):
+    """ Write the given data to stdout and to the log file. """
+    self._realstdout.write(data)
+    self._safe_outputfile_method('write', data)
+
+  def flush(self):
+    """ Flush the internal file buffers. """
+    self._realstdout.flush()
+    self._safe_outputfile_method('flush')
+    
+
 if (not helpOpt) and (not showDefaultsOpt):
-  logFileName = "checkin-test.out"
+  logFile = file("checkin-test.out", "w")
 else:
-  logFileName = ""
+  logFile = None
 
-cmnd = scriptsDir+"/checkin-test-impl.py " + requoteCmndLineArgs(sys.argv[1:])
-
-if logFileName:
-  cmnd = cmnd + " 2>&1 | tee "+logFileName
-
-# This return value is always 0 even if it fails?
-rtnVal = echoRunSysCmnd(cmnd, throwExcept=False)
-
-# Grep the output to determine success or failure
-success = True
-if logFileName and getCmndOutput("grep 'REQUESTED ACTIONS: PASSED' "+logFileName, True, False)=="":
+# There are a lot of print statements in the implementation. It's
+# easier to reset sys.stdout and sys.stderr to our WritableTee object
+# than to replace them.
+teeOutput = WritableTee(logFile)
+originalStdout = sys.stdout
+originalStderr = sys.stderr
+try:
+  sys.stdout = teeOutput
+  sys.stderr = teeOutput
+  from CheckinTestImpl import runProjectTestsWithCommandLineArgs
+  success = runProjectTestsWithCommandLineArgs(PROJECT_NAME, sys.argv[1:])
+except Exception:
   success = False
+  traceback.print_exc(file=teeOutput)
+finally:
+  # Reset stdout and stderr
+  sys.stdout = originalStdout
+  sys.stderr = originalStderr
   
 if success:
   sys.exit(0)

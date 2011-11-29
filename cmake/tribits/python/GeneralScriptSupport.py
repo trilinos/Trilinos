@@ -105,6 +105,8 @@ def getScriptBaseDir():
 def getScriptName():
   return os.path.basename(os.path.dirname(sys.argv[0]))
 
+def getCompleteFileDirname(filename):
+  return os.path.dirname(os.path.realpath(os.path.abspath(filename)))
 
 ######################################
 # List helper functions

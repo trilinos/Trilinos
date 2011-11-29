@@ -640,459 +640,471 @@ sufficient condition for readiness to push.
 
 """
 
-from optparse import OptionParser
+def runProjectTestsWithCommandLineArgs(projectName, commandLineArgs):
+  from optparse import OptionParser
 
-clp = OptionParser(usage=usageHelp)
+  clp = OptionParser(usage=usageHelp)
 
-clp.add_option(
-  "--show-defaults", dest="showDefaults", action="store_true",
-  help="Show the default option values and do nothing at all.",
-  default=False )
+  clp.add_option(
+    "--show-defaults", dest="showDefaults", action="store_true",
+    help="Show the default option values and do nothing at all.",
+    default=False )
 
-clp.add_option(
-  "--eg-git-version-check", dest="enableEgGitVersionCheck", action="store_true",
-  help="Enable automatic check for the right versions of eg and git. [default]" )
-clp.add_option(
-  "--no-eg-git-version-check", dest="enableEgGitVersionCheck", action="store_false",
-  help="Do not check the versions of eg and git, just trust they are okay.",
-  default=True )
+  clp.add_option(
+    "--eg-git-version-check", dest="enableEgGitVersionCheck", action="store_true",
+    help="Enable automatic check for the right versions of eg and git. [default]" )
+  clp.add_option(
+    "--no-eg-git-version-check", dest="enableEgGitVersionCheck", action="store_false",
+    help="Do not check the versions of eg and git, just trust they are okay.",
+    default=True )
 
-clp.add_option(
-  "--trilinos-src-dir", dest="trilinosSrcDir", type="string",
-  default='/'.join(getScriptBaseDir().split("/")[0:-3]),
-  help="The Trilinos source base directory for code to be tested." )
+  clp.add_option(
+    "--trilinos-src-dir", dest="trilinosSrcDir", type="string",
+    default='/'.join(getCompleteFileDirname(__file__).split("/")[0:-3]),
+    help="The Trilinos source base directory for code to be tested." )
 
-clp.add_option(
-  "--extra-repos", dest="extraRepos", type="string", default="",
-  help="List of comma separated extra Trilinos repos " \
-  +"(e.g. 'preCopyrightTrilinos,LIMEExt') containing extra " \
-  +"trilinos packages that can be enabled.  The order these repos is "
-  +"listed in not important.")
+  clp.add_option(
+    "--extra-repos", dest="extraRepos", type="string", default="",
+    help="List of comma separated extra Trilinos repos " \
+    +"(e.g. 'preCopyrightTrilinos,LIMEExt') containing extra " \
+    +"trilinos packages that can be enabled.  The order these repos is "
+    +"listed in not important.")
 
-clp.add_option(
-  "--skip-deps-update", dest="skipDepsUpdate", action="store_true",
-  help="If set, skip the update of the dependency XML file (debug only).",
-  default=False )
+  clp.add_option(
+    "--skip-deps-update", dest="skipDepsUpdate", action="store_true",
+    help="If set, skip the update of the dependency XML file (debug only).",
+    default=False )
 
-clp.add_option(
-  "--enable-packages", dest="enablePackages", type="string", default="",
-  help="List of comma separated Trilinos packages to test changes for" \
-  +" (example, 'Teuchos,Epetra').  If this list of packages is empty, then" \
-  +" the list of packages to enable will be determined automatically by examining" \
-  +" the set of modified files from the version control update log." )
+  clp.add_option(
+    "--enable-packages", dest="enablePackages", type="string", default="",
+    help="List of comma separated Trilinos packages to test changes for" \
+    +" (example, 'Teuchos,Epetra').  If this list of packages is empty, then" \
+    +" the list of packages to enable will be determined automatically by examining" \
+    +" the set of modified files from the version control update log." )
 
-clp.add_option(
-  "--disable-packages", dest="disablePackages", type="string", default="",
-  help="List of comma separated Trilinos packages to explicitly disable" \
-  +" (example, 'Tpetra,NOX').  This list of disables will be appended after" \
-  +" all of the listed enables no mater how they are determined (see" \
-  +" --enable-packages option).  NOTE: Only use this option to remove packages" \
-  +" that will not build for some reason.  You can disable tests that run" \
-  +" by using the CTest option -E passed through the --ctest-options argument" \
-  +" in this script." )
+  clp.add_option(
+    "--disable-packages", dest="disablePackages", type="string", default="",
+    help="List of comma separated Trilinos packages to explicitly disable" \
+    +" (example, 'Tpetra,NOX').  This list of disables will be appended after" \
+    +" all of the listed enables no mater how they are determined (see" \
+    +" --enable-packages option).  NOTE: Only use this option to remove packages" \
+    +" that will not build for some reason.  You can disable tests that run" \
+    +" by using the CTest option -E passed through the --ctest-options argument" \
+    +" in this script." )
 
-addOptionParserChoiceOption(
-  "--enable-all-packages", "enableAllPackages", ('auto', 'on', 'off'), 0,
-  "Determine if all Trilinos packages are enabled 'on', or 'off', or let" \
-  +" other logic decide 'auto'.  Setting to 'off' is appropriate when" \
-  +" the logic in this script determines that a global build file has changed" \
-  +" but you know that you don't need to rebuild every Trilinos package for" \
-  +" a reasonable test.  Setting --enable-packages effectively disables this" \
-  +" option.  NOTE: Setting this to 'off' does *not* stop the forward enabling" \
-  +" of downstream packages for packages that are modified or set by --enable-packages." \
-  +"  This only stops the setting of -DTrilinos_ENABLE_ALL_PAKCAGES:BOOL=ON.",
-  clp )
+  addOptionParserChoiceOption(
+    "--enable-all-packages", "enableAllPackages", ('auto', 'on', 'off'), 0,
+    "Determine if all Trilinos packages are enabled 'on', or 'off', or let" \
+    +" other logic decide 'auto'.  Setting to 'off' is appropriate when" \
+    +" the logic in this script determines that a global build file has changed" \
+    +" but you know that you don't need to rebuild every Trilinos package for" \
+    +" a reasonable test.  Setting --enable-packages effectively disables this" \
+    +" option.  NOTE: Setting this to 'off' does *not* stop the forward enabling" \
+    +" of downstream packages for packages that are modified or set by --enable-packages." \
+    +"  This only stops the setting of -DTrilinos_ENABLE_ALL_PAKCAGES:BOOL=ON.",
+    clp )
 
-clp.add_option(
-  "--enable-fwd-packages", dest="enableFwdPackages", action="store_true",
-  help="Enable forward Trilinos packages. [default]" )
-clp.add_option(
-  "--no-enable-fwd-packages", dest="enableFwdPackages", action="store_false",
-  help="Do not enable forward Trilinos packages.", default=True )
+  clp.add_option(
+    "--enable-fwd-packages", dest="enableFwdPackages", action="store_true",
+    help="Enable forward Trilinos packages. [default]" )
+  clp.add_option(
+    "--no-enable-fwd-packages", dest="enableFwdPackages", action="store_false",
+    help="Do not enable forward Trilinos packages.", default=True )
 
-clp.add_option(
-  "--continue-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_false",
-  help="If set, then the script will continue if no updates are pulled from any repo. [default]",
-  default=False )
-clp.add_option(
-  "--abort-gracefully-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_true",
-  help="If set, then the script will abort gracefully if no updates are pulled from any repo.",
-  default=False )
+  clp.add_option(
+    "--continue-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_false",
+    help="If set, then the script will continue if no updates are pulled from any repo. [default]",
+    default=False )
+  clp.add_option(
+    "--abort-gracefully-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_true",
+    help="If set, then the script will abort gracefully if no updates are pulled from any repo.",
+    default=False )
 
-clp.add_option(
-  "--continue-if-no-enables", dest="abortGracefullyIfNoEnables", action="store_false",
-  help="If set, then the script will continue if no packages are enabled. [default]",
-  default=False )
-clp.add_option(
-  "--abort-gracefully-if-no-enables", dest="abortGracefullyIfNoEnables", action="store_true",
-  help="If set, then the script will abort gracefully if no packages are enabled.",
-  default=False )
+  clp.add_option(
+    "--continue-if-no-enables", dest="abortGracefullyIfNoEnables", action="store_false",
+    help="If set, then the script will continue if no packages are enabled. [default]",
+    default=False )
+  clp.add_option(
+    "--abort-gracefully-if-no-enables", dest="abortGracefullyIfNoEnables", action="store_true",
+    help="If set, then the script will abort gracefully if no packages are enabled.",
+    default=False )
 
-clp.add_option(
-  "--extra-cmake-options", dest="extraCmakeOptions", type="string", default="",
-  help="Extra options to pass to 'cmake' after all other options." \
-  +" This should be used only as a last resort.  To disable packages, instead use" \
-  +" --disable-packages." )
+  clp.add_option(
+    "--extra-cmake-options", dest="extraCmakeOptions", type="string", default="",
+    help="Extra options to pass to 'cmake' after all other options." \
+    +" This should be used only as a last resort.  To disable packages, instead use" \
+    +" --disable-packages." )
 
-clp.add_option(
-  "-j", dest="overallNumProcs", type="string", default="",
-  help="The options to pass to make and ctest (e.g. -j4)." )
+  clp.add_option(
+    "-j", dest="overallNumProcs", type="string", default="",
+    help="The options to pass to make and ctest (e.g. -j4)." )
 
-clp.add_option(
-  "--make-options", dest="makeOptions", type="string", default="",
-  help="The options to pass to make (e.g. -j4)." )
+  clp.add_option(
+    "--make-options", dest="makeOptions", type="string", default="",
+    help="The options to pass to make (e.g. -j4)." )
 
-clp.add_option(
-  "--ctest-options", dest="ctestOptions", type="string", default="",
-  help="Extra options to pass to 'ctest' (e.g. -j2)." )
+  clp.add_option(
+    "--ctest-options", dest="ctestOptions", type="string", default="",
+    help="Extra options to pass to 'ctest' (e.g. -j2)." )
 
-clp.add_option(
-  "--ctest-timeout", dest="ctestTimeOut", type="float", default=300,
-  help="timeout (in seconds) for each single 'ctest' test (e.g. 180" \
-  +" for three minutes)." )
+  clp.add_option(
+    "--ctest-timeout", dest="ctestTimeOut", type="float", default=300,
+    help="timeout (in seconds) for each single 'ctest' test (e.g. 180" \
+    +" for three minutes)." )
 
-clp.add_option(
-  "--show-all-tests", dest="showAllTests", action="store_true",
-  help="Show all of the tests in the summary email and in the commit message" \
-  +" summary (see --append-test-results)." )
-clp.add_option(
-  "--no-show-all-tests", dest="showAllTests", action="store_false",
-  help="Don't show all of the test results in the summary email. [default]",
-  default=False )
+  clp.add_option(
+    "--show-all-tests", dest="showAllTests", action="store_true",
+    help="Show all of the tests in the summary email and in the commit message" \
+    +" summary (see --append-test-results)." )
+  clp.add_option(
+    "--no-show-all-tests", dest="showAllTests", action="store_false",
+    help="Don't show all of the test results in the summary email. [default]",
+    default=False )
 
-clp.add_option(
-  "--without-mpi-debug", dest="withMpiDebug", action="store_false",
-  help="Skip the mpi debug build.", default=True )
+  clp.add_option(
+    "--without-mpi-debug", dest="withMpiDebug", action="store_false",
+    help="Skip the mpi debug build.", default=True )
 
-clp.add_option(
-  "--without-serial-release", dest="withSerialRelease", action="store_false",
-  help="Skip the serial release build.", default=True )
+  clp.add_option(
+    "--without-serial-release", dest="withSerialRelease", action="store_false",
+    help="Skip the serial release build.", default=True )
 
-clp.add_option(
-  "--without-default-builds", dest="withoutDefaultBuilds", action="store_true",
-  default=False,
-    help="Skip the default builds (same as --without-mpi-debug --without-serial-release)." \
-    +"  You would use option along with --extra-builds=BUILD1,BUILD2,... to run your own" \
-    +" local custom builds." )
+  clp.add_option(
+    "--without-default-builds", dest="withoutDefaultBuilds", action="store_true",
+    default=False,
+      help="Skip the default builds (same as --without-mpi-debug --without-serial-release)." \
+      +"  You would use option along with --extra-builds=BUILD1,BUILD2,... to run your own" \
+      +" local custom builds." )
 
-clp.add_option(
-  "--ss-extra-builds", dest="ssExtraBuilds", type="string", default="",
-  help="List of comma-separated SS extra build names.  For each of the build names in" \
-  +" --ss-extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
-  +" the local directory along side the COMMON.config file that defines the special" \
-  +" build options for the extra build." )
+  clp.add_option(
+    "--ss-extra-builds", dest="ssExtraBuilds", type="string", default="",
+    help="List of comma-separated SS extra build names.  For each of the build names in" \
+    +" --ss-extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
+    +" the local directory along side the COMMON.config file that defines the special" \
+    +" build options for the extra build." )
 
-clp.add_option(
-  "--extra-builds", dest="extraBuilds", type="string", default="",
-  help="List of comma-separated extra build names.  For each of the build names in" \
-  +" --extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
-  +" the local directory along side the COMMON.config file that defines the special" \
-  +" build options for the extra build." )
+  clp.add_option(
+    "--extra-builds", dest="extraBuilds", type="string", default="",
+    help="List of comma-separated extra build names.  For each of the build names in" \
+    +" --extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
+    +" the local directory along side the COMMON.config file that defines the special" \
+    +" build options for the extra build." )
 
-clp.add_option(
-  "--send-email-to", dest="sendEmailTo", type="string",
-  default=getCmndOutput("git config --get user.email", True, False),
-  help="List of comma-separated email addresses to send email notification to" \
-  +" after every build/test case finishes and at the end for an overall summary" \
-  +" and push status." \
-  +"  By default, this is the email address you set for git returned by" \
-  +" `git config --get user.email`.  In order to turn off email" \
-  +" notification, just set --send-email-to='' and no email will be sent." )
+  clp.add_option(
+    "--send-email-to", dest="sendEmailTo", type="string",
+    default=getCmndOutput("git config --get user.email", True, False),
+    help="List of comma-separated email addresses to send email notification to" \
+    +" after every build/test case finishes and at the end for an overall summary" \
+    +" and push status." \
+    +"  By default, this is the email address you set for git returned by" \
+    +" `git config --get user.email`.  In order to turn off email" \
+    +" notification, just set --send-email-to='' and no email will be sent." )
 
-clp.add_option(
-  "--skip-case-send-email", dest="skipCaseSendEmail", action="store_true",
-  help="If set then if a build/test case is skipped for some reason (i.e." \
-  +" because no packages are enabled) then an email will go out for that case." \
-  +" [default]" )
-clp.add_option(
-  "--skip-case-no-email", dest="skipCaseSendEmail", action="store_false",
-  help="If set then if a build/test case is skipped for some reason (i.e." \
-  +" because no packages are enabled) then no email will go out for that case." \
-  +" [default]",
-  default=True )
+  clp.add_option(
+    "--skip-case-send-email", dest="skipCaseSendEmail", action="store_true",
+    help="If set then if a build/test case is skipped for some reason (i.e." \
+    +" because no packages are enabled) then an email will go out for that case." \
+    +" [default]" )
+  clp.add_option(
+    "--skip-case-no-email", dest="skipCaseSendEmail", action="store_false",
+    help="If set then if a build/test case is skipped for some reason (i.e." \
+    +" because no packages are enabled) then no email will go out for that case." \
+    +" [default]",
+    default=True )
 
-clp.add_option(
-  "--send-email-for-all", dest="sendEmailOnlyOnFailure", action="store_false",
-  help="If set, then emails will get sent out for all operations. [default]" )
-clp.add_option(
-  "--send-email-only-on-failure", dest="sendEmailOnlyOnFailure", action="store_true",
-  help="If set, then emails will only get sent out for failures.",
-  default=False )
+  clp.add_option(
+    "--send-email-for-all", dest="sendEmailOnlyOnFailure", action="store_false",
+    help="If set, then emails will get sent out for all operations. [default]" )
+  clp.add_option(
+    "--send-email-only-on-failure", dest="sendEmailOnlyOnFailure", action="store_true",
+    help="If set, then emails will only get sent out for failures.",
+    default=False )
 
-clp.add_option(
-  "--send-email-to-on-push", dest="sendEmailToOnPush", type="string",
-  default="trilinos-checkin-tests@software.sandia.gov",
-  help="List of comma-separated email addresses to send email notification to" \
-  +" on a successful push.  This is used to log pushes to a central list." \
-  +"  In order to turn off this email" \
-  +" notification, just set --send-email-to-on-push='' and no email will be sent" \
-  +" to these email lists." )
+  clp.add_option(
+    "--send-email-to-on-push", dest="sendEmailToOnPush", type="string",
+    default="trilinos-checkin-tests@software.sandia.gov",
+    help="List of comma-separated email addresses to send email notification to" \
+    +" on a successful push.  This is used to log pushes to a central list." \
+    +"  In order to turn off this email" \
+    +" notification, just set --send-email-to-on-push='' and no email will be sent" \
+    +" to these email lists." )
 
-clp.add_option(
-  "--force-push", dest="forcePush", action="store_true",
-  help="Force the local push even if there are build/test errors." \
-  +" WARNING: Only do this when you are 100% certain that the errors are not" \
-  +" caused by your code changes.  This only applies when --push is specified" \
-  +" and this script.")
-clp.add_option(
-  "--no-force-push", dest="forcePush", action="store_false", default=False,
-  help="Do not force a push if there are failures. [default]" )
+  clp.add_option(
+    "--force-push", dest="forcePush", action="store_true",
+    help="Force the local push even if there are build/test errors." \
+    +" WARNING: Only do this when you are 100% certain that the errors are not" \
+    +" caused by your code changes.  This only applies when --push is specified" \
+    +" and this script.")
+  clp.add_option(
+    "--no-force-push", dest="forcePush", action="store_false", default=False,
+    help="Do not force a push if there are failures. [default]" )
 
-clp.add_option(
-  "--do-push-readiness-check", dest="doPushReadinessCheck", action="store_true",
-  help="Check the push readiness status at the end and send email if not actually" \
-  +" pushing. [default]" )
-clp.add_option(
-  "--skip-push-readiness-check", dest="doPushReadinessCheck", action="store_false",
-  default=True,
-  help="Skip push status check." )
+  clp.add_option(
+    "--do-push-readiness-check", dest="doPushReadinessCheck", action="store_true",
+    help="Check the push readiness status at the end and send email if not actually" \
+    +" pushing. [default]" )
+  clp.add_option(
+    "--skip-push-readiness-check", dest="doPushReadinessCheck", action="store_false",
+    default=True,
+    help="Skip push status check." )
 
-clp.add_option(
-  "--rebase", dest="rebase", action="store_true",
-  help="Rebase the local commits on top of origin/master before amending" \
-  +" the last commit and pushing.  Rebasing keeps a nice linear commit" \
-  +" history like with CVS or SVN and will work perfectly for the basic" \
-  +" workflow of adding commits to the 'master' branch and then syncing" \
-  +" up with origin/master before the final push. [default]" )
-clp.add_option(
-  "--no-rebase", dest="rebase", action="store_false",
-  help="Do not rebase the local commits on top of origin/master before" \
-  +" amending the final commit and pushing.  This allows for some more " \
-  +" complex workflows involving local branches with multiple merges." \
-  +"  However, this will result in non-linear history and will allow for" \
-  +" trivial merge commits with origin/master to get pushed.  This mode" \
-  +" should only be used in cases where the rebase mode will not work or " \
-  +" when it is desired to use a merge commit to integrate changes on a" \
-  +" branch that you wish be able to easily back out.  For sophisticated" \
-  +" users of git, this may in fact be the prefered mode.",
-  default=True )
+  clp.add_option(
+    "--rebase", dest="rebase", action="store_true",
+    help="Rebase the local commits on top of origin/master before amending" \
+    +" the last commit and pushing.  Rebasing keeps a nice linear commit" \
+    +" history like with CVS or SVN and will work perfectly for the basic" \
+    +" workflow of adding commits to the 'master' branch and then syncing" \
+    +" up with origin/master before the final push. [default]" )
+  clp.add_option(
+    "--no-rebase", dest="rebase", action="store_false",
+    help="Do not rebase the local commits on top of origin/master before" \
+    +" amending the final commit and pushing.  This allows for some more " \
+    +" complex workflows involving local branches with multiple merges." \
+    +"  However, this will result in non-linear history and will allow for" \
+    +" trivial merge commits with origin/master to get pushed.  This mode" \
+    +" should only be used in cases where the rebase mode will not work or " \
+    +" when it is desired to use a merge commit to integrate changes on a" \
+    +" branch that you wish be able to easily back out.  For sophisticated" \
+    +" users of git, this may in fact be the prefered mode.",
+    default=True )
 
-clp.add_option(
-  "--append-test-results", dest="appendTestResults", action="store_true",
-  help="Before the final push, amend the most recent local commit by appending a" \
-  +" summary of the test results.  This provides a record of what builds" \
-  +" and tests were performed in order to test the local changes.  This is only " \
-  +" performed if --push is also set.  NOTE: If the same" \
-  +" local commit is amended more than once, the prior test summary sections will be" \
-  +" overwritten with the most recent test results from the current run. [default]" )
-clp.add_option(
-  "--no-append-test-results", dest="appendTestResults", action="store_false",
-  help="Do not amend the last local commit with test results.  NOTE: If you have" \
-  +" uncommitted local changes that you do not want this script to commit then you" \
-  +" must select this option to avoid this last amending commit.",
-  default=True )
+  clp.add_option(
+    "--append-test-results", dest="appendTestResults", action="store_true",
+    help="Before the final push, amend the most recent local commit by appending a" \
+    +" summary of the test results.  This provides a record of what builds" \
+    +" and tests were performed in order to test the local changes.  This is only " \
+    +" performed if --push is also set.  NOTE: If the same" \
+    +" local commit is amended more than once, the prior test summary sections will be" \
+    +" overwritten with the most recent test results from the current run. [default]" )
+  clp.add_option(
+    "--no-append-test-results", dest="appendTestResults", action="store_false",
+    help="Do not amend the last local commit with test results.  NOTE: If you have" \
+    +" uncommitted local changes that you do not want this script to commit then you" \
+    +" must select this option to avoid this last amending commit.",
+    default=True )
 
-clp.add_option(
-  "--extra-pull-from", dest="extraPullFrom", type="string", default="",
-  help="Optional extra git pull '<repository>:<branch>' to merge in changes from after" \
-  +" pulling in changes from 'origin'.  This option uses a colon with no spaces in between" \
-  +" <repository>:<branch>' to avoid issues with passing arguments with spaces." \
-  +"  For example --extra-pull-from=machine:/base/dir/repo:master." \
-  +"  This extra pull is only done if --pull is also specified.  NOTE: when using" \
-  +" --extra-repo=REPO1,REPO2,... the <repository> must be a named repository that is" \
-  +" present in all of the git repos or it will be an error." )
+  clp.add_option(
+    "--extra-pull-from", dest="extraPullFrom", type="string", default="",
+    help="Optional extra git pull '<repository>:<branch>' to merge in changes from after" \
+    +" pulling in changes from 'origin'.  This option uses a colon with no spaces in between" \
+    +" <repository>:<branch>' to avoid issues with passing arguments with spaces." \
+    +"  For example --extra-pull-from=machine:/base/dir/repo:master." \
+    +"  This extra pull is only done if --pull is also specified.  NOTE: when using" \
+    +" --extra-repo=REPO1,REPO2,... the <repository> must be a named repository that is" \
+    +" present in all of the git repos or it will be an error." )
 
-clp.add_option(
-  "--allow-no-pull", dest="allowNoPull", action="store_true", default=False,
-  help="Allowing for there to be no pull performed and still doing the other actions." \
-  +"  This option is useful for testing against local changes without having to" \
-  +" get the updates from the global repo.  However, if you don't pull, you can't" \
-  +" push your changes to the global repo.  WARNING: This does *not* stop a pull" \
-  +" attempt from being performed by --pull or --do-all!" )
+  clp.add_option(
+    "--allow-no-pull", dest="allowNoPull", action="store_true", default=False,
+    help="Allowing for there to be no pull performed and still doing the other actions." \
+    +"  This option is useful for testing against local changes without having to" \
+    +" get the updates from the global repo.  However, if you don't pull, you can't" \
+    +" push your changes to the global repo.  WARNING: This does *not* stop a pull" \
+    +" attempt from being performed by --pull or --do-all!" )
 
-clp.add_option(
-  "--wipe-clean", dest="wipeClean", action="store_true", default=False,
-  help="[ACTION] Blow existing build directories and build/test results.  The action can be" \
-  +" performed on its own or with other actions in which case the wipe clean will be" \
-  +" performed before any other actions. NOTE: This will only wipe clean the builds" \
-  +" that are specified and will not touch those being ignored (e.g. SERIAL_RELEASE" \
-  +" will not be removed if --without-serial-release is specified)." )
+  clp.add_option(
+    "--wipe-clean", dest="wipeClean", action="store_true", default=False,
+    help="[ACTION] Blow existing build directories and build/test results.  The action can be" \
+    +" performed on its own or with other actions in which case the wipe clean will be" \
+    +" performed before any other actions. NOTE: This will only wipe clean the builds" \
+    +" that are specified and will not touch those being ignored (e.g. SERIAL_RELEASE" \
+    +" will not be removed if --without-serial-release is specified)." )
 
-clp.add_option(
-  "--pull", dest="doPull", action="store_true", default=False,
-  help="[ACTION] Do the pull from the default (origin) repository and optionally also" \
-    +" merge in changes from the repo pointed to by --extra-pull-from." )
+  clp.add_option(
+    "--pull", dest="doPull", action="store_true", default=False,
+    help="[ACTION] Do the pull from the default (origin) repository and optionally also" \
+      +" merge in changes from the repo pointed to by --extra-pull-from." )
 
-clp.add_option(
-  "--configure", dest="doConfigure", action="store_true", default=False,
-  help="[ACTION] Do the configure of Trilinos." )
+  clp.add_option(
+    "--configure", dest="doConfigure", action="store_true", default=False,
+    help="[ACTION] Do the configure of Trilinos." )
 
-clp.add_option(
-  "--build", dest="doBuild", action="store_true", default=False,
-  help="[ACTION] Do the build of Trilinos." )
+  clp.add_option(
+    "--build", dest="doBuild", action="store_true", default=False,
+    help="[ACTION] Do the build of Trilinos." )
 
-clp.add_option(
-  "--test", dest="doTest", action="store_true", default=False,
-  help="[ACTION] Do the running of the enabled Trilinos tests." )
+  clp.add_option(
+    "--test", dest="doTest", action="store_true", default=False,
+    help="[ACTION] Do the running of the enabled Trilinos tests." )
 
-clp.add_option(
-  "--local-do-all", dest="localDoAll", action="store_true", default=False,
-  help="[AGGR ACTION] Do configure, build, and test with no pull (same as setting" \
-  +" --allow-no-pull ---configure --build --test)." \
-  +"  This is the same as --do-all except it does not do --pull and also allows for no pull." )
+  clp.add_option(
+    "--local-do-all", dest="localDoAll", action="store_true", default=False,
+    help="[AGGR ACTION] Do configure, build, and test with no pull (same as setting" \
+    +" --allow-no-pull ---configure --build --test)." \
+    +"  This is the same as --do-all except it does not do --pull and also allows for no pull." )
 
-clp.add_option(
-  "--do-all", dest="doAll", action="store_true", default=False,
-  help="[AGGR ACTION] Do update, configure, build, and test (same as --pull --configure" \
-  +" --build --test).  NOTE: This will do a --pull regardless if --allow-no-pull" \
-  +" is set or not.  To avoid the pull, use --local-do-all." )
+  clp.add_option(
+    "--do-all", dest="doAll", action="store_true", default=False,
+    help="[AGGR ACTION] Do update, configure, build, and test (same as --pull --configure" \
+    +" --build --test).  NOTE: This will do a --pull regardless if --allow-no-pull" \
+    +" is set or not.  To avoid the pull, use --local-do-all." )
 
-clp.add_option(
-  "--push", dest="doPush", action="store_true", default=False,
-  help="[ACTION] Push the committed changes in the local repo into to global repo" \
-    +" 'origin' for the current branch.  Note: If you have uncommitted changes this" \
-    +" command will fail.  Note: You must have SSH public/private keys set up with" \
-    +" the origin machine (e.g. software.sandia.gov) for the push to happen without" \
-    +" having to type your password." )
+  clp.add_option(
+    "--push", dest="doPush", action="store_true", default=False,
+    help="[ACTION] Push the committed changes in the local repo into to global repo" \
+      +" 'origin' for the current branch.  Note: If you have uncommitted changes this" \
+      +" command will fail.  Note: You must have SSH public/private keys set up with" \
+      +" the origin machine (e.g. software.sandia.gov) for the push to happen without" \
+      +" having to type your password." )
 
-clp.add_option(
-  "--execute-on-ready-to-push", dest="executeOnReadyToPush", type="string", default="",
-  help="[ACTION] A command to execute on successful execution and 'READY TO PUSH'" \
-  +" status from this script.  This can be used to do a remote SSH invocation to a" \
-  +" remote machine to do a remote pull/test/push after this machine finishes." )
+  clp.add_option(
+    "--execute-on-ready-to-push", dest="executeOnReadyToPush", type="string", default="",
+    help="[ACTION] A command to execute on successful execution and 'READY TO PUSH'" \
+    +" status from this script.  This can be used to do a remote SSH invocation to a" \
+    +" remote machine to do a remote pull/test/push after this machine finishes." )
 
-(options, args) = clp.parse_args()
+  (options, args) = clp.parse_args(args=commandLineArgs)
 
-# NOTE: Above, in the pairs of boolean options, the *last* add_option(...) 
-# takes effect!  That is why the commands are ordered the way they are!
-
-
-#
-# Echo the command-line
-#
-
-print ""
-print "**************************************************************************"
-print "Script: checkin-test.py \\"
-
-if options.enableEgGitVersionCheck:
-  print "  --eg-git-version-check \\"
-else:
-  print "  --no-eg-git-version-check \\"
-print "  --trilinos-src-dir='"+options.trilinosSrcDir+"' \\"
-print "  --extra-repos='"+options.extraRepos+"' \\"
-if options.skipDepsUpdate:
-  print "  --skip-deps-update \\"
-print "  --enable-packages='"+options.enablePackages+"' \\"
-print "  --disable-packages='"+options.disablePackages+"' \\"
-print "  --enable-all-packages='"+options.enableAllPackages+"'\\"
-if options.enableFwdPackages:
-  print "  --enable-fwd-packages \\"
-else:
-  print "  --no-enable-fwd-packages \\"
-if options.abortGracefullyIfNoUpdates:
-  print "  --abort-gracefully-if-no-updates \\"
-else:
-  print "  --continue-if-no-updates \\"
-if options.abortGracefullyIfNoEnables:
-  print "  --abort-gracefully-if-no-enables \\"
-else:
-  print "  --continue-if-no-enables \\"
-print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
-if options.overallNumProcs:
-  print "  -j"+options.overallNumProcs+" \\"
-print "  --make-options='"+options.makeOptions+"' \\"
-print "  --ctest-options='"+options.ctestOptions+"' \\"
-print "  --ctest-timeout="+str(options.ctestTimeOut)+" \\"
-if options.showAllTests:
-  print "  --show-all-tests \\"
-else:
-  print "  --no-show-all-tests \\"
-if not options.withMpiDebug:
-  print "  --without-mpi-debug \\" 
-if not options.withSerialRelease:
-  print "  --without-serial-release \\" 
-if options.withoutDefaultBuilds:
-  print "  --without-default-builds \\" 
-print "  --ss-extra-builds='"+options.ssExtraBuilds+"' \\"
-print "  --extra-builds='"+options.extraBuilds+"' \\"
-print "  --send-email-to='"+options.sendEmailTo+"' \\"
-if options.skipCaseSendEmail:
-  print "  --skip-case-send-email \\"
-else:
-  print "  --skip-case-no-email \\"
-if not options.sendEmailOnlyOnFailure:
-  print "  --send-email-for-all \\"
-else:
-  print "  --send-email-only-on-failure \\ "
-print "  --send-email-to-on-push='"+options.sendEmailToOnPush+"' \\"
-if options.forcePush:
-  print "  --force-push \\"
-else:
-  print "  --no-force-push \\"
-if options.doPushReadinessCheck:
-  print "  --do-push-readiness-check \\"
-else:
-  print "  --skip-push-readiness-check \\"
-if options.rebase:
-  print "  --rebase \\"
-else:
-  print "  --no-rebase \\"
-if options.appendTestResults:
-  print "  --append-test-results \\"
-else:
-  print "  --no-append-test-results \\"
-if options.extraPullFrom:
-  print "  --extra-pull-from='"+options.extraPullFrom+"' \\"
-if options.allowNoPull:
-  print "  --allow-no-pull \\"
-if options.wipeClean:
-  print "  --wipe-clean \\"
-if options.doPull:
-  print "  --pull \\"
-if options.doConfigure:
-  print "  --configure \\"
-if options.doBuild:
-  print "  --build \\"
-if options.doTest:
-  print "  --test \\"
-if options.localDoAll:
-  print "  --local-do-all \\"
-if options.doAll:
-  print "  --do-all \\"
-if options.doPush:
-  print "  --push \\"
-if options.executeOnReadyToPush:
-  print "  --execute-on-ready-to-push=("+options.executeOnReadyToPush+") \\"
+  # NOTE: Above, in the pairs of boolean options, the *last* add_option(...) 
+  # takes effect!  That is why the commands are ordered the way they are!
 
 
-#
-# Check the input arguments
-#
+  #
+  # Echo the command-line
+  #
 
-if options.doAll and options.localDoAll:
-  print "\nError, you can not use --do-all and --local-do-all together!  Use on or the other!"
-  sys.exit(1)
+  print ""
+  print "**************************************************************************"
+  print "Script: checkin-test.py \\"
 
-if options.doAll and options.allowNoPull:
-  print "\nError, you can not use --do-all and --allow-no-pull together! (see the" \
-    " documentation for the --do-all, --local-do-all, and --allow-no-pull arguments.)"
-  sys.exit(2)
+  if options.enableEgGitVersionCheck:
+    print "  --eg-git-version-check \\"
+  else:
+    print "  --no-eg-git-version-check \\"
+  print "  --trilinos-src-dir='"+options.trilinosSrcDir+"' \\"
+  print "  --extra-repos='"+options.extraRepos+"' \\"
+  if options.skipDepsUpdate:
+    print "  --skip-deps-update \\"
+  print "  --enable-packages='"+options.enablePackages+"' \\"
+  print "  --disable-packages='"+options.disablePackages+"' \\"
+  print "  --enable-all-packages='"+options.enableAllPackages+"'\\"
+  if options.enableFwdPackages:
+    print "  --enable-fwd-packages \\"
+  else:
+    print "  --no-enable-fwd-packages \\"
+  if options.abortGracefullyIfNoUpdates:
+    print "  --abort-gracefully-if-no-updates \\"
+  else:
+    print "  --continue-if-no-updates \\"
+  if options.abortGracefullyIfNoEnables:
+    print "  --abort-gracefully-if-no-enables \\"
+  else:
+    print "  --continue-if-no-enables \\"
+  print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
+  if options.overallNumProcs:
+    print "  -j"+options.overallNumProcs+" \\"
+  print "  --make-options='"+options.makeOptions+"' \\"
+  print "  --ctest-options='"+options.ctestOptions+"' \\"
+  print "  --ctest-timeout="+str(options.ctestTimeOut)+" \\"
+  if options.showAllTests:
+    print "  --show-all-tests \\"
+  else:
+    print "  --no-show-all-tests \\"
+  if not options.withMpiDebug:
+    print "  --without-mpi-debug \\" 
+  if not options.withSerialRelease:
+    print "  --without-serial-release \\" 
+  if options.withoutDefaultBuilds:
+    print "  --without-default-builds \\" 
+  print "  --ss-extra-builds='"+options.ssExtraBuilds+"' \\"
+  print "  --extra-builds='"+options.extraBuilds+"' \\"
+  print "  --send-email-to='"+options.sendEmailTo+"' \\"
+  if options.skipCaseSendEmail:
+    print "  --skip-case-send-email \\"
+  else:
+    print "  --skip-case-no-email \\"
+  if not options.sendEmailOnlyOnFailure:
+    print "  --send-email-for-all \\"
+  else:
+    print "  --send-email-only-on-failure \\ "
+  print "  --send-email-to-on-push='"+options.sendEmailToOnPush+"' \\"
+  if options.forcePush:
+    print "  --force-push \\"
+  else:
+    print "  --no-force-push \\"
+  if options.doPushReadinessCheck:
+    print "  --do-push-readiness-check \\"
+  else:
+    print "  --skip-push-readiness-check \\"
+  if options.rebase:
+    print "  --rebase \\"
+  else:
+    print "  --no-rebase \\"
+  if options.appendTestResults:
+    print "  --append-test-results \\"
+  else:
+    print "  --no-append-test-results \\"
+  if options.extraPullFrom:
+    print "  --extra-pull-from='"+options.extraPullFrom+"' \\"
+  if options.allowNoPull:
+    print "  --allow-no-pull \\"
+  if options.wipeClean:
+    print "  --wipe-clean \\"
+  if options.doPull:
+    print "  --pull \\"
+  if options.doConfigure:
+    print "  --configure \\"
+  if options.doBuild:
+    print "  --build \\"
+  if options.doTest:
+    print "  --test \\"
+  if options.localDoAll:
+    print "  --local-do-all \\"
+  if options.doAll:
+    print "  --do-all \\"
+  if options.doPush:
+    print "  --push \\"
+  if options.executeOnReadyToPush:
+    print "  --execute-on-ready-to-push=("+options.executeOnReadyToPush+") \\"
 
-if options.extraPullFrom:
-  getRepoSpaceBranchFromOptionStr(options.extraPullFrom) # Will validate form
+
+  #
+  # Check the input arguments
+  #
+
+  if options.doAll and options.localDoAll:
+    print "\nError, you can not use --do-all and --local-do-all together!  Use on or the other!"
+    sys.exit(1)
+
+  if options.doAll and options.allowNoPull:
+    print "\nError, you can not use --do-all and --allow-no-pull together! (see the" \
+      " documentation for the --do-all, --local-do-all, and --allow-no-pull arguments.)"
+    sys.exit(2)
+
+  if options.extraPullFrom:
+    getRepoSpaceBranchFromOptionStr(options.extraPullFrom) # Will validate form
 
 
-#
-# Execute the checkin test guts
-#
+  #
+  # Execute the checkin test guts
+  #
 
-import time
+  import time
 
-if not options.showDefaults:
+  if not options.showDefaults:
 
-  print "\nStarting time:", getCmndOutput("date",True)
-  
-  t1 = time.time()
-  success = checkinTest(options)
-  t2 = time.time()
-  print "\nTotal time for checkin-test.py =", formatMinutesStr((t2-t1)/60.0)
-  
-  print "\nFinal time:", getCmndOutput("date",True)
-  
+    print "\nStarting time:", getCmndOutput("date",True)
+
+    baseDir = getCompleteFileDirname(__file__)
+
+    t1 = time.time()
+    success = checkinTest(baseDir, options)
+    t2 = time.time()
+    print "\nTotal time for checkin-test.py =", formatMinutesStr((t2-t1)/60.0)
+
+    print "\nFinal time:", getCmndOutput("date",True)
+
+    if success:
+      print "\nREQUESTED ACTIONS: PASSED\n"
+      return True
+    else:
+      print "\nREQUESTED ACTIONS: FAILED\n"
+      return False
+  else:
+    return True
+
+if __name__ == '__main__':
+  success = runProjectTestsWithCommandLineArgs("Trilinos", sys.argv[1:])
   if success:
-    print "\nREQUESTED ACTIONS: PASSED\n"
     sys.exit(0)
   else:
-    print "\nREQUESTED ACTIONS: FAILED\n"
     sys.exit(1)

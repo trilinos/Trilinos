@@ -66,7 +66,7 @@ from GeneralScriptSupport import *
 # Default file locations
 #
 
-defaultDepsXmlDirectory = getScriptBaseDir() + "/../../dependencies"
+defaultDepsXmlDirectory = getCompleteFileDirname(__file__) + "/../../dependencies"
 
 defaultTrilinosDepsXmlInFile = defaultDepsXmlDirectory + "/TrilinosPackageDependencies.xml"
 
