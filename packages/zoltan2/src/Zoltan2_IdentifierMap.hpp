@@ -542,8 +542,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
     ArrayView<const LNO> countView = countOutBuf();
     AlltoAllv(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
   }
-  catch (const std::exception &e)
-    Z2_THROW_ZOLTAN2_ERROR(*env_, e);
+  Z2_FORWARD_EXCEPTIONS;
 
   gidOutBuf.clear();
   
@@ -554,8 +553,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
     try{
       AlltoAllv(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
     }
-    catch (const std::exception &e)
-      Z2_THROW_ZOLTAN2_ERROR(*env_, e);
+    Z2_FORWARD_EXCEPTIONS;
   }
 
   gnoOutBuf.clear();
@@ -675,8 +673,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
     ArrayView<const LNO> countView = countOutBuf();
     AlltoAllv(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
   }
-  catch (const std::exception &e)
-    Z2_THROW_ZOLTAN2_ERROR(*env_, e)
+  Z2_FORWARD_EXCEPTIONS;
 
   gidOutBuf.clear();
 
@@ -740,8 +737,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
     ArrayView<const LNO> countView = countOutBuf();
     AlltoAllv(*comm_, *env_, procView, countView, procInBuf, countInBuf);
   }
-  catch (const std::exception &e)
-    Z2_THROW_ZOLTAN2_ERROR(*env_, e);
+  Z2_FORWARD_EXCEPTIONS;
 
   procOutBuf.clear();
 
@@ -751,8 +747,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
       ArrayView<const LNO> countView = countOutBuf();
       AlltoAllv(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
     }
-    catch (const std::exception &e)
-      Z2_THROW_ZOLTAN2_ERROR(*env_, e);
+    Z2_FORWARD_EXCEPTIONS;
 
     gnoOutBuf.clear();
   }
@@ -908,9 +903,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
         try{
           AlltoAll<GID, LNO>(*comm_, *env_, sendBuf, LNO(1), recvBuf);
         }
-        catch(std::exception &e){
-          Z2_THROW_ZOLTAN2_ERROR(*env_, e);
-        }
+        Z2_FORWARD_EXCEPTIONS;
     
         userGidsAreConsecutive_ = true;
 

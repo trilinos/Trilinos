@@ -48,7 +48,7 @@ extern size_t SCOTCH_getMemoryMax();
 namespace Zoltan2{
 
 template <typename Adapter>
-int AlgPTScotch(
+void AlgPTScotch(
   const RCP<GraphModel<Adapter> > &model, 
   const RCP<PartitioningSolution<Adapter> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
@@ -56,9 +56,10 @@ int AlgPTScotch(
 ) 
 {
 #ifndef HAVE_SCOTCH
-  cout << "Scotch requested but not compiled into Zoltan2." << endl
-       << "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON." << endl;
-  return 1;
+  cout << "KDDKDD throwing from " << __func__ << endl;
+  throw std::runtime_error(
+        "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n" 
+        "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
 #else
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
@@ -67,9 +68,7 @@ int AlgPTScotch(
   typedef typename Adapter::scalar_t scalar_t;
 
   HELLO;
-// TODO - either don't compile for serial builds, or
-//    perform a serial scotch algorithm here
-//
+
   int ierr = 0;
   int me = comm->getRank();
 
@@ -217,6 +216,7 @@ int AlgPTScotch(
   //TODO if (ewtdim) delete [] edlotab;
 
 #else // DO NOT HAVE_MPI
+
   // TODO:  Handle serial case with calls to Scotch.
   // TODO:  For now, assign everything to rank 0 and assume only one part.
   // TODO:  Can probably use the code above for loading solution,
@@ -237,7 +237,6 @@ int AlgPTScotch(
                parts);
 
 #endif
-  return ierr;
 #endif // HAVE_SCOTCH
 }
 

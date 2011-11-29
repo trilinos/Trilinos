@@ -70,14 +70,16 @@ void PartitioningProblem<Adapter>::solve()
 {
   HELLO;
 
-  this->solution_ = rcp(new PartitioningSolution<Adapter>);
+  try {
+    this->solution_ = rcp(new PartitioningSolution<Adapter>);
 
-  // Determine which algorithm to use based on defaults and parameters.
-  // For now, assuming Scotch graph partitioning.
-  // Need some exception handling here, too.
+    // Determine which algorithm to use based on defaults and parameters.
+    // For now, assuming Scotch graph partitioning.
 
-  AlgPTScotch<Adapter>(this->graphModel_, this->solution_, this->params_,
-                       this->comm_);
+    AlgPTScotch<Adapter>(this->graphModel_, this->solution_, this->params_,
+                         this->comm_);
+  }
+  Z2_FORWARD_EXCEPTIONS;
 }
 
 ////////////////////////////////////////////////////////////////////////

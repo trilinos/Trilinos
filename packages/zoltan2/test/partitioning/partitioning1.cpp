@@ -189,7 +189,39 @@ int main(int narg, char** arg)
   }
 #endif
 
-  problem.solve();
+  try {
+    cout << "KDDKDD Trying solve() " << endl;
+    problem.solve();
+    cout << "KDDKDD Trying solve() " << endl;
+  }
+  catch (std::runtime_error &e) {
+    cout << "Runtime exception returned from solve(): " << e.what();
+    if (!strncmp(e.what(), "BUILD ERROR", 11)) {
+      // Catching build errors as exceptions is OK in the tests
+      cout << " PASS" << endl;
+      return 0;
+    }
+    else {
+      // All other runtime_errors are failures
+      cout << " FAIL" << endl;
+      return -1;
+    }
+  }
+  catch (std::logic_error &e) {
+    cout << "Logic exception returned from solve(): " << e.what()
+         << " FAIL" << endl;
+    return -1;
+  }
+  catch (std::bad_alloc &e) {
+    cout << "Bad_alloc exception returned from solve(): " << e.what()
+         << " FAIL" << endl;
+    return -1;
+  }
+  catch (std::exception &e) {
+    cout << "Unknown exception returned from solve(). " << e.what()
+         << " FAIL" << endl;
+    return -1;
+  }
 
   ////// Basic metric checking of the partitioning solution
   size_t checkNparts;
@@ -288,4 +320,6 @@ int main(int narg, char** arg)
     else
       std::cout << "PASS" << std::endl;
   }
+
+  return testReturn;
 }
