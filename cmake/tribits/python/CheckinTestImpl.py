@@ -663,10 +663,16 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs):
     help="Do not check the versions of eg and git, just trust they are okay.",
     default=True )
 
+  srcDirDefault = '/'.join(getCompleteFileDirname(__file__).split("/")[0:-3]) 
   clp.add_option(
     '--src-dir', dest="srcDir", type="string",
-    default='/'.join(getCompleteFileDirname(__file__).split("/")[0:-3]),
-    help="The Trilinos source base directory for code to be tested." )
+    default=srcDirDefault,
+    help="The source base directory for code to be tested." )
+
+  clp.add_option(
+    '--trilinos-src-dir', dest="srcDir", type="string",
+    default=srcDirDefault,
+    help="[DEPRECATED] Use --src-dir instead. This argument is for backwards compatibility only.")
 
   clp.add_option(
     "--extra-repos", dest="extraRepos", type="string", default="",
