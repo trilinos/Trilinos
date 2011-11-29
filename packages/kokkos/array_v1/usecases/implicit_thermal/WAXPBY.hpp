@@ -46,8 +46,8 @@ struct WAXPBY<Scalar , KOKKOS_MACRO_DEVICE >
   
   typedef KOKKOS_MACRO_DEVICE               device_type;
   typedef device_type::size_type              size_type;
-  typedef Kokkos::MultiVectorView<Scalar, device_type>   scalar_vector;  
-  typedef Kokkos::ValueView<Scalar , device_type>      value;
+  typedef Kokkos::MultiVector<Scalar, device_type>   scalar_vector;  
+  typedef Kokkos::Value<Scalar , device_type>      value;
 
 
   value alpha;

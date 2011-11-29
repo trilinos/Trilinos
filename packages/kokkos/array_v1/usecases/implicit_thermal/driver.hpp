@@ -83,11 +83,11 @@ static void run(int x, int y, int z, PerformanceData & perf )
   typedef KOKKOS_MACRO_DEVICE    device_type;
   typedef device_type::size_type index_type ;
 
-  typedef Kokkos::MDArrayView<Scalar,     device_type>  scalar_array_d;
-  typedef Kokkos::MDArrayView<index_type, device_type>  index_array_d;    
+  typedef Kokkos::MDArray<Scalar,     device_type>  scalar_array_d;
+  typedef Kokkos::MDArray<index_type, device_type>  index_array_d;    
 
-  typedef Kokkos::MultiVectorView<Scalar,     device_type>  scalar_vector_d;
-  typedef Kokkos::MultiVectorView<index_type, device_type>  index_vector_d;
+  typedef Kokkos::MultiVector<Scalar,     device_type>  scalar_vector_d;
+  typedef Kokkos::MultiVector<index_type, device_type>  index_vector_d;
 
   typedef typename scalar_array_d::HostView  scalar_array_h ;
   typedef typename index_array_d ::HostView  index_array_h ;
@@ -128,7 +128,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
       mesh.h_mesh.elem_node_ids.dimension(1) ,
       mesh.h_mesh.elem_node_ids.dimension(1) );
 
-  elem_graph_col_h = mirror_create( elem_graph_col_d );
+  elem_graph_col_h = create_mirror( elem_graph_col_d );
 
   init_crsgraph( mesh.h_mesh.node_elem_offset ,
                  mesh.h_mesh.node_elem_ids ,
@@ -136,7 +136,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
                  elem_graph_col_h ,
                  A_row_h , A_col_h );
 
-  mirror_update( elem_graph_col_d , elem_graph_col_h );
+  deep_copy( elem_graph_col_d , elem_graph_col_h );
 
   // Copy sparse matrix graph to device
 
@@ -146,7 +146,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
   Kokkos::deep_copy(A_row_d, A_row_h);
   Kokkos::deep_copy(A_col_d, A_col_h);
 
-  device_type::wait_functor_completion();
+  device_type::fence();
 
   perf.mesh_time = wall_clock.seconds(); // Mesh and graph allocation and population.
 
@@ -171,7 +171,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
                     elem_stiffness, elem_load ,
                     elem_coeff_K , elem_load_Q ) );
 
-  device_type::wait_functor_completion();
+  device_type::fence();
 
   // Element computation time and flops
   perf.elem_time = wall_clock.seconds();
@@ -188,7 +188,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
                        elem_stiffness,
                        elem_load ) );
 
-  device_type::wait_functor_completion();
+  device_type::fence();
 
   // Matrix gather-fill time and flops
   perf.fill_time = wall_clock.seconds();
@@ -210,9 +210,9 @@ static void run(int x, int y, int z, PerformanceData & perf )
 
 #if  PRINT_SAMPLE_OF_SOLUTION
 
-  scalar_vector_h X_h = Kokkos::mirror_create( X );
+  scalar_vector_h X_h = Kokkos::create_mirror( X );
 
-  Kokkos::mirror_update( X_h , X );
+  Kokkos::deep_copy( X_h , X );
 
   for ( int i = 0 ; i < (int) mesh.node_count_z ; ++i ) {
     const int ix = mesh.node_count_x - 1 ;

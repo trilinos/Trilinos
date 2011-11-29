@@ -43,7 +43,7 @@
     defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
     defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
 
-#error "Including <Kokkos_DeviceNUMA_macros.hpp> with macros already defined"
+#error "Including <Kokkos_Host_macros.hpp> with macros already defined"
 
 #else
 

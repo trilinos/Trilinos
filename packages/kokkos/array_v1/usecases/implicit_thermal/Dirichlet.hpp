@@ -44,10 +44,10 @@ template<class Scalar >
 struct Dirichlet<Scalar , KOKKOS_MACRO_DEVICE >
 {
   
-  typedef KOKKOS_MACRO_DEVICE                               device_type;
-  typedef device_type::size_type                            index_type;
-  typedef Kokkos::MultiVectorView<Scalar, device_type>      scalar_vector;  
-  typedef Kokkos::MultiVectorView<index_type, device_type>  index_vector;
+  typedef KOKKOS_MACRO_DEVICE                            device_type;
+  typedef device_type::size_type                         index_type;
+  typedef Kokkos::MultiVector<Scalar, device_type>      scalar_vector;  
+  typedef Kokkos::MultiVector<index_type, device_type>  index_vector;
 
   scalar_vector A ;
   index_vector  A_row ;

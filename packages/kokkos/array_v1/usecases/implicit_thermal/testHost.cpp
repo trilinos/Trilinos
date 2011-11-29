@@ -40,27 +40,38 @@
 #include <iostream>
 #include <math.h>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+#include <Kokkos_Value.hpp>
+#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_MDArray.hpp>
 
-#include <Kokkos_DeviceHost_macros.hpp>
+#include <Kokkos_Host.hpp>
+
+#include <Kokkos_Host_macros.hpp>
 #include <Element.hpp>
 #include <CRSMatrixGatherFill.hpp>
 #include <Dirichlet.hpp>
 #include <CG_Solve.hpp>
 #include <driver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 
 namespace Test{
 
-void test_Host(int beg, int end, int runs)
+void test_Host(int beg, int end, int runs,int threads)
 {
-  MiniImplTherm< double, Kokkos::DeviceHost >::driver( "Host-double" , beg , end , runs );
-  MiniImplTherm< float , Kokkos::DeviceHost >::driver( "Host-float" , beg , end , runs );
+  if ( 0 < threads ) {
+    Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( threads ) );
+  }
+  else {
+    Kokkos::Host::initialize( Kokkos::Host::DetectAndUseAllCores() );
+    threads = Kokkos::Host::detect_core_count();
+  }
+
+  std::cout << "\"Host with threads = \" , " << threads << std::endl ;
+
+  MiniImplTherm< double, Kokkos::Host >::driver( "Host-double" , beg , end , runs );
+  MiniImplTherm< float , Kokkos::Host >::driver( "Host-float" , beg , end , runs );
+
+  Kokkos::Host::finalize();
 
 } //test_host
 

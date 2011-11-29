@@ -37,8 +37,8 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_HOST_FORWARD_HPP
-#define KOKKOS_HOST_FORWARD_HPP
+#ifndef KOKKOS_FORWARD_HPP
+#define KOKKOS_FORWARD_HPP
 
 namespace Kokkos {
 class Host ;
@@ -48,10 +48,10 @@ namespace Kokkos {
 namespace Impl {
 template< class ViewType > class Initialize ;
 template< class DstType , class SrcType >  class DeepCopy ;
-template< class ViewType , bool OPTIMIZE > class CreateMirror ;
+template< class ViewType , bool MirrorIsView > class CreateMirror ;
 }
 }
 
-#endif /* #define KOKKOS_FORWARD_HPP */
+#endif /* #ifndef KOKKOS_FORWARD_HPP */
 
 

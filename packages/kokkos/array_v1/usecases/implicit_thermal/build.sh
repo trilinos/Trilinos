@@ -4,90 +4,85 @@
 # Simple build script with options
 #-----------------------------------------------------------------------------
 
-export INC_PATH="-I. -I../../src"
-export CXX_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp"
-export CXX="g++"
-export CXXFLAGS="-Wall"
+INC_PATH="-I. -I../../src"
+CXX="g++"
+CXXFLAGS="-Wall"
+
+CXX_SOURCES="main.cpp testHost.cpp"
+CXX_SOURCES="${CXX_SOURCES} ../../src/impl/*.cpp"
+CXX_SOURCES="${CXX_SOURCES} ../../src/Host/Kokkos_Host_Impl.cpp"
+CXX_SOURCES="${CXX_SOURCES} ../../src/Host/Kokkos_Host_MemoryManager.cpp"
 
 #-----------------------------------------------------------------------------
 
 while [ -n "${1}" ] ; do
 
-export ARG="${1}"
+ARG="${1}"
 shift 1
 
 case ${ARG} in
 #-------------------------------
-#----------- DEVICES -----------
-HOST | Host | host )
-  export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_HOST"
-  export CXX_SOURCES="${CXX_SOURCES} testHost.cpp"
-  ;;
-PTHREAD | Pthread | pthread )
-  export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_PTHREAD"
-  export CXX_SOURCES="${CXX_SOURCES} ../../src/DevicePthread/*.cpp testPthread.cpp"
-  export LIB="${LIB} -lpthread"
-  ;;
-TPI | tpi )
-  echo "#define HAVE_PTHREAD" > ThreadPool_config.h
-  export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_TPI"
-  export CXX_SOURCES="${CXX_SOURCES} ../../src/DeviceTPI/*.cpp testTPI.cpp"
-  export CXX_SOURCES="${CXX_SOURCES} ../../../../ThreadPool/src/*.c"
-  export INC_PATH="${INC_PATH} -I../../../../ThreadPool/src"
-  export LIB="${LIB} -lpthread"
-  ;;
-CUDA | Cuda | cuda )
-  export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
-  export NVCC_SOURCES="../../src/DeviceCuda/*.cu testCuda.cu"
-  export NVCC_PATH="/usr/local/cuda"
-  export NVCC="${NVCC_PATH}/bin/nvcc -arch=sm_20 -lib -o libCuda.a"
-  export LIB="${LIB} -L${NVCC_PATH}/lib64 libCuda.a -lcudart -lcuda -lcusparse"
-  ;;
-TBB | tbb )
-  export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_TBB"
-  export CXX_SOURCES="${CXX_SOURCES} ../../src/DeviceTBB/*.cpp testTBB.cpp"
-  export LIB="${LIB} -ltbb"
-  ;;
-#-------------------------------
 #----------- OPTIONS -----------
-OPT | opt | O3 | -O3 )
-  CXXFLAGS="${CXXFLAGS} -O3"
-  NVCCFLAGS="${NVCCFLAGS} -O3"
-  ;;
-DBG | dbg | g | -g )
-  CXXFLAGS="${CXXFLAGS} -g"
-  NVCCFLAGS="${NVCCFLAGS} -g"
-  ;;
+CUDA | Cuda | cuda ) HAVE_CUDA=1 ;;
+HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
+OPT | opt | O3 | -O3 ) OPTFLAGS="-O3" ;;
+DBG | dbg | g | -g )   OPTFLAGS="-g" ;;
 #-------------------------------
 #---------- COMPILERS ----------
 GNU | gnu | g++ )
-  export CXX="g++"
-  export CXXFLAGS="-Wall"
+  CXX="g++"
+  CXXFLAGS="-Wall"
   ;;
 INTEL | intel | icc )
-  export CXX="icc"
+  CXX="icc"
   # -xW = use SSE and SSE2 instructions
-  export CXXFLAGS="-Wall -xW"
-  export LIB="${LIB} -lstdc++"
+  CXXFLAGS="-Wall -xW"
+  LIB="${LIB} -lstdc++"
   ;;
 #-------------------------------
-*)
-  echo 'unknown option: ' ${ARG}
-  exit -1
+*) echo 'unknown option: ' ${ARG} ; exit -1 ;;
 esac
 done
 
 #-----------------------------------------------------------------------------
 
-if [ -n "${NVCC}" ] ;
+if [ -n "${HAVE_CUDA}" ] ;
 then
-  echo "Building CUDA files as: " ${NVCC} ${NVCCFLAGS}
-  ${NVCC} ${NVCCFLAGS} ${INC_PATH} ${NVCC_SOURCES} ;
+  TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
+  NVCC_SOURCES="../../src/Cuda/*.cu testCuda.cu"
+  LIB="${LIB} libCuda.a -lcudart -lcuda -lcusparse"
+  nvcc -arch=sm_20 -lib -o libCuda.a ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES} ;
 fi
 
-echo "Building regular files as: " ${CXX} ${CXXFLAGS}
+#-----------------------------------------------------------------------------
 
-${CXX} ${CXXFLAGS} ${INC_PATH} ${TEST_MACRO} -o mini_test.exe main.cpp ${CXX_SOURCES} ${LIB}
+if [ -n "${HAVE_HWLOC}" ] ;
+then
+  CXX_SOURCES="${CXX_SOURCES} ../../src/Host/Kokkos_Host_hwloc.cpp"
+  LIB="${LIB} -L${HAVE_HWLOC}/lib -lhwloc"
+  INC_PATH="${INC_PATH} -I${HAVE_HWLOC}/include"
+else
+  CXX_SOURCES="${CXX_SOURCES} ../../src/Host/Kokkos_Host_hwloc_unavailable.cpp"
+fi
+
+#-----------------------------------------------------------------------------
+# Option for PTHREAD or WINTHREAD eventually
+
+HAVE_PTHREAD=1
+
+if [ -n "${HAVE_PTHREAD}" ] ;
+then
+  CXX_SOURCES="${CXX_SOURCES} ../../src/Host/Kokkos_Host_pthread.cpp"
+  LIB="${LIB} -lpthread"
+else
+  CXX_SOURCES="${CXX_SOURCES} ../../src/Host/Kokkos_Host_nothread.cpp"
+fi
+
+#-----------------------------------------------------------------------------
+
+echo "Building regular files as: " ${CXX} ${CXXFLAGS} ${OPTFLAGS}
+
+${CXX} ${CXXFLAGS} ${OPTFLAGS} ${INC_PATH} ${TEST_MACRO} -o mini_test.exe ${CXX_SOURCES} ${LIB}
 
 rm -f *.o *.a ThreadPool_config.h
 

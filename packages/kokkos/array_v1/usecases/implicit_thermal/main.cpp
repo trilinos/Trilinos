@@ -41,10 +41,7 @@
 #include <cstdlib>
 
 namespace Test{
-  void test_Host(int beg, int end, int r);
-  void test_TPI (int beg, int end, int r, int t);
-  void test_Pthread (int beg, int end, int r, int t);
-  void test_TBB(int beg, int end, int r, int t);
+  void test_Host(int beg, int end, int r, int t);
   void test_Cuda(int beg, int end, int r);
 }
 
@@ -53,27 +50,31 @@ int main(int argc, char ** argv)
   int beg = 10 ;
   int end = 15 ;
   int runs = 1 ;
-  int threads = 4;
+  int host_threads = 0;
 
+  if ( 1 < argc ) {
+    host_threads = atoi(argv[1]);
+  }
   if ( argc == 5) {
-    beg = atoi(argv[1]);
-    end = atoi(argv[2]);
-    runs = atoi(argv[3]);
-    threads = atoi(argv[4]);
+    beg = atoi(argv[2]);
+    end = atoi(argv[3]);
+    runs = atoi(argv[4]);
   }
 
-#ifdef TEST_KOKKOS_HOST
-  Test::test_Host(beg, end, runs);
-#endif
-#ifdef TEST_KOKKOS_PTHREAD
-  Test::test_Pthread (beg, end, runs, threads);
-#endif
-#ifdef TEST_KOKKOS_TPI
-  Test::test_TPI (beg, end, runs, threads);
-#endif
-#ifdef TEST_KOKKOS_TBB
-  Test::test_TBB (beg, end, runs, threads);
-#endif
+std::cout << "\" " << argv[0]
+                   << " host_threads begin end runs \"" << std::endl ;
+std::cout << "\" " << argv[0]
+          << " " << host_threads
+          << " " << beg
+          << " " << end
+          << " " << runs
+          << " \"" << std::endl ;
+                    
+
+  if ( 0 <= host_threads ) {
+    Test::test_Host(beg, end, runs, host_threads);
+  }
+
 #ifdef TEST_KOKKOS_CUDA
   Test::test_Cuda(beg , end, runs);
 #endif

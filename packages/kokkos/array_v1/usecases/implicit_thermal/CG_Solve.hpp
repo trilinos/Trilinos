@@ -56,11 +56,11 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
   typedef KOKKOS_MACRO_DEVICE    device_type;
   typedef device_type::size_type index_type ;
-  typedef Kokkos::MultiVectorView<Scalar , device_type>  scalar_vector;
-  typedef Kokkos::MultiVectorView<index_type , device_type>    index_vector;
+  typedef Kokkos::MultiVector<Scalar , device_type>  scalar_vector;
+  typedef Kokkos::MultiVector<index_type , device_type>    index_vector;
 
-  typedef Kokkos::ValueView<Scalar , device_type>     value;
-  typedef Kokkos::ValueView<Scalar , Kokkos::DeviceHost> host_val;
+  typedef Kokkos::Value<Scalar , device_type>     value;
+  typedef typename Kokkos::Value<Scalar , device_type>::HostView host_val;
 
   
   // Return megaflops / second for iterations
