@@ -102,6 +102,7 @@ APPEND_SET(HEADERS
 APPEND_SET(HEADERS
       algorithms/order/Zoltan2_OrderingAlgorithms.hpp
       algorithms/order/Zoltan2_AlgRCM.hpp
+      algorithms/order/Zoltan2_AlgAMD.hpp
       algorithms/partition/Zoltan2_PartitioningAlgorithms.hpp
       algorithms/partition/Zoltan2_AlgScotch.hpp
   )
