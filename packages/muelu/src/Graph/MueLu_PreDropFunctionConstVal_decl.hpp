@@ -38,6 +38,18 @@ namespace MueLu {
      */
     bool Drop(size_t lrow, GlobalOrdinal grow, size_t k, LocalOrdinal lcid, GlobalOrdinal gcid, const Teuchos::ArrayView<const LocalOrdinal> & indices, const Teuchos::ArrayView<const Scalar> & vals);
 
+    //! @name Overridden from Teuchos::Describable
+    //@{
+
+    //! Return a simple one-line description of this object.
+    std::string description() const;
+
+    //! Print the object with some verbosity level to an FancyOStream object.
+    using MueLu::Describable::describe; // overloading, not hiding
+    void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+
+    //@}
+
   private:
 
     Scalar threshold_;

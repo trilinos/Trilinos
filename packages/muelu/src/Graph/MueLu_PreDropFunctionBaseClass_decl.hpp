@@ -26,6 +26,7 @@ namespace MueLu {
 
     //! Drop
     virtual bool Drop(size_t lrow, GlobalOrdinal grow, size_t k, LocalOrdinal lcid, GlobalOrdinal gcid, const Teuchos::ArrayView<const LocalOrdinal> & indices, const Teuchos::ArrayView<const Scalar> & vals) = 0;
+
   };
 }
 
