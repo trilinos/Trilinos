@@ -69,6 +69,10 @@ void OrderingProblem<Adapter>::solve()
 
   AlgRCM<Adapter>(this->graphModel_, this->solution_, this->params_,
                   this->comm_);
+
+  // TODO: Need to check a parameter
+  //AlgAMD<Adapter>(this->graphModel_, this->solution_, this->params_,
+                  //this->comm_);
 }
 
 ////////////////////////////////////////////////////////////////////////

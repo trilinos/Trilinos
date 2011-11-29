@@ -3,6 +3,7 @@
 
 #include <Zoltan2_Standards.hpp>
 #include "Zoltan2_AlgRCM.hpp"
+#include "Zoltan2_AlgAMD.hpp"
 
 
 #endif

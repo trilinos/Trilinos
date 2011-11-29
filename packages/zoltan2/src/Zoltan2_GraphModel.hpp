@@ -189,9 +189,10 @@ public:
    *  \param  inputAdapter  an encapsulation of the user data
    *  \param  comm          the problem communicator
    *  \param  env           environment (library configuration settings)
-   *  \param  env           environment (library configuration settings)
    *  \param  consecutiveIdsRequired  set to true if the algorithm or
    *           third party library requires consecutive global vertex Ids.
+   *  \param removeSelfEdges set to true if the algorithm or the third party
+   *           library cannot handle self edges
    */
   GraphModel(
     const RCP<const XpetraCrsMatrixInput<User> > &inputAdapter,
