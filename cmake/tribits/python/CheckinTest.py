@@ -815,7 +815,7 @@ def analyzeResultsSendEmail(inOptions, buildTestCase,
   if not selectedFinalStatus:
     raise Exception("Error, final pass/fail status not found!")
 
-  subjectLine = "Trilinos/"+buildTestCaseName+": "+buildCaseStatus
+  subjectLine = "%s/%s: %s" % (inOptions.projectName, buildTestCaseName, buildCaseStatus)
   if overallPassed:
     subjectLine = "passed: " + subjectLine
   else:
@@ -1803,7 +1803,7 @@ def checkinTest(baseDir, inOptions):
     print "***"
 
     print "\n***"
-    print "*** 3) Update the Trilinos sources ..."
+    print "*** 3) Update the %s sources ..." % inOptions.projectName
     print "***"
 
     repoIsClean = True
@@ -2479,7 +2479,7 @@ def checkinTest(baseDir, inOptions):
       print "\n9.b) Create and send out push (or readiness status) notification email ..."
       #
     
-      subjectLine += ": Trilinos: "+getHostname()
+      subjectLine += ": %s: %s" % (inOptions.projectName, getHostname())
     
       emailBodyStr = subjectLine + "\n\n"
       emailBodyStr += getCmndOutput("date", True) + "\n\n"
