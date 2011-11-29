@@ -264,6 +264,7 @@ class SysCmndInterceptor:
   def readCommandsFromStr(self, cmndsStr):
     lines = cmndsStr.split('\n')
     for line in lines:
+      #print "line: '"+line+"'"
       if line == "":
         continue
       splitArray = line.split(':')
@@ -274,6 +275,7 @@ class SysCmndInterceptor:
         self.__fallThroughCmndRegexList.append(entry.strip())
       elif tag == "IT":
         (cmndRegex, cmndReturn, cmndOutput) = entry.split(';')
+        #print "(cmndRegex, cmndReturn, cmndOutput) =", (cmndRegex, cmndReturn, cmndOutput)
         self.__interceptedCmndStructList.append(
           InterceptedCmndStruct(cmndRegex.strip(), int(cmndReturn),
             cmndOutput.strip()[1:-1] )
