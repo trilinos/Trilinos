@@ -84,26 +84,6 @@ sys.path.insert(0, scriptsDir)
 from GeneralScriptSupport import *
 from CheckinTestImpl import *
 
-#
-# Read in the commandline arguments
-#
-
-#print "sys.argv:", sys.argv
-
-# Create a deep copy of the commandline arguments
-cmndLineArgs = []
-cmndLineArgs.extend(sys.argv)
-
-# See if the help option is set or not
-helpOpt = len( set(cmndLineArgs) & set(("--help", "-h")) ) > 0
-
-# See if --show-defaults was set or not
-showDefaultsOpt = len( set(cmndLineArgs) & set(("--show-defaults", "dummy")) ) > 0
-
-#
-# Forward the options but tee the output
-#
-
 class WritableTee(object):
   """
   Object that directs all calls to its write method to stdout as well
@@ -127,40 +107,64 @@ class WritableTee(object):
           method(*args)
 
   def write(self, data):
-    """ Write the given data to stdout and to the log file. """
+    """
+    Write the given data to stdout and to the log file.
+    """
     self._realstdout.write(data)
     self._safe_outputfile_method('write', data)
 
   def flush(self):
-    """ Flush the internal file buffers. """
+    """
+    Flush the internal file buffers.
+    """
     self._realstdout.flush()
     self._safe_outputfile_method('flush')
-    
 
-if (not helpOpt) and (not showDefaultsOpt):
-  logFile = file("checkin-test.out", "w")
-else:
-  logFile = None
 
-# There are a lot of print statements in the implementation. It's
-# easier to reset sys.stdout and sys.stderr to our WritableTee object
-# than to replace them.
-teeOutput = WritableTee(logFile)
-originalStdout = sys.stdout
-originalStderr = sys.stderr
-try:
-  sys.stdout = teeOutput
-  sys.stderr = teeOutput
-  success = runProjectTestsWithCommandLineArgs(sys.argv[1:])
-except Exception:
-  success = False
-  traceback.print_exc(file=teeOutput)
-finally:
-  # Reset stdout and stderr
-  sys.stdout = originalStdout
-  sys.stderr = originalStderr
-  
-if success:
-  sys.exit(0)
-else:
-  sys.exit(1)
+def main():
+  #
+  # Read in the commandline arguments
+  #
+
+  #print "sys.argv:", sys.argv
+
+  # Create a deep copy of the commandline arguments
+  cmndLineArgs = []
+  cmndLineArgs.extend(sys.argv)
+
+  # See if the help option is set or not
+  helpOpt = len( set(cmndLineArgs) & set(("--help", "-h")) ) > 0
+
+  # See if --show-defaults was set or not
+  showDefaultsOpt = len( set(cmndLineArgs) & set(("--show-defaults", "dummy")) ) > 0
+
+  if (not helpOpt) and (not showDefaultsOpt):
+    logFile = file("checkin-test.out", "w")
+  else:
+    logFile = None
+
+  # There are a lot of print statements in the implementation. It's
+  # easier to reset sys.stdout and sys.stderr to our WritableTee object
+  # than to replace them.
+  teeOutput = WritableTee(logFile)
+  originalStdout = sys.stdout
+  originalStderr = sys.stderr
+  try:
+    sys.stdout = teeOutput
+    sys.stderr = teeOutput
+    success = runProjectTestsWithCommandLineArgs(sys.argv[1:])
+  except Exception:
+    success = False
+    traceback.print_exc(file=teeOutput)
+  finally:
+    # Reset stdout and stderr
+    sys.stdout = originalStdout
+    sys.stderr = originalStderr
+
+  if success:
+    return 0
+  else:
+    return 1
+
+if __name__ == '__main__':
+  sys.exit(main())
