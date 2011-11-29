@@ -452,14 +452,11 @@ def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
 
     writeStrToFile(buildSpecificConfigFileName, buildSpecificConfigFileStr)
 
+def assertNoIllegalEnables(projectName, fileName, cmakeOption):
+  
+  reTPlEnable = re.compile(r"-DTPL_ENABLE_.+")
+  reTrilinosEnableOn = re.compile(r"-D%s_ENABLE_[a-zA-Z]+.+=ON" % projectName)
 
-reTPlEnable = re.compile(r"-DTPL_ENABLE_.+")
-
-
-reTrilinosEnableOn = re.compile(r"-DTrilinos_ENABLE_[a-zA-Z]+.+=ON")
-
-
-def assertNoIllegalEnables(fileName, cmakeOption):
   success = True
   if reTPlEnable.match(cmakeOption):
     print "    ERROR: Illegal TPL enable "+cmakeOption+" in "+fileName+"!"    
@@ -470,7 +467,11 @@ def assertNoIllegalEnables(fileName, cmakeOption):
   return success
 
 
-def readAndAppendCMakeOptions(fileName, cmakeOptions_inout, assertNoIllegalEnablesBool):
+def readAndAppendCMakeOptions(
+    projectName,
+    fileName,
+    cmakeOptions_inout,
+    assertNoIllegalEnablesBool):
 
   success = True
 
@@ -487,7 +488,7 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout, assertNoIllegalEnabl
       if cmakeOption == "": continue
       print "  Appending: "+cmakeOption
       if assertNoIllegalEnablesBool:
-        if not assertNoIllegalEnables(fileName, cmakeOption):
+        if not assertNoIllegalEnables(projectName, fileName, cmakeOption):
           success = False
       cmakeOptions_inout.append(cmakeOption)
 
@@ -964,12 +965,18 @@ def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
         getTestCaseEmailSummary(buildTestCase.name, buildTestCase.buildIdx)
   return summaryEmailSectionStr
 
+def cmakeDefine(projectName, name, value):
+  """
+  Formats a CMake -D<projectName>_<name>=<value> argument.
+  """
+  return '-D%s_%s=%s' % (projectName, name, value)
 
 def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
    skipCaseIfNoChangeFromDefaultEnables, gitRepoList,
    baseTestDir, verbose \
    ):
 
+  projectName = inOptions.projectName
   cmakePkgOptions = []
   enablePackagesList = []
     
@@ -1025,31 +1032,32 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
     return (cmakePkgOptions, enablePackagesList)
 
   if inOptions.extraRepos:
-    cmakePkgOptions.append("-DTrilinos_EXTRA_REPOSITORIES:STRING="+inOptions.extraRepos)
+    cmakePkgOptions.append(cmakeDefine(
+      projectName, "EXTRA_REPOSITORIES:STRING", inOptions.extraRepos))
 
   for pkg in enablePackagesList:
-    cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
+    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_"+pkg+":BOOL", "ON"))
 
-  cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON")
+  cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_OPTIONAL_PACKAGES:BOOL", "ON"))
 
   if inOptions.enableAllPackages == 'on':
     if verbose:
       print "\nEnabling all packages on request!"
-    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON")
+    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_PACKAGES:BOOL", "ON"))
 
   if inOptions.enableFwdPackages:
     if verbose:
       print "\nEnabling forward packages on request!"
-    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
+    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL", "ON"))
   else:
-    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=OFF")
+    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL", "OFF"))
 
   if inOptions.disablePackages:
     if verbose:
       print "\nAdding hard disaled for specified packages '"+inOptions.disablePackages+"' ...\n"
     disablePackagesList = inOptions.disablePackages.split(',')
     for pkg in disablePackagesList:
-      cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=OFF")
+      cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_"+pkg+":BOOL", "OFF"))
 
   if verbose:
     print "\ncmakePkgOptions:", cmakePkgOptions
@@ -1085,16 +1093,17 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
     print ""
 
     preConfigurePassed = True
+    projectName = inOptions.projectName
 
     # A.1) Set the base options
   
     cmakeBaseOptions = []
   
-    cmakeBaseOptions.append("-DTrilinos_ENABLE_TESTS:BOOL=ON")
+    cmakeBaseOptions.append(cmakeDefine(projectName, "ENABLE_TESTS:BOOL", "ON"))
   
-    cmakeBaseOptions.append("-DTrilinos_TEST_CATEGORIES:STRING=BASIC")
+    cmakeBaseOptions.append(cmakeDefine(projectName, "TEST_CATEGORIES:STRING", "BASIC"))
 
-    cmakeBaseOptions.append("-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF")
+    cmakeBaseOptions.append(cmakeDefine(projectName, "ALLOW_NO_PACKAGES:BOOL", "OFF"))
 
     if inOptions.ctestTimeOut:
       cmakeBaseOptions.append(("-DDART_TESTING_TIMEOUT:STRING="+str(inOptions.ctestTimeOut)))
@@ -1102,12 +1111,14 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
     cmakeBaseOptions.extend(buildTestCase.extraCMakeOptions)
 
     result = readAndAppendCMakeOptions(
+      inOptions.projectName,
       os.path.join("..", getCommonConfigFileName()),
       cmakeBaseOptions,
       True)
     if not result: preConfigurePassed = False
 
     reuslt = readAndAppendCMakeOptions(
+      inOptions.projectName,
       os.path.join("..", getBuildSpecificConfigFileName(buildTestCaseName)),
       cmakeBaseOptions,
       buildTestCase.isDefaultBuild)
@@ -1596,13 +1607,11 @@ def checkinTest(baseDir, inOptions):
   Main function for checkin testing.
   """
 
-  if inOptions.projectName:
-    projectName = inOptions.projectName
-  else:
-    projectName = getProjectName(inOptions.srcDir)
+  if not inOptions.projectName:
+    inOptions.projectName = getProjectName(inOptions.srcDir)
   
   print "\n**********************************************"
-  print "*** Performing checkin testing of %s ***" % projectName
+  print "*** Performing checkin testing of %s ***" % inOptions.projectName
   print "**********************************************"
 
   scriptsDir = baseDir
@@ -1652,12 +1661,16 @@ def checkinTest(baseDir, inOptions):
     if not inOptions.skipDepsUpdate:
       # There are extra repos so we need to build a new list of Trilinos packages
       # to include the add-on packages.
-      cmnd = "cmake -DPROJECT_NAME=Trilinos" \
-       +" -DTrilinos_TRIBITS_DIR="+inOptions.srcDir+"/cmake/tribits" \
-       +" -DTrilinos_DEPS_HOME_DIR="+inOptions.srcDir \
-       +" -DTrilinos_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR="+baseTestDir \
-       +" -DTrilinos_EXTRA_REPOSITORIES="+inOptions.extraRepos \
-       +" -P "+inOptions.srcDir+"/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake"
+      cmakeArgumentList = [
+        "cmake",
+        "-DPROJECT_NAME=%s" % inOptions.projectName,
+        cmakeDefine(inOptions.projectName, "TRIBITS_DIR", inOptions.srcDir + "/cmake/tribits"),
+        cmakeDefine(inOptions.projectName, "DEPS_HOME_DIR", inOptions.srcDir),
+        cmakeDefine(inOptions.projectName, "OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR", baseTestDir),
+        cmakeDefine(inOptions.projectName, "EXTRA_REPOSITORIES", inOptions.extraRepos),
+        "-P %s/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.srcDir,
+      ]
+      cmnd = ' '.join(cmakeArgumentList)
       echoRunSysCmnd(cmnd,
         workingDir=baseTestDir,
         outFile=baseTestDir+"/"+getTrilinosDependenciesXmlGenerateOutputFileName(),
@@ -1667,7 +1680,7 @@ def checkinTest(baseDir, inOptions):
     trilinosDepsXmlFile = baseTestDir+"/"+getTrilinosDependenciesXmlFileName()
   else:
     # No extra repos so you can just use the default list of packages
-    trilinosDepsXmlFile = getDefaultDepsXmlInFile(inOptions.srcDir, projectName)
+    trilinosDepsXmlFile = getDefaultDepsXmlInFile(inOptions.srcDir, inOptions.projectName)
 
   trilinosDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
   if trilinosDepsXmlFileOverride:
@@ -1716,11 +1729,11 @@ def checkinTest(baseDir, inOptions):
     [
       "-DTPL_ENABLE_MPI:BOOL=ON",
       "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
-      "-DTrilinos_ENABLE_DEBUG:BOOL=ON",
-      "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
-      "-DTrilinos_ENABLE_DEBUG_SYMBOLS:BOOL=ON",
-      "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON",
-      "-DTeuchos_ENABLE_DEFAULT_STACKTRACE:BOOL=OFF"
+      cmakeDefine(inOptions.projectName, "ENABLE_DEBUG:BOOL", "ON"),
+      cmakeDefine(inOptions.projectName, "ENABLE_CHECKED_STL:BOOL", "ON"),
+      cmakeDefine(inOptions.projectName, "ENABLE_DEBUG_SYMBOLS:BOOL", "ON"),
+      cmakeDefine(inOptions.projectName, "ENABLE_EXPLICIT_INSTANTIATION:BOOL", "ON"),
+      "-DTeuchos_ENABLE_DEFAULT_STACKTRACE:BOOL=OFF",
     ]
     )
 
@@ -1731,9 +1744,9 @@ def checkinTest(baseDir, inOptions):
     [
       "-DTPL_ENABLE_MPI:BOOL=OFF",
       "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
-      "-DTrilinos_ENABLE_DEBUG:BOOL=OFF",
-      "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
-      "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
+      cmakeDefine(inOptions.projectName, "ENABLE_DEBUG:BOOL", "OFF"),
+      cmakeDefine(inOptions.projectName, "ENABLE_CHECKED_STL:BOOL", "OFF"),
+      cmakeDefine(inOptions.projectName, "ENABLE_EXPLICIT_INSTANTIATION:BOOL", "OFF"),
     ]
     )
 

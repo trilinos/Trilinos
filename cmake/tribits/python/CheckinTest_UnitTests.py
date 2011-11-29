@@ -342,6 +342,14 @@ class test_matchProjectName(unittest.TestCase):
     self.assertEqual(match, 'TestProject')
 
 #############################################################################
+# Test CMake helpers
+#############################################################################
+class test_cmakeDefine(unittest.TestCase):
+  def test_cmakeDefineSimple(self):
+    result = cmakeDefine('ProjectName', 'SOME_FLAG:BOOL', 'ON')
+    self.assertEqual(result, '-DProjectName_SOME_FLAG:BOOL=ON')
+
+#############################################################################
 #
 #                     Test checkin-test.py script
 #
