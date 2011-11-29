@@ -40,36 +40,29 @@
 #include <iostream>
 #include <math.h>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+#include <Kokkos_Value.hpp>
+#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_MDArray.hpp>
 
-#include <Kokkos_DeviceCuda.hpp>
-#include <Kokkos_DeviceCuda_ValueView.hpp>
-#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
-#include <Kokkos_DeviceCuda_MDArrayView.hpp>
-#include <Kokkos_DeviceCuda_ParallelFor.hpp>
-#include <Kokkos_DeviceCuda_ParallelReduce.hpp>
+#include <Kokkos_Host.hpp>
+#include <Kokkos_Cuda.hpp>
 
-#include <Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_Cuda_macros.hpp>
 #include <Element.hpp>
 #include <CRSMatrixGatherFill.hpp>
 #include <Dirichlet.hpp>
 #include <CG_Solve.hpp>
 #include <driver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
-
-__global__ void dummy_kernel(){}
+#include <Kokkos_Clear_macros.hpp>
 
 namespace Test {
 
 void test_Cuda(int beg, int end, int runs)
 {
-  MiniImplTherm<double, Kokkos::DeviceCuda >::driver( "CUDA-double" , beg , end , runs );
-  MiniImplTherm<float,  Kokkos::DeviceCuda >::driver( "CUDA-float" , beg , end , runs );
+  Kokkos::Cuda::initialize();
+  MiniImplTherm<double, Kokkos::Cuda >::driver( "CUDA-double" , beg , end , runs );
+  MiniImplTherm<float,  Kokkos::Cuda >::driver( "CUDA-float" , beg , end , runs );
+  Kokkos::Cuda::finalize();
 }
 
 }// namespace

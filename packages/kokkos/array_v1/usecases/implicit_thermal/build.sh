@@ -50,7 +50,7 @@ if [ -n "${HAVE_CUDA}" ] ;
 then
   TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
   NVCC_SOURCES="../../src/Cuda/*.cu testCuda.cu"
-  LIB="${LIB} libCuda.a -lcudart -lcuda -lcusparse"
+  LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda -lcusparse"
   nvcc -arch=sm_20 -lib -o libCuda.a ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES} ;
 fi
 

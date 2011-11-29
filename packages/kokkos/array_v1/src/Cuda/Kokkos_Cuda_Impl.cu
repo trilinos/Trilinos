@@ -162,7 +162,8 @@ public:
   size_type               * m_reduceScratchSpace ;
   size_type               * m_reduceScratchFlag ;
 
-  static CudaInternal & singleton();
+  static CudaInternal & raw_singleton();
+  static const CudaInternal & singleton();
 
   void initialize( int cuda_device_id );
   void finalize();
@@ -189,9 +190,17 @@ CudaInternal::~CudaInternal()
   }
 }
 
-CudaInternal & CudaInternal::singleton()
+CudaInternal & CudaInternal::raw_singleton()
+{ static CudaInternal self ; return self ; }
+
+const CudaInternal & CudaInternal::singleton()
 {
-  static CudaInternal self ;
+  const CudaInternal & self = raw_singleton();
+
+  if ( self.m_cudaDev == -1 ) {
+    throw std::runtime_error(std::string("CATASTROPHIC FAILURE: Using Kokkos::Cuda before calling Kokkos::Cuda::initialize(...)"));
+  }
+
   return self ;
 }
 
@@ -201,9 +210,7 @@ void CudaInternal::initialize( int cuda_device_id )
 
   const CudaInternalDevices & dev_info = CudaInternalDevices::singleton();
 
-  CudaInternal & dev = CudaInternal::singleton();
-
-  const bool ok_init = 0 == dev.m_reduceScratchSpace ;
+  const bool ok_init = 0 == m_reduceScratchSpace ;
   const bool ok_id   = 0 <= cuda_device_id &&
                             cuda_device_id < dev_info.m_cudaDevCount ;
 
@@ -341,9 +348,9 @@ Cuda::size_type cuda_internal_maximum_shared_words()
 Cuda::size_type cuda_internal_stream_count()
 { return CudaInternal::singleton().m_streams.size(); }
 
-cudaStream_t &  cuda_internal_stream( Cuda::size_type i )
+cudaStream_t & cuda_internal_stream( Cuda::size_type i )
 {
-  CudaInternal & s = CudaInternal::singleton();
+  CudaInternal & s = CudaInternal::raw_singleton();
 
   if ( s.m_streams.size() <= i ) {
     std::ostringstream msg ;
@@ -372,10 +379,10 @@ Cuda::size_type Cuda::detect_device_count()
 { return Impl::CudaInternalDevices::singleton().m_cudaDevCount ; }
 
 void Cuda::initialize( const Cuda::SelectDevice config )
-{ Impl::CudaInternal::singleton().initialize( config.cuda_device_id ); }
+{ Impl::CudaInternal::raw_singleton().initialize( config.cuda_device_id ); }
 
 void Cuda::finalize()
-{ Impl::CudaInternal::singleton().finalize(); }
+{ Impl::CudaInternal::raw_singleton().finalize(); }
 
 bool Cuda::sleep() { return false ; }
 
