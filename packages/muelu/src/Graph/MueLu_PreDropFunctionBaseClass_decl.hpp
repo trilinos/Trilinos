@@ -4,10 +4,9 @@
 #include <Xpetra_Operator.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-//#include TODO base class
+#include "MueLu_BaseClass.hpp"
 #include "MueLu_PreDropFunctionBaseClass_fwd.hpp"
 
-#include "MueLu_Graph_fwd.hpp"
 
 namespace MueLu {
 
@@ -16,7 +15,7 @@ namespace MueLu {
    *
    */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class PreDropFunctionBaseClass {
+  class PreDropFunctionBaseClass : public BaseClass {
 #undef MUELU_PREDROPFUNCTIONBASECLASS_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -26,7 +25,7 @@ namespace MueLu {
     virtual ~PreDropFunctionBaseClass() { }
 
     //! Drop
-    virtual RCP<Graph> Drop(RCP<Operator> A) = 0;
+    virtual bool Drop(size_t lrow, GlobalOrdinal grow, size_t k, LocalOrdinal lcid, GlobalOrdinal gcid, const Teuchos::ArrayView<const LocalOrdinal> & indices, const Teuchos::ArrayView<const Scalar> & vals) = 0;
   };
 }
 

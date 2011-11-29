@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   // custom parameters
-  LO maxLevels = 5;
+  LO maxLevels = 4;
 
   GO maxCoarseSize=1; //FIXME clp doesn't like long long int
   std::string aggOrdering = "natural";
@@ -142,8 +142,6 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
 
-
-
   // Epetra_Map -> Xpetra::Map
   const RCP< const Map> map = Xpetra::toXpetra(emap);
 
@@ -160,10 +158,13 @@ int main(int argc, char *argv[]) {
   /* RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
   Finest->Keep("Nullspace",nspFact.get());*/
 
+  RCP<PreDropFunctionConstVal> preDropFunc = rcp(new PreDropFunctionConstVal(1.0));
+
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(/*Teuchos::null,nspFact*/));
   dropFact->SetVerbLevel(MueLu::Extreme);
   //dropFact->SetFixedBlockSize(nDofsPerNode);
   dropFact->SetVariableBlockSize();
+  dropFact->SetPreDropFunction(preDropFunc);
 
   // setup "variable" block size information
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalrowid2globalamalblockid_vector = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getRowMap());

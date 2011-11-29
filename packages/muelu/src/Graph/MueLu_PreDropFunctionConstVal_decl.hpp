@@ -26,8 +26,17 @@ namespace MueLu {
     // Destructor
     virtual ~PreDropFunctionConstVal() { }
 
-    // Drop
-    RCP<Graph> Drop(RCP<Operator> A);
+    /*! Drop
+     * @param lrow (size_t): local row index (=lrowid)
+     * @param grow (GlobalOrdinal: global row id
+     * @param k    (size_t): local column iterator
+     * @param lcid (LocalOrdinal): local column id (=indices[k])
+     * @param gcid (GlobalOrdinal): global column id
+     * @param indices (ArrrayView): array of local column ids in current row (lrow)
+     * @param vals (ArrayView): array of corresponding values in current row (lrow)
+     * @return bool: false, if value in (lrow, lcid) shall be kept, true if it should be dropped
+     */
+    bool Drop(size_t lrow, GlobalOrdinal grow, size_t k, LocalOrdinal lcid, GlobalOrdinal gcid, const Teuchos::ArrayView<const LocalOrdinal> & indices, const Teuchos::ArrayView<const Scalar> & vals);
 
   private:
 

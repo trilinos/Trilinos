@@ -6,6 +6,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Graph.hpp"
 #include "MueLu_PreDropFunctionBaseClass.hpp"
+#include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Monitor.hpp"
 
 #include "Xpetra_VectorFactory.hpp"
@@ -21,6 +22,7 @@ namespace MueLu {
   CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceDropFactory(RCP<const FactoryBase> AFact, RCP<const FactoryBase> nullspaceFact)
     : AFact_(AFact), nullspaceFact_(nullspaceFact), blksize_(1), fixedBlkSize_(true), blkSizeInfo_(Teuchos::null)
   {
+    predrop_ = Teuchos::null;  // no pre-dropping filter
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -224,7 +226,9 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPTION(A->getColMap()->isNodeLocalElement(indices[k])==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: Problem with columns. Error.");
         GlobalOrdinal gcid = A->getColMap()->getGlobalElement(indices[k]); // global column id
         // TODO: decide whether to add or skip a matrix entry in resulting graph
-        if(vals[k]!=0.0) {  // avoid zeros
+        //if(vals[k]!=0.0) {  // avoid zeros
+        if((predrop_ == Teuchos::null && vals[k]!=0.0) ||
+           (predrop_ != Teuchos::null && predrop_->Drop(i,gDofId, k,indices[k],gcid,indices,vals) == false)) {
           //colblocks->push_back(globalrowid2globalamalblockid->find(gcid)->second); // add column block id to column ids of amalgamated matrix
           GlobalOrdinal globalcolblockid = GlobalId2GlobalAmalBlockId(gcid, A, blkSizeInfo_, blockSize);
           colblocks->push_back(globalcolblockid);
