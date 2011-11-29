@@ -16,13 +16,6 @@ namespace panzer {
 
 /** This class handles responses with values aggregated
   * on each finite element cell.
-  *
-  * The input parameter list as the following parameter fields
-     "Name": type std::string
-     "Response Data": type RCP<panzer::ResponseData<Traits> >
-     "Response Aggregator": type RCP<panzer::ResponseAggregator<ScalarT,Traits> >
-     "Response Names": type RCP<const std::vector<std::string> >
-     "Workset Size": type int
   */
 template<typename EvalT, typename Traits,typename AggregatorT>
 class ResponseScatterEvaluator : public PHX::EvaluatorWithBaseImpl<Traits>,
