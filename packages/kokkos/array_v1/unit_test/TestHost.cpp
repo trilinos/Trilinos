@@ -43,6 +43,7 @@
 #include <Kokkos_Value.hpp>
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_MDArray.hpp>
+#include <Kokkos_CrsArray.hpp>
 
 #include <Kokkos_Host.hpp>
 
@@ -55,6 +56,7 @@
 #include <TestMultiVector.hpp>
 #include <TestMDArray.hpp>
 #include <TestMDArrayIndexMap.hpp>
+#include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestMultiReduce.hpp>
 
@@ -66,7 +68,7 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( 8 ) );
+    Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( 4 ) );
   }
 
   static void TearDownTestCase()
@@ -97,6 +99,10 @@ TEST_F( host, multivector_double) {
 
 TEST_F( host, multivector_int) {
   TestMultiVector< int, Kokkos::Host >();
+}
+
+TEST_F( host, crsarray_int) {
+  TestCrsArray< int, Kokkos::Host >();
 }
 
 TEST_F( host, mdarray_view_double) {

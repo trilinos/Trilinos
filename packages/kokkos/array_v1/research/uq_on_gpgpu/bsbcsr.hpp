@@ -40,7 +40,7 @@
 #ifndef KOKKOS_BSBCSR_HPP
 #define KOKKOS_BSBCSR_HPP
 
-#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
+#include <Kokkos_Cuda_MultiVector.hpp>
 
 namespace Kokkos {
 
@@ -167,7 +167,7 @@ public:
   typedef Device                     device_type ;
   typedef typename Device::size_type index_type ;
 
-  typedef MultiVectorView< index_type , device_type > vector_type ;
+  typedef MultiVector< index_type , device_type > vector_type ;
 
   index_type  block_system_size ;
   index_type  block_length ;
@@ -184,9 +184,9 @@ class BigSymmetricBlockCSRMultiply ;
 
 template< class Device , typename MatrixScalar , typename VectorScalar >
 void multiply( const BigSymmetricBlockCSRGraph<Device> & A_graph ,
-               const MultiVectorView<MatrixScalar,Device> & A_coeff ,
-               const MultiVectorView<VectorScalar,Device> & input ,
-               const MultiVectorView<VectorScalar,Device> & output )
+               const MultiVector<MatrixScalar,Device> & A_coeff ,
+               const MultiVector<VectorScalar,Device> & input ,
+               const MultiVector<VectorScalar,Device> & output )
 {
   BigSymmetricBlockCSRMultiply< Device , MatrixScalar , VectorScalar >
     ( A_graph , A_coeff , input , output );
@@ -195,12 +195,12 @@ void multiply( const BigSymmetricBlockCSRGraph<Device> & A_graph ,
 //----------------------------------------------------------------------------
 
 template< typename MatrixScalar , typename VectorScalar >
-class BigSymmetricBlockCSRMultiply< DeviceCuda , MatrixScalar , VectorScalar > {
+class BigSymmetricBlockCSRMultiply< Cuda , MatrixScalar , VectorScalar > {
 public:
-  typedef DeviceCuda::size_type                        index_type ;
-  typedef BigSymmetricBlockCSRGraph< DeviceCuda >      graph_type ;
-  typedef MultiVectorView< MatrixScalar , DeviceCuda > matrix_type ;
-  typedef MultiVectorView< VectorScalar , DeviceCuda > vector_type ;
+  typedef Cuda::size_type                        index_type ;
+  typedef BigSymmetricBlockCSRGraph< Cuda >      graph_type ;
+  typedef MultiVector< MatrixScalar , Cuda > matrix_type ;
+  typedef MultiVector< VectorScalar , Cuda > vector_type ;
 
   const graph_type  m_graph ;
   const matrix_type m_matrix ;
@@ -221,18 +221,18 @@ public:
   , m_block_stride( graph.diag_stride * graph.diag_count )
   , m_diag_full( graph.diag_count - ( graph.block_length & 01 ? 0 : 1 ) )
   , m_shared_offset( graph.block_length +
-      ( graph.block_length % Impl::DeviceCudaTraits::WarpSize ?
+      ( graph.block_length % Impl::CudaTraits::WarpSize ?
       ( graph.block_length - 
-        ( graph.block_length % Impl::DeviceCudaTraits::WarpSize ) ) : 0 ) )
+        ( graph.block_length % Impl::CudaTraits::WarpSize ) ) : 0 ) )
   {
-    const index_type thread_max = DeviceCuda::maximum_warp_count() * Impl::DeviceCudaTraits::WarpSize ;
+    const index_type thread_max = Cuda::maximum_warp_count() * Impl::CudaTraits::WarpSize ;
 
     if ( thread_max < graph.block_length ) {
       throw std::runtime_error( std::string("block is too big") );
     }
 
 /*
-    if ( DeviceCuda::maximum_grid_count() < m_graph.block_system_size ) {
+    if ( Cuda::maximum_grid_count() < m_graph.block_system_size ) {
       throw std::runtime_error( std::string("too many blocks") );
     }
 */

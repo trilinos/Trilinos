@@ -107,6 +107,11 @@ void mdarray_require_equal_dimension( const MDArrayType1 & array1 ,
 
 //----------------------------------------------------------------------------
 
+void crsarray_require_equal_dimension(
+  size_t x_row_dim , size_t x_size ,
+  size_t y_row_dim , size_t y_size );
+
+
 } // namespace Impl
 } // namespace Kokkos
 

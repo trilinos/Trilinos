@@ -143,6 +143,8 @@ void mdarray_require_equal_dimension(
   }
 }
 
+//----------------------------------------------------------------------------
+
 void multivector_require_range( size_t beg , size_t end , size_t bound )
 {
   if ( ! ( beg < end || end <= bound ) ) {
@@ -169,6 +171,27 @@ void multivector_require_equal_dimension(
     throw std::runtime_error( msg.str() );
   }
 }
+
+//----------------------------------------------------------------------------
+
+void crsarray_require_equal_dimension(
+  size_t x_row_dim , size_t x_size ,
+  size_t y_row_dim , size_t y_size )
+{
+  if ( x_row_dim != y_row_dim || x_size != y_size ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::Impl::crsarray_require_equal_dimension FAILED :" ;
+    if ( x_row_dim != y_row_dim ) {
+      msg << " row_dimension( " << x_row_dim << " != " << y_row_dim << " )" ;
+    }
+    if ( x_size != y_size ) {
+      msg << " size( " << x_size << " != " << y_size << " )" ;
+    }
+    throw std::runtime_error( msg.str() );
+  }
+}
+
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace Kokkos

@@ -48,17 +48,31 @@
 #include <impl/Kokkos_MemoryView_macros.hpp>
 #endif
 
+//----------------------------------------------------------------------------
+
 #if defined( KOKKOS_VALUE_HPP ) && ! defined( KOKKOS_HOST_VALUE )
 #define KOKKOS_HOST_VALUE
 #include <impl/Kokkos_Value_macros.hpp>
 #include <Host/Kokkos_Host_Value.hpp>
 #endif
 
+//----------------------------------------------------------------------------
+
 #if defined( KOKKOS_MULTIVECTOR_HPP ) && ! defined( KOKKOS_HOST_MULTIVECTOR )
 #define KOKKOS_HOST_MULTIVECTOR
 #include <impl/Kokkos_MultiVector_macros.hpp>
 #include <Host/Kokkos_Host_MultiVector.hpp>
 #endif
+
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_CRSARRAY_HPP ) && ! defined( KOKKOS_HOST_CRSARRAY )
+#define KOKKOS_HOST_CRSARRAY
+#include <impl/Kokkos_CrsArray_macros.hpp>
+#include <Host/Kokkos_Host_CrsArray.hpp>
+#endif
+
+//----------------------------------------------------------------------------
 
 #if defined( KOKKOS_MDARRAY_HPP ) && ! defined( KOKKOS_HOST_MDARRAY )
 #define KOKKOS_HOST_MDARRAY
@@ -76,6 +90,8 @@
 #include <impl/Kokkos_MDArray_macros.hpp>
 #undef KOKKOS_MACRO_MDARRAY_TEMPLATE_ARGUMENT
 #endif
+
+//----------------------------------------------------------------------------
 
 #include <Kokkos_Clear_macros.hpp>
 
