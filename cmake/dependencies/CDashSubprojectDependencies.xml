@@ -246,7 +246,7 @@
     <Dependency name="EpetraExt" type="TO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="ITO"/>
-    <Dependency name="Galeri" type="ITO"/>
+    <Dependency name="Galeri" type="TO"/>
     <Dependency name="Amesos" type="ITO"/>
     <Dependency name="Ifpack" type="TO"/>
     <Dependency name="ML" type="TO"/>
