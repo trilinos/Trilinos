@@ -39,8 +39,8 @@ int AlgRCM(
 
   // TEST: return the identity permutation.
   const size_t nVtx = model->getLocalNumVertices();
-  size_t *perm;
-  perm = new size_t[nVtx];
+  lno_t *perm;
+  perm = new lno_t[nVtx];
   for (size_t i=0; i<nVtx; i++){
     perm[i] = i;
   }
