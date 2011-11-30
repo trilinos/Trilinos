@@ -270,7 +270,8 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
         int wgt_dim, float *ewgts, int *ierr)
 {
 int i, j, from, to;
-int *nextNbor, *nextProc;
+ZOLTAN_ID_PTR *nextNbor;
+int *nextProc;
 
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
   *ierr = ZOLTAN_OK;
