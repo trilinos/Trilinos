@@ -84,6 +84,7 @@ template< class FieldType > struct FieldTraits ;
 
 
 typedef unsigned Ordinal;
+static const Ordinal InvalidOrdinal = static_cast<Ordinal>(-1); // std::numeric_limits<PartOrdinal>::max();
 typedef Ordinal EntityRank ;
 typedef Ordinal PartOrdinal;
 typedef Ordinal FieldOrdinal;
@@ -96,9 +97,9 @@ typedef uint64_t EntityId ;
 // Note:  This BaseEntityRank can be considered the leaf of a tree and it
 // represents the furthest out you can go in downward relations.
 static const EntityRank BaseEntityRank = 0;
-static const EntityRank InvalidEntityRank = static_cast<EntityRank>(-1); // std::numeric_limits<EntityRank>::max();
-static const PartOrdinal InvalidPartOrdinal = static_cast<PartOrdinal>(-1); // std::numeric_limits<PartOrdinal>::max();
-static const RelationIdentifier InvalidRelationIdentifier = static_cast<RelationIdentifier>(-1); // std::numeric_limits<PartOrdinal>::max();
+static const EntityRank InvalidEntityRank = InvalidOrdinal;
+static const PartOrdinal InvalidPartOrdinal = InvalidOrdinal;
+static const RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
 
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel

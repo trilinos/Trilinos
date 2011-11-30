@@ -47,7 +47,6 @@ namespace {
 
 STKUNIT_UNIT_TEST(UnitTestEntity,testEntityKey)
 {
-  
   EntityKey key_bad_zero = EntityKey();
   EntityKey key_good_0_1 = EntityKey( 0 , 1 );
   EntityKey key_good_1_1 = EntityKey( 1 , 1 );
@@ -67,13 +66,13 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityKey)
   STKUNIT_ASSERT( 1  == entity_id( key_good_1_1) );
   STKUNIT_ASSERT( 10 == entity_id( key_good_2_10) );
 
-
   STKUNIT_ASSERT(  key_order_1_12 <  key_order_2_10);
   STKUNIT_ASSERT( !( key_order_1_12 >  key_order_2_10));
 
-
-  STKUNIT_ASSERT_THROW( EntityKey( ~0u , 1 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( EntityKey( 0 , ~stk::mesh::EntityKey::raw_key_type(0) ) , std::runtime_error );
+#ifndef NDEBUG
+  STKUNIT_ASSERT_THROW( EntityKey( ~0u , 1 ) , std::logic_error );
+  STKUNIT_ASSERT_THROW( EntityKey( 0 , ~stk::mesh::EntityKey::raw_key_type(0) ) , std::logic_error );
+#endif // NDEBUG
 }
 
 
@@ -82,7 +81,7 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   //Test Entity repository - covering EntityRepository.cpp/hpp
   const int spatial_dimension = 3;
   MetaData meta(stk::mesh::fem::entity_rank_names(spatial_dimension));
-  Part & part = meta.declare_part( "another part"); 
+  Part & part = meta.declare_part( "another part");
   MPI_Barrier( MPI_COMM_WORLD );
   ParallelMachine pm = MPI_COMM_WORLD;
   BulkData bulk( meta , pm, 200 );
@@ -107,7 +106,7 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
     int new_id =  size * id_base +  rank;
      bulk.declare_entity( 0 , new_id+1 ,  add_part );
   }
- 
+
   int new_id =  size * (++id_base) +  rank;
   stk::mesh::Entity & elem  =  bulk.declare_entity( 3 , new_id+1 ,  add_part );
 
@@ -143,7 +142,7 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
 
   //Checking get_entity with invalid key - no rank or id
   {
-    STKUNIT_ASSERT_THROW( 
+    STKUNIT_ASSERT_THROW(
         e.get_entity(stk::mesh::EntityKey()),
         std::runtime_error
         );
