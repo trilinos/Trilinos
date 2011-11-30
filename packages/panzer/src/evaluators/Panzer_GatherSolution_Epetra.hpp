@@ -127,8 +127,10 @@ private:
 // implementation
 #include "Panzer_GatherSolution_EpetraT.hpp"
 
+#ifdef HAVE_STOKHOS
 // definitions and implementation of SG types
 #include "Panzer_GatherSolution_EpetraSG.hpp"
+#endif
 
 // **************************************************************
 #endif

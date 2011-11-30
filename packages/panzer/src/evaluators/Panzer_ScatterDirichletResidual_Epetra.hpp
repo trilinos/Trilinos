@@ -157,7 +157,9 @@ private:
 
 #include "Panzer_ScatterDirichletResidual_EpetraT.hpp"
 
+#ifdef HAVE_STOKHOS
 #include "Panzer_ScatterDirichletResidual_EpetraSG.hpp"
+#endif
 
 // **************************************************************
 #endif

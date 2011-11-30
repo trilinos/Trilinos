@@ -129,8 +129,10 @@ private:
 
 #include "Panzer_ScatterInitialCondition_EpetraT.hpp"
 
+#ifdef HAVE_STOKHOS
 #include "Panzer_ScatterInitialCondition_EpetraSG.hpp"
 #include "Panzer_ScatterInitialCondition_EpetraSGT.hpp"
+#endif
 
 // **************************************************************
 #endif
