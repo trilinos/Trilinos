@@ -48,8 +48,8 @@
 #include "BelosSolverFactory.hpp"
 #include "BelosEpetraAdapter.hpp"
 
-#include "Galeri_Maps.h"
-#include "Galeri_CrsMatrices.h"
+#include <Galeri_Maps.h>
+#include <Galeri_CrsMatrices.h>
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -201,10 +201,14 @@ main (int argc, char *argv[])
   RCP<Epetra_Map> domainMap, rangeMap;
   RCP<Epetra_Operator> A = makeMatrix (domainMap, rangeMap);
   // "Solution" input/output multivector.
+  RCP<MV> X_exact = rcp (new MV (*domainMap, numRHS));
+  X_exact->Random ();
   RCP<MV> X = rcp (new MV (*domainMap, numRHS));
+  X->PutScalar (0.0);
   // "Right-hand side" input multivector.
   RCP<MV> B = rcp (new MV (*rangeMap, numRHS));
-
+  A->Apply (*X_exact, *B);
+  
   // Solver parameters.
   RCP<ParameterList> solverParams = parameterList ();
   //

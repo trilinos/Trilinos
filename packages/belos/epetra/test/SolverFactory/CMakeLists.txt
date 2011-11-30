@@ -1,7 +1,6 @@
 INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
-ASSERT_DEFINED(Trilinos_ENABLE_Galeri)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Galeri)
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
     
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
