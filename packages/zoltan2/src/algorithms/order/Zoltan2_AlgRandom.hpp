@@ -23,7 +23,9 @@ namespace Zoltan2{
 template <typename Adapter>
 int AlgRandom(
   const RCP<GraphModel<Adapter> > &model, 
-  const RCP<OrderingSolution<Adapter> > &solution,
+  const RCP<OrderingSolution<typename Adapter::gid_t,
+                             typename Adapter::lid_t,
+                             typename Adapter::lno_t> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
   const RCP<const Teuchos::Comm<int> > &comm
 ) 
@@ -55,7 +57,7 @@ int AlgRandom(
   lno_t temp;
   for (lno_t i=nVtx-1; i>0; i--){
     // Choose j randomly in [0,i]
-    j = rand() % (i+1);
+    lno_t j = rand() % (i+1);
     // Swap (perm[i], perm[j])
     temp = perm[i];
     perm[i] = perm[j];
