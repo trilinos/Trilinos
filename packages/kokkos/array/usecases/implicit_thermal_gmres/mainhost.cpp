@@ -40,14 +40,9 @@
 
 #include <iostream>
 #include <cstdlib>
-#include <Kokkos_ConfigDefs.hpp>
 
 namespace Test{
   void test_Host(int beg, int end, int r);
-  void test_TPI (int beg, int end, int r, int t);
-  void test_Pthread (int beg, int end, int r, int t);
-  void test_TBB(int beg, int end, int r, int t);
-  void test_Cuda(int beg, int end, int r);
 }
 
 int main(int argc, char ** argv)
@@ -64,34 +59,9 @@ int main(int argc, char ** argv)
     threads = atoi(argv[4]);
   }
 
-#ifdef IMPLICIT_THERMAL_GMRES_HOST
   std::cout << "Host Testing:" << std::endl;
   Test::test_Host(beg, end, runs);
   std::cout << std::endl << "--------------------------------------------" <<
     std::endl;
-#endif
-#ifdef IMPLICIT_THERMAL_GMRES_PTHREAD
-  std::cout << "Pthread testing:" << std::endl;
-  Test::test_Pthread (beg, end, runs, threads);
-  std::cout << std::endl << "--------------------------------------------" <<
-    std::endl;
-#endif
-#ifdef IMPLICIT_THERMAL_GMRES_TPI
-  std::cout << "TPI Testing:" << std::endl;
-  Test::test_TPI (beg, end, runs, threads);
-  std::cout << std::endl << "--------------------------------------------" <<
-    std::endl;
-#endif
-#ifdef IMPLICIT_THERMAL_GMRES_TBB
-  std::cout << "TBB Testing:" << std::endl;
-  Test::test_TBB (beg, end, runs, threads);
-  std::cout << std::endl << "--------------------------------------------" <<
-    std::endl;
-#endif
-#ifdef IMPLICIT_THERMAL_GMRES_CUDA
-  std::cout << "CUDA Testing:" << std::endl;
-  Test::test_Cuda(beg , end, runs);
-#endif
-
   return 0;
 }
