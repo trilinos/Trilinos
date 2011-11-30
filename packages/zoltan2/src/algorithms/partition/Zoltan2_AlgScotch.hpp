@@ -51,7 +51,8 @@ template <typename Adapter>
 void AlgPTScotch(
   const RCP<GraphModel<Adapter> > &model, 
   RCP<PartitioningSolution<typename Adapter::gid_t, 
-                           typename Adapter::lid_t> > &solution,
+                           typename Adapter::lid_t,
+                           typename Adapter::lno_t> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
   const RCP<const Teuchos::Comm<int> > &comm,
   const RCP<const Environment> &env
@@ -153,7 +154,7 @@ void AlgPTScotch(
   }
 
   // Have enough info to create the solution now.
-  solution = rcp(new PartitioningSolution<gid_t,lid_t>(nParts, nVtx, 0));
+  solution = rcp(new PartitioningSolution<gid_t,lid_t,lno_t>(nParts, nVtx, 0));
 
   // Create array for Scotch to return results in.
   SCOTCH_Num *partloctab;

@@ -29,6 +29,7 @@ public:
 
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::lid_t lid_t;
+  typedef typename Adapter::lno_t lno_t;
 
   // Destructor
   virtual ~PartitioningProblem() {};
@@ -57,14 +58,14 @@ public:
   //    don't think I've seen this style before.
   virtual void solve();
 
-  PartitioningSolution<gid_t, lid_t> *getSolution() {
+  PartitioningSolution<gid_t, lid_t, lno_t> *getSolution() {
     return solution_.getRawPtr();
   };
 
 private:
   void createPartitioningProblem();
 
-  RCP<PartitioningSolution<gid_t, lid_t> > solution_;
+  RCP<PartitioningSolution<gid_t, lid_t, lno_t> > solution_;
 
 };
 

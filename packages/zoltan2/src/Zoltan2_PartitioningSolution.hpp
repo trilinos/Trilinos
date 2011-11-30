@@ -24,8 +24,8 @@ namespace Zoltan2 {
     Just a placeholder for now.
 */
 
-template <typename gid_t, typename lid_t>
-  class PartitioningSolution : public Solution<gid_t, lid_t>
+template <typename gid_t, typename lid_t, typename lno_t>
+  class PartitioningSolution : public Solution<gid_t, lid_t, lno_t>
 {
 public:
 
