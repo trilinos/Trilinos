@@ -8,8 +8,9 @@ namespace panzer {
 template <typename Traits,typename LocalOrdinalT>
 SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 ::SGEpetraLinearObjFactory(const Teuchos::RCP<EpetraLinearObjFactory<Traits,LocalOrdinalT> > & epetraFact,
-                           const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion)
-   : epetraFact_(epetraFact), expansion_(expansion)
+                           const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion,
+                           const Teuchos::RCP<const EpetraExt::MultiComm> & globalMultiComm)
+   : epetraFact_(epetraFact), expansion_(expansion), globalMultiComm_(globalMultiComm)
 {
    // build and register the gather/scatter evaluators with 
    // the base class.
@@ -205,13 +206,30 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 }
 
 template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> SGEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getVectorOrthogPoly() const
+{
+   Teuchos::RCP<const Epetra_Map> blockMap = getSGBlockMap();
+   Teuchos::RCP<Epetra_Map> epMap = epetraFact_->getMap();
+   return Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(expansion_->getBasis(),blockMap,epMap,globalMultiComm_));
+}
+
+template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<const Epetra_Map> SGEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getMap()
 {
-   Teuchos::RCP<const Epetra_Map> block_map = 
-      Teuchos::rcp(new Epetra_LocalMap(expansion_->getBasis()->size(), 0, *epetraFact_->getEpetraComm()));
-   Teuchos::RCP<Epetra_Map> ep_map = epetraFact_->getMap();
-   return Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*ep_map,*block_map,*epetraFact_->getEpetraComm()));
+   Teuchos::RCP<const Epetra_Map> blockMap = getSGBlockMap();
+   Teuchos::RCP<Epetra_Map> epMap = epetraFact_->getMap();
+   return Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*epMap,*blockMap,*epetraFact_->getEpetraComm()));
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<const Epetra_Map> SGEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getSGBlockMap() const
+{
+   if(sgBlockMap_==Teuchos::null)
+      sgBlockMap_ = Teuchos::rcp(new Epetra_LocalMap(expansion_->getBasis()->size(), 0, *epetraFact_->getEpetraComm()));
+   return sgBlockMap_; 
 }
 
 }

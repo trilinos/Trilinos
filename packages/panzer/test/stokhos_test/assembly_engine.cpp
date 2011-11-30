@@ -167,7 +167,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,short> > eLinObjFactory
         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
   Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,short> > sgeLinObjFactory
-        = Teuchos::rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,short>(eLinObjFactory,sgExpansion));
+        = Teuchos::rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,short>(eLinObjFactory,sgExpansion,Teuchos::null));
   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = sgeLinObjFactory;
 
   // setup field manager build
