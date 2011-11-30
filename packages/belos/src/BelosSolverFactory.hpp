@@ -126,6 +126,12 @@ public:
   ///   configure the solver.  If null, we configure the solver with
   ///   default parameters.
   ///
+  /// Some solvers may be accessed by multiple names ("aliases").
+  /// Each solver has a canonical name, and zero or more aliases.
+  /// Using some aliases (such as those that access flexible versions
+  /// of solvers) may make this method set certain parameters in your
+  /// parameter list.
+  ///
   /// It is better to provide a non-null but empty parameter list,
   /// since in that case, the solver will fill in your list with
   /// parameters and their default values.  You can then inspect the
@@ -323,9 +329,12 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   aliasToCanonicalName_["CG"] = "Pseudoblock CG";
   aliasToCanonicalName_["Recycling CG"] = "RCG";
   aliasToCanonicalName_["Recycling GMRES"] = "GCRODR";
+  // For compatibility with Stratimikos' Belos adapter.
+  aliasToCanonicalName_["Pseudo Block GMRES"] = "Pseudoblock GMRES";  
+  aliasToCanonicalName_["Pseudo Block CG"] = "Pseudoblock CG";
 
   canonicalNameToEnum_["Block GMRES"] = details::SOLVER_TYPE_BLOCK_GMRES;
-  canonicalNameToEnum_["Pseudoblock GMRES"] = details::SOLVER_TYPE_BLOCK_GMRES;
+  canonicalNameToEnum_["Pseudoblock GMRES"] = details::SOLVER_TYPE_PSEUDO_BLOCK_GMRES;
   canonicalNameToEnum_["Block CG"] = details::SOLVER_TYPE_BLOCK_CG;
   canonicalNameToEnum_["Pseudoblock CG"] = details::SOLVER_TYPE_PSEUDO_BLOCK_CG;
   canonicalNameToEnum_["GCRODR"] = details::SOLVER_TYPE_GCRODR;

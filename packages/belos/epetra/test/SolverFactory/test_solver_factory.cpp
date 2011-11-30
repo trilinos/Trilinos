@@ -137,13 +137,13 @@ main (int argc, char *argv[])
 {
   using Belos::OutputManager;
   using Belos::SolverFactory;
-  using Belos::SolverManager;
   using Teuchos::CommandLineProcessor;
   using Teuchos::null;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcp_implicit_cast;
   using std::cerr;
   using std::cout;
@@ -151,6 +151,8 @@ main (int argc, char *argv[])
   typedef double scalar_type;
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
+  typedef Belos::SolverManager<scalar_type, MV, OP> solver_base_type;
+  typedef Belos::PseudoBlockGmresSolMgr<scalar_type, MV, OP> solver_impl_type;
 
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
@@ -204,6 +206,7 @@ main (int argc, char *argv[])
   RCP<Epetra_Operator> A = makeMatrix (comm, domainMap, rangeMap);
   // "Solution" input/output multivector.
   RCP<MV> X_exact = rcp (new MV (*domainMap, numRHS));
+  X_exact->Seed ();
   X_exact->Random ();
   RCP<MV> X = rcp (new MV (*domainMap, numRHS));
   X->PutScalar (0.0);
@@ -216,10 +219,19 @@ main (int argc, char *argv[])
   //
   // Create a solver instance using a solver factory.
   //
+  const std::string solverName ("Pseudoblock GMRES");
+  const std::string solverType ("PseudoBlockGmresSolMgr");
   SolverFactory<scalar_type, MV, OP> factory;
-  RCP<SolverManager<scalar_type, MV, OP> > solver = 
-    factory.create ("Pseudoblock GMRES", solverParams);
-
+  RCP<solver_base_type> solver = factory.create (solverName, solverParams);
+  TEUCHOS_TEST_FOR_EXCEPTION(solver.is_null(), std::logic_error,
+			     "Failed to create solver with valid name \"" 
+			     << solverName << "\".");
+  if (verbose && comm->MyPID() == 0) {
+    cout << "Solver description: " << solver->description() << endl;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(rcp_dynamic_cast<solver_impl_type> (solver).is_null(), 
+    std::logic_error, 
+    "Solver does not have the correct type \"" << solverType << "\".");
   if (comm->MyPID() == 0) {
     cout << "End Result: TEST PASSED" << endl;
   }
