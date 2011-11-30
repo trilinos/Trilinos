@@ -46,6 +46,15 @@
 #include <BelosOutputManager.hpp>
 #include <BelosSolverManager.hpp>
 
+#include <BelosBlockGmresSolMgr.hpp>
+#include <BelosPseudoBlockGmresSolMgr.hpp>
+#include <BelosBlockCGSolMgr.hpp>
+#include <BelosPseudoBlockCGSolMgr.hpp>
+#include <BelosGCRODRSolMgr.hpp>
+#include <BelosRCGSolMgr.hpp>
+#include <BelosMinresSolMgr.hpp>
+#include <BelosLSQRSolMgr.hpp>
+
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -103,7 +112,7 @@ template<class Scalar, class MV, class OP>
 class SolverFactory : public Teuchos::Describable {
 public:
   /// \typedef solver_base_type
-  /// \brief The type returned by \c makeSolver().
+  /// \brief The type returned by \c create().
   typedef SolverManager<Scalar, MV, OP> solver_base_type;
 
   //! Constructor.
@@ -113,17 +122,17 @@ public:
   ///
   /// \param solverName [in] Name of the solver.
   ///
-  /// \param params [in/out] List of parameters with which to configure
-  ///   the solver.  If null, we configure the solver with default
-  ///   parameters.
+  /// \param solverParams [in/out] List of parameters with which to
+  ///   configure the solver.  If null, we configure the solver with
+  ///   default parameters.
   ///
   /// It is better to provide a non-null but empty parameter list,
   /// since in that case, the solver will fill in your list with
   /// parameters and their default values.  You can then inspect the
   /// parameter names and learn how to modify their default values.
   Teuchos::RCP<solver_base_type>
-  makeSolver (const std::string& solverName, 
-	      const Teuchos::RCP<Teuchos::ParameterList>& params);
+  create (const std::string& solverName, 
+	  const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
   /// \brief Number of supported solvers.
   /// 
@@ -147,7 +156,7 @@ public:
   std::string description() const;
 
   void describe (Teuchos::FancyOStream& out, 
-		 const EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
+		 const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
   //@}
 
 private:
@@ -161,7 +170,7 @@ private:
   /// \brief Map from canonical solver name to solver enum value.
   ///
   /// Access the keys to get the list of canonical solver names.
-  std::map<std::string, EBelosSolverType> canonicalNameToEnum_;
+  std::map<std::string, details::EBelosSolverType> canonicalNameToEnum_;
 
   //! List of canonical solver names.
   Teuchos::Array<std::string> canonicalSolverNames () const;
@@ -315,20 +324,21 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   aliasToCanonicalName_["Recycling CG"] = "RCG";
   aliasToCanonicalName_["Recycling GMRES"] = "GCRODR";
 
-  canonicalNameToEnum_["Block GMRES"] = SOLVER_TYPE_BLOCK_GMRES;
-  canonicalNameToEnum_["Pseudoblock GMRES"] = SOLVER_TYPE_BLOCK_GMRES;
-  canonicalNameToEnum_["Block CG"] = SOLVER_TYPE_BLOCK_CG;
-  canonicalNameToEnum_["Pseudoblock CG"] = SOLVER_TYPE_PSEUDO_BLOCK_CG;
-  canonicalNameToEnum_["GCRODR"] = SOLVER_TYPE_GCRODR;
-  canonicalNameToEnum_["RCG"] = SOLVER_TYPE_RCG;
-  canonicalNameToEnum_["MINRES"] = SOLVER_TYPE_MINRES;
-  canonicalNameToEnum_["LSQR"] = SOLVER_TYPE_LSQR;
+  canonicalNameToEnum_["Block GMRES"] = details::SOLVER_TYPE_BLOCK_GMRES;
+  canonicalNameToEnum_["Pseudoblock GMRES"] = details::SOLVER_TYPE_BLOCK_GMRES;
+  canonicalNameToEnum_["Block CG"] = details::SOLVER_TYPE_BLOCK_CG;
+  canonicalNameToEnum_["Pseudoblock CG"] = details::SOLVER_TYPE_PSEUDO_BLOCK_CG;
+  canonicalNameToEnum_["GCRODR"] = details::SOLVER_TYPE_GCRODR;
+  canonicalNameToEnum_["RCG"] = details::SOLVER_TYPE_RCG;
+  canonicalNameToEnum_["MINRES"] = details::SOLVER_TYPE_MINRES;
+  canonicalNameToEnum_["LSQR"] = details::SOLVER_TYPE_LSQR;
 }
 
 template<class Scalar, class MV, class OP>
 Teuchos::RCP<typename SolverFactory<Scalar, MV, OP>::solver_base_type>
-makeSolver (const std::string& solverName, 
-	    const Teuchos::RCP<Teuchos::ParameterList>& params)
+SolverFactory<Scalar, MV, OP>::
+create (const std::string& solverName, 
+	const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   // Check whether the given name is an alias.
   std::map<std::string, std::string>::const_iterator aliasIter = 
@@ -338,9 +348,9 @@ makeSolver (const std::string& solverName,
     isAnAlias ? aliasIter->second : solverName;
 
   // Get the canonical name.
-  std::map<std::string, EBelosSolverType>::const_iterator canonicalIter =
+  std::map<std::string, details::EBelosSolverType>::const_iterator canonicalIter =
     canonicalNameToEnum_.find (candidateCanonicalName);
-  const bool validCanonicalName = (canonicalIter == canonicalNameToEnum_.end());
+  const bool validCanonicalName = (canonicalIter != canonicalNameToEnum_.end());
 
   // Check whether we found a canonical name.  If we didn't and the
   // input name is a valid alias, that's a bug.  Otherwise, the input
@@ -359,12 +369,12 @@ makeSolver (const std::string& solverName,
   // we can always replace a null list with an empty list.
   //
   Teuchos::RCP<Teuchos::ParameterList> pl = 
-    params.is_null() ? Teuchos::parameterList() : params;
+    solverParams.is_null() ? Teuchos::parameterList() : solverParams;
   if (solverName == "Flexible GMRES") {
     // "Gmres" uses title case in this solver's parameter list.
     pl->set ("Flexible Gmres", true);
   }
-  return makeSolverManagerFromEnum (canonicalIter->second, pl);
+  return details::makeSolverManagerFromEnum<Scalar, MV, OP> (canonicalIter->second, pl);
 }
 
 
@@ -386,7 +396,7 @@ template<class Scalar, class MV, class OP>
 void
 SolverFactory<Scalar, MV, OP>::
 describe (Teuchos::FancyOStream& out, 
-	  const EVerbosityLevel verbLevel) const
+	  const Teuchos::EVerbosityLevel verbLevel) const
 {
   using std::endl;
   typedef Teuchos::Array<std::string>::const_iterator iter_type;
@@ -435,7 +445,7 @@ Teuchos::Array<std::string>
 SolverFactory<Scalar, MV, OP>::canonicalSolverNames () const
 {
   Teuchos::Array<std::string> canonicalNames;
-  typedef std::map<std::string, EBelosSolverType>::const_iterator iter_type;
+  typedef std::map<std::string, details::EBelosSolverType>::const_iterator iter_type;
   for (iter_type iter = canonicalNameToEnum_.begin(); 
        iter != canonicalNameToEnum_.end(); ++iter) {
     canonicalNames.push_back (iter->first);
@@ -471,7 +481,7 @@ SolverFactory<Scalar, MV, OP>::supportedSolverNames () const
     }
   }
   {
-    typedef std::map<std::string, EBelosSolverType>::const_iterator iter_type;
+    typedef std::map<std::string, details::EBelosSolverType>::const_iterator iter_type;
     for (iter_type iter = canonicalNameToEnum_.begin(); 
 	 iter != canonicalNameToEnum_.end(); ++iter) {
       names.push_back (iter->first);

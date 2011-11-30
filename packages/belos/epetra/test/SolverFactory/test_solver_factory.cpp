@@ -103,7 +103,8 @@ namespace {
 
   /// The problem is defined on a 2D grid; global size is nx * nx.
   Teuchos::RCP<Epetra_Operator>
-  makeMatrix (Teuchos::RCP<const Epetra_Map>& domainMap,
+  makeMatrix (const Teuchos::RCP<Epetra_Comm>& comm,
+	      Teuchos::RCP<const Epetra_Map>& domainMap,
 	      Teuchos::RCP<const Epetra_Map>& rangeMap,
 	      const int nx = 30)
   {
@@ -116,13 +117,13 @@ namespace {
     GaleriList.set("n", nx * nx);
     GaleriList.set("nx", nx);
     GaleriList.set("ny", nx);
-    RCP<Epetra_Map> rowMap = rcp (Galeri::CreateMap("Linear", Comm, GaleriList));
+    RCP<const Epetra_Map> rowMap = rcp (Galeri::CreateMap("Linear", *comm, GaleriList));
     // "&*rowMap" turns an RCP<Epetra_Map> into a raw pointer
     // (Epetra_Map*), which is what Galeri::CreateCrsMatrix() wants.
     RCP<Epetra_RowMatrix> A = 
       rcp (Galeri::CreateCrsMatrix("Laplace2D", &*rowMap, GaleriList));
-    TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
-		       "Galeri returned a null operator A.");
+    TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
+			       "Galeri returned a null operator A.");
     domainMap = rowMap;
     rangeMap = rowMap;
     return rcp_implicit_cast<Epetra_Operator> (A);
@@ -147,20 +148,21 @@ main (int argc, char *argv[])
   using std::cerr;
   using std::cout;
   using std::endl;
+  typedef double scalar_type;
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
 
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
 
-  RCP<Epetra_Comm> pComm;
+  RCP<Epetra_Comm> comm;
   {
 #ifdef EPETRA_MPI
-    RCP<Epetra_MpiComm> pCommSpecific (new Epetra_MpiComm (MPI_COMM_WORLD));
+    RCP<Epetra_MpiComm> commSpecific (new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
-    RCP<Epetra_SerialComm> pCommSpecific (new Epetra_SerialComm);
+    RCP<Epetra_SerialComm> commSpecific (new Epetra_SerialComm);
 #endif // EPETRA_MPI
-    pComm = rcp_implicit_cast<Epetra_Comm> (pCommSpecific);
+    comm = rcp_implicit_cast<Epetra_Comm> (commSpecific);
   }
 
   int numRHS = 1;
@@ -179,7 +181,7 @@ main (int argc, char *argv[])
     const CommandLineProcessor::EParseCommandLineReturn parseResult = 
       cmdp.parse (argc,argv);
     if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
-      if (pComm->MyPID() == 0)
+      if (comm->MyPID() == 0)
 	std::cout << "End Result: TEST PASSED" << endl;
       return EXIT_SUCCESS;
     }
@@ -195,11 +197,11 @@ main (int argc, char *argv[])
   // Stream for debug output.  If debug output is not enabled, then
   // this stream doesn't print anything sent to it (it's a "black
   // hole" stream).
-  std::ostream& debugOut = outMan->stream (Belos::Debug);
+  //std::ostream& debugOut = outMan->stream (Belos::Debug);
 
   // Create the operator to test, with domain and range maps.
-  RCP<Epetra_Map> domainMap, rangeMap;
-  RCP<Epetra_Operator> A = makeMatrix (domainMap, rangeMap);
+  RCP<const Epetra_Map> domainMap, rangeMap;
+  RCP<Epetra_Operator> A = makeMatrix (comm, domainMap, rangeMap);
   // "Solution" input/output multivector.
   RCP<MV> X_exact = rcp (new MV (*domainMap, numRHS));
   X_exact->Random ();
@@ -214,11 +216,11 @@ main (int argc, char *argv[])
   //
   // Create a solver instance using a solver factory.
   //
-  SolverFactory<double, MV, OP> factory;
-  RCP<SolverManager<double, MV, OP> > solver = 
-    factory.makeSolver ("Pseudoblock GMRES", solverParams);
+  SolverFactory<scalar_type, MV, OP> factory;
+  RCP<SolverManager<scalar_type, MV, OP> > solver = 
+    factory.create ("Pseudoblock GMRES", solverParams);
 
-  if (pComm->MyPID() == 0) {
+  if (comm->MyPID() == 0) {
     cout << "End Result: TEST PASSED" << endl;
   }
   return EXIT_SUCCESS;
