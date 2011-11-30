@@ -677,7 +677,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     ortho_ = factory.makeMatOrthoManager (orthoType_, M, printer_, 
 					  label_, orthoParams);
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(! ortho_.is_null(), std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(ortho_.is_null(), std::logic_error, 
 			     "The MatOrthoManager is not yet initialized, but "
 			     "should be by this point.  "
 			     "Please report this bug to the Belos developers.");
