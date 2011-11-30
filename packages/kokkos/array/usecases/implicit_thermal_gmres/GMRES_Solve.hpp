@@ -179,7 +179,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
   struct Norm2 {
     value norm;
 
-    Norm2(value argNorm):
+    Norm2(const value & argNorm):
       norm(argNorm)
       {}
 
@@ -257,12 +257,12 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     value beta  = Kokkos::create_value<Scalar , device_type>();
     Kokkos::deep_copy( zero, Scalar( 0 ) );
 
-    // compute nrom2 of r
+    // compute norm2 of r
     Kokkos::parallel_reduce(rows, dot_single(r), Norm2(beta) );
 
     Scalar beta_copy;
     Kokkos::deep_copy(beta_copy,beta);
-    if(beta_copy){
+    if(beta_copy == 0.0){
       //Stuff didn't work
       return 0.0;
     }
@@ -288,8 +288,6 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       CRSMatVec<Scalar,device_type> A_mult_q(
         A_value, A_row , A_offsets , MultiVector(Q, j-1) , MultiVector(Q, j));
       A_mult_q.apply();
-
-
 
       //H(0:j, j-1) = Q(:, 0:j-1)^* Q(:,j)
       for (size_t k = 0; k <= j-1; ++k) { 
@@ -317,10 +315,12 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
     // Compute floating point operations performed during iterations
 
-    size_t iter_waxpby_flops = ( 3 * iteration ) * ( 3 * rows ); // y = a * x + b * y
     size_t iter_dot_flops    = ( 3 * iteration ) * ( 2 * rows );
     size_t iter_matvec_flops = iteration * ( 2 * A_offsets.length() );
-    size_t iter_total_flops  = iter_waxpby_flops + iter_dot_flops + iter_matvec_flops ;
+    size_t iter_ysax_flops = iteration * (2 * rows);
+    size_t iter_scale_flops = iteration * rows;
+    size_t iter_total_flops  = iter_dot_flops + iter_matvec_flops + iter_ysax_flops + iter_scale_flops;
+
     return (double) iter_total_flops / ( iter_time * 1.0e6 );
   }
 };
