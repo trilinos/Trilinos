@@ -1,5 +1,5 @@
-#ifndef _ZOLTAN2_ALGRCM_HPP_
-#define _ZOLTAN2_ALGRCM_HPP_
+#ifndef _ZOLTAN2_ALGRANDOM_HPP_
+#define _ZOLTAN2_ALGRANDOM_HPP_
 
 #include <Zoltan2_Standards.hpp>
 
@@ -8,8 +8,9 @@
 
 
 ////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_AlgRCM.hpp
-//! \brief RCM ordering of a graph (serial)
+//! \file Zoltan2_AlgRandom.hpp
+//! \brief Random ordering using the Knuth shuffle.
+//! \brief TODO: For now uses GraphModel but only needs IDs.
 
 
 // Placeholder for real error handling.
@@ -20,11 +21,9 @@
 namespace Zoltan2{
 
 template <typename Adapter>
-int AlgRCM(
+int AlgRandom(
   const RCP<GraphModel<Adapter> > &model, 
-  const RCP<OrderingSolution<typename Adapter::gid_t,
-                             typename Adapter::lid_t,
-                             typename Adapter::lno_t> > &solution,
+  const RCP<OrderingSolution<Adapter> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
   const RCP<const Teuchos::Comm<int> > &comm
 ) 
@@ -39,12 +38,28 @@ int AlgRCM(
 
   HELLO;
 
-  // TEST: return the identity permutation.
+  // This is the classic Knuth shuffle, also known as Fisher-Yates shuffle.
+  // References:
+  //   D.E. Knuth, "The Art of Computer Programming", volume 2, 1969.
+  //   R. Durstenfeld, "Algorithm 235: Random permutation", CACM, vol. 7, 1964.
+
+  // Start with the identity permutation.
   const size_t nVtx = model->getLocalNumVertices();
   lno_t *perm;
   perm = new lno_t[nVtx];
   for (lno_t i=0; i<nVtx; i++){
     perm[i] = i;
+  }
+
+  // Swap random pairs of indices in perm.
+  lno_t temp;
+  for (lno_t i=nVtx-1; i>0; i--){
+    // Choose j randomly in [0,i]
+    j = rand() % (i+1);
+    // Swap (perm[i], perm[j])
+    temp = perm[i];
+    perm[i] = perm[j];
+    perm[j] = temp;
   }
 
   // Set solution.
