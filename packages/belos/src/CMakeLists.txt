@@ -69,6 +69,7 @@ APPEND_SET(HEADERS
   BelosRCGSolMgr.hpp
   BelosSimpleOrthoManager.hpp
   BelosSolverManager.hpp
+  BelosSolverFactory.hpp
   BelosStatusTestCombo.hpp
   BelosStatusTestFactory.hpp
   BelosStatusTestGeneralOutput.hpp
