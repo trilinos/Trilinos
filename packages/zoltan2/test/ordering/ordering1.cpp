@@ -223,7 +223,7 @@ int main(int narg, char** arg)
   z2TestGO *checkGIDs;
   z2TestLO *checkLIDs;
   z2TestLO *checkPerm;
-  Zoltan2::OrderingSolution<SparseMatrixAdapter> *soln = 
+  Zoltan2::OrderingSolution<z2TestGO, z2TestLO, z2TestLO> *soln = 
            problem.getSolution();
 
   // Check that the solution is really a permutation

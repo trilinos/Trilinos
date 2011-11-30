@@ -24,60 +24,54 @@ namespace Zoltan2 {
     Just a placeholder for now.
 */
 
-template <typename Adapter>
-  class PartitioningSolution : public Solution<Adapter>
+template <typename gid_t, typename lid_t, typename lno_t>
+  class PartitioningSolution : public Solution<gid_t, lid_t, lno_t>
 {
 public:
-  typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::lid_t lid_t;
 
   //////////////////////////////////////////////
-  void setPartition(
-    size_t nparts,   // Number of parts
-    size_t length,   // Length of arrays
-    gid_t *gids,     // GIDs
-    lid_t *lids,     // LIDs
-    size_t *parts    // Part assignment for each gid
+  // Constructor allocates memory for the solution.
+  PartitioningSolution(
+    size_t nparts,
+    size_t ngids,
+    size_t nlids
   )
   {
     HELLO;
     nParts_ = nparts;
-
-    gids_ = ArrayView<gid_t>(gids, length);
-
-    if (lids != NULL)
-      lids_ = ArrayView<lid_t>(lids, length);
-    else     // lids may be NULL
-      lids_ = ArrayView<lid_t>(Teuchos::null);
-
-    parts_ = ArrayView<size_t>(parts, length);
+    gids_   = ArrayRCP<gid_t>(ngids);
+    if (nlids) lids_   = ArrayRCP<lid_t>(nlids);
+    else       lids_   = ArrayRCP<lid_t>(Teuchos::null);
+    parts_  = ArrayRCP<size_t>(ngids);
   }
 
   //////////////////////////////////////////////
-  void getPartition(
-    size_t *nparts,   // returned: Number of parts
-    size_t *length,   // returned: Length of arrays
-    gid_t **gids,     // returned: GIDs
-    lid_t **lids,     // returned: LIDs
-    size_t **parts    // returned: Part assignments
-  )
-  {
-    *nparts = nParts_;
-    *length = gids_.size();
-    *gids   = gids_.getRawPtr();
+  // Accessor functions, allowing algorithms to get ptrs to solution memory.
+  // Algorithms can then load the memory.  
+  // Non-RCP versions are provided for applications to use.
+  inline size_t getNumParts() {return nParts_;}
 
-    if (lids_.getRawPtr() != (lid_t*) Teuchos::null) *lids = lids_.getRawPtr();
-    else                                             *lids = (lid_t*) NULL;
+  inline ArrayRCP<gid_t>  getGidsRCP()  {return gids_;}
+  inline ArrayRCP<lid_t>  getLidsRCP()  {return lids_;}
+  inline ArrayRCP<size_t> getPartsRCP() {return parts_;}
 
-    *parts  = parts_.getRawPtr();
+  inline gid_t  *getGids(size_t *length) {
+    *length = gids_.size(); return gids_.getRawPtr();
+  }
+  inline lid_t  *getLids(size_t *length) {
+    *length = lids_.size();
+    return (lids_.is_null() ? (lid_t*) NULL : lids_.getRawPtr());
+  }
+  inline size_t *getParts(size_t *length) {
+    *length = parts_.size(); return parts_.getRawPtr();
   }
 
 protected:
   // Partitioning solution consists of GIDs, LIDs, and part assignments.
   size_t nParts_;
-  ArrayView<gid_t>  gids_;
-  ArrayView<lid_t>  lids_;
-  ArrayView<size_t> parts_;
+  ArrayRCP<gid_t>  gids_;
+  ArrayRCP<lid_t>  lids_;
+  ArrayRCP<size_t> parts_;
 };
 
 }

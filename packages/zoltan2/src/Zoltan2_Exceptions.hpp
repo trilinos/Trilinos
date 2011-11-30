@@ -138,6 +138,7 @@
 #define Z2_FORWARD_EXCEPTIONS \
   catch (std::runtime_error &e) { throw e; } \
   catch (std::logic_error   &e) { throw e; } \
-  catch (std::bad_alloc     &e) { throw e; } 
+  catch (std::bad_alloc     &e) { throw e; } \
+  catch (std::exception     &e) { throw e; } 
    
 #endif

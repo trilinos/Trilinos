@@ -39,8 +39,6 @@ namespace Zoltan2 {
 template <typename Adapter>
 class GraphModel : public Model<Adapter>
 {
-private:
-
 public:
 
   typedef typename Adapter::scalar_t  scalar_t;
@@ -52,7 +50,8 @@ public:
   typedef typename Adapter::user_t    user_t;
   
   GraphModel(){
-    //std::cout <<"GRAPH MODEL base" << std::endl;
+    HELLO;
+    identifierMap_ = NULL;
   }
 
   /*! Returns the number vertices on this process.
@@ -93,6 +92,10 @@ public:
          associated with each vertex in the Ids list.  Weights are listed by
          vertex by weight component.
        \return The number of ids in the Ids list.
+      KDDKDD This function should not return coordinates, as coordinates are
+      KDDKDD not needed in most graph algorithms.  There should be a separate
+      KDDKDD function for coordinates.  Or there should be an option to 
+      KDDKDD specify whether or not coordinates are needed.
    */
 
   size_t getVertexList( ArrayView<const gno_t> &Ids,
@@ -154,6 +157,13 @@ public:
   size_t getVertexLocalEdge( lno_t localRef,
     ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
     ArrayView<const scalar_t> &wgts) const { return 0; }
+
+  inline RCP<IdentifierMap<gid_t, lid_t, gno_t, lno_t> > getIdentifierMap() {
+    return identifierMap_;
+  }
+
+private:
+  RCP<IdentifierMap<gid_t, lid_t, gno_t, lno_t> > identifierMap_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -325,6 +335,8 @@ public:
     size_t n = gnos_.size();
     Ids = gnos_.view(0, n);
     return n;
+    // KDDKDD  Is it dangerous that xyz is ignored here?  Perhaps coordinates
+    // KDDKDD  should be separate.
   }
 
   size_t getEdgeList( ArrayView<const gno_t> &edgeIds, 
@@ -364,9 +376,14 @@ public:
     return nEdges;
   }
 
+  inline RCP<IdentifierMap<gid_t, lid_t, gno_t, lno_t> > getIdentifierMap() {
+    return identifierMap_;
+  }
+
 private:
 
   RCP<const XpetraCrsMatrixInput<User> > input_;
+  RCP<IdentifierMap<gid_t, lid_t, gno_t, lno_t> > identifierMap_;
   const RCP<const Xpetra::Map<lno_t, gno_t> > rowMap_;
   const RCP<const Xpetra::Map<lno_t, gno_t> > colMap_;
   RCP<const Teuchos::Comm<int> > comm_;

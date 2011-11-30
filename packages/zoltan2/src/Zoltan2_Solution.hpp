@@ -23,7 +23,7 @@ namespace Zoltan2 {
     Just a placeholder for now.
 */
 
-template <typename Adapter>
+template <typename gid_t, typename lid_t, typename lno_t>
   class Solution
 {
 };

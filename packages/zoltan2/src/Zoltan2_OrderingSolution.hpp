@@ -23,13 +23,10 @@ namespace Zoltan2 {
 /*! Zoltan2::OrderingSolution
 */
 
-template <typename Adapter>
-  class OrderingSolution : public Solution<Adapter>
+template <typename gid_t, typename lid_t, typename lno_t>
+  class OrderingSolution : public Solution<gid_t, lid_t, lno_t>
 {
 public:
-  typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::lid_t lid_t;
-  typedef typename Adapter::lno_t lno_t;
 
   //////////////////////////////////////////////
   void setPermutation(
