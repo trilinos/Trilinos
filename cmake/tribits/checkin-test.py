@@ -154,7 +154,12 @@ def main():
     sys.stderr = teeOutput
     try:
       success = runProjectTestsWithCommandLineArgs(sys.argv[1:])
-    except Exception:
+    except SystemExit, e:
+      # In Python 2.4, SystemExit inherits Exception, but for proper exit
+      # behavior the SystemExit exception must propagate all the way to the top
+      # of the call stack. It cannot get handled by the catch Exception below.
+      raise e
+    except Exception, e:
       success = False
       traceback.print_exc(file=teeOutput)
   finally:
