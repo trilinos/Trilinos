@@ -36,10 +36,7 @@
 //#include "my_feti_sparse_solver.hpp"
 #include "Epetra_LAPACK.h"
 #include "solver_crd.hpp"
-extern "C"{
-  void metis_nodend(int* N,int XADJ[],int ADJD[],int* numflag,
-		    int OPTIONS[],int PERM[],int INVP[]);
-}
+
 class CLAPS_sparse_lu2 : public solver_crd {
  public:
   CLAPS_sparse_lu2();
