@@ -52,7 +52,7 @@ int AlgRandom(
   }
 
   // Swap random pairs of indices in perm.
-  lno_t temp;
+  lno_t j, temp;
   for (lno_t i=nVtx-1; i>0; i--){
     // Choose j randomly in [0,i]
     j = rand() % (i+1);
