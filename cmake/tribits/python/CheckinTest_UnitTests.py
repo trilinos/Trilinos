@@ -1275,7 +1275,7 @@ class test_checkin_test(unittest.TestCase):
       "-extra-repos=.preCopyrightTrilinos.\n" \
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
       +"trilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride+"\n" \
-      +"Modified file: .packages/../preCopyrightTrilinos/teko/CMakeLists.txt.\n" \
+      +"Modified file: .preCopyrightTrilinos/teko/CMakeLists.txt.\n" \
       +"  => Enabling .Teko.!\n" \
       +"Teko of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
       +"Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n" \

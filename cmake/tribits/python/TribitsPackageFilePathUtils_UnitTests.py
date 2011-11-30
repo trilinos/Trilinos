@@ -69,24 +69,29 @@ import unittest
 class test_isGlobalBuildFileRequiringGlobalRebuild(unittest.TestCase):
 
 
-  def test_Trilinos_version_h(self):
-    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'Trilinos_version.h' ), True )
-
-
   def test_CMakeLists_txt(self):
     self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'CMakeLists.txt' ), True )
 
 
-  def test_TrilinosPackages_cmake(self):
-    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TrilinosPackages.cmake' ), False )
+  def test_PackagesList_cmake(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'PackagesList.cmake' ), False )
 
 
-  def test_TrilinosTPLs_cmake(self):
-    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TrilinosTPLs.cmake' ), False )
+  def test_TPLsList_cmake(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'TPLsList.cmake' ), False )
+
+
+  def test_Version_cmake(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'Version.cmake' ), True )
+
+
+  def test_Anything_cmake(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'Anything.cmake' ), True )
 
 
   def test_TrilinosCMakeQuickstart_txt(self):
-    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TrilinosCMakeQuickstart.txt' ), False )
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TrilinosCMakeQuickstart.txt' ),
+      False )
 
 
   def test_experimental_build_test_cmake(self):
@@ -94,32 +99,32 @@ class test_isGlobalBuildFileRequiringGlobalRebuild(unittest.TestCase):
       False )
 
 
-  def test_DependencyUnitTests(self):
-    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/DependencyUnitTests/blah' ),
+  def test_cmake_UnitTests(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/anything/UnitTests/CMakeLists.txt' ),
       False )
 
 
-  def test_FindTPLBLAS(self):
+  def test_FindTPLBLAS_cmake(self):
     self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TPLs/FindTPLBLAS.cmake' ),
-      True )
+      False )
 
 
-  def test_FindTPLLAPACK(self):
+  def test_FindTPLLAPACK_cmake(self):
     self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TPLs/FindTPLLAPACK.cmake' ),
-      True )
+      False )
 
 
-  def test_FindTPLMPI(self):
+  def test_FindTPLMPI_cmake(self):
     self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TPLs/FindTPLMPI.cmake' ),
-      True )
+      False )
 
 
-  def test_FindTPLDummy(self):
+  def test_FindTPLDummy_cmake(self):
     self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TPLs/FindTPLDummy.cmake' ),
       False )
 
 
-  def test_SetNotFound(self):
+  def test_SetNotFound_cmake(self):
     self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/utils/SetNotFound.cmake' ),
       True )
 

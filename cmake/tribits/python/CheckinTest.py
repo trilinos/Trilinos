@@ -540,7 +540,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
         inOptions_inout.enableAllPackages = 'on'
 
     if gitRepoName:
-      modifiedFileFullPath = "packages/../"+gitRepoName+"/"+modifiedFileFullPath
+      modifiedFileFullPath = gitRepoName+"/"+modifiedFileFullPath
     #print "\nmodifiedFileFullPath =", modifiedFileFullPath
 
     packageName = getPackageNameFromPath(trilinosDependenciesLocal, modifiedFileFullPath)

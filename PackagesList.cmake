@@ -105,65 +105,65 @@ INCLUDE(TribitsListHelpers)
 #
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  TrilinosFramework     ../cmake                       PS # Only tests, no libraries/capabilities!
-  Teuchos               teuchos                        PS
-  ThreadPool            ThreadPool                     PS # Depends on ptheads system library
-  Sacado                sacado                         PS
-  RTOp                  rtop                           PS
-  Kokkos                kokkos                         PS
-  Epetra                epetra                         PS
-  Zoltan                zoltan                         PS
-  Shards                shards                         PS
-  GlobiPack             globipack                      PS
-  Triutils              triutils                       PS
-  Tpetra                tpetra                         PS
-  EpetraExt             epetraext                      PS
-  Thyra                 thyra                          PS
-  OptiPack              optipack                       PS
-  Isorropia             isorropia                      PS
-  Pliris                pliris                         PS
-  Claps                 claps                          SS
-  AztecOO               aztecoo                        PS
-  Galeri                galeri                         PS
-  Amesos2               amesos2                        EX
-  Amesos                amesos                         PS
-  Pamgen                pamgen                         PS
-  SEACAS                seacas                         SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
-  Trios                 trios                          EX #temporary
-  Ifpack                ifpack                         PS
-  Komplex               komplex                        PS
-  ML                    ml                             PS
-  Belos                 belos                          PS
-  Ifpack2               ifpack2                        PS
-  Stratimikos           stratimikos                    PS
-  Meros                 meros                          EX # no longer released
-  FEI                   fei                            PS
-  Anasazi               anasazi                        PS
-  Teko                  teko                           SS
-  RBGen                 rbgen                          PS
-  TriKota               TriKota                        SS
-  Intrepid              intrepid                       PS
-  STK                   stk                            SS # Depends on boost
-  Phalanx               phalanx                        SS
-  Phdmesh               phdmesh                        EX # to be replaced by STK
-  NOX                   nox                            PS
-  Moertel               moertel                        PS
-  TrilinosCouplings     trilinoscouplings              SS
-  Rythmos               rythmos                        PS
-  MOOCHO                moocho                         PS
-  Aristos               aristos                        EX
-  Stokhos               stokhos                        SS
-  Piro                  piro                           SS
-  Sundance              Sundance                       SS # Could be PS based on deps (BUG: 4669)
-  CTrilinos             CTrilinos                      SS # Switched to SS to speed up checkin testing
-  ForTrilinos           ForTrilinos                    EX
-  PyTrilinos            PyTrilinos                     SS
-  WebTrilinos           WebTrilinos                    EX # Should be SS
-  Didasko               didasko                        SS
-  NewPackage            new_package                    EX # Should be SS
-  Optika		optika			       SS
-  Mesquite              mesquite                       PS
-  FEApp                 ../demos/FEApp                 SS # Capability demonstration package
+  TrilinosFramework     cmake                             PS # Only tests, no libraries/capabilities!
+  Teuchos               packages/teuchos                  PS
+  ThreadPool            packages/ThreadPool               PS # Depends on ptheads system library
+  Sacado                packages/sacado                   PS
+  RTOp                  packages/rtop                     PS
+  Kokkos                packages/kokkos                   PS
+  Epetra                packages/epetra                   PS
+  Zoltan                packages/zoltan                   PS
+  Shards                packages/shards                   PS
+  GlobiPack             packages/globipack                PS
+  Triutils              packages/triutils                 PS
+  Tpetra                packages/tpetra                   PS
+  EpetraExt             packages/epetraext                PS
+  Thyra                 packages/thyra                    PS
+  OptiPack              packages/optipack                 PS
+  Isorropia             packages/isorropia                PS
+  Pliris                packages/pliris                   PS
+  Claps                 packages/claps                    SS
+  AztecOO               packages/aztecoo                  PS
+  Galeri                packages/galeri                   PS
+  Amesos2               packages/amesos2                  EX
+  Amesos                packages/amesos                   PS
+  Pamgen                packages/pamgen                   PS
+  SEACAS                packages/seacas                   SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
+  Trios                 packages/trios                    EX #temporary
+  Ifpack                packages/ifpack                   PS
+  Komplex               packages/komplex                  PS
+  ML                    packages/ml                       PS
+  Belos                 packages/belos                    PS
+  Ifpack2               packages/ifpack2                  PS
+  Stratimikos           packages/stratimikos              PS
+  Meros                 packages/meros                    EX # no longer released
+  FEI                   packages/fei                      PS
+  Anasazi               packages/anasazi                  PS
+  Teko                  packages/teko                     SS
+  RBGen                 packages/rbgen                    PS
+  TriKota               packages/TriKota                  SS
+  Intrepid              packages/intrepid                 PS
+  STK                   packages/stk                      SS # Depends on boost
+  Phalanx               packages/phalanx                  SS
+  Phdmesh               packages/phdmesh                  EX # to be replaced by STK
+  NOX                   packages/nox                      PS
+  Moertel               packages/moertel                  PS
+  TrilinosCouplings     packages/trilinoscouplings        SS
+  Rythmos               packages/rythmos                  PS
+  MOOCHO                packages/moocho                   PS
+  Aristos               packages/aristos                  EX
+  Stokhos               packages/stokhos                  SS
+  Piro                  packages/piro                     SS
+  Sundance              packages/Sundance                 SS # Could be PS based on deps (BUG: 4669)
+  CTrilinos             packages/CTrilinos                SS # Switched to SS to speed up checkin testing
+  ForTrilinos           packages/ForTrilinos              EX
+  PyTrilinos            packages/PyTrilinos               SS
+  WebTrilinos           packages/WebTrilinos              EX # Should be SS
+  Didasko               packages/didasko                  SS
+  NewPackage            packages/new_package              EX # Should be SS
+  Optika		packages/optika		          SS
+  Mesquite              packages/mesquite                 PS
+  FEApp                 demos/FEApp                       SS # Capability demonstration package
   )
 
 

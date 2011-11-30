@@ -62,9 +62,9 @@
 #
 # TPL_FINDMOD:
 #
-#   The name of the find module under Trilinos/cmake/TPLs that is used to get the
-#   names of the TPLs.  If left empty '', it will just be set to FindTPL${TPL_NAME}.
-#
+#   The name of the find module under that is used to get the names of the
+#   TPLs.  If ends in '/' then this gives the directory and the standard module
+#   name will be used which is FindTPL${TPL_NAME}.cmake.
 #
 # TPL_CLASSIFICATION:
 #
@@ -108,67 +108,67 @@
 #
 
 SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
-  Peano           ""    EX
-  CUDA            ""    EX
-  Thrust          ""    EX
-  Cusp            ""    EX
-  TBB             ""    EX
-  Pthread         ""    SS
-  HWLOC           ""    SS
-  BinUtils        ""    SS
-  ARPREC          ""    SS
-  QD              ""    SS
-  MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/FindTPLMPI.cmake"    PS
-  BLAS            ""    PS
-  LAPACK          ""    PS
-  Boost           ""    SS
-  Scotch          ""    SS
-  OVIS            ""    SS
-  METIS           ""    TS
-  ParMETIS        ""    SS
-  PaToH           ""    SS
-  CppUnit         ""    SS
-  ADOLC           ""    SS
-  ADIC            ""    EX
-  TVMET           ""    SS
-  MF              ""    SS
-  ExodusII        ""    SS
-  Nemesis         ""    SS
-  XDMF            ""    TS
-  Netcdf          ""    SS
-  y12m            ""    SS
-  SuperLUDist     ""    SS
-  SuperLUMT	  ""	SS
-  SuperLU         ""    SS
-  Zlib            ""    SS
-  UMFPACK         ""    SS
-  MA28            ""    TS
-  AMD             ""    TS
-  PETSC           ""    SS
-  HYPRE           ""    EX
-  BLACS           ""    SS
-  SCALAPACK       ""    SS
-  MUMPS           ""    SS
-  PARDISO_MKL     ""    EX
-  Oski            ""    SS
-  TAUCS           ""    SS
-  ForUQTK         ""    EX
-  Dakota          ""    EX
-  HIPS            ""    EX
-  HDF5            ""    EX
-  MATLAB          ""    EX
-  CASK            ""    EX
-  SPARSKIT        ""    SS
-  QT              ""    SS
-  gtest           ""    EX
-  BoostLib        ""    SS
-  OpenNURBS       ""    EX
-  Portals         ""    SS
-  CrayPortals     ""    SS
-  Gemini          ""    SS
-  InfiniBand      ""    SS
-  Pablo           ""    SS
-  Pnetcdf         ""    SS
+  Peano           "cmake/TPLs/"    EX
+  CUDA            "cmake/TPLs/"    EX
+  Thrust          "cmake/TPLs/"    EX
+  Cusp            "cmake/TPLs/"    EX
+  TBB             "cmake/TPLs/"    EX
+  Pthread         "cmake/TPLs/"    SS
+  HWLOC           "cmake/TPLs/"    SS
+  BinUtils        "cmake/TPLs/"    SS
+  ARPREC          "cmake/TPLs/"    SS
+  QD              "cmake/TPLs/"    SS
+  MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"    PS
+  BLAS            "cmake/TPLs/"    PS
+  LAPACK          "cmake/TPLs/"    PS
+  Boost           "cmake/TPLs/"    SS
+  Scotch          "cmake/TPLs/"    SS
+  OVIS            "cmake/TPLs/"    SS
+  METIS           "cmake/TPLs/"    TS
+  ParMETIS        "cmake/TPLs/"    SS
+  PaToH           "cmake/TPLs/"    SS
+  CppUnit         "cmake/TPLs/"    SS
+  ADOLC           "cmake/TPLs/"    SS
+  ADIC            "cmake/TPLs/"    EX
+  TVMET           "cmake/TPLs/"    SS
+  MF              "cmake/TPLs/"    SS
+  ExodusII        "cmake/TPLs/"    SS
+  Nemesis         "cmake/TPLs/"    SS
+  XDMF            "cmake/TPLs/"    TS
+  Netcdf          "cmake/TPLs/"    SS
+  y12m            "cmake/TPLs/"    SS
+  SuperLUDist     "cmake/TPLs/"    SS
+  SuperLUMT	  "cmake/TPLs/"	SS
+  SuperLU         "cmake/TPLs/"    SS
+  Zlib            "cmake/TPLs/"    SS
+  UMFPACK         "cmake/TPLs/"    SS
+  MA28            "cmake/TPLs/"    TS
+  AMD             "cmake/TPLs/"    TS
+  PETSC           "cmake/TPLs/"    SS
+  HYPRE           "cmake/TPLs/"    EX
+  BLACS           "cmake/TPLs/"    SS
+  SCALAPACK       "cmake/TPLs/"    SS
+  MUMPS           "cmake/TPLs/"    SS
+  PARDISO_MKL     "cmake/TPLs/"    EX
+  Oski            "cmake/TPLs/"    SS
+  TAUCS           "cmake/TPLs/"    SS
+  ForUQTK         "cmake/TPLs/"    EX
+  Dakota          "cmake/TPLs/"    EX
+  HIPS            "cmake/TPLs/"    EX
+  HDF5            "cmake/TPLs/"    EX
+  MATLAB          "cmake/TPLs/"    EX
+  CASK            "cmake/TPLs/"    EX
+  SPARSKIT        "cmake/TPLs/"    SS
+  QT              "cmake/TPLs/"    SS
+  gtest           "cmake/TPLs/"    EX
+  BoostLib        "cmake/TPLs/"    SS
+  OpenNURBS       "cmake/TPLs/"    EX
+  Portals         "cmake/TPLs/"    SS
+  CrayPortals     "cmake/TPLs/"    SS
+  Gemini          "cmake/TPLs/"    SS
+  InfiniBand      "cmake/TPLs/"    SS
+  Pablo           "cmake/TPLs/"    SS
+  Pnetcdf         "cmake/TPLs/"    SS
   )
 
 # NOTES:

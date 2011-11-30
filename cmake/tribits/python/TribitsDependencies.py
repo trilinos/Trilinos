@@ -266,23 +266,12 @@ class TribitsDependencies:
     return None
 
 
-  def getPackageNameFromPath(self, fullPath, prefixPath):
-    #print "\nfullPath="+fullPath
-    fullPathArray = getFilePathArray(fullPath)
-    if fullPathArray[0] == "packages":
-      regexPathPrefix = "packages/"
-      pathPrefix = ""
-    else:
-      regexPathPrefix = ""
-      pathPrefix = "../"
-    #print "regexPathPrefix = '"+regexPathPrefix+"'"
-    #print "pathPrefix = '"+pathPrefix+"'"
+  def getPackageNameFromPath(self, fullPath):
     for packageDep in self.__packagesList:
-      regexFilePath = regexPathPrefix+packageDep.packageDir+"/"
-      ammendedFullPath = pathPrefix+fullPath 
+      regexFilePath = packageDep.packageDir+"/"
       #print "\nregexFilePath="+regexFilePath
-      #print "ammendedFullPath="+ammendedFullPath
-      if re.match(regexFilePath, ammendedFullPath):
+      #print "fullPath="+fullPath
+      if re.match(regexFilePath, fullPath):
         #print "MATCH!"
         return packageDep.packageName
     return u""

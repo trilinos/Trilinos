@@ -57,8 +57,8 @@
 INCLUDE(TribitsListHelpers)
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  Teko         ../preCopyrightTrilinos/teko      SS
-  Stalix       ../preCopyrightTrilinos/stalix    EX
+  Teko         teko      SS
+  Stalix       stalix    EX
   )
 
 #
