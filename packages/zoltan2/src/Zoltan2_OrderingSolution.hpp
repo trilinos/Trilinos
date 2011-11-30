@@ -23,8 +23,8 @@ namespace Zoltan2 {
 /*! Zoltan2::OrderingSolution
 */
 
-template <typename gid_t, typename lid_t>
-  class OrderingSolution : public Solution<gid_t, lid_t>
+template <typename gid_t, typename lid_t, typename lno_t>
+  class OrderingSolution : public Solution<gid_t, lid_t, lno_t>
 {
 public:
 
@@ -33,7 +33,7 @@ public:
     size_t length,   // Length of arrays
     gid_t *gids,     // GIDs
     lid_t *lids,     // LIDs
-    size_t *perm     // perm[i] = k means k is the i'th element in the perm.
+    lno_t *perm     // perm[i] = k means k is the i'th element in the perm.
   )
   {
     HELLO;
@@ -50,7 +50,7 @@ public:
     else     // lids may be NULL
       lids_ = ArrayView<lid_t>(Teuchos::null);
 
-    perm_ = ArrayView<size_t>(perm, length);
+    perm_ = ArrayView<lno_t>(perm, length);
   }
 
   //////////////////////////////////////////////
@@ -58,10 +58,10 @@ public:
     size_t *length,   // returned: Length of arrays
     gid_t **gids,     // returned: GIDs
     lid_t **lids,     // returned: LIDs
-    size_t **perm     // returned: Permutation
+    lno_t **perm     // returned: Permutation
   )
   {
-    *length = gids_.size();
+    *length = perm_.size();
     *gids   = gids_.getRawPtr();
 
     if (lids_.getRawPtr() != (lid_t*) Teuchos::null) *lids = lids_.getRawPtr();
@@ -75,7 +75,7 @@ protected:
   size_t nParts_;
   ArrayView<gid_t>  gids_;
   ArrayView<lid_t>  lids_;
-  ArrayView<size_t> perm_;    // zero-based local permutation
+  ArrayView<lno_t> perm_;    // zero-based local permutation
   //ArrayView<size_t> invperm_; // inverse of permutation above
 };
 

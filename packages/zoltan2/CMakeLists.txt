@@ -42,6 +42,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_HAVE_MALLINFO
   "malloc.h supports mallinfo()"
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_AMD
+  HAVE_AMD
+  "AMD is present"
+  OFF )
+
 #
 # The Zoltan library (in zz/zz_util.h) has utilities that
 # read /proc/meminfo at runtime.  There is code in Zoltan2
