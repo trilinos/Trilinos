@@ -54,6 +54,7 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 
 #ifdef EPETRA_MPI
 #  include <mpi.h>
@@ -73,6 +74,63 @@ using std::endl;
 using std::vector;
 
 namespace {
+
+  // Test creation of a Belos solver, using Belos::SolverFactory.
+  //
+  // Template parameters:
+  //
+  // SolverFactoryType: the Belos::SolverFactory specialization
+  // SolverBaseType: the Belos::SolverManager specialization
+  // SolverImplType: the Belos::SolverManager subclass which the
+  //   factory is supposed to produce.
+  //
+  // Function parameters:
+  // 
+  // factory: A Belos::SolverFactory instance.  Passing it in as a
+  //   reference lets us reuse the same factory instance for multiple
+  //   tests.  This saves the (small) overhead of creating the factory
+  //   each time, and also (more importantly) ensures that the
+  //   factory's create() method gets tested for multiple calls to the
+  //   same factory instance.  The reference is nonconst because the
+  //   create() method is nonconst.
+  //
+  // solverName: Name of the solver to create.
+  //
+  // out: An output stream reference to which to write verbose output
+  //   (verbose == true). When building with MPI, this should be a
+  //   black-hole stream (Teuchos::oblackholestream) reference on
+  //   every MPI process except the process with Rank 0.
+  //   
+  // verbose: Whether to write verbose output.
+  template<class SolverFactoryType, class SolverBaseType, class SolverImplType>
+  void
+  testCreatingSolver (SolverFactoryType& factory, 
+		      const std::string& solverName,
+		      std::ostream& out,
+		      const bool verbose)
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+    using Teuchos::TypeNameTraits;
+    using std::endl;
+
+    if (verbose) {
+      out << "Creating solver named: \"" << solverName << "\"" << endl;
+    }
+    RCP<ParameterList> solverParams = parameterList ();
+    RCP<SolverBaseType> solver = factory.create (solverName, solverParams);
+    TEUCHOS_TEST_FOR_EXCEPTION(solver.is_null(), std::logic_error,
+			       "Failed to create solver with valid name \"" 
+			       << solverName << "\".");
+    if (verbose) {
+      out << "Solver description: " << solver->description() << endl;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(rcp_dynamic_cast<SolverImplType> (solver).is_null(), 
+      std::logic_error, "Solver does not have the correct type.  Type should be "
+      << TypeNameTraits<SolverImplType>::name() << ".");
+  }
 
   int
   selectVerbosity (const bool verbose, const bool debug)
@@ -152,7 +210,7 @@ main (int argc, char *argv[])
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
   typedef Belos::SolverManager<scalar_type, MV, OP> solver_base_type;
-  typedef Belos::PseudoBlockGmresSolMgr<scalar_type, MV, OP> solver_impl_type;
+  typedef Belos::SolverFactory<scalar_type, MV, OP> factory_type;
 
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
@@ -166,6 +224,7 @@ main (int argc, char *argv[])
 #endif // EPETRA_MPI
     comm = rcp_implicit_cast<Epetra_Comm> (commSpecific);
   }
+  std::ostream& out = (comm->MyPID() == 0) ? std::cout : blackHole;
 
   int numRHS = 1;
   bool verbose = false;
@@ -213,29 +272,93 @@ main (int argc, char *argv[])
   // "Right-hand side" input multivector.
   RCP<MV> B = rcp (new MV (*rangeMap, numRHS));
   A->Apply (*X_exact, *B);
-  
-  // Solver parameters.
-  RCP<ParameterList> solverParams = parameterList ();
+
   //
-  // Create a solver instance using a solver factory.
+  // Test creating solver instances using the solver factory.
   //
-  const std::string solverName ("Pseudoblock GMRES");
-  const std::string solverType ("PseudoBlockGmresSolMgr");
-  SolverFactory<scalar_type, MV, OP> factory;
-  RCP<solver_base_type> solver = factory.create (solverName, solverParams);
-  TEUCHOS_TEST_FOR_EXCEPTION(solver.is_null(), std::logic_error,
-			     "Failed to create solver with valid name \"" 
-			     << solverName << "\".");
-  if (verbose && comm->MyPID() == 0) {
-    cout << "Solver description: " << solver->description() << endl;
+  factory_type factory;
+  //
+  // Test the canonical solver names.
+  //
+  {
+    typedef Belos::BlockGmresSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "Block GMRES", out, verbose);
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(rcp_dynamic_cast<solver_impl_type> (solver).is_null(), 
-    std::logic_error, 
-    "Solver does not have the correct type \"" << solverType << "\".");
+  {
+    typedef Belos::PseudoBlockGmresSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "Pseudoblock GMRES", out, verbose);
+  }
+  {
+    typedef Belos::BlockCGSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "Block CG", out, verbose);
+  }
+  {
+    typedef Belos::PseudoBlockCGSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "Pseudoblock CG", out, verbose);
+  }
+  {
+    typedef Belos::GCRODRSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "GCRODR", out, verbose);
+  }
+  {
+    typedef Belos::RCGSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "RCG", out, verbose);
+  }
+  {
+    typedef Belos::MinresSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "MINRES", out, verbose);
+  }
+  {
+    typedef Belos::LSQRSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "LSQR", out, verbose);
+  }
+  //
+  // Test aliases.
+  //
+  {
+    typedef Belos::BlockGmresSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "Flexible GMRES", out, verbose);
+  }
+  {
+    typedef Belos::PseudoBlockCGSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "CG", out, verbose);
+  }
+  {
+    typedef Belos::RCGSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "Recycling CG", out, verbose);
+  }
+  {
+    typedef Belos::GCRODRSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "Recycling GMRES", out, verbose);
+  }
+  {
+    typedef Belos::PseudoBlockGmresSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "Pseudo Block GMRES", out, verbose);
+  }
+  {
+    typedef Belos::PseudoBlockCGSolMgr<scalar_type, MV, OP> solver_impl_type;
+    testCreatingSolver<factory_type, solver_base_type, 
+      solver_impl_type> (factory, "Pseudo Block CG", out, verbose);
+  }
+  
   if (comm->MyPID() == 0) {
     cout << "End Result: TEST PASSED" << endl;
   }
   return EXIT_SUCCESS;
 }
+
 
 
