@@ -224,17 +224,14 @@ int main(int narg, char** arg)
   }
 
   ////// Basic metric checking of the partitioning solution
-  size_t checkNparts;
+  ////// Not ordinarily done in application code; just doing it for testing here.
+  size_t checkNparts = problem.getSolution()->getNumParts();
   size_t checkLength;
-  z2TestGO *checkGIDs;
-  z2TestLO *checkLIDs;
-  size_t *checkParts;
-  Zoltan2::PartitioningSolution<SparseMatrixAdapter> *soln = 
-           problem.getSolution();
+  z2TestGO *checkGIDs = problem.getSolution()->getGids(&checkLength);
+  z2TestLO *checkLIDs = problem.getSolution()->getLids(&checkLength);
+  size_t  *checkParts = problem.getSolution()->getParts(&checkLength);
 
   // Check number of parts
-  soln->getPartition(&checkNparts, &checkLength,
-                     &checkGIDs, &checkLIDs, &checkParts);
   if (me == 0) 
     cout << "Number of parts:  " << checkNparts 
          << (checkNparts != comm->getSize()

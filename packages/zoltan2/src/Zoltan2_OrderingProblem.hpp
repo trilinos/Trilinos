@@ -26,12 +26,10 @@ namespace Zoltan2{
 template<typename Adapter>
 class OrderingProblem : public Problem<Adapter>
 {
-protected:
-  void createOrderingProblem();
-
-  RCP<OrderingSolution<Adapter> > solution_;
-
 public:
+
+  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::lid_t lid_t;
 
   // Destructor
   virtual ~OrderingProblem() {};
@@ -50,9 +48,15 @@ public:
   virtual void solve();
   // virtual void redistribute();
 
-  OrderingSolution<Adapter> *getSolution() {
+  OrderingSolution<gid_t, lid_t> *getSolution() {
     return solution_.getRawPtr();
   };
+
+private:
+  void createOrderingProblem();
+
+  RCP<OrderingSolution<gid_t, lid_t> > solution_;
+
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -61,7 +65,7 @@ void OrderingProblem<Adapter>::solve()
 {
   HELLO;
 
-  this->solution_ = rcp(new OrderingSolution<Adapter>);
+  this->solution_ = rcp(new OrderingSolution<gid_t, lid_t>);
 
   // Determine which algorithm to use based on defaults and parameters.
   // For now, assuming RCM.

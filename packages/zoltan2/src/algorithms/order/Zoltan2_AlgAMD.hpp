@@ -17,7 +17,8 @@ namespace Zoltan2{
 template <typename Adapter>
 int AlgAMD(
   const RCP<GraphModel<Adapter> > &model,
-  const RCP<OrderingSolution<Adapter> > &solution,
+  const RCP<OrderingSolution<typename Adapter::gid_t,
+                             typename Adapter::lid_t> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
   const RCP<const Teuchos::Comm<int> > &comm
 ) 

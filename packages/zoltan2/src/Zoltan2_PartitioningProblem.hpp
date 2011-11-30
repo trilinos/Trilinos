@@ -25,12 +25,10 @@ namespace Zoltan2{
 template<typename Adapter>
 class PartitioningProblem : public Problem<Adapter>
 {
-protected:
-  void createPartitioningProblem();
-
-  RCP<PartitioningSolution<Adapter> > solution_;
-
 public:
+
+  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::lid_t lid_t;
 
   // Destructor
   virtual ~PartitioningProblem() {};
@@ -59,9 +57,15 @@ public:
   //    don't think I've seen this style before.
   virtual void solve();
 
-  PartitioningSolution<Adapter> *getSolution() {
+  PartitioningSolution<gid_t, lid_t> *getSolution() {
     return solution_.getRawPtr();
   };
+
+private:
+  void createPartitioningProblem();
+
+  RCP<PartitioningSolution<gid_t, lid_t> > solution_;
+
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -71,13 +75,12 @@ void PartitioningProblem<Adapter>::solve()
   HELLO;
 
   try {
-    this->solution_ = rcp(new PartitioningSolution<Adapter>);
 
     // Determine which algorithm to use based on defaults and parameters.
     // For now, assuming Scotch graph partitioning.
 
     AlgPTScotch<Adapter>(this->graphModel_, this->solution_, this->params_,
-                         this->comm_);
+                         this->comm_, this->env_);
   }
   Z2_FORWARD_EXCEPTIONS;
 }
