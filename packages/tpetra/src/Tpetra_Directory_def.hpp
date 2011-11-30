@@ -148,7 +148,24 @@ namespace Tpetra {
         GlobalOrdinal GID = *gid;
         // Guess uniform distribution and start a little above it
         // TODO: replace by a binary search
-        int curimg = TEUCHOS_MIN((int)(GID / TEUCHOS_MAX(nOverP, 1)) + 2, numImages - 1);
+	//
+	// The commented-out line below is not correct for negative
+	// GID values.  This is because a GlobalOrdinal (typically
+	// signed) divided by a global_size_t (unsigned) turns into
+	// unsigned, then gets cast back to (signed) int.  This turns
+	// small negative values of GID into bogus values.  We
+	// observed this in practice.
+	//
+        //int curimg = TEUCHOS_MIN((int)(GID / TEUCHOS_MAX(nOverP, 1)) + 2, numImages - 1);
+	int curimg;
+	{
+	  const GlobalOrdinal one = Teuchos::OrdinalTraits<GlobalOrdinal>::one();
+	  const GlobalOrdinal two = one + one;
+	  const GlobalOrdinal nOverP_GID = static_cast<GlobalOrdinal> (nOverP);
+	  const GlobalOrdinal lowerBound = GID / TEUCHOS_MAX(nOverP_GID, one) + two;
+	  const int lowerBound_int = static_cast<int> (lowerBound);
+	  curimg = TEUCHOS_MIN(lowerBound_int, numImages - 1);
+	}
         bool found = false;
         while (curimg >= 0 && curimg < numImages) {
           if (allMinGIDs_[curimg] <= GID) {
