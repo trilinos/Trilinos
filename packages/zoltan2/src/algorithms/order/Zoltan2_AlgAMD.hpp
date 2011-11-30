@@ -6,6 +6,41 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 
+#ifdef HAVE_AMD
+#include "amd.h"
+#endif
+
+template <typename Ordinal>
+class AMDTraits
+{
+    public:
+    Ordinal order(Ordinal n, const Ordinal *Ap, const Ordinal *Ai,
+                Ordinal *perm, double *control, double *info);
+};
+
+#ifdef HAVE_AMD
+template <>
+class AMDTraits<int>
+{
+    public:
+    int order(int n, const int *Ap, const int *Ai, int *perm,
+                double *control, double *info)
+    {
+        return (amd_order(n, Ap, Ai, perm, control, info));
+    }
+};
+
+template <>
+class AMDTraits<long>
+{
+    public:
+    long order(long n, const long *Ap, const long *Ai, long *perm,
+                double *control, double *info)
+    {
+        return (amd_l_order(n, Ap, Ai, perm, control, info));
+    }
+};
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgAMD.hpp
@@ -28,14 +63,47 @@ int AlgAMD(
   typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::scalar_t scalar_t;
 
+  AMDTraits<lno_t> AMDobj;
+
   int ierr= 0;
 
-  HELLO;
-
-  // TEST: return the identity permutation.
   const size_t nVtx = model->getLocalNumVertices();
 
-  cout << "Local num vertices " << nVtx << endl;   
+  cout << "Local num vertices" << nVtx << endl;
+  ArrayView<const gno_t> edgeIds;
+  ArrayView<const int> procIds;
+  ArrayView<const lno_t> offsets;
+  ArrayView<const scalar_t> wgts;
+
+  // TODO: Need to get local IDs
+  const size_t nEdgs = model->getEdgeList( edgeIds,
+                        procIds, offsets, wgts);
+
+  lno_t *perm;
+  perm = new lno_t[nVtx];
+
+#ifdef HAVE_AMD
+  cout << "AMD is enabled" << endl;
+  double Control[AMD_CONTROL];
+  double Info[AMD_INFO];
+
+  amd_defaults(Control);
+  amd_control(Control);
+  lno_t result = AMDobj.order(nVtx, offsets.getRawPtr(),
+                         edgeIds.getRawPtr(), perm, Control, Info);
+
+  if (result != AMD_OK && result != AMD_OK_BUT_JUMBLED)
+      ierr = -1; // TODO: Change return value to lno_t
+  else
+  {
+      // Set solution.
+      solution->setPermutation(nVtx,
+                   (gid_t *) NULL, // TODO
+                   (lid_t *) NULL, // TODO
+                   perm);
+  }
+
+#endif
 
   return ierr;
 }

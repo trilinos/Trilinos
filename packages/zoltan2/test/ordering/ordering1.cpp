@@ -56,7 +56,7 @@ typedef Zoltan2::XpetraVectorInput<Vector> VectorAdapter;
 
 #define epsilon 0.00000001
 
-int validatePerm(int n, size_t *perm)
+int validatePerm(size_t n, z2TestLO *perm)
 // returns 0 if permutation is valid
 {
   std::vector<int> count(n);
@@ -222,7 +222,7 @@ int main(int narg, char** arg)
   size_t checkLength;
   z2TestGO *checkGIDs;
   z2TestLO *checkLIDs;
-  size_t *checkPerm;
+  z2TestLO *checkPerm;
   Zoltan2::OrderingSolution<SparseMatrixAdapter> *soln = 
            problem.getSolution();
 
