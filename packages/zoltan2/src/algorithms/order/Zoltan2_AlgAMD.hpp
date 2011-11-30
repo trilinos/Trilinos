@@ -102,7 +102,9 @@ int AlgAMD(
                    (lid_t *) NULL, // TODO
                    perm);
   }
-
+#else
+  cout << "Zoltan2 is not built with AMD." << endl;
+  ierr = -2; // TODO: Need better error numbers ?
 #endif
 
   return ierr;
