@@ -152,10 +152,11 @@ def main():
   try:
     sys.stdout = teeOutput
     sys.stderr = teeOutput
-    success = runProjectTestsWithCommandLineArgs(sys.argv[1:])
-  except Exception:
-    success = False
-    traceback.print_exc(file=teeOutput)
+    try:
+      success = runProjectTestsWithCommandLineArgs(sys.argv[1:])
+    except Exception:
+      success = False
+      traceback.print_exc(file=teeOutput)
   finally:
     # Reset stdout and stderr
     sys.stdout = originalStdout
