@@ -163,6 +163,10 @@ namespace Tpetra {
 	  const GlobalOrdinal two = one + one;
 	  const GlobalOrdinal nOverP_GID = static_cast<GlobalOrdinal> (nOverP);
 	  const GlobalOrdinal lowerBound = GID / TEUCHOS_MAX(nOverP_GID, one) + two;
+	  // It's probably not OK to cast this to int in general.  It
+	  // works as long as |GID| <= the global number of entries
+	  // and nOverP is appropriately sized for int.  Trouble may
+	  // ensue if the index base has an exotic value.
 	  const int lowerBound_int = static_cast<int> (lowerBound);
 	  curimg = TEUCHOS_MIN(lowerBound_int, numImages - 1);
 	}
