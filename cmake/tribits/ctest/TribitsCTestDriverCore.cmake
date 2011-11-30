@@ -147,7 +147,11 @@ INCLUDE(AppendSet)
 INCLUDE(AppendStringVar)
 INCLUDE(TribitsGlobalMacros)
 INCLUDE(TribitsConstants)
-INCLUDE(${${PROJECT_NAME}_CMAKE_DIR}/${PROJECT_NAME}Version.cmake)
+
+# ToDo: Why is this being included and should it be in the mock project?
+IF (EXISTS ${TRIBITS_PROJECT_ROOT}/Version.cmake)
+  INCLUDE(${TRIBITS_PROJECT_ROOT}/Version.cmake)
+ENDIF()
 
 INCLUDE(TribitsFindPythonInterp)
 TRIBITS_FIND_PYTHON()
@@ -630,7 +634,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV(CTEST_SOURCE_NAME ${PROJECT_NAME})
 
   MESSAGE(
-    "\n***\n"
+    "\n***"
     "\n*** Setting input options to default and reading from env ..."
     "\n***\n")
   

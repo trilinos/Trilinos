@@ -124,7 +124,7 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
     TEST_${TEST_IDX} CMND env
       ARGS
         Trilinos_TRIBITS_DIR=${Trilinos_TRIBITS_DIR}
-        Trilinos_PACKAGES_FILE=${MOCK_TRILINOS_DIR}/cmake/PackagesList.cmake
+        Trilinos_PACKAGES_FILE=${MOCK_TRILINOS_DIR}/PackagesList.cmake
         Trilinos_EXTRAREPOS_FILE=${MOCK_TRILINOS_DIR}/cmake/ExtraRepositoriesList.cmake
         Trilinos_SOURCE_DIRECTORY=${MOCK_TRILINOS_DIR}
         CTEST_DEPENDENCY_HANDLING_UNIT_TESTING=ON
@@ -305,7 +305,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Adding extra Continuous repository Dakota"
     "Trilinos_NUM_PACKAGES='23'"
     "Trilinos_NUM_TPLS='19'"
-    "Reading a list of extra packages from .*/MockTrilinos/preCopyrightTrilinos/ExtraPackagesList.cmake"
+    "Reading a list of extra packages from .*/MockTrilinos/preCopyrightTrilinos/PackagesList.cmake"
     "Trilinos_NUM_PACKAGES='25'"
     "Trilinos_NUM_TPLS='20'"
     "Skipping reading packages and TPLs for extra repo Dakota because marked NOPACKAGES"

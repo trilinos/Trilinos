@@ -1,22 +1,27 @@
 
 TriBITS defines a system for building a set of interrelated software.
 
-Important concepts:
+There are some important concepts that are part of the TriBITS system that
+must be clearly defined.
 
 1) Project:
-* Defines a CMake PROJECT(...)
 * Defines PROJECT_NAME CMake varaible
-* Points to an ordered set of (internal or external) repositories that define
-  packages etc.
+* Defines a CMake project by calling PROJECT(${PROJECT_NAME} ...)
+* Defines a set of native Repositories (see below) that define
+  packages and TPLs etc.  This set of native Repositories defines the
+  official packages list and dependencies data-structure.  The list
+  of native Repositories can be empty!
+* Allows for extra Repositories to be added on before and after the
+  set of native Repositories.
 * Defines a default CDash server and default project name on the server
   (actually, the project name on the CDash server must be the same as
   ${PROJECT_NAME})
-* Files:
+* Core files making up a Project:
     CMakeLists.txt
     CTestConfig.cmake
     ProjectName.cmake
     cmake/
-      tribts/  # [optional] Could just be installed
+      tribts/  # [Optional] Could just point to installed tribits
 
 2) Repository (Collection):
 * Defines a CMake variable specific to the collection refered to the
@@ -30,10 +35,10 @@ Important concepts:
 * [Optional] Points to one ore more other VC repositories
 * [Optional] Defines a common set of initializations and other
   hooks.
-* Files:
+* Core files making up a Repository:
     PackagesList.cmake
     TPLsList.cmake
-    Copyright.txt  # [Optional] Only needed if creating header file
+    Copyright.txt  # [Optional] Only needed if creating version header file
     Version.cmake  # [Optional] Only needed if defining own versioning
     cmake/
        TribitsCallBackA.cmake # [Optional] Only included once
@@ -42,13 +47,17 @@ Important concepts:
        ...
 
 3) Package:
-* Defines a set of libraries and/or headers and/or executables and/or tests,
-  cmake build targets for building these, and publishes the list of header
+* Defines a set of libraries and/or headers and/or executables and/or tests
+  with cmake build targets for building these, and publishes the list of include
   directories and libraries that are created (along with CMake dependencies).
 * Defines dependenices on upstream TPLs and/or other packages by just 
-  naming the depencenices.
+  naming the depencenices using their package names.
 * Publishes a list of header file include paths and/or libraries
-* Installs an XXXConfig.cmake file that provides the list of this info 
+* Installs an XXXConfig.cmake file that provides the list of this info
+* Core files making up a project:
+    CMakeLists.txt  # Only processed if the package is enabled
+    cmake/
+       Dependencies.cmake  # Always processed if package exists
 
 4) TPL:
 * Defines a set of pre-built libraries and/or executables
@@ -56,5 +65,6 @@ Important concepts:
   provided by the TPL
 
 NOTES:
-* A Project and a Repository can be one in the same.  That is a project can
-  provide a set of packages and initializations.
+* A Project and a Repository can be one in the same.  That is, a project can
+  provide a set of packages and initializations.  This linkage is made in
+  the base-level Project CMakeLists.txt file.
