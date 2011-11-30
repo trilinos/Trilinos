@@ -9,6 +9,10 @@
 
 #cmakedefine HAVE_MUELU_EXPLICIT_INSTANTIATION
 
+#cmakedefine HAVE_MUELU_PROFILING
+
+#cmakedefine HAVE_MUELU_GOOGLE_PERFTOOLS
+
 /* Optional Dependencies */
 
 #cmakedefine HAVE_MUELU_AMESOS
@@ -26,8 +30,6 @@
 #cmakedefine HAVE_MUELU_IFPACK2
 
 #cmakedefine HAVE_MUELU_ML
-
-#cmakedefine HAVE_MUELU_PROFILING
 
 #cmakedefine HAVE_MUELU_TPETRA
 

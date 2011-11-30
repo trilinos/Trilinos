@@ -3,31 +3,14 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_Array.hpp>
 
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Version.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
-#include "Tpetra_CrsMatrix.hpp"
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Version.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
-#include <algorithm>
-#include <functional>
-
-#include <string>
-#include <sstream>
-#include <fstream>
-std::string PrintMemoryUsage() {
-  std::ostringstream mem;
-  std::ifstream proc("/proc/self/status");
-  std::string s;
-  while(getline(proc, s), !proc.fail()) {
-    if(s.substr(0, 6) == "VmSize") {
-      mem << s;
-      return mem.str();
-    }
-  }
-  return mem.str();
-}
+#include "MueLu_MemoryProfiler.hpp"
 
 int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
@@ -46,7 +29,7 @@ int main(int argc, char *argv[]) {
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > comm = platform.getComm();
   RCP<Node>                      node = platform.getNode();
-  const int myRank = comm->getRank();
+  //const int myRank = comm->getRank();
 
   //int numGlobalElements = 10000000;
   int numGlobalElements = 100;
@@ -61,35 +44,36 @@ int main(int argc, char *argv[]) {
   const size_t numMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const Ordinal> myGlobalElements = map->getNodeElementList();
 
-  std::cout << myRank << ": " << "Inital memory usage: " << PrintMemoryUsage() << std::endl;
+  MemoryUsageStart("Epetra");
+  PrintMemoryUsage("Initial memory usage", "tpetra-init.heap");
 
   RCP<CrsMatrix> A = Tpetra::createCrsMatrix<Scalar>(map,3);
 
-  std::cout << myRank << ": " << "Memory after CrsMatrix constructor: " << PrintMemoryUsage() << std::endl;
+  PrintMemoryUsage("Memory after CrsMatrix constructor", "tpetra-after-ctor.heap");
 
   for (size_t i=0; i<numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
       A->insertGlobalValues( myGlobalElements[i],
                              tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
                              tuple<Scalar> ( 2.0, -1.0 ) );
-    }
-    else if (myGlobalElements[i] == numGlobalElements-1) {
+    } else if (myGlobalElements[i] == numGlobalElements-1) {
       A->insertGlobalValues( myGlobalElements[i],
                              tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
                              tuple<Scalar> ( -1.0, 2.0 ) );
-    }
-    else {
+    } else {
       A->insertGlobalValues( myGlobalElements[i],
                              tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
                              tuple<Scalar> ( -1.0, 2.0, -1.0 ) );
     }
   }
 
-  std::cout << myRank << ": " << "Memory after InsertGlobalValues(): " << PrintMemoryUsage() << std::endl;
+  PrintMemoryUsage("Memory after InsertGlobalValues()", "tpetra-after-insert.heap");
 
   A->fillComplete(Tpetra::DoOptimizeStorage);
 
-  std::cout << myRank << ": " << "Memory after FillComplete(): " << PrintMemoryUsage() << std::endl;
+  PrintMemoryUsage("Memory after FillComplete()", "tpetra-after-fillcomplete.heap");
+
+  MemoryUsageStop();
 
   return 0;
 }
