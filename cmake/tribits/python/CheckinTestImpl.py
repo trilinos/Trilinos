@@ -55,13 +55,60 @@
 # ************************************************************************
 # @HEADER
 
+#
+# Imports
+#
 
+import os
+import sys
+import traceback
+from optparse import OptionParser
+
+sys.path.append(
+  os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
 from CheckinTest import *
-
+from GeneralScriptSupport import *
 
 #
-# Read in the command-line arguments
+# Utility classes and functions.
 #
+
+class WritableTee(object):
+  """
+  Object that directs all calls to its write method to stdout as well
+  as a file. This is to be used as a simple replacement for the Unix
+  tee command.
+  """
+  def __init__(self, outputfile):
+    """ Constructor takes a file-like object to write output to."""
+    self._realstdout = sys.stdout
+    self._outputfile = outputfile
+
+  def _safe_outputfile_method(self, methodname, *args):
+    """
+    Calls the method specified by methodname with the given args on
+    the internal file object if it is non-null.
+    """
+    if self._outputfile is not None:
+      if hasattr(self._outputfile, methodname):
+        method = getattr(self._outputfile, methodname)
+        if method and callable(method):
+          method(*args)
+
+  def write(self, data):
+    """
+    Write the given data to stdout and to the log file.
+    """
+    self._realstdout.write(data)
+    self._safe_outputfile_method('write', data)
+
+  def flush(self):
+    """
+    Flush the internal file buffers.
+    """
+    self._realstdout.flush()
+    self._safe_outputfile_method('flush')
+
 
 usageHelp = r"""checkin-test.py [OPTIONS]
 
@@ -640,9 +687,8 @@ sufficient condition for readiness to push.
 
 """
 
-def runProjectTestsWithCommandLineArgs(commandLineArgs):
-  from optparse import OptionParser
-
+def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
+  
   clp = OptionParser(usage=usageHelp)
 
   clp.add_option(
@@ -741,7 +787,8 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs):
     default=False )
 
   clp.add_option(
-    "--extra-cmake-options", dest="extraCmakeOptions", type="string", default="",
+    "--extra-cmake-options", dest="extraCmakeOptions", type="string",
+    default=configuration.get('extra-cmake-options', ''),
     help="Extra options to pass to 'cmake' after all other options." \
     +" This should be used only as a last resort.  To disable packages, instead use" \
     +" --disable-packages." )
@@ -833,7 +880,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs):
 
   clp.add_option(
     "--send-email-to-on-push", dest="sendEmailToOnPush", type="string",
-    default="trilinos-checkin-tests@software.sandia.gov",
+    default=configuration.get('SendEmailOnPush', ''),
     help="List of comma-separated email addresses to send email notification to" \
     +" on a successful push.  This is used to log pushes to a central list." \
     +"  In order to turn off this email" \
@@ -1113,9 +1160,52 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs):
   else:
     return True
 
-if __name__ == '__main__':
-  success = runProjectTestsWithCommandLineArgs("Trilinos", sys.argv[1:])
-  if success:
-    sys.exit(0)
+#
+# Main
+#
+
+def main(configuration = {}):
+  cmndLineArgs = sys.argv[1:]
+  
+  # See if the help option is set or not
+  helpOpt = len( set(cmndLineArgs) & set(("--help", "-h")) ) > 0
+
+  # See if --show-defaults was set or not
+  showDefaultsOpt = len( set(cmndLineArgs) & set(("--show-defaults", "dummy")) ) > 0
+
+  if (not helpOpt) and (not showDefaultsOpt):
+    logFile = file("checkin-test.out", "w")
   else:
-    sys.exit(1)
+    logFile = None
+
+  # There are a lot of print statements in the implementation. It's
+  # easier to reset sys.stdout and sys.stderr to our WritableTee object
+  # than to replace them.
+  teeOutput = WritableTee(logFile)
+  originalStdout = sys.stdout
+  originalStderr = sys.stderr
+  try:
+    sys.stdout = teeOutput
+    sys.stderr = teeOutput
+    try:
+      success = runProjectTestsWithCommandLineArgs(cmndLineArgs, configuration)
+    except SystemExit, e:
+      # In Python 2.4, SystemExit inherits Exception, but for proper exit
+      # behavior the SystemExit exception must propagate all the way to the top
+      # of the call stack. It cannot get handled by the catch Exception below.
+      raise e
+    except Exception, e:
+      success = False
+      traceback.print_exc(file=teeOutput)
+  finally:
+    # Reset stdout and stderr
+    sys.stdout = originalStdout
+    sys.stderr = originalStderr
+
+  if success:
+    return 0
+  else:
+    return 1
+
+if __name__ == '__main__':
+  sys.exit(main())

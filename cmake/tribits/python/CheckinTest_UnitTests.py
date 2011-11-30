@@ -604,12 +604,17 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     # B) Create the command to run the checkin-test.py script
 
     
-    cmnd = scriptsDir + "/../checkin-test.py" \
-     +" --project-name=Trilinos" \
-     +" --no-eg-git-version-check" \
-     +" --src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos" \
-     +" --send-email-to=bogous@somwhere.com" \
-     + " " + optionsStr
+    cmndArgs = [
+      scriptsDir + "/CheckinTestImpl.py",
+      "--project-name=Trilinos",
+      "--no-eg-git-version-check",
+      "--src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos",
+      "--send-email-to=bogous@somwhere.com",
+      "--send-email-to-on-push=trilinos-checkin-tests@software.sandia.gov",
+      "--extra-cmake-options='-DTPL_ENABLE_Pthread:BOOL=OFF -DTPL_ENABLE_BinUtils:BOOL=OFF'",
+      optionsStr,
+      ]
+    cmnd = ' '.join(cmndArgs)
     # NOTE: Above, we want to turn off the eg/git version tests since we want
     # these unit tests to run on machines that do not have the official
     # versions (e.g. the SCICO LAN) but where the versions might be okay.
@@ -883,9 +888,7 @@ class test_checkin_test(unittest.TestCase):
          +"Enabled all Forward Packages\n" \
          ),
       ("MPI_DEBUG/do-configure.base",
-       "\-DTPL_ENABLE_Pthread:BOOL=OFF\n" \
-       +"\-DTPL_ENABLE_BinUtils:BOOL=OFF\n" \
-       +"\-DTPL_ENABLE_MPI:BOOL=ON\n" \
+       "\-DTPL_ENABLE_MPI:BOOL=ON\n" \
        +"\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
        +"\-DCMAKE_BUILD_TYPE:STRING=RELEASE\n" \
        +"\-DTrilinos_ENABLE_DEBUG:BOOL=ON\n" \
@@ -897,9 +900,7 @@ class test_checkin_test(unittest.TestCase):
        +"\-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON\n" \
        +"\-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON\n"),
       ("SERIAL_RELEASE/do-configure.base",
-       "\-DTPL_ENABLE_Pthread:BOOL=OFF\n" \
-       +"\-DTPL_ENABLE_BinUtils:BOOL=OFF\n" \
-       +"\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
+       "\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
        +"\-DTPL_ENABLE_MPI:BOOL=OFF\n" \
        +"\-DCMAKE_BUILD_TYPE:STRING=RELEASE\n" \
        +"\-DTrilinos_ENABLE_DEBUG:BOOL=OFF\n" \

@@ -1715,12 +1715,7 @@ def checkinTest(baseDir, inOptions):
 
   buildTestCaseList = []
 
-  # Must hard turn off tentatively enabled TPLs in order to make all machines
-  # more uniform.
-  commonConfigOptions = [
-    "-DTPL_ENABLE_Pthread:BOOL=OFF",
-    "-DTPL_ENABLE_BinUtils:BOOL=OFF"
-    ]
+  commonConfigOptions = []
 
   setBuildTestCaseInList( buildTestCaseList,
     "MPI_DEBUG", inOptions.withMpiDebug,
