@@ -1,6 +1,9 @@
 FUNCTION(TRIBITS_CONFIGURE_CTEST_CUSTOM  OUTPUT_BINARY_DIR)
-  CONFIGURE_FILE(
-    ${PROJECT_HOME_DIR}/cmake/ctest/CTestCustom.ctest.in
-    ${OUTPUT_BINARY_DIR}/CTestCustom.ctest
-    )
+  SET(CTEST_CUSTOM_IN ${PROJECT_HOME_DIR}/cmake/ctest/CTestCustom.ctest.in)
+  IF(EXISTS ${CTEST_CUSTOM_IN})
+    CONFIGURE_FILE(
+      ${PROJECT_HOME_DIR}/cmake/ctest/CTestCustom.ctest.in
+      ${OUTPUT_BINARY_DIR}/CTestCustom.ctest
+      )
+  ENDIF()
 ENDFUNCTION()
