@@ -57,14 +57,15 @@ namespace Kokkos {
  *  map ( I , J ) -> value
  *  where I in [ 0 .. N ) and J in [ 0 .. M_I )
  */
-template< typename ValueType , class DeviceType >
+template< typename ValueType , class DeviceType ,
+          typename SizeType = typename DeviceType::size_type >
 class CrsArray {
 public:
-  typedef DeviceType                       device_type ;
-  typedef ValueType                        value_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType  device_type ;
+  typedef ValueType   value_type ;
+  typedef SizeType    size_type ;
 
-  typedef CrsArray< value_type , void /* Host */ > HostView ;
+  typedef CrsArray< value_type , void /* Host */ , size_type > HostView ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Number of rows */
@@ -152,40 +153,42 @@ create_mirror( const CrsArray< ValueType , DeviceType > & );
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class DeviceDst , class DeviceSrc >
-void deep_copy( const CrsArray< ValueType , DeviceDst > & dst ,
-                const CrsArray< ValueType , DeviceSrc > & src );
+template< typename ValueType , class DeviceDst , typename IndexDst ,
+                               class DeviceSrc , typename IndexSrc >
+void deep_copy( const CrsArray< ValueType , DeviceDst , IndexDst > & dst ,
+                const CrsArray< ValueType , DeviceSrc , IndexSrc > & src );
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace Impl {
 
-template< typename ValueType , class Device >
+template< typename ValueType , class Device , typename SizeType >
 class CreateCrsArray {
 public:
   template< typename IteratorType >
-  static CrsArray< ValueType , Device > create( const std::string & ,
-                                                const IteratorType ,
-                                                const IteratorType );
+  static CrsArray< ValueType , Device , SizeType >
+    create( const std::string & ,
+            const IteratorType ,
+            const IteratorType );
 };
 
-template< typename ValueType , class Device >
-class CreateMirror< CrsArray< ValueType , Device > , true /* view */ >
+template< typename ValueType , class Device , typename SizeType >
+class CreateMirror< CrsArray< ValueType , Device , SizeType > , true /* view */ >
 {
 public:
-  typedef  CrsArray< ValueType , Device >  View ;
-  typedef  typename View::HostView         HostView ;
+  typedef  CrsArray< ValueType , Device , SizeType >  View ;
+  typedef  typename View::HostView                    HostView ;
 
   static
   HostView create( const View & v ) { return HostView( v ); }
 };
 
-template< typename ValueType , class Device >
-class CreateMirror< CrsArray< ValueType , Device > , false /* copy */ >
+template< typename ValueType , class Device , typename SizeType >
+class CreateMirror< CrsArray< ValueType , Device , SizeType > , false /* copy */ >
 {
 public:
-  typedef  CrsArray< ValueType , Device >  View ;
+  typedef  CrsArray< ValueType , Device , SizeType >  View ;
   typedef  typename View::HostView         HostView ;
   typedef  typename HostView::device_type  HostDevice ;
 
@@ -217,7 +220,8 @@ create_labeled_crsarray( const std::string & label ,
   enum { iterator_to_integer = std::numeric_limits<value_type>::is_integer };
   enum { OK = Impl::StaticAssert< iterator_to_integer >::value };
 
-  return Impl::CreateCrsArray< ValueType , DeviceType >
+  return Impl::CreateCrsArray< ValueType , DeviceType ,
+                               typename DeviceType::size_type >
     ::create( label , row_size_begin , row_size_end );
 }
 
@@ -244,13 +248,14 @@ create_mirror( const CrsArray< ValueType , DeviceType > & v )
 }
 
 
-template< typename ValueType , class DeviceDst , class DeviceSrc >
+template< typename ValueType , class DeviceDst , typename IndexDst ,
+                               class DeviceSrc , typename IndexSrc >
 inline
-void deep_copy( const CrsArray< ValueType , DeviceDst > & dst ,
-                const CrsArray< ValueType , DeviceSrc > & src )
+void deep_copy( const CrsArray< ValueType , DeviceDst , IndexDst > & dst ,
+                const CrsArray< ValueType , DeviceSrc , IndexSrc > & src )
 {
-  typedef CrsArray< ValueType , DeviceDst > dst_type ;
-  typedef CrsArray< ValueType , DeviceSrc > src_type ;
+  typedef CrsArray< ValueType , DeviceDst , IndexDst > dst_type ;
+  typedef CrsArray< ValueType , DeviceSrc , IndexSrc > src_type ;
 
   if ( dst.operator!=( src ) ) {
     Impl::crsarray_require_equal_dimension( dst.row_dimension() , dst.size() ,

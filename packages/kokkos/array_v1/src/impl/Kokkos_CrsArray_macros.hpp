@@ -53,14 +53,14 @@ namespace Kokkos {
  *  Map ( I , J ) -> K
  *  where I in [ 0 .. N ) and J in [ 0 .. M_I )
  */
-template< typename ValueType >
-class CrsArray< ValueType , KOKKOS_MACRO_DEVICE > {
+template< typename ValueType , typename SizeType >
+class CrsArray< ValueType , KOKKOS_MACRO_DEVICE , SizeType > {
 public:
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
-  typedef ValueType               value_type ;
-  typedef device_type::size_type  size_type ;
+  typedef KOKKOS_MACRO_DEVICE  device_type ;
+  typedef ValueType            value_type ;
+  typedef SizeType             size_type ;
 
-  typedef CrsArray< value_type , Host > HostView ;
+  typedef CrsArray< value_type , Host , size_type > HostView ;
 
   /*------------------------------------------------------------------*/
   inline
@@ -77,9 +77,8 @@ public:
   value_type * values_array() const
     { return m_values.ptr_on_device(); }
   
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  size_type size() const
-    { return offset_array()[ m_row_count ]; }
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const { return m_value_count ; }
 
   /*------------------------------------------------------------------*/
   template< typename iType >
@@ -119,6 +118,7 @@ public:
   : m_offset()
   , m_values()
   , m_row_count(0)
+  , m_value_count(0)
   {}
 
   /** \brief  Construct a view of the array */
@@ -127,6 +127,7 @@ public:
   : m_offset(    rhs.m_offset )
   , m_values(    rhs.m_values )
   , m_row_count( rhs.m_row_count )
+  , m_value_count( rhs.m_value_count )
   {}
 
   /** \brief  Assign to a view of the rhs array.
@@ -139,6 +140,7 @@ public:
     m_offset    = rhs.m_offset ;
     m_values    = rhs.m_values ;
     m_row_count = rhs.m_row_count ;
+    m_value_count = rhs.m_value_count ;
     return *this ;
   }
 
@@ -155,11 +157,29 @@ public:
 
   /** \brief  Query if view to same memory */
   bool operator == ( const CrsArray & rhs ) const
-  { return m_offset.operator==( rhs.m_offset ); }
+  { return m_offset.ptr_on_device() == rhs.m_offset.ptr_on_device() ; }
 
   /** \brief  Query if not view to same memory */
   bool operator != ( const CrsArray & rhs ) const
-  { return m_offset.operator!=( rhs.m_offset ); }
+  { return m_offset.ptr_on_device() != rhs.m_offset.ptr_on_device() ; }
+
+  /** \brief  Query if view to same memory */
+  template< class DeviceRHS , typename SizeTypeRHS >
+  bool operator ==
+    ( const CrsArray< value_type , DeviceRHS , SizeTypeRHS > & rhs ) const
+    {
+      return Impl::SameType< typename device_type::memory_space ,
+                             typename DeviceRHS  ::memory_space >::value &&
+             Impl::SameType< size_type , SizeTypeRHS >::value &&
+             m_offset.ptr_on_device() ==
+               (size_type *) rhs.m_offset.ptr_on_device();
+    }
+
+  /** \brief  Query if not view to same memory */
+  template< class DeviceRHS , typename SizeTypeRHS >
+  bool operator !=
+    ( const CrsArray< value_type , DeviceRHS , SizeTypeRHS > & rhs ) const
+    { return ! operator==( rhs ); }
 
 private:
 
@@ -168,9 +188,14 @@ private:
   Impl::MemoryView< size_type ,  memory_space > m_offset ;
   Impl::MemoryView< value_type , memory_space > m_values ;
   size_type                                     m_row_count ;
+  size_type                                     m_value_count ;
 
-  template< class D , typename V > friend class Impl::CreateCrsArray ;
-  template< class Dst , class Src > friend class Impl::DeepCopy ;
+  template< typename V , class D , typename I >
+  friend class CrsArray ;
+  template< typename V , class D , typename I >
+  friend class Impl::CreateCrsArray ;
+  template< class Dst , class Src >
+  friend class Impl::DeepCopy ;
 };
 
 //----------------------------------------------------------------------------

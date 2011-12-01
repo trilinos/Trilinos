@@ -43,23 +43,21 @@
 namespace Kokkos {
 namespace Impl {
 
-template< typename ValueType >
-class CreateCrsArray< ValueType , Host > {
+template< typename ValueType , typename SizeType >
+class CreateCrsArray< ValueType , Host , SizeType > {
 public:
 
   template< typename IteratorType >
   static
-  CrsArray<ValueType,Host>
+  CrsArray<ValueType,Host,SizeType>
     create( const std::string & label ,
             const IteratorType row_count_begin ,
             const IteratorType row_count_end )
   {
-    typedef Host::size_type size_type ;
+    CrsArray<ValueType,Host,SizeType> array ;
 
-    CrsArray<ValueType,Host> array ;
-
-    size_type row_count = 0 ;
-    size_type value_count = 0 ;
+    SizeType row_count = 0 ;
+    SizeType value_count = 0 ;
 
     for ( IteratorType i = row_count_begin ; i != row_count_end ; ++i ) {
       ++row_count ;
@@ -67,10 +65,11 @@ public:
     }
 
     array.m_row_count = row_count ;
+    array.m_value_count = value_count ;
     array.m_offset.allocate( row_count + 1 , label );
     array.m_values.allocate( value_count , label );
 
-    size_type * const offset = array.m_offset.ptr_on_device();
+    SizeType * const offset = array.m_offset.ptr_on_device();
 
     row_count = 0 ;
     value_count = 0 ;
@@ -84,27 +83,26 @@ public:
   }
 
   static
-  CrsArray<ValueType,Host> create( const CrsArray<ValueType,Host> & rhs )
+  CrsArray<ValueType,Host,SizeType>
+    create( const CrsArray<ValueType,Host,SizeType> & rhs )
   {
-    typedef Host::size_type size_type ;
+    CrsArray<ValueType,Host,SizeType> array ;
 
-    CrsArray<ValueType,Host> array ;
-
-    const size_t row_count = rhs.row_dimension();
-    const size_t size      = rhs.size();
+    const size_t row_count   = rhs.m_row_count ;
+    const size_t value_count = rhs.m_value_count ;
 
     array.m_row_count = row_count ;
+    array.m_value_count = value_count ;
     array.m_offset.allocate( row_count + 1 , std::string() );
-    array.m_values.allocate( size , std::string() );
+    array.m_values.allocate( value_count , std::string() );
 
-    size_type * const dst = array.m_offset.ptr_on_device();
-    size_type * const src = rhs  .m_offset.ptr_on_device();
+    SizeType * const dst = array.m_offset.ptr_on_device();
+    SizeType * const src = rhs  .m_offset.ptr_on_device();
 
-    for ( size_type i = 0 ; i <= row_count ; ++i ) { dst[i] = src[i] ; }
+    for ( SizeType i = 0 ; i <= row_count ; ++i ) { dst[i] = src[i] ; }
 
     return array ;
   }
-
 };
 
 //----------------------------------------------------------------------------
@@ -118,7 +116,7 @@ public:
 
   static
   HostView create( const View & v )
-  { return CreateCrsArray<ValueType,Host>::create( v ); }
+  { return CreateCrsArray<ValueType,Host,Host::size_type>::create( v ); }
 };
 
 //----------------------------------------------------------------------------

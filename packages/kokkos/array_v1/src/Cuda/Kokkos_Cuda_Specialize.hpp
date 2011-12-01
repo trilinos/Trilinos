@@ -49,6 +49,12 @@
 #include <Cuda/Kokkos_Cuda_MultiVector.hpp>
 #endif
 
+#if defined( KOKKOS_CRSARRAY_HPP ) && ! defined( KOKKOS_CUDA_CRSARRAY )
+#define KOKKOS_CUDA_CRSARRAY
+#include <impl/Kokkos_CrsArray_macros.hpp>
+#include <Cuda/Kokkos_Cuda_CrsArray.hpp>
+#endif
+
 #if defined( KOKKOS_MDARRAY_HPP ) && ! defined( KOKKOS_CUDA_MDARRAY )
 #define KOKKOS_CUDA_MDARRAY
 #include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
