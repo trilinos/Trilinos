@@ -44,6 +44,7 @@
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Teuchos_Tuple.hpp"
 
 NOX::Thyra::Vector::
 Vector(const Teuchos::RCP< ::Thyra::VectorBase<double> >& source) :
@@ -61,6 +62,10 @@ NOX::Thyra::Vector::
 Vector(const NOX::Thyra::Vector& source, NOX::CopyType type) :
   thyraVec(source.thyraVec->clone_v())
 {
+  if (nonnull(source.weightVec_)) {
+    weightVec_ = source.weightVec_;
+    tmpVec_ = source.tmpVec_->clone_v();
+  }
 }
 
 NOX::Thyra::Vector::
@@ -82,7 +87,8 @@ NOX::Abstract::Vector&
 NOX::Thyra::Vector::
 operator=(const NOX::Thyra::Vector& src)
 {
-  ::Thyra::copy(*src.thyraVec, thyraVec.get());
+  ::Thyra::copy(*src.thyraVec, thyraVec.ptr());
+  weightVec_ = src.weightVec_;
   return *this;
 }
 
@@ -118,7 +124,7 @@ NOX::Abstract::Vector&
 NOX::Thyra::Vector::
 init(double value)
 {
-  ::Thyra::put_scalar(value, thyraVec.get());
+  ::Thyra::put_scalar(value, thyraVec.ptr());
   return *this;
 }
 
@@ -128,7 +134,7 @@ random(bool useSeed, int seed)
 {
   if (useSeed)
     ::Thyra::seed_randomize<double>(seed);
-  ::Thyra::randomize(-1.0, 1.0, thyraVec.get());
+  ::Thyra::randomize(-1.0, 1.0, thyraVec.ptr());
   return *this;
 }
 
@@ -138,7 +144,7 @@ abs(const NOX::Abstract::Vector& src)
 {
   const NOX::Thyra::Vector& source = 
     dynamic_cast<const NOX::Thyra::Vector&>(src);
-  ::Thyra::abs(thyraVec.get(), *source.thyraVec);
+  ::Thyra::abs(*source.thyraVec, thyraVec.ptr());
   return *this;
 }
 
@@ -148,7 +154,7 @@ reciprocal(const NOX::Abstract::Vector& src)
 {
   const NOX::Thyra::Vector& source = 
     dynamic_cast<const NOX::Thyra::Vector&>(src);
-  ::Thyra::reciprocal(thyraVec.get(), *source.thyraVec);
+  ::Thyra::reciprocal(*source.thyraVec, thyraVec.ptr());
   return *this;
 }
 
@@ -156,7 +162,7 @@ NOX::Abstract::Vector&
 NOX::Thyra::Vector::
 scale(double alpha)
 {
-  ::Thyra::scale(alpha, thyraVec.get());
+  ::Thyra::scale(alpha, thyraVec.ptr());
   return *this;
 }
 
@@ -166,7 +172,7 @@ scale(const NOX::Abstract::Vector& src)
 {  
   const NOX::Thyra::Vector& source = 
     dynamic_cast<const NOX::Thyra::Vector&>(src);
-  ::Thyra::Vt_StV(thyraVec.get(), 1.0, *source.thyraVec);
+  ::Thyra::ele_wise_scale(*source.thyraVec, thyraVec.ptr());
   return *this;
 }
 
@@ -176,8 +182,14 @@ update(double alpha, const NOX::Abstract::Vector& a, double gamma)
 {
   const NOX::Thyra::Vector& aa = 
     dynamic_cast<const NOX::Thyra::Vector&>(a);
-  const ::Thyra::VectorBase<double> *tv = aa.thyraVec.get();
-  ::Thyra::linear_combination(1, &alpha, &tv, gamma, thyraVec.get());
+
+  ::Thyra::linear_combination<double>(
+      Teuchos::tuple<double>(alpha)(),
+      Teuchos::tuple<Teuchos::Ptr<const ::Thyra::VectorBase<double> > >(aa.thyraVec.ptr())(),
+      gamma,
+      thyraVec.ptr()
+      );
+  
   return *this;
 }
 
@@ -190,10 +202,14 @@ update(double alpha, const NOX::Abstract::Vector& x,
     dynamic_cast<const NOX::Thyra::Vector&>(x);
   const NOX::Thyra::Vector& yy = 
     dynamic_cast<const NOX::Thyra::Vector&>(y);
-  double a[] = {alpha, beta};
-  const ::Thyra::VectorBase<double>* z[] = {xx.thyraVec.get(), 
-					    yy.thyraVec.get()};
-  ::Thyra::linear_combination(2, a, z, gamma, thyraVec.get());
+	
+  ::Thyra::linear_combination<double>(	
+      Teuchos::tuple<double>(alpha,beta)(),
+      Teuchos::tuple<Teuchos::Ptr<const ::Thyra::VectorBase<double> > >(xx.thyraVec.ptr(),yy.thyraVec.ptr())(),
+      gamma,
+      thyraVec.ptr()
+      );
+  
   return *this;
 }
 
@@ -209,6 +225,9 @@ NOX::Thyra::Vector::
 createMultiVector(const NOX::Abstract::Vector* const* vecs,
 		  int numVecs, NOX::CopyType type) const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(nonnull(weightVec_), std::logic_error,
+			     "Can NOT create NOX::Thyra::MultiVector from a NOX::Thyra::Vector that contains a weighting vector! ");
+
   // Get vector space
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > space = 
     thyraVec->space();
@@ -220,12 +239,12 @@ createMultiVector(const NOX::Abstract::Vector* const* vecs,
   // Copy vectors
   if (type == NOX::DeepCopy) {
     Teuchos::RCP< ::Thyra::VectorBase<double> > v = mv->col(0);
-    ::Thyra::copy(*thyraVec, v.get());
+    ::Thyra::copy(*thyraVec, v.ptr());
     for (int i=0; i<numVecs; i++) {
       const NOX::Thyra::Vector* tv = 
 	dynamic_cast<const NOX::Thyra::Vector*>(vecs[i]);
       v = mv->col(i+1);
-      ::Thyra::copy(*(tv->thyraVec), v.get());
+      ::Thyra::copy(*(tv->thyraVec), v.ptr());
     }
   }
   
@@ -240,6 +259,9 @@ Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Thyra::Vector::
 createMultiVector(int numVecs, NOX::CopyType type) const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(nonnull(weightVec_), std::logic_error,
+			     "Can NOT create NOX::Thyra::MultiVector from a NOX::Thyra::Vector that contains a weighting vector! ");
+
   // Get vector space
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > space = 
     thyraVec->space();
@@ -252,7 +274,7 @@ createMultiVector(int numVecs, NOX::CopyType type) const
   if (type == NOX::DeepCopy) {
     for (int i=0; i<numVecs; i++) {
       Teuchos::RCP< ::Thyra::VectorBase<double> > v = mv->col(i);
-      ::Thyra::copy(*thyraVec, v.get());
+      ::Thyra::copy(*thyraVec, v.ptr());
     }
   }
   
@@ -267,18 +289,36 @@ double
 NOX::Thyra::Vector::
 norm(NOX::Abstract::Vector::NormType type) const
 {
-  if (type == NOX::Abstract::Vector::TwoNorm)
-    return ::Thyra::norm_2(*thyraVec);
-  else if (type == NOX::Abstract::Vector::OneNorm)
-    return ::Thyra::norm_1(*thyraVec);
-  else
-    return ::Thyra::norm_inf(*thyraVec);
+  if (is_null(weightVec_)) {
+    if (type == NOX::Abstract::Vector::TwoNorm)
+      return ::Thyra::norm_2(*thyraVec);
+    else if (type == NOX::Abstract::Vector::OneNorm)
+      return ::Thyra::norm_1(*thyraVec);
+    else
+      return ::Thyra::norm_inf(*thyraVec);
+  }
+  else {
+    ::Thyra::copy(*thyraVec, tmpVec_.ptr());
+    ::Thyra::ele_wise_scale(*weightVec_, tmpVec_.ptr());
+
+    if (type == NOX::Abstract::Vector::TwoNorm)
+      return ::Thyra::norm_2(*tmpVec_);
+    else if (type == NOX::Abstract::Vector::OneNorm)
+      return ::Thyra::norm_1(*tmpVec_);
+    else
+      return ::Thyra::norm_inf(*tmpVec_);
+  }
 }
 
 double 
 NOX::Thyra::Vector::
 norm(const NOX::Abstract::Vector& weights) const
 {
+  if (nonnull(weightVec_)) {
+    ::Thyra::copy(*thyraVec, tmpVec_.ptr());
+    ::Thyra::ele_wise_scale(*weightVec_, tmpVec_.ptr());
+  }
+
   const NOX::Thyra::Vector& w = 
     dynamic_cast<const NOX::Thyra::Vector&>(weights);
   return ::Thyra::norm_2(*w.thyraVec, *thyraVec);
@@ -290,6 +330,15 @@ innerProduct(const NOX::Abstract::Vector& y) const
 {
   const NOX::Thyra::Vector& yy = 
     dynamic_cast<const NOX::Thyra::Vector&>(y);
+
+  if (nonnull(weightVec_)) {
+    ::Thyra::copy(*thyraVec, tmpVec_.ptr());
+    // double the scaling one for each vector in product
+    ::Thyra::ele_wise_scale(*weightVec_, tmpVec_.ptr());
+    ::Thyra::ele_wise_scale(*weightVec_, tmpVec_.ptr());
+    return thyraVec->space()->scalarProd(*tmpVec_, *yy.thyraVec);
+  }
+
   return thyraVec->space()->scalarProd(*thyraVec, *yy.thyraVec);
 }
 
@@ -311,3 +360,22 @@ print(std::ostream& stream) const
   return;
 }
 
+
+void 
+NOX::Thyra::Vector::
+setWeightVector(const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weightVec)
+{
+  weightVec_ = weightVec;
+  tmpVec_ = weightVec_->clone_v();
+}
+
+bool NOX::Thyra::Vector::hasWeightVector() const
+{
+  return Teuchos::nonnull(weightVec_);
+}
+
+Teuchos::RCP<const ::Thyra::VectorBase<double> >
+NOX::Thyra::Vector::getWeightVector() const
+{
+  return weightVec_;
+}

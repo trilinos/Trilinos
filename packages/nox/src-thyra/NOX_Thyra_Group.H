@@ -71,14 +71,25 @@ namespace NOX {
 
   namespace Thyra {
 
-    //! A simple example of a group structure, based on Thyra.
+    /** \brief A concrete implementaiton of the NOX::Abstract::Group using Thyra.
+
+        NOTE: This Group supports row sum scaling of the function
+        (residual and Jacobian).  This is enabled by setting a weight
+        vector on the initial guess vector in the Group constructor.
+        The residual and Jacobian must be scaled before and then
+        unscaled after calls to construct the preconditioner and solve
+        the linear system.  This follows the nox epetra group.  This
+        design should be changed in a future nox refactor, but
+        requires significant changes to the Group object.
+    */
     class Group : public virtual NOX::Abstract::Group {
 
     public:
 
       //! Constructor
       Group(const NOX::Thyra::Vector& initial_guess,
-	    const Teuchos::RCP< const ::Thyra::ModelEvaluator<double> >& model);
+	    const Teuchos::RCP< const ::Thyra::ModelEvaluator<double> >& model,
+	    const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
 
       //! Copy constructor
       Group(const NOX::Thyra::Group& source, NOX::CopyType type = DeepCopy);
@@ -245,6 +256,10 @@ namespace NOX {
       //! Finalizes LOWS to be a valid solver for the Jacobian
       void updateLOWS() const;
 
+      void scaleResidualAndJacobian() const;
+
+      void unscaleResidualAndJacobian() const;
+
     protected:
 
       //! Problem interface
@@ -302,6 +317,15 @@ namespace NOX {
       
       //! Residual OutArgs
       ::Thyra::ModelEvaluatorBase::OutArgs<double> out_args_;
+
+      /** \brief Optional wieghting vector for function scaling
+
+           This is pulled out of the initial guess vector
+      */
+      Teuchos::RCP<const ::Thyra::VectorBase<double> > weight_vec_;
+
+      //! Inverse of weight vector used to unscale problem
+      mutable Teuchos::RCP< ::Thyra::VectorBase<double> > inv_weight_vec_;
 
     };
 
