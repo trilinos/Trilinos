@@ -373,10 +373,24 @@ class testConfigurableOptionParser(unittest.TestCase):
     unconfiguredoption = parser.get_option('--unconfiguredoption')
     self.assertEqual(unconfiguredoption.default, 'this_should_not_be_overridden')
 
+class testTeeOutput(unittest.TestCase):
+  def test_write(self):
+    import StringIO
+    outputfile = StringIO.StringIO()
+    tee = TeeOutput(outputfile)
+    reset = sys.stdout
+    try:
+      sys.stdout = tee
+      print "line"
+      self.assertEqual(outputfile.getvalue(), "line\n")
+    finally:
+      sys.stdout = reset
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(testGeneralScriptSupport))
     suite.addTest(unittest.makeSuite(testConfigurableOptionParser))
+    suite.addTest(unittest.makeSuite(testTeeOutput))
     return suite
 
 

@@ -639,6 +639,43 @@ def copyFileAndReplaceTokens( scriptsDir, inputFile, tokenReplacementList,
     # ToDo: Replace above with native re commands
 
 
+class TeeOutput(object):
+  """
+  Object that directs all calls to its write method to stdout as well
+  as a file. This is to be used as a simple replacement for the Unix
+  tee command.
+  """
+  def __init__(self, outputfile):
+    """ Constructor takes a file-like object to write output to."""
+    self._realstdout = sys.stdout
+    self._outputfile = outputfile
+
+  def _safe_outputfile_method(self, methodname, *args):
+    """
+    Calls the method specified by methodname with the given args on
+    the internal file object if it is non-null.
+    """
+    if self._outputfile is not None:
+      if hasattr(self._outputfile, methodname):
+        method = getattr(self._outputfile, methodname)
+        if method and callable(method):
+          method(*args)
+
+  def write(self, data):
+    """
+    Write the given data to stdout and to the log file.
+    """
+    self._realstdout.write(data)
+    self._safe_outputfile_method('write', data)
+
+  def flush(self):
+    """
+    Flush the internal file buffers.
+    """
+    self._realstdout.flush()
+    self._safe_outputfile_method('flush')
+
+
 ######################################
 # Shell argument helpers
 ######################################
