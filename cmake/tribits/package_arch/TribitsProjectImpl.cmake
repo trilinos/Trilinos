@@ -147,14 +147,13 @@ MACRO(TRIBITS_PROJECT_IMPL)
   PRINT_VAR(PYTHON_EXECUTABLE)
   
   #
-  # A.3) Set up version file that also sets other options as well
+  # A.3) Read in the Project's version file
   #
-  # NOTE: ${PROJECT_NAME}Version.cmake must be read *before* the global options are
+  # NOTE: The file Version.cmake must be read *before* the global options are
   # read!
   #
 
-  TRIBITS_CONFIGURE_VERSION_FILE(
-    "${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}_version.h")
+  TRIBITS_PROJECT_READ_VERSION_FILE(${PROJECT_HOME_DIR})
   
   # Since the version header file is now configured the root build
   # dir needs to be on the include path
@@ -281,6 +280,9 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("")
   MESSAGE("Configuring individual enabled ${PROJECT_NAME} packages ...")
   MESSAGE("")
+
+  TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES(
+    ${${PROJECT_NAME}_ALL_REPOSITORIES})
   
   TRIBITS_CONFIGURE_ENABLED_PACKAGES()
   

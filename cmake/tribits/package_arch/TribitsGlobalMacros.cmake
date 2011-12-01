@@ -1375,32 +1375,84 @@ ENDFUNCTION()
 
 
 #
-# Macro that takes project specific version varibles and changes them to
-# general form to be used in project configuration.
+# Macro that reads in the project's version file into the current scope
 #
 
-MACRO(TRIBITS_CONFIGURE_VERSION_FILE  OUTPUT_VERSION_FILE)
+MACRO(TRIBITS_PROJECT_READ_VERSION_FILE  PROJECT_BASE_DIR)
+  IF (EXISTS ${PROJECT_BASE_DIR}/Version.cmake)
+    INCLUDE(${PROJECT_BASE_DIR}/Version.cmake)
+  ENDIF()
+ENDMACRO()
 
-  SET_DEFAULT(${PROJECT_NAME}_USE_TRIBITS_VERSION_SYSTEM FALSE)
 
-  IF (${PROJECT_NAME}_USE_TRIBITS_VERSION_SYSTEM)
+#
+# Function that reads in and the Repository's specific Version.cmake file and
+# then configures its ${REPO_NAME}_version.h file.
+#
+# The file ${REPO_NAME}_version.h is only configured if the repository contains
+# the files Version.cmake and Copyright.txt
+#
+# NOTE: This is done as a function so that the read-in version variables don't
+# bleed into the outer scope.
+#
+
+FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
+  REPOSITORY_NAME  REPOSITORY_DIR
+  OUTPUT_VERSION_HEADER_FILE
+  )
+
+  STRING(TOUPPER ${REPOSITORY_NAME} REPOSITORY_NAME_UC)
+
+  SET(REPOSITORY_ABS_DIR ${PROJECT_HOME_DIR}/${REPOSITORY_DIR})
+
+  SET(REPOSITORY_VERSION_FILE ${REPOSITORY_ABS_DIR}/Version.cmake)
+  SET(REPOSITORY_COPYRIGHT_FILE ${REPOSITORY_ABS_DIR}/Copyright.txt)
+
+  IF (EXISTS ${REPOSITORY_VERSION_FILE} AND EXISTS ${REPOSITORY_COPYRIGHT_FILE})
 
     # Read the copyright header info
-    FILE(READ "${${PROJECT_NAME}_HOME_DIR}/Copyright.txt" PROJECT_COPYRIGHT_HEADER)
+    FILE(READ "${REPOSITORY_COPYRIGHT_FILE}" REPOSITORY_COPYRIGHT_HEADER)
     
     # Read the version variables and translate into standard form
-    INCLUDE(${${PROJECT_NAME}_HOME_DIR}/Version.cmake)
-    SET(PROJECT_MAJOR_VERSION ${${PROJECT_NAME}_MAJOR_VERSION})
-    SET(PROJECT_MAJOR_MINOR_VERSION ${${PROJECT_NAME}_MAJOR_MINOR_VERSION})
-    SET(PROJECT_VERSION_STRING ${${PROJECT_NAME}_VERSION_STRING})
+    INCLUDE(${REPOSITORY_VERSION_FILE})
+    SET(REPOSITORY_MAJOR_VERSION ${${REPOSITORY_NAME}_MAJOR_VERSION})
+    SET(REPOSITORY_MAJOR_MINOR_VERSION ${${REPOSITORY_NAME}_MAJOR_MINOR_VERSION})
+    SET(REPOSITORY_VERSION_STRING ${${REPOSITORY_NAME}_VERSION_STRING})
 
     # Configure the file with everything set
     CONFIGURE_FILE(${${PROJECT_NAME}_TRIBITS_DIR}/Tribits_version.h.in
-      ${OUTPUT_VERSION_FILE})
+      ${OUTPUT_VERSION_HEADER_FILE})
 
   ENDIF()
 
-ENDMACRO()
+ENDFUNCTION()
+
+
+#
+# Configure each of the Repositories version header files
+#
+
+FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES
+   REPOSITORY_DIR_LIST
+   )
+  FOREACH(REPO ${REPOSITORY_DIR_LIST})
+    # This list of repositories is the list of directories!
+    SET(REPO_DIR ${REPO})
+    # Get the Repository name
+    IF (REPO STREQUAL ".")
+      # The Project and the Reposiotry are one and the same
+      SET(REPO_NAME ${PROJECT_NAME})
+    ELSE()
+      # The Repository name is the same as the repository directory
+      SET(REPO_NAME ${PROJECT_NAME})
+    ENDIF()
+    # Configure the header file (if applies to this Repository)
+    TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE( ${REPO_NAME} ${REPO_DIR}
+      "${${PROJECT_NAME}_BINARY_DIR}/${REPO_DIR}/${REPO_NAME}_version.h")
+  ENDFOREACH()
+
+ENDFUNCTION()
+
 
 #
 # Macro that does the final set of package configurations

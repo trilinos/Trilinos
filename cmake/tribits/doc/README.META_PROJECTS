@@ -20,12 +20,11 @@ must be clearly defined.
     CMakeLists.txt
     CTestConfig.cmake
     ProjectName.cmake
-    Version.cmake # [Optional] Dev mode, project version
+    Version.cmake # [Optional] Dev mode, project version, VC branch
     cmake/
       tribts/  # [Optional] Could just point to installed tribits
       ctest/
         CTestCustom.ctest.in  # [Optional] Some custom ctest settings
-
 
 2) Repository (Collection):
 * Defines a CMake variable specific to the collection refered to the
@@ -71,4 +70,6 @@ must be clearly defined.
 NOTES:
 * A Project and a Repository can be one in the same.  That is, a project can
   provide a set of packages and initializations.  This linkage is made in
-  the base-level Project CMakeLists.txt file.
+  the base-level Project CMakeLists.txt file.  Also, in this case, the
+  Project's and the Repositorie's Version.cmake and Copyright.txt files
+  are one and the same which works just fine.

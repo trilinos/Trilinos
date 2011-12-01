@@ -148,10 +148,9 @@ INCLUDE(AppendStringVar)
 INCLUDE(TribitsGlobalMacros)
 INCLUDE(TribitsConstants)
 
-# ToDo: Why is this being included and should it be in the mock project?
-IF (EXISTS ${TRIBITS_PROJECT_ROOT}/Version.cmake)
-  INCLUDE(${TRIBITS_PROJECT_ROOT}/Version.cmake)
-ENDIF()
+# Need to include the project's version file to get some Git and CDash
+# settings specific to the given version of Trilinos
+TRIBITS_PROJECT_READ_VERSION_FILE(${TRIBITS_PROJECT_ROOT})
 
 INCLUDE(TribitsFindPythonInterp)
 TRIBITS_FIND_PYTHON()
