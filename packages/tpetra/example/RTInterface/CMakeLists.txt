@@ -1,7 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
-IF (Trilinos_ENABLE_CXX11)
+IF (${PROJECT_NAME}_ENABLE_CXX11)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RTIExample
     SOURCES RTIExample

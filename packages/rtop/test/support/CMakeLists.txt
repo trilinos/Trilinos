@@ -6,7 +6,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     validate_apply_op_UnitTests.cpp
     supportUnitTestsHelpers.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS " "
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -18,7 +18,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RTOpSubRangeDecoratorUnitTests
   SOURCES
     RTOpSubRangeDecorator_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )

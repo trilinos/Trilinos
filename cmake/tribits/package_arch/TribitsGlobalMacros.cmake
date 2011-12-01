@@ -133,6 +133,10 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
 
   ADVANCED_SET( ${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES OFF CACHE BOOL
     "Set to empty all package enables (set to OFF at end)." )
+
+  ADVANCED_OPTION(${PROJECT_NAME}_REMOVE_DEFAULT_PACKAGE_DISABLES
+    "Removes all default disables from the packages list.  Used for testing etc."
+    OFF )
   
   ADVANCED_OPTION(${PROJECT_NAME}_ENABLE_C
     "Enable the C compiler and related code"
@@ -472,48 +476,44 @@ ENDMACRO()
 # Macro that processes the list of TPLs
 #
 
-MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_DIR)
+MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
 
-  #MESSAGE("TRIBITS_PROCESS_TPLS_LISTS:  '${REPOSITORY_DIR}'")
+  #MESSAGE("TRIBITS_PROCESS_TPLS_LISTS:  '${REPOSITORY_NAME}'  '${REPOSITORY_DIR}'")
 
   SET(TPL_NAME_OFFSET 0)
   SET(TPL_FINDMOD_OFFSET 1)
   SET(TPL_CLASSIFICATION_OFFSET 2)
   SET(TPL_NUM_COLUMNS 3)
 
-  LIST(LENGTH ${PROJECT_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
-    ${PROJECT_NAME}_CURR_NUM_TPLS_FULL)
-  MATH(EXPR ${PROJECT_NAME}_CURR_NUM_TPLS
-    "${${PROJECT_NAME}_CURR_NUM_TPLS_FULL}/${TPL_NUM_COLUMNS}")
+  LIST(LENGTH ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+    ${REPOSITORY_NAME}_CURR_NUM_TPLS_FULL)
+  MATH(EXPR ${REPOSITORY_NAME}_CURR_NUM_TPLS
+    "${${REPOSITORY_NAME}_CURR_NUM_TPLS_FULL}/${TPL_NUM_COLUMNS}")
 
-  IF (${PROJECT_NAME}_CURR_NUM_TPLS GREATER 0)
+  IF (${REPOSITORY_NAME}_CURR_NUM_TPLS GREATER 0)
 
-    MATH(EXPR ${PROJECT_NAME}_LAST_TPL_IDX
-      "${${PROJECT_NAME}_CURR_NUM_TPLS}-1")
-    
-    IF (NOT APPEND_TO_TPLS_LIST)
-      SET(${PROJECT_NAME}_TPLS)
-    ENDIF()
+    MATH(EXPR ${REPOSITORY_NAME}_LAST_TPL_IDX
+      "${${REPOSITORY_NAME}_CURR_NUM_TPLS}-1")
   
-    FOREACH(TPL_IDX RANGE ${${PROJECT_NAME}_LAST_TPL_IDX})
+    FOREACH(TPL_IDX RANGE ${${REPOSITORY_NAME}_LAST_TPL_IDX})
   
       # Get fields for this TPL
   
       MATH(EXPR TPL_NAME_IDX
         "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_NAME_OFFSET}")
-      LIST(GET ${PROJECT_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_NAME_IDX}
+      LIST(GET ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_NAME_IDX}
         TPL_NAME)
       #PRINT_VAR(TPL_NAME)
   
       MATH(EXPR TPL_FINDMOD_IDX
         "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_FINDMOD_OFFSET}")
-      LIST(GET ${PROJECT_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_FINDMOD_IDX}
+      LIST(GET ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_FINDMOD_IDX}
         TPL_FINDMOD)
       #PRINT_VAR(TPL_FINDMOD)
   
       MATH(EXPR TPL_CLASSIFICATION_IDX
         "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_CLASSIFICATION_OFFSET}")
-      LIST(GET ${PROJECT_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_CLASSIFICATION_IDX}
+      LIST(GET ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_CLASSIFICATION_IDX}
         TPL_CLASSIFICATION)
   
       # Update TPLS list
@@ -594,8 +594,12 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_DIR)
   
   # Create a reverse list for later use
   
-  SET(${PROJECT_NAME}_REVERSE_TPLS ${${PROJECT_NAME}_TPLS})
-  LIST(REVERSE ${PROJECT_NAME}_REVERSE_TPLS)
+  IF (${PROJECT_NAME}_TPLS)
+    SET(${PROJECT_NAME}_REVERSE_TPLS ${${PROJECT_NAME}_TPLS})
+    LIST(REVERSE ${PROJECT_NAME}_REVERSE_TPLS)
+  ELSE()
+    SET(${PROJECT_NAME}_REVERSE_TPLS)
+  ENDIF()
 
 ENDMACRO()
 
@@ -772,6 +776,20 @@ ENDMACRO()
 
 
 #
+# Read in the Project's native repositories
+#
+
+MACRO(TRIBITS_READ_IN_NATIVE_REPOSITORIES)
+  SET(NATIVE_REPO_FILE ${PROJECT_HOME_DIR}/cmake/NativeRepositoriesList.cmake)
+  IF (EXISTS ${NATIVE_REPO_FILE})
+    INCLUDE(${NATIVE_REPO_FILE})
+  ELSE()
+    SET(${PROJECT_NAME}_NATIVE_REPOSITORIES ".")
+  ENDIF()
+ENDMACRO()
+
+
+#
 # Read in ${PROJECT_NAME} packages and TPLs, process dependencies, write XML files
 #
 # The reason that these steps are all jammed into one macro is so that the XML
@@ -782,56 +800,72 @@ ENDMACRO()
 
 MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
 
+  # Set to empty
+  SET(${PROJECT_NAME}_PACKAGES)
+  SET(${PROJECT_NAME}_PACKAGE_DIRS)
+  SET(${PROJECT_NAME}_TPLS)
+
   #
-  # 1) Define the lists of all ${PROJECT_NAME} packages and TPLs
+  # A) Process the native repos
   #
 
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
     TIMER_GET_RAW_SECONDS(SET_UP_DEPENDENCIES_TIME_START_SECONDS)
   ENDIF()
-  
-  # 1.a) Read the core ${PROJECT_NAME} packages
 
-  SET(${PROJECT_NAME}_PACKAGES_FILE
-    "${${PROJECT_NAME}_DEPS_HOME_DIR}/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
+  FOREACH(NATIVE_REPO ${${PROJECT_NAME}_NATIVE_REPOSITORIES})
 
-  MESSAGE("")
-  MESSAGE("Reading the list of packages from ${${PROJECT_NAME}_PACKAGES_FILE}")
-  MESSAGE("")
-  
-  INCLUDE(${${PROJECT_NAME}_PACKAGES_FILE})
-  
-  SET(APPEND_TO_PACKAGES_LIST FALSE)
-  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(".")
-  
-  # 1.b) Read the core TPLs dependencies
+    TRIBITS_GET_REPO_NAME_DIR(${NATIVE_REPO}  NATIVE_REPO_NAME  NATIVE_REPO_DIR)
+    #PRINT_VAR(NATIVE_REPO_NAME)
+    #PRINT_VAR(NATIVE_REPO_DIR)
 
-  SET(${PROJECT_NAME}_TPLS_FILE
-    "${${PROJECT_NAME}_DEPS_HOME_DIR}/${${PROJECT_NAME}_TPLS_FILE_NAME}")
-  
-  MESSAGE("")
-  MESSAGE("Reading the list of TPLs from ${${PROJECT_NAME}_TPLS_FILE}")
-  MESSAGE("")
-  
-  INCLUDE(${${PROJECT_NAME}_TPLS_FILE})
-  
-  TRIBITS_PROCESS_TPLS_LISTS(".")
+    #
+    # A.1) Define the lists of all ${NATIVE_REPO_NAME} native packages and TPLs
+    #
     
-  #
-  # 2) Process the package and TPL dependencies
-  #
+    # A.1.a) Read the core ${NATIVE_REPO_NAME} packages
   
-  TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
+    SET(${NATIVE_REPO_NAME}_PACKAGES_FILE
+      "${${PROJECT_NAME}_DEPS_HOME_DIR}/${NATIVE_REPO_DIR}/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
+  
+    MESSAGE("")
+    MESSAGE("Reading the list of packages from ${${NATIVE_REPO_NAME}_PACKAGES_FILE}")
+    MESSAGE("")
+    
+    INCLUDE(${${NATIVE_REPO_NAME}_PACKAGES_FILE})
+    
+    TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${NATIVE_REPO_NAME} ${NATIVE_REPO_DIR})
+    
+    # A.1.b) Read the core TPLs dependencies
+  
+    SET(${NATIVE_REPO_NAME}_TPLS_FILE
+      "${${PROJECT_NAME}_DEPS_HOME_DIR}/${NATIVE_REPO_DIR}/${${PROJECT_NAME}_TPLS_FILE_NAME}")
+    
+    MESSAGE("")
+    MESSAGE("Reading the list of TPLs from ${${NATIVE_REPO_NAME}_TPLS_FILE}")
+    MESSAGE("")
+    
+    INCLUDE(${${NATIVE_REPO_NAME}_TPLS_FILE})
+    
+    TRIBITS_PROCESS_TPLS_LISTS(${NATIVE_REPO_NAME} ${NATIVE_REPO_DIR})
 
+  ENDFOREACH()
+      
+  #
+  # A.2) Process the package and TPL dependencies
+  #
+    
+  TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
+  
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
     TIMER_GET_RAW_SECONDS(SET_UP_DEPENDENCIES_TIME_STOP_SECONDS)
     TIMER_PRINT_REL_TIME(${SET_UP_DEPENDENCIES_TIME_START_SECONDS}
       ${SET_UP_DEPENDENCIES_TIME_STOP_SECONDS}
-      "\nTotal time to read in and process core package dependencies")
+      "\nTotal time to read in and process native package dependencies")
   ENDIF()
-
+  
   #
-  # 3) Write the XML dependency files for the core ${PROJECT_NAME} packages
+  # 3) Write the XML dependency files for the native ${PROJECT_NAME} packages
   #
   
   IF (${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES)
@@ -886,7 +920,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
       ELSE()
         INCLUDE("${EXTRAREPO_PACKAGES_FILE}")  # Writes the variable ???
         SET(APPEND_TO_PACKAGES_LIST TRUE)
-        TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${EXTRA_REPO})  # Reads the variable ???
+        TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${EXTRA_REPO} ${EXTRA_REPO})  # Reads the variable ???
       ENDIF()
   
       # Read in the add-on TPLs from the extra repo
@@ -906,7 +940,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
       ELSE()
         INCLUDE("${EXTRAREPO_TPLS_FILE}")  # Writes the varaible ???
         SET(APPEND_TO_TPLS_LIST TRUE)
-        TRIBITS_PROCESS_TPLS_LISTS("${EXTRA_REPO}")  # Reads the variable ???
+        TRIBITS_PROCESS_TPLS_LISTS(${EXTRA_REPO} ${EXTRA_REPO})  # Reads the variable ???
       ENDIF()
 
     ENDIF()
@@ -921,6 +955,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   #
 
   IF (${PROJECT_NAME}_EXTRA_REPOSITORIES)
+
     TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
 
     IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
@@ -1429,6 +1464,27 @@ ENDFUNCTION()
 
 
 #
+# Get the REPO_NAME and REPO_DIR given the REPO
+#
+
+FUNCTION(TRIBITS_GET_REPO_NAME_DIR  REPO_IN  REPO_NAME_OUT  REPO_DIR_OUT)
+  #MESSAGE("TRIBITS_GET_REPO_NAME_DIR:  '${REPO_IN}'  '${REPO_NAME_OUT}'  '${REPO_DIR_OUT}'")
+  # This list of repositories is the list of directories!
+  SET(REPO_DIR ${REPO_IN})
+  # Get the Repository name
+  IF (REPO_IN STREQUAL ".")
+    # The Project and the Reposiotry are one and the same
+    SET(REPO_NAME ${PROJECT_NAME})
+  ELSE()
+    # The Repository name is the same as the repository directory
+    SET(REPO_NAME ${REPO_IN})
+  ENDIF()
+  SET(${REPO_NAME_OUT} ${REPO_NAME} PARENT_SCOPE)
+  SET(${REPO_DIR_OUT} ${REPO_DIR} PARENT_SCOPE)
+ENDFUNCTION()
+
+
+#
 # Configure each of the Repositories version header files
 #
 
@@ -1436,17 +1492,7 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES
    REPOSITORY_DIR_LIST
    )
   FOREACH(REPO ${REPOSITORY_DIR_LIST})
-    # This list of repositories is the list of directories!
-    SET(REPO_DIR ${REPO})
-    # Get the Repository name
-    IF (REPO STREQUAL ".")
-      # The Project and the Reposiotry are one and the same
-      SET(REPO_NAME ${PROJECT_NAME})
-    ELSE()
-      # The Repository name is the same as the repository directory
-      SET(REPO_NAME ${PROJECT_NAME})
-    ENDIF()
-    # Configure the header file (if applies to this Repository)
+    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
     TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE( ${REPO_NAME} ${REPO_DIR}
       "${${PROJECT_NAME}_BINARY_DIR}/${REPO_DIR}/${REPO_NAME}_version.h")
   ENDFOREACH()
@@ -1473,7 +1519,46 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   GLOBAL_NULL_SET(${PROJECT_NAME}_LIBRARIES)
 
   #
-  # B) Loop over all of the packages and process their CMakeLists.txt files if
+  # B) Define the source and binary directories for all of the pacakges that
+  # have been enbaled.  These are used to allow packages to refer to each
+  # other even downstream packages (which is pretty messed up really).
+  #
+
+  SET(PACKAGE_IDX 0)
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+
+   # Get all the package soruces independent if they are enabled or not.
+   # There are some messed up packages that grab parts out of unrelated
+   # downstream packages that might not even be enabled.  To support this,
+   # allow this.
+   LIST(GET ${PROJECT_NAME}_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
+   SET(${TRIBITS_PACKAGE}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${PACKAGE_DIR})
+   #PRINT_VAR(${TRIBITS_PACKAGE}_SOURCE_DIR)
+
+    TRIBITS_DETERMINE_IF_PROCESS_PACKAGE(${TRIBITS_PACKAGE}
+      PROCESS_PACKAGE  PACKAGE_ENABLE_STR)
+
+    IF (PROCESS_PACKAGE)
+
+      IF (${TRIBITS_PACKAGE}_SPECIFIED_BUILD_DIR)
+        IF(IS_ABSOLUTE ${${TRIBITS_PACKAGE}_SPECIFIED_BUILD_DIR})
+          SET(${TRIBITS_PACKAGE}_BINARY_DIR ${${TRIBITS_PACKAGE}_SPECIFIED_BUILD_DIR})
+        ELSE()
+          SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${${TRIBITS_PACKAGE}_SPECIFIED_BUILD_DIR})
+        ENDIF()
+      ELSE()
+	SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_DIR})
+      ENDIF()
+      #PRINT_VAR(${TRIBITS_PACKAGE}_BINARY_DIR)
+
+    ENDIF()
+
+    MATH(EXPR PACKAGE_IDX "${PACKAGE_IDX}+1")
+
+  ENDFOREACH()
+
+  #
+  # C) Loop over all of the packages and process their CMakeLists.txt files if
   # they are enabled or if any of their subpackages are enabled.
   #
 
@@ -1497,21 +1582,9 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
       SET(PACKAGE_NAME ${TRIBITS_PACKAGE}) # Used in CMake code in downstream package
       SET(PARENT_PACKAGE_NAME ${TRIBITS_PACKAGE})
 
-      LIST(GET ${PROJECT_NAME}_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
-      SET(${TRIBITS_PACKAGE}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${PACKAGE_DIR})
-
-      IF (${TRIBITS_PACKAGE}_SPECIFIED_BUILD_DIR)
-        IF(IS_ABSOLUTE ${${TRIBITS_PACKAGE}_SPECIFIED_BUILD_DIR})
-          SET(${TRIBITS_PACKAGE}_BINARY_DIR ${${TRIBITS_PACKAGE}_SPECIFIED_BUILD_DIR})
-        ELSE()
-          SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${${TRIBITS_PACKAGE}_SPECIFIED_BUILD_DIR})
-        ENDIF()
-      ELSE()
-	SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_DIR})
-      ENDIF()
-
       IF (NOT EXISTS ${${TRIBITS_PACKAGE}_SOURCE_DIR}/CMakeLists.txt)
-        MESSAGE(FATAL_ERROR "Error, the file ${PACKAGE_DIR}/CMakeLists.txt does not exist!")
+        MESSAGE(FATAL_ERROR
+          "Error, the file ${${TRIBITS_PACKAGE}_SOURCE_DIR}/CMakeLists.txt does not exist!")
       ENDIF()
 
       ADD_SUBDIRECTORY(${${TRIBITS_PACKAGE}_SOURCE_DIR} ${${TRIBITS_PACKAGE}_BINARY_DIR})
@@ -1537,7 +1610,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   ENDFOREACH()
 
   #
-  # C) Check if no packages are enabled and if that is allowed
+  # D) Check if no packages are enabled and if that is allowed
   #
 
   ADVANCED_SET( ${PROJECT_NAME}_ALLOW_NO_PACKAGES ON
@@ -1563,7 +1636,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   ENDIF()
 
   #
-  # D) Process the global varibles and other cleanup
+  # E) Process the global varibles and other cleanup
   #
   
   REMOVE_GLOBAL_DUPLICATES(${PROJECT_NAME}_INCLUDE_DIRS)

@@ -107,7 +107,7 @@
 # such dependencies exist).
 #
 
-SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
+SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Peano           "cmake/TPLs/"    EX
   CUDA            "cmake/TPLs/"    EX
   Thrust          "cmake/TPLs/"    EX

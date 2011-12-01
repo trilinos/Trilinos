@@ -6,7 +6,7 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
 
   # Automatically update the version file for sierra
   TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE("Trilinos" "."
-    ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/${PROJECT_NAME}_version.h)
+    ${Trilinos_SOURCE_DIR}/SIERRA/bjam/config_headers/${PROJECT_NAME}_version.h)
 
   SET(CPACK_SOURCE_IGNORE_FILES
     ${CPACK_SOURCE_IGNORE_FILES}

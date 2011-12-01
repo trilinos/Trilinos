@@ -1,3 +1,9 @@
+
+# We need to inject the Trilinos/cmake directory to find
+# TrilinosCreateClientTemplateHeaders.cmake
+SET(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} "${Trilinos_SOURCE_DIR}/cmake")
+
+
 MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
 
   #MESSAGE("TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS got called!")

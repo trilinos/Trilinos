@@ -56,6 +56,6 @@
 
 INCLUDE(TribitsListHelpers)
 
-SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+SET( extraTrilinosRepo_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   ExtraPack         extrapack     SS
   )

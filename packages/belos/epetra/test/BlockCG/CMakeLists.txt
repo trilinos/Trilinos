@@ -33,7 +33,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockCGFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockCG
+    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockCG
     SOURCE_FILES bcsstk14.hb
     EXEDEPS bl_cg_hb
     )

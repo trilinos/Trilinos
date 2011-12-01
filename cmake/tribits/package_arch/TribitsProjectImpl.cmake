@@ -169,6 +169,8 @@ MACRO(TRIBITS_PROJECT_IMPL)
   
   TRIBITS_DEFINE_GLOBAL_OPTIONS()
 
+  TRIBITS_READ_IN_NATIVE_REPOSITORIES()
+
   # Define a single variable that will loop over native and extra Repositories
   #
   # NOTE: ${PROJECT_NAME}_EXTRA_REPOSITORIES should be defined after the above
@@ -177,10 +179,13 @@ MACRO(TRIBITS_PROJECT_IMPL)
   SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
     ${PROJECT_NAME}_EXTRA_REPOSITORIES)
 
-  # Loop through the Repositories and run their callback functions.
+  # Loop through the Repositories, set their base directories and run their
+  # options setup callback functions.
   FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
-    #PRINT_VAR(REPO)
-    TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS_RUNNER(${REPO})
+    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
+    SET(${REPO_NAME}_SOURCE_DIR "${PROJECT_HOME_DIR}/${REPO_DIR}")
+    SET(${REPO_NAME}_BINARY_DIR "${PROJECT_BUILD_DIR}/${REPO_DIR}")
+    TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS_RUNNER(${REPO_NAME})
   ENDFOREACH()
   
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)

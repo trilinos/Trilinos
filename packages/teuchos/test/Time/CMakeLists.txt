@@ -20,7 +20,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TimeMonitor_UnitTests
   SOURCES
     TimeMonitor_UnitTests.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 3
   ARGS --teuchos-suppress-startup-banner

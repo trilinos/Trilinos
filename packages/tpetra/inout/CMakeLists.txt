@@ -1,5 +1,6 @@
 
 INCLUDE(TribitsLibraryMacros)
+INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 #
 # A) Package-specific configuration options
@@ -30,7 +31,7 @@ SET(SOURCES "")
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(HEADERS ${DIR}/*.cpp)
-TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 # Must glob the binary dir last to get all of the auto-generated headers
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})

@@ -14,7 +14,7 @@ IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
     COMM serial mpi  
     SOURCES
       TabularOutputter_UnitTests.cpp
-      ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
     )
 
 ENDIF()

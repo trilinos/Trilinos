@@ -1,10 +1,21 @@
+################################################################################
+#                                                                              #
+#                           TriBITS Meta Project                               #
+#                                                                              #
+################################################################################
 
-TriBITS defines a system for building a set of interrelated software.
+
+TriBITS defines a system for building a set of interrelated software with a
+web of dependencies.
+
+
+A) Important Concepts:
+----------------------
 
 There are some important concepts that are part of the TriBITS system that
 must be clearly defined.
 
-1) Project:
+1) Project (global CMake build):
 * Defines PROJECT_NAME CMake varaible (defined in ProjectName.cmake)
 * Defines a CMake project by calling PROJECT(${PROJECT_NAME} ...)
 * Defines a set of native Repositories (see below) that define
@@ -12,21 +23,24 @@ must be clearly defined.
   official packages list and dependencies data-structure.  The list
   of native Repositories can be empty!
 * Allows for extra Repositories to be added on before and after the
-  set of native Repositories.
+  set of native Repositories (given in ExtraRepositoriesList.cmake
+  or by CMake varibles)
 * Defines a default CDash server and default project name on the server
   (actually, the project name on the CDash server must be the same as
   ${PROJECT_NAME})
 * Core files making up a Project:
     CMakeLists.txt
     CTestConfig.cmake
-    ProjectName.cmake
+    ProjectName.cmake  # Defines PACAKGE_NAME
     Version.cmake # [Optional] Dev mode, project version, VC branch
     cmake/
+      NativeRepositoriesList.cmake  # [Optional] For meta-projects
+      ExtraRepositoriesList.cmake   # [Optional] Lists VC URLs 
       tribts/  # [Optional] Could just point to installed tribits
       ctest/
-        CTestCustom.ctest.in  # [Optional] Some custom ctest settings
+        CTestCustom.ctest.in  # [Optional] Custom ctest settings
 
-2) Repository (Collection):
+2) Repository (i.e. collection of packages or just files):
 * Defines a CMake variable specific to the collection refered to the
   in the varaible REPOSITORY_NAME.
 * Defines the base source and binary directories for the repostory:
@@ -34,10 +48,10 @@ must be clearly defined.
   same as ${PROJECT_NAME}_HOME_DIR and ${PROJECT_NAME}_BUILD_DIR).
 * Contains files that contribute to the build and or tests for a partent
   project
-* [Optional] Defines a list of add-on packages and and TPLs
-* [Optional] Points to one ore more other VC repositories
-* [Optional] Defines a common set of initializations and other
-  hooks.
+* [Optional] Defines a list of add-on packages and and TPLs (PackagesList.cmake
+  and TPLsList.cmake)
+* [Optional] Defines a common set of initializations and other hooks for a
+  collectio of projects.
 * Core files making up a Repository:
     PackagesList.cmake
     TPLsList.cmake
@@ -57,7 +71,7 @@ must be clearly defined.
   naming the depencenices using their package names.
 * Publishes a list of header file include paths and/or libraries
 * Installs an XXXConfig.cmake file that provides the list of this info
-* Core files making up a project:
+* Core files making up a package:
     CMakeLists.txt  # Only processed if the package is enabled
     cmake/
        Dependencies.cmake  # Always processed if package exists
@@ -68,8 +82,81 @@ must be clearly defined.
   provided by the TPL
 
 NOTES:
+
 * A Project and a Repository can be one in the same.  That is, a project can
   provide a set of packages and initializations.  This linkage is made in
-  the base-level Project CMakeLists.txt file.  Also, in this case, the
-  Project's and the Repositorie's Version.cmake and Copyright.txt files
-  are one and the same which works just fine.
+  the base-level Project CMakeLists.txt file.
+
+  - Also, in this case, the Project's and the Repository's Version.cmake and
+    Copyright.txt files are one and the same which works just fine.
+
+  - When the Project and Repositories base directrories are the same and there
+  is just one list of packages, then the file NativeRepositoriesList.cmake is
+  unnecessary.
+
+
+B) CMake Varaibles
+
+1) Project:
+
+These are top-level (non-cache) CMake varibles that are available once the
+project is defined:
+
+  PROJECT_NAME: The name of the project
+  PROJECT_SOURCE_DIR: The absolute path to the base project source directory
+  PROJECT_BINARY_DIR: The absolute path to the base project binary/build directory
+  ${PROJECT_NAME}_SOURCE_DIR: Set to ${PROJECT_SOURCE_DIR}
+  ${PROJECT_NAME}_BINARY_DIR: Set to ${PROJECT_BINARY_DIR}
+
+2) Repository:
+
+These are varibles once a Repostory is defines
+
+These are top-level (non-cache) CMake varibles that are available once the
+project is defined:
+
+  REPOSITORY_NAME:
+    The name of the current repository
+  REPOSITORY_DIR:
+    Path of the current repository relative to the project directory
+  <REPOSITORY_NAME>_SOURCE_DIR:
+    The absolute path to the base of a given
+    repository source dir.  CMake code, for exmaple in packages, refer to
+    this by the raw name like RepoX_SOURCE_DIR.  This makes such CMake
+    code independent of where the repository is in relation to the project.
+  <REPOSITORY_NAME>_BINARY_DIR:
+    The absolute path to the base of a given
+    repository binary dir.  CMake code, for exmaple in packages, refer to
+    this by the raw name like RepoX_SOURCE_DIR.  This makes such CMake
+    code independent of where the repository is in relation to the project.
+
+3) Package:
+
+These are top-level (non-cache) CMake varibles that are available once a
+package is processed.
+
+  PACKAGE_NAME:
+    The name of the current package
+  PACKAGE_SOURCE_DIR:
+    The absolute path to the base package's base source directory
+  PACKAGE_BINARY_DIR:
+    The absolute path to the base package's base binary/build directory
+  <PACKAGE_NAME>_SOURCE_DIR:
+    The absolute path to the base of a given
+    package's source dir.  CMake code, for exmaple in other packages, refer to
+    this by the raw name like PackageX_SOURCE_DIR.  This makes such CMake
+    code independent of where the package is in relation to other packages.
+    This variable is defined for all packages, independent of if they
+    are enbled or not.
+  <PACKAGE_NAME>_BINARY_DIR:
+    The absolute path to the base of a given
+    package's binary dir.  CMake code, for exmaple in other packages, refer to
+    this by the raw name like PackageX_BINARY_DIR.  This makes such CMake
+    code independent of where the package is in relation to other packages.
+    This variable is only defined if the package is enbaled.
+  PARENT_PACKAGE_SOURCE_DIR:
+    The absolute path to the parent package's source directory.  This is accessed
+     by subpackages.
+  PARENT_PACKAGE_BINARY_DIR:
+    The absolute path to the parent package's binary directory.  This is accessed
+     by subpackages.

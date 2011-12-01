@@ -12,7 +12,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Int_UnitTests.cpp
     TemplateFunc_UnitTests.cpp
     vector_UnitTests.cpp
-    Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -44,7 +44,7 @@ TRIBITS_ADD_EXECUTABLE(
   UnitTest_TimeMonitor_UnitTests
   SOURCES
     TimeMonitor_UnitTests.cpp
-    Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -70,7 +70,7 @@ TRIBITS_ADD_EXECUTABLE(
     Int_UnitTests.cpp
     TemplateFunc_UnitTests.cpp
     Failing_UnitTest.cpp
-    Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   )
 
 TRIBITS_ADD_TEST(

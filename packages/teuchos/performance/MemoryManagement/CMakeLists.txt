@@ -12,7 +12,7 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi  
   SOURCES
     RCP_Performance_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   )
 
 # This form of the test just makes sure that it runs without crashing
@@ -52,7 +52,7 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi  
   SOURCES
     Array_Performance_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   )
 
 # This form of the test just makes sure that it runs without crashing

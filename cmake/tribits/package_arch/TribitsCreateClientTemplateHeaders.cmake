@@ -67,7 +67,7 @@ INCLUDE(PrintVar)
 #
 #    TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS(
 #      BASE_DIR
-#      [NOSIERRABJAM]
+#      [ADDITIONAL_OUTPUT_DIRS ABSDIR1 ABSDIR2 ...]
 #      )
 #
 # The arguments are:
@@ -77,11 +77,10 @@ INCLUDE(PrintVar)
 #    The base directory where files with the extension *_decl.hpp will be
 #    globed for.
 #
-#  NOSIERRABJAM
+#  ADDITIONAL_OUTPUT_DIRS
 #
-#    If set, then the files will not be written in the SIERRA/bjam directory
-#    for SIERRA to pick up.  This option would be used for template code that
-#    is only used in tests and not in libraries.
+#    If set, then the files will be copied to an additional output
+#    directories as well.  These must be abolute paths.
 #
 
 FUNCTION(TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS BASE_DIR)
@@ -96,9 +95,9 @@ FUNCTION(TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS BASE_DIR)
     #prefix
     PARSE
     #lists
-    ""
+    "ADDITIONAL_OUPTUT_DIRS"
     #options
-    "NOSIERRABJAM"
+    ""
     ${ARGN}
     )
 
@@ -145,20 +144,19 @@ FUNCTION(TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS BASE_DIR)
     ENDIF()
 
     # Create the SIERRA BJAM version of the header file
-    IF (NOT PARSE_NOSIERRABJAM)
-      SET(BJAM_CLIENT_HEADER_STR "")
-      APPEND_STRING_VAR(BJAM_CLIENT_HEADER_STR
+    FOREACH(OUTPUT_DIR ${PARSE_ADDITIONAL_OUTPUT_DIRS})
+      SET(EXTERNAL_CLIENT_HEADER_STR "")
+      APPEND_STRING_VAR(EXTERNAL_CLIENT_HEADER_STR
         "#include \"${DECL_HEADER_BASE}_decl.hpp\"\n"
         "#ifndef HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION\n"
         "#  include \"${DECL_HEADER_BASE}_def.hpp\"\n"
         "#endif\n"
          )
-      SET(SIERRA_HEADER
-        "${${PROJECT_NAME}_SOURCE_DIR}/SIERRA/bjam/config_headers/${DECL_HEADER_BASE}.hpp")
-      IF (NOT EXISTS "${SIERRA_HEADER}")
-        FILE(WRITE "${SIERRA_HEADER}" "${BJAM_CLIENT_HEADER_STR}")
+      SET(EXTERNAL_HEADER "${OUTPUT_DIR}/${DECL_HEADER_BASE}.hpp")
+      IF (NOT EXISTS "${EXTERNAL_HEADER}")
+        FILE(WRITE "${EXTERNAL_HEADER}" "${EXTERNAL_CLIENT_HEADER_STR}")
       ENDIF()
-    ENDIF()
+    ENDFOREACH()
 
   ENDFOREACH()
 

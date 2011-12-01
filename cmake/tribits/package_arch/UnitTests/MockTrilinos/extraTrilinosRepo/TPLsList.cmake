@@ -56,7 +56,7 @@
 
 # Only for unit testing
 
-SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
+SET(extraTrilinosRepo_TPLS_FINDMODS_CLASSIFICATIONS
   ExtraTPL1    cmake/    SS
   ExtraTPL2    cmake/    PS
   )

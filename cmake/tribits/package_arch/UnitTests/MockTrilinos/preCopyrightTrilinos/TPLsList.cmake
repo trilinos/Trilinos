@@ -56,7 +56,7 @@
 
 # Only for unit testing
 
-SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
+SET(preCopyrightTrilinos_TPLS_FINDMODS_CLASSIFICATIONS
   TekoDepTPL    cmake/    PS
   )
 

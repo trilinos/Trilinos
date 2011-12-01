@@ -4,7 +4,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_MultiVector_Adapter_UnitTests
   SOURCES
     Tpetra_MultiVector_Adapter_UnitTests
-    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
@@ -13,7 +13,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_CrsMatrix_Adapter_UnitTests
   SOURCES
     Tpetra_CrsMatrix_Adapter_UnitTests
-    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
@@ -23,7 +23,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     Epetra_MultiVector_Adapter_UnitTests
     SOURCES
       Epetra_MultiVector_Adapter_UnitTests
-      ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
@@ -32,7 +32,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     Epetra_RowMatrix_Adapter_UnitTests
     SOURCES
       Epetra_RowMatrix_Adapter_UnitTests
-      ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
@@ -43,7 +43,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
       CrsMatrix_Adapter_Consistency_Tests
       SOURCES
         CrsMatrix_Adapter_Consistency_Tests
-        ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+        ${TEUCHOS_STD_UNIT_TEST_MAIN}
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       )

@@ -15,7 +15,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleTFQMRFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockGmres
+    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
     SOURCE_FILES orsirr1.hb 
     EXEDEPS TFQMR_Epetra_File_Ex
     )

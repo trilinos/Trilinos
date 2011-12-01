@@ -13,16 +13,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_HybridPlatformTest_Files1
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/tpetra/example/HybridPlatform
+  SOURCE_DIR ${Tpetra_SOURCE_DIR}/example/HybridPlatform
   SOURCE_FILES gpuonly.xml hybrid.xml mpionly.xml threaded.xml
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_HybridPlatformTest_Files2
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/tpetra/test/BlockCG
+  SOURCE_DIR ${Belos_SOURCE_DIR}/tpetra/test/BlockCG
   SOURCE_FILES bcsstk17.rsa
 )
 
-# IF (Belos_ENABLE_Tpetra AND Trilinos_ENABLE_Ifpack2)
+# IF (Belos_ENABLE_Tpetra AND ${PROJECT_NAME}_ENABLE_Ifpack2)
 # 
 #   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ifpack2/src)
 #   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../ifpack2/src)
@@ -45,7 +45,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_HybridPlatformTest_Files2
 #            
 # ENDIF()
 # 
-# IF (Anasazi_ENABLE_Tpetra AND Trilinos_ENABLE_Ifpack2)
+# IF (Anasazi_ENABLE_Tpetra AND ${PROJECT_NAME}_ENABLE_Ifpack2)
 # 
 #   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../ifpack2/src)
 #   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../ifpack2/src)

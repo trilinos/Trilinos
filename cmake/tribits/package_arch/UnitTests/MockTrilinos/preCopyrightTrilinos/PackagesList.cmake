@@ -56,7 +56,7 @@
 
 INCLUDE(TribitsListHelpers)
 
-SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+SET( preCopyrightTrilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Teko         teko      SS
   Stalix       stalix    EX
   )

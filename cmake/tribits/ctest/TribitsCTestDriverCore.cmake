@@ -324,6 +324,7 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   # something.  We don't want a sloppy commit to bring down automated testing.
   SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES ON)
 
+  TRIBITS_READ_IN_NATIVE_REPOSITORIES()
   TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
 
   # When we get here, we will have the basic dependency structure set up

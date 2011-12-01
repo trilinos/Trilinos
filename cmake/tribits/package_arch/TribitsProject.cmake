@@ -52,7 +52,6 @@
 #
 # ************************************************************************
 # @HEADER
- 
 
 # Projects that change the location of the source need to consider this in
 # their top-level CMakeLists.txt file

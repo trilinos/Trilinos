@@ -84,7 +84,7 @@ def requoteCmndLineArgs(inArgs):
     splitArg = arg.split("=")
     newArg = None
     if len(splitArg) == 1:
-      newArg = arg
+      newArg = "\""+arg+"\""
     else:
       newArg = splitArg[0]+"=\""+'='.join(splitArg[1:])+"\""
     #print "\nnewArg =", newArg                                                                                 

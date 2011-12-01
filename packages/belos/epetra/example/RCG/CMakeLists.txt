@@ -13,7 +13,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleRCGFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/RCG
+    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/RCG
     SOURCE_FILES bcsstk14.hb
     EXEDEPS RCG_Epetra_Ex_File
     )

@@ -65,12 +65,6 @@ INCLUDE(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
 # not in an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
-# Define the projects native repositories relative to the base project directory
-SET(${PROJECT_NAME}_NATIVE_REPOSITORIES ".")
-
-# Read from TrilinosVersion.cmake and write Trilinos_version.h
-SET(${PROJECT_NAME}_USE_TRIBITS_VERSION_SYSTEM TRUE)
-
 # Add support for extra repositories
 SET(${PROJECT_NAME}_SUPPORT_EXTRA_REPOS TRUE)
 

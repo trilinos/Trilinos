@@ -7,7 +7,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NonlinearCGUnitTests
   SOURCES
     NonlinearCG_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   DEPLIBS thyra_nonlinear_test_models
   COMM serial mpi
   ARGS
