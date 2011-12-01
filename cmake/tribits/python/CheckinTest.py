@@ -1098,6 +1098,8 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
     # A.1) Set the base options
   
     cmakeBaseOptions = []
+    if inOptions.extraCmakeOptions:
+      cmakeBaseOptions.extend(commandLineOptionsToList(inOptions.extraCmakeOptions))
   
     cmakeBaseOptions.append(cmakeDefine(projectName, "ENABLE_TESTS:BOOL", "ON"))
   
@@ -1175,8 +1177,6 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
       removeIfExists("CMakeCache.txt")
 
       cmnd = "./do-configure"
-      if inOptions.extraCmakeOptions:
-        cmnd += " " + inOptions.extraCmakeOptions
 
       (configureRtn, timings.configure) = echoRunSysCmnd(cmnd,
         outFile=getConfigureOutputFileName(),

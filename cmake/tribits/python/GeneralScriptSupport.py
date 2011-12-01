@@ -718,6 +718,14 @@ def requoteCmndLineArgs(inArgs):
     argsStr = argsStr+" "+newArg
   return argsStr
 
+def commandLineOptionsToList(stringOptions):
+  """
+  Convert a string of space separated command line options to a python
+  list of the individual optionstrings.
+  TODO: Handle shell quoting.
+  """
+  return stringOptions.split()
+
 class ConfigurableOptionParser(optparse.OptionParser):
   """
   OptionParser that accepts a python dictionary as a configuration
