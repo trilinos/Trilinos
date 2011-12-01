@@ -59,7 +59,7 @@
 
 # Must set the project name as a varaible at very beginning before including anything else
 # We set the project name in a separate file so CTest scripts can use it.
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/ProjectName.cmake)
+INCLUDE(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
 
 # CMake requires that you declare the CMake project in the top-level file and
 # not in an include file :-(

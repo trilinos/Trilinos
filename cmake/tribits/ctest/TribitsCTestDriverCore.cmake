@@ -103,7 +103,7 @@ IF(NOT TRIBITS_PROJECT_ROOT)
 ENDIF()
 
 # Check that the ProjectName.cmake file exists.
-SET(TRIBITS_PROJECT_NAME_INCLUDE "${TRIBITS_PROJECT_ROOT}/cmake/ProjectName.cmake")
+SET(TRIBITS_PROJECT_NAME_INCLUDE "${TRIBITS_PROJECT_ROOT}/ProjectName.cmake")
 IF(NOT EXISTS "${TRIBITS_PROJECT_NAME_INCLUDE}")
   MESSAGE(FATAL_ERROR
     "Could not locate ProjectName.cmake.\n"
@@ -116,7 +116,7 @@ INCLUDE(${TRIBITS_PROJECT_NAME_INCLUDE})
 IF(NOT PROJECT_NAME)
   MESSAGE(FATAL_ERROR 
     "The project name has not been set!"
-    "  It should be set in ${TRIBITS_PROJECT_ROOT}/cmake/ProjectName.cmake.")
+    "  It should be set in ${TRIBITS_PROJECT_ROOT}/ProjectName.cmake.")
 ENDIF()
 MESSAGE("PROJECT_NAME = ${PROJECT_NAME}")
 

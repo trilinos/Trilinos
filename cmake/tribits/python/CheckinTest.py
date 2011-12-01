@@ -1584,9 +1584,9 @@ def matchProjectName(line):
 
 def getProjectName(sourceDirectory):
   """
-  Reads the project name from <root>/cmake/ProjectName.cmake
+  Reads the project name from <root>/ProjectName.cmake
   """
-  projectNameFile = os.path.join(sourceDirectory, 'cmake', 'ProjectName.cmake')
+  projectNameFile = os.path.join(sourceDirectory, 'ProjectName.cmake')
   if not os.path.exists(projectNameFile):
     raise Exception(
       "%s is required to exist for a valid Tribits project." % projectNameFile)
