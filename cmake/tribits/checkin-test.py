@@ -672,7 +672,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     help="Do not check the versions of eg and git, just trust they are okay.",
     default=True )
 
-  srcDirDefault = '/'.join(getCompleteFileDirname(__file__).split("/")[0:-3]) 
+  srcDirDefault = '/'.join(getCompleteFileDirname(__file__).split("/")[0:-2]) 
   clp.add_option(
     '--src-dir', dest="srcDir", type="string",
     default=srcDirDefault,
