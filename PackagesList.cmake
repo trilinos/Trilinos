@@ -122,7 +122,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   OptiPack              packages/optipack                 PS
   Isorropia             packages/isorropia                PS
   Pliris                packages/pliris                   PS
-  Claps                 packages/claps                    SS
+  Claps                 packages/claps                    EX
   AztecOO               packages/aztecoo                  PS
   Galeri                packages/galeri                   PS
   Amesos2               packages/amesos2                  EX
