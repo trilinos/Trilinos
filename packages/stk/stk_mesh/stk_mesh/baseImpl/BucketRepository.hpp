@@ -74,7 +74,7 @@ public:
       );
   void copy_fields( Bucket & k_dst , unsigned i_dst ,
                            Bucket & k_src , unsigned i_src );
-  void zero_fields( Bucket & k_dst , unsigned i_dst );
+  void initialize_fields( Bucket & k_dst , unsigned i_dst );
 
   void internal_sort_bucket_entities();
 

@@ -163,7 +163,7 @@ namespace Belos {
      *   - time spent in solve() routine
      */
     Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-      return tuple(timerSolve_);
+      return Teuchos::tuple(timerSolve_);
     }
 
     //! Get the iteration count for the most recent call to \c solve().
@@ -248,8 +248,15 @@ namespace Belos {
     // Orthogonalization manager.
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
 
-     // Current parameter list.
+    // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
+
+    /// \brief List of valid parameters and their default values.
+    ///
+    /// This is declared "mutable" because the SolverManager interface
+    /// requires that getValidParameters() be declared const, yet we
+    /// want to create the valid parameter list only on demand.
+    mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
    
     // Default solver values.
     static const MagnitudeType convtol_default_;
@@ -363,12 +370,17 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr(
 template<class ScalarType, class MV, class OP>
 void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
-  // Create the internal parameter list if ones doesn't already exist.
-  if (params_ == Teuchos::null) {
-    params_ = Teuchos::rcp( new Teuchos::ParameterList(*getValidParameters()) );
-  }
-  else {
-    params->validateParameters(*getValidParameters());
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+
+  RCP<const ParameterList> defaultParams = getValidParameters();
+
+  // Create the internal parameter list if one doesn't already exist.
+  if (params_.is_null()) {
+    params_ = parameterList (*defaultParams);
+  } else {
+    params->validateParameters (*defaultParams);
   }
 
   // Check for maximum number of iterations
@@ -483,17 +495,35 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
 
   // Check for a change in scaling, if so we need to build new residual tests.
   bool newResTest = false;
-  if (params->isParameter("Residual Scaling")) {
-    std::string tempResScale = Teuchos::getParameter<std::string>( *params, "Residual Scaling" );
+  {
+    // "Residual Scaling" is the old parameter name; "Implicit
+    // Residual Scaling" is the new name.  We support both options for
+    // backwards compatibility.
+    std::string tempResScale = resScale_;
+    bool implicitResidualScalingName = false;
+    if (params->isParameter ("Residual Scaling")) {
+      tempResScale = params->get<std::string> ("Residual Scaling");
+    } 
+    else if (params->isParameter ("Implicit Residual Scaling")) {
+      tempResScale = params->get<std::string> ("Implicit Residual Scaling");
+      implicitResidualScalingName = true;
+    }
 
     // Only update the scaling if it's different.
     if (resScale_ != tempResScale) {
       Belos::ScaleType resScaleType = convertStringToScaleType( tempResScale );
       resScale_ = tempResScale;
 
-      // Update parameter in our list and residual tests
-      params_->set("Residual Scaling", resScale_);
-      if (convTest_ != Teuchos::null) {
+      // Update parameter in our list and residual tests, using the
+      // given parameter name.
+      if (implicitResidualScalingName) {
+	params_->set ("Implicit Residual Scaling", resScale_);
+      } 
+      else {
+	params_->set ("Residual Scaling", resScale_); 
+      }
+
+      if (! convTest_.is_null()) {
         try {
           convTest_->defineScaleForm( resScaleType, Belos::TwoNorm );
         }
@@ -558,11 +588,13 @@ template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
 PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
 {
-  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
-  if (is_null(validPL)) {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+
+  if (validParams_.is_null()) {
     // Set all the valid parameters and their default values.
-    pl= Teuchos::rcp( new Teuchos::ParameterList() );
+    RCP<ParameterList> pl = parameterList ();
     pl->set("Convergence Tolerance", convtol_default_,
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linera system to be declared converged.");
@@ -590,14 +622,22 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
       "When convergence information is printed, only show the maximum\n"
       "relative residual norm when the block size is greater than one.");
-    pl->set("Residual Scaling", resScale_default_,
+    pl->set("Implicit Residual Scaling", resScale_default_,
       "The type of scaling used in the residual convergence test.");
+    // We leave the old name as a valid parameter for backwards
+    // compatibility (so that validateParametersAndSetDefaults()
+    // doesn't raise an exception if it encounters "Residual
+    // Scaling").  The new name was added for compatibility with other
+    // solvers, none of which use "Residual Scaling".
+    pl->set("Residual Scaling", resScale_default_,
+	    "The type of scaling used in the residual convergence test.  This "
+	    "name is deprecated; the new name is \"Implicit Residual Scaling\".");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
     //  defaultParams_->set("Restart Timers", restartTimers_);
-    validPL = pl;
+    validParams_ = pl;
   }
-  return validPL;
+  return validParams_;
 }
 
 

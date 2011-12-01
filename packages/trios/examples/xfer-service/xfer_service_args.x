@@ -86,16 +86,14 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  * @brief Opcodes for the types of transfer operations.  
  */
 enum xfer_op {
-    /** Opcode for the operation to transfer the array with the request. */
-    XFER_PUSH = 1,
-    /** Opcode for the operation that pulls the data array to the server. */
-    XFER_PULL,
-    /**  */
-    XFER_ROUNDTRIP,
-    /**  */
-    XFER_GET,
-    /**  */
-    XFER_PUT
+    /** Opcode for writing the data through the function arguments. */
+    XFER_WRITE_ENCODE_OP = 1,
+    /** Opcode for the writing the data through the data channel. */
+    XFER_WRITE_RDMA_OP,
+    /**  Opcode for reading the data through the result structure. */
+    XFER_READ_ENCODE_OP,
+    /** Opcode for reading the data throught the data channel. */
+    XFER_READ_RDMA_OP
 };
 
 /**
@@ -124,106 +122,90 @@ struct data_t {
 typedef data_t data_array_t<>;
 
 /**
- * @brief Arguments for the first transfer operation (PUSH).
+ * @brief Arguments for the first transfer operation, XFER_WRITE_ENCODE.
  *
  * The first transfer operation includes the array of \ref data_t
  * structures as an argument of the remote operation.  This will
  * cause the array to be sent to the server as part of the request.
+ * The client encodes the data before sending it to the server, the server
+ * decodes the data structure when it arrives. 
  */
-struct xfer_push_args {
-    /** The array of \ref data_t structures, including length. */
-    data_array_t array;
+struct xfer_write_encode_args {
+        /** The length of the data array. */
+        int32_t len;
+        /** A seed for initializing the array */
+        uint32_t seed;
+        /** A flag to perform validation */
+        bool validate;
+        /** The array of \ref data_t structures, including length. */
+        data_array_t array;
+
 };
 
 /**
- * @brief Arguments for the second transfer operation (PULL).
+ * @brief Arguments for the second transfer operation, XFER_WRITE_RDMA.
  *
  * The second transfer operation only needs to send the length
  * of the data array.  It uses the data argument in the nssi_call_rpc()
  * to identify the raw data for the server to fetch.
  */
-struct xfer_pull_args {
-    /** The length of the data array. */
-    int32_t len;
+struct xfer_write_rdma_args {
+        /** The length of the data array. */
+        int32_t len;
+        /** A seed for initializing the array */
+        uint32_t seed;
+        /** A flag to perform validation */
+        bool validate;
 };
 
-/**
- * @brief Arguments for the third transfer operation (ROUNDTRIP).
- *
- * The third transfer operation includes the array of \ref data_t
- * structures as an argument of the remote operation.  This will
- * cause the array to be sent to the server as part of the request.
- * If the size of array is large, the address of array will be sent
- * as part of the request and the server will fetch array via RDMA.
- */
-struct xfer_roundtrip_args {
-    /** The array of \ref data_t structures, including length. */
-    data_array_t array;
-};
-/**
- * @brief Results for the third transfer operation (ROUNDTRIP).
- *
- * The third transfer operation includes the array of \ref data_t
- * structures as a result of the remote operation.  This will
- * cause the array to be sent to the client as part of the result.
- * If the size of array is large, the address of array will be sent
- * as part of the result and the client will fetch array via RDMA.
- */
-struct xfer_roundtrip_res {
-    /** The array of \ref data_t structures, including length. */
-    data_array_t array;
-};
 
 /**
- * @brief Arguments for the fourth transfer operation (GET).
+ * @brief Arguments for the third transfer operation, XFER_READ_ENCODE.
  *
- * The fourth transfer operation only needs to send the length
+ * The third transfer operation only needs to send the length
  * of the data array.  It uses the data argument in the nssi_call_rpc()
  * to identify the raw data for the server to fetch.
  */
-struct xfer_get_args {
-    /** The length of the data array. */
-    int32_t len;
+struct xfer_read_encode_args {
+        /** The length of the data array. */
+        int32_t len;
+        /** A value used to initialize the data */
+        uint32_t seed;
+        /** A flag to perform validation */
+        bool validate;
 };
 
 /**
- * @brief Results for the fourth transfer operation (GET).
+ * @brief Results for the third transfer operation, XFER_READ_ENCODE.
  *
- * The fourth transfer operation includes the array of \ref data_t
- * structures as a result of the remote operation.  This will
- * cause the array to be sent to the client as part of the result.
- * If the size of array is large, the address of array will be sent
- * as part of the result and the client will fetch array via RDMA.
+ * The result of the xfer_read_encode operation includes the 
+ * array of \ref data_t structures.  If the size of array is large, 
+ * the address of array will be sent as part of the result and the 
+ * client will fetch array via RDMA.  In either case, the structures
+ * are encoded by the server and decoded by the client. 
  */
-struct xfer_get_res {
-    /** The array of \ref data_t structures, including length. */
-    data_array_t array;
+struct xfer_read_encode_res {
+        /** The array of \ref data_t structures, including length. */
+        data_array_t array;
 };
 
 /**
- * @brief Arguments for the fifth transfer operation (PUT).
+ * @brief Arguments for the fourth transfer operation, XFER_READ_RDMA.
  *
- * The fifth transfer operation includes the array of \ref data_t
+ * The xfer_read_rdma operation includes the array of \ref data_t
  * structures as an argument of the remote operation.  This will
  * cause the array to be sent to the server as part of the request.
  */
-struct xfer_put_args {
-    /** The array of \ref data_t structures, including length. */
-    data_array_t array;
+struct xfer_read_rdma_args {
+        /** The length of the data array. */
+        int32_t len;
+        /** A seed for initializing the array */
+        uint32_t seed;
+        /** A flag to perform validation */
+        bool validate;
 };
 
-/**
- * @brief Results for the fifth transfer operation (PUT).
- *
- * The fifth transfer operation only needs to send the length
- * of the data array as the result.  The client uses the data
- * argument in the nssi_call_rpc() to identify the address of
- * the raw data buffer for the server to put into.
- */
-struct xfer_put_res {
-    /** The length of the data array. */
-    int32_t len;
-};
+
 
 /**
  * @}

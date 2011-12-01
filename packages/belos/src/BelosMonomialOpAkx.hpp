@@ -50,6 +50,9 @@ namespace Belos {
   /// \brief Monomial-basis Akx implementation using abstract operators.
   /// \author Mark Hoemmen
   ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
+  ///
   template<class Scalar, class MV, class OP>
   class MonomialOpAkx : public OpAkx<Scalar, MV, OP> {
   public:

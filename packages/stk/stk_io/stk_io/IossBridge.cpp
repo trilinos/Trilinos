@@ -581,6 +581,33 @@ namespace stk {
       }
     }
 
+    void remove_io_part_attribute(mesh::Part & part)
+    {
+      const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
+      if (entity == NULL) {
+	std::string msg = "stk::io::remove_io_part_attribute( ";
+	msg += part.name();
+	msg += " ) FAILED:";
+	msg += " io_part_attribute is not defined on this part";
+	throw std::runtime_error( msg );
+      } else {
+	mesh::MetaData & meta = mesh::MetaData::get(part);
+	bool success = meta.remove_attribute(part, entity);
+	if (!success) {
+	  std::string msg = "stk::io::remove_io_part_attribute( ";
+	  msg += part.name();
+	  msg += " ) FAILED:";
+	  msg += " meta.remove_attribute(..) returned failure.";
+	  throw std::runtime_error( msg );
+	}
+
+	if (entity->type() == Ioss::INVALID_TYPE) {
+	  delete entity;
+	}
+
+      }
+    }
+
     /** Determine whether the field is defined on the specified part
      * and should also be associated with a Ioss GroupingEntity for
      * input or output
@@ -1055,15 +1082,18 @@ namespace stk {
 	if (blocks.size() > 0) {
 	  for (size_t j = 0; j < blocks.size(); j++) {
 	    mesh::Part & side_block_part = *blocks[j];
+	    stk::mesh::EntityRank side_rank = side_block_part.primary_entity_rank();
             mesh::Selector selector = meta.locally_owned_part() & side_block_part;
-	    size_t num_side = count_selected_entities(selector, bulk_data.buckets(type));
+	    
+	    size_t num_side = count_selected_entities(selector, bulk_data.buckets(side_rank));
 
-	    define_side_block(side_block_part, sset, type, num_side, spatial_dimension);
+	    define_side_block(side_block_part, sset, side_rank, num_side, spatial_dimension);
 	  }
 	} else {
+	  stk::mesh::EntityRank side_rank = part.primary_entity_rank();
           mesh::Selector selector = meta.locally_owned_part() & part;
-	  size_t num_side = count_selected_entities(selector, bulk_data.buckets(type));
-	  define_side_block(part, sset, type, num_side, spatial_dimension);
+	  size_t num_side = count_selected_entities(selector, bulk_data.buckets(side_rank));
+	  define_side_block(part, sset, side_rank, num_side, spatial_dimension);
 	}
       }
 

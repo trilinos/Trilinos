@@ -49,17 +49,10 @@ C   --   NVARGL - IN - the number of global variables
 C   --   NVARNP - IN - the number of nodal variables
 C   --   NVAREL - IN - the number of element variables
 
-      INTEGER NVARGL, NVARNP, NVAREL
-
-C   --Definition for the ENTRY routine parameters
-      CHARACTER ITYP, TYP
-      INTEGER   IID, ID
-      INTEGER   IIX, IX
-
       INTEGER IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
-      SAVE    IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
-
-      DATA    IXGV, IXNV, IXEV / -1, -1, -1 /
+      common /dbv/ IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
+      
+      INTEGER NVARGL, NVARNP, NVAREL
 
       IXGV  = 1
       IXGVE = IXGV + NVARGL - 1
@@ -69,47 +62,10 @@ C   --Definition for the ENTRY routine parameters
       IXEVE = IXEV + NVAREL - 1
 
       RETURN
+      END
 
 C=======================================================================
-      ENTRY DBVTYP (IIX, TYP, ID)
-C=======================================================================
-
-C   --*** DBVTYP *** (EXOLIB) Return the variable type and number
-C   --   Written by Amy Gilkey - revised 03/18/88
-C   --
-C   --DBVTYP is passed a variable index.  It returns the variable type
-C   --and variable number.
-C   --
-C   --Note that DBVINI must be called before this routine to initialize
-C   --the indices.  The indices are shared because this routine is an
-C   --ENTRY routine of DBVINI.
-C   --
-C   --Parameters:
-C   --   IIX - IN  - the variable index
-C   --   TYP - OUT - the variable type: 'G'lobal, 'N'odal, 'E'lement
-C   --   ID  - OUT - the variable number within the type
-
-      IF ((IXGV .LE. 0) .AND. (IXNV .LE. 0)
-     &    .AND. (IXEV .LE. 0)) RETURN
-
-      IF ((IIX .GE. IXGV) .AND. (IIX .LE. IXGVE)) THEN
-         TYP = 'G'
-         ID = IIX - IXGV + 1
-      ELSE IF ((IIX .GE. IXNV) .AND. (IIX .LE. IXNVE)) THEN
-         TYP = 'N'
-         ID = IIX - IXNV + 1
-      ELSE IF ((IIX .GE. IXEV) .AND. (IIX .LE. IXEVE)) THEN
-         TYP = 'E'
-         ID = IIX - IXEV + 1
-      ELSE
-         TYP = ' '
-         ID = 0
-      END IF
-
-      RETURN
-
-C=======================================================================
-      ENTRY DBVIX (ITYP, IID, IX)
+      SUBROUTINE DBVIX (ITYP, IID, IX)
 C=======================================================================
 
 C   --*** DBVIX *** (EXOLIB) Return the variable index
@@ -127,6 +83,12 @@ C   --   ITYP - IN  - the variable type: 'G'lobal, 'N'odal, 'E'lement
 C   --   IID  - IN  - the variable number within the type
 C   --   IX   - OUT - the variable index
 
+      INTEGER IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
+      common /dbv/ IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
+      
+      CHARACTER ITYP
+      INTEGER IID, IX
+      
       IF ((IXGV .LE. 0) .AND. (IXNV .LE. 0)
      &    .AND. (IXEV .LE. 0)) RETURN
 

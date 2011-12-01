@@ -1,4 +1,4 @@
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 IF(NOT TriKota_ENABLE_DakotaCMake)
 
@@ -166,7 +166,7 @@ ENDIF() # IF(NOT TriKota_ENABLE_DakotaCMake)
 # Build the TriKota library
 #
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -201,11 +201,11 @@ IF(TriKota_ENABLE_DakotaCMake)
   # DAKOTA built with CMake
 
   # The DEPLIBS part is to tell CMake that trikota depends on the specified
-  # Dakota libraries.  The IMPORTEDLIBS part is to get the PACKAGE_ADD_LIBRARY
+  # Dakota libraries.  The IMPORTEDLIBS part is to get the TRIBITS_ADD_LIBRARY
   # macro to put the Dakota libraries TriKota_LIBRARIES when writing
   # TriKotaConfig.cmake and Makefile.export.TriKota.  There should be a better
   # way of doing this...
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     trikota
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
@@ -220,7 +220,7 @@ ELSE() # IF(TriKota_ENABLE_DakotaCMake)
   LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}
     ${PACKAGE_BINARY_DIR}/Dakota/install/lib/)
 
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     trikota
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}

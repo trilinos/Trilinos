@@ -51,17 +51,17 @@ message("begin loop")
 
 set(Trilinos_LAST_WORKING_PACKAGE)
 
-foreach(PACKAGE ${Trilinos_PACKAGES})
-  set_property(GLOBAL PROPERTY SubProject ${PACKAGE})
-  set_property(GLOBAL PROPERTY Label ${PACKAGE})
-  message("PACKAGE='${PACKAGE}'")
+foreach(TRIBITS_PACKAGE ${Trilinos_PACKAGES})
+  set_property(GLOBAL PROPERTY SubProject ${TRIBITS_PACKAGE})
+  set_property(GLOBAL PROPERTY Label ${TRIBITS_PACKAGE})
+  message("TRIBITS_PACKAGE='${TRIBITS_PACKAGE}'")
 
   # CONFIGURE STEP
 
-  # create CONFIGURE_OPTIONS for this PACKAGE
+  # create CONFIGURE_OPTIONS for this TRIBITS_PACKAGE
   set(CONFIGURE_OPTIONS
     "-DCTEST_USE_LAUNCHERS:BOOL=${CTEST_USE_LAUNCHERS}"
-    "-DTrilinos_ENABLE_${PACKAGE}:BOOL=ON"
+    "-DTrilinos_ENABLE_${TRIBITS_PACKAGE}:BOOL=ON"
     "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON"
     "-DTrilinos_ENABLE_TESTS:BOOL=ON")
   if(DEFINED Trilinos_LAST_WORKING_PACKAGE)
@@ -76,7 +76,7 @@ foreach(PACKAGE ${Trilinos_PACKAGES})
 
   # new option for ctest_configure OPTIONS a list of command
   # line arguments to give to cmake: -D stuff for example
-  message("Configure PACKAGE='${PACKAGE}'")
+  message("Configure TRIBITS_PACKAGE='${TRIBITS_PACKAGE}'")
   message("CONFIGURE_OPTIONS = '${CONFIGURE_OPTIONS}'")
   ctest_configure(
     BUILD "${CTEST_BINARY_DIRECTORY}"
@@ -87,8 +87,8 @@ foreach(PACKAGE ${Trilinos_PACKAGES})
   # if the configure failed add the package to the list
   # of failed packages
   if(NOT "${res}" EQUAL "0")
-    message("${PACKAGE} FAILED to configure")
-    list(APPEND Trilinos_FAILED_PACKAGES ${PACKAGE})
+    message("${TRIBITS_PACKAGE} FAILED to configure")
+    list(APPEND Trilinos_FAILED_PACKAGES ${TRIBITS_PACKAGE})
   else()
     # load target properties and test keywords
     ctest_read_custom_files(BUILD "${CTEST_BINARY_DIRECTORY}")
@@ -104,7 +104,7 @@ foreach(PACKAGE ${Trilinos_PACKAGES})
   #
   if("${res}" EQUAL "0")
 
-    set(CTEST_BUILD_TARGET ${PACKAGE}_libs)
+    set(CTEST_BUILD_TARGET ${TRIBITS_PACKAGE}_libs)
     message("Build: '${CTEST_BUILD_TARGET}'")
     ctest_build (
       BUILD "${CTEST_BINARY_DIRECTORY}"
@@ -126,13 +126,13 @@ foreach(PACKAGE ${Trilinos_PACKAGES})
 
     # check to see if the build worked
     if(NOT build_success)
-      message("FAILED: build '${PACKAGE}'")
-      list(APPEND Trilinos_FAILED_PACKAGES ${PACKAGE})
+      message("FAILED: build '${TRIBITS_PACKAGE}'")
+      list(APPEND Trilinos_FAILED_PACKAGES ${TRIBITS_PACKAGE})
     else()
       # inside here the build worked
       # Now build ALL target, but append the results to the last build.xml
       set(CTEST_BUILD_TARGET)
-      message("build all for '${PACKAGE}'")
+      message("build all for '${TRIBITS_PACKAGE}'")
       ctest_build (BUILD "${CTEST_BINARY_DIRECTORY}"
         NUMBER_ERRORS numerrors
         RETURN_VALUE res
@@ -140,20 +140,20 @@ foreach(PACKAGE ${Trilinos_PACKAGES})
         )
       # submit the build for all target
       ctest_submit( PARTS build )  
-      # now run the tests that match the ${PACKAGE} name 
-      message("test for '${PACKAGE}'")
+      # now run the tests that match the ${TRIBITS_PACKAGE} name 
+      message("test for '${TRIBITS_PACKAGE}'")
       ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}"
-        INCLUDE "^${PACKAGE}" APPEND
+        INCLUDE "^${TRIBITS_PACKAGE}" APPEND
         )
       #ctest_memcheck(BUILD "${CTEST_BINARY_DIRECTORY}"
-      #  KEYWORDS ${PACKAGE})
+      #  KEYWORDS ${TRIBITS_PACKAGE})
       #ctest_coverage(BUILD "${CTEST_BINARY_DIRECTORY}")
       # submit test, memcheck and coverage results
       ctest_submit(PARTS Test)
-      set(Trilinos_LAST_WORKING_PACKAGE "${PACKAGE}")
+      set(Trilinos_LAST_WORKING_PACKAGE "${TRIBITS_PACKAGE}")
     endif()
   endif()
-endforeach(PACKAGE)
+endforeach(TRIBITS_PACKAGE)
 
 if(Trilinos_FAILED_PACKAGES)
   message("Failed packages! ${Trilinos_FAILED_PACKAGES}")

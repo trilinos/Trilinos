@@ -1,11 +1,11 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-# PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -39,7 +39,7 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   stk_rebalance
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}

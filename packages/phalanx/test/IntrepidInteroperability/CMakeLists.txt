@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -10,7 +10,7 @@ ASSERT_DEFINED(Phalanx_ENABLE_Intrepid)
 
 IF (Phalanx_ENABLE_Intrepid)
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     intrepid_interoperability
     SOURCES IntrepidInteroperability.cpp
     DEPLIBS phalanx_test_utilities

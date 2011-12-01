@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -8,7 +8,7 @@ INCLUDE(PackageLibraryMacros)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_PETSC)
 SET(HAVE_PETSC ${${PACKAGE_NAME}_ENABLE_PETSC})
 
-PACKAGE_CONFIGURE_FILE(ml_config.h)
+TRIBITS_CONFIGURE_FILE(ml_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -314,7 +314,7 @@ APPEND_SET(SOURCES
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   ml
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

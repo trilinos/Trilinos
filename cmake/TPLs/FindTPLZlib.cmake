@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( Zlib
+TRIBITS_TPL_DECLARE_LIBRARIES( Zlib
   REQUIRED_HEADERS zlib.h
   REQUIRED_LIBS_NAMES  z
   )

@@ -79,9 +79,10 @@ class FieldRepository {
         unsigned         arg_entity_rank ,
         const Part     & arg_part ,
         const PartVector & arg_all_parts,
-        const unsigned * arg_stride )
+        const unsigned * arg_stride ,
+        const void     * arg_init_value = NULL)
     {
-      arg_field.m_impl.insert_restriction( arg_method, arg_entity_rank, arg_part, arg_stride);
+      arg_field.m_impl.insert_restriction( arg_method, arg_entity_rank, arg_part, arg_stride, arg_init_value);
       verify_and_clean_restrictions( arg_method, arg_all_parts );
     }
 

@@ -1,10 +1,10 @@
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 
 #
 # B) Define the header and source files (and directories)
@@ -58,6 +58,10 @@ IF (Piro_ENABLE_Rythmos)
   APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
 ENDIF()
 
+IF (Piro_ENABLE_Rythmos AND Piro_ENABLE_NOX) 
+  APPEND_SET(HEADERS Piro_RythmosNOX_RowSumUpdater.hpp)
+ENDIF()
+
 # Optional StochasticGalerkin capability, depending upon Stokhos and NOX
 IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX) 
   APPEND_SET(HEADERS Piro_Epetra_StokhosNOXObserver.hpp
@@ -90,7 +94,7 @@ APPEND_SET(SOURCES Piro_Thyra_PerformAnalysis.cpp)
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   piro
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

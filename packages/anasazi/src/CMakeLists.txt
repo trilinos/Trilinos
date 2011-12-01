@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -20,10 +20,10 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   SET(HAVE_ANASAZI_TSQR 1)
 ENDIF()
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(CURRENT_PACKAGE ANASAZI)
-CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+CONFIGURE_FILE("${${PROJECT_NAME}_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
 
 #
@@ -168,7 +168,7 @@ ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   anasazi
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -11,7 +11,7 @@ SET(SOURCES
   Thyra_MLPreconditionerFactory.cpp
   )
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   stratimikosml
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

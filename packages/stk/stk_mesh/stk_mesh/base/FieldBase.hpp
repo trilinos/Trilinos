@@ -130,6 +130,10 @@ class FieldBase
     return m_impl.field_state(fstate);
   }
 
+  const void* get_initial_value() const { return m_impl.get_initial_value(); }
+
+  void* get_initial_value() { return m_impl.get_initial_value(); }
+
 private:
 
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"

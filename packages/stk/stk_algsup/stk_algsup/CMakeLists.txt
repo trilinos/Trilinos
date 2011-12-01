@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -14,7 +14,7 @@ FILE(GLOB SOURCES *.cpp)
 # Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   stk_algsup
   NOINSTALLHEADERS ${HEADERS}
   DEPLIBS stk_mesh_base

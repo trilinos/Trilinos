@@ -1,41 +1,44 @@
-INCLUDE(PackageMacros)
-INCLUDE(PackageLibraryMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 ###########################################################
 # A) Define the package
 #
 
-PACKAGE( Trios ENABLE_SHADOWING_WARNINGS )
+TRIBITS_PACKAGE( Trios ENABLE_SHADOWING_WARNINGS )
 
-PACKAGE_ADD_DEBUG_OPTION()
+TRIBITS_ADD_DEBUG_OPTION()
 
-PACKAGE_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 
 ###########################################################
 # B) Set up package-specific options
 #
 
-# Checks for various types of timers
+# Various Trios checks
 INCLUDE(TriosProbeTimers)
+# Checks for a supported interconnect
 INCLUDE(TriosProbeNetwork)
+# Checks for differences in Pthread implementations
+INCLUDE(TriosProbeThreads)
 
 IF (TPL_ENABLE_Netcdf)
-  ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_NETCDF_SERVICE
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_NETCDF_SERVICE
     TRIOS_ENABLE_NETCDF_SERVICE
     "Build libraries for netcdf service."
     OFF )
 ENDIF (TPL_ENABLE_Netcdf)
 
 IF (TPL_ENABLE_Pnetcdf)
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PNETCDF_SERVICE
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PNETCDF_SERVICE
    TRIOS_ENABLE_PNETCDF_SERVICE
    "Build libraries for PnetCDF service."
    OFF )
 ENDIF (TPL_ENABLE_Pnetcdf)
 
-ADD_OPTION_AND_DEFINE( ${PACKAGE_NAME}_ENABLE_TRACING
+TRIBITS_ADD_OPTION_AND_DEFINE( ${PACKAGE_NAME}_ENABLE_TRACING
   TRIOS_ENABLE_TRACING
   "Enable the tracing API"
   OFF
@@ -45,10 +48,10 @@ ADD_OPTION_AND_DEFINE( ${PACKAGE_NAME}_ENABLE_TRACING
 IF (${PACKAGE_NAME}_ENABLE_Portals OR
     ${PACKAGE_NAME}_ENABLE_CrayPortals OR
     ${PACKAGE_NAME}_ENABLE_InfiniBand OR
-    ${PACKAGE_NAME}_ENABLE_Gemini OR 
+    ${PACKAGE_NAME}_ENABLE_Gemini OR
     ${PACKAGE_NAME}_ENABLE_LUC)
 
-  SET(${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT 1)        
+  SET(${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT 1)
 ELSE()
   SET(${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT 0)
 ENDIF()
@@ -56,7 +59,7 @@ ENDIF()
 
 
 # Create the Trios_config.h file in ${CMAKE_BINARY_DIR}
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 # Copy the TriosProcessXDR.cmake file
 CONFIGURE_FILE(
@@ -85,8 +88,8 @@ ADD_SUBDIRECTORY(libraries)
 ADD_SUBDIRECTORY(programs)
 ADD_SUBDIRECTORY(services)
 
-PACKAGE_ADD_TEST_DIRECTORIES(tests)
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(examples)
+TRIBITS_ADD_TEST_DIRECTORIES(tests)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
 
 
 
@@ -94,11 +97,11 @@ PACKAGE_ADD_EXAMPLE_DIRECTORIES(examples)
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()
 
 
 # Install cmake scripts so others can use them
-INSTALL(FILES 
+INSTALL(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/TriosProcessXDR.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/UseTrios.cmake
   DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PACKAGE_NAME}"

@@ -74,15 +74,6 @@
     This is an example of how to use the Belos::PseudoBlockGmresSolMgr solver manager with an Ifpack preconditioner.
 */
 
-/*! \class Belos::PseudoBlockGmresSolMgr
- *
- *  \brief The Belos::PseudoBlockGmresSolMgr provides a powerful and fully-featured solver manager over the pseudo-block GMRES iteration.
-
- \ingroup belos_solver_framework
-
- \author Heidi Thornquist, Chris Baker, and Teri Barth
- */
-
 namespace Belos {
   
   //! @name PseudoBlockGmresSolMgr Exceptions
@@ -107,7 +98,30 @@ namespace Belos {
   class PseudoBlockGmresSolMgrOrthoFailure : public BelosError {public:
     PseudoBlockGmresSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
+  /*! \class PseudoBlockGmresSolMgr
+   * \brief Interface to standard and "pseudoblock" GMRES.
+   * \author Heidi Thornquist, Chris Baker, and Teri Barth
+   * \ingroup belos_solver_framework
+   * 
+   * This class provides an interface to the following iterative solvers:
+   * - GMRES, for linear systems with one right-hand side
+   * - The "pseudoblock" variant of GMRES, for linear systems
+   *   with multiple right-hand sides
+   *
+   * If you are a new Belos user and just want standard GMRES, use
+   * this class.  If you want Flexible GMRES, use \c BlockGmresSolMgr
+   * with the appropriate option set.
+   *
+   * "Pseudoblock" GMRES is a way to improve performance when solving
+   * systems with multiple right-hand sides, without changing the
+   * convergence characteristics.  It is equivalent in terms of
+   * convergence to running a separate instance of (standard) GMRES
+   * for each right-hand side, but should often be faster.  When
+   * solving for multiple right-hand sides, "Block GMRES" (as
+   * implemented by \c BlockGmresSolMgr) is a different algorithm with
+   * different convergence characteristics than Pseudoblock GMRES.
+   */
   template<class ScalarType, class MV, class OP>
   class PseudoBlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
     
@@ -170,7 +184,7 @@ namespace Belos {
      *   - time spent in solve() routine
      */
     Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-      return tuple(timerSolve_);
+      return Teuchos::tuple(timerSolve_);
     }
 
     //! Get the iteration count for the most recent call to \c solve().

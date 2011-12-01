@@ -94,7 +94,10 @@ extern "C" {
     extern const char *trios_timer_getimpl();
 
 
-#if defined(USE_TIMERS)
+#if defined(TRIOS_USE_TIMERS)
+
+/* always use this macro to declare timer variables */
+#define trios_declare_timer(timer_var) double timer_var;
 
 #define trios_start_timer(timer) { timer = trios_get_time(); }
 #define trios_stop_timer(name, timer)  { timer = trios_get_time() - timer; log_debug(LOG_ALL, "%s Time = %10.8f", name, timer); }
@@ -104,6 +107,8 @@ extern "C" {
 #define trios_log_delay_timer(name, timer)  { log_debug(LOG_ALL, "%s Time = %10.8f", name, timer); }
 
 #else
+
+#define trios_declare_timer(t)
 
 #define trios_start_timer(timer)  {}
 #define trios_stop_timer(name, timer)   {}

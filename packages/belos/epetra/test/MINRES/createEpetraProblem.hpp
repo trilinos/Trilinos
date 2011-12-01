@@ -39,36 +39,38 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef EPETRA_MPI
-#include "mpi.h"
-#endif
+#include "Epetra_config.h"
+#include "Teuchos_Ptr.hpp"
+#include "Teuchos_RCP.hpp"
 
+class Epetra_Comm;
 class Epetra_Map;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
 
-#include "Teuchos_RCP.hpp"
-using Teuchos::RCP;
-using Teuchos::rcp;
-
 namespace Belos {
 
-class MPIFinalize {
-public:
-  ~MPIFinalize() {
-#ifdef EPETRA_MPI 
-    MPI_Finalize();
-#endif
-  }
-};
+  namespace Test {
+    class MPISession {
+    public:
+      MPISession (Teuchos::Ptr<int> argc, Teuchos::Ptr<char**> argv);
+      ~MPISession ();
+      Teuchos::RCP<const Epetra_Comm> getComm ();
 
-int createEpetraProblem(
-			std::string                      &filename
-			,RCP<Epetra_Map>         *rowMap
-			,RCP<Epetra_CrsMatrix>   *A
-			,RCP<Epetra_MultiVector> *B
-			,RCP<Epetra_MultiVector> *X
-			,int                             *MyPID
-			);
+    private:
+      // Lazily initialized Epetra communicator wrapper.
+      Teuchos::RCP<Epetra_Comm> comm_;
+    };
+  } // namespace Test
+
+
+void
+createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
+		     const std::string& filename,
+		     Teuchos::RCP<Epetra_Map>& rowMap,
+		     Teuchos::RCP<Epetra_CrsMatrix>& A,
+		     Teuchos::RCP<Epetra_MultiVector>& B,
+		     Teuchos::RCP<Epetra_MultiVector>& X,
+		     int &numRHS); // in/out
 
 } // namespace Belos

@@ -1,7 +1,7 @@
 # Required modules
 
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
 
 # Example definitions
 

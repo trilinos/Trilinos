@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -46,7 +46,7 @@
    \file   Amesos2_Lapack_def.hpp
    \author Eric Bavier <etbavie@sandia.gov>
    \date   Fri Jul 29 18:54:39 MDT 2011
-   
+
    \brief  Definitions for the Amesos2 Lapack interface.
 */
 
@@ -106,16 +106,25 @@ namespace Amesos2 {
   int
   Lapack<Matrix,Vector>::numericFactorization_impl()
   {
-    // Set here so that solver_ can refresh it's internal state
-    solver_.setMatrix( Teuchos::rcpFromRef(lu_) );
+    int factor_ierr = 0;
 
-    int factor_ierr = solver_.factor();
+    if( this->root_ ){
+      // Set here so that solver_ can refresh it's internal state
+      solver_.setMatrix( Teuchos::rcpFromRef(lu_) );
 
+      {
+#ifdef HAVE_AMESOS2_TIMERS
+	Teuchos::TimeMonitor numFactTimer( this->timers_.numFactTime_ );
+#endif
+	factor_ierr = solver_.factor();
+      }
+    }
+
+    Teuchos::broadcast(*(this->getComm()), 0, &factor_ierr);
     TEUCHOS_TEST_FOR_EXCEPTION( factor_ierr != 0,
-			std::runtime_error,
-			"Lapack factor routine returned error code "
-			<< factor_ierr );
-
+				std::runtime_error,
+				"Lapack factor routine returned error code "
+				<< factor_ierr );
     return( 0 );
   }
 
@@ -126,7 +135,7 @@ namespace Amesos2 {
 				    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
   {
     using Teuchos::as;
-    
+
     // Convert X and B to SerialDenseMatrix's
     const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
     const size_t nrhs = X->getGlobalNumVectors();
@@ -141,32 +150,39 @@ namespace Amesos2 {
       Teuchos::TimeMonitor mvConvTimer( this->timers_.vecConvTime_ );
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>, scalar_type>::do_get(B, rhsvals_(),
-									     as<size_t>(ld_rhs),
-									     ROOTED);
+      typedef Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+				       scalar_type> copy_helper;
+      copy_helper::do_get(B, rhsvals_(), as<size_t>(ld_rhs), ROOTED);
     }
+
+    int solve_ierr         = 0;
+    int unequilibrate_ierr = 0;
 
     if( this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor solveTimer( this->timers_.solveTime_ );
 #endif
-      
+
       using Teuchos::rcpFromRef;
       typedef Teuchos::SerialDenseMatrix<int,scalar_type> DenseMat;
-      
+
       DenseMat rhs_dense_mat(Teuchos::View, rhsvals_.getRawPtr(),
 				  as<int>(ld_rhs), as<int>(ld_rhs), as<int>(nrhs));
 
       solver_.setVectors( rcpFromRef(rhs_dense_mat),
 			  rcpFromRef(rhs_dense_mat) );
-    
-      int solve_ierr = solver_.solve();
-      TEUCHOS_TEST_FOR_EXCEPTION( solve_ierr != 0,
-			  std::runtime_error,
-			  "Lapack solver solve method returned with error code "
-			  << solve_ierr );
+
+      solve_ierr = solver_.solve();
+
       // Solution is found in rhsvals_
     }
+
+    // Consolidate and check error codes
+    Teuchos::broadcast(*(this->getComm()), 0, &solve_ierr);
+    TEUCHOS_TEST_FOR_EXCEPTION( solve_ierr != 0,
+				std::runtime_error,
+				"Lapack solver solve method returned with error code "
+				<< solve_ierr );
 
     /* Update X's global values */
     {
@@ -190,7 +206,7 @@ namespace Amesos2 {
   {
     // Factorization of rectangular matrices is supported, but not
     // their solution.  For solution we can have square matrices.
-    
+
     return( this->globalNumCols_ == this->globalNumRows_ );
   }
 
@@ -214,7 +230,7 @@ namespace Amesos2 {
     using Teuchos::ParameterList;
 
     static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
-    
+
     if( is_null(valid_params) ){
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
@@ -254,7 +270,7 @@ namespace Amesos2 {
 #endif
 
       // typedef Util::get_ccs_helper<MatrixAdapter<Matrix>,
-      // 	scalar_type, global_ordinal_type, global_size_type> ccs_helper;
+      //	scalar_type, global_ordinal_type, global_size_type> ccs_helper;
       typedef Util::get_ccs_helper<MatrixAdapter<Matrix>,
 	scalar_type, int, int> ccs_helper;
       ccs_helper::do_get(this->matrixA_.ptr(),
@@ -278,7 +294,7 @@ namespace Amesos2 {
 
       // lu_.print(std::cout);
     }
-    
+
   return( true );
 }
 

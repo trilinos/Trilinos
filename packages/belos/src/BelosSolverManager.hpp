@@ -110,7 +110,16 @@ class SolverManager : virtual public Teuchos::Describable {
   //! Set the linear problem that needs to be solved. 
   virtual void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) = 0;
 
-  //! Set the parameters the solver manager should use to solve the linear problem.
+  /// \brief Set the parameters to use when solving the linear problem.
+  ///
+  /// \param params [in/out] List of parameters to use when solving
+  ///   the linear problem.  This list will be modified as necessary
+  ///   to include default parameters that need not be provided.  If
+  ///   params is null, then this method uses default parameters.
+  ///
+  /// \note The ParameterList returned by \c getValidParameters() has
+  ///   all the parameters that the solver understands, possibly
+  ///   including human-readable documentation and validators.
   virtual void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) = 0;
 
   //! Set user-defined convergence status test.
@@ -126,24 +135,31 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! @name Reset methods
   //@{
-  /*! \brief Performs a reset of the solver manager specified by the \c ResetType.  This informs the
-   *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
-   *  of the iterative solver strategy.
-  */ 
+
+  /// \brief Reset the solver manager.
+  ///
+  /// Reset the solver manager in a way specified by the \c
+  /// ResetType parameter.  This informs the solver manager that the
+  /// solver should prepare for the next call to solve by resetting
+  /// certain elements of the iterative solver strategy.
   virtual void reset( const ResetType type ) = 0;
   //@}
 
   //! @name Solver application methods
   //@{ 
-    
-  /*! \brief This method performs possibly repeated calls to the underlying linear solver's iterate() routine
-   * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
-   * quit.
-   *
-   * \returns ::ReturnType specifying:
-   *    - ::Converged: the linear problem was solved to the specification required by the solver manager.
-   *    - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager
-  */
+
+  /// \brief Iterate until the status test tells us to stop.
+  //
+  /// This method performs possibly repeated calls to the underlying
+  /// linear solver's iterate() routine, until the problem has been
+  /// solved (as decided by the solver manager via the status
+  /// test(s)), or the solver manager decides to quit.
+  ///
+  /// \return A \c Belos::ReturnType enum specifying:
+  ///   - Belos::Converged: the linear problem was solved to the
+  ///     specification required by the solver manager.
+  ///   - Belos::Unconverged: the linear problem was not solved to the
+  ///     specification desired by the solver manager.
   virtual ReturnType solve() = 0;
   //@}
   

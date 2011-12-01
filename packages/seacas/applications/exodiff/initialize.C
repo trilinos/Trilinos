@@ -190,7 +190,7 @@ void ExoII_Read::Get_Init_Data()
     eblocks = new Exo_Block[num_elmt_blocks];    SMART_ASSERT(eblocks != 0);
     std::vector<int> ids(num_elmt_blocks);
     
-    err = ex_get_ids(file_id, EX_ELEM_BLOCK, &ids[0]);
+    err = ex_get_ids(file_id, EX_ELEM_BLOCK, TOPTR(ids));
     
     if (err < 0) {
       std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get element"
@@ -235,7 +235,7 @@ void ExoII_Read::Get_Init_Data()
     nsets = new Node_Set[num_node_sets];         SMART_ASSERT(nsets != 0);
     std::vector<int> ids(num_node_sets);
     
-    err = ex_get_ids(file_id, EX_NODE_SET, &ids[0]);
+    err = ex_get_ids(file_id, EX_NODE_SET, TOPTR(ids));
 
     if (err < 0) {
       std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get "
@@ -260,7 +260,7 @@ void ExoII_Read::Get_Init_Data()
     ssets = new Side_Set[num_side_sets];         SMART_ASSERT(ssets != 0);
     std::vector<int> ids(num_side_sets);
     
-    err = ex_get_ids(file_id, EX_SIDE_SET, &ids[0]);
+    err = ex_get_ids(file_id, EX_SIDE_SET, TOPTR(ids));
 
     if (err < 0) {
       std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get "

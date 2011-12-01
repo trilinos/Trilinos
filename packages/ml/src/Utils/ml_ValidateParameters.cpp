@@ -16,18 +16,24 @@ class InverseLibrary;
 }
 #endif
 
-using namespace Teuchos;
 using namespace ML_Epetra;
 
-bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList,int depth){
-  Teuchos::ParameterList List,*validList;
+bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList, int depth){
+  using Teuchos::ParameterList;
+  using Teuchos::Exceptions::InvalidParameterName;
+  using Teuchos::Exceptions::InvalidParameterType;
+  using Teuchos::Exceptions::InvalidParameterValue;
+  using std::cout;
+  using std::endl;
+  using std::string;
+  
+  ParameterList List,*validList;
   bool rv=true;
 
   /* Build a copy of the list to be validated. */
-  for(ParameterList::ConstIterator param=inList.begin(); param!=inList.end(); param++){
+  for (ParameterList::ConstIterator param = inList.begin(); param != inList.end(); ++param) {
     const string pname=inList.name(param);
-    if( pname.find("user-defined function",0) == string::npos )
-    {
+    if (pname.find("user-defined function",0) == string::npos) {
       List.setEntry(pname,inList.entry(param));
     }
   }
@@ -35,22 +41,24 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList,int d
   List.setName(inList.name());
 
   /* Get Defaults + Validate */
-  try{
-  validList=GetValidMLPParameters();
+  try {
+    validList = GetValidMLPParameters();
   }
   catch(...) {
-    std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;
+    cout << "Error in GetValidMLPParameters.  Please report this bug to the ML "
+      "developers." << endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     exit(EXIT_FAILURE);
   }
-  try{
-    List.validateParameters(*validList,depth,VALIDATE_USED_ENABLED,VALIDATE_DEFAULTS_DISABLED);
+  try {
+    List.validateParameters (*validList, depth, Teuchos::VALIDATE_USED_ENABLED, 
+			     Teuchos::VALIDATE_DEFAULTS_DISABLED);
   }
-  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
-  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
-  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; std::cout<<excpt.what()<<std::endl;}
+  catch(InvalidParameterName &excpt)  {rv=false; cout<<excpt.what()<<endl;}
+  catch(InvalidParameterType &excpt)  {rv=false; cout<<excpt.what()<<endl;}
+  catch(InvalidParameterValue &excpt) {rv=false; cout<<excpt.what()<<endl;}
   catch(...) {rv=false;}
   delete validList;
   return rv;
@@ -58,9 +66,20 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList,int d
 
 /******************************************************************************/
 
-void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
+void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<std::string> &smoothers)
 {
-  Teuchos::ParameterList dummy;
+  using Teuchos::AnyNumberParameterEntryValidator;
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::setIntParameter;
+  using Teuchos::setDoubleParameter;
+  using Teuchos::setStringToIntegralParameter;
+  using Teuchos::tuple; // Different than std::tuple.
+  using std::string;
+  using std::vector;
+
+  ParameterList dummy;
   // prevent Teuchos from converting parameter types
   AnyNumberParameterEntryValidator::AcceptedTypes intParam(false),
                                                   dblParam(false),
@@ -70,8 +89,9 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   strParam.allowString(true); 
 
   /* Smoothing Options (Section 6.4.4) */
-  setStringToIntegralParameter<int>("smoother: type",string("Chebyshev"),"Smoothing algorithm",smoothers,PL);
-  setIntParameter("smoother: sweeps",2,"Number of smoothing sweeps",PL,intParam);
+  setStringToIntegralParameter<int>("smoother: type", string("Chebyshev"), 
+				    "Smoothing algorithm",smoothers,PL);
+  setIntParameter("smoother: sweeps", 2, "Number of smoothing sweeps", PL, intParam);
   setDoubleParameter("smoother: damping factor",1.0,"Smoother damping factor",PL,dblParam);
   setStringToIntegralParameter<int>("smoother: pre or post","both","Smooth before/after coarse correction, or both",tuple<string>("pre","post","both"),PL);
 #ifdef HAVE_ML_AZTECOO
@@ -98,12 +118,12 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
 # endif
 # ifdef HAVE_ML_TekoSmoothers
   { 
-     Teuchos::RCP<Teuchos::ParameterList> nullList;
-     PL->set("smoother: teko filename",std::string("teko_smoother.xml"));
-     PL->set<Teuchos::RCP<const Teko::InverseLibrary> >("smoother: teko inverse library",Teuchos::null);
-     PL->set("smoother: teko parameter list",nullList);
-     PL->set("smoother: teko inverse",std::string("Amesos"));
-     PL->set("smoother: teko is blocked",0);
+    RCP<ParameterList> nullList;
+    PL->set("smoother: teko filename",std::string("teko_smoother.xml"));
+    PL->set<RCP<const Teko::InverseLibrary> >("smoother: teko inverse library",Teuchos::null);
+    PL->set("smoother: teko parameter list",nullList);
+    PL->set("smoother: teko inverse",std::string("Amesos"));
+    PL->set("smoother: teko is blocked",0);
   }
 # endif
   /* Unlisted Options */ 
@@ -186,8 +206,15 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
 
 /******************************************************************************/
 
-void ML_Epetra::SetValidAggrParams(ParameterList *PL)
+void ML_Epetra::SetValidAggrParams(Teuchos::ParameterList *PL)
 {
+  using Teuchos::AnyNumberParameterEntryValidator;
+  using Teuchos::setIntParameter;
+  using Teuchos::setDoubleParameter;
+  using Teuchos::setStringToIntegralParameter;
+  using Teuchos::tuple;
+  using std::string;
+
   // prevent Teuchos from converting parameter types
   AnyNumberParameterEntryValidator::AcceptedTypes intParam(false),
                                                   dblParam(false),
@@ -217,7 +244,16 @@ void ML_Epetra::SetValidAggrParams(ParameterList *PL)
 /******************************************************************************/
 
 Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
-  Teuchos::ParameterList dummy;
+  using Teuchos::AnyNumberParameterEntryValidator;
+  using Teuchos::Array;
+  using Teuchos::ParameterList;
+  using Teuchos::setIntParameter;
+  using Teuchos::setDoubleParameter;
+  using Teuchos::setStringToIntegralParameter;
+  using Teuchos::tuple;
+  using std::string;
+
+  ParameterList dummy;
   ParameterList * PL = new ParameterList;
 
   // prevent Teuchos from converting parameter types
@@ -258,7 +294,9 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 #  endif
    };
   Array<string> smoothers(num_smoothers);
-  for(int i=0;i<num_smoothers;i++) smoothers[i] = smoother_strings[i];
+  for(int i = 0; i<num_smoothers; i++) {
+    smoothers[i] = smoother_strings[i];
+  }
 
   /* General Options (Section 6.4.1) */
   setIntParameter("ML output",0,"Output Level",PL,intParam);
@@ -282,7 +320,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Aggregation and Prolongator Options (Section 6.4.3) */
   SetValidAggrParams(PL);
-  for (int i=0; i<10;i++) {
+  for (int i = 0; i < 10; ++i) {
     char param[32];
     sprintf(param,"aggregation: list (level %d)",i); 
     SetValidAggrParams(&(PL->sublist(param)));
@@ -295,7 +333,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Smoothing Options (Section 6.4.4) */
   SetValidSmooParams(PL,smoothers);
-  for (int i=0; i<10;i++) {
+  for (int i = 0; i < 10; ++i) {
     char param[32];
     sprintf(param,"smoother: list (level %d)",i); 
     SetValidSmooParams(&(PL->sublist(param)),smoothers);
@@ -385,7 +423,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->sublist("partitioner: options").disableRecursiveValidation();
 
   /* EXPERIMENTAL - node aware code */
-  setIntParameter("ML node id",-1,"Unlisted option",PL,intParam);
+  setIntParameter("ML node id", -1, "Unlisted option", PL, intParam);
 
   return PL;
 }
@@ -396,36 +434,47 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 /***************************************************************************************************/
 
 bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inList){
-  Teuchos::ParameterList List,*validList;
+  using Teuchos::ParameterList;
+  using Teuchos::Exceptions::InvalidParameterName;
+  using Teuchos::Exceptions::InvalidParameterType;
+  using Teuchos::Exceptions::InvalidParameterValue;
+  using std::cout;
+  using std::endl;
+  using std::string;
+
+  ParameterList List,*validList;
   bool rv=true;
   
   /* Build a list with level-specific stuff stripped */
   //TODO this should be fixed
-  for(ParameterList::ConstIterator param=inList.begin(); param!=inList.end(); param++){
+  for (ParameterList::ConstIterator param = inList.begin(); param != inList.end(); ++param) {
     const string pname=inList.name(param);
-    if(pname.find("(level",0) == string::npos)
+    if (pname.find("(level",0) == string::npos) {
       List.setEntry(pname,inList.entry(param));
+    }
   }
 
   List.setName(inList.name());
 
   /* Get Defaults + Validate */
   try{
-  validList=GetValidRefMaxwellParameters();
+    validList = GetValidRefMaxwellParameters();
   }
   catch(...) {
-    std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;
+    cout << "Error in GetValidMLPParameters.  Please report this bug to the ML "
+      "developers." << endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     exit(EXIT_FAILURE);
   }
-  try{
-    List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
+  try {
+    List.validateParameters(*validList, 0, Teuchos::VALIDATE_USED_DISABLED,
+			    Teuchos::VALIDATE_DEFAULTS_DISABLED);
   }
-  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; std::cout<<excpt.what();}
-  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; std::cout<<excpt.what();}
-  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; std::cout<<excpt.what();}
+  catch(InvalidParameterName &excpt)  {rv=false; cout<<excpt.what();}
+  catch(InvalidParameterType &excpt)  {rv=false; cout<<excpt.what();}
+  catch(InvalidParameterValue &excpt) {rv=false; cout<<excpt.what();}
   catch(...) {rv=false;}
   delete validList;
   return rv;
@@ -433,7 +482,12 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
 
 
 Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
-  Teuchos::ParameterList dummy,List11;
+  using Teuchos::ParameterList;
+  using Teuchos::setStringToIntegralParameter;
+  using Teuchos::tuple;
+  using std::string;
+
+  ParameterList dummy,List11;
   ParameterList * PL = GetValidMLPParameters();
 
   /* RefMaxwell Options */

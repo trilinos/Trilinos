@@ -38,7 +38,7 @@ echo "PAUSE_FILE = '$PAUSE_FILE'"
 
 export PATH=/opt/trilinos-toolset/bin:$PATH
 
-$TRILINOS_BASE/cmake/python/mailmsg.py "Starting CASL VRI CI testing server on pu241"
+$TRILINOS_BASE/cmake/tribits/python/mailmsg.py "Starting CASL VRI CI testing server on pu241"
 
 echo
 echo "***"
@@ -59,13 +59,13 @@ echo "CI_COMMAND = $CI_COMMAND"
 
 # B.2) Run the loop
 
-$TRILINOS_BASE/cmake/python/generic-looping-demon.py \
+$TRILINOS_BASE/cmake/tribits/python/generic-looping-demon.py \
 --command="$CI_COMMAND" \
 --today-run-till=$TODAY_RUN_TILL \
 --loop-interval=$LOOP_INTERVAL \
 --pause-file=$PAUSE_FILE
 
-$TRILINOS_BASE/cmake/python/mailmsg.py "Finished CASL VRI CI testing server on pu241"
+$TRILINOS_BASE/cmake/tribits/python/mailmsg.py "Finished CASL VRI CI testing server on pu241"
 
 # NOTES:
 #

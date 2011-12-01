@@ -1,9 +1,9 @@
 
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Epetra_OrthoManagerTester
   SOURCES cxx_main.cpp 
   COMM serial mpi
@@ -18,7 +18,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Epetra_OrthoManagerMatTester
   SOURCES cxx_mattest.cpp 
   COMM serial mpi
@@ -33,7 +33,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Epetra_OrthoManagerGenTester
   SOURCES cxx_gentest.cpp 
   COMM serial mpi

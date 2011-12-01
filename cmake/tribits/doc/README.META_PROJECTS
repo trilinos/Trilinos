@@ -1,0 +1,75 @@
+
+TriBITS defines a system for building a set of interrelated software.
+
+There are some important concepts that are part of the TriBITS system that
+must be clearly defined.
+
+1) Project:
+* Defines PROJECT_NAME CMake varaible (defined in ProjectName.cmake)
+* Defines a CMake project by calling PROJECT(${PROJECT_NAME} ...)
+* Defines a set of native Repositories (see below) that define
+  packages and TPLs.  This set of native Repositories defines the
+  official packages list and dependencies data-structure.  The list
+  of native Repositories can be empty!
+* Allows for extra Repositories to be added on before and after the
+  set of native Repositories.
+* Defines a default CDash server and default project name on the server
+  (actually, the project name on the CDash server must be the same as
+  ${PROJECT_NAME})
+* Core files making up a Project:
+    CMakeLists.txt
+    CTestConfig.cmake
+    ProjectName.cmake
+    Version.cmake # [Optional] Dev mode, project version, VC branch
+    cmake/
+      tribts/  # [Optional] Could just point to installed tribits
+      ctest/
+        CTestCustom.ctest.in  # [Optional] Some custom ctest settings
+
+2) Repository (Collection):
+* Defines a CMake variable specific to the collection refered to the
+  in the varaible REPOSITORY_NAME.
+* Defines the base source and binary directories for the repostory:
+  (e.g. Trilinos_HOME_DIR and Trilinos_BUILD_DIR which may *not* be the
+  same as ${PROJECT_NAME}_HOME_DIR and ${PROJECT_NAME}_BUILD_DIR).
+* Contains files that contribute to the build and or tests for a partent
+  project
+* [Optional] Defines a list of add-on packages and and TPLs
+* [Optional] Points to one ore more other VC repositories
+* [Optional] Defines a common set of initializations and other
+  hooks.
+* Core files making up a Repository:
+    PackagesList.cmake
+    TPLsList.cmake
+    Copyright.txt  # [Optional] Only needed if creating version header file
+    Version.cmake  # [Optional] Info inserted into ${REPO_NAME}_version.h
+    cmake/
+       CallBack<A>.cmake # [Optional] Only included once
+       CallBack<B>.cmake # [Optional] Only included once
+       CallBack<C>.cmake # [Optional] Only included once
+       ...
+
+3) Package:
+* Defines a set of libraries and/or headers and/or executables and/or tests
+  with cmake build targets for building these, and publishes the list of include
+  directories and libraries that are created (along with CMake dependencies).
+* Defines dependenices on upstream TPLs and/or other packages by just 
+  naming the depencenices using their package names.
+* Publishes a list of header file include paths and/or libraries
+* Installs an XXXConfig.cmake file that provides the list of this info
+* Core files making up a project:
+    CMakeLists.txt  # Only processed if the package is enabled
+    cmake/
+       Dependencies.cmake  # Always processed if package exists
+
+4) TPL:
+* Defines a set of pre-built libraries and/or executables
+* Publishes the include directories and/or libraries and/or executables
+  provided by the TPL
+
+NOTES:
+* A Project and a Repository can be one in the same.  That is, a project can
+  provide a set of packages and initializations.  This linkage is made in
+  the base-level Project CMakeLists.txt file.  Also, in this case, the
+  Project's and the Repositorie's Version.cmake and Copyright.txt files
+  are one and the same which works just fine.

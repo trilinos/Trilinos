@@ -8,7 +8,20 @@
 #include	"structs.h"
 #include        "smalloc.h"
 
-static void free2d();
+/* Free the space used in the bpmatch routines. */
+static void 
+free2d (double *vals[4][MAXSETS], int *indices[4][MAXSETS])
+{
+    sfree(vals[0][1]);
+    sfree(vals[0][2]);
+    sfree(vals[0][3]);
+    sfree(vals[1][2]);
+
+    sfree(indices[0][1]);
+    sfree(indices[0][2]);
+    sfree(indices[0][3]);
+    sfree(indices[1][2]);
+}
 
 void 
 map2d (
@@ -63,19 +76,3 @@ map2d (
 }
 
 
-/* Free the space used in the bpmatch routines. */
-static void 
-free2d (double *vals[4][MAXSETS], int *indices[4][MAXSETS])
-{
-
-
-    sfree(vals[0][1]);
-    sfree(vals[0][2]);
-    sfree(vals[0][3]);
-    sfree(vals[1][2]);
-
-    sfree(indices[0][1]);
-    sfree(indices[0][2]);
-    sfree(indices[0][3]);
-    sfree(indices[1][2]);
-}

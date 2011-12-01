@@ -1,7 +1,7 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   minres_indefinite
   SOURCES test_minres_indefinite.cpp
   COMM serial mpi
@@ -13,7 +13,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     minres_hb
     SOURCES test_minres_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -22,7 +22,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     STANDARD_PASS_OUTPUT 
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestMinresFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestMinresFiles
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockCG
     SOURCE_FILES bcsstk14.hb
     EXEDEPS minres_hb

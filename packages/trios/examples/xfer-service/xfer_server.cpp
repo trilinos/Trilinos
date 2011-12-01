@@ -58,6 +58,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_logger.h"
 #include "Trios_timer.h"
 
+#include "nssi_debug.h"
+
 #include <iostream>
 #include <string>
 
@@ -74,16 +76,22 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 log_level xfer_debug_level = LOG_UNDEFINED;
 
+/* prototype for a function to initialize buffers */
+extern void xfer_init_data_array(const unsigned int seed, data_array_t *array);
+extern int xfer_compare_data_arrays( const data_array_t *arr1,  const data_array_t *arr2);
+
 
 /**
- * @brief Transfer an array of \ref data_t structures through
- *        the process arguments.
+ * @brief Emulate a write operation where all the data is sent
+ *        through the function arguments.
  *
- * This function simply returns a result that tells the client
- * the request was received.  Before this function is called,
- * the request and the data array passed in the args structure
- * is decoded.  This function helps test the overhead of the
- * encoding/decoding process.
+ * Transfer an array of data structures to the server through the
+ * procedure arguments, forcing the client to encode the array before
+ * sending and the server to decode the array when receiving.  We use
+ * this method to evaluate the performance of the encoding/decoding the arguments.
+ * For large arrays, this method also tests our two-phase transfer protocol in
+ * which the client pushes a small header of arguments and lets the server pull the
+ * remaining arguments on demand.
  *
  * @param request_id   ID of the request.
  * @param caller      The process ID of the calling process.
@@ -91,20 +99,44 @@ log_level xfer_debug_level = LOG_UNDEFINED;
  * @param data_addr   The remote memory descriptor for the data (not used).
  * @param res_addr    The remote memory descriptor for the result.
  */
-int xfer_push_srvr(
+int xfer_write_encode_srvr(
         const unsigned long request_id,
         const NNTI_peer_t *caller,
-        const xfer_push_args *args,
+        const xfer_write_encode_args *args,
         const NNTI_buffer_t *data_addr,
         const NNTI_buffer_t *res_addr)
 {
-//    const int len = args->array.data_array_t_len;
-//    const data_t *array = args->array.data_array_t_val;
+    const int len = args->len;
+    const long int seed = args->seed;
+    const bool validate = args->validate;
+
+    int nbytes = len*sizeof(data_t);
+
     log_level debug_level = xfer_debug_level;
     int rc;
 
     /* process array (nothing to do) */
-    log_debug(debug_level, "starting xfer_push_srvr");
+
+    log_debug(debug_level, "starting xfer_write_encode_srvr");
+
+    /* Validate the array that was sent through the args */
+    if (validate) {
+        data_array_t tmp_array;
+        tmp_array.data_array_t_len = len;
+
+        tmp_array.data_array_t_val = (data_t *)malloc(nbytes);
+
+        xfer_init_data_array(seed, &tmp_array);
+        rc = xfer_compare_data_arrays(&tmp_array, const_cast<data_array_t *>(&args->array));
+
+        if (rc != 0) {
+            log_warn(debug_level, "Unable to validate array");
+        }
+
+        free(tmp_array.data_array_t_val);
+    }
+
+
 
     rc = nssi_send_result(caller, request_id, NSSI_OK, NULL, res_addr);
 
@@ -112,14 +144,11 @@ int xfer_push_srvr(
 }
 
 /**
- * @brief Transfer an array of \ref data_t structures through
- *        the data portal.
+ * @brief Transfer an array of data structures to the server using the data channel.
  *
- * This server-side function is a callback that executes when
- * the server receives an \ref XFER_PULL request.  This function
- * pulls data from the client using the nssi_get_data() function
- * and returns a result telling the calling process that this
- * function is complete.
+ * This procedure passes the length of the array in the arguments. The server
+ * then ``pulls'' the unencoded data from the client using the \ref nssi_get function.
+ * This method evaluates the RDMA transfer performance for the \ref nssi_get_data function.
  *
  * @param request_id   ID of the request.
  * @param caller      The process ID of the calling process.
@@ -127,10 +156,10 @@ int xfer_push_srvr(
  * @param data_addr   The remote memory descriptor for the data.
  * @param res_addr    The remote memory descriptor for the result.
  */
-int xfer_pull_srvr(
+int xfer_write_rdma_srvr(
         const unsigned long request_id,
         const NNTI_peer_t *caller,
-        const xfer_pull_args *args,
+        const xfer_write_rdma_args *args,
         const NNTI_buffer_t *data_addr,
         const NNTI_buffer_t *res_addr)
 {
@@ -138,110 +167,64 @@ int xfer_pull_srvr(
     log_level debug_level = xfer_debug_level;
 
     const int len = args->len;
+    const long int seed = args->seed;
+    const bool validate = args->validate;
+
     int nbytes = len*sizeof(data_t);
 
-    log_debug(debug_level, "starting xfer_pull_srvr");
-
+    log_debug(debug_level, "starting xfer_write_rdma_srvr");
 
     /* allocate space for the incoming buffer */
-    data_t *buf = (data_t *)malloc(nbytes);
+    data_array_t array;
+    array.data_array_t_len = len;
+    array.data_array_t_val = (data_t *)malloc(nbytes);
 
     log_debug(debug_level, "getting data from client (%s)", caller->url);
 
     /* now we need to fetch the data from the client */
-    rc = nssi_get_data(caller, buf, nbytes, data_addr);
+    rc = nssi_get_data(caller, array.data_array_t_val, nbytes, data_addr);
     if (rc != NSSI_OK) {
         log_warn(debug_level, "could not fetch data from client");
         return rc;
     }
 
-    rc = nssi_send_result(caller, request_id, NSSI_OK, NULL, res_addr);
+    /* Validate the array */
+    if (validate && (rc == 0)) {
+        data_array_t tmp_array;
+        tmp_array.data_array_t_len = len;
+        tmp_array.data_array_t_val = (data_t *)malloc(nbytes);
 
-    free(buf);
+        xfer_init_data_array(seed, &tmp_array);
+        rc = xfer_compare_data_arrays(&tmp_array, &array);
 
-    return rc;
-}
+        if (rc != 0) {
+            log_warn(debug_level, "Unable to validate array");
+        }
 
-/**
- * @brief Transfer an array of \ref data_t structures through
- *        the process arguments.  Send it back through the result.
- *
- * This function returns in the result the same data that the
- * client sent in the request.  Before this function is called,
- * the request and the data array passed in the args structure
- * is decoded.  When this function calls nssi_send_result(),
- * the data array passed in the results structure
- * is encoded.  This function helps test that both small and
- * large data can be sent via args and results.
- *
- * @param request_id   ID of the request.
- * @param caller      The process ID of the calling process.
- * @param args        Arguments passed with the request.
- * @param data_addr   The remote memory descriptor for the data (not used).
- * @param res_addr    The remote memory descriptor for the result.
- */
-int xfer_roundtrip_srvr(
-        const unsigned long request_id,
-        const NNTI_peer_t *caller,
-        const xfer_roundtrip_args *args,
-        const NNTI_buffer_t *data_addr,
-        const NNTI_buffer_t *res_addr)
-{
-    int rc;
-    log_level debug_level = xfer_debug_level;
+        free(tmp_array.data_array_t_val);
+    }
 
-    int len = 0;
-    data_t *array = NULL;
-    xfer_roundtrip_res res;
+    rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
 
-    /* process array (nothing to do) */
-    log_debug(debug_level, "starting xfer_roundtrip_srvr (args=%p)", args);
-
-    len   = args->array.data_array_t_len;
-    array = args->array.data_array_t_val;
-
-    memset(&res, 0, sizeof(res));
-
-    res.array.data_array_t_val = (data_t *)malloc(len * sizeof(data_t));
-    res.array.data_array_t_len = len;
-
-    log_debug(debug_level, "args->array.data_array_t_val=%p, array=%p, res.array.data_array_t_val=%p", args->array.data_array_t_val, array, res.array.data_array_t_val);
-
-    log_debug(debug_level, "calling memcpy");
-    memcpy(res.array.data_array_t_val, array, len * sizeof(data_t));
-    log_debug(debug_level, "done memcpy");
-
-//    log_debug(debug_level, "mta_get_num_teams ==%d", mta_get_num_teams());
-//    log_debug(debug_level, "mta_get_team_index==%d", mta_get_team_index(0));
-//    log_debug(debug_level, "mta_get_rt_teamid ==%d", mta_get_rt_teamid());
-//    log_debug(debug_level, "yielding!!!!");
-//    mta_yield();
-
-//    for (i=0; i<len; i++) {
-//        log_debug(LOG_ALL, "args array int(%d) float(%f) double(%f)",
-//                args->array.data_array_t_val[i].int_val, args->array.data_array_t_val[i].float_val, args->array.data_array_t_val[i].double_val);
-//    }
-//    for (i=0; i<len; i++) {
-//        log_debug(LOG_ALL, "result array int(%d) float(%f) double(%f)",
-//                res.array.data_array_t_val[i].int_val, res.array.data_array_t_val[i].float_val, res.array.data_array_t_val[i].double_val);
-//    }
-
-    log_debug(debug_level, "calling nssi_send_result");
-    rc = nssi_send_result(caller, request_id, NSSI_OK, &res, res_addr);
-
-    free(res.array.data_array_t_val);
+    free(array.data_array_t_val);
 
     return rc;
 }
 
+
+
 /**
- * @brief Transfer an array of \ref data_t structures through
- *        the data portal.  Send it back through the result.
+ * @brief Transfer an array of data structures to the client
+ *        using the control channel.
  *
- * This server-side function is a callback that executes when
- * the server receives an \ref XFER_GET request.  This function
- * pulls data from the client using the nssi_get_data() function
- * and returns a result containing the same data.
+ * This method tells the server to send the data array to the
+ * client through the result data structure, forcing the server
+ * to encode the array before sending and the client to decode the array
+ * when receiving. This procedure evaluates the performance of the encoding/decoding
+ * the arguments.  For large arrays, this method also tests our two-phase transfer
+ * protocol for the result structure in which the server pushes a small header of
+ * the result and lets the client pull the remaining result on demand (at the
+ * \ref nssi_wait function).
  *
  * @param request_id   ID of the request.
  * @param caller      The process ID of the calling process.
@@ -249,10 +232,10 @@ int xfer_roundtrip_srvr(
  * @param data_addr   The remote memory descriptor for the data.
  * @param res_addr    The remote memory descriptor for the result.
  */
-int xfer_get_srvr(
+int xfer_read_encode_srvr(
         const unsigned long request_id,
         const NNTI_peer_t *caller,
-        const xfer_get_args *args,
+        const xfer_read_encode_args *args,
         const NNTI_buffer_t *data_addr,
         const NNTI_buffer_t *res_addr)
 {
@@ -260,32 +243,24 @@ int xfer_get_srvr(
     log_level debug_level = xfer_debug_level;
 
     const int len = args->len;
+    const int seed = args->seed;
+    const bool validate = args->validate;
     int nbytes = len*sizeof(data_t);
 
-    xfer_get_res res;
+    xfer_read_encode_res res;
 
-    log_debug(debug_level, "starting xfer_get_srvr");
+    log_debug(debug_level, "starting xfer_read_encode_srvr");
 
     memset(&res, 0, sizeof(res));
 
+    /* allocate space for the outgoing buffer */
     res.array.data_array_t_val = (data_t *)malloc(nbytes);
     res.array.data_array_t_len = len;
 
-    log_debug(debug_level, "getting data from client (%s)", caller->url);
-
-    /* now we need to fetch the data from the client */
-    rc = nssi_get_data(caller, res.array.data_array_t_val, nbytes, data_addr);
-    if (rc != NSSI_OK) {
-        log_warn(debug_level, "could not fetch data from client");
-        return rc;
+    if (validate) {
+        xfer_init_data_array(seed, &res.array);
     }
-
-//    for (int idx=0;idx<len;idx++) {
-//        log_debug(LOG_ALL, "res.array[%d].int_val=%u ; res.array[%d].float_val=%f ; res.array[%d].double_val=%f",
-//                idx, res.array.data_array_t_val[idx].int_val,
-//                idx, res.array.data_array_t_val[idx].float_val,
-//                idx, res.array.data_array_t_val[idx].double_val);
-//    }
+    log_debug(debug_level, "getting data from client (%s)", caller->url);
 
     rc = nssi_send_result(caller, request_id, NSSI_OK, &res, res_addr);
 
@@ -295,16 +270,14 @@ int xfer_get_srvr(
 }
 
 /**
- * @brief Transfer an array of \ref data_t structures through
- *        the process arguments.  Send it back through a data portal.
+ * @brief Emulate a read operation where the bulk data is sent using
+ *        the \ref nssi_put function.
  *
- * This server-side function is a callback that executes when
- * the server receives an \ref XFER_PUT request.  Before this
- * function is called, the request and the data array passed
- * in the args structure is decoded.  This function
- * puts data to the client using the nssi_put_data() function
- * and returns a result telling the calling process that this
- * function is complete.
+ * Transfer an array of data structures to the client using the data
+ * channel.  This procedure passes the length of the array in the arguments.
+ * The server then ``puts'' the unencoded data into the client memory using
+ * the \ref nssi_put_data function.  This method evaluates the RDMA
+ * transfer performance for \ref nssi_put_data.
  *
  * @param request_id   ID of the request.
  * @param caller      The process ID of the calling process.
@@ -312,43 +285,53 @@ int xfer_get_srvr(
  * @param data_addr   The remote memory descriptor for the data (not used).
  * @param res_addr    The remote memory descriptor for the result.
  */
-int xfer_put_srvr(
+int xfer_read_rdma_srvr(
         const unsigned long request_id,
         const NNTI_peer_t *caller,
-        const xfer_put_args *args,
+        const xfer_read_rdma_args *args,
         const NNTI_buffer_t *data_addr,
         const NNTI_buffer_t *res_addr)
 {
     int rc;
     log_level debug_level = xfer_debug_level;
 
-    const int len = args->array.data_array_t_len;
-    const data_t *array = args->array.data_array_t_val;
-    int nbytes = len*sizeof(data_t);
-    xfer_put_res res;
+    const bool validate = args->validate;
+    const int seed = args->seed;
 
-    memset(&res, 0, sizeof(res));
+    int nbytes = args->len*sizeof(data_t);
 
-    res.len = len;
+    /* allocate space for the outgoing buffer */
+    data_array_t array;
+    array.data_array_t_len = args->len;
+    array.data_array_t_val = (data_t *)malloc(nbytes);
 
     /* process array (nothing to do) */
-    log_debug(debug_level, "starting xfer_put_srvr");
+    log_debug(debug_level, "starting xfer_read_rdma_srvr");
+
+    /* if we need to validate the array, it needs to be initialized */
+    if (validate) {
+        xfer_init_data_array(seed, &array);
+    }
+
+    log_debug(debug_level, "putting data in client buffer");
 
     /* now we need to put the data to the client */
-    rc = nssi_put_data(caller, array, nbytes, data_addr, -1);
+    rc = nssi_put_data(caller, array.data_array_t_val, nbytes, data_addr, -1);
     if (rc != NSSI_OK) {
         log_warn(debug_level, "could not put data to client");
         return rc;
     }
 
 //    for (int idx=0;idx<len;idx++) {
-//        log_debug(LOG_ALL, "array[%d].int_val=%u ; array[%d].float_val=%f ; array[%d].double_val=%f",
+//        log_debug(debug_level, "array[%d].int_val=%u ; array[%d].float_val=%f ; array[%d].double_val=%f",
 //                idx, array[idx].int_val,
 //                idx, array[idx].float_val,
 //                idx, array[idx].double_val);
 //    }
 
-    rc = nssi_send_result(caller, request_id, NSSI_OK, &res, res_addr);
+    rc = nssi_send_result(caller, request_id, NSSI_OK, NULL, res_addr);
+
+    free(array.data_array_t_val);
 
     return rc;
 }
@@ -357,7 +340,7 @@ int xfer_put_srvr(
 
 void make_progress(bool is_idle)
 {
-    log_debug(LOG_ALL, "current_time(%llu) is_idle(%llu)", (uint64_t)trios_get_time_ms(), (uint64_t)is_idle);
+    log_debug(xfer_debug_level, "current_time(%llu) is_idle(%llu)", (uint64_t)trios_get_time_ms(), (uint64_t)is_idle);
 
     return;
 }
@@ -392,13 +375,13 @@ int xfer_server_main(MPI_Comm server_comm)
     memset(&xfer_svc, 0, sizeof(nssi_service));
 
 
-    log_str=logfile.c_str();
-    if (logfile.c_str()[0]=='\0') {
-        log_str=NULL;
-    }
-    /* initialize and enable logging */
-    logger_init((log_level)verbose, NULL);
-    debug_level = (log_level)verbose;
+//    log_str=logfile.c_str();
+//    if (logfile.c_str()[0]=='\0') {
+//        log_str=NULL;
+//    }
+//    /* initialize and enable logging */
+//    logger_init((log_level)verbose, NULL);
+//    debug_level = (log_level)verbose;
 
 
     /* initialize the nssi service */
@@ -410,11 +393,10 @@ int xfer_server_main(MPI_Comm server_comm)
     }
 
     // register callbacks for the service methods
-    NSSI_REGISTER_SERVER_STUB(XFER_PUSH, xfer_push_srvr, xfer_push_args, void);
-    NSSI_REGISTER_SERVER_STUB(XFER_PULL, xfer_pull_srvr, xfer_pull_args, void);
-    NSSI_REGISTER_SERVER_STUB(XFER_ROUNDTRIP, xfer_roundtrip_srvr, xfer_roundtrip_args, xfer_roundtrip_res);
-    NSSI_REGISTER_SERVER_STUB(XFER_GET, xfer_get_srvr, xfer_get_args, xfer_get_res);
-    NSSI_REGISTER_SERVER_STUB(XFER_PUT, xfer_put_srvr, xfer_put_args, xfer_put_res);
+    NSSI_REGISTER_SERVER_STUB(XFER_WRITE_ENCODE_OP, xfer_write_encode_srvr, xfer_write_encode_args, void);
+    NSSI_REGISTER_SERVER_STUB(XFER_WRITE_RDMA_OP, xfer_write_rdma_srvr, xfer_write_rdma_args, void);
+    NSSI_REGISTER_SERVER_STUB(XFER_READ_ENCODE_OP, xfer_read_encode_srvr, xfer_read_encode_args, xfer_read_encode_res);
+    NSSI_REGISTER_SERVER_STUB(XFER_READ_RDMA_OP, xfer_read_rdma_srvr, xfer_read_rdma_args, void);
 
 
     // Get the Server URL
@@ -427,7 +409,10 @@ int xfer_server_main(MPI_Comm server_comm)
     //        xfer_svc.progress_callback=(uint64_t)make_progress;
     //        xfer_svc.progress_callback_timeout=100;
 
-    log_debug(LOG_ALL, "Starting Server: url = %s", url.c_str());
+    log_debug(xfer_debug_level, "Starting Server: url = %s", url.c_str());
+
+    // Tell the NSSI server to output log data
+    //rpc_debug_level = xfer_debug_level;
 
     // start processing requests, the client will send a request to exit when done
     rc = nssi_service_start(&xfer_svc, num_threads);

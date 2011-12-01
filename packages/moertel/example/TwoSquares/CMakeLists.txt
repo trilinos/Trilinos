@@ -1,10 +1,10 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TwoSquares
   NAME TwoSquares
   SOURCES TwoSquares.cpp
@@ -14,7 +14,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
    TwoSquaresCopyFiles
    DEST_FILES TwoSquares.grid
    SOURCE_DIR ${PACKAGE_SOURCE_DIR}/example/TwoSquares

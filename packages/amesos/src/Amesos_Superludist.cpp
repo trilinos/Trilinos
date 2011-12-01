@@ -162,7 +162,13 @@ Amesos_Superludist::~Amesos_Superludist(void)
     }
   }
   if ( GridCreated_ ) {
+#ifndef IFPACK_SUBCOMM_CODE
+    // TODO: Cleanup of MPI comms and types in SuperLU causes an MPI error
+    // when used in conjuction with Ifpack_SubdomainFilter. This hack WILL
+    // cause memory leaks when Amesos_Superlu is created and destroyed
+    // multiple times per execution (only with IFPACK_SUBCOMM_CODE defined)
     superlu_gridexit(&PrivateSuperluData_->grid_);
+#endif
   }
 }
 
@@ -293,6 +299,7 @@ int Amesos_Superludist::RedistributeA()
   
   return(0);
 }
+
 
 // ====================================================================== 
 int Amesos_Superludist::Factor()

@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( METIS
+TRIBITS_TPL_DECLARE_LIBRARIES( METIS
   REQUIRED_HEADERS metis.h
   REQUIRED_LIBS_NAMES "metis"
   )

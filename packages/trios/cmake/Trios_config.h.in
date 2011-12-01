@@ -1,5 +1,5 @@
 
-/* ************************************************ 
+/* ************************************************
  * Network configuration
  * ************************************************ */
 
@@ -22,9 +22,9 @@
 #cmakedefine HAVE_TRIOS_PTL_NO_ACK_REQ 1
 #cmakedefine HAVE_TRIOS_P3RT_P3RT_H 1
 #cmakedefine HAVE_TRIOS_P3NAL_UTCP_H 1
-#cmakedefine HAVE_TRIOS_PTL_TIME_T 
-#cmakedefine HAVE_TRIOS_PTL_EQ_HANDLER_T 
- 
+#cmakedefine HAVE_TRIOS_PTL_TIME_T
+#cmakedefine HAVE_TRIOS_PTL_EQ_HANDLER_T
+
 /* Headers */
 #cmakedefine HAVE_TRIOS_MALLOC_H 1
 #cmakedefine HAVE_TRIOS_SYS_TYPES_H 1
@@ -41,27 +41,30 @@
 #cmakedefine HAVE_TRIOS_IFADDRS_H 1
 #cmakedefine HAVE_TRIOS_STRUCT_SOCKADDR_IN 1
 
-/* ************************************************ 
+/* ************************************************
  * I/O Libraries
  * ************************************************ */
 #cmakedefine HAVE_TRIOS_NETCDF 1
 #cmakedefine HAVE_TRIOS_PNETCDF 1
 
-/* ************************************************ 
- * Misc Config 
+/* ************************************************
+ * Misc Config
  * ************************************************ */
 #cmakedefine HAVE_TRIOS_XDR_SIZEOF 1
 #cmakedefine TRIOS_HAVE_GETIFADDRS 1
 
 
-/* ************************************************ 
+/* ************************************************
  * Thread configuration
  * ************************************************ */
 #cmakedefine HAVE_TRIOS_PTHREAD 1
+#cmakedefine HAVE_TRIOS_PTHREAD_YIELD 1
+#cmakedefine HAVE_TRIOS_PTHREAD_YIELD_NP 1
+#cmakedefine HAVE_TRIOS_SCHED_YIELD 1
 #cmakedefine HAVE_TRIOS_PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP 1
 
 
-/* ************************************************ 
+/* ************************************************
  * Timer configuration
  * ************************************************ */
 #cmakedefine HAVE_TRIOS_SYS_TIME_H 1
@@ -73,7 +76,7 @@
 #cmakedefine HAVE_TRIOS_MACH_TIME_H 1
 #cmakedefine HAVE_TRIOS_MACH_ABSOLUTE_TIME 1
 
-/* ************************************************ 
+/* ************************************************
  * Tracing configuration
  * ************************************************ */
 #cmakedefine TRIOS_ENABLE_TRACING 1

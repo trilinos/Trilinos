@@ -64,6 +64,14 @@ template<typename DataT,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 const std::string PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::m_field_data_error_msg = 
   "Error - PHX::MDField::operator[] - No data has been set!  Please call getFieldData(this) on all PHX::MDField objects in providers!";
+
+template<typename DataT>
+const std::string PHX::MDField<DataT>::m_field_tag_error_msg = 
+  "Error - PHX::MDField::fieldTag() - No tag has been set!";
+
+template<typename DataT>
+const std::string PHX::MDField<DataT>::m_field_data_error_msg = 
+  "Error - PHX::MDField::operator[] - No data has been set!  Please call getFieldData(this) on all PHX::MDField objects in providers!";
 #endif
 
 //**********************************************************************

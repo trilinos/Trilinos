@@ -48,6 +48,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include "Trios_config.h"
 #include "Trios_nssi_client.h"
+#include "Trios_nssi_xdr.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -75,7 +76,7 @@ int xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm c
 /* -------------- private methods -------------------*/
 
 
-static int print_args(
+int print_args(
         std::ostream &out,
         const struct xfer_args &args,
         const char *prefix)
@@ -91,9 +92,12 @@ static int print_args(
 
     if (args.client_flag) {
         out << prefix << " \tio-method        = " << args.io_method_name << std::endl;
-        out << prefix << " \tnum-trials        = " << args.num_trials << std::endl;
+        out << prefix << " \tnum-trials       = " << args.num_trials << std::endl;
         out << prefix << " \tnum-reqs         = " << args.num_reqs << std::endl;
-        out << prefix << " \tresult-file      = " << args.result_file << std::endl;
+        out << prefix << " \tlen              = " << args.len << std::endl;
+        out << prefix << " \tvalidate         = " << ((args.validate_flag)?"true":"false") << std::endl;
+        out << prefix << " \tresult-file      = " <<
+                (args.result_file.empty()?"<stdout>":args.result_file) << std::endl;
         out << prefix << " \tresult-file-mode = " << args.result_file_mode << std::endl;
     }
     out << prefix << " \tdebug            = " << args.debug_level << std::endl;
@@ -118,29 +122,30 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
+    MPI_Barrier(MPI_COMM_WORLD);
 
     Teuchos::oblackholestream blackhole;
     std::ostream &out = ( rank == 0 ? std::cout : blackhole );
 
     struct xfer_args args;
 
-    const int num_io_methods = 10;
-    const int io_method_vals[] = {PUSH_SYNC, PUSH_ASYNC,
-            PULL_SYNC, PULL_ASYNC,
-            ROUNDTRIP_SYNC, ROUNDTRIP_ASYNC,
-            GET_SYNC, GET_ASYNC,
-            PUT_SYNC, PUT_ASYNC};
-    const char * io_method_names[] = {"push-sync", "push-async",
-            "pull-sync", "pull-async",
-            "roundtrip-sync", "roundtrip-async",
-            "get-sync", "get-async",
-            "put-sync", "put-async"};
+    const int num_io_methods = 8;
+    const int io_method_vals[] = {
+            XFER_WRITE_ENCODE_SYNC, XFER_WRITE_ENCODE_ASYNC,
+            XFER_WRITE_RDMA_SYNC, XFER_WRITE_RDMA_ASYNC,
+            XFER_READ_ENCODE_SYNC, XFER_READ_ENCODE_ASYNC,
+            XFER_READ_RDMA_SYNC, XFER_READ_RDMA_ASYNC};
+    const char * io_method_names[] = {
+            "write-encode-sync", "write-encode-async",
+            "write-rdma-sync", "write-rdma-async",
+            "read-encode-sync", "read-encode-async",
+            "read-rdma-sync", "read-rdma-async"};
 
 
     // Initialize arguments
     args.len = 1;
     args.delay = 1;
-    args.io_method = PUSH_SYNC;
+    args.io_method = XFER_WRITE_RDMA_SYNC;
     args.debug_level = LOG_WARN;
     args.num_trials = 1;
     args.num_reqs = 1;
@@ -152,6 +157,8 @@ int main(int argc, char *argv[])
     args.server_flag = true;
     args.timeout = 500;
     args.num_retries = 5;
+    args.validate_flag = true;
+    args.server_url = "";
 
     bool success = true;
 
@@ -193,21 +200,20 @@ int main(int argc, char *argv[])
         parser.setOption("result-file-mode", &args.result_file_mode, "Write mode for the result");
         parser.setOption("server-url", &args.server_url, "URL client uses to find the server");
         parser.setOption("server-url-file", &args.url_file, "File that has URL client uses to find server");
+        parser.setOption("validate", "no-validate", &args.validate_flag, "Validate the data");
 
         // Set an enumeration command line option for the io_method
 
         parser.setOption("io-method", &args.io_method, num_io_methods, io_method_vals, io_method_names,
                 "I/O Methods for the example: \n"
-                "\t\t\tpush-sync : Send all data with the request, synchronous\n"
-                "\t\t\tpush-async: Send all data with the request - asynchronous\n"
-                "\t\t\tpull-sync : Server-directed pull of data - synchronous\n"
-                "\t\t\tpull-async: Server-directed pull of data - asynchronous\n"
-                "\t\t\troundtrip-sync : Send all data with the request, send back in result - synchronous\n"
-                "\t\t\troundtrip-async: Send all data with the request, send back in result - asynchronous\n"
-                "\t\t\tget-sync : Server-directed pull of data, send back in result - synchronous\n"
-                "\t\t\tget-async: Server-directed pull of data, send back in result - asynchronous\n"
-                "\t\t\tput-sync : Send all data with the request, server-directed put back of data - synchronous\n"
-                "\t\t\tput-async: Send all data with the request, server-directed put back of data - asynchronous");
+                "\t\t\twrite-encode-sync : Write data through the RPC args, synchronous\n"
+                "\t\t\twrite-encode-async: Write data through the RPC args - asynchronous\n"
+                "\t\t\twrite-rdma-sync : Write data using RDMA (server pulls) - synchronous\n"
+                "\t\t\twrite-rdma-async: Write data using RDMA (server pulls) - asynchronous\n"
+                "\t\t\tread-encode-sync : Read data through the RPC result - synchronous\n"
+                "\t\t\tread-encode-async: Read data through the RPC result - asynchronous\n"
+                "\t\t\tread-rdma-sync : Read data using RDMA (server puts) - synchronous\n"
+                "\t\t\tread-rdma-async: Read data using RDMA (server puts) - asynchronous");
 
 
 
@@ -255,17 +261,48 @@ int main(int argc, char *argv[])
 
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
 
+    log_debug(args.debug_level, "%d: Finished processing arguments", rank);
+
+
     if (!success) {
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
+    if (!args.server_flag && args.client_flag) {
+        /* initialize logger */
+        if (args.logfile.empty()) {
+            logger_init(args.debug_level, NULL);
+        } else {
+            char fn[1024];
+            sprintf(fn, "%s.client.%03d.log", args.logfile.c_str(), rank);
+            logger_init(args.debug_level, fn);
+        }
+    } else if (args.server_flag && !args.client_flag) {
+        /* initialize logger */
+        if (args.logfile.empty()) {
+            logger_init(args.debug_level, NULL);
+        } else {
+            char fn[1024];
+            sprintf(fn, "%s.server.%03d.log", args.logfile.c_str(), rank);
+            logger_init(args.debug_level, fn);
+        }
+    } else if (args.server_flag && args.client_flag) {
+        /* initialize logger */
+        if (args.logfile.empty()) {
+            logger_init(args.debug_level, NULL);
+        } else {
+            char fn[1024];
+            sprintf(fn, "%s.%03d.log", args.logfile.c_str(), rank);
+            logger_init(args.debug_level, fn);
+        }
+    }
+
     log_level debug_level = args.debug_level;
-    debug_level = LOG_ALL;
 
     // Communicator used for both client and server (may split if using client and server)
     MPI_Comm comm;
 
-    std::cout << rank << "/" << np << ": Starting Xfer_Service_Test" << std::endl;
+    log_debug(debug_level, "%d: Starting xfer-service test", rank);
 
     /**
      * Since this test can be run as a server, client, or both, we need to play some fancy
@@ -319,6 +356,7 @@ int main(int argc, char *argv[])
     nssi_get_url(NSSI_DEFAULT_TRANSPORT, &my_url[0], NSSI_URL_LEN);
 
     // Broadcast the server URL to all the clients
+    args.server_url.resize(NSSI_URL_LEN, '\0');
     if (args.server_flag && args.client_flag) {
         args.server_url = my_url;
         MPI_Bcast(&args.server_url[0], args.server_url.size(), MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -360,7 +398,7 @@ int main(int argc, char *argv[])
                 urlfile << args.server_url.c_str() << std::endl;
             }
             urlfile.close();
-            log_debug(LOG_ALL, "Wrote url to file %s", args.url_file.c_str());
+            log_debug(debug_level, "Wrote url to file %s", args.url_file.c_str());
         }
     }
 

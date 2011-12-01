@@ -50,6 +50,9 @@ namespace Belos {
   /// \author Mark Hoemmen
   /// \brief Factory for creating GmresBase subclass instances.
   ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
+  ///
   /// GmresBase describes a general GMRES or Flexible GMRES (FGMRES)
   /// iteration, and leaves the specifics up to the subclasses.  \c
   /// GmresBaseFactory is a factory class that generates subclass

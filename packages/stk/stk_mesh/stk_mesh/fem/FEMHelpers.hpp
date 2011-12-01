@@ -48,6 +48,16 @@ Entity & declare_element_side( BulkData & mesh ,
                                const unsigned local_side_id ,
                                Part * part = NULL );
 
+/** \brief  Create (or find) an element edge.
+ *
+ *  The element must be a member of a Part with a CellTopology.
+ */
+Entity & declare_element_edge( BulkData & mesh ,
+                               const stk::mesh::EntityId global_side_id ,
+                               Entity & elem ,
+                               const unsigned local_side_id ,
+                               Part * part = NULL );
+
 /** \brief  Determine the polarity of the local side,
  *          more efficient if the local_side_id is known.
  */
@@ -61,6 +71,17 @@ bool element_side_polarity( const Entity & elem ,
 Entity & declare_element_side( Entity & elem ,
                                Entity & side ,
                                const unsigned local_side_id ,
+                               Part * part = NULL );
+
+
+
+/** \brief  Create (or find) an element edge.
+ *
+ *  The element must be a member of a Part with a CellTopology.
+ */
+Entity & declare_element_edge( Entity & elem ,
+                               Entity & edge ,
+                               const unsigned local_edge_id ,
                                Part * part = NULL );
 
 

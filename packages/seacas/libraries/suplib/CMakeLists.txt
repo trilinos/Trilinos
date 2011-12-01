@@ -1,6 +1,6 @@
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
-SUBPACKAGE(Suplib)
+TRIBITS_SUBPACKAGE(Suplib)
 INCLUDE(FortranSettings)
 
 SET(SUPLIB_VERSION_MAJOR "3")
@@ -27,10 +27,11 @@ SET(SOURCES
 	ckwhol.f    dbiv0.f     ffaddr.f    ffreal.f    iengrx.f    inistr.f    locstr.f    numeqi.f    pltone.f    wheneq.f
 	add_to_log.c addlog.c	getline.c   GetLongOpt.C   adler.C        smart_assert.C timer.C        to_string.C    SL_tokenize.C)
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
 	suplib
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
 	DEPLIBS supes
 )
 
+TRIBITS_SUBPACKAGE_POSTPROCESS()

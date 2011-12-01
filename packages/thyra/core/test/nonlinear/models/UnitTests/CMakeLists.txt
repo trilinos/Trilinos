@@ -1,7 +1,7 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Simple2DModelEvaluatorUnitTests
   SOURCES
     Simple2DModelEvaluator_UnitTests.cpp
@@ -12,7 +12,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   DiagonalQuadraticResponseOnlyModelEvaluatorUnitTests
   SOURCES
     DiagonalQuadraticResponseOnlyModelEvaluator_UnitTests.cpp
@@ -22,7 +22,7 @@ PACKAGE_ADD_EXECUTABLE(
   )
 
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   DiagonalQuadraticResponseOnlyModelEvaluatorUnitTests
   POSTFIX_AND_ARGS_0 ld1 --local-dim=1 --show-test-details=ALL
   POSTFIX_AND_ARGS_1 ld2 --local-dim=2 --show-test-details=ALL

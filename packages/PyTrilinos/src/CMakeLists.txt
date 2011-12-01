@@ -27,7 +27,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # Package-specific configuration options
@@ -55,7 +55,7 @@ IF(TPL_ENABLE_MPI)
   SET(HAVE_MPI ON)
 ENDIF(TPL_ENABLE_MPI)
 
-PACKAGE_CONFIGURE_FILE(PyTrilinos_config.h)
+TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
 
 #
 # On Mac OS X Gnu compilers, add dynamic lookup for undefined symbols
@@ -186,7 +186,7 @@ APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_RUNTIME})
 
 #
 # Define the targets for the PyTrilinos library
-PACKAGE_ADD_LIBRARY(pytrilinos
+TRIBITS_ADD_LIBRARY(pytrilinos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

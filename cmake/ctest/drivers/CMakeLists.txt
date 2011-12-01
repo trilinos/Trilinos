@@ -1,3 +1,7 @@
+# This part needs to be in the top level project CMakeLists.txt.
+
+cmake_minimum_required(VERSION 2.7.20090924)
+
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
   message(FATAL_ERROR "Error, CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
     " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
@@ -5,71 +9,28 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
 
 cmake_minimum_required(VERSION 2.7.20090924)
+
+# We have to declare the project name in the top level CMakeLists.txt file.
 project(TrilinosDriver NONE)
 
-# We depend on some of the cmake modules in the parent Trilinos source tree:
-#
-get_filename_component(TRILINOS_HOME_DIR
-  "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
-get_filename_component(TD_BASE_DIR
-  "${TRILINOS_HOME_DIR}" PATH)
+# The rest of the body is provided by TriBITS.
+set(TRIBITS_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../tribits)
+set(PROJECT_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
+include(${TRIBITS_ROOT}/ctest/tdd/TribitsDriverCMakeLists.cmake)
 
-set(CMAKE_MODULE_PATH
-  ${TRILINOS_HOME_DIR}
-  ${TRILINOS_HOME_DIR}/cmake
-  ${TRILINOS_HOME_DIR}/cmake/utils
-  ${TRILINOS_HOME_DIR}/cmake/package_arch
-  ${TRILINOS_HOME_DIR}/cmake/config_tests
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  )
+# Provide Trilinos-specific hooks for TRIBITS_DRIVER_SETUP,
+# TRIBITS_DRIVER_ADD_DASHBOARD, and
+# TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS.
+function(TRILINOS_DRIVER_SETUP)
+  TRIBITS_DRIVER_SETUP(${ARGN})
+endfunction()
 
-include(CTest)
-include(TrilinosDriverSupport)
+function(TRILINOS_DRIVER_ADD_DASHBOARD)
+  TRIBITS_DRIVER_ADD_DASHBOARD(${ARGN})
+endfunction()
 
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/CTestCustom.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake
-  )
+function(TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS)
+  TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS(${ARGN})
+endfunction()
 
-# Now make exactly one add_subdirectory call based on the site name of the
-# machine we're running on...
-#
-# By default, use the exact site name as the subdir value:
-#
-site_name(site)
-set(subdir "${site}")
-message("site='${site}'")
-
-# But if that directory does not exist as named, and there's a regex match
-# with the name of a subdirectory, use the exact subdirectory name instead:
-#
-file(GLOB filesAndDirs RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/*")
-
-set(dirs "")
-foreach(dir ${filesAndDirs})
-  if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
-    set(dirs ${dirs} "${dir}")
-  endif()
-endforeach()
-
-foreach(dir ${dirs})
-  if("${site}" MATCHES "${dir}")
-    set(subdir "${dir}")
-    message("site='${site}' MATCHES directory name dir='${dir}'")
-  endif()
-endforeach()
-
-# The one add_subdirectory call:
-#
-message("subdir='${subdir}'")
-
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}")
-  message(FATAL_ERROR "error: there is no subdirectory matching '${subdir}'")
-endif()
-
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/CMakeLists.txt")
-  message(FATAL_ERROR "error: there is no CMakeLists.txt file in '${CMAKE_CURRENT_SOURCE_DIR}/${subdir}'")
-endif()
-
-add_subdirectory("${subdir}")
+TDD_PROJECT()

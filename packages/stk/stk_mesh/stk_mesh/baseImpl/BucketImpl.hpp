@@ -99,7 +99,7 @@ class BucketImpl {
   void set_last_bucket_in_family( Bucket * last_bucket );
   void set_first_bucket_in_family( Bucket * first_bucket );
   DataMap * get_field_map();
-  void zero_fields( unsigned i_dst );
+  void initialize_fields( unsigned i_dst );
   void replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src );
   void set_bucket_family_pointer( Bucket * bucket ) { m_bucket = bucket; }
   const Bucket * get_bucket_family_pointer() const { return m_bucket; }

@@ -21,9 +21,9 @@ SET(ZZDIRNAME hg_${ZZNAME})
 #### with ${ZZNAME} is an exception; the copy macro at the end of this file
 #### must be modified.)
 
-INCLUDE(PackageAddTest)
-INCLUDE(PackageAddAdvancedTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddAdvancedTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 # All data files needed for tested (*.graph, *.mtx, *.mtxp, *.coords, *.hg)
 FILE(GLOB DATA_INP RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${ZZNAME}.*)
@@ -39,7 +39,7 @@ FILE(GLOB ANSWERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} answers/${ZZNAME}.*)
 SET(ZOLTAN_TEST_ARGS --np ${ZOLTANNUMPROCS} --debug --mpiexec ${MPI_EXEC} --mpiexecarg ${MPI_EXEC_NUMPROCS_FLAG} --pkg )
 
 # Parallel Tests
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   ${ZZDIRNAME}_zoltan_parallel
   # Test Native Zoltan algorithms in parallel
   TEST_0 ${ZOLTAN_TEST_DRIVER} ${ZOLTAN_TEST_ARGS} Zoltan 
@@ -52,7 +52,7 @@ PACKAGE_ADD_ADVANCED_TEST(
 SET(ZOLTAN_SERIAL_TEST_ARGS --np 1 --debug --pkg )
 
 # Serial Tests
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   ${ZZDIRNAME}_zoltan_serial
   # Test Native Zoltan algorithms in serial
   TEST_0 ${ZOLTAN_TEST_DRIVER} ${ZOLTAN_SERIAL_TEST_ARGS} Zoltan
@@ -62,7 +62,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   )
 
 # Command that copies files to the executable directory.
-PACKAGE_COPY_FILES_TO_BINARY_DIR(Zoltan_${ZZDIRNAME}_copy_files
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Zoltan_${ZZDIRNAME}_copy_files
   SOURCE_FILES
     ${DATA_INP}
     ${ZDRIVE_INP}

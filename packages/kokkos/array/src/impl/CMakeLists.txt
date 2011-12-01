@@ -1,7 +1,7 @@
-INCLUDE(PackageLibraryMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -36,7 +36,7 @@ APPEND_SET(SOURCES
     Kokkos_ViewMirror.cpp
   )
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
     kokkosimpl
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}

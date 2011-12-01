@@ -3,6 +3,7 @@
 *.pyc
 \#*#
 .#*
+.*.swp
 doxygen_entrydb_*.tmp
 doxygen_objdb_*.tmp
 /checkin_message
@@ -97,3 +98,6 @@ packages/tpetra/doc/MatrixMatrixReport/atransData/*pdf
 
 rsync.*
 .project
+
+# Repostiory list file for egdist
+.egdist

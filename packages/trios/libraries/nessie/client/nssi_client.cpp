@@ -180,7 +180,7 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
     XDR hdr_xdrs;
     XDR res_xdrs;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     char *buf=NULL;
     NNTI_buffer_t encoded_long_res_hdl;
@@ -1323,7 +1323,7 @@ static int encode_args(
 
     int rc = NSSI_OK;  /* return code */
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     /* xdrs for the header and the args. */
     XDR hdr_xdrs, args_xdrs;
@@ -1544,7 +1544,7 @@ int nssi_call_rpc(
     NNTI_buffer_t short_req_hdl;
     NNTI_status_t status;
 
-    double call_time;
+    trios_declare_timer(call_time);
 
     unsigned long len=0;
 

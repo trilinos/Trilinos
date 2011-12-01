@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( gtest
+TRIBITS_TPL_DECLARE_LIBRARIES( gtest
   REQUIRED_HEADERS gtest/gtest.h 
   REQUIRED_LIBS_NAMES gtest
   )

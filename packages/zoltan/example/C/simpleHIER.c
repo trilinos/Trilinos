@@ -70,6 +70,13 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
+  if (numProcs < 4){
+    if (myRank == 0) fprintf(stderr,
+      "ERROR: This test requires at least 4 processes\n");
+    MPI_Finalize();
+    exit(1);
+  }
+
   rc = Zoltan_Initialize(argc, argv, &ver);
 
   if (rc != ZOLTAN_OK){
@@ -107,7 +114,8 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "HIER_DEBUG_LEVEL", "1");
   Zoltan_Set_Param(zz, "LB_METHOD", "HIER");
   Zoltan_Set_Param(zz, "HIER_ASSIST", "1");
-  Zoltan_Set_Param(zz, "PLATFORM_NAME", "glory");
+  Zoltan_Set_Param(zz, "TOPOLOGY", "2,2");
+  Zoltan_Set_Param(zz, "PHG_EDGE_SIZE_THRESHOLD", ".8");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
@@ -262,7 +270,8 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
         int wgt_dim, float *ewgts, int *ierr)
 {
 int i, j, from, to;
-int *nextNbor, *nextProc;
+ZOLTAN_ID_PTR *nextNbor;
+int *nextProc;
 
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
   *ierr = ZOLTAN_OK;
@@ -514,7 +523,7 @@ GRAPH_DATA *send_graph;
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, count_tag, 1);
 
-      num = get_line_ints(buf, bufsize, vals);
+      num = get_line_ints(buf, num, vals);
 
       if (num < 2) input_file_error(numProcs, count_tag, 1);
 

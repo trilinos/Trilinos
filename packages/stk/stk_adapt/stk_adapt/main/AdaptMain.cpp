@@ -334,7 +334,7 @@ namespace stk {
       std::string block_name_inc = "";
       std::string block_name_exc = "";
       std::string convert="";
-      std::string refine="DEFAULT";
+      std::string refine="";
       //std::string refine="";
       std::string enrich="";
       bool doRefineMesh = true;
@@ -381,6 +381,9 @@ namespace stk {
       std::string block_name_desc_inc = "which blocks to include, specified as: "+block_name_desc;
       std::string block_name_desc_exc = "which blocks to exclude, specified as: "+block_name_desc;
 
+      int help = 0;
+
+      run_environment.clp.setOption("help"                     , &help                     , "print this usage message");
       run_environment.clp.setOption("convert"                  , &convert                  , convert_options.c_str());
       run_environment.clp.setOption("refine"                   , &refine                   , refine_options.c_str());
       run_environment.clp.setOption("enrich"                   , &enrich                   , enrich_options.c_str());
@@ -422,18 +425,19 @@ namespace stk {
         if (convert.length())
           checkInput("convert", convert, convert_options, run_environment);
 
-        if (refine.length())
-          checkInput("refine", refine, refine_options, run_environment);
-
         if (enrich.length())
           checkInput("enrich", enrich, enrich_options, run_environment);
+
+        if (refine.length())
+          checkInput("refine", refine, refine_options, run_environment);
 
         if (print_info)
           {
             doRefineMesh = false;
           }
 
-        if (input_mesh.length() == 0 
+        if (help
+            || input_mesh.length() == 0 
             || output_mesh.length() == 0
             || (convert.length() == 0 && refine.length()==0 && enrich.length()==0)
             //||  not (convert == "Hex8_Tet4_24" || convert == "Quad4_Quad4_4" || convert == "Quad4_Tri3_6")
@@ -474,6 +478,7 @@ namespace stk {
                   {
                     eMesh.commit();
                     block_names = RefinerUtil::correctBlockNamesForPartPartConsistency(eMesh, block_names);
+
                     eMesh.close();
                     eMesh.open(input_mesh);
                   }
@@ -504,6 +509,7 @@ namespace stk {
           }
 
         eMesh.commit();
+
         if (print_memory_usage)
           memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), 0, "after file open");
 
@@ -583,6 +589,15 @@ namespace stk {
 
             t1 =  stk::wall_time(); 
             cpu1 = stk::cpu_time();
+
+#if 0
+            // This is a vagary of not being able to delete parts on the fly, or change their attributes..., so we reopen
+            // the mesh which deletes the old part on reading.
+            if (convert.length() || enrich.length())
+              {
+                eMesh.reopen();
+              }
+#endif
 
             stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
             std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;

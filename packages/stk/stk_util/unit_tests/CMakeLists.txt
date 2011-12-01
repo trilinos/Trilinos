@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
@@ -7,7 +7,7 @@ if ( TPL_ENABLE_MPI )
   ADD_SUBDIRECTORY(parallel)
 ENDIF()
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 FILE(GLOB SOURCES diag/*.cpp environment/*.cpp util/*.cpp)
 
@@ -22,7 +22,7 @@ if ( TPL_ENABLE_MPI )
   )
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
     util_UnitTest
     SOURCES ${SOURCES}
     DEPLIBS stk_util_parallel stk_util_diag

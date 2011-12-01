@@ -177,11 +177,11 @@ va_dcl
    dim[0].index = va_arg(va, int);
 
 
-   if (dim[0].index <= 0) {
+   if (dim[0].index == 0) {
 #ifdef DEBUG
     fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-            "dimension <= 0, %ld; will return NULL\n",
-            yo, file, lineno, dim[0].index);
+            "dimension == 0; will return NULL\n",
+            yo, file, lineno);
 #endif
       return((double *) NULL);
    }
@@ -192,9 +192,9 @@ va_dcl
    for (i=1; i<numdim; i++) {
       dim[i].index = va_arg(va, int);
       if (dim[i].index <= 0) {
-         fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d <= 0, "
-                 "%ld; will return NULL\n",
-                 yo, file, lineno, i+1, dim[i].index);
+         fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d == 0, "
+                 " will return NULL\n",
+                 yo, file, lineno, i+1);
 	 return((double *) NULL);
       }
       dim[i].total = dim[i-1].total * dim[i].index;
@@ -245,7 +245,7 @@ static double *smalloc (size_t n, char *filename, int lineno)
 
   if (pntr == NULL && n != 0) {
     fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
-            "requested = %ld\n", yo, filename, lineno, n);
+            "requested = %lu\n", yo, filename, lineno, (unsigned long)n);
     exit(0);
   }
 

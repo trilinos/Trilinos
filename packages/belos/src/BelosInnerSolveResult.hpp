@@ -50,6 +50,10 @@ namespace Belos {
 
   /// \class InnerSolveResult
   /// \brief Represents the result of an inner solve.
+  /// \author Mark Hoemmen
+  ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
   ///
   /// An "inner solve" is an invocation of an iterative method, itself
   /// used as the operator or preconditioner for another iterative

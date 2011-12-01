@@ -1,13 +1,13 @@
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
 
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ../MVOPTester)
 
 IF(Teuchos_ENABLE_COMPLEX)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     IRTR_complex_lap_test
     SOURCES cxx_main_complex_lap.cpp
     ARGS 
@@ -26,7 +26,7 @@ IF(Teuchos_ENABLE_COMPLEX)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     IRTR_complex_test
     SOURCES cxx_main_complex.cpp
     COMM serial mpi
@@ -36,7 +36,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     STANDARD_PASS_OUTPUT
     )
 
-    PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestIRTRComplexFiles
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestIRTRComplexFiles
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
     SOURCE_FILES mhd1280b.cua
     EXEDEPS IRTR_complex_test

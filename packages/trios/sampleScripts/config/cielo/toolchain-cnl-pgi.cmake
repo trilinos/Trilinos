@@ -1,6 +1,7 @@
 # Cross-compiler setup
 set(CMAKE_C_COMPILER cc)
 set(CMAKE_CXX_COMPILER CC)
+set(CMAKE_Fortran_COMPILER ftn)
 
 # Gemini configuration
 set(GEMINI_INCLUDE_DIRS /opt/cray/gni-headers/default/include)

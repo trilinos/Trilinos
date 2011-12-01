@@ -87,17 +87,17 @@ namespace {
 				   SystemInterface &interface);
 
   void output_nodeblock(Ioss::Region &output_region, RegionVector &part_mesh,
-			const Map &local_node_map, Map &global_node_map);
+			const IdMap &local_node_map, IdMap &global_node_map);
   void output_elementblock(Ioss::Region &output_region, RegionVector &part_mesh,
-			   const Map &local_node_map, const Map &local_element_map);
+			   const IdMap &local_node_map, const IdMap &local_element_map);
   void output_nodeset(Ioss::Region &output_region, RegionVector &part_mesh,
-		      const Map &local_node_map);
+		      const IdMap &local_node_map);
   void output_sideset(Ioss::Region &output_region, RegionVector &part_mesh,
-		      const Map& local_element_map);
+		      const IdMap& local_element_map);
   void output_nodal_nodeset(Ioss::Region &output_region, RegionVector &part_mesh,
-			    SystemInterface &interface, const Map &local_node_map);
+			    SystemInterface &interface, const IdMap &local_node_map);
   void output_transient_state(Ioss::Region &output_region, RegionVector &part_mesh,
-			      double time, const Map &local_node_map, SystemInterface &interface);
+			      double time, const IdMap &local_node_map, SystemInterface &interface);
   void process_nset_omissions(RegionVector &part_mesh, const Omissions &omit);
   void process_sset_omissions(RegionVector &part_mesh, const Omissions &omit);
 
@@ -264,8 +264,8 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh)
   }
 
   int node_count = node_offset; // Sum of nodes in part meshes.
-  Map local_node_map(node_count);
-  Map global_node_map;
+  IdMap local_node_map(node_count);
+  IdMap global_node_map;
 
   // This is the map from local element position to global element
   // position (0-based). If there are no element block omissions, then
@@ -273,7 +273,7 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh)
   // Then local_element_map[j] will be -1 for an omitted element.
   // If not omitted, local_element_map[part_offset+j] gives the global
   // position of local element j in the current part.
-  Map local_element_map(element_offset);
+  IdMap local_element_map(element_offset);
   build_local_element_map(part_mesh, local_element_map);
 			  
   // Need a map from local node to global node.  Position in the map
@@ -570,7 +570,7 @@ namespace {
   // Output the bulk data for a nodeset on the output region
   // consisting of all the nodes in the input region.
   void output_nodal_nodeset(Ioss::Region &output_region, RegionVector &part_mesh, SystemInterface &interface,
-			    const Map &local_node_map)
+			    const IdMap &local_node_map)
   {
     size_t part_count = part_mesh.size();
     for (size_t p = 0; p < part_count; p++) {
@@ -708,8 +708,8 @@ namespace {
 }
 
 namespace {
-  void output_nodeblock(Ioss::Region &output_region, RegionVector &part_mesh, const Map &local_node_map,
-			Map &global_node_map)
+  void output_nodeblock(Ioss::Region &output_region, RegionVector &part_mesh, const IdMap &local_node_map,
+			IdMap &global_node_map)
   {
     Ioss::NodeBlock *onb = output_region.get_node_blocks()[0];
     SMART_ASSERT(onb != NULL);
@@ -739,13 +739,13 @@ namespace {
   }
 
   void output_elementblock(Ioss::Region &output_region, RegionVector &part_mesh,
-			   const Map &local_node_map, const Map &local_element_map)
+			   const IdMap &local_node_map, const IdMap &local_element_map)
   {
 
     Ioss::ElementBlockContainer ebs = output_region.get_element_blocks();
 
     int element_count = output_region.get_property("element_count").get_int();
-    Map ids(element_count);
+    IdMap ids(element_count);
 
     // Try to maintain the original element ids if possible...
     generate_element_ids(part_mesh, local_element_map, ids);
@@ -796,7 +796,7 @@ namespace {
     }
   }
 
-  void output_nodeset(Ioss::Region &output_region, RegionVector &part_mesh, const Map &local_node_map)
+  void output_nodeset(Ioss::Region &output_region, RegionVector &part_mesh, const IdMap &local_node_map)
   {
     if (output_region.get_nodesets().empty())
       return;
@@ -831,7 +831,7 @@ namespace {
   }
   
   void output_sideset(Ioss::Region &output_region, RegionVector &part_mesh,
-		      const Map& local_element_map)
+		      const IdMap& local_element_map)
   {
     Ioss::SideSetContainer os = output_region.get_sidesets();
     Ioss::SideSetContainer::const_iterator I = os.begin();
@@ -901,7 +901,7 @@ namespace {
   }
 
   void output_nodal(Ioss::Region &output_region, RegionVector &part_mesh,
-		    double time, const IntVector &steps, const Map &local_node_map,
+		    double time, const IntVector &steps, const IdMap &local_node_map,
 		    SystemInterface &interface)
   {
     size_t part_count = part_mesh.size();
@@ -1080,7 +1080,7 @@ namespace {
   }
 
   void output_transient_state(Ioss::Region &output_region, RegionVector &part_mesh, double time,
-			      const Map &local_node_map, SystemInterface &interface)
+			      const IdMap &local_node_map, SystemInterface &interface)
   {
     // Determine which state on each input mesh corresponds to 'time'
     std::vector<int> steps(part_mesh.size());

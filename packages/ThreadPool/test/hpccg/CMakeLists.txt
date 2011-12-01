@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsLibraryMacros)
 
 ####################
 
@@ -24,7 +24,7 @@ APPEND_SET(HEADERS
 ####################
 
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   test_tpi_hpccg
   COMM serial mpi
   SOURCES main.c CGSolver.c BoxPartition.c tpi_vector.c
@@ -32,14 +32,14 @@ PACKAGE_ADD_EXECUTABLE(
   DIRECTORY .
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   test_tpi_hpccg
   NAME test_tpi_hpccg_serial_1
   COMM serial
   DIRECTORY .
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   test_tpi_hpccg
   NAME test_tpi_hpccg_serial_2
   COMM serial
@@ -48,7 +48,7 @@ PACKAGE_ADD_TEST(
   XHOSTTYPE AIX
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   test_tpi_hpccg
   NAME test_tpi_hpccg_serial_4
   COMM serial
@@ -56,7 +56,7 @@ PACKAGE_ADD_TEST(
   DIRECTORY .
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   test_tpi_hpccg
   NAME test_tpi_hpccg_mpi_1
   COMM mpi
@@ -64,7 +64,7 @@ PACKAGE_ADD_TEST(
   DIRECTORY .
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   test_tpi_hpccg
   NAME test_tpi_hpccg_mpi_2
   COMM mpi
@@ -72,7 +72,7 @@ PACKAGE_ADD_TEST(
   DIRECTORY .
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   test_tpi_hpccg
   NAME test_tpi_hpccg_mpi_4
   COMM mpi

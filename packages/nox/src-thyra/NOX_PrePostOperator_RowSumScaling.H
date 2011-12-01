@@ -62,14 +62,14 @@ namespace NOX {
     
   public:
     
-    enum NOX_WhenToScale {
-      NOX_RowSumScaleAtBeginningOfSolve,
-      NOX_RowSumScaleAtBeginningOfIteration
+    enum ENOX_WhenToUpdateScaling {
+      UpdateInvRowSumVectorAtBeginningOfSolve,
+      UpdateInvRowSumVectorAtBeginningOfIteration
     };
 
     /** <tt>sv</tt> is the scaling vector */
-    RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& sv,
-		  NOX_WhenToScale s);
+    RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& inv_row_sum_vec,
+		  ENOX_WhenToUpdateScaling s);
 
     void runPreIterate(const NOX::Solver::Generic& solver);
     
@@ -85,7 +85,7 @@ namespace NOX {
     //! Inverse row sum vector
     Teuchos::RCP< ::Thyra::VectorBase<double> > inv_row_sum_vec_;
     
-    NOX_WhenToScale when_to_scale;
+    ENOX_WhenToUpdateScaling when_to_update;
   };
 }
 

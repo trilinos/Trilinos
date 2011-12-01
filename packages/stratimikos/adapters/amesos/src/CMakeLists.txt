@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -15,7 +15,7 @@ SET(SOURCES
   Thyra_AmesosLinearOpWithSolveFactory.cpp
   )
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   stratimikosamesos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

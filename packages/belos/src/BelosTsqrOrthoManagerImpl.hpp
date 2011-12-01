@@ -57,7 +57,7 @@
 #  include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 #include <algorithm>
-
+#include <functional> // std::binary_function
 
 namespace Belos {
 
@@ -94,6 +94,60 @@ namespace Belos {
     TsqrOrthoFault (const std::string& what_arg) : 
       OrthoError (what_arg) {}
   };
+
+  /// \class ReorthogonalizationCallback
+  /// \brief Interface of callback invoked by TsqrOrthoManager on reorthogonalization.
+  /// \author Mark Hoemmen
+  ///
+  /// This callback's \c operator() is invoked by \c
+  /// TsqrOrthoManagerImpl, and therefore by \c TsqrOrthoManager.  It
+  /// is invoked right after discovering the need to reorthogonalize
+  /// (for the first time), but before actually reorthogonalizing.  It
+  /// is <i>only</i> invoked if reorthogonalization is necessary.  You
+  /// can define your own callback by implementing this interface.
+  ///
+  /// This callback lets you collect metrics on reorthogonalization.
+  /// For example, you might want to measure how often it occurs, or
+  /// by how much the norms of the vectors drop each time.  You can
+  /// use this information in order to adjust parameters (such as the
+  /// reorthogonalization parameters) dynamically for your desired
+  /// balance of accuracy and performance.  You might also use it as a
+  /// numerical debugging aid.
+  ///
+  /// Why a reorthgonalization callback, but not other kinds of
+  /// callbacks?  Reorthogonalization is an event that affects
+  /// performance, and happens in a data-driven way.  Even if you have
+  /// enabled reorthogonalization, it may not happen at all, or only
+  /// infrequently.  Other kinds of data-driven events (such as a
+  /// normalization discovering numerical rank deficiency) immediately
+  /// return to the user with useful diagnostics.  Reorthogonalization
+  /// does not; it happens silently.  We could have the
+  /// orthogonalization method itself gather metrics on
+  /// reorthogonalization, but the callback lets you define what
+  /// metrics you want to collect and how you want to display them
+  /// yourself.
+  ///
+  /// \warning Please do not rely on this interface.  It may change or
+  ///   go away at any time.
+  template<class Scalar>
+  class ReorthogonalizationCallback : 
+    public std::binary_function<Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>, 
+				Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>,
+				void>
+  {
+  public:
+    typedef Scalar scalar_type;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+    /// \brief Callback invoked by TsqrOrthoManager on reorthogonalization.
+    ///
+    /// \warning The input views are only valid within the scope of this
+    ///   function.  Do not keep them.
+    virtual void
+    operator() (Teuchos::ArrayView<magnitude_type> normsBeforeFirstPass,
+		Teuchos::ArrayView<magnitude_type> normsAfterFirstPass) = 0;
+  };
+
 
   /// \class TsqrOrthoManagerImpl
   /// \brief TSQR-based OrthoManager subclass implementation
@@ -194,6 +248,33 @@ namespace Belos {
     /// \param label [in] Label for timers.  This only matters if the
     ///   compile-time option for enabling timers is set.
     TsqrOrthoManagerImpl (const std::string& label);
+    
+    /// \brief Set callback to be invoked on reorthogonalization.
+    ///
+    /// This callback is invoked right after the first projection
+    /// step, and only if reorthogonalization will be necessary.  It
+    /// is called before actually reorthogonalizing.  The first
+    /// argument gives the norms of the columns of the input
+    /// multivector before the first projection pass, and the second
+    /// argument gives their norms after the first projection pass.
+    ///
+    /// The callback is null by default.  If the callback is null, no
+    /// callback will be invoked.
+    ///
+    /// For details and suggested uses, please refer to the
+    /// documentation of \c ReorthogonalizationCallback.
+    ///
+    /// \warning Please do not rely on the interface to this method.
+    ///   This method may change or go away at any time.
+    ///
+    /// \warning We assume that the input arguments of the callback's
+    ///   operator() are only valid views within the scope of the
+    ///   function.  Your callback should not keep the views.
+    void 
+    setReorthogonalizationCallback (const Teuchos::RCP<ReorthogonalizationCallback<Scalar> >& callback)
+    {
+      reorthogCallback_ = callback;
+    }
 
     /// \brief Set the label for timers.
     ///
@@ -466,6 +547,9 @@ namespace Belos {
     //! Timer for normalization operations
     Teuchos::RCP<Teuchos::Time> timerNormalize_;
 
+    //! Callback invoked if reorthogonalization is necessary.
+    Teuchos::RCP<ReorthogonalizationCallback<Scalar> > reorthogCallback_;
+
     /// Instantiate and return a timer with an appropriate label.
     ///
     /// \param prefix [in] Prefix for the timer label, e.g., "Belos"
@@ -536,11 +620,11 @@ namespace Belos {
 				    const MV& X,
 				    const bool attemptToRecycle = true) const;
 
-    /// \brief Implementation of projection and normalization
+    /// \brief Implementation of projection and normalization.
     ///
-    /// Implementation of projectAndNormalize() (in which case X_out
-    /// is not read or written, so it may alias X_in, and
-    /// outOfPlace==false) and projectAndNormalizeOutOfPlace() (in
+    /// Implementation of \c projectAndNormalize() (in which case
+    /// X_out is not read or written, so it may alias X_in, and
+    /// outOfPlace==false) and \c projectAndNormalizeOutOfPlace() (in
     /// which case X_out is written, and outOfPlace==true).
     ///
     /// \return Rank of X_in after projection
@@ -803,39 +887,42 @@ namespace Belos {
 
     // If we are doing block reorthogonalization, reorthogonalize X if
     // necessary.
-    if (reorthogonalizeBlocks_)
-      {
-	std::vector<magnitude_type> columnNormsAfter (ncols_X, magnitude_type(0));
-	MVT::MvNorm (X, columnNormsAfter);
+    if (reorthogonalizeBlocks_) {
+      std::vector<magnitude_type> columnNormsAfter (ncols_X, magnitude_type(0));
+      MVT::MvNorm (X, columnNormsAfter);
 	
-	// Relative block reorthogonalization threshold
-	const magnitude_type relThres = blockReorthogThreshold();
-	// Reorthogonalize X if any of its column norms decreased by a
-	// factor more than the block reorthogonalization threshold.
-	// Don't bother trying to subset the columns; that will make
-	// the columns noncontiguous and thus hinder BLAS 3
-	// optimizations.
-	bool reorthogonalize = false;
-	for (int j = 0; j < ncols_X; ++j)
-	  if (columnNormsAfter[j] < relThres * columnNormsBefore[j])
-	    {
-	      reorthogonalize = true;
-	      break;
-	    }
-	if (reorthogonalize)
-	  {
-	    // Second-pass projection coefficients
-	    Teuchos::Array<mat_ptr> C2;
-	    allocateProjectionCoefficients (C2, Q, X, false);
-
-	    // Perform the second projection pass:
-	    // C2 = Q' X, X = X - Q*C2
-	    rawProject (X, Q, C2);
-	    // Update the projection coefficients
-	    for (int k = 0; k < num_Q_blocks; ++k)
-	      *C[k] += *C2[k];
-	  }
+      // Relative block reorthogonalization threshold.
+      const magnitude_type relThres = blockReorthogThreshold();
+      // Reorthogonalize X if any of its column norms decreased by a
+      // factor more than the block reorthogonalization threshold.
+      // Don't bother trying to subset the columns; that will make the
+      // columns noncontiguous and thus hinder BLAS 3 optimizations.
+      bool reorthogonalize = false;
+      for (int j = 0; j < ncols_X; ++j) {
+	if (columnNormsAfter[j] < relThres * columnNormsBefore[j]) {
+	  reorthogonalize = true;
+	  break;
+	}
       }
+      if (reorthogonalize) {
+	// Notify the caller via callback about the need for
+	// reorthogonalization.
+	if (! reorthogCallback_.is_null()) {
+	  reorthogCallback_->operator() (Teuchos::arrayViewFromVector (columnNormsBefore), 
+					 Teuchos::arrayViewFromVector (columnNormsAfter));
+	}
+	// Second-pass projection coefficients
+	Teuchos::Array<mat_ptr> C2;
+	allocateProjectionCoefficients (C2, Q, X, false);
+
+	// Perform the second projection pass:
+	// C2 = Q' X, X = X - Q*C2
+	rawProject (X, Q, C2);
+	// Update the projection coefficients
+	for (int k = 0; k < num_Q_blocks; ++k)
+	  *C[k] += *C2[k];
+      }
+    }
   }
 
 
@@ -1014,7 +1101,7 @@ namespace Belos {
       TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < MVT::GetNumberVecs(X_in),
 			 std::invalid_argument, 
 			 "Belos::TsqrOrthoManagerImpl::"
-			 "projectAndNormalizeOutOfPlace(...):"
+			 "projectAndNormalizeImpl(..., outOfPlace=true, ...):"
 			 "X_out has " << MVT::GetNumberVecs(X_out) 
 			 << " columns, but X_in has "
 			 << MVT::GetNumberVecs(X_in) << " columns.");
@@ -1206,6 +1293,14 @@ namespace Belos {
 	  break;
 	}
       }
+
+      // Notify the caller via callback about the need for
+      // reorthogonalization.
+      if (! reorthogCallback_.is_null()) {
+	reorthogCallback_->operator() (Teuchos::arrayViewFromVector (normsBeforeFirstPass), 
+				       Teuchos::arrayViewFromVector (normsAfterFirstPass));
+      }
+
       // Perform another Block Gram-Schmidt pass if necessary.  "Twice
       // is enough" (Kahan's theorem) for a Krylov method, unless
       // (using Stewart's term) there is an "orthogonalization fault"
@@ -1227,8 +1322,9 @@ namespace Belos {
 	// If we're using out-of-place normalization, copy X_out
 	// (results of first project and normalize pass) back into
 	// X_in, for the second project and normalize pass.
-	if (outOfPlace)
+	if (outOfPlace) {
 	  MVT::Assign (X_out, X_in);
+	}
 
 	// C2 is only used internally, so we know that we are
 	// allocating fresh and not recycling allocations.  Stating
@@ -1328,13 +1424,12 @@ namespace Belos {
 		  
     os << "Orthogonalization fault at the following column(s) of X:" << endl;
     os << "Column\tNorm decrease factor" << endl;
-    for (size_type k = 0; k < faultIndices.size(); ++k)
-      {
-	const int index = faultIndices[k];
-	const magnitude_type decreaseFactor = 
-	  normsAfterSecondPass[index] / normsAfterFirstPass[index];
-	os << index << "\t" << decreaseFactor << endl;
-      }
+    for (size_type k = 0; k < faultIndices.size(); ++k) {
+      const int index = faultIndices[k];
+      const magnitude_type decreaseFactor = 
+	normsAfterSecondPass[index] / normsAfterFirstPass[index];
+      os << index << "\t" << decreaseFactor << endl;
+    }
     throw TsqrOrthoFault (os.str());
   }
 

@@ -1,6 +1,6 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   Solver_Test
   SOURCES Solver_Test
   )
@@ -8,13 +8,13 @@ PACKAGE_ADD_EXECUTABLE(
 ##### SuperLu Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES superlu_test.xml
     EXEDEPS Solver_Test
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     Solver_Test
     NAME SuperLU_Solver_Test
     ARGS "--xml-params=superlu_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
@@ -22,11 +22,11 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
     COMM serial mpi
     )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Superlu_UnitTests
     SOURCES
       Superlu_UnitTests
-      ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+      ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
     COMM serial mpi
     CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT
@@ -37,13 +37,13 @@ ENDIF()
 ##### SuperLU_MT Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUMTFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUMTFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES superlumt_test.xml
     EXEDEPS Solver_Test
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     Solver_Test
     NAME SuperLU_MT_Solver_Test
     ARGS "--xml-params=superlumt_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
@@ -56,13 +56,13 @@ ENDIF()
 ##### SuperLU_DIST Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUDistFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUDistFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES superludist_test.xml
     EXEDEPS Solver_Test
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     Solver_Test
     NAME SuperLU_DIST_Solver_Test
     ARGS "--xml-params=superludist_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
@@ -75,13 +75,13 @@ ENDIF()
 ##### PARDISO_MKL Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyPardisoMKLFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyPardisoMKLFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES pardiso_mkl_test.xml
     EXEDEPS Solver_Test
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     Solver_Test
     NAME Pardiso_MKL_Solver_Test
     ARGS "--xml-params=pardiso_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
@@ -94,13 +94,13 @@ ENDIF()
 ##### LAPACK Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_LAPACK)
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyLapackFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyLapackFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES lapack_test.xml
     EXEDEPS Solver_Test
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     Solver_Test
     NAME LAPACK_Solver_Test
     ARGS "--xml-params=lapack_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"

@@ -149,7 +149,7 @@ int nssi_rpc_init(
             break;
         default:
             rc = NSSI_ENOENT;
-            log_error(rpc_debug_level, "the transport scheme does not exist");
+            log_error(rpc_debug_level, "the transport scheme %d does not exist", rpc_transport);
             return rc;
     }
 

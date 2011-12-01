@@ -206,6 +206,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
   //------------------------------
   // Solve linear sytem
 
+  //THIS IS WHAT I'M Going to change
   perf.solve_mflop_per_sec = CG_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X );
 
 #if  PRINT_SAMPLE_OF_SOLUTION

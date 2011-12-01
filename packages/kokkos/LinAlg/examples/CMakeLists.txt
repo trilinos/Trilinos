@@ -1,11 +1,11 @@
-INCLUDE(PackageAddExecutableAndTest)   
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsAddExecutableAndTest)   
+INCLUDE(TribitsLibraryMacros)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(  DummySparseKernelDriver  
+TRIBITS_ADD_EXECUTABLE_AND_TEST(  DummySparseKernelDriver  
   SOURCES DummySparseKernelDriver.cpp  
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
-PACKAGE_ADD_TEST_DIRECTORIES(PDP10)
+TRIBITS_ADD_TEST_DIRECTORIES(PDP10)

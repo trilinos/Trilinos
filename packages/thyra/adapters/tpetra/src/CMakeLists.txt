@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -10,7 +10,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   thyratpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

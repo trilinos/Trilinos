@@ -42,128 +42,191 @@
 #include "createEpetraProblem.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Trilinos_Util.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Map.h"
+#include "Epetra_Comm.h"
 #ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
+#  include "mpi.h"
+#  include "Epetra_MpiComm.h"
 #else
-#include "Epetra_SerialComm.h"
-#endif
+#  include "Epetra_SerialComm.h"
+#endif // EPETRA_MPI
+#include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
+#include "Epetra_MultiVector.h"
+#include "Teuchos_StandardCatchMacros.hpp"
 
-int Belos::createEpetraProblem(
-			       std::string                      &filename
-			       ,RCP<Epetra_Map>         *rowMap
-			       ,RCP<Epetra_CrsMatrix>   *A
-			       ,RCP<Epetra_MultiVector> *B
-			       ,RCP<Epetra_MultiVector> *X
-			       ,int                             *MyPID_out
-			       )
-{
-  //
-  int &MyPID = *MyPID_out;
-  //
-  int i;
-  int n_nonzeros, N_update;
-  int *bindx=0, *update=0, *col_inds=0;
-  double *val=0, *row_vals=0;
-  double *xguess=0, *b=0, *xexact=0;
 
-  RCP<Epetra_Comm> epetraComm;
+namespace Belos {
+
+  namespace Test {
+    MPISession::MPISession (Teuchos::Ptr<int> argc, Teuchos::Ptr<char**> argv) 
+    {
+#ifdef EPETRA_MPI 
+      MPI_Init (argc.getRawPtr(), argv.getRawPtr());
+#endif // EPETRA_MPI 
+    }
+
+    MPISession::~MPISession () 
+    {
+#ifdef EPETRA_MPI 
+      MPI_Finalize ();
+#endif // EPETRA_MPI 
+    }
+
+    Teuchos::RCP<const Epetra_Comm> 
+    MPISession::getComm () 
+    {
+      using Teuchos::rcp;
+
+      if (comm_.is_null()) {
 #ifdef EPETRA_MPI	
-  epetraComm = rcp(new Epetra_MpiComm( MPI_COMM_WORLD ) );	
+	comm_ = rcp (new Epetra_MpiComm (MPI_COMM_WORLD));	
 #else	
-  epetraComm = rcp(new Epetra_SerialComm());
-#endif
-	
-  MyPID = epetraComm->MyPID();
+	comm_ = rcp (new Epetra_SerialComm);
+#endif // EPETRA_MPI
+      }
+      return comm_;
+    }
+  } // namespace Test
+
+
+void
+createEpetraProblem (const Teuchos::RCP<const Epetra_Comm>& epetraComm,
+		     const std::string& filename,
+		     Teuchos::RCP<Epetra_Map>& rowMap,
+		     Teuchos::RCP<Epetra_CrsMatrix>& A,
+		     Teuchos::RCP<Epetra_MultiVector>& B,
+		     Teuchos::RCP<Epetra_MultiVector>& X,
+		     int& numRHS)
+{
+  using Teuchos::inOutArg;
+  using Teuchos::ptr;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::set_extra_data;
+
+  const int MyPID = epetraComm->MyPID();
+
+  int n_nonzeros, N_update;
+  int *bindx = NULL, *update = NULL, *col_inds = NULL;
+  double *val = NULL, *row_vals = NULL;
+  double *xguess = NULL, *b = NULL, *xexact = NULL;
+
   //
-  // **********************************************************************
-  // ******************Set up the problem to be solved*********************
-  // **********************************************************************
+  // Set up the problem to be solved
   //
   int NumGlobalElements;  // total # of rows in matrix
-  //
-  // *****Read in matrix from HB file******
-  //
-  Trilinos_Util_read_hb(const_cast<char *>(filename.c_str()), MyPID, &NumGlobalElements, &n_nonzeros,
-			&val, &bindx, &xguess, &b, &xexact);
-  // 
-  // *****Distribute data among processors*****
-  //
-  Trilinos_Util_distrib_msr_matrix(*epetraComm, &NumGlobalElements, &n_nonzeros, &N_update, 
-				   &update, &val, &bindx, &xguess, &b, &xexact);
-  //
-  // *****Construct the matrix*****
-  //
-  int NumMyElements = N_update; // # local rows of matrix on processor
-  //
-  // Create an integer std::vector NumNz that is used to build the Petra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
-  // on this processor
-  //
-  int * NumNz = new int[NumMyElements];
-  for (i=0; i<NumMyElements; i++) {
-    NumNz[i] = bindx[i+1] - bindx[i] + 1;
+
+  try {
+    // Read in matrix from HB file
+    Trilinos_Util_read_hb (const_cast<char *> (filename.c_str()), MyPID, 
+			   &NumGlobalElements, &n_nonzeros, &val, &bindx, 
+			   &xguess, &b, &xexact);
+
+    // Distribute data among processors
+    Trilinos_Util_distrib_msr_matrix (*epetraComm, &NumGlobalElements, 
+				      &n_nonzeros, &N_update, &update, &val, 
+				      &bindx, &xguess, &b, &xexact);
+    //
+    // Construct the matrix
+    //
+    int NumMyElements = N_update; // # local rows of matrix on processor
+    //
+    // Create an int array NumNz that is used to build the Petra Matrix.
+    // NumNz[i] is the number of OFF-DIAGONAL terms for the i-th global
+    // equation on this processor.
+    //
+    std::vector<int> NumNz (NumMyElements);
+    for (int i = 0; i < NumMyElements; ++i) {
+      NumNz[i] = bindx[i+1] - bindx[i] + 1;
+    }
+    rowMap = rcp (new Epetra_Map (NumGlobalElements, NumMyElements, 
+				  update, 0, *epetraComm));
+    //set_extra_data (epetraComm, "Map::Comm", inOutArg (rowMap));
+
+    // Create an Epetra sparse matrix.
+    if (NumMyElements == 0) {
+      A = rcp (new Epetra_CrsMatrix (Copy, *rowMap, static_cast<int*>(NULL)));
+    } else {
+      A = rcp (new Epetra_CrsMatrix (Copy, *rowMap, &NumNz[0]));
+    }
+    //set_extra_data (rowMap, "Operator::Map", ptr (A));
+
+    // Add rows to the sparse matrix one at a time.
+    int NumEntries;
+    for (int i = 0; i < NumMyElements; ++i) {
+      row_vals = val + bindx[i];
+      col_inds = bindx + bindx[i];
+      NumEntries = bindx[i+1] - bindx[i];
+      int info = A->InsertGlobalValues (update[i], NumEntries, row_vals, col_inds);
+      TEUCHOS_TEST_FOR_EXCEPTION( info != 0, std::logic_error,
+				  "Failed to insert global value into A." );
+      info = A->InsertGlobalValues (update[i], 1, val+i, update+i);
+      TEUCHOS_TEST_FOR_EXCEPTION( info != 0, std::logic_error,
+				  "Failed to insert global value into A." );
+    }
+    // Finish initializing the sparse matrix.
+    int info = A->FillComplete();
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, std::logic_error,
+				"FillComplete() failed on the sparse matrix A.");
+    info = A->OptimizeStorage();
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, std::logic_error,
+				"OptimizeStorage() failed on the sparse matrix A.");
+    A->SetTracebackMode (1); // Shut down Epetra warning tracebacks
+    //
+    // Construct the right-hand side and solution multivectors.
+    //
+    if (false && b != NULL) {
+      B = rcp (new Epetra_MultiVector (::Copy, *rowMap, b, NumMyElements, 1));
+      numRHS = 1;
+    } else {
+      B = rcp (new Epetra_MultiVector (*rowMap, numRHS));
+      B->Random ();
+    }
+    X = rcp (new Epetra_MultiVector (*rowMap, numRHS));
+    X->PutScalar (0.0);
+
+    //set_extra_data (rowMap, "X::Map", Teuchos::ptr (X));
+    //set_extra_data (rowMap, "B::Map", Teuchos::ptr (B));
+  } 
+  catch (std::exception& e) {
+    // Free up memory before rethrowing the exception.
+    if (update) free(update);
+    if (val) free(val);
+    if (bindx) free(bindx);
+    if (xexact) free(xexact);
+    if (xguess) free(xguess);
+    if (b) free(b);
+    throw e; // Rethrow the exception.
+  } 
+  catch (...) { // Epetra sometimes throws an int "object."
+    // Free up memory before rethrowing the exception.
+    if (update) free(update);
+    if (val) free(val);
+    if (bindx) free(bindx);
+    if (xexact) free(xexact);
+    if (xguess) free(xguess);
+    if (b) free(b);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+			       "Generating the Epetra problem to solve failed "
+			       "with an unknown error.");
   }
+
+  //if (false) {
+    //
+    // Create workspace
+    //
+    //Teuchos::set_default_workspace_store (rcp (new Teuchos::WorkspaceStoreInitializeable(static_cast<size_t>(2e+6))));
+  //}
+
   //
-  RCP<Epetra_Map> epetraMap = rcp(new Epetra_Map(NumGlobalElements, NumMyElements, update, 0, *epetraComm));
-  Teuchos::set_extra_data( epetraComm, "Map::Comm", Teuchos::inOutArg(epetraMap) );
-  if(rowMap) *rowMap = epetraMap;
+  // Free up memory.
   //
-  // Create a Epetra_Matrix
-  //
-  *A = rcp(new Epetra_CrsMatrix(Copy, *epetraMap, NumNz));
-  Teuchos::set_extra_data( epetraMap, "Operator::Map", Teuchos::ptr(A) );
-  //
-  // Add rows one-at-a-time
-  //
-  int NumEntries;
-  for (i=0; i<NumMyElements; i++) {
-    row_vals = val + bindx[i];
-    col_inds = bindx + bindx[i];
-    NumEntries = bindx[i+1] - bindx[i];
-    int info = (*A)->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds);
-    assert( info == 0 );
-    info = (*A)->InsertGlobalValues(update[i], 1, val+i, update+i);
-    assert( info == 0 );
-  }
-  //
-  // Finish up
-  //
-  int info = (*A)->FillComplete();
-  assert( info == 0 );
-  info = (*A)->OptimizeStorage();
-  assert( info == 0 );
-  (*A)->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-  //
-  // Construct the right-hand side and solution multivectors.
-  //
-  if(B) {
-    *B = rcp(new Epetra_MultiVector(::Copy, *epetraMap, b, NumMyElements, 1 ));
-    Teuchos::set_extra_data( epetraMap, "B::Map", Teuchos::ptr(B) );
-  }
-  if(X) {
-    *X = rcp(new Epetra_MultiVector(*epetraMap, 1 ));
-    Teuchos::set_extra_data( epetraMap, "X::Map", Teuchos::ptr(X) );
-  }
-  //
-  // Create workspace
-  //
-  Teuchos::set_default_workspace_store(
-    Teuchos::rcp(new Teuchos::WorkspaceStoreInitializeable(static_cast<size_t>(2e+6)))
-    );
-  //
-  // Free up memory
-  //
-  delete [] NumNz;
-  free(update);
-  free(val);
-  free(bindx);
+  if (update) free(update);
+  if (val) free(val);
+  if (bindx) free(bindx);
   if (xexact) free(xexact);
   if (xguess) free(xguess);
   if (b) free(b);
-
-  return (0);
 }
+
+} // namespace Belos

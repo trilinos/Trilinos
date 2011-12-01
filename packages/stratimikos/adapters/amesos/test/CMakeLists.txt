@@ -1,5 +1,5 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
 SET(COMMON_SOURCES test_single_amesos_thyra_solver.cpp)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   test_amesos_thyra_driver
   SOURCES
     test_amesos_thyra_driver.cpp
@@ -21,7 +21,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyAmesosTestFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyAmesosTestFiles
   DEST_FILES
     bcsstk01.mtx                              
     bcsstk02.mtx                              

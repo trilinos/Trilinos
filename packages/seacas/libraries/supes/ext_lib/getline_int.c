@@ -106,6 +106,7 @@ struct termio   new_termio, old_termio;
 static void
 gl_char_init()			/* turn off input echo */
 {
+#if !defined(REDS)
 #ifdef POSIX
     tcgetattr(0, &old_termios);
     gl_intrc = old_termios.c_cc[VINTR];
@@ -149,12 +150,13 @@ gl_char_init()			/* turn off input echo */
     ioctl(0, TCSETA, &new_termio);
 #endif /* TIOCSETN */
 #endif /* POSIX */
-
+#endif /* REDS */
 }
 
 static void 
 gl_char_cleanup (void)		/* undo effects of gl_char_init */
 {
+#if !defined(REDS)
 #ifdef POSIX 
     tcsetattr(0, TCSANOW, &old_termios);
 #else 			/* not POSIX */
@@ -164,6 +166,7 @@ gl_char_cleanup (void)		/* undo effects of gl_char_init */
     ioctl(0, TCSETA, &old_termio);
 #endif /* TIOCSETN */
 #endif /* POSIX */
+#endif /* REDS */
 }
 
 static int 

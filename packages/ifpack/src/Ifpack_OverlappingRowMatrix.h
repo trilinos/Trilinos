@@ -36,8 +36,12 @@
 #include "Epetra_CombineMode.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_Import.h"
-#ifdef IFPACK_NODE_AWARE_CODE
+#ifdef IFPACK_SUBCOMM_CODE
 #include "Epetra_IntVector.h"
+#else
+# ifdef IFPACK_NODE_AWARE_CODE
+# include "Epetra_IntVector.h"
+# endif
 #endif
 
 class Epetra_Map;
@@ -52,18 +56,27 @@ class Ifpack_OverlappingRowMatrix : public virtual Epetra_RowMatrix {
 public:
 
   //@{ Constructors/Destructors
+#ifdef IFPACK_SUBCOMM_CODE
+  Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
+                              int OverlapLevel_in, int subdomainID);
+#else
 # ifdef IFPACK_NODE_AWARE_CODE
   Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
                               int OverlapLevel_in, int myNodeID);
 # endif
+#endif
   Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
                               int OverlapLevel_in);
 
+#ifdef IFPACK_SUBCOMM_CODE
+  ~Ifpack_OverlappingRowMatrix() {};
+#else
 # ifdef IFPACK_NODE_AWARE_CODE
   ~Ifpack_OverlappingRowMatrix();
 # else
   ~Ifpack_OverlappingRowMatrix() {};
 # endif
+#endif
   //@}
 
   //@{ \name Matrix data extraction routines
@@ -101,8 +114,12 @@ public:
     \return Integer error code, set to 0 if successful.
     */
   virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
-#ifdef IFPACK_NODE_AWARE_CODE
+#ifdef IFPACK_SUBCOMM_CODE
   virtual int ExtractGlobalRowCopy(int MyRow, int Length, int & NumEntries, double* Values, int* Indices) const;
+#else
+# ifdef IFPACK_NODE_AWARE_CODE
+  virtual int ExtractGlobalRowCopy(int MyRow, int Length, int & NumEntries, double* Values, int* Indices) const;
+# endif
 #endif
 
   //! Returns a copy of the main diagonal in a user-provided vector.
@@ -264,11 +281,15 @@ public:
   //! Returns the Epetra_Map object associated with the columns of this matrix.
   virtual const Epetra_Map & RowMatrixColMap() const
   {
+#ifdef IFPACK_SUBCOMM_CODE
+    return(*colMap_);
+#else
 #   ifdef IFPACK_NODE_AWARE_CODE
     return(*colMap_);
 #   else
     return(*Map_);
 #   endif
+#endif
   }
 
   //! Returns the Epetra_Import object that contains the import operations for distributed operations.
@@ -342,7 +363,7 @@ int ImportMultiVector(const Epetra_MultiVector& X,
 int ExportMultiVector(const Epetra_MultiVector& OvX,
                       Epetra_MultiVector& X,
                       Epetra_CombineMode CM = Add);
-#ifdef IFPACK_NODE_AWARE_CODE
+#ifdef IFPACK_SUBCOMM_CODE
   inline const Epetra_RowMatrix& A() const 
   {
     return(*Matrix_);
@@ -352,17 +373,30 @@ int ExportMultiVector(const Epetra_MultiVector& OvX,
   {
     return(*ExtMatrix_);
   }
+#else
+# ifdef IFPACK_NODE_AWARE_CODE
+  inline const Epetra_RowMatrix& A() const 
+  {
+    return(*Matrix_);
+  }
+
+  inline Epetra_CrsMatrix& B() const
+  {
+    return(*ExtMatrix_);
+  }
+# endif
 #endif
 
 private: 
-#ifndef IFPACK_NODE_AWARE_CODE
+#ifndef IFPACK_SUBCOMM_CODE
+# ifndef IFPACK_NODE_AWARE_CODE
   inline const Epetra_RowMatrix& A() const 
   {
     return(*Matrix_);
   }
 
   inline Epetra_RowMatrix& B() const;
-
+# endif
 #endif
 
   int NumMyRows_;
@@ -379,11 +413,13 @@ private:
   bool UseTranspose_;
 
   Teuchos::RefCountPtr<const Epetra_Map> Map_;
-# ifdef IFPACK_NODE_AWARE_CODE
-  //Teuchos::RefCountPtr<const Epetra_Map> colMap_;
+#ifdef IFPACK_SUBCOMM_CODE
   const Epetra_Map *colMap_;
-
+#else
+# ifdef IFPACK_NODE_AWARE_CODE
+  const Epetra_Map *colMap_;
 # endif
+#endif
   Teuchos::RefCountPtr<const Epetra_Import> Importer_;
 
   Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;

@@ -7,9 +7,9 @@ IF (ML_ENABLE_TekoSmoothers)
    ADD_SUBDIRECTORY(ML-Teko-Coupling)
 ENDIF()
 
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(example_copyfiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(example_copyfiles
   SOURCE_FILES nsjac_test.mm
      nslhs_test.mm
      nsrhs_test.mm

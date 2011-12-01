@@ -195,12 +195,28 @@ namespace NOX {
       //! Print the vector.  To be used for debugging only. 
       void print(std::ostream& stream) const;
 
+      //! Set the weighting vector used for inner products and norms.
+      void setWeightVector(const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weightVec);
+
+      bool hasWeightVector() const;
+
+      //! Returns a weighting vector if one was set, otherwise throws.
+      Teuchos::RCP<const ::Thyra::VectorBase<double> >
+      getWeightVector() const;
+
     protected:
 
       //! Pointer to Thyra vector owned by this object
       Teuchos::RCP< ::Thyra::VectorBase<double> > thyraVec;
 
+      //! Thyra vector used for weighting inner product and norms
+      Teuchos::RCP<const ::Thyra::VectorBase<double> > weightVec_;
+
+      //! Thyra vector used for weighting inner product and norms
+      Teuchos::RCP< ::Thyra::VectorBase<double> > tmpVec_;
+
     };
+
 
   } // namespace Thyra
 } // namespace NOX

@@ -7,6 +7,45 @@
 #include	"defs.h"
 
 
+void 
+median_assign (
+    struct vtx_data **graph,	/* data structure with vertex weights */
+    double *vals,			/* values of which to find median */
+    int nvtxs,		/* number of values I own */
+    double *goal,			/* desired sizes for sets */
+    int using_vwgts,		/* are vertex weights being used? */
+    int *sets,			/* assigned set for each vertex */
+    double wlow,			/* sum of weights below guess */
+    double whigh,		/* sum of weights above guess */
+    double guess		/* median value */
+)
+{
+    int       i;		/* loop counter */
+
+    for (i = 1; i <= nvtxs; i++) {
+	if (vals[i] < guess)
+	    sets[i] = 0;
+	else if (vals[i] > guess)
+	    sets[i] = 1;
+	else {
+	    if (goal[0] - wlow > goal[1] - whigh) {
+		sets[i] = 0;
+		if (using_vwgts)
+		    wlow += graph[i]->vwgt;
+		else
+		    wlow++;
+	    }
+	    else {
+		sets[i] = 1;
+		if (using_vwgts)
+		    whigh += graph[i]->vwgt;
+		else
+		    whigh++;
+	    }
+	}
+    }
+}
+
 /* Find the median of set of values. */
 /* Can also find nested medians of several sets of values */
 /* Routine works by repeatedly guessing a value, and discarding those */
@@ -47,7 +86,6 @@ median (
     int       done;		/* check for termination criteria */
     int       vtx;		/* vertex being considered */
     int       i;		/* loop counters */
-    void      median_assign();
 
     /* Initialize. */
 
@@ -187,41 +225,3 @@ median (
 }
 
 
-void 
-median_assign (
-    struct vtx_data **graph,	/* data structure with vertex weights */
-    double *vals,			/* values of which to find median */
-    int nvtxs,		/* number of values I own */
-    double *goal,			/* desired sizes for sets */
-    int using_vwgts,		/* are vertex weights being used? */
-    int *sets,			/* assigned set for each vertex */
-    double wlow,			/* sum of weights below guess */
-    double whigh,		/* sum of weights above guess */
-    double guess		/* median value */
-)
-{
-    int       i;		/* loop counter */
-
-    for (i = 1; i <= nvtxs; i++) {
-	if (vals[i] < guess)
-	    sets[i] = 0;
-	else if (vals[i] > guess)
-	    sets[i] = 1;
-	else {
-	    if (goal[0] - wlow > goal[1] - whigh) {
-		sets[i] = 0;
-		if (using_vwgts)
-		    wlow += graph[i]->vwgt;
-		else
-		    wlow++;
-	    }
-	    else {
-		sets[i] = 1;
-		if (using_vwgts)
-		    whigh += graph[i]->vwgt;
-		else
-		    whigh++;
-	    }
-	}
-    }
-}

@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( CCOLAMD
+TRIBITS_TPL_DECLARE_LIBRARIES( CCOLAMD
   REQUIRED_HEADERS ccolamd.h UFconfig.h
   REQUIRED_LIBS_NAMES ccolamd
   )

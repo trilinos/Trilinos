@@ -1,8 +1,8 @@
 
-INCLUDE(PackageLibraryMacros)
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(TriosProcessXDR)
 
 ############# Process Subdirectories ###################
@@ -73,10 +73,12 @@ APPEND_SET(SOURCES
   common/nssi_xdr.cpp
 )
 
-IF (${PACKAGE_NAME}_ENABLE_Portals)
+IF (${PACKAGE_NAME}_ENABLE_Portals OR ${PACKAGE_NAME}_ENABLE_CrayPortals)
+  APPEND_SET(SOURCES common/nnti_ptls.cpp)
+ELSEIF (${PACKAGE_NAME}_ENABLE_CrayPortals)
   APPEND_SET(SOURCES common/nnti_ptls.cpp)
 ELSEIF (${PACKAGE_NAME}_ENABLE_InfiniBand)
-  APPEND_SET(SOURCES common/nnti_ib.c)
+  APPEND_SET(SOURCES common/nnti_ib.cpp)
 ELSEIF (${PACKAGE_NAME}_ENABLE_LUC)
   APPEND_SET(SOURCES common/nnti_luc.cpp)
 ELSEIF (${PACKAGE_NAME}_ENABLE_Gemini)
@@ -117,7 +119,7 @@ APPEND_SET(SOURCES
 
 ############# libnssi ##########################
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
    trios_nssi
    HEADERS ${HEADERS}
    NOINSTALLHEADERS ${NOINSTALLHEADERS}

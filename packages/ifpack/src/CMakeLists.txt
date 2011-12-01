@@ -1,11 +1,11 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -56,6 +56,7 @@ SET(HEADERS ${HEADERS}
   Ifpack_AdditiveSchwarz.h
   Ifpack_LocalFilter.h
   Ifpack_NodeFilter.h
+  Ifpack_SubdomainFilter.h
   Ifpack_DropFilter.h
   Ifpack_SparsityFilter.h
   Ifpack_ReorderFilter.h
@@ -110,6 +111,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_DenseContainer.cpp
   Ifpack_LocalFilter.cpp
   Ifpack_NodeFilter.cpp
+  Ifpack_SubdomainFilter.cpp
   Ifpack_DropFilter.cpp
   Ifpack_SparsityFilter.cpp
   Ifpack_ReorderFilter.cpp
@@ -231,7 +233,7 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   ifpack
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

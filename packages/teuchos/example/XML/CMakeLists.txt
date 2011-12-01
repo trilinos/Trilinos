@@ -1,8 +1,8 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XmlToParameterList
   SOURCES XmlToParameterList.cpp
   ARGS
@@ -13,7 +13,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   XmlToParameterList
   NAME XmlToParameterList_empty
   ARGS
@@ -24,7 +24,7 @@ PACKAGE_ADD_TEST(
   PASS_REGULAR_EXPRESSION "EmptyXMLError"
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyExampleXmlFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleXmlFiles
   DEST_FILES Example1.xml Example2.xml ExtraXML1.txt ExtraXML2.txt EmptyXML.txt
   SOURCE_PREFIX "_"
   EXEDEPS XmlToParameterList

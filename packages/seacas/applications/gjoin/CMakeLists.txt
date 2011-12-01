@@ -1,8 +1,8 @@
-INCLUDE(SubPackageMacros)
-INCLUDE(PackageAddExecutable)
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddExecutable)
 INCLUDE(FortranSettings)
 
-SUBPACKAGE(Gjoin)
+TRIBITS_SUBPACKAGE(Gjoin)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -17,10 +17,10 @@ SET(SOURCES gj_prtelb.F gj_prtess.F gj_prtnps.F
 	    gj_dbmir1.f gj_dorot.f  gj_getall.f gj_inigen.f gj_irennp.f gj_movint.f
 	    gj_muness.f gj_offset.f gj_outlog.f gj_renix.f  gj_setsta.f gj_zmfixd.f gj_zmxyz.f)
 
-PACKAGE_ADD_LIBRARY(gjoin_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-PACKAGE_ADD_EXECUTABLE(gjoin NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES gjoin.f DEPLIBS gjoin_app_lib COMM serial)
+TRIBITS_ADD_LIBRARY(gjoin_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
+TRIBITS_ADD_EXECUTABLE(gjoin NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES gjoin.f DEPLIBS gjoin_app_lib COMM serial mpi)
 
 install_executable(gjoin)
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

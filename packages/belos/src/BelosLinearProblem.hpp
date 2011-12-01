@@ -109,7 +109,7 @@ namespace Belos {
     /// Makes a copy of an existing LinearProblem instance.
     LinearProblem (const LinearProblem<ScalarType,MV,OP>& Problem);
     
-    //! Destructor; completely deletes a LinearProblem object.
+    //! Destructor (declared virtual for memory safety of derived classes).
     virtual ~LinearProblem (void);
 
     //@}
@@ -130,6 +130,7 @@ namespace Belos {
     /// Setting the "left-hand side" sets the starting vector (also
     /// called "initial guess") of an iterative method.  The
     /// multivector is set by pointer; no copy of the object is made.
+    /// Belos' solvers will modify this multivector in place.
     void setLHS (const Teuchos::RCP<MV> &X) { 
       X_ = X; 
       isSet_=false; 
@@ -161,7 +162,7 @@ namespace Belos {
     ///   current block of linear systems.  The next time that
     ///   Curr{RHS, LHS}Vec() is called, the next linear system will
     ///   be returned.  Computing the next linear system isn't done in
-    ///   this method in case the blocksize is changed.
+    ///   this method in case the block size is changed.
     void setCurrLS ();
 
     /// \brief Tell the linear problem which linear system(s) need to be solved next.
@@ -175,12 +176,16 @@ namespace Belos {
     /// augmented using a random vector.
     void setLSIndex (const std::vector<int>& index); 
     
-    /// \brief Tell the linear problem that the operator is Hermitian.
+    /// \brief Tell the linear problem that the (preconditioned) operator is Hermitian.
     ///
     /// This knowledge may allow the operator to take advantage of the
-    /// linear problem symmetry.  However, this should not be set to
-    /// true if the preconditioner is not Hermitian, or symmetrically
-    /// applied.
+    /// linear problem's symmetry.  However, this method should not be
+    /// called if the preconditioned operator is not Hermitian (or
+    /// symmetric in real arithmetic).
+    ///
+    /// We make no attempt to detect the symmetry of the operators, so
+    /// we cannot check whether this method has been called
+    /// incorrectly.
     void setHermitian() { isHermitian_ = true; }
    
     /// \brief Set the label prefix used by the timers in this object.  
@@ -217,15 +222,15 @@ namespace Belos {
     ///   called, a new residual will be computed.  If updateLP is
     ///   false, then the new solution is computed and returned as a
     ///   copy, without modifying this LinearProblem's stored current
-    ///   solution.  The default behavior keeps the linear problem
-    ///   from having to recompute the residual vector every time the
-    ///   solution is updated.
+    ///   solution.
     ///
     /// \param scale [in] The factor \f$\alpha\f$ by which to multiply
     ///   the solution update vector when computing the update.  This
     ///   is ignored if the update vector is null.
     ///
-    /// \param A pointer to the new solution. 
+    /// \return A pointer to the new solution.  This is freshly
+    ///   allocated if updateLP is false, otherwise it is a view of
+    ///   the LinearProblem's stored current solution.
     ///
     Teuchos::RCP<MV> 
     updateSolution (const Teuchos::RCP<MV>& update = Teuchos::null,
@@ -237,7 +242,8 @@ namespace Belos {
     ///
     /// This method does the same thing as calling the three-argument
     /// version of updateSolution() with updateLP = false.  It does
-    /// not update the linear problem.
+    /// not update the linear problem or change the linear problem's
+    /// state in any way.
     ///
     /// \param update [in/out] The solution update vector.  If null,
     ///   this method returns a pointer to the new solution.
@@ -246,7 +252,7 @@ namespace Belos {
     ///   the solution update vector when computing the update.  This
     ///   is ignored if the update vector is null.
     ///
-    /// \param A pointer to the new solution. 
+    /// \return A pointer to the new solution. 
     ///
     Teuchos::RCP<MV> updateSolution( const Teuchos::RCP<MV>& update = Teuchos::null,
                                     ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() ) const
@@ -266,6 +272,9 @@ namespace Belos {
     /// default arguments.)  The internal flags will be set as if the
     /// linear system manager was just initialized, and the initial
     /// residual will be computed.
+    ///
+    /// Many of Belos' solvers require that this method has been
+    /// called on the linear problem, before they can solve it.
     ///
     /// \param newX [in/out] If you want to solve the linear system
     ///   with a different left-hand side, pass it in here.
@@ -288,7 +297,7 @@ namespace Belos {
     //! @name Accessor methods
     //@{ 
     
-    //! A pointer to the operator A.
+    //! A pointer to the (unpreconditioned) operator A.
     Teuchos::RCP<const OP> getOperator() const { return(A_); }
     
     //! A pointer to the left-hand side X.
@@ -306,28 +315,36 @@ namespace Belos {
     ///   is left preconditioned.
     Teuchos::RCP<const MV> getInitPrecResVec() const { return(PR0_); }
     
-    //! Get a pointer to the current left-hand side (solution) of the linear system.
-    /*! This method is called by the solver or any method that is interested in the current linear system
-      being solved.  
-      <ol>
-      <li> If the solution has been updated by the solver, then this
-           vector is current ( see \c isSolutionUpdated() ).
-      <li> If there is no linear system to solve, this method will
-           return a null pointer.
-      </ol>
-    */
+    /// \brief Get a pointer to the current left-hand side (solution) of the linear system.
+    ///
+    /// This method is called by the solver or any method that is
+    /// interested in the current linear system being solved.
+    ///   - If the solution has been updated by the solver, then this
+    ///     vector is current ( see \c isSolutionUpdated() ).
+    ///   - If there is no linear system to solve, this method returns
+    ///     a null pointer.
+    ///
+    /// This method is <i>not</i> the same thing as \c getLHS().  The
+    /// \c getLHS() method just returns a pointer to the original
+    /// left-hand side vector.  This method only returns a valid
+    /// vector if the current subset of right-hand side(s) to solve
+    /// has been set (via the \c setLSIndex() method).
     Teuchos::RCP<MV> getCurrLHSVec();
     
-    //! Get a pointer to the current right-hand side of the linear system.
-    /*! This method is called by the solver of any method that is interested in the current linear system
-      being solved.  
-      <ol>
-      <li> If the solution has been updated by the solver, then this
-           vector is current ( see \c isSolutionUpdated() ).
-      <li> If there is no linear system to solve, this method will
-           return a null pointer.  
-      </ol>
-    */	
+    /// \brief Get a pointer to the current right-hand side of the linear system.
+    ///
+    /// This method is called by the solver or any method that is
+    /// interested in the current linear system being solved.
+    ///   - If the solution has been updated by the solver, then this
+    ///     vector is current ( see \c isSolutionUpdated() ).
+    ///   - If there is no linear system to solve, this method returns
+    ///     a null pointer.
+    ///
+    /// This method is <i>not</i> the same thing as \c getRHS().  The
+    /// \c getRHS() method just returns a pointer to the original
+    /// right-hand side vector.  This method only returns a valid
+    /// vector if the current subset of right-hand side(s) to solve
+    /// has been set (via the \c setLSIndex() method).
     Teuchos::RCP<const MV> getCurrRHSVec();
     
     //! Get a pointer to the left preconditioner.
@@ -336,31 +353,35 @@ namespace Belos {
     //! Get a pointer to the right preconditioner.
     Teuchos::RCP<const OP> getRightPrec() const { return(RP_); };
     
-    /// \brief The 0-based vector of indices of the linear system(s)
-    ///   currently being solved.
+    /// \brief (Zero-based) indices of the linear system(s) currently being solved.
     ///
     /// Since the block size is independent of the number of
     /// right-hand sides for some solvers (GMRES, CG, etc.), it is
     /// important to know which linear systems are being solved.  That
     /// may mean you need to update the information about the norms of
     /// your initial residual vector for weighting purposes.  This
-    /// information can keep you from querying the solver for
+    /// information can help you avoid querying the solver for
     /// information that rarely changes.
     ///
     /// \note The length of the returned index vector is the number of
-    /// right-hand sides currently being solved.  If an entry of the
-    /// index vector is -1, then that linear system is an augmented
-    /// linear system and doesn't need to be considered for convergence.
+    ///   right-hand sides currently being solved.  If an entry of the
+    ///   index vector is -1, then the corresponding linear system is
+    ///   an augmented linear system and doesn't need to be considered
+    ///   for convergence.
     /// 
-    /// \note The index vector returned from this method is valid if
-    ///   \c isProblemSet() returns true.
+    /// \note The index vector returned from this method can only be
+    ///   nonempty if \c setLSIndex() has been called with a nonempty
+    ///   index vector argument, or if this linear problem was
+    ///   constructed via the copy constructor of a linear problem
+    ///   with a nonempty index vector.
     const std::vector<int> getLSIndex() const { return(rhsIndex_); }
 
     /// \brief The number of linear systems that have been set.
     ///
     /// This can be used by status test classes to determine if the
     /// solver manager has advanced and is solving another linear
-    /// system.
+    /// system.  This is incremented by one every time that \c
+    /// setLSIndex() completes successfully.
     int getLSNumber() const { return(lsNum_); }
 
     /*! \brief The timers for this object.
@@ -370,7 +391,7 @@ namespace Belos {
      *   - time spent applying preconditioner
      */
     Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-      return tuple(timerOp_,timerPrec_);
+      return Teuchos::tuple(timerOp_,timerPrec_);
     }
 
 
@@ -390,9 +411,12 @@ namespace Belos {
 
     //! Whether the problem has been set.
     bool isProblemSet() const { return(isSet_); }
-    
-    /// Whether the operator A is symmetric (in real arithmetic, or
-    /// Hermitian in complex arithmetic).
+
+    /// \brief Whether the (preconditioned) operator is Hermitian.
+    ///
+    /// If preconditioner(s) are defined and this method returns true,
+    /// then the entire preconditioned operator is Hermitian (or
+    /// symmetric in real arithmetic).
     bool isHermitian() const { return(isHermitian_); }
     
     //! Whether the linear system is being preconditioned on the left.
@@ -416,28 +440,29 @@ namespace Belos {
     */
     void apply( const MV& x, MV& y ) const;
     
-    //! Apply ONLY the operator to \c x, returning \c y.
-    /*! This application is only of the linear problem operator, no preconditioners are applied.
-      Flexible variants of Krylov methods will use this application method within their code.
-      
-      Precondition:<ul>
-      <li><tt>getOperator().get()!=NULL</tt>
-      </ul>
-    */
+    /// \brief Apply ONLY the operator to \c x, returning \c y.
+    ///
+    /// This method only applies the linear problem's operator,
+    /// without any preconditioners that may have been defined.
+    /// Flexible variants of Krylov methods will use this method.  If
+    /// no operator has been defined, this method just copies x into
+    /// y.
     void applyOp( const MV& x, MV& y ) const;
     
-    //! Apply ONLY the left preconditioner to \c x, returning \c y.  
-    /*! This application is only of the left preconditioner, which may be required for flexible variants
-      of Krylov methods.
-      \note This will return Undefined if the left preconditioner is not defined for this operator.
-    */  
+    /// \brief Apply ONLY the left preconditioner to \c x, returning \c y.
+    ///
+    /// This method only applies the left preconditioner.  This may be
+    /// required for flexible variants of Krylov methods.  If no left
+    /// preconditioner has been defined, this method just copies x
+    /// into y.
     void applyLeftPrec( const MV& x, MV& y ) const;
-    
-    //! Apply ONLY the right preconditioner to \c x, returning \c y.
-    /*! This application is only of the right preconditioner, which may be required for flexible variants
-      of Krylov methods.
-      \note This will return Undefined if the right preconditioner is not defined for this operator.
-    */
+
+    /// \brief Apply ONLY the right preconditioner to \c x, returning \c y.
+    ///
+    /// This method only applies the right preconditioner.  This may
+    /// be required for flexible variants of Krylov methods.  If no
+    /// right preconditioner has been defined, this method just copies
+    /// x into y.
     void applyRightPrec( const MV& x, MV& y ) const;
     
     //! Compute a residual \c R for this operator given a solution \c X, and right-hand side \c B.

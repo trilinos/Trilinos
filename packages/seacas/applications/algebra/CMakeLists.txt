@@ -1,8 +1,8 @@
-INCLUDE(SubPackageMacros)
-INCLUDE(PackageAddExecutable)
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddExecutable)
 INCLUDE(FortranSettings)
 
-SUBPACKAGE(Algebra)
+TRIBITS_SUBPACKAGE(Algebra)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -19,9 +19,9 @@ SET(SOURCES
    chkerr.f   ag_dbicon.f   ag_dbpini.f   dofncg.f   isize.f    makevo.f   nxttim.f   rdstep.f   show.f     uglob.f    zmfixd.f
    chkfnc.f   ag_dbielb.f   ag_dbpnam.f   doif.f     lnkfnc.f   mlist.f    opnlog.f   remel.f    shptim.f   uhist.f    zmnps.f)
 
-PACKAGE_ADD_LIBRARY(algebra_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
-PACKAGE_ADD_EXECUTABLE(algebra NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} LINKER_LANGUAGE Fortran SOURCES algebra.f DEPLIBS algebra_app_lib COMM serial)
+TRIBITS_ADD_LIBRARY(algebra_app_lib SOURCES ${SOURCES} DEPLIBS supes suplib exodus_for)
+TRIBITS_ADD_EXECUTABLE(algebra NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} LINKER_LANGUAGE Fortran SOURCES algebra.f DEPLIBS algebra_app_lib COMM serial mpi)
 install_executable(algebra)
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

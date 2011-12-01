@@ -1,11 +1,11 @@
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-PACKAGE(Shards)
+TRIBITS_PACKAGE(Shards)
 
 #
 # B) Set up package-specific options
@@ -17,18 +17,18 @@ PACKAGE(Shards)
 
 ADD_SUBDIRECTORY(src)
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # Exclude files for source package.
 #
 
-PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 #
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

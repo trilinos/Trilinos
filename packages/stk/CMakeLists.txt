@@ -1,19 +1,19 @@
 
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
 # ENABLE_SHADOWING_WARNINGS  not possible, because of TBB
-PACKAGE( STK )
+TRIBITS_PACKAGE( STK )
 
 #
 # B) Set up package-specific options
 #
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Trilinos
   HAVE_STK_Trilinos
   "Building as a Trilinos package"
@@ -69,4 +69,4 @@ ENDIF()
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

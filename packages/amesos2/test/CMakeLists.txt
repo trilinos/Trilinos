@@ -1,12 +1,12 @@
 INCLUDE(AddSubdirectories)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ADD_SUBDIRECTORIES(
   solvers
   adapters
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyMatrixTestFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMatrixTestFiles
   SOURCE_FILES ./matrices/arc130.mtx
                ./matrices/orsirr_2.mtx
                ./matrices/gemat12.mtx

@@ -54,8 +54,11 @@
 namespace Belos {
 
   /// \class AkxFactory
-  /// \brief Create and return Akx subclass instances.
   /// \author Mark Hoemmen
+  /// \brief Create and return Akx subclass instances.
+  ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
   ///
   /// This factory knows how to create various types of matrix powers
   /// kernel bases, all of which implement the Belos::Akx interface.

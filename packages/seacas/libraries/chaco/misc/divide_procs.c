@@ -11,12 +11,12 @@
 int 
 divide_procs (
     int architecture,		/* 0 => hypercube, d => d-dimensional mesh */
-    int ndims,		/* normal dimension of each cut */
+    int ndims,			/* normal dimension of each cut */
     int ndims_tot,		/* total number of hypercube dimensions */
-    struct set_info *set_info,	/* data for all sets */
-    struct set_info *set,		/* data for set being divided */
+    struct set_info *info_set,	/* data for all sets */
+    struct set_info *divide_set,/* data for set being divided */
     int *subsets,		/* subsets to be created */
-    int inert,		/* using inertial method? */
+    int inert,			/* using inertial method? */
     int *pndims_real,		/* actual ndims for this cut */
     int *pnsets_real,		/* # sets created by this cut */
     int *pstriping,		/* cut in single direction? */
@@ -35,7 +35,7 @@ divide_procs (
     int       define_submeshes(), define_subcubes();
 
     if (architecture > 0) {	/* Mesh, complicated case. */
-	nsets_real = set->span[0] * set->span[1] * set->span[2];
+	nsets_real = divide_set->span[0] * divide_set->span[1] * divide_set->span[2];
 	nsets_real = min(1 << ndims, nsets_real);
 	ndims_real = ndims;
 	while (1 << ndims_real > nsets_real)
@@ -44,12 +44,12 @@ divide_procs (
         ndim_poss = 0;
 	idims = 0;
 	for (i = 0; i < 3; i++) {
-	    if (set->span[i] >= 2) {
+	    if (divide_set->span[i] >= 2) {
 		ndim_poss++;
 		idims++;
 	    }
-	    if (set->span[i] >= 4) ndim_poss++;
-	    if (set->span[i] >= 8) ndim_poss++;
+	    if (divide_set->span[i] >= 4) ndim_poss++;
+	    if (divide_set->span[i] >= 8) ndim_poss++;
 	}
 	ndims_real = min(ndim_poss, ndims_real);
 
@@ -58,19 +58,19 @@ divide_procs (
 	}
 
 
-	flag = define_submeshes(nsets_real, architecture, mesh_dims, set,
-		      set_info, subsets, inert, &striping, cut_dirs, hops_special);
+	flag = define_submeshes(nsets_real, architecture, mesh_dims, divide_set,
+		      info_set, subsets, inert, &striping, cut_dirs, hops_special);
 	if (striping) {
 	    ndims_real = 1;
 	}
     }
 
     else if (architecture == 0) {	/* Hypercube, easy case. */
-	ndims_real = min(ndims, set->ndims);
+	ndims_real = min(ndims, divide_set->ndims);
 	nsets_real = 1 << ndims_real;
 
-	flag = define_subcubes(nsets_real, ndims_tot, ndims_real, set,
-		      set_info, subsets, inert, &striping, hops_special);
+	flag = define_subcubes(nsets_real, ndims_tot, ndims_real, divide_set,
+		      info_set, subsets, inert, &striping, hops_special);
 
 	if (striping)
 	    ndims_real = 1;

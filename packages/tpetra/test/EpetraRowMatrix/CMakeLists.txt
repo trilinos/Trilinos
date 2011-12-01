@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 SET(ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/")
 
@@ -10,7 +10,7 @@ IF (SITE STREQUAL "gabriel.sandia.gov")
 ENDIF()
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   EpetraRowMatrix_UnitTests
   SOURCES
     EpetraRowMatrix_UnitTests
@@ -20,7 +20,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraEpetraRowMatrixCopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraEpetraRowMatrixCopyFiles
   SOURCE_FILES west0067.rua mhd1280b.cua
   EXEDEPS EpetraRowMatrix_UnitTests
   )

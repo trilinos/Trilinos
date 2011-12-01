@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( ForUQTK
+TRIBITS_TPL_DECLARE_LIBRARIES( ForUQTK
   REQUIRED_LIBS_NAMES uqgen dvode-clean timing cvode gh slatec)

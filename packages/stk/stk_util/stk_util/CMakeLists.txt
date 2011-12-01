@@ -12,7 +12,7 @@ IF ( TPL_ENABLE_BoostLib )
   ADD_SUBDIRECTORY(use_cases)
 ENDIF()
 
-PACKAGE_CONFIGURE_FILE(STK_config.h)
+TRIBITS_CONFIGURE_FILE(STK_config.h)
 
 INSTALL(FILES stk_config.h DESTINATION
     ${CMAKE_INSTALL_PREFIX}/include/stk_util/)

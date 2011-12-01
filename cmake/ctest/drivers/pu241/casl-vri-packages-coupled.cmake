@@ -3,4 +3,4 @@
 #
 
 SET(Trilinos_EXTRAREPOS_FILE
-  "${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/ExtraExternalRepositories.casl_vri.cmake")
+  "${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/ExtraExternalRepositories.casl_vri.cmake")

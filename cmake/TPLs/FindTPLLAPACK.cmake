@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( LAPACK
+TRIBITS_TPL_DECLARE_LIBRARIES( LAPACK
   REQUIRED_LIBS_NAMES "lapack lapack_win32")

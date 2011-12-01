@@ -1,5 +1,5 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 # IF (Anasazi_ENABLE_Tpetra)
 # ENDIF()
@@ -9,7 +9,7 @@ INCLUDE(PackageCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../kokkos/LinAlg)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LocalMatOpExample
   SOURCES 
     LocalMatOpExample

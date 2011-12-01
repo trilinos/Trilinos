@@ -53,8 +53,8 @@ namespace {
 }
 
 void eliminate_omitted_nodes(RegionVector &part_mesh,
-			     Map &global_node_map,
-			     Map &local_node_map)
+			     IdMap &global_node_map,
+			     IdMap &local_node_map)
 {
   int offset = 0;
   int j = 0;
@@ -91,8 +91,8 @@ void eliminate_omitted_nodes(RegionVector &part_mesh,
 
   void build_reverse_node_map(Ioss::Region &global,
 			      RegionVector &part_mesh,
-			      Map &global_node_map,
-			      Map &local_node_map)
+			      IdMap &global_node_map,
+			      IdMap &local_node_map)
   {
     // Instead of using <set> and <map>, consider using a sorted vector...
     // Append all local node maps to the global node map.
@@ -167,7 +167,7 @@ void eliminate_omitted_nodes(RegionVector &part_mesh,
     // 'global id' and then 'global id' to global position. The
     // mapping is now a direct lookup instead of a lookup followed by
     // a reverse map.
-    Map::iterator cur_pos = global_node_map.begin();
+    IdMap::iterator cur_pos = global_node_map.begin();
     for (size_t p = 0; p < part_count; p++) {
       int noffset = part_mesh[p]->get_property("node_offset").get_int();
       size_t node_count = global_nodes[p].size();
@@ -176,7 +176,7 @@ void eliminate_omitted_nodes(RegionVector &part_mesh,
 
 	if (global_node > 0) {
 	if (cur_pos == global_node_map.end() || *cur_pos != global_node) {
-	  std::pair<Map::iterator, Map::iterator> iter = std::equal_range(global_node_map.begin(),
+	  std::pair<IdMap::iterator, IdMap::iterator> iter = std::equal_range(global_node_map.begin(),
 									  global_node_map.end(),
 									  global_node);
 	  if (iter.first == iter.second) {
@@ -216,7 +216,7 @@ void eliminate_omitted_nodes(RegionVector &part_mesh,
   }
 
 void build_local_element_map(RegionVector &part_mesh,
-			     Map &local_element_map)
+			     IdMap &local_element_map)
 {
   int global = 0;
   int offset = 0;
@@ -244,8 +244,8 @@ void build_local_element_map(RegionVector &part_mesh,
 }
 
 void generate_element_ids(RegionVector &part_mesh,
-			  const Map &local_element_map,
-			  Map &global_element_map)
+			  const IdMap &local_element_map,
+			  IdMap &global_element_map)
 {
   // Follow same logic as 'build_local_element_map' to ensure elements
   // are processed in same order.
@@ -266,7 +266,7 @@ void generate_element_ids(RegionVector &part_mesh,
       Ioss::ElementBlock *eb = *i++; 
       int    num_elem  = eb->get_property("entity_count").get_int();
       if (!entity_is_omitted(eb)) {
-	Map part_ids;
+	IdMap part_ids;
 	eb->get_field_data("ids", part_ids);
 
 	if (!has_map) { 

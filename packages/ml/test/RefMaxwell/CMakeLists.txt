@@ -1,15 +1,15 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Ifpack AND Trilinos_ENABLE_AztecOO)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RefMaxwell
     SOURCES cxx_main.cpp
     DEPLIBS epetra epetraext ifpack aztecoo ml
     NUM_MPI_PROCS 1
     )
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(RefMaxwell_copy
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(RefMaxwell_copy
   SOURCE_FILES coord_node.dat
                M0.dat
   	       M1.dat

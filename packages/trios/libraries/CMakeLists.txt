@@ -1,5 +1,5 @@
 
-INCLUDE(PackageMacros)
+INCLUDE(TribitsPackageMacros)
 
 ADD_SUBDIRECTORY(support)
 #ADD_SUBDIRECTORY(commsplitter)

@@ -1,5 +1,5 @@
-INCLUDE(PackageLibraryMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -12,7 +12,7 @@ SET(SOURCES "")
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   kokkosdevicepthread
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

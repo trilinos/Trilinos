@@ -861,6 +861,9 @@ namespace stk {
       /// Cache internal pointer to coordinate field
       void setCoordinatesField();
 
+      // look for omitted parts
+      void checkForPartsToAvoidWriting();
+
       // write in exodus format to given file
       void writeModel( const std::string& out_filename );
 

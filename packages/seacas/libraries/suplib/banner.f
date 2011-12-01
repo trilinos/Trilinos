@@ -32,7 +32,6 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C=======================================================================
       SUBROUTINE BANNER (NOUT, QAINFO, LINE1, LINE2, LINE3)
 C=======================================================================
-C$Id: banner.f,v 1.5 2009/03/25 12:46:01 gdsjaar Exp $
 
 C   --*** BANNER *** (ETCLIB) Print program banner
 C   --   Written by Amy Gilkey - revised 11/24/87
@@ -159,5 +158,5 @@ C   --   LENSTR - (STRLIB) Find string length
 10010  FORMAT ('Run on ', A4, '-', A2, '-', A2, ' at ', A8)
 10020  FORMAT ('Run on ', A8, ' at ', A8)
 10030  FORMAT (/,15x,
-     *   '==== Email seacas-help@sandia.gov for support ====')
+     *   '==== Email gdsjaar@sandia.gov for support ====')
       END

@@ -53,8 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( SPARSKIT
+TRIBITS_TPL_DECLARE_LIBRARIES( SPARSKIT
   REQUIRED_LIBS_NAMES "skit"
   )

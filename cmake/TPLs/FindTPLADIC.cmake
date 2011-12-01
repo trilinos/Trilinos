@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( ADIC
+TRIBITS_TPL_DECLARE_LIBRARIES( ADIC
   REQUIRED_HEADERS ad_grad.h
   REQUIRED_LIBS_NAMES ADIntrinsics-C aif_grad
   )

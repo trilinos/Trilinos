@@ -6,20 +6,22 @@
 #   - the -lz is for the compression library (commsplitter uses crc)
 #   - MPI details are in the toolchain file
 
-# Path to Trilinos source 
+# Path to Trilinos source
 TRILINOS_SRCDIR=${HOME}/research/workspace/Trilinos
-TRIOS_SRCDIR=${TRILINOS_SRCDIR}/preCopyrightTrilinos/trios
+TRIOS_SRCDIR=${TRILINOS_SRCDIR}/packages/trios
+
+rm -f CMakeCache.txt
+
+export TARGET_COMPILER=pgi
 
 # Load the appropriate bash environment
 source ${TRIOS_SRCDIR}/sampleScripts/config/cielo/loadenv.sh
 
-rm -f CMakeCache.txt
-
-TARGET_COMPILER=pgi
 TOOLCHAIN=${TRIOS_SRCDIR}/sampleScripts/config/cielo/toolchain-cnl-${TARGET_COMPILER}.cmake
 
 INSTALL_PATH=/home/raoldfi/research/support/cnl/lib/trilinos
 
+EXTRA_ARGS=$@
 
 cmake \
     -D CMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
@@ -48,6 +50,6 @@ cmake \
     -D TPL_ENABLE_Gemini:BOOL=ON \
     -D Gemini_INCLUDE_DIRS:FILEPATH="/opt/cray/gni-headers/default/include" \
 \
-    "$@" \
+    $EXTRA_ARGS \
+\
     ${TRILINOS_SRCDIR}
-

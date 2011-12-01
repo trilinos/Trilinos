@@ -1,4 +1,4 @@
-INCLUDE(PackageAddExecutableAndTest)   
+INCLUDE(TribitsAddExecutableAndTest)   
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -6,6 +6,15 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
 
 SET(SOURCES UnitTestMain.cpp UnitTestHost.cpp ../TPL/gtest/gtest-all.cc)
 SET(LIBRARIES kokkos kokkosdevicehost kokkosimpl)
+
+IF(Kokkos_ENABLE_DeviceNUMA)
+  LIST( APPEND SOURCES
+    UnitTestNUMA.cpp
+  )
+  LIST( APPEND LIBRARIES
+    kokkosdevicenuma
+  )
+ENDIF()
 
 IF(Kokkos_ENABLE_DevicePthread)
   LIST( APPEND SOURCES
@@ -47,7 +56,7 @@ IF(Kokkos_ENABLE_DeviceCuda)
   )
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   UnitTest
   SOURCES ${SOURCES}
   COMM serial mpi

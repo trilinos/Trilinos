@@ -20,6 +20,6 @@ int PMPI_File_write_at(MPI_File fh, MPI_Offset offset, void *buf,
                       MPI_Status *status)
 {
   fprintf(stderr,"%s:%d: NOT IMPLEMENTED\n",__FILE__,__LINE__);
-  return MPI_Abort((MPI_Comm)NULL, MPI_UNDEFINED); 
+  return MPI_Abort((MPI_Comm)0, MPI_UNDEFINED); 
 }
 

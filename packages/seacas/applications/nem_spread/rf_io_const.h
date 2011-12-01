@@ -42,7 +42,7 @@
 #define MAX_INPUT_STR_LN 4096   /* maximum string length for read_string()  */
 
 /* Maximum length of a filename */
-#define MAX_FNL		1024
+#define MAX_FNL		2048
 
 /* Restart structure */
 struct Restart_Description {

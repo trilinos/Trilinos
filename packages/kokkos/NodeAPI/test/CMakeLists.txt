@@ -1,7 +1,7 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NodeAPI_DefaultNodeTest
   SOURCES 
     DefaultNodeTest
@@ -12,7 +12,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS kokkosnodeapi
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SerialNodeTestAndTiming
   SOURCES 
     NodeTest
@@ -26,7 +26,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 SET(TIMING_INSTALLS Kokkos_SerialNodeTestAndTiming)
 
 IF (Kokkos_ENABLE_TBB)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TBBNodeTestAndTiming
     SOURCES 
       NodeTest
@@ -41,7 +41,7 @@ IF (Kokkos_ENABLE_TBB)
 ENDIF()
 
 IF (Kokkos_ENABLE_OpenMP)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     OpenMPNodeTestAndTiming
     SOURCES 
       NodeTest
@@ -56,7 +56,7 @@ IF (Kokkos_ENABLE_OpenMP)
 ENDIF()
 
 IF (Kokkos_ENABLE_ThreadPool)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TPINodeTestAndTiming
     SOURCES 
       NodeTest
@@ -75,7 +75,7 @@ IF (Kokkos_ENABLE_Thrust)
   set(source_files TestOps.cu)
   CUDA_COMPILE(CUDA_FILES TestOps.cu)
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ThrustGPUNodeTestAndTiming
     SOURCES 
       NodeTest

@@ -1,7 +1,7 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   ml_read_matrix_AIJ
   SOURCES ml_read_matrix_AIJ.cpp
   COMM serial mpi

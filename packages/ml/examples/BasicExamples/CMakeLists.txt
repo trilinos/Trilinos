@@ -1,29 +1,29 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   aztec_simple
   SOURCES ml_aztec_simple.c place_holder.cpp
   NUM_MPI_PROCS 1-4
   COMM serial mpi
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   operator
   SOURCES ml_operator.cpp
   NUM_MPI_PROCS 1-4
   COMM serial mpi
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   preconditioner
   SOURCES ml_preconditioner.cpp
   NUM_MPI_PROCS 1-4
   COMM serial mpi
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   readex
   SOURCES ml_readex.c place_holder.cpp
   COMM serial
@@ -31,7 +31,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   user_smoothing
   SOURCES ml_user_smoothing.cpp
   NUM_MPI_PROCS 1-4

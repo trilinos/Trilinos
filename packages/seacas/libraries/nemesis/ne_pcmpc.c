@@ -297,8 +297,8 @@ file ID %d",
     if ((status = nc_def_dim(neid, DIM_NCNT_CMAP, ncnt_cmap, &n_dimid[0])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to add dimension for \"%s\" of size %zd in file ID %d",
-	      DIM_NCNT_CMAP, ncnt_cmap, neid);
+	      "Error: failed to add dimension for \"%s\" of size %lu in file ID %d",
+	      DIM_NCNT_CMAP, (unsigned long)ncnt_cmap, neid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ne_leavedef(neid, func_name);

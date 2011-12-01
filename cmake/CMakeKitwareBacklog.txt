@@ -207,7 +207,7 @@ would not be all that hard to write in an external tool actually, but again,
 this is a feature that should go into CTest proper.
 
 
-(*) [CTest] [P2] Unit test the TrilinosCTestDriverCore.cmake script.
+(*) [CTest] [P2] Unit test the TribitsCTestDriverCore.cmake script.
 
 
 (*) [General] [P2] Set up an Official Trilinos Development Toolset that

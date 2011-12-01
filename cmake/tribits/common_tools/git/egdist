@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+
+usageHelp = r"""egdist --extra-repos=repo1,repo2,... [OPTIONS]
+
+Run eg recursively over extra repos
+
+Instead of typing
+
+   $ eg [OPTIONS]
+
+type:
+
+  $ egdist [--extra-repos=repo1,repo2,...] [OPTIONS]
+
+This will distribute git options across all git repos listed, including the
+base git repo.
+
+If --extra-repos="", then the list of extra repos will be grabbed from the file
+.egdist.
+"""
+
+import sys
+import os
+
+from optparse import OptionParser
+
+clp = OptionParser(usage=usageHelp)
+
+extraRepoName = "--extra-repos"
+
+clp.add_option(
+  extraRepoName, dest="extraRepos", type="string",
+  default="",
+  help="Coma seprated list of extra repos to forward eg commands to."
+  +"  If the list is empty, it will look for a file called .egdist to"
+  +" get the list of extra repos seprated by newlines."
+  )
+
+if len(sys.argv) == 1:
+  inArgs = []
+  otherArgs = sys.argv[1:]
+elif sys.argv[1][0:len(extraRepoName)] == extraRepoName:
+  inArgs = sys.argv[1:2]
+  otherArgs = sys.argv[2:]
+elif sys.argv[1] == "--help":
+  inArgs = ["--help"]
+  otherArgs = sys.argv[2:]
+else:
+  inArgs = []
+  otherArgs = sys.argv[1:]
+
+#print "inArgs =", inArgs
+#print "otherArgs = ", otherArgs
+
+
+(options, args) = clp.parse_args(inArgs)
+
+if options.extraRepos:
+  extraReposFullList = options.extraRepos.split(",")
+else:
+  egdistfile = ".egdist"
+  if os.path.exists(egdistfile):
+    extraReposFullList = open(egdistfile, 'r').read().split()
+  else:
+    extraReposFullList = []
+
+#
+# Helper functions
+#
+
+
+import commands
+
+
+# Get output from command
+def getCmndOutput(cmnd):
+  return commands.getstatusoutput(cmnd)[1]
+
+
+# Requote commandline arguments
+def requoteCmndLineArgs(inArgs):
+  argsStr = ""
+  for arg in inArgs:
+    splitArg = arg.split("=")
+    newArg = None
+    if len(splitArg) == 1:
+      newArg = arg
+    else:
+      newArg = splitArg[0]+"=\""+'='.join(splitArg[1:])+"\""
+    #print "\nnewArg =", newArg                                                                                 
+    argsStr = argsStr+" "+newArg
+  return argsStr
+
+
+#
+# Run the script
+# 
+
+
+# Get the terminal colors
+txtbld=getCmndOutput(r"tput bold")       # Bold
+txtblu=getCmndOutput(r"tput setaf 4")    # Blue
+txtred=getCmndOutput(r"tput setaf 1")    # Red
+txtrst=getCmndOutput(r"tput sgr0")       # Text reset
+
+# Check for valid usage
+if len(otherArgs) == 0:
+  print txtred+"Must specify eg command. See 'eg --help' for options."+txtrst
+  sys.exit(1)
+
+# Reform the commandline arguments correctly
+cmndLineArgs = requoteCmndLineArgs(otherArgs)
+
+# Get the reference base directory
+baseDir = os.getcwd()
+
+print "" 
+print "*** Git Repo: "+txtbld+txtblu+"Trilinos"+txtrst
+os.system("eg "+cmndLineArgs)
+
+for extraRepo in extraReposFullList:
+  if os.path.isdir(extraRepo):
+    print "" 
+    print "*** Git Repo: "+txtbld+txtblu+extraRepo+txtrst
+    os.chdir(extraRepo)
+    os.system("eg "+cmndLineArgs)
+    os.chdir(baseDir)
+
+print ""

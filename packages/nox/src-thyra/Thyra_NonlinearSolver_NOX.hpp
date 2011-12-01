@@ -6,6 +6,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
+#include "NOX_PrePostOperator_RowSumScaling.H"
 
 namespace NOX {
   class SolverManager;
@@ -85,6 +86,15 @@ private:
   RCP<NOX::StatusTest::Generic> 
   buildStatusTests(Teuchos::ParameterList& p);
 
+  void
+  validateAndParseThyraGroupOptions(Teuchos::ParameterList& thyra_group_sublist);
+
+  /** If row sum scaling is enabled, allocates scaling vector and
+      creates and sets the nox rePostOperator in the main parmaeter
+      list.
+  */
+  void setupRowSumScalingObjects();
+
 private:
 
   RCP<Teuchos::ParameterList> param_list_;
@@ -94,6 +104,12 @@ private:
   RCP<NOX::Thyra::Group> nox_group_;
   RCP<NOX::StatusTest::Generic> status_test_;
   RCP<NOX::Solver::Generic> solver_;
+
+  // Options
+  std::string function_scaling_;
+  bool do_row_sum_scaling_;
+  NOX::RowSumScaling::ENOX_WhenToUpdateScaling when_to_update_;
+  Teuchos::RCP< ::Thyra::VectorBase<double> > scaling_vector_;
 
 };
 
