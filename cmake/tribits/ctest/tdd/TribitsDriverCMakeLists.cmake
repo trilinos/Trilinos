@@ -84,11 +84,9 @@ set(TRIBITS_PYTHON_DIR "${TRIBITS_ROOT}/python")
 
 include(CTest)
 include(TribitsDriverSupport)
+include(TribitsConfigureCTestCustom)
 
-configure_file(
-  ${CMAKE_CURRENT_LIST_DIR}/CTestCustom.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake
-  )
+TRIBITS_CONFIGURE_CTEST_CUSTOM(${CMAKE_CURRENT_BINARY_DIR})
 
 # Function to make exactly one add_subdirectory call based on the site
 # name of the machine we're running on. By default, the subdirectory

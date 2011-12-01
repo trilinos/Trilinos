@@ -5,10 +5,10 @@ There are some important concepts that are part of the TriBITS system that
 must be clearly defined.
 
 1) Project:
-* Defines PROJECT_NAME CMake varaible
+* Defines PROJECT_NAME CMake varaible (defined in ProjectName.cmake)
 * Defines a CMake project by calling PROJECT(${PROJECT_NAME} ...)
 * Defines a set of native Repositories (see below) that define
-  packages and TPLs etc.  This set of native Repositories defines the
+  packages and TPLs.  This set of native Repositories defines the
   official packages list and dependencies data-structure.  The list
   of native Repositories can be empty!
 * Allows for extra Repositories to be added on before and after the
@@ -20,8 +20,12 @@ must be clearly defined.
     CMakeLists.txt
     CTestConfig.cmake
     ProjectName.cmake
+    Version.cmake # [Optional] Dev mode, project version
     cmake/
       tribts/  # [Optional] Could just point to installed tribits
+      ctest/
+        CTestCustom.ctest.in  # [Optional] Some custom ctest settings
+
 
 2) Repository (Collection):
 * Defines a CMake variable specific to the collection refered to the
@@ -39,11 +43,11 @@ must be clearly defined.
     PackagesList.cmake
     TPLsList.cmake
     Copyright.txt  # [Optional] Only needed if creating version header file
-    Version.cmake  # [Optional] Only needed if defining own versioning
+    Version.cmake  # [Optional] Info inserted into ${REPO_NAME}_version.h
     cmake/
-       TribitsCallBackA.cmake # [Optional] Only included once
-       TribitsCallBackB.cmake # [Optional] Only included once
-       TribitsCallBackC.cmake # [Optional] Only included once
+       CallBack<A>.cmake # [Optional] Only included once
+       CallBack<B>.cmake # [Optional] Only included once
+       CallBack<C>.cmake # [Optional] Only included once
        ...
 
 3) Package:

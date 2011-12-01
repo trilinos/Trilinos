@@ -79,6 +79,8 @@ INCLUDE(CMakeOverrides)
 
 INCLUDE(TribitsConstants)
 INCLUDE(TribitsGlobalMacros)
+INCLUDE(TribitsConfigureCTestCustom)
+
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
 INCLUDE(TimingUtils)
@@ -133,27 +135,8 @@ MACRO(TRIBITS_PROJECT_IMPL)
   IF (NOT ${PROJECT_NAME}_DEPS_HOME_DIR)
     SET(${PROJECT_NAME}_DEPS_HOME_DIR "${PROJECT_HOME_DIR}")
   ENDIF()
-
-  SET(TRIBITS_PROJECT_CALLBACK_FILE
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${${PROJECT_NAME}_TRIBITS_PROJECT_CALLBACKS_FILE})
-  IF(EXISTS ${TRIBITS_PROJECT_CALLBACK_FILE})
-    INCLUDE(${TRIBITS_PROJECT_CALLBACK_FILE})
-  ENDIF()
-
   
   TRIBITS_READ_IN_OPTIONS_FROM_FILE()
-
-  #
-  # A.1) Run misc unit tests that don't need anything else
-  #
-  # These below tests are a bit strange.  See
-  # cmake/TestingUnitTests/CMakeLists.txt for details!
-  #
-  
-  IF (${PROJECT_NAME}_INVOKE_TESTING_UNIT_TESTS)
-    ADD_SUBDIRECTORY(cmake/TestingUnitTests/UnitTests)
-    RETURN()
-  ENDIF()
   
   #
   # A.2) Set up other stuff
@@ -187,10 +170,19 @@ MACRO(TRIBITS_PROJECT_IMPL)
   
   TRIBITS_DEFINE_GLOBAL_OPTIONS()
 
-  # Call-back defined by specific project
-  IF (COMMAND ${PROJECT_NAME}_EXTRA_REPOSITORIES)
-    TRIBITS_PROJECT_SETUP_EXTRA_OPTIONS()
-  ENDIF()
+  # Define a single variable that will loop over native and extra Repositories
+  #
+  # NOTE: ${PROJECT_NAME}_EXTRA_REPOSITORIES should be defined after the above
+  # options call.
+  #
+  SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
+    ${PROJECT_NAME}_EXTRA_REPOSITORIES)
+
+  # Loop through the Repositories and run their callback functions.
+  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+    #PRINT_VAR(REPO)
+    TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS_RUNNER(${REPO})
+  ENDFOREACH()
   
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
     # Start the global timer
@@ -271,9 +263,7 @@ MACRO(TRIBITS_PROJECT_IMPL)
   
   INCLUDE(CTest)
 
-  IF (COMMAND TRIBITS_PROJECT_SETUP_TESTING_SUPPORT)
-    TRIBITS_PROJECT_SETUP_TESTING_SUPPORT()
-  ENDIF()
+  TRIBITS_CONFIGURE_CTEST_CUSTOM(${${PROJECT_NAME}_BINARY_DIR})
   
   #
   # I) Add the 'dashboard' target
@@ -298,10 +288,12 @@ MACRO(TRIBITS_PROJECT_IMPL)
   #
   # K) Setup for packaging and distribution
   #
-  
-  IF (COMMAND TRIBITS_PROJECT_DEFINE_PACKAGING)
-    TRIBITS_PROJECT_DEFINE_PACKAGING()
-  ENDIF()
+
+  # Loop through the Repositories and run their callback functions.
+  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+    #PRINT_VAR(REPO)
+    TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO})
+  ENDFOREACH()
   
   
   #

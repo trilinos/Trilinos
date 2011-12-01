@@ -412,6 +412,63 @@ ENDMACRO()
 
 
 #
+# Repository specializaiton call-back functions
+#
+# NOTE: The Tribits system promises to only include these call-back files once
+# (in order) and to only the call call-back macros they provide once (in
+# order).
+#
+
+
+MACRO(CREATE_EMPTY_TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
+  MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
+  ENDMACRO()
+ENDMACRO()
+
+
+MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS_RUNNER  REPO_NAME)
+  SET(CALLBACK_SETUP_EXTRA_OPTIONS_FILE
+    "${PROJECT_HOME_DIR}/${REPO_NAME}/cmake/CallbackSetupExtraOptions.cmake")
+  #PRINT_VAR(CALLBACK_SETUP_EXTRA_OPTIONS_FILE)
+  IF (EXISTS ${CALLBACK_SETUP_EXTRA_OPTIONS_FILE})
+    # Define the callback macros as empty in case it is not defined
+    # in this file.
+    CREATE_EMPTY_TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()
+    # Include the file which will define the callback macros
+    INCLUDE(${CALLBACK_SETUP_EXTRA_OPTIONS_FILE})
+    # Call the callback macros to inject repository-specific behavir
+    TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()
+    # Set back the callback macros to empty to ensure that nonone calls them
+    CREATE_EMPTY_TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()
+  ENDIF()
+ENDMACRO()
+
+
+MACRO(CREATE_EMPTY_TRIBITS_REPOSITORY_DEFINE_PACKAGING)
+  MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
+  ENDMACRO()
+ENDMACRO()
+
+
+MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER  REPO_NAME)
+  SET(CALLBACK_DEFINE_PACKAGING_FILE
+    "${PROJECT_HOME_DIR}/${REPO_NAME}/cmake/CallbackDefinePackaging.cmake")
+  #PRINT_VAR(CALLBACK_DEFINE_PACKAGING_FILE)
+  IF (EXISTS ${CALLBACK_DEFINE_PACKAGING_FILE})
+    # Define the callback macros as empty in case it is not defined
+    # in this file.
+    CREATE_EMPTY_TRIBITS_REPOSITORY_DEFINE_PACKAGING()
+    # Include the file which will define the callback macros
+    INCLUDE(${CALLBACK_DEFINE_PACKAGING_FILE})
+    # Call the callback macros to inject repository-specific behavir
+    TRIBITS_REPOSITORY_DEFINE_PACKAGING()
+    # Set back the callback macros to empty to ensure that nonone calls them
+    CREATE_EMPTY_TRIBITS_REPOSITORY_DEFINE_PACKAGING()
+  ENDIF()
+ENDMACRO()
+
+
+#
 # Macro that processes the list of TPLs
 #
 

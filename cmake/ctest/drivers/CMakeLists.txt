@@ -15,6 +15,7 @@ project(TrilinosDriver NONE)
 
 # The rest of the body is provided by TriBITS.
 set(TRIBITS_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../tribits)
+set(PROJECT_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 include(${TRIBITS_ROOT}/ctest/tdd/TribitsDriverCMakeLists.cmake)
 
 # Provide Trilinos-specific hooks for TRIBITS_DRIVER_SETUP,
