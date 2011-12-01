@@ -37,7 +37,7 @@ namespace {
   // 
 
   ////
-  TEUCHOS_UNIT_TEST( readHBMatrix, Bug5401_NegativeBaseIndex )
+  TEUCHOS_UNIT_TEST( Map, Bug5401_NegativeBaseIndex )
   {
     // failure reading 1x4 matrix under MPI
     typedef int                       LO;
@@ -51,7 +51,7 @@ namespace {
     TEUCHOS_TEST_FOR_EXCEPTION( numImages != 2, std::logic_error, "This test is appropriate only for MPI runs of rank 2.")
     RCP<Node>             node = getDefaultNode();
 
-    const GO numGlobalElements = 78;
+    const GO numElements = 78;
     const GO baseIndexIsNegOne = -1;
     const global_size_t GINV   = Teuchos::OrdinalTraits<global_size_t>::invalid();
     Array<int> elements(78);
@@ -61,8 +61,11 @@ namespace {
 
     RCP<Map> map = rcp(new Map(GINV, elements(), baseIndexIsNegOne, comm));
 
-    TEST_EQUALITY( map->getGlobalNumElements(), numGlobalElements );
+    TEST_EQUALITY( map->getNodeNumElements(),   numElements );
+    TEST_EQUALITY( map->getGlobalNumElements(), numElements*numImages );
     TEST_EQUALITY( map->getIndexBase(), -1 );
+    TEST_EQUALITY( map->getMinGlobalIndex(),     -1 );
+    TEST_EQUALITY( map->getMinAllGlobalIndex(),  -1 );
 
     // All procs fail if any proc fails 
     int globalSuccess_int = -1;
