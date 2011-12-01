@@ -685,11 +685,11 @@ is passed in and is successful, then 0 will be returned but that does *not*
 mean that it is okay to do a push.  A 0 return value is a necessary but not
 sufficient condition for readiness to push.
 
-"""
+"""        
 
 def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   
-  clp = OptionParser(usage=usageHelp)
+  clp = ConfigurableOptionParser(configuration, usage=usageHelp)
 
   clp.add_option(
     "--show-defaults", dest="showDefaults", action="store_true",

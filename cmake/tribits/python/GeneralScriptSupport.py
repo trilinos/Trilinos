@@ -681,6 +681,30 @@ def requoteCmndLineArgs(inArgs):
     argsStr = argsStr+" "+newArg
   return argsStr
 
+class ConfigurableOptionParser(optparse.OptionParser):
+  """
+  OptionParser that accepts a python dictionary as a configuration
+  file to provide default value overrides for the options.
+  """
+  def __init__(self, configuration, **kwargs):
+    """
+    Constructor accepts a configuration dictionary with default values
+    for arguments and all of the OptionParser arguments as well.
+    """
+    optparse.OptionParser.__init__(self, **kwargs)
+    self._configuration = configuration
+
+  def add_option(self, *args, **kwargs):
+    """
+    Checks for a default override in the configuration dictionary and
+    modifies the default and help arguments before dispatching them to
+    the base class implementation.
+    """
+    if kwargs.has_key('default'):
+      for arg in args:
+        kwargs['default'] = self._configuration.get(arg, kwargs['default'])
+    optparse.OptionParser.add_option(self, *args, **kwargs)
+
 
 ######################################
 # Debugging support

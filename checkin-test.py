@@ -8,8 +8,8 @@
 # command line arguments. These are used to add project-specific
 # defaults for the arguments that all developers should use.
 configuration = {
-    'extra-cmake-options': '-DTPL_ENABLE_Pthread:BOOL=OFF -DTPL_ENABLE_BinUtils:BOOL=OFF',
-    'send-email-to-on-push': 'trilinos-checkin-tests@software.sandia.gov',
+    '--extra-cmake-options': '-DTPL_ENABLE_Pthread:BOOL=OFF -DTPL_ENABLE_BinUtils:BOOL=OFF',
+    '--send-email-to-on-push': 'trilinos-checkin-tests@software.sandia.gov',
 }
 
 # Load the main implementation and execute.
