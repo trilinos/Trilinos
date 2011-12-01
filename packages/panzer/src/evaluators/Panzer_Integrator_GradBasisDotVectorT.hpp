@@ -20,6 +20,23 @@ PHX_EVALUATOR_CTOR(Integrator_GradBasisDotVector,p) :
   
   multiplier = p.get<double>("Multiplier");
 
+  if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) 
+  {
+    const std::vector<std::string>& field_multiplier_names = 
+      *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
+
+    for (std::vector<std::string>::const_iterator name = field_multiplier_names.begin(); 
+      name != field_multiplier_names.end(); ++name) 
+    {
+      PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+      field_multipliers.push_back(tmp_field);
+    }
+  }
+
+  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+       field != field_multipliers.end(); ++field)
+    this->addDependentField(*field);
+
   std::string n = 
     "Integrator_GradBasisDotVector: " + residual.fieldTag().name();
 
@@ -31,6 +48,10 @@ PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisDotVector,sd,fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(flux,fm);
+
+  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+       field != field_multipliers.end(); ++field)
+    this->utils.setFieldData(*field,fm);
 
   num_nodes = residual.dimension(1);
   num_qp = flux.dimension(1);
@@ -52,9 +73,18 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
     residual[i] = 0.0;
   
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+  {
     for (std::size_t qp = 0; qp < num_qp; ++qp)
+    {
+      ScalarT tmpVar = 1.0;
+      for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+           field != field_multipliers.end(); ++field)
+        tmpVar = tmpVar * (*field)(cell,qp);  
+
       for (std::size_t dim = 0; dim < num_dim; ++dim)
-	tmp(cell,qp,dim) = multiplier * flux(cell,qp,dim);
+        tmp(cell,qp,dim) = multiplier * tmpVar * flux(cell,qp,dim);
+    }
+  }
   
   if(workset.num_cells>0)
      Intrepid::FunctionSpaceTools::

@@ -15,6 +15,8 @@ PHX_EVALUATOR_CLASS(Integrator_GradBasisDotVector)
     
   PHX::MDField<ScalarT,Cell,IP,Dim> flux;
     
+  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+
   std::size_t num_nodes;
 
   std::size_t num_qp;
