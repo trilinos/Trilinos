@@ -14,8 +14,9 @@ namespace MueLu {
       Warnings1    = 0x0000040, //!< Additional warnings
       PerfWarnings = 0x0000080, //!< Performance warnings
    
-      Runtime0     = 0x0000100, //!< One-liner description of what is happening
-      Runtime1     = 0x0000200, //!< description of what is happening (more verbose)
+      Runtime0     = 0x0000100,   //!< One-liner description of what is happening
+      Runtime1     = 0x0000200,   //!< Description of what is happening (more verbose)
+      RuntimeTimings = 0x0000400, //!< Print timers on-the-go.
 
       Parameters0  = 0x0001000, //!< Print class parameters
       Parameters1  = 0x0002000, //!< Print class parameters (more parameters, more verbose)
@@ -23,8 +24,8 @@ namespace MueLu {
       Statistics0  = 0x0010000, //!< Print statistics that do not involve significant additional computation
       Statistics1  = 0x0020000, //!< Print more statistics
 
-      Timings0     = 0x0100000, //!< Print high level timing information
-      Timings1     = 0x0200000, //!< Print detailed timing information
+      Timings0     = 0x0100000, //!< Record high level timing information (use Teuchos::TimeMonitor::summarize() to print)
+      Timings1     = 0x0200000, //!< Record detailed timing information   (use Teuchos::TimeMonitor::summarize() to print)
 
       External     = 0x1000000, //!< Print external lib objects
       Debug        = 0x2000000, //!< Print additional debugging information

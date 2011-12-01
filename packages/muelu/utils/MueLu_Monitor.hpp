@@ -2,69 +2,90 @@
 #define MUELU_MONITOR_HPP
 
 #include <string>
+#include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Time.hpp>
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
 #include "MueLu_VerboseObject.hpp"
-
-//TODO: change timing default value to true
 
 namespace MueLu {
 
-  class Monitor : public BaseClass {
+  // Helper function. Similar to Teuchos::TimeMonitor::summarize().
+  ArrayRCP<double> ReduceMaxMinAvg(double localValue, Teuchos::Comm<int> const &comm, int rootNode = 0);
+
+  class MonitorBase : public BaseClass {
 
   public:
 
-    Monitor(const BaseClass& object, const std::string & descr, bool timing = false) {
-      init(object, descr + " (" + object.description() + ")", timing);
+    MonitorBase(const std::string& descr, VerbLevel verbLevel, const RCP<Teuchos::FancyOStream> & out, bool runTimer = true)
+      : descr_(descr)
+    {
+
+      SetVerbLevel(verbLevel);
+      setOStream(out);
+      
+      // Print descr
+      GetOStream(Runtime0, 0) << descr_ << std::endl;
+      // verbObject.describe(getOStream(), getVerbLevel()); //TODO
+      
+      tab_ = rcp(new Teuchos::OSTab(getOStream()));
+      
+      if (runTimer) {
+        // Start the timer
+        timer_ = Teuchos::TimeMonitor::getNewTimer("MueLu: " + descr_);
+        timeMonitor_ = rcp(new Teuchos::TimeMonitor(*timer_));
+      }
     }
 
-    ~Monitor() {
+    ~MonitorBase() {
       if (timer_ != Teuchos::null) {
-        timer_->stop();
-        //MemUtils::ReportTimeAndMemory(*timer_, comm_);
+
+        // Stop the timer
+        timeMonitor_ = Teuchos::null;
+        
+        if (IsPrint(RuntimeTimings)) {
+          //FIXME: MPI_COMM_WORLD only... BTW, it is also the case in Teuchos::TimeMonitor...
+          ArrayRCP<double> stats = ReduceMaxMinAvg(timer_->totalElapsedTime(), *Teuchos::DefaultComm<int>::getComm ());
+          
+          //FIXME: Not very important for now, but timer will be printed even if verboseLevel of Monitor/Object changed
+          //       between Monitor constructor and destructor.
+          if (GetProcRankVerbose() == 0)
+            *getOStream() << descr_ << " max=" << stats[0] << " min=" << stats[1] << " avg=" << stats[2] << std::endl;
+        }
       }
     }
 
   protected:
-    Monitor() {};
-
-    void init (const VerboseObject& verbObject, const std::string & descr, bool timing = false) {
-      // Set Monitor description
-      description_ = descr;
-
-      // Inherits the verbLevel and ostream from verbObject
-      setVerbLevel(verbObject.getVerbLevel()); // Teuchos (unused)
-      SetVerbLevel(verbObject.GetVerbLevel()); // MueLu
-      setOStream(verbObject.getOStream());
-      
-      // Print description
-      GetOStream(Runtime0, 0) << description_ << std::endl;
-      // verbObject.describe(getOStream(), getVerbLevel()); //TODO
-
-      tab_ = rcp(new Teuchos::OSTab(getOStream()));
-
-      // Start timer
-      if (timing) {
-        timer_ = rcp(new Teuchos::Time(description_));
-        timer_->start(true);
-      }
-    }
+    MonitorBase() { }
     
   private:
-    std::string description_;
-    RCP<Teuchos::Time> timer_; //TODO use TimeMonitor?
+    std::string descr_;
+
+    RCP<Teuchos::Time> timer_; // keep a reference on the timer to print stats if RuntimeTimings=ON
+    RCP<Teuchos::TimeMonitor> timeMonitor_;
+
     RCP<Teuchos::OSTab> tab_;
   };
-
-  class SubMonitor: public Monitor {
+  
+  // Main Monitor
+  // - A timer is created only if Timings0 == true
+  // - Timer is printed on the go if RuntimeTimings)) == true
+  class Monitor: public MonitorBase {
   public:
-    SubMonitor(const BaseClass& object, const std::string & descr, bool timing = false) {
-      init(object, descr, timing);
-    }
+    Monitor(const BaseClass& object, const std::string & descr) 
+      : MonitorBase(descr + " (" + object.description() + ")", object.GetVerbLevel(), object.getOStream(), object.IsPrint(Timings0))
+    { }
   };
 
-}
+  // Another version of the Monitor, that does not repeat the object descr.
+  // A timer is created only if Timings1 == true
+  class SubMonitor: public MonitorBase {
+  public:
+    SubMonitor(const VerboseObject& object, const std::string & descr, MsgType timerLevel = Timings1)
+      : MonitorBase(descr, object.GetVerbLevel(), object.getOStream(), object.IsPrint(Timings1))
+    { }
+  };
+  
+} // namespace MueLu
 
 #endif // MUELU_MONITOR_HPP
-
-// TODO       describe(GetOStream(Parameters0), getVerbLevel());
