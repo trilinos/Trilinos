@@ -64,8 +64,8 @@ import sys
 import traceback
 from optparse import OptionParser
 
-sys.path.append(
-  os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
+_THIS_REAL_PATH = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
+sys.path.append(os.path.join(_THIS_REAL_PATH, 'python'))
 from CheckinTest import *
 from GeneralScriptSupport import *
 
@@ -1123,6 +1123,45 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     return True
 
+def getConfigurationSearchPaths():
+  """
+  Gets a list of paths to search for the configuration. If this file
+  was invoked from a symlink, look in the directory that contains the
+  symlink. The returned list will always contain at least one element.
+  """
+  result = []
+  if os.path.islink(__file__):
+    # Don't use realpath here!
+    result.append(os.path.dirname(os.path.abspath(__file__)))
+  # Always append the default tribits directory structure where this file lives in
+  # <project-root>/cmake/tribits
+  result.append(os.path.join(_THIS_REAL_PATH, '..', '..'))
+  return result
+
+def locateAndLoadConfiguration(path_hints = []):
+  """
+  Locate and load a module called
+  checkin_test_project_configuration.py. The path_hints argument can
+  be used to provide location hints at which to locate the
+  file. Returns a configuration dictionary. If the module is not
+  found, this dictionary will be empty.
+  """
+  CONFIG_MODULE = 'project-checkin-test-config'
+  CONFIG_FILE = CONFIG_MODULE + ".py"
+  for path in path_hints:
+    candidate = os.path.join(path, CONFIG_FILE)
+    if os.path.exists(candidate):
+      try:
+        sys.path.append(path)
+        try:
+          return __import__(CONFIG_MODULE).configuration
+        except Exception:
+          pass
+      finally:
+        sys.path.pop()
+  return {}
+    
+
 #
 # Main
 #
@@ -1151,6 +1190,7 @@ def main(configuration = {}):
     sys.stdout = teeOutput
     sys.stderr = teeOutput
     try:
+      configuration = locateAndLoadConfiguration(getConfigurationSearchPaths())
       success = runProjectTestsWithCommandLineArgs(cmndLineArgs, configuration)
     except SystemExit, e:
       # In Python 2.4, SystemExit inherits Exception, but for proper exit

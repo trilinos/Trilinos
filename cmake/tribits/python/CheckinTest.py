@@ -1614,7 +1614,7 @@ def checkinTest(baseDir, inOptions):
   print "*** Performing checkin testing of %s ***" % inOptions.projectName
   print "**********************************************"
 
-  scriptsDir = baseDir
+  scriptsDir = os.path.join(baseDir, 'python')
   #print "\nscriptsDir =", scriptsDir
   setattr(inOptions, "scriptsDir", scriptsDir)
 

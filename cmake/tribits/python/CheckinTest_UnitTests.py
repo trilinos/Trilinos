@@ -605,7 +605,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     
     cmndArgs = [
-      scriptsDir + "/CheckinTestImpl.py",
+      scriptsDir + "/../checkin-test.py",
       "--project-name=Trilinos",
       "--no-eg-git-version-check",
       "--src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos",
