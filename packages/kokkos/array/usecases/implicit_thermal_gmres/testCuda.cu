@@ -67,7 +67,7 @@ namespace Test {
 
 void test_Cuda(int beg, int end, int runs)
 {
-  MiniImplTherm<double, Kokkos::DeviceCuda >::driver( "CUDA-double" , beg , end , runs );
+//  MiniImplTherm<double, Kokkos::DeviceCuda >::driver( "CUDA-double" , beg , end , runs );
   MiniImplTherm<float,  Kokkos::DeviceCuda >::driver( "CUDA-float" , beg , end , runs );
 }
 
