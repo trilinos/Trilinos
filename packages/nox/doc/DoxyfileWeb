@@ -53,7 +53,7 @@ INPUT                 += ../src-loca/src-lapack
 INPUT                 += ../src-loca/src-epetra
 INPUT                 += ../src-loca/src-thyra
 
-FILE_PATTERNS          = *.H *.C
+FILE_PATTERNS          = *.H *.C *.hpp *.cpp
 
 TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
 TAGFILES              += ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html
