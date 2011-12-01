@@ -182,10 +182,7 @@ namespace MueLu {
     //because aggregates can span processors.
     rowMapForPtent = fineA.getRowMap();
 
-    // FIXME This should really be Xpetra::StaticProfile, but something is causing that to crash.
-    // I have no idea why this is the case. -CMS.
     Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
-    //Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::DynamicProfile));
 
     // Set up storage for the rows of the local Qs that belong to other processors.
     // FIXME This is inefficient and could be done within the main loop below with std::vector's.
