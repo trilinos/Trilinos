@@ -49,6 +49,7 @@ namespace Zoltan2{
 
 template <typename Adapter>
 void AlgPTScotch(
+  const size_t nParts,
   const RCP<GraphModel<Adapter> > &model, 
   RCP<PartitioningSolution<typename Adapter::gid_t, 
                            typename Adapter::lid_t,
@@ -74,7 +75,6 @@ void AlgPTScotch(
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr = 0;
-  size_t nParts = comm->getSize();  // TODO read from params later.
   const SCOTCH_Num partnbr = nParts;
 
 #ifdef HAVE_MPI
@@ -152,9 +152,6 @@ void AlgPTScotch(
   if (ierr) {
     KDD_HANDLE_ERROR;
   }
-
-  // Have enough info to create the solution now.
-  solution = rcp(new PartitioningSolution<gid_t,lid_t,lno_t>(nParts, nVtx, 0));
 
   // Create array for Scotch to return results in.
   SCOTCH_Num *partloctab;

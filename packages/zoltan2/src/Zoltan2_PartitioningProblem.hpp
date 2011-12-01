@@ -75,12 +75,24 @@ void PartitioningProblem<Adapter>::solve()
 {
   HELLO;
 
+  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::lid_t lid_t;
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::lno_t lno_t;
+
+  // Create the solution.
+  // TODO:  For now, assume nParts = nProcessors. Should read from params.
+  size_t nParts = this->comm_->getSize();  // TODO read from params later.
+
   try {
 
     // Determine which algorithm to use based on defaults and parameters.
-    // For now, assuming Scotch graph partitioning.
 
-    AlgPTScotch<Adapter>(this->graphModel_, this->solution_, this->params_,
+    // For now, assuming Scotch graph partitioning.
+    size_t nVtx = this->graphModel_->getLocalNumVertices();
+    this->solution_ = rcp(new PartitioningSolution<gid_t,lid_t,lno_t>(nParts, nVtx, 0));
+
+    AlgPTScotch<Adapter>(nParts, this->graphModel_, this->solution_, this->params_,
                          this->comm_, this->env_);
   }
   Z2_FORWARD_EXCEPTIONS;
