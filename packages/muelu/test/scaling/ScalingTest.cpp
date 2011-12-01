@@ -60,8 +60,11 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include "MueLu_UseShortNames.hpp"
 
 int main(int argc, char *argv[]) {
-  using Teuchos::RCP;
+  using Teuchos::RCP; using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
 
+  RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
+  
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
@@ -69,11 +72,6 @@ int main(int argc, char *argv[]) {
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
-
-  // Timing
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::Array<Teuchos::RCP<Teuchos::Time> > mtime;
 
   //out->setOutputToRootOnly(-1);
   //out->precision(12);
@@ -95,7 +93,7 @@ int main(int argc, char *argv[]) {
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
-  LO maxLevels = 10;
+  LO maxLevels = 10; //was 3 in simple
   LO its=10;
   std::string smooType="sgs";
   int pauseForDebugger=0;
@@ -107,7 +105,7 @@ int main(int argc, char *argv[]) {
   Scalar SADampingFactor=4./3;
   double tol = 1e-7;
   std::string aggOrdering = "natural";
-  int minPerAgg=2;
+  int minPerAgg=2; //was 3 in simple
   int maxNbrAlreadySelected=0;
 
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
@@ -143,102 +141,116 @@ int main(int argc, char *argv[]) {
 
   if (comm->getRank() == 0) {
     std::cout << xpetraParameters << matrixParameters;
-    // TODO: print custom parameters
+    // TODO: print custom parameters // Or use paramList::print()!
   }
 
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
-  mtime.push_back(M.getNewTimer("Matrix Build"));
-  (mtime.back())->start();
-  const RCP<const Map> map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
-  mtime.back()->stop();
+  RCP<const Map> map;
+  RCP<Operator> Op;
+  {
+    TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build"));
+   
+    map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
+    Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  }
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
+  // dump matrix to file
+  //std::string fileName = "Amat.mm";
+  //Utils::Write(fileName,Op);
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
   Teuchos::Array<ST::magnitudeType> norms(1);
 
-  mtime.push_back(M.getNewTimer("MueLu Setup"));
-  mtime.back()->start();
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
-  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-
-  RCP<MueLu::Level> Finest = H->GetLevel();
-  Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",Op);
-  Finest->Set("Nullspace",nullSpace);
-
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  *out << "========================= Aggregate option summary  =========================" << std::endl;
-  *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
-  *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  UCAggFact->SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
-  UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-  std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
-  if (aggOrdering == "natural") {
-       *out << "aggregate ordering :                    NATURAL" << std::endl;
-       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-  } else if (aggOrdering == "random") {
-       *out << "aggregate ordering :                    RANDOM" << std::endl;
-       UCAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
-  } else if (aggOrdering == "graph") {
-       *out << "aggregate ordering :                    GRAPH" << std::endl;
-       UCAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
-  } else {
-    std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
-    throw(MueLu::Exceptions::RuntimeError(msg));
-  }
-  UCAggFact->SetPhase3AggCreation(0.5);
-  *out << "=============================================================================" << std::endl;
-
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
-
-  RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
-  Pfact->SetDampingFactor(SADampingFactor);
-  RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
-  RCP<RFactory>         Rfact = rcp( new TransPFactory());
-  if (!useExplicitR) {
-    H->SetImplicitTranspose(true);
-    Acfact->SetImplicitTranspose(true);
-    if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
-  }
-  H->SetMaxCoarseSize((GO) maxCoarseSize);
-
-  RCP<SmootherPrototype> smooProto;
-  std::string ifpackType;
-  Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: sweeps", (LO) sweeps);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  if (smooType == "sgs") {
-    ifpackType = "RELAXATION";
-    ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  } else if (smooType == "cheby") {
-    ifpackType = "CHEBYSHEV";
-    ifpackList.set("chebyshev: degree", (LO) sweeps);
-    ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
-    ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
-    ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
-    ifpackList.set("chebyshev: zero starting solution", true);
-  }
-
-  smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
-  RCP<SmootherFactory> SmooFact;
-  if (maxLevels > 1) 
-    SmooFact = rcp( new SmootherFactory(smooProto) );
-  Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+  nullSpace->norm1(norms);
+  if (comm->getRank() == 0)
+    std::cout << "||NS|| = " << norms[0] << std::endl;
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
-  mtime.back()->stop();
+  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H;
+  {
+    TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup"));
+
+    H = rcp( new Hierarchy() );
+    H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
+    RCP<MueLu::Level> Finest = H->GetLevel();
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    Finest->Set("A",Op);
+    Finest->Set("Nullspace",nullSpace);
+
+    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+    *out << "========================= Aggregate option summary  =========================" << std::endl;
+    *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
+    *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
+    UCAggFact->SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
+    UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+    std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
+    if (aggOrdering == "natural") {
+      *out << "aggregate ordering :                    NATURAL" << std::endl;
+      UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    } else if (aggOrdering == "random") {
+      *out << "aggregate ordering :                    RANDOM" << std::endl;
+      UCAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
+    } else if (aggOrdering == "graph") {
+      *out << "aggregate ordering :                    GRAPH" << std::endl;
+      UCAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+    } else {
+      std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
+      throw(MueLu::Exceptions::RuntimeError(msg));
+    }
+    UCAggFact->SetPhase3AggCreation(0.5);
+    *out << "=============================================================================" << std::endl;
+
+    RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+
+    RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
+    Pfact->SetDampingFactor(SADampingFactor);
+    RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
+    RCP<RFactory>         Rfact = rcp( new TransPFactory());
+    if (!useExplicitR) {
+      H->SetImplicitTranspose(true);
+      Acfact->SetImplicitTranspose(true);
+      if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
+    }
+    H->SetMaxCoarseSize((GO) maxCoarseSize);
+
+    RCP<SmootherPrototype> smooProto;
+    std::string ifpackType;
+    Teuchos::ParameterList ifpackList;
+    ifpackList.set("relaxation: sweeps", (LO) sweeps);
+    ifpackList.set("relaxation: damping factor", (SC) 1.0);
+    if (smooType == "sgs") {
+      ifpackType = "RELAXATION";
+      ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+    } else if (smooType == "cheby") {
+      ifpackType = "CHEBYSHEV";
+      ifpackList.set("chebyshev: degree", (LO) sweeps);
+      ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
+      ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
+      ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
+      ifpackList.set("chebyshev: zero starting solution", true);
+    }
+
+    smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+    RCP<SmootherFactory> SmooFact;
+    if (maxLevels > 1) 
+      SmooFact = rcp( new SmootherFactory(smooProto) );
+    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+    status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
+
+  } // end of Setup TimeMonitor
+
   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
 
   Teuchos::ParameterList amesosList;
-  amesosList.set("PrintTiming",true);
+  amesosList.set("PrintTiming", true);
   RCP<DirectSolver> coarseProto = rcp( new DirectSolver("", amesosList) );
   SmootherFactory coarseSolveFact(coarseProto);
 
@@ -264,132 +276,116 @@ int main(int argc, char *argv[]) {
     {
       X->putScalar( (SC) 0.0);
 
-      mtime.push_back(M.getNewTimer("Fixed Point Solve"));
-      mtime.back()->start();
+      TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 3 - Fixed Point Solve"));
+
       H->Iterate(*RHS,its,*X);
-      mtime.back()->stop();
   
       //X->norm2(norms);
       //*out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
     }
-  } //if (fixedPt)
+  } // if (fixedPt)
 #endif //ifdef AMG_SOLVER
 
   // Use AMG as a preconditioner in Belos
   if (amgAsPrecond && lib == Xpetra::UseTpetra)
-  {
+    {
 #if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA)
 #define BELOS_SOLVER
 #endif
 
 #ifdef BELOS_SOLVER
 
-    X->putScalar( (SC) 0.0);
+      X->putScalar( (SC) 0.0);
 
-    int numrhs=1;  
-    RCP<MultiVector> resid = MultiVectorFactory::Build(map,numrhs); 
+      int numrhs=1;  
+      RCP<MultiVector> resid = MultiVectorFactory::Build(map,numrhs); 
 
-    typedef ST::magnitudeType                 MT;
-    typedef Tpetra::MultiVector<SC,LO,GO,NO>  MV;
-    typedef Belos::OperatorT<MV>              OP;
+      typedef ST::magnitudeType                 MT;
+      typedef Tpetra::MultiVector<SC,LO,GO,NO>  MV;
+      typedef Belos::OperatorT<MV>              OP;
 
-    // Vectors  
-    RCP<MV> belosX     = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(X);
-    RCP<MV> belosRHS   = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(RHS);
-    RCP<MV> belosResid = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(resid);
+      // Vectors  
+      RCP<MV> belosX     = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(X);
+      RCP<MV> belosRHS   = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(RHS);
+      RCP<MV> belosResid = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(resid);
 
-    // Construct a Belos LinearProblem object
-    RCP<OP> belosOp   = rcp (new Belos::XpetraOp<SC,LO,GO,NO,LMO>(Op) );   // Turns a Xpetra::Operator object into a Belos 'OP'
-    RCP<OP> belosPrec = rcp( new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H) ); // Turns a MueLu::Hierarchy  object into a Belos 'OP'
+      // Construct a Belos LinearProblem object
+      RCP<OP> belosOp   = rcp (new Belos::XpetraOp<SC,LO,GO,NO,LMO>(Op) ); // Turns a Xpetra::Operator object into a Belos 'OP'
+      RCP<OP> belosPrec = rcp( new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H) );   // Turns a MueLu::Hierarchy  object into a Belos 'OP'
 
-    RCP<Belos::LinearProblem<double,MV,OP> > problem = rcp( new Belos::LinearProblem<double,MV,OP>( belosOp, belosX, belosRHS ) );
+      RCP<Belos::LinearProblem<double,MV,OP> > problem = rcp( new Belos::LinearProblem<double,MV,OP>( belosOp, belosX, belosRHS ) );
 
-    problem->setLeftPrec( belosPrec );
+      problem->setLeftPrec( belosPrec );
     
-    bool set = problem->setProblem();
-    if (set == false) {
-      *out << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-      return EXIT_FAILURE;
-    }
-    
-    // Create an iterative solver manager.
-
-    // Belos parameter list
-    int maxiters = 100;
-    Teuchos::ParameterList belosList;
-    belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
-    belosList.set("Output Frequency",1);
-    belosList.set("Output Style",Belos::Brief);
-    belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
-    //belosList.set( "Verbosity", Belos::TimingDetails + Belos::StatusTestDetails);
-
-    RCP< Belos::SolverManager<SC,MV,OP> > solver = rcp( new Belos::BlockCGSolMgr<SC,MV,OP>(problem, rcp(&belosList,false)) );
-    
-    Belos::ReturnType ret;
-    bool badRes = false;
-
-    try{
-      // Perform solve
-      mtime.push_back(M.getNewTimer("Belos Solve"));
-      mtime.back()->start();
-      ret = solver->solve();
-      mtime.back()->stop();
-
-      // Get the number of iterations for this solve.
-      int numIters = solver->getNumIters();
-      *out << "Number of iterations performed for this solve: " << numIters << std::endl;
-    
-      // Compute actual residuals.
-      std::vector<double> actual_resids( numrhs ); //TODO: double?
-      std::vector<double> rhs_norm( numrhs );
-
-      typedef Belos::OperatorTraits<SC,MV,OP>  OPT;
-      typedef Belos::MultiVecTraits<SC,MV>     MVT;
-      
-      OPT::Apply( *belosOp, *belosX, *belosResid );
-      MVT::MvAddMv( -1.0, *belosResid, 1.0, *belosRHS, *belosResid );
-      MVT::MvNorm( *belosResid, actual_resids );
-      MVT::MvNorm( *belosRHS, rhs_norm );
-      *out<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
-      for ( int i=0; i<numrhs; i++) {
-        double actRes = actual_resids[i]/rhs_norm[i];
-        *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-        if (actRes > tol) { badRes = true; }
+      bool set = problem->setProblem();
+      if (set == false) {
+        *out << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+        return EXIT_FAILURE;
       }
-    } //try
-    catch(...) {
-      *out << std::endl << "ERROR:  Belos threw an error! " << std::endl;
-    }
-
-    // Check convergence
-    if (ret!=Belos::Converged || badRes) {
-      *out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-    } else
-      *out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-#endif 
-  } //if (amgAsPrecond)
-
-  // Final summaries - this eats memory like a hot dog eating contest
-  // M.summarize();
     
-  int ntimers=mtime.size();
-  Teuchos::ArrayRCP<double> lTime(ntimers);
-  Teuchos::ArrayRCP<double> gTime(ntimers);
+      // Create an iterative solver manager.
 
-  for(int i=0;i<ntimers;i++) lTime[i]=mtime[i]->totalElapsedTime();
+      // Belos parameter list
+      int maxiters = 100;
+      Teuchos::ParameterList belosList;
+      belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
+      belosList.set("Output Frequency",1);
+      belosList.set("Output Style",Belos::Brief);
+      belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
+      //belosList.set( "Verbosity", Belos::TimingDetails + Belos::StatusTestDetails);
 
-  // Allreduce is my friend.
-#ifdef HAVE_MPI
-  MPI_Allreduce(&*lTime,&*gTime,ntimers,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
-#else
-  for(int i=0;i<ntimers;i++) gTime[i] = lTime[i];
-#endif
+      RCP< Belos::SolverManager<SC,MV,OP> > solver = rcp( new Belos::BlockCGSolMgr<SC,MV,OP>(problem, rcp(&belosList,false)) );
+    
+      Belos::ReturnType ret;
+      bool badRes = false;
 
-  for(int i=0;i<ntimers;i++) *out<<mtime[i]->name()<<": \t"<<gTime[i]<<std::endl;
+      try {
 
-  *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
+        {
+          TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 3 - Belos Solve"));
+          // Perform solve
+          ret = solver->solve();
+        } // end of TimeMonitor
 
+        // Get the number of iterations for this solve.
+        int numIters = solver->getNumIters();
+        *out << "Number of iterations performed for this solve: " << numIters << std::endl;
+    
+        // Compute actual residuals.
+        std::vector<double> actual_resids( numrhs ); //TODO: double?
+        std::vector<double> rhs_norm( numrhs );
+
+        typedef Belos::OperatorTraits<SC,MV,OP>  OPT;
+        typedef Belos::MultiVecTraits<SC,MV>     MVT;
+      
+        OPT::Apply( *belosOp, *belosX, *belosResid );
+        MVT::MvAddMv( -1.0, *belosResid, 1.0, *belosRHS, *belosResid );
+        MVT::MvNorm( *belosResid, actual_resids );
+        MVT::MvNorm( *belosRHS, rhs_norm );
+        *out<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+        for ( int i=0; i<numrhs; i++) {
+          double actRes = actual_resids[i]/rhs_norm[i];
+          *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+          if (actRes > tol) { badRes = true; }
+        }
+      } //try
+      catch(...) {
+        *out << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+      }
+
+      // Check convergence
+      if (ret!=Belos::Converged || badRes) {
+        *out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+      } else
+        *out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+#endif 
+    } //if (amgAsPrecond)
+
+  // Timer final summaries
+  globalTimeMonitor = Teuchos::null; // stop this timer before summary
+  TimeMonitor::summarize();
+    
   return EXIT_SUCCESS;
 }
 
