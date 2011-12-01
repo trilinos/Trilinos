@@ -2,6 +2,8 @@
 #define __Panzer_ResponseAggregator_Manager_hpp__
 
 #include "Panzer_ResponseAggregatorBase.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 #include "Phalanx_TemplateManager.hpp"
 
@@ -12,6 +14,10 @@ class ResponseAggregator_Manager {
 public:
    typedef PHX::TemplateManager<typename TraitsT::EvalTypes,ResponseAggregatorBase<TraitsT>,ResponseAggregator<_,TraitsT> >
            AggregatorManager;
+
+   ResponseAggregator_Manager(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+                              const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
+      : globalIndexer_(ugi), linObjFactory_(lof) {}
 
    /** Statically access an aggregator of a particular type
      *
@@ -57,6 +63,12 @@ public:
      */
    const AggregatorManager & getAggregatorManager(const std::string & type) const;
 
+   Teuchos::RCP<LinearObjFactory<TraitsT> > getLinearObjFactory() const
+   { return linObjFactory_; }
+
+   Teuchos::RCP<UniqueGlobalIndexer<int,int> > getGlobalIndexer() const
+   { return globalIndexer_; }
+
 
    /** Add a set of panzer defined aggregators to the default aggregator manager.
      * In paricular the aggregator "Functional" is added as a Residual evaluator.
@@ -65,6 +77,12 @@ public:
 private:
 
    std::map<std::string,Teuchos::RCP<AggregatorManager> > aggregators_;
+
+   Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
+   Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
+
+   ResponseAggregator_Manager();
+   ResponseAggregator_Manager(const ResponseAggregator_Manager &);
 };
 
 } // end namespace panzer

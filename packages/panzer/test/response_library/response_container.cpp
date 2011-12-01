@@ -61,7 +61,7 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
   RCP<WorksetContainer> wkstContainer = Teuchos::rcp(new WorksetContainer);
 
   RCP<ResponseLibrary<Traits> > rLibrary 
-        = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer));
+        = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer,Teuchos::null,Teuchos::null));
   rLibrary->defineDefaultAggregators();
 
   RCP<ResponseContainerBase<Traits> > container

@@ -252,7 +252,7 @@ namespace panzer_stk {
     // build response library
     /////////////////////////////////////////////////////////////
 
-    m_response_library = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer));
+    m_response_library = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
     m_response_library->defineDefaultAggregators();
     addVolumeResponses(*m_response_library,*mesh,volume_responses);
 
@@ -613,9 +613,10 @@ namespace panzer_stk {
         const std::list <std::string> & eTypes = respItr->second.second.second;
 
         // sanity check for valid element blocks
-        for(std::list<std::string>::const_iterator itr=eBlocks.begin();itr!=eBlocks.end();itr++)
+        for(std::list<std::string>::const_iterator itr=eBlocks.begin();itr!=eBlocks.end();itr++) {
            TEUCHOS_TEST_FOR_EXCEPTION(std::find(validEBlocks.begin(),validEBlocks.end(),*itr)==validEBlocks.end(),Teuchos::Exceptions::InvalidParameterValue,
                               "Invalid element block \""+(*itr)+"\" specified for response labeled \""+label+"\"."); 
+        }
 
         rLibrary.reserveLabeledVolumeResponse(label,rid,eBlocks,eTypes);
      }

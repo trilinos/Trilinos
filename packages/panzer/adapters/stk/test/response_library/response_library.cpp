@@ -158,7 +158,7 @@ namespace panzer {
     ResponseId dResp  = buildResponse("Dog","Functional");
     ResponseId hResp  = buildResponse("Horse","Functional");
     RCP<ResponseLibrary<Traits> > rLibrary 
-          = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer));
+          = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer,dofManager,lof));
     rLibrary->defineDefaultAggregators();
   
     out << "reserving responses" << std::endl;

@@ -7,6 +7,8 @@
 #include <vector>
 
 #include "Panzer_Response.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -40,6 +42,42 @@ public:
    //! Is this field contain in the response data
    virtual bool contains(const std::string & field) const = 0;
 
+   //! Get a vector of fields in this data object
+   virtual const std::vector<std::string> & getFields() const = 0;
+
+   //! Set a vector of fields in this data object
+   virtual void setFields(const std::vector<std::string> & fields) = 0;
+};
+
+/** A default implementation that handles basic field string management
+  */
+template <typename TraitsT>
+class ResponseDataDefault : public ResponseData<TraitsT> {
+public:
+   virtual ~ResponseDataDefault() {}
+
+   //! Is this field contain in the response data
+   virtual bool contains(const std::string & field) const
+   { return this->fieldIndex(field)<fields_.size(); }
+   
+   //! Get a vector of fields in this data object
+   virtual const std::vector<std::string> & getFields() const
+   { return fields_; }
+
+   //! Set a vector of fields in this data object
+   virtual void setFields(const std::vector<std::string> & fields) 
+   { fields_ = fields; }
+
+   //! Get field index
+   std::size_t fieldIndex(const std::string & field) const
+   {
+      std::vector<std::string>::const_iterator itr 
+            = std::find(fields_.begin(),fields_.end(),field);
+      return itr-fields_.begin();
+   }
+
+private:
+   std::vector<std::string> fields_; // Storing fields in this data object
 };
 
 template <typename TraitsT>
@@ -63,15 +101,25 @@ public:
    //! Aggregate a set of responses locally
    virtual void aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const = 0;
 
-   //! Aggregate fields into a data object
-   virtual void evaluateFields(panzer::Workset & wkst,ResponseData<TraitsT> & data,
-                               const std::vector<PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> > & fields) const = 0;
+   virtual void setGlobalIndexer(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi) = 0;
+
+   virtual void setLinearObjFactory(const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof) = 0;
 };
 
 template <typename EvalT,typename TraitsT>
 class ResponseAggregator : public ResponseAggregatorBase<TraitsT> {
 public:
    virtual ~ResponseAggregator() {}
+
+   virtual void setGlobalIndexer(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi)
+   { globalIndexer_ = ugi; }
+
+   virtual void setLinearObjFactory(const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
+   { linObjFactory_ = lof; }
+
+private:
+   Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
+   Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
 };
 
 }

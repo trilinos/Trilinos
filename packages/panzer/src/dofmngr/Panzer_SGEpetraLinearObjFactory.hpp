@@ -37,7 +37,8 @@ class SGEpetraLinearObjFactory : public LinearObjFactory<Traits> {
 public:
 
    SGEpetraLinearObjFactory(const Teuchos::RCP<EpetraLinearObjFactory<Traits,LocalOrdinalT> > & epetraFact,
-                            const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion);
+                            const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion,
+                            const Teuchos::RCP<const EpetraExt::MultiComm> & globalMultiComm);
 
    virtual ~SGEpetraLinearObjFactory();
 
@@ -118,23 +119,22 @@ public:
    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > getExpansion()
    { return expansion_; }
 
-   //! Set Orthog poly for this object, this serves as a template for converting vectors to block vectors
-   void setVectorOrthogPolyMaster(const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> & vecOrthogPoly)
-   { vecOrthogPoly_ = vecOrthogPoly; }
-   
    //! Set orthog poly object, this serves as a template for converting vectors to block vectors
-   Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> getVectorOrthogPoly() const
-   { TEUCHOS_TEST_FOR_EXCEPTION(vecOrthogPoly_==Teuchos::null,std::logic_error,
-                        "SGEpetraLinearObjFactory::getVectorOrthogPoly: Vector orthogonal poly object has not been set!");
-     return Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(*vecOrthogPoly_)); }
+   Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> getVectorOrthogPoly() const;
 
    //! get the map from the matrix, this is the map for the solution vector
    Teuchos::RCP<const Epetra_Map> getMap();
 
+   //! get the block map needed by Stokhos to describe the parallel layout of the SG unknowns
+   Teuchos::RCP<const Epetra_Map> getSGBlockMap() const;
+
 protected:
+
    Teuchos::RCP<EpetraLinearObjFactory<Traits,LocalOrdinalT> > epetraFact_;
    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion_;
-   Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> vecOrthogPoly_; // this is probably unneccessary waste of space
+   Teuchos::RCP<const EpetraExt::MultiComm> globalMultiComm_;
+
+   mutable Teuchos::RCP<const Epetra_Map> sgBlockMap_; // constructed via lazy evaluation
 };
 
 }

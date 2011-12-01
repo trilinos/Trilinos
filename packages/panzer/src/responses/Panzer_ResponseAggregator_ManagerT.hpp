@@ -96,6 +96,8 @@ defineDefaultAggregators(ResponseAggregator_Manager<TraitsT> & aggMngr)
    // add functional aggregator
    {
       ResponseFunctional_Aggregator_Builder builder;
+      builder.setLinearObjFactory(aggMngr.getLinearObjFactory());
+      builder.setGlobalIndexer(aggMngr.getGlobalIndexer());
       aggMngr.defineAggregatorTypeFromBuilder("Functional",builder);
    }
 }

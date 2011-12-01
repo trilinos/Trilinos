@@ -32,6 +32,7 @@ APPEND_SET(HEADERS
   Panzer_AssemblyEngine_InArgs.hpp
   Panzer_AssemblyEngine_TemplateBuilder.hpp
   Panzer_AssemblyEngine_TemplateManager.hpp
+  Panzer_Base.hpp
   Panzer_Basis.hpp
   Panzer_BasisValues.hpp
   Panzer_BasisValuesT.hpp
@@ -83,7 +84,10 @@ APPEND_SET(HEADERS
   Panzer_ParameterList_ObjectBuilders.hpp
   Panzer_PauseToAttach.hpp
   Panzer_PhysicsBlock.hpp
+  Panzer_Shards_Utilities.hpp
+  Panzer_StlMap_Utilities.hpp
   Panzer_String_Utilities.hpp
+  Panzer_Traits.hpp
   Panzer_Version.hpp
   Panzer_Workset.hpp
   Panzer_Workset_Builder.hpp
@@ -120,12 +124,16 @@ APPEND_SET(HEADERS
   evaluators/Panzer_DOFGradientT.hpp
   evaluators/Panzer_GatherSolution_Epetra.hpp
   evaluators/Panzer_GatherSolution_EpetraT.hpp
+  evaluators/Panzer_GatherOrientation.hpp
+  evaluators/Panzer_GatherOrientationT.hpp
   evaluators/Panzer_GlobalStatistics.hpp
   evaluators/Panzer_GlobalStatisticsT.hpp
   evaluators/Panzer_Integrator_BasisTimesScalar.hpp
   evaluators/Panzer_Integrator_BasisTimesScalarT.hpp
   evaluators/Panzer_Integrator_GradBasisDotVector.hpp
   evaluators/Panzer_Integrator_GradBasisDotVectorT.hpp
+  evaluators/Panzer_Integrator_Scalar.hpp
+  evaluators/Panzer_Integrator_ScalarT.hpp
   evaluators/Panzer_Normals.hpp
   evaluators/Panzer_NormalsT.hpp
   evaluators/Panzer_ScalarToVector.hpp

@@ -119,9 +119,6 @@ namespace panzer {
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary =
-      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer));
-
     // build DOF Manager
     /////////////////////////////////////////////////////////////
  
@@ -135,6 +132,9 @@ namespace panzer {
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
           = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
+      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
@@ -333,8 +333,6 @@ namespace panzer {
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
-    RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer));
-
     // build DOF Manager
     /////////////////////////////////////////////////////////////
  
@@ -349,8 +347,12 @@ namespace panzer {
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
           = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
     Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sgLinObjFactory
-          = Teuchos::rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,int>(eLinObjFactory,sgExpansion));
+          = Teuchos::rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,int>(eLinObjFactory,sgExpansion,Teuchos::null));
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = sgLinObjFactory;
+
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
+      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
+
 
     // setup field manager build
     /////////////////////////////////////////////////////////////

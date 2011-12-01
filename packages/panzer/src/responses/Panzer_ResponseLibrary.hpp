@@ -10,6 +10,7 @@
 
 #include "Phalanx_FieldManager.hpp"
 
+#include "Panzer_config.hpp"
 #include "Panzer_Response.hpp"
 #include "Panzer_ResponseAggregator_Manager.hpp"
 #include "Panzer_ResponseAggregatorBase.hpp"
@@ -20,6 +21,8 @@
 #include "Panzer_PhysicsBlock.hpp"
 
 #include "Panzer_WorksetContainer.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
 namespace panzer {
 
@@ -43,7 +46,9 @@ class ResponseLibrary {
 public:
    typedef typename TraitsT::EvalTypes TypeSeq;
 
-   ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc); 
+   ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
+                   const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+                   const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof); 
 
    /** Asks, does this string correspond to a response type
      * in this library?
@@ -203,6 +208,9 @@ private:
 
    //! Maps from a "label"->(ResponseId,List of Element Blocks)
    std::map<std::string,ResponseDescriptor> labeledResponses_;
+
+   Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
+   Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
 
    ResponseLibrary();  // hide default constructor
 };

@@ -48,20 +48,18 @@ buildResponseData(const std::vector<std::string> & fields) const
 
 //! Build an evaluator ofr the set of fields to be aggregated (calculated) together
 template <typename TraitsT>
-void
-ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>::
+void ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>::
 registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<ResponseData<TraitsT> > & data,
                              const Teuchos::ParameterList & p) const
 {
-   Teuchos::RCP<ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> > func_data 
-      = Teuchos::rcp_dynamic_cast<ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> >(data);
+   typedef ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT> ThisType;
 
    // build useful evaluator
    Teuchos::RCP<PHX::Evaluator<TraitsT> > eval = Teuchos::rcp(
-         new ResponseScatterEvaluator<panzer::Traits::Residual,TraitsT>("Functional Response",
+         new ResponseScatterEvaluator<panzer::Traits::Residual,TraitsT,ThisType>("Functional Response",
                                                                         data,
                                                                         Teuchos::rcpFromRef(*this),
-                                                                        func_data->getFields(),
+                                                                        data->getFields(),
                                                                         p.get<int>("Workset Size")));
 
    // add and require fields from aggregator constructed evaluator
@@ -72,10 +70,10 @@ registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<
 
 //! Aggregate fields into a specific data object
 template <typename TraitsT>
-void
-ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>::
+template <typename FieldT>
+void ResponseFunctional_Aggregator<panzer::Traits::Residual,TraitsT>::
 evaluateFields(panzer::Workset & wkst,ResponseData<TraitsT> & in_data,
-                                           const std::vector<PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> > & fields) const
+               const std::vector<FieldT> & fields) const
 {
    ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> & data 
          = Teuchos::dyn_cast<ResponseFunctional_Data<panzer::Traits::Residual,TraitsT> >(in_data); // dynamic cast to correct data type
@@ -86,7 +84,7 @@ evaluateFields(panzer::Workset & wkst,ResponseData<TraitsT> & in_data,
 
    // loop over reponse fields
    for(std::size_t i=0;i<fields.size();i++) {
-      const PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> & field = fields[i];
+      const PHX::MDField<panzer::Traits::Residual::ScalarT,Cell> & field = fields[i]; // this also forces type
 
       // loop over cells
       for(std::size_t c=0;c<wkst.num_cells;c++)

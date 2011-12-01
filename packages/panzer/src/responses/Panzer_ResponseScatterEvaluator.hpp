@@ -16,30 +16,34 @@ namespace panzer {
 
 /** This class handles responses with values aggregated
   * on each finite element cell.
-  *
-  * The input parameter list as the following parameter fields
-     "Name": type std::string
-     "Response Data": type RCP<panzer::ResponseData<Traits> >
-     "Response Aggregator": type RCP<panzer::ResponseAggregator<ScalarT,Traits> >
-     "Response Names": type RCP<const std::vector<std::string> >
-     "Workset Size": type int
   */
-PHX_EVALUATOR_CLASS(ResponseScatterEvaluator)
-  
-  Teuchos::RCP<PHX::FieldTag> responseDummyTag_;
-  Teuchos::RCP<panzer::ResponseData<Traits> > responseData_;
-  Teuchos::RCP<const panzer::ResponseAggregator<EvalT,Traits> > responseAggregator_;
-  std::vector<PHX::MDField<ScalarT,Cell> > responseFields_;
-
+template<typename EvalT, typename Traits,typename AggregatorT>
+class ResponseScatterEvaluator : public PHX::EvaluatorWithBaseImpl<Traits>,
+                                 public PHX::EvaluatorDerived<EvalT, Traits>  { 
 public:
+
   //! A constructor with concrete arguments instead of a parameter list.
   ResponseScatterEvaluator(const std::string & name,
                            const Teuchos::RCP<panzer::ResponseData<Traits> > & data,
-                           const Teuchos::RCP<const panzer::ResponseAggregator<EvalT,Traits> > & aggregator,
+                           const Teuchos::RCP<const AggregatorT> & aggregator,
                            const std::vector<std::string> & responseNames,
                            int worksetSize);
-    
-PHX_EVALUATOR_CLASS_END
+
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& fm);
+
+  void evaluateFields(typename Traits::EvalData d);
+
+private:
+
+  typedef typename EvalT::ScalarT ScalarT;
+
+  Teuchos::RCP<PHX::FieldTag> responseDummyTag_;
+  Teuchos::RCP<panzer::ResponseData<Traits> > responseData_;
+  Teuchos::RCP<const AggregatorT> responseAggregator_;
+  std::vector<PHX::MDField<ScalarT,Cell> > responseFields_;
+
+};
 
 }
 
