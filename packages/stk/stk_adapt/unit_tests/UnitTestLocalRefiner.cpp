@@ -1621,7 +1621,7 @@ namespace stk {
             const unsigned n = 2;
             const unsigned nx = n , ny = n;
 
-            bool createEdgeSets = false;
+            bool createEdgeSets = true;
             percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
 
             bool isCommitted = false;
@@ -1658,6 +1658,8 @@ namespace stk {
               }
 
             eMesh.saveAs(output_files_loc+"local_tri_N_5_ElementBased_1_"+post_fix[p_size]+".e");
+            //breaker.deleteParentElements();
+            //eMesh.saveAs(output_files_loc+"local_tri_N_5_ElementBased_1_"+post_fix[p_size]+"_no_parent_elems.e");
 
 #if 1
             for (int iunref_pass=0; iunref_pass < 4; iunref_pass++)

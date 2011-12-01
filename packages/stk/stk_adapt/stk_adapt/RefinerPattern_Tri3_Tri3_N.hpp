@@ -6,7 +6,8 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
-#include "UniformRefinerPattern_Line2_Line2_2_sierra.hpp"
+//#include "UniformRefinerPattern_Line2_Line2_2_sierra.hpp"
+#include "RefinerPattern_Line2_Line2_N.hpp"
 
 namespace stk {
   namespace adapt {
@@ -21,7 +22,7 @@ namespace stk {
     class RefinerPattern<shards::Triangle<3>, shards::Triangle<3>, -1 > : public URP<shards::Triangle<3>,shards::Triangle<3>  >
     {
 
-      UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > * m_edge_breaker;
+      RefinerPattern<shards::Line<2>, shards::Line<2>, -1 > * m_edge_breaker;
 
     public:
 
@@ -37,7 +38,7 @@ namespace stk {
 
         if (m_eMesh.getSpatialDim() == 2)
           {
-            m_edge_breaker =  new UniformRefinerPattern<shards::Line<2>, shards::Line<2>, 2, SierraPort > (eMesh, block_names) ;
+            m_edge_breaker =  new RefinerPattern<shards::Line<2>, shards::Line<2>, -1 > (eMesh, block_names) ;
           }
 
       }

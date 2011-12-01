@@ -1163,17 +1163,23 @@ namespace stk {
     /// Delete all elements that aren't child elements
     void Refiner::deleteParentElements()
     {
+      //check_sidesets_2(" deleteParentElements:: start");
+      //check_sidesets(" deleteParentElements:: start");
+      //check_sidesets_1(" deleteParentElements:: start");
 
       std::vector<stk::mesh::EntityRank> ranks_to_be_deleted;
       ranks_to_be_deleted.push_back(m_eMesh.element_rank());
       ranks_to_be_deleted.push_back(m_eMesh.side_rank());
 
+      //std::cout << "tmp srk ranks_to_be_deleted= " << ranks_to_be_deleted << std::endl;
+
+      elements_to_be_destroyed_type parents;
       for (unsigned irank=0; irank < ranks_to_be_deleted.size(); irank++)
         {
-          elements_to_be_destroyed_type parents;
 
           const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( ranks_to_be_deleted[irank] );
-
+          int npar=0;
+          int nchild=0;
           for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
             {
               stk::mesh::Bucket & bucket = **k ;
@@ -1186,8 +1192,16 @@ namespace stk {
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
                   stk::mesh::Entity& element = bucket[iElement];
-                  if (m_eMesh.isParentElement(element, false))
+                  if (!m_eMesh.isParentElement(element, false))
+                  //if (!m_eMesh.hasFamilyTree(element) || m_eMesh.isChildElement(element, true))
+                  //if (!m_eMesh.hasFamilyTree(element) || m_eMesh.isChildElementLeaf(element, true))
                     {
+                      // it has no family tree, so it's a leaf, or it has no children
+                      ++nchild;
+                    }
+                  else
+                    {
+                      ++npar;
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
                       parents.push_back(&element);
 #else
@@ -1196,15 +1210,23 @@ namespace stk {
                     }
                 }
             }
+          //std::cout << "tmp removeElements(parents) irank, size= " << ranks_to_be_deleted[irank] << " " << npar << " nchild= " << nchild << std::endl;
 
-          m_eMesh.getBulkData()->modification_begin();
-#if PERCEPT_USE_FAMILY_TREE
-          if (0 == irank) removeFamilyTrees();
-#endif
-          //std::cout << "tmp removeElements(parents) " << std::endl;
-          removeElements(parents);
-          m_eMesh.getBulkData()->modification_end();
         }
+
+      m_eMesh.getBulkData()->modification_begin();
+#if PERCEPT_USE_FAMILY_TREE
+      removeFamilyTrees();
+#endif
+      //std::cout << "tmp removeElements(parents) size= " << parents.size() << std::endl;
+      removeElements(parents);
+      fix_side_sets_2();
+
+      m_eMesh.getBulkData()->modification_end();
+
+      //check_sidesets_2(" deleteParentElements:: end");
+      //check_sidesets(" deleteParentElements:: end");
+      //check_sidesets_1(" deleteParentElements:: end");
 
     }
 
@@ -2359,7 +2381,7 @@ namespace stk {
     {
       EXCEPTWATCH;
 
-      //std::cout << "tmp check_sidesets start..." << std::endl;
+      std::cout << "tmp check_sidesets start..." << std::endl;
 
       stk::mesh::EntityRank node_rank = m_eMesh.node_rank();
       stk::mesh::EntityRank side_rank = m_eMesh.side_rank();
@@ -2414,7 +2436,7 @@ namespace stk {
                 }
             }
         }
-      //std::cout << "tmp check_sidesets ...end" << std::endl;
+      std::cout << "tmp check_sidesets ...end" << std::endl;
     }
 
     // check for two sides sharing all nodes
@@ -2461,11 +2483,12 @@ namespace stk {
     {
       EXCEPTWATCH;
 
-      std::cout << "tmp check_sidesets_2 start... " << msg << std::endl;
 
       stk::mesh::EntityRank node_rank = m_eMesh.node_rank();
       stk::mesh::EntityRank side_rank = m_eMesh.side_rank();
       stk::mesh::EntityRank element_rank = m_eMesh.element_rank();
+
+      std::cout << "tmp check_sidesets_2 start... " << msg << " side_rank= " << side_rank << " element_rank= " << element_rank << std::endl;
 
       typedef std::set<stk::mesh::Entity *> SetOfEntities;
       SetOfEntities side_set;
@@ -2482,11 +2505,18 @@ namespace stk {
                 continue;
 
               if (side.relations(node_rank).size() == 0)
-                continue;
+                {
+                  continue;
+                }
 
               if (side.relations(element_rank).size() > 1)
                 {
                   throw std::logic_error("check_sidesets_2: too many side relations");
+                }
+
+              if (side.relations(element_rank).size() < 1)
+                {
+                  throw std::logic_error("check_sidesets_2: too few side relations");
                 }
 
               //if (!m_eMesh.isLeafElement(side))
@@ -2697,7 +2727,7 @@ namespace stk {
 
       int spatialDim = m_eMesh.getSpatialDim();
 
-      //std::cout << "tmp fix_side_sets_2 side_rank= " << side_rank << " element_rank= " << element_rank << std::endl;
+      std::cout << "tmp fix_side_sets_2 side_rank= " << side_rank << " element_rank= " << element_rank << std::endl;
 
       // loop over all sides that are leaves (not parent or have no family tree), 
       //   loop over their nodes and their associated elements,
