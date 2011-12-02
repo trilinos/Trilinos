@@ -12,7 +12,7 @@
 #else
 #include "ptscotch.h"
 #endif
-#endif
+#endif  // HAVE_SCOTCH
 
 #ifdef SHOW_LINUX_MEMINFO
 extern "C"{
@@ -25,7 +25,7 @@ extern void Zoltan_get_linux_meminfo(char *msg, char **result);
 extern "C"{
 //
 // Scotch keeps track of memory high water mark, but doesn't
-// provide a way to get that number.  So add this function:  
+// provide a way to get that number.  So add this function:
 //   "size_t SCOTCH_getMemoryMax() { return memorymax;}"
 // to src/libscotch/common_memory.c
 // and compile scotch with -DCOMMON_MEMORY_TRACE
@@ -47,21 +47,93 @@ extern size_t SCOTCH_getMemoryMax();
 
 namespace Zoltan2{
 
+/////////////////////////////////////////////////////////////////////////////
+//  Traits struct to handle conversions between gno_t/lno_t and SCOTCH_Num.
+/////////////////////////////////////////////////////////////////////////////
+
+// General case:  SCOTCH_Num and gno_t/lno_t (called zno_t here) differ.
+template <typename zno_t>
+struct SCOTCH_Num_Traits {
+
+  static inline SCOTCH_Num ASSIGN_TO_SCOTCH_NUM(
+    SCOTCH_Num &a,
+    zno_t b,
+    const RCP<const Environment> &env)
+  {
+    // Assign a = b; make sure SCOTCH_Num is large enough to accept zno_t.
+    if (b <= SCOTCH_NUMMAX) a = b;
+    else Z2_LOCAL_INPUT_ASSERTION(*env,"Value too large for SCOTCH_Num"
+                                       "Rebuild Scotch with larger SCOTCH_Num",
+                                        1,0);
+    return a;
+  }
+
+  static inline void ASSIGN_SCOTCH_NUM_ARRAY(
+    SCOTCH_Num **a,
+    ArrayView<const zno_t> &b,
+    const RCP<const Environment> &env)
+  {
+    // Allocate array a; copy b values into a.
+    size_t size = b.size();
+    *a = new SCOTCH_Num[size];
+    for (size_t i = 0; i < size; i++) ASSIGN_TO_SCOTCH_NUM((*a)[i], b[i], env);
+  }
+
+  static inline void DELETE_SCOTCH_NUM_ARRAY(SCOTCH_Num *a)
+  {
+    // Delete the copy made in ASSIGN_SCOTCH_NUM_ARRAY.
+    delete [] a;
+  }
+
+  //TODO static inline ASSIGN_FROM_SCOTCH_NUM(zno_t b, SCOTCH_Num a)
+  //TODO {
+  //TODO   Make sure zno_t is large enough to accept SCOTCH_Num.
+  //TODO   NOT NEEDED AS LONG AS PARTS ARE size_t.
+  //TODO }
+};
+
+
+// Special case:  zno_t == SCOTCH_Num. No error checking or copies needed.
+template <>
+struct SCOTCH_Num_Traits<SCOTCH_Num> {
+  static inline SCOTCH_Num ASSIGN_TO_SCOTCH_NUM(
+    SCOTCH_Num &a,
+    SCOTCH_Num b,
+    const RCP<const Environment> &env)
+  {
+    a = b;
+    return a;
+  }
+  static inline void ASSIGN_SCOTCH_NUM_ARRAY(
+    SCOTCH_Num **a,
+    ArrayView<const SCOTCH_Num> &b,
+    const RCP<const Environment> &env)
+  {
+    *a = const_cast<SCOTCH_Num *> (b.getRawPtr());
+  }
+  static inline void DELETE_SCOTCH_NUM_ARRAY(SCOTCH_Num *a) { }
+};
+
+
+///////////////////////////////////////////////////////////////////////
+// Now, the actual Scotch algorithm.
+///////////////////////////////////////////////////////////////////////
+
 template <typename Adapter>
 void AlgPTScotch(
   const size_t nParts,
-  const RCP<GraphModel<Adapter> > &model, 
-  RCP<PartitioningSolution<typename Adapter::gid_t, 
+  const RCP<GraphModel<Adapter> > &model,
+  RCP<PartitioningSolution<typename Adapter::gid_t,
                            typename Adapter::lid_t,
                            typename Adapter::lno_t> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
   const RCP<const Teuchos::Comm<int> > &comm,
   const RCP<const Environment> &env
-) 
+)
 {
 #ifndef HAVE_SCOTCH
   throw std::runtime_error(
-        "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n" 
+        "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
         "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
 
 #else
@@ -75,17 +147,10 @@ void AlgPTScotch(
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr = 0;
-  const SCOTCH_Num partnbr = nParts;
+  SCOTCH_Num partnbr;
+  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, nParts, env);
 
 #ifdef HAVE_MPI
-
-  if (sizeof(lno_t) != sizeof(SCOTCH_Num) || 
-      sizeof(gno_t) != sizeof(SCOTCH_Num)) {
-    throw std::runtime_error(
-          "Incompatible Scotch build; "
-          "sizeof SCOTCH_Num must match sizeof(lno_t) and sizeof(gno_t)\n");
-    return;
-  }
 
   const SCOTCH_Num  baseval = 0;  // Base value for array indexing.
                                   // GraphModel returns GNOs from base 0.
@@ -94,12 +159,12 @@ void AlgPTScotch(
                                   // TODO:  Set from parameters
   SCOTCH_stratInit(&stratstr);
 
-  MPI_Comm mpicomm = *(rcp_dynamic_cast<const Teuchos::MpiComm<int> > 
+  MPI_Comm mpicomm = *(rcp_dynamic_cast<const Teuchos::MpiComm<int> >
                                        (comm)->getRawMpiComm());
 
   // Allocate & initialize PTScotch data structure.
-  SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph 
-  ierr = SCOTCH_dgraphInit(gr, mpicomm);  
+  SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
+  ierr = SCOTCH_dgraphInit(gr, mpicomm);
   if (ierr) {
     KDD_HANDLE_ERROR;
   }
@@ -109,8 +174,9 @@ void AlgPTScotch(
   ArrayView<const scalar_t> xyz;
   ArrayView<const scalar_t> vtxWt;
   size_t nVtx = model->getVertexList(vtxID, xyz, vtxWt);
-  const SCOTCH_Num vertlocnbr = nVtx;
-  const SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
+  SCOTCH_Num vertlocnbr;
+  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(vertlocnbr, nVtx, env);
+  SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
 
   // Get edge info
   ArrayView<const gno_t> edgeIds;
@@ -118,15 +184,16 @@ void AlgPTScotch(
   ArrayView<const lno_t> offsets;
   ArrayView<const scalar_t> ewgts;
   size_t nEdges = model->getEdgeList(edgeIds, procIds, offsets, ewgts);
-  const SCOTCH_Num edgelocnbr = nEdges;
+
+  SCOTCH_Num edgelocnbr;
+  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(edgelocnbr, nEdges, env);
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
+  SCOTCH_Num *vertloctab;  // starting adj/vtx
+  SCOTCH_Num_Traits<lno_t>::ASSIGN_SCOTCH_NUM_ARRAY(&vertloctab, offsets, env);
 
-  SCOTCH_Num *vertloctab = 
-              const_cast<SCOTCH_Num *>(offsets.getRawPtr()); // starting adj/vtx
-
-  SCOTCH_Num *edgeloctab = 
-              const_cast<SCOTCH_Num *>(edgeIds.getRawPtr()); // adjacencies
+  SCOTCH_Num *edgeloctab;  // adjacencies
+  SCOTCH_Num_Traits<gno_t>::ASSIGN_SCOTCH_NUM_ARRAY(&edgeloctab, edgeIds, env);
 
   // We don't use these arrays, but we need them as arguments to Scotch.
   SCOTCH_Num *vendloctab = NULL;  // Assume consecutive storage for adj
@@ -145,9 +212,9 @@ void AlgPTScotch(
   //TODO scale weights to SCOTCH_Nums.
 
   // Build PTScotch distributed data structure
-  ierr = SCOTCH_dgraphBuild(gr, baseval, vertlocnbr, vertlocmax, 
-                            vertloctab, vendloctab, veloloctab, vlblloctab, 
-                            edgelocnbr, edgelocsize, 
+  ierr = SCOTCH_dgraphBuild(gr, baseval, vertlocnbr, vertlocmax,
+                            vertloctab, vendloctab, veloloctab, vlblloctab,
+                            edgelocnbr, edgelocsize,
                             edgeloctab, edgegsttab, edloloctab);
   if (ierr) {
     KDD_HANDLE_ERROR;
@@ -218,6 +285,10 @@ void AlgPTScotch(
   // Clean up Zoltan2
   //TODO if (vwtdim) delete [] velotab;
   //TODO if (ewtdim) delete [] edlotab;
+
+  // Clean up copies made due to differing data sizes.
+  if (sizeof(lno_t) != sizeof(SCOTCH_Num)) delete [] vertloctab;
+  if (sizeof(gno_t) != sizeof(SCOTCH_Num)) delete [] edgeloctab;
 
 #else // DO NOT HAVE_MPI
 

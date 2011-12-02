@@ -37,13 +37,8 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // Eventually want to use Teuchos unit tests to vary z2TestLO and
 // GO.  For now, we set them at compile time.
-#ifdef HAVE_TPL64
-typedef long z2TestLO;
+typedef int  z2TestLO;
 typedef long z2TestGO;
-#else
-typedef int z2TestLO;
-typedef int z2TestGO;
-#endif
 
 typedef double Scalar;
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
@@ -190,9 +185,9 @@ int main(int narg, char** arg)
 #endif
 
   try {
-    cout << "KDDKDD Trying solve() " << endl;
+    if (me == 0) cout << "Calling solve() " << endl;
     problem.solve();
-    cout << "KDDKDD Trying solve() " << endl;
+    if (me == 0) cout << "Done solve() " << endl;
   }
   catch (std::runtime_error &e) {
     cout << "Runtime exception returned from solve(): " << e.what();
@@ -274,10 +269,12 @@ int main(int narg, char** arg)
   }
 
   ////// Redistribute matrix and vector into new matrix and vector.
+  if (me == 0) cout << "Redistributing matrix..." << endl;
   SparseMatrix *redistribMatrix;
   adapter.applyPartitioningSolution(*origMatrix, redistribMatrix,
                                     problem.getSolution());
 
+  if (me == 0) cout << "Redistributing vectors..." << endl;
   Vector *redistribVector;
   VectorAdapter adapterVector(origVector);
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,
@@ -291,11 +288,13 @@ int main(int narg, char** arg)
   ////// Verify that redistribution is "correct"; perform matvec with 
   ////// original and redistributed matrices/vectors and compare norms.
 
+  if (me == 0) cout << "Matvec original..." << endl;
   origMatrix->apply(*origVector, *origProd);
   Scalar origNorm = origProd->norm2();
   if (me == 0)
     cout << "Norm of Original matvec prod:       " << origNorm << endl;
 
+  if (me == 0) cout << "Matvec redistributed..." << endl;
   redistribMatrix->apply(*redistribVector, *redistribProd);
   Scalar redistribNorm = redistribProd->norm2();
   if (me == 0)
