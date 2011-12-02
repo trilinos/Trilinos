@@ -66,7 +66,7 @@ evaluateFields(typename Traits::EvalData workset)
     return;
 
   // do some work
-  responseAggregator_->template evaluateFields(workset,*responseData_,responseFields_);
+  responseAggregator_->template evaluateFields<PHX::MDField<ScalarT,Cell> > (workset,*responseData_,responseFields_);
 }
 
 } // namespace panzer
