@@ -410,7 +410,7 @@ namespace panzer_stk {
     if (solver=="NOX") {
       Teuchos::RCP<const panzer_stk::NOXObserverFactory> observer_factory = 
 	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
-      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(mesh,dofManager,ep_lof,Teuchos::ParameterList());
+      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(mesh,dofManager,ep_lof);
       piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
       piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
     }

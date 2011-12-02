@@ -17,8 +17,7 @@ namespace user_app {
     Teuchos::RCP<NOX::Abstract::PrePostOperator>
     buildNOXObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 		     const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
-		     const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
-                     const Teuchos::ParameterList & pl) const
+		     const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof) const
     {
       Teuchos::RCP<NOX::PrePostOperatorVector> observer = 
 	Teuchos::rcp(new NOX::PrePostOperatorVector);
