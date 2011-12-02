@@ -18,7 +18,7 @@ void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk:
 void read_solution_data(const panzer::DOFManager<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_MultiVector & x);
 void read_solution_data(const panzer::DOFManager<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_Vector & x);
 
-/** Using a container, computed the sorted permutation vector
+/** Using a container, compute the sorted permutation vector
   * do not modifiy the original container.
   *
   * Motivated by this board on StackOverflow: 
@@ -27,7 +27,7 @@ void read_solution_data(const panzer::DOFManager<int,int> & dofMngr,const panzer
 template <typename RAContainer,class Compare>
 void sorted_permutation(const RAContainer & cont,std::vector<std::size_t> & permutation,const Compare & comp);
 
-/** Using a container, computed the sorted permutation vector
+/** Using a container, compute the sorted permutation vector
   * do not modifiy the original container.
   *
   * Motivated by this board on StackOverflow: 
