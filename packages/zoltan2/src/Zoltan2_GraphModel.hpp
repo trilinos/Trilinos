@@ -20,9 +20,7 @@
 #include <Teuchos_Hashtable.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Zoltan2_Model.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_IdentifierMap.hpp>
-#include <Xpetra_Map.hpp>
+#include <Zoltan2_MatrixInput.hpp>
 
 namespace Zoltan2 {
 
@@ -44,14 +42,9 @@ public:
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
-  typedef typename Adapter::gid_t     gid_t;
-  typedef typename Adapter::lid_t     lid_t;
-  typedef typename Adapter::node_t    node_t;
-  typedef typename Adapter::user_t    user_t;
   
   GraphModel(){
-    HELLO;
-    identifierMap_ = NULL;
+    throw std::logic_error("in non-specialized GraphModel");
   }
 
   /*! Returns the number vertices on this process.
@@ -60,7 +53,7 @@ public:
 
   /*! Returns the global number vertices.
    */
-  global_size_t getGlobalNumVertices() const { return 0; }
+  size_t getGlobalNumVertices() const { return 0; }
 
   /*! Returns the number edges on this process.
    */
@@ -68,7 +61,7 @@ public:
 
   /*! Returns the global number edges.
    */
-  global_size_t getGlobalNumEdges() const { return 0; }
+  size_t getGlobalNumEdges() const { return 0; }
 
   /*! Returns the dimension (0 or greater) of vertex weights.
    */
@@ -118,123 +111,76 @@ public:
   size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
     ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
     ArrayView<const scalar_t> &wgts) const { return 0; }
-
-  /*! Obtain a view of the edge Ids of the input vertex.
-      \param Id  is the global Id for a vertex on this process.
-      \param edgeIds on return will point to the list of edge neighbors.
-      \param procIds on return holds the list of each process owning the
-        corresponding neighbor vertex. 
-      \param wgts on return points to the weights, if any, associated with the
-         edges. Weights are listed by edge by weight component.
-      \return The number of ids in the edgeId list.
-  
-      This method is defined for convenience when obtaining the
-      neighbors of a vertex.  It is not efficient to call this method
-      many times in a loop, due to the construction and destruction of
-      ArrayViews.  Call getEdgeList instead.
-   */
-  size_t getVertexGlobalEdge( gno_t Id, 
-    ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
-    ArrayView<const scalar_t> &wgts) const { return 0; }
-   
-  /*! Obtain a view of the edge Ids of the input vertex.
-      \param localRef  is the local id associated with vertex.  Local ids
-        are consecutive, begin at 0 and follow the order of vertices returned
-        by getVertexList.
-      \param edgeIds on return will point to the list of edge neighbor global
-         Ids.
-      \param procIds on return holds the list of each process owning the
-        corresponding neighbor vertex.
-      \param wgts on return points to the weights, if any, associated with the
-         edges. Weights are listed by edge by weight component.
-      \return The number of ids in the edgeId list.
-
-      This method is defined for convenience when obtaining the 
-      neighbors of a vertex.  It is not efficient to call this method 
-      many times in a loop, due to the construction and destruction of
-      ArrayViews.  Call getEdgeList instead.
-   */
-  size_t getVertexLocalEdge( lno_t localRef,
-    ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
-    ArrayView<const scalar_t> &wgts) const { return 0; }
-
-  inline RCP<IdentifierMap<gid_t, lid_t, gno_t, lno_t> > getIdentifierMap() {
-    return identifierMap_;
-  }
-
-private:
-  RCP<IdentifierMap<gid_t, lid_t, gno_t, lno_t> > identifierMap_;
 };
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from XpetraCrsMatrixInput.
-//    We know that Xpetra input does not need an IdentifierMap
-//    unless consecutive global Ids are required and the Xpetra
-//    input is not consecutive.
+// Graph model derived from MatrixInput.
 //
-//   TODO Xpetra matrices need not have consecutive IDs, so
-//               add use if IdentifierMap to ensure IDs are
-//               consecutive
+//   TODO: support a flag that says the vertices are columns or
+//           non-zeros rather than rows
 ////////////////////////////////////////////////////////////////
 
-/*! Zoltan2::GraphModel<XpetraCrsMatrixInput>
-    \brief A (partial) specialization of GraphModel
-           for a Zoltan2::XpetraCrsMatrixInput object.
+/*! Zoltan2::GraphModel<MatrixInput>
+    \brief A specialization of GraphModel for Zoltan2::MatrixInput.
 */
 
 template <typename User>
-class GraphModel<XpetraCrsMatrixInput<User> >
+class GraphModel<MatrixInput<User> > : public Model<MatrixInput<User> >
 {
 public:
 
-  typedef typename XpetraCrsMatrixInput<User>::scalar_t  scalar_t;
-  typedef typename XpetraCrsMatrixInput<User>::gno_t     gno_t;
-  typedef typename XpetraCrsMatrixInput<User>::lno_t     lno_t;
-  typedef typename XpetraCrsMatrixInput<User>::gid_t     gid_t;
-  typedef typename XpetraCrsMatrixInput<User>::lid_t     lid_t;
-  typedef typename XpetraCrsMatrixInput<User>::node_t    node_t;
+  typedef typename MatrixInput<User>::scalar_t  scalar_t;
+  typedef typename MatrixInput<User>::gno_t     gno_t;
+  typedef typename MatrixInput<User>::lno_t     lno_t;
+  typedef typename MatrixInput<User>::gid_t     gid_t;
+  typedef typename MatrixInput<User>::lid_t     lid_t;
+  typedef typename MatrixInput<User>::node_t    node_t;
+  typedef IdentifierMap<lid_t, gid_t, lno_t, gno_t>     idmap_t;
 
   /*! Constructor
    *  All processes in the communicator must call the constructor.
    *  \param  inputAdapter  an encapsulation of the user data
-   *  \param  comm          the problem communicator
    *  \param  env           environment (library configuration settings)
    *  \param  consecutiveIdsRequired  set to true if the algorithm or
    *           third party library requires consecutive global vertex Ids.
    *  \param removeSelfEdges set to true if the algorithm or the third party
    *           library cannot handle self edges
    */
-  GraphModel(
-    const RCP<const XpetraCrsMatrixInput<User> > &inputAdapter,
-    const RCP<const Comm<int> > &comm, const RCP<const Environment> &env,
-    bool consecutiveIdsRequired=false, bool removeSelfEdges=false) :
-      input_(inputAdapter), rowMap_(inputAdapter->getMatrix()->getRowMap()),
-      colMap_(inputAdapter->getMatrix()->getColMap()), comm_(comm), env_(env),
-      gnos_(), edgeGnos_(), procIds_(), offsets_(),
-      numLocalEdges_(), numGlobalEdges_(0), numLocalVtx_()
+  GraphModel(const RCP<const MatrixInput<User> > &inputAdapter,
+    const RCP<const Environment> &env, bool consecutiveIdsRequired=false,
+    bool removeSelfEdges=false) :
+     input_(inputAdapter), env_(env), gids_(), lids_(), gnos_(),
+     edgeGnos_(), procIds_(), offsets_(),
+     numLocalEdges_(0), numGlobalEdges_(0), numLocalVtx_(0),
+     gidsAreGnos_(false)
   {
+    // Get the matrix from the input adapter
+
     gno_t const *vtxIds=NULL, *nborIds=NULL;
-    lno_t const  *offsets=NULL, *lids=NULL; 
+    lno_t const  *offsets=NULL, *lids=NULL;
     try{
       numLocalVtx_ = input_->getRowListView(vtxIds, lids, offsets, nborIds);
     }
     Z2_FORWARD_EXCEPTIONS;
 
-    numLocalEdges_ = offsets[numLocalVtx_];
-    size_t numOffsets = numLocalVtx_ + 1;
+    gids_ = arcp(vtxIds, 0, numLocalVtx_, false);
 
-    ArrayView<gno_t> av1(const_cast<gno_t *>(vtxIds), numLocalVtx_);
-    gnos_ = av1.getConst();  // to make ArrayView<const gno_t>
+    numLocalEdges_ = offsets[numLocalVtx_];
+
+    // If Matrix has diagonal entries, and self-edges are to be removed
+    //    do that now.
 
     ArrayRCP<lno_t> tmpOffsets;
-    ArrayRCP<gno_t> tmpEdges;
+    ArrayRCP<gid_t> tmpEdges;
     lno_t nSelfEdges = 0;
+
+    size_t numOffsets = numLocalVtx_ + 1;
 
     if (removeSelfEdges) {
 
       lno_t *offArray = new lno_t [numOffsets];
       Z2_LOCAL_MEMORY_ASSERTION(*env, numOffsets, offArray);
-      gno_t *edArray = new gno_t [numLocalEdges_];
+      gid_t *edArray = new gid_t [numLocalEdges_];
       Z2_LOCAL_MEMORY_ASSERTION(*env, numLocalEdges_, !numLocalEdges_||edArray);
 
       for (lno_t i=0; i < numLocalVtx_; i++){
@@ -242,7 +188,7 @@ public:
         offArray[i] = offsets[i] - nSelfEdges;
 
         for (lno_t j = offsets[i]; j < offsets[i+1]; j++) {
-          if (gnos_[i] == nborIds[j]) { // self edge; remove it
+          if (gids_[i] == nborIds[j]) { // self edge; remove it
             nSelfEdges++;
           }
           else {  // Not a self-edge; keep it.
@@ -262,33 +208,75 @@ public:
         if (numLocalEdges_) delete [] edArray;
       }
     }
-  
+
     if (nSelfEdges == 0){
       offsets_ = arcp(const_cast<lno_t *>(offsets), 0, numOffsets, false);
-      edgeGnos_ = arcp(const_cast<gno_t *>(nborIds), 0, numLocalEdges_, false);
+      edgeGids_ = arcp(const_cast<gno_t *>(nborIds), 0, numLocalEdges_, false);
     }
     else{
       offsets_ = tmpOffsets;
-      edgeGnos_ =  tmpEdges;
+      edgeGids_ =  tmpEdges;
     }
 
-    Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
+    Teuchos::reduceAll<int, size_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1,
       &numLocalEdges_, &numGlobalEdges_);
 
-    RCP<Array<int> > procBuf =  rcp(new Array<int>(numLocalEdges_));
-    procIds_ = arcp(procBuf);
+
+    if (lids)
+      lids_ = arcp(lids, 0, numLocalVtx_, false);
+
+    // Create an IdentifierMap, which will map the user's global IDs to
+    //   Zoltan2 internal global numbers if neccesary.
+    //   The map can also give us owners of our vertex neighbors.
+
+    RCP<const idmap_t> idMap;
 
     try{
-      ArrayView<const gno_t> gnoView = 
-        edgeGnos_.view(0,numLocalEdges_).getConst();
-      rowMap_->getRemoteIndexList(gnoView, procIds_.view(0, numLocalEdges_));
+      idMap = rcp(new idmap_t(env, gids_, lids_, consecutiveIdsRequired));
     }
     Z2_FORWARD_EXCEPTIONS;
+
+    gidsAreGnos_ = idMap->gnosAreGids();
+
+    if (numLocalVtx_ && !gidsAreGnos_){
+      gno_t *tmp = new gno_t [numLocalVtx_];
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalVtx_, tmp)
+      gnos_ = arcp(tmp, 0, numLocalVtx_, true);
+
+      try{
+        // Because gidTranslate can translate gids to gnos or
+        // gnos to gids depending on a flag, neither the gids nor
+        // the gnos are declared to be const.
+        ArrayRCP<gid_t> tmpGids = Teuchos::arcp_const_cast<gid_t>(gids_);
+
+        idMap->gidTranslate(tmpGids, gnos_, TRANSLATE_APP_TO_LIB);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+
+      if (numLocalEdges_){
+        tmp = new gno_t [numLocalEdges_];
+        Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, tmp)
+        edgeGnos_ = arcp(tmp, 0, numLocalEdges_, true);
+      }
+    }
+
+    if (numLocalEdges_){
+      int *p = new int [numLocalEdges_];
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, p)
+      procIds_ = arcp(p, 0, numLocalEdges_, true);
+    }
+
+    try{
+      // All processes must make this call.
+      idMap->gidGlobalTranslate(edgeGids_, edgeGnos_, procIds_);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    this->setIdentifierMap(idMap);   // Zoltan2::Model method
   }
 
   //!  Destructor
-  ~GraphModel() {
-  }
+  ~GraphModel() { }
 
   // // // // // // // // // // // // // // // // // // // // // /
   // The GraphModel interface.
@@ -296,10 +284,11 @@ public:
 
   size_t getLocalNumVertices() const
   {
+    std::cout << input_.strong_count() << std::endl;
     return input_->getLocalNumRows();
   }
 
-  global_size_t getGlobalNumVertices() const
+  size_t getGlobalNumVertices() const
   {
     return input_->getGlobalNumRows();
   }
@@ -308,101 +297,82 @@ public:
   {
     return numLocalEdges_;
   }
-   
-  global_size_t getGlobalNumEdges() const
-  { 
+
+  size_t getGlobalNumEdges() const
+  {
     return numGlobalEdges_;
-  } 
+  }
 
   int getVertexWeightDim() const
   {
     return 0;   // TODO
-  } 
+  }
 
   int getEdgeWeightDim() const
   {
     return 0;   // TODO
-  } 
-    
+  }
+
   int getCoordinateDim() const
   {
     return 0;   // TODO
-  } 
+  }
 
   size_t getVertexList( ArrayView<const gno_t> &Ids,
     ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const
   {
-    size_t n = gnos_.size();
-    Ids = gnos_.view(0, n);
+    size_t n = getLocalNumVertices();
+
+    if (gidsAreGnos_){
+      Ids = gids_.persistingView(0, n);
+    }
+    else{
+      Ids = gnos_.getConst();
+    }
+
     return n;
     // KDDKDD  Is it dangerous that xyz is ignored here?  Perhaps coordinates
     // KDDKDD  should be separate.
   }
 
-  size_t getEdgeList( ArrayView<const gno_t> &edgeIds, 
+  size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
     ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
     ArrayView<const scalar_t> &wgts) const
   {
-    edgeIds = edgeGnos_.view(0,numLocalEdges_).getConst();
-    procIds = procIds_.view(0, numLocalEdges_).getConst();
-    offsets = offsets_.view(0, numLocalVtx_+1).getConst();
+    if (edgeGnos_.size() == 0){
+      edgeIds = edgeGids_.persistingView(0, numLocalEdges_);
+    }
+    else{
+      edgeIds = edgeGnos_.getConst();
+    }
+    procIds = procIds_.getConst();
+    offsets = offsets_.persistingView(0, numLocalVtx_+1);
 
     return numLocalEdges_;
   }
 
-  size_t getVertexGlobalEdge( gno_t Id, ArrayView<const gno_t> &edgeId,
-    ArrayView<const int> &procId, ArrayView<const scalar_t> &wgts) const
-  {
-    if (rowMap_->isNodeGlobalElement(Id)){
-      return getVertexLocalEdge(rowMap_->getLocalElement(Id), edgeId, procId, wgts);
-    }
-    else{
-      throw std::runtime_error("Global Id not on this process");
-    }
-  }
-
-  size_t getVertexLocalEdge( lno_t lno, ArrayView<const gno_t> &edgeId,
-    ArrayView<const int> &procId, ArrayView<const scalar_t> &wgts) const
-  { 
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid local id",
-      lno >= 0 && lno < gnos_.size(), BASIC_ASSERTION);
-
-    lno_t thisVtx =  offsets_[lno];
-    lno_t nextVtx = (lno < gnos_.size()-1) ? offsets_[lno+1] : numLocalEdges_;
-    size_t nEdges = nextVtx - thisVtx;
-
-    edgeId = edgeGnos_.view(thisVtx, nEdges).getConst();
-    procId = procIds_.view(thisVtx, nEdges).getConst();
-    return nEdges;
-  }
-
-  inline RCP<IdentifierMap<gid_t, lid_t, gno_t, lno_t> > getIdentifierMap() {
-    return identifierMap_;
-  }
-
 private:
 
-  RCP<const XpetraCrsMatrixInput<User> > input_;
-  RCP<IdentifierMap<gid_t, lid_t, gno_t, lno_t> > identifierMap_;
-  const RCP<const Xpetra::Map<lno_t, gno_t> > rowMap_;
-  const RCP<const Xpetra::Map<lno_t, gno_t> > colMap_;
-  RCP<const Teuchos::Comm<int> > comm_;
-  RCP<const Environment > env_;
+  const RCP<const MatrixInput<User> > input_;
+  const RCP<const Environment > env_;
 
-  ArrayView<const gno_t> gnos_;
-  ArrayRCP<const gno_t> edgeGnos_;
+  ArrayRCP<const gid_t> gids_;
+  ArrayRCP<const lid_t> lids_;
+  ArrayRCP<gno_t> gnos_;
+
+  ArrayRCP<const gid_t> edgeGids_;
+  ArrayRCP<gno_t> edgeGnos_;
   ArrayRCP<int> procIds_;
   ArrayRCP<const lno_t> offsets_;
 
-  // Transpose is required only if vertices are columns.
-  // KDDKDD ??  We won't form an actual transpose, will we?
-  // KDDKDD RCP<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> > inputTranspose;
-
-  global_size_t numLocalEdges_;
-  global_size_t numGlobalEdges_;
+  size_t numLocalEdges_;
+  size_t numGlobalEdges_;
   size_t numLocalVtx_;
+
+  bool gidsAreGnos_;
 };
 
 }   // namespace Zoltan2
 
 #endif
+
