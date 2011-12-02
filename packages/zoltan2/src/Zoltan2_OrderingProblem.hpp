@@ -8,6 +8,7 @@
 #include <Zoltan2_OrderingSolution.hpp>
 
 #include <Zoltan2_GraphModel.hpp>
+#include <string>
 #ifdef HAVE_OVIS
 #include <ovis.h>
 #endif
@@ -19,6 +20,7 @@
 */
 
 using Teuchos::rcp_dynamic_cast;
+using namespace std;
 
 namespace Zoltan2{
 
@@ -72,12 +74,23 @@ void OrderingProblem<Adapter>::solve()
   // For now, assuming RCM.
   // Need some exception handling here, too.
 
-  AlgRCM<Adapter>(this->graphModel_, this->solution_, this->params_,
-                  this->comm_);
+  string method = this->params_->template get<string>("ORDER_METHOD", "RCM");
 
-  // TODO: Need to check a parameter
-  //AlgAMD<Adapter>(this->graphModel_, this->solution_, this->params_,
-                  //this->comm_);
+  // TODO: Ignore case
+  if (method.compare("RCM") == 0)
+  {
+      AlgRCM<Adapter>(this->graphModel_, this->solution_, this->params_,
+                      this->comm_);
+  }
+  else if (method.compare("Minimum_Degree") == 0)
+  {
+      string pkg = this->params_->template get<string>("ORDER_PACKAGE", "AMD");
+      if (pkg.compare("AMD") == 0)
+      {
+          AlgAMD<Adapter>(this->graphModel_, this->solution_, this->params_,
+                          this->comm_);
+      }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////

@@ -7,7 +7,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES useMueLuGallery.hpp ordering1.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
-  ARGS 
+  ARGS
+   "--inputFile=simple.mtx"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  OrderingAMD
+  SOURCES useMueLuGallery.hpp orderingAMD.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
    "--inputFile=simple.mtx"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
