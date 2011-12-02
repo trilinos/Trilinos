@@ -247,7 +247,7 @@ public:
         // Because gidTranslate can translate gids to gnos or
         // gnos to gids depending on a flag, neither the gids nor
         // the gnos are declared to be const.
-        ArrayRCP<gid_t> tmpGids = Teuchos::arcp_const_cast<gid_t>(gids_);
+        ArrayRCP<gid_t> tmpGids = arcp_const_cast<gid_t>(gids_);
 
         idMap->gidTranslate(tmpGids, gnos_, TRANSLATE_APP_TO_LIB);
       }

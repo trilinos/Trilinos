@@ -170,6 +170,7 @@ void AlgPTScotch(
   if (ierr) KDD_HANDLE_ERROR;
 
 #ifdef SHOW_SCOTCH_HIGH_WATER_MARK
+  int me = comm->getRank();
   if (me == 0){
     size_t scotchBytes = SCOTCH_getMemoryMax();
     std::cout << "Rank " << me << ": Maximum bytes used by Scotch: ";

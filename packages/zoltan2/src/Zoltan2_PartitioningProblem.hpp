@@ -79,6 +79,7 @@ void PartitioningProblem<Adapter>::solve()
   typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // Create the solution.
   // TODO:  For now, assume nParts = nProcessors. Should read from params.
@@ -92,7 +93,7 @@ void PartitioningProblem<Adapter>::solve()
     size_t nVtx = this->graphModel_->getLocalNumVertices();
     this->solution_ = rcp(new PartitioningSolution<gid_t,lid_t,lno_t>(nParts, nVtx, 0));
 
-    AlgPTScotch<Adapter>(nParts, this->graphModel_, this->solution_, this->params_,
+    AlgPTScotch<base_adapter_t>(nParts, this->graphModel_, this->solution_, this->params_,
                          this->comm_, this->env_);
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -126,21 +127,27 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
   // functionality in Zoltan2.  For now, I will set a few parameters and
   // continue computing.
   ModelType modelType = GraphModelType;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
+
+  RCP<const base_adapter_t> baseInputAdapter_ = 
+    rcp_implicit_cast<const base_adapter_t>(this->inputAdapter_);
+
+std::cout << this->inputAdapter_->getLocalNumRows() << std::endl;;
+
+std::cout << this->baseInputAdapter_->getLocalNumRows() << std::endl;;
+
 
   // Select Model based on parameters and InputAdapter type
   switch (modelType) {
 
   case GraphModelType:
-
-    this->graphModel_ = RCP<GraphModel<Adapter> > 
-                        (new GraphModel<Adapter>(this->inputAdapter_,
-                                                 this->comm_, this->env_,
-                                                 false, true));
+    this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
+      this->baseInputAdapter_, this->env_, false, true));
     break;
 
   case HypergraphModelType:
   case GeometryModelType:
-  case IdModelType:
+  case IdentifierModelType:
     cout << __func__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;

@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
   mapLongGids_t *idMap = NULL;
 
   try{
-    idMap = new mapLongGids_t(comm, env, gids, lids, false);
+    idMap = new mapLongGids_t(env, gids, lids, false);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
   //  IdentifierMap is asked to map them to consecutive.
 
   try{
-    idMap = new mapLongGids_t(comm, env, gids, lids, true); 
+    idMap = new mapLongGids_t(env, gids, lids, true); 
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
   }
 
   try{
-    idMap = new mapLongGids_t(comm, env, gids, lids, false); 
+    idMap = new mapLongGids_t(env, gids, lids, false); 
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
   mapPairGids_t *idMap2 = NULL;
 
   try{
-    idMap2 = new mapPairGids_t(comm, env, nonOrdinalGids, lids, false); 
+    idMap2 = new mapPairGids_t(env, nonOrdinalGids, lids, false); 
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;

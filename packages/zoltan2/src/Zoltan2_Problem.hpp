@@ -4,11 +4,8 @@
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_Environment.hpp>
 
-#include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-
 #include <Zoltan2_GraphModel.hpp>
+#include <Zoltan2_IdentifierModel.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
 
@@ -47,8 +44,13 @@ public:
   virtual void solve() = 0;
 
 protected:
-  RCP<Adapter> inputAdapter_;
-  RCP<GraphModel<Adapter> > graphModel_;  
+  RCP<const Adapter> inputAdapter_;
+
+  typedef typename Adapter::base_adapter_t base_adapter_t;
+  RCP<GraphModel<base_adapter_t> > graphModel_;  
+  RCP<IdentifierModel<base_adapter_t> > identifieModel_;  
+  RCP<const base_adapter_t> baseInputAdapter_;
+
   // KDDKDD May want other models, too, for eval, printing, etc.
   RCP<Teuchos::ParameterList> params_;
   RCP<const Teuchos::Comm<int> > comm_;
