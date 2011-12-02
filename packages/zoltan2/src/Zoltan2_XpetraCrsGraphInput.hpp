@@ -349,21 +349,20 @@ public:
    *   the graph that instantiated this input adapter.
    */
   size_t applyPartitioningSolution(const User &in, User *&out,
-    size_t numParts, size_t numIds,
-    const gid_t *gid, const lid_t *lid, const size_t *partition)
+         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
   {
     // Get an import list
     Zoltan2::Environment env;
-    ArrayView<const gid_t> gidList(gid, numIds);
-    ArrayView<const size_t> partList(partition, numIds);
-    ArrayView<const lno_t> dummyIn;
+    ArrayRCP<gid_t> gidList = solution.getGidsRCPConst();
+    ArrayRCP<size_t> partList = solution.getPartsRCPConst();
+    ArrayRCP<lno_t> dummyIn;
     ArrayRCP<gid_t> importList;
     ArrayRCP<lno_t> dummyOut;
     size_t numNewVtx;
     const RCP<const Comm<int> > comm = graph_->getComm();
 
     try{
-      numNewVtx = convertPartitionListToImportList<gid_t, lno_t, lno_t>(
+      numNewVtx = convertPartListToImportList<gid_t, lno_t, lno_t>(
         *comm, partList, gidList, dummyIn, importList, dummyOut);
     }
     Z2_FORWARD_EXCEPTIONS;

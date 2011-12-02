@@ -27,7 +27,7 @@ template <typename Ordinal>
   RCP<MpiComm<Ordinal> >
     getTeuchosMpiComm(const MPI_Comm &comm)
 {
-  RCP<Teuchos::OpaqueWrapper<MPI_Comm> >handle = Teuchos::opaqueWrapper<MPI_Comm>(comm); 
+  RCP<Teuchos::OpaqueWrapper<MPI_Comm> >handle = Teuchos::opaqueWrapper<MPI_Comm>(comm);
   RCP<MpiComm<Ordinal> > tcommPtr(new MpiComm<Ordinal>(handle));
 
   return tcommPtr;
@@ -35,7 +35,7 @@ template <typename Ordinal>
 #endif
 
 // Given a list of global IDs and their assigned parts, return
-// a list of all the global IDs that are mine.  Assumption is that 
+// a list of all the global IDs that are mine.  Assumption is that
 // parts are 0 through nprocs-1, and process p gets part p.
 //
 // If there are sizes associated with the IDs (like number of non-zeros)
@@ -45,12 +45,15 @@ template <typename Ordinal>
 // return the size of the import list
 
 template <typename GID, typename LNO, typename EXTRA>
-  size_t convertPartitionListToImportList(const Teuchos::Comm<int> &comm, 
-    ArrayView<const size_t> &part, ArrayView<const GID> &gid,
-    ArrayView<const EXTRA> &xtraInfo, 
-    ArrayRCP<GID> &imports, ArrayRCP<EXTRA> &newXtraInfo)
+  size_t convertPartListToImportList(
+    const Teuchos::Comm<int> &comm,
+    ArrayRCP<size_t> &part,
+    ArrayRCP<GID> &gid,
+    ArrayRCP<EXTRA> &xtraInfo,
+    ArrayRCP<GID> &imports,
+    ArrayRCP<EXTRA> &newXtraInfo)
 {
-  int numParts = comm.getSize();
+  size_t numParts = comm.getSize();
   size_t localNumIds = gid.size();
 
   int localSend = (xtraInfo.size() == gid.size() ? 1 : 0);
@@ -62,11 +65,11 @@ template <typename GID, typename LNO, typename EXTRA>
 
   Array<LNO> counts(numParts, 0);
   for (size_t i=0; i < localNumIds; i++){
-    counts[part[i]]++; 
+    counts[part[i]]++;
   }
 
   Array<LNO> offsets(numParts+1, 0);
-  for (LNO i=1; i <= numParts; i++){
+  for (size_t i=1; i <= numParts; i++){
     offsets[i] = offsets[i-1] + counts[i-1];
   }
 
@@ -79,7 +82,7 @@ template <typename GID, typename LNO, typename EXTRA>
     if (sendSizes)
       numericInfo[idx] = xtraInfo[i];
     offsets[part[i]] = idx + 1;
-  } 
+  }
 
   ArrayRCP<LNO> recvCounts;
   Environment env;   //  default environment
@@ -93,7 +96,7 @@ template <typename GID, typename LNO, typename EXTRA>
 
   if (sendSizes){
     try{
-      AlltoAllv<EXTRA, LNO>(comm, env, xtraInfo, counts(), newXtraInfo, recvCounts);
+      AlltoAllv<EXTRA, LNO>(comm, env, xtraInfo(), counts(), newXtraInfo, recvCounts);
     }
     catch (std::exception &e){
       throw std::runtime_error("alltoallv 2");

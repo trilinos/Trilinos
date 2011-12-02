@@ -7,7 +7,7 @@
 //
 // ***********************************************************************
 //
-// Basic testing of Zoltan2::XpetraCrsGraphInput 
+// Basic testing of Zoltan2::XpetraCrsGraphInput
 
 #include <string>
 
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
   RCP<uinput_t> uinput;
 
   try{
-    uinput = 
+    uinput =
       rcp(new uinput_t(std::string("../data/simple.mtx"), comm));
   }
   catch(std::exception &e){
@@ -149,39 +149,41 @@ int main(int argc, char *argv[])
 
   tG = uinput->getTpetraCrsGraph();
   size_t nvtx = tG->getNodeNumRows();
-  Teuchos::ArrayView<const gno_t> rowGids = 
+  Teuchos::ArrayView<const gno_t> rowGids =
     tG->getRowMap()->getNodeElementList();
-  lno_t *rowLids = NULL;
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsGraph
-  if (!gfail){ 
+  if (!gfail){
     RCP<const tgraph_t> ctG = rcp_const_cast<const tgraph_t>(tG);
     RCP<Zoltan2::XpetraCrsGraphInput<tgraph_t> > tGInput;
-  
+
     try {
-      tGInput = 
+      tGInput =
         rcp(new Zoltan2::XpetraCrsGraphInput<tgraph_t>(ctG));
     }
     catch (std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0, 
+      TEST_FAIL_AND_EXIT(*comm, 0,
         string("XpetraCrsGraphInput ")+e.what(), 1);
     }
-  
+
     if (rank==0)
       std::cout << "Input adapter for Tpetra::CrsGraph" << std::endl;
-    
+
     fail = verifyInputAdapter<tgraph_t>(*tGInput, *tG);
-  
+
     gfail = globalFail(comm, fail);
-  
+
     if (!gfail){
-      Array<size_t> partNum(nvtx,0);  // Migrate all rows to proc 0
+      Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
+               solution(nprocs, nvtx, 0);
+      ArrayRCP<gno_t> solnGids = solution.getGidsRCP();
+      ArrayRCP<size_t> solnParts = solution.getPartsRCP();
+      for (size_t i = 0; i < solnGids.size(); i++) solnGids[i] = rowGids[i];
+      for (size_t i = 0; i < solnParts.size(); i++) solnParts[i] = 0;
       tgraph_t *mMigrate = NULL;
       try{
-        tGInput->applyPartitioningSolution(*tG, mMigrate,
-          nprocs, nvtx, rowGids.getRawPtr(), rowLids,
-          partNum.getRawPtr());
+        tGInput->applyPartitioningSolution(*tG, mMigrate, solution);
         newG = rcp(mMigrate);
       }
       catch (std::exception &e){
@@ -189,7 +191,7 @@ int main(int argc, char *argv[])
       }
 
       gfail = globalFail(comm, fail);
-  
+
       if (!gfail){
         RCP<const tgraph_t> cnewG = rcp_const_cast<const tgraph_t>(newG);
         RCP<Zoltan2::XpetraCrsGraphInput<tgraph_t> > newInput;
@@ -197,13 +199,13 @@ int main(int argc, char *argv[])
           newInput = rcp(new Zoltan2::XpetraCrsGraphInput<tgraph_t>(cnewG));
         }
         catch (std::exception &e){
-          TEST_FAIL_AND_EXIT(*comm, 0, 
+          TEST_FAIL_AND_EXIT(*comm, 0,
             string("XpetraCrsGraphInput 2 ")+e.what(), 1);
         }
-  
+
         if (rank==0){
-          std::cout << 
-           "Input adapter for Tpetra::CrsGraph migrated to proc 0" << 
+          std::cout <<
+           "Input adapter for Tpetra::CrsGraph migrated to proc 0" <<
            std::endl;
         }
         fail = verifyInputAdapter<tgraph_t>(*newInput, *newG);
@@ -218,56 +220,59 @@ int main(int argc, char *argv[])
 
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::CrsGraph
-  if (!gfail){ 
+  if (!gfail){
     RCP<xgraph_t> xG = uinput->getXpetraCrsGraph();
     RCP<const xgraph_t> cxG = rcp_const_cast<const xgraph_t>(xG);
     RCP<Zoltan2::XpetraCrsGraphInput<xgraph_t> > xGInput;
-  
+
     try {
-      xGInput = 
+      xGInput =
         rcp(new Zoltan2::XpetraCrsGraphInput<xgraph_t>(cxG));
     }
     catch (std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0, 
+      TEST_FAIL_AND_EXIT(*comm, 0,
         string("XpetraCrsGraphInput 3 ")+e.what(), 1);
     }
-  
+
     if (rank==0){
       std::cout << "Input adapter for Xpetra::CrsGraph" << std::endl;
     }
     fail = verifyInputAdapter<xgraph_t>(*xGInput, *tG);
-  
+
     gfail = globalFail(comm, fail);
-  
+
     if (!gfail){
-      Array<size_t> partNum(nvtx,0);  // Migrate all rows to proc 0
+      Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
+               solution(nprocs, nvtx, 0);
+      ArrayRCP<gno_t> solnGids = solution.getGidsRCP();
+      ArrayRCP<size_t> solnParts = solution.getPartsRCP();
+      for (size_t i = 0; i < solnGids.size(); i++) solnGids[i] = rowGids[i];
+      for (size_t i = 0; i < solnParts.size(); i++) solnParts[i] = 0;
       xgraph_t *mMigrate =NULL;
-       try{
-        xGInput->applyPartitioningSolution(*xG, mMigrate, 
-          nprocs, nvtx, rowGids.getRawPtr(), rowLids,
-          partNum.getRawPtr());
+      try{
+        xGInput->applyPartitioningSolution(*xG, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
       }
-  
+
       gfail = globalFail(comm, fail);
-  
+
       if (!gfail){
         RCP<const xgraph_t> cnewG(mMigrate);
         RCP<Zoltan2::XpetraCrsGraphInput<xgraph_t> > newInput;
         try{
-          newInput = 
+          newInput =
             rcp(new Zoltan2::XpetraCrsGraphInput<xgraph_t>(cnewG));
         }
         catch (std::exception &e){
-          TEST_FAIL_AND_EXIT(*comm, 0, 
+          TEST_FAIL_AND_EXIT(*comm, 0,
             string("XpetraCrsGraphInput 4 ")+e.what(), 1);
         }
-  
+
         if (rank==0){
-          std::cout << 
-           "Input adapter for Xpetra::CrsGraph migrated to proc 0" << 
+          std::cout <<
+           "Input adapter for Xpetra::CrsGraph migrated to proc 0" <<
            std::endl;
         }
         fail = verifyInputAdapter<xgraph_t>(*newInput, *newG);
@@ -282,56 +287,59 @@ int main(int argc, char *argv[])
 
   /////////////////////////////////////////////////////////////
   // User object is Epetra_CrsGraph
-  if (!gfail){ 
+  if (!gfail){
     RCP<egraph_t> eG = uinput->getEpetraCrsGraph();
     RCP<const egraph_t> ceG = rcp_const_cast<const egraph_t>(eG);
     RCP<Zoltan2::XpetraCrsGraphInput<egraph_t> > eGInput;
-  
+
     try {
-      eGInput = 
+      eGInput =
         rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t>(ceG));
     }
     catch (std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0, 
+      TEST_FAIL_AND_EXIT(*comm, 0,
         string("XpetraCrsGraphInput 5 ")+e.what(), 1);
     }
-  
+
     if (rank==0){
       std::cout << "Input adapter for Epetra_CrsGraph" << std::endl;
     }
     fail = verifyInputAdapter<egraph_t>(*eGInput, *tG);
-  
+
     gfail = globalFail(comm, fail);
-  
+
     if (!gfail){
-      Array<size_t> partNum(nvtx,0);  // Migrate all rows to proc 0
+      Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
+               solution(nprocs, nvtx, 0);
+      ArrayRCP<gno_t> solnGids = solution.getGidsRCP();
+      ArrayRCP<size_t> solnParts = solution.getPartsRCP();
+      for (size_t i = 0; i < solnGids.size(); i++) solnGids[i] = rowGids[i];
+      for (size_t i = 0; i < solnParts.size(); i++) solnParts[i] = 0;
       egraph_t *mMigrate =NULL;
       try{
-        eGInput->applyPartitioningSolution(*eG, mMigrate,
-          nprocs, nvtx, rowGids.getRawPtr(), rowLids,
-          partNum.getRawPtr());
+        eGInput->applyPartitioningSolution(*eG, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
       }
-  
+
       gfail = globalFail(comm, fail);
-  
+
       if (!gfail){
         RCP<const egraph_t> cnewG(mMigrate, true);
         RCP<Zoltan2::XpetraCrsGraphInput<egraph_t> > newInput;
         try{
-          newInput = 
+          newInput =
             rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t>(cnewG));
         }
         catch (std::exception &e){
-          TEST_FAIL_AND_EXIT(*comm, 0, 
+          TEST_FAIL_AND_EXIT(*comm, 0,
             string("XpetraCrsGraphInput 6 ")+e.what(), 1);
         }
-  
+
         if (rank==0){
-          std::cout << 
-           "Input adapter for Epetra_CrsGraph migrated to proc 0" << 
+          std::cout <<
+           "Input adapter for Epetra_CrsGraph migrated to proc 0" <<
            std::endl;
         }
         fail = verifyInputAdapter<egraph_t>(*newInput, *newG);

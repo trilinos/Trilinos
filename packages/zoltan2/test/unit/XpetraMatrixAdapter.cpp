@@ -153,7 +153,6 @@ int main(int argc, char *argv[])
   size_t nrows = tM->getNodeNumRows();
   Teuchos::ArrayView<const gno_t> rowGids = 
     tM->getRowMap()->getNodeElementList();
-  lno_t *rowLids = NULL;
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsMatrix
@@ -178,12 +177,15 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Array<size_t> partNum(nrows,0);  // Migrate all rows to proc 0
+      Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
+               solution(nprocs, nrows, 0);
+      ArrayRCP<gno_t> solnGids = solution.getGidsRCP();
+      ArrayRCP<size_t> solnParts = solution.getPartsRCP();
+      for (size_t i = 0; i < solnGids.size(); i++) solnGids[i] = rowGids[i];
+      for (size_t i = 0; i < solnParts.size(); i++) solnParts[i] = 0;
       tmatrix_t *mMigrate = NULL;
       try{
-        tMInput->applyPartitioningSolution(*tM, mMigrate, 
-          nprocs, nrows, rowGids.getRawPtr(), rowLids,
-          partNum.getRawPtr());
+        tMInput->applyPartitioningSolution(*tM, mMigrate, solution);
         newM = rcp(mMigrate);
       }
       catch (std::exception &e){
@@ -242,12 +244,15 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Array<size_t> partNum(nrows,0);  // Migrate all rows to proc 0
+      Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
+               solution(nprocs, nrows, 0);
+      ArrayRCP<gno_t> solnGids = solution.getGidsRCP();
+      ArrayRCP<size_t> solnParts = solution.getPartsRCP();
+      for (size_t i = 0; i < solnGids.size(); i++) solnGids[i] = rowGids[i];
+      for (size_t i = 0; i < solnParts.size(); i++) solnParts[i] = 0;
       xmatrix_t *mMigrate =NULL;
-       try{
-        xMInput->applyPartitioningSolution(*xM, mMigrate,
-          nprocs, nrows, rowGids.getRawPtr(), rowLids,
-          partNum.getRawPtr());
+      try{
+        xMInput->applyPartitioningSolution(*xM, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -306,12 +311,15 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Array<size_t> partNum(nrows,0);  // Migrate all rows to proc 0
+      Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
+               solution(nprocs, nrows, 0);
+      ArrayRCP<gno_t> solnGids = solution.getGidsRCP();
+      ArrayRCP<size_t> solnParts = solution.getPartsRCP();
+      for (size_t i = 0; i < solnGids.size(); i++) solnGids[i] = rowGids[i];
+      for (size_t i = 0; i < solnParts.size(); i++) solnParts[i] = 0;
       ematrix_t *mMigrate =NULL;
       try{
-        eMInput->applyPartitioningSolution(*eM, mMigrate,
-          nprocs, nrows, rowGids.getRawPtr(), rowLids,
-          partNum.getRawPtr());
+        eMInput->applyPartitioningSolution(*eM, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;

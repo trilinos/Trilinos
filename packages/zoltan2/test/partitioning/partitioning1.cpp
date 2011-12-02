@@ -225,11 +225,9 @@ int main(int narg, char** arg)
 
   ////// Basic metric checking of the partitioning solution
   ////// Not ordinarily done in application code; just doing it for testing here.
-  size_t checkNparts = problem.getSolution()->getNumParts();
+  size_t checkNparts = problem.getSolution().getNumParts();
   size_t checkLength;
-  z2TestGO *checkGIDs = problem.getSolution()->getGids(&checkLength);
-  z2TestLO *checkLIDs = problem.getSolution()->getLids(&checkLength);
-  size_t  *checkParts = problem.getSolution()->getParts(&checkLength);
+  size_t  *checkParts = problem.getSolution().getParts(&checkLength);
 
   // Check number of parts
   if (me == 0) 
@@ -278,14 +276,12 @@ int main(int narg, char** arg)
   ////// Redistribute matrix and vector into new matrix and vector.
   SparseMatrix *redistribMatrix;
   adapter.applyPartitioningSolution(*origMatrix, redistribMatrix,
-                                    checkNparts, checkLength,
-                                    checkGIDs, checkLIDs, checkParts);
+                                    problem.getSolution());
 
   Vector *redistribVector;
   VectorAdapter adapterVector(origVector);
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,
-                                          checkNparts, checkLength,
-                                          checkGIDs, checkLIDs, checkParts);
+                                          problem.getSolution());
 
   RCP<Vector> redistribProd;
   redistribProd = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
