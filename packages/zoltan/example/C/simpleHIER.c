@@ -134,6 +134,10 @@ int main(int argc, char *argv[])
   ** partition 0, process rank 1 will own partition 1, and so on.
   ******************************************************************/
 
+MPI_Barrier(MPI_COMM_WORLD);
+if (myRank==0) fprintf(stderr,"GO Zoltan_LB_Partition\n"); 
+MPI_Barrier(MPI_COMM_WORLD);
+
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
         &numGidEntries,  /* Number of integers used for a global ID */
@@ -156,6 +160,9 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
+MPI_Barrier(MPI_COMM_WORLD);
+if (myRank==0) fprintf(stderr,"DONE Zoltan_LB_Partition\n"); 
+MPI_Barrier(MPI_COMM_WORLD);
   /******************************************************************
   ** Visualize the graph partitioning before and after calling Zoltan.
   ******************************************************************/
@@ -270,7 +277,7 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
         int wgt_dim, float *ewgts, int *ierr)
 {
 int i, j, from, to;
-ZOLTAN_ID_PTR *nextNbor;
+ZOLTAN_ID_PTR nextNbor;
 int *nextProc;
 
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
@@ -283,7 +290,7 @@ int *nextProc;
     return;
   }
 
-  nextNbor = (int *)nborGID;
+  nextNbor = nborGID;
   nextProc = nborProc;
 
   for (i=0; i < num_obj; i++){
