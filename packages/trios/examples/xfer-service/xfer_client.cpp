@@ -886,9 +886,10 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
         // Aggregate bytes per experiment
         if (i == 0) timings_desc.push_back("Bytes per experiment");
         double nbytes = args.num_reqs*client_size* (
-                sizeof(struct nssi_request) +
+                sizeof(struct nssi_request_header) +
+                sizeof(struct xfer_write_rdma_args) +
                 args.len * sizeof(struct data_t) +
-                sizeof(int));
+                sizeof(struct nssi_result_header));
         timings.push_back(nbytes);
 
         // Time
