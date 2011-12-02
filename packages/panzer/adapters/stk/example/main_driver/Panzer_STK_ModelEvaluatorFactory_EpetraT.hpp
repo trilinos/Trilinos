@@ -330,9 +330,6 @@ namespace panzer_stk {
 			                ghosted_solution);
       }
 
-      if (is_transient)
-	mesh->writeToExodus(t_init);
-
     }
    
     // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
