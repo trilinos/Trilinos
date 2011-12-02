@@ -35,7 +35,7 @@ namespace Zoltan2
 
 template <typename T, typename LNO>
 void AlltoAll(const Comm<int> &comm,
-              Zoltan2::Environment &env,
+              const Environment &env,
               const ArrayView<const T> &sendBuf,  // input
               LNO count,                          // input
               ArrayRCP<T> &recvBuf)         // output - allocated here
@@ -114,7 +114,7 @@ void AlltoAll(const Comm<int> &comm,
 
 template <typename T, typename LNO>
 void AlltoAllv(const Comm<int> &comm,
-              Zoltan2::Environment &env,  
+              const Environment &env,  
               const ArrayView<const T> &sendBuf,      // input
               const ArrayView<const LNO> &sendCount,  // input
               ArrayRCP<T> &recvBuf,      // output, allocated here
@@ -354,7 +354,7 @@ template <typename T, typename LNO>
 
 template <typename T, typename LNO>
 void AlltoAllv(const Comm<int>     &comm,
-  Zoltan2::Environment &env,
+  const Environment &env,
   const ArrayView<const std::vector<T> > &sendBuf,
   const ArrayView<const LNO>             &sendCount,
   ArrayRCP<std::vector<T> >        &recvBuf,
