@@ -39,13 +39,15 @@ enum TranslationType {
   TRANSLATE_LIB_TO_APP
 };
 
-/*! Z2::IdentifierMap
+/*! Zoltan2::IdentifierMap
     \brief An IdentifierMap manages a global space of unique object identifiers.
 
     LID  is the data type used by application for local IDs, which are optional.
     GID  is the data type used by application for globls IDs
     LNO  is the data type used by Zoltan2 for local counts and indexes.
     GNO  is the integral data type used by Zoltan2 for global counts.
+
+TODO: If the local ID array is NULL, then assume local IDs are 0 - n-1
 */
 
 ////////////////////////////////////////////////////////////////////
@@ -78,10 +80,9 @@ public:
 
   // TODO - we don't need comm - it's in the env.
 
-  explicit IdentifierMap( const RCP<const Comm<int> > &comm, 
-                          const RCP<Environment > &env, 
-                          const ArrayRCP<GID> &gids, 
-                          const ArrayRCP<LID> &lids,
+  explicit IdentifierMap( const RCP<const Environment > &env, 
+                          const ArrayRCP<const GID> &gids, 
+                          const ArrayRCP<const LID> &lids,
                           bool gidsMustBeConsecutive=false);
 
   /*! Destructor */
@@ -173,12 +174,12 @@ private:
 
   // Problem parameters, library configuration.
 
-  const RCP<Environment> env_;
+  const RCP<const Environment> env_;
 
   // Application global and local IDs
 
-  const ArrayRCP<GID> myGids_; 
-  const ArrayRCP<LID> myLids_;
+  const ArrayRCP<const GID> myGids_; 
+  const ArrayRCP<const LID> myLids_;
 
   // Zoltan2 GNOs will be consecutive if the application GIDs
   // were mapped to GNOs, or if the application GIDs happen
@@ -224,18 +225,20 @@ private:
 
 template<typename LID, typename GID, typename LNO, typename GNO> 
   IdentifierMap<LID,GID,LNO,GNO>::IdentifierMap(
-    const RCP<const Comm<int> > &incomm, const RCP<Environment> &env,
-    const ArrayRCP<GID> &gids, const ArrayRCP<LID> &lids,
+    const RCP<const Environment> &env,
+    const ArrayRCP<const GID> &gids, const ArrayRCP<const LID> &lids,
     bool idsMustBeConsecutive) 
-         : comm_(incomm),  env_(env), myGids_(gids), myLids_(lids),
+         : comm_(env->comm_),  env_(env), myGids_(gids), myLids_(lids),
            gnoDist_(), gidHash_(), lidHash_(), 
            globalNumberOfIds_(0), localNumberOfIds_(0), haveLocalIds_(false),
-           myRank_(incomm->getRank()), numProcs_(incomm->getSize()), 
+           myRank_(0), numProcs_(1),
            userGidsAreTeuchosOrdinal_(false), userGidsAreConsecutive_(false), 
            userGidsAreZoltan2Gids_(false), zoltan2GidsAreConsecutive_(false), 
            consecutiveGidsAreRequired_(idsMustBeConsecutive),
            minGlobalGno_(0), maxGlobalGno_(0)
 {
+  myRank_ = comm_->getRank();
+  numProcs_ = comm_->getSize();
   setupMap();
 }
 
@@ -540,7 +543,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   try{
     ArrayView<const GID> gidView = gidOutBuf();
     ArrayView<const LNO> countView = countOutBuf();
-    AlltoAllv(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
+    AlltoAllv<GID, LNO>(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -551,7 +554,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
     ArrayView<const GNO> gnoView = gnoOutBuf();
     ArrayView<const LNO> countView = countOutBuf();
     try{
-      AlltoAllv(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
+      AlltoAllv<GNO, LNO>(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
     }
     Z2_FORWARD_EXCEPTIONS;
   }
@@ -671,7 +674,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   try{
     ArrayView<const GID> gidView = gidOutBuf();
     ArrayView<const LNO> countView = countOutBuf();
-    AlltoAllv(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
+    AlltoAllv<GID,LNO>(*comm_, *env_, gidView, countView, gidInBuf, countInBuf);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -735,7 +738,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   try{
     ArrayView<const int> procView = procOutBuf();
     ArrayView<const LNO> countView = countOutBuf();
-    AlltoAllv(*comm_, *env_, procView, countView, procInBuf, countInBuf);
+    AlltoAllv<int,LNO>(*comm_, *env_, procView, countView, procInBuf, countInBuf);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -745,7 +748,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
     try{
       ArrayView<const GNO> gnoView = gnoOutBuf();
       ArrayView<const LNO> countView = countOutBuf();
-      AlltoAllv(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
+      AlltoAllv<GNO,LNO>(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -830,7 +833,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
         Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
     }
 
-    LID *lidPtr = myLids_.get();  // for performance
+    const LID *lidPtr = myLids_.get();  // for performance
 
     for (teuchos_size_t i=0; i < localNumberOfIds_; i++){
       try{
@@ -858,7 +861,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   if (IdentifierTraits<GID>::isGlobalOrdinal()){
 
     userGidsAreTeuchosOrdinal_ = true;
-    GID *gidPtr = myGids_.get();
+    const GID *gidPtr = myGids_.get();
 
     GID min = gidPtr[0];
     GID max = gidPtr[localNumberOfIds_-1];
@@ -901,7 +904,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
         // not be a Teuchos Packet type at compile time.
   
         try{
-          AlltoAll<GID, LNO>(*comm_, *env_, sendBuf, LNO(1), recvBuf);
+          AlltoAll<GID,LNO>(*comm_, *env_, sendBuf, LNO(1), recvBuf);
         }
         Z2_FORWARD_EXCEPTIONS;
     
@@ -975,7 +978,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
         Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
     }
 
-    GID *gidPtr = myGids_.get();  // for performance
+    const GID *gidPtr = myGids_.get();  // for performance
 
     for (teuchos_size_t i=0; i < localNumberOfIds_; i++){
       try{
