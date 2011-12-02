@@ -41,6 +41,7 @@ using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_implicit_cast;
 using Teuchos::rcp_dynamic_cast;
+using Teuchos::arcp_const_cast;
 using Teuchos::Array;
 using Teuchos::ArrayRCP;
 using Teuchos::arcp;
