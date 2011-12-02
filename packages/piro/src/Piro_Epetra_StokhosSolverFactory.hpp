@@ -114,6 +114,9 @@ namespace Epetra {
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > 
     getExpansion() const { return expansion; }
 
+    Teuchos::RCP<Stokhos::ParallelData> getParallelData() const
+    { return sg_parallel_data; }
+
     //@}
     
   private:
