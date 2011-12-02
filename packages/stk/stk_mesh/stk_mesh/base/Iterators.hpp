@@ -53,19 +53,19 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, ValueTy
     return !(*this == rhs);
   }
 
-  // ++x
-  self& operator++(int)
-  {
-    increment();
-    return *this;
-  }
-
   // x++
-  self operator++()
+  self operator++(int)
   {
     self copy = *this;
     increment();
     return copy;
+  }
+
+  // ++x
+  self& operator++()
+  {
+    increment();
+    return *this;
   }
 
   ValueType operator*() const
@@ -193,19 +193,19 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag, B
     return !(*this == rhs);
   }
 
-  // ++x
-  self& operator++(int)
-  {
-    increment();
-    return *this;
-  }
-
   // x++
-  self operator++()
+  self operator++(int)
   {
     self copy = *this;
     increment();
     return copy;
+  }
+
+  // ++x
+  self& operator++()
+  {
+    increment();
+    return *this;
   }
 
   // The method below is why boost::filter_iterator won't work for us. filter_iterator
