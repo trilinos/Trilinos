@@ -3310,17 +3310,18 @@ namespace stk {
     void Refiner::set_active_part()
     {
       // deal with parts
-      stk::mesh::Part* active_elements_part = m_eMesh.getNonConstPart("refine_active_elements_part");
-      if (active_elements_part)
+      stk::mesh::Part* child_elements_part = m_eMesh.getNonConstPart("refine_active_elements_part");
+      stk::mesh::Part* parent_elements_part = m_eMesh.getNonConstPart("refine_inactive_elements_part");
+      if (child_elements_part && parent_elements_part)
         {
           //m_eMesh.getBulkData()->modification_begin();
-          std::vector<stk::mesh::Part*> add_parts(1, active_elements_part);
-          std::vector<stk::mesh::Part*> remove_parts;
-          mesh::Selector in_active_part(*active_elements_part);
+          std::vector<stk::mesh::Part*> child_parts(1, child_elements_part);
+          std::vector<stk::mesh::Part*> parent_parts(1, parent_elements_part);
+          //mesh::Selector in_child_part(*child_elements_part);
           mesh::Selector on_locally_owned_part =  ( m_eMesh.getFEM_meta_data()->locally_owned_part() );
 
-          std::vector<stk::mesh::Entity *> add_entities;
-          std::vector<stk::mesh::Entity *> remove_entities;
+          std::vector<stk::mesh::Entity *> child_entities;
+          std::vector<stk::mesh::Entity *> parent_entities;
 
           const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
 
@@ -3337,16 +3338,16 @@ namespace stk {
                       stk::mesh::Entity& element = bucket[ientity];
                       if (m_eMesh.hasFamilyTree(element) && m_eMesh.isParentElement(element, true))
                         {
-                          if (in_active_part(element))
+                          //if (in_child_part(element))
                             {
-                              remove_entities.push_back(&element);
+                              parent_entities.push_back(&element);
                             }
                         }
                       else
                         {
-                          if (!in_active_part(element))
+                          //if (!in_child_part(element))
                             {
-                              add_entities.push_back(&element);
+                              child_entities.push_back(&element);
                             }
                         }
                     }
@@ -3354,16 +3355,22 @@ namespace stk {
                 }
             }
 
-          for (unsigned iv=0; iv < add_entities.size(); iv++)
+          std::cout << "tmp Refiner::set_active_part: child_entities= " << child_entities.size() << " parent_entities= " << parent_entities.size() << std::endl;
+          for (unsigned iv=0; iv < child_entities.size(); iv++)
             {
-              m_eMesh.getBulkData()->change_entity_parts( *add_entities[iv],   add_parts, remove_parts );
+              m_eMesh.getBulkData()->change_entity_parts( *child_entities[iv],   child_parts, parent_parts );
             }
-          for (unsigned iv=0; iv < remove_entities.size(); iv++)
+          for (unsigned iv=0; iv < parent_entities.size(); iv++)
             {
-              // reversed arguments - removing not adding
-              m_eMesh.getBulkData()->change_entity_parts( *remove_entities[iv],  remove_parts, add_parts );
+              m_eMesh.getBulkData()->change_entity_parts( *parent_entities[iv],  parent_parts, child_parts );
             }
 
+          /* for future
+          if (!m_doIOSaveInactiveElements) 
+            {
+              m_eMesh.set_io_omitted_parts(parent_parts);
+            }
+          */
           //m_eMesh.getBulkData()->modification_end();
         }
 

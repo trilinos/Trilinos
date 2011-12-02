@@ -109,6 +109,13 @@ namespace stk {
       bool
       getRemoveOldElements();
 
+      /* for future
+      void
+      setIOSaveInactiveElements(bool do_save) { m_doIOSaveInactiveElements = do_save; }
+      bool
+      getIOSaveInactiveElements() { return m_doIOSaveInactiveElements; }
+      */
+
       void
       setGeometryFile(std::string file_name);
 
@@ -334,6 +341,9 @@ namespace stk {
       NodeRegistry* m_nodeRegistry;
       stk::mesh::FieldBase *m_proc_rank_field;
       bool m_doRemove;
+
+      // for future: 
+      // bool m_doIOSaveInactiveElements; // default false
 
       std::vector<stk::mesh::EntityRank> m_ranks;
       bool m_ignoreSideSets;

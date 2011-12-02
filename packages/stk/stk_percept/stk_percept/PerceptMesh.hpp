@@ -820,6 +820,8 @@ namespace stk {
         return cell_topo_data;
       }
 
+      const stk::mesh::PartVector& get_io_omitted_parts() { return m_io_omitted_parts; }
+      void set_io_omitted_parts(stk::mesh::PartVector& io_omitted_parts) { m_io_omitted_parts = io_omitted_parts; }
 
       static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
                                   std::string msg,
@@ -894,6 +896,8 @@ namespace stk {
       static BasisTableMap m_basisTable;
 
       SameRankRelation m_adapt_parent_to_child_relations;
+
+      stk::mesh::PartVector                 m_io_omitted_parts;
 
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 

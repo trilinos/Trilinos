@@ -1601,15 +1601,31 @@ namespace stk {
 
     void PerceptMesh::checkForPartsToAvoidWriting()
     {
-      const stk::mesh::PartVector & parts = getFEM_meta_data()->get_parts();
-      unsigned nparts = parts.size();
+      const stk::mesh::PartVector * parts = &getFEM_meta_data()->get_parts();
+      unsigned nparts = parts->size();
 
       for (unsigned ipart=0; ipart < nparts; ipart++)
         {
-          stk::mesh::Part& part = *parts[ipart];
+          stk::mesh::Part& part = *((*parts)[ipart]);
           std::string name = part.name();
           //std::cout << "tmp srk checkForPartsToAvoidWriting found part= " << name << " s_omit_part= " << s_omit_part << std::endl;
           if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
+          {
+            //std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
+            const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
+            if (entity) 
+              stk::io::remove_io_part_attribute(part);
+          }
+        }
+
+      parts = &get_io_omitted_parts();
+      nparts = parts->size();
+
+      for (unsigned ipart=0; ipart < nparts; ipart++)
+        {
+          stk::mesh::Part& part = *((*parts)[ipart]);
+          //std::string name = part.name();
+          //std::cout << "tmp srk checkForPartsToAvoidWriting found part= " << name << " s_omit_part= " << s_omit_part << std::endl;
           {
             //std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();

@@ -2435,13 +2435,18 @@ namespace stk {
               }
           }
 
-        // a part to hold active elements (i.e. leaf elements)
-        if (0)
+        // a part to hold active elements (i.e. leaf elements), and parent (non-active) elements
+        if (1)
           {
             stk::mesh::Part* active_elements_part = eMesh.getNonConstPart("refine_active_elements_part");
             if (!active_elements_part)
               {
                 eMesh.getFEM_meta_data()->declare_part("refine_active_elements_part", eMesh.element_rank());
+              }
+            stk::mesh::Part* inactive_elements_part = eMesh.getNonConstPart("refine_inactive_elements_part");
+            if (!inactive_elements_part)
+              {
+                eMesh.getFEM_meta_data()->declare_part("refine_inactive_elements_part", eMesh.element_rank());
               }
           }
 
