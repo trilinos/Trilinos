@@ -1,0 +1,21 @@
+
+The borders have to be local or distributed depending on the separator.
+
+Avoid the matrix multiply every time to do a transpose. Store the transposed
+matrix.
+
+Fix the narrow separator for the case when the matrix already has a separator.
+
+Can we make Amesos_Schur cheaper ?
+
+Switch inner solve to Belos.
+
+Fix KLU's triangular solve.
+
+Change probing operator to handle local and distributed cases. Avoid doing
+this in the factor.
+
+Refactor the three copies of the computeApproxSchur for wide, narrow and
+guided probing into something manageable.
+
+Start using the debug manager correctly.
