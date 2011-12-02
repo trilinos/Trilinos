@@ -38,38 +38,45 @@
  */
 
 #include <iostream>
-#include <math.h>
+#include <cstdlib>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
-
-#include <Kokkos_DeviceCuda.hpp>
-#include <Kokkos_DeviceCuda_ValueView.hpp>
-#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
-#include <Kokkos_DeviceCuda_MDArrayView.hpp>
-#include <Kokkos_DeviceCuda_ParallelFor.hpp>
-#include <Kokkos_DeviceCuda_ParallelReduce.hpp>
-
-#include <Kokkos_DeviceCuda_macros.hpp>
-#include <Element.hpp>
-#include <CRSMatrixGatherFill.hpp>
-#include <Dirichlet.hpp>
-#include <driver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
-
-__global__ void dummy_kernel(){}
-
-namespace Test {
-
-void test_Cuda(int beg, int end, int runs)
-{
-  MiniImplTherm<double, Kokkos::DeviceCuda >::driver( "CUDA-double" , beg , end , runs );
-  MiniImplTherm<float,  Kokkos::DeviceCuda >::driver( "CUDA-float" , beg , end , runs );
+namespace Test{
+  void test_Host(int beg, int end, int r);
+  void test_TPI (int beg, int end, int r, int t);
+  void test_Pthread (int beg, int end, int r, int t);
+  void test_TBB(int beg, int end, int r, int t);
+  void test_Cuda(int beg, int end, int r);
 }
 
-}// namespace
+int main(int argc, char ** argv)
+{
+  int beg = 10 ;
+  int end = 15 ;
+  int runs = 1 ;
+  int threads = 4;
 
+  if ( argc == 5) {
+    beg = atoi(argv[1]);
+    end = atoi(argv[2]);
+    runs = atoi(argv[3]);
+    threads = atoi(argv[4]);
+  }
+
+#ifdef TEST_KOKKOS_HOST
+  Test::test_Host(beg, end, runs);
+#endif
+#ifdef TEST_KOKKOS_PTHREAD
+  Test::test_Pthread (beg, end, runs, threads);
+#endif
+#ifdef TEST_KOKKOS_TPI
+  Test::test_TPI (beg, end, runs, threads);
+#endif
+#ifdef TEST_KOKKOS_TBB
+  Test::test_TBB (beg, end, runs, threads);
+#endif
+#ifdef TEST_KOKKOS_CUDA
+  Test::test_Cuda(beg , end, runs);
+#endif
+
+  return 0;
+}

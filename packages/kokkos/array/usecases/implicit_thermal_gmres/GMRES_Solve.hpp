@@ -41,7 +41,6 @@
 #include <WAXSBY.hpp>
 #include <CRSMatVec.hpp>
 #include <impl/Kokkos_Timer.hpp>
-#include <Kokkos_DefaultArithmetic.hpp>
 
 template< typename Scalar , class DeviceType , unsigned N = 1 >
 struct InvMultiVectorScale ;
