@@ -456,7 +456,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   const RCP<ParameterList> tmpPL = Teuchos::parameterList();
 
   // The solver's valid parameter list.
-  RCP<ParameterList> validPL = iterativeSolver_->getValidParameters();
+  RCP<const ParameterList> validPL = iterativeSolver_->getValidParameters();
 
   SolveMeasureType solveMeasureType;
   RCP<GeneralSolveCriteriaBelosStatusTest<Scalar> > generalSolveCriteriaBelosStatusTest;
