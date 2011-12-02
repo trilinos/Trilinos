@@ -144,13 +144,66 @@ void cuda_parallel_launch( const DriverType & driver ,
   }
 }
 
+//----------------------------------------------------------------------------
+
+template< typename DstType , typename SrcType  >
+class CudaParallelCopy ;
+
+template< typename Type >
+class CudaParallelCopy<Type,Type> {
+public:
+  CudaParallelCopy( Type * dst , const Type * src , Cuda::size_type count )
+  {
+    CUDA_SAFE_CALL( cudaMemcpy( dst , src , count * sizeof(Type) ,
+                                cudaMemcpyDeviceToDevice ) );
+  }
+};
+
+template< typename DstType , typename SrcType  >
+class CudaParallelCopy {
+public:
+
+        DstType * const m_dst ;
+  const SrcType * const m_src ;
+  const Cuda::size_type m_count ;
+        Cuda::size_type m_stride ;
+
+  inline
+  __device__
+  void execute_on_device() const
+  {
+    Cuda::size_type i = threadIdx.x + blockDim.x * blockIdx.x ;
+    for ( ; i < m_count ; i += m_stride ) {
+      m_dst[i] = (DstType) m_src[i] ;
+    }
+  }
+
+  CudaParallelCopy( DstType * dst , const SrcType * src ,
+                    Cuda::size_type count )
+    : m_dst( dst ), m_src( src ), m_count( count )
+    {
+      const Cuda::size_type grid_max = cuda_internal_maximum_grid_count();
+
+      const dim3 block( CudaTraits::WarpSize * cuda_internal_maximum_warp_count(), 1, 1);
+
+      dim3 grid( ( ( count + block.x - 1 ) / block.x ) , 1 , 1 );
+
+      if ( grid_max < grid.x ) grid.x = grid_max ;
+
+      m_stride = grid.x * block.x ;
+
+      cuda_parallel_launch_local_memory< CudaParallelCopy ><<< grid , block >>>( *this );
+    }
+};
+
+//----------------------------------------------------------------------------
+
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* defined( __CUDACC__ ) */
+//----------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+#endif /* defined( __CUDACC__ ) */
 
 #endif /* #define KOKKOS_CUDA_PARALLEL_HPP */
 

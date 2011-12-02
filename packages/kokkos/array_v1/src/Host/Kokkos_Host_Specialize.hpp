@@ -66,10 +66,10 @@
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_CRSARRAY_HPP ) && ! defined( KOKKOS_HOST_CRSARRAY )
-#define KOKKOS_HOST_CRSARRAY
-#include <impl/Kokkos_CrsArray_macros.hpp>
-#include <Host/Kokkos_Host_CrsArray.hpp>
+#if defined( KOKKOS_CRSMAP_HPP ) && ! defined( KOKKOS_HOST_CRSMAP )
+#define KOKKOS_HOST_CRSMAP
+#include <impl/Kokkos_CrsMap_macros.hpp>
+#include <Host/Kokkos_Host_CrsMap.hpp>
 #endif
 
 //----------------------------------------------------------------------------

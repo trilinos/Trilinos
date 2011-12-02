@@ -155,7 +155,9 @@ void MemoryManager< Cuda >::copy_to_device_from_host(
 {
   CUDA_SAFE_CALL( cudaMemcpy( dst_device , src_host , count ,
                               cudaMemcpyHostToDevice ) );
+  CUDA_SAFE_CALL( cudaThreadSynchronize() );
 }
+
 void MemoryManager< Cuda >::copy_to_device_from_device(
   void * dst_device , const void * src_device , size_t count )
 {

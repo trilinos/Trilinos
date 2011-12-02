@@ -41,93 +41,73 @@
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
     ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#error "Including <Kokkos_CrsArray_macros.hpp> without macros defined"
+#error "Including <Kokkos_CrsMap_macros.hpp> without macros defined"
 
 #else
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
-/** \brief  Compressed row storage array.
- *
- *  Map ( I , J ) -> K
- *  where I in [ 0 .. N ) and J in [ 0 .. M_I )
- */
-template< typename ValueType , typename SizeType >
-class CrsArray< ValueType , KOKKOS_MACRO_DEVICE , SizeType > {
+
+template< typename SizeType >
+class CrsMap< KOKKOS_MACRO_DEVICE , SizeType > {
 public:
   typedef KOKKOS_MACRO_DEVICE  device_type ;
-  typedef ValueType            value_type ;
   typedef SizeType             size_type ;
-
-  typedef CrsArray< value_type , Host , size_type > HostView ;
 
   /*------------------------------------------------------------------*/
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type row_dimension() const { return m_row_count ; }
+  size_type first_count() const { return m_first_count ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const { return m_total_count ; }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   const size_type * offset_array() const
-    { return m_offset.ptr_on_device(); }
+    { return m_memory.ptr_on_device(); }
   
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  value_type * values_array() const
-    { return m_values.ptr_on_device(); }
-  
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type size() const { return m_value_count ; }
-
-  /*------------------------------------------------------------------*/
   template< typename iType >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  size_type column_dimension( const iType & row ) const
+  size_type second_count( const iType & first ) const
     {
-      const size_type * const offset = offset_array() + row ;
+      const size_type * const offset = m_memory.ptr_on_device() + first ;
       return offset[1] - offset[0] ;
     }
 
   template< typename iType , typename jType >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator()( const iType & row , const jType & j ) const
-    {
-      const size_type offset = offset_array()[row] + j ;
-      return values_array()[ offset ];
-    }
-
-  typedef std::pair<value_type*,value_type*> value_range_type ;
+  size_type operator()( const iType & first , const jType & second ) const
+    { return m_memory.ptr_on_device()[first] + second ; }
 
   template< typename iType >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_range_type operator()( const iType & row ) const
+  std::pair<size_type,size_type> range( const iType & first ) const
     {
-      const size_type  * const offset = offset_array() + row ;
-      const value_type * const values = values_array();
-      return value_range_type( values + offset[0] , values + offset[1] );
+      const size_type * const offset = m_memory.ptr_on_device() + first ;
+      return std::pair<size_type,size_type>( offset[0] , offset[1] );
     }
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  CrsArray()
-  : m_offset()
-  , m_values()
-  , m_row_count(0)
-  , m_value_count(0)
+  CrsMap()
+  : m_memory()
+  , m_first_count(0)
+  , m_total_count(0)
   {}
 
   /** \brief  Construct a view of the array */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  CrsArray( const CrsArray & rhs )
-  : m_offset(    rhs.m_offset )
-  , m_values(    rhs.m_values )
-  , m_row_count( rhs.m_row_count )
-  , m_value_count( rhs.m_value_count )
+  CrsMap( const CrsMap & rhs )
+  : m_memory(    rhs.m_memory )
+  , m_first_count( rhs.m_first_count )
+  , m_total_count( rhs.m_total_count )
   {}
 
   /** \brief  Assign to a view of the rhs array.
@@ -135,12 +115,11 @@ public:
    *          then allocated memory is deallocated.
    */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  CrsArray & operator = ( const CrsArray & rhs )
+  CrsMap & operator = ( const CrsMap & rhs )
   {
-    m_offset    = rhs.m_offset ;
-    m_values    = rhs.m_values ;
-    m_row_count = rhs.m_row_count ;
-    m_value_count = rhs.m_value_count ;
+    m_memory    = rhs.m_memory ;
+    m_first_count = rhs.m_first_count ;
+    m_total_count = rhs.m_total_count ;
     return *this ;
   }
 
@@ -148,54 +127,48 @@ public:
    *           If the last view then allocated memory is deallocated.
    */
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  ~CrsArray() { m_row_count = 0 ; }
+  ~CrsMap() { m_first_count = 0 ; m_total_count = 0 ; }
 
   /*------------------------------------------------------------------*/
   /** \brief  Query if NULL view */
   operator bool () const
-  { return m_offset.operator bool(); }
+  { return m_memory.operator bool(); }
 
   /** \brief  Query if view to same memory */
-  bool operator == ( const CrsArray & rhs ) const
-  { return m_offset.ptr_on_device() == rhs.m_offset.ptr_on_device() ; }
+  bool operator == ( const CrsMap & rhs ) const
+  { return m_memory.ptr_on_device() == rhs.m_memory.ptr_on_device() ; }
 
   /** \brief  Query if not view to same memory */
-  bool operator != ( const CrsArray & rhs ) const
-  { return m_offset.ptr_on_device() != rhs.m_offset.ptr_on_device() ; }
+  bool operator != ( const CrsMap & rhs ) const
+  { return m_memory.ptr_on_device() != rhs.m_memory.ptr_on_device() ; }
 
   /** \brief  Query if view to same memory */
   template< class DeviceRHS , typename SizeTypeRHS >
-  bool operator ==
-    ( const CrsArray< value_type , DeviceRHS , SizeTypeRHS > & rhs ) const
+  bool operator == ( const CrsMap< DeviceRHS , SizeTypeRHS > & rhs ) const
     {
       return Impl::SameType< typename device_type::memory_space ,
                              typename DeviceRHS  ::memory_space >::value &&
              Impl::SameType< size_type , SizeTypeRHS >::value &&
-             m_offset.ptr_on_device() ==
-               (size_type *) rhs.m_offset.ptr_on_device();
+             m_memory.ptr_on_device() ==
+               (size_type *) rhs.m_memory.ptr_on_device();
     }
 
   /** \brief  Query if not view to same memory */
   template< class DeviceRHS , typename SizeTypeRHS >
   bool operator !=
-    ( const CrsArray< value_type , DeviceRHS , SizeTypeRHS > & rhs ) const
+    ( const CrsMap< DeviceRHS , SizeTypeRHS > & rhs ) const
     { return ! operator==( rhs ); }
 
 private:
 
   typedef device_type::memory_space  memory_space ;
 
-  Impl::MemoryView< size_type ,  memory_space > m_offset ;
-  Impl::MemoryView< value_type , memory_space > m_values ;
-  size_type                                     m_row_count ;
-  size_type                                     m_value_count ;
+  Impl::MemoryView< size_type ,  memory_space > m_memory ;
+  size_type                                     m_first_count ;
+  size_type                                     m_total_count ;
 
-  template< typename V , class D , typename I >
-  friend class CrsArray ;
-  template< typename V , class D , typename I >
-  friend class Impl::CreateCrsArray ;
-  template< class Dst , class Src >
-  friend class Impl::DeepCopy ;
+  template< class Dev , typename I > friend class CrsMap ;
+  template< class Dst , class Src >  friend class Impl::CreateCrsMap ;
 };
 
 //----------------------------------------------------------------------------

@@ -221,6 +221,36 @@ private:
 
 //----------------------------------------------------------------------------
 
+template< typename DstType , typename SrcType  >
+class HostParallelCopy : public HostThreadWorker<void> {
+public:
+
+        DstType * const m_dst ;
+  const SrcType * const m_src ;
+  const Host::size_type m_count ;
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( m_count );
+    DstType * const x_end = m_dst + range.second ;
+    DstType *       x     = m_dst + range.first ;
+    const SrcType * y     = m_src + range.first ;
+
+    for ( ; x_end != x ; ++x , ++y ) { *x = (DstType) *y ; }
+
+    this_thread.barrier();
+  }
+
+  HostParallelCopy( DstType * dst , const SrcType * src ,
+                    Host::size_type count )
+    : HostThreadWorker<void>()
+    , m_dst( dst ), m_src( src ), m_count( count )
+    { HostThreadWorker<void>::execute( *this ); }
+};
+
+//----------------------------------------------------------------------------
+
 } // namespace Impl
 } // namespace Kokkos
 

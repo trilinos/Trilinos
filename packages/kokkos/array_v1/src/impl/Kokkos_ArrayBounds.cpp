@@ -174,15 +174,15 @@ void multivector_require_equal_dimension(
 
 //----------------------------------------------------------------------------
 
-void crsarray_require_equal_dimension(
-  size_t x_row_dim , size_t x_size ,
-  size_t y_row_dim , size_t y_size )
+void crsmap_require_equal_dimension(
+  size_t x_first_count , size_t x_size ,
+  size_t y_first_count , size_t y_size )
 {
-  if ( x_row_dim != y_row_dim || x_size != y_size ) {
+  if ( x_first_count != y_first_count || x_size != y_size ) {
     std::ostringstream msg ;
-    msg << "Kokkos::Impl::crsarray_require_equal_dimension FAILED :" ;
-    if ( x_row_dim != y_row_dim ) {
-      msg << " row_dimension( " << x_row_dim << " != " << y_row_dim << " )" ;
+    msg << "Kokkos::Impl::crsmap_require_equal_dimension FAILED :" ;
+    if ( x_first_count != y_first_count ) {
+      msg << " first_count( " << x_first_count << " != " << y_first_count << " )" ;
     }
     if ( x_size != y_size ) {
       msg << " size( " << x_size << " != " << y_size << " )" ;

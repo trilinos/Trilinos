@@ -53,19 +53,19 @@
 
 namespace {
 
-template< typename T, class > class TestCrsArray ;
+template< class > class TestCrsMap ;
 
-template<typename T>
-class TestCrsArray< T, KOKKOS_MACRO_DEVICE >
+template<>
+class TestCrsMap< KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef KOKKOS_MACRO_DEVICE device ;
   typedef Kokkos::Host        host ;
 
-  typedef Kokkos::CrsArray< T , device > dView ;
-  typedef typename dView::HostView       hView ;
+  typedef Kokkos::CrsMap< device > dView ;
+  typedef Kokkos::CrsMap< host >   hView ;
 
-  TestCrsArray() { run_test(); }
+  TestCrsMap() { run_test(); }
 
   void run_test()
   {
@@ -85,40 +85,31 @@ public:
     int x_row_size[ LENGTH ];
     size_t y_row_size[ LENGTH ];
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      x_count += ( x_row_size[i] = i % 8 );
-      y_count += ( y_row_size[i] = i % 8 );
+      const int size = ( i + 1 ) % 16 ;
+      x_row_size[i] = size ;
+      y_row_size[i] = size ;
+      x_count += size ;
+      y_count += size ;
     }
 
-    dx = Kokkos::create_labeled_crsarray<T,device>( "dx" , x_row_size , x_row_size + LENGTH );
-    dy = Kokkos::create_labeled_crsarray<T,device>( "dy" , y_row_size , y_row_size + LENGTH );
+    dx = Kokkos::create_labeled_crsmap<device>( "dx" , x_row_size , x_row_size + LENGTH );
+    dy = Kokkos::create_labeled_crsmap<device>( "dy" , y_row_size , y_row_size + LENGTH );
 
     ASSERT_TRUE(dx);
     ASSERT_TRUE(dy);
     ASSERT_NE( dx , dy );
 
-    ASSERT_EQ( dx.row_dimension() , LENGTH );
-    ASSERT_EQ( dy.row_dimension() , LENGTH );
+    ASSERT_EQ( dx.first_count() , LENGTH );
+    ASSERT_EQ( dy.first_count() , LENGTH );
     ASSERT_EQ( dx.size() , (device::size_type) x_count );
     ASSERT_EQ( dy.size() , (device::size_type) y_count );
 
-    hx = Kokkos::create_mirror( dx );
-    hy = Kokkos::create_mirror( dy );
+    hx = Kokkos::create_crsmap<Kokkos::Host>( dx );
+    hy = Kokkos::create_crsmap<Kokkos::Host>( dy );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      for ( size_t j = 0 ; j < hx.column_dimension( i ) ; ++j ) {
-        hx(i,j) = i + j ;
-      }
-    }
-
-    Kokkos::deep_copy( dx , hx );
-    Kokkos::deep_copy( dy , dx );
-    Kokkos::deep_copy( hy , dy );
-
-    for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      ASSERT_EQ( hx.column_dimension(i) , hy.column_dimension(i) );
-      for ( size_t j = 0 ; j < hx.column_dimension( i ) ; ++j ) {
-        ASSERT_EQ( hx(i,j) , hy(i,j) );
-      }
+      ASSERT_EQ( (int) hx.second_count(i) , x_row_size[i] );
+      ASSERT_EQ( hx.second_count(i) , hy.second_count(i) );
     }
 
     dz = dx ; ASSERT_EQ( dx, dz); ASSERT_NE( dy, dz);

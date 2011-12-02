@@ -45,7 +45,7 @@
 #include <Kokkos_Value.hpp>
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_MDArray.hpp>
-#include <Kokkos_CrsArray.hpp>
+#include <Kokkos_CrsMap.hpp>
 
 #include <Kokkos_Host.hpp>
 #include <Kokkos_Cuda.hpp>
@@ -58,7 +58,7 @@
 #include <TestValue.hpp>
 #include <TestMultiVector.hpp>
 #include <TestMDArray.hpp>
-#include <TestCrsArray.hpp>
+#include <TestCrsMap.hpp>
 
 #include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
 #include <TestMDArrayIndexMap.hpp>
@@ -89,9 +89,8 @@ void test_device_cuda_multi_vector() {
   TestMultiVector< double, Kokkos::Cuda >();
 }
 
-void test_device_cuda_crsarray() {
-  TestCrsArray< int, Kokkos::Cuda >();
-  TestCrsArray< double, Kokkos::Cuda >();
+void test_device_cuda_crsmap() {
+  TestCrsMap< Kokkos::Cuda >();
 }
 
 void test_device_cuda_mdarray() {
