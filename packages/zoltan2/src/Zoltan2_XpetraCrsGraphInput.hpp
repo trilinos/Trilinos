@@ -44,6 +44,7 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
+  typedef GraphInput<User>       base_adapter_t;
 
   /*! \brief Destructor
    */

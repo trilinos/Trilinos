@@ -43,6 +43,7 @@ public:
   typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
+  typedef VectorInput<User>       base_adapter_t;
 
   typedef Xpetra::Vector<
     scalar_t, lno_t, gno_t, node_t> x_vector_t;
