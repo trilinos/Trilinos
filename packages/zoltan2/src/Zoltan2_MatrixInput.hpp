@@ -122,8 +122,7 @@ public:
    */
 
   size_t applyPartitioningSolution(const User &in, User *&out,
-    size_t numParts, size_t numIds,
-    const gid_t *gid, const lid_t *lid, const size_t *partition)
+         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
   {
     return 0;
   }

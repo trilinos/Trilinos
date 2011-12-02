@@ -17,8 +17,6 @@
   the Problem class.
 */
 
-using Teuchos::rcp_dynamic_cast;
-
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
@@ -58,8 +56,8 @@ public:
   //    don't think I've seen this style before.
   virtual void solve();
 
-  PartitioningSolution<gid_t, lid_t, lno_t> *getSolution() {
-    return solution_.getRawPtr();
+  PartitioningSolution<gid_t, lid_t, lno_t> &getSolution() {
+    return *(solution_.getRawPtr());
   };
 
 private:

@@ -140,12 +140,11 @@ public:
    *   be on the list, or the Import will fail.
    */
   size_t applyPartitioningSolution(const User &in, User *&out,
-    size_t numParts, size_t numIds,
-    const gid_t *gid, const lid_t *lid, const size_t *partition)
+         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
   {
-    ArrayView<const gid_t> gidList(gid, numIds);
-    ArrayView<const size_t> partList(partition, numIds);
-    ArrayView<const lno_t> dummyIn;
+    ArrayRCP<gid_t> gidList = solution.getGidsRCPConst();
+    ArrayRCP<size_t> partList = solution.getPartsRCPConst();
+    ArrayRCP<lno_t> dummyIn;
     ArrayRCP<gid_t> importList;
     ArrayRCP<lno_t> dummyOut;
     size_t numNewRows;
@@ -154,7 +153,7 @@ public:
 
     try{
       // Get an import list
-      numNewRows = convertPartitionListToImportList<gid_t, lno_t, lno_t>(
+      numNewRows = convertPartListToImportList<gid_t, lno_t, lno_t>(
         *comm, partList, gidList, dummyIn, importList, dummyOut);
     }
     Z2_FORWARD_EXCEPTIONS;

@@ -18,6 +18,8 @@
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_InputTraits.hpp>
 
+#include <Zoltan2_PartitioningSolution.hpp>
+
 namespace Zoltan2 {
 
 /*! \brief An enum to identify general types of input adapters.

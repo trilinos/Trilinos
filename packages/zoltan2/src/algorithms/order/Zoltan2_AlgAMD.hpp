@@ -65,8 +65,6 @@ int AlgAMD(
   typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::scalar_t scalar_t;
 
-  AMDTraits<lno_t> AMDobj;
-
   int ierr= 0;
 
   const size_t nVtx = model->getLocalNumVertices();
@@ -86,6 +84,7 @@ int AlgAMD(
 
 #ifdef HAVE_AMD
   cout << "AMD is enabled" << endl;
+  AMDTraits<lno_t> AMDobj;
   double Control[AMD_CONTROL];
   double Info[AMD_INFO];
 
