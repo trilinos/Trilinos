@@ -42,6 +42,7 @@
 #include <CRSMatVec.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
+
 template< typename Scalar , class DeviceType , unsigned N = 1 >
 struct InvMultiVectorScale ;
 
@@ -56,12 +57,12 @@ struct InvMultiVectorScale<Scalar, KOKKOS_MACRO_DEVICE ,1> {
 
   InvMultiVectorScale(
     const Kokkos::MultiVectorView<Scalar,device_type> & argY ,
-    const Kokkos::ValueView<Scalar,device_type>       & argS )
-    : Y( argY ), S( argS ) {}
+    const Kokkos::ValueView<Scalar,device_type>       & argS)
+    : Y( argY ), S( argS ){}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( size_type iwork ) const
-  { Y(iwork) /= *S ; }
+  { Y(iwork) /= *S; }
 };
 
 
@@ -108,16 +109,19 @@ struct MultiVectorYSAX<Scalar, KOKKOS_MACRO_DEVICE ,1> {
   typedef device_type::size_type  size_type ;
 
   Kokkos::MultiVectorView<Scalar,device_type> Y , X ;
-  Kokkos::ValueView<Scalar,device_type>     A ;
+  Kokkos::MultiVectorView<Scalar,device_type>     A ;
+  size_type aRow, aCol;
 
   MultiVectorYSAX( const Kokkos::MultiVectorView<Scalar,device_type> & argY ,
-                   const Kokkos::ValueView<Scalar,device_type>     & argA ,
+                   const Kokkos::MultiVectorView<Scalar,device_type>     & argA ,
+		   const size_type argArow,
+		   const size_type argAcol,
                    const Kokkos::MultiVectorView<Scalar,device_type> & argX )
-   : Y( argY ), X( argX ), A( argA ) {}
+   : Y( argY ), X( argX ), A( argA ), aRow(argArow), aCol(argAcol) {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( size_type iwork ) const
-  { Y(iwork) -= X(iwork) * *A ; }
+  { Y(iwork) -= X(iwork) * A(aRow, aCol) ; }
 };
 
 template< typename Scalar , class DeviceType , unsigned N = 1 >
@@ -186,6 +190,24 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     void operator()( Scalar & result ) const
     {
       *norm = sqrt( result );
+    }
+  };
+
+  struct Norm2PlusAssign {
+    value norm;
+    MultiVector toAssign;
+    size_type row;
+    size_type col;
+
+    Norm2PlusAssign(const value & argNorm, const MultiVector &argAssign, size_type argRow, size_type argCol ):
+      norm(argNorm), toAssign(argAssign), row(argRow), col(argCol)
+      {}
+
+    KOKKOS_MACRO_DEVICE_FUNCTION
+    void operator()( Scalar & result ) const
+    {
+      *norm = sqrt( result );
+      toAssign(row, col) = *norm;
     }
   };
 
@@ -284,8 +306,12 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     Kokkos::Impl::Timer wall_clock ;
     for(size_t j =1; j<= num_iters; ++j, ++iteration){
       //Q(:,j) = A * Q(:, j-1)
+      MultiVector qj1 = MultiVector(Q,j-1);
+      MultiVector qj = MultiVector(Q,j);
+      //CRSMatVec<Scalar,device_type> A_mult_q(
+        //A_value, A_row , A_offsets , MultiVector(Q, j-1) , MultiVector(Q, j));
       CRSMatVec<Scalar,device_type> A_mult_q(
-        A_value, A_row , A_offsets , MultiVector(Q, j-1) , MultiVector(Q, j));
+        A_value, A_row , A_offsets , qj1, qj);
       A_mult_q.apply();
 
       //H(0:j, j-1) = Q(:, 0:j-1)^* Q(:,j)
@@ -297,14 +323,16 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
       // Q(:, j) = Q(:, j) - Q(:, 0:j-1) * H(0:j, j-1)
       for(size_t i =0; i<j; ++i){
-        Kokkos::deep_copy(tmp, H(i,j-1));
+        //Kokkos::deep_copy(tmp, H(i,j-1));
+//        Kokkos::parallel_for(
+ //         rows, YSAX(MultiVector(Q,j), tmp, MultiVector(Q,i)));
         Kokkos::parallel_for(
-          rows, YSAX(MultiVector(Q,j), tmp, MultiVector(Q,i)));
+          rows, YSAX(MultiVector(Q,j), H,i,j-1, MultiVector(Q,i)));
       }
      
       //H(j, j-1) = norm(Q(:,j),2) 
-      Kokkos::parallel_reduce(rows, dot_single(Q, j), Norm2(tmp) );
-      Kokkos::deep_copy(H(j,j-1), tmp);
+      Kokkos::parallel_reduce(rows, dot_single(Q, j), Norm2PlusAssign(tmp, H, j, (size_type)j-1) );
+      //Kokkos::deep_copy(H(j,j-1), tmp);
       //Q(:,j) = Q(:, j) / H(j, j-1)
       Kokkos::parallel_for(rows, InvScale(MultiVector(Q, j), tmp));
        

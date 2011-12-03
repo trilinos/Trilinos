@@ -40,8 +40,8 @@ CUDA | Cuda | cuda )
   export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
   export NVCC_SOURCES="../../src/DeviceCuda/*.cu testCuda.cu"
   export NVCC_PATH="/usr/local/cuda"
-  export NVCC="${NVCC_PATH}/bin/nvcc -arch=sm_20 -lib -o libCuda.a"
-  export LIB="${LIB} -L${NVCC_PATH}/lib64 libCuda.a -lcudart -lcuda -lcusparse"
+  export NVCC="${NVCC_PATH}/bin/nvcc -arch=sm_20 -lib -o libCuda.so"
+  export LIB="${LIB} -L${NVCC_PATH}/lib64 libCuda.so -lcudart -lcusparse"
   ;;
 TBB | tbb )
   export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_TBB"
