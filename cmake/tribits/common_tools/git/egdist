@@ -114,8 +114,11 @@ cmndLineArgs = requoteCmndLineArgs(otherArgs)
 # Get the reference base directory
 baseDir = os.getcwd()
 
+baseDirArray = baseDir.split("/")
+baseRepoName = baseDirArray[-1]
+
 print "" 
-print "*** Git Repo: "+txtbld+txtblu+"Trilinos"+txtrst
+print "*** Base Git Repo: "+txtbld+txtblu+baseRepoName+txtrst
 os.system("eg "+cmndLineArgs)
 
 for extraRepo in extraReposFullList:
