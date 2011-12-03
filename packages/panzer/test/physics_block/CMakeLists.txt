@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../equation_set)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../closure_model)
 
 SET(UNIT_TEST_DRIVER
-  ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)
+  ${TEUCHOS_STD_UNIT_TEST_MAIN})
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   physics_block

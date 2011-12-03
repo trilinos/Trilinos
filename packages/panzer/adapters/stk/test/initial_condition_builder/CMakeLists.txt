@@ -10,7 +10,7 @@ INCLUDE_DIRECTORIES(${${PROJECT_NAME}_HOME_DIR}/Panzer/panzer/test/closure_model
 INCLUDE_DIRECTORIES(${${PROJECT_NAME}_HOME_DIR}/Panzer/panzer/adapters/stk/test/bcstrategy)
 
 SET(UNIT_TEST_DRIVER
-  ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)
+  ${TEUCHOS_STD_UNIT_TEST_MAIN})
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   initial_condition_builder

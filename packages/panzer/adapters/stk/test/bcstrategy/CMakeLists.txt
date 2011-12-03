@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/equation_set)
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/closure_model)
 
 SET(UNIT_TEST_DRIVER
-  ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)
+  ${TEUCHOS_STD_UNIT_TEST_MAIN})
 
 SET(SOURCES
     bcstrategy.cpp
