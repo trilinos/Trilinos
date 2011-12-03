@@ -1,6 +1,7 @@
 # CMakeLists inspired by Tpetra/src/CMakeLists.txt
 
 INCLUDE(TribitsLibraryMacros)
+INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 #
 # A) Package-specific configuration options
@@ -97,7 +98,7 @@ APPEND_GLOB(HEADERS */*.hpp)
 #APPEND_GLOB(HEADERS ${DIR}/*/*.cpp)
 #APPEND_GLOB(HEADERS ${DIR}/*/*.hpp)
 
-TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 # Must glob the binary dir last to get all of the auto-generated headers
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
