@@ -545,39 +545,42 @@ that is not sufficient, send email to trilinos-framework@software.sandia.gov
 to ask for help.
 
 
-Handling of PS and SS Code:
----------------------------
+Handling of PS, SS, and EX Code in built-in and extra builds:
+-------------------------------------------------------------
 
-This script will only process PS (Primary Stable) packages in the
-default MPI_DEBUG and SERIAL_RELEASE builds.  This is to avoid
-problems of side-effects of turning on SS packages that would impact
-PS packages (e.g. SS Phalanx getting enabled that enables SS Boost
-which turns on support for Boost in PS Teuchos producing different
-code which might work but the pure PS build without Boost of Teuchos
-may actually be broken and not know it).  Therefore, any non PS
-packages that are enabled (either implicity through changed files or
-explicitly in --enable-packages) will be turned off in the MP_DEBUG
-and SERIAL_RELEASE builds.  If none of the enabled packages are PS,
-then they will all be disabled and the MPI_DEBUG and SERIAL_RELEASE
-builds will be skipped.
+This script will only process PS (Primary Stable) packages in the default
+MPI_DEBUG and SERIAL_RELEASE builds.  This is to avoid problems of
+side-effects of turning on SS packages that would impact PS packages (e.g. SS
+Phalanx getting enabled that enables SS Boost which turns on support for Boost
+in PS Teuchos producing different code which might work but the pure PS build
+without Boost of Teuchos may actually be broken and not know it).  Therefore,
+any non-PS packages that are enabled (either implicity through changed files
+or explicitly in --enable-packages) will be turned off in the MP_DEBUG and
+SERIAL_RELEASE builds.  If none of the enabled packages are PS, then they will
+all be disabled and the MPI_DEBUG and SERIAL_RELEASE builds will be skipped.
 
-In order to better support the development of SS and EX packages, this
-script allows you to define some extra builds that will be invoked and
-used to determine overall pass/fail before a potential push.  The
-option --ss-extra-builds is used to specify extra builds that will
-test SS packages (and also PS packages if any are enabled).  However,
-if no SS packages are enabled, the builds are skipped.
+In order to better support the development of SS and EX packages, this script
+allows you to define some extra builds that will be invoked and used to
+determine overall pass/fail before a potential push.  The option
+--ss-extra-builds is used to specify extra builds that will test SS packages
+(and also PS packages if any are enabled).  If only PS packages are enabled
+then the builds specified in --ss-extra-builds will still be run.  The
+reasoning is that PS packages may contain extra SS features and therefore if
+the goal is to test these SS builds it is desirable to also run these builds
+because they also my impact downstream SS packages.
 
-Finally, the option --extra-builds will test all enabled packages
-reguardless of their categorization.
+Finally, the option --extra-builds will test all enabled packages, including
+EX packages, reguardless of their categorization.  Therefore, when using
+--extra-builds, be careful that you watch what packages are enabled.  If you
+change an EX package, it will be enabled in --extra-builds builds.
 
 A few use cases might help better demonstrate the behavior.  Consider
-the following input arguments specifying extra builds:
+the following input arguments specifying extra builds
 
   --ss-extra-builds=MPI_DEBUG_SS --extra-builds=INTEL_DEBUG
 
-and the packages Techos, Phalanx, and Meros where Teuchos is PS,
-Phalanx is SS, and Meros is EX.
+with the packages Techos, Phalanx, and Meros where Teuchos is PS, Phalanx is
+SS, and Meros is EX.
 
 Here is what packages would be enabled in each of the builds
 MPI_DEBUG, SERIAL_RELEASE, MPI_DEBUG_SS, and INTEL_DEBUG and which
@@ -586,7 +589,7 @@ builds would be skipped:
 A) --enable-packages=Teuchos:
    MPI_DEBUG:       [Teuchos]
    SERIAL_RELEASE:  [Teuchos]
-   MPI_DEBUG_SS:    [Teuchos]     Skipped, no SS packages!
+   MPI_DEBUG_SS:    [Teuchos]
    INTEL_DEBUG:     [Teuchos]     Always enabled!
 
 B) --enable-packages=Phalanx:
@@ -598,7 +601,7 @@ B) --enable-packages=Phalanx:
 C) --enable-packages=Meros:
    MPI_DEBUG:       []            Skipped, no PS packages!
    SERIAL_RELEASE:  []            Skipped, no PS packages!
-   MPI_DEBUG_SS:    []            Skipped, no SS packages!
+   MPI_DEBUG_SS:    []            Skipped, no PS or SS packages!
    INTEL_DEBUG:     [Meros]
 
 D) --enable-packages=Teuchos,Phalanx:
@@ -613,11 +616,9 @@ E) --enable-packages=Teuchos,Phalanx,Meros:
    MPI_DEBUG_SS:    [Teuchos,Phalanx]
    INTEL_DEBUG:     [Teuchos,Phalanx,Meros]
 
-Above, the --ss-extra-builds=MPI_DEBUG_SS build was skipped in use
-case 'A' because it did not contain any SS packages beyond what was in
-the set of PS packages.  However, the --extra-builds=INTEL_DEBUG build
-is always performed with all of the enabled packages.  This logic
-given above in order to understand the output given in the script.
+Tthe --extra-builds=INTEL_DEBUG build is always performed with all of the
+enabled packages.  This logic given above in order to understand the output
+given in the script.
 
 
 Conventions for Command-Line Arguments:

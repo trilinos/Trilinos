@@ -2091,6 +2091,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
@@ -2099,25 +2100,22 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      +"Enable packages list is unchanged from default build, disabling all packages for this build/test case!\n"  \
-      +"passed: Trilinos/MPI_DEBUG_SS: skipped configure, build, test due to no enabled packages\n" \
+      +"passed: Trilinos/MPI_DEBUG_SS: passed=100,notpassed=0\n" \
       +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
-      +"2) MPI_DEBUG_SS => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
+      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
       +"^DID PUSH\n" \
       )
 
 
-  def test_ss_extra_builds_skip_case_no_email_ps_only_pass(self):
+  def test_ss_extra_builds_skip_case_no_email_ex_only_pass(self):
     
-    testName = "ss_extra_builds_skip_case_no_email_ps_only_pass"
+    testName = "ss_extra_builds_skip_case_no_email_ex_only_pass"
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
     writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
       )
-
-    modifiedFilesStr = "M\tpackages/teuchos/CMakeLists.txt"
 
     checkin_test_run_case(
       \
@@ -2128,11 +2126,13 @@ class test_checkin_test(unittest.TestCase):
       "--make-options=-j3 --ctest-options=-j5" \
       +" --without-serial-release" \
       +" --skip-case-no-email --do-all --push " \
-      +" --ss-extra-builds=MPI_DEBUG_SS" \
+      +" --extra-builds=MPI_DEBUG_SS" \
       ,
       \
       g_cmndinterceptsCurrentBranch \
-      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +"IT: eg diff --name-status origin/currentbranch; 0; 'M\tpackages/stokhos/CMakeLists.txt'\n" \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsFinalPushPasses \
@@ -2141,7 +2141,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "Skipping sending final status email for MPI_DEBUG_SS because it had no packages enabled and --skip-case-no-email was set!\n" \
+      "Skipping sending final status email for MPI_DEBUG because it had no packages enabled and --skip-case-no-email was set!\n" \
       +"^DID PUSH\n" \
       )
 

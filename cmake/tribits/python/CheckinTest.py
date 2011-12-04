@@ -452,6 +452,7 @@ def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
 
     writeStrToFile(buildSpecificConfigFileName, buildSpecificConfigFileStr)
 
+
 def assertNoIllegalEnables(projectName, fileName, cmakeOption):
   
   reTPlEnable = re.compile(r"-DTPL_ENABLE_.+")
@@ -1018,16 +1019,6 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   if verbose:
     print "\nFinal package enable list: [" + ','.join(enablePackagesList) + "]"
 
-  if isDefaultBuild:
-    print "\nSaving current set of default package enables for later comparison!"
-    inOptions.defaultPackageEnables = enablePackagesList[:]
-  elif skipCaseIfNoChangeFromDefaultEnables and enablePackagesList == inOptions.defaultPackageEnables:
-    #print "inOptions.enablePackagesList =", inOptions.defaultPackageEnables
-    #print "enablePackagesList =", enablePackagesList
-    print "\nEnable packages list is unchanged from default build," \
-      " disabling all packages for this build/test case!"
-    enablePackagesList = []
-
   if not enablePackagesList:
     return (cmakePkgOptions, enablePackagesList)
 
@@ -1569,6 +1560,7 @@ def getLocalCommitsExist(inOptions, gitRepoName):
     return True
   return False
 
+
 def matchProjectName(line):
   """
   Attempts to match and return the value of PROJECT_NAME in a line like
@@ -1581,6 +1573,7 @@ def matchProjectName(line):
     return match.group(1)
   else:
     return None
+
 
 def getProjectName(sourceDirectory):
   """
@@ -1651,8 +1644,6 @@ def checkinTest(baseDir, inOptions):
   if not inOptions.skipDepsUpdate:
     removeIfExists(getTrilinosDependenciesXmlFileName())
     removeIfExists(getTrilinosDependenciesXmlGenerateOutputFileName())
-
-  setattr(inOptions, "defaultPackageEnables", [])
 
   if inOptions.extraRepos:
     print "\nPulling in packages from extra repos: "+inOptions.extraRepos+" ..."
