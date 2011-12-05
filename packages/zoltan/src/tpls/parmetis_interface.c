@@ -25,7 +25,7 @@ extern "C" {
 #include "order_const.h"
 #include "third_library.h"
 #include "parmetis_interface.h"
-
+#include "parmetis_interface_params.h"
 
 /*********** COMPATIBILITY CHECKING AT COMPILE TIME ************/
 #if (PARMETIS_MAJOR_VERSION < 3)
@@ -44,16 +44,6 @@ extern "C" {
 #if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 1) && (PARMETIS_SUBMINOR_VERSION == 0)
 #define  PARMETIS31_ALWAYS_FREES_VSIZE
 #endif
-
-/**********  parameters structure for parmetis methods **********/
-static PARAM_VARS Parmetis_params[] = {
-  { "PARMETIS_METHOD", NULL, "STRING", 0 },
-  { "PARMETIS_OUTPUT_LEVEL", NULL, "INT", 0 },
-  { "PARMETIS_SEED", NULL, "INT", 0 },
-  { "PARMETIS_ITR", NULL, "DOUBLE", 0 },
-  { "PARMETIS_COARSE_ALG", NULL, "INT", 0 },
-  { "PARMETIS_FOLD", NULL, "INT", 0 },
-  { NULL, NULL, NULL, 0 } };
 
 static int pmv3method(char *alg);
 
