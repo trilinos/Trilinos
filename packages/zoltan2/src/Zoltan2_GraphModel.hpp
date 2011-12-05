@@ -356,7 +356,6 @@ public:
 
 private:
 
-  //const RCP<const MatrixInput<User> > input_;
   const MatrixInput<User> *input_;
   const RCP<const Environment > env_;
 

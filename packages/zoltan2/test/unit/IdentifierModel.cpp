@@ -67,10 +67,9 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
 
   RCP<const adapter_t> ia = Teuchos::rcp(new adapter_t(M));
-  RCP<const base_adapter_t> base_ia = 
-    Teuchos::rcp_implicit_cast<const base_adapter_t>(ia);
   
   Zoltan2::IdentifierModel<base_adapter_t> *model = NULL;
+  const base_adapter_t *base_ia = ia.get();
 
   try{
     model = new Zoltan2::IdentifierModel<base_adapter_t>(

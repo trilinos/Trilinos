@@ -94,49 +94,48 @@ void PartitioningProblem<Adapter>::solve()
   size_t numGlobalParts = partitioningParams_->get<int>(
     string("num_global_parts"));
 
-  size_t *tmp = new size_t [nVtx];
-  Z2_GLOBAL_MEMORY_ASSERTION(*(this->env_), nVtx, !nVtx||tmp);
+  // Create the solution.   TODO add exception handling
 
-  ArrayRCP<size_t> parts(tmp, 0, nVtx, true);
+  solution_ = 
+    rcp(new PartitioningSolution<gid_t,lid_t,lno_t>( numGlobalParts, nVtx,
+      this->inputAdapter_->haveLocalIds() ? nVtx : 0));
+
+  ArrayRCP<gid_t> &solnGids = solution_->getGidsRCP();
+  ArrayRCP<lid_t> &solnLids = solution_->getLidsRCP();
+  ArrayRCP<size_t> &solnParts = solution_->getPartsRCP();
+
+  // Call the algorithm
 
   try {
     // Determine which algorithm to use based on defaults and parameters.
     // For now, assuming Scotch graph partitioning.
 
     AlgPTScotch<base_adapter_t>(this->envConst_, this->comm_, 
-      this->graphModel_, numGlobalParts, parts.persistingView(0, numGlobalParts));
+      this->graphModel_, numGlobalParts, solnParts.persistingView(0, nVtx));
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  // Create the solution.   TODO add exception handling
-
-  this->solution_ = 
-    rcp(new PartitioningSolution<gid_t,lid_t,lno_t>( numGlobalParts, nVtx,
-      this->inputAdapter_->haveLocalIds() ? nVtx : 0));
-
-  this->solution_->getPartsRCP() = parts;
+  // Write User's GIDs and LIDs (if used) to the solution object.
 
   typedef IdentifierMap<lid_t,gid_t,lno_t,gno_t> idmap_t;
   const RCP<const idmap_t> idMap = this->graphModel_->getIdentifierMap();
 
-  ArrayView<const gno_t> vtxID;
+  ArrayView<const gno_t> vtxGNO;
   ArrayView<const scalar_t> xyz, vtxWt;
-  this->graphModel_->getVertexList(vtxID, xyz, vtxWt);
-  ArrayRCP<gno_t> gnos = arcpFromArrayView(av_const_cast<gno_t>(vtxID));
+  this->graphModel_->getVertexList(vtxGNO, xyz, vtxWt);
+  ArrayRCP<gno_t> gnos = arcpFromArrayView(av_const_cast<gno_t>(vtxGNO));
 
   if (idMap->gnosAreGids()){
-    this->solution_->getGidsRCP() = gnos;   // TODO may need a cast
+    solnGids = arcp_reinterpret_cast<gid_t>(gnos);
   }
   else{
-    ArrayRCP<gid_t> gids(nVtx);
-    idMap->gidTranslate(gids, gnos, TRANSLATE_LIB_TO_APP);
-    this->solution_->getGidsRCP() = gids;
+    idMap->gidTranslate(solnGids.persistingView(0, nVtx), gnos, 
+      TRANSLATE_LIB_TO_APP);
   }
 
   if (this->inputAdapter_->haveLocalIds()){
-    ArrayRCP<lid_t> lids(nVtx);
-    idMap->lidTranslate(lids, gnos, TRANSLATE_LIB_TO_APP);
-    this->solution_->getLidsRCP() = lids;
+    idMap->lidTranslate(solnLids.persistingView(0, nVtx), gnos, 
+      TRANSLATE_LIB_TO_APP);
   }
 }
 

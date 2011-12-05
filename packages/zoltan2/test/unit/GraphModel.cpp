@@ -70,7 +70,6 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   else
     input = new TestAdapters<Scalar,LNO,GNO,LNO,GNO,Node>(xdim,ydim,zdim,comm);
 
-  // TODO return by reference
   RCP<adapter_t> tmi = input->getTpetraCrsMatrixInputAdapter();
 
   // Question: Are the matrix global IDs consecutive (locally)?
@@ -94,7 +93,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
   // Create a graph model with this input
   Zoltan2::GraphModel<base_adapter_t> *model = NULL;
-  RCP<const base_adapter_t> baseTmi = rcp_implicit_cast<const base_adapter_t>(tmi);
+  const base_adapter_t *baseTmi = tmi.get();
 
   try{
     model = new Zoltan2::GraphModel<base_adapter_t>(baseTmi, default_env);

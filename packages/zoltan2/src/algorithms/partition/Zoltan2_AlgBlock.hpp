@@ -28,17 +28,15 @@ namespace Zoltan2{
 template <typename Adapter>
 void AlgBlock(
   const RCP<const Environment> &env,
+  const RCP<const Comm<int> > &problemComm,
   const RCP<const IdentifierModel<Adapter> > &ids, 
-  ArrayView<int> &gnoPart,
-  ArrayView<double> &imbalance
+  ArrayView<size_t> &gnoPart,
+  scalar_t &imbalance
 ) 
 {
-  using Teuchos::ParameterEntry;
   using std::string;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   Z2_GLOBAL_BUG_ASSERTION(env, "parameters are not committed",
@@ -88,6 +86,9 @@ void AlgBlock(
   size_t numGnos = getLocalNumIdentifiers();
   int wtflag = ids->getIdentifierWeightDim();
 
+  Z2_GLOBAL_BUG_ASSERTION(env, "partition array must be pre-allocated",
+    gnoPart.size() >= numGnods, BASIC_ASSERTION);
+
   ArrayView<const gno_t> idList;
   ArrayView <const scalar_t> wgtList;
   
@@ -100,50 +101,92 @@ void AlgBlock(
 
   int rank = env->myRank_;
   int nprocs = env->numProcs_;
-  Array<float> part_sizes(numGlobalParts, 1.0);
-  Array<int> newparts(numGnos);
 
-  int i, part;
-  scalar_t wtsum;
+  // TODO here we are assuming nparts = procs
 
-  Array<scalar_t> scansum(nprocs+1);
+  scalar_t wtsum(0);
 
   if (wtflag){ /* Sum up local object weights. */
-    wtsum = 0.0;
-    for (i=0; i<numGnos; i++)
+    for (size_t i=0; i<numGnos; i++)
       wtsum += wgtList[i];
   }
   else
-    wtsum = numGnos;
+    wtsum = static_cast<scalar_t>(numGnos);
 
+  Array<scalar_t> scansum(nprocs+1, 0);
 
+  Teuchos::gatherAll<int, scalar_t>(*comm, 1, &wtsum, nprocs,
+    scansum.getRawPtr()+1);
 
-  /* Cumulative global wtsum FIXME */
-  MPI_Allgather(&wtsum, 1, MPI_DOUBLE, &scansum[1], 1, MPI_DOUBLE,
-                zz->Communicator);
   /* scansum = sum of weights on lower processors, excluding self. */
-  scansum[0] = 0.;
-  for (i=1; i<=nprocs; i++)
+
+  for (int i=2; i<=nprocs; i++)
     scansum[i] += scansum[i-1];
+
+  scalar_t globalTotalWeight = scansum[nprocs];
 
   /* Overwrite part_sizes with cumulative sum (inclusive) part_sizes. */
   /* A cleaner way is to make a copy, but this works. */
+
+  Array<scalar_t> part_sizes(numGlobalParts, 1.0/numGlobalParts);  // TODO
   for (i=1; i<numGlobalParts; i++)
     part_sizes[i] += part_sizes[i-1];
 
+  // TODO algorithm assumes numGlobalParts = nprocs
+
   /* Loop over objects and assign partition. */
-  part = 0;
+  size_t part = 0;
   wtsum = scansum[rank];
-  for (i=0; i<numGnos; i++){
+  Array<scalar_t> partTotal(numGlobalParts, 0);
+
+  for (size_t i=0; i<numGnos; i++){
     /* wtsum is now sum of all lower-ordered object */
     /* determine new partition number for this object,
        using the "center of gravity" */
     while (part<numGlobalParts-1 && 
            (wtsum+0.5*(wtflag? wgtList[i]: 1.0))
-           > part_sizes[part]*scansum[nprocs])
+           > part_sizes[part]*globalTotalWeight)
       part++;
     gnoPart[i] = part;
+    partTotal[part] += wgtList[i];
     wtsum += (wtflag? wgtList[i] : 1.0);
+  }
+
+  // Compute the imbalance - taken from Zoltan's object_metrics function.
+  //    TODO check this   copied with out thinking about it
+  //   TODO we only get imbalance for one weight
+
+  ArrayRCP<scalar_t> globalPartTotal(nprocs); 
+
+  Teuchos::reduceAll<int, scalar_t>(*problemComm, Teuchos::REDUCE_SUM, 
+    numGlobalParts, partTotal.getRawPtr(), globalPartTotal.getRawPtr());
+
+  bool emptyParts = false;
+  for (int p=0; p < numGlobalParts; p++){
+    if (globalPartTotal[p] == 0){
+      emptyParts = true;
+      break;
+    }
+  }
+
+  if (!emptyParts){
+    scalar_t imbal = 0.0;
+
+    if (globalTotalWeight > 0){
+      int wtIncrement = wtflag ? wtflag : 1;
+
+      for (int i=0, idx = 0; i < numGlobalParts; i++, idx += wtIncrement){
+        if (part_sizes[idx] > 0){
+          scalar_t tmp = 
+            globalPartTotal[idx] / (globalTotalWeight * part_sizes[idx]);
+          if (tmp > imbal) imbal = tmp;
+        }
+      }
+    }
+    imbalance = (imbal > 0 ? imbal : 1.0);
+  }
+  else{
+    imbalance = -1;  /* flag some part_sizes are zero */
   }
 }
 

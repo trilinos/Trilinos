@@ -177,10 +177,11 @@ int main(int argc, char *argv[])
     if (!gfail){
       Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
                solution(nprocs, nvtx, 0);
-      ArrayRCP<gno_t> solnGids = solution.getGidsRCP();
-      ArrayRCP<size_t> solnParts = solution.getPartsRCP();
-      for (size_t i = 0; i < solnGids.size(); i++) solnGids[i] = rowGids[i];
-      for (size_t i = 0; i < solnParts.size(); i++) solnParts[i] = 0;
+      ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
+      ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
+      for (size_t i = 0; i < nvtx; i++) solnGids[i] = rowGids[i];
+      memset(solnParts.getRawPtr(), 0, sizeof(size_t) * nvtx);
+
       tgraph_t *mMigrate = NULL;
       try{
         tGInput->applyPartitioningSolution(*tG, mMigrate, solution);
@@ -244,10 +245,11 @@ int main(int argc, char *argv[])
     if (!gfail){
       Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
                solution(nprocs, nvtx, 0);
-      ArrayRCP<gno_t> solnGids = solution.getGidsRCP();
-      ArrayRCP<size_t> solnParts = solution.getPartsRCP();
-      for (size_t i = 0; i < solnGids.size(); i++) solnGids[i] = rowGids[i];
-      for (size_t i = 0; i < solnParts.size(); i++) solnParts[i] = 0;
+      ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
+      ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
+      for (size_t i = 0; i < nvtx; i++) solnGids[i] = rowGids[i];
+      memset(solnParts.getRawPtr(), 0, sizeof(size_t) * nvtx);
+
       xgraph_t *mMigrate =NULL;
       try{
         xGInput->applyPartitioningSolution(*xG, mMigrate, solution);
@@ -311,10 +313,11 @@ int main(int argc, char *argv[])
     if (!gfail){
       Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
                solution(nprocs, nvtx, 0);
-      ArrayRCP<gno_t> solnGids = solution.getGidsRCP();
-      ArrayRCP<size_t> solnParts = solution.getPartsRCP();
-      for (size_t i = 0; i < solnGids.size(); i++) solnGids[i] = rowGids[i];
-      for (size_t i = 0; i < solnParts.size(); i++) solnParts[i] = 0;
+      ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
+      ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
+      for (size_t i = 0; i < nvtx; i++) solnGids[i] = rowGids[i];
+      memset(solnParts.getRawPtr(), 0, sizeof(size_t) * nvtx);
+
       egraph_t *mMigrate =NULL;
       try{
         eGInput->applyPartitioningSolution(*eG, mMigrate, solution);

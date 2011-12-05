@@ -145,7 +145,7 @@ void AlgPTScotch(
 
   int ierr = 0;
   SCOTCH_Num partnbr;
-  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, nParts, env);
+  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numParts, env);
 
 #ifdef HAVE_MPI
 

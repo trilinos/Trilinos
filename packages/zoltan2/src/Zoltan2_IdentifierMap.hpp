@@ -386,7 +386,6 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   if (len == 0){
     return;
   }
-
   Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid TranslationType", 
     (tt==TRANSLATE_LIB_TO_APP) || (tt==TRANSLATE_APP_TO_LIB), 
     BASIC_ASSERTION);
@@ -860,14 +859,13 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   bool needLidHash = localIdsProvided_;
 
   if (localIdsProvided_ && IdentifierTraits<LID>::is_valid_id_type()){
-    LID globalMin, globalMax;
     bool inARow = IdentifierTraits<LID>::areConsecutive(myLids_.getRawPtr(),
       localNumberOfIds_);
 
     if (inARow){
       minLid_ = myLids_[0];
       needLidHash = false;
-      localIdsAreImplied_;
+      localIdsAreImplied_ = true;
     }
   }
   else if (localIdsAreImplied_){
@@ -914,13 +912,15 @@ template<typename LID, typename GID, typename LNO, typename GNO>
 
   if (IdentifierTraits<GID>::isGlobalOrdinal()){
 
+    userGidsAreTeuchosOrdinal_ = true;
+
     // Are the gids consecutive and increasing with process rank? 
     // If so GID/proc lookups can be optimized.
 
-    ArrayRCP<GID> tmpDist;
+    ArrayRCP<GID> tmpDist(numProcs_+1);
     const GID *gidPtr = myGids_.get();
 
-    bool userGidsAreConsecutive_= globallyConsecutiveOrdinals<GID>(gidPtr,
+    userGidsAreConsecutive_= globallyConsecutiveOrdinals<GID>(gidPtr,
       localNumberOfIds_,  globalNumberOfIds_, *(env_->comm_), *env_,
       tmpDist);
 

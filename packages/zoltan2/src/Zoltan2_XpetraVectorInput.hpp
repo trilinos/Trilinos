@@ -146,12 +146,15 @@ public:
   { 
     // Get an import list
 
-    ArrayRCP<gid_t> gidList = solution.getGidsRCPConst();
-    ArrayRCP<size_t> partList = solution.getPartsRCPConst();
+    ArrayRCP<gid_t> &gidList = solution.getGidsRCPConst();
+    ArrayRCP<size_t> &partList = solution.getPartsRCPConst();
     ArrayRCP<lno_t> dummyIn;
     ArrayRCP<gid_t> importList;
     ArrayRCP<lno_t> dummyOut;
     size_t numNewRows;
+
+std::cout << gidList.size() << std::endl;
+std::cout << partList.size() << std::endl;
 
     const RCP<const Comm<int> > comm = map_->getComm(); 
 
