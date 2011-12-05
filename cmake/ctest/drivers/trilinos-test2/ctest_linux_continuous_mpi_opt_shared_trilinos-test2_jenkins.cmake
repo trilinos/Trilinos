@@ -95,6 +95,17 @@ SET( EXTRA_CONFIGURE_OPTIONS
 
 SET(CTEST_TEST_TYPE Continuous)
 
+# Set the following variables to reasonable values so the Jenkins job
+# provides useful feedback, rather then always returning an error
+# because they aren't defined.
+
+# The Jenkins checkout of the scripts repository. 
+SET(CTEST_SOURCE_DIRECTORY "$ENV{WORKSPACE}/Trilinos")
+# The location where the Jenkins script gets run.
+SET(CTEST_BINARY_DIRECTORY "$ENV{WORKSPACE}/continuous-development")
+# The CTest command being used by Jenkins.
+SET(CTEST_COMMAND "$ENV{CTEST_EXE}")
+
 function(VISIBLE_MESSAGE message)
   message("\n***")
   message("*** ${message}")
