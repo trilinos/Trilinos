@@ -2,6 +2,10 @@
 #ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 #define _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Ptr.hpp>
+
+#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_PartitioningAlgorithms.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -44,8 +48,8 @@ public:
 #endif
 
   //! Constructor with InputAdapter Interface
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) 
-                      : Problem<Adapter>(A, p) 
+  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p): 
+    Problem<Adapter>(A,p), generalParams_(), partitioningParams_(),solution_()
   {
     HELLO;
     createPartitioningProblem();
@@ -63,6 +67,8 @@ public:
 private:
   void createPartitioningProblem();
 
+  Teuchos::Ptr<const Teuchos::ParameterList> generalParams_;
+  Teuchos::Ptr<const Teuchos::ParameterList> partitioningParams_;
   RCP<PartitioningSolution<gid_t, lid_t, lno_t> > solution_;
 
 };
@@ -77,24 +83,61 @@ void PartitioningProblem<Adapter>::solve()
   typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  // Create the solution.
-  // TODO:  For now, assume nParts = nProcessors. Should read from params.
-  size_t nParts = this->comm_->getSize();  // TODO read from params later.
+  size_t nVtx = this->graphModel_->getLocalNumVertices();
+
+  std::string algorithm = partitioningParams_->get<std::string>(
+   string("algorithm"));
+
+  size_t numGlobalParts = partitioningParams_->get<int>(
+    string("num_global_parts"));
+
+  size_t *tmp = new size_t [nVtx];
+  Z2_GLOBAL_MEMORY_ASSERTION(*(this->env_), nVtx, !nVtx||tmp);
+
+  ArrayRCP<size_t> parts(tmp, 0, nVtx, true);
 
   try {
-
     // Determine which algorithm to use based on defaults and parameters.
-
     // For now, assuming Scotch graph partitioning.
-    size_t nVtx = this->graphModel_->getLocalNumVertices();
-    this->solution_ = rcp(new PartitioningSolution<gid_t,lid_t,lno_t>(nParts, nVtx, 0));
 
-    AlgPTScotch<base_adapter_t>(nParts, this->graphModel_, this->solution_, this->params_,
-                         this->comm_, this->env_);
+    AlgPTScotch<base_adapter_t>(this->envConst_, this->comm_, 
+      this->graphModel_, numGlobalParts, parts.persistingView(0, numGlobalParts));
   }
   Z2_FORWARD_EXCEPTIONS;
+
+  // Create the solution.   TODO add exception handling
+
+  this->solution_ = 
+    rcp(new PartitioningSolution<gid_t,lid_t,lno_t>( numGlobalParts, nVtx,
+      this->inputAdapter_->haveLocalIds() ? nVtx : 0));
+
+  this->solution_->getPartsRCP() = parts;
+
+  typedef IdentifierMap<lid_t,gid_t,lno_t,gno_t> idmap_t;
+  const RCP<const idmap_t> idMap = this->graphModel_->getIdentifierMap();
+
+  ArrayView<const gno_t> vtxID;
+  ArrayView<const scalar_t> xyz, vtxWt;
+  this->graphModel_->getVertexList(vtxID, xyz, vtxWt);
+  ArrayRCP<gno_t> gnos = arcpFromArrayView(av_const_cast<gno_t>(vtxID));
+
+  if (idMap->gnosAreGids()){
+    this->solution_->getGidsRCP() = gnos;   // TODO may need a cast
+  }
+  else{
+    ArrayRCP<gid_t> gids(nVtx);
+    idMap->gidTranslate(gids, gnos, TRANSLATE_LIB_TO_APP);
+    this->solution_->getGidsRCP() = gids;
+  }
+
+  if (this->inputAdapter_->haveLocalIds()){
+    ArrayRCP<lid_t> lids(nVtx);
+    idMap->lidTranslate(lids, gnos, TRANSLATE_LIB_TO_APP);
+    this->solution_->getLidsRCP() = lids;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -107,13 +150,28 @@ template <typename Adapter>
 void PartitioningProblem<Adapter>::createPartitioningProblem()
 {
   HELLO;
-//  cout << __func__ << " input adapter type " 
-//       << this->inputAdapter_->inputAdapterType() << " " 
-//       << this->inputAdapter_->inputAdapterName() << endl;
 
 #ifdef HAVE_OVIS
   ovis_enabled(this->comm_->getRank());
 #endif
+
+  // The problem communicator is this->comm_.  
+  // Set the application communicator to MPI_COMM_WORLD.
+
+  this->env_->setCommunicator(DefaultComm<int>::getComm());
+
+  // Finalize parameters.  If the Problem wants to set or
+  // change any parameters, do it before this call.
+
+  this->env_->commitParameters();
+
+  // Get the parameters
+
+  generalParams_ = Teuchos::Ptr<const Teuchos::ParameterList>(
+    &this->env_->getParams());
+
+  partitioningParams_ = Teuchos::Ptr<const Teuchos::ParameterList>(
+    &this->env_->getPartitioningParams());
 
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
@@ -124,23 +182,28 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
   // TODO: I will need help from Lee Ann understanding how to use the parameter
   // functionality in Zoltan2.  For now, I will set a few parameters and
   // continue computing.
-  ModelType modelType = GraphModelType;
+
+  ModelType modelType = GraphModelType;  // make this a class variable
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  RCP<const base_adapter_t> baseInputAdapter_ = 
-    rcp_implicit_cast<const base_adapter_t>(this->inputAdapter_);
+  // TODO: This doesn't work.  baseInputAdapter_.getRawPtr() is NULL.
+  //
+  // RCP<const base_adapter_t> baseInputAdapter_ = 
+  //   rcp_implicit_cast<const base_adapter_t>(this->inputAdapter_);
+  //
+  // So to pass the InputAdapter to the Model we use a raw pointer.
+  // Since the Problem creates the Model and will destroy it when
+  // done, the Model doesn't really need an RCP to the InputAdapter.
+  // But it would be nice if that worked.
 
-std::cout << this->inputAdapter_->getLocalNumRows() << std::endl;;
-
-std::cout << this->baseInputAdapter_->getLocalNumRows() << std::endl;;
-
+  const base_adapter_t *baseAdapter = this->inputAdapter_.getRawPtr();
 
   // Select Model based on parameters and InputAdapter type
   switch (modelType) {
 
   case GraphModelType:
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      this->baseInputAdapter_, this->env_, false, true));
+      baseAdapter, this->env_, false, true));
     break;
 
   case HypergraphModelType:

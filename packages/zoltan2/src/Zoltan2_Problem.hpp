@@ -54,7 +54,8 @@ protected:
   // KDDKDD May want other models, too, for eval, printing, etc.
   RCP<Teuchos::ParameterList> params_;
   RCP<const Teuchos::Comm<int> > comm_;
-  RCP<const Environment> env_;
+  RCP<Environment> env_;
+  RCP<const Environment> envConst_;
 
 private:
 
@@ -88,9 +89,12 @@ Problem<Adapter>::Problem(
   inputAdapter_(RCP<Adapter>(input,false)),
   params_(RCP<Teuchos::ParameterList>(params,false)),
   comm_(comm),
-  env_(Teuchos::RCP<const Environment>(new Environment(*params, comm_)))
+  env_(Teuchos::RCP<Environment>(new Environment(*params, comm_)))
 {
   HELLO;
+
+  envConst_ = rcp_const_cast<const Environment>(env_);
+  
 //  cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() 
 //       << " " << inputAdapter_->inputAdapterName() 
 //       << " sizeof(scalar_t)= " 

@@ -146,10 +146,10 @@ public:
    *  \param removeSelfEdges set to true if the algorithm or the third party
    *           library cannot handle self edges
    */
-  GraphModel(const RCP<const MatrixInput<User> > &inputAdapter,
+  GraphModel(const MatrixInput<User> *ia,
     const RCP<const Environment> &env, bool consecutiveIdsRequired=false,
     bool removeSelfEdges=false) :
-     input_(inputAdapter), env_(env), gids_(), lids_(), gnos_(),
+     input_(ia), env_(env), gids_(), lids_(), gnos_(),
      edgeGnos_(), procIds_(), offsets_(),
      numLocalEdges_(0), numGlobalEdges_(0), numLocalVtx_(0),
      gidsAreGnos_(false)
@@ -164,6 +164,9 @@ public:
     Z2_FORWARD_EXCEPTIONS;
 
     gids_ = arcp(vtxIds, 0, numLocalVtx_, false);
+
+    size_t lidBase;
+    bool impliedLids = input_->haveConsecutiveLocalIds(lidBase);
 
     numLocalEdges_ = offsets[numLocalVtx_];
 
@@ -232,7 +235,8 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env, gids_, lids_, consecutiveIdsRequired));
+      idMap = rcp(new idmap_t(env, gids_, lids_, impliedLids, 
+        consecutiveIdsRequired));
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -284,7 +288,6 @@ public:
 
   size_t getLocalNumVertices() const
   {
-    std::cout << input_.strong_count() << std::endl;
     return input_->getLocalNumRows();
   }
 
@@ -353,7 +356,8 @@ public:
 
 private:
 
-  const RCP<const MatrixInput<User> > input_;
+  //const RCP<const MatrixInput<User> > input_;
+  const MatrixInput<User> *input_;
   const RCP<const Environment > env_;
 
   ArrayRCP<const gid_t> gids_;

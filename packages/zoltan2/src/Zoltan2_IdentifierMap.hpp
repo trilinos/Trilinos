@@ -64,9 +64,16 @@ public:
    * \param comm the problem communicator
    * \param env  the problem and library environment
    * \param gids  the application global IDs
-   * \param lids  the application local IDs, if any
-   *    TODO - provide some way to indicate that local IDs
-   *              are consecutive ordinals, and omit lids array
+   * \param lids  the application local referneces, if any
+   * \param lidsAreImplied The ability to have local references to 
+   *      global identifiers is an option.  If the application wants
+   *      to use local references (lids) these values will be returned
+   *      in the solution along with the global IDs.  Examples of local 
+   *      references are pointers to data, or array indices.  A very
+   *      common local reference is the integer representing the location
+   *      of the global ID in the gids list.  If this is your local
+   *      reference, set lidsAreImplied to "true", and leave the lids
+   *      parameter empty.
    * \param gidsMustBeConsecutive  set to true if the algorithm
    *           or third party library requires consective ids
    *           If necessary the IdentifierMap will map the application's
@@ -83,6 +90,7 @@ public:
   explicit IdentifierMap( const RCP<const Environment > &env, 
                           const ArrayRCP<const GID> &gids, 
                           const ArrayRCP<const LID> &lids,
+                          bool lidsAreImplied=false,
                           bool gidsMustBeConsecutive=false);
 
   /*! Destructor */
@@ -196,21 +204,29 @@ private:
   RCP<Teuchos::Hashtable<double, LNO> >  gidHash_;
 
   // A hash table from application local ID key to our local index.
-  // TODO: just save min LID if LIDs are consecutive ordinals
+  // If local IDs are consecutive, instead of the lidHash_ we just
+  // define minLid_ on this process.
 
   RCP<Teuchos::Hashtable<double, LNO> >  lidHash_;
+  LNO minLid_;
 
-  typename Array<GNO>::size_type globalNumberOfIds_;
-  typename Array<GNO>::size_type localNumberOfIds_;
-  bool haveLocalIds_;
+  //typename Array<GNO>::size_type globalNumberOfIds_;
+  //typename Array<GNO>::size_type localNumberOfIds_;
+  size_t globalNumberOfIds_;
+  size_t localNumberOfIds_;
+  bool localIdsProvided_;
   int myRank_;
   int numProcs_;
+
+  // By "Consecutive" we mean globally consecutive increasing
+  // with process rank.
 
   bool userGidsAreTeuchosOrdinal_;
   bool userGidsAreConsecutive_;
   bool userGidsAreZoltan2Gids_;
   bool zoltan2GidsAreConsecutive_;
-  // TODO it should be possible to specify the base too
+
+  bool localIdsAreImplied_;
   bool consecutiveGidsAreRequired_;
 
   GNO minGlobalGno_;
@@ -227,13 +243,15 @@ template<typename LID, typename GID, typename LNO, typename GNO>
   IdentifierMap<LID,GID,LNO,GNO>::IdentifierMap(
     const RCP<const Environment> &env,
     const ArrayRCP<const GID> &gids, const ArrayRCP<const LID> &lids,
+    bool lidsAreImplied,
     bool idsMustBeConsecutive) 
          : comm_(env->comm_),  env_(env), myGids_(gids), myLids_(lids),
-           gnoDist_(), gidHash_(), lidHash_(), 
-           globalNumberOfIds_(0), localNumberOfIds_(0), haveLocalIds_(false),
+           gnoDist_(), gidHash_(), lidHash_(), minLid_(0),
+           globalNumberOfIds_(0), localNumberOfIds_(0), localIdsProvided_(false),
            myRank_(0), numProcs_(1),
            userGidsAreTeuchosOrdinal_(false), userGidsAreConsecutive_(false), 
            userGidsAreZoltan2Gids_(false), zoltan2GidsAreConsecutive_(false), 
+           localIdsAreImplied_(lidsAreImplied),
            consecutiveGidsAreRequired_(idsMustBeConsecutive),
            minGlobalGno_(0), maxGlobalGno_(0)
 {
@@ -380,7 +398,7 @@ template<typename LID, typename GID, typename LNO, typename GNO>
 
   Z2_LOCAL_INPUT_ASSERTION(*env_, 
      "local ID translation is requested but none were provided",
-     haveLocalIds_, BASIC_ASSERTION);
+     localIdsProvided_||localIdsAreImplied_, BASIC_ASSERTION);
 
   GNO firstGno(0), endGno(0);
   if (gnoDist_.size() > 0){
@@ -408,18 +426,28 @@ template<typename LID, typename GID, typename LNO, typename GNO>
           Z2_THROW_OUTSIDE_ERROR(*env_, e);
         }
       }
-      
-      lid[i] = myLids_[idx];
+
+      if (localIdsAreImplied_)
+        lid[i] = minLid_ + idx;
+      else
+        lid[i] = myLids_[idx];
     }
   }
   else{
     for (teuchos_size_t i=0; i < len; i++){
       LNO idx(0);
-      try{
-        idx = lidHash_->get(IdentifierTraits<LID>::key(lid[i]));
+      if (localIdsAreImplied_){
+        idx = lid[i] - minLid_;
       }
-      catch (const std::exception &e) {
-        Z2_THROW_OUTSIDE_ERROR(*env_, e);
+      else{
+        try{
+          // LID may not be a valid identifier.
+          uint64_t uint_lid = static_cast<uint64_t>(lid[i]);
+          idx = lidHash_->get(IdentifierTraits<uint64_t>::key(uint_lid));
+        }
+        catch (const std::exception &e) {
+          Z2_THROW_OUTSIDE_ERROR(*env_, e);
+        }
       }
 
       if (gnoDist_.size() > 0)  // gnos are consecutive
@@ -814,16 +842,40 @@ template<typename LID, typename GID, typename LNO, typename GNO>
     Z2_THROW_OUTSIDE_ERROR(*env_, e);
   }
 
-  haveLocalIds_ = (counts[2] > 0);
+  localIdsProvided_ = counts[2] > 0;
   globalNumberOfIds_ = counts[3];
 
   Z2_GLOBAL_INPUT_ASSERTION(*env_, 
        "number of global IDs does not equal number of local IDs",
-      !haveLocalIds_ || (counts[0] == localNumberOfIds_), BASIC_ASSERTION);
+      !localIdsProvided_ || (counts[0] == localNumberOfIds_), BASIC_ASSERTION);
 
-  if (haveLocalIds_){   // hash LID to index in LID vector
-    // TODO test to see if LIDs are consecutive, to avoid need for
-    // hash for LID to its location in array.
+  bool inconsistent = localIdsProvided_ && localIdsAreImplied_;
+
+  Z2_GLOBAL_INPUT_ASSERTION(*env_, 
+       "Providing local IDs, but then saying local IDs are implied",
+       !inconsistent, BASIC_ASSERTION);
+
+  // Do we need a hash table from local IDs to indices?
+
+  bool needLidHash = localIdsProvided_;
+
+  if (localIdsProvided_ && IdentifierTraits<LID>::is_valid_id_type()){
+    LID globalMin, globalMax;
+    bool inARow = IdentifierTraits<LID>::areConsecutive(myLids_.getRawPtr(),
+      localNumberOfIds_);
+
+    if (inARow){
+      minLid_ = myLids_[0];
+      needLidHash = false;
+      localIdsAreImplied_;
+    }
+  }
+  else if (localIdsAreImplied_){
+    minLid_ = 0;
+    needLidHash = false;
+  }
+
+  if (needLidHash){   // hash LID to index in LID vector
     id2index_hash_t *p = NULL;
     if (localNumberOfIds_){
       try{
@@ -837,7 +889,9 @@ template<typename LID, typename GID, typename LNO, typename GNO>
 
     for (teuchos_size_t i=0; i < localNumberOfIds_; i++){
       try{
-        p->put(IdentifierTraits<LID>::key(lidPtr[i]), i);
+        // LID may not be a valid identifier.
+        uint64_t lid = static_cast<uint64_t>(lidPtr[i]);
+        p->put(IdentifierTraits<uint64_t>::key(lid), i);
       }
       catch (const std::exception &e) 
         Z2_THROW_OUTSIDE_ERROR(*env_, e);
@@ -860,69 +914,25 @@ template<typename LID, typename GID, typename LNO, typename GNO>
 
   if (IdentifierTraits<GID>::isGlobalOrdinal()){
 
-    userGidsAreTeuchosOrdinal_ = true;
-    const GID *gidPtr = myGids_.get();
-
-    GID min = gidPtr[0];
-    GID max = gidPtr[localNumberOfIds_-1];
-
-    std::pair<GID, GID> globalMinMax = 
-      IdentifierTraits<GID>::globalMinMax(min, max, *comm_);
-  
-    GNO nMin, nMax;
-    IdentifierTraits<GID>::castTo(globalMinMax.first, nMin);
-    IdentifierTraits<GID>::castTo(globalMinMax.second, nMax);
-
-    minGlobalGno_ = nMin;  // We'll overwrite these if
-    maxGlobalGno_ = nMax;  // not userGidsAreZoltan2Gids_
-
     // Are the gids consecutive and increasing with process rank? 
     // If so GID/proc lookups can be optimized.
 
-    bool locallyConsecutiveIncreasing = 
-      IdentifierTraits<GID>::areConsecutive(gidPtr, localNumberOfIds_);
-  
-    int localFlag = (locallyConsecutiveIncreasing ? 1 : 0);
-    int globalFlag = 0;
+    ArrayRCP<GID> tmpDist;
+    const GID *gidPtr = myGids_.get();
 
-    try{
-      Teuchos::reduceAll<int, int>(*comm_, Teuchos::REDUCE_MIN, 1, 
-        &localFlag, &globalFlag);
-    }
-    catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(*env_, e);
-    }
+    bool userGidsAreConsecutive_= globallyConsecutiveOrdinals<GID>(gidPtr,
+      localNumberOfIds_,  globalNumberOfIds_, *(env_->comm_), *env_,
+      tmpDist);
 
-    if (globalFlag == 1){
-
-      if (nMax - nMin + 1 == globalNumberOfIds_){
-
-        Array<GID> sendBuf(numProcs_, min);
-        ArrayRCP<GID> recvBuf;
-  
-        // We use Zoltan2::AlltoAll because GID may 
-        // not be a Teuchos Packet type at compile time.
-  
-        try{
-          AlltoAll<GID,LNO>(*comm_, *env_, sendBuf, LNO(1), recvBuf);
-        }
-        Z2_FORWARD_EXCEPTIONS;
-    
-        userGidsAreConsecutive_ = true;
-
-        for (int i=1; i < numProcs_; i++){
-          if (IdentifierTraits<GID>::lessThan(recvBuf[i-1], recvBuf[i]))
-            continue;
-          userGidsAreConsecutive_ = false;
-          break; 
-        }
-
-        if (userGidsAreConsecutive_){
-          gnoDist_.resize(numProcs_ + 1, 0);
-          for (int i=0; i < numProcs_; i++){
-            IdentifierTraits<GID>::castTo(recvBuf[i], gnoDist_[i]);
-          }
-          gnoDist_[numProcs_] = globalNumberOfIds_ + gnoDist_[0];
+    if (userGidsAreConsecutive_){    
+      // A GNO is large enough to hold GIDs, but may be a different type.
+      if (sizeof(GID) == sizeof(GNO)) {
+        gnoDist_ = arcp_reinterpret_cast<GNO>(tmpDist);
+      }
+      else{
+        gnoDist_.resize(numProcs_ + 1);
+        for (LNO i=0; i <= numProcs_; i++){
+          gnoDist_[i] = static_cast<GNO>(tmpDist[i]);
         }
       }
     }

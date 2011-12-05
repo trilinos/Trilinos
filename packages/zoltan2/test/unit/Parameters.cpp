@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
   if (rank == 0){
     Teuchos::ParameterList validParameters;
   
-    Zoltan2::createValidParameterList(validParameters);
+    Zoltan2::createValidParameterList(validParameters, *comm);
     std::cout << "Default, validating parameter list created: ";
     std::cout << validParameters.name() << std::endl;
     std::cout << validParameters << std::endl;

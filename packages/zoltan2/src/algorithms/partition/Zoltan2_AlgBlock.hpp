@@ -16,8 +16,8 @@ namespace Zoltan2{
  *
  *  \param env  parameters for the problem and library configuration
  *  \param model the application Ids and weights
- *  \param gnoPart the resulting assignment of gno to part number
- *  \param imbalance the imbalance achieved by this partitioning
+ *  \param gnoPart on return, the resulting assignment of gno to part number
+ *  \param imbalance on return, the imbalance achieved by this partitioning
  *
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).  The model supplies consecutive identifiers
@@ -27,8 +27,8 @@ namespace Zoltan2{
 
 template <typename Adapter>
 void AlgBlock(
-  const RCP<Environment> &env,
-  const RCP<IdentifierModel<Adapter> > &model, 
+  const RCP<const Environment> &env,
+  const RCP<const IdentifierModel<Adapter> > &ids, 
   ArrayView<int> &gnoPart,
   ArrayView<double> &imbalance
 ) 
@@ -81,13 +81,70 @@ void AlgBlock(
   bool balanceMemoryRunTime = (svq==string("balance"));
 
   // From the IdentifierModel we need:
-  //    the gnos
+  //    the number of gnos
   //    number of weights per gno
   //    the weights
 
+  size_t numGnos = getLocalNumIdentifiers();
+  int wtflag = ids->getIdentifierWeightDim();
+
+  ArrayView<const gno_t> idList;
+  ArrayView <const scalar_t> wgtList;
+  
+  ids->getIdentifierList(idList, wgtList);
+
+  // Block partitioning algorithm lifted from zoltan/src/simple/block.c
   // The solution is:
   //    a list of part numbers in gno order
   //    an imbalance for each weight 
+
+  int rank = env->myRank_;
+  int nprocs = env->numProcs_;
+  Array<float> part_sizes(numGlobalParts, 1.0);
+  Array<int> newparts(numGnos);
+
+  int i, part;
+  double wtsum;
+
+  Array<double> scansum(nprocs+1);
+
+  if (wtflag){ /* Sum up local object weights. */
+    wtsum = 0.0;
+    for (i=0; i<numGnos; i++)
+      wtsum += wgtList[i];
+  }
+  else
+    wtsum = numGnos;
+
+  /* Cumulative global wtsum FIXME */
+  MPI_Allgather(&wtsum, 1, MPI_DOUBLE, &scansum[1], 1, MPI_DOUBLE,
+                zz->Communicator);
+  /* scansum = sum of weights on lower processors, excluding self. */
+  scansum[0] = 0.;
+  for (i=1; i<=nprocs; i++)
+    scansum[i] += scansum[i-1];
+
+  /* Overwrite part_sizes with cumulative sum (inclusive) part_sizes. */
+  /* A cleaner way is to make a copy, but this works. */
+  for (i=1; i<numGlobalParts; i++)
+    part_sizes[i] += part_sizes[i-1];
+
+  /* Loop over objects and assign partition. */
+  part = 0;
+  wtsum = scansum[rank];
+  for (i=0; i<numGnos; i++){
+    /* wtsum is now sum of all lower-ordered object */
+    /* determine new partition number for this object,
+       using the "center of gravity" */
+    while (part<numGlobalParts-1 && 
+           (wtsum+0.5*(wtflag? wgtList[i]: 1.0))
+           > part_sizes[part]*scansum[nprocs])
+      part++;
+    gnoPart[i] = part;
+    wtsum += (wtflag? wgtList[i] : 1.0);
+  }
+}
+
 }
 
 }

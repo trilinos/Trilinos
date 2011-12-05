@@ -35,14 +35,9 @@ public:
     size_t nparts,
     size_t ngids,
     size_t nlids
-  )
+  ):nParts_(nparts), gids_(), lids_(), parts_()
   {
     HELLO;
-    nParts_ = nparts;
-    gids_   = ArrayRCP<gid_t>(ngids);
-    if (nlids) lids_   = ArrayRCP<lid_t>(nlids);
-    else       lids_   = ArrayRCP<lid_t>(Teuchos::null);
-    parts_  = ArrayRCP<size_t>(ngids);
   }
 
   //////////////////////////////////////////////

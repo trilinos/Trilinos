@@ -21,6 +21,7 @@
 #include <Teuchos_StrUtils.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_Comm.hpp>
 
 /*! \file Zoltan2_Parameters.hpp
 
@@ -105,7 +106,8 @@ template <typename Integral>
 
 // Function declarations
 
-void createValidParameterList(Teuchos::ParameterList &pl);
+void createValidParameterList(Teuchos::ParameterList &pl, 
+  const Teuchos::Comm<int> &comm);
 
 ////////////////////////////////////////////////////////////////////
 // Definitions

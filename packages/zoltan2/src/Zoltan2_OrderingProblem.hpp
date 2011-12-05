@@ -128,15 +128,24 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  RCP<const base_adapter_t> baseInputAdapter_ =
-    rcp_implicit_cast<const base_adapter_t>(this->inputAdapter_);
+  // TODO: This doesn't work.  baseInputAdapter_.getRawPtr() is NULL.
+  //
+  // RCP<const base_adapter_t> baseInputAdapter_ =
+  //   rcp_implicit_cast<const base_adapter_t>(this->inputAdapter_);
+  //
+  // So to pass the InputAdapter to the Model we use a raw pointer.
+  // Since the Problem creates the Model and will destroy it when
+  // done, the Model doesn't really need an RCP to the InputAdapter.
+  // But it would be nice if that worked.
+
+  const base_adapter_t *baseAdapter = this->inputAdapter_.getRawPtr();
 
   // Select Model based on parameters and InputAdapter type
   switch (modelType) {
 
   case GraphModelType:
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      this->baseInputAdapter_, this->env_, false, true));
+      baseAdapter, this->env_, false, true));
     break;
 
   case HypergraphModelType:

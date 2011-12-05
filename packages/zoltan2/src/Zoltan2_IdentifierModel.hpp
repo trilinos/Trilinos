@@ -80,7 +80,7 @@ public:
   typedef typename IdentifierInput<User>::lid_t     lid_t;
   typedef IdentifierMap<lid_t, gid_t, lno_t, gno_t> idmap_t;
   
-  IdentifierModel( RCP<const IdentifierInput<User> > &ia, 
+  IdentifierModel( const IdentifierInput<User> *ia, 
     const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
       gnosAreGids_(false), weightDim_(0), numGlobalIdentifiers_(), env_(env), 
       comm_(env->comm_), gids_(), lids_(), weights_(), gnos_()
@@ -110,10 +110,14 @@ public:
       }
     }
 
+    size_t lidBase;
+    bool impliedLids = ia->haveConsecutiveLocalIds(lidBase);
+
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env_, gids_, lids_, gnosMustBeConsecutive));
+      idMap = rcp(new idmap_t(env_, gids_, lids_, impliedLids, 
+        gnosMustBeConsecutive));
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -197,7 +201,7 @@ public:
   typedef typename MatrixInput<User>::lid_t     lid_t;
   typedef IdentifierMap<lid_t, gid_t, lno_t, gno_t> idmap_t;
   
-  IdentifierModel( RCP<const MatrixInput<User> > &ia, 
+  IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
       gnosAreGids_(false), weightDim_(0), numGlobalIdentifiers_(), env_(env), 
       comm_(env->comm_), gids_(), lids_(), weights_(), gnos_()
@@ -223,10 +227,14 @@ public:
       }
     }
 
+    size_t lidBase;
+    bool impliedLids = ia->haveConsecutiveLocalIds(lidBase);
+
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env_, gids_, lids_, gnosMustBeConsecutive));
+      idMap = rcp(new idmap_t(env_, gids_, lids_, impliedLids,
+        gnosMustBeConsecutive));
     }
     Z2_FORWARD_EXCEPTIONS;
 

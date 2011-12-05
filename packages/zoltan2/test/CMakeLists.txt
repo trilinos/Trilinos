@@ -9,5 +9,8 @@ INCLUDE(AddSubdirectories)
 #unit
 
 ADD_SUBDIRECTORIES(
+unit
+ordering
 partitioning
+data
   )
