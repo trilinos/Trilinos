@@ -104,9 +104,9 @@ void AlgBlock(
   Array<int> newparts(numGnos);
 
   int i, part;
-  double wtsum;
+  scalar_t wtsum;
 
-  Array<double> scansum(nprocs+1);
+  Array<scalar_t> scansum(nprocs+1);
 
   if (wtflag){ /* Sum up local object weights. */
     wtsum = 0.0;
@@ -115,6 +115,8 @@ void AlgBlock(
   }
   else
     wtsum = numGnos;
+
+
 
   /* Cumulative global wtsum FIXME */
   MPI_Allgather(&wtsum, 1, MPI_DOUBLE, &scansum[1], 1, MPI_DOUBLE,
