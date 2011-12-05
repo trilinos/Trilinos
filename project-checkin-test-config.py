@@ -28,7 +28,7 @@ configuration = {
         # standard checkin. This is a list of tuples so a preference
         # for build order can be expressed (e.g. if a project's
         # developers prefer one case to fail earlier than another).
-        'default-builds': (
+        'default-builds': [
 
             # Options for the MPI_DEBUG build.
             ('MPI_DEBUG', [
@@ -50,7 +50,7 @@ configuration = {
                 '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF',
                 ]),
 
-            }, # default-builds
+            ], # default-builds
 
         }, # cmake
 
