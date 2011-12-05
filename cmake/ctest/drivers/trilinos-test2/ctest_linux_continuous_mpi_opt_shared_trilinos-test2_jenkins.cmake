@@ -95,6 +95,12 @@ SET( EXTRA_CONFIGURE_OPTIONS
 
 SET(CTEST_TEST_TYPE Continuous)
 
+function(VISIBLE_MESSAGE message)
+  message("\n***")
+  message("*** ${message}")
+  message("***\n")
+endfunction()
+
 # Check to see if we need to start with an empty binary directory or enabling
 # modified packages only. First, get the current time in seconds past the
 # epoch.
@@ -104,7 +110,7 @@ execute_process(
 )
 set(_timestamp_file timestamp.txt)
 if(NOT EXISTS ${_timestamp_file})
-  message("No timestamp file exists, performing a clean build.")
+  VISIBLE_MESSAGE("No timestamp file exists, performing a clean build.")
   SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY ON)
   SET(CTEST_ENABLE_MODIFIED_PACKAGES_ONLY OFF)
   file(WRITE ${_timestamp_file} ${_current_time}) 
@@ -112,12 +118,12 @@ else()
   file(READ ${_timestamp_file} _last_time)
   math(EXPR _difference "${_current_time} - ${_last_time}") 
   if(${_difference} GREATER 57600) # 16 hours
-    message("Timestamp is more than 16 hours old, performing a clean build.")
+    VISIBLE_MESSAGE("Timestamp is more than 16 hours old, performing a clean build.")
     SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY ON)
     SET(CTEST_ENABLE_MODIFIED_PACKAGES_ONLY OFF)
     file(WRITE ${_timestamp_file} ${_current_time}) 
   else()
-    message("Timestamp is less than 16 hours old, performing an incremental build.")
+    VISIBLE_MESSAGE("Timestamp is less than 16 hours old, performing an incremental build.")
     SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY OFF)
     SET(CTEST_ENABLE_MODIFIED_PACKAGES_ONLY ON)
   endif()
