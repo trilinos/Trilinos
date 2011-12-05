@@ -22,6 +22,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/PropertyBase.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
+#include <stk_mesh/base/Selector.hpp>
 
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
@@ -358,6 +359,14 @@ public:
                                   const Part     & arg_part ,
                                   const unsigned * arg_stride ,
                                   const void*      arg_init_value = NULL );
+
+  /** \brief  Declare a field restriction via runtime type information.
+   */
+  void declare_field_restriction( FieldBase      & arg_field ,
+                                  EntityRank       arg_entity_rank ,
+                                  const Selector & arg_selector ,
+                                  const unsigned * arg_stride ,
+                                  const void*      arg_init_value = NULL );
   /** \} */
 private:
   MetaData( const MetaData & );                ///< \brief  Not allowed
@@ -421,6 +430,12 @@ field_type & put_field( field_type & field ,
                         const Part & part ,
                         const void* init_value = NULL);
 
+template< class field_type >
+field_type & put_field( field_type & field ,
+                        EntityRank  entity_rank ,
+                        const Selector & selector ,
+                        const void* init_value = NULL);
+
 /** \brief Declare a field to exist for a given entity type and Part. The
  *         extra unsigned arguments specify the size of a dimension. So,
  *         put_field( field, rank, part, 3, 3 ) would create a 3x3 2D field.
@@ -436,6 +451,13 @@ field_type & put_field( field_type & field ,
 template< class field_type >
 field_type & put_field( field_type & field ,
                         EntityRank  entity_rank ,
+                        const Selector & selector ,
+                        unsigned     n1 ,
+                        const void* init_value = NULL);
+
+template< class field_type >
+field_type & put_field( field_type & field ,
+                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -444,7 +466,24 @@ field_type & put_field( field_type & field ,
 template< class field_type >
 field_type & put_field( field_type & field ,
                         EntityRank  entity_rank ,
+                        const Selector & selector ,
+                        unsigned     n1 ,
+                        unsigned     n2 ,
+                        const void* init_value = NULL);
+
+template< class field_type >
+field_type & put_field( field_type & field ,
+                        EntityRank  entity_rank ,
                         const Part & part ,
+                        unsigned     n1 ,
+                        unsigned     n2 ,
+                        unsigned     n3 ,
+                        const void* init_value = NULL);
+
+template< class field_type >
+field_type & put_field( field_type & field ,
+                        EntityRank  entity_rank ,
+                        const Selector & selector ,
                         unsigned     n1 ,
                         unsigned     n2 ,
                         unsigned     n3 ,
@@ -571,6 +610,26 @@ field_type & put_field(
 
 template< class field_type >
 inline
+field_type & put_field(
+  field_type & field ,
+  EntityRank entity_rank ,
+  const Selector & selector ,
+  const void* init_value)
+{
+  typedef FieldTraits< field_type > Traits ;
+  typedef typename Traits::Helper   Helper ;
+
+  unsigned stride[8] ;
+
+  Helper::assign( stride );
+
+  MetaData::get(field).declare_field_restriction( field, entity_rank, selector, stride, init_value);
+
+  return field ;
+}
+
+template< class field_type >
+inline
 field_type & put_field( field_type &field ,
                         EntityRank entity_rank ,
                         const Part &part ,
@@ -585,6 +644,26 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 );
 
   MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+
+  return field ;
+}
+
+template< class field_type >
+inline
+field_type & put_field( field_type &field ,
+                        EntityRank entity_rank ,
+                        const Selector &selector ,
+                        unsigned    n1 ,
+                        const void* init_value )
+{
+  typedef FieldTraits< field_type > Traits ;
+  typedef typename Traits::Helper   Helper ;
+
+  unsigned stride[8] ;
+
+  Helper::assign( stride , n1 );
+
+  MetaData::get(field).declare_field_restriction( field, entity_rank, selector, stride, init_value);
 
   return field ;
 }
@@ -614,6 +693,27 @@ template< class field_type >
 inline
 field_type & put_field( field_type &field ,
                         EntityRank entity_rank ,
+                        const Selector &selector ,
+                        unsigned    n1 ,
+                        unsigned    n2 ,
+                        const void* init_value )
+{
+  typedef FieldTraits< field_type > Traits ;
+  typedef typename Traits::Helper   Helper ;
+
+  unsigned stride[8] ;
+
+  Helper::assign( stride , n1 , n2 );
+
+  MetaData::get(field).declare_field_restriction( field, entity_rank, selector, stride, init_value);
+
+  return field ;
+}
+
+template< class field_type >
+inline
+field_type & put_field( field_type &field ,
+                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -628,6 +728,28 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 , n3 );
 
   MetaData::get(field).declare_field_restriction( field, entity_rank, part, stride, init_value);
+
+  return field ;
+}
+
+template< class field_type >
+inline
+field_type & put_field( field_type &field ,
+                        EntityRank entity_rank ,
+                        const Selector &selector ,
+                        unsigned    n1 ,
+                        unsigned    n2 ,
+                        unsigned    n3 ,
+                        const void* init_value )
+{
+  typedef FieldTraits< field_type > Traits ;
+  typedef typename Traits::Helper   Helper ;
+
+  unsigned stride[8] ;
+
+  Helper::assign( stride , n1 , n2 , n3 );
+
+  MetaData::get(field).declare_field_restriction( field, entity_rank, selector, stride, init_value);
 
   return field ;
 }

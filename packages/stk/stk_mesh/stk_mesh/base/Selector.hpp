@@ -40,6 +40,15 @@ struct OpType {
     this->m_op    = opType.m_op;
     return *this;
   }
+  bool operator == (const OpType & opType ) const
+  {
+    return m_part_id == opType.m_part_id &&
+           m_unary == opType.m_unary &&
+           m_count == opType.m_count &&
+           m_op == opType.m_op;
+  }
+  bool operator != (const OpType & opType ) const
+  { return !(*this == opType); }
 };
 
 /** \addtogroup stk_mesh_module
@@ -71,8 +80,14 @@ public:
   /** \brief  Copy constructor */
   Selector( const Selector & selector);
 
-  /** \brief  Operator equality copy constructor */
+  /** \brief  Assignment Operator */
   Selector & operator = ( const Selector & B );
+
+  bool operator == (const Selector & rhs) const
+  { return m_op == rhs.m_op; }
+
+  bool operator != (const Selector & rhs) const
+  { return m_op != rhs.m_op; }
 
   /** \brief  A part that is required */
   Selector( const Part & part);
@@ -93,12 +108,12 @@ public:
     { Selector S( *this ); return S.complement(); }
 
   /** \brief  Is this bucket a subset of the
-   *          set defined by thePerceptMesh* mesh_data selector expression.
+   *          set defined by the selector expression.
    */
   bool operator()( const Bucket & candidate ) const ;
 
   /** \brief  Is this bucket a subset of the
-   *          set defined by thePerceptMesh* mesh_data selector expression.
+   *          set defined by the selector expression.
    */
   bool operator()( const Bucket * candidate ) const{
     return operator()(*candidate);
@@ -108,6 +123,11 @@ public:
    *          set defined by the selector expression.
    */
   bool operator()( const Entity & candidate ) const ;
+
+  /** \brief Is the intersection of the 'part_ords' parts a member
+   * of the set defined by the selector expression.
+   */
+  bool apply(const std::pair<const unsigned*,const unsigned*>& part_ords) const;
 
   /** \brief  Pretty print the set-expression with part names */
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
@@ -133,16 +153,16 @@ private:
   void verify_compatible( const Bucket & B ) const;
 
   /** \brief . */
-  bool apply(
-      unsigned part_id ,
-      const Bucket & candidate
+  bool part_is_present(
+      unsigned part_ord ,
+      const std::pair<const unsigned*,const unsigned*>& part_ords
       ) const;
 
   /** \brief . */
   bool apply(
       std::vector<OpType>::const_iterator start,
       std::vector<OpType>::const_iterator finish,
-      const Bucket & candidate
+      const std::pair<const unsigned*,const unsigned*>& part_ords
       ) const;
 
   /** \brief Turn the entire expression into a compound */

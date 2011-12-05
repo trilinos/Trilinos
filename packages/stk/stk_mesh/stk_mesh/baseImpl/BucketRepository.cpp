@@ -22,61 +22,6 @@ namespace impl {
 
 //----------------------------------------------------------------------
 
-namespace {
-
-const FieldBase::Restriction & empty_field_restriction()
-{
-  static const FieldBase::Restriction empty ;
-  return empty ;
-}
-
-const FieldBase::Restriction & dimension( const FieldBase & field ,
-                                          EntityRank erank ,
-                                          const unsigned num_part_ord ,
-                                          const unsigned part_ord[] ,
-                                          const char * const method )
-{
-  const FieldBase::Restriction & empty = empty_field_restriction();
-  const FieldBase::Restriction * dim = & empty ;
-
-  const std::vector<FieldBase::Restriction> & dim_map = field.restrictions();
-  const std::vector<FieldBase::Restriction>::const_iterator iend = dim_map.end();
-        std::vector<FieldBase::Restriction>::const_iterator ibeg = dim_map.begin();
-
-  for ( PartOrdinal i = 0 ; i < num_part_ord && iend != ibeg ; ++i ) {
-
-    const FieldRestriction restr(erank,part_ord[i]);
-
-    ibeg = std::lower_bound( ibeg , iend , restr );
-
-    if ( (iend != ibeg) && (*ibeg == restr) ) {
-      if ( dim == & empty ) { dim = & *ibeg ; }
-
-      if ( ibeg->not_equal_stride(*dim) ) {
-
-        Part & p_old = MetaData::get(field).get_part( ibeg->part_ordinal() );
-        Part & p_new = MetaData::get(field).get_part( dim->part_ordinal() );
-
-        std::ostringstream msg ;
-        msg << method ;
-        msg << " FAILED WITH INCOMPATIBLE DIMENSIONS FOR " ;
-        msg << field ;
-        msg << " Part[" << p_old.name() ;
-        msg << "] and Part[" << p_new.name() ;
-        msg << "]" ;
-
-        ThrowErrorMsg( msg.str() );
-      }
-    }
-  }
-
-  return *dim ;
-}
-
-} // namespace
-
-//----------------------------------------------------------------------
-
 
 BucketRepository::BucketRepository(
     BulkData & mesh,

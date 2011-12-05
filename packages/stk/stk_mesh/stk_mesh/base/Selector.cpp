@@ -156,29 +156,30 @@ void Selector::verify_compatible( const Bucket & B ) const
 }
 
 
-bool Selector::apply(
-    unsigned part_id,
-    const Bucket & candidate
+bool Selector::part_is_present(
+    unsigned part_ord,
+    const std::pair<const unsigned*, const unsigned*>& part_ords
     ) const
 {
-  // Search for 'part_id' in the bucket's list of sorted integer part ids
-  return has_superset(candidate,part_id);
+  // Search for 'part_ord' in the bucket's list of sorted integer part ords
+  const unsigned* lb = std::lower_bound(part_ords.first, part_ords.second, part_ord);
+  return (lb<part_ords.second && *lb == part_ord);
 }
 
 bool Selector::apply(
     std::vector<OpType>::const_iterator i,
     std::vector<OpType>::const_iterator j,
-    const Bucket & candidate
+    const std::pair<const unsigned*, const unsigned*>& part_ords
     ) const
 {
   bool result = i != j ;
   while ( result && i != j ) {
     if ( i->m_count ) { // Compound statement
-      result = i->m_unary ^ apply( i + 1 , i + i->m_count , candidate );
+      result = i->m_unary ^ apply( i + 1 , i + i->m_count , part_ords );
       i += i->m_count ;
     }
     else { // Test for containment of bucket in this part, or not in
-      result = i->m_unary ^ apply( i->m_part_id , candidate );
+      result = i->m_unary ^ part_is_present( i->m_part_id , part_ords );
       ++i ;
     }
   }
@@ -191,13 +192,18 @@ bool Selector::operator()( const Bucket & candidate ) const
   if (m_mesh_meta_data != NULL) {
     verify_compatible(candidate);
   }
-  return apply( m_op.begin() , m_op.end() , candidate );
+  return apply( m_op.begin() , m_op.end() , candidate.superset_part_ordinals() );
 }
 
 bool Selector::operator()( const Entity & candidate ) const
 {
   const Bucket & b = candidate.bucket();
   return this->operator()(b);
+}
+
+bool Selector::apply(const std::pair<const unsigned*,const unsigned*>& part_ords) const
+{
+  return apply(m_op.begin(), m_op.end(), part_ords);
 }
 
 Selector operator & ( const Part & A , const Part & B )
@@ -355,6 +361,12 @@ Selector selectField( const FieldBase& field )
   for(size_t i=0; i<rvec.size(); ++i) {
     selector |= meta.get_part(rvec[i].part_ordinal());
   }
+
+  const FieldRestrictionVector& sel_rvec = field.selector_restrictions();
+  for(size_t i=0; i<sel_rvec.size(); ++i) {
+    selector |= sel_rvec[i].selector();
+  }
+
   return selector;
 }
 

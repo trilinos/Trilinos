@@ -87,6 +87,8 @@ public:
 
   const FieldRestrictionVector &restrictions() const ;
 
+  const FieldRestrictionVector &selector_restrictions() const ;
+
   FieldBase * field_state(FieldState fstate) const {
     return m_field_states[fstate];
   }
@@ -94,6 +96,12 @@ public:
   void insert_restriction( const char       * arg_method ,
                            EntityRank         arg_entity_rank ,
                            const Part       & arg_part ,
+                           const unsigned   * arg_stride ,
+                           const void*        arg_init_value = NULL);
+
+  void insert_restriction( const char       * arg_method ,
+                           EntityRank         arg_entity_rank ,
+                           const Selector   & arg_selector ,
                            const unsigned   * arg_stride ,
                            const void*        arg_init_value = NULL);
 
@@ -126,6 +134,7 @@ private:
   void set_initial_value(const void* new_initial_value, unsigned num_scalars, unsigned num_bytes);
 
   FieldRestrictionVector & restrictions();
+  FieldRestrictionVector & selector_restrictions();
 
   const std::string            m_name ;                    ///< Name of the field
   CSet                         m_attribute ;               ///< User's attributes
@@ -136,6 +145,7 @@ private:
   const FieldState             m_this_state ;              ///< Field state of this field
   unsigned                     m_field_rank ;              ///< Number of dimensions
   FieldRestrictionVector       m_dim_map ;                 ///< Only valid on StateNone
+  FieldRestrictionVector       m_selector_restrictions ;   ///< Only valid on StateNone
   FieldBase                  * m_field_states[ MaximumFieldStates ];
   const shards::ArrayDimTag  * m_dim_tags[ MaximumFieldDimension ];
   void*                        m_initial_value;

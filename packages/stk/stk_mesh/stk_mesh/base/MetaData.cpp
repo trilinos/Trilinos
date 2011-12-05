@@ -312,6 +312,30 @@ void MetaData::declare_field_restriction(
       );
 }
 
+void MetaData::declare_field_restriction(
+  FieldBase      & arg_field ,
+  EntityRank       arg_entity_rank ,
+  const Selector & arg_selector ,
+  const unsigned * arg_stride ,
+  const void     * arg_init_value )
+{
+  static const char method[] =
+    "std::mesh::MetaData::declare_field_restriction" ;
+
+  //require_not_committed(); // Moved to FieldBaseImpl::declare_field_restriction
+  require_same_mesh_meta_data( MetaData::get(arg_field) );
+
+  m_field_repo.declare_field_restriction(
+      method,
+      arg_field,
+      arg_entity_rank,
+      arg_selector,
+      m_part_repo.get_all_parts(),
+      arg_stride,
+      arg_init_value
+      );
+}
+
 
 void MetaData::internal_declare_field_relation(
   FieldBase & pointer_field ,

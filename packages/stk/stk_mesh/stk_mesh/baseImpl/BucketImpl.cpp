@@ -241,6 +241,22 @@ const FieldBase::Restriction & dimension( const FieldBase & field ,
     }
   }
 
+  if (dim == &empty) {
+    const std::vector<FieldBase::Restriction> & sel_res = field.selector_restrictions();
+
+    for(std::vector<FieldBase::Restriction>::const_iterator it=sel_res.begin(), it_end=sel_res.end(); it != it_end; ++it) {
+      const Selector& selector = it->selector();
+      if (selector.apply(std::make_pair(part_ord, part_ord+num_part_ord))) {
+        if (dim == &empty) {
+          dim = &*it;
+        }
+        if (it->not_equal_stride(*dim)) {
+          ThrowErrorMsg("dimension calculation failed with different field-restriction selectors giving incompatible sizes.");
+        }
+      }
+    }
+  }
+
   return *dim ;
 }
 } // namespace

@@ -64,6 +64,7 @@ FieldBaseImpl::FieldBaseImpl(
   m_this_state( arg_this_state ),
   m_field_rank( arg_rank ),
   m_dim_map(),
+  m_selector_restrictions(),
   m_initial_value(NULL)
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::FieldBaseImpl", LOG_FIELD, m_ordinal);
@@ -93,8 +94,14 @@ FieldBaseImpl::~FieldBaseImpl()
 const FieldRestrictionVector & FieldBaseImpl::restrictions() const
 { return m_field_states[0]->m_impl.m_dim_map ; }
 
+const FieldRestrictionVector & FieldBaseImpl::selector_restrictions() const
+{ return m_field_states[0]->m_impl.m_selector_restrictions ; }
+
 FieldRestrictionVector & FieldBaseImpl::restrictions()
 { return m_field_states[0]->m_impl.m_dim_map ; }
+
+FieldRestrictionVector & FieldBaseImpl::selector_restrictions()
+{ return m_field_states[0]->m_impl.m_selector_restrictions ; }
 
 
 //----------------------------------------------------------------------
@@ -193,6 +200,95 @@ void FieldBaseImpl::insert_restriction(
           print_restriction( *restr, arg_entity_rank, arg_part, m_field_rank ) <<
           " WITH INCOMPATIBLE REDECLARATION " <<
           print_restriction( tmp, arg_entity_rank, arg_part, m_field_rank ));
+    }
+  }
+}
+
+void FieldBaseImpl::insert_restriction(
+  const char     * arg_method ,
+  EntityRank       arg_entity_rank ,
+  const Selector & arg_selector ,
+  const unsigned * arg_stride,
+  const void*      arg_init_value )
+{
+  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
+
+  FieldRestriction tmp( arg_entity_rank , arg_selector );
+
+  {
+    unsigned i = 0 ;
+    if ( m_field_rank ) {
+      for ( i = 0 ; i < m_field_rank ; ++i ) { tmp.stride(i) = arg_stride[i] ; }
+    }
+    else { // Scalar field is 0 == m_field_rank
+      i = 1 ;
+      tmp.stride(0) = 1 ;
+    }
+    // Remaining dimensions are 1, no change to stride
+    for ( ; i < MaximumFieldDimension ; ++i ) {
+      tmp.stride(i) = tmp.stride(i-1) ;
+    }
+
+    for ( i = 1 ; i < m_field_rank ; ++i ) {
+      const bool bad_stride = 0 == tmp.stride(i) ||
+                              0 != tmp.stride(i) % tmp.stride(i-1);
+      ThrowErrorMsgIf( bad_stride,
+          arg_method << " FAILED for " << *this <<
+          " WITH BAD STRIDE!");
+    }
+  }
+
+  if (arg_init_value != NULL) {
+    //insert_restriction can be called multiple times for the same field, giving
+    //the field different lengths on different mesh-parts.
+    //We will only store one initial-value array, we need to store the one with
+    //maximum length for this field so that it can be used to initialize data
+    //for all field-restrictions. For the parts on which the field is shorter,
+    //a subset of the initial-value array will be used.
+    //
+    //We want to end up storing the longest arg_init_value array for this field.
+    //
+    //Thus, we call set_initial_value only if the current length is longer
+    //than what's already been stored.
+
+    //length in bytes is num-scalars X sizeof-scalar:
+
+    size_t num_scalars = 1;
+    //if rank > 0, then field is not a scalar field, so num-scalars is
+    //obtained from the stride array:
+    if (m_field_rank > 0) num_scalars = tmp.stride(m_field_rank-1);
+
+    size_t sizeof_scalar = m_data_traits.size_of;
+    size_t nbytes = sizeof_scalar * num_scalars;
+
+    size_t old_nbytes = 0;
+    if (get_initial_value() != NULL) {
+      old_nbytes = get_initial_value_num_bytes();
+    }
+
+    if (nbytes > old_nbytes) {
+      set_initial_value(arg_init_value, num_scalars, nbytes);
+    }
+  }
+
+  {
+    FieldRestrictionVector & srvec = selector_restrictions();
+
+    bool restriction_already_exists = false;
+    for(FieldRestrictionVector::const_iterator it=srvec.begin(), it_end=srvec.end();
+        it!=it_end; ++it) {
+      if (tmp == *it) {
+        restriction_already_exists = true;
+        if (tmp.not_equal_stride(*it)) {
+          ThrowErrorMsg("Incompatible selector field-restrictions!");
+        }
+      }
+    }
+
+    if ( !restriction_already_exists ) {
+      // New field restriction, verify we are not committed:
+      ThrowRequireMsg(!m_meta_data->is_commit(), "mesh MetaData has been committed.");
+      srvec.push_back( tmp );
     }
   }
 }
