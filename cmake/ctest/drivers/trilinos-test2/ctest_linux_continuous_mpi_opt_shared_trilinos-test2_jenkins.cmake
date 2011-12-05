@@ -104,7 +104,7 @@ SET(CTEST_SOURCE_DIRECTORY "$ENV{WORKSPACE}/Trilinos")
 # The location where the Jenkins script gets run.
 SET(CTEST_BINARY_DIRECTORY "$ENV{WORKSPACE}/continuous-development")
 # The CTest command being used by Jenkins.
-SET(CTEST_COMMAND "$ENV{CTEST_EXE}")
+SET(CTEST_COMMAND "/home/trilinos/bin/ctest")
 
 function(VISIBLE_MESSAGE message)
   message("\n***")
