@@ -4,6 +4,7 @@
 #include <string>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Time.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_VerboseObject.hpp"
