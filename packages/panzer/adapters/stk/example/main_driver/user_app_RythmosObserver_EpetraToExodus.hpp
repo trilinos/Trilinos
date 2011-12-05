@@ -1,5 +1,5 @@
-#ifndef USER_APP_RYTHMOS_OBSERVER_HPP
-#define USER_APP_RYTHMOS_OBSERVER_HPP
+#ifndef USER_APP_RYTHMOS_OBSERVER_EPETRA_TO_EXODUS_HPP
+#define USER_APP_RYTHMOS_OBSERVER_EPETRA_TO_EXODUS_HPP
 
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_IntegrationObserverBase.hpp"
@@ -15,14 +15,14 @@
 
 namespace user_app {
 
-  class RythmosObserver_Epetra : 
+  class RythmosObserver_EpetraToExodus : 
     public Rythmos::IntegrationObserverBase<double> {
 
   public:
     
-    RythmosObserver_Epetra(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			   const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
-			   const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) :
+    RythmosObserver_EpetraToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+				   const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
+				   const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) :
       m_mesh(mesh),
       m_dof_manager(dof_manager),
       m_lof(lof)
@@ -31,7 +31,7 @@ namespace user_app {
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     cloneIntegrationObserver() const
     {
-      return Teuchos::rcp(new RythmosObserver_Epetra(m_mesh, m_dof_manager, m_lof));
+      return Teuchos::rcp(new RythmosObserver_EpetraToExodus(m_mesh, m_dof_manager, m_lof));
     }
 
     void resetIntegrationObserver(const Rythmos::TimeRange<double> &integrationTimeDomain)

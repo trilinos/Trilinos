@@ -35,7 +35,7 @@
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STK_NOXObserverFactory.hpp"
-#include "Panzer_STK_RythmosObserverFactory_Epetra.hpp"
+#include "Panzer_STK_RythmosObserverFactory.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
 
 #include <vector>
@@ -415,9 +415,9 @@ namespace panzer_stk {
       piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
     }
     else if (solver=="Rythmos") {
-      Teuchos::RCP<const panzer_stk::RythmosObserverFactory_Epetra> observer_factory = 
-	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::RythmosObserverFactory_Epetra> >("Rythmos Observer Factory");
-      piro = Teuchos::rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer_factory->buildRythmosObserver(mesh,dofManager,ep_lof)));
+      Teuchos::RCP<const panzer_stk::RythmosObserverFactory> observer_factory = 
+	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::RythmosObserverFactory> >("Rythmos Observer Factory");
+      piro = Teuchos::rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer_factory->buildRythmosObserver(mesh,dofManager,linObjFactory)));
     } 
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,

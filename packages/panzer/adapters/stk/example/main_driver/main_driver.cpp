@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
     // Parse the input file and broadcast to other processes
     Teuchos::RCP<Teuchos::ParameterList> input_params = Teuchos::rcp(new Teuchos::ParameterList("User_App Parameters"));
-    Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.get(), *comm);
+    Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
     
     *out << *input_params << std::endl;
     
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 
     // Add in the application specific observer factories
     {
-      Teuchos::RCP<const panzer_stk::RythmosObserverFactory_Epetra> rof = 
+      Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof = 
 	Teuchos::rcp(new user_app::RythmosObserverFactory_Epetra);
       input_params->sublist("Solver Factories").set("Rythmos Observer Factory", rof);
       Teuchos::RCP<const panzer_stk::NOXObserverFactory> nof = 
