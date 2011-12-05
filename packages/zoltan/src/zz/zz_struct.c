@@ -159,9 +159,6 @@ int Zoltan_Copy_To(ZZ *to, ZZ const *from)
   *to = *from;
 
   MPI_Comm_dup(from->Communicator, &(to->Communicator));
-
-  to->Machine_Desc = NULL;
-  Zoltan_Copy_Machine_Desc(&(to->Machine_Desc), from->Machine_Desc);
   
   to->Params = NULL;
   Zoltan_Copy_Params(&(to->Params), from->Params);
@@ -207,7 +204,6 @@ void Zoltan_Destroy(ZZ **zz)
 
 static void Zoltan_Free_Zoltan_Struct_Members(ZZ *zz)
 {
-  Zoltan_Free_Machine_Desc(&(zz->Machine_Desc));
   Zoltan_Free_Params(&(zz->Params));
   Zoltan_Timer_Destroy(&(zz->ZTime));
   Zoltan_Free_Structures(zz);  /* Algorithm-specific structures */
@@ -253,7 +249,6 @@ static void Zoltan_Init(ZZ* zz)
   zz->Tflops_Special = ZOLTAN_TFLOPS_SPECIAL_DEF;
   zz->Seed = ZOLTAN_RAND_INIT;
   zz->Timer = ZOLTAN_TIMER_DEF;
-  zz->Machine_Desc = NULL;
   zz->Params = NULL;
   zz->Deterministic = ZOLTAN_DETERMINISTIC_DEF;
   zz->Obj_Weight_Dim = ZOLTAN_OBJ_WEIGHT_DEF;

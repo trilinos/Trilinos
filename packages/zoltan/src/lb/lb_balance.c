@@ -333,17 +333,6 @@ ZOLTAN_ID_PTR gid;
 
   Zoltan_Srand_Sync(Zoltan_Rand(NULL), NULL, zz->Communicator);
 
-  /*
-   *  Construct the heterogenous machine description.
-   */
-
-  error = Zoltan_Build_Machine_Desc(zz);
-
-  if (error == ZOLTAN_FATAL)
-    goto End;
-
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Done machine description");
-
   /* Since generating a new partition, need to free old mapping vector */
   zz->LB.OldRemap = zz->LB.Remap;
   zz->LB.Remap = NULL;

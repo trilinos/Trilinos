@@ -194,18 +194,6 @@ int Zoltan_Order (
     return (ZOLTAN_FATAL);
   }
 
-  /* TODO : Ask why useful ! */
-  /*
-   *  Construct the heterogenous machine description.
-   */
-  ierr = Zoltan_Build_Machine_Desc(zz);
-  if (ierr == ZOLTAN_FATAL){
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ierr);
-  }
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Done machine description");
-
-
   /************************************
    *  Check for required query function
    ************************************/

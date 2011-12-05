@@ -142,7 +142,6 @@ APPEND_SET(NOINSTALLHEADERS
   )
 
 APPEND_SET(SOURCES
-  ha/build_machine_desc.c
   ha/divide_machine.c
   ha/get_processor_name.c
   ha/ha_drum.c
