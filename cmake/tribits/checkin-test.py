@@ -653,8 +653,13 @@ sufficient condition for readiness to push.
 
 def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   
-  clp = ConfigurableOptionParser(configuration, usage=usageHelp)
+  clp = ConfigurableOptionParser(configuration.get('defaults', {}), usage=usageHelp)
 
+  clp.add_option(
+    "--project-configuration", dest="projectConfiguration", type="string",
+    help="Custom file to provide configuration defaults for the project.",
+    default={})
+  
   clp.add_option(
     "--show-defaults", dest="showDefaults", action="store_true",
     help="Show the default option values and do nothing at all.",
@@ -683,6 +688,13 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     '--trilinos-src-dir', dest="srcDir", type="string",
     default=srcDirDefault,
     help="[DEPRECATED] Use --src-dir instead. This argument is for backwards compatibility only.")
+
+  configuredBuilds = [build for build, unused in
+                      configuration.get('cmake', {}).get('default-builds', [])]
+  clp.add_option(
+    '--default-builds', dest='defaultBuilds', type='string',
+    default=','.join(configuredBuilds),
+    help="Comma separated list of builds that should always be run by default.")
 
   clp.add_option(
     "--extra-repos", dest="extraRepos", type="string", default="",
@@ -993,6 +1005,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     print "  --no-eg-git-version-check \\"
   print "  --src-dir='" + options.srcDir+"' \\"
+  print "  --default-builds'" + options.defaultBuilds + "' \\"
   print "  --extra-repos='"+options.extraRepos+"' \\"
   if options.skipDepsUpdate:
     print "  --skip-deps-update \\"
@@ -1109,7 +1122,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     baseDir = getCompleteFileDirname(__file__)
 
     t1 = time.time()
-    success = checkinTest(baseDir, options)
+    success = checkinTest(baseDir, options, configuration)
     t2 = time.time()
     print "\nTotal time for checkin-test.py =", formatMinutesStr((t2-t1)/60.0)
 
@@ -1139,6 +1152,24 @@ def getConfigurationSearchPaths():
   result.append(os.path.join(_THIS_REAL_PATH, '..', '..'))
   return result
 
+def loadConfigurationFile(filepath):
+  print "Loading project configuration from %s..." % filepath
+  if os.path.exists(filepath):
+    try:
+      modulePath = os.path.dirname(filepath)
+      moduleFile = os.path.basename(filepath)
+      moduleName, extension = os.path.splitext(moduleFile)
+      sys.path.append(modulePath)
+      try:
+        return __import__(moduleName).configuration
+      except Exception, e:
+        print e
+        raise e
+    finally:
+      sys.path.pop()
+  else:
+    raise Exception('The file %s does not exist.' % filepath)
+
 def locateAndLoadConfiguration(path_hints = []):
   """
   Locate and load a module called
@@ -1152,14 +1183,7 @@ def locateAndLoadConfiguration(path_hints = []):
   for path in path_hints:
     candidate = os.path.join(path, CONFIG_FILE)
     if os.path.exists(candidate):
-      try:
-        sys.path.append(path)
-        try:
-          return __import__(CONFIG_MODULE).configuration
-        except Exception:
-          pass
-      finally:
-        sys.path.pop()
+      return loadConfigurationFile(candidate)
   return {}
     
 
@@ -1167,9 +1191,7 @@ def locateAndLoadConfiguration(path_hints = []):
 # Main
 #
 
-def main(configuration = {}):
-  cmndLineArgs = sys.argv[1:]
-  
+def main(cmndLineArgs):
   # See if the help option is set or not
   helpOpt = len( set(cmndLineArgs) & set(("--help", "-h")) ) > 0
 
@@ -1191,7 +1213,14 @@ def main(configuration = {}):
     sys.stdout = teeOutput
     sys.stderr = teeOutput
     try:
-      configuration = locateAndLoadConfiguration(getConfigurationSearchPaths())
+      # See if there is a configuration file override.
+      configuration = None
+      for arg in cmndLineArgs:
+        if arg.startswith('--project-configuration='):
+          print "Found configuration override %s..." % arg
+          configuration = loadConfigurationFile(arg.split('=')[1])
+      if not configuration:
+        configuration = locateAndLoadConfiguration(getConfigurationSearchPaths())
       success = runProjectTestsWithCommandLineArgs(cmndLineArgs, configuration)
     except SystemExit, e:
       # In Python 2.4, SystemExit inherits Exception, but for proper exit
@@ -1212,4 +1241,4 @@ def main(configuration = {}):
     return 1
 
 if __name__ == '__main__':
-  sys.exit(main())
+  sys.exit(main(sys.argv[1:]))

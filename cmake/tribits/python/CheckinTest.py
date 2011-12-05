@@ -1594,8 +1594,7 @@ def getProjectName(sourceDirectory):
     'The file %s does not set the PROJECT_NAME variable. ' +
     'This is required of any Tribits project.')
   
-  
-def checkinTest(baseDir, inOptions):
+def checkinTest(baseDir, inOptions, configuration={}):
   """
   Main function for checkin testing.
   """
@@ -1617,9 +1616,8 @@ def checkinTest(baseDir, inOptions):
   print "\nbaseTestDir =", baseTestDir
 
   if inOptions.withoutDefaultBuilds:
-    inOptions.withMpiDebug = False
-    inOptions.withSerialRelease = False
-
+    inOptions.defaultBuilds = ''
+    
   if inOptions.doAll:
     inOptions.doPull = True
     inOptions.doConfigure = True
@@ -1706,36 +1704,22 @@ def checkinTest(baseDir, inOptions):
 
   buildTestCaseList = []
 
-  commonConfigOptions = []
+  cmakeConfig = configuration.get('cmake', {})
 
-  setBuildTestCaseInList( buildTestCaseList,
-    "MPI_DEBUG", inOptions.withMpiDebug,
-    ["PS"], True, False,
-    commonConfigOptions +
-    [
-      "-DTPL_ENABLE_MPI:BOOL=ON",
-      "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
-      cmakeDefine(inOptions.projectName, "ENABLE_DEBUG:BOOL", "ON"),
-      cmakeDefine(inOptions.projectName, "ENABLE_CHECKED_STL:BOOL", "ON"),
-      cmakeDefine(inOptions.projectName, "ENABLE_DEBUG_SYMBOLS:BOOL", "ON"),
-      cmakeDefine(inOptions.projectName, "ENABLE_EXPLICIT_INSTANTIATION:BOOL", "ON"),
-      "-DTeuchos_ENABLE_DEFAULT_STACKTRACE:BOOL=OFF",
-    ]
-    )
+  commonConfigOptions = cmakeConfig.get('common', [])
 
-  setBuildTestCaseInList( buildTestCaseList,
-    "SERIAL_RELEASE", inOptions.withSerialRelease,
-    ["PS"], True, False,
-    commonConfigOptions +
-    [
-      "-DTPL_ENABLE_MPI:BOOL=OFF",
-      "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
-      cmakeDefine(inOptions.projectName, "ENABLE_DEBUG:BOOL", "OFF"),
-      cmakeDefine(inOptions.projectName, "ENABLE_CHECKED_STL:BOOL", "OFF"),
-      cmakeDefine(inOptions.projectName, "ENABLE_EXPLICIT_INSTANTIATION:BOOL", "OFF"),
-    ]
-    )
-
+  defaultBuilds = cmakeConfig.get('default-builds', [])
+  requestedDefaultBuilds = inOptions.defaultBuilds
+  for buildname, buildopts in defaultBuilds:
+    setBuildTestCaseInList(
+      buildTestCaseList,
+      buildname,
+      buildname in requestedDefaultBuilds,
+      ["PS"],
+      True,
+      False,
+      commonConfigOptions + buildopts)
+      
   if inOptions.ssExtraBuilds:
     for ssExtraBuild in inOptions.ssExtraBuilds.split(','):
       setBuildTestCaseInList(buildTestCaseList, ssExtraBuild, True,
