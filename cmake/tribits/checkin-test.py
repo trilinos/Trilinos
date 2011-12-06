@@ -372,11 +372,11 @@ Common Use Cases (examples):
   --push but keep all of the rest of the options the same.  For example, if
   you did:
 
-    ../checkin-test.py --enable-packages=Blah --without-serial-release --do-all
+    ../checkin-test.py --enable-packages=Blah --default-builds=MPI_DEBUG --do-all
 
   then follow that up with:
 
-    ../checkin-test.py --enable-packages=Blah --without-serial-release --push
+    ../checkin-test.py --enable-packages=Blah --default-builds=MPI_DEBUG --push
 
   NOTE: This is a common use case when some tests are failing which aborted
   the initial push but you determine it is okay to push anyway and do so with
@@ -395,13 +395,13 @@ Common Use Cases (examples):
 
 (*) Run the MPI_DEBUG build/test only:
 
-  ../checkin-test.py --do-all --without-serial-release
+  ../checkin-test.py --do-all --default-builds=MPI_DEBUG
 
 (*) The minimum acceptable testing when code has been changed:
 
   ../checkin-test.py \
     --do-all --enable-all-packages=off --no-enable-fwd-packages \
-    --without-serial-release
+    --default-builds=MPI_DEBUG
 
   NOTE: This will do only an MPI DEBUG build and will only build and run the
   tests for the packages that have directly been changed and not any forward
@@ -796,17 +796,9 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     default=False )
 
   clp.add_option(
-    "--without-mpi-debug", dest="withMpiDebug", action="store_false",
-    help="Skip the mpi debug build.", default=True )
-
-  clp.add_option(
-    "--without-serial-release", dest="withSerialRelease", action="store_false",
-    help="Skip the serial release build.", default=True )
-
-  clp.add_option(
     "--without-default-builds", dest="withoutDefaultBuilds", action="store_true",
     default=False,
-      help="Skip the default builds (same as --without-mpi-debug --without-serial-release)." \
+      help="Skip the default builds (same as --default-builds='')." \
       +"  You would use option along with --extra-builds=BUILD1,BUILD2,... to run your own" \
       +" local custom builds." )
 
@@ -941,7 +933,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     +" performed on its own or with other actions in which case the wipe clean will be" \
     +" performed before any other actions. NOTE: This will only wipe clean the builds" \
     +" that are specified and will not touch those being ignored (e.g. SERIAL_RELEASE" \
-    +" will not be removed if --without-serial-release is specified)." )
+    +" will not be removed if --default-builds=MPI_DEBUG is specified)." )
 
   clp.add_option(
     "--pull", dest="doPull", action="store_true", default=False,
@@ -1034,10 +1026,6 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     print "  --show-all-tests \\"
   else:
     print "  --no-show-all-tests \\"
-  if not options.withMpiDebug:
-    print "  --without-mpi-debug \\" 
-  if not options.withSerialRelease:
-    print "  --without-serial-release \\" 
   if options.withoutDefaultBuilds:
     print "  --without-default-builds \\" 
   print "  --ss-extra-builds='"+options.ssExtraBuilds+"' \\"
