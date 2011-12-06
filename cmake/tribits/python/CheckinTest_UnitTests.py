@@ -610,7 +610,8 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
       "--no-eg-git-version-check",
       "--src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos",
       "--send-email-to=bogous@somwhere.com",
-      "--project-configuration=%s" % os.path.join(scriptsDir, 'CheckinTest_UnitTests_Config.py'),
+      "--project-configuration=%s" % os.path.join(scriptsDir,
+        'UnitTests', 'CheckinTest_UnitTests_Config.py'),
       optionsStr,
       ]
     cmnd = ' '.join(cmndArgs)
