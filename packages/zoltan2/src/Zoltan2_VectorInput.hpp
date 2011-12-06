@@ -51,7 +51,7 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
 
-  enum InputAdapterType inputAdapterType() {return VectorAdapterType;}
+  enum InputAdapterType inputAdapterType() const {return VectorAdapterType;}
 
   /*! Pure virtual destructor
    */
