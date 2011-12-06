@@ -45,6 +45,7 @@
 #define NOX_THYRA_VECTOR_H
 
 #include "NOX_Abstract_Vector.H" // base class
+#include "NOX_Abstract_ImplicitWeighting.H" // base class
 #include "Thyra_VectorBase.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -63,7 +64,8 @@ namespace NOX {
   namespace Thyra {
 
     //! Implementation of NOX::Thyra::Vector 
-    class Vector : public NOX::Abstract::Vector {
+    class Vector : public NOX::Abstract::Vector,
+		   public NOX::Abstract::ImplicitWeighting {
 
     public:
 
@@ -204,6 +206,14 @@ namespace NOX {
       Teuchos::RCP<const ::Thyra::VectorBase<double> >
       getWeightVector() const;
 
+      //@{ \name Derived from NOX::Abstract::ImplicitWeighting
+
+      bool getImplicitWeighting() const;
+      
+      void setImplicitWeighting(bool do_implicit_weighting);
+
+      //@}
+
     protected:
 
       //! Pointer to Thyra vector owned by this object
@@ -214,6 +224,9 @@ namespace NOX {
 
       //! Thyra vector used for weighting inner product and norms
       Teuchos::RCP< ::Thyra::VectorBase<double> > tmpVec_;
+
+      //! True if implicit weighting is enabled (i.e. a nonnull wieghtVec_)
+      bool do_implicit_weighting_;
 
     };
 
