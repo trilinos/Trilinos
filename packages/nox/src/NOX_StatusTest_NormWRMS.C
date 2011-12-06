@@ -167,7 +167,6 @@ checkStatus(const NOX::Solver::Generic& problem,
   if (nonnull(iw_u) && m_disable_implicit_weighting) {
     saved_status = iw_u->getImplicitWeighting();
     iw_u->setImplicitWeighting(false);
-    cout << "********ROGER************" << endl;
   }
 
   // tmp = factor * sqrt (u * u / N)
