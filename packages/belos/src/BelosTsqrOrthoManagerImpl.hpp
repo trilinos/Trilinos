@@ -1297,8 +1297,9 @@ namespace Belos {
       // Notify the caller via callback about the need for
       // reorthogonalization.
       if (! reorthogCallback_.is_null()) {
-	reorthogCallback_->operator() (Teuchos::arrayViewFromVector (normsBeforeFirstPass), 
-				       Teuchos::arrayViewFromVector (normsAfterFirstPass));
+	using Teuchos::arrayViewFromVector;
+	(*reorthogCallback_) (arrayViewFromVector (normsBeforeFirstPass),
+			      arrayViewFromVector (normsAfterFirstPass));
       }
 
       // Perform another Block Gram-Schmidt pass if necessary.  "Twice
