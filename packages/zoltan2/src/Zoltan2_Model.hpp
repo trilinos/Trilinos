@@ -53,12 +53,30 @@ public:
    */
   Model() : idMap_() {}
 
-   /*
+   /*!
    *  Every model must have an IdentifierMap, whether it needs for mapping 
    *  or not. The Map can simply indicate that Zoltan2 global numbers are 
    *  identical to the application's global IDs.
    */
   const RCP<const idmap_t > getIdentifierMap() { return idMap_; }
+
+  /*! Return the local number of objects, which may be
+   *  vertices, matrix rows, identifiers, coordinates,
+   *  or mesh nodes or elements.
+   */
+  virtual size_t getLocalNumObjects() const = 0;
+
+  /*! Return the global number of objects, which may be
+   *  vertices, matrix rows, identifiers, coordinates,
+   *  or mesh nodes or elements.
+   */
+  virtual global_size_t getGlobalNumObjects() const = 0;
+
+  /*! Set a view to the list of object global numbers, which may be
+   *  vertex IDs, matrix row IDs, identifiers, coordinate IDs,
+   *  or mesh node or element IDs.
+   */
+  virtual void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const = 0;
 
 protected:
 

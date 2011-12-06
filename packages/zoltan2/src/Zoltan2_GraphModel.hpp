@@ -111,6 +111,23 @@ public:
   size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
     ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
     ArrayView<const scalar_t> &wgts) const { return 0; }
+
+  ////////////////////////////////////////////////////
+  // The Model interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumObjects() const
+  {
+    return getLocalNumVertices();
+  }
+
+  global_size_t getGlobalNumObjects() const
+  {
+    return getGlobalNumVertices();
+  }
+
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return; }
+
 };
 
 ////////////////////////////////////////////////////////////////
@@ -352,6 +369,31 @@ public:
     offsets = offsets_.persistingView(0, numLocalVtx_+1);
 
     return numLocalEdges_;
+  }
+
+  ////////////////////////////////////////////////////
+  // The Model interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumObjects() const
+  {
+    return getLocalNumVertices();
+  }
+
+  size_t getGlobalNumObjects() const
+  {
+    return getGlobalNumVertices();
+  }
+
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
+  { 
+    size_t n = getLocalNumVertices();
+    if (gidsAreGnos_){
+      gnos = gids_.persistingView(0, n);
+    }
+    else{
+      gnos = gnos_.getConst();
+    }
   }
 
 private:

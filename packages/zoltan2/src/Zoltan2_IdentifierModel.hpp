@@ -31,7 +31,8 @@ namespace Zoltan2 {
     templated on the basic user input type.
 */
 template <typename Adapter>
-class IdentifierModel : public Model<Adapter> {
+class IdentifierModel : public Model<Adapter> 
+{
 private:
 
 public:
@@ -66,6 +67,24 @@ public:
 
   size_t getIdentifierList( ArrayView<const gno_t> &Ids,
     ArrayView<const scalar_t> &wgts) const { return 0; }
+
+  ////////////////////////////////////////////////////
+  // The Model interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumObjects() const
+  {
+    return getLocalNumIdentifiers();
+  }
+
+  size_t getGlobalNumObjects() const
+  {
+    return getGlobalNumIdentifiers();
+  }
+
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return ; }
+
+
 };
 
 template <typename User>
@@ -174,6 +193,30 @@ public:
       Ids = gnos_.getConst();
     }
     return gids_.size();
+  }
+
+  ////////////////////////////////////////////////////
+  // The Model interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumObjects() const
+  {
+    return getLocalNumIdentifiers();
+  }
+
+  size_t getGlobalNumObjects() const
+  {
+    return getGlobalNumIdentifiers();
+  }
+
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
+  { 
+    if (gnosAreGids_){
+      gnos = gids_.persistingView(0, gids_.size());
+    }
+    else{
+      gnos = gnos_.getConst();
+    }
   }
 
 private:
@@ -291,6 +334,30 @@ public:
       Ids = gnos_.getConst();
     }
     return gids_.size();
+  }
+
+  ////////////////////////////////////////////////////
+  // The Model interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumObjects() const
+  {
+    return getLocalNumIdentifiers();
+  }
+
+  size_t getGlobalNumObjects() const
+  {
+    return getGlobalNumIdentifiers();
+  }
+
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
+  { 
+    if (gnosAreGids_){
+      gnos = gids_.persistingView(0, gids_.size());
+    }
+    else{
+      gnos = gnos_.getConst();
+    }
   }
 
 private:
