@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Teuchos::ParameterList> finalParamsPtr = 
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::updateParametersFromXmlFile(input_file_name.str(), 
-				       finalParamsPtr.get());
+				       outArg(*finalParamsPtr));
 #else
   Teuchos::RCP<Teuchos::ParameterList> finalParamsPtr = nlParamsPtr;
 #endif
