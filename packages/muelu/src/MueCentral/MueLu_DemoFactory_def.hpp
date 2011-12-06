@@ -1,20 +1,12 @@
-/*
- * MueLu_DemoFactory_def.hpp
- *
- *  Created on: 06.12.2011
- *      Author: tobias
- */
+#ifndef MUELU_DEMOFACTORY_DEF_HPP
+#define MUELU_DEMOFACTORY_DEF_HPP
 
-#ifndef MUELU_DEMOFACTORY_DEF_HPP_
-#define MUELU_DEMOFACTORY_DEF_HPP_
+#include "MueLu_DemoFactory_decl.hpp"
 
+// #include <Xpetra_Operator.hpp>
 
-#include "MueLu_ThresholdAFilterFactory_decl.hpp"
-
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_CrsOperator.hpp>
 #include "MueLu_Level.hpp"
-#include "MueLu_Monitor.hpp"
+// #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -36,7 +28,7 @@ namespace MueLu {
     // TODO: implement factory
   }
 
-#define MUELU_DEMOFACTORY_SHORT
 } // namespace MueLu
 
-#endif /* MUELU_DEMOFACTORY_DEF_HPP_ */
+#define MUELU_DEMOFACTORY_SHORT
+#endif // MUELU_DEMOFACTORY_DEF_HPP

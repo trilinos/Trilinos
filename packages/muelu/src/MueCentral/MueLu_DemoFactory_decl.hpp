@@ -1,15 +1,8 @@
-/*
- * MueLu_DemoFactory_decl.hpp
- *
- *  Created on: 06.12.2011
- *      Author: tobias
- */
-
-#ifndef MUELU_DEMOFACTORY_DECL_HPP_
-#define MUELU_DEMOFACTORY_DECL_HPP_
+#ifndef MUELU_DEMOFACTORY_DECL_HPP
+#define MUELU_DEMOFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"  // TODO: include base factory (in this case DemoFactory derives from SingleLevelFactoryBase)
+#include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_DemoFactory_fwd.hpp"
 
 namespace MueLu {
@@ -17,13 +10,12 @@ namespace MueLu {
   /*!
     @class DemoFactory class.
     @brief empty factory for demonstration
-
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class ThresholdAFilterFactory : public SingleLevelFactoryBase {
 #undef MUELU_DEMOFACTORY_SHORT
-    #include "MueLu_UseShortNames.hpp"
+#include "MueLu_UseShortNames.hpp"
 
   public:
     //! @name Constructors/Destructors.
@@ -34,6 +26,7 @@ namespace MueLu {
 
     //! Destructor.
     virtual ~DemoFactory();
+
     //@}
 
     //! Input
@@ -59,6 +52,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_DEMOFACTORY_SHORT
-
-
-#endif /* MUELU_DEMOFACTORY_DECL_HPP_ */
+#endif // MUELU_DEMOFACTORY_DECL_HPP
