@@ -67,6 +67,8 @@ namespace stk
 
 #define EXTRA_PRINT 0
 
+      static std::string procs_string[9] = {"np0", "np1", "np2", "np3", "np4", "np5", "np6", "np7", "np8"};
+
       static void output_draw(std::string filename, std::string toFile)
       {
         std::ofstream file(filename.c_str());
@@ -1752,7 +1754,7 @@ namespace stk
                 breaker.doBreak();
               }
             
-            eMesh.saveAs("./output_files/cylinder_tet10_tet10_"+toString(numRefines)+".e");
+            eMesh.saveAs("./output_files/cylinder_tet10_tet10_"+toString(numRefines)+"_"+procs_string[p_size]+".e");
             // end_demo
 
 

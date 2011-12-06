@@ -1095,7 +1095,7 @@ namespace stk {
       removeEmptyElements();
 
       // remove nodes not referred to by elements
-      //removeDanglingNodes();
+      removeDanglingNodes();
 
       // remove pseudo elements
       //m_nodeRegistry->removePseudoEntities();
