@@ -73,6 +73,17 @@ namespace details {
 /// \enum EBelosSolverType
 /// \brief 1-to-1 enumeration of all supported SolverManager subclasses.
 /// \author Mark Hoemmen
+///
+/// This enum is an implementation detail of \c SolverFactory.
+/// Users of \c SolverFactory should not refer to this enum or
+/// rely on the symbols or integer values therein.
+///
+/// Belos developers who have implemented a new solver (i.e., a new
+/// subclass of \c SolverManager) and who want to make the solver
+/// available through the \c SolverFactory should first add a new enum
+/// symbol corresponding to their solver to the end of the list.  They
+/// should then follow the instructions provided in the \c
+/// SolverFactory documentation.
 enum EBelosSolverType {
   SOLVER_TYPE_BLOCK_GMRES,
   SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
@@ -90,29 +101,118 @@ enum EBelosSolverType {
 /// \brief Factory for all solvers which Belos supports.
 /// \author Mark Hoemmen
 ///
+/// New Belos users should start by creating an instance of this
+/// class, and using it to create the solver they want.
+///
 /// Belos implements several different iterative solvers.  The usual
 /// way in which users interact with these solvers is through
-/// appropriately named subclasses of \c SolverManager.  This
-/// factory class tells users which solvers are supported.  It can
-/// initialize and return any supported subclass of \c
-/// SolverManager, given a short name of the subclass (such as
-/// "GMRES" or "CG").
+/// appropriately named subclasses of \c SolverManager.  This factory
+/// class tells users which solvers are supported.  It can initialize
+/// and return any supported subclass of \c SolverManager, given a
+/// short name of the subclass (such as "GMRES" or "CG").  
+///
+/// Users ask for the solver they want by a string name, and supply an
+/// optional (but recommended) list of parameters (\c
+/// Teuchos::ParameterList) for the solver.  The solver may fill in
+/// the parameter list with all the valid parameters and their default
+/// values, which users may later inspect and modify.  Valid solver
+/// names include both "canonical names" (each maps one-to-one to a
+/// specific SolverManager subclass) and "aliases."  Some aliases are
+/// short nicknames for canonical names, like "GMRES" for "Pseudoblock
+/// GMRES".  Other aliases refer to a canonical solver name, but also
+/// modify the user's parameter list.  For example, "Flexible GMRES"
+/// is an alias for "Block GMRES", and also sets the "Flexible Gmres"
+/// parameter to true in the input parameter list.
 ///
 /// This class' template parameters are the same as those of \c
-/// SolverManager: Scalar is the scalar type (of entries in the
+/// SolverManager.  Scalar is the scalar type (of entries in the
 /// multivector), MV is the multivector type, and OP is the operator
 /// type.  For example: Scalar=double, MV=Epetra_MultiVector, and
 /// OP=Epetra_Operator will access the Epetra specialization of the
 /// Belos solvers.
 ///
-/// This factory implements \c Teuchos::Describable.  At higher
-/// verbosity levels, the describe() method will print out the list of
-/// names of supported solvers.  You can also get this list directly.
+/// Here is a simple example of how to use SolverFactory to create a
+/// GMRES solver for your linear system.  Your code needs to include
+/// BelosSolverFactory.hpp and whatever linear algebra library header
+/// files you would normally use.  Suppose that Scalar, MV, and OP
+/// have been previously typedef'd to the scalar resp. multivector
+/// resp. operator type in your application.
+/// \code
+/// using Teuchos::ParameterList;
+/// using Teuchos::parameterList;
+/// using Teuchos::RCP; 
+/// using Teuchos::rcp; // Save some typing
+/// 
+/// // The ellipses represent the code you would normally use to create 
+/// // the sparse matrix, preconditioner, right-hand side, and initial 
+/// // guess for the linear system AX=B you want to solve.
+/// RCP<OP> A = ...; // The sparse matrix / operator A
+/// RCP<OP> M = ...; // The (right) preconditioner M
+/// RCP<MV> B = ...; // Right-hand side of AX=B
+/// RCP<MV> X = ...; // Initial guess for the solution
+///
+/// Belos::SolverFactory<Scalar, MV, OP> factory;
+/// // Make an empty new parameter list.
+/// RCP<ParameterList> solverParams = parameterList();
+///
+/// // Set some GMRES parameters.
+/// //
+/// // "Num Blocks" = Maximum number of Krylov vectors to store.  This 
+/// // is also the restart length.  "Block" here refers to the ability 
+/// // of this particular solver (and many other Belos solvers) to solve
+/// // multiple linear systems at a time, even though we are only solving
+/// // one linear system in this example.
+/// solverParams->set ("Num Blocks", 40);
+/// solverParams->set ("Maximum Iterations", 400);
+/// solverParams->set ("Convergence Tolerance", 1.0e-8);
+///
+/// // Create the GMRES solver.
+/// RCP<Belos::SolverManager<Scalar, MV, OP> > solver = 
+///   factory.create ("GMRES", solverParams);
+///
+/// // Create a LinearProblem struct with the problem to solve.
+/// // A, X, B, and M are passed by (smart) pointer, not copied.
+/// RCP<Belos::LinearProblem<Scalar, MV, OP> > problem = 
+///   rcp (new Belos::LinearProblem<Scalar, MV, OP> (A, X, B));
+/// problem->setRightPrec (M);
+///
+/// // Tell the solver what problem you want to solve.
+/// solver->setProblem (problem);
+///
+/// // Attempt to solve the linear system.  result == Belos::Converged 
+/// // means that it was solved to the desired tolerance.  This call 
+/// // overwrites X with the computed approximate solution.
+/// Belos::ReturnType result = solver->solve();
+///
+/// // Ask the solver how many iterations the last solve() took.
+/// const int numIters = solver->getNumIters();
+/// \endcode
+///
+/// Belos developers who have implemented a new solver (i.e., a new
+/// subclass of \c SolverManager) and who want to make the solver
+/// available through the factory should do the following:
+/// 1. Add a new symbol corresponding to their solver to the \c
+///    details::EBelosSolverType enum.  
+/// 2. If necessary, specialize \c details::makeSolverManagerTmpl for
+///    their SolverManager subclass.  In most cases, the default
+///    implementation suffices.
+/// 3. Add a case for their enum symbol that instantiates their
+///    solver to the long switch-case statement in \c
+///    details::makeSolverManagerFromEnum.
+/// 4. In the SolverFactory constructor, define a canonical string
+///    name for their solver and its mapping to the corresponding enum
+///    value, following the examples and comments there.  (This takes
+///    one line of code.)
+///
 template<class Scalar, class MV, class OP>
 class SolverFactory : public Teuchos::Describable {
 public:
   /// \typedef solver_base_type
   /// \brief The type returned by \c create().
+  ///
+  /// This is a specialization of \c SolverManager for the same
+  /// scalar, multivector, and operator types as the template
+  /// parameters of this factory.
   typedef SolverManager<Scalar, MV, OP> solver_base_type;
 
   //! Constructor.
@@ -132,10 +232,12 @@ public:
   /// of solvers) may make this method set certain parameters in your
   /// parameter list.
   ///
-  /// It is better to provide a non-null but empty parameter list,
-  /// since in that case, the solver will fill in your list with
+  /// We recommend providing a non-null parameter list, since in that
+  /// case, the solver will fill in your list with any missing
   /// parameters and their default values.  You can then inspect the
-  /// parameter names and learn how to modify their default values.
+  /// parameter names, modify their default values, and change the
+  /// solver's parameters by calling its setParameters() method with
+  /// the modified list.
   Teuchos::RCP<solver_base_type>
   create (const std::string& solverName, 
 	  const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
@@ -144,14 +246,14 @@ public:
   /// 
   /// This may differ from the number of supported solver
   /// <i>names</i>, since we may accept multiple names ("aliases") for
-  /// commonly used solvers.
+  /// some solvers.
   int numSupportedSolvers () const;
 
   /// \brief List of supported solver names.
   ///
   /// The length of this list may differ from the number of supported
-  /// solvers, since we may accept multiple names ("aliases") for
-  /// commonly used solvers.
+  /// solvers, since we may accept multiple names ("aliases") for some
+  /// solvers.
   Teuchos::Array<std::string> supportedSolverNames () const;
 
   //! Whether the given solver name names a supported solver.
@@ -161,6 +263,11 @@ public:
   //@{
   std::string description() const;
 
+  /// \brief Describe this SolverFactory object.
+  ///
+  /// At higher verbosity levels, the describe() method will print out
+  /// the list of names of supported solvers.  You can also get this
+  /// list directly by using the \c supportedSolverNames() method.
   void describe (Teuchos::FancyOStream& out, 
 		 const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
   //@}
@@ -333,6 +440,8 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   aliasToCanonicalName_["Pseudo Block GMRES"] = "Pseudoblock GMRES";  
   aliasToCanonicalName_["Pseudo Block CG"] = "Pseudoblock CG";
 
+  // Mapping from canonical solver name (a string) to its
+  // corresponding enum value.  This mapping is one-to-one.
   canonicalNameToEnum_["Block GMRES"] = details::SOLVER_TYPE_BLOCK_GMRES;
   canonicalNameToEnum_["Pseudoblock GMRES"] = details::SOLVER_TYPE_PSEUDO_BLOCK_GMRES;
   canonicalNameToEnum_["Block CG"] = details::SOLVER_TYPE_BLOCK_CG;
