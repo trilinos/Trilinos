@@ -13,7 +13,7 @@ namespace MueLu {
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class ThresholdAFilterFactory : public SingleLevelFactoryBase {
+  class DemoFactory : public SingleLevelFactoryBase {
 #undef MUELU_DEMOFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 

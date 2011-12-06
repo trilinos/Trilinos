@@ -5,3 +5,4 @@ LocalAggregationAlgorithm
 UCAggregationCommHelper
 UCAggregationFactory
 #Zoltan
+DemoFactory
