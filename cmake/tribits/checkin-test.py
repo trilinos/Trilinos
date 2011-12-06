@@ -708,7 +708,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     +" but you know that you don't need to rebuild every package for" \
     +" a reasonable test.  Setting --enable-packages effectively disables this" \
     +" option.  NOTE: Setting this to 'off' does *not* stop the forward enabling" \
-    +" of downstream packages for packages that are modified or set by --enable-packages."
+    +" of downstream packages for packages that are modified or set by --enable-packages.",
     clp )
 
   clp.add_option(
