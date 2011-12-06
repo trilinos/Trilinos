@@ -74,10 +74,6 @@ typedef MueLu::PFactory PFactory;
 typedef MueLu::TwoKeyMap TwoKeyMap;
 #endif
 
-#ifdef MUELU_PREDROPFUNCTIONBASECLASS_SHORT
-typedef MueLu::PreDropFunctionBaseClass PreDropFunctionBaseClass;
-#endif
-
 #ifdef MUELU_VARIABLECONTAINER_SHORT
 typedef MueLu::VariableContainer VariableContainer;
 #endif
