@@ -2,9 +2,9 @@
 # checkin-test-fissile4.sh INTEL12_SERIAL_DEBUG build
 #
 
-SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE  ON  CACHE BOOL "")
+SET(${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE  ON  CACHE BOOL "")
 
 # Include last so that above override these cache variables
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/intel-12.0.4-serial-options.cmake)
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/intel-debug-options.cmake)
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/boost-1.46.1-options.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/intel-12.0.4-serial-options.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/intel-debug-options.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/boost-1.46.1-options.cmake)

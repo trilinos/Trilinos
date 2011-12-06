@@ -4,7 +4,7 @@
 #
 
 # Must be including first in order to define TRILINOS_TOOLSET_BASE
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/gcc-4.5.1-base-options.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/gcc-4.5.1-base-options.cmake)
 
 # Set up the hybrid compilers
 SET(CMAKE_CXX_COMPILER "${TRILINOS_TOOLSET_BASE}/bin/g++" CACHE FILEPATH "")
