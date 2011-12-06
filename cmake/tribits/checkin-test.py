@@ -75,10 +75,11 @@ from GeneralScriptSupport import *
 
 usageHelp = r"""checkin-test.py [OPTIONS]
 
-This tool does checkin testing for Trilinos with CMake/CTest and can actually
-do the push itself using eg/git in a safe way.  In fact, it is recommended
-that you use this script to push since it will amend the last commit message
-with a (minimal) summary of the builds and tests run with results.
+This tool does checkin testing with CMake/CTest and can actually do
+the push itself using eg/git in a safe way.  In fact, it is
+recommended that you use this script to push since it will amend the
+last commit message with a (minimal) summary of the builds and tests
+run with results.
 
 
 Quickstart:
@@ -108,16 +109,16 @@ In order to do a solid checkin, perform the following recommended workflow
   eg/git documentation).
 
   NOTE: If not installed on your system, the eg script can be found at
-  Trilinos/cmake/tribits/common_tools/git/eg.  Just add it to your path.
+  cmake/tribits/common_tools/git/eg.  Just add it to your path.
 
 2) Review the changes that you have made to make sure it is safe to push:
 
-  $ cd $TRILINOS_HOME
+  $ cd $PROJECT_HOME
   $ eg local-stat                  # Look at the full status of local repo
   $ eg diff --name-status origin   # [Optional] Look at the files that have changed
 
   NOTE: The command 'local-stat' is an alias that can be installed with the
-  script Trilinos/cmake/tribits/common_tools/git/git-config-alias.sh.  It is highly
+  script cmake/tribits/common_tools/git/git-config-alias.sh.  It is highly
   recommended over just a raw 'eg status' or 'eg log' to review commits before
   attempting to test/push commits.
 
@@ -129,7 +130,7 @@ In order to do a solid checkin, perform the following recommended workflow
 
 3) Set up the checkin base build directory (first time only):
 
-  $ cd $TRILINOS_HOME
+  $ cd $PROJECT_HOME
   $ echo CHECKIN >> .git/info/exclude
   $ mkdir CHECKIN
   $ cd CHECKIN
@@ -138,18 +139,15 @@ In order to do a solid checkin, perform the following recommended workflow
   the right compilers, MPI, and TPLs by default (see detailed documentation
   below).
 
-  NOTE: You might want to set up a simple shell driver script.  See some
-  examples in the files:
+  NOTE: You might want to set up a simple shell driver script.
 
-    Trilinos/sampmleScripts/checkin-test-*
-
-  NOTE: You can set up a CHECKIN directory of any name in any location you
-  want.  If you create one outside of the main Trilinos source dir, then you
-  will not have to add the git exclude shown above.
+  NOTE: You can set up a CHECKIN directory of any name in any location
+  you want.  If you create one outside of the main source dir, then
+  you will not have to add the git exclude shown above.
 
 4) Do the checkin build, test, and push:
 
-  $ cd $TRILINOS_HOME
+  $ cd $PROJECT_HOME
   $ cd CHECKIN
   $ ../checkin-test.py -j4 --do-all --push
 
@@ -194,25 +192,6 @@ For more details on using this script, see the detailed documentation below.
 Detailed Documentation:
 -----------------------
 
-There are two basic configurations that are tested by default:
-MPI_DEBUG and SERIAL_RELEASE.  Both of these configurations only test
-Primary Stable Code (see --extra-builds, --ss-extra-builds and
-'Handling of PS and SS Code' for more details)).  Several configure
-options are varied in these two builds to try to catch as much
-conditional configuration behavior as possible.  If nothing else,
-please at least do the MPI_DEBUG build since that will cover the most
-code and best supports day-to-day development efforts.  However, if
-you are changing code that might break the serial build or break
-non-debug code, please allow the SERIAL_RELEASE build to be run as
-well.  Note that the MPI_DEBUG build actually uses
--DCMAKE_BUILD_TYPE=RELEASE with -DTrilinos_ENABLE_DEBUG=ON to use
-optimized compiler options but with runtime debug checking turned on.
-This helps to make the tests run faster but still builds and runs the
-runtime debug checking code.  Therefore, you should not use the
-MPI_DEBUG configure options when building a debug version for yourself
-to do debugging.
-
-
 The following approximate steps are performed by this script:
 
 
@@ -254,8 +233,6 @@ extra builds specified with --extra-builds):
   4.c) Run all BASIC tests for enabled packages.  (done if --test, --do-all,
   or --local-do-all is set.)
 
-    NOTE: By default, only Trilinos_TEST_CATEGORIES=BASIC tests are enabled.
-  
   4.d) Analyze the results of the update, configure, build, and tests and send
   email about results.  (emails only sent out if --send-emails-to is not set
   to ''.)
@@ -266,9 +243,9 @@ if --push is set)
   5.a) Do a final 'eg pull && eg rebase --against origin/<current_branch>'
   (done if --pull or --do-all is set)
 
-    NOTE: The final 'eg rebase --against origin/<current_branch>' is required
-    to avoid trival merge commits that the Trilinos global get repo will
-    reject on the push.
+    NOTE: The final 'eg rebase --against origin/<current_branch>' is
+    required to avoid trival merge commits that the global get repo
+    will reject on the push.
   
   5.b) Amend commit message of the most recent commit with the summary of the
   testing performed.  (done if --append-test-results is set.)
@@ -282,7 +259,7 @@ if --push is set)
 The recommended way to use this script is to create a new base CHECKIN test
 directory apart from your standard build directories such as with:
 
-  $ $TRILINOS_HOME
+  $ $PROJECT_HOME
   $ mkdir CHECKIN
   $ echo CHECKIN >> .git/info/exclude
 
@@ -372,11 +349,11 @@ Common Use Cases (examples):
   --push but keep all of the rest of the options the same.  For example, if
   you did:
 
-    ../checkin-test.py --enable-packages=Blah --without-serial-release --do-all
+    ../checkin-test.py --enable-packages=Blah --default-builds=MPI_DEBUG --do-all
 
   then follow that up with:
 
-    ../checkin-test.py --enable-packages=Blah --without-serial-release --push
+    ../checkin-test.py --enable-packages=Blah --default-builds=MPI_DEBUG --push
 
   NOTE: This is a common use case when some tests are failing which aborted
   the initial push but you determine it is okay to push anyway and do so with
@@ -390,18 +367,18 @@ Common Use Cases (examples):
   are changed and not library code.  This can speed up the testing process and
   is to be preferred over not running this script at all.  It would be very
   hard to make this script automatically determine if only test code has
-  changed because every Trilinos package does not follow a set pattern for
+  changed because every package does not follow a set pattern for
   tests and test code.
 
 (*) Run the MPI_DEBUG build/test only:
 
-  ../checkin-test.py --do-all --without-serial-release
+  ../checkin-test.py --do-all --default-builds=MPI_DEBUG
 
 (*) The minimum acceptable testing when code has been changed:
 
   ../checkin-test.py \
     --do-all --enable-all-packages=off --no-enable-fwd-packages \
-    --without-serial-release
+    --default-builds=MPI_DEBUG
 
   NOTE: This will do only an MPI DEBUG build and will only build and run the
   tests for the packages that have directly been changed and not any forward
@@ -472,13 +449,11 @@ Common Use Cases (examples):
 
 (*) Including extra repos:
 
-  You can also use the checkin-test.py script to continuously integrate with
-  other external extra git repos containing add-on Trilinos packages (such as
-  preCopyrightTrilinos).  To do so, just run:
+  You can also use the checkin-test.py script to continuously
+  integrate with other external extra git repos containing add-on
+  packages. To do so, just run:
     
     ../checkin-test.py --extra-builds=REPO1,REPO2,... [options]
-
-  where REPOI = preCopyrightTrilinos, LIMEExt, etc.
 
   NOTE: You have to create local commits in all of the extra repos where there
   are changes or the script will abort.
@@ -501,7 +476,7 @@ Common Use Cases (examples):
   On your fast remote test machine, do a full test and push with:
   
     ../checkin-test.py \
-      --extra-pull-from=mymachine:/some/dir/to/your/trilinos/src:master \
+      --extra-pull-from=mymachine:/some/dir/to/your/src:master \
       --do-all --push
   
   NOTE: You can of course adjust the packages and/or build/test cases that get
@@ -653,8 +628,13 @@ sufficient condition for readiness to push.
 
 def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   
-  clp = ConfigurableOptionParser(configuration, usage=usageHelp)
+  clp = ConfigurableOptionParser(configuration.get('defaults', {}), usage=usageHelp)
 
+  clp.add_option(
+    "--project-configuration", dest="projectConfiguration", type="string",
+    help="Custom file to provide configuration defaults for the project.",
+    default={})
+  
   clp.add_option(
     "--show-defaults", dest="showDefaults", action="store_true",
     help="Show the default option values and do nothing at all.",
@@ -684,11 +664,18 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     default=srcDirDefault,
     help="[DEPRECATED] Use --src-dir instead. This argument is for backwards compatibility only.")
 
+  configuredBuilds = [build for build, unused in
+                      configuration.get('cmake', {}).get('default-builds', [])]
+  clp.add_option(
+    '--default-builds', dest='defaultBuilds', type='string',
+    default=','.join(configuredBuilds),
+    help="Comma separated list of builds that should always be run by default.")
+
   clp.add_option(
     "--extra-repos", dest="extraRepos", type="string", default="",
-    help="List of comma separated extra Trilinos repos " \
-    +"(e.g. 'preCopyrightTrilinos,LIMEExt') containing extra " \
-    +"trilinos packages that can be enabled.  The order these repos is "
+    help="List of comma separated extra repositories " \
+    +"containing extra " \
+    +"packages that can be enabled.  The order these repos is "
     +"listed in not important.")
 
   clp.add_option(
@@ -698,14 +685,14 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   clp.add_option(
     "--enable-packages", dest="enablePackages", type="string", default="",
-    help="List of comma separated Trilinos packages to test changes for" \
+    help="List of comma separated packages to test changes for" \
     +" (example, 'Teuchos,Epetra').  If this list of packages is empty, then" \
     +" the list of packages to enable will be determined automatically by examining" \
     +" the set of modified files from the version control update log." )
 
   clp.add_option(
     "--disable-packages", dest="disablePackages", type="string", default="",
-    help="List of comma separated Trilinos packages to explicitly disable" \
+    help="List of comma separated packages to explicitly disable" \
     +" (example, 'Tpetra,NOX').  This list of disables will be appended after" \
     +" all of the listed enables no mater how they are determined (see" \
     +" --enable-packages option).  NOTE: Only use this option to remove packages" \
@@ -715,22 +702,21 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   addOptionParserChoiceOption(
     "--enable-all-packages", "enableAllPackages", ('auto', 'on', 'off'), 0,
-    "Determine if all Trilinos packages are enabled 'on', or 'off', or let" \
+    "Determine if all packages are enabled 'on', or 'off', or let" \
     +" other logic decide 'auto'.  Setting to 'off' is appropriate when" \
     +" the logic in this script determines that a global build file has changed" \
-    +" but you know that you don't need to rebuild every Trilinos package for" \
+    +" but you know that you don't need to rebuild every package for" \
     +" a reasonable test.  Setting --enable-packages effectively disables this" \
     +" option.  NOTE: Setting this to 'off' does *not* stop the forward enabling" \
-    +" of downstream packages for packages that are modified or set by --enable-packages." \
-    +"  This only stops the setting of -DTrilinos_ENABLE_ALL_PAKCAGES:BOOL=ON.",
+    +" of downstream packages for packages that are modified or set by --enable-packages.",
     clp )
 
   clp.add_option(
     "--enable-fwd-packages", dest="enableFwdPackages", action="store_true",
-    help="Enable forward Trilinos packages. [default]" )
+    help="Enable forward packages. [default]" )
   clp.add_option(
     "--no-enable-fwd-packages", dest="enableFwdPackages", action="store_false",
-    help="Do not enable forward Trilinos packages.", default=True )
+    help="Do not enable forward packages.", default=True )
 
   clp.add_option(
     "--continue-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_false",
@@ -784,17 +770,9 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     default=False )
 
   clp.add_option(
-    "--without-mpi-debug", dest="withMpiDebug", action="store_false",
-    help="Skip the mpi debug build.", default=True )
-
-  clp.add_option(
-    "--without-serial-release", dest="withSerialRelease", action="store_false",
-    help="Skip the serial release build.", default=True )
-
-  clp.add_option(
     "--without-default-builds", dest="withoutDefaultBuilds", action="store_true",
     default=False,
-      help="Skip the default builds (same as --without-mpi-debug --without-serial-release)." \
+      help="Skip the default builds (same as --default-builds='')." \
       +"  You would use option along with --extra-builds=BUILD1,BUILD2,... to run your own" \
       +" local custom builds." )
 
@@ -929,7 +907,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     +" performed on its own or with other actions in which case the wipe clean will be" \
     +" performed before any other actions. NOTE: This will only wipe clean the builds" \
     +" that are specified and will not touch those being ignored (e.g. SERIAL_RELEASE" \
-    +" will not be removed if --without-serial-release is specified)." )
+    +" will not be removed if --default-builds=MPI_DEBUG is specified)." )
 
   clp.add_option(
     "--pull", dest="doPull", action="store_true", default=False,
@@ -938,15 +916,15 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   clp.add_option(
     "--configure", dest="doConfigure", action="store_true", default=False,
-    help="[ACTION] Do the configure of Trilinos." )
+    help="[ACTION] Do the configure step." )
 
   clp.add_option(
     "--build", dest="doBuild", action="store_true", default=False,
-    help="[ACTION] Do the build of Trilinos." )
+    help="[ACTION] Do the build step." )
 
   clp.add_option(
     "--test", dest="doTest", action="store_true", default=False,
-    help="[ACTION] Do the running of the enabled Trilinos tests." )
+    help="[ACTION] Do the running of the enabled tests." )
 
   clp.add_option(
     "--local-do-all", dest="localDoAll", action="store_true", default=False,
@@ -993,6 +971,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     print "  --no-eg-git-version-check \\"
   print "  --src-dir='" + options.srcDir+"' \\"
+  print "  --default-builds'" + options.defaultBuilds + "' \\"
   print "  --extra-repos='"+options.extraRepos+"' \\"
   if options.skipDepsUpdate:
     print "  --skip-deps-update \\"
@@ -1021,10 +1000,6 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     print "  --show-all-tests \\"
   else:
     print "  --no-show-all-tests \\"
-  if not options.withMpiDebug:
-    print "  --without-mpi-debug \\" 
-  if not options.withSerialRelease:
-    print "  --without-serial-release \\" 
   if options.withoutDefaultBuilds:
     print "  --without-default-builds \\" 
   print "  --ss-extra-builds='"+options.ssExtraBuilds+"' \\"
@@ -1109,7 +1084,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     baseDir = getCompleteFileDirname(__file__)
 
     t1 = time.time()
-    success = checkinTest(baseDir, options)
+    success = checkinTest(baseDir, options, configuration)
     t2 = time.time()
     print "\nTotal time for checkin-test.py =", formatMinutesStr((t2-t1)/60.0)
 
@@ -1139,6 +1114,24 @@ def getConfigurationSearchPaths():
   result.append(os.path.join(_THIS_REAL_PATH, '..', '..'))
   return result
 
+def loadConfigurationFile(filepath):
+  print "Loading project configuration from %s..." % filepath
+  if os.path.exists(filepath):
+    try:
+      modulePath = os.path.dirname(filepath)
+      moduleFile = os.path.basename(filepath)
+      moduleName, extension = os.path.splitext(moduleFile)
+      sys.path.append(modulePath)
+      try:
+        return __import__(moduleName).configuration
+      except Exception, e:
+        print e
+        raise e
+    finally:
+      sys.path.pop()
+  else:
+    raise Exception('The file %s does not exist.' % filepath)
+
 def locateAndLoadConfiguration(path_hints = []):
   """
   Locate and load a module called
@@ -1152,14 +1145,7 @@ def locateAndLoadConfiguration(path_hints = []):
   for path in path_hints:
     candidate = os.path.join(path, CONFIG_FILE)
     if os.path.exists(candidate):
-      try:
-        sys.path.append(path)
-        try:
-          return __import__(CONFIG_MODULE).configuration
-        except Exception:
-          pass
-      finally:
-        sys.path.pop()
+      return loadConfigurationFile(candidate)
   return {}
     
 
@@ -1167,9 +1153,7 @@ def locateAndLoadConfiguration(path_hints = []):
 # Main
 #
 
-def main(configuration = {}):
-  cmndLineArgs = sys.argv[1:]
-  
+def main(cmndLineArgs):
   # See if the help option is set or not
   helpOpt = len( set(cmndLineArgs) & set(("--help", "-h")) ) > 0
 
@@ -1191,7 +1175,14 @@ def main(configuration = {}):
     sys.stdout = teeOutput
     sys.stderr = teeOutput
     try:
-      configuration = locateAndLoadConfiguration(getConfigurationSearchPaths())
+      # See if there is a configuration file override.
+      configuration = None
+      for arg in cmndLineArgs:
+        if arg.startswith('--project-configuration='):
+          print "Found configuration override %s..." % arg
+          configuration = loadConfigurationFile(arg.split('=')[1])
+      if not configuration:
+        configuration = locateAndLoadConfiguration(getConfigurationSearchPaths())
       success = runProjectTestsWithCommandLineArgs(cmndLineArgs, configuration)
     except SystemExit, e:
       # In Python 2.4, SystemExit inherits Exception, but for proper exit
@@ -1212,4 +1203,4 @@ def main(configuration = {}):
     return 1
 
 if __name__ == '__main__':
-  sys.exit(main())
+  sys.exit(main(sys.argv[1:]))

@@ -155,9 +155,67 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new Teuchos::ParameterList);
   nl_params->set("Nonlinear Solver", "Line Search Based");
 
+  Teuchos::ParameterList& printParams = nl_params->sublist("Printing");
+  printParams.set("Output Information", 
+		  NOX::Utils::OuterIteration + 
+		  NOX::Utils::OuterIterationStatusTest + 
+		  NOX::Utils::InnerIteration +
+		  NOX::Utils::LinearSolverDetails +
+		  NOX::Utils::Parameters + 
+		  NOX::Utils::Details + 
+		  NOX::Utils::Warning +
+		  NOX::Utils::Debug +
+		  NOX::Utils::TestDetails +
+		  NOX::Utils::Error);
+
+  nl_params->sublist("Solver Options").set("Status Test Check Type", "Complete");
+
   // Enable row sum scaling
   nl_params->sublist("Thyra Group Options").set("Function Scaling", "Row Sum");
   
+  // Create Status Tests
+  {
+    Teuchos::ParameterList& st = nl_params->sublist("Status Tests");
+    st.set("Test Type", "Combo");
+    st.set("Combo Type", "OR");
+    st.set("Number of Tests", 3);
+    
+    {
+      Teuchos::ParameterList& conv = st.sublist("Test 0");
+      conv.set("Test Type", "Combo");
+      conv.set("Combo Type", "AND");
+      conv.set("Number of Tests", 2);
+      
+      Teuchos::ParameterList& normF_rel = conv.sublist("Test 0");
+      normF_rel.set("Test Type", "RelativeNormF");
+      normF_rel.set("Tolerance", 1.0e-4);
+      
+      Teuchos::ParameterList& normWRMS = conv.sublist("Test 1");
+      normWRMS.set("Test Type", "NormWRMS");
+      normWRMS.set("Absolute Tolerance", 1.0e-8);
+      normWRMS.set("Relative Tolerance", 1.0e-5);
+      normWRMS.set("Tolerance", 1.0);
+      normWRMS.set("BDF Multiplier", 1.0);
+      normWRMS.set("Alpha", 1.0);
+      normWRMS.set("Beta", 0.5);
+      normWRMS.set("Disable Implicit Weighting", true);
+    }
+    
+    {
+      Teuchos::ParameterList& fv = st.sublist("Test 1");
+      fv.set("Test Type", "FiniteValue");
+      fv.set("Vector Type", "F Vector");
+      fv.set("Norm Type", "Two Norm");
+    }
+
+    {
+      Teuchos::ParameterList& maxiters = st.sublist("Test 2");
+      maxiters.set("Test Type", "MaxIters");
+      maxiters.set("Maximum Iterations", 20);
+    }
+    
+  }
+
   // Create a Thyra nonlinear solver
   Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver = 
     Teuchos::rcp(new ::Thyra::NOXNonlinearSolver);

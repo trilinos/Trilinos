@@ -35,6 +35,7 @@ APPEND_SET(HEADERS
   NOX_Abstract_MultiVector.H
   NOX_Abstract_Group.H
   NOX_Abstract_PrePostOperator.H
+  NOX_Abstract_ImplicitWeighting.H
   )
 
 APPEND_SET(SOURCES

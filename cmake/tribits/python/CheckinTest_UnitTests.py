@@ -610,8 +610,8 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
       "--no-eg-git-version-check",
       "--src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos",
       "--send-email-to=bogous@somwhere.com",
-      "--send-email-to-on-push=trilinos-checkin-tests@software.sandia.gov",
-      "--extra-cmake-options='-DTPL_ENABLE_Pthread:BOOL=OFF -DTPL_ENABLE_BinUtils:BOOL=OFF'",
+      "--project-configuration=%s" % os.path.join(scriptsDir,
+        'UnitTests', 'CheckinTest_UnitTests_Config.py'),
       optionsStr,
       ]
     cmnd = ' '.join(cmndArgs)
@@ -712,7 +712,7 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     \
     testName,
     \
-    "--make-options=-j3 --ctest-options=-j5 --without-serial-release --do-all",
+    "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --do-all",
     \
     g_cmndinterceptsCurrentBranch \
     +g_cmndinterceptsPullPasses \
@@ -743,7 +743,7 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
 
 
 def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexStrList, \
-  fileFailRegexStrList=[], modifiedFilesStr="" \
+  fileFailRegexStrList=[], modifiedFilesStr="", extraPassRegexStr="" \
   ):
 
   if not modifiedFilesStr:
@@ -768,6 +768,7 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
     \
     "Configure passed!\n" \
     +"^NOT READY TO PUSH\n" \
+    +extraPassRegexStr \
     ,
     filePassRegexStrList
     ,
@@ -776,15 +777,16 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
 
 
 def checkin_test_configure_enables_test(testObject, testName, optionsStr, regexListStr, \
-  notRegexListStr="", modifiedFilesStr="" \
+  notRegexListStr="", modifiedFilesStr="", extraPassRegexStr="" \
   ):
   checkin_test_configure_test(
      testObject,
      testName,
-     "--without-serial-release "+optionsStr,
+     "--default-builds=MPI_DEBUG "+optionsStr,
      [("MPI_DEBUG/do-configure", regexListStr)],
      [("MPI_DEBUG/do-configure", notRegexListStr)],
      modifiedFilesStr,
+     extraPassRegexStr,
      )
   
 
@@ -933,7 +935,7 @@ class test_checkin_test(unittest.TestCase):
       "do_all_no_eg_installed",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --without-serial-release" \
+      +" --default-builds=MPI_DEBUG" \
       +" --do-all --push" \
       ,
       \
@@ -977,7 +979,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "local_do_all_without_serial_release_pass",
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG" \
       +" --extra-pull-from=machine:/path/to/repo:master --local-do-all" \
       +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
@@ -1011,7 +1013,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_test_fail_force_push_pass",
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG" \
       " --do-all --force-push --push",
       \
       g_cmndinterceptsCurrentBranch \
@@ -1055,7 +1057,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG" \
       +" --wipe-clean --pull" \
       ,
       \
@@ -1263,7 +1265,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "extra_repo_1_implicit_enable_configure_pass",
       \
-      "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-serial-release --configure", \
+      "--extra-repos=preCopyrightTrilinos --allow-no-pull --default-builds=MPI_DEBUG --configure", \
       \
       "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -1299,7 +1301,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesPasses \
@@ -1377,7 +1379,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_trilinos_changes_do_all_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesPasses \
@@ -1407,7 +1409,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_extra_repo_changes_do_all_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesNoChanges \
@@ -1700,7 +1702,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--without-serial-release",
+      "--default-builds=MPI_DEBUG",
       \
       [
       ("MPI_DEBUG/do-configure.base",
@@ -1818,9 +1820,10 @@ class test_checkin_test(unittest.TestCase):
       self,
       "enable_all_packages_auto",
       "--enable-all-packages=auto",
-      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n" \
-      +"\-DTrilinos_ENABLE_TrilinosFramework:BOOL=ON\n",
-      modifiedFilesStr="M\tcmake/utils/AppendSet.cmake",
+      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n",
+      modifiedFilesStr="M\tCMakeLists.txt", # Will not trigger TrilinosFramework!
+      extraPassRegexStr="Modifed file: .CMakeLists.txt.\n"\
+      +"Enabling all Trilinos packages!\n",
       )
 
 
@@ -1829,8 +1832,9 @@ class test_checkin_test(unittest.TestCase):
       self,
       "enable_all_packages_on",
       "--enable-all-packages=on",
-      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n" \
-      +"\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n",
+      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n",
+      modifiedFilesStr = "M\tdummy.txt", # Will not trigger any enables!
+      extraPassRegexStr="Enabling all packages on request\n",
       )
 
 
@@ -1854,7 +1858,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "without_serial_release_pull_only",
       \
-      "--without-serial-release --pull",
+      "--default-builds=MPI_DEBUG --pull",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -1877,7 +1881,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "without_serial_release_pull_skip_push_readiness_check",
       \
-      "--without-serial-release --pull --skip-push-readiness-check",
+      "--default-builds=MPI_DEBUG --pull --skip-push-readiness-check",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -1946,7 +1950,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "without_serial_release_configure_only",
       \
-      "--without-serial-release --pull --configure",
+      "--default-builds=MPI_DEBUG --pull --configure",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -1974,7 +1978,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "without_serial_release_build_only",
       \
-      "--make-options=-j3 --without-serial-release --pull --configure --build",
+      "--make-options=-j3 --default-builds=MPI_DEBUG --pull --configure --build",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -2083,7 +2087,7 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --without-serial-release --do-all --push " \
+      +" --default-builds=MPI_DEBUG --do-all --push " \
       +" --ss-extra-builds=MPI_DEBUG_SS" \
       ,
       \
@@ -2124,7 +2128,7 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --without-serial-release" \
+      +" --default-builds=MPI_DEBUG" \
       +" --skip-case-no-email --do-all --push " \
       +" --extra-builds=MPI_DEBUG_SS" \
       ,
@@ -2173,7 +2177,7 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --without-serial-release --do-all --push " \
+      +" --default-builds=MPI_DEBUG --do-all --push " \
       +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Phalanx" \
       ,
       \
@@ -2224,7 +2228,7 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --without-serial-release --do-all --push " \
+      +" --default-builds=MPI_DEBUG --do-all --push " \
       +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Teuchos,Phalanx" \
       ,
       \
@@ -2275,7 +2279,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      " --without-serial-release --send-email-to=" \
+      " --default-builds=MPI_DEBUG --send-email-to=" \
       +" --make-options=-j3 --ctest-options=-j5" \
       +" --do-all --push" \
       +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=ThyraCrazyStuff" \
@@ -2329,7 +2333,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      " --without-serial-release" \
+      " --default-builds=MPI_DEBUG" \
       +" --make-options=-j3 --ctest-options=-j5" \
       +" --do-all --push" \
       +" --ss-extra-builds=MPI_DEBUG_SS" \
@@ -2383,7 +2387,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --push",
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --push",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
@@ -2415,7 +2419,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --push" \
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --push" \
       +" --extra-pull-from=dummy:master" \
       ,
       \
@@ -2450,7 +2454,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release",
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG",
       \
       g_cmndinterceptsCurrentBranch \
       +"IT: eg diff --name-status origin/currentbranch; 0; 'eg diff passed'\n" 
@@ -2720,7 +2724,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--without-serial-release --configure --allow-no-pull",
+      "--default-builds=MPI_DEBUG --configure --allow-no-pull",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
@@ -2757,7 +2761,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_configure_fail",
       \
-      "--do-all --without-serial-release",
+      "--do-all --default-builds=MPI_DEBUG",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -2785,7 +2789,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_build_fail",
       \
-      "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
+      "--do-all --default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -2816,7 +2820,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_test_fail",
       \
-      "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
+      "--do-all --default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -2849,7 +2853,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_push_without_serial_release_final_pull_fail",
       \
-      "--without-serial-release --make-options=-j3 --ctest-options=-j5" \
+      "--default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5" \
       " --do-all --push" \
       ,
       \
@@ -2883,7 +2887,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_push_without_serial_release_final_commit_fail",
       \
-      "--without-serial-release --make-options=-j3 --ctest-options=-j5" \
+      "--default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5" \
       " --do-all --push" \
       ,
       \
@@ -2921,7 +2925,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_push_without_serial_release_push_fail",
       \
-      "--without-serial-release --make-options=-j3 --ctest-options=-j5" \
+      "--default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5" \
       " --do-all --push" \
       ,
       \
@@ -3002,7 +3006,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_push_no_tests_fail",
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --do-all --push",
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --do-all --push",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -3033,7 +3037,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "local_do_all_without_serial_release_push_fail",
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --local-do-all --push",
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --local-do-all --push",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
@@ -3064,7 +3068,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_no_changes_do_all_push_fail",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesNoChanges \
@@ -3153,7 +3157,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "extra_repo_1_initial_trilinos_pull_fail",
       \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull", \
       \
       "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -3184,7 +3188,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "extra_repo_1_initial_extra_repo_pull_fail",
       \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull", \
       \
       "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -3217,7 +3221,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "extra_repo_1_extra_pull_trilinos_fail",
       \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull --extra-pull-from=ssg:master", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull --extra-pull-from=ssg:master", \
       \
       "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -3252,7 +3256,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "extra_repo_1_extra_pull_extra_repo_fail",
       \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull --extra-pull-from=ssg:master", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull --extra-pull-from=ssg:master", \
       \
       "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -3290,7 +3294,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_pull_trilinos_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllThroughTest \
       +g_cmndinterceptsFinalPullRebaseFails \
@@ -3319,7 +3323,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_pull_extra_repo_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllThroughTest \
       +g_cmndinterceptsFinalPullRebasePasses \
@@ -3351,7 +3355,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_amend_trilinos_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllThroughTest \
       +g_cmndinterceptsFinalPullRebasePasses \
@@ -3384,7 +3388,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_amend_extra_repo_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllThroughTest \
       +g_cmndinterceptsFinalPullRebasePasses \
@@ -3420,7 +3424,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_push_trilinos_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesPasses \
@@ -3448,7 +3452,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_push_trilinos_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesPasses \
