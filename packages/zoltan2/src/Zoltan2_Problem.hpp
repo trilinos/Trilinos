@@ -44,12 +44,15 @@ public:
   virtual void solve() = 0;
 
 protected:
-  RCP<const Adapter> inputAdapter_;
-
   typedef typename Adapter::base_adapter_t base_adapter_t;
-  RCP<GraphModel<base_adapter_t> > graphModel_;  
-  RCP<IdentifierModel<base_adapter_t> > identifieModel_;  
+
+  RCP<const Adapter> inputAdapter_;
   RCP<const base_adapter_t> baseInputAdapter_;
+
+  RCP<GraphModel<base_adapter_t> > graphModel_;  
+  RCP<IdentifierModel<base_adapter_t> > identifierModel_;  
+
+  RCP<Model<base_adapter_t> > generalModel_;  
 
   // KDDKDD May want other models, too, for eval, printing, etc.
   RCP<Teuchos::ParameterList> params_;
