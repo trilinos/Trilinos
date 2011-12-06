@@ -46,6 +46,7 @@
 #include "Teuchos_Version.hpp"
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_as.hpp"
 #include <iostream>
 
 //ignore this for now
@@ -104,80 +105,85 @@ std::istream& operator>>(std::istream &in, CustomDataType &object){
  */
 int main(int argc, char* argv[])
 {
+
+  using Teuchos::tuple;
+  using Teuchos::Array;
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
   std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
-  Teuchos::ParameterList My_List;
+  ParameterList myPL;
 
   //Basic data types
-  My_List.set("int", 1);
-  My_List.set("unsigned int", (unsigned int)1);
-  My_List.set("short int", (short)1);
-  My_List.set("unsigned short int", (unsigned short)1);
-  My_List.set("long int", (long)1);
-  My_List.set("unsigned long int", (unsigned long)1);
-  #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  My_List.set("long long int", (long long)1);
-  My_List.set("unsigned long long int", (unsigned long long)1);
-  #endif
-  My_List.set("float", (float)4.3);
-  My_List.set("double", (double)4.3);
-  My_List.set("string", "hello");
-  My_List.set("char", 'c');
-  My_List.set("bool", true);
+  myPL.set<int>("my int", 1);
+  myPL.set<unsigned int>("my unsigned int", 1);
+  myPL.set<short int>("my short int", 1);
+  myPL.set<unsigned short int>("my unsigned short int", 1);
+  myPL.set<long int>("my long int", 1);
+  myPL.set<unsigned long int>("my unsigned long int", 1);
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  myPL.set<long long int>("my long long int", 1);
+  myPL.set<unsigned long long int>("my unsigned long long int", 1);
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+  myPL.set<float>("my float", 4.3);
+  myPL.set<double>("my double", 4.3);
+  myPL.set("my string", "hello");
+  myPL.set("my char", 'c');
+  myPL.set("my bool", true);
 
-  //Teuchos::Array are also supported for the following types
-  Teuchos::Array<int> intArray = Teuchos::tuple<int>(1);
-  My_List.set("array int", intArray );
-  Teuchos::Array<unsigned int> uintArray = Teuchos::tuple<unsigned int>(1);
-  My_List.set("array unsigned int", uintArray);
-  Teuchos::Array<short> shortArray = Teuchos::tuple<short>(1);
-  My_List.set("array short int", shortArray);
-  Teuchos::Array<unsigned short> ushortArray = Teuchos::tuple<unsigned short>(1);
-  My_List.set("array unsigned short int", ushortArray);
-  Teuchos::Array<long> longArray = Teuchos::tuple<long>(1);
-  My_List.set("array long int", longArray);
-  Teuchos::Array<unsigned long> ulongArray = Teuchos::tuple<unsigned long>(1);
-  My_List.set("array unsigned long int", ulongArray);
-  #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  Teuchos::Array<long long> longlongArray = Teuchos::tuple<long long>(1);
-  My_List.set("array long long int", longlongArray);
-  Teuchos::Array<unsigned long long> ulonglongArray = Teuchos::tuple<unsigned long long>(1);
-  My_List.set("array unsigned long long int", ulonglongArray);
-  #endif
-  Teuchos::Array<float> floatArray = Teuchos::tuple<float>(4.3);
-  My_List.set("array float", floatArray);
-  Teuchos::Array<double> doubleArray = Teuchos::tuple<double>(4.3);
-  My_List.set("array double", doubleArray);
-  Teuchos::Array<std::string> stringArray = Teuchos::tuple<std::string>("hello");
-  My_List.set("array string", stringArray);
+  // Array are also supported for the following types
+  myPL.set<Array<int> >("my array int", tuple<int>(1, 2));
+  myPL.set<Array<unsigned int> >("my array unsigned int",
+    tuple<unsigned int>(1));
+  myPL.set<Array<short int> > ("my array short int",
+    tuple<short int>(1, 2));
+  myPL.set<Array<unsigned short int> > ("my array unsigned short int",
+    tuple<unsigned short int>(1, 2));
+  myPL.set<Array<long int> >("my array long int",
+    tuple<long int>(1, 2));
+  myPL.set<Array<unsigned long int> >("my array unsigned long int",
+    tuple<unsigned long int>(1, 2));
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  myPL.set<Array<long long int> >("my array long long int",
+    tuple<long long int>(1, 2));
+  myPL.set<Array<unsigned long long int> >("my array unsigned long long int",
+    tuple<unsigned long long>(1, 2));
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+  myPL.set<Array<float> >("my array float", tuple<float>(1,1, 2.2));
+  myPL.set<Array<double> >("my array double", tuple<double>(1,1, 2.2));
+  myPL.set<Array<std::string> >("my array string",
+    tuple<std::string>("hello", "world"));
 
   //Now for the custom data type. First, lets put one in the parameter list.
   CustomDataType sampleCustom(3, "hello");
 
-  My_List.set("custom data", sampleCustom);
+  myPL.set("my custom data", sampleCustom);
   
-  //Now before we write this out to xml, we have to make sure we have a converter 
-  //for our cusomt data type. Since our custom datatype overrides the operator<< and
-  //operator>> we can just use and instance of the StandardTemplatedParameterConverter.
-  //We'll do this using the convience macro. Look at the source code for the macro
-  //to see everything that's actually goiing on. It's in Teuchos_ParameterEntryXMLConverterDB.hpp .
+  //Now before we write this out to xml, we have to make sure we have a
+  //converter for our cusomt data type. Since our custom datatype overrides
+  //the operator<< and operator>> we can just use and instance of the
+  //StandardTemplatedParameterConverter.  We'll do this using the convience
+  //macro. Look at the source code for the macro to see everything that's
+  //actually goiing on. It's in Teuchos_ParameterEntryXMLConverterDB.hpp.
 
   TEUCHOS_ADD_TYPE_CONVERTER(CustomDataType);
 
   //Now we'll write it out to xml.
-  Teuchos::writeParameterListToXmlFile(My_List, "xml_data_types_test_list.xml");
+  Teuchos::writeParameterListToXmlFile(myPL, "xml_data_types_test_list.xml");
   //Then read it in to a new list.
 
   Teuchos::writeParameterListToXmlOStream(
-    My_List,
+    myPL,
     std::cout);
-
  
-  Teuchos::RCP<Teuchos::ParameterList> readIn = Teuchos::getParametersFromXmlFile("xml_data_types_test_list.xml");
+  const RCP<ParameterList> readPL = 
+    Teuchos::getParametersFromXmlFile("xml_data_types_test_list.xml");
 
-  std::cout << *readIn;
+  std::cout << *readPL;
+
   //If we compare them, we'll see they're equal
-  if(*readIn == My_List){
+  if(*readPL == myPL){
     std::cout << "Huzzah!\n";
   }
   else{
@@ -185,11 +191,33 @@ int main(int argc, char* argv[])
     return -1;
   }
 
+  // Read the parameters in one at a time
+  const int myInt = readPL->get<int>("my int");
+  std::cout << "myInt = " << myInt << "\n";
+  const float myFloat = readPL->get<float>("my float");
+  std::cout << "myFloat = " << myFloat << "\n";
+  const double myDouble = readPL->get<double>("my double");
+  std::cout << "myDouble = " << myDouble << "\n";
+  const std::string myString = readPL->get<std::string>("my string");
+  std::cout << "myString = " << myString << "\n";
+  const char myChar = readPL->get<char>("my char");
+  std::cout << "myChar = " << myChar << "\n";
+  const bool myBool = readPL->get<bool>("my bool");
+  std::cout << "myBool = " << myBool << "\n";
+  const Array<int> myIntArray = readPL->get<Array<int> >("my array int");
+  std::cout << "myIntArray = " << myIntArray << "\n";
+  const Array<float> myFloatArray = readPL->get<Array<float> >("my array float");
+  std::cout << "myFloatArray = " << myFloatArray << "\n";
+  const Array<double> myDoubleArray = readPL->get<Array<double> >("my array double");
+  std::cout << "myDoubleArray = " << myDoubleArray << "\n";
+  const Array<std::string> myStringArray = readPL->get<Array<std::string> >("my array string");
+  std::cout << "myStringArray = " << myStringArray << "\n";
+
   /**
-   * Final Notes:
-   * StandardTemplatedParameterConverter should suit most your needs. Buf if for some reason you
-   * don't feel like overrideing the inseration and extraction operators, you can allways subclass
-   * the ParameterEntryXMLConverter class and do your own thing.
+   * Final Notes: StandardTemplatedParameterConverter should suit most your
+   * needs. Buf if for some reason you don't feel like overrideing the
+   * inseration and extraction operators, you can allways subclass the
+   * ParameterEntryXMLConverter class and do your own thing.
    */
   return 0;
 }
