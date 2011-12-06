@@ -743,7 +743,7 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
 
 
 def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexStrList, \
-  fileFailRegexStrList=[], modifiedFilesStr="" \
+  fileFailRegexStrList=[], modifiedFilesStr="", extraPassRegexStr="" \
   ):
 
   if not modifiedFilesStr:
@@ -768,6 +768,7 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
     \
     "Configure passed!\n" \
     +"^NOT READY TO PUSH\n" \
+    +extraPassRegexStr \
     ,
     filePassRegexStrList
     ,
@@ -776,7 +777,7 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
 
 
 def checkin_test_configure_enables_test(testObject, testName, optionsStr, regexListStr, \
-  notRegexListStr="", modifiedFilesStr="" \
+  notRegexListStr="", modifiedFilesStr="", extraPassRegexStr="" \
   ):
   checkin_test_configure_test(
      testObject,
@@ -785,6 +786,7 @@ def checkin_test_configure_enables_test(testObject, testName, optionsStr, regexL
      [("MPI_DEBUG/do-configure", regexListStr)],
      [("MPI_DEBUG/do-configure", notRegexListStr)],
      modifiedFilesStr,
+     extraPassRegexStr,
      )
   
 
@@ -1818,9 +1820,10 @@ class test_checkin_test(unittest.TestCase):
       self,
       "enable_all_packages_auto",
       "--enable-all-packages=auto",
-      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n" \
-      +"\-DTrilinos_ENABLE_TrilinosFramework:BOOL=ON\n",
-      modifiedFilesStr="M\tcmake/utils/AppendSet.cmake",
+      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n",
+      modifiedFilesStr="M\tCMakeLists.txt", # Will not trigger TrilinosFramework!
+      extraPassRegexStr="Modifed file: .CMakeLists.txt.\n"\
+      +"Enabling all Trilinos packages!\n",
       )
 
 
@@ -1829,8 +1832,9 @@ class test_checkin_test(unittest.TestCase):
       self,
       "enable_all_packages_on",
       "--enable-all-packages=on",
-      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n" \
-      +"\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n",
+      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n",
+      modifiedFilesStr = "M\tdummy.txt", # Will not trigger any enables!
+      extraPassRegexStr="Enabling all packages on request\n",
       )
 
 

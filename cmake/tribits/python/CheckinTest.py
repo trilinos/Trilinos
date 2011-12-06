@@ -966,6 +966,7 @@ def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
         getTestCaseEmailSummary(buildTestCase.name, buildTestCase.buildIdx)
   return summaryEmailSectionStr
 
+
 def cmakeDefine(projectName, name, value):
   """
   Formats a CMake -D<projectName>_<name>=<value> argument.
@@ -1018,9 +1019,6 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
 
   if verbose:
     print "\nFinal package enable list: [" + ','.join(enablePackagesList) + "]"
-
-  if not enablePackagesList:
-    return (cmakePkgOptions, enablePackagesList)
 
   if inOptions.extraRepos:
     cmakePkgOptions.append(cmakeDefine(
@@ -1158,7 +1156,7 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
 
       print "\nSkipping "+buildTestCaseName+" configure because pre-configure failed (see above)!\n"
 
-    elif not enablePackagesList:
+    elif not (enablePackagesList or inOptions.enableAllPackages == 'on'):
 
       print "\nSkipping "+buildTestCaseName+" configure because no packages are enabled!\n"
       buildTestCase.skippedConfigureDueToNoEnables = True
