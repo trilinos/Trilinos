@@ -109,9 +109,23 @@ public:
     return params_.sublist("partitioning"); 
   }
 
+  /*! \brief Returns a reference to the user's partitioning parameters.
+   */
+  Teuchos::ParameterList &getPartitioningParamsNonConst() 
+  { 
+    return params_.sublist("partitioning"); 
+  }
+
   /*! \brief Returns a reference to the user's ordering parameters.
    */
   const Teuchos::ParameterList &getOrderingParams() const 
+  { 
+    return params_.sublist("ordering"); 
+  }
+
+  /*! \brief Returns a reference to the user's ordering parameters.
+   */
+  Teuchos::ParameterList &getOrderingParamsNonConst()
   { 
     return params_.sublist("ordering"); 
   }
