@@ -26,12 +26,20 @@ typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 typedef MueLu::UCAggregationCommHelper<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UCAggregationCommHelper;
 #endif
 
-#ifdef MUELU_TWOLEVELFACTORYBASE_SHORT
-typedef MueLu::TwoLevelFactoryBase TwoLevelFactoryBase;
-#endif
-
 #ifdef MUELU_PRFACTORY_SHORT
 typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
+#endif
+
+#ifdef MUELU_ZOLTANINTERFACE_SHORT
+typedef MueLu::ZoltanInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ZoltanInterface;
+#endif
+
+#ifdef MUELU_SINGLELEVELFACTORYBASE_SHORT
+typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
+#endif
+
+#ifdef MUELU_TWOLEVELFACTORYBASE_SHORT
+typedef MueLu::TwoLevelFactoryBase TwoLevelFactoryBase;
 #endif
 
 #ifdef MUELU_RFACTORY_SHORT
@@ -44,10 +52,6 @@ typedef MueLu::AmesosSmoother AmesosSmoother;
 
 #ifdef MUELU_IFPACKSMOOTHER_SHORT
 typedef MueLu::IfpackSmoother IfpackSmoother;
-#endif
-
-#ifdef MUELU_ZOLTANINTERFACE_SHORT
-typedef MueLu::ZoltanInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ZoltanInterface;
 #endif
 
 #ifdef MUELU_FACTORYBASE_SHORT
@@ -66,10 +70,15 @@ typedef MueLu::Level Level;
 typedef MueLu::PFactory PFactory;
 #endif
 
-#ifdef MUELU_SINGLELEVELFACTORYBASE_SHORT
-typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
-#endif
-
 #ifdef MUELU_TWOKEYMAP_SHORT
 typedef MueLu::TwoKeyMap TwoKeyMap;
 #endif
+
+#ifdef MUELU_PREDROPFUNCTIONBASECLASS_SHORT
+typedef MueLu::PreDropFunctionBaseClass PreDropFunctionBaseClass;
+#endif
+
+#ifdef MUELU_VARIABLECONTAINER_SHORT
+typedef MueLu::VariableContainer VariableContainer;
+#endif
+
