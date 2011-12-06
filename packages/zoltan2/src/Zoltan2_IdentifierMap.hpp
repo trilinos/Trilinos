@@ -935,6 +935,12 @@ template<typename LID, typename GID, typename LNO, typename GNO>
           gnoDist_[i] = static_cast<GNO>(tmpDist[i]);
         }
       }
+
+      if (gnoDist_[0] != 0){
+        // We assume consecutive means base zero.  Perhaps this should
+        //   be changed to allow non-zero base.
+        throw std::runtime_error("Consecutive global IDs must begin at zero.");
+      }
     }
   }
 
