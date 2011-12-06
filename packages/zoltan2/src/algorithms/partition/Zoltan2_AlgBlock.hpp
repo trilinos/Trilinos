@@ -31,7 +31,7 @@ void AlgBlock(
   const RCP<const Comm<int> > &problemComm,
   const RCP<const IdentifierModel<Adapter> > &ids, 
   ArrayView<size_t> &gnoPart,
-  scalar_t &imbalance
+  ArrayView<scalar_t> &imbalance
 ) 
 {
   using std::string;
@@ -63,6 +63,9 @@ void AlgBlock(
   double &imbalanceTolerance = pl.get(string("imbalance_tolerance"));
   int &numGlobalParts = pl.get(string("num_global_parts"));
   int &numLocalParts = pl.get(string("num_local_parts"));
+
+  // TODO - need a method to tell me local number of parts based
+  //       on the value of those last two parameters.
 
   // Parameters that may drive algorithm choices
   //    speed_versus_quality
@@ -102,12 +105,12 @@ void AlgBlock(
   int rank = env->myRank_;
   int nprocs = env->numProcs_;
 
-  // TODO here we are assuming nparts = procs
+  // TODO We are only using the first weight.
 
   scalar_t wtsum(0);
 
-  if (wtflag){ /* Sum up local object weights. */
-    for (size_t i=0; i<numGnos; i++)
+  if (wtflag){ /* Sum up first weight */
+    for (size_t i=0; i<numGnos; i+=wtflag)
       wtsum += wgtList[i];
   }
   else
@@ -128,28 +131,27 @@ void AlgBlock(
   /* Overwrite part_sizes with cumulative sum (inclusive) part_sizes. */
   /* A cleaner way is to make a copy, but this works. */
 
-  Array<scalar_t> part_sizes(numGlobalParts, 1.0/numGlobalParts);  // TODO
+  // TODO: we need an interface for part sizes - paramter list?
+  Array<scalar_t> part_sizes(numGlobalParts, 1.0/numGlobalParts); 
   for (i=1; i<numGlobalParts; i++)
     part_sizes[i] += part_sizes[i-1];
-
-  // TODO algorithm assumes numGlobalParts = nprocs
 
   /* Loop over objects and assign partition. */
   size_t part = 0;
   wtsum = scansum[rank];
   Array<scalar_t> partTotal(numGlobalParts, 0);
 
-  for (size_t i=0; i<numGnos; i++){
+  for (size_t i=0,j=0; i<numGnos; i++,j+=wtflag){
     /* wtsum is now sum of all lower-ordered object */
     /* determine new partition number for this object,
        using the "center of gravity" */
     while (part<numGlobalParts-1 && 
-           (wtsum+0.5*(wtflag? wgtList[i]: 1.0))
+           (wtsum+0.5*(wtflag? wgtList[j]: 1.0))
            > part_sizes[part]*globalTotalWeight)
       part++;
     gnoPart[i] = part;
-    partTotal[part] += wgtList[i];
-    wtsum += (wtflag? wgtList[i] : 1.0);
+    partTotal[part] += wgtList[j];
+    wtsum += (wtflag? wgtList[j] : 1.0);
   }
 
   // Compute the imbalance - taken from Zoltan's object_metrics function.
@@ -169,25 +171,24 @@ void AlgBlock(
     }
   }
 
+  scalar_t imbal = 0.0;
   if (!emptyParts){
-    scalar_t imbal = 0.0;
 
     if (globalTotalWeight > 0){
-      int wtIncrement = wtflag ? wtflag : 1;
-
-      for (int i=0, idx = 0; i < numGlobalParts; i++, idx += wtIncrement){
-        if (part_sizes[idx] > 0){
+      for (int i=0; i < numGlobalParts; i++){
+        if (part_sizes[i] > 0){
           scalar_t tmp = 
-            globalPartTotal[idx] / (globalTotalWeight * part_sizes[idx]);
+            globalPartTotal[i] / (globalTotalWeight * part_sizes[]);
           if (tmp > imbal) imbal = tmp;
         }
       }
     }
-    imbalance = (imbal > 0 ? imbal : 1.0);
+    imbal = (imbal > 0 ? imbal : 1.0);
   }
   else{
-    imbalance = -1;  /* flag some part_sizes are zero */
+    imbal= -1;  /* flag some part_sizes are zero */
   }
+  imbalance[0] = imbal;
 }
 
 }
