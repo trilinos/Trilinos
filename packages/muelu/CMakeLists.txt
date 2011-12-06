@@ -1,7 +1,7 @@
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
-  
+ 
 #
 # A) Define the package
 #
