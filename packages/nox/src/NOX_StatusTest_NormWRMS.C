@@ -43,6 +43,7 @@
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_Abstract_ImplicitWeighting.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Solver_LineSearchBased.H"
 #include "NOX_Utils.H"
@@ -53,7 +54,8 @@
 using namespace NOX::StatusTest;
 
 NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
-		   double alpha_, double beta_) :
+		   double alpha_, double beta_,
+		   bool disable_implicit_weighting) :
   value(0.0),
   rtol(rtol_),
   atolIsScalar(true),
@@ -66,14 +68,16 @@ NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
   achievedTol(0.0),
   status(Unconverged),
   printCriteria2Info(false),
-  printCriteria3Info(false)
+  printCriteria3Info(false),
+  m_disable_implicit_weighting(disable_implicit_weighting)
 {
 
 }
 
 NormWRMS::NormWRMS(double rtol_, 
 		   const Teuchos::RCP<const NOX::Abstract::Vector>& atolVec_,
-		   double BDFmult_, double tol_, double alpha_, double beta_) :
+		   double BDFmult_, double tol_, double alpha_, double beta_,
+		   bool disable_implicit_weighting) :
   value(0.0),
   rtol(rtol_),
   atolIsScalar(false),
@@ -87,7 +91,8 @@ NormWRMS::NormWRMS(double rtol_,
   achievedTol(0.0),
   status(Unconverged),
   printCriteria2Info(false),
-  printCriteria3Info(false)
+  printCriteria3Info(false),
+  m_disable_implicit_weighting(disable_implicit_weighting)
 {
 
 }
@@ -155,8 +160,22 @@ checkStatus(const NOX::Solver::Generic& problem,
   // u = Cp * u @ v (where @ represents an elementwise multiply)
   u->scale(*v);
 
+  // Turn off implicit scaling of norm if the vector supports it
+  Teuchos::RCP<NOX::Abstract::ImplicitWeighting> iw_u;
+  iw_u = Teuchos::rcp_dynamic_cast<NOX::Abstract::ImplicitWeighting>(u,false);
+  bool saved_status = false;
+  if (nonnull(iw_u) && m_disable_implicit_weighting) {
+    saved_status = iw_u->getImplicitWeighting();
+    iw_u->setImplicitWeighting(false);
+    cout << "********ROGER************" << endl;
+  }
+
   // tmp = factor * sqrt (u * u / N)
   value = u->norm() * factor / sqrt(static_cast<double>(u->length()));
+
+  // Set the implicit scaling back to original value
+  if (nonnull(iw_u) && m_disable_implicit_weighting)
+    iw_u->setImplicitWeighting(saved_status);
 
   StatusType status1 = Unconverged;
   if (value < tolerance)
@@ -294,4 +313,9 @@ double NormWRMS::getAlpha() const
 double NormWRMS::getBeta() const
 {
   return beta;
+}
+
+bool NormWRMS::getDisableImplicitWeighting() const
+{
+  return m_disable_implicit_weighting;
 }

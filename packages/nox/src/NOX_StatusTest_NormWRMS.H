@@ -152,7 +152,8 @@ public:
 	   double BDFMultiplier = 1.0, 
 	   double tolerance = 1.0,
 	   double alpha = 1.0,
-	   double beta = 0.5);
+	   double beta = 0.5,
+	   bool disable_implicit_weighting = true);
 
   //! Constructor where ATOL is a vector
   NormWRMS(double rtol,
@@ -160,7 +161,8 @@ public:
 	   double BDFMultiplier = 1.0, 
 	   double tolerance = 1.0,
 	   double alpha = 1.0,
-	   double beta = 0.5);
+	   double beta = 0.5,
+	   bool disable_implicit_weighting = true);
 
   //! Destructor.
   virtual ~NormWRMS();
@@ -199,9 +201,10 @@ public:
   //! Returns the value of 'beta' set in the constructor.
   virtual double getBeta() const;
 
+  //! Returns true if implicit weighting is disabled during norm computation
+  virtual bool getDisableImplicitWeighting() const;
+
   //@}
-
-
 
 private:
 
@@ -253,6 +256,8 @@ private:
   //! Flag that tells the print method whether to print the criteria 3 information.
   bool printCriteria3Info;
 
+  //! If true, the implicit weighting will be disabled during norm calculation
+  bool m_disable_implicit_weighting;
 };
 
 } // namespace Status
