@@ -139,12 +139,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ha)
 APPEND_SET(NOINSTALLHEADERS
   ha/ha_const.h
   ha/ha_drum.h
+  ha/ha_ovis.h
   )
 
 APPEND_SET(SOURCES
   ha/divide_machine.c
   ha/get_processor_name.c
   ha/ha_drum.c
+  ha/ha_ovis.c
   )
 
 #

@@ -27,6 +27,10 @@ extern "C" {
 #ifdef ZOLTAN_DRUM
 #include "ha_drum.h"
 #endif
+#ifdef ZOLTAN_OVIS
+#include "ha_ovis.h"
+#include "ovis.h"
+#endif
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -281,6 +285,7 @@ ZOLTAN_ID_PTR gid;
 
 #ifdef ZOLTAN_OVIS
   ovis_enabled(zz->Proc);
+  Zoltan_OVIS_Setup(zz);
 #endif
 
   /* 
