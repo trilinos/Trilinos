@@ -143,7 +143,7 @@ class test_getTimeInMinFromTotalTimeLine(unittest.TestCase):
 
 
 trilinosDepsXmlFileDefaultOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.gold.xml"
-trilinosDependenciesDefault = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFileDefaultOverride)
+trilinosDependenciesDefault = getProjectDependenciesFromXmlFile(trilinosDepsXmlFileDefaultOverride)
 
 
 class test_extractPackageEnablesFromChangeStatus(unittest.TestCase):
@@ -201,7 +201,7 @@ M	stalix/README
 """
     # NOTE: Above, we ignore top-level changes in extra repos which would cause global rebuilds
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
-    trilinosDependenciesLocal = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFileOverride)
+    trilinosDependenciesLocal = getProjectDependenciesFromXmlFile(trilinosDepsXmlFileOverride)
 
     options = MockOptions()
     enablePackagesList = []

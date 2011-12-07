@@ -130,7 +130,7 @@ class test_isGlobalBuildFileRequiringGlobalRebuild(unittest.TestCase):
 
 
 testingTrilinosDepsXmlInFile = getScriptBaseDir()+"/UnitTests/TrilinosPackageDependencies.gold.xml"
-trilinosDependencies = getTrilinosDependenciesFromXmlFile(testingTrilinosDepsXmlInFile)
+trilinosDependencies = getProjectDependenciesFromXmlFile(testingTrilinosDepsXmlInFile)
   
 #print "\ntrilinosDependencies:\n", trilinosDependencies
 
@@ -151,7 +151,7 @@ M demos/FEApp/src/CMakeLists.txt
 updateOutputList = updateOutputStr.split("\n")
 
 
-class testTrilinosPackageFilePathUtils(unittest.TestCase):
+class testProjectPackageFilePathUtils(unittest.TestCase):
 
 
   def test_getPackageNameFromPath_01(self):

@@ -75,9 +75,7 @@ clp.add_option(
 
 clp.add_option(
   "--deps-xml-file", dest="depsXmlFile", type="string",
-  default=defaultTrilinosDepsXmlInFile,
-  help="File containing the listing of packages, dir names, dependencies, etc."\
-    +" (default = '"+defaultTrilinosDepsXmlInFile+"'" )
+  help="File containing the listing of packages, dir names, dependencies, etc.")
 
 (options, args) = clp.parse_args()
 
@@ -86,7 +84,7 @@ if not options.filesListFile:
 
 filesList = readStrFromFile(options.filesListFile).split('\n')
 
-trilinosDependencies = getTrilinosDependenciesFromXmlFile(options.depsXmlFile)
+trilinosDependencies = getProjectDependenciesFromXmlFile(options.depsXmlFile)
 
 packagesList = getPackagesListFromFilePathsList(trilinosDependencies, filesList, True)
 

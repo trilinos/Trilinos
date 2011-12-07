@@ -8,6 +8,7 @@ INCLUDE(TribitsLibraryMacros)
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(CURRENT_PACKAGE TEUCHOS)
+ASSERT_DEFINED(Trilinos_SOURCE_DIR)
 CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
 
@@ -19,7 +20,8 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 # Set the base Trilinos directory in order to find Trilinos_version.h
-ASSERT_DEFINED(PROJECT_SOURCE_DIR)
+ASSERT_DEFINED(Trilinos_BINARY_DIR)
+PRINT_VAR(Trilinos_BINARY_DIR)
 INCLUDE_DIRECTORIES(${Trilinos_BINARY_DIR})
 APPEND_SET(HEADERS
   ${Trilinos_BINARY_DIR}/Trilinos_version.h

@@ -69,7 +69,7 @@
 
 from GeneralScriptSupport import *
 
-from TribitsDependencies import getTrilinosDependenciesFromXmlFile
+from TribitsDependencies import getProjectDependenciesFromXmlFile
 from TribitsDependencies import getDefaultDepsXmlInFile
 from TribitsPackageFilePathUtils import *
 import time
@@ -81,10 +81,10 @@ pp = pprint.PrettyPrinter(indent=4)
 
 # Load some default dependencies for some unit tests
 trilinosDependenciesCache = None
-def getDefaultTrilinosDependenices():
+def getDefaultProjectDependenices():
 #  global trilinosDependenciesCache
 #  if not trilinosDependenciesCache:
-#    trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
+#    trilinosDependencies = getProjectDependenciesFromXmlFile(defaultProjectDepsXmlInFile)
   return trilinosDependenciesCache
 
 # Set the official eg/git versions!
@@ -108,12 +108,12 @@ def getCommonConfigFileName():
   return "COMMON.config"
 
 
-def getTrilinosDependenciesXmlFileName():
-  return "TrilinosPackageDependencies.xml"
+def getProjectDependenciesXmlFileName(projectName):
+  return projectName+"PackageDependencies.xml"
 
 
-def getTrilinosDependenciesXmlGenerateOutputFileName():
-  return "TrilinosPackageDependencies.generate.out"
+def getProjectDependenciesXmlGenerateOutputFileName(projectName):
+  return projectName+"PackageDependencies.generate.out"
 
 
 def getBuildSpecificConfigFileName(buildTestCaseName):
@@ -258,12 +258,12 @@ def assertPackageNames(optionName, packagesListStr):
   if not packagesListStr:
     return
   for packageName in packagesListStr.split(','):
-    if getDefaultTrilinosDependenices().packageNameToID(packageName) == -1:
+    if getDefaultProjectDependenices().packageNameToID(packageName) == -1:
       validPackagesListStr = ""
-      for i in range(getDefaultTrilinosDependenices().numPackages()):
+      for i in range(getDefaultProjectDependenices().numPackages()):
         if validPackagesListStr != "":
           validPackagesListStr += ", "
-        validPackagesListStr += getDefaultTrilinosDependenices().getPackageByID(i).packageName
+        validPackagesListStr += getDefaultProjectDependenices().getPackageByID(i).packageName
       raise Exception("Error, invalid package name "+packageName+" in " \
         +optionName+"="+packagesListStr \
         +".  The valid package names include: "+validPackagesListStr)
@@ -456,13 +456,13 @@ def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
 def assertNoIllegalEnables(projectName, fileName, cmakeOption):
   
   reTPlEnable = re.compile(r"-DTPL_ENABLE_.+")
-  reTrilinosEnableOn = re.compile(r"-D%s_ENABLE_[a-zA-Z]+.+=ON" % projectName)
+  reProjectEnableOn = re.compile(r"-D%s_ENABLE_[a-zA-Z]+.+=ON" % projectName)
 
   success = True
   if reTPlEnable.match(cmakeOption):
     print "    ERROR: Illegal TPL enable "+cmakeOption+" in "+fileName+"!"    
     success = False
-  elif reTrilinosEnableOn.match(cmakeOption):
+  elif reProjectEnableOn.match(cmakeOption):
     print "    ERROR: Illegal enable "+cmakeOption+" in "+fileName+"!"    
     success = False
   return success
@@ -525,7 +525,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
   :
 
   if not trilinosDependenciesLocal:
-    trilinosDependenciesLocal = getDefaultTrilinosDependenices()
+    trilinosDependenciesLocal = getDefaultProjectDependenices()
 
   modifiedFilesList = extractFilesListMatchingPattern(
     updateOutputStr.split('\n'), reModifiedFiles )
@@ -537,7 +537,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
       if inOptions_inout.enableAllPackages == 'auto':
         if verbose:
           print "\nModifed file: '"+modifiedFileFullPath+"'\n" \
-            "  => Enabling all Trilinos packages!"
+            "  => Enabling all "+inOptions_inout.projectName+" packages!"
         inOptions_inout.enableAllPackages = 'on'
 
     if gitRepoName:
@@ -1014,7 +1014,7 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   if verbose:
     print "\nFiltering the set of enabled packages according to allowed package types ..."
   origEnablePackagesList = enablePackagesList[:]
-  enablePackagesList = getDefaultTrilinosDependenices().filterPackageNameList(
+  enablePackagesList = getDefaultProjectDependenices().filterPackageNameList(
     enablePackagesList, validPackageTypesList, verbose)
 
   if verbose:
@@ -1638,15 +1638,15 @@ def checkinTest(baseDir, inOptions, configuration={}):
   assertExtraBuildConfigFiles(inOptions.ssExtraBuilds)
 
   if not inOptions.skipDepsUpdate:
-    removeIfExists(getTrilinosDependenciesXmlFileName())
-    removeIfExists(getTrilinosDependenciesXmlGenerateOutputFileName())
+    removeIfExists(getProjectDependenciesXmlFileName(inOptions.projectName))
+    removeIfExists(getProjectDependenciesXmlGenerateOutputFileName(inOptions.projectName))
 
   if inOptions.extraRepos:
     print "\nPulling in packages from extra repos: "+inOptions.extraRepos+" ..."
     for gitRepoName in inOptions.extraRepos.split(","):
       assertGitRepoExists(inOptions, gitRepoName)        
     if not inOptions.skipDepsUpdate:
-      # There are extra repos so we need to build a new list of Trilinos packages
+      # There are extra repos so we need to build a new list of Project packages
       # to include the add-on packages.
       cmakeArgumentList = [
         "cmake",
@@ -1660,11 +1660,13 @@ def checkinTest(baseDir, inOptions, configuration={}):
       cmnd = ' '.join(cmakeArgumentList)
       echoRunSysCmnd(cmnd,
         workingDir=baseTestDir,
-        outFile=baseTestDir+"/"+getTrilinosDependenciesXmlGenerateOutputFileName(),
+        outFile=baseTestDir+"/"\
+          +getProjectDependenciesXmlGenerateOutputFileName(inOptions.projectName),
         timeCmnd=True)
     else:
       print "\nSkipping update of dependencies XML file on request!"
-    trilinosDepsXmlFile = baseTestDir+"/"+getTrilinosDependenciesXmlFileName()
+    trilinosDepsXmlFile = baseTestDir+"/"\
+      +getProjectDependenciesXmlFileName(inOptions.projectName)
   else:
     # No extra repos so you can just use the default list of packages
     trilinosDepsXmlFile = getDefaultDepsXmlInFile(inOptions.srcDir, inOptions.projectName)
@@ -1676,7 +1678,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
 
 
   global trilinosDependenciesCache
-  trilinosDependenciesCache = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFile)
+  trilinosDependenciesCache = getProjectDependenciesFromXmlFile(trilinosDepsXmlFile)
 
   assertPackageNames("--enable-packages", inOptions.enablePackages)
   assertPackageNames("--disable-packages", inOptions.disablePackages)
@@ -1690,7 +1692,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
   # Set up list of repos array
 
   gitRepoList = []
-  gitRepoList.append(GitRepo("")) # The main Trilinos repo
+  gitRepoList.append(GitRepo("")) # The main Project repo
   if inOptions.extraRepos:
     for extraRepo in inOptions.extraRepos.split(","):
       gitRepoList.append(GitRepo(extraRepo))

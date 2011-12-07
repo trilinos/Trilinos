@@ -80,25 +80,17 @@ Have fun looking through all of the Trilinos dependencies!
 
 """
 
-
-from TribitsDependencies import defaultTrilinosDepsXmlInFile, \
-  defaultTrilinosDepsHtmlOutFile, defaultCDashDepsXmlFile
-
 from optparse import OptionParser
 
 clp = OptionParser(usage=usageHelp)
 
 clp.add_option(
   "--input-xml-deps-file", dest="inputXmlDepsFile", type="string",
-  default=defaultTrilinosDepsXmlInFile,
-  help="Input XML file giving the Trilinos dependencies "+\
-    "(default = "+defaultTrilinosDepsXmlInFile+")." )
+  help="Input XML file giving the Trilinos dependencies.")
 
 clp.add_option(
   "--output-cdash-deps-xml-file", dest="outputCDashDepsXmlFile", type="string",
-  default=defaultCDashDepsXmlFile,
-  help="Output XML file giving the Trilinos dependices CDash language"+\
-    "(default = "+defaultCDashDepsXmlFile+")." )
+  help="Output XML file giving the Trilinos dependices CDash language.")
 
 (options, args) = clp.parse_args()
 
@@ -108,9 +100,9 @@ clp.add_option(
 #
 
 
-from TribitsDependencies import getTrilinosDependenciesFromXmlFile
+from TribitsDependencies import getProjectDependenciesFromXmlFile
 
-trilinosDependencies = getTrilinosDependenciesFromXmlFile(
+trilinosDependencies = getProjectDependenciesFromXmlFile(
   options.inputXmlDepsFile)
 
 trilinosDependencies.writeCDashXmlDepsFile(

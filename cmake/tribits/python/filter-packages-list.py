@@ -78,13 +78,12 @@ clp.add_option(
   help="List of types to keep (i.e. \"PS,SS,EX\"." )
 
 clp.add_option(
-  "--deps-xml-file", dest="depsXmlFile", type="string", default=defaultTrilinosDepsXmlInFile,
-  help="File containing the listing of packages, dir names, dependencies, etc."\
-    +" (default = '"+defaultTrilinosDepsXmlInFile+"'" )
+  "--deps-xml-file", dest="depsXmlFile", type="string",
+  help="File containing the listing of packages, dir names, dependencies, etc.")
 
 (options, args) = clp.parse_args()
 
-trilinosDependencies = getTrilinosDependenciesFromXmlFile(options.depsXmlFile)
+trilinosDependencies = getProjectDependenciesFromXmlFile(options.depsXmlFile)
 
 inputPackagesList = options.inputPackagesList.split(",")
 keepTypesList = options.keepTypes.split(",")

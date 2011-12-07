@@ -70,9 +70,9 @@ from GeneralScriptSupport import *
 # below instead.
 defaultDepsXmlDirectory = getCompleteFileDirname(__file__) + "/../../dependencies"
 
-defaultTrilinosDepsXmlInFile = defaultDepsXmlDirectory + "/TrilinosPackageDependencies.xml"
+defaultProjectDepsXmlInFile = defaultDepsXmlDirectory + "/TrilinosPackageDependencies.xml"
 
-defaultTrilinosDepsHtmlOutFile = defaultDepsXmlDirectory + "/TrilinosPackageDependenciesTable.html"
+defaultProjectDepsHtmlOutFile = defaultDepsXmlDirectory + "/TrilinosPackageDependenciesTable.html"
 
 defaultCDashDepsXmlFile = defaultDepsXmlDirectory + "/CDashSubprojectDependencies.xml"
 
@@ -408,7 +408,7 @@ class TribitsDependencies:
 
     return trilinosDepsTable
 
-  def createTrilinosPackagesNumberedList(self):
+  def createProjectPackagesNumberedList(self):
     numPackages = self.numPackages()
     htmlText = "<p><b>Packages:</b> " + \
       ", ".join( \
@@ -493,7 +493,7 @@ class TribitsDependencies:
 
   def createFullHtmlForTables(self):
 
-    packagesListHtml = self.createTrilinosPackagesNumberedList()
+    packagesListHtml = self.createProjectPackagesNumberedList()
 
     htmlText = \
       "<p><huge><b>Trilinos Test/Example and Library Package Dependencies</b></huge></p>\n"+\
@@ -537,7 +537,7 @@ class TribitsDependencies:
     return htmlText
 
 
-  def writeFullHtmlPage(self, htmlFileName=defaultTrilinosDepsHtmlOutFile):
+  def writeFullHtmlPage(self, htmlFileName=defaultProjectDepsHtmlOutFile):
     htmlString = self.createFullHtmlPage()
     htmlFile = open(htmlFileName, 'w')
     htmlFile.write(htmlString)
@@ -655,7 +655,7 @@ def getParentPackage(packageEle):
   return parentPackage
 
 
-def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
+def getProjectDependenciesFromXmlFile(xmlFile=defaultProjectDepsXmlInFile):
   #print "xmlFile =", xmlFile
   packageDepXmlDom = xml.dom.minidom.parse(xmlFile)
   trilinosDependencies = TribitsDependencies()

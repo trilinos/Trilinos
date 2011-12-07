@@ -69,8 +69,8 @@
 # NOTE: Included first to check the version of python!
 #
 
-from TribitsDependencies import getTrilinosDependenciesFromXmlFile
-from TribitsDependencies import defaultTrilinosDepsXmlInFile
+from TribitsDependencies import getProjectDependenciesFromXmlFile
+from TribitsDependencies import defaultProjectDepsXmlInFile
 from GeneralScriptSupport import *
 import time
 
@@ -82,7 +82,7 @@ import time
 # global rebuild of all Trilinos packaes.  There are a few special files
 # that we don't do a global rebuild for:
 #
-# cmake/TrilinosPackages.cmake: This file gets modified frequently to add new
+# cmake/ProjectPackages.cmake: This file gets modified frequently to add new
 # packages and rearrange packages.  We don't need to do a global rebuild
 # because this list of pakages is validated if we do even a single rebuild.
 # If a package line gets removed, the code that reads the Dependencies.cmake
