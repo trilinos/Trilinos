@@ -83,6 +83,7 @@ APPEND_SET(HEADERS
   Panzer_OutputStream_DefaultImpl.hpp
   Panzer_ParameterLibrary.hpp
   Panzer_ParameterLibraryAcceptor.hpp
+  Panzer_ParameterLibraryAcceptor_DefaultImpl.hpp
   Panzer_ParameterLibraryUtilities.hpp
   Panzer_ParameterLibraryUtilitiesT.hpp
   Panzer_ParameterList_ObjectBuilders.hpp

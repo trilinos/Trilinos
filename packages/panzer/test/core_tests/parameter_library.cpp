@@ -6,6 +6,7 @@
 #include "Panzer_ParameterLibrary.hpp"
 #include "Panzer_ScalarParameterEntry.hpp"
 #include "Panzer_ParameterLibraryUtilities.hpp"
+#include "Panzer_ParameterLibraryAcceptor_DefaultImpl.hpp"
 
 namespace panzer {
 
@@ -90,6 +91,40 @@ namespace panzer {
     const double tol = 10.0*std::numeric_limits<double>::epsilon();
 
     TEST_FLOATING_EQUALITY(test_value, value, tol);
+
+  }
+
+  class TestAcceptor : public panzer::ParameterLibraryAcceptor_DefaultImpl {
+
+  public:
+
+    TestAcceptor() {}
+
+    TestAcceptor(const Teuchos::RCP<panzer::ParamLib>& pl) :
+      panzer::ParameterLibraryAcceptor_DefaultImpl(pl)
+    { }
+
+  };
+
+
+  TEUCHOS_UNIT_TEST(parameter_library, acceptor)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using panzer::ParamLib;
+
+    RCP<ParamLib> p1 = rcp(new ParamLib);
+    RCP<ParamLib> p2 = rcp(new ParamLib);
+
+    TestAcceptor t1(p1);
+    TestAcceptor t2;
+
+    t2.setParameterLibrary(p2);
+
+    TEST_EQUALITY(p1, t1.getParameterLibrary());
+    TEST_EQUALITY(p2, t2.getParameterLibrary());
+    TEST_INEQUALITY(p1, t2.getParameterLibrary());
+    TEST_INEQUALITY(p2, t1.getParameterLibrary());
 
   }
 

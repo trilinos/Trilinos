@@ -15,6 +15,8 @@ namespace panzer {
 
   public:
 
+    virtual ~ParameterLibraryAcceptor() {}
+
     virtual Teuchos::RCP<panzer::ParamLib> getParameterLibrary() const = 0;
 
   };
