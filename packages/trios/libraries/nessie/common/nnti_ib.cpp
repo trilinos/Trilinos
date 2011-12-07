@@ -729,8 +729,6 @@ NNTI_result_t NNTI_ib_disconnect (
     close_connection(conn);
     del_conn_peer(peer_hdl);
 
-    free(peer_hdl->url);
-
     return(rc);
 }
 
