@@ -356,8 +356,8 @@ int main(int argc, char *argv[])
     nssi_get_url(NSSI_DEFAULT_TRANSPORT, &my_url[0], NSSI_URL_LEN);
 
     // Broadcast the server URL to all the clients
-    args.server_url.resize(NSSI_URL_LEN, '\0');
     if (args.server_flag && args.client_flag) {
+        args.server_url.resize(NSSI_URL_LEN, '\0');
         args.server_url = my_url;
         MPI_Bcast(&args.server_url[0], args.server_url.size(), MPI_CHAR, 0, MPI_COMM_WORLD);
     }
