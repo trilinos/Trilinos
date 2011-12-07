@@ -84,6 +84,7 @@ APPEND_SET(HEADERS
   Panzer_ParameterList_ObjectBuilders.hpp
   Panzer_PauseToAttach.hpp
   Panzer_PhysicsBlock.hpp
+  Panzer_ScalarParameterEntry.hpp
   Panzer_Shards_Utilities.hpp
   Panzer_StlMap_Utilities.hpp
   Panzer_String_Utilities.hpp
