@@ -24,7 +24,6 @@ template <typename Adapter>
 int AlgRandom(
   const RCP<GraphModel<Adapter> > &model, 
   const RCP<OrderingSolution<typename Adapter::gid_t,
-                             typename Adapter::lid_t,
                              typename Adapter::lno_t> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
   const RCP<const Teuchos::Comm<int> > &comm
@@ -33,7 +32,6 @@ int AlgRandom(
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr= 0;
@@ -67,7 +65,6 @@ int AlgRandom(
   // Set solution.
   solution->setPermutation(nVtx,
                (gid_t *) NULL, // TODO
-               (lid_t *) NULL, // TODO
                perm);
 
   // delete [] perm; // Can't delete perm yet, RCP would help here?

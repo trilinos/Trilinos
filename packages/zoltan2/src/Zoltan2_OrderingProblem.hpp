@@ -31,7 +31,6 @@ class OrderingProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::lno_t lno_t;
 
   // Destructor
@@ -51,14 +50,14 @@ public:
   virtual void solve();
   // virtual void redistribute();
 
-  OrderingSolution<gid_t, lid_t, lno_t> *getSolution() {
+  OrderingSolution<gid_t, lno_t> *getSolution() {
     return solution_.getRawPtr();
   };
 
 private:
   void createOrderingProblem();
 
-  RCP<OrderingSolution<gid_t, lid_t, lno_t> > solution_;
+  RCP<OrderingSolution<gid_t, lno_t> > solution_;
 
 };
 
@@ -68,7 +67,7 @@ void OrderingProblem<Adapter>::solve()
 {
   HELLO;
 
-  this->solution_ = rcp(new OrderingSolution<gid_t, lid_t, lno_t>);
+  this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>);
 
   // Determine which algorithm to use based on defaults and parameters.
   // For now, assuming RCM.

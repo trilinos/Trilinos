@@ -27,7 +27,6 @@ namespace Zoltan2 {
     Tpetra::CrsMatrix and Tpetra::Map.
 
     scalar_t: This data type is used for matrix non-zeros
-    lid_t: the type for the application's local Ids
     gid_t: the type for the application's global Ids
     lno_t: the integral type that Zoltan2 will use for local counters.
     gno_t: the integral type that Zoltan2 will use for the global 
@@ -44,7 +43,6 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
 
@@ -77,11 +75,6 @@ public:
       If this optional call is defined in the adapter, it can save a memory
       copy of application data.
       \param rowIds will on return a pointer to row global Ids
-      \param localIds can, optionally, on return hold a list of locally
-        relevant values that the process will use to refer to the objects
-        listed in the first list.  If localIds are omitted and
-        haveConsecutiveLocalIds is true, it is assumed that the
-        global Ids are in local Id order.
       \param offsets is an array of size numRows + 1.  The column Ids for
           rowId[i] begin at colIds[offsets[i]].  The last element of offsets
           is the size of the colIds array.
@@ -90,7 +83,7 @@ public:
        \return The number of ids in the rowIds list.
    */
 
-  virtual size_t getRowListView(const gid_t *&rowIds, const lid_t *&localIds, 
+  virtual size_t getRowListView(const gid_t *&rowIds, 
     const lno_t *&offsets, const gid_t *& colIds) const = 0;
 
   /*! Apply the solution to a partitioning problem to an input.  
@@ -106,14 +99,6 @@ public:
    *           data that instantiated this InputAdapter.
    *  \param out On return this should point to a newly created object 
    *            with the specified partitioning.
-   *  \param numIds  The number of ids in the gid and partition lists.
-   *  \param numParts  The global number of partitions.  Partitions are 
-   *     numbered from 0 through numParts-1. 
-   *  \param gid     A list of object global Ids.
-   *  \param lid     A corresponding list of object local Ids, if the
-   *      InputAdapter had supplied local Ids.
-   *  \param partition  A corresponding list of partitions.  gid[i]
-   *            has been assigned to partition[i].
    *  \return   Returns the number of Ids in the new partitioning.
    *
    * TODO - A solution needs to be more than a list of partitions, but
@@ -122,7 +107,7 @@ public:
    */
 
   size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
+         const PartitioningSolution<gid_t, lno_t> &solution)
   {
     return 0;
   }

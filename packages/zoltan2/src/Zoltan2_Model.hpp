@@ -41,9 +41,8 @@ public:
     */
   typedef typename Adapter::lno_t    lno_t;
   typedef typename Adapter::gno_t    gno_t;
-  typedef typename Adapter::lid_t    lid_t;
   typedef typename Adapter::gid_t    gid_t;
-  typedef IdentifierMap<lid_t, gid_t, lno_t, gno_t> idmap_t;
+  typedef IdentifierMap<gid_t, lno_t, gno_t> idmap_t;
 
   /*! Pure virtual destructor
    */

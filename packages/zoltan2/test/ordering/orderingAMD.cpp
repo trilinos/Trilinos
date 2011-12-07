@@ -224,13 +224,12 @@ int main(int narg, char** arg)
   ////// Basic metric checking of the ordering solution
   size_t checkLength;
   z2TestGO *checkGIDs;
-  z2TestLO *checkLIDs;
   z2TestLO *checkPerm;
   Zoltan2::OrderingSolution<z2TestGO, z2TestLO, z2TestLO> *soln = 
            problem.getSolution();
 
   // Check that the solution is really a permutation
-  soln->getPermutation(&checkLength, &checkGIDs, &checkLIDs, &checkPerm);
+  soln->getPermutation(&checkLength, &checkGIDs, &checkPerm);
 
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);

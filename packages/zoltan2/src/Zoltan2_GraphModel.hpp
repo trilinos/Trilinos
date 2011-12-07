@@ -29,7 +29,7 @@ namespace Zoltan2 {
 
     The constructor of the GraphModel can be a global call, requiring
     all processes in the application to call it.  The rest of the
-    method should be local methods.
+    methods should be local methods.
 
     The template parameter is an Input Adapter.  Input adapters are
     templated on the basic user input type.
@@ -184,9 +184,8 @@ public:
   typedef typename MatrixInput<User>::gno_t     gno_t;
   typedef typename MatrixInput<User>::lno_t     lno_t;
   typedef typename MatrixInput<User>::gid_t     gid_t;
-  typedef typename MatrixInput<User>::lid_t     lid_t;
   typedef typename MatrixInput<User>::node_t    node_t;
-  typedef IdentifierMap<lid_t, gid_t, lno_t, gno_t>     idmap_t;
+  typedef IdentifierMap<gid_t, lno_t, gno_t>     idmap_t;
 
   /*! Constructor
    *  All processes in the communicator must call the constructor.
@@ -200,24 +199,21 @@ public:
   GraphModel(const MatrixInput<User> *ia,
     const RCP<const Environment> &env, bool consecutiveIdsRequired=false,
     bool removeSelfEdges=false) :
-     input_(ia), env_(env), gids_(), lids_(), gnos_(),
+     input_(ia), env_(env), gids_(), gnos_(),
      edgeGnos_(), procIds_(), offsets_(),
      numLocalEdges_(0), numGlobalEdges_(0), numLocalVtx_(0),
      gidsAreGnos_(false)
   {
     // Get the matrix from the input adapter
 
-    gno_t const *vtxIds=NULL, *nborIds=NULL;
-    lno_t const  *offsets=NULL, *lids=NULL;
+    gid_t const *vtxIds=NULL, *nborIds=NULL;
+    lno_t const  *offsets=NULL;
     try{
-      numLocalVtx_ = input_->getRowListView(vtxIds, lids, offsets, nborIds);
+      numLocalVtx_ = input_->getRowListView(vtxIds, offsets, nborIds);
     }
     Z2_FORWARD_EXCEPTIONS;
 
     gids_ = arcp(vtxIds, 0, numLocalVtx_, false);
-
-    size_t lidBase;
-    bool impliedLids = input_->haveConsecutiveLocalIds(lidBase);
 
     numLocalEdges_ = offsets[numLocalVtx_];
 
@@ -275,10 +271,6 @@ public:
     Teuchos::reduceAll<int, size_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1,
       &numLocalEdges_, &numGlobalEdges_);
 
-
-    if (lids)
-      lids_ = arcp(lids, 0, numLocalVtx_, false);
-
     // Create an IdentifierMap, which will map the user's global IDs to
     //   Zoltan2 internal global numbers if neccesary.
     //   The map can also give us owners of our vertex neighbors.
@@ -286,8 +278,7 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env, gids_, lids_, impliedLids, 
-        consecutiveIdsRequired));
+      idMap = rcp(new idmap_t(env, gids_, consecutiveIdsRequired));
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -387,6 +378,7 @@ public:
     return n;
     // KDDKDD  Is it dangerous that xyz is ignored here?  Perhaps coordinates
     // KDDKDD  should be separate.
+    // LRIESEN  Coordinates and weights are not yet implemented.
   }
 
   size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
@@ -436,7 +428,6 @@ private:
   const RCP<const Environment > env_;
 
   ArrayRCP<const gid_t> gids_;
-  ArrayRCP<const lid_t> lids_;
   ArrayRCP<gno_t> gnos_;
 
   ArrayRCP<const gid_t> edgeGids_;

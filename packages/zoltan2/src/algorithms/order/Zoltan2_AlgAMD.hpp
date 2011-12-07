@@ -53,7 +53,6 @@ template <typename Adapter>
 int AlgAMD(
   const RCP<GraphModel<Adapter> > &model,
   const RCP<OrderingSolution<typename Adapter::gid_t,
-                             typename Adapter::lid_t,
                              typename Adapter::lno_t> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
   const RCP<const Teuchos::Comm<int> > &comm
@@ -62,7 +61,6 @@ int AlgAMD(
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr= 0;
@@ -75,7 +73,6 @@ int AlgAMD(
   ArrayView<const lno_t> offsets;
   ArrayView<const scalar_t> wgts;
 
-  // TODO: Need to get local IDs
   const size_t nEdgs = model->getEdgeList( edgeIds,
                         procIds, offsets, wgts);
 
@@ -100,7 +97,6 @@ int AlgAMD(
       // Set solution.
       solution->setPermutation(nVtx,
                    (gid_t *) NULL, // TODO
-                   (lid_t *) NULL, // TODO
                    perm);
   }
 #else

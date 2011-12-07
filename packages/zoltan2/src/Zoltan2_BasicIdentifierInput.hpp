@@ -23,7 +23,6 @@ namespace Zoltan2 {
  *           and their associated weights, if any.
  *
  *  A pointer to the global identifiers is supplied in the constructor.
- *  Local identifiers are implied to be consecutive beginning at zero.
  */
 
 template <typename User>
@@ -34,7 +33,6 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef IdentifierInput<User>       base_adapter_t;
@@ -49,25 +47,15 @@ public:
 
   std::string inputAdapterName() const {return std::string("BasicIdentifier");}
 
-  bool haveLocalIds() const {return true;}
-
-  bool haveConsecutiveLocalIds(size_t &base) const 
-  {
-    base = 0;
-    return true;
-  }
-
   ////////////////////////////////////////////////////////////////
   // The IdentifierInput interface.
   ////////////////////////////////////////////////////////////////
 
   size_t getLocalNumIds() const { return numIds_;}
 
-  size_t getIdList(const gid_t *&gids, const lid_t *&lids,
-    const scalar_t *&weights) const
+  size_t getIdList(const gid_t *&gids, const scalar_t *&weights) const
   {
     gids = idList_;
-    lids = NULL;   // it's implied to be 0 to n-1
     weights = idWeights_;
     return numIds_;
   }

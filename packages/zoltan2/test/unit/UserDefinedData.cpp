@@ -12,22 +12,20 @@
 #include <Zoltan2_InputTraits.hpp>
 
 // user data structure 
-template<typename AppLID, typename AppGID>
+template<typename AppGID>
 struct TestData{
-  Teuchos::ArrayRCP<AppLID> lids;
   Teuchos::ArrayRCP<AppGID> gids;
 };
 
 // the InputTraits of our structure for Zoltan2
 namespace Zoltan2{
 template<>
-template<typename AppLID, typename AppGID>
-struct InputTraits<struct TestData<AppLID, AppGID> >
+template<typename AppGID>
+struct InputTraits<struct TestData<AppGID> >
 {
   typedef float scalar_t;
   typedef int lno_t;
   typedef long gno_t;
-  typedef AppLID lid_t;
   typedef AppGID gid_t;
   typedef Zoltan2::default_node_t node_t;
 };

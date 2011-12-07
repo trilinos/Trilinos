@@ -23,17 +23,16 @@ namespace Zoltan2 {
 /*! Zoltan2::OrderingSolution
 */
 
-template <typename gid_t, typename lid_t, typename lno_t>
-  class OrderingSolution : public Solution<gid_t, lid_t, lno_t>
+template <typename gid_t, typename lno_t>
+  class OrderingSolution : public Solution<gid_t, lno_t>
 {
 public:
 
   //////////////////////////////////////////////
   void setPermutation(
-    size_t length,   // Length of arrays
-    gid_t *gids,     // GIDs
-    lid_t *lids,     // LIDs
-    lno_t *perm     // perm[i] = k means k is the i'th element in the perm.
+    size_t length,// Length of arrays
+    gid_t *gids,  // User's IDs, same order as appeared in adapter "get" method
+    lno_t *perm   // perm[i] = k means k is the i'th element in the perm.
   )
   {
     HELLO;
@@ -44,37 +43,27 @@ public:
       gids_ = ArrayView<gid_t>(Teuchos::null);
       // throw std::logic_error("invalid gids");
 
-
-    if (lids != NULL)
-      lids_ = ArrayView<lid_t>(lids, length);
-    else     // lids may be NULL
-      lids_ = ArrayView<lid_t>(Teuchos::null);
-
     perm_ = ArrayView<lno_t>(perm, length);
   }
 
   //////////////////////////////////////////////
   void getPermutation(
-    size_t *length,   // returned: Length of arrays
-    gid_t **gids,     // returned: GIDs
-    lid_t **lids,     // returned: LIDs
+    size_t *length,  // returned: Length of arrays
+    gid_t **gids,    // returned: GIDs
     lno_t **perm     // returned: Permutation
   )
   {
     *length = perm_.size();
     *gids   = gids_.getRawPtr();
 
-    if (lids_.getRawPtr() != (lid_t*) Teuchos::null) *lids = lids_.getRawPtr();
-    else                                             *lids = (lid_t*) NULL;
-
     *perm  = perm_.getRawPtr();
   }
 
 protected:
-  // Ordering solution consists of GIDs, LIDs, and permutation vector(s).
+  // Ordering solution is GIDs listed in the same order in which they were
+  // provided in the input adapter's "get" method, and permutation vector(s).
   size_t nParts_;
   ArrayView<gid_t>  gids_;
-  ArrayView<lid_t>  lids_;
   ArrayView<lno_t> perm_;    // zero-based local permutation
   //ArrayView<size_t> invperm_; // inverse of permutation above
 };

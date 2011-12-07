@@ -30,7 +30,6 @@ class PartitioningProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::lno_t lno_t;
 
   // Destructor
@@ -61,7 +60,7 @@ public:
   //    don't think I've seen this style before.
   virtual void solve();
 
-  PartitioningSolution<gid_t, lid_t, lno_t> &getSolution() {
+  PartitioningSolution<gid_t, lno_t> &getSolution() {
     return *(solution_.getRawPtr());
   };
 
@@ -70,7 +69,7 @@ private:
 
   Teuchos::Ptr<Teuchos::ParameterList> generalParams_;
   Teuchos::Ptr<Teuchos::ParameterList> partitioningParams_;
-  RCP<PartitioningSolution<gid_t, lid_t, lno_t> > solution_;
+  RCP<PartitioningSolution<gid_t, lno_t> > solution_;
 
   InputAdapterType inputType_;
   ModelType modelType_;
@@ -84,7 +83,6 @@ void PartitioningProblem<Adapter>::solve()
   HELLO;
 
   typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::scalar_t scalar_t;
@@ -92,17 +90,14 @@ void PartitioningProblem<Adapter>::solve()
 
   size_t nObj = this->generalModel_->getLocalNumObjects();
 
-  size_t numGlobalParts = partitioningParams_->get<int>(
-    string("num_global_parts"));
+  size_t numGlobalParts = 
+    partitioningParams_->get<int>(string("num_global_parts"));
 
   // Create the solution.   TODO add exception handling
 
-  solution_ = 
-    rcp(new PartitioningSolution<gid_t,lid_t,lno_t>( numGlobalParts, nObj,
-      this->inputAdapter_->haveLocalIds() ? nObj : 0));
+  solution_ = rcp(new PartitioningSolution<gid_t,lno_t>(numGlobalParts, nObj));
 
   ArrayRCP<gid_t> &solnGids = solution_->getGidsRCP();
-  ArrayRCP<lid_t> &solnLids = solution_->getLidsRCP();
   ArrayRCP<size_t> &solnParts = solution_->getPartsRCP();
 
   // Call the algorithm
@@ -115,15 +110,14 @@ void PartitioningProblem<Adapter>::solve()
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  // Write User's GIDs and LIDs (if used) to the solution object.
+  // Write User's GIDs (in the same order in which they appears in the
+  //   input adapter's "get" method) to the solution.
 
-  typedef IdentifierMap<lid_t,gid_t,lno_t,gno_t> idmap_t;
+  typedef IdentifierMap<gid_t,lno_t,gno_t> idmap_t;
   const RCP<const idmap_t> idMap = this->generalModel_->getIdentifierMap();
 
   ArrayView<const gno_t> vtxGNO;
   this->generalModel_->getGlobalObjectIds(vtxGNO);
-
-std::cout << vtxGNO.size() << std::endl;
 
   ArrayRCP<gno_t> gnos = arcpFromArrayView(av_const_cast<gno_t>(vtxGNO));
 
@@ -132,11 +126,6 @@ std::cout << vtxGNO.size() << std::endl;
   }
   else{
     idMap->gidTranslate(solnGids.persistingView(0, nObj), gnos, 
-      TRANSLATE_LIB_TO_APP);
-  }
-
-  if (this->inputAdapter_->haveLocalIds()){
-    idMap->lidTranslate(solnLids.persistingView(0, nObj), gnos, 
       TRANSLATE_LIB_TO_APP);
   }
 }

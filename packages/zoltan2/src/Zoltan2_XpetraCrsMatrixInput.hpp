@@ -42,7 +42,6 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
@@ -72,16 +71,16 @@ public:
     size_t nrows = matrix_->getNodeNumRows();
     size_t nnz = matrix_->getNodeNumEntries();
  
-    offset_.resize(nrows+1, lid_t(0));
+    offset_.resize(nrows+1, 0);
     columnIds_.resize(nnz);
-    ArrayView<const lid_t> indices;
+    ArrayView<const lno_t> indices;
     ArrayView<const scalar_t> nzs;
-    lid_t next = 0;
+    lno_t next = 0;
     for (size_t i=0; i < nrows; i++){
-      lid_t row = i + base_;
-      lid_t nnz = matrix_->getNumEntriesInLocalRow(row);
+      lno_t row = i + base_;
+      lno_t nnz = matrix_->getNumEntriesInLocalRow(row);
       matrix_->getLocalRowView(row, indices, nzs);
-      for (lid_t j=0; j < nnz; j++){
+      for (lno_t j=0; j < nnz; j++){
         // TODO - this will be slow
         //   Is it possible that global columns ids might be stored in order?
         columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
@@ -104,13 +103,6 @@ public:
 
   std::string inputAdapterName()const {
     return std::string("XpetraCrsMatrix");}
-
-  bool haveLocalIds() const { return true;}
-
-  bool haveConsecutiveLocalIds(size_t &base) const{
-    base = base_;
-    return true;
-  }
 
   ////////////////////////////////////////////////////
   // The MatrixInput interface.
@@ -144,9 +136,6 @@ public:
   /*! Return a read only view of the data.
      \param rowIds  Global row ids.  The memory for the global 
           row IDs persists until the underlying Xpetra::CrsMatrix is deleted.
-     \param localIds on return is NULL, signifying that local IDs are
-           contiguous integers starting at the base supplied in
-          haveConsecutiveLocalIds.
      \param offsets The columns for rowIds[i] begin at colIds[offsets[i]].  
         There are numRows+1 offsets.  The last offset is the length of the 
         colIds array.  The memory pointed to by offsets persists 
@@ -157,16 +146,13 @@ public:
      \return  The number rows in the rowIds list is returned.
    */
 
-  size_t getRowListView(const gid_t *&rowIds, const lid_t *&localIds,
-    const lid_t *&offsets, const gid_t *& colIds) const
+  size_t getRowListView(const gid_t *&rowIds,
+    const lno_t *&offsets, const gid_t *& colIds) const
   {
     size_t nrows = getLocalNumRows();
 
     ArrayView<const gid_t> rowView = rowMap_->getNodeElementList();
     rowIds = rowView.getRawPtr();
-   
-    localIds = NULL;   // Implies consecutive integers
-
     offsets = offset_.getRawPtr();
     colIds = columnIds_.getRawPtr();
     return nrows;
@@ -183,7 +169,7 @@ public:
    *   TODO : params etc
    */
   size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
+         const PartitioningSolution<gid_t, lno_t> &solution)
   { 
     // Get an import list
 

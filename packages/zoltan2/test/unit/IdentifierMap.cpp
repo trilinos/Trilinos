@@ -76,14 +76,12 @@ template <typename IDMAP>
   void testIdMap( RCP<const Comm<int> > &comm,
     IDMAP *map, bool gnosAreGids, bool gnosAreConsecutive,
     ArrayRCP<typename IDMAP::gid_t> &gids, 
-    ArrayRCP<typename IDMAP::lid_t> &lids, 
     ArrayRCP<typename IDMAP::gid_t> &remoteGids,
     bool verbose)
 {
   typedef typename IDMAP::lno_t LNO;
   typedef typename IDMAP::gno_t GNO;
   typedef typename IDMAP::gid_t GID;
-  typedef typename IDMAP::lid_t LID;
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -109,7 +107,7 @@ template <typename IDMAP>
     map->gidTranslate(gids(), z2Ids(), Zoltan2::TRANSLATE_APP_TO_LIB);
   }
   catch (std::exception &e){
-    fail = 1;
+    fail = 2;
   }
 
   TEST_FAIL_AND_THROW(*comm, fail==0, "gidTranslate")
@@ -138,27 +136,33 @@ template <typename IDMAP>
     comm->barrier();
   }
 
-  // Get Zoltan2's global numbers given user local Ids
+  // Get Zoltan2's global numbers given user local indices 
 
   Array<GNO> z2Ids2(nLocalIds);
+  Array<LNO> indices(nLocalIds);
+
+  for (LNO i=nLocalIds-1, i >= 0; i--){
+    indices[i] = i;
+  }
+   
 
   try {
-    map->lidTranslate(lids(), z2Ids2(), Zoltan2::TRANSLATE_APP_TO_LIB);
+    map->lnoTranslate(indices(), z2Ids2(), Zoltan2::TRANSLATE_APP_TO_LIB);
   }
   catch (std::exception &e){
-    fail = 1;
+    fail = 3;
   }
 
   TEST_FAIL_AND_THROW(*comm, fail==0, "lidTranslate")
 
-  for (size_t i=0; i < nLocalIds; i++){
-    if (z2Ids2[i] != z2Ids[i]){
-       fail = 1;
+  for (LNO i=nLocalIds-1, j=0, i >= 0; i--, j++){
+    if (z2Ids2[j] != z2Ids[i]){
+       fail = 4;
        break;
     }
   }
 
-  TEST_FAIL_AND_THROW(*comm, fail==0, "lidTranslate results")
+  TEST_FAIL_AND_THROW(*comm, fail==0, "lnoTranslate results")
 
   // Get User's global Ids give Zoltan2's global numbers
 
@@ -168,14 +172,14 @@ template <typename IDMAP>
     map->gidTranslate(userGids(), z2Ids(), Zoltan2::TRANSLATE_LIB_TO_APP);
   }
   catch (std::exception &e){
-    fail = 1;
+    fail = 5;
   }
 
   TEST_FAIL_AND_THROW(*comm, fail==0, "gidTranslate 2")
 
   for (size_t i=0; i < nLocalIds; i++){
     if (userGids[i] != gids[i]){
-       fail = 1;
+       fail = 6;
        break;
     }
   }
@@ -192,7 +196,7 @@ template <typename IDMAP>
       map->gidGlobalTranslate(remoteGids(), remoteGno(), remoteProc());
     }
     catch (std::exception &e){
-      fail = 1;
+      fail = 7;
     }
 
     TEST_FAIL_AND_THROW(*comm, fail==0, "gidGLobalTranslate")
@@ -246,7 +250,6 @@ int main(int argc, char *argv[])
     numRemoteObjects, true);
   ArrayRCP<std::pair<int,int> > remoteGidPairs(
     new std::pair<int,int> [numRemoteObjects], 0, numRemoteObjects, true);
-  ArrayRCP<int> lids(new int[numLocalObjects], 0, numLocalObjects, true);
 
   using Zoltan2::IdentifierMap;
 
@@ -260,16 +263,15 @@ int main(int argc, char *argv[])
 
   for (int i=0; i < numLocalObjects; i++){
     gids[i] = base + i;   
-    lids[i] = i;
     if (i == numLocalObjects/2) base = base2;
   }
 
-  typedef IdentifierMap<int, long, int, long> mapLongGids_t;
+  typedef IdentifierMap<long, int, long> mapLongGids_t;
 
   mapLongGids_t *idMap = NULL;
 
   try{
-    idMap = new mapLongGids_t(env, gids, lids, false, false);
+    idMap = new mapLongGids_t(env, gids, false);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -289,7 +291,7 @@ int main(int argc, char *argv[])
   // we will not have consecutive GNOs.
 
   testIdMap(comm, idMap, gnosAreGids, !consecutiveGids, 
-    gids, lids, remoteGids, verbose);
+    gids, remoteGids, verbose);
 
   delete idMap;
 
@@ -298,7 +300,7 @@ int main(int argc, char *argv[])
   //  IdentifierMap is asked to map them to consecutive.
 
   try{
-    idMap = new mapLongGids_t(env, gids, lids, false, true); 
+    idMap = new mapLongGids_t(env, gids, true); 
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -312,7 +314,7 @@ int main(int argc, char *argv[])
   // will have consecutive global Ids.
 
   testIdMap(comm, idMap, !gnosAreGids, consecutiveGids, 
-    gids, lids, remoteGids, verbose);
+    gids, remoteGids, verbose);
 
   delete idMap;
 
@@ -325,7 +327,7 @@ int main(int argc, char *argv[])
   }
 
   try{
-    idMap = new mapLongGids_t(env, gids, lids, false, false); 
+    idMap = new mapLongGids_t(env, gids, false); 
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -345,7 +347,7 @@ int main(int argc, char *argv[])
   // the Zoltan2 GNOs are consecutive.
 
   testIdMap(comm, idMap, gnosAreGids, consecutiveGids, 
-    gids, lids, remoteGids, verbose);
+    gids, remoteGids, verbose);
 
   delete idMap;
 
@@ -369,7 +371,7 @@ int main(int argc, char *argv[])
   mapPairGids_t *idMap2 = NULL;
 
   try{
-    idMap2 = new mapPairGids_t(env, nonOrdinalGids, lids, false, false); 
+    idMap2 = new mapPairGids_t(env, nonOrdinalGids, false); 
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -390,7 +392,7 @@ int main(int argc, char *argv[])
   // Ids that begin at 0.
 
   testIdMap(comm, idMap2, !gnosAreGids, consecutiveGids, 
-    nonOrdinalGids, lids, remoteGidPairs, verbose);
+    nonOrdinalGids, remoteGidPairs, verbose);
 
   delete idMap2;
 #endif

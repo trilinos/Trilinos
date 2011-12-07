@@ -40,7 +40,6 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
@@ -53,7 +52,7 @@ public:
   /*! \brief Constructor
    */
   XpetraCrsGraphInput(const RCP<const User> &ingraph):
-    base_(), ingraph_(ingraph), graph_(), comm_() ,
+    ingraph_(ingraph), graph_(), comm_() ,
     offs_(), eids_()
 #if 0
     ,rowMap_(), colMap_(), edgeOffsets_(),
@@ -62,7 +61,6 @@ public:
 #endif
   {
     graph_ = XpetraTraits<User>::convertToXpetra(ingraph);
-    base_ = graph_->getIndexBase();
     comm_ = graph_->getComm();
     size_t nvtx = graph_->getNodeNumRows();
     size_t nedges = graph_->getNodeNumEntries();
@@ -238,7 +236,7 @@ public:
       }
 
       for (int i=0; i < nnbors; i++){
-        int toOffset = (edgeOffsets_[lid-base_] + idx[i]) * edgeWeightDim_;
+        int toOffset = (edgeOffsets_[lid] + idx[i]) * edgeWeightDim_;
         int fromOffset = nextWgt + (i * edgeWeightDim_);
         for (int j=0; j < edgeWeightDim_; j++)
           edgeWgt_[toOffset+j] = wgts[fromOffset+j];
@@ -267,13 +265,6 @@ public:
 
   std::string inputAdapterName()const {
     return std::string("XpetraCrsGraph");}
-
-  bool haveLocalIds() const { return true;}
-
-  bool haveConsecutiveLocalIds(size_t &base) const{
-    base = base_;
-    return true;
-  }
 
   ////////////////////////////////////////////////////
   // The GraphInput interface.
@@ -327,14 +318,10 @@ public:
   /*! \brief Return a read only view of the data.
    */
   size_t getVertexListView(const gid_t *&ids,
-    const lid_t *&localIds,
     const lno_t *&offsets, const gid_t *& edgeId) const
   {
-    // TODO we need to verify that gids are actually stored
-    //   in lid order
     size_t nvtx = getLocalNumVertices();
     ids = edgeId = NULL;
-    localIds = NULL;  // implied to be consecutive 
     offsets = NULL;
 
     if (nvtx){
@@ -350,7 +337,7 @@ public:
    *   the graph that instantiated this input adapter.
    */
   size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
+         const PartitioningSolution<gid_t, lno_t> &solution)
   {
     // Get an import list
     Zoltan2::Environment env;
@@ -376,7 +363,7 @@ public:
     RCP<const User> inPtr = rcp(&in, false);
 
     RCP<const User> outPtr = XpetraTraits<User>::doMigration(
-     inPtr, lsum, importList.getRawPtr(), base_);
+     inPtr, lsum, importList.getRawPtr());
 
     out = const_cast<User *>(outPtr.get());
     outPtr.release();
@@ -385,7 +372,6 @@ public:
 
 private:
 
-  lid_t base_;
   RCP<const User > ingraph_;
   RCP<const xgraph_t > graph_;
   RCP<const Comm<int> > comm_;
@@ -410,7 +396,6 @@ private:
   {
     rowMap_ = graph_->getRowMap();
     colMap_ = graph_->getColMap();
-    base_ = rowMap_->getMinLocalIndex();
     int numV = rowMap_->getNodeNumElements();
     edgeOffsets_.resize(numV+1, 0);
     for (int i=0; i < numV; i++){

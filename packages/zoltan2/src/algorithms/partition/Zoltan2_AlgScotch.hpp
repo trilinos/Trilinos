@@ -140,7 +140,6 @@ void AlgPTScotch(
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr = 0;

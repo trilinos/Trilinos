@@ -75,8 +75,8 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   // Question: Are the matrix global IDs consecutive (locally)?
 
   const GNO *rowIds, *colIds;
-  const LNO *off, *rowLocalIds;
-  size_t n = tmi->getRowListView(rowIds, rowLocalIds, off, colIds);
+  const LNO *off;
+  size_t n = tmi->getRowListView(rowIds, off, colIds);
   bool inARow = Zoltan2::IdentifierTraits<GNO>::areConsecutive(rowIds, n);
 
   if (inARow)

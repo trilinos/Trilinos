@@ -29,7 +29,6 @@ int main(int argc, char *argv[])
   int fail = 0, gfail=0;
 
   typedef double scalar_t;
-  typedef int    lid_t;
   typedef long   gid_t;
   typedef int    lno_t;
   typedef long   gno_t;
@@ -53,20 +52,9 @@ int main(int argc, char *argv[])
   // and verify that it is correct
 
   typedef Zoltan2::BasicUserTypes<
-    scalar_t, lid_t, gid_t, lno_t, gno_t> userTypes_t;
+    scalar_t, gid_t, lno_t, gno_t> userTypes_t;
 
-  Zoltan2::BasicIdentifierInput<userTypes_t> ia(
-    numLocalIds, weightDim, myIds, weights);
-
-  if (!fail && ia.haveLocalIds() != true)
-    fail = 1;
-
-  size_t localIdBase;
-  if (!fail && !ia.haveConsecutiveLocalIds(localIdBase))
-    fail = 2;
-
-  if (!fail && localIdBase != 0)
-    fail = 3;
+  Zoltan2::BasicIdentifierInput<userTypes_t> ia(weightDim, myIds, weights);
 
   if (!fail && ia.getLocalNumIds() != numLocalIds){
     fail = 4;
@@ -76,14 +64,10 @@ int main(int argc, char *argv[])
     fail = 5;
 
   const gid_t *globalIdsIn;
-  const lid_t *localIdsIn;
   const scalar_t *weightsIn;
 
-  if (!fail && ia.getIdList(globalIdsIn, localIdsIn, weightsIn) != numLocalIds)
+  if (!fail && ia.getIdList(globalIdsIn, weightsIn) != numLocalIds)
     fail = 6;
-
-  if (!fail && localIdsIn != NULL)
-    fail = 7;
 
   if (!fail){
     for (lno_t i=0; i < numLocalIds; i++){

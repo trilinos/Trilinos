@@ -39,7 +39,6 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MultiVectorInput<User>       base_adapter_t;
@@ -72,13 +71,6 @@ public:
   std::string inputAdapterName()const {
     return std::string("XpetraMultiVector");}
 
-  bool haveLocalIds() const { return true;}
-
-  bool haveConsecutiveLocalIds(size_t &base)const {
-    base = base_;
-    return true;
-  }
-
   ////////////////////////////////////////////////////
   // The MultiVectorInput interface.
   ////////////////////////////////////////////////////
@@ -90,8 +82,7 @@ public:
   size_t getGlobalLength() const {return vector_->getGlobalLength();}
 
   size_t getMultiVectorView(int i, const gid_t *&Ids, 
-    const lid_t *&localIds, const scalar_t *&elements, 
-    const scalar_t *&wgts) const
+    const scalar_t *&elements, const scalar_t *&wgts) const
   {
     elements = NULL;
     if (map_->lib() == Xpetra::UseTpetra){
@@ -140,7 +131,7 @@ public:
    *   be on the list, or the Import will fail.
    */
   size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
+         const PartitioningSolution<gid_t, lno_t> &solution)
   {
     ArrayRCP<gid_t> gidList = solution.getGidsRCPConst();
     ArrayRCP<size_t> partList = solution.getPartsRCPConst();

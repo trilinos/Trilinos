@@ -40,7 +40,6 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef VectorInput<User>       base_adapter_t;
@@ -85,13 +84,6 @@ public:
   std::string inputAdapterName()const {
     return std::string("XpetraVector");}
 
-  bool haveLocalIds() const { return true;}
-
-  bool haveConsecutiveLocalIds(size_t &base) const{
-    base = base_;
-    return true;
-  }
-
   ////////////////////////////////////////////////////
   // The VectorInput interface.
   ////////////////////////////////////////////////////
@@ -100,8 +92,7 @@ public:
   
   size_t getGlobalLength() const {return vector_->getGlobalLength();}
 
-  size_t getVectorView(const gid_t *&Ids, 
-    const lid_t *&localIds, const scalar_t *&elements, 
+  size_t getVectorView(const gid_t *&Ids, const scalar_t *&elements, 
     const scalar_t *&wgts) const
   {
     elements = NULL;
@@ -142,7 +133,7 @@ public:
    *   be on the list, or the Import will fail.
    */
   size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
+         const PartitioningSolution<gid_t, lno_t> &solution)
   { 
     // Get an import list
 

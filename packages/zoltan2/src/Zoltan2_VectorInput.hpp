@@ -24,7 +24,6 @@ namespace Zoltan2 {
 /*! Zoltan2::VectorInput
     \brief VectorInput defines the interface for input adapters for vectors.
 
-    lid_t: the type for the application's local Ids
     gid_t: the type for the application's global Ids
     lno_t: the integral type that Zoltan2 will use for local counters.
     gno_t: the integral type that Zoltan2 will use for the global 
@@ -47,7 +46,6 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
 
@@ -71,11 +69,6 @@ public:
   /*! Sets pointers to this process' vertex elements.
       \param Ids will on return point to the list of the global Ids for 
         each element on this process.
-      \param localIds can, optionally, on return point to a list of locally
-        relevant values that the process will use to refer to the objects
-        listed in the first list. If localIds is NULL and
-        haveConsecutiveLocalIds is true, it is assumed that the
-        global Ids are in local ID order.
       \param element will on return point to the vector elements
         corresponding to the global Ids.
       \param wgts will on return point to a list of the weight or weights 
@@ -84,7 +77,7 @@ public:
        \return The number of ids in the Ids list.
    */
 
-  virtual size_t getVectorView(const gid_t *&Ids,  const lid_t *&localIds,
+  virtual size_t getVectorView(const gid_t *&Ids, 
      const scalar_t *&element, const scalar_t *&wgts) const = 0;
 
   /*! Given a new mapping of vertex elements to processes,
@@ -95,7 +88,7 @@ public:
    *  TODO   documentation
    */
   size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
+         const PartitioningSolution<gid_t, lno_t> &solution)
   {
     return 0;
   } 

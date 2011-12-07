@@ -25,7 +25,6 @@ namespace Zoltan2 {
 /*! Zoltan2::MultiVectorInput
     \brief MultiVectorInput defines the interface for input adapters sets of vectors
 
-    LID: the type for the application's local Ids
     GID: the type for the application's global Ids
     LNO: the integral type that Zoltan2 will use for local counters.
     GNO: the integral type that Zoltan2 will use for the global 
@@ -51,7 +50,6 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
 
@@ -80,11 +78,6 @@ public:
       \param i  the vector to return, i ranges from 0 to getNumVectors()-1
       \param Ids will on return point to the list of the global Ids for 
         each element on this process.
-      \param localIds can, optionally, on return point to a list of locally
-        relevant values that the process will use to refer to the objects
-        listed in the first list. If localIds is NULL and
-        haveConsecutiveLocalIds is true, it is assumed that the
-        global Ids are in local ID order.
       \param element will on return point to the vector elements
         corresponding to the global Ids.
       \param wgts will on return point to a list of the weight or weights 
@@ -94,8 +87,7 @@ public:
    */
 
   virtual size_t getMultiVectorView(int i, const gid_t *&Ids, 
-     const lid_t *&localIds, const scalar_t *&element, 
-     const scalar_t *&wgts) const = 0;
+     const scalar_t *&element, const scalar_t *&wgts) const = 0;
 
   /*! Given a new mapping of multi vertex elements to processes,
    *    create a new multi vertex with this mapping, and migrate
@@ -105,7 +97,7 @@ public:
    *  TODO   documentation
    */
   size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
+         const PartitioningSolution<gid_t, lno_t> &solution)
   {
     return 0;
   } 

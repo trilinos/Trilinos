@@ -41,7 +41,6 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
 
@@ -62,19 +61,13 @@ public:
   /*! Sets pointers to this process' identifiers.
       \param Ids will on return point to the list of the global Ids for 
         this process.
-      \param localIds can, optionally, on return point to a list of locally
-        relevant values that the process will use to refer to the objects
-        listed in the first list. If localIds is NULL and
-        haveConsecutiveLocalIds is true, it is assumed that the
-        global Ids are in local ID order.
       \param wgts will on return point to a list of the weight or weights 
          associated with each element in the Ids list.  Weights are listed by 
          identifier by weight component.
        \return The number of ids in the Ids list.
    */
 
-  virtual size_t getIdList(const gid_t *&Ids,  const lid_t *&localIds,
-    const scalar_t *&weights) const = 0;
+  virtual size_t getIdList(const gid_t *&Ids, const scalar_t *&wgts) const = 0;
 
   /*! Given a new mapping of identifiers to partitions,
    *    migrate the identifiers to the new partitions.
@@ -82,7 +75,7 @@ public:
    *    defined if you want to redistribute your objects. 
    */
   size_t applyPartitioningSolution(User &in, User *&out,
-    const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
+    const PartitioningSolution<gid_t, lno_t> &solution)
   {
     return 0;
   } 

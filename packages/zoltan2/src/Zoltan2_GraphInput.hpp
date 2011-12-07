@@ -39,9 +39,6 @@ public:
   /*! \brief Data type for Zoltan2's global identifiers and counts. */
   typedef typename InputTraits<User>::gno_t    gno_t;
 
-  /*! \brief The application's local identifier data type. */
-  typedef typename InputTraits<User>::lid_t    lid_t;
-
   /*! \brief The application's global identifier data type. */
   typedef typename InputTraits<User>::gid_t    gid_t;
 
@@ -86,11 +83,6 @@ public:
 
   /*! \brief Sets pointers to this process' graph entries.
       \param vertexIds will on return a pointer to vertex global Ids
-      \param localIds can, optionally, on return hold a list of locally
-        relevant values that the process will use to refer to the objects
-        listed in the first list.  If localIds are omitted and
-        haveConsecutiveLocalIds is true, it is assumed that the
-        global Ids are in local Id order.
       \param offsets is an array of size numVertices + 1.  
          The edge Ids for vertexId[i] begin at edgeIds[offsets[i]].  
           The last element of offsets
@@ -101,7 +93,6 @@ public:
    */
 
   virtual size_t getVertexListView(const gid_t *&vertexIds, 
-    const lid_t *&localIds, 
     const lno_t *&offsets, const gid_t *& edgeIds) const = 0; 
 
   /*! \brief Apply the solution to a partitioning problem to an input.  
@@ -117,14 +108,6 @@ public:
    *           data that instantiated this InputAdapter.
    *  \param out On return this should point to a newly created object 
    *            with the specified partitioning.
-   *  \param numIds  The number of ids in the gid and partition lists.
-   *  \param numParts  The global number of partitions.  Partitions are 
-   *     numbered from 0 through numParts-1. 
-   *  \param gid     A list of object global Ids.
-   *  \param lid     A corresponding list of object local Ids, if the
-   *      InputAdapter had supplied local Ids.
-   *  \param partition  A corresponding list of partitions.  gid[i]
-   *            has been assigned to partition[i].
    *  \return   Returns the number of local Ids in the new partitioning.
    *
    * TODO - A solution needs to be more than a list of partitions, but
@@ -133,7 +116,7 @@ public:
    */
 
   size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<gid_t, lid_t, lno_t> &solution)
+         const PartitioningSolution<gid_t, lno_t> &solution)
   {
     return 0;
   }

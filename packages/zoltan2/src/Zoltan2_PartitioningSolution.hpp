@@ -24,8 +24,8 @@ namespace Zoltan2 {
     Just a placeholder for now.
 */
 
-template <typename gid_t, typename lid_t, typename lno_t>
-  class PartitioningSolution : public Solution<gid_t, lid_t, lno_t>
+template <typename gid_t, typename lno_t>
+  class PartitioningSolution : public Solution<gid_t, lno_t>
 {
 public:
 
@@ -33,15 +33,12 @@ public:
   // Constructor allocates memory for the solution.
   PartitioningSolution(
     size_t nparts,
-    size_t ngids,
-    size_t nlids
+    size_t ngids
   )
   {
     HELLO;
     nParts_ = nparts;
     gids_   = ArrayRCP<gid_t>(ngids);
-    if (nlids) lids_   = ArrayRCP<lid_t>(nlids);
-    else       lids_   = ArrayRCP<lid_t>(Teuchos::null);
     parts_  = ArrayRCP<size_t>(ngids);
   }
 
@@ -52,16 +49,11 @@ public:
   inline size_t getNumParts() {return nParts_;}
 
   inline ArrayRCP<gid_t>  &getGidsRCP()  {return gids_;}
-  inline ArrayRCP<lid_t>  &getLidsRCP()  {return lids_;}
   inline ArrayRCP<size_t> &getPartsRCP() {return parts_;}
 
   inline ArrayRCP<gid_t>  &getGidsRCPConst()  const
   {
     return const_cast<ArrayRCP<gid_t>& > (gids_);
-  }
-  inline ArrayRCP<lid_t>  &getLidsRCPConst()  const
-  {
-    return const_cast<ArrayRCP<lid_t>& > (lids_);
   }
   inline ArrayRCP<size_t> &getPartsRCPConst() const
   {
@@ -73,11 +65,6 @@ public:
     *length = gids_.size();
     return gids_.getRawPtr();
   }
-  inline lid_t  *getLids(size_t *length)
-  {
-    *length = lids_.size();
-    return (lids_.is_null() ? (lid_t*) NULL : lids_.getRawPtr());
-  }
   inline size_t *getParts(size_t *length)
   {
     *length = parts_.size();
@@ -85,11 +72,13 @@ public:
   }
 
 protected:
-  // Partitioning solution consists of GIDs, LIDs, and part assignments.
+  // Partitioning solution consists of User's global IDs, listed in
+  // the order in which they appeared in the input adapters "get" method,
+  // and the part assigned to each global ID.
+
   size_t nParts_;
-  ArrayRCP<gid_t>  gids_;
-  ArrayRCP<lid_t>  lids_;
-  ArrayRCP<size_t> parts_;
+  ArrayRCP<gid_t>  gids_;    // User's global IDs from adapter "get" method
+  ArrayRCP<size_t> parts_;   // part number assigned to gids_[i]
 };
 
 }
