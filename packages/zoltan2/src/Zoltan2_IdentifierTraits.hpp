@@ -638,9 +638,9 @@ struct IdentifierTraits<long long> {
 };
 
 template<>
-struct IdentifierTraits<unsigned long long > {
+struct IdentifierTraits<long long unsigned int> {
   typedef unsigned long ulong;
-  typedef unsigned long long ullong;
+  typedef long long unsigned int ullong;
   typedef long long llong;
   static inline int hashCode(const ullong a) { 
     return IdentifierTraits<long long>::hashCode(static_cast<long long>(a));}
