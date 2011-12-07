@@ -33,8 +33,8 @@ int AlgRCM(
 
   // TEST: return the identity permutation.
   const size_t nVtx = model->getLocalNumVertices();
-  lno_t *perm;
-  perm = new lno_t[nVtx];
+  RCP<lno_t> perm;
+  perm = solution->getPermRCP();
   for (lno_t i=0; i<nVtx; i++){
 #ifdef RCM
     perm[i] = -1;
@@ -85,13 +85,6 @@ int AlgRCM(
     root = next;
   }
 #endif
-
-  // Set solution.
-  solution->setPermutation(nVtx,
-               (gid_t *) NULL, // TODO
-               perm);
-
-  // delete [] perm; // Can't delete perm yet, RCP would help here?
 
   return ierr;
 }
