@@ -34,12 +34,11 @@ int Zoltan_OVIS_Setup(
   ZZ *zz        /* Zoltan structure; needed for parameters */
 ) 
 {
-  printf("KDDKDD BEGIN %s\n", __func__);
   /* Allow OVIS parameters to be passed to Zoltan via Zoltan_Set_Param */
   /* Three example parameters below. */
 
   /* Declare variables for parameter values; initialize to default values */
-  char   ovis_hello[22];
+  char   ovis_hello[MAX_PARAM_STRING_LEN];
   int    ovis_output_level = 1;
   double ovis_minversion = 0.1;
   strcpy(ovis_hello, "Howdy, Shorty!");
@@ -58,7 +57,6 @@ int Zoltan_OVIS_Setup(
   Zoltan_Assign_Param_Vals(zz->Params, OVIS_params, 7, zz->Proc,
                            zz->Debug_Proc);
 
-  printf("KDDKDD DONE %s\n", __func__);
   return ZOLTAN_OK;
 }
 
