@@ -1,0 +1,9 @@
+Sierra: this is version 20110202 of OpenNURBS, tweaked to remove
+trailing commas from some enums that were causing compile failures. 
+
+OpenNURBS is used in the stk_adapt package for tying geometry to
+refinement. 
+
+This package is available here: 
+
+     http://en.wiki.mcneel.com/default.aspx/McNeel/OpenNURBS.html

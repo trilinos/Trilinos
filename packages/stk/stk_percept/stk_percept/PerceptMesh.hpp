@@ -174,6 +174,9 @@ namespace stk {
       getNumberElements();
 
       int
+      getNumberNodes();
+
+      int
       getNumberEdges();
 
       int

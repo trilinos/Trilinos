@@ -1,0 +1,251 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		367D3CAC0C566D6A00EB7BB9 /* example_ud.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 367D3CAA0C566D6A00EB7BB9 /* example_ud.cpp */; };
+		367D3CAD0C566D6A00EB7BB9 /* example_userdata.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 367D3CAB0C566D6A00EB7BB9 /* example_userdata.cpp */; };
+		367D3CBB0C566DA600EB7BB9 /* example_ud.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 367D3CBA0C566DA600EB7BB9 /* example_ud.h */; };
+		367D3CC10C566DB800EB7BB9 /* libopennurbs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 367D3CB80C566D8700EB7BB9 /* libopennurbs.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		367D3CB70C566D8700EB7BB9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 367D3CB00C566D8700EB7BB9 /* opennurbs.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = D2AAC046055464E500DB518D;
+			remoteInfo = opennurbs;
+		};
+		367D3CC70C566DFC00EB7BB9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 367D3CB00C566D8700EB7BB9 /* opennurbs.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D2AAC045055464E500DB518D;
+			remoteInfo = opennurbs;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8DD76F690486A84900D96B5E /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				367D3CBB0C566DA600EB7BB9 /* example_ud.h in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		367D3CAA0C566D6A00EB7BB9 /* example_ud.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = example_ud.cpp; sourceTree = "<group>"; };
+		367D3CAB0C566D6A00EB7BB9 /* example_userdata.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = example_userdata.cpp; sourceTree = "<group>"; };
+		367D3CB00C566D8700EB7BB9 /* opennurbs.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = opennurbs.xcodeproj; path = ../opennurbs.xcodeproj; sourceTree = SOURCE_ROOT; };
+		367D3CBA0C566DA600EB7BB9 /* example_ud.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = example_ud.h; sourceTree = "<group>"; };
+		8DD76F6C0486A84900D96B5E /* example_userdata */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = example_userdata; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8DD76F660486A84900D96B5E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				367D3CC10C566DB800EB7BB9 /* libopennurbs.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* example_userdata */ = {
+			isa = PBXGroup;
+			children = (
+				08FB7795FE84155DC02AAC07 /* Source */,
+				367D3CB90C566D9400EB7BB9 /* Header */,
+				367D3CB00C566D8700EB7BB9 /* opennurbs.xcodeproj */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+			);
+			name = example_userdata;
+			sourceTree = "<group>";
+		};
+		08FB7795FE84155DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				367D3CAA0C566D6A00EB7BB9 /* example_ud.cpp */,
+				367D3CAB0C566D6A00EB7BB9 /* example_userdata.cpp */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8DD76F6C0486A84900D96B5E /* example_userdata */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		367D3CB10C566D8700EB7BB9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				367D3CB80C566D8700EB7BB9 /* libopennurbs.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		367D3CB90C566D9400EB7BB9 /* Header */ = {
+			isa = PBXGroup;
+			children = (
+				367D3CBA0C566DA600EB7BB9 /* example_ud.h */,
+			);
+			name = Header;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8DD76F620486A84900D96B5E /* example_userdata */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB923108733DC60010E9CD /* Build configuration list for PBXNativeTarget "example_userdata" */;
+			buildPhases = (
+				8DD76F640486A84900D96B5E /* Sources */,
+				8DD76F660486A84900D96B5E /* Frameworks */,
+				8DD76F690486A84900D96B5E /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				367D3CC80C566DFC00EB7BB9 /* PBXTargetDependency */,
+			);
+			name = example_userdata;
+			productInstallPath = "$(HOME)/bin";
+			productName = example_userdata;
+			productReference = 8DD76F6C0486A84900D96B5E /* example_userdata */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "example_userdata" */;
+			compatibilityVersion = "Xcode 2.4";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = 08FB7794FE84155DC02AAC07 /* example_userdata */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 367D3CB10C566D8700EB7BB9 /* Products */;
+					ProjectRef = 367D3CB00C566D8700EB7BB9 /* opennurbs.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				8DD76F620486A84900D96B5E /* example_userdata */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		367D3CB80C566D8700EB7BB9 /* libopennurbs.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libopennurbs.a;
+			remoteRef = 367D3CB70C566D8700EB7BB9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8DD76F640486A84900D96B5E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				367D3CAC0C566D6A00EB7BB9 /* example_ud.cpp in Sources */,
+				367D3CAD0C566D6A00EB7BB9 /* example_userdata.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		367D3CC80C566DFC00EB7BB9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = opennurbs;
+			targetProxy = 367D3CC70C566DFC00EB7BB9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB923208733DC60010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
+				PRODUCT_NAME = example_userdata;
+			};
+			name = Debug;
+		};
+		1DEB923308733DC60010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT_PRE_XCODE_3_1)";
+				ARCHS_STANDARD_32_64_BIT_PRE_XCODE_3_1 = "x86_64 i386 ppc";
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				PRODUCT_NAME = example_userdata;
+			};
+			name = Release;
+		};
+		1DEB923608733DC60010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		1DEB923708733DC60010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB923108733DC60010E9CD /* Build configuration list for PBXNativeTarget "example_userdata" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB923208733DC60010E9CD /* Debug */,
+				1DEB923308733DC60010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "example_userdata" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB923608733DC60010E9CD /* Debug */,
+				1DEB923708733DC60010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}

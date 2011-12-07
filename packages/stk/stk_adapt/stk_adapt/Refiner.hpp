@@ -19,7 +19,7 @@
 #endif
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
-#include <stk_adapt/geometry/MeshGeometry.hpp>
+#include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
 #endif
 
 #include <Shards_BasicTopologies.hpp>

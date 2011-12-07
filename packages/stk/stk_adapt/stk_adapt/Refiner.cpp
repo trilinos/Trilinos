@@ -12,9 +12,12 @@
 #include <stk_percept/MeshUtil.hpp>
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
-#include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
-#include <stk_adapt/geometry/MeshGeometry.hpp>
-#include <stk_adapt/geometry/GeometryFactory.hpp>
+// #include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
+// #include <stk_adapt/geometry/MeshGeometry.hpp>
+// #include <stk_adapt/geometry/GeometryFactory.hpp>
+#include <stk_percept/mesh/geometry/kernel/GeometryKernelOpenNURBS.hpp>
+#include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
+#include <stk_percept/mesh/geometry/kernel/GeometryFactory.hpp>
 #endif
 
 #include <stk_adapt/NodeRegistryDef.hpp>
@@ -1290,7 +1293,7 @@ namespace stk {
             }
         }
 
-      //std::cout << "P[" << m_eMesh.getRank() << "] tmp number of dangling nodes = " << node_list.size() << " and pseudos= " << pseudos.size() << std::endl;
+      if (0 && node_list.size()) std::cout << "P[" << m_eMesh.getRank() << "] tmp number of dangling nodes = " << node_list.size() << " and pseudos= " << pseudos.size() << std::endl;
 
       if (1)
         {

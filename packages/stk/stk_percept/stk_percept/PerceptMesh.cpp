@@ -587,6 +587,20 @@ namespace stk {
     }
 
     int PerceptMesh::
+    getNumberNodes()
+    {
+      std::vector<unsigned> count ;
+      stk::mesh::Selector selector(getFEM_meta_data()->universal_part());
+      stk::mesh::count_entities( selector, *getBulkData(), count );
+      if (count.size() < 3)
+        {
+          throw std::logic_error("logic error in PerceptMesh::getNumberElements");
+        }
+
+      return count[ node_rank() ];
+    }
+
+    int PerceptMesh::
     getNumberElementsLocallyOwned()
     {
       std::vector<unsigned> count ;
