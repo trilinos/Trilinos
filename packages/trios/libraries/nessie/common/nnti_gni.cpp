@@ -35,8 +35,8 @@
 
 
 
-#define USE_RDMA_EVENTS
 #undef USE_RDMA_EVENTS
+#define USE_RDMA_EVENTS
 
 #undef USE_RDMA_FENCE
 #define USE_RDMA_FENCE
@@ -996,8 +996,6 @@ NNTI_result_t NNTI_gni_disconnect (
     gni_connection *conn=get_conn_peer(peer_hdl);
     close_connection(conn);
     del_conn_peer(peer_hdl);
-
-    free(peer_hdl->url);
 
     log_debug(nnti_ee_debug_level, "exit");
 
