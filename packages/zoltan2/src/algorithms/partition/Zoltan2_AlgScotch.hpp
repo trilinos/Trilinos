@@ -121,15 +121,12 @@ struct SCOTCH_Num_Traits<SCOTCH_Num> {
 
 template <typename Adapter>
 void AlgPTScotch(
-  const size_t nParts,
-  const RCP<GraphModel<Adapter> > &model,
-  RCP<PartitioningSolution<typename Adapter::gid_t,
-                           typename Adapter::lid_t,
-                           typename Adapter::lno_t> > &solution,
-  const RCP<Teuchos::ParameterList> &pl,
-  const RCP<const Teuchos::Comm<int> > &comm,
-  const RCP<const Environment> &env
-)
+  const RCP<const Environment> &env,        // parameters & app comm
+  const RCP<const Comm<int> > &problemComm, // problem comm
+  const RCP<GraphModel<Adapter> > &model,   // the graph
+  size_t numParts,                          // number of parts
+  ArrayView<size_t> partList                // return parts here
+) 
 {
 #ifndef HAVE_SCOTCH
   throw std::runtime_error(
@@ -148,7 +145,7 @@ void AlgPTScotch(
 
   int ierr = 0;
   SCOTCH_Num partnbr;
-  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, nParts, env);
+  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numParts, env);
 
 #ifdef HAVE_MPI
 
@@ -159,8 +156,8 @@ void AlgPTScotch(
                                   // TODO:  Set from parameters
   SCOTCH_stratInit(&stratstr);
 
-  MPI_Comm mpicomm = *(rcp_dynamic_cast<const Teuchos::MpiComm<int> >
-                                       (comm)->getRawMpiComm());
+  MPI_Comm mpicomm = *(rcp_dynamic_cast<const Teuchos::MpiComm<int> >(
+    problemComm)->getRawMpiComm());
 
   // Allocate & initialize PTScotch data structure.
   SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
@@ -224,7 +221,7 @@ void AlgPTScotch(
   SCOTCH_Num *partloctab;
   if (sizeof(SCOTCH_Num) == sizeof(size_t)) {
     // Can write directly into the solution's memory
-    partloctab = (SCOTCH_Num *) (solution->getPartsRCP().getRawPtr());
+    partloctab = (SCOTCH_Num *) partList.getRawPtr();
   }
   else {
     // Can't use solution memory directly; will have to copy later.
@@ -237,6 +234,7 @@ void AlgPTScotch(
   if (ierr) KDD_HANDLE_ERROR;
 
 #ifdef SHOW_SCOTCH_HIGH_WATER_MARK
+  int me = env->comm_->getRank();
   if (me == 0){
     size_t scotchBytes = SCOTCH_getMemoryMax();
     std::cout << "Rank " << me << ": Maximum bytes used by Scotch: ";
@@ -251,23 +249,7 @@ void AlgPTScotch(
   // Load answer into the solution.
 
   if (sizeof(SCOTCH_Num) != sizeof(size_t)) {
-    // Need to copy parts if didn't use parts array directly from Solution.
-    ArrayRCP<size_t> solnParts = solution->getPartsRCP();
-    for (size_t i = 0; i < nVtx; i++) solnParts[i] = partloctab[i];
-    delete [] partloctab;
-  }
-
-  if (!(model->getIdentifierMap().is_null())) {
-    // TODO Need to translate vtxIDs to GIDs for solution
-    Z2_LOCAL_BUG_ASSERTION(*env, "GID translation not yet implemented", 1, 0);
-  }
-  else {
-    // Copy vtxIDs to Solution, assuming vtxIDs == GIDs.
-    // TODO:  Handling of LIDs is not yet clear.
-    ArrayRCP<gid_t> solnGIDs = solution->getGidsRCP();
-    ArrayRCP<lid_t> solnLIDs = solution->getLidsRCP();
-    for (size_t i = 0; i < nVtx; i++) solnGIDs[i] = vtxID[i];
-    for (size_t i = 0; i < solnLIDs.size(); i++) solnLIDs[i] = i; // TODO NOT CORRECT YET. KDD
+    for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
   }
 
 #ifdef SHOW_LINUX_MEMINFO
@@ -303,21 +285,8 @@ void AlgPTScotch(
   ArrayView<const scalar_t> vtxWt;
   size_t nVtx = model->getVertexList(vtxID, xyz, vtxWt);
 
-  ArrayRCP<size_t> solnParts = solution->getParts();
-  for (size_t i = 0; i < nVtx; i++) solnParts[i] = 0;
+  for (size_t i = 0; i < nVtx; i++) partList[i] = 0;
 
-  if (!(model->getIdentifierMap().isNull())) {
-    // TODO Need to translate vtxIDs to GIDs for solution
-    Z2_LOCAL_BUG_ASSERTION(*env, "GID translation not yet implemented", 1, 0);
-  }
-  else {
-    // Copy vtxIDs to Solution, assuming vtxIDs == GIDs.
-    // TODO:  Handling of LIDs is not yet clear.
-    RCP<gid_t> solnGIDs = solution->getGidRCP();
-    RCP<lid_t> solnLIDs = solution->getLidRCP();
-    for (size_t i = 0; i < nVtx; i++) solnGIDs[i] = vtxID[i];
-    for (size_t i = 0; i < solnLIDs->size(); i++) solnLIDs[i] = i; // TODO NOT CORRECT YET. KDD
-  }
 
 #endif // DO NOT HAVE_MPI
 #endif // HAVE_SCOTCH

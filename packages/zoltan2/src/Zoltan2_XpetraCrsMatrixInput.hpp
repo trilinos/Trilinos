@@ -46,6 +46,7 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
+  typedef MatrixInput<User>       base_adapter_t;
 
   /*! Destructor
    */

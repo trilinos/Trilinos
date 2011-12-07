@@ -43,8 +43,11 @@ using Teuchos::rcp_implicit_cast;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::Array;
 using Teuchos::ArrayRCP;
+using Teuchos::arcp_const_cast;
+using Teuchos::arcp_reinterpret_cast;
 using Teuchos::arcp;
 using Teuchos::ArrayView;
+using Teuchos::av_const_cast;
 #ifdef HAVE_MPI
 using Teuchos::MpiComm;
 #endif

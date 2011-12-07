@@ -43,6 +43,7 @@ public:
   typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
+  typedef VectorInput<User>       base_adapter_t;
 
   typedef Xpetra::Vector<
     scalar_t, lno_t, gno_t, node_t> x_vector_t;
@@ -145,12 +146,15 @@ public:
   { 
     // Get an import list
 
-    ArrayRCP<gid_t> gidList = solution.getGidsRCPConst();
-    ArrayRCP<size_t> partList = solution.getPartsRCPConst();
+    ArrayRCP<gid_t> &gidList = solution.getGidsRCPConst();
+    ArrayRCP<size_t> &partList = solution.getPartsRCPConst();
     ArrayRCP<lno_t> dummyIn;
     ArrayRCP<gid_t> importList;
     ArrayRCP<lno_t> dummyOut;
     size_t numNewRows;
+
+std::cout << gidList.size() << std::endl;
+std::cout << partList.size() << std::endl;
 
     const RCP<const Comm<int> > comm = map_->getComm(); 
 

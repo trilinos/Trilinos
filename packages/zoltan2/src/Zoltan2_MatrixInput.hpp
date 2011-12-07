@@ -51,7 +51,7 @@ public:
   // adapterType == MatrixAdapterType
   // Function must return one of Zoltan2's enumerated types in InputAdapter
   // User should not rewrite this function.
-  enum InputAdapterType inputAdapterType() {return MatrixAdapterType;}
+  enum InputAdapterType inputAdapterType() const {return MatrixAdapterType;}
 
   /*! Pure virtual Destructor
    */

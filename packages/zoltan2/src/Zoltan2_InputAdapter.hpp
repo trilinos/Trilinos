@@ -29,7 +29,7 @@ enum InputAdapterType {
   MatrixAdapterType,    /*!< matrix input */
   MeshAdapterType,    /*!< mesh input */
   GraphAdapterType,    /*!< graph input */
-  CoordAdapterType,    /*!< coordinate input */
+  CoordinateAdapterType,    /*!< coordinate input */
   VectorAdapterType,    /*!< vector input*/
   MultiVectorAdapterType,    /*!< multivector input*/
   IdentifierAdapterType,    /*!< plain identifier input*/
@@ -66,7 +66,7 @@ public:
 
   /*! \brief Return type of adapter.
    */
-  virtual enum InputAdapterType inputAdapterType() = 0;
+  virtual enum InputAdapterType inputAdapterType()const = 0;
 
   /*! \brief Pure virtual destructor
    */

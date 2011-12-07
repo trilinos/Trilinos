@@ -28,7 +28,7 @@ enum ModelType {
   HypergraphModelType,
   GraphModelType,
   GeometryModelType,
-  IdModelType
+  IdentifierModelType
 };
 
 
@@ -51,50 +51,41 @@ public:
 
   /*! Constructor
    */
-  Model() : requireConsecutiveIds_(false), idMap_() {}
+  Model() : idMap_() {}
 
-  /*! An algorithm or TPL may require consecutive global IDs.
-   *
-   * \param c  If true, a model will be created that has
-   *   consecutive global ids.  If false, the most convenient
-   *   global numbering will be used.
-   */
-
-  void setRequireConsecutiveIds(bool c) {requireConsecutiveIds_=c;}
-
-  /*! An algorithm or TPL may require consecutive global IDs.
-   *
-   *   \return  true, if a model will be created that has
-   *      consecutive global ids.  false, if the most convenient
-   *      global numbering will be used.
-   */
-  bool getRequireConsecutiveIds()  { return requireConsecutiveIds_; }
-
-  /*! Return the IdentifierMap used by the model.
-   *
+   /*!
    *  Every model must have an IdentifierMap, whether it needs for mapping 
-   *  or not. The Map can simply indicate that Zoltan2 global numbers are identical
-   *  to the application's global IDs.
+   *  or not. The Map can simply indicate that Zoltan2 global numbers are 
+   *  identical to the application's global IDs.
    */
-  template <typename lid_t, typename gid_t, typename lno_t, typename gno_t>
-    const RCP<const Zoltan2::IdentifierMap<lid_t, gid_t, lno_t, gno_t> > &getIdentifierMap()
-    {
-      return idMap_;
-    }
+  const RCP<const idmap_t > getIdentifierMap() { return idMap_; }
+
+  /*! Return the local number of objects, which may be
+   *  vertices, matrix rows, identifiers, coordinates,
+   *  or mesh nodes or elements.
+   */
+  virtual size_t getLocalNumObjects() const = 0;
+
+  /*! Return the global number of objects, which may be
+   *  vertices, matrix rows, identifiers, coordinates,
+   *  or mesh nodes or elements.
+   */
+  virtual global_size_t getGlobalNumObjects() const = 0;
+
+  /*! Set a view to the list of object global numbers, which may be
+   *  vertex IDs, matrix row IDs, identifiers, coordinate IDs,
+   *  or mesh node or element IDs.
+   */
+  virtual void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const = 0;
 
 protected:
 
   /*! Set the IdentifierMap used by the model.
    */
-  template <typename lid_t, typename gid_t, typename lno_t, typename gno_t>
-    void setIdentifierMap(RCP<const idmap_t> &map)
-    {
-      idMap_ = map; 
-    }
+  void setIdentifierMap(RCP<const idmap_t> &map) { idMap_ = map; }
 
 private:
 
-  bool requireConsecutiveIds_;
   RCP<const idmap_t> idMap_;
 };
 

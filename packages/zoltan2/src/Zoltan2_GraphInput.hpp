@@ -48,7 +48,7 @@ public:
   /*! \brief The Kokkos node type. */
   typedef typename InputTraits<User>::node_t   node_t;
 
-  enum InputAdapterType inputAdapterType() {return GraphAdapterType;}
+  enum InputAdapterType inputAdapterType() const {return GraphAdapterType;}
 
   /*! \brief Pure virtual destructor
    */

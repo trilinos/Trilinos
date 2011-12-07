@@ -75,11 +75,12 @@ void OrderingProblem<Adapter>::solve()
   // Need some exception handling here, too.
 
   string method = this->params_->template get<string>("ORDER_METHOD", "RCM");
+  typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // TODO: Ignore case
   if (method.compare("RCM") == 0)
   {
-      AlgRCM<Adapter>(this->graphModel_, this->solution_, this->params_,
+      AlgRCM<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
                       this->comm_);
   }
   else if (method.compare("Minimum_Degree") == 0)
@@ -87,7 +88,7 @@ void OrderingProblem<Adapter>::solve()
       string pkg = this->params_->template get<string>("ORDER_PACKAGE", "AMD");
       if (pkg.compare("AMD") == 0)
       {
-          AlgAMD<Adapter>(this->graphModel_, this->solution_, this->params_,
+          AlgAMD<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
                           this->comm_);
       }
   }
@@ -125,20 +126,31 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   ModelType modelType = GraphModelType;
 
+  typedef typename Adapter::base_adapter_t base_adapter_t;
+
+  // TODO: This doesn't work.  baseInputAdapter_.getRawPtr() is NULL.
+  //
+  // RCP<const base_adapter_t> baseInputAdapter_ =
+  //   rcp_implicit_cast<const base_adapter_t>(this->inputAdapter_);
+  //
+  // So to pass the InputAdapter to the Model we use a raw pointer.
+  // Since the Problem creates the Model and will destroy it when
+  // done, the Model doesn't really need an RCP to the InputAdapter.
+  // But it would be nice if that worked.
+
+  const base_adapter_t *baseAdapter = this->inputAdapter_.getRawPtr();
+
   // Select Model based on parameters and InputAdapter type
   switch (modelType) {
 
   case GraphModelType:
-
-    this->graphModel_ = RCP<GraphModel<Adapter> > 
-                        (new GraphModel<Adapter>(this->inputAdapter_,
-                                                 this->comm_, this->env_,
-                                                 false, true));
+    this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
+      baseAdapter, this->env_, false, true));
     break;
 
   case HypergraphModelType:
   case GeometryModelType:
-  case IdModelType:
+  case IdentifierModelType:
     cout << __func__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;

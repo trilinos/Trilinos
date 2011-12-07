@@ -37,6 +37,7 @@ public:
   typedef typename InputTraits<User>::lid_t    lid_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
+  typedef IdentifierInput<User>       base_adapter_t;
 
   BasicIdentifierInput(lno_t numIds, int numWeights, const gid_t *ids, 
     const scalar_t *weights): numIds_(numIds), numWeights_(numWeights), 

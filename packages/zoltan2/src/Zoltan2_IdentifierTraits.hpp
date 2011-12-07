@@ -29,6 +29,8 @@ using Teuchos::SerializationTraits;
 
   Zoltan2 uses the IdentifierTraits structures to manage the application
   supplied identifiers.
+
+  TODO  can we use as instead of the casts
 */
 
 /*! \namespace Zoltan2
@@ -780,6 +782,83 @@ struct IdentifierTraits<std::pair<T1, T2> > {
       throw std::logic_error("invalid call");
       return false; }
 };
+
+//////////////////////////////////////////////////////////////
+//  A helper function.  Are the ordinals globally consecutive?
+//    If IDs are globally consecutive, then return true and
+//    set nprocs+1 length dist array to proc starting IDs.
+//////////////////////////////////////////////////////////////
+
+template <typename T>
+  bool globallyConsecutiveOrdinals(const T* val, size_t len, size_t globalLen,
+    const Comm<int> &comm, const Environment &env,
+    ArrayView<T> dist)
+{
+  bool globallyConsecutive = false;
+
+  if (!IdentifierTraits<T>::isGlobalOrdinal()){
+    return globallyConsecutive;
+  }
+
+  // Are they consecutive and increasing with process rank?
+
+  bool locallyConsecutiveIncreasing =
+    IdentifierTraits<T>::areConsecutive(val, len);
+
+  int localFlag = (locallyConsecutiveIncreasing ? 1 : 0);
+  int globalFlag = 0;
+
+  try{
+    Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MIN, 1,
+      &localFlag, &globalFlag);
+  }
+  catch (const std::exception &e) {
+    Z2_THROW_OUTSIDE_ERROR(env, e);
+  }
+
+  if (globalFlag == 1){
+
+    std::pair<T, T> minMax = IdentifierTraits<T>::globalMinMax(
+      val[0], val[len-1], comm);
+
+    T globalMin = minMax.first;
+    T globalMax = minMax.second;
+
+    if (globalMax - globalMin + 1 == globalLen){
+
+      int nprocs = comm.getSize();
+
+      Array<T> sendBuf(nprocs, val[0]);
+      ArrayRCP<T> recvBuf;
+
+      // We use Zoltan2::AlltoAll because T may
+      // not be a Teuchos Packet type at compile time.
+
+      try{
+        AlltoAll<T,int>(comm, env, sendBuf, 1, recvBuf);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+
+      globallyConsecutive = true;
+
+      for (int i=1; i < nprocs; i++){
+        if (IdentifierTraits<T>::lessThan(recvBuf[i-1], recvBuf[i]))
+          continue;
+        globallyConsecutive = false;
+        break;
+      }
+
+      if (globallyConsecutive){
+        if (dist.size() <= nprocs)
+          throw std::logic_error("dist not preallocated");
+
+        memcpy(dist.getRawPtr(), recvBuf.getRawPtr(), sizeof(T)*nprocs);
+        dist[nprocs] = globalLen + dist[0];
+      }
+    }
+  }
+  return globallyConsecutive;
+}
 
 /*! \endcond
  */

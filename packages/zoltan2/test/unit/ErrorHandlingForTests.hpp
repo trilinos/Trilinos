@@ -60,14 +60,14 @@ exit(code);\
 
 #endif
 
-int globalFail(RCP<const Comm<int> > &comm, int fail)
+int globalFail(const RCP<const Comm<int> > &comm, int fail)
 {
   int gfail=0;
   reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &fail, &gfail);
   return gfail;
 }
 
-void printFailureCode(RCP<const Comm<int> > &comm, int fail)
+void printFailureCode(const RCP<const Comm<int> > &comm, int fail)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();

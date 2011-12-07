@@ -3,10 +3,14 @@ INCLUDE(AddSubdirectories)
 #scaling
 #temp
 #util
+#data
+#partitioning
+#ordering
+#unit
 
 ADD_SUBDIRECTORIES(
-data
-partitioning
-ordering
 unit
+ordering
+partitioning
+data
   )

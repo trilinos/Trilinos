@@ -4,11 +4,8 @@
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_Environment.hpp>
 
-#include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-
 #include <Zoltan2_GraphModel.hpp>
+#include <Zoltan2_IdentifierModel.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
 
@@ -47,12 +44,21 @@ public:
   virtual void solve() = 0;
 
 protected:
-  RCP<Adapter> inputAdapter_;
-  RCP<GraphModel<Adapter> > graphModel_;  
+  typedef typename Adapter::base_adapter_t base_adapter_t;
+
+  RCP<const Adapter> inputAdapter_;
+  RCP<const base_adapter_t> baseInputAdapter_;
+
+  RCP<GraphModel<base_adapter_t> > graphModel_;  
+  RCP<IdentifierModel<base_adapter_t> > identifierModel_;  
+
+  RCP<Model<base_adapter_t> > generalModel_;  
+
   // KDDKDD May want other models, too, for eval, printing, etc.
   RCP<Teuchos::ParameterList> params_;
   RCP<const Teuchos::Comm<int> > comm_;
-  RCP<const Environment> env_;
+  RCP<Environment> env_;
+  RCP<const Environment> envConst_;
 
 private:
 
@@ -86,9 +92,12 @@ Problem<Adapter>::Problem(
   inputAdapter_(RCP<Adapter>(input,false)),
   params_(RCP<Teuchos::ParameterList>(params,false)),
   comm_(comm),
-  env_(Teuchos::RCP<const Environment>(new Environment(*params, comm_)))
+  env_(Teuchos::RCP<Environment>(new Environment(*params, comm_)))
 {
   HELLO;
+
+  envConst_ = rcp_const_cast<const Environment>(env_);
+  
 //  cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() 
 //       << " " << inputAdapter_->inputAdapterName() 
 //       << " sizeof(scalar_t)= " 

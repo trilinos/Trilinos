@@ -60,6 +60,8 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   // Zoltan2 user data input adapter
   typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
 
+  typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
+
   // Test adapter generator
   TestAdapters<Scalar,LNO,GNO,LNO,GNO,Node> *input;
 
@@ -68,7 +70,6 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   else
     input = new TestAdapters<Scalar,LNO,GNO,LNO,GNO,Node>(xdim,ydim,zdim,comm);
 
-  // TODO return by reference
   RCP<adapter_t> tmi = input->getTpetraCrsMatrixInputAdapter();
 
   // Question: Are the matrix global IDs consecutive (locally)?
@@ -91,10 +92,11 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   GNO nGlobalNonZeros = M->getGlobalNumEntries();
 
   // Create a graph model with this input
-  Zoltan2::GraphModel<adapter_t> *model = NULL;
+  Zoltan2::GraphModel<base_adapter_t> *model = NULL;
+  const base_adapter_t *baseTmi = tmi.get();
 
   try{
-    model = new Zoltan2::GraphModel<adapter_t>(tmi, comm, default_env);
+    model = new Zoltan2::GraphModel<base_adapter_t>(baseTmi, default_env);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -182,43 +184,6 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
       comm->barrier();
     }
     comm->barrier();
-  }
-
-  // Test getting the edge list for one vertex
-
-  for (LNO i=0; (fail==0) && (i < nLocalRows); i++){
-     LNO vertexLid =  i;
-     GNO vertexGid =  vertexGids[i];
-     ArrayView<const GNO> edges;
-     ArrayView<const int> procs;
-     ArrayView<const Scalar> wgts;
-
-     size_t nedges = model->getVertexGlobalEdge(vertexGid, edges, procs, wgts);
-
-     LNO idx0 = offsets[i];
-     LNO idx1 = offsets[i+1];
-
-     if (nedges != idx1 - idx0)
-       fail = 1;
-     else{
-       for (LNO j=idx0,k=0; !fail && (j < idx1); j++,k++){
-         if ((edges[k] != edgeGids[j]) || (procs[k] != procIds[j]))
-           fail = 2;
-       }
-     }
-
-     if (!fail){
-       nedges = model->getVertexLocalEdge(vertexLid, edges, procs, wgts);
-
-       if (nedges != idx1 - idx0)
-         fail = 3;
-       else{
-         for (LNO j=idx0,k=0; !fail && (j < idx1); j++,k++){
-           if ((edges[k] != edgeGids[j]) || (procs[k] != procIds[j]))
-             fail = 4;
-         }
-       }
-     }
   }
 
   delete model;

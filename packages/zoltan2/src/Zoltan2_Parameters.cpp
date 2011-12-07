@@ -30,7 +30,7 @@ using namespace std;
 
 namespace Zoltan2 {
 
-void createValidParameterList(Teuchos::ParameterList &pl)
+void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
 {
   using Teuchos::EnhancedNumberValidator;
   using Teuchos::StringValidator;
@@ -375,8 +375,7 @@ void createValidParameterList(Teuchos::ParameterList &pl)
   intValidatorP = 
     Teuchos::rcp(new EnhancedNumberValidator<int>(-1,INT_MAX));
   docString.str("");
-  entry = ParameterEntry(
-        0, isNotDefault, isNotList,
+  entry = ParameterEntry(comm.getSize(), isDefault, isNotList,
         docString.str(), 
         intValidatorP);
 

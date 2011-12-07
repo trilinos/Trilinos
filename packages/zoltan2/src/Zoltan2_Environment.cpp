@@ -100,7 +100,7 @@ void Environment::commitParameters()
   string noOutStream("/dev/null");
   string noFile();
 
-  createValidParameterList(validParams_);
+  createValidParameterList(validParams_, *comm_);
   params_.validateParametersAndSetDefaults(validParams_);
 
   int level = params_.get<int>(string("debug_level"));

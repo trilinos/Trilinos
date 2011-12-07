@@ -2,6 +2,10 @@
 #ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 #define _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Ptr.hpp>
+
+#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_PartitioningAlgorithms.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -44,8 +48,9 @@ public:
 #endif
 
   //! Constructor with InputAdapter Interface
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) 
-                      : Problem<Adapter>(A, p) 
+  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p): 
+    Problem<Adapter>(A,p), generalParams_(), partitioningParams_(),solution_(),
+    inputType_(InvalidAdapterType), modelType_(InvalidModel), algorithm_()
   {
     HELLO;
     createPartitioningProblem();
@@ -63,8 +68,13 @@ public:
 private:
   void createPartitioningProblem();
 
+  Teuchos::Ptr<Teuchos::ParameterList> generalParams_;
+  Teuchos::Ptr<Teuchos::ParameterList> partitioningParams_;
   RCP<PartitioningSolution<gid_t, lid_t, lno_t> > solution_;
 
+  InputAdapterType inputType_;
+  ModelType modelType_;
+  std::string algorithm_;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -77,23 +87,58 @@ void PartitioningProblem<Adapter>::solve()
   typedef typename Adapter::lid_t lid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  // Create the solution.
-  // TODO:  For now, assume nParts = nProcessors. Should read from params.
-  size_t nParts = this->comm_->getSize();  // TODO read from params later.
+  size_t nObj = this->generalModel_->getLocalNumObjects();
+
+  size_t numGlobalParts = partitioningParams_->get<int>(
+    string("num_global_parts"));
+
+  // Create the solution.   TODO add exception handling
+
+  solution_ = 
+    rcp(new PartitioningSolution<gid_t,lid_t,lno_t>( numGlobalParts, nObj,
+      this->inputAdapter_->haveLocalIds() ? nObj : 0));
+
+  ArrayRCP<gid_t> &solnGids = solution_->getGidsRCP();
+  ArrayRCP<lid_t> &solnLids = solution_->getLidsRCP();
+  ArrayRCP<size_t> &solnParts = solution_->getPartsRCP();
+
+  // Call the algorithm
 
   try {
-
-    // Determine which algorithm to use based on defaults and parameters.
-
-    // For now, assuming Scotch graph partitioning.
-    size_t nVtx = this->graphModel_->getLocalNumVertices();
-    this->solution_ = rcp(new PartitioningSolution<gid_t,lid_t,lno_t>(nParts, nVtx, 0));
-
-    AlgPTScotch<Adapter>(nParts, this->graphModel_, this->solution_, this->params_,
-                         this->comm_, this->env_);
+    if (algorithm_ == string("scotch")){
+      AlgPTScotch<base_adapter_t>(this->envConst_, this->comm_, 
+        this->graphModel_, numGlobalParts, solnParts.persistingView(0, nObj));
+    }
   }
   Z2_FORWARD_EXCEPTIONS;
+
+  // Write User's GIDs and LIDs (if used) to the solution object.
+
+  typedef IdentifierMap<lid_t,gid_t,lno_t,gno_t> idmap_t;
+  const RCP<const idmap_t> idMap = this->generalModel_->getIdentifierMap();
+
+  ArrayView<const gno_t> vtxGNO;
+  this->generalModel_->getGlobalObjectIds(vtxGNO);
+
+std::cout << vtxGNO.size() << std::endl;
+
+  ArrayRCP<gno_t> gnos = arcpFromArrayView(av_const_cast<gno_t>(vtxGNO));
+
+  if (idMap->gnosAreGids()){
+    solnGids = arcp_reinterpret_cast<gid_t>(gnos);
+  }
+  else{
+    idMap->gidTranslate(solnGids.persistingView(0, nObj), gnos, 
+      TRANSLATE_LIB_TO_APP);
+  }
+
+  if (this->inputAdapter_->haveLocalIds()){
+    idMap->lidTranslate(solnLids.persistingView(0, nObj), gnos, 
+      TRANSLATE_LIB_TO_APP);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -106,45 +151,235 @@ template <typename Adapter>
 void PartitioningProblem<Adapter>::createPartitioningProblem()
 {
   HELLO;
-//  cout << __func__ << " input adapter type " 
-//       << this->inputAdapter_->inputAdapterType() << " " 
-//       << this->inputAdapter_->inputAdapterName() << endl;
+  using std::string;
 
 #ifdef HAVE_OVIS
   ovis_enabled(this->comm_->getRank());
 #endif
 
-  // Determine which parameters are relevant here.
-  // For now, assume parameters similar to Zoltan:
-  //   MODEL = graph, hypergraph, geometric, ids
-  //   APPROACH = partition, repartition
-  //   ALGORITHM = metis, parmetis, scotch, ptscotch, patoh, 
-  //               phg, rcb, rib, hsfc, block, cyclic, random
-  // TODO: I will need help from Lee Ann understanding how to use the parameter
-  // functionality in Zoltan2.  For now, I will set a few parameters and
-  // continue computing.
-  ModelType modelType = GraphModelType;
+  // The problem communicator is this->comm_.  
+  // Set the application communicator to MPI_COMM_WORLD.
 
-  // Select Model based on parameters and InputAdapter type
-  switch (modelType) {
+  this->env_->setCommunicator(DefaultComm<int>::getComm());
+
+  // Finalize parameters.  If the Problem wants to set or
+  // change any parameters, do it before this call.
+
+  this->env_->commitParameters();
+
+  // Get the parameters
+
+  generalParams_ = Teuchos::Ptr<Teuchos::ParameterList>(
+    &this->env_->getParamsNonConst());
+
+  partitioningParams_ = Teuchos::Ptr<Teuchos::ParameterList>(
+    &this->env_->getPartitioningParamsNonConst());
+
+  string paramNotSet("unset");
+
+  // What type of input did the User provide.  If they didn't
+  //   specify a model and/or an algorithm, we can use the input
+  //   type to choose some defaults.
+
+  inputType_ = this->inputAdapter_->inputAdapterType();
+
+  // Did user specify a computational model?
+
+  string &model = partitioningParams_->get<string>(string("model"), 
+    paramNotSet);
+
+  // What type of partitioning algorithm, if any, is the user asking for?
+
+  string &algorithm = partitioningParams_->get<string>(string("algorithm"), 
+    paramNotSet);
+
+  // Does the algorithm require consecutive global IDs?
+
+  bool needConsecutiveGlobalIds = false;
+
+  // Do matrix and graph algorithms require that diagonal entries
+  //    or self-edges be removed?
+
+  bool removeSelfEdges= false;
+
+  // Determine algorithm, model, and algorithm requirements.  This
+  // is a first pass.  Feel free to change this and add to it.
+  
+  if (algorithm != paramNotSet){
+    // Figure out the model required by the algorithm
+    if (algorithm == string("block") ||
+        algorithm == string("random") ||
+        algorithm == string("cyclic") ){
+
+      modelType_ = IdentifierModelType;
+      algorithm_ = algorithm;
+      needConsecutiveGlobalIds = true;
+    }
+    else if (algorithm == string("rcb") ||
+             algorithm == string("rib") ||
+             algorithm == string("hsfc")){
+
+      modelType_ = GeometryModelType;
+      algorithm_ = algorithm;
+      needConsecutiveGlobalIds = true;
+    }
+    else if (algorithm == string("metis") ||
+             algorithm == string("parmetis") ||
+             algorithm == string("scotch") ||
+             algorithm == string("ptscotch")){
+
+      modelType_ = GraphModelType;
+      algorithm_ = algorithm;
+      removeSelfEdges = true;
+      needConsecutiveGlobalIds = true;
+    }
+    else if (algorithm == string("patoh") ||
+             algorithm == string("phg")){
+
+      if ((modelType_ != GraphModelType) &&
+          (modelType_ != HypergraphModelType) ){
+        modelType_ = HypergraphModelType;
+      }
+      algorithm_ = algorithm;
+      needConsecutiveGlobalIds = true;
+    }
+    else{
+      // Parameter list should ensure this does not happen.
+      throw std::logic_error("parameter list algorithm is invalid");
+    }
+  }
+  else if (model != paramNotSet){
+    // Figure out the algorithm suggested by the model.
+    if (model == string("hypergraph")){
+      modelType_ = HypergraphModelType;
+      if (this->comm_->getSize() > 1)
+        algorithm_ = string("phg"); 
+      else
+        algorithm_ = string("patoh"); 
+      needConsecutiveGlobalIds = true;
+    }
+    else if (model == string("graph")){
+      modelType_ = GraphModelType;
+#ifdef HAVE_SCOTCH
+      if (this->comm_->getSize() > 1)
+        algorithm_ = string("ptscotch"); 
+      else
+        algorithm_ = string("scotch"); 
+      removeSelfEdges = true;
+      needConsecutiveGlobalIds = true;
+#else
+#ifdef HAVE_PARMETIS
+      if (this->comm_->getSize() > 1)
+        algorithm_ = string("parmetis"); 
+      else
+        algorithm_ = string("metis"); 
+      removeSelfEdges = true;
+      needConsecutiveGlobalIds = true;
+#else
+      if (this->comm_->getSize() > 1)
+        algorithm_ = string("phg"); 
+      else
+        algorithm_ = string("patoh"); 
+      removeSelfEdges = true;
+      needConsecutiveGlobalIds = true;
+#endif
+#endif
+    }
+    else if (model == string("geometry")){
+      modelType_ = GeometryModelType;
+      algorithm_ = string("rib");
+      needConsecutiveGlobalIds = true;
+    }
+    else if (model == string("ids")){
+      modelType_ = IdentifierModelType;
+      algorithm_ = string("block");
+      needConsecutiveGlobalIds = true;
+    }
+    else{
+      // Parameter list should ensure this does not happen.
+      throw std::logic_error("parameter list model type is invalid");
+    }
+  }
+  else{   
+    // Determine an algorithm and model suggested by the input type.
+    //   TODO: this is a good time to use the time vs. quality parameter
+    //     in choosing an algorithm, and setting some parameters
+
+    if (inputType_ == MatrixAdapterType){
+      modelType_ = HypergraphModelType;
+      if (this->comm_->getSize() > 1)
+        algorithm_ = string("phg"); 
+      else
+        algorithm_ = string("patoh"); 
+    }
+    else if (inputType_ == GraphAdapterType ||
+        inputType_ == MeshAdapterType){
+      modelType_ = GraphModelType;
+      if (this->comm_->getSize() > 1)
+        algorithm_ = string("phg"); 
+      else
+        algorithm_ = string("patoh"); 
+    }
+    else if (inputType_ == CoordinateAdapterType){
+      modelType_ = GeometryModelType;
+      algorithm_ = string("rib");
+    }
+    else if (inputType_ == VectorAdapterType ||
+             inputType_ == MultiVectorAdapterType ||
+             inputType_ == IdentifierAdapterType){
+      modelType_ = IdentifierModelType;
+      algorithm_ = string("block");
+    }
+    else{
+      // This should never happen
+      throw std::logic_error("input type is invalid");
+    }
+  }
+
+  // TODO: This doesn't work.  baseInputAdapter_.getRawPtr() is NULL.
+  //
+  // RCP<const base_adapter_t> baseInputAdapter_ = 
+  //   rcp_implicit_cast<const base_adapter_t>(this->inputAdapter_);
+  //
+  // So to pass the InputAdapter to the Model we use a raw pointer.
+  // Since the Problem creates the Model and will destroy it when
+  // done, the Model doesn't really need an RCP to the InputAdapter.
+  // But it would be nice if that worked.
+
+  // TODO - check for exceptions
+
+  typedef typename Adapter::base_adapter_t base_adapter_t;
+  const base_adapter_t *baseAdapter = this->inputAdapter_.getRawPtr();
+
+  // Create the computational model.
+
+  switch (modelType_) {
 
   case GraphModelType:
+    this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
+      baseAdapter, this->envConst_, needConsecutiveGlobalIds, removeSelfEdges));
 
-    this->graphModel_ = RCP<GraphModel<Adapter> > 
-                        (new GraphModel<Adapter>(this->inputAdapter_,
-                                                 this->comm_, this->env_,
-                                                 false, true));
+    this->generalModel_ = rcp_implicit_cast<Model<base_adapter_t> >(
+      this->graphModel_);
+
     break;
 
   case HypergraphModelType:
+    break;
+
   case GeometryModelType:
-  case IdModelType:
-    cout << __func__ << " Model type " << modelType << " not yet supported." 
-         << endl;
+    break;
+
+  case IdentifierModelType:
+    this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
+      baseAdapter, this->envConst_, needConsecutiveGlobalIds));
+
+    this->generalModel_ = rcp_implicit_cast<Model<base_adapter_t> >(
+      this->identifierModel_);
     break;
 
   default:
-    cout << __func__ << " Invalid model" << modelType << endl;
+    cout << __func__ << " Invalid model" << modelType_ << endl;
     break;
   }
 }

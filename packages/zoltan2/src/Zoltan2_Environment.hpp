@@ -98,6 +98,45 @@ public:
    */
   const Teuchos::ParameterList &getParams() const { return params_; }
 
+  /*! \brief Returns a reference to a non-const copy of the parameters.
+   */
+  Teuchos::ParameterList &getParamsNonConst() { return params_; }
+
+  /*! \brief Returns a reference to the user's partitioning parameters.
+   */
+  const Teuchos::ParameterList &getPartitioningParams() const 
+  { 
+    return params_.sublist("partitioning"); 
+  }
+
+  /*! \brief Returns a reference to the user's partitioning parameters.
+   */
+  Teuchos::ParameterList &getPartitioningParamsNonConst() 
+  { 
+    return params_.sublist("partitioning"); 
+  }
+
+  /*! \brief Returns a reference to the user's ordering parameters.
+   */
+  const Teuchos::ParameterList &getOrderingParams() const 
+  { 
+    return params_.sublist("ordering"); 
+  }
+
+  /*! \brief Returns a reference to the user's ordering parameters.
+   */
+  Teuchos::ParameterList &getOrderingParamsNonConst()
+  { 
+    return params_.sublist("ordering"); 
+  }
+
+  /*! \brief Returns a reference to the user's coloring parameters.
+   */
+  const Teuchos::ParameterList &getColoringParams() const 
+  { 
+    return params_.sublist("coloring"); 
+  }
+
   /*! \brief Returns true if the user parameters have been processed.
    *
    * The user's parameters are processed in commitParameters(). During
