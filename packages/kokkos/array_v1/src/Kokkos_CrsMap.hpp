@@ -84,14 +84,16 @@ public:
   /** \brief  Map indices */
   template< typename iType , typename jType >
   size_type operator()( const iType & first , const jType & second ) const ;
-  
+
+  typedef std::pair<size_type,size_type> range_type ;
+
   /** \brief  Range of indices for a given 'first' index.
    *
    *    second_count(first) == range.second - range.first
    *    operator()(first,0) == range.first ;
    */
   template< typename iType >
-  std::pair<size_type,size_type> range( const iType & first ) const ;
+  range_type range( const iType & first ) const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */

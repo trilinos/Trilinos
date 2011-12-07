@@ -84,13 +84,15 @@ public:
   size_type operator()( const iType & first , const jType & second ) const
     { return m_memory.ptr_on_device()[first] + second ; }
 
+  typedef std::pair<size_type,size_type> range_type ;
+
   template< typename iType >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  std::pair<size_type,size_type> range( const iType & first ) const
+  range_type range( const iType & first ) const
     {
       const size_type * const offset = m_memory.ptr_on_device() + first ;
-      return std::pair<size_type,size_type>( offset[0] , offset[1] );
+      return range_type( offset[0] , offset[1] );
     }
 
   /*------------------------------------------------------------------*/
