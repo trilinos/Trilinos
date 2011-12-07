@@ -417,8 +417,11 @@ void MpiComm<Ordinal>::reduceAll(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::reduceAll(...)"
     );
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
+  MPI_Datatype char_block;
+  MPI_Type_contiguous(bytes, MPI_CHAR, &char_block);
+  MPI_Type_commit(&char_block);
   MPI_Allreduce(
-    const_cast<char*>(sendBuffer),globalReducts,bytes,MPI_CHAR,op.mpi_op()
+    const_cast<char*>(sendBuffer),globalReducts,1,char_block,op.mpi_op()
     ,*rawMpiComm_
     );
 }
