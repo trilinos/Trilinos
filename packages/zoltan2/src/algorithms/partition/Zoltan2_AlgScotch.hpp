@@ -6,13 +6,34 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
-#ifdef HAVE_SCOTCH
+#ifndef HAVE_SCOTCH
+
+// Error handling for when Scotch is requested
+// but Zoltan2 not built with Scotch.
+
+namespace Zoltan2 {
+template <typename Adapter>
+void AlgPTScotch(
+  const RCP<const Environment> &env,        // parameters & app comm
+  const RCP<const Comm<int> > &problemComm, // problem comm
+  const RCP<GraphModel<Adapter> > &model,   // the graph
+  size_t numParts,                          // number of parts
+  ArrayView<size_t> partList                // return parts here
+)
+{
+  throw std::runtime_error(
+        "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
+        "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
+}
+}
+
+#else  //HAVE_SCOTCH
+
 #ifndef HAVE_MPI
 #include "scotch.h"
 #else
 #include "ptscotch.h"
 #endif
-#endif  // HAVE_SCOTCH
 
 #ifdef SHOW_LINUX_MEMINFO
 extern "C"{
@@ -126,15 +147,8 @@ void AlgPTScotch(
   const RCP<GraphModel<Adapter> > &model,   // the graph
   size_t numParts,                          // number of parts
   ArrayView<size_t> partList                // return parts here
-) 
+)
 {
-#ifndef HAVE_SCOTCH
-  throw std::runtime_error(
-        "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
-        "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
-
-#else
-
   HELLO;
 
   typedef typename Adapter::lno_t lno_t;
@@ -289,8 +303,8 @@ void AlgPTScotch(
 
 
 #endif // DO NOT HAVE_MPI
-#endif // HAVE_SCOTCH
 }
 
 }
+#endif // HAVE_SCOTCH
 #endif
