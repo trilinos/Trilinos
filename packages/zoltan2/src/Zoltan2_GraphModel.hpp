@@ -62,9 +62,15 @@ public:
    */
   global_size_t getGlobalNumVertices() const { return 0; }
 
-  /*! Returns the number edges on this process.
+  /*! Returns the number of global edges on this process.
+   *  Includes remote edges.
    */
-  size_t getLocalNumEdges() const { return 0; }
+  size_t getLocalNumGlobalEdges() const { return 0; }
+
+  /*! Returns the number of local edges on this process.
+   *  Does not include remote edges.
+   */
+  size_t getLocalNumLocalEdges() const { return 0; }
 
   /*! Returns the global number edges.
    */
@@ -97,12 +103,16 @@ public:
       KDDKDD function for coordinates.  Or there should be an option to 
       KDDKDD specify whether or not coordinates are needed.
    */
+  // GNOs are returned.
+  // LNOs are implied by the order that the vertices have been returned.
 
   size_t getVertexList( ArrayView<const gno_t> &Ids,
     ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const {
       return 0; }
 
-  /*! Sets pointers to this process' edge (neighbor) global Ids.
+  /*! getEdgeList:
+      Sets pointers to this process' edge (neighbor) global Ids, including
+      off-process edges.
       \param edgeIds This is the list of global neighbor Ids corresponding
         to the vertices listed in getVertexList.
       \param procIds lists the process owning each neighbor in the edgeIds
@@ -114,9 +124,33 @@ public:
          edge by weight component.
        \return The number of ids in the edgeIds list.
    */
+  // Implied Vertex LNOs from getVertexList are used as indices to offsets 
+  // array.
+  // Vertex GNOs are returned as neighbors in edgeIds.
 
   size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
     ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) const { return 0; }
+
+  /*! getLocalEdgeList:
+      Sets pointers to this process' local-only edge (neighbor) LNOs, using
+      the same implied vertex LNOs returned in getVertexList.
+      \param edgeIds This is the list of local neighbor Ids corresponding
+        to the vertices listed in getVertexList.
+        Off-process edges are not returned.
+      \param offsets offsets[i] is the offset into edgeIds to the start
+        of neighbors for ith vertex.
+      \param wgts will on return point to a list of the weight or weights
+         associated with each edge in the edgeIds list.  Weights are listed by
+         edge by weight component.
+       \return The number of ids in the edgeIds list.
+   */
+  // Implied Vertex LNOs from getVertexList are used as indices to offsets 
+  // array.
+  // Vertex LNOs are returned as neighbors in edgeIds.
+
+  size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
+    ArrayView<const lno_t> &offsets,
     ArrayView<const scalar_t> &wgts) const { return 0; }
 
   /*! Obtain a view of the edge Ids of the input vertex.
