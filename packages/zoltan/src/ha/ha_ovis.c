@@ -52,9 +52,7 @@ int Zoltan_OVIS_Setup(
                     (void *) &ovis_minversion);
 
   /* Tell Zoltan to look for parameters matching the names above */
-  /*Zoltan_Assign_Param_Vals(zz->Params, OVIS_params, zz->Debug_Level, zz->Proc,
-                           zz->Debug_Proc);*/
-  Zoltan_Assign_Param_Vals(zz->Params, OVIS_params, 7, zz->Proc,
+  Zoltan_Assign_Param_Vals(zz->Params, OVIS_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
 
   return ZOLTAN_OK;
