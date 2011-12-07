@@ -80,12 +80,9 @@ import re
 pp = pprint.PrettyPrinter(indent=4)
 
 # Load some default dependencies for some unit tests
-trilinosDependenciesCache = None
+projectDependenciesCache = None
 def getDefaultProjectDependenices():
-#  global trilinosDependenciesCache
-#  if not trilinosDependenciesCache:
-#    trilinosDependencies = getProjectDependenciesFromXmlFile(defaultProjectDepsXmlInFile)
-  return trilinosDependenciesCache
+  return projectDependenciesCache
 
 # Set the official eg/git versions!
 g_officialEgVersion = "1.7.0.4"
@@ -521,11 +518,11 @@ def getCurrentDiffOutput(gitRepoName, inOptions, baseTestDir):
 
 def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
   gitRepoName, enablePackagesList_inout, verbose=True,
-  trilinosDependenciesLocal=None ) \
+  projectDependenciesLocal=None ) \
   :
 
-  if not trilinosDependenciesLocal:
-    trilinosDependenciesLocal = getDefaultProjectDependenices()
+  if not projectDependenciesLocal:
+    projectDependenciesLocal = getDefaultProjectDependenices()
 
   modifiedFilesList = extractFilesListMatchingPattern(
     updateOutputStr.split('\n'), reModifiedFiles )
@@ -544,7 +541,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
       modifiedFileFullPath = gitRepoName+"/"+modifiedFileFullPath
     #print "\nmodifiedFileFullPath =", modifiedFileFullPath
 
-    packageName = getPackageNameFromPath(trilinosDependenciesLocal, modifiedFileFullPath)
+    packageName = getPackageNameFromPath(projectDependenciesLocal, modifiedFileFullPath)
     if packageName and findInSequence(enablePackagesList_inout, packageName) == -1:
       if verbose:
         print "\nModified file: '"+modifiedFileFullPath+"'\n" \
@@ -1665,20 +1662,20 @@ def checkinTest(baseDir, inOptions, configuration={}):
         timeCmnd=True)
     else:
       print "\nSkipping update of dependencies XML file on request!"
-    trilinosDepsXmlFile = baseTestDir+"/"\
+    projectDepsXmlFile = baseTestDir+"/"\
       +getProjectDependenciesXmlFileName(inOptions.projectName)
   else:
     # No extra repos so you can just use the default list of packages
-    trilinosDepsXmlFile = getDefaultDepsXmlInFile(inOptions.srcDir, inOptions.projectName)
+    projectDepsXmlFile = getDefaultDepsXmlInFile(inOptions.srcDir, inOptions.projectName)
 
-  trilinosDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
-  if trilinosDepsXmlFileOverride:
-    print "\ntrilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride
-    trilinosDepsXmlFile = trilinosDepsXmlFileOverride
+  projectDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
+  if projectDepsXmlFileOverride:
+    print "\nprojectDepsXmlFileOverride="+projectDepsXmlFileOverride
+    projectDepsXmlFile = projectDepsXmlFileOverride
 
 
-  global trilinosDependenciesCache
-  trilinosDependenciesCache = getProjectDependenciesFromXmlFile(trilinosDepsXmlFile)
+  global projectDependenciesCache
+  projectDependenciesCache = getProjectDependenciesFromXmlFile(projectDepsXmlFile)
 
   assertPackageNames("--enable-packages", inOptions.enablePackages)
   assertPackageNames("--disable-packages", inOptions.disablePackages)

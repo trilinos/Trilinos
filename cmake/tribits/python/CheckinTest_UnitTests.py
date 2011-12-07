@@ -142,8 +142,8 @@ class test_getTimeInMinFromTotalTimeLine(unittest.TestCase):
 #
 
 
-trilinosDepsXmlFileDefaultOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.gold.xml"
-trilinosDependenciesDefault = getProjectDependenciesFromXmlFile(trilinosDepsXmlFileDefaultOverride)
+projectDepsXmlFileDefaultOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.gold.xml"
+projectDependenciesDefault = getProjectDependenciesFromXmlFile(projectDepsXmlFileDefaultOverride)
 
 
 class test_extractPackageEnablesFromChangeStatus(unittest.TestCase):
@@ -164,7 +164,7 @@ A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
     enablePackagesList = []
 
     extractPackageEnablesFromChangeStatus(updateOutputStr, options, "",
-      enablePackagesList, False, trilinosDependenciesDefault)
+      enablePackagesList, False, projectDependenciesDefault)
 
     self.assertEqual( options.enableAllPackages, 'on' )
     self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'Teuchos'] )
@@ -186,7 +186,7 @@ D	packages/tpetra/FSeconds.f
     enablePackagesList = []
 
     extractPackageEnablesFromChangeStatus(updateOutputStr, options, "",
-      enablePackagesList, False, trilinosDependenciesDefault)
+      enablePackagesList, False, projectDependenciesDefault)
 
     self.assertEqual( options.enableAllPackages, 'auto' )
     self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'Stratimikos', u'ThyraCoreLibs', u'Tpetra'] )
@@ -200,14 +200,14 @@ M	ExtraTrilinosPackages.cmake
 M	stalix/README
 """
     # NOTE: Above, we ignore top-level changes in extra repos which would cause global rebuilds
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
-    trilinosDependenciesLocal = getProjectDependenciesFromXmlFile(trilinosDepsXmlFileOverride)
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDependenciesLocal = getProjectDependenciesFromXmlFile(projectDepsXmlFileOverride)
 
     options = MockOptions()
     enablePackagesList = []
 
     extractPackageEnablesFromChangeStatus(updateOutputStr, options, "preCopyrightTrilinos",
-      enablePackagesList, False, trilinosDependenciesLocal)
+      enablePackagesList, False, projectDependenciesLocal)
 
     self.assertEqual( options.enableAllPackages, 'auto' )
     self.assertEqual( enablePackagesList, [u'Stalix'] )
@@ -650,7 +650,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     os.environ['GENERAL_SCRIPT_SUPPORT_CMND_INTERCEPTS_FILE'] = fullCmndInterceptsFileName
 
-    os.environ['CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE'] = trilinosDepsXmlFileDefaultOverride
+    os.environ['CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE'] = projectDepsXmlFileDefaultOverride
     
     # D) Run the checkin-test.py script with mock commands
 
@@ -1214,7 +1214,7 @@ class test_checkin_test(unittest.TestCase):
 
   def test_extra_repo_1_explicit_enable_configure_pass(self):
 
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
 
     testName = "extra_repo_1_explicit_enable_configure_pass"
 
@@ -1247,18 +1247,18 @@ class test_checkin_test(unittest.TestCase):
       \
       "-extra-repos=.preCopyrightTrilinos.\n" \
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
-      +"trilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride+"\n" \
+      +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
       +"Enabling only the explicitly specified packages .Stalix. ...\n" \
       +"Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n" \
       +"Enabled Packages: Stalix\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_implicit_enable_configure_pass(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1280,7 +1280,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "-extra-repos=.preCopyrightTrilinos.\n" \
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
-      +"trilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride+"\n" \
+      +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
       +"Modified file: .preCopyrightTrilinos/teko/CMakeLists.txt.\n" \
       +"  => Enabling .Teko.!\n" \
       +"Teko of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
@@ -1288,12 +1288,12 @@ class test_checkin_test(unittest.TestCase):
       +"Enabled Packages: Teuchos, Teko\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_push_pass(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1331,12 +1331,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: PASSED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_pull_extra_pull_pass(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1366,12 +1366,12 @@ class test_checkin_test(unittest.TestCase):
       "pullInitialExtra.preCopyrightTrilinos.out\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_trilinos_changes_do_all_push_pass(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1396,12 +1396,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: PASSED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_repo_changes_do_all_push_pass(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1426,12 +1426,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: PASSED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_abort_gracefully_if_no_updates_no_updates_passes(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1460,12 +1460,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: PASSED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_no_updates_passes(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1498,12 +1498,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: PASSED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_main_repo_update(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1533,12 +1533,12 @@ class test_checkin_test(unittest.TestCase):
       +"NOT READY TO PUSH\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_extra_repo_update(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1568,12 +1568,12 @@ class test_checkin_test(unittest.TestCase):
       +"NOT READY TO PUSH\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_main_repo_extra_update(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1603,12 +1603,12 @@ class test_checkin_test(unittest.TestCase):
       +"NOT READY TO PUSH\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_extra_repo_extra_update(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1638,7 +1638,7 @@ class test_checkin_test(unittest.TestCase):
       +"NOT READY TO PUSH\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
@@ -3060,7 +3060,7 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_no_changes_do_all_push_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3085,7 +3085,7 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
@@ -3128,7 +3128,7 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_mispell_repo_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3145,12 +3145,12 @@ class test_checkin_test(unittest.TestCase):
       "Error, the specified git repo .preCopyrightTrilinosMispell. directory .*preCopyrightTrilinosMispell. does not exist!\n"
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_initial_trilinos_pull_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3176,12 +3176,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_initial_extra_repo_pull_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3209,12 +3209,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_trilinos_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3244,12 +3244,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_extra_repo_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3281,12 +3281,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_pull_trilinos_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3310,12 +3310,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_pull_extra_repo_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3342,12 +3342,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_amend_trilinos_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3375,12 +3375,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_amend_extra_repo_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3411,12 +3411,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_push_trilinos_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3439,12 +3439,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_push_extra_repo_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3469,7 +3469,7 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 

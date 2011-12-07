@@ -66,29 +66,22 @@ from GeneralScriptSupport import *
 # Default file locations
 #
 
-# These constants should be considered deprecated, use the functions
-# below instead.
-defaultDepsXmlDirectory = getCompleteFileDirname(__file__) + "/../../dependencies"
 
-defaultProjectDepsXmlInFile = defaultDepsXmlDirectory + "/TrilinosPackageDependencies.xml"
-
-defaultProjectDepsHtmlOutFile = defaultDepsXmlDirectory + "/TrilinosPackageDependenciesTable.html"
-
-defaultCDashDepsXmlFile = defaultDepsXmlDirectory + "/CDashSubprojectDependencies.xml"
-
-# Use these functions instead of the above constants.
 def getDefaultDepsXmlDirectory(rootDir):
   return os.path.join(rootDir, 'cmake', 'dependencies')
+
 
 def getDefaultDepsXmlInFile(rootDir, projectName):
   return os.path.join(
     getDefaultDepsXmlDirectory(rootDir),
     '%sPackageDependencies.xml' % projectName)
 
+
 def getDefaultDepsHtmlOutFile(rootDir, projectName):
   return os.path.join(
     getDefaultDepsXmlDirectory(rootDir),
     '%sPackageDependenciesTable.html' % projectName)
+
 
 def getDefaultCDashDepsXmlFile(rootDir):
   return os.path.join(
@@ -537,7 +530,7 @@ class TribitsDependencies:
     return htmlText
 
 
-  def writeFullHtmlPage(self, htmlFileName=defaultProjectDepsHtmlOutFile):
+  def writeFullHtmlPage(self, htmlFileName):
     htmlString = self.createFullHtmlPage()
     htmlFile = open(htmlFileName, 'w')
     htmlFile.write(htmlString)
@@ -617,7 +610,7 @@ class TribitsDependencies:
     return self.createCDashDepsXMLFromRawDepsTable(self.createRawTable(False))
 
 
-  def writeCDashXmlDepsFile(self, xmlDepsFile=defaultCDashDepsXmlFile):
+  def writeCDashXmlDepsFile(self, xmlDepsFile):
     xmlString = self.createCDashDepsXML()
     xmlFile = open(xmlDepsFile, 'w')
     xmlFile.write(xmlString)
@@ -655,8 +648,7 @@ def getParentPackage(packageEle):
   return parentPackage
 
 
-def getProjectDependenciesFromXmlFile(xmlFile=defaultProjectDepsXmlInFile):
-  #print "xmlFile =", xmlFile
+def getProjectDependenciesFromXmlFile(xmlFile):
   packageDepXmlDom = xml.dom.minidom.parse(xmlFile)
   trilinosDependencies = TribitsDependencies()
   for ele in packageDepXmlDom.childNodes[0].childNodes:

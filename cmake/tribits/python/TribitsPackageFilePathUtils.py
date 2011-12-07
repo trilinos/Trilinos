@@ -70,7 +70,6 @@
 #
 
 from TribitsDependencies import getProjectDependenciesFromXmlFile
-from TribitsDependencies import defaultProjectDepsXmlInFile
 from GeneralScriptSupport import *
 import time
 
