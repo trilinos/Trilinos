@@ -8,6 +8,9 @@
 #ifndef _ZOLTAN2_IDENTIFIERTRAITS
 #define _ZOLTAN2_IDENTIFIERTRAITS
 
+// TODO get this from Cmake configuer
+#define HAVE_LONG_LONG  1
+
 #include <utility>
 #include <iostream>
 #include <sstream>
