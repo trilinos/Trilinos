@@ -56,12 +56,12 @@
 # This file gets included in the base-level CMakeLists.txt file to define
 # Fortran name mangling.
 
-IF (Trilinos_ENABLE_Fortran)
+IF (${PROJECT_NAME}_ENABLE_Fortran)
   INCLUDE(FortranMangling)
   FORTRAN_MANGLING()
 
   # Verify the selected combination of Fortran and C++ compilers.
-  IF("${CMAKE_VERSION}" VERSION_GREATER 2.7.20090824 AND NOT Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST)
+  IF("${CMAKE_VERSION}" VERSION_GREATER 2.7.20090824 AND NOT ${PROJECT_NAME}_SKIP_FORTRANCINTERFACE_VERIFY_TEST)
     INCLUDE(FortranCInterface)
     FortranCInterface_VERIFY(CXX)
   ENDIF()

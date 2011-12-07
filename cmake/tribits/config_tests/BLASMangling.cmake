@@ -78,7 +78,7 @@ FUNCTION(BLAS_MANGLING)
 
   IF(NOT DEFINED BLAS_FN_CASE)
 
-    IF (Trilinos_VERBOSE_CONFIGURE)
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       MESSAGE("BLAS_MANGLING: Testing name Mangling Schemes!\n")
     ENDIF()
 
@@ -95,7 +95,7 @@ FUNCTION(BLAS_MANGLING)
 
       FOREACH(udef UNDER NO_UNDER)
 
-        IF (Trilinos_VERBOSE_CONFIGURE)
+        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE("BLAS_MANGLING: Testing ${cdef} ${udef}\n\n")
         ENDIF()
 
@@ -107,12 +107,12 @@ FUNCTION(BLAS_MANGLING)
           CMAKE_FLAGS "-DMANGLE_FLAGS:STRING=-DFC_FN_${cdef};-DFC_FN_${udef}"
           OUTPUT_VARIABLE _blasmngl_output
           )
-        IF (Trilinos_VERBOSE_CONFIGURE)
+        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE("${_blasmngl_output}\n\n")
         ENDIF()
 
         IF(_blasmngl)
-          IF (Trilinos_VERBOSE_CONFIGURE)
+          IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
             MESSAGE("BLAS_MANGLING: Bingo!  ${cdef} ${udef} is the correct BLAS name mangling!\n")
           ENDIF()
           SET(BLAS_FN_CASE ${cdef} CACHE INTERNAL
