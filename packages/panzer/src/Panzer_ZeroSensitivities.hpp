@@ -38,6 +38,6 @@ namespace panzer {
   }
 #endif
 
-} // namespace charon
+}
 
 #endif
