@@ -61,6 +61,7 @@ APPEND_SET(HEADERS
   Panzer_EquationSet_Factory.hpp
   Panzer_EquationSet_Factory_Defines.hpp
   Panzer_EquationSet_TemplateManager.hpp
+  Panzer_EvaluationTraits.hpp
   Panzer_ExplicitTemplateInstantiation.hpp
   Panzer_FieldManagerBuilder.hpp
   Panzer_FieldManagerBuilderT.hpp
@@ -80,7 +81,10 @@ APPEND_SET(HEADERS
   Panzer_ModelEvaluator_FactoryT.hpp
   Panzer_OutputStream.hpp
   Panzer_OutputStream_DefaultImpl.hpp
-  Panzer_ParameterLibraryEvaluationTraits.hpp
+  Panzer_ParameterLibrary.hpp
+  Panzer_ParameterLibraryAcceptor.hpp
+  Panzer_ParameterLibraryUtilities.hpp
+  Panzer_ParameterLibraryUtilitiesT.hpp
   Panzer_ParameterList_ObjectBuilders.hpp
   Panzer_PauseToAttach.hpp
   Panzer_PhysicsBlock.hpp

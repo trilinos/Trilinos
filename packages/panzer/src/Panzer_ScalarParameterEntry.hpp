@@ -3,6 +3,7 @@
 
 #include "Panzer_Traits.hpp"
 #include "Sacado_ScalarParameterEntry.hpp"
+#include "Panzer_EvaluationTraits.hpp"
 
 namespace panzer {
 

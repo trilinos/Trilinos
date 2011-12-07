@@ -3,7 +3,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "Panzer_ParameterLibraryEvaluationTraits.hpp"
+#include "Panzer_ParameterLibrary.hpp"
 
 namespace panzer {
   

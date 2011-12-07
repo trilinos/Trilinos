@@ -3,8 +3,9 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include "Panzer_ParameterLibraryEvaluationTraits.hpp"
+#include "Panzer_ParameterLibrary.hpp"
 #include "Panzer_ScalarParameterEntry.hpp"
+#include "Panzer_ParameterLibraryUtilities.hpp"
 
 namespace panzer {
 
@@ -66,37 +67,29 @@ namespace panzer {
 
   }
 
-  TEUCHOS_UNIT_TEST(parameter_library, scalar_parameter_library)
+  TEUCHOS_UNIT_TEST(parameter_library, utilities)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using panzer::ParamLib;
-
+    
     RCP<ParamLib> pl = rcp(new ParamLib);
+    
+    std::string name = "viscosity";
 
-    {
-      RCP<ScalarParameterEntry<panzer::Traits::Residual> > entry = 
-	rcp(new ScalarParameterEntry<panzer::Traits::Residual>);
-      
-      std::string name = "viscosity";
-      
-      if (!pl->isParameter(name))
-	pl->addParameterFamily(name,true,false);
-      
-      pl->addEntry<panzer::Traits::Residual>("viscosity",entry);
-    }
+    panzer::createAndRegisterScalarParameter<panzer::Traits::Residual>(name,*pl);
+    
+    panzer::createAndRegisterScalarParameter<panzer::Traits::Jacobian>(name,*pl);
+    
+    const double value = 5.0;
+    
+    pl->setRealValue<panzer::Traits::Jacobian>(name,value);
 
-    {
-      RCP<ScalarParameterEntry<panzer::Traits::Jacobian> > entry = 
-	rcp(new ScalarParameterEntry<panzer::Traits::Jacobian>);
+    double test_value = pl->getRealValue<panzer::Traits::Jacobian>(name);
 
-      std::string name = "viscosity";
-      
-      if (!pl->isParameter(name))
-	pl->addParameterFamily(name,true,false);
-      
-      pl->addEntry<panzer::Traits::Jacobian>("viscosity",entry);
-    }
+    const double tol = 10.0*std::numeric_limits<double>::epsilon();
+
+    TEST_FLOATING_EQUALITY(test_value, value, tol);
 
   }
 
