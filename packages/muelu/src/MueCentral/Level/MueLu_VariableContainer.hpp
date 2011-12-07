@@ -1,6 +1,7 @@
-#ifndef MUELU_VARIABLECONTAINER_HPP_
-#define MUELU_VARIABLECONTAINER_HPP_
+#ifndef MUELU_VARIABLECONTAINER_HPP
+#define MUELU_VARIABLECONTAINER_HPP
 
+#include <map>
 #include <Teuchos_ParameterEntry.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -144,4 +145,6 @@ namespace MueLu {
 
 }
 
-#endif /* MUELU_VARIABLECONTAINER_HPP_ */
+#endif /* MUELU_VARIABLECONTAINER_HPP */
+
+//TODO: .cpp file + fwd decl of this class

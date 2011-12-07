@@ -77,6 +77,7 @@ namespace MueLu {
   public:
 
     TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager);
+    TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManagerFine, RCP<const FactoryManagerBase> parentFactoryManagerCoarse);
 
     virtual ~TopRAPFactory();
 
@@ -85,7 +86,8 @@ namespace MueLu {
     void Build(Level & fineLevel, Level & coarseLevel) const;
 
   private:
-    RCP<const FactoryManagerBase> factoryManager_;
+    RCP<const FactoryManagerBase> factoryManagerFine_;
+    RCP<const FactoryManagerBase> factoryManagerCoarse_;
     RCP<const FactoryBase> PFact_;
     RCP<const FactoryBase> RFact_;
     RCP<const FactoryBase> AcFact_;

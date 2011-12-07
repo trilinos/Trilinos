@@ -168,12 +168,15 @@ namespace MueLu {
   }
 
   void Level::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+    MUELU_DESCRIBE; 
+    out0 << ""; // remove warning
+
     Teuchos::TabularOutputter outputter(out);
     outputter.pushFieldSpec("name",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 32);
     outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
     outputter.pushFieldSpec("req",                Teuchos::TabularOutputter::INT,    Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 3);
-    outputter.pushFieldSpec("keep",               Teuchos::TabularOutputter::STRING,    Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 5);
-    outputter.pushFieldSpec("type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 10);
+    outputter.pushFieldSpec("keep",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 5);
+    outputter.pushFieldSpec("type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 15);
     outputter.pushFieldSpec("data",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
     outputter.outputHeader();
 
@@ -182,8 +185,13 @@ namespace MueLu {
       std::vector<std::string> enames = needs_.RequestedKeys(*kt);
       for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); it++) {
         outputter.outputField(*it);   // variable name
-        outputter.outputField(*kt);   // factory ptr
 
+        // factory ptr
+        if (*kt == NoFactory::get())
+          outputter.outputField("NoFactory");
+        else
+          outputter.outputField(*kt);
+        
         int reqcount = needs_.NumRequests(*it, *kt); // request counter
         outputter.outputField(reqcount);
         if (needs_.IsKept(*it, *kt)) {
@@ -198,13 +206,13 @@ namespace MueLu {
           std::string strType = needs_.GetType(*it, *kt); // Variable type
           if (strType.find("Xpetra::Operator") != std::string::npos) {
             outputter.outputField("Operator" );
-            outputter.outputField(" ");
+            outputter.outputField("available");
           } else if (strType.find("Xpetra::MultiVector") != std::string::npos) {
             outputter.outputField("Vector");
-            outputter.outputField("");
+            outputter.outputField("available");
           } else if (strType.find("MueLu::SmootherBase") != std::string::npos) {
             outputter.outputField("SmootherBase");
-            outputter.outputField("");
+            outputter.outputField("available");
           } else if (strType == "int") {
             outputter.outputField(strType);
             int data = needs_.Get<int>(*it, *kt);
@@ -219,7 +227,7 @@ namespace MueLu {
             outputter.outputField(data);
           } else {
             outputter.outputField(strType);
-            outputter.outputField("");
+            outputter.outputField("available");
           }
         } else {
           outputter.outputField("unknown");

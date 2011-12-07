@@ -7,30 +7,37 @@
 
 #include "MueLu_SmootherBase.hpp"
 
+//TODO/FIXME: DeclareInput(, **this**) cannot be used here
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager)
-    : factoryManager_(rcp( new InternalFactoryManager(parentFactoryManager))), PFact_(parentFactoryManager->GetFactory("P")), RFact_(parentFactoryManager->GetFactory("R")), AcFact_(parentFactoryManager->GetFactory("A"))
+    : factoryManagerFine_(rcp( new InternalFactoryManager(parentFactoryManager))), factoryManagerCoarse_(rcp( new InternalFactoryManager(parentFactoryManager))), PFact_(parentFactoryManager->GetFactory("P")), RFact_(parentFactoryManager->GetFactory("R")), AcFact_(parentFactoryManager->GetFactory("A"))
   { }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManagerFine, RCP<const FactoryManagerBase> parentFactoryManagerCoarse)
+    :  factoryManagerFine_(rcp( new InternalFactoryManager(parentFactoryManagerFine))), factoryManagerCoarse_(rcp( new InternalFactoryManager(parentFactoryManagerCoarse))), PFact_(parentFactoryManagerCoarse->GetFactory("P")), RFact_(parentFactoryManagerCoarse->GetFactory("R")), AcFact_(parentFactoryManagerCoarse->GetFactory("A"))
+  { }
+  
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~TopRAPFactory() { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-    SetFactoryManager SFM2(fineLevel,   factoryManager_);
-    SetFactoryManager SFM1(coarseLevel, factoryManager_);
+    SetFactoryManager SFM2(fineLevel,   factoryManagerFine_);
+    SetFactoryManager SFM1(coarseLevel, factoryManagerCoarse_);
 
-    if (PFact_  != Teuchos::null) coarseLevel.DeclareInput("P", PFact_.get(), this);
-    if (RFact_  != Teuchos::null) coarseLevel.DeclareInput("R", RFact_.get(), this);
-    if (AcFact_ != Teuchos::null) coarseLevel.DeclareInput("A", AcFact_.get(), this);
+    if (PFact_  != Teuchos::null) coarseLevel.DeclareInput("P", PFact_.get());
+    if (RFact_  != Teuchos::null) coarseLevel.DeclareInput("R", RFact_.get());
+    if (AcFact_ != Teuchos::null) coarseLevel.DeclareInput("A", AcFact_.get());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
-    SetFactoryManager SFM1(fineLevel,   factoryManager_);
-    SetFactoryManager SFM2(coarseLevel, factoryManager_);
+    SetFactoryManager SFM1(fineLevel,   factoryManagerFine_);
+    SetFactoryManager SFM2(coarseLevel, factoryManagerCoarse_);
 
     if (PFact_ != Teuchos::null) {
       RCP<Operator> P = coarseLevel.Get<RCP<Operator> >("P", PFact_.get());
@@ -65,8 +72,8 @@ namespace MueLu {
     SetFactoryManager SFM(level, factoryManager_);
 
     if (smootherFact_ != Teuchos::null) {
-      level.DeclareInput("PreSmoother",  smootherFact_.get(), this);
-      level.DeclareInput("PostSmoother", smootherFact_.get(), this);
+      level.DeclareInput("PreSmoother",  smootherFact_.get());
+      level.DeclareInput("PostSmoother", smootherFact_.get());
     }
   }
 

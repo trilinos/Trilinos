@@ -26,7 +26,7 @@ namespace MueLu {
     Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
     var->Release(requestedBy);
 
-    if (var->IsRequested() == false && var->IsKept() == false ) {
+    if (var->IsRequested() == false && var->IsKept() == false) {
       var = Teuchos::null; // free data
       dataTable_.Remove(factory, ename);
     }
