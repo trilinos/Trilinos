@@ -385,11 +385,6 @@ int NNTI_ptl_connect (
             peer_hdl,
             nid,
             pid);
-//    peer_hdl->url = strdup(url);
-//
-//    peer_hdl->peer.transport_id                         = NNTI_TRANSPORT_PORTALS;
-//    peer_hdl->peer.NNTI_remote_process_t_u.portals.nid  = nid;
-//    peer_hdl->peer.NNTI_remote_process_t_u.portals.pid  = pid;
 
     return(rc);
 }
@@ -409,8 +404,6 @@ int NNTI_ptl_disconnect (
 
     assert(trans_hdl);
     assert(peer_hdl);
-
-    free(peer_hdl->url);
 
     return(rc);
 }
@@ -706,7 +699,7 @@ int NNTI_ptl_unregister_memory (
     assert(ptls_mem_hdl);
 
     log_debug(debug_level, "unregistering buf(%lu) md_h(%d) eq_h(%d)",
-    		reg_buf->payload, ptls_mem_hdl->md_h, ptls_mem_hdl->eq_h);
+            reg_buf->payload, ptls_mem_hdl->md_h, ptls_mem_hdl->eq_h);
 
     if (ptls_mem_hdl->buffer_id == NNTI_REQ_PT_INDEX) {
         uint32_t index=0;
@@ -1404,21 +1397,26 @@ int is_buf_op_complete(
 
 void create_peer(NNTI_peer_t *peer, ptl_nid_t nid, ptl_pid_t pid)
 {
-    //peer->url = (char *)malloc(NNTI_URL_LEN);
-    log_debug(nnti_debug_level, "sizeof(peer->url)=%d", sizeof(peer->url));
+    log_debug(nnti_debug_level, "enter");
+
     sprintf(peer->url, "ptl://%u:%u/", nid, pid);
 
     peer->peer.transport_id                        = NNTI_TRANSPORT_PORTALS;
     peer->peer.NNTI_remote_process_t_u.portals.nid = nid;
     peer->peer.NNTI_remote_process_t_u.portals.pid = pid;
+
+    log_debug(nnti_debug_level, "exit");
 }
 
 void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
 {
-    //dest->url = strdup(src->url);
+    log_debug(nnti_debug_level, "enter");
+
     strcpy(dest->url, src->url);
 
     dest->peer.transport_id                        = NNTI_TRANSPORT_PORTALS;
     dest->peer.NNTI_remote_process_t_u.portals.nid = src->peer.NNTI_remote_process_t_u.portals.nid;
     dest->peer.NNTI_remote_process_t_u.portals.pid = src->peer.NNTI_remote_process_t_u.portals.nid;
+
+    log_debug(nnti_debug_level, "exit");
 }
