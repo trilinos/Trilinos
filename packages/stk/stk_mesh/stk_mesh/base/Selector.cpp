@@ -27,17 +27,6 @@ Selector::Selector( )
 }
 
 
-Selector::~Selector( )
-{ }
-
-
-// Deep copy
-Selector::Selector( const Selector & selector )
-  : m_mesh_meta_data(selector.m_mesh_meta_data), m_op(selector.m_op)
-{
-}
-
-
 Selector::Selector( const Part & p )
   : m_mesh_meta_data( & MetaData::get(p) ) , m_op()
 {
@@ -64,13 +53,6 @@ Selector & Selector::complement()
   return *this;
 }
 
-
-Selector & Selector::operator = ( const Selector & B )
-{
-  this->m_mesh_meta_data = B.m_mesh_meta_data;
-  this->m_op = B.m_op;
-  return *this;
-}
 
 Selector & Selector::operator &= ( const Selector & B )
 {
