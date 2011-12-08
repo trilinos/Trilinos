@@ -124,7 +124,7 @@ public:
       }
     }
 
-    typedef array_type::HostView h_array_type ;
+    typedef array_type::HostMirror h_array_type ;
 
     h_array_type  h_left  = Kokkos::create_mdarray< h_array_type >(  NP , N1 , N2 );
     h_array_type h_right = Kokkos::create_mdarray< h_array_type >( NP , N1 , N2 );

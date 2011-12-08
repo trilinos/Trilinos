@@ -1,6 +1,3 @@
-#include "BoxMeshFixture.hpp"
-
-
 template<typename Scalar , class DeviceType>
 struct Region;
 
@@ -10,10 +7,10 @@ struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
   typedef KOKKOS_MACRO_DEVICE       device_type;
   typedef device_type::size_type    size_type;
 
-  typedef Kokkos::MDArrayView<Scalar,device_type>   scalar_array;
-  typedef Kokkos::MDArrayView<int,device_type>      int_array;
+  typedef Kokkos::MDArray<Scalar,device_type>   scalar_array;
+  typedef Kokkos::MDArray<int,device_type>      int_array;
 
-  typedef Kokkos::ValueView<Scalar,device_type>     scalar;
+  typedef Kokkos::Value<Scalar,device_type>     scalar;
 
   template <class Mesh>
   Region(

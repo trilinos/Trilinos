@@ -63,7 +63,7 @@ public:
   typedef Kokkos::Host        host ;
 
   typedef Kokkos::MDArray< T , device > dView ;
-  typedef typename dView::HostView hView ;
+  typedef typename dView::HostMirror hView ;
 
   TestMDArray() { run_test(); }
 

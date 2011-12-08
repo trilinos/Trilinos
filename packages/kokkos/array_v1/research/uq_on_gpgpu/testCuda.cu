@@ -99,9 +99,9 @@ void run( int block_count , int block_size )
 
   Kokkos::multiply( graph , matrix , input , output );
 
-  vector_type::HostView h_output = Kokkos::mirror_create( output );
-  vector_type::HostView h_input  = Kokkos::mirror_create( input );
-  matrix_type::HostView h_matrix = Kokkos::mirror_create( matrix );
+  vector_type::HostMirror h_output = Kokkos::mirror_create( output );
+  vector_type::HostMirror h_input  = Kokkos::mirror_create( input );
+  matrix_type::HostMirror h_matrix = Kokkos::mirror_create( matrix );
 
   Kokkos::mirror_update( h_input , input );
   Kokkos::mirror_update( h_output , output );
@@ -190,9 +190,9 @@ void run( const int block_count ,
   graph.block_column_index  =
     Kokkos::create_multivector< graph_type::vector_type >( count );
 
-  graph_type::vector_type::HostView h_column_offset =
+  graph_type::vector_type::HostMirror h_column_offset =
     Kokkos::mirror_create( graph.block_column_offset );
-  graph_type::vector_type::HostView h_column_index  =
+  graph_type::vector_type::HostMirror h_column_index  =
     Kokkos::mirror_create( graph.block_column_index );
 
   count = 0 ;
@@ -227,9 +227,9 @@ void run( const int block_count ,
 
   perf.seconds = wall_clock.seconds();
 
-  vector_type::HostView h_output = Kokkos::mirror_create( output );
-  vector_type::HostView h_input  = Kokkos::mirror_create( input );
-  matrix_type::HostView h_matrix = Kokkos::mirror_create( matrix );
+  vector_type::HostMirror h_output = Kokkos::mirror_create( output );
+  vector_type::HostMirror h_input  = Kokkos::mirror_create( input );
+  matrix_type::HostMirror h_matrix = Kokkos::mirror_create( matrix );
 
   Kokkos::mirror_update( h_input , input );
   Kokkos::mirror_update( h_output , output );
@@ -357,9 +357,9 @@ void run( const int block_count ,
   graph.block_column_index  =
     Kokkos::create_multivector< graph_type::vector_type >( count );
 
-  graph_type::vector_type::HostView h_column_offset =
+  graph_type::vector_type::HostMirror h_column_offset =
     Kokkos::mirror_create( graph.block_column_offset );
-  graph_type::vector_type::HostView h_column_index  =
+  graph_type::vector_type::HostMirror h_column_index  =
     Kokkos::mirror_create( graph.block_column_index );
 
   count = 0 ;
@@ -394,9 +394,9 @@ void run( const int block_count ,
 
   perf.seconds = wall_clock.seconds();
 
-  vector_type::HostView h_output = Kokkos::mirror_create( output );
-  vector_type::HostView h_input  = Kokkos::mirror_create( input );
-  matrix_type::HostView h_matrix = Kokkos::mirror_create( matrix );
+  vector_type::HostMirror h_output = Kokkos::mirror_create( output );
+  vector_type::HostMirror h_input  = Kokkos::mirror_create( input );
+  matrix_type::HostMirror h_matrix = Kokkos::mirror_create( matrix );
 
   Kokkos::mirror_update( h_input , input );
   Kokkos::mirror_update( h_output , output );

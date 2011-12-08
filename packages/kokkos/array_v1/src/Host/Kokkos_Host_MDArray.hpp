@@ -51,13 +51,13 @@ public:
 };
 
 template< typename ValueType >
-class MDArrayHostView< ValueType , Host::mdarray_map > {
+class MDArrayHostMirror< ValueType , Host::mdarray_map > {
 public:
   typedef MDArray< ValueType , Host > type ;
 };
 
 template< typename ValueType , class MDArrayMapType >
-class MDArrayHostView {
+class MDArrayHostMirror {
 public:
   typedef MDArray< ValueType , HostMapped< MDArrayMapType > > type ;
 };
@@ -157,7 +157,7 @@ template< typename ValueType , class MDArrayMap >
 class Initialize< MDArray< ValueType , HostMapped< MDArrayMap > > > {
 public:
   typedef MDArray< ValueType , HostMapped< MDArrayMap > > dst_type ;
-  
+
   static void run( const dst_type & dst )
   {
     switch( dst.rank() ) {
@@ -262,7 +262,7 @@ class DeepCopy< MDArray< ValueType , Host > ,
 public:
   typedef MDArray< ValueType , Host >                     dst_type ;
   typedef MDArray< ValueType , HostMapped< MDArrayMap > > src_type ;
-  
+
   static void run( const dst_type & dst , const src_type & src )
   {
     typedef MemoryManager< Host::memory_space > memory_manager ;
@@ -289,7 +289,7 @@ class DeepCopy< MDArray< ValueType , HostMapped< MDArrayMap > > ,
 public:
   typedef MDArray< ValueType , HostMapped< MDArrayMap > > dst_type ;
   typedef MDArray< ValueType , Host >                     src_type ;
-  
+
   static void run( const dst_type & dst , const src_type & src )
   {
     typedef MemoryManager< Host::memory_space > memory_manager ;
@@ -311,6 +311,6 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-} // namespace Impl 
-} // namespace Kokkos 
+} // namespace Impl
+} // namespace Kokkos
 

@@ -2,40 +2,36 @@
 #include <iomanip>
 #include <sys/time.h>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+#include <Kokkos_Value.hpp>
+#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_MDArray.hpp>
 
-#include <Kokkos_DeviceCuda.hpp>
-#include <Kokkos_DeviceCuda_ValueView.hpp>
-#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
-#include <Kokkos_DeviceCuda_MDArrayView.hpp>
-#include <Kokkos_DeviceCuda_ParallelFor.hpp>
-#include <Kokkos_DeviceCuda_ParallelReduce.hpp>
+#include <Kokkos_Host.hpp>
+#include <Kokkos_Cuda.hpp>
 
-#include <Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_Cuda_macros.hpp>
 #include <explicit_dynamics_app.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 
 __global__ void dummy_kernel(){}
 
-namespace test{
+namespace Test{
 
-	void test_Cuda(int beg, int end, int runs){
+void test_Cuda(int beg, int end, int runs){
 
-		cudaFuncSetCacheConfig(dummy_kernel, cudaFuncCachePreferL1);
-		dummy_kernel<<<1, 1>>>();
+  Kokkos::Cuda::initialize();
 
-		std::cout << "Kokkos Cuda: " << std::endl;
+  cudaFuncSetCacheConfig(dummy_kernel, cudaFuncCachePreferL1);
+  dummy_kernel<<<1, 1>>>();
 
-		Kokkos::DeviceCuda::initialize();
+  std::cout << "Kokkos Cuda: " << std::endl;
 
-    explicit_dynamics::driver<float,Kokkos::DeviceCuda>("Cuda float", beg, end, runs);
-    explicit_dynamics::driver<double,Kokkos::DeviceCuda>("Cuda double", beg, end, runs);
-	}
+
+  explicit_dynamics::driver<float,Kokkos::Cuda>("Cuda-float", beg, end, runs);
+  explicit_dynamics::driver<double,Kokkos::Cuda>("Cuda-double", beg, end, runs);
+
+  Kokkos::Cuda::finalize();
+}
 
 }// namespace
 

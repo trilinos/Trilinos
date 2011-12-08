@@ -55,7 +55,7 @@ class Value< ValueType , KOKKOS_MACRO_DEVICE > {
 public:
   typedef ValueType                  value_type ;
   typedef KOKKOS_MACRO_DEVICE        device_type ;
-  typedef Value< value_type , Host > HostView ;
+  typedef Value< value_type , Host > HostMirror ;
 
   /*------------------------------------------------------------------*/
 
@@ -64,7 +64,7 @@ public:
   /** \brief  Access value */
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type & operator* () const 
+  value_type & operator* () const
   { return * m_memory.ptr_on_device(); }
 
   /** \brief  Allow the Value to be a parallel reduce
@@ -109,7 +109,7 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   Value & operator = ( const Value & rhs )
     { m_memory.operator=( rhs.m_memory ); return *this ; }
-  
+
   /**  \brief  Destroy this view of the value.  */
   ~Value() {}
 

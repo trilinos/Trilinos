@@ -64,10 +64,10 @@ public:
 
 template< typename ValueType >
 class DeepCopy< Value< ValueType , Cuda > ,
-                typename Value< ValueType , Cuda >::HostView > {
+                typename Value< ValueType , Cuda >::HostMirror > {
 public:
   typedef Value< ValueType , Cuda >                    dst_type ;
-  typedef typename Value< ValueType , Cuda >::HostView src_type ;
+  typedef typename Value< ValueType , Cuda >::HostMirror src_type ;
 
   static void run( const Value< ValueType , Cuda > & dst ,
                    const Value< ValueType , Cuda > & src )
@@ -80,10 +80,10 @@ public:
 };
 
 template< typename ValueType >
-class DeepCopy< typename Value< ValueType , Cuda >::HostView ,
+class DeepCopy< typename Value< ValueType , Cuda >::HostMirror ,
                 Value< ValueType , Cuda > > {
 public:
-  typedef typename Value< ValueType , Cuda >::HostView dst_type ;
+  typedef typename Value< ValueType , Cuda >::HostMirror dst_type ;
   typedef Value< ValueType , Cuda >                    src_type ;
 
   static void run( const dst_type & dst , const src_type & src )

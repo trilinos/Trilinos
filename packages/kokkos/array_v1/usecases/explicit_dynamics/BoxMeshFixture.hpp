@@ -41,7 +41,6 @@
 #define KOKKOS_BOXMESHFIXTURE_HPP
 
 #include <stdexcept>
-#include <Kokkos_MDArrayView.hpp>
 
 //  construct a structured, rectangular prism mesh of Hex elements,
 //  with dimensions given by elems_x, elems_y, elems_z

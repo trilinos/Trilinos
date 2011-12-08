@@ -249,7 +249,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
   multivector_type R ;
   double seconds ;
 
-  ModifiedGramSchmidt( const typename multivector_type::HostView & A )
+  ModifiedGramSchmidt( const typename multivector_type::HostMirror & A )
   : Q( Kokkos::create_multivector<Scalar,device_type>( A.length(), A.count()) )
   , R( Kokkos::create_multivector<Scalar,device_type>( A.count() , A.count()) )
   {
@@ -290,7 +290,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
   static double test( const size_t length ,
                       const size_t count )
   {
-    typedef typename multivector_type::HostView HostMultiVector ;
+    typedef typename multivector_type::HostMirror HostMultiVector ;
 
     // Create and fill A on the host
 

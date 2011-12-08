@@ -68,7 +68,7 @@ public:
   typedef DeviceType                      device_type ;
   typedef typename DeviceType::size_type  size_type ;
 
-  typedef MultiVector< value_type , void /* Host */ > HostView ;
+  typedef MultiVector< value_type , void /* Host */ > HostMirror ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query length of vectors */
@@ -148,7 +148,7 @@ create_multivector( size_t length , size_t count = 1 );
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class DeviceType >
-typename MultiVector< ValueType , DeviceType >::HostView
+typename MultiVector< ValueType , DeviceType >::HostMirror
 create_mirror( const MultiVector< ValueType , DeviceType > & );
 
 //----------------------------------------------------------------------------
@@ -215,10 +215,10 @@ class CreateMirror< MultiVector< ValueType , Device > , true /* view */ >
 {
 public:
   typedef  MultiVector< ValueType , Device >            View ;
-  typedef  typename MultiVector< ValueType , Device >::HostView  HostView ;
+  typedef  typename MultiVector< ValueType , Device >::HostMirror  HostMirror ;
 
   static
-  HostView create( const View & v ) { return HostView( v ); }
+  HostMirror create( const View & v ) { return HostMirror( v ); }
 };
 
 template< typename ValueType , class Device >
@@ -226,11 +226,11 @@ class CreateMirror< MultiVector< ValueType , Device > , false /* copy */ >
 {
 public:
   typedef  MultiVector< ValueType , Device >            View ;
-  typedef  typename MultiVector< ValueType , Device >::HostView  HostView ;
-  typedef  typename HostView::device_type  HostDevice ;
+  typedef  typename MultiVector< ValueType , Device >::HostMirror  HostMirror ;
+  typedef  typename HostMirror::device_type  HostDevice ;
 
   static
-  HostView create( const View & v )
+  HostMirror create( const View & v )
     {
       const size_t length = v.length();
       const size_t count  = v.count();
@@ -244,11 +244,11 @@ public:
 
 template< typename ValueType , class DeviceType >
 inline
-typename MultiVector< ValueType , DeviceType >::HostView
+typename MultiVector< ValueType , DeviceType >::HostMirror
 create_mirror( const MultiVector< ValueType , DeviceType > & v )
 {
   typedef MultiVector< ValueType , DeviceType >  view_type ;
-  typedef typename view_type::HostView           host_view ;
+  typedef typename view_type::HostMirror           host_view ;
   typedef typename host_view::device_type        host_device ;
   typedef typename host_device::memory_space     host_memory ;
   typedef typename DeviceType::memory_space      memory ;

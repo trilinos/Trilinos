@@ -44,7 +44,7 @@
 #include <Kokkos_MDArray.hpp>
 #include <Kokkos_MultiVector.hpp>
 
-//  construct a structured, rectangular prism mesh of Hex elements, 
+//  construct a structured, rectangular prism mesh of Hex elements,
 //  with dimensions given by elems_x, elems_y, elems_z
 
 template < class IndexArray , class ScalarArray >
@@ -67,8 +67,8 @@ public:
   typedef Kokkos::MDArray< index_type ,  Device > index_array_d ;
   typedef Kokkos::MDArray< scalar_type , Device > scalar_array_d ;
 
-  typedef typename index_array_d  ::HostView  index_array_h ;
-  typedef typename scalar_array_d ::HostView  scalar_array_h ;
+  typedef typename index_array_d  ::HostMirror  index_array_h ;
+  typedef typename scalar_array_d ::HostMirror  scalar_array_h ;
 
   MeshFixture< index_array_d , scalar_array_d > d_mesh ;
   MeshFixture< index_array_h , scalar_array_h > h_mesh ;
@@ -132,7 +132,7 @@ public:
   void verify_connectivity_and_coordinates() const
   {
     for ( index_type node_index = 0 ; node_index < node_count; ++node_index ) {
-      for ( index_type j = h_mesh.node_elem_offset( node_index ) ; 
+      for ( index_type j = h_mesh.node_elem_offset( node_index ) ;
                 j < h_mesh.node_elem_offset( node_index + 1 ) ; ++j ) {
         const index_type elem_index = h_mesh.node_elem_ids(j,0);
         const index_type node_local = h_mesh.node_elem_ids(j,1);
@@ -279,8 +279,8 @@ public:
     typedef Kokkos::MultiVector< index_type, Device > index_vector_d ;
     typedef Kokkos::MultiVector< ValueType , Device > value_vector_d ;
 
-    typedef typename value_vector_d::HostView  value_vector_h ;
-    typedef typename index_vector_d::HostView  index_vector_h ;
+    typedef typename value_vector_d::HostMirror  value_vector_h ;
+    typedef typename index_vector_d::HostMirror  index_vector_h ;
 
     node_flag  = Kokkos::create_multivector< index_vector_d >( node_count );
     node_value = Kokkos::create_multivector< value_vector_d >( node_count );

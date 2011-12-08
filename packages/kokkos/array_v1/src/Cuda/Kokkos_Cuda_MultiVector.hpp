@@ -68,10 +68,10 @@ public:
 
 template< typename ValueType >
 class DeepCopy< MultiVector< ValueType , Cuda > ,
-                typename MultiVector< ValueType , Cuda >::HostView > {
+                typename MultiVector< ValueType , Cuda >::HostMirror > {
 public:
   typedef MultiVector< ValueType , Cuda >                    dst_type ;
-  typedef typename MultiVector< ValueType , Cuda >::HostView src_type ;
+  typedef typename MultiVector< ValueType , Cuda >::HostMirror src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
@@ -87,10 +87,10 @@ public:
 };
 
 template< typename ValueType >
-class DeepCopy< typename MultiVector< ValueType , Cuda >::HostView ,
+class DeepCopy< typename MultiVector< ValueType , Cuda >::HostMirror ,
                 MultiVector< ValueType , Cuda > > {
 public:
-  typedef typename MultiVector< ValueType , Cuda >::HostView dst_type ;
+  typedef typename MultiVector< ValueType , Cuda >::HostMirror dst_type ;
   typedef MultiVector< ValueType , Cuda >                    src_type ;
 
   static void run( const dst_type & dst , const src_type & src )

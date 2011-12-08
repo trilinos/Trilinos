@@ -56,7 +56,7 @@ public:
   typedef ValueType  value_type ;
   typedef DeviceType device_type ;
 
-  typedef Value< value_type , void /* Host */ > HostView ;
+  typedef Value< value_type , void /* Host */ > HostMirror ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Access value */
@@ -109,7 +109,7 @@ create_value();
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class DeviceType >
-typename Value< ValueType , DeviceType >::HostView
+typename Value< ValueType , DeviceType >::HostMirror
 create_mirror( const Value< ValueType , DeviceType > & v );
 
 //----------------------------------------------------------------------------
@@ -169,10 +169,10 @@ class CreateMirror< Value< ValueType , Device > , true /* view */ >
 {
 public:
   typedef  Value< ValueType , Device >            View ;
-  typedef  typename Value< ValueType , Device >::HostView  HostView ;
+  typedef  typename Value< ValueType , Device >::HostMirror  HostMirror ;
 
   static
-  HostView create( const View & v ) { return HostView( v ); }
+  HostMirror create( const View & v ) { return HostMirror( v ); }
 };
 
 template< typename ValueType , class Device >
@@ -180,11 +180,11 @@ class CreateMirror< Value< ValueType , Device > , false /* copy */ >
 {
 public:
   typedef  Value< ValueType , Device >            View ;
-  typedef  typename Value< ValueType , Device >::HostView  HostView ;
+  typedef  typename Value< ValueType , Device >::HostMirror  HostMirror ;
 
   static
-  HostView create( const View & )
-    { return create_labeled_value< HostView >( std::string() ); }
+  HostMirror create( const View & )
+    { return create_labeled_value< HostMirror >( std::string() ); }
 };
 
 } // namespace Impl
@@ -193,11 +193,11 @@ public:
 
 template< typename ValueType , class DeviceType >
 inline
-typename Value< ValueType , DeviceType >::HostView
+typename Value< ValueType , DeviceType >::HostMirror
 create_mirror( const Value< ValueType , DeviceType > & v )
 {
   typedef Value< ValueType , DeviceType >     device_view ;
-  typedef typename device_view::HostView      host_view ;
+  typedef typename device_view::HostMirror      host_view ;
   typedef typename host_view::device_type     host_device ;
   typedef typename host_device::memory_space  host_memory ;
   typedef typename DeviceType::memory_space   device_memory ;

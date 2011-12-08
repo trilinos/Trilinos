@@ -61,7 +61,7 @@ public:
   typedef typename device_type::size_type     size_type ;
 
   typedef typename
-    Impl::MDArrayHostView< value_type , mdarray_map >::type HostView ;
+    Impl::MDArrayHostMirror< value_type , mdarray_map >::type HostMirror ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query rank of the array */
@@ -420,7 +420,7 @@ public:
       m_map   .operator=( rhs.m_map );
       return *this ;
     }
-  
+
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */

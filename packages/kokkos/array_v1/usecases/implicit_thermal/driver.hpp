@@ -84,16 +84,16 @@ static void run(int x, int y, int z, PerformanceData & perf )
   typedef device_type::size_type index_type ;
 
   typedef Kokkos::MDArray<Scalar,     device_type>  scalar_array_d;
-  typedef Kokkos::MDArray<index_type, device_type>  index_array_d;    
+  typedef Kokkos::MDArray<index_type, device_type>  index_array_d;
 
   typedef Kokkos::MultiVector<Scalar,     device_type>  scalar_vector_d;
   typedef Kokkos::MultiVector<index_type, device_type>  index_vector_d;
 
-  typedef typename scalar_array_d::HostView  scalar_array_h ;
-  typedef typename index_array_d ::HostView  index_array_h ;
+  typedef typename scalar_array_d::HostMirror  scalar_array_h ;
+  typedef typename index_array_d ::HostMirror  index_array_h ;
 
-  typedef typename scalar_vector_d::HostView  scalar_vector_h ;
-  typedef typename index_vector_d ::HostView  index_vector_h ;
+  typedef typename scalar_vector_d::HostMirror  scalar_vector_h ;
+  typedef typename index_vector_d ::HostMirror  index_vector_h ;
 
   // Problem coefficients
 
@@ -153,8 +153,8 @@ static void run(int x, int y, int z, PerformanceData & perf )
   //------------------------------
   // Allocate device memory for linear system and element contributions.
 
-  A = Kokkos::create_labeled_multivector< scalar_vector_d > ("A",A_col_h.length());  
-  b = Kokkos::create_labeled_multivector< scalar_vector_d > ("b",mesh.elem_count, 8);  
+  A = Kokkos::create_labeled_multivector< scalar_vector_d > ("A",A_col_h.length());
+  b = Kokkos::create_labeled_multivector< scalar_vector_d > ("b",mesh.elem_count, 8);
   X = Kokkos::create_labeled_multivector< scalar_vector_d > ("X",mesh.node_count);
 
   elem_stiffness =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8, 8);
@@ -240,7 +240,7 @@ static void driver( const char * label , int beg , int end , int runs )
   std::cout << std::endl ;
   std::cout << "\"MiniImplTherm with Kokkos " << label << "\"" << std::endl;
   std::cout << "\"Size\" ,     \"Setup\" ,    \"Element\" ,  \"Element\" , \"Fill\" ,   \"Fill\" ,  \"Solve\"" << std::endl
-            << "\"elements\" , \"millisec\" , \"millisec\" , \"flops\" , \"millisec\" , \"flops\" , \"Mflop/sec\"" << std::endl ; 
+            << "\"elements\" , \"millisec\" , \"millisec\" , \"flops\" , \"millisec\" , \"flops\" , \"Mflop/sec\"" << std::endl ;
 
   for(int i = beg ; i < end; ++i )
   {

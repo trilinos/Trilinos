@@ -57,7 +57,7 @@ public:
   typedef KOKKOS_MACRO_DEVICE        device_type ;
   typedef device_type::size_type     size_type ;
 
-  typedef MultiVector< value_type , Host > HostView ;
+  typedef MultiVector< value_type , Host > HostMirror ;
 
 public:
 
@@ -66,17 +66,17 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type length() const { return m_length ; }
-  
+
   /** \brief  Query count of vectors */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type count()  const { return m_count ; }
-  
+
   /** \brief  Query if NULL view */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   operator bool ()  const { return 0 != m_ptr_on_device ; }
-  
+
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const MultiVector & rhs ) const
@@ -84,7 +84,7 @@ public:
     return m_ptr_on_device == rhs.m_ptr_on_device &&
            m_count         == rhs.m_count ;
   }
-  
+
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const MultiVector & rhs ) const
@@ -118,7 +118,7 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   value_type * ptr_on_device() const { return m_ptr_on_device ; }
-  
+
   /*------------------------------------------------------------------*/
 
 #if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
@@ -128,7 +128,7 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator()( const iTypeP & iP , const iTypeV & iV ) const
     { return m_ptr_on_device[ iP + m_stride * iV ]; }
-  
+
   template< typename iTypeP >
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator()( const iTypeP & iP ) const
@@ -174,7 +174,7 @@ public:
       m_count          = rhs.m_count ;
       return *this ;
     }
-  
+
   /**  \brief  Destroy this view of the value.
    *           If the last view then allocated memory is deallocated.
    */

@@ -68,10 +68,10 @@ public:
 /** \brief  The hostview is identically mapped */
 template< typename ValueType >
 class DeepCopy< MDArray< ValueType , Cuda > ,
-                typename MDArray< ValueType , Cuda >::HostView > {
+                typename MDArray< ValueType , Cuda >::HostMirror > {
 public:
   typedef MDArray< ValueType , Cuda >                    dst_type ;
-  typedef typename MDArray< ValueType , Cuda >::HostView src_type ;
+  typedef typename MDArray< ValueType , Cuda >::HostMirror src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
@@ -85,10 +85,10 @@ public:
 };
 
 template< typename ValueType >
-class DeepCopy< typename MDArray< ValueType , Cuda >::HostView ,
+class DeepCopy< typename MDArray< ValueType , Cuda >::HostMirror ,
                 MDArray< ValueType , Cuda > > {
 public:
-  typedef typename MDArray< ValueType , Cuda >::HostView dst_type ;
+  typedef typename MDArray< ValueType , Cuda >::HostMirror dst_type ;
   typedef MDArray< ValueType , Cuda >                    src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
