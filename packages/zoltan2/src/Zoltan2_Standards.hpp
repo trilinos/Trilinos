@@ -19,12 +19,25 @@
 #include <Zoltan2_config.h>
 
 //////////////////////////////////////////
-// Return value of global counts will be size_t for now.
+// For int*_t, INT*_MAX, INT*_MIN
+//
+// TODO: If the application includes stdint.h
+//   before including the Zoltan2 header file,
+//   then it is likely that __STD_LIMIT_MACROS
+//   was not defined, and the INT*_MAX/MIN will
+//   also not be defined.
 
-typedef size_t global_size_t;
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 
 //////////////////////////////////////////
-// Frequently used Trilinos classes
+// Frequently used Trilinos symbols
+
+#include <Tpetra_ConfigDefs.hpp>
+
+namespace Zoltan2{
+using Tpetra::global_size_t;
+}
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -34,6 +47,7 @@ typedef size_t global_size_t;
 #include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 namespace Zoltan2{
 using Teuchos::RCP;
@@ -57,6 +71,7 @@ using Teuchos::DefaultComm;
 using Teuchos::CommRequest;
 using Teuchos::ParameterList;
 using Teuchos::ParameterEntry;
+using Teuchos::reduceAll;
 }
 
 //////////////////////////////////////////////////////
