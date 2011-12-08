@@ -187,8 +187,7 @@ struct IdentifierTraits {
   }
 
   /*! \brief Compute b - a, if possible
-      \result b-a if a and b are ordinals,
-                 throw an error otherwise.
+      \result b-a if that's a valid operation, throw an error otherwise.
    */
   static inline T difference(const T a, const T b) {
     return UndefIdTraits<bool>::invalid(); 

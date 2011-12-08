@@ -801,7 +801,7 @@ template< typename GID, typename LNO, typename GNO>
 
     userGidsAreConsecutive_= globallyConsecutiveOrdinals<GID>(gidPtr,
       localNumberOfIds_,  globalNumberOfIds_, *(env_->comm_), *env_,
-      tmpDist);
+      tmpDist(0, numProcs_+1));
 
     if (userGidsAreConsecutive_){    
       // A GNO is large enough to hold GIDs, but may be a different type.

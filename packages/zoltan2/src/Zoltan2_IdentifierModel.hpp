@@ -98,7 +98,7 @@ public:
   IdentifierModel( const IdentifierInput<User> *ia, 
     const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
       gnosAreGids_(false), weightDim_(0), numGlobalIdentifiers_(), env_(env), 
-      comm_(env->comm_), gids_(), weights_(), gnos_()
+      comm_(env->comm_), gids_(), weights_(), gnos_(), gnosConst_()
   {
     size_t nLocalIds;
     const gid_t *gids;
@@ -142,10 +142,13 @@ public:
 
       try{
         ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
-        idMap->gidTranslate( gids_,  gnos_, TRANSLATE_APP_TO_LIB);
+        idMap->gidTranslate( gids_(0,nLocalIds),  gnos_(0,nLocalIds), 
+          TRANSLATE_APP_TO_LIB);
       }
       Z2_FORWARD_EXCEPTIONS;
     }
+
+    gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
   }
 
   /*! Returns the number identifierson this process.
@@ -173,13 +176,15 @@ public:
     ArrayView<const scalar_t> &wgts) const 
   {
     wgts = weights_;
+    size_t n = getLocalNumIdentifiers();
+
     if (gnosAreGids_){
-      Ids = gids_.persistingView(0, gids_.size());
+      Ids = gids_(0, n);
     }
     else{
-      Ids = gnos_.getConst();
+      Ids = gnosConst_(0, n);
     }
-    return gids_.size();
+    return n;
   }
 
   ////////////////////////////////////////////////////
@@ -198,12 +203,8 @@ public:
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
   { 
-    if (gnosAreGids_){
-      gnos = gids_.persistingView(0, gids_.size());
-    }
-    else{
-      gnos = gnos_.getConst();
-    }
+    ArrayView<const scalar_t> weights;
+    getIdentifierList(gnos, weights);
   }
 
 private:
@@ -216,6 +217,7 @@ private:
   ArrayRCP<const gid_t> gids_;
   ArrayRCP<const scalar_t> weights_;
   ArrayRCP<gno_t> gnos_;
+  ArrayRCP<const gno_t> gnosConst_;
 };
 
 template <typename User>
@@ -232,7 +234,7 @@ public:
   IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
       gnosAreGids_(false), weightDim_(0), numGlobalIdentifiers_(), env_(env), 
-      comm_(env->comm_), gids_(), weights_(), gnos_()
+      comm_(env->comm_), gids_(), weights_(), gnos_(), gnosConst_()
   {
     size_t nLocalIds;
     const gid_t *gids;
@@ -272,10 +274,13 @@ public:
 
       try{
         ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
-        idMap->gidTranslate(gidsNonConst,  gnos_, TRANSLATE_APP_TO_LIB);
+        idMap->gidTranslate(gidsNonConst(0, nLocalIds),  
+          gnos_(0, nLocalIds), TRANSLATE_APP_TO_LIB);
       }
       Z2_FORWARD_EXCEPTIONS;
     }
+   
+    gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
   }
 
   /*! Returns the number identifierson this process.
@@ -302,14 +307,16 @@ public:
   size_t getIdentifierList( ArrayView<const gno_t> &Ids,
     ArrayView<const scalar_t> &wgts) const 
   {
-    wgts = weights_;
+    wgts = weights_(0, weightDim_*gids_.size());
+    size_t n = getLocalNumIdentifiers();
+
     if (gnosAreGids_){
-      Ids = gids_.persistingView(0, gids_.size());
+      Ids = gids_(0, n);
     }
     else{
-      Ids = gnos_.getConst();
+      Ids = gnosConst_(0, n);
     }
-    return gids_.size();
+    return n;
   }
 
   ////////////////////////////////////////////////////
@@ -328,12 +335,8 @@ public:
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
   { 
-    if (gnosAreGids_){
-      gnos = gids_.persistingView(0, gids_.size());
-    }
-    else{
-      gnos = gnos_.getConst();
-    }
+    ArrayView<const scalar_t> weights;
+    getIdentifierList(gnos, weights);
   }
 
 private:
@@ -346,6 +349,7 @@ private:
   ArrayRCP<const gid_t> gids_;
   ArrayRCP<const scalar_t> weights_;
   ArrayRCP<gno_t> gnos_;
+  ArrayRCP<const gno_t> gnosConst_;
 };
 
 }  // namespace Zoltan2

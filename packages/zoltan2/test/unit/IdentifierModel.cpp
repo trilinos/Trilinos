@@ -34,7 +34,6 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
     const RCP<const Comm<int> > &comm, bool consecutiveIds)
 {
   int rank = comm->getRank();
-  int nprocs = comm->getSize();
   int fail = 0, gfail = 0;
 
   // A default environment 

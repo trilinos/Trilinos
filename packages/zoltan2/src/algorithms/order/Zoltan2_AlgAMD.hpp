@@ -71,8 +71,9 @@ int AlgAMD(
   ArrayView<const lno_t> offsets;
   ArrayView<const scalar_t> wgts;
 
-  const size_t nEdgs = model->getEdgeList( edgeIds,
-                        procIds, offsets, wgts);
+  //const size_t nEdgs = model->getEdgeList( edgeIds,
+  //                      procIds, offsets, wgts);
+  model->getEdgeList( edgeIds, procIds, offsets, wgts);
 
   lno_t *perm;
   perm = new lno_t[nVtx];

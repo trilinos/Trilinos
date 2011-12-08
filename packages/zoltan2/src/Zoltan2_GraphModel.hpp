@@ -200,6 +200,7 @@ public:
     bool removeSelfEdges=false) :
      input_(ia), env_(env), gids_(), gnos_(),
      edgeGnos_(), procIds_(), offsets_(),
+     gnosConst_(), edgeGnosConst_(), procIdsConst_(),
      numLocalEdges_(0), numGlobalEdges_(0), numLocalVtx_(0),
      gidsAreGnos_(false)
   {
@@ -294,7 +295,8 @@ public:
         // the gnos are declared to be const.
         ArrayRCP<gid_t> tmpGids = arcp_const_cast<gid_t>(gids_);
 
-        idMap->gidTranslate(tmpGids, gnos_, TRANSLATE_APP_TO_LIB);
+        idMap->gidTranslate(tmpGids(0,numLocalVtx_), gnos_(0,numLocalVtx_), 
+          TRANSLATE_APP_TO_LIB);
       }
       Z2_FORWARD_EXCEPTIONS;
 
@@ -313,11 +315,16 @@ public:
 
     try{
       // All processes must make this call.
-      idMap->gidGlobalTranslate(edgeGids_, edgeGnos_, procIds_);
+      idMap->gidGlobalTranslate(edgeGids_(0,numLocalEdges_), 
+        edgeGnos_(0,numLocalEdges_), procIds_(0,numLocalEdges_));
     }
     Z2_FORWARD_EXCEPTIONS;
 
     this->setIdentifierMap(idMap);   // Zoltan2::Model method
+
+    gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+    edgeGnosConst_ = arcp_const_cast<const gno_t>(edgeGnos_);
+    procIdsConst_ = arcp_const_cast<const int>(procIds_);
   }
 
   //!  Destructor
@@ -368,10 +375,10 @@ public:
     size_t n = getLocalNumVertices();
 
     if (gidsAreGnos_){
-      Ids = gids_.persistingView(0, n);
+      Ids = gids_(0, n);
     }
     else{
-      Ids = gnos_.getConst();
+      Ids = gnosConst_(0, n);
     }
 
     return n;
@@ -385,13 +392,13 @@ public:
     ArrayView<const scalar_t> &wgts) const
   {
     if (edgeGnos_.size() == 0){
-      edgeIds = edgeGids_.persistingView(0, numLocalEdges_);
+      edgeIds = edgeGids_(0, numLocalEdges_);
     }
     else{
-      edgeIds = edgeGnos_.getConst();
+      edgeIds = edgeGnosConst_(0, numLocalEdges_);
     }
-    procIds = procIds_.getConst();
-    offsets = offsets_.persistingView(0, numLocalVtx_+1);
+    procIds = procIdsConst_(0, numLocalVtx_+1);
+    offsets = offsets_(0, numLocalVtx_+1);
 
     return numLocalEdges_;
   }
@@ -412,13 +419,8 @@ public:
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
   { 
-    size_t n = getLocalNumVertices();
-    if (gidsAreGnos_){
-      gnos = gids_.persistingView(0, n);
-    }
-    else{
-      gnos = gnos_.getConst();
-    }
+    ArrayView<const scalar_t> xyz, wgts;
+    getVertexList(gnos, xyz, wgts);
   }
 
 private:
@@ -433,6 +435,10 @@ private:
   ArrayRCP<gno_t> edgeGnos_;
   ArrayRCP<int> procIds_;
   ArrayRCP<const lno_t> offsets_;
+
+  ArrayRCP<const gno_t> gnosConst_;
+  ArrayRCP<const gno_t> edgeGnosConst_;
+  ArrayRCP<const int> procIdsConst_;
 
   size_t numLocalEdges_;
   global_size_t numGlobalEdges_;

@@ -111,7 +111,7 @@ void PartitioningProblem<Adapter>::solve()
   try {
     if (algorithm_ == string("scotch")){
       AlgPTScotch<base_adapter_t>(this->envConst_, this->comm_, 
-        this->graphModel_, numGlobalParts, solnParts.persistingView(0, nObj));
+        this->graphModel_, numGlobalParts, solnParts(0, nObj));
     }
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -131,7 +131,7 @@ void PartitioningProblem<Adapter>::solve()
     solnGids = arcp_reinterpret_cast<gid_t>(gnos);
   }
   else{
-    idMap->gidTranslate(solnGids.persistingView(0, nObj), gnos, 
+    idMap->gidTranslate(solnGids(0, nObj), gnos(0, nObj), 
       TRANSLATE_LIB_TO_APP);
   }
 }
