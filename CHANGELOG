@@ -4,6 +4,39 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.8.4 December 8, 2011
+
+1.  Belos       - Extended valid parameters of PseudoBlockCGSolMgr to make it
+                  compatible with Stratimikos.
+
+2.  Belos       - Add Implicit Residula Scaling parmeter to PseudoBlockCGSolMgr
+                  default parameter list. "Residual Scaling" is still available,
+                  but is now deprecated.
+
+3.  Belos       - Fixed some compile errors when C++Ox support is enabled.
+
+4.  Kokkos      - Fix compile error when built with LAPACK 3.2.2.
+
+5.  Stratimikos - Bug 5442: The Belos adapter now checks whether the Belos
+                  solver supports residual scaling parameters before setting
+                  them.
+
+6.  Teuchos     - Bug 5306: Fix unequilibrateLHS and the use of it in
+                  SerialDenseSolver and SerialSpdDenseSolver.
+
+7.  Teuchos     - Fix compile issue with Visual Studio 2010.
+
+8.  Thyra       - Fix residual scaling parameters in Belos adapter.
+
+9.  Tpetra      - Make MpiPlatform destructors virtual.
+
+10. Tpetra      - Fixed MpiPlatform specialization for DefaultNodeType to have a
+                  one arguement constructor.
+
+11. Tpetra      - Bug 5401: Fix logic error in Tpetra_directory::getEntries.
+
+-------------------------------------------------------------------------------
+
 Release update 10.8.3 October 12, 2011
 
 1. Epetra - Fix a bug in FECrsMatrix GlobalAssemble.
