@@ -63,8 +63,7 @@ public:
   /** \brief  Constructor */
   Relation();
 
-  /** \brief  Construct a relation from a referenced entity,
-   *          local identifier, kind, and converse flag.
+  /** \brief  Construct a relation from a referenced entity and local identifier
    */
   Relation( Entity & entity , RelationIdentifier identifier );
 
@@ -84,7 +83,7 @@ public:
   RelationIdentifier identifier() const ;
 
   /** \brief  The referenced entity */
-  Entity * entity() const { return m_entity ; }
+  Entity * entity() const { return m_target_entity ; }
 
   /** \brief  Equality operator */
   bool operator == ( const Relation & r ) const;
@@ -128,7 +127,7 @@ private:
 
   RawRelationType        m_raw_relation ;
   mutable attribute_type m_attribute ;
-  Entity               * m_entity ;
+  Entity               * m_target_entity ;
 
 // Issue: Framework supports relation types (parent, child, etc) that STK_Mesh
 // does not support, so these relations will have to be managed by framework
@@ -182,16 +181,16 @@ private:
    * Construct filled-out relation.
    */
   // Possible states for the entity to be in:
-  //  1) Constructed on the fmwk side. Indicated by having NULL m_entity
+  //  1) Constructed on the fmwk side. Indicated by having NULL m_target_entity
   //  2) Constructed on stk side. Indicated by having NULL m_meshObj
-  //  3) Constructed on stk side, but with fmwk data (like m_meshObj) added on. Indicated by having non-null m_entity and m_meshObj.
+  //  3) Constructed on stk side, but with fmwk data (like m_meshObj) added on. Indicated by having non-null m_target_entity and m_meshObj.
   //  NOTE: (2) relations are NOT comparable with (1) relations!
   template <class MeshObj>
   Relation(MeshObj *obj, const unsigned relation_type, const unsigned ordinal, const unsigned Orient = 0)
     :
     m_raw_relation( Relation::raw_relation_id( obj->derived_type() , ordinal )), // makes this m_raw_relation forever incomparable with Relations constructed STK-style
     m_attribute(Orient),
-    m_entity( NULL ),
+    m_target_entity( NULL ),
 
     m_meshObj(obj),
     m_relationType(relation_type),
@@ -219,7 +218,7 @@ private:
   }
 
   void setOrdinal(RelationIdentifier ordinal) {
-    ThrowAssertMsg(m_entity == NULL, "Cannot call setOrdinal on a relation created on the STK side");
+    ThrowAssertMsg(m_target_entity == NULL, "Cannot call setOrdinal on a relation created on the STK side");
     m_raw_relation = Relation::raw_relation_id( getDerivedType(), ordinal );
   }
 
@@ -261,7 +260,7 @@ private:
   void * m_meshObj;                     ///< A pointer to the related mesh object.
   unsigned char m_relationType;         ///< Identification of the type of relationship, e.g. USES or USED_BY.
   unsigned char m_derivedType;          ///< Derived type of related mesh object in a Fmwk-based rank
-#endif
+#endif // STK_BUILT_IN_SIERRA
 };
 
 //----------------------------------------------------------------------
@@ -364,8 +363,8 @@ inline
 bool Relation::operator == ( const Relation & rhs ) const
 #ifdef STK_BUILT_IN_SIERRA
 {
-  if (m_entity != NULL && rhs.m_entity != NULL) {
-    return m_raw_relation.value == rhs.m_raw_relation.value && m_entity == rhs.m_entity;
+  if (m_target_entity != NULL && rhs.m_target_entity != NULL) {
+    return m_raw_relation.value == rhs.m_raw_relation.value && m_target_entity == rhs.m_target_entity;
   }
   else if (m_meshObj != NULL && rhs.m_meshObj != NULL) {
     return getMeshObj()      == rhs.getMeshObj() &&
@@ -379,7 +378,7 @@ bool Relation::operator == ( const Relation & rhs ) const
   }
 }
 #else
-{ return m_raw_relation.value == rhs.m_raw_relation.value && m_entity == rhs.m_entity ; }
+{ return m_raw_relation.value == rhs.m_raw_relation.value && m_target_entity == rhs.m_target_entity ; }
 #endif
 
 } // namespace mesh

@@ -45,7 +45,7 @@ operator << ( std::ostream & s , const Relation & rel )
 Relation::Relation() :
   m_raw_relation(),
   m_attribute(),
-  m_entity(NULL)
+  m_target_entity(NULL)
 #ifdef STK_BUILT_IN_SIERRA
   ,
   m_meshObj(NULL),
@@ -55,7 +55,7 @@ Relation::Relation() :
 
 Relation::Relation( Entity & entity , RelationIdentifier identifier )
   : m_raw_relation( Relation::raw_relation_id( entity.entity_rank() , identifier ) ),
-    m_entity( & entity )
+    m_target_entity( & entity )
 #ifdef STK_BUILT_IN_SIERRA
   ,
     m_meshObj(NULL),
@@ -68,28 +68,28 @@ bool Relation::operator < ( const Relation & rhs ) const
   bool result = false;
 
 #ifdef STK_BUILT_IN_SIERRA
-  if (m_entity != NULL && rhs.m_entity != NULL) {
+  if (m_target_entity != NULL && rhs.m_target_entity != NULL) {
 #endif
+    // STK_Mesh version of relation comparison
     if ( m_raw_relation.value != rhs.m_raw_relation.value ) {
       result = m_raw_relation.value < rhs.m_raw_relation.value ;
     }
     else {
-      const EntityKey lhs_key = m_entity   ? m_entity->key()   : EntityKey() ;
-      const EntityKey rhs_key = rhs.m_entity ? rhs.m_entity->key() : EntityKey() ;
+      const EntityKey lhs_key = m_target_entity   ? m_target_entity->key()   : EntityKey() ;
+      const EntityKey rhs_key = rhs.m_target_entity ? rhs.m_target_entity->key() : EntityKey() ;
       result = lhs_key < rhs_key ;
     }
     return result ;
 #ifdef STK_BUILT_IN_SIERRA
   }
   else if (m_meshObj != NULL && rhs.m_meshObj != NULL) {
+    // Fmwk version of relation comparison
     if ( getDerivedType() < rhs.getDerivedType()) return true;
     if ( rhs.getDerivedType() < getDerivedType()) return false;
 
-    //derived type equal
     if ( getRelationType() < rhs.getRelationType() ) return true;
     if ( rhs.getRelationType() < getRelationType() ) return false;
 
-    //relation type equal
     return getOrdinal() < rhs.getOrdinal();
   }
   else {
