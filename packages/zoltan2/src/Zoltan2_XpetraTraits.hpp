@@ -14,14 +14,15 @@
 #ifndef _ZOLTAN2_XPETRATRAITS_HPP_
 #define _ZOLTAN2_XPETRATRAITS_HPP_
 
+#include <Zoltan2_InputTraits.hpp>
+#include <Zoltan2_Standards.hpp>
+
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_EpetraVector.hpp>
 #include <Xpetra_TpetraVector.hpp>
 #include <Xpetra_EpetraUtils.hpp>
 #include <Tpetra_Vector.hpp>
-#include <Zoltan2_InputTraits.hpp>
-#include <Zoltan2_Standards.hpp>
 
 namespace Zoltan2 {
 
@@ -45,7 +46,7 @@ struct XpetraTraits
    */
 
   static RCP<const User> doMigration(const RCP<const User> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     return from;
   }
@@ -73,9 +74,10 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
     }
 
   static RCP<const tmatrix_t> doMigration(const RCP<const tmatrix_t> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
+    lno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from->getRowMap();
@@ -140,8 +142,10 @@ struct XpetraTraits<Epetra_CrsMatrix>
 
   static RCP<Epetra_CrsMatrix> doMigration(
       const RCP<const Epetra_CrsMatrix> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
+    lno_t base = 0;
+
     // source map
     const Epetra_Map &smap = from->RowMap();
     int oldNumElts = smap.NumMyElements();
@@ -200,7 +204,7 @@ struct XpetraTraits<Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
     }
 
   static RCP<const x_matrix_t> doMigration(const RCP<const x_matrix_t> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     Xpetra::UnderlyingLib l = from->getRowMap()->lib();
 
@@ -213,7 +217,7 @@ struct XpetraTraits<Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
       RCP<const t_matrix_t> tm = xtm->getTpetra_CrsMatrix();
 
       RCP<const t_matrix_t> tmnew = XpetraTraits<t_matrix_t>::doMigration(
-        tm, numLocalRows, myNewRows, base);
+        tm, numLocalRows, myNewRows);
 
       RCP<const x_matrix_t> xmnew = 
         XpetraTraits<t_matrix_t>::convertToXpetra(tmnew);
@@ -245,7 +249,7 @@ struct XpetraTraits<Xpetra::CrsMatrix<double, int, int, node_t> >
     }
 
   static RCP<const x_matrix_t> doMigration(const RCP<const x_matrix_t> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     Xpetra::UnderlyingLib l = from->getRowMap()->lib();
     const x_matrix_t *xm = from.get();
@@ -256,7 +260,7 @@ struct XpetraTraits<Xpetra::CrsMatrix<double, int, int, node_t> >
       RCP<const e_matrix_t> em = xem->getEpetra_CrsMatrix();
 
       RCP<const e_matrix_t> emnew = XpetraTraits<e_matrix_t>::doMigration(
-        em, numLocalRows, myNewRows, base);
+        em, numLocalRows, myNewRows);
 
       RCP<const x_matrix_t> xmnew = 
         XpetraTraits<e_matrix_t>::convertToXpetra(emnew);
@@ -268,7 +272,7 @@ struct XpetraTraits<Xpetra::CrsMatrix<double, int, int, node_t> >
       RCP<const t_matrix_t> tm = xtm->getTpetra_CrsMatrix();
 
       RCP<const t_matrix_t> tmnew = XpetraTraits<t_matrix_t>::doMigration(
-        tm, numLocalRows, myNewRows, base);
+        tm, numLocalRows, myNewRows);
 
       RCP<const x_matrix_t> xmnew = 
         XpetraTraits<t_matrix_t>::convertToXpetra(tmnew);
@@ -297,9 +301,10 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
     }
 
   static RCP<const tgraph_t> doMigration(const RCP<const tgraph_t> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
+    lno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from->getRowMap();
@@ -356,8 +361,10 @@ struct XpetraTraits<Epetra_CrsGraph>
 
   static RCP<const Epetra_CrsGraph> doMigration(
       const RCP<const Epetra_CrsGraph> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
+    lno_t base = 0;
+
     // source map
     const Epetra_BlockMap &smap = from->RowMap();
     gno_t numGlobalRows = smap.NumGlobalElements();
@@ -417,7 +424,7 @@ struct XpetraTraits<Xpetra::CrsGraph<lno_t, gno_t, node_t> >
     }
 
   static RCP<const x_graph_t> doMigration(const RCP<const x_graph_t> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     Xpetra::UnderlyingLib l = from->getRowMap()->lib();
 
@@ -430,7 +437,7 @@ struct XpetraTraits<Xpetra::CrsGraph<lno_t, gno_t, node_t> >
       RCP<const t_graph_t> tg = xtg->getTpetra_CrsGraph();
 
       RCP<const t_graph_t> tgnew = XpetraTraits<t_graph_t>::doMigration(
-        tg, numLocalRows, myNewRows, base);
+        tg, numLocalRows, myNewRows);
 
       RCP<const x_graph_t> xgnew =
         XpetraTraits<t_graph_t>::convertToXpetra(tgnew);
@@ -459,7 +466,7 @@ struct XpetraTraits<Xpetra::CrsGraph<int, int, node_t> >
     }
 
   static RCP<const x_graph_t> doMigration(const RCP<const x_graph_t> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     Xpetra::UnderlyingLib l = from->getRowMap()->lib();
     const x_graph_t *xg = from.get();
@@ -470,7 +477,7 @@ struct XpetraTraits<Xpetra::CrsGraph<int, int, node_t> >
       RCP<const e_graph_t> eg = xeg->getEpetra_CrsGraph();
 
       RCP<const e_graph_t> egnew = XpetraTraits<e_graph_t>::doMigration(
-        eg, numLocalRows, myNewRows, base);
+        eg, numLocalRows, myNewRows);
 
       RCP<const x_graph_t> xgnew =
         XpetraTraits<e_graph_t>::convertToXpetra(egnew);
@@ -482,7 +489,7 @@ struct XpetraTraits<Xpetra::CrsGraph<int, int, node_t> >
       RCP<const t_graph_t> tg = xtg->getTpetra_CrsGraph();
 
       RCP<const t_graph_t> tgnew = XpetraTraits<t_graph_t>::doMigration(
-        tg, numLocalRows, myNewRows, base);
+        tg, numLocalRows, myNewRows);
 
       RCP<const x_graph_t> xgnew =
         XpetraTraits<t_graph_t>::convertToXpetra(tgnew);
@@ -511,8 +518,9 @@ struct XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
     }
 
   static RCP<const t_vector_t> doMigration(const RCP<const t_vector_t> &from,
-      lno_t numLocalElts, const gno_t *myNewElts, gno_t base)
+      lno_t numLocalElts, const gno_t *myNewElts)
   {
+    lno_t base = 0;
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
 
     // source map
@@ -558,8 +566,9 @@ struct XpetraTraits<Epetra_Vector>
     }
 
   static RCP<Epetra_Vector> doMigration(const RCP<const Epetra_Vector> &from,
-      lno_t numLocalElts, const gno_t *myNewElts, gno_t base)
+      lno_t numLocalElts, const gno_t *myNewElts)
   {
+    lno_t base = 0;
     // source map
     const Epetra_BlockMap &smap = from->Map();
     gno_t numGlobalElts = smap.NumGlobalElements();
@@ -600,7 +609,7 @@ struct XpetraTraits<Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
     }
 
   static RCP<const x_vector_t> doMigration(const RCP<const x_vector_t> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     Xpetra::UnderlyingLib l = from->getMap()->lib();
 
@@ -613,7 +622,7 @@ struct XpetraTraits<Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
       RCP<const t_vector_t> tv = xtv->getTpetra_Vector();
 
       RCP<const t_vector_t> tvnew = XpetraTraits<t_vector_t>::doMigration(
-        tv, numLocalRows, myNewRows, base);
+        tv, numLocalRows, myNewRows);
 
       RCP<const x_vector_t> xvnew =
         XpetraTraits<t_vector_t>::convertToXpetra(tvnew);
@@ -644,7 +653,7 @@ struct XpetraTraits<Xpetra::Vector<double, int, int, node_t> >
     }
 
   static RCP<const x_vector_t> doMigration(const RCP<const x_vector_t> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     Xpetra::UnderlyingLib l = from->getMap()->lib();
     const x_vector_t *vec = from.get();
@@ -655,7 +664,7 @@ struct XpetraTraits<Xpetra::Vector<double, int, int, node_t> >
       RCP<const e_vector_t> ev = rcp(xev->getEpetra_Vector());
 
       RCP<const e_vector_t> evnew = XpetraTraits<e_vector_t>::doMigration(
-        ev, numLocalRows, myNewRows, base);
+        ev, numLocalRows, myNewRows);
 
       RCP<const x_vector_t> xvnew =
         XpetraTraits<e_vector_t>::convertToXpetra(evnew);
@@ -668,7 +677,7 @@ struct XpetraTraits<Xpetra::Vector<double, int, int, node_t> >
       RCP<const t_vector_t> ctv = rcp_const_cast<const t_vector_t>(tv);
 
       RCP<const t_vector_t> tvnew = XpetraTraits<t_vector_t>::doMigration(
-        ctv, numLocalRows, myNewRows, base);
+        ctv, numLocalRows, myNewRows);
 
       RCP<const x_vector_t> xvnew =
         XpetraTraits<t_vector_t>::convertToXpetra(tvnew);
@@ -697,9 +706,10 @@ struct XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
     }
 
   static RCP<const t_vector_t> doMigration(const RCP<const t_vector_t> &from,
-      lno_t numLocalElts, const gno_t *myNewElts, gno_t base)
+      lno_t numLocalElts, const gno_t *myNewElts)
   {
     typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
+    lno_t base = 0;
 
     // source map
     const RCP<const map_t> &smap = from->getMap();
@@ -745,8 +755,9 @@ struct XpetraTraits<Epetra_MultiVector>
 
   static RCP<Epetra_MultiVector> doMigration(
     const RCP<const Epetra_MultiVector> &from,
-    lno_t numLocalElts, const gno_t *myNewElts, gno_t base)
+    lno_t numLocalElts, const gno_t *myNewElts)
   {
+    lno_t base = 0;
     // source map
     const Epetra_BlockMap &smap = from->Map();
     gno_t numGlobalElts = smap.NumGlobalElements();
@@ -788,7 +799,7 @@ struct XpetraTraits<Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
     }
 
   static RCP<const x_mvector_t> doMigration(const RCP<const x_mvector_t> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     Xpetra::UnderlyingLib l = from->getMap()->lib();
 
@@ -802,7 +813,7 @@ struct XpetraTraits<Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
       RCP<const t_mvector_t> ctv = rcp_const_cast<const t_mvector_t>(tv);
 
       RCP<const t_mvector_t> tvnew = XpetraTraits<t_mvector_t>::doMigration(
-        ctv, numLocalRows, myNewRows, base);
+        ctv, numLocalRows, myNewRows);
 
       RCP<const x_mvector_t> xvnew =
         XpetraTraits<t_mvector_t>::convertToXpetra(tvnew);
@@ -833,10 +844,11 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
     }
 
   static RCP<const x_mvector_t> doMigration(const RCP<const x_mvector_t> &from,
-      lno_t numLocalRows, const gno_t *myNewRows, gno_t base)
+      lno_t numLocalRows, const gno_t *myNewRows)
   {
     Xpetra::UnderlyingLib l = from->getMap()->lib();
     const x_mvector_t *xmv = from.get();
+    lno_t base = 0;
 
     if (l == Xpetra::UseEpetra){
       // Do the import with the Epetra_MultiVector traits object
@@ -845,7 +857,7 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
       RCP<const e_mvector_t> cev = rcp_const_cast<const e_mvector_t>(ev);
 
       RCP<const e_mvector_t> evnew = XpetraTraits<e_mvector_t>::doMigration(
-        cev, numLocalRows, myNewRows, base);
+        cev, numLocalRows, myNewRows);
 
       RCP<const x_mvector_t> xvnew =
         XpetraTraits<e_mvector_t>::convertToXpetra(evnew);
@@ -859,7 +871,7 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
       RCP<const t_mvector_t> ctv = rcp_const_cast<const t_mvector_t>(tv);
 
       RCP<const t_mvector_t> tvnew = XpetraTraits<t_mvector_t>::doMigration(
-        ctv, numLocalRows, myNewRows, base);
+        ctv, numLocalRows, myNewRows);
 
       RCP<const x_mvector_t> xvnew =
         XpetraTraits<t_mvector_t>::convertToXpetra(tvnew);
