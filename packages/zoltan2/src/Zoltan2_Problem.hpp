@@ -2,12 +2,8 @@
 #define _ZOLTAN2_PROBLEM_HPP_
 
 #include <Zoltan2_Standards.hpp>
-#include <Zoltan2_Environment.hpp>
-
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
-
-#include <Teuchos_CommHelpers.hpp>
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_Problem.hpp

@@ -1,25 +1,31 @@
-
-#ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
-#define _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
-
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Ptr.hpp>
-
-#include <Zoltan2_Environment.hpp>
-#include <Zoltan2_Problem.hpp>
-#include <Zoltan2_PartitioningAlgorithms.hpp>
-#include <Zoltan2_PartitioningSolution.hpp>
-
-#include <Zoltan2_GraphModel.hpp>
-#ifdef HAVE_OVIS
-#include <ovis.h>
-#endif
+// @HEADER
+// ***********************************************************************
+//
+//                Copyright message goes here.   TODO
+//
+// ***********************************************************************
+// @HEADER
 
 /*! \file Zoltan2_PartitioningProblem.hpp
 
   This file contains the PartitioningProblem class, which derives from 
   the Problem class.
 */
+
+#ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
+#define _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
+
+#include <Zoltan2_Problem.hpp>
+#include <Zoltan2_PartitioningAlgorithms.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_GraphModel.hpp>
+#include <Zoltan2_IdentifierModel.hpp>
+
+#include <Teuchos_Ptr.hpp>
+
+#ifdef HAVE_OVIS
+#include <ovis.h>
+#endif
 
 namespace Zoltan2{
 

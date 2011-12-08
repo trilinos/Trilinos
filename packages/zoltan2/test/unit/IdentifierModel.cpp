@@ -10,7 +10,10 @@
 // Testing of IdentifierModel
 //
 
-#include <iostream>
+#include <Zoltan2_IdentifierModel.hpp>
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <UserInputForTests.hpp>
+
 #include <set>
 
 #include <Teuchos_Comm.hpp>
@@ -20,9 +23,6 @@
 
 #include <Tpetra_CrsMatrix.hpp>
 
-#include <UserInputForTests.hpp>
-#include <Zoltan2_IdentifierModel.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
 
 using namespace std;
 using Teuchos::RCP;

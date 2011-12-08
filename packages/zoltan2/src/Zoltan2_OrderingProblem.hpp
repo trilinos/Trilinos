@@ -1,3 +1,16 @@
+// @HEADER
+// ***********************************************************************
+//
+//                Copyright message goes here.   TODO
+//
+// ***********************************************************************
+// @HEADER
+
+/*! \file Zoltan2_OrderingProblem.hpp
+
+  This file contains the OrderingProblem class, which derives from 
+  the Problem class.
+*/
 
 #ifndef _ZOLTAN2_ORDERINGPROBLEM_HPP_
 #define _ZOLTAN2_ORDERINGPROBLEM_HPP_
@@ -12,12 +25,6 @@
 #ifdef HAVE_OVIS
 #include <ovis.h>
 #endif
-
-/*! \file Zoltan2_OrderingProblem.hpp
-
-  This file contains the OrderingProblem class, which derives from 
-  the Problem class.
-*/
 
 using Teuchos::rcp_dynamic_cast;
 using namespace std;

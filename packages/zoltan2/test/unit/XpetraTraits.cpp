@@ -17,6 +17,8 @@
 // TODO look at number of diagonals and max number of entries in
 //   Tpetra and Xpetra migrated graphs.  They're garbage.
 
+#include <Zoltan2_XpetraTraits.hpp>
+#include <UserInputForTests.hpp>
 #include <string>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -27,8 +29,6 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
-#include <Zoltan2_XpetraTraits.hpp>
-#include <UserInputForTests.hpp>
 
 #include <Xpetra_EpetraUtils.hpp>
 #ifdef HAVE_MPI
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     try{
       newM = Zoltan2::XpetraTraits<tmatrix_t>::doMigration(
         rcp_const_cast<const tmatrix_t>(M),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
     try{
       newG = Zoltan2::XpetraTraits<tgraph_t>::doMigration(
         rcp_const_cast<const tgraph_t>(G),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
     try{
       newV = Zoltan2::XpetraTraits<tvector_t>::doMigration(
         rcp_const_cast<const tvector_t>(V),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
     try{
       newMV = Zoltan2::XpetraTraits<tmvector_t>::doMigration(
         rcp_const_cast<const tmvector_t>(MV),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
     try{
       newM = Zoltan2::XpetraTraits<xmatrix_t>::doMigration(
         rcp_const_cast<const xmatrix_t>(M),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
     try{
       newG = Zoltan2::XpetraTraits<xgraph_t>::doMigration(
         rcp_const_cast<const xgraph_t>(G),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
     try{
       newV = Zoltan2::XpetraTraits<xvector_t>::doMigration(
         rcp_const_cast<const xvector_t>(V),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
     try{
       newMV = Zoltan2::XpetraTraits<xmvector_t>::doMigration(
         rcp_const_cast<const xmvector_t>(MV),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -521,7 +521,7 @@ int main(int argc, char *argv[])
     try{
       newM = Zoltan2::XpetraTraits<ematrix_t>::doMigration(
         rcp_const_cast<const ematrix_t>(M),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -563,7 +563,7 @@ int main(int argc, char *argv[])
     try{
       newG = Zoltan2::XpetraTraits<egraph_t>::doMigration(
         rcp_const_cast<const egraph_t>(G),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -605,7 +605,7 @@ int main(int argc, char *argv[])
     try{
       newV = Zoltan2::XpetraTraits<evector_t>::doMigration(
         rcp_const_cast<const evector_t>(V),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -647,7 +647,7 @@ int main(int argc, char *argv[])
     try{
       newMV = Zoltan2::XpetraTraits<emvector_t>::doMigration(
         rcp_const_cast<const emvector_t>(MV),
-        localNumRows, newRowIds.getRawPtr(), base);
+        localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 

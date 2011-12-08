@@ -14,17 +14,19 @@
 //     make this a real unit test that gives helpful information if it fails
 //     and uses different template values
 
+#include <Zoltan2_Environment.hpp>   
+#include <Zoltan2_AlltoAll.hpp>   
+
 #include <iostream>
 #include <algorithm>
 #include <vector>
 #include <string>
+
 #include <Teuchos_RCP.hpp>   
 #include <Teuchos_ArrayRCP.hpp>   
 #include <Teuchos_Comm.hpp>   
 #include <Teuchos_ParameterList.hpp>   
 #include <Teuchos_DefaultComm.hpp>   
-#include <Zoltan2_Environment.hpp>   
-#include <Zoltan2_AlltoAll.hpp>   
 
 using namespace std;
 

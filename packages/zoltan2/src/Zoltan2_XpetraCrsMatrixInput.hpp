@@ -14,11 +14,11 @@
 #ifndef _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
 #define _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
 
-#include <Xpetra_CrsMatrix.hpp>
-#include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_Util.hpp>
+
+#include <Xpetra_CrsMatrix.hpp>
 
 namespace Zoltan2 {
 
@@ -189,12 +189,12 @@ public:
 
     gno_t lsum = numNewRows;
     gno_t gsum = 0;
-    Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);
+    reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);
 
     RCP<const User> inPtr = rcp(&in, false);
 
     RCP<const User> outPtr = XpetraTraits<User>::doMigration(
-     inPtr, lsum, importList.getRawPtr(), base_);
+     inPtr, lsum, importList.getRawPtr());
 
     out = const_cast<User *>(outPtr.get());
     outPtr.release();

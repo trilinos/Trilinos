@@ -18,31 +18,32 @@
 //               which does.  Modify TestAdapters and all unit
 //               tests to run both Serial and MPI.
 
+#include <Zoltan2_GraphModel.hpp>
+#include <Zoltan2_IdentifierTraits.hpp>
+
+#include <AdaptersForTests.hpp>
+
 #include <string>
-#include <sstream>
 #include <vector>
 #include <iostream>
-#include <AdaptersForTests.hpp>
+
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ArrayView.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Zoltan2_Environment.hpp>
-#include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_IdentifierTraits.hpp>
 
 using namespace std;
 using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
-using Teuchos::OrdinalTraits;
-using Teuchos::ScalarTraits;
 using Teuchos::ArrayView;
+
+using std::string;
+using std::vector;
 
 #define COMMENT(s) {if (rank==0) {std::cout << s << std::endl;}}
 
 template <typename Scalar, typename LNO, typename GNO, typename Node>
-  void testGraphModel(std::string fname, GNO xdim, GNO ydim, GNO zdim,
+  void testGraphModel(string fname, GNO xdim, GNO ydim, GNO zdim,
     const RCP<const Comm<int> > &comm,
     bool verbose, bool consecutiveIds)
 {
@@ -201,8 +202,8 @@ int main(int argc, char *argv[])
 
   int rank = comm->getRank();
 
-  std::string nullString;
-  std::vector<std::string> mtxFiles;
+  string nullString;
+  vector<string> mtxFiles;
   
   mtxFiles.push_back("../data/simple.mtx");
   mtxFiles.push_back("../data/cage10.mtx");

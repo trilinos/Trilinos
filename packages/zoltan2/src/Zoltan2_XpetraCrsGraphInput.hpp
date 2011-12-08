@@ -14,10 +14,11 @@
 #ifndef _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
 #define _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
 
-#include <Xpetra_CrsGraph.hpp>
 #include <Zoltan2_GraphInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_Util.hpp>
+
+#include <Xpetra_CrsGraph.hpp>
 
 namespace Zoltan2 {
 
@@ -357,8 +358,7 @@ public:
 
     gno_t lsum = numNewVtx;
     gno_t gsum = 0;
-    Teuchos::reduceAll<int, gno_t>(
-      *comm_, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);
+    reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);
 
     RCP<const User> inPtr = rcp(&in, false);
 

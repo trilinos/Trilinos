@@ -1,4 +1,3 @@
-
 // @HEADER
 // ***********************************************************************
 //
@@ -10,11 +9,14 @@
 #ifndef _ZOLTAN2_PARAMETERS_HPP_
 #define _ZOLTAN2_PARAMETERS_HPP_
 
+#include <Zoltan2_config.h>
+
 #include <string>
 #include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <cctype>
+
 #include <Teuchos_ParameterEntryValidator.hpp>
 #include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_TypeNameTraits.hpp>

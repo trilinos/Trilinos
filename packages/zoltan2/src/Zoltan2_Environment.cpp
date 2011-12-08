@@ -19,10 +19,10 @@
 
 */
 
+#include <Zoltan2_Environment.hpp>
+
 #include <sstream>
 #include <ostream>
-#include <Zoltan2_Environment.hpp>
-#include <Teuchos_DefaultComm.hpp>
 
 namespace Zoltan2 {
 

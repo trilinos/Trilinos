@@ -11,14 +11,10 @@
     \brief The abstract interface for an input adapter.
 */
 
-
 #ifndef _ZOLTAN2_INPUTADAPTER_HPP_
 #define _ZOLTAN2_INPUTADAPTER_HPP_
 
 #include <Zoltan2_Standards.hpp>
-#include <Zoltan2_InputTraits.hpp>
-
-#include <Zoltan2_PartitioningSolution.hpp>
 
 namespace Zoltan2 {
 

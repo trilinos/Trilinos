@@ -1,8 +1,6 @@
 #ifndef _ZOLTAN2_ALGRANDOM_HPP_
 #define _ZOLTAN2_ALGRANDOM_HPP_
 
-#include <Zoltan2_Standards.hpp>
-
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 

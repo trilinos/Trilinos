@@ -15,10 +15,10 @@
 // TODO: just testing that the test compiles and looks reasonable
 //   We need to test the validity of the values returned in check_traits.
 
+#include <Zoltan2_IdentifierTraits.hpp>
 #include <ostream>
 #include <string>
 #include <algorithm>
-#include <Zoltan2_IdentifierTraits.hpp>
 #include <Teuchos_GlobalMPISession.hpp>   
 
 using namespace std;

@@ -10,12 +10,12 @@
 
 // Test the conversion of MPI communicators to Teuchos::MPIComm objects.
 // Test creation of sub-communicators.
+#include <Zoltan2_Environment.hpp>
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
-#include <Zoltan2_Environment.hpp>
 
 #include <iostream>
 #include <vector>

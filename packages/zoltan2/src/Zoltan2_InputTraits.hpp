@@ -1,13 +1,27 @@
+// @HEADER
+// ***********************************************************************
+//
+//                Copyright message goes here.   TODO
+//
+// ***********************************************************************
+// @HEADER
+
+/*! \file Zoltan2_InputTraits.hpp
+
+    \brief Traits for application input objects.
+*/
+
+#ifndef ZOLTAN2_INPUTTRAITS_HPP
+#define ZOLTAN2_INPUTTRAITS_HPP
+
+#include <Zoltan2_Standards.hpp>
+
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_CrsGraph.hpp>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_CrsGraph.h>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
-#include <Zoltan2_Standards.hpp>
-
-#ifndef ZOLTAN2_INPUTTRAITS_HPP
-#define ZOLTAN2_INPUTTRAITS_HPP
 
 namespace Zoltan2{
 
@@ -48,11 +62,10 @@ struct InputTraits {
 
 // Specialization for generic user input.
 template <typename Scalar,
-          typename LID,
           typename GID,
           typename LNO,
           typename GNO>
-struct InputTraits<BasicUserTypes<Scalar, LID, GID, LNO, GNO> >
+struct InputTraits<BasicUserTypes<Scalar, GID, LNO, GNO> >
 {
   typedef Scalar        scalar_t;
   typedef LNO lno_t;

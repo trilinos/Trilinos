@@ -12,11 +12,17 @@
 //
 //   Test local IDs are implied, not supplied by app.
 
+#include <Zoltan2_IdentifierMap.hpp>
+#include <AdaptersForTests.hpp>
+
+#if 0
 #include <string>
 #include <ostream>
 #include <iostream>
 #include <exception>
 #include <utility>
+#endif
+
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
@@ -24,8 +30,6 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 
-#include <Zoltan2_IdentifierMap.hpp>
-#include <AdaptersForTests.hpp>
 
 using namespace std;
 using Teuchos::RCP;
@@ -141,8 +145,8 @@ template <typename IDMAP>
   Array<GNO> z2Ids2(nLocalIds);
   Array<LNO> indices(nLocalIds);
 
-  for (LNO i=nLocalIds-1, i >= 0; i--){
-    indices[i] = i;
+  for (LNO i=nLocalIds-1,j=0; i >= 0; i--,j++){
+    indices[j] = i;
   }
    
 
@@ -155,7 +159,7 @@ template <typename IDMAP>
 
   TEST_FAIL_AND_THROW(*comm, fail==0, "lidTranslate")
 
-  for (LNO i=nLocalIds-1, j=0, i >= 0; i--, j++){
+  for (LNO i=nLocalIds-1, j=0; i >= 0; i--, j++){
     if (z2Ids2[j] != z2Ids[i]){
        fail = 4;
        break;

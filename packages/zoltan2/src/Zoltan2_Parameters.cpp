@@ -12,11 +12,11 @@
         their defaults, and their validators.
 
 */
+#include <Zoltan2_Standards.hpp>
+#include <Zoltan2_Parameters.hpp>
 
 #include <ostream>
 #include <sstream>
-#include <Zoltan2_Parameters.hpp>
-#include <Zoltan2_Standards.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 
 using namespace std;

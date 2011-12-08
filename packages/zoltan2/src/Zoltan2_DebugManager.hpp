@@ -1,4 +1,12 @@
-/** \file Zoltan2_DebugManager.hpp
+// @HEADER
+// ***********************************************************************
+//
+//                Copyright message goes here.   TODO
+//
+// ***********************************************************************
+// @HEADER
+
+/*! \file Zoltan2_DebugManager.hpp
 
     \brief Debug Manager for Zoltan2
 

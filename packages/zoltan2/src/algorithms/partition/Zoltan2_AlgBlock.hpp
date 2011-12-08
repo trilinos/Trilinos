@@ -1,7 +1,6 @@
 #ifndef _ZOLTAN2_ALGBLOCK_HPP_
 #define _ZOLTAN2_ALGBLOCK_HPP_
 
-#include <Zoltan2_Standards.hpp>
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>

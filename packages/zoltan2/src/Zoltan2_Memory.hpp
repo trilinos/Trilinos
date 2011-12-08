@@ -14,10 +14,10 @@
   \brief Memory related declarations.
 */
 
+#include <Zoltan2_config.h>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Ptr.hpp>
-#include <Zoltan2_config.h>
 
 namespace Zoltan2{
 

@@ -16,9 +16,7 @@
 //   2. Build the generating matrix in-core using MueLu::Gallery.
 //
 
-#include <iostream>
-#include <string>
-
+#include <Zoltan2_XpetraTraits.hpp>
 #include <ErrorHandlingForTests.hpp>
 
 #include <Teuchos_RCP.hpp>
@@ -45,9 +43,6 @@
 #else
 #include <Epetra_SerialComm.h>
 #endif
-
-#include <Zoltan2_XpetraTraits.hpp>
-
 
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;

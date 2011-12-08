@@ -14,11 +14,12 @@
 #ifndef _ZOLTAN2_XPETRAMULTIVECTORINPUT_HPP_
 #define _ZOLTAN2_XPETRAMULTIVECTORINPUT_HPP_
 
-#include <Xpetra_EpetraMultiVector.hpp>
-#include <Xpetra_TpetraMultiVector.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_MultiVectorInput.hpp>
 #include <Zoltan2_Util.hpp>
+
+#include <Xpetra_EpetraMultiVector.hpp>
+#include <Xpetra_TpetraMultiVector.hpp>
 
 namespace Zoltan2 {
 
@@ -109,7 +110,6 @@ public:
 
     ArrayView<const gid_t> gids = map_->getNodeElementList();
     Ids = gids.getRawPtr();
-    localIds = NULL;  // Implies 0 through numElements-1
     wgts = NULL; // Not implemented
     return gids.size();
   }
@@ -153,7 +153,7 @@ public:
     lno_t localNumElts = numNewRows;
 
     RCP<const User> outPtr = XpetraTraits<User>::doMigration(
-     inPtr, localNumElts, importList.get(), base_);
+     inPtr, localNumElts, importList.get());
 
     out = const_cast<User *>(outPtr.get());
     outPtr.release();

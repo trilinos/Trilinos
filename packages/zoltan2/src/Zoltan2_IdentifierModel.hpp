@@ -15,10 +15,7 @@
 #ifndef _ZOLTAN2_IDENTIFIERMODEL_HPP_
 #define _ZOLTAN2_IDENTIFIERMODEL_HPP_
 
-#include <Teuchos_CommHelpers.hpp>
-
 #include <Zoltan2_Model.hpp>
-#include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_IdentifierInput.hpp>
 
@@ -135,7 +132,7 @@ public:
     this->setIdentifierMap(idMap);
 
     gno_t lsum = nLocalIds;
-    Teuchos::reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 1, &lsum,
+    reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 1, &lsum,
       &numGlobalIdentifiers_);
 
     if (!gnosAreGids_ && nLocalIds>0){
@@ -265,7 +262,7 @@ public:
     this->setIdentifierMap(idMap);   // Base Model method
 
     gno_t lsum = nLocalIds;
-    Teuchos::reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 1, &lsum,
+    reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 1, &lsum,
       &numGlobalIdentifiers_);
 
     if (!gnosAreGids_ && nLocalIds>0){

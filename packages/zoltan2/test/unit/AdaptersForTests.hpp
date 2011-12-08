@@ -15,6 +15,9 @@
 //
 // Note: These adapters use the default Kokkos::Node.
 
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsGraphInput.hpp>
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -26,9 +29,7 @@
 #include <Teuchos_Array.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Xpetra_EpetraUtils.hpp>
-
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_XpetraCrsGraphInput.hpp>
+#include <Tpetra_ConfigDefs.hpp>
 
 #include <Epetra_SerialComm.h>
 #include <Teuchos_DefaultComm.hpp>
@@ -39,7 +40,6 @@
 
 #include <MueLu_MatrixFactory.hpp>
 #include <MueLu_GalleryParameters.hpp>
-
 
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
@@ -240,6 +240,7 @@ public:
       throw std::runtime_error("not done yet");
 
       if (tmi_64_.is_null()){
+        using Tpetra::global_size_t;
         if (M_.is_null())
           createMatrix();
 

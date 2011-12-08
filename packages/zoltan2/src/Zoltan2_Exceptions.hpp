@@ -31,11 +31,12 @@
   process throws an error.
 */
 
+#include <Zoltan2_Environment.hpp>
+
 #include <stdexcept>
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <Zoltan2_Environment.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING

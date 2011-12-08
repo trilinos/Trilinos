@@ -311,16 +311,27 @@ template< typename GID, typename LNO, typename GNO>
     }
     else{
       LNO idx;
-      for (size_t i=0; i < len; i++){
-        try{
-          double key = Zoltan2::IdentifierTraits<GID>::key(gid[i]);
-          idx = gidHash_->get(key);
+      if (userGidsAreConsecutive_){
+        for (size_t i=0; i < len; i++){
+          gno[i] = firstGno + IdentifierTraits<GID>::difference(
+            myGids_[0], gid[i]);
+          Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global id", 
+            (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
         }
-        catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(*env_, e);
+      }
+      else{
+        for (size_t i=0; i < len; i++){
+          try{
+            double key = Zoltan2::IdentifierTraits<GID>::key(gid[i]);
+            idx = gidHash_->get(key);
+          }
+          catch (const std::exception &e) {
+            Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global id", 
+              false, BASIC_ASSERTION);
+          }
+          
+          gno[i] = firstGno + idx;
         }
-        
-        gno[i] = firstGno + idx;
       }
     }
   }
@@ -354,26 +365,37 @@ template< typename GID, typename LNO, typename GNO>
   }
   
   if (tt == TRANSLATE_LIB_TO_APP){
-    for (size_t i=0; i < len; i++){
-      if (gnoDist_.size() > 0) {// gnos are consecutive
-
+    if (gnoDist_.size() > 0) {   // gnos are consecutive
+      for (size_t i=0; i < len; i++){
         Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number", 
           (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
-
         lno[i] = gno[i] - firstGno;
       }
-      else {                    // gnos must be the app gids
-        try{
-          GID keyArg = Teuchos::as<GID>(gno[i]);
-          lno[i] = gidHash_->get(IdentifierTraits<GID>::key(keyArg));
+    }
+    else {                    // gnos must be the app gids
+      if (userGidsAreConsecutive_){
+        for (size_t i=0; i < len; i++){ 
+          GID tmp = Teuchos::as<GID>(gno[i]);
+          lno[i] = IdentifierTraits<GID>::difference(myGids_[0], tmp);
+          Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number",
+            (lno[i] >= 0) && (lno[i] < localNumberOfIds_), BASIC_ASSERTION);
         }
-        catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(*env_, e);
+      }
+      else{
+        for (size_t i=0; i < len; i++){ 
+          try{
+            GID keyArg = Teuchos::as<GID>(gno[i]);
+            lno[i] = gidHash_->get(IdentifierTraits<GID>::key(keyArg));
+          }
+          catch (const std::exception &e) {
+            Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number",
+              false, BASIC_ASSERTION);
+          }
         }
       }
     }
   }
-  else{
+  else{                           // TRANSLATE_APP_TO_LIB
     for (size_t i=0; i < len; i++){
       LNO idx = lno[i];
 
@@ -769,12 +791,13 @@ template< typename GID, typename LNO, typename GNO>
   userGidsAreConsecutive_ = false;
   bool baseZeroConsecutiveIds = false;
 
+  const GID *gidPtr = myGids_.get();
+
   if (IdentifierTraits<GID>::isGlobalOrdinal()){
 
     userGidsAreTeuchosOrdinal_ = true;
 
     ArrayRCP<GID> tmpDist(numProcs_+1);
-    const GID *gidPtr = myGids_.get();
 
     userGidsAreConsecutive_= globallyConsecutiveOrdinals<GID>(gidPtr,
       localNumberOfIds_,  globalNumberOfIds_, *(env_->comm_), *env_,
@@ -798,6 +821,31 @@ template< typename GID, typename LNO, typename GNO>
     }
   }
 
+  // If user global IDs are not consecutive ordinals, create a hash table
+  // mapping the global IDs to their location in myGids_.
+
+  if (!userGidsAreConsecutive_){
+    id2index_hash_t *p = NULL;
+    if (localNumberOfIds_){
+      try{
+        p = new id2index_hash_t(localNumberOfIds_);
+      }
+      catch (const std::exception &e)
+        Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false);
+    }
+
+    for (size_t i=0; i < localNumberOfIds_; i++){
+      try{
+        // CRASH here when GIDs are std::pair<int,int> TODO
+        p->put(IdentifierTraits<GID>::key(gidPtr[i]), i);
+      }
+      catch (const std::exception &e) {
+        Z2_THROW_OUTSIDE_ERROR(*env_, e);
+      }
+    }
+    gidHash_ = RCP<id2index_hash_t>(p);
+  }
+
   // Can we use the user's global IDs as our internal global numbers?
   // If so, we can save memory.
 
@@ -809,41 +857,17 @@ template< typename GID, typename LNO, typename GNO>
   {
     // We can use the application's global IDs
     userGidsAreZoltan2Gnos_ = true;
-    zoltan2GnosAreConsecutive_ = userGidsAreConsecutive_;
   }
 
   if (userGidsAreZoltan2Gnos_){
+
+    zoltan2GnosAreConsecutive_ = userGidsAreConsecutive_;
 
     if (userGidsAreConsecutive_){
       minGlobalGno_ = gnoDist_[0];
       maxGlobalGno_ = gnoDist_[numProcs_]-1;
     }
     else{
-      // We need a hash table mapping the application global ID
-      // to its index in myGids_.
-
-      id2index_hash_t *p = NULL;
-      if (localNumberOfIds_){
-        try{
-          p = new id2index_hash_t(localNumberOfIds_);
-        }
-        catch (const std::exception &e) 
-          Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
-      }
-  
-      const GID *gidPtr = myGids_.get();  // for performance
-
-      for (size_t i=0; i < localNumberOfIds_; i++){
-        try{
-          // CRASH here when GIDs are std::pair<int,int> TODO
-          p->put(IdentifierTraits<GID>::key(gidPtr[i]), i);
-        }
-        catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(*env_, e);
-        }
-      }
-      gidHash_ = RCP<id2index_hash_t>(p);
-
       intmax_t localMin, globalMin, localMax, globalMax;
 
       if (localNumberOfIds_ > 0){

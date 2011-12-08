@@ -17,10 +17,9 @@
 /*! \file Zoltan2_AlltoAll.hpp
 */
 
-#include <vector>
-#include <Teuchos_CommHelpers.hpp>
-#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_Standards.hpp>
+
+#include <vector>
 
 namespace Zoltan2
 {
@@ -31,6 +30,13 @@ namespace Zoltan2
  * Teuchos::SerializationTraits are defined.  This is most likely every 
  * fundamental data type plus std::pair<T1,T2>. It does not
  * include std::vector<T2>.
+ *
+ * AlltoAll uses only point-to-point messages.  This is to avoid the MPI 
+ * limitation of integer offsets and counters in collective operations.
+ * In other words, "count" can be a 64-bit integer.
+ *
+ * TODO: test that these AlltoAll methods actually work when message offsets
+ *   require integral data types larger than ints.
  */
 
 template <typename T, typename LNO>

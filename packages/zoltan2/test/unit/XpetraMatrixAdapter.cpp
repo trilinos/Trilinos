@@ -11,10 +11,10 @@
 
 #include <string>
 
-#include <UserInputForTests.hpp>
 
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_InputTraits.hpp>
+#include <UserInputForTests.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -74,16 +74,6 @@ int verifyInputAdapter(
   RCP<const Comm<int> > comm = M.getComm();
   int fail = 0, gfail=0;
 
-  if (!ia.haveLocalIds())
-    fail = 1;
-
-  size_t base;
-  if (!fail && !ia.haveConsecutiveLocalIds(base))
-    fail = 2;
-
-  if (!fail && base != 0)
-    fail = 3;
-
   if (!fail && ia.getLocalNumRows() != M.getNodeNumRows())
     fail = 4;
 
@@ -101,17 +91,15 @@ int verifyInputAdapter(
   gfail = globalFail(comm, fail);
 
   const G *rowIds=NULL, *colIds=NULL;
-  const L *lids=NULL, *offsets=NULL;
+  const L *offsets=NULL;
   size_t nrows=0;
 
   if (!gfail){
 
-    nrows = ia.getRowListView(rowIds, lids, offsets, colIds);
+    nrows = ia.getRowListView(rowIds, offsets, colIds);
 
     if (nrows != M.getNodeNumRows())
       fail = 8;
-    if (!fail && lids != NULL)
-      fail = 9;
 
     gfail = globalFail(comm, fail);
 
@@ -177,8 +165,7 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
-               solution(nprocs, nrows, 0);
+      Zoltan2::PartitioningSolution<gno_t, lno_t> solution(nprocs, nrows);
       ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
       ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
       for (size_t i = 0; i < nrows; i++) solnGids[i] = rowGids[i];
@@ -245,8 +232,7 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
-               solution(nprocs, nrows, 0);
+      Zoltan2::PartitioningSolution<gno_t, lno_t> solution(nprocs, nrows);
       ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
       ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
       for (size_t i = 0; i < nrows; i++) solnGids[i] = rowGids[i];
@@ -313,8 +299,7 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Zoltan2::PartitioningSolution<gno_t, lno_t, lno_t>
-               solution(nprocs, nrows, 0);
+      Zoltan2::PartitioningSolution<gno_t, lno_t> solution(nprocs, nrows);
       ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
       ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
       for (size_t i = 0; i < nrows; i++) solnGids[i] = rowGids[i];

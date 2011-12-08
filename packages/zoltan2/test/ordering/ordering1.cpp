@@ -1,3 +1,6 @@
+#include <Zoltan2_OrderingProblem.hpp>
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraVectorInput.hpp>
 #include <iostream>
 #include <limits>
 #include <vector>
@@ -8,9 +11,6 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-#include <Zoltan2_OrderingProblem.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_XpetraVectorInput.hpp>
 
 //#include <Zoltan2_Memory.hpp>  KDD User app wouldn't include our memory mgr.
 
@@ -222,8 +222,7 @@ int main(int narg, char** arg)
   size_t checkLength;
   z2TestGO *checkGIDs;
   z2TestLO *checkPerm;
-  Zoltan2::OrderingSolution<z2TestGO, z2TestLO, z2TestLO> *soln = 
-           problem.getSolution();
+  Zoltan2::OrderingSolution<z2TestGO, z2TestLO> *soln = problem.getSolution();
 
   // Check that the solution is really a permutation
   soln->getPermutation(&checkLength, &checkGIDs, &checkPerm);

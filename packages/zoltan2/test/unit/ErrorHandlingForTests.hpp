@@ -7,11 +7,11 @@
 //
 // ***********************************************************************
 
+#include <Zoltan2_config.h>
 #include <iostream>
 #include <string>
 #include <exception>
 
-#include <Zoltan2_config.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>

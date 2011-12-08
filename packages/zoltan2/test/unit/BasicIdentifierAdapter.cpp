@@ -9,8 +9,9 @@
 //
 // Basic testing of Zoltan2::BasicIdentifierInput 
 
-#include <ErrorHandlingForTests.hpp>
 #include <Zoltan2_BasicIdentifierInput.hpp>
+#include <ErrorHandlingForTests.hpp>
+
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
@@ -51,10 +52,10 @@ int main(int argc, char *argv[])
   // Create a Zoltan2::BasicIdentifierInput object
   // and verify that it is correct
 
-  typedef Zoltan2::BasicUserTypes<
-    scalar_t, gid_t, lno_t, gno_t> userTypes_t;
+  typedef Zoltan2::BasicUserTypes<scalar_t, gid_t, lno_t, gno_t> userTypes_t;
 
-  Zoltan2::BasicIdentifierInput<userTypes_t> ia(weightDim, myIds, weights);
+  Zoltan2::BasicIdentifierInput<userTypes_t> ia(
+    numLocalIds, weightDim, myIds, weights);
 
   if (!fail && ia.getLocalNumIds() != numLocalIds){
     fail = 4;

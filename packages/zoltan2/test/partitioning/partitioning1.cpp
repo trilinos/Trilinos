@@ -1,3 +1,6 @@
+#include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraVectorInput.hpp>
 #include <iostream>
 #include <limits>
 #include <Teuchos_ParameterList.hpp>
@@ -7,9 +10,6 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-#include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_XpetraVectorInput.hpp>
 
 //#include <Zoltan2_Memory.hpp>  KDD User app wouldn't include our memory mgr.
 

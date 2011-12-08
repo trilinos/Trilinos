@@ -20,11 +20,14 @@
 
 */
 
+#include <Zoltan2_config.h>
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_DebugManager.hpp>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
 namespace Zoltan2 {
 

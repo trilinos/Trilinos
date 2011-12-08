@@ -9,11 +9,11 @@
 #ifndef ZOLTAN2_UTIL_HPP
 #define ZOLTAN2_UTIL_HPP
 
-#include <Teuchos_OpaqueWrapper.hpp>
-#include <Teuchos_DefaultMpiComm.hpp>
-#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_AlltoAll.hpp>
+
+#include <Teuchos_OpaqueWrapper.hpp>
+#include <Teuchos_DefaultMpiComm.hpp>
 
 namespace Zoltan2{
 
@@ -58,7 +58,7 @@ template <typename GID, typename LNO, typename EXTRA>
 
   int localSend = (xtraInfo.size() == gid.size() ? 1 : 0);
   int globalSend =0;
-  Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_SUM, 1,
+  reduceAll<int, int>(comm, Teuchos::REDUCE_SUM, 1,
     &localSend, &globalSend);
 
   bool sendSizes = (globalSend == comm.getSize());

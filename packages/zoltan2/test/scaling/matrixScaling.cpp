@@ -11,6 +11,8 @@
 //  this matrix.  Observe memory usage and runtime.
 //
 
+#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_GraphModel.hpp>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -23,8 +25,6 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_GraphModel.hpp>
 
 #include <MueLu_MatrixFactory.hpp>
 #include <MueLu_GalleryParameters.hpp>

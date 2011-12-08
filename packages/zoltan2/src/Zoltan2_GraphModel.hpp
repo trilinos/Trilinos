@@ -15,12 +15,11 @@
 #ifndef _ZOLTAN2_GRAPHMODEL_HPP_
 #define _ZOLTAN2_GRAPHMODEL_HPP_
 
-#include <vector>
-#include <Teuchos_CommHelpers.hpp>
-#include <Teuchos_Hashtable.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_MatrixInput.hpp>
+
+#include <vector>
+#include <Teuchos_Hashtable.hpp>
 
 namespace Zoltan2 {
 
@@ -268,7 +267,7 @@ public:
       edgeGids_ =  tmpEdges;
     }
 
-    Teuchos::reduceAll<int, size_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1,
+    reduceAll<int, size_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1,
       &numLocalEdges_, &numGlobalEdges_);
 
     // Create an IdentifierMap, which will map the user's global IDs to
