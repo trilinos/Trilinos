@@ -13,17 +13,14 @@
 
     \brief IdentifierMap class.
 */
-
-#include <cstdint>
+#include <Zoltan2_IdentifierTraits.hpp>
+#include <Zoltan2_AlltoAll.hpp>
 
 #include <vector>
 #include <map>
+
+#include <Teuchos_as.hpp>
 #include <Teuchos_Hashtable.hpp>
-#include <Teuchos_CommHelpers.hpp>
-#include <Teuchos_TestForException.hpp>
-#include <Zoltan2_Standards.hpp>
-#include <Zoltan2_IdentifierTraits.hpp>
-#include <Zoltan2_AlltoAll.hpp>
 
 namespace Zoltan2
 {
@@ -294,10 +291,10 @@ template< typename GID, typename LNO, typename GNO>
   if (userGidsAreZoltan2Gnos_){   // our gnos are the app gids
     if (tt == TRANSLATE_LIB_TO_APP)
       for (size_t i=0; i < len; i++)
-        IdentifierTraits<GNO>::castTo(gno[i], gid[i]);
+        gid[i] = Teuchos::as<GID>(gno[i]);
     else
       for (size_t i=0; i < len; i++)
-        IdentifierTraits<GID>::castTo(gid[i], gno[i]);
+        gno[i] = Teuchos::as<GNO>(gid[i]);
   }
   else{              // we mapped gids to consecutive gnos
     GNO firstGno = gnoDist_[myRank_];
@@ -346,8 +343,8 @@ template< typename GID, typename LNO, typename GNO>
     BASIC_ASSERTION);
 
   Z2_LOCAL_INPUT_ASSERTION(*env_, "Destination array is too small",
-    ((tt==TRANSLATE_LIB_TO_APP) && (lid.size() >= gno.size())) || 
-    ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= lid.size())),
+    ((tt==TRANSLATE_LIB_TO_APP) && (lno.size() >= gno.size())) || 
+    ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= lno.size())),
     BASIC_ASSERTION);
 
   GNO firstGno(0), endGno(0);
@@ -367,8 +364,7 @@ template< typename GID, typename LNO, typename GNO>
       }
       else {                    // gnos must be the app gids
         try{
-          GID keyArg;
-          IdentifierTraits<GNO>::castTo(gno[i], keyArg);
+          GID keyArg = Teuchos::as<GID>(gno[i]);
           lno[i] = gidHash_->get(IdentifierTraits<GID>::key(keyArg));
         }
         catch (const std::exception &e) {
@@ -384,7 +380,7 @@ template< typename GID, typename LNO, typename GNO>
       if (gnoDist_.size() > 0)  // gnos are consecutive
         gno[i] = firstGno + idx;
       else                     // gnos must be the app gids
-        IdentifierTraits<GID>::castTo(myGids_[idx], gno[i]);
+        gno[i] = Teuchos::as<GNO>(myGids_[idx]);
     }
   }
 }
@@ -423,8 +419,7 @@ template< typename GID, typename LNO, typename GNO>
     }
 
     for (size_t i=0; i < len; i++){
-      GNO globalNumber;
-      IdentifierTraits<GID>::castTo(in_gid[i], globalNumber);
+      GNO globalNumber = Teuchos::as<GNO>(in_gid[i]);;
       if (!skipGno)
         out_gno[i] = globalNumber;
       pos = firstGnoToProc.upper_bound(globalNumber);
@@ -493,9 +488,6 @@ template< typename GID, typename LNO, typename GNO>
     hashProc.clear();
   }
 
-  // Teuchos comment #1: The Array::() operator returns an ArrayView.
-  // Teuchos comment #2: GID may not be a Teuchos Packet type,
-  //                     so we wrote our own AlltoAllv.
   // Z2::AlltoAllv comment: Buffers are in process rank contiguous order.
 
   try{
@@ -731,7 +723,7 @@ template< typename GID, typename LNO, typename GNO>
     }
     else{
       GID gid = IdentifierTraits<GID>::keyToGid(key);
-      IdentifierTraits<GID>::castTo(gid, gno);
+      gno = Teuchos::as<GNO>(gid);
     }
 
     for (size_t j=0; j < v.size(); j++){
@@ -760,7 +752,7 @@ template< typename GID, typename LNO, typename GNO>
   global_size_t gtmp = localNumberOfIds_;
 
   try{
-    Teuchos::reduceAll<int, global_size_t>(*comm_, Teuchos::REDUCE_SUM, 
+    reduceAll<int, global_size_t>(*comm_, Teuchos::REDUCE_SUM, 
       1, &gtmp, &globalNumberOfIds_);
   } 
   catch (const std::exception &e) {
@@ -775,7 +767,7 @@ template< typename GID, typename LNO, typename GNO>
 
   userGidsAreTeuchosOrdinal_ = false;
   userGidsAreConsecutive_ = false;
-  baseZeroConsecutiveIds = false;
+  bool baseZeroConsecutiveIds = false;
 
   if (IdentifierTraits<GID>::isGlobalOrdinal()){
 
@@ -857,24 +849,23 @@ template< typename GID, typename LNO, typename GNO>
       if (localNumberOfIds_ > 0){
         std::pair<GID, GID> minMax =
           IdentifierTraits<GID>::minMax(gidPtr, localNumberOfIds_);
-        IdentifierTraits<GID>::castTo(minMax.first, localMin);
-        IdentifierTraits<GID>::castTo(minMax.second, localMax);
+        localMin = Teuchos::as<intmax_t>(minMax.first);
+        localMax = Teuchos::as<intmax_t>(minMax.second);
       }
       else{
         localMin = INTMAX_MAX;
         localMax = INTMAX_MIN;
       }
 
-      Teuchos::reduceAll<int, intmax_t>(*comm_, Teuchos::REDUCE_MAX, 
+      reduceAll<int, intmax_t>(*comm_, Teuchos::REDUCE_MAX, 
           1, &localMax, &globalMax);
 
-      Teuchos::reduceAll<int, intmax_t>(*comm_, Teuchos::REDUCE_MIN, 
+      reduceAll<int, intmax_t>(*comm_, Teuchos::REDUCE_MIN, 
           1, &localMin, &globalMin);
 
       minGlobalGno_ = static_cast<GNO>(globalMin);
       maxGlobalGno_ = static_cast<GNO>(globalMax);
     }
-
   } else{
     // We map application gids to consecutive global numbers starting with 0.
 
