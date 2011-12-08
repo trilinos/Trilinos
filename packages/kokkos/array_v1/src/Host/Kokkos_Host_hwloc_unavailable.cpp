@@ -47,10 +47,12 @@
 namespace Kokkos {
 namespace Impl {
 
-unsigned host_internal_page_size() { return 0 ; }
 unsigned host_internal_node_count() { return 0 ; }
 unsigned host_internal_core_per_node() { return 0 ; }
 bool     host_internal_bind_this_thread_to_node( unsigned ) { return false ; }
+
+/* Cannot return zero.  At least align on quad-word boundary */
+unsigned host_internal_page_size() { return 4 * sizeof(unsigned) ; }
 
 } // namespace Impl
 } // namespace Kokkos
