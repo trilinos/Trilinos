@@ -97,26 +97,36 @@ public:
   
   IdentifierModel( const IdentifierInput<User> *ia, 
     const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
-      gnosAreGids_(false), weightDim_(0), numGlobalIdentifiers_(), env_(env), 
+      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
       comm_(env->comm_), gids_(), weights_(), gnos_(), gnosConst_()
   {
-    size_t nLocalIds;
-    const gid_t *gids;
-    const scalar_t *wgts;
+    int weightDim = ia->getNumWeights();
+    size_t nLocalIds = ia->getLocalNumIds();
 
-    weightDim_ = ia->getIdentifierWeightDim();
+    const scalar_t **wgts=NULL;
+    const int *wgtStrides=NULL;
+
+    if (nLocalIds && weightDim){
+      wgts = new scalar_t * [weightDim];
+      wgtStrides = new int [weightDim];
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, nLocalIds, wgts && wgtStrides);
+    }
+
+    const gid_t *gids=NULL;
 
     try{
-      nLocalIds = ia->getIdentifierView(gids, wgts);
+      ia->getIdList(gids, wgts, wgtStrides);
     }
     Z2_FORWARD_EXCEPTIONS;
 
     if (nLocalIds){
       gids_ = arcp(const_cast<gid_t *>(gids), 0, nLocalIds, false);
   
-      if (wgts){
-        weights_ = arcp(const_cast<scalar_t *>(wgts), 0, nLocalIds*weightDim_, 
-          false);
+      if (weightDim_ > 0){
+        StridedInput *w[weightDim_];
+        for (int i=0; i < weightDim; i++)
+          w[i] = new StridedInput(env_, wgts[i], wgtStrides[i]);
+        weights_ = arcp<const StridedInput>(w, 0, weightDim_, true);
       }
     }
 
@@ -151,7 +161,7 @@ public:
     gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
   }
 
-  /*! Returns the number identifierson this process.
+  /*! Returns the number identifiers on this process.
    */
   size_t getLocalNumIdentifiers() const { return gids_.size(); }
 
@@ -161,21 +171,22 @@ public:
 
   /*! Returns the dimension (0 or greater) of identifier weights.
    */
-  int getIdentifierWeightDim() const { return weightDim_; }
+  int getIdentifierWeightDim() const { return weights_.size(); }
 
   /*! Sets pointers to this process' identifier Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
         each identifier on this process.
       \param wgts will on return point to a list of the weight or weights
-         associated with each identifier in the Ids list.  Weights are listed by
-         identifier by weight component.
+         associated with each identifier in the Ids list. Each weight
+         is represented as a StridedInput object.
+         
        \return The number of ids in the Ids list.
    */
 
   size_t getIdentifierList( ArrayView<const gno_t> &Ids,
-    ArrayView<const scalar_t> &wgts) const 
+    ArrayView<const StridedInput> &wgts) const 
   {
-    wgts = weights_;
+    wgts = weights_(0, weights_.size());
     size_t n = getLocalNumIdentifiers();
 
     if (gnosAreGids_){
@@ -210,12 +221,11 @@ public:
 private:
 
   bool gnosAreGids_;
-  int weightDim_;
   gno_t numGlobalIdentifiers_;
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
-  ArrayRCP<const scalar_t> weights_;
+  ArrayRCP<const StridedInput<scalar_t> > weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 };
@@ -233,7 +243,7 @@ public:
   
   IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
-      gnosAreGids_(false), weightDim_(0), numGlobalIdentifiers_(), env_(env), 
+      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
       comm_(env->comm_), gids_(), weights_(), gnos_(), gnosConst_()
   {
     size_t nLocalIds;
@@ -307,7 +317,7 @@ public:
   size_t getIdentifierList( ArrayView<const gno_t> &Ids,
     ArrayView<const scalar_t> &wgts) const 
   {
-    wgts = weights_(0, weightDim_*gids_.size());
+    wgts = weights_(0, 0);   // not implemented yet
     size_t n = getLocalNumIdentifiers();
 
     if (gnosAreGids_){
@@ -347,7 +357,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
-  ArrayRCP<const scalar_t> weights_;
+  ArrayRCP<const StridedInput> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 };

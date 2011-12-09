@@ -96,6 +96,7 @@ APPEND_SET(HEADERS
       Zoltan2_Problem.hpp
       Zoltan2_Solution.hpp
       Zoltan2_Standards.hpp
+      Zoltan2_StridedInput.hpp
       Zoltan2_TemplateMacros.hpp
       Zoltan2_Util.hpp
       Zoltan2_XpetraCrsGraphInput.hpp

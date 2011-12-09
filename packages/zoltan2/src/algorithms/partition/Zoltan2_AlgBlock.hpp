@@ -88,11 +88,29 @@ void AlgBlock(
   size_t numGnos = getLocalNumIdentifiers();
   int wtflag = ids->getIdentifierWeightDim();
 
+  // If there are multiple weights, how should we use them?
+
+  enum {object_weight,     // balance on first weight
+        object_count,      // ignore weight, balance on object count
+        total_weight,      // balance on total of weights
+        maximum_weight};   // balance on maximum of weights
+
+  int balanceObjective = (wtflag ? object_weight : object_count);
+
+  if (wtflag > 1){
+    if (objective == string("balance_object_count"))
+      balanceObjective = object_count;
+    else if (objective == string("multicriteria_minimize_total_weight"))
+      balanceObjective = total_weight;
+    else if (objective == string("multicriteria_minimize_maximum_weight"))
+      balanceObjective = maximum_weight;
+  }
+
   Z2_GLOBAL_BUG_ASSERTION(env, "partition array must be pre-allocated",
-    gnoPart.size() >= numGnods, BASIC_ASSERTION);
+    gnoPart.size() >= numGnos, BASIC_ASSERTION);
 
   ArrayView<const gno_t> idList;
-  ArrayView <const scalar_t> wgtList;
+  ArrayView <const StridedInput> wgtList;
   
   ids->getIdentifierList(idList, wgtList);
 
