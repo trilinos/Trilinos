@@ -417,6 +417,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   using Teuchos::ParameterList;
+  using Teuchos::parameterList;
   using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
@@ -533,6 +534,16 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   switch (belosSolveStatus) {
     case Belos::Unconverged: {
       solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
+      // FIXME (mfh 08 Dec 2011) Please set achievedTol even if the
+      // solver did not converge.  If not set explicitly, the
+      // constructor of SolveStatus (see
+      // thyra/core/src/interfaces/operator_solve/fundamental/Thyra_SolveSupportTypes.hpp)
+      // sets this to unknownTolerance(), which is -1 (as the
+      // magnitude type of Scalar).  It would be nice to know what the
+      // solver actually managed to achieve.  This is especially for
+      // nonlinear solvers, which might be able to use a partially
+      // converged result, and which would like to know the achieved
+      // convergence tolerance for use in computing bounds.
       break;
     }
     case Belos::Converged: {
@@ -546,6 +557,9 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         }
       }
       else {
+	// FIXME (mfh 08 Dec 2011) Should find out what the solver
+	// actually achieved, even though defaultTol_ is a correct
+	// upper bound in this case.
         solveStatus.achievedTol = tmpPL->get("Convergence Tolerance", defaultTol_);
       }
       break;
@@ -563,6 +577,17 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     *out << "\n" << ossmessage.str() << "\n";
 
   solveStatus.message = ossmessage.str();
+
+  // Dump the getNumIters() and the achieved convergence tolerance
+  // into solveStatus.extraParameters, as the "Belos/Iteration Count"
+  // resp. "Belos/Achieved Tolerance" parameters.
+  if (solveStatus.extraParameters.is_null()) {
+    solveStatus.extraParameters = parameterList ();
+  }
+  solveStatus.extraParameters->set ("Belos/Iteration Count", 
+				    iterativeSolver_->getNumIters());
+  solveStatus.extraParameters->set ("Belos/Achieved Tolerance", 
+				    solveStatus.achievedTol);
 
 //  This information is in the previous line, which is printed anytime the verbosity
 //  is not set to Teuchos::VERB_NONE, so I'm commenting this out for now.
