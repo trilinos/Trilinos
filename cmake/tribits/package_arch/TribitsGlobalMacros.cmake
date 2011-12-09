@@ -673,7 +673,7 @@ FUNCTION(TRIBITS_DUMP_DEPS_XML_FILE)
   SET(DEPS_XML "")
 
   APPEND_STRING_VAR(DEPS_XML
-    "<PackageDependencies>\n")
+    "<PackageDependencies project=\"${PROJECT_NAME}\">\n")
 
   SET(PACKAGE_IDX 0)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
