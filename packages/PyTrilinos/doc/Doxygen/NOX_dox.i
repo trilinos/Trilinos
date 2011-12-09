@@ -2224,61 +2224,6 @@ search.
 Return value is true for a successful line search computation. ";
 
 
-// File: classNOX_1_1Direction_1_1Generic.xml
-%feature("docstring") NOX::Direction::Generic "
-
-Generic direction interface
-
-Generic interface for calculating a search direction, $d$, to be used
-in updating the iterate.
-
-C++ includes: NOX_Direction_Generic.H ";
-
-%feature("docstring")  NOX::Direction::Generic::Generic "NOX::Direction::Generic::Generic()
-
-Constructor.
-
-Constructors of derived objects should look like reset(). ";
-
-%feature("docstring")  NOX::Direction::Generic::~Generic "virtual
-NOX::Direction::Generic::~Generic()
-
-Destructor. ";
-
-%feature("docstring")  NOX::Direction::Generic::reset "virtual bool
-NOX::Direction::Generic::reset(const Teuchos::RCP< NOX::GlobalData >
-&gd, Teuchos::ParameterList &params)=0
-
-Reset direction based on possibly new parameters. ";
-
-%feature("docstring")  NOX::Direction::Generic::compute "virtual bool
-NOX::Direction::Generic::compute(NOX::Abstract::Vector &dir,
-NOX::Abstract::Group &grp, const NOX::Solver::Generic &solver)=0
-
-Compute the direction vector, dir, for a specific method given the
-current group, grp.
-
-The grp is not const so that we can compute the F vector, the Jacobian
-matrix, the Newton vector, and so on.
-
-Const access to the solver is used for getting additional information
-such as the past solution, the iteration number, and so on. ";
-
-%feature("docstring")  NOX::Direction::Generic::compute "bool
-NOX::Direction::Generic::compute(NOX::Abstract::Vector &dir,
-NOX::Abstract::Group &grp, const NOX::Solver::LineSearchBased &solver)
-
-Same as compute( NOX::Abstract::Vector&, NOX::Abstract::Group&, const
-NOX::Solver::Generic&)
-
-Enables direct support for line search based solvers for the purpose
-of efficiency since the LineSearchBased object has a getStep()
-function that some directions require.
-
-If it is not redefined in the derived class, it will just call the
-compute with the NOX::Solver::Generic argument. ";
-
-
 // File: classNOX_1_1Multiphysics_1_1Solver_1_1Generic.xml
 %feature("docstring") NOX::Multiphysics::Solver::Generic "
 
@@ -2346,6 +2291,61 @@ avoid hiding this overloaded virtual method ";
 %feature("docstring")  NOX::Multiphysics::Solver::Generic::reset "virtual void NOX::Multiphysics::Solver::Generic::reset(const
 NOX::Abstract::Vector &initialGuess, const Teuchos::RCP<
 NOX::StatusTest::Generic > &tests)=0 ";
+
+
+// File: classNOX_1_1Direction_1_1Generic.xml
+%feature("docstring") NOX::Direction::Generic "
+
+Generic direction interface
+
+Generic interface for calculating a search direction, $d$, to be used
+in updating the iterate.
+
+C++ includes: NOX_Direction_Generic.H ";
+
+%feature("docstring")  NOX::Direction::Generic::Generic "NOX::Direction::Generic::Generic()
+
+Constructor.
+
+Constructors of derived objects should look like reset(). ";
+
+%feature("docstring")  NOX::Direction::Generic::~Generic "virtual
+NOX::Direction::Generic::~Generic()
+
+Destructor. ";
+
+%feature("docstring")  NOX::Direction::Generic::reset "virtual bool
+NOX::Direction::Generic::reset(const Teuchos::RCP< NOX::GlobalData >
+&gd, Teuchos::ParameterList &params)=0
+
+Reset direction based on possibly new parameters. ";
+
+%feature("docstring")  NOX::Direction::Generic::compute "virtual bool
+NOX::Direction::Generic::compute(NOX::Abstract::Vector &dir,
+NOX::Abstract::Group &grp, const NOX::Solver::Generic &solver)=0
+
+Compute the direction vector, dir, for a specific method given the
+current group, grp.
+
+The grp is not const so that we can compute the F vector, the Jacobian
+matrix, the Newton vector, and so on.
+
+Const access to the solver is used for getting additional information
+such as the past solution, the iteration number, and so on. ";
+
+%feature("docstring")  NOX::Direction::Generic::compute "bool
+NOX::Direction::Generic::compute(NOX::Abstract::Vector &dir,
+NOX::Abstract::Group &grp, const NOX::Solver::LineSearchBased &solver)
+
+Same as compute( NOX::Abstract::Vector&, NOX::Abstract::Group&, const
+NOX::Solver::Generic&)
+
+Enables direct support for line search based solvers for the purpose
+of efficiency since the LineSearchBased object has a getStep()
+function that some directions require.
+
+If it is not redefined in the derived class, it will just call the
+compute with the NOX::Solver::Generic argument. ";
 
 
 // File: classNOX_1_1LineSearch_1_1Generic.xml
@@ -3813,6 +3813,56 @@ calculated
 NOX::Abstract::Group::Failed - Any other type of failure
 
 NOX::Abstract::Group::Ok - Otherwise ";
+
+
+// File: classNOX_1_1Abstract_1_1ImplicitWeighting.xml
+%feature("docstring") NOX::Abstract::ImplicitWeighting "
+
+A pure virtual interface for enabling/disabling any user defined
+implicit weighting of the concrete object.
+
+This class is used to toggle on/off any implicit weighting that might
+be handled internal to a particular user defined class. The classical
+use case is to disable an implicitly defined weighting on the inner
+product and norm computations of the abstract vector class so that
+classes like the NormWRMS can apply their own weighting. This prevents
+a \"double weight\" effect being applied to specific status tests.
+
+The typical use case is the get the current weighting flag, then
+disable the weighting, perform the computations on the unweighted
+object and then set the flag back to its original value. By storing
+the original value, one can return it to its prior state regardless if
+an implicit weighting is defined.
+
+CAUTION: This is a power user feature and should only be used in
+concert with specialized NOX::Abstract::Vector implementations.
+
+Roger Pawlowski (SNL 1444)
+
+C++ includes: NOX_Abstract_ImplicitWeighting.H ";
+
+%feature("docstring")
+NOX::Abstract::ImplicitWeighting::~ImplicitWeighting "virtual
+NOX::Abstract::ImplicitWeighting::~ImplicitWeighting() ";
+
+%feature("docstring")
+NOX::Abstract::ImplicitWeighting::getImplicitWeighting "virtual bool
+NOX::Abstract::ImplicitWeighting::getImplicitWeighting() const =0
+
+Return true if implicit weighting is currently enabled.
+
+CAUTION: This is a power user feature and should only be used in
+concert with specialized NOX::Abstract::Vector implementations. ";
+
+%feature("docstring")
+NOX::Abstract::ImplicitWeighting::setImplicitWeighting "virtual void
+NOX::Abstract::ImplicitWeighting::setImplicitWeighting(bool
+do_implicit_weighting)=0
+
+Set to true to enable implicit weighting, false disables.
+
+CAUTION: This is a power user feature and should only be used in
+concert with specialized NOX::Abstract::Vector implementations. ";
 
 
 // File: classNOX_1_1Direction_1_1Utils_1_1InexactNewton.xml
@@ -5838,6 +5888,166 @@ search.
 Return value is true for a successful line search computation. ";
 
 
+// File: classNOX_1_1MultiVector.xml
+%feature("docstring") NOX::MultiVector "
+
+Default implementation for NOX::Abstract::MultiVector using an array
+of NOX::Abstract::MultiVector's.
+
+C++ includes: NOX_MultiVector.H ";
+
+%feature("docstring")  NOX::MultiVector::init "NOX::Abstract::MultiVector & NOX::MultiVector::init(double gamma)
+
+Initialize every element of this multi-vector with gamma. ";
+
+%feature("docstring")  NOX::MultiVector::random "NOX::Abstract::MultiVector & NOX::MultiVector::random(bool
+useSeed=false, int seed=1)
+
+Initialize each element of this multi-vector with a random value. ";
+
+%feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
+NOX::Abstract::MultiVector &source, const vector< int > &index)
+
+Copy the vectors in source to a set of vectors in *this. The
+index.size() vectors in source are copied to a subset of vectors in
+*this indicated by the indices given in index. ";
+
+%feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
+NOX::MultiVector &source, const vector< int > &index) ";
+
+%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
+NOX::Abstract::MultiVector &source)
+
+Append the vectors in source to *this. ";
+
+%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
+NOX::MultiVector &source) ";
+
+%feature("docstring")  NOX::MultiVector::scale "NOX::Abstract::MultiVector & NOX::MultiVector::scale(double gamma)
+
+Scale each element of this multivector by gamma. ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::Abstract::MultiVector &a, double gamma=0.0)
+
+Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
+= *this. ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::MultiVector &a, double gamma=0.0) ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::Abstract::MultiVector &a, double beta, const
+NOX::Abstract::MultiVector &b, double gamma=0.0)
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
+multi-vectors and x = *this. ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::MultiVector &a, double beta, const NOX::MultiVector &b,
+double gamma=0.0) ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
+transb, double alpha, const NOX::Abstract::MultiVector &a, const
+NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0)
+
+Compute x = (alpha * a * b) + (gamma * x) where a is a multivector, b
+is a dense matrix, x = *this, and op(b) = b if transb =
+Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
+";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
+transb, double alpha, const NOX::MultiVector &a, const
+NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0) ";
+
+%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::clone(NOX::CopyType
+type=NOX::DeepCopy) const
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\". Note that there is no assumption that a vector
+created by ShapeCopy is initialized to zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::clone(int numvecs)
+const
+
+Creates a new multi-vector with numvecs columns. ";
+
+%feature("docstring")  NOX::MultiVector::subCopy "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::subCopy(const vector<
+int > &index) const
+
+Creates a new multi-vector with index.size() columns whose columns are
+copies of the columns of *this given by index. ";
+
+%feature("docstring")  NOX::MultiVector::subView "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::subView(const vector<
+int > &index) const
+
+Creates a new multi-vector with index.size() columns that shares the
+columns of *this given by index. ";
+
+%feature("docstring")  NOX::MultiVector::norm "void
+NOX::MultiVector::norm(vector< double > &result,
+NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
+const
+
+Norm. ";
+
+%feature("docstring")  NOX::MultiVector::multiply "void
+NOX::MultiVector::multiply(double alpha, const
+NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
+&b) const
+
+Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
+
+%feature("docstring")  NOX::MultiVector::multiply "void
+NOX::MultiVector::multiply(double alpha, const NOX::MultiVector &y,
+NOX::Abstract::MultiVector::DenseMatrix &b) const ";
+
+%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector &v, int
+numVecs=1, NOX::CopyType type=NOX::DeepCopy)
+
+Create MultiVector with numVecs columns out of a single
+NOX::Abstract::Vector. ";
+
+%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector *const *vs,
+int numVecs, NOX::CopyType type=NOX::DeepCopy)
+
+Create MultiVector out of array of NOX::Abstract::Vector's. ";
+
+%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const MultiVector &source, NOX::CopyType
+type=NOX::DeepCopy)
+
+Copy constructor. ";
+
+%feature("docstring")  NOX::MultiVector::~MultiVector "NOX::MultiVector::~MultiVector()
+
+Destructor. ";
+
+%feature("docstring")  NOX::MultiVector::length "int
+NOX::MultiVector::length() const
+
+Return the length of multi-vector. ";
+
+%feature("docstring")  NOX::MultiVector::numVectors "int
+NOX::MultiVector::numVectors() const
+
+Return the number of vectors in the multi-vector. ";
+
+%feature("docstring")  NOX::MultiVector::print "void
+NOX::MultiVector::print(std::ostream &stream) const
+
+Print the vector. This is meant for debugging purposes only. ";
+
+
 // File: classNOX_1_1Epetra_1_1MultiVector.xml
 %feature("docstring") NOX::Epetra::MultiVector "
 
@@ -6019,166 +6229,6 @@ Return the number of vectors in the multi-vector. ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::print "void
 NOX::Epetra::MultiVector::print(std::ostream &stream) const
-
-Print the vector. This is meant for debugging purposes only. ";
-
-
-// File: classNOX_1_1MultiVector.xml
-%feature("docstring") NOX::MultiVector "
-
-Default implementation for NOX::Abstract::MultiVector using an array
-of NOX::Abstract::MultiVector's.
-
-C++ includes: NOX_MultiVector.H ";
-
-%feature("docstring")  NOX::MultiVector::init "NOX::Abstract::MultiVector & NOX::MultiVector::init(double gamma)
-
-Initialize every element of this multi-vector with gamma. ";
-
-%feature("docstring")  NOX::MultiVector::random "NOX::Abstract::MultiVector & NOX::MultiVector::random(bool
-useSeed=false, int seed=1)
-
-Initialize each element of this multi-vector with a random value. ";
-
-%feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
-NOX::Abstract::MultiVector &source, const vector< int > &index)
-
-Copy the vectors in source to a set of vectors in *this. The
-index.size() vectors in source are copied to a subset of vectors in
-*this indicated by the indices given in index. ";
-
-%feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
-NOX::MultiVector &source, const vector< int > &index) ";
-
-%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
-NOX::Abstract::MultiVector &source)
-
-Append the vectors in source to *this. ";
-
-%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
-NOX::MultiVector &source) ";
-
-%feature("docstring")  NOX::MultiVector::scale "NOX::Abstract::MultiVector & NOX::MultiVector::scale(double gamma)
-
-Scale each element of this multivector by gamma. ";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::Abstract::MultiVector &a, double gamma=0.0)
-
-Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
-= *this. ";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::MultiVector &a, double gamma=0.0) ";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::Abstract::MultiVector &a, double beta, const
-NOX::Abstract::MultiVector &b, double gamma=0.0)
-
-Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
-multi-vectors and x = *this. ";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::MultiVector &a, double beta, const NOX::MultiVector &b,
-double gamma=0.0) ";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
-transb, double alpha, const NOX::Abstract::MultiVector &a, const
-NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0)
-
-Compute x = (alpha * a * b) + (gamma * x) where a is a multivector, b
-is a dense matrix, x = *this, and op(b) = b if transb =
-Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
-";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
-transb, double alpha, const NOX::MultiVector &a, const
-NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0) ";
-
-%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::clone(NOX::CopyType
-type=NOX::DeepCopy) const
-
-Create a new Vector of the same underlying type by cloning \"this\",
-and return a pointer to the new vector.
-
-If type is NOX::DeepCopy, then we need to create an exact replica of
-\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
-the shape of \"this\". Note that there is no assumption that a vector
-created by ShapeCopy is initialized to zeros.
-
-Pointer to newly created vector or NULL if clone is not supported. ";
-
-%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::clone(int numvecs)
-const
-
-Creates a new multi-vector with numvecs columns. ";
-
-%feature("docstring")  NOX::MultiVector::subCopy "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::subCopy(const vector<
-int > &index) const
-
-Creates a new multi-vector with index.size() columns whose columns are
-copies of the columns of *this given by index. ";
-
-%feature("docstring")  NOX::MultiVector::subView "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::subView(const vector<
-int > &index) const
-
-Creates a new multi-vector with index.size() columns that shares the
-columns of *this given by index. ";
-
-%feature("docstring")  NOX::MultiVector::norm "void
-NOX::MultiVector::norm(vector< double > &result,
-NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
-const
-
-Norm. ";
-
-%feature("docstring")  NOX::MultiVector::multiply "void
-NOX::MultiVector::multiply(double alpha, const
-NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
-&b) const
-
-Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
-
-%feature("docstring")  NOX::MultiVector::multiply "void
-NOX::MultiVector::multiply(double alpha, const NOX::MultiVector &y,
-NOX::Abstract::MultiVector::DenseMatrix &b) const ";
-
-%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector &v, int
-numVecs=1, NOX::CopyType type=NOX::DeepCopy)
-
-Create MultiVector with numVecs columns out of a single
-NOX::Abstract::Vector. ";
-
-%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector *const *vs,
-int numVecs, NOX::CopyType type=NOX::DeepCopy)
-
-Create MultiVector out of array of NOX::Abstract::Vector's. ";
-
-%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const MultiVector &source, NOX::CopyType
-type=NOX::DeepCopy)
-
-Copy constructor. ";
-
-%feature("docstring")  NOX::MultiVector::~MultiVector "NOX::MultiVector::~MultiVector()
-
-Destructor. ";
-
-%feature("docstring")  NOX::MultiVector::length "int
-NOX::MultiVector::length() const
-
-Return the length of multi-vector. ";
-
-%feature("docstring")  NOX::MultiVector::numVectors "int
-NOX::MultiVector::numVectors() const
-
-Return the number of vectors in the multi-vector. ";
-
-%feature("docstring")  NOX::MultiVector::print "void
-NOX::MultiVector::print(std::ostream &stream) const
 
 Print the vector. This is meant for debugging purposes only. ";
 
@@ -7073,14 +7123,23 @@ NormWRMS::getBeta() const
 
 Returns the value of 'beta' set in the constructor. ";
 
+%feature("docstring")
+NOX::StatusTest::NormWRMS::getDisableImplicitWeighting "bool
+NormWRMS::getDisableImplicitWeighting() const
+
+Returns true if implicit weighting is disabled during norm
+computation. ";
+
 %feature("docstring")  NOX::StatusTest::NormWRMS::NormWRMS "NormWRMS::NormWRMS(double rtol, double atol, double BDFMultiplier=1.0,
-double tolerance=1.0, double alpha=1.0, double beta=0.5)
+double tolerance=1.0, double alpha=1.0, double beta=0.5, bool
+disable_implicit_weighting=true)
 
 Constructor where ATOL is a scalar. ";
 
 %feature("docstring")  NOX::StatusTest::NormWRMS::NormWRMS "NormWRMS::NormWRMS(double rtol, const Teuchos::RCP< const
 NOX::Abstract::Vector > &atol, double BDFMultiplier=1.0, double
-tolerance=1.0, double alpha=1.0, double beta=0.5)
+tolerance=1.0, double alpha=1.0, double beta=0.5, bool
+disable_implicit_weighting=true)
 
 Constructor where ATOL is a vector. ";
 
@@ -7501,63 +7560,6 @@ Epetra_Vector &x, Epetra_Operator &M, Teuchos::ParameterList
 Computes a user defined preconditioner. ";
 
 
-// File: classNOX_1_1Solver_1_1PrePostOperator.xml
-%feature("docstring") NOX::Solver::PrePostOperator "
-
-Functor to process the pre/post operator object in the parameter list.
-
-This is a wrapper class for a user derived
-NOX::Abstract::PrePostOperator (ppo) object. All solvers use this
-class so we don't have to repeat all parsing code in each NOX::Solver.
-This class searches the \"Solver Options\" parameter list passed into
-the ctor and if a ppo is found will wrap the object.
-
-For instructions on how to implement a PrePostOperator, see
-NOX::Abstract::PrePostOperator.
-
-C++ includes: NOX_Solver_PrePostOperator.H ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::PrePostOperator "NOX::Solver::PrePostOperator::PrePostOperator(const Teuchos::RCP<
-NOX::Utils > &utils, Teuchos::ParameterList &solverOptionsSubList)
-
-Ctor. ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::~PrePostOperator
-"NOX::Solver::PrePostOperator::~PrePostOperator()
-
-Destructor. ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::reset "void
-NOX::Solver::PrePostOperator::reset(const Teuchos::RCP< NOX::Utils >
-&utils, Teuchos::ParameterList &solverOptionsSublist)
-
-Resets the pre/post operator. ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::runPreIterate "void NOX::Solver::PrePostOperator::runPreIterate(const
-NOX::Solver::Generic &solver)
-
-User defined method that will be executed at the start of a call to
-NOX::Solver::Generic::iterate(). ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::runPostIterate "void NOX::Solver::PrePostOperator::runPostIterate(const
-NOX::Solver::Generic &solver)
-
-User defined method that will be executed at the end of a call to
-NOX::Solver::Generic::iterate(). ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::runPreSolve "void NOX::Solver::PrePostOperator::runPreSolve(const
-NOX::Solver::Generic &solver)
-
-User defined method that will be executed at the start of a call to
-NOX::Solver::Generic::solve(). ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::runPostSolve "void NOX::Solver::PrePostOperator::runPostSolve(const
-NOX::Solver::Generic &solver)
-
-User defined method that will be executed at the end of a call to
-NOX::Solver::Generic::solve(). ";
-
-
 // File: classNOX_1_1Abstract_1_1PrePostOperator.xml
 %feature("docstring") NOX::Abstract::PrePostOperator "
 
@@ -7620,6 +7622,63 @@ User defined method that will be executed at the start of a call to
 NOX::Solver::Generic::solve(). ";
 
 %feature("docstring")  NOX::Abstract::PrePostOperator::runPostSolve "void NOX::Abstract::PrePostOperator::runPostSolve(const
+NOX::Solver::Generic &solver)
+
+User defined method that will be executed at the end of a call to
+NOX::Solver::Generic::solve(). ";
+
+
+// File: classNOX_1_1Solver_1_1PrePostOperator.xml
+%feature("docstring") NOX::Solver::PrePostOperator "
+
+Functor to process the pre/post operator object in the parameter list.
+
+This is a wrapper class for a user derived
+NOX::Abstract::PrePostOperator (ppo) object. All solvers use this
+class so we don't have to repeat all parsing code in each NOX::Solver.
+This class searches the \"Solver Options\" parameter list passed into
+the ctor and if a ppo is found will wrap the object.
+
+For instructions on how to implement a PrePostOperator, see
+NOX::Abstract::PrePostOperator.
+
+C++ includes: NOX_Solver_PrePostOperator.H ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::PrePostOperator "NOX::Solver::PrePostOperator::PrePostOperator(const Teuchos::RCP<
+NOX::Utils > &utils, Teuchos::ParameterList &solverOptionsSubList)
+
+Ctor. ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::~PrePostOperator
+"NOX::Solver::PrePostOperator::~PrePostOperator()
+
+Destructor. ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::reset "void
+NOX::Solver::PrePostOperator::reset(const Teuchos::RCP< NOX::Utils >
+&utils, Teuchos::ParameterList &solverOptionsSublist)
+
+Resets the pre/post operator. ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::runPreIterate "void NOX::Solver::PrePostOperator::runPreIterate(const
+NOX::Solver::Generic &solver)
+
+User defined method that will be executed at the start of a call to
+NOX::Solver::Generic::iterate(). ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::runPostIterate "void NOX::Solver::PrePostOperator::runPostIterate(const
+NOX::Solver::Generic &solver)
+
+User defined method that will be executed at the end of a call to
+NOX::Solver::Generic::iterate(). ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::runPreSolve "void NOX::Solver::PrePostOperator::runPreSolve(const
+NOX::Solver::Generic &solver)
+
+User defined method that will be executed at the start of a call to
+NOX::Solver::Generic::solve(). ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::runPostSolve "void NOX::Solver::PrePostOperator::runPostSolve(const
 NOX::Solver::Generic &solver)
 
 User defined method that will be executed at the end of a call to
@@ -9742,6 +9801,9 @@ follow the link for this object for more information. ";
 
 
 // File: NOX__Abstract__Group_8H.xml
+
+
+// File: NOX__Abstract__ImplicitWeighting_8H.xml
 
 
 // File: NOX__Abstract__MultiVector_8H.xml
