@@ -348,19 +348,34 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     CACHE STRING
     "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
 
+  #
+  # Extra repositories
+  #
+
   ASSERT_DEFINED(${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME)
+
+  SET(DEFAULT_EXTRA_REPOS_FILE 
+    "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+
+  IF (EXISTS ${DEFAULT_EXTRA_REPOS_FILE})
+    #MESSAGE("${DEFAULT_EXTRA_REPOS_FILE} does exist!")
+    SET(${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT ${DEFAULT_EXTRA_REPOS_FILE})
+  ELSE()
+    #MESSAGE("${DEFAULT_EXTRA_REPOS_FILE} does *NOT* exist!")
+    SET(${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT)
+  ENDIF()
+
   ADVANCED_SET(${PROJECT_NAME}_EXTRAREPOS_FILE
-    "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}"
+    "${${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT}"
     CACHE FILENAME
     "File contining the list of extra repositories contining add-on packages to process")
+  #PRINT_VAR(${PROJECT_NAME}_EXTRAREPOS_FILE)
 
   ADVANCED_SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES
     FALSE CACHE BOOL
    "Set if to ignore missing extra repositories (or fail hard)" )
 
-  SET_DEFAULT(${PROJECT_NAME}_SUPPORT_EXTRA_REPOS FALSE)
-
-  IF (${PROJECT_NAME}_SUPPORT_EXTRA_REPOS)
+  IF (${PROJECT_NAME}_EXTRAREPOS_FILE)
   
     MESSAGE("")
     MESSAGE("Reading the list of extra repositories from ${${PROJECT_NAME}_EXTRAREPOS_FILE}")
@@ -369,26 +384,33 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     INCLUDE(${${PROJECT_NAME}_EXTRAREPOS_FILE})
     TRIBITS_PROCESS_EXTRAREPOS_LISTS()
     # Above sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
- 
-    ADVANCED_SET(${PROJECT_NAME}_EXTRA_REPOSITORIES
-      "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}"
-      CACHE STRING
-      "List of external repositories that contain extra ${PROJECT_NAME} packages."
-      )
-  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  ","
-    ${PROJECT_NAME}_EXTRA_REPOSITORIES)
 
   ELSE()
 
-    SET(${PROJECT_NAME}_EXTRA_REPOSITORIES)
+    SET({PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT)
 
   ENDIF()
+
+  # Even if a project does not support an extra repos file, it can always
+  # support extra repositories defined by the user by the very nature of
+  # Tribits.
+  ADVANCED_SET(${PROJECT_NAME}_EXTRA_REPOSITORIES
+    "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}"
+    CACHE STRING
+    "List of external repositories that contain extra ${PROJECT_NAME} packages."
+    )
+  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  ","
+    ${PROJECT_NAME}_EXTRA_REPOSITORIES)
 
   ADVANCED_SET(${PROJECT_NAME}_INSTALLATION_DIR
     ""
     CACHE STRING
     "Location of an installed version of ${PROJECT_NAME} that will be built against during installation testing"
     )
+
+  #
+  # More options
+  #
 
   IF("${${PROJECT_NAME}_INSTALLATION_DIR}" STREQUAL "")
     SET(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING_DEFAULT OFF)
