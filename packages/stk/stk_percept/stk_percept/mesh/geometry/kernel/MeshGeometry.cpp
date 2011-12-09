@@ -53,6 +53,9 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, std::vector<s
   // and vertices).  We first create a list of all the evaluators that
   // might be relevant.
 
+  curveEvaluators.resize(0);
+  surfEvaluators.resize(0);
+
   size_t s;
   for (s=0; s<geomEvaluators.size(); s++)
     {

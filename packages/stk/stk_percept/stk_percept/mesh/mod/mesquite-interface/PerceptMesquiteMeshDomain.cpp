@@ -24,8 +24,6 @@
 namespace stk {
   namespace percept {
 
-#if 0
-
 #define PRINT_ERROR(a) do { std::cout << "PerceptMesquite::Mesh::ERROR: " << a << std::endl; } while (0)
 
     //! Modifies "coordinate" so that it lies on the
@@ -177,9 +175,7 @@ namespace stk {
       for (size_t i = 0; i < num_handles; i++)
         {
           stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(handle_array[i]);
-          curveEvaluators.resize(0);
-          surfEvaluators.resize(0);
-          int dof = m_meshGeometry->classify_node(node_ptr, curveEvaluators, surfEvaluators);
+          int dof = m_meshGeometry->classify_node(*node_ptr, curveEvaluators, surfEvaluators);
           if (dof < 0)
             {
               PRINT_ERROR("dof < 0");
@@ -193,7 +189,6 @@ namespace stk {
 
     //static bool myPerceptMesquiteMesh_cpp = true;
 
-#endif
 
   } // namespace percept
 } // namespace stk

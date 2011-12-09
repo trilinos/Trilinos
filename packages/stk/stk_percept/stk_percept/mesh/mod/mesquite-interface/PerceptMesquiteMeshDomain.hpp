@@ -21,7 +21,7 @@
 #include <MsqGeomPrim.hpp>
 
 #include <stk_percept/PerceptMesh.hpp>
-//#include <stk_adapt/geometry/MeshGeometry.hpp>
+#include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
 #include <map>
 
 class MeshGeometry;
