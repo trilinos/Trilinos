@@ -586,6 +586,11 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   }
   solveStatus.extraParameters->set ("Belos/Iteration Count", 
 				    iterativeSolver_->getNumIters());
+  // FIXME (mfh 08 Dec 2011) The achievedTol value may not mean
+  // anything yet.  I am merely adding the parameter now so that NOX
+  // developers can start to build the code that extracts and uses it.
+  // Getting the actual achieved convergence tolerance will likely
+  // require changes to Belos.
   solveStatus.extraParameters->set ("Belos/Achieved Tolerance", 
 				    solveStatus.achievedTol);
 
