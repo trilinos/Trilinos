@@ -179,7 +179,7 @@ BucketRepository::declare_bucket(
 
   TraceIf("stk::mesh::impl::BucketRepository::declare_bucket", LOG_BUCKET);
 
-  const unsigned max = 2000000000; //hard-code 2billion; intel warns about using -1. Dan???;
+  const unsigned max = static_cast<unsigned>(-1);
 
   ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
                   "Entity rank " << arg_entity_rank << " is invalid");
