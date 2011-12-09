@@ -189,6 +189,7 @@ namespace MueLu {
           Levels_[nextLevelID]->Release(TopRAPFactory(coarseManager, nextManager));
           Levels_[nextLevelID]->Release(TopSmootherFactory(nextManager, "Smoother"));
           Levels_[nextLevelID]->Release(TopSmootherFactory(nextManager, "CoarseSolver"));
+          Levels_.pop_back();
         }
 
         isLastLevel = true;
