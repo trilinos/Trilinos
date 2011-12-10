@@ -1536,7 +1536,7 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES  DO_PROCESS_MPI_ENABLES)
 
   IF (${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES)
     MESSAGE("")
-    MESSAGE("Setting to empty '' all package enabled packages on reqeust ...")
+    MESSAGE("Setting to empty '' all enabled packages on reqeust ...")
     MESSAGE("")
     FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
       IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
