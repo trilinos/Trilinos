@@ -86,23 +86,32 @@ MESSAGE("")
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 
+#
+# Get the basic varaibles that define the project and the build
+#
+
 # We must locate the source code root directory before processing this
 # file. Once the root directory is located, we can make good guesses
-# at other properties, but this file can be executed outside of the
-# context of a CMake build. 
+# at other properties, but this file is a CTest script that is always
+# executed outside of the context of the project's CMake build. 
 #
 # We allow the environment variable TRIBITS_PROJECT_ROOT to locate the
 # root directory. If the variable doesn't exist, we fall back on the
 # default convention.
-SET(TRIBITS_PROJECT_ROOT "$ENV{TRIBITS_PROJECT_ROOT}")
+#MESSAGE("TRIBITS_PROJECT_ROOT (before env) = '${TRIBITS_PROJECT_ROOT}'")
+IF (NOT TRIBITS_PROJECT_ROOT)
+  SET(TRIBITS_PROJECT_ROOT "$ENV{TRIBITS_PROJECT_ROOT}")
+ENDIF()
+#MESSAGE("TRIBITS_PROJECT_ROOT (after env) = '${TRIBITS_PROJECT_ROOT}'")
 IF(NOT TRIBITS_PROJECT_ROOT)
   # Fall back on the default convention, in which this file is located at: 
   #   <root>/cmake/tribits/ctest.
   GET_FILENAME_COMPONENT(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
   SET(TRIBITS_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../..")
 ENDIF()
+MESSAGE("TRIBITS_PROJECT_ROOT = '${TRIBITS_PROJECT_ROOT}'")
 
-# Check that the ProjectName.cmake file exists.
+# Assert that the ProjectName.cmake file exists.
 SET(TRIBITS_PROJECT_NAME_INCLUDE "${TRIBITS_PROJECT_ROOT}/ProjectName.cmake")
 IF(NOT EXISTS "${TRIBITS_PROJECT_NAME_INCLUDE}")
   MESSAGE(FATAL_ERROR
@@ -112,6 +121,7 @@ IF(NOT EXISTS "${TRIBITS_PROJECT_NAME_INCLUDE}")
     "to point at the source root.")
 ENDIF()
 
+# Include the ProjectName.cmake file and get PROJECT_NAME
 INCLUDE(${TRIBITS_PROJECT_NAME_INCLUDE})
 IF(NOT PROJECT_NAME)
   MESSAGE(FATAL_ERROR 
@@ -127,7 +137,10 @@ MESSAGE("${PROJECT_NAME}_HOME_DIR=${${PROJECT_NAME}_HOME_DIR}")
 SET(${PROJECT_NAME}_CMAKE_DIR "${${PROJECT_NAME}_HOME_DIR}/cmake")
 MESSAGE("${PROJECT_NAME}_CMAKE_DIR = ${${PROJECT_NAME}_CMAKE_DIR}")
 
-SET(${PROJECT_NAME}_TRIBITS_DIR "$ENV{${PROJECT_NAME}_TRIBITS_DIR}")
+# Get the Tribits directory
+IF (NOT ${PROJECT_NAME}_TRIBITS_DIR)
+  SET(${PROJECT_NAME}_TRIBITS_DIR "$ENV{${PROJECT_NAME}_TRIBITS_DIR}")
+ENDIF()
 IF(NOT ${PROJECT_NAME}_TRIBITS_DIR)
   SET(${PROJECT_NAME}_TRIBITS_DIR "${${PROJECT_NAME}_CMAKE_DIR}/tribits")
 ENDIF()
@@ -149,7 +162,7 @@ INCLUDE(TribitsGlobalMacros)
 INCLUDE(TribitsConstants)
 
 # Need to include the project's version file to get some Git and CDash
-# settings specific to the given version of Trilinos
+# settings specific to the given version
 TRIBITS_PROJECT_READ_VERSION_FILE(${TRIBITS_PROJECT_ROOT})
 
 INCLUDE(TribitsFindPythonInterp)
@@ -857,6 +870,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       FILE(MAKE_DIRECTORY "${CTEST_DASHBOARD_ROOT}")
     ENDIF()
   ENDIF()
+  PRINT_VAR(CTEST_SOURCE_DIRECTORY)
+  PRINT_VAR(CTEST_BINARY_DIRECTORY)
 
   # Set override hook for unit testing
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_SOURCE_DIRECTORY ${CTEST_SOURCE_DIRECTORY} )
@@ -875,7 +890,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Some platform-independent setup
   #
   
-  INCLUDE("${${PROJECT_NAME}_CMAKE_DIR}/../CTestConfig.cmake")
+  INCLUDE("${${PROJECT_NAME}_HOME_DIR}/CTestConfig.cmake")
   SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
   SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
   SET(CTEST_USE_LAUNCHERS 1)
