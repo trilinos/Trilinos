@@ -250,8 +250,8 @@ public:
       offArray[numLocalVtx_] = numLocalEdges_;
 
       if (nSelfEdges > 0){
-        tmpOffsets = arcp(offArray, 0, numLocalVtx_+1, true);
-        tmpEdges = arcp(edArray, 0, numLocalEdges_, true);
+        tmpOffsets = arcp(offArray, 0, numLocalVtx_+1);
+        tmpEdges = arcp(edArray, 0, numLocalEdges_);
       }
       else{
         delete [] offArray;
@@ -287,7 +287,7 @@ public:
     if (numLocalVtx_ && !gidsAreGnos_){
       gno_t *tmp = new gno_t [numLocalVtx_];
       Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalVtx_, tmp)
-      gnos_ = arcp(tmp, 0, numLocalVtx_, true);
+      gnos_ = arcp(tmp, 0, numLocalVtx_);
 
       try{
         // Because gidTranslate can translate gids to gnos or
@@ -303,22 +303,24 @@ public:
       if (numLocalEdges_){
         tmp = new gno_t [numLocalEdges_];
         Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, tmp)
-        edgeGnos_ = arcp(tmp, 0, numLocalEdges_, true);
+        edgeGnos_ = arcp(tmp, 0, numLocalEdges_);
       }
     }
 
     if (numLocalEdges_){
       int *p = new int [numLocalEdges_];
       Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, p)
-      procIds_ = arcp(p, 0, numLocalEdges_, true);
+      procIds_ = arcp(p, 0, numLocalEdges_);
     }
 
-    try{
-      // All processes must make this call.
-      idMap->gidGlobalTranslate(edgeGids_(0,numLocalEdges_), 
-        edgeGnos_(0,numLocalEdges_), procIds_(0,numLocalEdges_));
+    if (!gidsAreGnos_){
+      try{
+        // All processes must make this call.
+        idMap->gidGlobalTranslate(edgeGids_(0,numLocalEdges_), 
+          edgeGnos_(0,numLocalEdges_), procIds_(0,numLocalEdges_));
+      }
+      Z2_FORWARD_EXCEPTIONS;
     }
-    Z2_FORWARD_EXCEPTIONS;
 
     this->setIdentifierMap(idMap);   // Zoltan2::Model method
 
@@ -373,12 +375,13 @@ public:
     ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const
   {
     size_t n = getLocalNumVertices();
+    Ids = ArrayView<const gno_t>(Teuchos::null);
 
-    if (gidsAreGnos_){
-      Ids = gids_(0, n);
-    }
-    else{
-      Ids = gnosConst_(0, n);
+    if (n){
+      if (gidsAreGnos_)
+        Ids = gids_(0, n);
+      else
+        Ids = gnosConst_(0, n);
     }
 
     return n;
@@ -391,14 +394,16 @@ public:
     ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
     ArrayView<const scalar_t> &wgts) const
   {
-    if (edgeGnos_.size() == 0){
-      edgeIds = edgeGids_(0, numLocalEdges_);
-    }
-    else{
-      edgeIds = edgeGnosConst_(0, numLocalEdges_);
-    }
+    edgeIds = ArrayView<const gno_t>(Teuchos::null);
     procIds = procIdsConst_(0, numLocalVtx_+1);
     offsets = offsets_(0, numLocalVtx_+1);
+
+    if (numLocalEdges_){
+      if (edgeGnos_.size() == 0)
+        edgeIds = edgeGids_(0, numLocalEdges_);
+      else
+        edgeIds = edgeGnosConst_(0, numLocalEdges_);
+    }
 
     return numLocalEdges_;
   }
