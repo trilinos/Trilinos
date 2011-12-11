@@ -284,6 +284,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     Scalar beta_copy;
     Kokkos::deep_copy(beta_copy,beta);
     if(beta_copy == 0.0){
+      std::cout << "Beta was zero\n";
       //Stuff didn't work
       return 0.0;
     }
@@ -332,12 +333,22 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
      
       //H(j, j-1) = norm(Q(:,j),2) 
       Kokkos::parallel_reduce(rows, dot_single(Q, j), Norm2PlusAssign(tmp, H, j, (size_type)j-1) );
-      //Kokkos::deep_copy(H(j,j-1), tmp);
       //Q(:,j) = Q(:, j) / H(j, j-1)
       Kokkos::parallel_for(rows, InvScale(MultiVector(Q, j), tmp));
+
+      #ifdef TEST_KOKKOS_SYNC
+      Scalar syncTestValue = 0;
+      Kokkos::deep_copy(syncTestValue, tmp);
+      Kokkos::deep_copy(tmp, syncTestValue);
+      #endif
        
     }
-
+    #ifndef TEST_KOKKOS_SYNC
+    Scalar syncTestValue = 0;
+    Kokkos::deep_copy(syncTestValue, tmp);
+    Kokkos::deep_copy(tmp, syncTestValue);
+    #endif
+    device_type::wait_functor_completion();
     const double iter_time = wall_clock.seconds();
 
     // Compute floating point operations performed during iterations
