@@ -197,6 +197,7 @@ const Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > CoalesceDropFa
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amalgamate(const RCP<Operator>& A, const LocalOrdinal blockSize, RCP<Graph>& graph) const {
+  SubMonitor m(*this, "Amalgamate");
 
   if(fixedBlkSize_==true) {
 
