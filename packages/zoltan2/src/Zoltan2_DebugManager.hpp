@@ -70,14 +70,14 @@ class DebugManager
     inline void print(int debugLevel, const std::string &output){
 //#ifdef ZOLTAN2_DEBUG
       if (debugLevel <= debugLevel_ && iPrint_)
-        *myOS_ << output;
+        *myOS_ << output << std::endl;
 //#endif
     }
 
     inline void printInAllTasks(int debugLevel, const std::string &output){
 //#ifdef ZOLTAN2_DEBUG
       if (debugLevel <= debugLevel_)
-        *myOS_ << output;
+        *myOS_ << output << std::endl;
 //#endif
     }
 
@@ -87,19 +87,19 @@ class DebugManager
     inline void print(int debugLevel, const char *output){
 //#ifdef ZOLTAN2_DEBUG
         if (debugLevel <= debugLevel_ && iPrint_)
-            *myOS_ << output;
+            *myOS_ << output << std::endl;
 //#endif
     }
 
     inline void printInAllTasks(int debugLevel, const char *output) {
 //#ifdef ZOLTAN2_DEBUG
     if (debugLevel <= debugLevel_)
-        *myOS_ << "PID =" << myPID_ << " " << output;
+        *myOS_ << "PID =" << myPID_ << " " << output << std::endl;
 //#endif
     }
 
     inline void error(const std::string &output) {
-      *myOS_ << "PID =" << myPID_ << " " << output;
+      *myOS_ << "PID =" << myPID_ << " " << output << std::endl;
     }
 
     private:
