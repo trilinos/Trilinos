@@ -12,6 +12,20 @@
 
 namespace MueLu {
 
+  //! Keep status of a variable of Level.
+  // Several keep status can be set at the same time
+  enum KeepEnum {
+    UserData  = 0x1, //!< User data are always kept. This flag is set automatically when Level::Set("data", data) is used. The keep status of the variable is not propagated to coarser level (if you use Level::Build()). 
+    Keep      = 0x2, //!< Always keep data, even accross run. This flag is set by Level::Keep(). This flag is propagated to coarser level by Level::Build().
+    Final     = 0x4, //!< Keep data only for this run. Used to keep data useful for Hierarchy::Iterate(). Data will be deleted if setup phase is re-run. This flag is set by default for A, P, R, PreSmoother and PostSmoother of NoFactory by Hierarchy::Setup(). Not propagated by Level::Build().
+
+    NextRun   = UserData | Keep, //!< Both UserData and Keep flags force data to be kept and reused for the next run. Do not use MueLu::NextRun in AddKeepFlag. Use it only for testing keep == UserData || keep == Keep.
+    All       = UserData | Keep | Final
+  }; 
+
+  //!
+  typedef short KeepType; //TODO: name it KeepFlag?
+
   /*!
     @class VariableContainer
     @brief Class that stores all relevant data for a variable
@@ -86,7 +100,7 @@ namespace MueLu {
       if(requests_.count(reqFactory) > 0) {
         int cnt = requests_[reqFactory];
         requests_[reqFactory] = --cnt;
-        if(cnt == 0 && IsKept() == false) {
+        if(cnt == 0 && GetKeepFlag() == 0) {
           requests_.erase(reqFactory);
         }
       }
@@ -123,22 +137,24 @@ namespace MueLu {
     //! @name Keep status
     //@{
 
-    //! returns keep flag
-    bool IsKept() const {
-      return keep_;
-    }
+    //! returns true if at least one keep flag is set
+    bool IsKept(KeepType keep) const { return keep_ & keep; }
 
-    //! set keep flag
-    void Keep(bool bKeep = true) {
-      keep_ = bKeep;
-    }
+    //! add a keep flag to the flag combination
+    void AddKeepFlag(KeepType keep = UserData) { keep_ = keep_ | keep; } // bitwise addition because flags can be set several times.
+
+    //! remove a keep flag to the flag combination
+    void RemoveKeepFlag(KeepType keep = UserData) { keep_ = keep_ & (keep_ ^ keep); } // xor between keep and keep_ and mask using & to avoid adding bits to keep_ if they were not set at the first place.
+
+    //! returns the keep flag combination
+    KeepType GetKeepFlag() const { return keep_; }
 
     //@}
 
   private:
     Teuchos::ParameterEntry           data_;        ///< the data itself
     bool                              available_;   ///< is data available?
-    bool                              keep_;        ///< keep flag
+    KeepType                          keep_;        ///< keep flag
     int                               count_;       ///< number of requests by all factories
     std::map<const FactoryBase*,int>  requests_;    ///< requesting factories
   };
@@ -147,4 +163,4 @@ namespace MueLu {
 
 #endif /* MUELU_VARIABLECONTAINER_HPP */
 
-//TODO: .cpp file + fwd decl of this class
+//TODO: move implementation to .cpp file + fwd decl of this class

@@ -25,8 +25,8 @@ namespace MueLu {
       for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); it++) {
         const std::string & ename = *it;
         const MueLu::FactoryBase* fac = *kt;
-        if (IsKept(ename, fac)) {
-          if (fac == NULL)
+        if (IsKept(ename, fac, MueLu::Keep)) { // MueLu::Keep is the only flag propagated
+          if (fac == NULL) // TODO: Is this possible?? Throw exception. Not supposed to use the FactoryManager here.
             newLevel->Keep(ename);
           else
             newLevel->Keep(ename, fac);
@@ -43,7 +43,7 @@ namespace MueLu {
 
   void Level::SetLevelID(int levelID) {
     if (levelID_ != -1 && levelID_ != levelID)
-      GetOStream(Warnings1, 0) << "Warning: Level::SetLevelID(): Changing an already defined LevelID (previousID=" << levelID_ << "newID=" << levelID << std::endl;
+      GetOStream(Warnings1, 0) << "Warning: Level::SetLevelID(): Changing an already defined LevelID (previousID=" << levelID_ << ", newID=" << levelID << ")" << std::endl;
 
     levelID_ = levelID;
   }
@@ -61,21 +61,18 @@ namespace MueLu {
     factoryManager_ = factoryManager;
   }
 
-  void Level::Keep(const std::string& ename, const FactoryBase* factory) {
-    TEUCHOS_TEST_FOR_EXCEPTION(factory==NULL, Exceptions::RuntimeError, "MueLu::Level::Keep(): Factory for " << ename << " must not be NULL");
-
-    // mark (ename,factory) to be kept
-    needs_.Keep(ename, factory);
+  void Level::AddKeepFlag(const std::string& ename, const FactoryBase* factory, KeepType keepType) {
+    needs_.AddKeepFlag(ename, GetFactory(ename, factory), keepType);
   }
 
-  bool Level::IsKept(const std::string& ename, const FactoryBase* factory) const {
-    return needs_.IsKept(ename, GetFactory(ename, factory));
+  void Level::RemoveKeepFlag(const std::string& ename, const FactoryBase* factory, KeepType keepType) {
+    needs_.RemoveKeepFlag(ename, GetFactory(ename, factory), keepType);
   }
 
-  void Level::Delete(const std::string& ename, const FactoryBase* factory) {
-    needs_.Keep(ename, GetFactory(ename, factory), false);
+  KeepType Level::GetKeepFlag(const std::string& ename, const FactoryBase* factory) const {
+    return needs_.GetKeepFlag(ename, GetFactory(ename, factory));
   }
-
+  
   void Level::Request(const FactoryBase& factory) {
     RequestMode prev = requestMode_;
     requestMode_ = REQUEST;
@@ -129,33 +126,29 @@ namespace MueLu {
     needs_.Request(ename, fac, requestedBy);
   }
 
+  //TODO: finish this
+// #define MUELU_LEVEL_ERROR_MESSAGE(function, message)    
+//   "MueLu::Level[" << levelID_ << "]::" << function << "(" << ename << ", " << factory << " << ): " << message << std::endl 
+//                                                                                                                  << ((factory == Teuchos::null && factoryManager_ != Teuchos::null) ? (*GetFactory(ename, factory)) : *factory)  << "Generating factory:" << *fac << " NoFactory=" << NoFactory::get()
+//   //
+
   void Level::Release(const std::string& ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
     const FactoryBase* fac = GetFactory(ename, factory);
 
-    if(IsRequested(ename,fac) == true) {
+    //FIXME FIXME FIXME FIXME
+    //TMP    TEUCHOS_TEST_FOR_EXCEPTION(IsRequested(ename,fac) == false, Exceptions::RuntimeError, "MueLu::Level[" << levelID_ << "]::Release(): This method cannot be called on non requested data. Called on " << ename << ", " << fac << std::endl << "Generating factory:" << *fac << " NoFactory="<<NoFactory::get() ); //TODO: add print() of variable info to complete the error msg
 
-      if(needs_.IsRequestedBy(fac, ename, requestedBy)) {
-
-        // data has been requested but never built
-        // can we release the dependencies of fac safely?
-        int cnt = needs_.CountRequestedFactory(fac);
-        if(cnt == 1) {
-          // factory is only generating factory of current variable (ename,factory)
-          // Release(fac) can be called safely
-          Release(*fac);
-        }
-        needs_.Release(ename,fac,requestedBy);
+    if(needs_.IsRequestedBy(fac, ename, requestedBy)) {
+      
+      // data has been requested but never built
+      // can we release the dependencies of fac safely?
+      int cnt = needs_.CountRequestedFactory(fac);
+      if(cnt == 1) {
+        // factory is only generating factory of current variable (ename,factory)
+        // Release(fac) can be called safely
+        Release(*fac);
       }
-      //else { // do nothing: don't release data since not requested by this factory!
-      //  std::cout << "variable (" << ename << "," << fac << ") has NOT been requested by " << requestedBy << " (isKept=" << IsKept(ename, fac) << ")"<< std::endl;
-      //}
-    }
-    else {
-      // check for error! Release should not be called for unrequested data
-      TEUCHOS_TEST_FOR_EXCEPTION(IsAvailable(ename,fac) == false && IsRequested(ename,fac) == false && IsKept(ename,fac) == true, Exceptions::RuntimeError,
-                                 "MueLu::Level::Release(): Data not requested and not available, but kept. Call of Release does not make sense. You should check this!");
-      TEUCHOS_TEST_FOR_EXCEPTION(IsAvailable(ename,fac) == true && IsRequested(ename,fac) == false && IsKept(ename,fac) == false, Exceptions::RuntimeError,
-                                 "MueLu::Level::Release(): Strange! Data is available but not requested and not kept??");
+      needs_.Release(ename,fac,requestedBy);
     }
   }
 
@@ -167,6 +160,13 @@ namespace MueLu {
     return needs_.IsRequested(ename, GetFactory(ename, factory));
   }
 
+  std::string Level::description() const {
+    std::ostringstream out;
+    out << BaseClass::description();
+    out << "{ levelID = " << levelID_ << "}";
+    return out.str();
+  }
+
   void Level::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE; 
     out0 << ""; // remove warning
@@ -176,7 +176,7 @@ namespace MueLu {
     outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
     outputter.pushFieldSpec("req",                Teuchos::TabularOutputter::INT,    Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 3);
     outputter.pushFieldSpec("keep",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 5);
-    outputter.pushFieldSpec("type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 15);
+    outputter.pushFieldSpec("type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 10);
     outputter.pushFieldSpec("data",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
     outputter.outputHeader();
 
@@ -194,13 +194,17 @@ namespace MueLu {
         
         int reqcount = needs_.NumRequests(*it, *kt); // request counter
         outputter.outputField(reqcount);
-        if (needs_.IsKept(*it, *kt)) {
-          outputter.outputField("true");
+
+        KeepType keepType = needs_.GetKeepFlag(*it, *kt);
+        if (keepType != 0) { 
+          std::stringstream ss;
+          if (keepType & MueLu::UserData) { ss << "User";  }
+          if (keepType & MueLu::Keep)     { ss << "Keep";  }
+          if (keepType & MueLu::Final)    { ss << "Final"; }
+          outputter.outputField(ss.str()); 
+        } else { 
+          outputter.outputField("No"); 
         }
-        else
-          {
-            outputter.outputField("false");
-          }
 
         if (needs_.IsAvailable(*it, *kt)) {
           std::string strType = needs_.GetType(*it, *kt); // Variable type

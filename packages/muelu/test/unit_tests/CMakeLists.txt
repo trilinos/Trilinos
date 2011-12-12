@@ -35,7 +35,6 @@ APPEND_SET(SOURCES
   Smoothers/SmootherFactory.cpp
   Smoothers/MueLu_TestHelpersSmoothers.cpp
   Utilities
-
   # Zoltan.cpp
 )
 

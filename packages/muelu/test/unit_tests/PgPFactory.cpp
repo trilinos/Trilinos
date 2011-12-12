@@ -36,7 +36,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, Test0)
 
 }
 
-TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_nonsymExample)
+TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
 {
   out << "version: " << MueLu::Version() << std::endl;
   out << "Test PgPFactory within" << std::endl;
@@ -120,11 +120,11 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_nonsymExample)
   TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
   TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",MueLu::NoFactory::get()), true);
   TEST_EQUALITY(coarseLevel->IsAvailable("R",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel->IsKept("A",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel->IsKept("P",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel->IsKept("PreSmoother",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel->IsKept("PostSmoother",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel->IsKept("R",MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(coarseLevel->IsRequested("P",Pfact.get()), false);
   TEST_EQUALITY(coarseLevel->IsRequested("P",Ptentfact.get()), false);
   TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",SmooFact.get()), false);
@@ -135,11 +135,11 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_nonsymExample)
   TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother",SmooFact.get()), false);
   TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",SmooFact.get()), false);
   TEST_EQUALITY(coarseLevel->IsAvailable("R",Rfact.get()), false);
-  TEST_EQUALITY(coarseLevel->IsKept("P",Pfact.get()), false);
-  TEST_EQUALITY(coarseLevel->IsKept("P",Ptentfact.get()), false);
-  TEST_EQUALITY(coarseLevel->IsKept("PreSmoother",SmooFact.get()), false);
-  TEST_EQUALITY(coarseLevel->IsKept("PostSmoother",SmooFact.get()), false);
-  TEST_EQUALITY(coarseLevel->IsKept("R",Rfact.get()), false);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("P",Pfact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("P",Ptentfact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PreSmoother",SmooFact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("R",Rfact.get()), 0);
 
   RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
   RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
@@ -155,11 +155,11 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_nonsymExample)
   TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
   TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("R",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel2->IsKept("A",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel2->IsKept("P",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel2->IsKept("PreSmoother",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel2->IsKept("PostSmoother",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("R",MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(coarseLevel2->IsRequested("P",Pfact.get()), false);
   TEST_EQUALITY(coarseLevel2->IsRequested("P",Ptentfact.get()), false);
   TEST_EQUALITY(coarseLevel2->IsRequested("PreSmoother",SmooFact.get()), false);
@@ -170,11 +170,11 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_nonsymExample)
   TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",SmooFact.get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",SmooFact.get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("R",Rfact.get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("P",Pfact.get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("P",Ptentfact.get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("PreSmoother",SmooFact.get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("PostSmoother",SmooFact.get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("R",Rfact.get()), false);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("P",Pfact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("P",Ptentfact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PreSmoother",SmooFact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("R",Rfact.get()), 0);
   RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
   RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
 
@@ -200,10 +200,10 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_nonsymExample)
       out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   }
 
-} //PgPFactory_EpetraVsTpetra
+} //EpetraVsTpetra
 
 
-TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_NonStandardMaps)
+TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
 {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -327,11 +327,11 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_NonStandardMaps)
   TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
   TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",MueLu::NoFactory::get()), true);
   TEST_EQUALITY(coarseLevel->IsAvailable("R",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel->IsKept("A",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel->IsKept("P",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel->IsKept("PreSmoother",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel->IsKept("PostSmoother",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel->IsKept("R",MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(coarseLevel->IsRequested("P",Pfact.get()), false);
   TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",SmooFact.get()), false);
   TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",SmooFact.get()), false);
@@ -340,10 +340,10 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_NonStandardMaps)
   TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother",SmooFact.get()), false);
   TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",SmooFact.get()), false);
   TEST_EQUALITY(coarseLevel->IsAvailable("R",Rfact.get()), false);
-  TEST_EQUALITY(coarseLevel->IsKept("P",Pfact.get()), false);
-  TEST_EQUALITY(coarseLevel->IsKept("PreSmoother",SmooFact.get()), false);
-  TEST_EQUALITY(coarseLevel->IsKept("PostSmoother",SmooFact.get()), false);
-  TEST_EQUALITY(coarseLevel->IsKept("R",Rfact.get()), false);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("P",Pfact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PreSmoother",SmooFact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
+  TEST_EQUALITY(coarseLevel->GetKeepFlag("R",Rfact.get()), 0);
   RCP<Level> coarseLevel2 = H->GetLevel(2);
   TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel2->IsRequested("P",MueLu::NoFactory::get()), false);
@@ -355,26 +355,26 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_NonStandardMaps)
   TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("R",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel2->IsKept("A",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel2->IsKept("P",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel2->IsKept("PreSmoother",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("PostSmoother",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("R",MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(coarseLevel2->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel2->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), 0);
+  TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), 0);
+  TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(coarseLevel2->IsRequested("P",Pfact.get()), false);
   TEST_EQUALITY(coarseLevel2->IsRequested("R",Rfact.get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("P",Pfact.get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",SmooFact.get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",SmooFact.get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("R",Rfact.get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("P",Pfact.get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("PreSmoother",SmooFact.get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("PostSmoother",SmooFact.get()), false);
-  TEST_EQUALITY(coarseLevel2->IsKept("R",Rfact.get()), false);
+  TEST_EQUALITY(coarseLevel2->GetKeepFlag("P",Pfact.get()), 0);
+  TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",SmooFact.get()), 0);
+  TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
+  TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",Rfact.get()), 0);
 
 }
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_EpetraVsTpetra)
+TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
 {
   out << "version: " << MueLu::Version() << std::endl;
   out << "Compare results of Epetra and Tpetra" << std::endl;
@@ -465,11 +465,11 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_EpetraVsTpetra)
       TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",MueLu::NoFactory::get()), true);
       TEST_EQUALITY(coarseLevel->IsAvailable("R",MueLu::NoFactory::get()), true);
       TEST_EQUALITY(coarseLevel->IsRequested("P",Pfact.get()), false);
-      TEST_EQUALITY(coarseLevel->IsKept("A",MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(coarseLevel->IsKept("P",MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(coarseLevel->IsKept("PreSmoother",MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(coarseLevel->IsKept("PostSmoother",MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(coarseLevel->IsKept("R",MueLu::NoFactory::get()), true);
+      TEST_EQUALITY(coarseLevel->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
+      TEST_EQUALITY(coarseLevel->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
+      TEST_EQUALITY(coarseLevel->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
+      TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), MueLu::Final);
+      TEST_EQUALITY(coarseLevel->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
       TEST_EQUALITY(coarseLevel->IsRequested("P",Ptentfact.get()), false);
       TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",SmooFact.get()), false);
       TEST_EQUALITY(coarseLevel->IsRequested("PostSmoother",SmooFact.get()), false);
@@ -496,11 +496,11 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_EpetraVsTpetra)
       TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
       TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",MueLu::NoFactory::get()), false);
       TEST_EQUALITY(coarseLevel2->IsAvailable("R",MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(coarseLevel2->IsKept("A",MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(coarseLevel2->IsKept("P",MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(coarseLevel2->IsKept("PreSmoother",MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(coarseLevel2->IsKept("PostSmoother",MueLu::NoFactory::get()), false);
-      TEST_EQUALITY(coarseLevel2->IsKept("R",MueLu::NoFactory::get()), true);
+      TEST_EQUALITY(coarseLevel2->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
+      TEST_EQUALITY(coarseLevel2->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
+      TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
+      TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), 0);
+      TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
       TEST_EQUALITY(coarseLevel2->IsRequested("P",Pfact.get()), false);
       TEST_EQUALITY(coarseLevel2->IsRequested("P",Ptentfact.get()), false);
       TEST_EQUALITY(coarseLevel2->IsRequested("R",Rfact.get()), false);
@@ -509,11 +509,11 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_EpetraVsTpetra)
       TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",SmooFact.get()), false);
       TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",SmooFact.get()), false);
       TEST_EQUALITY(coarseLevel2->IsAvailable("R",Rfact.get()), false);
-      TEST_EQUALITY(coarseLevel2->IsKept("P",Pfact.get()), false);
-      TEST_EQUALITY(coarseLevel2->IsKept("P",Ptentfact.get()), false);
-      TEST_EQUALITY(coarseLevel2->IsKept("PreSmoother",SmooFact.get()), false);
-      TEST_EQUALITY(coarseLevel2->IsKept("PostSmoother",SmooFact.get()), false);
-      TEST_EQUALITY(coarseLevel2->IsKept("R",Rfact.get()), false);
+      TEST_EQUALITY(coarseLevel2->GetKeepFlag("P",Pfact.get()), 0);
+      TEST_EQUALITY(coarseLevel2->GetKeepFlag("P",Ptentfact.get()), 0);
+      TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",SmooFact.get()), 0);
+      TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
+      TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",Rfact.get()), 0);
       RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
       RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
       TEST_EQUALITY(P2->getGlobalNumRows(), 21);
@@ -554,7 +554,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, PgPFactory_EpetraVsTpetra)
     TEST_EQUALITY(results[0] - results[1] < 1e-10, true); // check results of EPETRA vs TPETRA
   } // comm->getSize == 1
 
-} //PgPFactory_EpetraVsTpetra
+} //EpetraVsTpetra
 #endif
 
 }//namespace MueLuTests

@@ -68,7 +68,7 @@ namespace MueLu {
   void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildSmoother(Level & currentLevel, PreOrPost const preOrPost) const {
     RCP<SmootherPrototype> preSmoother;
     RCP<SmootherPrototype> postSmoother;
-      
+
     if ((preOrPost == BOTH || preOrPost == PRE) && (preSmootherPrototype_ != Teuchos::null)) {
       preSmoother = preSmootherPrototype_->Copy();
       //preSmoother = rcp( new SmootherPrototype(preSmootherPrototype_) );
@@ -80,7 +80,7 @@ namespace MueLu {
       currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
       currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother); //TODO: remove this
     }
-      
+
     if ((preOrPost == BOTH || preOrPost == POST) && (postSmootherPrototype_ != Teuchos::null))
       {
         if (preOrPost == BOTH && preSmootherPrototype_ == postSmootherPrototype_) {
@@ -163,4 +163,9 @@ namespace MueLu {
 } // namespace MueLu
 
 //TODO: doc: setup done twice if PostSmoother object != PreSmoother object and no adv. reused capability
+
+// TODO ReUse:   If only one smoother is missing, SmootherFactory can be smart and build only the missing smoother.
+// TODO (optim): we can also reuse if preOrPost = post and preSmoother available in Level
+//               we can also reuse if preOrPost = pre  and postSmoother available in Level
+
 #endif // MUELU_SMOOTHERFACTORY_DEF_HPP
