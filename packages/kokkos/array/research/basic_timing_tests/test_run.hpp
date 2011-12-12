@@ -44,6 +44,7 @@ void test_run(const char *test_name, unsigned int runs){
   Kokkos::deep_copy(y, Scalar(5));
   for(unsigned int i= 0; i< runs; ++i){
     Kokkos::deep_copy(z, Scalar(0));  
+    Device::wait_functor_completion();
     Kokkos::Impl::Timer wall_clock ;
     Kokkos::parallel_for(1, TrivialForFunctor<Scalar, Device>(x, y, z));
     Device::wait_functor_completion();
