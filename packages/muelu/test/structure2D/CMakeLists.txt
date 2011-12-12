@@ -13,6 +13,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS muelu muelu-xpetra
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Structure2D_MLmode_Test
+  SOURCES Structure2D_MLmode_epetra.cpp
+  COMM serial mpi
+  DEPLIBS muelu muelu-xpetra
+)
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_test_copyfiles
 SOURCE_FILES stru2d_A.txt stru2d_b.txt stru2d_ns.txt
 )

@@ -55,6 +55,8 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 
+#include <MueLu_MLInterpreter.hpp>
+
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
@@ -70,6 +72,54 @@
  *  of the matrix has 3402 nodes!
  */
 
+void FillMLParameterList(Teuchos::ParameterList & params) {
+
+  params.set("PDE equations",2);
+  params.set("aggregation: damping factor", 1.33);
+  params.set("aggregation: nodes per aggregate", 27);
+  params.set("aggregation: threshold", 0);
+  params.set("aggregation: type", "Uncoupled");
+  params.set("coarse: max size", 50);
+  params.set("coarse: pre or post", "post");
+  params.set("coarse: sweeps", 1);
+  params.set("coarse: type", "Amesos-Superludist");
+  params.set("max levels", 7);
+  params.set("null space: add default vectors", 0);
+  params.set("null space: dimension", 3);
+  params.set("null space: type", "pre-computed");
+  params.set("prec type","MGV");
+  Teuchos::ParameterList & l0 = params.sublist("smoother: list (level 0)");
+  Teuchos::ParameterList & l1 = params.sublist("smoother: list (level 1)");
+  Teuchos::ParameterList & l2 = params.sublist("smoother: list (level 2)");
+  Teuchos::ParameterList & l3 = params.sublist("smoother: list (level 3)");
+  Teuchos::ParameterList & l4 = params.sublist("smoother: list (level 4)");
+  Teuchos::ParameterList & l5 = params.sublist("smoother: list (level 5)");
+  Teuchos::ParameterList & l6 = params.sublist("smoother: list (level 6)");
+
+
+  l0.set("smoother: damping factor", 0.9);
+  l0.set("smoother: sweeps", 1);
+  l0.set("smoother: type", "symmetric Gauss-Seidel");
+  l1.set("smoother: damping factor", 0.9);
+  l1.set("smoother: sweeps", 1);
+  l1.set("smoother: type", "symmetric Gauss-Seidel");
+  l2.set("smoother: damping factor", 0.9);
+  l2.set("smoother: sweeps", 1);
+  l2.set("smoother: type", "symmetric Gauss-Seidel");
+  l3.set("smoother: damping factor", 0.9);
+  l3.set("smoother: sweeps", 1);
+  l3.set("smoother: type", "symmetric Gauss-Seidel");
+  l4.set("smoother: damping factor", 0.89);
+  l4.set("smoother: sweeps", 1);
+  l4.set("smoother: type", "Jacobi");
+  l5.set("smoother: damping factor", 0.89);
+  l5.set("smoother: sweeps", 12);
+  l5.set("smoother: type", "Jacobi");
+  l6.set("smoother: damping factor", 0.89);
+  l6.set("smoother: sweeps", 14);
+  l6.set("smoother: type", "Jacobi");
+
+}
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP;
@@ -91,13 +141,6 @@ int main(int argc, char *argv[]) {
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
-  // custom parameters
-  LO maxLevels = 4;
-
-  GO maxCoarseSize=1; //FIXME clp doesn't like long long int
-  std::string aggOrdering = "natural";
-  int minPerAgg=3;
-  int maxNbrAlreadySelected=0;
 
   int globalNumDofs = 3402;
   int nProcs = comm->getSize();
@@ -107,7 +150,6 @@ int main(int argc, char *argv[]) {
   nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
   int nCumulatedDofs = 0;
   sumAll(comm,nLocalDofs, nCumulatedDofs);
-  //Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM, 1, nLocalDofs, &nCumulatedDofs );
 
   if(comm->getRank() == nProcs-1) {
     nLocalDofs += globalNumDofs - nCumulatedDofs;
@@ -117,6 +159,7 @@ int main(int argc, char *argv[]) {
 
   // read in problem
   Epetra_Map emap (globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
+  //Epetra_Map emap(3402,0,*Xpetra::toEpetra(comm));
   Epetra_CrsMatrix * ptrA = 0;
   Epetra_Vector * ptrf = 0;
   Epetra_MultiVector* ptrNS = 0;
@@ -148,121 +191,11 @@ int main(int argc, char *argv[]) {
   // Epetra_Map -> Xpetra::Map
   const RCP< const Map> map = Xpetra::toXpetra(emap);
 
-  RCP<Hierarchy> H = rcp ( new Hierarchy() );
-  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  H->SetMaxCoarseSize(maxCoarseSize);
+  Teuchos::ParameterList mlParams;
+  FillMLParameterList(mlParams); // fill ML parameter list (without nullspace)
+  RCP<Hierarchy> H = MLInterpreter::Setup(mlParams,Op,xNS);
+  H->SetVerbLevel(MueLu::High);
 
-  // build finest Level
-  RCP<MueLu::Level> Finest = H->GetLevel();
-  Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",Op);
-  Finest->Set("Nullspace",xNS);
-
-  /* RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
-  Finest->Keep("Nullspace",nspFact.get());*/
-
-  RCP<PreDropFunctionConstVal> preDropFunc = rcp(new PreDropFunctionConstVal(1.0));
-
-  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(/*Teuchos::null,nspFact*/));
-  dropFact->SetVerbLevel(MueLu::Extreme);
-  //dropFact->SetFixedBlockSize(nDofsPerNode);
-  dropFact->SetVariableBlockSize();
-  dropFact->SetPreDropFunction(preDropFunc);
-
-  // setup "variable" block size information
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalrowid2globalamalblockid_vector = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getRowMap());
-  Teuchos::ArrayRCP< Scalar > vectordata = globalrowid2globalamalblockid_vector->getDataNonConst(0);
-  for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(Op->getRowMap()->getNodeNumElements());i++) {
-    GlobalOrdinal gDofId = Op->getColMap()->getGlobalElement(i);
-    GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nDofsPerNode;
-    (vectordata)[i] = globalblockid;
-  }
-  Finest->Set("VariableBlockSizeInfo", globalrowid2globalamalblockid_vector);
-
-  //globalrowid2globalamalblockid_vector->describe(GetOStream(Runtime0, 0), Teuchos::VERB_EXTREME);
-
-
-
-  //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
-  //dropFact->SetPreDropFunction(predrop);
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
-  *out << "========================= Aggregate option summary  =========================" << std::endl;
-  *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
-  *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  UCAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-  UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-  std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
-  if (aggOrdering == "natural") {
-    *out << "aggregate ordering :                    NATURAL" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-  } else if (aggOrdering == "random") {
-    *out << "aggregate ordering :                    RANDOM" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
-  } else if (aggOrdering == "graph") {
-    *out << "aggregate ordering :                    GRAPH" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
-  } else {
-    std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
-    throw(MueLu::Exceptions::RuntimeError(msg));
-  }
-  UCAggFact->SetPhase3AggCreation(0.5);
-  *out << "=============================================================================" << std::endl;
-
-  // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
-  //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
-  //RCP<RFactory> Rfact  = rcp( new GenericRFactory(Pfact));
-  RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
-  RCP<RFactory>   Rfact  = rcp( new TransPFactory(Pfact) );
-  RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
-  Acfact->setVerbLevel(Teuchos::VERB_HIGH);
-
-  //Finest->Keep("Aggregates",UCAggFact.get());
-  //Finest->Keep("Nullspace",nspFact.get());
-
-  // build level smoothers
-  RCP<SmootherPrototype> smooProto;
-  std::string ifpackType;
-  Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 0.9); // 0.7
-  ifpackType = "RELAXATION";
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-
-  smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
-  RCP<SmootherFactory> SmooFact;
-  if (maxLevels > 1)
-    SmooFact = rcp( new SmootherFactory(smooProto) );
-
-  Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
-
-
-#if 1
-  // create coarsest smoother
-  RCP<SmootherPrototype> coarsestSmooProto;
-  std::string type = "";
-  Teuchos::ParameterList coarsestSmooList;
-  coarsestSmooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
-  RCP<SmootherFactory> coarsestSmooFact;
-  coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto));
-  H->SetCoarsestSolver(*coarsestSmooFact);
-#else
-  H->SetCoarsestSolver(*SmooFact,MueLu::PRE); // just use SmooFact also for coarsest level
-#endif
-
-
-
-  *out << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
-
-  Finest->print(*out);
-
-  RCP<Level> coarseLevel = H->GetLevel(1);
-  coarseLevel->print(*out);
-
-  RCP<Level> coarseLevel2 = H->GetLevel(2);
-  coarseLevel2->print(*out);
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);
 
@@ -274,6 +207,8 @@ int main(int argc, char *argv[]) {
 
     //xLsg->describe(*out,Teuchos::VERB_EXTREME);
   }
+
+  *out << mlParams << std::endl;
 
   return EXIT_SUCCESS;
 }

@@ -110,6 +110,10 @@ typedef MueLu::SegregationAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,
 typedef MueLu::SegregationATransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SegregationATransferFactory;
 #endif
 
+#ifdef MUELU_MLINTERPRETER_SHORT
+typedef MueLu::MLInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MLInterpreter;
+#endif
+
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
