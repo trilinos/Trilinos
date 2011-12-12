@@ -82,7 +82,7 @@ void FillMLParameterList(Teuchos::ParameterList & params) {
   params.set("coarse: max size", 50);
   params.set("coarse: pre or post", "post");
   params.set("coarse: sweeps", 1);
-  params.set("coarse: type", "Amesos-Superludist");
+  params.set("coarse: type", "Amesos-Superlu");
   params.set("max levels", 7);
   params.set("null space: add default vectors", 0);
   params.set("null space: dimension", 3);

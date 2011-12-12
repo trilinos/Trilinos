@@ -47,6 +47,8 @@ namespace MueLu {
 
   private:
 
+    static RCP<SmootherFactory> GetCoarsestSolverFactory(const Teuchos::ParameterList & params);
+
     static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & params, int level);
 
   }; // class MLInterpreter
