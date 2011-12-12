@@ -92,7 +92,7 @@ typedef enum {
 
 typedef enum {
     REQUEST_BUFFER,
-    RESULT_BUFFER,
+//    RESULT_BUFFER,
     RECEIVE_BUFFER,
     SEND_BUFFER,
     GET_SRC_BUFFER,
@@ -110,7 +110,7 @@ typedef enum {
 #define GNI_OP_GET_TARGET     4
 #define GNI_OP_SEND           5
 #define GNI_OP_NEW_REQUEST    6
-#define GNI_OP_RESULT         7
+//#define GNI_OP_RESULT         7
 #define GNI_OP_RECEIVE        8
 
 typedef enum {
@@ -436,11 +436,24 @@ struct addrport_key {
 
     // Need this operators for the hash map
     bool operator<(const addrport_key &key1) const {
-        return addr < key1.addr;
+        if (addr < key1.addr) {
+            return true;
+        } else if (addr == key1.addr) {
+            if (port < key1.port) {
+                return true;
+            }
+        }
+        return false;
     }
-
     bool operator>(const addrport_key &key1) const {
-        return addr > key1.addr;
+        if (addr > key1.addr) {
+            return true;
+        } else if (addr == key1.addr) {
+            if (port > key1.port) {
+                return true;
+            }
+        }
+        return false;
     }
 };
 
@@ -1014,7 +1027,8 @@ NNTI_result_t NNTI_gni_disconnect (
 NNTI_result_t NNTI_gni_register_memory (
         const NNTI_transport_t *trans_hdl,
         char                   *buffer,
-        const uint64_t          size,
+        const uint64_t          element_size,
+        const uint64_t          num_elements,
         const NNTI_buf_ops_t    ops,
         const NNTI_peer_t      *peer,
         NNTI_buffer_t          *reg_buf)
@@ -1026,7 +1040,8 @@ NNTI_result_t NNTI_gni_register_memory (
 
     assert(trans_hdl);
     assert(buffer);
-    assert(size>0);
+    assert(element_size>0);
+    assert(num_elements>0);
     assert(ops>0);
     assert(reg_buf);
 
@@ -1041,7 +1056,7 @@ NNTI_result_t NNTI_gni_register_memory (
     reg_buf->transport_id      = trans_hdl->id;
     reg_buf->buffer_owner      = trans_hdl->me;
     reg_buf->ops               = ops;
-    reg_buf->payload_size      = size;
+    reg_buf->payload_size      = element_size;
     reg_buf->payload           = (uint64_t)buffer;
     reg_buf->transport_private = (uint64_t)gni_mem_hdl;
     if (peer != NULL) {
@@ -1055,58 +1070,31 @@ NNTI_result_t NNTI_gni_register_memory (
     log_debug(nnti_debug_level, "rpc_buffer->payload_size=%ld",
             reg_buf->payload_size);
 
-    if (ops == NNTI_RECV_DST) {
-        if ((size > NNTI_REQUEST_BUFFER_SIZE) && (size%NNTI_REQUEST_BUFFER_SIZE) == 0) {
-            gni_request_queue_handle *q_hdl=&transport_global_data.req_queue;
+    if (ops == NNTI_RECV_QUEUE) {
+        gni_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
-            /*
-             * This is a receive-only buffer.  This buffer is divisible by
-             * NNTI_REQUEST_BUFFER_SIZE.  This buffer can hold more than
-             * one short request.  Assume this buffer is a request queue.
-             */
-            gni_mem_hdl->type   =REQUEST_BUFFER;
-            gni_mem_hdl->last_op=GNI_OP_NEW_REQUEST;
+        gni_mem_hdl->type   =REQUEST_BUFFER;
+        gni_mem_hdl->last_op=GNI_OP_NEW_REQUEST;
 
-            memset(q_hdl, 0, sizeof(gni_request_queue_handle));
+        memset(q_hdl, 0, sizeof(gni_request_queue_handle));
 
-            q_hdl->reg_buf=reg_buf;
+        q_hdl->reg_buf=reg_buf;
 
-            server_req_queue_init(
-                    q_hdl,
-                    buffer,
-                    NNTI_REQUEST_BUFFER_SIZE,
-                    size/NNTI_REQUEST_BUFFER_SIZE);
+        server_req_queue_init(
+                q_hdl,
+                buffer,
+                element_size,
+                num_elements);
 
-            reg_buf->payload_size=q_hdl->req_size;
+        reg_buf->payload_size=q_hdl->req_size;
 
-        } else if (size == NNTI_RESULT_BUFFER_SIZE) {
-            /*
-             * This is a receive-only buffer.  This buffer can hold exactly
-             * one short result.  Assume this buffer is a result queue.
-             */
-            gni_mem_hdl->type    =RESULT_BUFFER;
-            gni_mem_hdl->op_state=RDMA_WRITE_INIT;
+    } else if (ops == NNTI_RECV_DST) {
+        gni_mem_hdl->type    =RECEIVE_BUFFER;
+        gni_mem_hdl->op_state=RDMA_WRITE_INIT;
 
-            gni_mem_hdl->conn=get_conn_peer(peer);
+        gni_mem_hdl->conn=get_conn_peer(peer);
 
-            rc=register_memory(gni_mem_hdl, buffer, NNTI_RESULT_BUFFER_SIZE);
-
-            print_gni_conn(gni_mem_hdl->conn);
-
-        } else {
-            /*
-             * This is a receive-only buffer.  This buffer doesn't look
-             * like a request buffer or a result buffer.  I don't know
-             * what it is.  Assume it is a regular data buffer.
-             */
-            gni_mem_hdl->type    =RECEIVE_BUFFER;
-            gni_mem_hdl->op_state=RDMA_WRITE_INIT;
-
-            gni_mem_hdl->conn=get_conn_peer(peer);
-
-            rc=register_memory(gni_mem_hdl, buffer, size);
-
-        }
+        rc=register_memory(gni_mem_hdl, buffer, element_size);
 
     } else if (ops == NNTI_SEND_SRC) {
         gni_mem_hdl->type=SEND_BUFFER;
@@ -1115,7 +1103,7 @@ NNTI_result_t NNTI_gni_register_memory (
 
         print_gni_conn(gni_mem_hdl->conn);
 
-        rc=register_memory(gni_mem_hdl, buffer, size);
+        rc=register_memory(gni_mem_hdl, buffer, element_size);
 
     } else if (ops == NNTI_GET_DST) {
         gni_mem_hdl->type    =GET_DST_BUFFER;
@@ -1123,7 +1111,7 @@ NNTI_result_t NNTI_gni_register_memory (
 
         gni_mem_hdl->conn=get_conn_peer(peer);
 
-        rc=register_memory(gni_mem_hdl, buffer, size);
+        rc=register_memory(gni_mem_hdl, buffer, element_size);
 
     } else if (ops == NNTI_GET_SRC) {
         gni_mem_hdl->type    =GET_SRC_BUFFER;
@@ -1131,7 +1119,7 @@ NNTI_result_t NNTI_gni_register_memory (
 
         gni_mem_hdl->conn=get_conn_peer(peer);
 
-        rc=register_memory(gni_mem_hdl, buffer, size);
+        rc=register_memory(gni_mem_hdl, buffer, element_size);
 
     } else if (ops == NNTI_PUT_SRC) {
 //        print_put_buf(buffer, size);
@@ -1141,7 +1129,7 @@ NNTI_result_t NNTI_gni_register_memory (
 
         gni_mem_hdl->conn=get_conn_peer(peer);
 
-        rc=register_memory(gni_mem_hdl, buffer, size);
+        rc=register_memory(gni_mem_hdl, buffer, element_size);
 
 //        print_put_buf(buffer, size);
 
@@ -1151,7 +1139,7 @@ NNTI_result_t NNTI_gni_register_memory (
 
         gni_mem_hdl->conn=get_conn_peer(peer);
 
-        rc=register_memory(gni_mem_hdl, buffer, size);
+        rc=register_memory(gni_mem_hdl, buffer, element_size);
 
     } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
         gni_mem_hdl->type    =RDMA_TARGET_BUFFER;
@@ -1159,7 +1147,7 @@ NNTI_result_t NNTI_gni_register_memory (
 
         gni_mem_hdl->conn=get_conn_peer(peer);
 
-        rc=register_memory(gni_mem_hdl, buffer, size);
+        rc=register_memory(gni_mem_hdl, buffer, element_size);
 
     } else {
         gni_mem_hdl->type=UNKNOWN_BUFFER;
@@ -1713,7 +1701,7 @@ NNTI_result_t NNTI_gni_wait (
             case GNI_OP_GET_INITIATOR:
             case GNI_OP_PUT_TARGET:
             case GNI_OP_NEW_REQUEST:
-            case GNI_OP_RESULT:
+//            case GNI_OP_RESULT:
             case GNI_OP_RECEIVE:
                 create_peer(&status->src,
                         conn->peer_name,
@@ -2053,7 +2041,7 @@ static int need_mem_cq(const gni_memory_handle *gni_mem_hdl)
             break;
         case GET_SRC_BUFFER:
         case PUT_DST_BUFFER:
-        case RESULT_BUFFER:
+//        case RESULT_BUFFER:
         case RECEIVE_BUFFER:
         case REQUEST_BUFFER:
             need_cq=1;
@@ -2147,7 +2135,7 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
 #endif
             break;
         case PUT_DST_BUFFER:
-        case RESULT_BUFFER:
+//        case RESULT_BUFFER:
         case RECEIVE_BUFFER:
 #if defined(USE_RDMA_EVENTS)
             if (gni_mem_hdl->op_state==RDMA_WRITE_INIT) {
@@ -2254,7 +2242,7 @@ static void print_failed_cq(const NNTI_buffer_t *reg_buf)
 #endif
             break;
         case PUT_DST_BUFFER:
-        case RESULT_BUFFER:
+//        case RESULT_BUFFER:
         case RECEIVE_BUFFER:
 #if defined(USE_RDMA_EVENTS)
             if (gni_mem_hdl->op_state==RDMA_WRITE_INIT) {
@@ -2509,14 +2497,14 @@ static int process_event(
             }
             break;
         case RECEIVE_BUFFER:
-            gni_mem_hdl->last_op=GNI_OP_RECEIVE;
-            log_debug(debug_level, "receive buffer - recv completion - reg_buf==%p", reg_buf);
-
-            gni_mem_hdl->op_state = RECV_COMPLETE;
-            wc->byte_len   =gni_mem_hdl->wc.byte_len;
-            wc->byte_offset=gni_mem_hdl->wc.dest_offset;
-            break;
-        case RESULT_BUFFER:
+//            gni_mem_hdl->last_op=GNI_OP_RECEIVE;
+//            log_debug(debug_level, "receive buffer - recv completion - reg_buf==%p", reg_buf);
+//
+//            gni_mem_hdl->op_state = RECV_COMPLETE;
+//            wc->byte_len   =gni_mem_hdl->wc.byte_len;
+//            wc->byte_offset=gni_mem_hdl->wc.dest_offset;
+//            break;
+//        case RESULT_BUFFER:
             gni_mem_hdl->last_op=GNI_OP_PUT_TARGET;
 #if defined(USE_RDMA_EVENTS)
             if (gni_mem_hdl->op_state==RDMA_WRITE_INIT) {
@@ -2679,7 +2667,7 @@ static int8_t is_buf_op_complete(
                 rc=TRUE;
             }
             break;
-        case RESULT_BUFFER:
+//        case RESULT_BUFFER:
         case RECEIVE_BUFFER:
             if (gni_mem_hdl->op_state == RDMA_WRITE_COMPLETE) {
                 rc=TRUE;
