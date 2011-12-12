@@ -534,21 +534,29 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   switch (belosSolveStatus) {
     case Belos::Unconverged: {
       solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
-      // FIXME (mfh 08 Dec 2011) Please set achievedTol even if the
-      // solver did not converge.  If not set explicitly, the
-      // constructor of SolveStatus (see
-      // thyra/core/src/interfaces/operator_solve/fundamental/Thyra_SolveSupportTypes.hpp)
-      // sets this to unknownTolerance(), which is -1 (as the
-      // magnitude type of Scalar).  It would be nice to know what the
-      // solver actually managed to achieve.  This is especially for
-      // nonlinear solvers, which might be able to use a partially
-      // converged result, and which would like to know the achieved
-      // convergence tolerance for use in computing bounds.
+      // Set achievedTol even if the solver did not converge.  This is
+      // helpful for things like nonlinear solvers, which might be
+      // able to use a partially converged result, and which would
+      // like to know the achieved convergence tolerance for use in
+      // computing bounds.  It's also helpful for estimating whether a
+      // small increase in the maximum iteration count might be
+      // helpful next time.
+      try {
+	// Some solvers might not have implemented achievedTol(). 
+	// The default implementation throws std::runtime_error.
+	solveStatus.achievedTol = iterativeSolver_->achievedTol();
+      } catch (std::runtime_error&) {
+	// Do nothing; use the default value of achievedTol.
+      }
       break;
     }
     case Belos::Converged: {
       solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
       if (nonnull(generalSolveCriteriaBelosStatusTest)) {
+	// The user set a custom status test.  This means that we
+	// should ask the custom status test itself, rather than the
+	// Belos solver, what the final achieved convergence tolerance
+	// was.
         const ArrayView<const ScalarMag> achievedTol = 
           generalSolveCriteriaBelosStatusTest->achievedTol();
         solveStatus.achievedTol = ST::zero();
@@ -557,10 +565,15 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         }
       }
       else {
-	// FIXME (mfh 08 Dec 2011) Should find out what the solver
-	// actually achieved, even though defaultTol_ is a correct
-	// upper bound in this case.
-        solveStatus.achievedTol = tmpPL->get("Convergence Tolerance", defaultTol_);
+	try {
+	  // Some solvers might not have implemented achievedTol(). 
+	  // The default implementation throws std::runtime_error.
+	  solveStatus.achievedTol = iterativeSolver_->achievedTol();
+	} catch (std::runtime_error&) {
+	  // Use the default convergence tolerance.  This is a correct
+	  // upper bound, since we did actually converge.
+	  solveStatus.achievedTol = tmpPL->get("Convergence Tolerance", defaultTol_);
+	}
       }
       break;
     }
