@@ -189,7 +189,7 @@ void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase
     std::cout << "no Aggregates available." << std::endl;
     return;
   }
-  if(level->IsAvailable("A") == false || level->IsKept("A")==false) {
+  if(level->IsAvailable("A") == false /*|| level->IsKept("A")==false Why?*/) {
     std::cout << "no matrix A available" << std::endl;
     return;
   }
