@@ -488,7 +488,8 @@ namespace MueLu {
 
     SetFactoryManager SFM(level, manager);
 
-    level.Request(smooFact);
+    level.Request("PreSmoother", &smooFact);
+    level.Request("PostSmoother", &smooFact);
     smooFact.BuildSmoother(level, pop);
 
     if (level.IsAvailable("PreSmoother", &smooFact)) {
@@ -501,7 +502,8 @@ namespace MueLu {
       level.Set("PostSmoother", Post);
     }
 
-    level.Release(smooFact);
+    level.Release("PreSmoother", &smooFact);
+    level.Release("PostSmoother", &smooFact);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

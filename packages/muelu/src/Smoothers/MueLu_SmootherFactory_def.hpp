@@ -122,7 +122,6 @@ namespace MueLu {
             
         // Level Set
         currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
-        currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother); // TODO: remove this
       }
         
   } // Build()
