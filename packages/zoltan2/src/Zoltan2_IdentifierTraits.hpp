@@ -487,6 +487,12 @@ template <typename T>
   bool locallyConsecutiveIncreasing =
     IdentifierTraits<T>::areConsecutive(val, len);
 
+  if (locallyConsecutiveIncreasing && comm.getSize() == 1){
+    dist[0] = val[0];
+    dist[1] = len;
+    return locallyConsecutiveIncreasing;
+  }
+
   int localFlag = (locallyConsecutiveIncreasing ? 1 : 0);
   int globalFlag = 0;
 

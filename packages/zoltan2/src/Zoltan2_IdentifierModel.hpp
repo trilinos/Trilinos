@@ -188,15 +188,22 @@ public:
   size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
     ArrayView<const input_t> &wgts) const 
   {
-    wgts = weights_(0, weights_.size());
     size_t n = getLocalNumIdentifiers();
+    size_t nweights = n * weightDim_;
 
-    if (gnosAreGids_){
-      Ids = gids_(0, n);
+    Ids =  ArrayView<const gno_t>(Teuchos::null);
+    wgts = ArrayView<const scalar_t>(Teuchos::null);
+
+    if (n){
+      if (gnosAreGids_)
+        Ids = gids_(0, n);
+      else
+        Ids = gnosConst_(0, n);
+
+      if (nweights)
+        wgts = weights_;
     }
-    else{
-      Ids = gnosConst_(0, n);
-    }
+    
     return n;
   }
 
@@ -319,15 +326,22 @@ public:
   size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
     ArrayView<const input_t> &wgts) const            
   {
-    wgts = weights_(0, weights_.size());   // not implemented yet
     size_t n = getLocalNumIdentifiers();
+    size_t nweights = n * weightDim_;
 
-    if (gnosAreGids_){
-      Ids = gids_(0, n);
+    Ids = ArrayView<const gno_t>(Teuchos::null);
+    wgts = ArrayView<const scalar_t>(Teuchos::null);
+
+    if (n){
+      if (gnosAreGids_)
+        Ids = gids_(0, n);
+      else
+        Ids = gnosConst_(0, n);
+
+      if (nweights)
+        wgts = weights_(0, nweights);
     }
-    else{
-      Ids = gnosConst_(0, n);
-    }
+
     return n;
   }
 

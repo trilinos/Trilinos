@@ -313,12 +313,14 @@ public:
       procIds_ = arcp(p, 0, numLocalEdges_);
     }
 
-    try{
-      // All processes must make this call.
-      idMap->gidGlobalTranslate(edgeGids_(0,numLocalEdges_), 
-        edgeGnos_(0,numLocalEdges_), procIds_(0,numLocalEdges_));
+    if (!gidsAreGnos_){
+      try{
+        // All processes must make this call.
+        idMap->gidGlobalTranslate(edgeGids_(0,numLocalEdges_), 
+          edgeGnos_(0,numLocalEdges_), procIds_(0,numLocalEdges_));
+      }
+      Z2_FORWARD_EXCEPTIONS;
     }
-    Z2_FORWARD_EXCEPTIONS;
 
     this->setIdentifierMap(idMap);   // Zoltan2::Model method
 
@@ -373,12 +375,13 @@ public:
     ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const
   {
     size_t n = getLocalNumVertices();
+    Ids = ArrayView<const gno_t>(Teuchos::null);
 
-    if (gidsAreGnos_){
-      Ids = gids_(0, n);
-    }
-    else{
-      Ids = gnosConst_(0, n);
+    if (n){
+      if (gidsAreGnos_)
+        Ids = gids_(0, n);
+      else
+        Ids = gnosConst_(0, n);
     }
 
     return n;
@@ -391,14 +394,16 @@ public:
     ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
     ArrayView<const scalar_t> &wgts) const
   {
-    if (edgeGnos_.size() == 0){
-      edgeIds = edgeGids_(0, numLocalEdges_);
-    }
-    else{
-      edgeIds = edgeGnosConst_(0, numLocalEdges_);
-    }
+    edgeIds = ArrayView<const gno_t>(Teuchos::null);
     procIds = procIdsConst_(0, numLocalVtx_+1);
     offsets = offsets_(0, numLocalVtx_+1);
+
+    if (numLocalEdges_){
+      if (edgeGnos_.size() == 0)
+        edgeIds = edgeGids_(0, numLocalEdges_);
+      else
+        edgeIds = edgeGnosConst_(0, numLocalEdges_);
+    }
 
     return numLocalEdges_;
   }
