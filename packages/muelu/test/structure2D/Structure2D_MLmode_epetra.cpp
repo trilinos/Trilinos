@@ -99,15 +99,19 @@ void FillMLParameterList(Teuchos::ParameterList & params) {
 
   l0.set("smoother: damping factor", 0.9);
   l0.set("smoother: sweeps", 1);
+  l0.set("smoother: pre or post", "post");
   l0.set("smoother: type", "symmetric Gauss-Seidel");
   l1.set("smoother: damping factor", 0.9);
   l1.set("smoother: sweeps", 1);
+  l1.set("smoother: pre or post", "post");
   l1.set("smoother: type", "symmetric Gauss-Seidel");
   l2.set("smoother: damping factor", 0.9);
   l2.set("smoother: sweeps", 1);
+  l2.set("smoother: pre or post", "pre");
   l2.set("smoother: type", "symmetric Gauss-Seidel");
   l3.set("smoother: damping factor", 0.9);
   l3.set("smoother: sweeps", 1);
+  l3.set("smoother: pre or post", "pre");
   l3.set("smoother: type", "symmetric Gauss-Seidel");
   l4.set("smoother: damping factor", 0.89);
   l4.set("smoother: sweeps", 1);

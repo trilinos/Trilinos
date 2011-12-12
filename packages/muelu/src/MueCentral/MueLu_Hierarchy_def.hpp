@@ -213,6 +213,7 @@ namespace MueLu {
     return isLastLevel;
   }
 
+  // new setup routine
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(int coarseLevelID, const RCP<FactoryManager> & fineLevelManager, const RCP<FactoryManager> &coarseLevelManager,
              const RCP<FactoryManager> & nextLevelManager /*should be optional*/) {
@@ -232,11 +233,6 @@ namespace MueLu {
     bool isFinestLevel = false;
     if(fineLevelManager == Teuchos::null) isFinestLevel = true;
     if(nextLevelManager == Teuchos::null) isLastLevel = true;
-
-    // Safe to use rcpFromRef here as all objects using this RCP are destroyed at the end of this function.
-    /*RCP<const FactoryManager> fineManager   = rcpFromRef(fineLevelManager);
-    RCP<const FactoryManager> coarseManager = rcpFromRef(coarseLevelManager);
-    RCP<const FactoryManager> nextManager   = rcpFromRef(nextLevelManager);*/
 
     //
     // Requests for next coarse level
@@ -292,7 +288,7 @@ namespace MueLu {
     }
 
     // Build coarse level smoother
-    TopSmootherFactory smootherFact      (coarseLevelManager, "Smoother");
+    TopSmootherFactory smootherFact (coarseLevelManager, "Smoother");
     TopSmootherFactory coarsestSolverFact(coarseLevelManager, "CoarseSolver");
 
     if (!isLastLevel) {
@@ -605,7 +601,7 @@ namespace MueLu {
           RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
           preSmoo->Apply(X, B, zeroGuess);
         } else {
-          GetOStream(Errors, 0) << "Error: Level " <<  startLevel << ": No Smoother!" << std::endl;
+          GetOStream(Warnings0, 0) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
         }
 
         RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")), X, B);
@@ -643,7 +639,7 @@ namespace MueLu {
           RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
           postSmoo->Apply(X, B, false);
         } else {
-          GetOStream(Errors, 0) << "Error: Level " <<  startLevel << ": No Smoother!" << std::endl;
+          GetOStream(Warnings0, 0) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
         }
       }
       zeroGuess=false;
