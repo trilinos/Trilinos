@@ -30,7 +30,7 @@ namespace MueLu {
       External     = 0x1000000, //!< Print external lib objects
       Debug        = 0x2000000, //!< Print additional debugging information
 
-      // Predefined combinaisons of MsgType
+      // Predefined combinations of MsgType
       // Can be used in user code or examples. Do not used as input parameters of IsPrint() or GetOStream().
       Warnings     = Warnings0 + Warnings00 + Warnings1 + PerfWarnings, //!< Print all warning messages
       Runtime      = Runtime0 + Runtime1,                               //!< Print description of what is going on
