@@ -848,7 +848,6 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
   {
     Xpetra::UnderlyingLib l = from->getMap()->lib();
     const x_mvector_t *xmv = from.get();
-    lno_t base = 0;
 
     if (l == Xpetra::UseEpetra){
       // Do the import with the Epetra_MultiVector traits object

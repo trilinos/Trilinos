@@ -37,12 +37,18 @@ public:
 
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
+  typedef typename Adapter::lno_t     lno_t;
+  typedef StridedInput<lno_t, scalar_t> input_t;
   
   IdentifierModel(){
     throw std::logic_error("a specific instantiation should be used");
   }
 
-  /*! Returns the number identifierson this process.
+  ////////////////////////////////////////////////////
+  // The IdentifierModel interface.
+  ////////////////////////////////////////////////////
+
+  /*! Returns the number identifiers on this process.
    */
   size_t getLocalNumIdentifiers() const { return 0; }
 
@@ -58,13 +64,14 @@ public:
       \param Ids will on return point to the list of the global Ids for
         each identifier on this process.
       \param wgts will on return point to a list of the weight or weights
-         associated with each identifier in the Ids list.  Weights are listed by
-         identifier by weight component.
+         associated with each identifier in the Ids list. Each weight
+         is represented as a StridedInput object.
+
        \return The number of ids in the Ids list.
    */
 
-  size_t getIdentifierList( ArrayView<const gno_t> &Ids,
-    ArrayView<const scalar_t> &wgts) const { return 0; }
+  size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
+    ArrayView<const input_t> &wgts) const {return 0;}
 
   ////////////////////////////////////////////////////
   // The Model interface.
@@ -122,12 +129,14 @@ public:
     Z2_FORWARD_EXCEPTIONS;
 
     if (nLocalIds){
-      gids_ = arcp(const_cast<gid_t *>(gids), 0, nLocalIds);
+      gids_ = arcp(gids, 0, nLocalIds, false);
   
       if (weightDim > 0){
         input_t *w = new input_t [weightDim];
-        for (int i=0; i < weightDim; i++)
-          w[i] = new input_t(env_, wgts[i], wgtStrides[i]);
+        for (int i=0; i < weightDim; i++){
+          ArrayView<const scalar_t> wgtArray(wgts[i], nLocalIds*wgtStrides[i]);
+          w[i] = new input_t(env_, wgtArray, wgtStrides[i]);
+        }
         weights_ = arcp<const input_t>(w, 0, weightDim);
       }
     }
@@ -150,7 +159,7 @@ public:
     if (!gnosAreGids_ && nLocalIds>0){
       gno_t *tmpGno = new gno_t [nLocalIds];
       Z2_LOCAL_MEMORY_ASSERTION(*env_, nLocalIds, tmpGno);
-      gnos_ = arcp(tmpGno, 0, gids_.size());
+      gnos_ = arcp(tmpGno, 0, nLocalIds);
 
       try{
         ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
@@ -189,7 +198,7 @@ public:
     ArrayView<const input_t> &wgts) const 
   {
     size_t n = getLocalNumIdentifiers();
-    size_t nweights = n * weightDim_;
+    size_t nweights = n * weights_.size();
 
     Ids =  ArrayView<const gno_t>(Teuchos::null);
     wgts = ArrayView<const scalar_t>(Teuchos::null);
@@ -267,7 +276,7 @@ public:
     Z2_FORWARD_EXCEPTIONS;
 
     if (nLocalIds){
-      gids_ = arcp(const_cast<gid_t *>(gids), 0, nLocalIds);
+      gids_ = arcp(gids, 0, nLocalIds, false);
     }
 
     RCP<const idmap_t> idMap;
@@ -310,8 +319,9 @@ public:
   global_size_t getGlobalNumIdentifiers() const {return numGlobalIdentifiers_;}
 
   /*! Returns the dimension (0 or greater) of identifier weights.
+   *    Weights are not yet implemented in MatrixInput.
    */
-  int getIdentifierWeightDim() const { return weightDim_; }
+  int getIdentifierWeightDim() const { return 0; }
 
   /*! Sets pointers to this process' identifier Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
@@ -327,10 +337,10 @@ public:
     ArrayView<const input_t> &wgts) const            
   {
     size_t n = getLocalNumIdentifiers();
-    size_t nweights = n * weightDim_;
+    size_t nweights = 0;
 
     Ids = ArrayView<const gno_t>(Teuchos::null);
-    wgts = ArrayView<const scalar_t>(Teuchos::null);
+    wgts = ArrayView<const input_t>(Teuchos::null);
 
     if (n){
       if (gnosAreGids_)
@@ -368,7 +378,6 @@ public:
 private:
 
   bool gnosAreGids_;
-  int weightDim_;
   gno_t numGlobalIdentifiers_;
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;

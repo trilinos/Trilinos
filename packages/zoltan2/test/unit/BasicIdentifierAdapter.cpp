@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
   int weightStridesIn[2];
 
   if (!fail && 
-    ia.getIdList(globalIdsIn, &weightsIn[0], &weightStridesIn[0]) != numLocalIds)
+    ia.getIdList(&globalIdsIn, weightsIn, weightStridesIn) != numLocalIds)
     fail = 6;
 
   const scalar_t *w1 = weightsIn[0];

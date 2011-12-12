@@ -74,8 +74,9 @@ public:
        \return The number of ids in the Ids list.
    */
 
-  virtual size_t getIdList(const gid_t (*Ids), const scalar_t * (*weights),   
+  virtual size_t getIdList(gid_t const **Ids, scalar_t const **weights,
     int *strides) const = 0;
+
 
 
   /*! Given a new mapping of identifiers to partitions,

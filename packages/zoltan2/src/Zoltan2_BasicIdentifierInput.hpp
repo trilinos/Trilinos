@@ -77,18 +77,19 @@ public:
 
   ////////////////////////////////////////////////////////////////
   // The IdentifierInput interface.
+  // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
 
   size_t getLocalNumIds() const { return numIds_;}
    
   int getNumWeights() const { return weights_.size(); }
 
-  size_t getIdList(const gid_t (*Ids), const scalar_t * (*weights), 
+  size_t getIdList(gid_t const **Ids, scalar_t const **weights, 
     int *strides) const
   {
     int nweights = getNumWeights();
 
-    Ids = idList_;
+    *Ids = idList_;
 
     size_t len;
     int stride;

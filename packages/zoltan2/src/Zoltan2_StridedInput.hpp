@@ -14,8 +14,17 @@ namespace Zoltan2{
  *  \brief The StridedInput class manages lists of weights or coordinates.
  *
  * A likely representation for multi-dimensional weights or coordinates is
- *  an array ordered by identifier by dimension. This class is designed
- *  to make access to these arrays efficient. And conversion for TPLs too.
+ *  an array ordered by identifier by dimension. The purposes of this class:
+ *
+ *   \li to make it easy for applications to supply these arrays to Zoltan2.
+ *   \li to provide a [] operator for algorithm's access to strided arrays.
+ *   \li to create contiguous arrays of weights or coordinates if needed by 
+ *         the algorithm.
+ *   \li to create a contiguous array of weights using the data type required
+ *        by the algorithm.
+ *
+ * If we need to modify weights (say convert floating point weights to
+ * integers for a third party library) methods to do this could be added here.
  */
 
 template<typename lno_t, typename scalar_t>

@@ -213,7 +213,7 @@ public:
     }
     Z2_FORWARD_EXCEPTIONS;
 
-    gids_ = arcp(vtxIds, 0, numLocalVtx_);
+    gids_ = arcp(vtxIds, 0, numLocalVtx_, false);
 
     numLocalEdges_ = offsets[numLocalVtx_];
 
@@ -260,8 +260,8 @@ public:
     }
 
     if (nSelfEdges == 0){
-      offsets_ = arcp(const_cast<lno_t *>(offsets), 0, numOffsets);
-      edgeGids_ = arcp(const_cast<gno_t *>(nborIds), 0, numLocalEdges_);
+      offsets_ = arcp(const_cast<lno_t *>(offsets), 0, numOffsets, false);
+      edgeGids_ = arcp(const_cast<gno_t *>(nborIds), 0, numLocalEdges_, false);
     }
     else{
       offsets_ = tmpOffsets;
