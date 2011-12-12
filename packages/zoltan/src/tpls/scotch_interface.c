@@ -26,18 +26,11 @@ extern "C" {
 #include "order_const.h"
 #include "third_library.h"
 #include "scotch_interface.h"
+#include "scotch_interface_params.h"
 
 #ifndef ZOLTAN_PTSCOTCH
 #define Scotch_Dgraph Scotch_Graph
 #endif /* ZOLTAN_PTSCOTCH */
-
-  /**********  parameters structure for Scotch methods **********/
-static PARAM_VARS Scotch_params[] = {
-  { "SCOTCH_METHOD", NULL, "STRING", 0 },
-  { "SCOTCH_TYPE", NULL, "STRING", 0 },
-  { "SCOTCH_STRAT", NULL, "STRING", 0 },
-  { "SCOTCH_STRAT_FILE", NULL, "STRING", 0 },
-  { NULL, NULL, NULL, 0 } };
 
 static int Zoltan_Scotch_Bind_Param(ZZ * zz, char *alg, char* graph_type, char **strat);
 

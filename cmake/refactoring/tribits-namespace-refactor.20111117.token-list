@@ -1,4 +1,3 @@
-TrilinosCTestDriverCore       TribitsCTestDriverCore
 TrilinosDriverDashboard   TribitsDriverDashboard
 TrilinosDriverSupport     TribitsDriverSupport
 PackageAddAdvancedTest TribitsAddAdvancedTest

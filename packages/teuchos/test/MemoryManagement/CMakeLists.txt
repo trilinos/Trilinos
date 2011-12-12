@@ -17,7 +17,7 @@ IF (${PACKAGE_NAME}_ENABLE_Boost)
       GetBaseObjVoidPtr_UnitTests
       SOURCES GetBaseObjVoidPtr_UnitTests.cpp
         TestClasses.cpp
-        ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+        ${TEUCHOS_STD_UNIT_TEST_MAIN}
       NUM_MPI_PROCS 1
       ARGS --teuchos-suppress-startup-banner
       STANDARD_PASS_OUTPUT
@@ -30,7 +30,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   AssertAndThrow_UnitTests
   SOURCES
     AssertAndThrow_UnitTests.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -40,7 +40,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   OldTestForException_UnitTests
   SOURCES
     OldTestForException_UnitTests.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -109,7 +109,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     RCPNodeHandle_UnitTests.cpp
     TestClasses.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   ARGS --teuchos-suppress-startup-banner
@@ -129,7 +129,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ArrayRCP_UnitTests.cpp
     ArrayConversions_UnitTests.cpp
     TestClasses.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   ARGS --teuchos-suppress-startup-banner
@@ -180,7 +180,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     SimpleObjTbl_UnitTests.cpp
     TestClasses.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   ARGS --teuchos-suppress-startup-banner
@@ -238,7 +238,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  GCC_CheckedSTL_UnitTests
 #  SOURCES GCC_CheckedSTL_UnitTests.cpp  
-#    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+#    ${TEUCHOS_STD_UNIT_TEST_MAIN}
 #  COMM serial mpi
 #  NUM_MPI_PROCS 1
 #  ARGS --teuchos-suppress-startup-banner
@@ -292,7 +292,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CATEGORIES BASIC PERFORMANCE
   SOURCES
     RCP_Performance_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -322,7 +322,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CATEGORIES BASIC PERFORMANCE
   SOURCES
     Array_Performance_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )

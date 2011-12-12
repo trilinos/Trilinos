@@ -48,10 +48,10 @@
 
 
 NOX::RowSumScaling::
-RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& sv,
-	      NOX_WhenToScale s) :
-  inv_row_sum_vec_(sv),
-  when_to_scale(s)
+RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& inv_row_sum_vec,
+	      ENOX_WhenToUpdateScaling s) :
+  inv_row_sum_vec_(inv_row_sum_vec),
+  when_to_update(s)
 {
 
 }
@@ -59,14 +59,14 @@ RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& sv,
 void NOX::RowSumScaling::
 runPreIterate(const NOX::Solver::Generic& solver)
 {  
-  if (when_to_scale == NOX_RowSumScaleAtBeginningOfIteration)
+  if (when_to_update == UpdateInvRowSumVectorAtBeginningOfIteration)
     computeScaling(solver);
 }
 
 void NOX::RowSumScaling::
 runPreSolve(const NOX::Solver::Generic& solver)
 {  
-  if (when_to_scale == NOX_RowSumScaleAtBeginningOfSolve)
+  if (when_to_update == UpdateInvRowSumVectorAtBeginningOfSolve)
     computeScaling(solver);
 }
 

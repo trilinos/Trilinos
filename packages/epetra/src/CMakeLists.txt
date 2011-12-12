@@ -9,14 +9,18 @@ SET(EPETRA_MPI ${TPL_ENABLE_MPI})
 IF(CMAKE_SIZEOF_VOID_P GREATER 4)
   SET(EPETRA_ADDRESS64BIT ON)
 ENDIF()
-SET(Epetra_HAVE_OMP ${Trilinos_ENABLE_OpenMP})
+SET(Epetra_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
 # This is the preferred macro to key on, but am keeping the old one for backward compatibility
-SET(EPETRA_HAVE_OMP ${Trilinos_ENABLE_OpenMP})
+SET(EPETRA_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
+# Set the base Trilinos directory in order to find Trilinos_version.h
+ASSERT_DEFINED(PROJECT_SOURCE_DIR)
+INCLUDE_DIRECTORIES(${Trilinos_BINARY_DIR})
+
 SET(CURRENT_PACKAGE EPETRA)
-CONFIGURE_FILE("${${PROJECT_NAME}_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
 
 #

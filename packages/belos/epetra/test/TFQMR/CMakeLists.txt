@@ -30,7 +30,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestTFQMRFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockGmres
+    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
     SOURCE_FILES orsirr1.hb orsirr1_scaled.hb
     EXEDEPS tfqmr_hb
     )

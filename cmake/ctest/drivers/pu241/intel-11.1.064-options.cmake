@@ -7,7 +7,7 @@ SET(IFORT_VERSION "11.1.064")
 SET(INTEL_LIB /opt/intel/Compiler/11.1/064/lib/intel64)
 SET(INTEL_BIN /opt/intel/Compiler/11.1/064/bin/intel64)
 # Add rpath for compiler libraries
-# SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${INTEL_LIB}" CACHE STRING "")
+# SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS "-Wl,-rpath,${INTEL_LIB}" CACHE STRING "")
 SET(CMAKE_SKIP_RPATH ON BOOL "")
 # Intel 11 not compatible with GCC 4.5.1; in case it is loaded, lock it out
 SET(CMAKE_C_FLAGS   "-gcc-name=/usr/bin/gcc" CACHE STRING "")
@@ -17,8 +17,8 @@ SET(CMAKE_CXX_FLAGS "-gxx-name=/usr/bin/g++" CACHE STRING "")
 SET(TPL_ENABLE_BinUtils ON CACHE BOOL "")
 
 # Include MKL and TBB; these should match version of Intel compilers being used
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/tbb-11.1.064-options.cmake)
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-11.1.064-options.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/tbb-11.1.064-options.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/mkl-11.1.064-options.cmake)
 SET(BLAS_INCLUDE_DIRS   ${MKL_IFORT_MODULE_PATH} CACHE PATH "Path to MKL BLAS Fortran modules compatible with Intel fortran")
 SET(LAPACK_INCLUDE_DIRS ${MKL_IFORT_MODULE_PATH} CACHE PATH "Path to MKL LAPACK Fortran modules compatible with Intel fortran")
 
@@ -31,5 +31,5 @@ SET(HDF5_INCLUDE_DIRS /opt/intel-11.1.064/tpls/hdf5-1.8.5-patch1/include CACHE F
 
 
 # Including these last to allow override above
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/casl-vri-tpls.cmake)
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/casl-core-enables-disables.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-vri-tpls.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-core-enables-disables.cmake)

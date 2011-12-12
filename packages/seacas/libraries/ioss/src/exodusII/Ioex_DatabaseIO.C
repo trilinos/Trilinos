@@ -6699,13 +6699,7 @@ namespace {
       return NULL;
 
     if (which_names.size() % N != 0) {
-      std::ostringstream errmsg;
-      errmsg << "ERROR: Invalid logic in Ioex::DatabaseIO::match_composite_field()\n"
-	     << "       which_names.size() == " << which_names.size() << " which is not a multiple of " << N << "\n"
-	     << "       The field name is " << names[which_names[which_names.size()-1]] << "\n"
-	     << "       Please report to gdsjaar@sandia.gov.";
-      IOSS_ERROR(errmsg);
-      /* Does not return */
+      return NULL;
     }
 
     size_t inner_token = tokens.size() - 2;

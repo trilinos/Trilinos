@@ -242,6 +242,15 @@ namespace Belos {
     Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
       return Teuchos::tuple(timerSolve_);
     }
+
+    /// \brief Tolerance achieved by the last \c solve() invocation.
+    /// 
+    /// This is the maximum over all right-hand sides' achieved
+    /// convergence tolerances, and is set whether or not the solve
+    /// actually managed to achieve the desired convergence tolerance.
+    MagnitudeType achievedTol() const {
+      return achievedTol_;
+    }
   
     //! Get the iteration count for the most recent call to \c solve().
     int getNumIters() const {
@@ -385,7 +394,7 @@ namespace Belos {
     static const Teuchos::RCP<std::ostream> outputStream_default_;
 
     // Current solver values.
-    MagnitudeType convTol_, orthoKappa_;
+    MagnitudeType convTol_, orthoKappa_, achievedTol_;
     int maxRestarts_, maxIters_, numIters_;
     int verbosity_, outputStyle_, outputFreq_;
     std::string orthoType_; 
@@ -1741,6 +1750,34 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
  
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
+
+  // Save the convergence test value ("achieved tolerance") for this
+  // solve.  This solver (unlike BlockGmresSolMgr) always has two
+  // residual norm status tests: an explicit and an implicit test.
+  // The master convergence test convTest_ is a SEQ combo of the
+  // implicit resp. explicit tests.  If the implicit test never
+  // passes, then the explicit test won't ever be executed.  This
+  // manifests as expConvTest_->getTestValue()->size() < 1.  We deal
+  // with this case by using the values returned by
+  // impConvTest_->getTestValue().
+  {
+    const std::vector<MagnitudeType>* pTestValues = expConvTest_->getTestValue();
+    if (pTestValues == NULL || pTestValues->size() < 1) {
+      pTestValues = impConvTest_->getTestValue();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
+      "Belos::GCRODRSolMgr::solve(): The implicit convergence test's getTestValue() "
+      "method returned NULL.  Please report this bug to the Belos developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
+      "Belos::GCRODRSolMgr::solve(): The implicit convergence test's getTestValue() "
+      "method returned a vector of length zero.  Please report this bug to the "
+      "Belos developers.");
+
+    // FIXME (mfh 12 Dec 2011) Does pTestValues really contain the
+    // achieved tolerances for all vectors in the current solve(), or
+    // just for the vectors from the last deflation?
+    achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
+  }
  
   if (!isConverged) {
     return Unconverged; // return from GCRODRSolMgr::solve() 

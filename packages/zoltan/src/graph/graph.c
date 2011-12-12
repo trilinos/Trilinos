@@ -24,17 +24,9 @@ extern "C" {
 #include "graph_const.h"
 #include "params_const.h"
 #include "graph_util.h"
+#include "graph_params.h"
 
 /* #define CC_TIMERS */
-
-/* Parameters for how to build the graph */
-static PARAM_VARS ZG_params[] = {
-	{ "GRAPH_SYMMETRIZE", NULL, "STRING", 0 },
-	{ "GRAPH_SYM_WEIGHT", NULL, "STRING", 0 },
-	{ "GRAPH_BIPARTITE_TYPE", NULL, "STRING", 0},
-	{ "GRAPH_BUILD_TYPE", NULL, "STRING", 0},
-	{ "GRAPH_FAST_BUILD_BASE", NULL, "INTEGER", 0},
-	{ NULL, NULL, NULL, 0 } };
 
 #define AFFECT_NOT_NULL(ptr, src) do { if ((ptr) != NULL) (*(ptr)) = (src); } while (0)
 

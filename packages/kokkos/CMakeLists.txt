@@ -27,10 +27,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_OpenMP
   HAVE_KOKKOS_OPENMP
   "Enable OpenMP in Kokkos."
-  ${Trilinos_ENABLE_OpenMP}
+  ${${PROJECT_NAME}_ENABLE_OpenMP}
   )
-IF(Kokkos_ENABLE_OpenMP AND NOT Trilinos_ENABLE_OpenMP)
-  MESSAGE(WARNING "Disabling OpenMP in Kokkos because Trilinos_ENABLE_OpenMP is ${Trilinos_ENABLE_OpenMP}")
+IF(Kokkos_ENABLE_OpenMP AND NOT ${PROJECT_NAME}_ENABLE_OpenMP)
+  MESSAGE(WARNING "Disabling OpenMP in Kokkos because ${PROJECT_NAME}_ENABLE_OpenMP is ${${PROJECT_NAME}_ENABLE_OpenMP}")
 ENDIF()
 
 
@@ -47,6 +47,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable Kokkos local linear algebra."
   ON
   )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_Array
   HAVE_KOKKOS_ARRAY
@@ -171,6 +172,7 @@ ENDIF()
 
 IF (Kokkos_ENABLE_Array)
   ADD_SUBDIRECTORY(array)
+  #ADD_SUBDIRECTORY(array_v1)
 ENDIF()
 
 ######################################################################

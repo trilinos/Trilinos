@@ -56,6 +56,7 @@ SET(HEADERS ${HEADERS}
   Ifpack_AdditiveSchwarz.h
   Ifpack_LocalFilter.h
   Ifpack_NodeFilter.h
+  Ifpack_SubdomainFilter.h
   Ifpack_DropFilter.h
   Ifpack_SparsityFilter.h
   Ifpack_ReorderFilter.h
@@ -110,6 +111,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_DenseContainer.cpp
   Ifpack_LocalFilter.cpp
   Ifpack_NodeFilter.cpp
+  Ifpack_SubdomainFilter.cpp
   Ifpack_DropFilter.cpp
   Ifpack_SparsityFilter.cpp
   Ifpack_ReorderFilter.cpp

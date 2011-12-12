@@ -125,6 +125,9 @@ namespace Belos {
   /// \ingroup belos_solver_framework
   /// \author Mark Hoemmen
   ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
+  ///
   /// Communication-Avoiding GMRES (CA-GMRES) (Hoemmen 2010) is an
   /// iterative method for solving nonsymmetric linear systems.  It is
   /// equivalent to GMRES (Saad and Schultz 1986) in exact arithmetic.

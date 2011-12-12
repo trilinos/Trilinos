@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.kallikrates.msvc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.kallikrates.msvc.cmake")
 
 #
 # Set the options specific to this build case
@@ -62,7 +62,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.kallikrates.msvc.cmake
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME SERIAL_OPT_DEV_SHARED)
-SET(CTEST_TEST_TYPE EXPERIMENTAL)
+#SET(CTEST_TEST_TYPE EXPERIMENTAL)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 #

@@ -92,7 +92,7 @@ C      --A - the dynamic numeric memory base array
       LOGICAL USESDF, NONQUD
       LOGICAL RENNP, RENEL, REN, DELNP, DELEL, BATCH, CLOSE, MATMAT
       LOGICAL FIRST, DONE, MDEBUG
-      character*(256) filnam, string
+      character*(2048) filnam, string
 
 C... String containing name of common element topology in model
 C    or 'MULTIPLE_TOPOLOGIES' if not common topology.

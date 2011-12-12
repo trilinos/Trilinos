@@ -87,7 +87,7 @@ buildStatusTests(const std::string& file_name , const NOX::Utils& u,
   
 #ifdef HAVE_TEUCHOS_EXTENDED
   Teuchos::ParameterList param_list;
-  Teuchos::updateParametersFromXmlFile("input.xml", &param_list);
+  Teuchos::updateParametersFromXmlFile("input.xml", ptrFromRef(param_list));
   status_tests = this->buildStatusTests(param_list, u, tagged_tests);
 #else
   std::string msg = "Error - Teuchos Extended Support must be enabled to use the xml reader for parameter lists.  Please rebuild the Trilinos Teuchos library with exteded support enabled.";
@@ -298,6 +298,7 @@ buildNormWRMSTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
   double alpha = p.get("Alpha", 1.0);
   double beta = p.get("Beta", 0.5);
   double rel_tol = p.get("Relative Tolerance", 1.0e-5);
+  bool disable_implicit_weighting = p.get("Disable Implicit Weighting", true);
 
   bool abs_tol_is_vector = false;
   Teuchos::RCP<const NOX::Abstract::Vector> abs_tol_vector;
@@ -320,7 +321,8 @@ buildNormWRMSTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 						    bdf_multiplier,
 						    tolerance,
 						    alpha,
-						    beta)
+						    beta,
+						    disable_implicit_weighting)
 		      );
   else
     status_test = rcp(new NOX::StatusTest::NormWRMS(rel_tol,
@@ -328,7 +330,8 @@ buildNormWRMSTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 						    bdf_multiplier,
 						    tolerance,
 						    alpha,
-						    beta)
+						    beta,
+						    disable_implicit_weighting)
 		      );
 
   return status_test;

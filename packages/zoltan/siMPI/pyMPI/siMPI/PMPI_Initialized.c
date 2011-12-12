@@ -20,7 +20,7 @@ int PMPI_Initialized( int *flag )
   retval = _MPI_checkIntP (flag);
   if (retval!=MPI_SUCCESS)
   {
-    MPI_Abort((MPI_Comm)NULL, MPI_ERR_OTHER);
+    MPI_Abort((MPI_Comm)0, MPI_ERR_OTHER);
     return retval;
   }
   *flag = _MPI_INITIALIZED_FLAG;

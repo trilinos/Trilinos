@@ -142,8 +142,8 @@ class test_getTimeInMinFromTotalTimeLine(unittest.TestCase):
 #
 
 
-trilinosDepsXmlFileDefaultOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.gold.xml"
-trilinosDependenciesDefault = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFileDefaultOverride)
+projectDepsXmlFileDefaultOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.gold.xml"
+projectDependenciesDefault = getProjectDependenciesFromXmlFile(projectDepsXmlFileDefaultOverride)
 
 
 class test_extractPackageEnablesFromChangeStatus(unittest.TestCase):
@@ -164,7 +164,7 @@ A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
     enablePackagesList = []
 
     extractPackageEnablesFromChangeStatus(updateOutputStr, options, "",
-      enablePackagesList, False, trilinosDependenciesDefault)
+      enablePackagesList, False, projectDependenciesDefault)
 
     self.assertEqual( options.enableAllPackages, 'on' )
     self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'Teuchos'] )
@@ -186,7 +186,7 @@ D	packages/tpetra/FSeconds.f
     enablePackagesList = []
 
     extractPackageEnablesFromChangeStatus(updateOutputStr, options, "",
-      enablePackagesList, False, trilinosDependenciesDefault)
+      enablePackagesList, False, projectDependenciesDefault)
 
     self.assertEqual( options.enableAllPackages, 'auto' )
     self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'Stratimikos', u'ThyraCoreLibs', u'Tpetra'] )
@@ -200,14 +200,14 @@ M	ExtraTrilinosPackages.cmake
 M	stalix/README
 """
     # NOTE: Above, we ignore top-level changes in extra repos which would cause global rebuilds
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
-    trilinosDependenciesLocal = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFileOverride)
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDependenciesLocal = getProjectDependenciesFromXmlFile(projectDepsXmlFileOverride)
 
     options = MockOptions()
     enablePackagesList = []
 
     extractPackageEnablesFromChangeStatus(updateOutputStr, options, "preCopyrightTrilinos",
-      enablePackagesList, False, trilinosDependenciesLocal)
+      enablePackagesList, False, projectDependenciesLocal)
 
     self.assertEqual( options.enableAllPackages, 'auto' )
     self.assertEqual( enablePackagesList, [u'Stalix'] )
@@ -316,6 +316,38 @@ Some other message
     self.assertEqual(numBlankLines, 1)
     self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
 
+
+################################################################################
+# Test Project name matching.
+################################################################################
+class test_matchProjectName(unittest.TestCase):
+  def test_good_match(self):
+    line = 'SET(PROJECT_NAME TestProject)'
+    match = matchProjectName(line)
+    self.assertEqual(match, 'TestProject')
+    
+  def test_match_with_extra_spaces(self):
+    line = '  set ( PROJECT_NAME   TestProject ) '
+    match = matchProjectName(line)
+    self.assertEqual(match, 'TestProject')
+
+  def test_no_match_wrong_variable(self):
+    line = 'SET(SOME_VAR TestProject)'
+    match = matchProjectName(line)
+    self.assertFalse(match)
+
+  def test_match_with_comment_at_end(self):
+    line = 'Set(PROJECT_NAME TestProject) # This is a comment'
+    match = matchProjectName(line)
+    self.assertEqual(match, 'TestProject')
+
+#############################################################################
+# Test CMake helpers
+#############################################################################
+class test_cmakeDefine(unittest.TestCase):
+  def test_cmakeDefineSimple(self):
+    result = cmakeDefine('ProjectName', 'SOME_FLAG:BOOL', 'ON')
+    self.assertEqual(result, '-DProjectName_SOME_FLAG:BOOL=ON')
 
 #############################################################################
 #
@@ -572,11 +604,17 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     # B) Create the command to run the checkin-test.py script
 
     
-    cmnd = scriptsDir + "/../checkin-test.py" \
-     +" --no-eg-git-version-check" \
-     +" --trilinos-src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos" \
-     +" --send-email-to=bogous@somwhere.com" \
-     + " " + optionsStr
+    cmndArgs = [
+      scriptsDir + "/../checkin-test.py",
+      "--project-name=Trilinos",
+      "--no-eg-git-version-check",
+      "--src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos",
+      "--send-email-to=bogous@somwhere.com",
+      "--project-configuration=%s" % os.path.join(scriptsDir,
+        'UnitTests', 'CheckinTest_UnitTests_Config.py'),
+      optionsStr,
+      ]
+    cmnd = ' '.join(cmndArgs)
     # NOTE: Above, we want to turn off the eg/git version tests since we want
     # these unit tests to run on machines that do not have the official
     # versions (e.g. the SCICO LAN) but where the versions might be okay.
@@ -612,7 +650,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     os.environ['GENERAL_SCRIPT_SUPPORT_CMND_INTERCEPTS_FILE'] = fullCmndInterceptsFileName
 
-    os.environ['CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE'] = trilinosDepsXmlFileDefaultOverride
+    os.environ['CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE'] = projectDepsXmlFileDefaultOverride
     
     # D) Run the checkin-test.py script with mock commands
 
@@ -674,7 +712,7 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     \
     testName,
     \
-    "--make-options=-j3 --ctest-options=-j5 --without-serial-release --do-all",
+    "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --do-all",
     \
     g_cmndinterceptsCurrentBranch \
     +g_cmndinterceptsPullPasses \
@@ -705,7 +743,7 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
 
 
 def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexStrList, \
-  fileFailRegexStrList=[], modifiedFilesStr="" \
+  fileFailRegexStrList=[], modifiedFilesStr="", extraPassRegexStr="" \
   ):
 
   if not modifiedFilesStr:
@@ -730,6 +768,7 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
     \
     "Configure passed!\n" \
     +"^NOT READY TO PUSH\n" \
+    +extraPassRegexStr \
     ,
     filePassRegexStrList
     ,
@@ -738,15 +777,16 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
 
 
 def checkin_test_configure_enables_test(testObject, testName, optionsStr, regexListStr, \
-  notRegexListStr="", modifiedFilesStr="" \
+  notRegexListStr="", modifiedFilesStr="", extraPassRegexStr="" \
   ):
   checkin_test_configure_test(
      testObject,
      testName,
-     "--without-serial-release "+optionsStr,
+     "--default-builds=MPI_DEBUG "+optionsStr,
      [("MPI_DEBUG/do-configure", regexListStr)],
      [("MPI_DEBUG/do-configure", notRegexListStr)],
      modifiedFilesStr,
+     extraPassRegexStr,
      )
   
 
@@ -850,8 +890,8 @@ class test_checkin_test(unittest.TestCase):
          +"Enabled all Forward Packages\n" \
          ),
       ("MPI_DEBUG/do-configure.base",
-       "\-DTPL_ENABLE_Pthread:BOOL=OFF\n" \
-       +"\-DTPL_ENABLE_BinUtils:BOOL=OFF\n" \
+       "\-DTPL_ENABLE_Pthread:BOOL=OFF\n"\
+       +"\-DTPL_ENABLE_BinUtils:BOOL=OFF\n"\
        +"\-DTPL_ENABLE_MPI:BOOL=ON\n" \
        +"\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
        +"\-DCMAKE_BUILD_TYPE:STRING=RELEASE\n" \
@@ -864,8 +904,8 @@ class test_checkin_test(unittest.TestCase):
        +"\-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON\n" \
        +"\-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON\n"),
       ("SERIAL_RELEASE/do-configure.base",
-       "\-DTPL_ENABLE_Pthread:BOOL=OFF\n" \
-       +"\-DTPL_ENABLE_BinUtils:BOOL=OFF\n" \
+       "\-DTPL_ENABLE_Pthread:BOOL=OFF\n"\
+       +"\-DTPL_ENABLE_BinUtils:BOOL=OFF\n"\
        +"\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
        +"\-DTPL_ENABLE_MPI:BOOL=OFF\n" \
        +"\-DCMAKE_BUILD_TYPE:STRING=RELEASE\n" \
@@ -895,7 +935,7 @@ class test_checkin_test(unittest.TestCase):
       "do_all_no_eg_installed",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --without-serial-release" \
+      +" --default-builds=MPI_DEBUG" \
       +" --do-all --push" \
       ,
       \
@@ -939,7 +979,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "local_do_all_without_serial_release_pass",
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG" \
       +" --extra-pull-from=machine:/path/to/repo:master --local-do-all" \
       +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
@@ -973,7 +1013,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_test_fail_force_push_pass",
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG" \
       " --do-all --force-push --push",
       \
       g_cmndinterceptsCurrentBranch \
@@ -1017,7 +1057,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG" \
       +" --wipe-clean --pull" \
       ,
       \
@@ -1174,7 +1214,7 @@ class test_checkin_test(unittest.TestCase):
 
   def test_extra_repo_1_explicit_enable_configure_pass(self):
 
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
 
     testName = "extra_repo_1_explicit_enable_configure_pass"
 
@@ -1207,25 +1247,25 @@ class test_checkin_test(unittest.TestCase):
       \
       "-extra-repos=.preCopyrightTrilinos.\n" \
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
-      +"trilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride+"\n" \
+      +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
       +"Enabling only the explicitly specified packages .Stalix. ...\n" \
       +"Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n" \
       +"Enabled Packages: Stalix\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_implicit_enable_configure_pass(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
       \
       "extra_repo_1_implicit_enable_configure_pass",
       \
-      "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-serial-release --configure", \
+      "--extra-repos=preCopyrightTrilinos --allow-no-pull --default-builds=MPI_DEBUG --configure", \
       \
       "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -1240,20 +1280,20 @@ class test_checkin_test(unittest.TestCase):
       \
       "-extra-repos=.preCopyrightTrilinos.\n" \
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
-      +"trilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride+"\n" \
-      +"Modified file: .packages/../preCopyrightTrilinos/teko/CMakeLists.txt.\n" \
+      +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
+      +"Modified file: .preCopyrightTrilinos/teko/CMakeLists.txt.\n" \
       +"  => Enabling .Teko.!\n" \
       +"Teko of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
       +"Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n" \
       +"Enabled Packages: Teuchos, Teko\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_push_pass(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1261,7 +1301,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesPasses \
@@ -1291,12 +1331,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: PASSED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_pull_extra_pull_pass(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1326,12 +1366,12 @@ class test_checkin_test(unittest.TestCase):
       "pullInitialExtra.preCopyrightTrilinos.out\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_trilinos_changes_do_all_push_pass(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1339,7 +1379,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_trilinos_changes_do_all_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesPasses \
@@ -1356,12 +1396,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: PASSED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_repo_changes_do_all_push_pass(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1369,7 +1409,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_extra_repo_changes_do_all_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesNoChanges \
@@ -1386,12 +1426,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: PASSED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_abort_gracefully_if_no_updates_no_updates_passes(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1420,12 +1460,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: PASSED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_no_updates_passes(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1458,12 +1498,12 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: PASSED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_main_repo_update(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1493,12 +1533,12 @@ class test_checkin_test(unittest.TestCase):
       +"NOT READY TO PUSH\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_extra_repo_update(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1528,12 +1568,12 @@ class test_checkin_test(unittest.TestCase):
       +"NOT READY TO PUSH\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_main_repo_extra_update(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1563,12 +1603,12 @@ class test_checkin_test(unittest.TestCase):
       +"NOT READY TO PUSH\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_extra_repo_extra_update(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -1598,7 +1638,7 @@ class test_checkin_test(unittest.TestCase):
       +"NOT READY TO PUSH\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
@@ -1662,7 +1702,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--without-serial-release",
+      "--default-builds=MPI_DEBUG",
       \
       [
       ("MPI_DEBUG/do-configure.base",
@@ -1780,9 +1820,10 @@ class test_checkin_test(unittest.TestCase):
       self,
       "enable_all_packages_auto",
       "--enable-all-packages=auto",
-      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n" \
-      +"\-DTrilinos_ENABLE_TrilinosFramework:BOOL=ON\n",
-      modifiedFilesStr="M\tcmake/utils/AppendSet.cmake",
+      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n",
+      modifiedFilesStr="M\tCMakeLists.txt", # Will not trigger TrilinosFramework!
+      extraPassRegexStr="Modifed file: .CMakeLists.txt.\n"\
+      +"Enabling all Trilinos packages!\n",
       )
 
 
@@ -1791,8 +1832,9 @@ class test_checkin_test(unittest.TestCase):
       self,
       "enable_all_packages_on",
       "--enable-all-packages=on",
-      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n" \
-      +"\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n",
+      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n",
+      modifiedFilesStr = "M\tdummy.txt", # Will not trigger any enables!
+      extraPassRegexStr="Enabling all packages on request\n",
       )
 
 
@@ -1816,7 +1858,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "without_serial_release_pull_only",
       \
-      "--without-serial-release --pull",
+      "--default-builds=MPI_DEBUG --pull",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -1839,7 +1881,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "without_serial_release_pull_skip_push_readiness_check",
       \
-      "--without-serial-release --pull --skip-push-readiness-check",
+      "--default-builds=MPI_DEBUG --pull --skip-push-readiness-check",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -1908,7 +1950,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "without_serial_release_configure_only",
       \
-      "--without-serial-release --pull --configure",
+      "--default-builds=MPI_DEBUG --pull --configure",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -1936,7 +1978,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "without_serial_release_build_only",
       \
-      "--make-options=-j3 --without-serial-release --pull --configure --build",
+      "--make-options=-j3 --default-builds=MPI_DEBUG --pull --configure --build",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -2045,7 +2087,7 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --without-serial-release --do-all --push " \
+      +" --default-builds=MPI_DEBUG --do-all --push " \
       +" --ss-extra-builds=MPI_DEBUG_SS" \
       ,
       \
@@ -2053,6 +2095,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
@@ -2061,25 +2104,22 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      +"Enable packages list is unchanged from default build, disabling all packages for this build/test case!\n"  \
-      +"passed: Trilinos/MPI_DEBUG_SS: skipped configure, build, test due to no enabled packages\n" \
+      +"passed: Trilinos/MPI_DEBUG_SS: passed=100,notpassed=0\n" \
       +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
-      +"2) MPI_DEBUG_SS => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
+      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
       +"^DID PUSH\n" \
       )
 
 
-  def test_ss_extra_builds_skip_case_no_email_ps_only_pass(self):
+  def test_ss_extra_builds_skip_case_no_email_ex_only_pass(self):
     
-    testName = "ss_extra_builds_skip_case_no_email_ps_only_pass"
+    testName = "ss_extra_builds_skip_case_no_email_ex_only_pass"
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
     writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
       )
-
-    modifiedFilesStr = "M\tpackages/teuchos/CMakeLists.txt"
 
     checkin_test_run_case(
       \
@@ -2088,13 +2128,15 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --without-serial-release" \
+      +" --default-builds=MPI_DEBUG" \
       +" --skip-case-no-email --do-all --push " \
-      +" --ss-extra-builds=MPI_DEBUG_SS" \
+      +" --extra-builds=MPI_DEBUG_SS" \
       ,
       \
       g_cmndinterceptsCurrentBranch \
-      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +"IT: eg diff --name-status origin/currentbranch; 0; 'M\tpackages/stokhos/CMakeLists.txt'\n" \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsFinalPushPasses \
@@ -2103,7 +2145,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "Skipping sending final status email for MPI_DEBUG_SS because it had no packages enabled and --skip-case-no-email was set!\n" \
+      "Skipping sending final status email for MPI_DEBUG because it had no packages enabled and --skip-case-no-email was set!\n" \
       +"^DID PUSH\n" \
       )
 
@@ -2135,7 +2177,7 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --without-serial-release --do-all --push " \
+      +" --default-builds=MPI_DEBUG --do-all --push " \
       +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Phalanx" \
       ,
       \
@@ -2186,7 +2228,7 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --without-serial-release --do-all --push " \
+      +" --default-builds=MPI_DEBUG --do-all --push " \
       +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Teuchos,Phalanx" \
       ,
       \
@@ -2237,7 +2279,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      " --without-serial-release --send-email-to=" \
+      " --default-builds=MPI_DEBUG --send-email-to=" \
       +" --make-options=-j3 --ctest-options=-j5" \
       +" --do-all --push" \
       +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=ThyraCrazyStuff" \
@@ -2291,7 +2333,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      " --without-serial-release" \
+      " --default-builds=MPI_DEBUG" \
       +" --make-options=-j3 --ctest-options=-j5" \
       +" --do-all --push" \
       +" --ss-extra-builds=MPI_DEBUG_SS" \
@@ -2345,7 +2387,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --push",
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --push",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
@@ -2377,7 +2419,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --push" \
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --push" \
       +" --extra-pull-from=dummy:master" \
       ,
       \
@@ -2412,7 +2454,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release",
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG",
       \
       g_cmndinterceptsCurrentBranch \
       +"IT: eg diff --name-status origin/currentbranch; 0; 'eg diff passed'\n" 
@@ -2682,7 +2724,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      "--without-serial-release --configure --allow-no-pull",
+      "--default-builds=MPI_DEBUG --configure --allow-no-pull",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
@@ -2719,7 +2761,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_configure_fail",
       \
-      "--do-all --without-serial-release",
+      "--do-all --default-builds=MPI_DEBUG",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -2747,7 +2789,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_build_fail",
       \
-      "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
+      "--do-all --default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -2778,7 +2820,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_test_fail",
       \
-      "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
+      "--do-all --default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -2811,7 +2853,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_push_without_serial_release_final_pull_fail",
       \
-      "--without-serial-release --make-options=-j3 --ctest-options=-j5" \
+      "--default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5" \
       " --do-all --push" \
       ,
       \
@@ -2845,7 +2887,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_push_without_serial_release_final_commit_fail",
       \
-      "--without-serial-release --make-options=-j3 --ctest-options=-j5" \
+      "--default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5" \
       " --do-all --push" \
       ,
       \
@@ -2883,7 +2925,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_push_without_serial_release_push_fail",
       \
-      "--without-serial-release --make-options=-j3 --ctest-options=-j5" \
+      "--default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5" \
       " --do-all --push" \
       ,
       \
@@ -2964,7 +3006,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_push_no_tests_fail",
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --do-all --push",
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --do-all --push",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
@@ -2995,7 +3037,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "local_do_all_without_serial_release_push_fail",
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --local-do-all --push",
+      "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --local-do-all --push",
       \
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
@@ -3018,7 +3060,7 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_no_changes_do_all_push_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3026,7 +3068,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_no_changes_do_all_push_fail",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesNoChanges \
@@ -3043,7 +3085,7 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
@@ -3086,7 +3128,7 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_mispell_repo_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3103,19 +3145,19 @@ class test_checkin_test(unittest.TestCase):
       "Error, the specified git repo .preCopyrightTrilinosMispell. directory .*preCopyrightTrilinosMispell. does not exist!\n"
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_initial_trilinos_pull_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
       \
       "extra_repo_1_initial_trilinos_pull_fail",
       \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull", \
       \
       "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -3134,19 +3176,19 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_initial_extra_repo_pull_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
       \
       "extra_repo_1_initial_extra_repo_pull_fail",
       \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull", \
       \
       "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -3167,19 +3209,19 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_trilinos_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
       \
       "extra_repo_1_extra_pull_trilinos_fail",
       \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull --extra-pull-from=ssg:master", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull --extra-pull-from=ssg:master", \
       \
       "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -3202,19 +3244,19 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_extra_pull_extra_repo_fail(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
       \
       "extra_repo_1_extra_pull_extra_repo_fail",
       \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --pull --extra-pull-from=ssg:master", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull --extra-pull-from=ssg:master", \
       \
       "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
@@ -3239,12 +3281,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_pull_trilinos_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3252,7 +3294,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_pull_trilinos_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllThroughTest \
       +g_cmndinterceptsFinalPullRebaseFails \
@@ -3268,12 +3310,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_pull_extra_repo_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3281,7 +3323,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_pull_extra_repo_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllThroughTest \
       +g_cmndinterceptsFinalPullRebasePasses \
@@ -3300,12 +3342,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_amend_trilinos_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3313,7 +3355,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_amend_trilinos_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllThroughTest \
       +g_cmndinterceptsFinalPullRebasePasses \
@@ -3333,12 +3375,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_amend_extra_repo_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3346,7 +3388,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_amend_extra_repo_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllThroughTest \
       +g_cmndinterceptsFinalPullRebasePasses \
@@ -3369,12 +3411,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_push_trilinos_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3382,7 +3424,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_push_trilinos_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesPasses \
@@ -3397,12 +3439,12 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 
   def test_extra_repo_1_do_all_final_push_extra_repo_fails(self):
-    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
       self,
@@ -3410,7 +3452,7 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_do_all_final_push_trilinos_fails",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --extra-repos=preCopyrightTrilinos --without-serial-release --do-all --push", \
+      " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
       +g_cmndinterceptsCatModifiedFilesPasses \
@@ -3427,7 +3469,7 @@ class test_checkin_test(unittest.TestCase):
       "REQUESTED ACTIONS: FAILED\n" \
       ,
       \
-      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
 
 

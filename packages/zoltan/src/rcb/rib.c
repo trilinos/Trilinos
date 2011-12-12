@@ -27,6 +27,7 @@ extern "C" {
 #include "params_const.h"
 #include "ha_const.h"
 #include "par_median_const.h"
+#include "rib_params.h"
 
 /* Inertial recursive bisection (RIB) load balancing routine operates on
    "dots" as defined in shared_const.h */
@@ -57,21 +58,6 @@ static int compute_rib_direction(ZZ *, int, int, double *, double *,
 static int serial_rib(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   int, double, int, int, int *, int *, int, int, int, int, int, int, int,
   struct rib_tree *, double *, double *, float *);
-
-/*---------------------------------------------------------------------------*/
-/*  Parameters structure for RIB method.  Used in  */
-/*  Zoltan_RIB_Set_Param and Zoltan_RIB.                      */
-static PARAM_VARS RIB_params[] = {
-               { "RIB_OVERALLOC", NULL, "DOUBLE", 0 },
-               { "CHECK_GEOM", NULL, "INT", 0 },
-               { "RIB_OUTPUT_LEVEL", NULL, "INT", 0 },
-               { "AVERAGE_CUTS", NULL, "INT", 0 },
-               { "KEEP_CUTS", NULL, "INT", 0 },
-               { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
-               { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
-               {"FINAL_OUTPUT", NULL,  "INT",    0},
-
-               { NULL, NULL, NULL, 0 } };
 
 /*---------------------------------------------------------------------------*/
 

@@ -36,8 +36,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCrsMatrixCopyFiles
   EXEDEPS CrsMatrix_UnitTests
   )
 
+ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CRSTests_CopyFiles1
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
+  SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk14.hb bcsstk15.hb
   )
 

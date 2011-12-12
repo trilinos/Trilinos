@@ -85,7 +85,7 @@ FUNCTION(FORTRAN_MANGLING)
 
   IF(NOT DEFINED FC_FN_CASE)
 
-    IF (Trilinos_VERBOSE_CONFIGURE)
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       MESSAGE("FORTRAN_MANGLING: Testing name Mangling Schemes!\n")
     ENDIF()
 
@@ -102,7 +102,7 @@ FUNCTION(FORTRAN_MANGLING)
 
       FOREACH(udef UNDER NO_UNDER SECOND_UNDER)
 
-        IF (Trilinos_VERBOSE_CONFIGURE)
+        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE("FORTRAN_MANGLING: Testing ${cdef} ${udef}\n\n")
         ENDIF()
 
@@ -111,20 +111,20 @@ FUNCTION(FORTRAN_MANGLING)
         FILE(MAKE_DIRECTORY ${_fcmangledir_case})
 
         SET(COMMON_DEFS -DFC_FN_${cdef} -DFC_FN_${udef})
-        SET(C_FLAGS "${CMAKE_C_FLAGS} ${Trilinos_EXTRA_LINK_FLAGS}")
-        SET(F_FLAGS "${CMAKE_Fortran_FLAGS} ${Trilinos_EXTRA_LINK_FLAGS}")
+        SET(C_FLAGS "${CMAKE_C_FLAGS} ${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
+        SET(F_FLAGS "${CMAKE_Fortran_FLAGS} ${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
         TRY_COMPILE(_fcmngl ${_fcmangledir_case} ${_fcmakelists} fmangle
           CMAKE_FLAGS "-DCMAKE_C_FLAGS:STRING=${C_FLAGS}"
           "-DCMAKE_Fortran_FLAGS:STRING=${F_FLAGS}"
           "-DCOMMON_DEFS=${COMMON_DEFS}"
           OUTPUT_VARIABLE _fcmngl_output
           )
-        IF (Trilinos_VERBOSE_CONFIGURE)
+        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE("${_fcmngl_output}\n\n")
         ENDIF()
 
         IF(_fcmngl)
-          IF (Trilinos_VERBOSE_CONFIGURE)
+          IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
             MESSAGE("FORTRAN_MANGLING: Bingo!  ${cdef} ${udef} is the correct fortran name mangling!\n")
           ENDIF()
           GLOBAL_SET(FC_FN_CASE ${cdef})

@@ -26,7 +26,7 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
     Superlu_UnitTests
     SOURCES
       Superlu_UnitTests
-      ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT

@@ -48,7 +48,7 @@ C     --Expects the input text file on unit 20, the output database on unit 11.
 
       CHARACTER*80 TITLE
 
-      CHARACTER*256 FILNAM, SCRATCH
+      CHARACTER*2048 FILNAM, SCRATCH
 
       LOGICAL EXODUS
 

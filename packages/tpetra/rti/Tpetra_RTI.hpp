@@ -44,21 +44,56 @@ namespace Tpetra {
 
   namespace RTI {
     
-    //! A static identity functor, providing a static method identity() that returns zero.
+    /// \class ZeroOp
+    /// \brief A static identity functor, providing a static method identity() that returns zero.
+    ///
+    /// This class is useful for providing zero as the initial value
+    /// of a reduction.  It may be used as the IOP template parameter
+    /// of a ReductionGlob.
     template <class T>
     class ZeroOp {
       public:
       static inline T identity() {return Teuchos::ScalarTraits<T>::zero();}
     };
 
-    //! A static identity functor, providing a static method identity() that returns one.
+    /// \class OneOp
+    /// \brief A static identity functor, providing a static method identity() that returns one.
+    /// 
+    /// This class is useful for providing one as the initial value of
+    /// a reduction.  It may be used as the IOP template parameter of
+    /// a ReductionGlob.
     template <class T>
     class OneOp {
       public:
       static inline T identity() {return Teuchos::ScalarTraits<T>::one();}
     };
 
-    //! A type glob containing the types needed for calling Tpetra::RTI::reduce() with individual functors.
+    /// \class ReductionGlob
+    /// \brief A type glob containing the types needed for calling Tpetra::RTI::reduce() with individual functors.
+    ///
+    /// \tparam GOP Type of the operator genop, that generates
+    ///   successive new inputs of the reduction.
+    /// 
+    /// \tparam ROP Type of the operator that performs the pairwise
+    ///   reduction operations.
+    ///
+    /// \tparam IOP Type of the operator that provides (via a
+    ///   zero-argument static function) the initial value of the
+    ///   reduction.
+    ///
+    /// For reducing a pair of vectors v1, v2, successive reduction
+    /// elements are generated in a way equivalent to <tt>genop(v1[i],
+    /// v2[i])</tt> for all indices i of the vector.
+    ///
+    /// For reducing a triple of vectors v1, v2, v3, successive
+    /// reduction elements are generated in a way equivalent to
+    /// <tt>genop(v1[i], v2[i], v3[i])</tt> for all indices i of the
+    /// vector.
+    ///
+    /// Regardless, each genop invocation generates a single value,
+    /// and the sequence of these values is reduced using the binary
+    /// operator redop.  The initial value of this sequence comes from
+    /// the static <tt>identity()</tt> method of IOP.
     template <class GOP, class ROP, class IOP> 
     class ReductionGlob {
       public:

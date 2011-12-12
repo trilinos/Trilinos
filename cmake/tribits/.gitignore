@@ -1,0 +1,6 @@
+# Standard ignores
+*~
+*.pyc
+\#*#
+.#*
+.*.swp

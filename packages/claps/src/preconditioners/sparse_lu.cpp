@@ -29,6 +29,8 @@
 
 #include "sparse_lu.hpp"
 #include "my_feti_sparse_solver.hpp"
+#include <metis.h>
+#include <vector>
 
 CLAPS_sparse_lu::CLAPS_sparse_lu()
 {
@@ -184,7 +186,12 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   //
   if (order_opt == 2) {
     int numflag=1;
-    metis_nodend(&N,XLINDX,LINDX,&numflag,OPTIONS,PERM,INVP);
+    std::vector<idx_t> options(METIS_NOPTIONS,0);
+    METIS_SetDefaultOptions(&options[0]);
+
+    options[METIS_OPTION_NUMBERING] = numflag;
+
+    METIS_NodeND(&N,XLINDX,LINDX,0,&options[0],PERM,INVP);
   }
   //
   // symbolic factorization initialization

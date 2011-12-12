@@ -29,6 +29,7 @@ extern "C" {
 
 
 #include "hsfc.h"
+#include "hsfc_params.h"
 #include "zz_const.h"
 #include <float.h>
 
@@ -37,15 +38,6 @@ extern "C" {
 static int partition_stats(ZZ *zz, int ndots, 
                    Dots *dots, int *obj_sizes,
                    float *work_fraction, int *parts, int *new_parts);
-
-/* This structure is the Zoltan convention for user settable parameters */
-static PARAM_VARS HSFC_params[] =
-   {{"KEEP_CUTS", NULL, "INT", 0},
-    { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
-    { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
-    {"FINAL_OUTPUT",  NULL,  "INT",    0},
-    {NULL,        NULL,  NULL, 0}};
-
 
 /****************************************************************************/
 

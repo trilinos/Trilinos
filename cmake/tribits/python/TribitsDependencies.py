@@ -66,11 +66,27 @@ from GeneralScriptSupport import *
 # Default file locations
 #
 
-defaultTrilinosDepsXmlInFile = getScriptBaseDir()+"/data/TrilinosPackageDependencies.xml"
 
-defaultTrilinosDepsHtmlOutFile = getScriptBaseDir()+"/data/TrilinosPackageDependenciesTable.html"
+def getDefaultDepsXmlDirectory(rootDir):
+  return os.path.join(rootDir, 'cmake', 'dependencies')
 
-defaultCDashDepsXmlFile = getScriptBaseDir()+"/data/CDashSubprojectDependencies.xml"
+
+def getDefaultDepsXmlInFile(rootDir, projectName):
+  return os.path.join(
+    getDefaultDepsXmlDirectory(rootDir),
+    '%sPackageDependencies.xml' % projectName)
+
+
+def getDefaultDepsHtmlOutFile(rootDir, projectName):
+  return os.path.join(
+    getDefaultDepsXmlDirectory(rootDir),
+    '%sPackageDependenciesTable.html' % projectName)
+
+
+def getDefaultCDashDepsXmlFile(rootDir):
+  return os.path.join(
+    getDefaultDepsXmlDirectory(rootDir),
+    'CDashSubprojectDependencies.xml')
 
 
 #
@@ -205,9 +221,18 @@ class TribitsDependencies:
 
 
   def __init__(self):
+    self.__projectName = None
     self.__packagesList = []
     self.__packagesNameToID = {}
     self.__packagesDirToID = {}
+
+
+  def setProjectName(self, projectName):
+    self.__projectName = projectName
+
+
+  def getProjectName(self):
+    return self.__projectName
 
 
   def addPackageDependencies(self, packageDeps):
@@ -243,23 +268,12 @@ class TribitsDependencies:
     return None
 
 
-  def getPackageNameFromPath(self, fullPath, prefixPath):
-    #print "\nfullPath="+fullPath
-    fullPathArray = getFilePathArray(fullPath)
-    if fullPathArray[0] == "packages":
-      regexPathPrefix = "packages/"
-      pathPrefix = ""
-    else:
-      regexPathPrefix = ""
-      pathPrefix = "../"
-    #print "regexPathPrefix = '"+regexPathPrefix+"'"
-    #print "pathPrefix = '"+pathPrefix+"'"
+  def getPackageNameFromPath(self, fullPath):
     for packageDep in self.__packagesList:
-      regexFilePath = regexPathPrefix+packageDep.packageDir+"/"
-      ammendedFullPath = pathPrefix+fullPath 
+      regexFilePath = packageDep.packageDir+"/"
       #print "\nregexFilePath="+regexFilePath
-      #print "ammendedFullPath="+ammendedFullPath
-      if re.match(regexFilePath, ammendedFullPath):
+      #print "fullPath="+fullPath
+      if re.match(regexFilePath, fullPath):
         #print "MATCH!"
         return packageDep.packageName
     return u""
@@ -317,10 +331,10 @@ class TribitsDependencies:
 
 
   def updatePackageDepsCategory(self, libsOnly, packageRowID, packageID, depCategory,
-    depCategoryName, depStats, trilinosDepsTable
+    depCategoryName, depStats, projectDepsTable
     ):
 
-    packageRow = trilinosDepsTable[packageRowID+1]
+    packageRow = projectDepsTable[packageRowID+1]
     #print "\npackageRow =", packageRow
 
     depList = getattr(self.__packagesList[packageID], depCategory)
@@ -345,17 +359,17 @@ class TribitsDependencies:
       childDepStats = DepStats(False, isRequiredDep, depStats.isTestDepChain)
 
       self.updatePackageDeps(libsOnly, packageRowID, dep_i, childDepStats,
-         trilinosDepsTable)
+         projectDepsTable)
 
 
   def updatePackageDeps(self, libsOnly, packageRowID, packageID, depStats,
-    trilinosDepsTable
+    projectDepsTable
     ):
 
     self.updatePackageDepsCategory(libsOnly, packageRowID, packageID,
-      "libRequiredDepPackages", "LR", depStats, trilinosDepsTable)
+      "libRequiredDepPackages", "LR", depStats, projectDepsTable)
     self.updatePackageDepsCategory(libsOnly, packageRowID, packageID,
-      "libOptionalDepPackages", "LO", depStats, trilinosDepsTable)
+      "libOptionalDepPackages", "LO", depStats, projectDepsTable)
 
     # Only process the test dependencies if we are asked to do so
     # (i.e. libsOnly=True) or if this is the top-level package.  The tests for
@@ -366,9 +380,9 @@ class TribitsDependencies:
     if not libsOnly and depStats.isDirect:
       libDepStats = DepStats(True, depStats.isRequired, True)
       self.updatePackageDepsCategory(False, packageRowID, packageID,
-        "testRequiredDepPackages", "TR", libDepStats, trilinosDepsTable)
+        "testRequiredDepPackages", "TR", libDepStats, projectDepsTable)
       self.updatePackageDepsCategory(False, packageRowID, packageID,
-        "testOptionalDepPackages", "TO", libDepStats, trilinosDepsTable)
+        "testOptionalDepPackages", "TO", libDepStats, projectDepsTable)
 
   
   def createRawTable(self, libsOnly):
@@ -376,27 +390,27 @@ class TribitsDependencies:
     numPackages = self.numPackages()
     #print "\nnumPackages =", numPackages
 
-    trilinosDepsTable = []
+    projectDepsTable = []
 
     topRow = [ "Packages" ]
     topRow.extend(["P%02d"%(i+1) for i in range(numPackages)] )
-    trilinosDepsTable.append(topRow)
+    projectDepsTable.append(topRow)
 
     for packageDeps in self.__packagesList:
       i = packageDeps.packageID
       row = ["P%02d"%(i+1)+") "+packageDeps.packageName]
       row.extend(["" for i in range(numPackages)])
-      trilinosDepsTable.append(row)
+      projectDepsTable.append(row)
 
     for packageDeps in self.__packagesList:
       #print "\npackageName =", packageDeps.packageName
       i = packageDeps.packageID
-      trilinosDepsTable[i+1][i+1] = "X"
-      self.updatePackageDeps(libsOnly, i, i, DepStats(True, True, False), trilinosDepsTable)
+      projectDepsTable[i+1][i+1] = "X"
+      self.updatePackageDeps(libsOnly, i, i, DepStats(True, True, False), projectDepsTable)
 
-    return trilinosDepsTable
+    return projectDepsTable
 
-  def createTrilinosPackagesNumberedList(self):
+  def createProjectPackagesNumberedList(self):
     numPackages = self.numPackages()
     htmlText = "<p><b>Packages:</b> " + \
       ", ".join( \
@@ -481,10 +495,10 @@ class TribitsDependencies:
 
   def createFullHtmlForTables(self):
 
-    packagesListHtml = self.createTrilinosPackagesNumberedList()
+    packagesListHtml = self.createProjectPackagesNumberedList()
 
     htmlText = \
-      "<p><huge><b>Trilinos Test/Example and Library Package Dependencies</b></huge></p>\n"+\
+      "<p><huge><b>"+self.getProjectName()+" Test/Example and Library Package Dependencies</b></huge></p>\n"+\
       "\n"+\
       self.createHtmlFromTable(self.createRawTable(False))+\
       "\n"+\
@@ -494,7 +508,7 @@ class TribitsDependencies:
       "\n"+\
       self.createHtmlTableLegend(False)+\
       "\n"+\
-      "<p><b><huge>Trilinos Libary-Only Package Dependencies</huge></b></p>\n"+\
+      "<p><b><huge>"+self.getProjectName()+" Libary-Only Package Dependencies</huge></b></p>\n"+\
       "\n"+\
       self.createHtmlFromTable(self.createRawTable(True))+\
       "\n"+\
@@ -511,7 +525,7 @@ class TribitsDependencies:
     htmlText = \
       "<html>\n"+\
       "<head>\n"+\
-      "<title>Trilinos Package Dependencies</title>\n"+\
+      "<title>"+self.getProjectName()+" Package Dependencies</title>\n"+\
       "</head>\n"+\
       "\n"+\
       "<body>\n"+\
@@ -525,7 +539,7 @@ class TribitsDependencies:
     return htmlText
 
 
-  def writeFullHtmlPage(self, htmlFileName=defaultTrilinosDepsHtmlOutFile):
+  def writeFullHtmlPage(self, htmlFileName):
     htmlString = self.createFullHtmlPage()
     htmlFile = open(htmlFileName, 'w')
     htmlFile.write(htmlString)
@@ -541,7 +555,7 @@ class TribitsDependencies:
     
     xmlText = ""
 
-    xmlText += "<Project name=\"Trilinos\">\n"
+    xmlText += "<Project name=\""+self.getProjectName()+"\">\n"
 
     numPackages = self.numPackages()
 
@@ -592,8 +606,8 @@ class TribitsDependencies:
 
     xmlText += "</Project>\n"
 
-    # rabartl: 2011/07/06: ToDo: Change tha above logic to only
-    # write'Dependency' elements for actual Trilinos packages in the place of
+    # rabartl: 2011/07/06: ToDo: Change tha above logic to only write
+    # 'Dependency' elements for actual Project packages in the place of
     # subpackages.  This will be a little hard to implement and test but we
     # need to do so at some point if we want CDash to know the correct
     # dependencies (but I don't really care).
@@ -605,7 +619,7 @@ class TribitsDependencies:
     return self.createCDashDepsXMLFromRawDepsTable(self.createRawTable(False))
 
 
-  def writeCDashXmlDepsFile(self, xmlDepsFile=defaultCDashDepsXmlFile):
+  def writeCDashXmlDepsFile(self, xmlDepsFile):
     xmlString = self.createCDashDepsXML()
     xmlFile = open(xmlDepsFile, 'w')
     xmlFile.write(xmlString)
@@ -643,10 +657,12 @@ def getParentPackage(packageEle):
   return parentPackage
 
 
-def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
-  #print "xmlFile =", xmlFile
+def getProjectDependenciesFromXmlFile(xmlFile):
   packageDepXmlDom = xml.dom.minidom.parse(xmlFile)
-  trilinosDependencies = TribitsDependencies()
+  #print "\npackageDepXmlDom =", dir(packageDepXmlDom)
+  #print "\npackageDepXmlDom.documentElement =", dir(packageDepXmlDom.documentElement)
+  projectDependencies = TribitsDependencies()
+  projectDependencies.setProjectName(packageDepXmlDom.documentElement.getAttribute('project'))
   for ele in packageDepXmlDom.childNodes[0].childNodes:
     if ele.nodeType == ele.ELEMENT_NODE:
       packageName = ele.getAttribute('name')
@@ -662,5 +678,5 @@ def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
         getParentPackage(ele)
         )
       #print "\npackageDeps =", str(packageDeps)
-      trilinosDependencies.addPackageDependencies(packageDeps)
-  return trilinosDependencies
+      projectDependencies.addPackageDependencies(packageDeps)
+  return projectDependencies

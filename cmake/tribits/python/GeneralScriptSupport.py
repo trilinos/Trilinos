@@ -105,6 +105,8 @@ def getScriptBaseDir():
 def getScriptName():
   return os.path.basename(os.path.dirname(sys.argv[0]))
 
+def getCompleteFileDirname(filename):
+  return os.path.dirname(os.path.realpath(os.path.abspath(filename)))
 
 ######################################
 # List helper functions
@@ -227,6 +229,7 @@ class SysCmndInterceptor:
     return self.__interceptedCmndStructList[:]
 
   def doProcessInterceptedCmnd(self, cmnd):
+    #print "doProcessInterceptedCmnd(): cmnd='"+cmnd+"'"
     if self.isFallThroughCmnd(cmnd):
       return False
     if len(self.__interceptedCmndStructList) > 0:
@@ -263,6 +266,7 @@ class SysCmndInterceptor:
   def readCommandsFromStr(self, cmndsStr):
     lines = cmndsStr.split('\n')
     for line in lines:
+      #print "line: '"+line+"'"
       if line == "":
         continue
       splitArray = line.split(':')
@@ -273,6 +277,7 @@ class SysCmndInterceptor:
         self.__fallThroughCmndRegexList.append(entry.strip())
       elif tag == "IT":
         (cmndRegex, cmndReturn, cmndOutput) = entry.split(';')
+        #print "(cmndRegex, cmndReturn, cmndOutput) =", (cmndRegex, cmndReturn, cmndOutput)
         self.__interceptedCmndStructList.append(
           InterceptedCmndStruct(cmndRegex.strip(), int(cmndReturn),
             cmndOutput.strip()[1:-1] )
@@ -306,7 +311,9 @@ if cmndInterceptsFile:
 g_dumpAllSysCmnds = os.environ.has_key("GENERAL_SCRIPT_SUPPORT_DUMD_COMMANDS")
 
 
-def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None):
+def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None, \
+  workingDir="" \
+  ):
   if g_dumpAllSysCmnds:
     print "\nDUMP SYS CMND: " + cmnd + "\n"
   if outFile!=None and rtnOutput==True:
@@ -322,19 +329,28 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None):
       writeStrToFile(outFile, cmndOutput)  
     return cmndReturn
   # Else, fall through
-  if rtnOutput:
-    child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
-      env=environment).stdout
-    data = child.read()
-    rtnCode = child.close()
-    return (data, rtnCode)
-  else:
-    outFileHandle = None
-    if outFile:
-      outFileHandle = open(outFile, 'w')
-    rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT,
-      stdout=outFileHandle, env=environment)
-    return rtnCode
+  pwd = None
+  if workingDir:
+    pwd = os.getcwd()
+    os.chdir(workingDir)
+  rtnObject = None
+  try:
+    if rtnOutput:
+      child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
+        env=environment).stdout
+      data = child.read()
+      rtnCode = child.close()
+      rtnObject = (data, rtnCode)
+    else:
+      outFileHandle = None
+      if outFile:
+        outFileHandle = open(outFile, 'w')
+      rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT,
+        stdout=outFileHandle, env=environment)
+      rtnObject = rtnCode
+  finally:
+    if pwd: os.chdir(pwd)
+  return rtnObject
 
 
 ######################################
@@ -348,22 +364,14 @@ def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir="",
   sys.stdout.flush()
   sys.stderr.flush()
   try:
-    if workingDir:
-      pwd = os.getcwd()
-      os.chdir(workingDir)
-    #rtnCode = subprocess.call(cmnd, shell=True)
     outFileHandle = None
-    rtnCode = runSysCmndInterface(cmnd, outFile=outFile, environment=environment)
-#    if outFile:
-#       outFileHandle = open(outFile, 'w')
-#    rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT, stdout=outFileHandle)
+    rtnCode = runSysCmndInterface(cmnd, outFile=outFile, environment=environment,
+      workingDir=workingDir)
   except OSError, e:
     rtnCode = 1 # Just some error code != 0 please!
-  if workingDir:
-    os.chdir(pwd)
   if rtnCode != 0 and throwExcept:
     raise RuntimeError('Error, the command \'%s\' failed with error code %d' \
-                       % (cmnd,rtnCode) )
+      % (cmnd,rtnCode) )
   return rtnCode
 
 
@@ -397,20 +405,13 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
 
 def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir=""):
   """Run a shell command and return its output"""
-  pwd = None
-  if workingDir:
-    pwd = os.getcwd()
-    os.chdir(workingDir)
-  try:
-    (data, err) = runSysCmndInterface(cmnd, rtnOutput=True)
-    if err:
-      if throwOnError:
-        raise RuntimeError, '%s failed w/ exit code %d' % (cmnd, err)
-    if stripTrailingSpaces:
-      return data.rstrip()
-    return data
-  finally:
-    if pwd: os.chdir(pwd)
+  (data, err) = runSysCmndInterface(cmnd, rtnOutput=True, workingDir=workingDir)
+  if err:
+    if throwOnError:
+      raise RuntimeError, '%s failed w/ exit code %d' % (cmnd, err)
+  if stripTrailingSpaces:
+    return data.rstrip()
+  return data
 
 
 def pidStillRunning(pid):
@@ -638,6 +639,43 @@ def copyFileAndReplaceTokens( scriptsDir, inputFile, tokenReplacementList,
     # ToDo: Replace above with native re commands
 
 
+class TeeOutput(object):
+  """
+  Object that directs all calls to its write method to stdout as well
+  as a file. This is to be used as a simple replacement for the Unix
+  tee command.
+  """
+  def __init__(self, outputfile):
+    """ Constructor takes a file-like object to write output to."""
+    self._realstdout = sys.stdout
+    self._outputfile = outputfile
+
+  def _safe_outputfile_method(self, methodname, *args):
+    """
+    Calls the method specified by methodname with the given args on
+    the internal file object if it is non-null.
+    """
+    if self._outputfile is not None:
+      if hasattr(self._outputfile, methodname):
+        method = getattr(self._outputfile, methodname)
+        if method and callable(method):
+          method(*args)
+
+  def write(self, data):
+    """
+    Write the given data to stdout and to the log file.
+    """
+    self._realstdout.write(data)
+    self._safe_outputfile_method('write', data)
+
+  def flush(self):
+    """
+    Flush the internal file buffers.
+    """
+    self._realstdout.flush()
+    self._safe_outputfile_method('flush')
+
+
 ######################################
 # Shell argument helpers
 ######################################
@@ -679,6 +717,38 @@ def requoteCmndLineArgs(inArgs):
     #print "\nnewArg =", newArg
     argsStr = argsStr+" "+newArg
   return argsStr
+
+def commandLineOptionsToList(stringOptions):
+  """
+  Convert a string of space separated command line options to a python
+  list of the individual optionstrings.
+  TODO: Handle shell quoting.
+  """
+  return stringOptions.split()
+
+class ConfigurableOptionParser(optparse.OptionParser):
+  """
+  OptionParser that accepts a python dictionary as a configuration
+  file to provide default value overrides for the options.
+  """
+  def __init__(self, configuration, **kwargs):
+    """
+    Constructor accepts a configuration dictionary with default values
+    for arguments and all of the OptionParser arguments as well.
+    """
+    optparse.OptionParser.__init__(self, **kwargs)
+    self._configuration = configuration
+
+  def add_option(self, *args, **kwargs):
+    """
+    Checks for a default override in the configuration dictionary and
+    modifies the default and help arguments before dispatching them to
+    the base class implementation.
+    """
+    if kwargs.has_key('default'):
+      for arg in args:
+        kwargs['default'] = self._configuration.get(arg, kwargs['default'])
+    optparse.OptionParser.add_option(self, *args, **kwargs)
 
 
 ######################################

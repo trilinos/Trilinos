@@ -7,7 +7,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Thyra_Belos_StatusTest_UnitTests
   SOURCES
     Thyra_Belos_StatusTest_UnitTests.cpp
-    ${${PROJECT_NAME}_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -21,6 +21,12 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+# FIXME (mfh 12 Dec 2011) The tests that use preconditioners will fail
+# if Trilinos was built without IFPACK support.  See e.g., line 101 of
+# test_single_belos_thyra_solver.cpp.  Fix this by making execution of
+# the test conditional on whether IFPACK was enabled.  I would do that
+# myself, but I'm not sure how to split up this combined test into a
+# list of conditionally enabled tests.
 TRIBITS_ADD_TEST(
   test_single_belos_thyra_solver_driver
   POSTFIX_AND_ARGS_0 FourByFour

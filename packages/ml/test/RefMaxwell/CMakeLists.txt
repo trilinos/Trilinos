@@ -1,8 +1,8 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
-IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
-   Trilinos_ENABLE_Ifpack AND Trilinos_ENABLE_AztecOO)
+IF(${PROJECT_NAME}_ENABLE_Epetra AND ${PROJECT_NAME}_ENABLE_EpetraExt AND
+   ${PROJECT_NAME}_ENABLE_Ifpack AND ${PROJECT_NAME}_ENABLE_AztecOO)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RefMaxwell
     SOURCES cxx_main.cpp

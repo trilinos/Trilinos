@@ -89,7 +89,7 @@ namespace {
 
 void match_node_xyz(RegionVector &part_mesh,
 		    double tolerance,
-		    Map &global_node_map, Map &local_node_map)
+		    IdMap &global_node_map, IdMap &local_node_map)
 {
   // See if any omitted element blocks...
   bool has_omissions = false;
@@ -105,7 +105,7 @@ void match_node_xyz(RegionVector &part_mesh,
       local_node_map[i] = i;
     }
   } else {
-    Map dummy;
+    IdMap dummy;
     eliminate_omitted_nodes(part_mesh, dummy, local_node_map);
 
     // The local_node_map is not quite in the correct format after the

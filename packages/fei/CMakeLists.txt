@@ -12,39 +12,39 @@ TRIBITS_PACKAGE(FEI)
 # B) Set up package-specific options
 #
 
-IF (Trilinos_ENABLE_Epetra)
+IF (${PROJECT_NAME}_ENABLE_Epetra)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   FEI_EPETRA
   HAVE_FEI_EPETRA
   "FEI support for Epetra"
-  ${Trilinos_ENABLE_Epetra}
+  ${${PROJECT_NAME}_ENABLE_Epetra}
 )
 ENDIF()
 
-IF (Trilinos_ENABLE_AztecOO)
+IF (${PROJECT_NAME}_ENABLE_AztecOO)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   FEI_AZTECOO
   HAVE_FEI_AZTECOO
   "FEI support for AztecOO"
-  ${Trilinos_ENABLE_AztecOO}
+  ${${PROJECT_NAME}_ENABLE_AztecOO}
 )
 ENDIF()
 
-IF (Trilinos_ENABLE_Amesos)
+IF (${PROJECT_NAME}_ENABLE_Amesos)
   TRIBITS_ADD_OPTION_AND_DEFINE(
     FEI_AMESOS
     HAVE_FEI_AMESOS
     "FEI support for Amesos"
-    ${Trilinos_ENABLE_Amesos}
+    ${${PROJECT_NAME}_ENABLE_Amesos}
   )
 ENDIF()
 
-IF (Trilinos_ENABLE_Tpetra)
+IF (${PROJECT_NAME}_ENABLE_Tpetra)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   FEI_TPETRA
   HAVE_FEI_TPETRA
   "FEI support for Tpetra"
-  ${Trilinos_ENABLE_Tpetra}
+  ${${PROJECT_NAME}_ENABLE_Tpetra}
 )
 ENDIF()
 

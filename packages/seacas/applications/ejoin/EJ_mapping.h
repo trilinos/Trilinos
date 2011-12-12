@@ -35,18 +35,18 @@
 #include "EJ_CodeTypes.h"
 
 void eliminate_omitted_nodes(RegionVector &part_mesh,
-			     Map &global_node_map,
-			     Map &local_node_map);
+			     IdMap &global_node_map,
+			     IdMap &local_node_map);
 
 void build_reverse_node_map(Ioss::Region &output_region,
 			    RegionVector &part_mesh,
-			    Map &global_node_map,
-			    Map &local_node_map);
+			    IdMap &global_node_map,
+			    IdMap &local_node_map);
 
 void build_local_element_map(RegionVector &part_mesh,
-			     Map &local_element_map);
+			     IdMap &local_element_map);
 
 void generate_element_ids(RegionVector &part_mesh,
-			  const Map &local_element_map,
-			  Map& global_element_map);
+			  const IdMap &local_element_map,
+			  IdMap& global_element_map);
 #endif

@@ -11,7 +11,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockDavidson_ComplexCopyFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
+    SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
     SOURCE_FILES mhd1280b.cua
     EXEDEPS Tpetra_BlockDavidson_Complex_test
     )

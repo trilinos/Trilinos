@@ -11,7 +11,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_LOBPCG_ComplexCopyFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
+    SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
     SOURCE_FILES mhd1280b.cua
     EXEDEPS Tpetra_LOBPCG_Complex_test
     )
@@ -24,7 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   #   )
 
   # TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_LOBPCG_DoubleFloatCopyFiles
-  #   SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
+  #   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
   #   SOURCE_FILES bcsstk14.hb
   #   EXEDEPS Tpetra_LOBPCG_DoubleFloat_test
   #   )

@@ -50,6 +50,7 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 /// \file BelosProjectedLeastSquaresSolver.hpp 
 /// \brief Methods for solving GMRES' projected least-squares problem.
@@ -845,6 +846,42 @@ namespace Belos {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
 			 "Invalid robustness string " << x << ".");
     }
+
+    /// \brief Make a ParameterList validator for ERobustness.
+    ///
+    /// Use this validator when you are setting up a default
+    /// ParameterList for a solver that accepts a ERobustness
+    /// parameter.  This will let users supply a string that turns
+    /// into an enum value.
+    ///
+    /// The validator converts strings ("None", "Some", "Lots") to the
+    /// corresponding ERobustness enum values.  It also includes
+    /// documentation for each value.
+    Teuchos::RCP<Teuchos::ParameterEntryValidator>
+    robustnessValidator ()
+    {
+      using Teuchos::stringToIntegralParameterEntryValidator;
+
+      Teuchos::Array<std::string> strs (3);
+      strs[0] = robustnessEnumToString (ROBUSTNESS_NONE);
+      strs[1] = robustnessEnumToString (ROBUSTNESS_SOME);
+      strs[2] = robustnessEnumToString (ROBUSTNESS_LOTS);
+      Teuchos::Array<std::string> docs (3);
+      docs[0] = "Use the BLAS' triangular solve.  This may result in Inf or "
+	"NaN output if the triangular matrix is rank deficient.";
+      docs[1] = "Robustness somewhere between \"None\" and \"Lots\".";
+      docs[2] = "Solve the triangular system in a least-squares sense, using "
+	"an SVD-based algorithm.  This will always succeed, though the "
+	"solution may not make sense for GMRES.";
+      Teuchos::Array<ERobustness> ints (3);
+      ints[0] = ROBUSTNESS_NONE;
+      ints[1] = ROBUSTNESS_SOME;
+      ints[2] = ROBUSTNESS_LOTS;
+      const std::string pname ("Robustness of Projected Least-Squares Solve");
+
+      return stringToIntegralParameterEntryValidator<ERobustness> (strs, docs,
+								   ints, pname);
+    }
     
     /// \class ProjectedLeastSquaresSolver
     /// \brief Methods for solving GMRES' projected least-squares problem.
@@ -854,26 +891,31 @@ namespace Belos {
     ///   least-squares problem.
     ///
     /// Expected use of this class:
-    /// 1. Use a ProjectedLeastSquaresProblem<scalar_type> struct
-    ///    instance to store the projected problem in your GMRES
-    ///    solver.
+    /// 1. Use a \c ProjectedLeastSquaresProblem struct instance to
+    ///    store the projected problem in your GMRES solver.
     /// 2. Instantiate a ProjectedLeastSquaresSolver:
-    ///    <code>
-    ///    ProjectedLeastSquaresSolver<scalar_type> solver;
-    ///    </endcode>
+    ///    \code
+    ///    ProjectedLeastSquaresSolver<Scalar> solver;
+    ///    \endcode
     /// 3. Update the current column(s) of the QR factorization 
     ///    of GMRES' upper Hessenberg matrix:
-    ///    <code>
-    ///    magnitude_type resNorm = solver.updateColumn (problem, endCol);
-    ///    </endcode>
+    ///    \code
+    ///    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    ///    // Standard GMRE: update one column at a time.
+    ///    MT resNorm = solver.updateColumn (problem, endCol);
+    ///    \endcode
     ///    or
-    ///    <code>
-    ///    magnitude_type resNorm = solver.updateColumns (problem, startCol, endCol);
-    ///    </endcode>
+    ///    \code
+    ///    // Some GMRES variants update multiple columns at a time.
+    ///    // You can also use this feature to recompute the upper 
+    ///    // Hessenberg's QR factorization from scratch.
+    ///    MT resNorm = solver.updateColumns (problem, startCol, endCol);
+    ///    \endcode
     /// 4. Solve for the current GMRES solution update coefficients:
-    ///    <code>
+    ///    \code
     ///    solver.solve (problem, endCol);
-    ///    </endcode>
+    ///    \endcode
+    ///
     /// You can defer Step 4 as long as you want.  Step 4 must always
     /// follow Step 3.
     ///
@@ -890,15 +932,15 @@ namespace Belos {
     /// "Robust" here means regularizing the least-squares solve, so
     /// that the solution is well-defined even if the problem is
     /// ill-conditioned.  Many distributed-memory iterative solvers,
-    /// including Belos, currently solve the projected least-squares
-    /// problem redundantly on different processes.  If those
-    /// processes are heterogeneous or implement the BLAS and LAPACK
-    /// themselves in parallel (via multithreading, for example), then
-    /// different BLAS or LAPACK calls on different processes may
-    /// result in different answers.  The answers may be significantly
-    /// different if the projected problem is singular or
-    /// ill-conditioned.  This is bad because GMRES variants use the
-    /// projected problem's solution as the coefficients for the
+    /// including those in Belos, currently solve the projected
+    /// least-squares problem redundantly on different processes.  If
+    /// those processes are heterogeneous or implement the BLAS and
+    /// LAPACK themselves in parallel (via multithreading, for
+    /// example), then different BLAS or LAPACK calls on different
+    /// processes may result in different answers.  The answers may be
+    /// significantly different if the projected problem is singular
+    /// or ill-conditioned.  This is bad because GMRES variants use
+    /// the projected problem's solution as the coefficients for the
     /// solution update.  The solution update coefficients must be
     /// (almost nearly) the same on all processes.  Regularizing the
     /// projected problem is one way to ensure that different
@@ -908,9 +950,15 @@ namespace Belos {
     public:
       /// \typedef scalar_type
       /// \brief The template parameter of this class.
+      ///
+      /// The type of the matrix and vector entries in the projected
+      /// least-squares problem to solve, and the type of the
+      /// resulting GMRES solution update coefficients.
       typedef Scalar scalar_type;
       /// \typedef magnitude_type
       /// \brief The type of the magnitude of a \c scalar_type value.
+      ///
+      /// If scalar_type is complex-valued, then magnitude_type is real.
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
       /// \typedef mat_type
       /// \brief The type of a dense matrix (or vector) of \c scalar_type.

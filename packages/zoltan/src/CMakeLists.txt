@@ -139,13 +139,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ha)
 APPEND_SET(NOINSTALLHEADERS
   ha/ha_const.h
   ha/ha_drum.h
+  ha/ha_ovis.h
   )
 
 APPEND_SET(SOURCES
-  ha/build_machine_desc.c
   ha/divide_machine.c
   ha/get_processor_name.c
   ha/ha_drum.c
+  ha/ha_ovis.c
   )
 
 #
@@ -599,7 +600,7 @@ APPEND_SET(SOURCES
 # src/fort
 #
 
-IF(Trilinos_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
+IF(${PROJECT_NAME}_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/fort)
 
   APPEND_SET(NOINSTALLHEADERS

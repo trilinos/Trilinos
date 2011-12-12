@@ -1,16 +1,21 @@
 #! /usr/bin/env bash
 
+#configure script for creating a tarball on
+#trilinos-test
+
 EXTRA_ARGS=$@
 
 PROJECT_NAME=Trilinos
 SOURCE_DIR=../$PROJECT_NAME
 
 NETCDF_DIR=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0
-BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost-1.46.1
+BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_46_1
 MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.2.2
 
 #this is also needed to build pytrilinos not just configure
 export PYTHONPATH="$MPI4PY_DIR:/home/trilinos/tpl/gcc4.1.2/numpy1.4.0/lib64/python2.4/site-packages"
+
+export PATH=/home/trilinos/tpl/gcc4.1.2/swig-2.0.0/bin:$PATH
 
 rm -fr CMakeCache.txt CMakeFiles/
 

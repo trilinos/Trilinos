@@ -35,10 +35,7 @@
 #include <assert.h>
 //#include "my_feti_sparse_solver.hpp"
 #include "Epetra_LAPACK.h"
-extern "C"{
-  void metis_nodend(int* N,int XADJ[],int ADJD[],int* numflag,
-		    int OPTIONS[],int PERM[],int INVP[]);
-}
+
 class CLAPS_sparse_lu {
  public:
   CLAPS_sparse_lu();

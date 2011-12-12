@@ -136,41 +136,6 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,"Requested NOX solver for a Rythmos Transient solve, Trilinos was not built with NOX enabled.  Please rebuild Trilinos or use the native Rythmos nonlinear solver.");
 #endif
     
-    // Check for model scaling, if it should be scaled, wrap the
-    // model with a scaled model evaluator and register
-    // appropriate observer to compute/update the scaling
-    if (rythmosPL->get("Scaling", "None") == "Row Sum") {
-      
-      RCP< ::Thyra::VectorBase<Scalar> > scale_vec = 
-	::Thyra::createMember(model->get_f_space());
-      
-      ::Thyra::V_S(scale_vec.ptr(),1.0);
-      
-      // Create thyra scaled model evaluator
-      const RCP< ::Thyra::ScaledModelEvaluator<Scalar> > scaled_model = 
-	rcp(new ::Thyra::ScaledModelEvaluator<Scalar>);
-      scaled_model->initialize(Teuchos::rcp_static_cast<const Thyra::ModelEvaluator<Scalar> >(model));
-      scaled_model->set_f_scaling(scale_vec);
-      model = scaled_model;
-      
-      // Create the observer to trigger updating the scaling
-      // vector
-      RCP<Piro::RythmosNOXRowSumUpdaterObserver<Scalar> > rythmos_row_sum_updater_observer = 
-	rcp(new Piro::RythmosNOXRowSumUpdaterObserver<Scalar>);
-      rythmos_row_sum_updater_observer->set_f_scaling(scale_vec);
-      
-      RCP<Rythmos::CompositeIntegrationObserver<Scalar> > rythmos_comp_observer = 
-	rcp(new Rythmos::CompositeIntegrationObserver<Scalar>);
-      
-      rythmos_comp_observer->addObserver(rythmos_row_sum_updater_observer);
-      
-      // Add in any user registered observers
-      if (nonnull(observer))
-	rythmos_comp_observer->addObserver(observer);
-      
-      observer = rythmos_comp_observer;
-    }
-    
   }
   
   if (stepperType == "Backward Euler") {
@@ -552,14 +517,6 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
   validPL->set<double>("Max State Error", 1.0, "");
   validPL->set<std::string>("Name", "", "");
   validPL->set<bool>("Invert Mass Matrix", false, "");
-
-  Teuchos::setStringToIntegralParameter<int>(
-    "Scaling",
-    "None",
-    "Determines of a function scaling should be applied to model evaluator",
-    Teuchos::tuple<std::string>("None","Row Sum"),
-    validPL.get()
-    );
 
   return validPL;
 }

@@ -115,7 +115,6 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   int nprocs;                    /* Number of processors. */
   int i;                         /* Loop index */
   int ierr;                      /* Error code */
-  int graph_package;
   char errmsg[128];              /* Error message */
 
   DEBUG_TRACE_START(Proc, yo);
@@ -132,8 +131,6 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     Test.Multi_Callbacks = 1;  /* vertex increment implemented only in
 				  multi callbacks */
   }
-
-  graph_package = -1;
 
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
@@ -158,8 +155,6 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Num_LID = atoi(prob->params[i].Val);
     else if (strcasecmp(prob->params[i].Name, "RETURN_LISTS") == 0)
       Export_Lists_Special = (strstr(prob->params[i].Val,"partition") != NULL);
-    else if (strcasecmp(prob->params[i].Name, "GRAPH_PACKAGE") == 0)
-      graph_package = i;
   }
 
   /* Set the load-balance method */

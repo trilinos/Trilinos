@@ -770,7 +770,7 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   OrdinalType LAPACK<OrdinalType, ScalarType>::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
   {
-    return UndefinedLAPACKRoutine<ScalarType>::notDefined();
+    return UndefinedLAPACKRoutine<OrdinalType>::notDefined();
   }
  
   template<typename OrdinalType, typename ScalarType>
@@ -782,26 +782,26 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::LARTG( const ScalarType f, const ScalarType g, MagnitudeType* c, ScalarType* s, ScalarType* r ) const
   {
-    return UndefinedLAPACKRoutine<ScalarType>::notDefined();
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::LARFG( const OrdinalType n, ScalarType* alpha, ScalarType* x, const OrdinalType incx, ScalarType* tau ) const
   {
-    return UndefinedLAPACKRoutine<ScalarType>::notDefined();
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::GEBAL( const char JOBZ, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, MagnitudeType* scale, OrdinalType* info ) const
   {
-    return UndefinedLAPACKRoutine<ScalarType>::notDefined();
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
  
 
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::GEBAK( const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const MagnitudeType* scale, const OrdinalType m, ScalarType* V, const OrdinalType ldv, OrdinalType* info ) const 
   {
-    return UndefinedLAPACKRoutine<ScalarType>::notDefined();
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
   template<typename OrdinalType, typename ScalarType>
@@ -813,7 +813,7 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, ScalarType* v ) const    
   {
-    return UndefinedLAPACKRoutine<ScalarType>::notDefined();
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
   // END GENERAL TEMPLATE IMPLEMENTATION //
@@ -823,7 +823,7 @@ namespace Teuchos
   // BEGIN INT, FLOAT SPECIALIZATION DECLARATION //
 
   template<>
-  class LAPACK<int, float>
+  class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, float>
   {    
   public:
     inline LAPACK(void) {}
@@ -923,7 +923,7 @@ namespace Teuchos
   // BEGIN INT, DOUBLE SPECIALIZATION DECLARATION //
 
   template<>
-  class LAPACK<int, double>
+  class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, double>
   {    
   public:
     inline LAPACK(void) {}
@@ -1024,7 +1024,7 @@ namespace Teuchos
   // BEGIN INT, COMPLEX<FLOAT> SPECIALIZATION DECLARATION //
 
   template<>
-  class LAPACK<int, std::complex<float> >
+  class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, std::complex<float> >
   {    
   public:
     inline LAPACK(void) {}
@@ -1105,7 +1105,7 @@ namespace Teuchos
   // BEGIN INT, COMPLEX<DOUBLE> SPECIALIZATION DECLARATION //
 
   template<>
-  class LAPACK<int, std::complex<double> >
+  class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, std::complex<double> >
   {    
   public:
     inline LAPACK(void) {}

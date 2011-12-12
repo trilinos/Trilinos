@@ -48,9 +48,11 @@
 
 namespace Belos {
   /// \class Akx
-  /// \brief Matrix powers kernel interface
   /// \author Mark Hoemmen
+  /// \brief Matrix powers kernel interface
   ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
   template<class Scalar, class MV>
   class Akx {
   public:

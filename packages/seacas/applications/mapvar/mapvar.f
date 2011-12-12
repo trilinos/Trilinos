@@ -789,6 +789,7 @@ C IA(NAINVLN) =    INVLNA(1:NODESA) - Mesh-Anumber of elements per
 C                                      node in inverse connectivity
 C IA(NAINVC)  =    INVCN(1:MAXLN,1:NODESA) Inverse connectivity
 C IA(NACTR)   =    CNTRA(1:NUMEBA,1:3) - Mesh-A element centroids
+        LBLK = 1
         IDIM = MAX(NUMNDB, NUMEBB)
         CALL MDRSRV ('ISRCHR', NS1,  1*idim)
         CALL MDRSRV ('RSRCHR', NS2,  6*idim)

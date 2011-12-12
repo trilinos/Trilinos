@@ -73,11 +73,11 @@
 #
 # 2) Run the script (overriding any appropriate options) as:
 #
-#    env Trilinos_PACKAGES="<PACKAGES>" \
+#    env ${PROJECT_NAME}_PACKAGES="<PACKAGES>" \
 #      ctest -S $TRILINOS_HOME/cmake/ctest/experimental_build_test.cmake -VV
 #
 # where PACAKGES is the semi-colon-separated list of packages being tested
-# (e.g. Trilinos_PACKAGES="Teuchos;Epetra;NOX") and TRILINOS_HOME points back
+# (e.g. ${PROJECT_NAME}_PACKAGES="Teuchos;Epetra;NOX") and TRILINOS_HOME points back
 # to your home Trilinos directory.  You can take off the -VV argument if you
 # don't want this to be too verbose.
 #
@@ -88,7 +88,7 @@
 # you can insert a special name into the dashboard.
 #
 # When this script finishes running, the last package listed in
-# Trilinos_PACAKGES will be enabled in the CMakeCache.txt file.
+# ${PROJECT_NAME}_PACAKGES will be enabled in the CMakeCache.txt file.
 #
 # NOTE: It is better to use the CMake-built make target 'experimental' to run
 # this script as it takes care of the details of manipulating the cache and
@@ -121,7 +121,7 @@ INCLUDE(GetLastDirName)
 # All these can be changed by env vars
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_DO_UPDATES FALSE)
-SET(Trilinos_WARNINGS_AS_ERRORS_FLAGS "-Werror")
+SET(${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS "-Werror")
 
 # Don't change these in the env!
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY FALSE)
@@ -129,7 +129,7 @@ SET(CTEST_GENERATE_DEPS_XML_OUTPUT_FILE TRUE)
 SET(CTEST_WIPE_CACHE FALSE)
 
 # This script should be in PROJECT_BASE/cmake/tribits/ctest
-SET(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/../../..")
+SET(CTEST_SOURCE_DIRECTORY "${${PROJECT_NAME}_HOME_DIR}")
 
 GET_FILENAME_COMPONENT(PWD . REALPATH)
 SET(CTEST_BINARY_DIRECTORY "${PWD}")
@@ -145,4 +145,4 @@ SET( CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES OFF )
 # Run the build/test/submit driver
 #
 
-TRILINOS_CTEST_DRIVER()
+TRIBITS_CTEST_DRIVER()

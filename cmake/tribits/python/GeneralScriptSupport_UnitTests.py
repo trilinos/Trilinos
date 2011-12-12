@@ -362,10 +362,35 @@ IT: ./do-configure; 5; ''
     inputStr = self.get_isSubstrInMultiLineString_inputStr()
     self.assertEqual(isSubstrInMultiLineString(inputStr, "Will not find this"), False)
 
+class testConfigurableOptionParser(unittest.TestCase):
+  def test_add_option(self):
+    config = {'--configuredoption': 'configured_value'}
+    parser = ConfigurableOptionParser(config)
+    parser.add_option('--configuredoption', default='this_should_end_up_overridden')
+    parser.add_option('--unconfiguredoption', default='this_should_not_be_overridden')
+    configuredoption = parser.get_option('--configuredoption')
+    self.assertEqual(configuredoption.default, 'configured_value')
+    unconfiguredoption = parser.get_option('--unconfiguredoption')
+    self.assertEqual(unconfiguredoption.default, 'this_should_not_be_overridden')
+
+class testTeeOutput(unittest.TestCase):
+  def test_write(self):
+    import StringIO
+    outputfile = StringIO.StringIO()
+    tee = TeeOutput(outputfile)
+    reset = sys.stdout
+    try:
+      sys.stdout = tee
+      print "line"
+      self.assertEqual(outputfile.getvalue(), "line\n")
+    finally:
+      sys.stdout = reset
 
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(testGeneralScriptSupport))
+    suite.addTest(unittest.makeSuite(testConfigurableOptionParser))
+    suite.addTest(unittest.makeSuite(testTeeOutput))
     return suite
 
 

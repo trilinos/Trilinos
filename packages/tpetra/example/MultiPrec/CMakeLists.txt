@@ -1,14 +1,15 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
-IF (Trilinos_ENABLE_CXX11)
+ASSERT_DEFINED(Anasazi_SOURCE_DIR)
+IF (${PROJECT_NAME}_ENABLE_CXX11)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(MultiPrecInputMatrix
-      SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
+      SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
       SOURCE_FILES bcsstk14.hb
       )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(MultiPrecInputMatrix2
-      SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/tpetra/test/BlockCG
+      SOURCE_DIR ${Belos_SOURCE_DIR}/tpetra/test/BlockCG
       SOURCE_FILES bcsstk17.rsa
       )
 

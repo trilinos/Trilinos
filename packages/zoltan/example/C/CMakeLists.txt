@@ -13,7 +13,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   simpleHIER
   SOURCES simpleHIER.c
   ARGS 
-  COMM serial mpi
+  COMM mpi
   NUM_MPI_PROCS 1-4
   )
 

@@ -63,11 +63,11 @@
 #    -D TD_BASE_DIR=${TD_BASE_DIR}
 #    -D testname=${testname}
 #
-# It looks recursively under ${TD_BASE_DIR}/tools/cmake-${ctest_type} for a
-# ctest executable and uses it to drive a ctest -S script to run a dashboard
-# for Trilinos. It has to be run this way indirectly through a cmake -P script
-# because the desired ctest executable location is unknown at CMake configure
-# time of the TrilinosDriver project.
+# It looks recursively under ${TD_BASE_DIR}/tools/cmake-${ctest_type}
+# for a ctest executable and uses it to drive a ctest -S script to run
+# a dashboard for the project. It has to be run this way indirectly
+# through a cmake -P script because the desired ctest executable
+# location is unknown at CMake configure time of the driver project.
 
 if(NOT CTEST_EXE)
   if(WIN32)

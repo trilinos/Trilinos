@@ -95,7 +95,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ABC
   HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   "Enable Teuchos features for array bounds checking."
-  ${Trilinos_ENABLE_DEBUG}
+  ${${PROJECT_NAME}_ENABLE_DEBUG}
   )
 
 IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
@@ -134,7 +134,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 OPTION(
   ${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
   "Override enable ${PACKAGE_NAME} performance tests."
-  ${Trilinos_ENABLE_PERFORMANCE_TESTS}
+  ${${PROJECT_NAME}_ENABLE_PERFORMANCE_TESTS}
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -185,6 +185,10 @@ ENDIF()
 # D) Add the libraries, tests, and examples
 #
 
+# For use by other packages as well as Teuchos tests
+GLOBAL_SET(TEUCHOS_STD_UNIT_TEST_MAIN
+  "${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp")
+
 ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
@@ -208,7 +212,3 @@ TRIBITS_EXCLUDE_FILES(
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
-
-# For use by other packages
-GLOBAL_SET(TEUCHOS_STD_UNIT_TEST_MAIN
-  ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)

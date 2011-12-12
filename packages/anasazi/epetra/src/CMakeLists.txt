@@ -6,7 +6,7 @@ INCLUDE(TribitsLibraryMacros)
 #
 
 SET(CURRENT_PACKAGE ANASAZIEPETRA)
-CONFIGURE_FILE("${${PROJECT_NAME}_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}epetra_DLLExportMacro.h)
 
 #

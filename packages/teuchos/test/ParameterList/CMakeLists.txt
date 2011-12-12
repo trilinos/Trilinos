@@ -28,7 +28,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ParameterList_UnitTest
-  SOURCES ParameterList_UnitTest.cpp Teuchos_StandardUnitTestMain.cpp
+  SOURCES ParameterList_UnitTest.cpp
+   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -36,7 +37,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ParameterEntry_UnitTest
-  SOURCES ParameterEntry_UnitTest.cpp Teuchos_StandardUnitTestMain.cpp
+  SOURCES ParameterEntry_UnitTest.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -44,7 +45,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ParameterList_SerializationTest
-  SOURCES ParameterList_SerializationTest.cpp Teuchos_StandardUnitTestMain.cpp
+  SOURCES ParameterList_SerializationTest.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   DEPLIBS teuchos_xml_pl_test_helpers
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -58,7 +59,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterListFileCopies
 )
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ParameterList_UnitTest_Parallel
-  SOURCES ParameterList_UnitTest_Parallel.cpp Teuchos_StandardUnitTestMain.cpp
+  SOURCES ParameterList_UnitTest_Parallel.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )

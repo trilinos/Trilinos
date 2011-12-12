@@ -12,7 +12,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   UnitTests
   SOURCES
     Piro_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
     MockModelEval_A.cpp
     MockModelEval_A.hpp
     MockModelEval_C.cpp

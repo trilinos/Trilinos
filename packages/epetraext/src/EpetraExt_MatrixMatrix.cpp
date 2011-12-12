@@ -195,7 +195,7 @@ int mult_A_B(CrsMatrixStruct& Aview,
 
     2) The second major twist involves the c_index, c_cols and c_vals arrays.  The arrays c_cols 
     and c_vals store the *local* column index and values accumulator respectively.  These 
-    arrays are allocated to a size equal to the max number of columns in C, namely C_numcols.
+    arrays are allocated to a size equal to the max number of local columns in C, namely C_numcols.
     The value c_current tells us how many non-zeros we currently have in this row.
     
     So how do we take a LCID and find the right accumulator?  This is where the c_index array
@@ -209,13 +209,14 @@ int mult_A_B(CrsMatrixStruct& Aview,
     This trick works because we're working with local ids.  We can then loop from 0 to c_current
     and reset c_index to -1's when we're done, only touching the arrays that have changed.
     While we're at it, we can switch to the global ids so we can call [Insert|SumInto]GlobalValues.
-
+    Thus, the effect of this trick is to avoid passes over the index array.
 
     3) The third major twist involves handling the remote and local components of B separately.
-    Since they have different column maps, they have inconsistent local column ids.  This
-    means the "second twist" won't work as stated on both matrices at the same time.  While
-    this could be handled any number of ways, I have chosen to do the two parts of B
-    separately to make the code easier to read (and reduce the memory footprint of the MMM.
+    (ML doesn't need to do this, because its local ordering scheme is consistent between the local
+    and imported components of B.)  Since they have different column maps, they have inconsistent 
+    local column ids.  This means the "second twist" won't work as stated on both matrices at the 
+    same time.  While this could be handled any number of ways, I have chosen to do the two parts 
+    of B separately to make the code easier to read (and reduce the memory footprint of the MMM).
     */
 
     // Local matrix: Zero Current counts for matrix
@@ -225,6 +226,7 @@ int mult_A_B(CrsMatrixStruct& Aview,
     for(k=0; k<Aview.numEntriesPerRow[i]; ++k) {
       int Ak=Acol2Brow[Aindices_i[k]];
       double Aval = Aval_i[k];
+      // We're skipping remote entries on this pass.
       if(Bview.remote[Ak] || Aval==0) continue;
       
       int* Bcol_inds = Bview.indices[Ak];
@@ -233,12 +235,18 @@ int mult_A_B(CrsMatrixStruct& Aview,
       for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
 	int col=Bcol_inds[j];
 	if(c_index[col]<0){
+	  // We haven't seen this entry before; add it.  (In ML, on
+	  // the first pass, you haven't seen any of the entries
+	  // before, so they are added without the check.  Not sure
+	  // how much more efficient that would be; depends on branch
+	  // prediction.  We've favored code readability here.)
 	  c_cols[c_current]=col;	      
 	  c_vals[c_current]=Aval*Bvals_k[j];
 	  c_index[col]=c_current;
 	  c_current++;
 	}
-	else{
+	else{ 
+	  // We've already seen this entry; accumulate it.
 	  c_vals[c_index[col]]+=Aval*Bvals_k[j];	    
 	}
       }
@@ -246,9 +254,14 @@ int mult_A_B(CrsMatrixStruct& Aview,
     // Local matrix: Reset c_index and switch c_cols to GIDs
     for(k=0; k<c_current; k++){
       c_index[c_cols[k]]=-1;
-      c_cols[k]=bcols[c_cols[k]];      
+      c_cols[k]=bcols[c_cols[k]]; // Switch from local to global IDs.     
     }
-    // Local matrix: Insert
+    // Local matrix: Insert.
+    //
+    // We should check global error results after the algorithm is
+    // through.  It's probably safer just to let the algorithm run all
+    // the way through before doing this, since otherwise we have to
+    // remember to free all allocations carefully.
     int err = C_filled ?
       C.SumIntoGlobalValues(global_row,c_current,c_vals,c_cols)
       :
@@ -261,6 +274,7 @@ int mult_A_B(CrsMatrixStruct& Aview,
     for(k=0; k<Aview.numEntriesPerRow[i]; ++k) {
       int Ak=Acol2Brow[Aindices_i[k]];
       double Aval = Aval_i[k];
+      // We're skipping local entries on this pass.
       if(!Bview.remote[Ak] || Aval==0) continue;
       
       int* Bcol_inds = Bview.indices[Ak];
@@ -279,12 +293,14 @@ int mult_A_B(CrsMatrixStruct& Aview,
 	}
       }
     }    
-    // Remote matrix: Reset a_index and switch a_cols to GIDs
+    // Remote matrix: Reset c_index and switch c_cols to GIDs
     for(k=0; k<c_current; k++){
       c_index[c_cols[k]]=-1;
       c_cols[k]=bcols_import[c_cols[k]];      
     }
     // Remove matrix: Insert
+    //
+    // See above (on error handling).
     err = C_filled ?
       C.SumIntoGlobalValues(global_row,c_current,c_vals,c_cols)
       :

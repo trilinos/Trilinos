@@ -16,7 +16,7 @@ SET(SOURCES EP_ExodusFile.C EP_Internals.C EP_ParallelDisks.C EP_SystemInterface
 #is not given for pgi compilers unfortunately so we can't be more specific
 IF(NOT __LINUX_COMPILER_PGI)
   TRIBITS_ADD_LIBRARY(epu_lib SOURCES ${SOURCES} DEPLIBS suplib exodus)
-  TRIBITS_ADD_EXECUTABLE(epu NOEXEPREFIX NOEXESUFFIX SOURCES epu.C DEPLIBS epu_lib)
+  TRIBITS_ADD_EXECUTABLE(epu NOEXEPREFIX NOEXESUFFIX SOURCES epu.C DEPLIBS epu_lib COMM serial mpi)
   install_executable(epu)
 ENDIF()
 

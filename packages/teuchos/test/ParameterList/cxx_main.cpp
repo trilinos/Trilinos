@@ -64,6 +64,7 @@ typedef ParameterList::PrintOptions PLPrintOptions;
 using Teuchos::ParameterEntry;
 using Teuchos::OSTab;
 using Teuchos::rcp;
+using Teuchos::inoutArg;
 
 void print_break() { std::cout << "---------------------------------------------------" << std::endl; }
 double Plus ( double a, double b ) { return a+b; }
@@ -791,7 +792,7 @@ int main( int argc, char *argv[] )
       cout << "reading from XML file" << std::endl;
       print_break();
       ParameterList readBack;
-      updateParametersFromXmlFile("PL_Main.xml",&readBack);
+      updateParametersFromXmlFile("PL_Main.xml", inoutArg(readBack));
       if (verbose) readBack.print(cout);
 
       print_break();
@@ -805,7 +806,7 @@ int main( int argc, char *argv[] )
         xmlStr += line + "\n";
       }
       readBack = ParameterList();
-      updateParametersFromXmlString(xmlStr,&readBack);
+      updateParametersFromXmlString(xmlStr, inoutArg(readBack));
       if (verbose) readBack.print(cout);
 
     }

@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TribitsCTestDriverCore.godel.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.godel.gcc.cmake")
 
 #
 # Set the options specific to this build case

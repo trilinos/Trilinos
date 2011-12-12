@@ -38,7 +38,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MF
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   NOX_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors enabled."
-  "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
+  "${${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR}" )
 
 # Ignoring these flags - should be fixed in more recent compilers
 # AC_CXX_STL_MAP_KEY_CONST
@@ -65,7 +65,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   HAVE_NOX_DEBUG
   "Build with debug code enabled."
-  ${Trilinos_ENABLE_DEBUG} )
+  ${${PROJECT_NAME}_ENABLE_DEBUG} )
 
 ###################################################
 # Optional Trilinos Library Support

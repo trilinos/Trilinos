@@ -19,7 +19,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleBlockGmresFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockGmres
+    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
     SOURCE_FILES orsirr1.hb
     EXEDEPS BlockGmres_Epetra_File_Ex
     )

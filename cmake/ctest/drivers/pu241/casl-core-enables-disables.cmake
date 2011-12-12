@@ -7,11 +7,11 @@
 # 100% general!
 #
 
-# Must include first so that it defines Trilinos_EXCLUDE_PACKAGES
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/casl-exclude-trilinos-packages.cmake)
+# Must include first so that it defines ${PROJECT_NAME}_EXCLUDE_PACKAGES
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-exclude-trilinos-packages.cmake)
 
 # Put in hard disables for excluded packages
-FOREACH(EXCLUDED_PACKAGE ${Trilinos_EXCLUDE_PACKAGES})
+FOREACH(EXCLUDED_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
   SET(${PROJECT_NAME}_ENABLE_${EXCLUDED_PACKAGE} OFF CACHE BOOL
     "Disabled in casl-core-enables-disables.cmake")
 ENDFOREACH()
@@ -30,7 +30,7 @@ SET(STK_ENABLE_TESTS OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmak
 SET(STK_ENABLE_EXAMPLES OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
 
 # Turn on configure timing
-SET(Trilinos_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
+SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
 
 # Don't create *Config.cmake files since they are massively expensive to create
 SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES OFF CACHE BOOL "")

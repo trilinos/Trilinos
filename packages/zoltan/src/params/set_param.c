@@ -42,6 +42,9 @@ extern "C" {
 #ifdef ZOLTAN_DRUM
 #include "ha_drum.h"
 #endif
+#ifdef ZOLTAN_OVIS
+#include "ha_ovis.h"
+#endif
 #include "coloring_const.h"
 #include "zz_const.h"
 
@@ -72,6 +75,9 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
 #endif
 #ifdef ZOLTAN_DRUM
        Zoltan_Drum_Set_Param,
+#endif
+#ifdef ZOLTAN_OVIS
+       Zoltan_OVIS_Set_Param,
 #endif
        Zoltan_ZG_Set_Param,
        /* Zoltan_Set_Machine_Param, */

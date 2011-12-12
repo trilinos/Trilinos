@@ -7,15 +7,15 @@ SET(IFORT_VERSION "12.0.4")
 SET(INTEL_LIB /opt/intel/Compiler/composerxe-2011.4.191/compiler/lib/intel64)
 SET(INTEL_BIN /opt/intel/Compiler/composerxe-2011.4.191/bin/intel64)
 # Add rpath for compiler libraries
-# SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${INTEL_LIB}" CACHE STRING "")
+# SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS "-Wl,-rpath,${INTEL_LIB}" CACHE STRING "")
 SET(CMAKE_SKIP_RPATH ON BOOL "")
 
 # this compiler supports BinUtils
 SET(TPL_ENABLE_BinUtils ON CACHE BOOL "")
 
 # Include MKL and TBB; these should match version of Intel compilers being used
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/tbb-12.0.4-options.cmake)
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-12.0.4-options.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/tbb-12.0.4-options.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/mkl-12.0.4-options.cmake)
 SET(BLAS_INCLUDE_DIRS   ${MKL_IFORT_MODULE_PATH} CACHE PATH "Path to MKL BLAS Fortran modules compatible with Intel fortran")
 SET(LAPACK_INCLUDE_DIRS ${MKL_IFORT_MODULE_PATH} CACHE PATH "Path to MKL LAPACK Fortran modules compatible with Intel fortran")
 
@@ -28,5 +28,5 @@ SET(HDF5_INCLUDE_DIRS /opt/intel-11.1.064/tpls/hdf5-1.8.5-patch1/include CACHE F
 
 
 # Including these last to allow override above
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/casl-vri-tpls.cmake)
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/casl-core-enables-disables.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-vri-tpls.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-core-enables-disables.cmake)

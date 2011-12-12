@@ -211,7 +211,6 @@ struct Zoltan_Struct {
                                       MPI constructs (0) or not (1) on tflops*/
   unsigned int Seed;              /*  Zoltan_Rand seed: default or provided 
                                       by user.     */
-  MachineType *Machine_Desc;      /*  Machine description for hetero. arch.  */
   struct Param_List *Params;      /*  List of parameter names & new vals     */
   int Deterministic;              /*  Flag indicating whether algorithms used
                                       should be forced to be deterministic.

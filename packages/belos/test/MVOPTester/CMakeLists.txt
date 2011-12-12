@@ -18,7 +18,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestMVOPTesterComplexFiles
-      SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/test/MVOPTester
+      SOURCE_DIR ${Belos_SOURCE_DIR}/test/MVOPTester
       SOURCE_FILES mhd1280b.cua 
       EXEDEPS MVOPComplexTester
       )

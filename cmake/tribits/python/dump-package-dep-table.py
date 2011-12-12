@@ -80,24 +80,17 @@ Have fun looking through all of the Trilinos dependencies!
 """
 
 
-from TribitsDependencies import defaultTrilinosDepsXmlInFile, \
-  defaultTrilinosDepsHtmlOutFile
-
 from optparse import OptionParser
 
 clp = OptionParser(usage=usageHelp)
 
 clp.add_option(
   "--input-xml-deps-file", dest="inputXmlDepsFile", type="string",
-  default=defaultTrilinosDepsXmlInFile,
-  help="Input XML file giving the Trilinos dependencies "+\
-    "(default = "+defaultTrilinosDepsXmlInFile+")." )
+  help="Input XML file giving the Trilinos dependencies.")
 
 clp.add_option(
   "--output-html-deps-file", dest="outputHtmlDepsFile", type="string",
-  default="TrilinosPackageDependenciesTable.html",
-  help="Output HTML file showing the Trilinos dependencies"+\
-    "(default = TrilinosPackageDependenciesTable.html)." )
+  help="Output HTML file showing the Trilinos dependencies")
 
 (options, args) = clp.parse_args()
 
@@ -107,9 +100,9 @@ clp.add_option(
 #
 
 
-from TribitsDependencies import getTrilinosDependenciesFromXmlFile
+from TribitsDependencies import getProjectDependenciesFromXmlFile
 
-trilinosDependencies = getTrilinosDependenciesFromXmlFile(
+trilinosDependencies = getProjectDependenciesFromXmlFile(
   options.inputXmlDepsFile)
 
 trilinosDependencies.writeFullHtmlPage(

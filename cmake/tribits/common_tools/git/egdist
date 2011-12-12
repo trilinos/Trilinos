@@ -84,7 +84,7 @@ def requoteCmndLineArgs(inArgs):
     splitArg = arg.split("=")
     newArg = None
     if len(splitArg) == 1:
-      newArg = arg
+      newArg = "\""+arg+"\""
     else:
       newArg = splitArg[0]+"=\""+'='.join(splitArg[1:])+"\""
     #print "\nnewArg =", newArg                                                                                 
@@ -109,13 +109,18 @@ if len(otherArgs) == 0:
   sys.exit(1)
 
 # Reform the commandline arguments correctly
+#print "otherArgs =", otherArgs
 cmndLineArgs = requoteCmndLineArgs(otherArgs)
+#print "cmndLineArgs = '"+cmndLineArgs+"'"
 
 # Get the reference base directory
 baseDir = os.getcwd()
 
+baseDirArray = baseDir.split("/")
+baseRepoName = baseDirArray[-1]
+
 print "" 
-print "*** Git Repo: "+txtbld+txtblu+"Trilinos"+txtrst
+print "*** Base Git Repo: "+txtbld+txtblu+baseRepoName+txtrst
 os.system("eg "+cmndLineArgs)
 
 for extraRepo in extraReposFullList:
@@ -123,7 +128,9 @@ for extraRepo in extraReposFullList:
     print "" 
     print "*** Git Repo: "+txtbld+txtblu+extraRepo+txtrst
     os.chdir(extraRepo)
-    os.system("eg "+cmndLineArgs)
+    cmnd = "eg "+cmndLineArgs
+    #print cmnd
+    os.system(cmnd)
     os.chdir(baseDir)
 
 print ""

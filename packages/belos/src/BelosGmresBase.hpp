@@ -195,6 +195,9 @@ namespace Belos {
   /// \ingroup belos_solver_framework
   /// \author Mark Hoemmen
   ///
+  /// \warning This is EXPERIMENTAL CODE.  DO NOT RELY ON THIS CODE.
+  ///   The interface or implementation may change at any time.
+  ///
   /// This class includes both state and functionality that are useful
   /// for different implementations of the Generalized Minimal
   /// Residual (GMRES) method of Saad and Schultz, for iterative

@@ -6,12 +6,6 @@ import re
 import traceback
 
 
-scriptsDir = os.path.abspath(os.path.dirname(sys.argv[0]))+"/../../cmake/python"
-sys.path.insert(0, scriptsDir)
-
-from GeneralScriptSupport import *
-
-
 #
 # Read in the command-line arguments
 #
@@ -23,7 +17,12 @@ for an existing copyright header in the file and replaces it with the provided
 copyright header.  A copyright header is determined by looking for beginning
 @HEADER and ending @HEADER lines.  If no such comment blocks are found, then
 the given copyright header is inserted as the very first line in the file
-enclosed in '/*' and '*/' lines so as to work also for C files.
+enclosed in '/*' and '*/' lines so as to work also for C files.  This can be
+disabled by passing in --script-mode, in case it is assumed that the copyright
+header already has the correct commentting in the copyright comment.  Also,
+the copyright header will not be inserted into the first line if --script-mode
+is given and the first line is '#!'.  In this case, the copyright header will
+be added the the second line instead of the first line.
 
 To replace the copyright header for all of the source files for a complete
 package do:
@@ -80,12 +79,12 @@ if not options.copyrightHeader:
 if not options.fileName:
   raise Exception("Error, must set --fileName")
 
-if options.scriptMode == False:
-  commentBegin = "/*" + os.linesep
-  commentEnd   = "*/" + os.linesep
-else:
+if options.scriptMode:
   commentBegin = ""
   commentEnd   = ""
+else:
+  commentBegin = "/*" + os.linesep
+  commentEnd   = "*/" + os.linesep
 
 
 #
@@ -103,21 +102,33 @@ reHeaderLine = re.compile(r".*@HEADER.*")
 
 fileLines = open(options.fileName, 'r').readlines()
 
-newFileStr = ""
+# See if the first line is #!
+#print "fileLines[0] = '"+fileLines[0]+"'"
+if options.scriptMode and fileLines[0][0:2] == "#!":
+  firstLineIsSheBang = True
+else:
+  firstLineIsSheBang = False
 
+# Look for the header
+foundSheBang = False
 foundExistingHeaderBlock = False
 inHeaderBlock = False
-
+firstLineStr = ""
+lowerNewFileStr = ""
 for line in fileLines:
   #print "line: '"+line+"'"
-  if reHeaderLine.match(line) and not inHeaderBlock:
+  if firstLineIsSheBang and not foundSheBang:
+    #print "Found #!"
+    firstLineStr = line
+    foundSheBang = True
+  elif reHeaderLine.match(line) and not inHeaderBlock:
     #print "Found first @HEADER!"
     if foundExistingHeaderBlock:
       raise Exception("Error, the file '"+options.fileName+"'" + \
         " contains more than one header block!");
     foundExistingHeaderBlock = True
     inHeaderBlock = True
-    newFileStr += copyrightHeaderStr
+    lowerNewFileStr += copyrightHeaderStr
   elif reHeaderLine.match(line) and inHeaderBlock:
     #print "Found last @HEADER!"
     inHeaderBlock = False
@@ -126,14 +137,21 @@ for line in fileLines:
     None
   else:
     #print "Augmenting line!"
-    newFileStr += line
+    lowerNewFileStr += line
+
+#print "\n\nfirstLineStr =", firstLineStr
+#print "\n\nlowerNewFileStr:\n----------\n"+lowerNewFileStr+"-----------\n"
+
 
 # C) If an existing header was never found, then add one at the top of the
 # file.
 
 if not foundExistingHeaderBlock:
-  newFileStr = commentBegin + copyrightHeaderStr + commentEnd + os.linesep + \
-               newFileStr
+  newFileStr = firstLineStr + \
+    commentBegin + copyrightHeaderStr + commentEnd + os.linesep + \
+    lowerNewFileStr
+else:
+  newFileStr = firstLineStr + lowerNewFileStr
 
 
 # D) Write the new file

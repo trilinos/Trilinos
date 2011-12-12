@@ -3,7 +3,7 @@
 #
 
 # Must be including first in order to define TRILINOS_TOOLSET_BASE
-INCLUDE(${${PROJECT_NAME}_HOME_DIR}/cmake/ctest/drivers/pu241/intel-11.1.064-options.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/intel-11.1.064-options.cmake)
 
 SET(TPL_ENABLE_MPI  OFF  CACHE  BOOL "")
 

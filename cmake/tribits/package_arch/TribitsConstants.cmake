@@ -69,12 +69,9 @@ SET(${PROJECT_NAME}_TPLS_FILE_NAME TPLsList.cmake)
 
 SET(${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME ExtraRepositoriesList.cmake)
 
-SET(${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME ExtraPackagesList.cmake)
+SET(${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME PackagesList.cmake)
 
-SET(${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME ExtraTPLsList.cmake)
-
-SET(${PROJECT_NAME}_TRIBITS_PROJECT_CALLBACKS_FILE
-  ${PROJECT_NAME}TribitsProjectCallbacks.cmake)
+SET(${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME TPLsList.cmake)
 
 # Directories relative to the TriBITS base directory
 

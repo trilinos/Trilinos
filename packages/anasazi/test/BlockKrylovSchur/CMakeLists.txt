@@ -31,7 +31,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockKrylovSchurComplexFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
+    SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
     SOURCE_FILES mhd1280b.cua mhd1280a.cua
     EXEDEPS BlockKrylovSchur_complex_test
     )

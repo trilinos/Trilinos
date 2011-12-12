@@ -111,8 +111,8 @@ C      --A - the dynamic numeric memory base array
       EQUIVALENCE (A(1), IA(1))
       CHARACTER*1 C(1)
 
-      CHARACTER*132 DBNAME
-      CHARACTER*132 SCRATCH
+      CHARACTER*2048 DBNAME
+      CHARACTER*2048 SCRATCH
 C      --DBNAME - the database name, needed because the database may be closed
 
       LOGICAL EXODUS

@@ -72,6 +72,7 @@
 // Configure Trilinos with --enable-teuchos-extended
 #ifdef HAVE_TEUCHOS_EXTENDED
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include <sstream>
 #endif
 
 using namespace std;
@@ -245,15 +246,19 @@ int main(int argc, char *argv[])
   combo->addStatusTest(maxiters);
   
 #ifdef HAVE_TEUCHOS_EXTENDED
+  std::stringstream input_file_name;
+  input_file_name << "input_" << MyPID << ".xml";
+
   // Write the parameter list to a file
-  cout << "Writing parameter list to \"input.xml\"" << endl;
-  Teuchos::writeParameterListToXmlFile(*nlParamsPtr, "input.xml");
+  cout << "Writing parameter list to "<< input_file_name.str() << endl;
+  Teuchos::writeParameterListToXmlFile(*nlParamsPtr, input_file_name.str());
 
   // Read in the parameter list from a file
-  cout << "Reading parameter list from \"input.xml\"" << endl;
+  cout << "Reading parameter list from " << input_file_name.str() << endl;
   Teuchos::RCP<Teuchos::ParameterList> finalParamsPtr = 
     Teuchos::rcp(new Teuchos::ParameterList);
-  Teuchos::updateParametersFromXmlFile("input.xml", finalParamsPtr.get());
+  Teuchos::updateParametersFromXmlFile(input_file_name.str(), 
+				       outArg(*finalParamsPtr));
 #else
   Teuchos::RCP<Teuchos::ParameterList> finalParamsPtr = nlParamsPtr;
 #endif

@@ -6,7 +6,7 @@ TRIBITS_ADD_EXECUTABLE(
   DefaultMpiComm_UnitTests
   SOURCES
     DefaultMpiComm_UnitTests.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   )
 

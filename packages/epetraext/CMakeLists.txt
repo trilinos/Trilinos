@@ -113,7 +113,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USING_HDF5
 
 #Adding a define for when PyTrilinos is enabled.
 #This replaces an option that was reusing an existing name.
-SET(HAVE_PYTRILINOS "${Trilinos_ENABLE_PyTrilinos}")
+SET(HAVE_PYTRILINOS "${${PROJECT_NAME}_ENABLE_PyTrilinos}")
 
 #
 # C) Add the libraries, tests, and examples

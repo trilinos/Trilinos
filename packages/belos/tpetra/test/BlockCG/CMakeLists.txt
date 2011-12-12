@@ -25,20 +25,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   )
 
 #TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_complex_hb_CopyFiles
-#  SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/test/MVOPTester
+#  SOURCE_DIR ${Belos_SOURCE_DIR}/test/MVOPTester
 #  SOURCE_FILES mhd1280b.cua
 #  EXEDEPS Tpetra_BlockCG_complex_hb_test
 #  )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_hb_CopyFiles1
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/tpetra/test/BlockCG
+  SOURCE_DIR ${Belos_SOURCE_DIR}/tpetra/test/BlockCG
   SOURCE_FILES bcsstk17.rsa bcsstk18.rsa
   EXEDEPS Tpetra_BlockCG_hb_test 
   # EXEDEPS Tpetra_BlockCG_hb_test Tpetra_BlockCG_hb_multiprec_test
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_hb_CopyFiles2
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockCG
+  SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockCG
   SOURCE_FILES bcsstk14.hb bcsstk15.hb
   EXEDEPS Tpetra_BlockCG_hb_test 
   # EXEDEPS Tpetra_BlockCG_hb_test Tpetra_BlockCG_hb_multiprec_test

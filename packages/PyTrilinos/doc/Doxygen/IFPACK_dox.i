@@ -8727,6 +8727,12 @@ int(*fkeep)(int, int, double, void *), void *other) ";
 // File: Ifpack__SPARSKIT_8h.xml
 
 
+// File: Ifpack__SubdomainFilter_8cpp.xml
+
+
+// File: Ifpack__SubdomainFilter_8h.xml
+
+
 // File: Ifpack__UserPartitioner_8cpp.xml
 
 

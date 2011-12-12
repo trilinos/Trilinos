@@ -19,6 +19,6 @@ int PMPI_Group_range_excl ( MPI_Group group, int n, int ranges[][3],
                          MPI_Group *newgroup )
 {
   fprintf(stderr,"%s:%d: NOT IMPLEMENTED\n",__FILE__,__LINE__);
-  return MPI_Abort((MPI_Comm)NULL, MPI_UNDEFINED); 
+  return MPI_Abort((MPI_Comm)0, MPI_UNDEFINED); 
 }
 

@@ -11,7 +11,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
      Belos_GCRODR_strattest 
      SOURCES
        test_belos_gcrodr.cpp
-       ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+       ${TEUCHOS_STD_UNIT_TEST_MAIN}
      ARGS " --show-timer-summary"
      COMM serial mpi
      NUM_MPI_PROCS 4

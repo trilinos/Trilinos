@@ -320,6 +320,7 @@ int main(int argc, char *argv[])
   normWRMS.set("BDF Multiplier", 1.0);
   normWRMS.set("Alpha", 1.0);
   normWRMS.set("Beta", 0.5);
+  normWRMS.set("Disable Implicit Weighting", true);
   normUpdate.set("Test Type", "NormUpdate");
   normUpdate.set("Norm Type", "One Norm");
   normUpdate.set("Scale Type", "Scaled");

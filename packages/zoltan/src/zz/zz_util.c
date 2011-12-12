@@ -339,6 +339,49 @@ char *Zoltan_mpi_gno_name()
   return zz_mpi_gno_name;
 }
 
+/* On a linux node, find the total memory currently allocated
+ * to this process.
+ * Return the number of kilobytes allocated to this process.
+ * Return 0 if it is not possible to determine this.
+ */
+long Zoltan_get_process_kilobytes()
+{
+pid_t pid;
+long pageSize, pageKBytes, totalPages;
+char buf[64];
+char *c;
+int f, rc;
+
+#ifdef _SC_PAGESIZE
+  pageSize = sysconf(_SC_PAGESIZE);
+#else
+#warning "Page size query is not possible.  No per-process memory stats."
+  return 0;
+#endif
+
+  pid = getpid();
+  sprintf(buf,"/proc/%d/statm", pid);
+  f = open(buf, O_RDONLY);
+  if (f == -1) return 0;
+
+  c = buf;
+  rc = read(f, (void *)c, 1);
+
+  while ((rc==1) && isdigit(*c)){
+    ++c;
+    rc = read(f, (void *)c, 1);
+  }
+  *c = 0;  /* null terminate */
+  
+  close(f);
+  if (buf[0] == 0) return 0;
+
+  pageKBytes = pageSize / 1024;
+  totalPages = atol(buf);
+
+  return totalPages * pageKBytes;
+}
+
 /* On a linux node, try to write the contents of /proc/meminfo to a file.
  * If committedOnly, then only write the Committed_AS line.  This is the
  * amount of memory that has been granted for memory allocation requests.
@@ -421,7 +464,7 @@ void Zoltan_get_linux_meminfo(char *msg, char **result)
 int f, n, got_it;
 size_t fsize, rc;
 char *c=NULL, *next=NULL, *c_end;
-char fbuf[64],buf[2048],label[64],value[64],units[64];
+char buf[2048],label[64],value[64],units[64];
 
   *result=NULL;
   f = open("/proc/meminfo", O_RDONLY);

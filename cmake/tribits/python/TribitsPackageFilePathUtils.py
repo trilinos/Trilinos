@@ -69,8 +69,7 @@
 # NOTE: Included first to check the version of python!
 #
 
-from TribitsDependencies import getTrilinosDependenciesFromXmlFile
-from TribitsDependencies import defaultTrilinosDepsXmlInFile
+from TribitsDependencies import getProjectDependenciesFromXmlFile
 from GeneralScriptSupport import *
 import time
 
@@ -82,7 +81,7 @@ import time
 # global rebuild of all Trilinos packaes.  There are a few special files
 # that we don't do a global rebuild for:
 #
-# cmake/TrilinosPackages.cmake: This file gets modified frequently to add new
+# cmake/ProjectPackages.cmake: This file gets modified frequently to add new
 # packages and rearrange packages.  We don't need to do a global rebuild
 # because this list of pakages is validated if we do even a single rebuild.
 # If a package line gets removed, the code that reads the Dependencies.cmake
@@ -106,24 +105,20 @@ def isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath):
   if len(modifiedFileFullPathArray)==1:
     if modifiedFileFullPathArray[0] == "CMakeLists.txt":
       return True
-    if modifiedFileFullPathArray[0] == "Trilinos_version.h":
+    if modifiedFileFullPathArray[0] == 'PackagesList.cmake':
+      return False
+    if modifiedFileFullPathArray[0] == 'TPLsList.cmake':
+      return False
+    if modifiedFileFullPathArray[0].rfind(".cmake") != -1:
       return True
-  if modifiedFileFullPathArray[0] == 'cmake':
-    if modifiedFileFullPathArray[1] == 'TrilinosPackages.cmake':
-      return False
-    if modifiedFileFullPathArray[1] == 'TrilinosTPLs.cmake':
-      return False
+  elif modifiedFileFullPathArray[0] == 'cmake':
     if modifiedFileFullPathArray[1] == 'ctest':
       return False
-    if modifiedFileFullPathArray[1] == 'DependencyUnitTests':
-      return False
     if modifiedFileFullPathArray[1] == 'TPLs':
-      if ['FindTPLBLAS.cmake', 'FindTPLLAPACK.cmake', 'FindTPLMPI.cmake'].count(
-        modifiedFileFullPathArray[2]) == 1 \
-        :
-        return True
       return False
-    if modifiedFileFullPathArray[-1].rfind(".cmake") != -1:
+    if modifiedFileFullPath.rfind("UnitTests/") != -1:
+      return False
+    if modifiedFileFullPath.rfind(".cmake") != -1:
       return True
   return False
 
@@ -135,8 +130,8 @@ def getPackageStructFromPath(trilinosDependencies, fullPath):
   return None
 
 
-def getPackageNameFromPath(trilinosDependencies, fullPath, prefixPath="packages"):
-  return trilinosDependencies.getPackageNameFromPath(fullPath, prefixPath)
+def getPackageNameFromPath(trilinosDependencies, fullPath):
+  return trilinosDependencies.getPackageNameFromPath(fullPath)
 
 
 def extractFilesListMatchingPattern(fileList_in, reMatachingPattern):

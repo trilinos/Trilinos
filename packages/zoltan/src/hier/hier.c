@@ -26,85 +26,19 @@ extern "C" {
 #include "hier.h"
 #include "zoltan_comm.h"
 #include "key_params.h"
+#include "parmetis_interface_params.h"
+#include "scotch_interface_params.h"
+#include "third_library_params.h"
+#include "graph_params.h"
+#include "order_params.h"
+#include "phg_params.h"
+#include "rcb_params.h"
+#include "rib_params.h"
+#include "hsfc_params.h"
 
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-
-static PARAM_VARS graph_type_params[] = {
-  { "GRAPH_PACKAGE", NULL, "STRING", 0 },
-  { "ORDER_TYPE", NULL, "STRING", 0 },
-  { "GRAPH_SYMMETRIZE", NULL, "STRING", 0 },
-  { "GRAPH_SYM_WEIGHT", NULL, "STRING", 0 },
-  { "GRAPH_BIPARTITE_TYPE", NULL, "STRING", 0},
-  { "GRAPH_BUILD_TYPE", NULL, "STRING"},       
-  { "GRAPH_FAST_BUILD_BASE", NULL, "INTEGER"},       
-  { "ORDER_METHOD", NULL, "STRING", 0 },
-  { "USE_ORDER_INFO", NULL, "INT", 0 },
-  {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
-  {"PHG_MULTILEVEL",                  NULL,  "INT", 0},
-  {"PHG_CUT_OBJECTIVE",               NULL,  "STRING", 0},
-  {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
-  {"CHECK_GRAPH",                     NULL,  "INT",    0},
-  {"CHECK_HYPERGRAPH",                NULL,  "INT",    0},
-  {"PHG_NPROC_VERTEX",                NULL,  "INT",    0},
-  {"PHG_NPROC_EDGE",                  NULL,  "INT",    0},
-  {"PHG_COARSENING_LIMIT",            NULL,  "INT",    0},
-  {"PHG_COARSENING_NCANDIDATE",       NULL,  "INT",    0},
-  {"PHG_COARSENING_METHOD",           NULL,  "STRING", 0},
-  {"PHG_COARSENING_METHOD_FAST",      NULL,  "STRING", 0},
-  {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
-  {"PHG_EDGE_SCALING",                NULL,  "INT",    0},
-  {"PHG_VERTEX_SCALING",              NULL,  "INT",    0},
-  {"PHG_COARSEPARTITION_METHOD",      NULL,  "STRING", 0},
-  {"PHG_REFINEMENT_METHOD",           NULL,  "STRING", 0},
-  {"PHG_DIRECT_KWAY",                 NULL,  "INT",    0},
-  {"PHG_REFINEMENT_LOOP_LIMIT",       NULL,  "INT",    0},
-  {"PHG_REFINEMENT_MAX_NEG_MOVE",     NULL,  "INT",    0},
-  {"PHG_REFINEMENT_QUALITY",          NULL,  "FLOAT",  0},
-  {"PHG_USE_TIMERS",                  NULL,  "INT",    0},
-  {"USE_TIMERS",                      NULL,  "INT",    0},
-  {"PHG_EDGE_SIZE_THRESHOLD",         NULL,  "FLOAT",  0},
-  {"PHG_MATCH_EDGE_SIZE_THRESHOLD",   NULL,  "INT",    0},
-  {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},
-  {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING",  0},
-  {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
-  {"PHG_RANDOMIZE_INPUT",             NULL,  "INT",    0},
-  {"PHG_PROCESSOR_REDUCTION_LIMIT",   NULL,  "FLOAT",  0},
-  {"PHG_REPART_MULTIPLIER",           NULL,  "FLOAT",  0},
-  {"PATOH_ALLOC_POOL0",               NULL,  "INT",    0},
-  {"PATOH_ALLOC_POOL1",               NULL,  "INT",    0},
-  {"PHG_KEEP_TREE",                   NULL,  "INT",    0},
-  { "PARMETIS_METHOD", NULL, "STRING", 0 },
-  { "PARMETIS_OUTPUT_LEVEL", NULL, "INT", 0 },
-  { "PARMETIS_SEED", NULL, "INT", 0 },
-  { "PARMETIS_ITR", NULL, "DOUBLE", 0 },
-  { "PARMETIS_COARSE_ALG", NULL, "INT", 0 },
-  { "PARMETIS_FOLD", NULL, "INT", 0 },
-  { NULL, NULL, NULL, 0 } };
-
-static PARAM_VARS geometric_type_params[] = {
-        { "RCB_OVERALLOC", NULL, "DOUBLE", 0 },
-        { "CHECK_GEOM", NULL, "INT", 0 },
-        { "RCB_OUTPUT_LEVEL", NULL, "INT", 0 },
-        { "RCB_LOCK_DIRECTIONS", NULL, "INT", 0 },
-        { "RCB_SET_DIRECTIONS", NULL, "INT", 0 },
-        { "RCB_RECTILINEAR_BLOCKS", NULL, "INT", 0 },
-        { "OBJ_WEIGHTS_COMPARABLE", NULL, "INT", 0 },
-        { "RCB_MULTICRITERIA_NORM", NULL, "INT", 0 },
-        { "RCB_MAX_ASPECT_RATIO", NULL, "DOUBLE", 0 },
-        { "AVERAGE_CUTS", NULL, "INT", 0 },
-        { "RANDOM_PIVOTS", NULL, "INT", 0 },
-        { "RCB_RECOMPUTE_BOX", NULL, "INT", 0 },
-        { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
-        { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
-        { "RIB_OVERALLOC", NULL, "DOUBLE", 0 },
-        { "RIB_OUTPUT_LEVEL", NULL, "INT", 0 },
-        { "AVERAGE_CUTS", NULL, "INT", 0 },
-        { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
-        { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
-        {"FINAL_OUTPUT", NULL,  "INT",    0},
-        { NULL, NULL, NULL, 0 } };
 
 static char *make_platform_name_string();
 static void view_hierarchy_specification(zoltan_platform_specification *spec, int rank,
@@ -200,13 +134,20 @@ static void Zoltan_Hier_Assist_Method(void *data, int level, struct Zoltan_Struc
   if ((from->Get_Num_Edges != NULL || from->Get_Num_Edges_Multi != NULL) &&
            (from->Get_Edge_List != NULL || from->Get_Edge_List_Multi != NULL)) {
 
-    Zoltan_Filter_Params(to, from, graph_type_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Filter_Params(to, from, Graph_Package_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Filter_Params(to, from, ZG_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Filter_Params(to, from, Order_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Filter_Params(to, from, Parmetis_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Filter_Params(to, from, Scotch_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Filter_Params(to, from, PHG_params, from->Debug_Level, to->Proc, 0);
     Zoltan_Set_Param(to, "LB_METHOD", "GRAPH");
   }
   else if (from->Get_Num_Geom != NULL &&
       (from->Get_Geom != NULL || from->Get_Geom_Multi != NULL)) {
 
-    Zoltan_Filter_Params(to, from, geometric_type_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Filter_Params(to, from, RCB_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Filter_Params(to, from, RIB_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Filter_Params(to, from, HSFC_params, from->Debug_Level, to->Proc, 0);
     Zoltan_Set_Param(to, "LB_METHOD", "RIB");   /* TODO figure out RIB, RCB or HSFC? */
   }
   else{

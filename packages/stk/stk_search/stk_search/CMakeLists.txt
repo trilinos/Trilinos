@@ -1,6 +1,9 @@
 
 INCLUDE(TribitsLibraryMacros)
 
+ADD_SUBDIRECTORY(diag)
+
+
 #
 # A) Package-specific configuration options
 #
@@ -59,5 +62,5 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
-#INSTALL(FILES ${HEADERS} DESTINATION
-#    ${CMAKE_INSTALL_PREFIX}/include/stk_search)
+INSTALL(FILES ${HEADERS} DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/include/stk_search)

@@ -10,6 +10,9 @@
 #include "Ifpack_METISReordering.h"
 #include "Ifpack_LocalFilter.h"
 #include "Ifpack_NodeFilter.h"
+#ifdef IFPACK_SUBCOMM_CODE
+#include "Ifpack_SubdomainFilter.h"
+#endif
 #include "Ifpack_SingletonFilter.h"
 #include "Ifpack_ReorderFilter.h"
 #include "Ifpack_Utils.h"
@@ -25,6 +28,10 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
+#ifdef IFPACK_SUBCOMM_CODE
+#include "EpetraExt_Reindex_CrsMatrix.h"
+#include "EpetraExt_Reindex_MultiVector.h"
+#endif
 #ifdef IFPACK_NODE_AWARE_CODE
 #include "EpetraExt_OperatorOut.h"
 #include "EpetraExt_RowMatrixOut.h"
@@ -351,11 +358,44 @@ protected:
   //TODO then we should switch to this definition.
   Teuchos::RefCountPtr<Epetra_RowMatrix> LocalizedMatrix_;
 */
+#ifdef IFPACK_SUBCOMM_CODE
+  //! The subdomain matrix (either LocalFilter or SubdomainFilter)
+  Teuchos::RCP<Epetra_RowMatrix> LocalizedMatrix_;
+  //! The subdomain matrix in Epetra_CrsMatrix format
+  Teuchos::RCP<Epetra_CrsMatrix> SubdomainCrsMatrix_;
+  //! The reindexed version of SubdomainCrsMatrix_
+  Teuchos::RCP<Epetra_CrsMatrix> ReindexedCrsMatrix_;
+
+  // The following data members are needed when doing ApplyInverse
+  // with an Ifpack_SubdomainFilter local matrix
+  Teuchos::RCP<Epetra_Map> tempMap_;
+  Teuchos::RCP<Epetra_Map> tempDomainMap_;
+  Teuchos::RCP<Epetra_Map> tempRangeMap_;
+  Teuchos::RCP<EpetraExt::CrsMatrix_Reindex> SubdomainMatrixReindexer_;
+  Teuchos::RCP<EpetraExt::MultiVector_Reindex> DomainVectorReindexer_;
+  Teuchos::RCP<EpetraExt::MultiVector_Reindex> RangeVectorReindexer_;
+  mutable Teuchos::RCP<Epetra_MultiVector> tempX_;
+  mutable Teuchos::RCP<Epetra_MultiVector> tempY_;
+#else
 # ifdef IFPACK_NODE_AWARE_CODE
   Teuchos::RefCountPtr<Ifpack_NodeFilter> LocalizedMatrix_;
 # else
   Teuchos::RefCountPtr<Ifpack_LocalFilter> LocalizedMatrix_;
 # endif
+#endif
+#ifdef IFPACK_SUBCOMM_CODE
+  // Some data members used for determining the subdomain id (color)
+  //! The MPI rank of the current process
+  int MpiRank_;
+  //! The total number of MPI processes in the simulation
+  int NumMpiProcs_;
+  //! The number of MPI processes per subdomain
+  int NumMpiProcsPerSubdomain_;
+  //! The number of subdomains
+  int NumSubdomains_;
+  //! The unique ID associated with the subdomain
+  int SubdomainId_;
+#endif
   //! Contains the label of \c this object.
   string Label_;
   //! If true, the preconditioner has been successfully initialized.
@@ -411,6 +451,10 @@ protected:
   //! Pointer to the local solver.
   Teuchos::RefCountPtr<T> Inverse_;
   //! Vectors used in overlap solve.
+#ifdef IFPACK_SUBCOMM_CODE
+  mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlappingX;
+  mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlappingY;
+#endif
 # ifdef IFPACK_NODE_AWARE_CODE
   mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlappingX;
   mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlappingY;
@@ -422,7 +466,14 @@ protected:
 template<typename T>
 Ifpack_AdditiveSchwarz<T>::
 Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix_in,
-		       int OverlapLevel_in) :
+        		       int OverlapLevel_in) :
+#ifdef IFPACK_SUBCOMM_CODE
+  MpiRank_(0),
+  NumMpiProcs_(1),
+  NumMpiProcsPerSubdomain_(1),
+  NumSubdomains_(1),
+  SubdomainId_(0),
+#endif
   IsInitialized_(false),
   IsComputed_(false),
   UseTranspose_(false),
@@ -468,6 +519,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 
   Epetra_RowMatrix* MatrixPtr;
 
+#ifndef IFPACK_SUBCOMM_CODE
 # ifdef IFPACK_NODE_AWARE_CODE
 /*
   sleep(3);
@@ -490,10 +542,18 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   catch(...){fprintf(stderr,"%s","Ifpack_AdditiveSchwarz<T>::Setup(): no parameter \"ML node id\"\n\n");
              cout << List_ << endl;}
 # endif
+#endif
 
   try{
   if (OverlappingMatrix_ != Teuchos::null)
   {
+#ifdef IFPACK_SUBCOMM_CODE
+    if (NumMpiProcsPerSubdomain_ > 1) {
+      LocalizedMatrix_ = Teuchos::rcp(new Ifpack_SubdomainFilter(OverlappingMatrix_, SubdomainId_));
+    } else {
+      LocalizedMatrix_ = Teuchos::rcp(new Ifpack_LocalFilter(OverlappingMatrix_));
+    }
+#else
 #   ifdef IFPACK_NODE_AWARE_CODE
     Ifpack_NodeFilter *tt = new Ifpack_NodeFilter(OverlappingMatrix_,nodeID); //FIXME
     LocalizedMatrix_ = Teuchos::rcp(tt);
@@ -501,9 +561,17 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 #   else
     LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(OverlappingMatrix_) );
 #   endif
+#endif
   }
   else
   {
+#ifdef IFPACK_SUBCOMM_CODE
+    if (NumMpiProcsPerSubdomain_ > 1) {
+      LocalizedMatrix_ = Teuchos::rcp(new Ifpack_SubdomainFilter(Matrix_, SubdomainId_));
+    } else {
+      LocalizedMatrix_ = Teuchos::rcp(new Ifpack_LocalFilter(Matrix_));
+    }
+#else
 #   ifdef IFPACK_NODE_AWARE_CODE
     Ifpack_NodeFilter *tt = new Ifpack_NodeFilter(Matrix_,nodeID); //FIXME
     LocalizedMatrix_ = Teuchos::rcp(tt);
@@ -511,6 +579,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 #   else
     LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(Matrix_) );
 #   endif
+#endif
   }
   }
   catch(...) {
@@ -557,6 +626,35 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
     MatrixPtr = &*ReorderedLocalizedMatrix_;
   }
 
+#ifdef IFPACK_SUBCOMM_CODE
+  // The subdomain matrix needs to be reindexed by Amesos so we need to make a CrsMatrix
+  // and then reindex it with EpetraExt.
+  // The reindexing is done here because this feature is only implemented in Amesos_Klu,
+  // and it is desired to have reindexing with other direct solvers in the Amesos package
+  SubdomainCrsMatrix_.reset(new Epetra_CrsMatrix(Copy, MatrixPtr->RowMatrixRowMap(), -1));
+  Teuchos::RCP<Epetra_Import> tempImporter = Teuchos::rcp(new Epetra_Import(SubdomainCrsMatrix_->Map(), MatrixPtr->Map()));
+  SubdomainCrsMatrix_->Import(*MatrixPtr, *tempImporter, Insert);
+  SubdomainCrsMatrix_->FillComplete();
+
+  tempMap_.reset(new Epetra_Map(SubdomainCrsMatrix_->RowMap().NumGlobalElements(),
+                               SubdomainCrsMatrix_->RowMap().NumMyElements(),
+                               0, SubdomainCrsMatrix_->Comm()));
+  tempRangeMap_.reset(new Epetra_Map(SubdomainCrsMatrix_->OperatorRangeMap().NumGlobalElements(),
+                                    SubdomainCrsMatrix_->OperatorRangeMap().NumMyElements(),
+                                    0, SubdomainCrsMatrix_->Comm()));
+  tempDomainMap_.reset(new Epetra_Map(SubdomainCrsMatrix_->OperatorDomainMap().NumGlobalElements(),
+                                     SubdomainCrsMatrix_->OperatorDomainMap().NumMyElements(),
+                                     0, SubdomainCrsMatrix_->Comm()));
+
+  SubdomainMatrixReindexer_.reset(new EpetraExt::CrsMatrix_Reindex(*tempMap_));
+  DomainVectorReindexer_.reset(new EpetraExt::MultiVector_Reindex(*tempDomainMap_));
+  RangeVectorReindexer_.reset(new EpetraExt::MultiVector_Reindex(*tempRangeMap_));
+
+  ReindexedCrsMatrix_.reset(&((*SubdomainMatrixReindexer_)(*SubdomainCrsMatrix_)), false);
+  
+  MatrixPtr = &*ReindexedCrsMatrix_;
+#endif
+
   Inverse_ = Teuchos::rcp( new T(MatrixPtr) );
 
   if (Inverse_ == Teuchos::null)
@@ -569,7 +667,18 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 template<typename T>
 int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List_in)
 {
- 
+#ifdef IFPACK_SUBCOMM_CODE
+  MpiRank_ = Matrix_->Comm().MyPID();
+  NumMpiProcs_ = Matrix_->Comm().NumProc();
+  NumMpiProcsPerSubdomain_ = List_in.get("subdomain: number-of-processors", 1);
+  NumSubdomains_ = NumMpiProcs_ / NumMpiProcsPerSubdomain_;
+  SubdomainId_ = MpiRank_ / NumMpiProcsPerSubdomain_;
+
+  if (NumSubdomains_ == 1) {
+      IsOverlapping_ = false;
+  }
+
+#endif
   // compute the condition number each time Compute() is invoked.
   ComputeCondest_ = List_in.get("schwarz: compute condest", ComputeCondest_);
   // combine mode
@@ -647,20 +756,27 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
 
   // compute the overlapping matrix if necessary
   if (IsOverlapping_) {
+#ifdef IFPACK_SUBCOMM_CODE
+    if (NumMpiProcsPerSubdomain_ > 1) {
+      OverlappingMatrix_ = Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_, SubdomainId_) );
+    } else {
+      OverlappingMatrix_ = Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_));
+    }
+#else
 #     ifdef IFPACK_NODE_AWARE_CODE
-      int myNodeID;
-      try{ myNodeID = List_.get("ML node id",-1);}
-      catch(...){fprintf(stderr,"pid %d: no such entry (returned %d)\n",Comm().MyPID(),myNodeID);}
+    int myNodeID;
+    try{ myNodeID = List_.get("ML node id",-1);}
+    catch(...){fprintf(stderr,"pid %d: no such entry (returned %d)\n",Comm().MyPID(),myNodeID);}
 /*
       cout << "pid " << Comm().MyPID()
            << ": calling Ifpack_OverlappingRowMatrix with myNodeID = "
            << myNodeID << ", OverlapLevel_ = " << OverlapLevel_ << endl;
 */
-      OverlappingMatrix_ = Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_, myNodeID) );
+    OverlappingMatrix_ = Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_, myNodeID) );
 #   else
-      OverlappingMatrix_ =
-        Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_) );
+    OverlappingMatrix_ = Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_) );
 #   endif
+#endif
 
     if (OverlappingMatrix_ == Teuchos::null) {
       IFPACK_CHK_ERR(-5);
@@ -721,7 +837,6 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
 template<typename T>
 int Ifpack_AdditiveSchwarz<T>::Compute()
 {
-
   if (IsInitialized() == false)
     IFPACK_CHK_ERR(Initialize());
 
@@ -755,7 +870,7 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
   Label_ = "Ifpack_AdditiveSchwarz, ov = " + Ifpack_toString(OverlapLevel_)
     + ", local solver = \n\t\t***** `" + string(Inverse_->Label()) + "'"
     + "\n\t\t***** " + R + "Condition number estimate = "
-    + Ifpack_toString(Condest());
+    + Ifpack_toString(Condest_);
 
   return(0);
 }
@@ -861,6 +976,16 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // process overlap, may need to create vectors and import data
   if (IsOverlapping()) {
+#ifdef IFPACK_SUBCOMM_CODE
+    if (OverlappingX == Teuchos::null) {
+      OverlappingX = Teuchos::rcp( new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(), X.NumVectors()) );
+      if (OverlappingX == Teuchos::null) IFPACK_CHK_ERR(-5);
+    } else assert(OverlappingX->NumVectors() == X.NumVectors());
+    if (OverlappingY == Teuchos::null) {
+      OverlappingY = Teuchos::rcp( new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(), Y.NumVectors()) );
+      if (OverlappingY == Teuchos::null) IFPACK_CHK_ERR(-5);
+    } else assert(OverlappingY->NumVectors() == Y.NumVectors());
+#else
 #   ifdef IFPACK_NODE_AWARE_CODE
     if (OverlappingX == Teuchos::null) {
       OverlappingX = Teuchos::rcp( new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
@@ -879,6 +1004,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 							Y.NumVectors()) );
     if (OverlappingY == Teuchos::null) IFPACK_CHK_ERR(-5);
 #   endif
+#endif
     OverlappingY->PutScalar(0.0);
     OverlappingX->PutScalar(0.0);
     IFPACK_CHK_ERR(OverlappingMatrix_->ImportMultiVector(X,*OverlappingX,Insert));
@@ -917,7 +1043,13 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   else {
     // process reordering
     if (!UseReordering_) {
+#ifdef IFPACK_SUBCOMM_CODE
+      tempX_.reset(&((*RangeVectorReindexer_)(*OverlappingX)), false);
+      tempY_.reset(&((*DomainVectorReindexer_)(*OverlappingY)), false);
+      IFPACK_CHK_ERR(Inverse_->ApplyInverse(*tempX_,*tempY_));
+#else
       IFPACK_CHK_ERR(Inverse_->ApplyInverse(*OverlappingX,*OverlappingY));
+#endif
     }
     else {
       Epetra_MultiVector ReorderedX(*OverlappingX);
@@ -988,6 +1120,15 @@ Print(std::ostream& os) const
 
   os << "Condition number estimate             = " << Condest_ << endl;
   os << "Global number of rows                 = " << Matrix_->NumGlobalRows() << endl;
+
+#ifdef IFPACK_SUBCOMM_CODE
+  os << endl;
+  os << "================================================================================" << endl;
+  os << "Subcommunicator stats" << endl;
+  os << "Number of MPI processes in simulation: " << NumMpiProcs_ << endl;
+  os << "Number of subdomains: " << NumSubdomains_ << endl;
+  os << "Number of MPI processes per subdomain: " << NumMpiProcsPerSubdomain_ << endl;
+#endif
 
   os << endl;
   os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;

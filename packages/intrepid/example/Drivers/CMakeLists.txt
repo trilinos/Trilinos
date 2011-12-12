@@ -1,6 +1,6 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
-IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
+IF(${PROJECT_NAME}_ENABLE_Epetra AND ${PROJECT_NAME}_ENABLE_EpetraExt)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_01
     SOURCES example_01.cpp

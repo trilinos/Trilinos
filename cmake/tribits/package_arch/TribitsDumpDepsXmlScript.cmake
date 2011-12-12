@@ -59,7 +59,8 @@
 #
 # This script is designed to be run as:
 #
-#   $ cmake -P -DPACKAGE_NAME=<packageName> [options] SOME_BASE_DIR/TribitsDumpDepsXmlScript.cmake
+#   $ cmake -P -DPACKAGE_NAME=<packageName> [options] \
+#       SOME_BASE_DIR/TribitsDumpDepsXmlScript.cmake
 #
 
 # A) Echo input options (must be specified with -D arguments to CMake command)
@@ -78,10 +79,11 @@ SET( CMAKE_MODULE_PATH
 
 INCLUDE(TribitsGlobalMacros)
 
-# Generate the d
+# Generate the dependencies file
 
 SET(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
 SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
 SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
+TRIBITS_READ_IN_NATIVE_REPOSITORIES()
 
 TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()

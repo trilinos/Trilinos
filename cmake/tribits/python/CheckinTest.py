@@ -69,31 +69,30 @@
 
 from GeneralScriptSupport import *
 
-from TribitsDependencies import getTrilinosDependenciesFromXmlFile
-from TribitsDependencies import defaultTrilinosDepsXmlInFile
+from TribitsDependencies import getProjectDependenciesFromXmlFile
+from TribitsDependencies import getDefaultDepsXmlInFile
 from TribitsPackageFilePathUtils import *
 import time
 import pprint
 
+import re
+
 pp = pprint.PrettyPrinter(indent=4)
 
 # Load some default dependencies for some unit tests
-trilinosDependenciesCache = None
-def getDefaultTrilinosDependenices():
-#  global trilinosDependenciesCache
-#  if not trilinosDependenciesCache:
-#    trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
-  return trilinosDependenciesCache
+projectDependenciesCache = None
+def getDefaultProjectDependenices():
+  return projectDependenciesCache
 
 # Set the official eg/git versions!
 g_officialEgVersion = "1.7.0.4"
 g_officialGitVersion = "1.7.0.4"
 
 
-def getGitRepoDir(trilinosSrcDir, gitRepoName):
+def getGitRepoDir(srcDir, gitRepoName):
   if gitRepoName:
-    return trilinosSrcDir+"/"+gitRepoName
-  return trilinosSrcDir
+    return srcDir+"/"+gitRepoName
+  return srcDir
 
 
 def getGitRepoFileExt(gitRepoName):
@@ -106,12 +105,12 @@ def getCommonConfigFileName():
   return "COMMON.config"
 
 
-def getTrilinosDependenciesXmlFileName():
-  return "TrilinosPackageDependencies.xml"
+def getProjectDependenciesXmlFileName(projectName):
+  return projectName+"PackageDependencies.xml"
 
 
-def getTrilinosDependenciesXmlGenerateOutputFileName():
-  return "TrilinosPackageDependencies.generate.out"
+def getProjectDependenciesXmlGenerateOutputFileName(projectName):
+  return projectName+"PackageDependencies.generate.out"
 
 
 def getBuildSpecificConfigFileName(buildTestCaseName):
@@ -246,7 +245,7 @@ def setupAndAssertEgGitVersions(inOptions):
 
 
 def assertGitRepoExists(inOptions, gitRepoName):
-  gitRepoDir = getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
+  gitRepoDir = getGitRepoDir(inOptions.srcDir, gitRepoName)
   if not os.path.os.path.exists(gitRepoDir):
     raise Exception("Error, the specified git repo '"+gitRepoName+"' directory"
       " '"+gitRepoDir+"' does not exist!")
@@ -256,12 +255,12 @@ def assertPackageNames(optionName, packagesListStr):
   if not packagesListStr:
     return
   for packageName in packagesListStr.split(','):
-    if getDefaultTrilinosDependenices().packageNameToID(packageName) == -1:
+    if getDefaultProjectDependenices().packageNameToID(packageName) == -1:
       validPackagesListStr = ""
-      for i in range(getDefaultTrilinosDependenices().numPackages()):
+      for i in range(getDefaultProjectDependenices().numPackages()):
         if validPackagesListStr != "":
           validPackagesListStr += ", "
-        validPackagesListStr += getDefaultTrilinosDependenices().getPackageByID(i).packageName
+        validPackagesListStr += getDefaultProjectDependenices().getPackageByID(i).packageName
       raise Exception("Error, invalid package name "+packageName+" in " \
         +optionName+"="+packagesListStr \
         +".  The valid package names include: "+validPackagesListStr)
@@ -312,7 +311,7 @@ def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
     cmnd += " && "+inOptions.eg+" rebase --against origin/"+inOptions.currentBranch
   outFileFullPath = os.path.join(baseTestDir, outFile)
   (updateRtn, updateTimings) = echoRunSysCmnd( cmnd,
-    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName),
     outFile=outFileFullPath,
     timeCmnd=True, returnTimeCmnd=True, throwExcept=False
     )
@@ -451,24 +450,26 @@ def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
     writeStrToFile(buildSpecificConfigFileName, buildSpecificConfigFileStr)
 
 
-reTPlEnable = re.compile(r"-DTPL_ENABLE_.+")
+def assertNoIllegalEnables(projectName, fileName, cmakeOption):
+  
+  reTPlEnable = re.compile(r"-DTPL_ENABLE_.+")
+  reProjectEnableOn = re.compile(r"-D%s_ENABLE_[a-zA-Z]+.+=ON" % projectName)
 
-
-reTrilinosEnableOn = re.compile(r"-DTrilinos_ENABLE_[a-zA-Z]+.+=ON")
-
-
-def assertNoIllegalEnables(fileName, cmakeOption):
   success = True
   if reTPlEnable.match(cmakeOption):
     print "    ERROR: Illegal TPL enable "+cmakeOption+" in "+fileName+"!"    
     success = False
-  elif reTrilinosEnableOn.match(cmakeOption):
+  elif reProjectEnableOn.match(cmakeOption):
     print "    ERROR: Illegal enable "+cmakeOption+" in "+fileName+"!"    
     success = False
   return success
 
 
-def readAndAppendCMakeOptions(fileName, cmakeOptions_inout, assertNoIllegalEnablesBool):
+def readAndAppendCMakeOptions(
+    projectName,
+    fileName,
+    cmakeOptions_inout,
+    assertNoIllegalEnablesBool):
 
   success = True
 
@@ -485,7 +486,7 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout, assertNoIllegalEnabl
       if cmakeOption == "": continue
       print "  Appending: "+cmakeOption
       if assertNoIllegalEnablesBool:
-        if not assertNoIllegalEnables(fileName, cmakeOption):
+        if not assertNoIllegalEnables(projectName, fileName, cmakeOption):
           success = False
       cmakeOptions_inout.append(cmakeOption)
 
@@ -496,7 +497,7 @@ reModifiedFiles = re.compile(r"^[MAD]\t(.+)$")
 
 
 def getCurrentBranchName(inOptions, baseTestDir):
-  branchesStr = getCmndOutput(inOptions.eg+" branch", workingDir=inOptions.trilinosSrcDir)
+  branchesStr = getCmndOutput(inOptions.eg+" branch", workingDir=inOptions.srcDir)
   for branchName in branchesStr.split('\n'):
     #print "branchName =", branchName
     if branchName[0] == '*':
@@ -509,7 +510,7 @@ def getCurrentBranchName(inOptions, baseTestDir):
 def getCurrentDiffOutput(gitRepoName, inOptions, baseTestDir):
   echoRunSysCmnd(
     inOptions.eg+" diff --name-status origin/"+inOptions.currentBranch,
-    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName),
     outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName(gitRepoName)),
     timeCmnd=True
     )
@@ -517,11 +518,11 @@ def getCurrentDiffOutput(gitRepoName, inOptions, baseTestDir):
 
 def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
   gitRepoName, enablePackagesList_inout, verbose=True,
-  trilinosDependenciesLocal=None ) \
+  projectDependenciesLocal=None ) \
   :
 
-  if not trilinosDependenciesLocal:
-    trilinosDependenciesLocal = getDefaultTrilinosDependenices()
+  if not projectDependenciesLocal:
+    projectDependenciesLocal = getDefaultProjectDependenices()
 
   modifiedFilesList = extractFilesListMatchingPattern(
     updateOutputStr.split('\n'), reModifiedFiles )
@@ -533,14 +534,14 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
       if inOptions_inout.enableAllPackages == 'auto':
         if verbose:
           print "\nModifed file: '"+modifiedFileFullPath+"'\n" \
-            "  => Enabling all Trilinos packages!"
+            "  => Enabling all "+inOptions_inout.projectName+" packages!"
         inOptions_inout.enableAllPackages = 'on'
 
     if gitRepoName:
-      modifiedFileFullPath = "packages/../"+gitRepoName+"/"+modifiedFileFullPath
+      modifiedFileFullPath = gitRepoName+"/"+modifiedFileFullPath
     #print "\nmodifiedFileFullPath =", modifiedFileFullPath
 
-    packageName = getPackageNameFromPath(trilinosDependenciesLocal, modifiedFileFullPath)
+    packageName = getPackageNameFromPath(projectDependenciesLocal, modifiedFileFullPath)
     if packageName and findInSequence(enablePackagesList_inout, packageName) == -1:
       if verbose:
         print "\nModified file: '"+modifiedFileFullPath+"'\n" \
@@ -548,7 +549,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
       enablePackagesList_inout.append(packageName)
 
 
-def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
+def createConfigureFile(cmakeOptions, baseCmnd, srcDir, configFileName):
 
     doConfigStr = ""
   
@@ -563,8 +564,8 @@ def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
     doConfigStr += \
       "$EXTRA_ARGS"
 
-    if trilinosSrcDir:
-      doConfigStr += " \\\n"+trilinosSrcDir
+    if srcDir:
+      doConfigStr += " \\\n"+srcDir
     
     doConfigStr += "\n"
   
@@ -812,7 +813,7 @@ def analyzeResultsSendEmail(inOptions, buildTestCase,
   if not selectedFinalStatus:
     raise Exception("Error, final pass/fail status not found!")
 
-  subjectLine = "Trilinos/"+buildTestCaseName+": "+buildCaseStatus
+  subjectLine = "%s/%s: %s" % (inOptions.projectName, buildTestCaseName, buildCaseStatus)
   if overallPassed:
     subjectLine = "passed: " + subjectLine
   else:
@@ -830,7 +831,7 @@ def analyzeResultsSendEmail(inOptions, buildTestCase,
 
   emailBody += getEnableStatusList(inOptions, enabledPackagesList)
   emailBody += "Hostname: " + getHostname() + "\n"
-  emailBody += "Source Dir: " + inOptions.trilinosSrcDir + "\n"
+  emailBody += "Source Dir: " + inOptions.srcDir + "\n"
   emailBody += "Build Dir: " + os.getcwd() + "\n"
   emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
   if inOptions.extraCmakeOptions:
@@ -963,11 +964,18 @@ def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
   return summaryEmailSectionStr
 
 
+def cmakeDefine(projectName, name, value):
+  """
+  Formats a CMake -D<projectName>_<name>=<value> argument.
+  """
+  return '-D%s_%s=%s' % (projectName, name, value)
+
 def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
    skipCaseIfNoChangeFromDefaultEnables, gitRepoList,
    baseTestDir, verbose \
    ):
 
+  projectName = inOptions.projectName
   cmakePkgOptions = []
   enablePackagesList = []
     
@@ -1003,51 +1011,39 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   if verbose:
     print "\nFiltering the set of enabled packages according to allowed package types ..."
   origEnablePackagesList = enablePackagesList[:]
-  enablePackagesList = getDefaultTrilinosDependenices().filterPackageNameList(
+  enablePackagesList = getDefaultProjectDependenices().filterPackageNameList(
     enablePackagesList, validPackageTypesList, verbose)
 
   if verbose:
     print "\nFinal package enable list: [" + ','.join(enablePackagesList) + "]"
 
-  if isDefaultBuild:
-    print "\nSaving current set of default package enables for later comparison!"
-    inOptions.defaultPackageEnables = enablePackagesList[:]
-  elif skipCaseIfNoChangeFromDefaultEnables and enablePackagesList == inOptions.defaultPackageEnables:
-    #print "inOptions.enablePackagesList =", inOptions.defaultPackageEnables
-    #print "enablePackagesList =", enablePackagesList
-    print "\nEnable packages list is unchanged from default build," \
-      " disabling all packages for this build/test case!"
-    enablePackagesList = []
-
-  if not enablePackagesList:
-    return (cmakePkgOptions, enablePackagesList)
-
   if inOptions.extraRepos:
-    cmakePkgOptions.append("-DTrilinos_EXTRA_REPOSITORIES:STRING="+inOptions.extraRepos)
+    cmakePkgOptions.append(cmakeDefine(
+      projectName, "EXTRA_REPOSITORIES:STRING", inOptions.extraRepos))
 
   for pkg in enablePackagesList:
-    cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
+    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_"+pkg+":BOOL", "ON"))
 
-  cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON")
+  cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_OPTIONAL_PACKAGES:BOOL", "ON"))
 
   if inOptions.enableAllPackages == 'on':
     if verbose:
       print "\nEnabling all packages on request!"
-    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON")
+    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_PACKAGES:BOOL", "ON"))
 
   if inOptions.enableFwdPackages:
     if verbose:
       print "\nEnabling forward packages on request!"
-    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
+    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL", "ON"))
   else:
-    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=OFF")
+    cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL", "OFF"))
 
   if inOptions.disablePackages:
     if verbose:
       print "\nAdding hard disaled for specified packages '"+inOptions.disablePackages+"' ...\n"
     disablePackagesList = inOptions.disablePackages.split(',')
     for pkg in disablePackagesList:
-      cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=OFF")
+      cmakePkgOptions.append(cmakeDefine(projectName, "ENABLE_"+pkg+":BOOL", "OFF"))
 
   if verbose:
     print "\ncmakePkgOptions:", cmakePkgOptions
@@ -1083,16 +1079,19 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
     print ""
 
     preConfigurePassed = True
+    projectName = inOptions.projectName
 
     # A.1) Set the base options
   
     cmakeBaseOptions = []
+    if inOptions.extraCmakeOptions:
+      cmakeBaseOptions.extend(commandLineOptionsToList(inOptions.extraCmakeOptions))
   
-    cmakeBaseOptions.append("-DTrilinos_ENABLE_TESTS:BOOL=ON")
+    cmakeBaseOptions.append(cmakeDefine(projectName, "ENABLE_TESTS:BOOL", "ON"))
   
-    cmakeBaseOptions.append("-DTrilinos_TEST_CATEGORIES:STRING=BASIC")
+    cmakeBaseOptions.append(cmakeDefine(projectName, "TEST_CATEGORIES:STRING", "BASIC"))
 
-    cmakeBaseOptions.append("-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF")
+    cmakeBaseOptions.append(cmakeDefine(projectName, "ALLOW_NO_PACKAGES:BOOL", "OFF"))
 
     if inOptions.ctestTimeOut:
       cmakeBaseOptions.append(("-DDART_TESTING_TIMEOUT:STRING="+str(inOptions.ctestTimeOut)))
@@ -1100,12 +1099,14 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
     cmakeBaseOptions.extend(buildTestCase.extraCMakeOptions)
 
     result = readAndAppendCMakeOptions(
+      inOptions.projectName,
       os.path.join("..", getCommonConfigFileName()),
       cmakeBaseOptions,
       True)
     if not result: preConfigurePassed = False
 
     reuslt = readAndAppendCMakeOptions(
+      inOptions.projectName,
       os.path.join("..", getBuildSpecificConfigFileName(buildTestCaseName)),
       cmakeBaseOptions,
       buildTestCase.isDefaultBuild)
@@ -1136,7 +1137,7 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
       print "\ncmakeOptions =", cmakeOptions
     
       print "\nCreating base configure file do-configure.base ..."
-      createConfigureFile(cmakeBaseOptions, "cmake", inOptions.trilinosSrcDir,
+      createConfigureFile(cmakeBaseOptions, "cmake", inOptions.srcDir,
         "do-configure.base")
     
       print "\nCreating package-enabled configure file do-configure ..."
@@ -1152,7 +1153,7 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
 
       print "\nSkipping "+buildTestCaseName+" configure because pre-configure failed (see above)!\n"
 
-    elif not enablePackagesList:
+    elif not (enablePackagesList or inOptions.enableAllPackages == 'on'):
 
       print "\nSkipping "+buildTestCaseName+" configure because no packages are enabled!\n"
       buildTestCase.skippedConfigureDueToNoEnables = True
@@ -1162,8 +1163,6 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
       removeIfExists("CMakeCache.txt")
 
       cmnd = "./do-configure"
-      if inOptions.extraCmakeOptions:
-        cmnd += " " + inOptions.extraCmakeOptions
 
       (configureRtn, timings.configure) = echoRunSysCmnd(cmnd,
         outFile=getConfigureOutputFileName(),
@@ -1401,7 +1400,7 @@ def getUserCommitMessageStr(inOptions):
 
   absCommitMsgHeaderFile = inOptions.commitMsgHeaderFile
   if not os.path.isabs(absCommitMsgHeaderFile):
-    absCommitMsgHeaderFile = os.path.join(inOptions.trilinosSrcDir, absCommitMsgHeaderFile)
+    absCommitMsgHeaderFile = os.path.join(inOptions.srcDir, absCommitMsgHeaderFile)
 
   print "\nExtracting commit message subject and header from the file '" \
         +absCommitMsgHeaderFile+"' ...\n"
@@ -1490,7 +1489,7 @@ def getLastCommitMessageStr(inOptions, gitRepoName):
   # Get the raw output from the last current commit log
   rawLogOutput = getCmndOutput(
     inOptions.eg+" cat-file -p HEAD",
-    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName)
     )
 
   return getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)[0]
@@ -1502,7 +1501,7 @@ def getLocalCommitsSummariesStr(inOptions, gitRepoName, appendRepoName):
   rawLocalCommitsStr = getCmndOutput(
     inOptions.eg+" log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
     True,
-    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName)
     )
 
   if gitRepoName and appendRepoName:
@@ -1541,7 +1540,7 @@ def getLocalCommitsSHA1ListStr(inOptions, gitRepoName):
   rawLocalCommitsStr = getCmndOutput(
     inOptions.eg+" log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
     True,
-    workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
+    workingDir=getGitRepoDir(inOptions.srcDir, gitRepoName)
     )
 
   if rawLocalCommitsStr:
@@ -1557,25 +1556,63 @@ def getLocalCommitsExist(inOptions, gitRepoName):
   return False
 
 
-def checkinTest(inOptions):
+def matchProjectName(line):
+  """
+  Attempts to match and return the value of PROJECT_NAME in a line like
+  SET(PROJECT_NAME <name>)
+  If no match can be made, None is returned.
+  """
+  matchRegex = r'\s*[Ss][Ee][Tt]\s*\(\s*PROJECT_NAME\s+([^\)\s]*)\s*\).*'
+  match = re.search(matchRegex, line)
+  if match:
+    return match.group(1)
+  else:
+    return None
 
+
+def getProjectName(sourceDirectory):
+  """
+  Reads the project name from <root>/ProjectName.cmake
+  """
+  projectNameFile = os.path.join(sourceDirectory, 'ProjectName.cmake')
+  if not os.path.exists(projectNameFile):
+    raise Exception(
+      "%s is required to exist for a valid Tribits project." % projectNameFile)
+  content = open(projectNameFile, "r")
+  line = content.readline()
+  while line:
+    name = matchProjectName(line)
+    if name:
+      return name
+    line = content.readline()
+  raise Exception(
+    'The file %s does not set the PROJECT_NAME variable. ' +
+    'This is required of any Tribits project.')
+  
+def checkinTest(baseDir, inOptions, configuration={}):
+  """
+  Main function for checkin testing.
+  """
+
+  if not inOptions.projectName:
+    inOptions.projectName = getProjectName(inOptions.srcDir)
+  
   print "\n**********************************************"
-  print "*** Performing checkin testing of Trilinos ***"
+  print "*** Performing checkin testing of %s ***" % inOptions.projectName
   print "**********************************************"
 
-  scriptsDir = getScriptBaseDir()
+  scriptsDir = os.path.join(baseDir, 'python')
   #print "\nscriptsDir =", scriptsDir
   setattr(inOptions, "scriptsDir", scriptsDir)
 
-  print "\ntrilinosSrcDir =", inOptions.trilinosSrcDir
+  print "\nsrcDir =", inOptions.srcDir
 
   baseTestDir = os.getcwd()
   print "\nbaseTestDir =", baseTestDir
 
   if inOptions.withoutDefaultBuilds:
-    inOptions.withMpiDebug = False
-    inOptions.withSerialRelease = False
-
+    inOptions.defaultBuilds = ''
+    
   if inOptions.doAll:
     inOptions.doPull = True
     inOptions.doConfigure = True
@@ -1598,44 +1635,47 @@ def checkinTest(inOptions):
   assertExtraBuildConfigFiles(inOptions.ssExtraBuilds)
 
   if not inOptions.skipDepsUpdate:
-    removeIfExists(getTrilinosDependenciesXmlFileName())
-    removeIfExists(getTrilinosDependenciesXmlGenerateOutputFileName())
-
-  setattr(inOptions, "defaultPackageEnables", [])
+    removeIfExists(getProjectDependenciesXmlFileName(inOptions.projectName))
+    removeIfExists(getProjectDependenciesXmlGenerateOutputFileName(inOptions.projectName))
 
   if inOptions.extraRepos:
     print "\nPulling in packages from extra repos: "+inOptions.extraRepos+" ..."
     for gitRepoName in inOptions.extraRepos.split(","):
       assertGitRepoExists(inOptions, gitRepoName)        
     if not inOptions.skipDepsUpdate:
-      # There are extra repos so we need to build a new list of Trilinos packages
+      # There are extra repos so we need to build a new list of Project packages
       # to include the add-on packages.
-      cmnd = "cmake -DPROJECT_NAME=Trilinos" \
-       +" -DTrilinos_TRIBITS_DIR="+inOptions.trilinosSrcDir+"/cmake/tribits" \
-       +" -DTrilinos_DEPS_HOME_DIR="+inOptions.trilinosSrcDir \
-       +" -DTrilinos_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR="+baseTestDir \
-       +" -DTrilinos_EXTRA_REPOSITORIES="+inOptions.extraRepos \
-       +" -P "+inOptions.trilinosSrcDir+"/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake"
+      cmakeArgumentList = [
+        "cmake",
+        "-DPROJECT_NAME=%s" % inOptions.projectName,
+        cmakeDefine(inOptions.projectName, "TRIBITS_DIR", inOptions.srcDir + "/cmake/tribits"),
+        cmakeDefine(inOptions.projectName, "DEPS_HOME_DIR", inOptions.srcDir),
+        cmakeDefine(inOptions.projectName, "OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR", baseTestDir),
+        cmakeDefine(inOptions.projectName, "EXTRA_REPOSITORIES", inOptions.extraRepos),
+        "-P %s/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.srcDir,
+      ]
+      cmnd = ' '.join(cmakeArgumentList)
       echoRunSysCmnd(cmnd,
         workingDir=baseTestDir,
-        outFile=baseTestDir+"/"+getTrilinosDependenciesXmlGenerateOutputFileName(),
+        outFile=baseTestDir+"/"\
+          +getProjectDependenciesXmlGenerateOutputFileName(inOptions.projectName),
         timeCmnd=True)
     else:
       print "\nSkipping update of dependencies XML file on request!"
-    trilinosDepsXmlFile = baseTestDir+"/"+getTrilinosDependenciesXmlFileName()
+    projectDepsXmlFile = baseTestDir+"/"\
+      +getProjectDependenciesXmlFileName(inOptions.projectName)
   else:
-    # No extra repos so you can just use the default list of Trilinos
-    # packages
-    trilinosDepsXmlFile = defaultTrilinosDepsXmlInFile
+    # No extra repos so you can just use the default list of packages
+    projectDepsXmlFile = getDefaultDepsXmlInFile(inOptions.srcDir, inOptions.projectName)
 
-  trilinosDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
-  if trilinosDepsXmlFileOverride:
-    print "\ntrilinosDepsXmlFileOverride="+trilinosDepsXmlFileOverride
-    trilinosDepsXmlFile = trilinosDepsXmlFileOverride
+  projectDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
+  if projectDepsXmlFileOverride:
+    print "\nprojectDepsXmlFileOverride="+projectDepsXmlFileOverride
+    projectDepsXmlFile = projectDepsXmlFileOverride
 
 
-  global trilinosDependenciesCache
-  trilinosDependenciesCache = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFile)
+  global projectDependenciesCache
+  projectDependenciesCache = getProjectDependenciesFromXmlFile(projectDepsXmlFile)
 
   assertPackageNames("--enable-packages", inOptions.enablePackages)
   assertPackageNames("--disable-packages", inOptions.disablePackages)
@@ -1649,7 +1689,7 @@ def checkinTest(inOptions):
   # Set up list of repos array
 
   gitRepoList = []
-  gitRepoList.append(GitRepo("")) # The main Trilinos repo
+  gitRepoList.append(GitRepo("")) # The main Project repo
   if inOptions.extraRepos:
     for extraRepo in inOptions.extraRepos.split(","):
       gitRepoList.append(GitRepo(extraRepo))
@@ -1661,41 +1701,22 @@ def checkinTest(inOptions):
 
   buildTestCaseList = []
 
-  # Must hard turn off tentatively enabled TPLs in order to make all machines
-  # more uniform.
-  commonConfigOptions = [
-    "-DTPL_ENABLE_Pthread:BOOL=OFF",
-    "-DTPL_ENABLE_BinUtils:BOOL=OFF"
-    ]
+  cmakeConfig = configuration.get('cmake', {})
 
-  setBuildTestCaseInList( buildTestCaseList,
-    "MPI_DEBUG", inOptions.withMpiDebug,
-    ["PS"], True, False,
-    commonConfigOptions +
-    [
-      "-DTPL_ENABLE_MPI:BOOL=ON",
-      "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
-      "-DTrilinos_ENABLE_DEBUG:BOOL=ON",
-      "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
-      "-DTrilinos_ENABLE_DEBUG_SYMBOLS:BOOL=ON",
-      "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON",
-      "-DTeuchos_ENABLE_DEFAULT_STACKTRACE:BOOL=OFF"
-    ]
-    )
+  commonConfigOptions = cmakeConfig.get('common', [])
 
-  setBuildTestCaseInList( buildTestCaseList,
-    "SERIAL_RELEASE", inOptions.withSerialRelease,
-    ["PS"], True, False,
-    commonConfigOptions +
-    [
-      "-DTPL_ENABLE_MPI:BOOL=OFF",
-      "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
-      "-DTrilinos_ENABLE_DEBUG:BOOL=OFF",
-      "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
-      "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
-    ]
-    )
-
+  defaultBuilds = cmakeConfig.get('default-builds', [])
+  requestedDefaultBuilds = inOptions.defaultBuilds
+  for buildname, buildopts in defaultBuilds:
+    setBuildTestCaseInList(
+      buildTestCaseList,
+      buildname,
+      buildname in requestedDefaultBuilds,
+      ["PS"],
+      True,
+      False,
+      commonConfigOptions + buildopts)
+      
   if inOptions.ssExtraBuilds:
     for ssExtraBuild in inOptions.ssExtraBuilds.split(','):
       setBuildTestCaseInList(buildTestCaseList, ssExtraBuild, True,
@@ -1749,7 +1770,7 @@ def checkinTest(inOptions):
     print "***"
 
     print "\n***"
-    print "*** 3) Update the Trilinos sources ..."
+    print "*** 3) Update the %s sources ..." % inOptions.projectName
     print "***"
 
     repoIsClean = True
@@ -1775,7 +1796,7 @@ def checkinTest(inOptions):
         print "\n3.a."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
         egStatusOutput = getCmndOutput(inOptions.eg+" status", True, throwOnError=False,
-          workingDir=getGitRepoDir(inOptions.trilinosSrcDir,gitRepo.repoName))
+          workingDir=getGitRepoDir(inOptions.srcDir,gitRepo.repoName))
   
         print \
           "\nOutput from 'eg status':\n" + \
@@ -2217,7 +2238,7 @@ def checkinTest(inOptions):
               commitAmendRtn = echoRunSysCmnd(
                 inOptions.eg+" commit --amend" \
                 " -F "+os.path.join(baseTestDir, finalCommitEmailBodyFileName),
-                workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepo.repoName),
+                workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoName),
                 outFile=os.path.join(baseTestDir, getFinalCommitOutputFileName(gitRepo.repoName)),
                 timeCmnd=True, throwExcept=False
                 )
@@ -2299,7 +2320,7 @@ def checkinTest(inOptions):
             if not debugSkipPush:
               pushRtn = echoRunSysCmnd(
                 inOptions.eg+" push origin "+inOptions.currentBranch,
-                workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepo.repoName),
+                workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoName),
                 outFile=os.path.join(baseTestDir, getPushOutputFileName(gitRepo.repoName)),
                 throwExcept=False, timeCmnd=True )
               didAtLeastOnePush = True
@@ -2425,7 +2446,7 @@ def checkinTest(inOptions):
       print "\n9.b) Create and send out push (or readiness status) notification email ..."
       #
     
-      subjectLine += ": Trilinos: "+getHostname()
+      subjectLine += ": %s: %s" % (inOptions.projectName, getHostname())
     
       emailBodyStr = subjectLine + "\n\n"
       emailBodyStr += getCmndOutput("date", True) + "\n\n"
