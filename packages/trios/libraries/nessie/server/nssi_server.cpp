@@ -480,6 +480,7 @@ static int fetch_args(
             &transports[caller->peer.transport_id],
             buf,
             encoded_args_size,
+            1,
             NNTI_GET_DST,
             caller,
             &encoded_args_hdl);
@@ -651,6 +652,7 @@ static int send_result(const NNTI_peer_t   *caller,
             &transports[caller->peer.transport_id],
             buf,
             res_buf_size,
+            1,
             NNTI_SEND_SRC,
             caller,
             &short_res_hdl);
@@ -724,6 +726,7 @@ static int send_result(const NNTI_peer_t   *caller,
                 &transports[caller->peer.transport_id],
                 buf,
                 res_size,
+                1,
                 NNTI_GET_SRC,
                 caller,
                 &long_res_hdl);
@@ -1019,7 +1022,7 @@ void *process_rpc_request(
         goto cleanup;
     }
 
-    log_debug(debug_level, "%d: begin processing request %lu with opcode (%u)",
+    log_debug(debug_level, "%d: begin processing request %d with opcode (%u)",
             thread_id, req_count, header.opcode);
 
     if (logging_debug(rpc_debug_level)) {
@@ -1193,6 +1196,7 @@ int nssi_get_data(
             &transports[data_addr->transport_id],
             (char *)buf,
             len,
+            1,
             NNTI_GET_DST,
             caller,
             &rpc_msg);
@@ -1264,6 +1268,7 @@ extern int nssi_put_data(
             &transports[data_addr->transport_id],
             (char *)buf,
             len,
+            1,
             NNTI_PUT_SRC,
             caller,
             &rpc_msg);
@@ -1613,8 +1618,9 @@ int nssi_service_start(
     rc=NNTI_register_memory(
             &transports[svc->transport_id],
             req_queue_buffer,
-            2*reqs_per_queue*req_size,
-            NNTI_RECV_DST,
+            req_size,
+            2*reqs_per_queue,
+            NNTI_RECV_QUEUE,
             &transports[svc->transport_id].me,
             &req_queue);
     if (rc != NNTI_OK) {
