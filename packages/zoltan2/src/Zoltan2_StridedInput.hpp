@@ -32,7 +32,7 @@ public:
    *  elements are at x[i*stride].
    */
   StridedInput(RCP<const Environment> env, ArrayView<const scalar_t> x, 
-    LNO stride) :  env_(env), vec_(x), stride_(stride) 
+    lno_t stride) :  env_(env), vec_(x), stride_(stride) 
   {
   }
 
@@ -54,10 +54,10 @@ public:
     size_t n = vec_.size();
 
     if (n < 1){
-      array = ArrayRCP<const T>(Teuchos::Enull); 
+      array = ArrayRCP<const T>();
     }
     else if (stride_==1 && typeid(T()) == typeid(scalar_t())){
-      array = arcpFromArrayView<const T>(vec_);
+      array = Teuchos::arcpFromArrayView<const T>(vec_);
     }
     else{
       T *tmp = new T [n];

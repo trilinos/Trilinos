@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
   // Create global identifiers with weights
 
-  int numLocalIds = 10;
+  lno_t numLocalIds = 10;
   int weightDim = 2;
 
   gid_t *myIds = new gid_t [numLocalIds];
@@ -53,9 +53,11 @@ int main(int argc, char *argv[])
   // and verify that it is correct
 
   typedef Zoltan2::BasicUserTypes<scalar_t, gid_t, lno_t, gno_t> userTypes_t;
+  scalar_t *weightPtrs[2] = {weights, weights+1};
+  int strides[2] = {2,2};
 
-  Zoltan2::BasicIdentifierInput<userTypes_t> ia(
-    numLocalIds, weightDim, myIds, weights);
+  Zoltan2::BasicIdentifierInput<userTypes_t> ia( numLocalIds, weightDim, myIds,
+    &weightPtrs[0], &strides[0]);
 
   if (!fail && ia.getLocalNumIds() != numLocalIds){
     fail = 4;
@@ -65,10 +67,17 @@ int main(int argc, char *argv[])
     fail = 5;
 
   const gid_t *globalIdsIn;
-  const scalar_t *weightsIn;
+  scalar_t const *weightsIn[2];
+  int weightStridesIn[2];
 
-  if (!fail && ia.getIdList(globalIdsIn, weightsIn) != numLocalIds)
+  if (!fail && 
+    ia.getIdList(globalIdsIn, &weightsIn[0], &weightStridesIn[0]) != numLocalIds)
     fail = 6;
+
+  const scalar_t *w1 = weightsIn[0];
+  const scalar_t *w2 = weightsIn[1];
+  int incr1 = weightStridesIn[0];
+  int incr2 = weightStridesIn[1];
 
   if (!fail){
     for (lno_t i=0; i < numLocalIds; i++){
@@ -76,11 +85,11 @@ int main(int argc, char *argv[])
         fail = 8;
         break;    
       }
-      if (weightsIn[i*weightDim] != 1.0){
+      if (w1[i*incr1] != 1.0){
         fail = 9;
         break;    
       }
-      if (weightsIn[i*weightDim + 1] != weights[i*weightDim+1]){
+      if (w2[i*incr2] != weights[i*weightDim+1]){
         fail = 10;
         break;    
       }

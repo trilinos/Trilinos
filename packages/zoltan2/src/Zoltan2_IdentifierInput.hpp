@@ -64,19 +64,19 @@ public:
   /*! Sets pointers to this process' identifiers and optional weights.
       \param Ids will on return point to the list of the global Ids for 
         this process.
-      \param weights on return will point to numWeights pointers, each
+      \param weights on return will contain numWeights pointers, each
          pointing to one of the lists of weights.  (The caller must
          allocate the array of numWeighst pointers.)
-      \param strides on return will point to numWeights numbers, one for each
-         weight list, indicating the stride of that list.  If strides is left
-         NULL, it will be assumed the stride of each list of weights is one.
+      \param strides on return will contain numWeights numbers, one for each
+         weight list, indicating the stride of that list.  
          (The caller must allocate the array of numWeights integers.)
 
        \return The number of ids in the Ids list.
    */
 
-  virtual size_t getIdList(const gid_t *&Ids, const scalar_t **&weights, 
-    const int *&strides) const = 0;
+  virtual size_t getIdList(const gid_t (*Ids), const scalar_t * (*weights),   
+    int *strides) const = 0;
+
 
   /*! Given a new mapping of identifiers to partitions,
    *    migrate the identifiers to the new partitions.

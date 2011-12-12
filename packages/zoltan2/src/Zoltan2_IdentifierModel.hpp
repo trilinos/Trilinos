@@ -18,6 +18,7 @@
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_IdentifierInput.hpp>
+#include <Zoltan2_StridedInput.hpp>
 
 namespace Zoltan2 {
 
@@ -94,6 +95,7 @@ public:
   typedef typename IdentifierInput<User>::lno_t     lno_t;
   typedef typename IdentifierInput<User>::gid_t     gid_t;
   typedef IdentifierMap<gid_t, lno_t, gno_t> idmap_t;
+  typedef StridedInput<lno_t, scalar_t> input_t;
   
   IdentifierModel( const IdentifierInput<User> *ia, 
     const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
@@ -120,13 +122,13 @@ public:
     Z2_FORWARD_EXCEPTIONS;
 
     if (nLocalIds){
-      gids_ = arcp(const_cast<gid_t *>(gids), 0, nLocalIds, false);
+      gids_ = arcp(const_cast<gid_t *>(gids), 0, nLocalIds);
   
-      if (weightDim_ > 0){
-        StridedInput *w[weightDim_];
+      if (weightDim > 0){
+        input_t *w = new input_t [weightDim];
         for (int i=0; i < weightDim; i++)
-          w[i] = new StridedInput(env_, wgts[i], wgtStrides[i]);
-        weights_ = arcp<const StridedInput>(w, 0, weightDim_, true);
+          w[i] = new input_t(env_, wgts[i], wgtStrides[i]);
+        weights_ = arcp<const input_t>(w, 0, weightDim);
       }
     }
 
@@ -148,7 +150,7 @@ public:
     if (!gnosAreGids_ && nLocalIds>0){
       gno_t *tmpGno = new gno_t [nLocalIds];
       Z2_LOCAL_MEMORY_ASSERTION(*env_, nLocalIds, tmpGno);
-      gnos_ = arcp(tmpGno, 0, gids_.size(), true);
+      gnos_ = arcp(tmpGno, 0, gids_.size());
 
       try{
         ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
@@ -183,8 +185,8 @@ public:
        \return The number of ids in the Ids list.
    */
 
-  size_t getIdentifierList( ArrayView<const gno_t> &Ids,
-    ArrayView<const StridedInput> &wgts) const 
+  size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
+    ArrayView<const input_t> &wgts) const 
   {
     wgts = weights_(0, weights_.size());
     size_t n = getLocalNumIdentifiers();
@@ -214,7 +216,7 @@ public:
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
   { 
-    ArrayView<const scalar_t> weights;
+    ArrayView<const input_t> weights;
     getIdentifierList(gnos, weights);
   }
 
@@ -225,7 +227,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
-  ArrayRCP<const StridedInput<scalar_t> > weights_;
+  ArrayRCP<const input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 };
@@ -240,6 +242,7 @@ public:
   typedef typename MatrixInput<User>::lno_t     lno_t;
   typedef typename MatrixInput<User>::gid_t     gid_t;
   typedef IdentifierMap<gid_t, lno_t, gno_t> idmap_t;
+  typedef StridedInput<lno_t, scalar_t> input_t;
   
   IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
@@ -251,15 +254,13 @@ public:
     const gid_t *colIds;
     const lno_t *offsets;
 
-    weightDim_ = 0;    // TODO not implemented yet
-
     try{
       nLocalIds = ia->getRowListView(gids, offsets, colIds);
     }
     Z2_FORWARD_EXCEPTIONS;
 
     if (nLocalIds){
-      gids_ = arcp(const_cast<gid_t *>(gids), 0, nLocalIds, false);
+      gids_ = arcp(const_cast<gid_t *>(gids), 0, nLocalIds);
     }
 
     RCP<const idmap_t> idMap;
@@ -280,7 +281,7 @@ public:
     if (!gnosAreGids_ && nLocalIds>0){
       gno_t *tmpGno = new gno_t [nLocalIds];
       Z2_LOCAL_MEMORY_ASSERTION(*env_, nLocalIds, tmpGno);
-      gnos_ = arcp(tmpGno, 0, gids_.size(), true);
+      gnos_ = arcp(tmpGno, 0, gids_.size());
 
       try{
         ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
@@ -309,15 +310,16 @@ public:
       \param Ids will on return point to the list of the global Ids for
         each identifier on this process.
       \param wgts will on return point to a list of the weight or weights
-         associated with each identifier in the Ids list.  Weights are listed by
-         identifier by weight component.
+         associated with each identifier in the Ids list. Each weight
+         is represented as a StridedInput object.
+
        \return The number of ids in the Ids list.
    */
 
-  size_t getIdentifierList( ArrayView<const gno_t> &Ids,
-    ArrayView<const scalar_t> &wgts) const 
+  size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
+    ArrayView<const input_t> &wgts) const            
   {
-    wgts = weights_(0, 0);   // not implemented yet
+    wgts = weights_(0, weights_.size());   // not implemented yet
     size_t n = getLocalNumIdentifiers();
 
     if (gnosAreGids_){
@@ -345,7 +347,7 @@ public:
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
   { 
-    ArrayView<const scalar_t> weights;
+    ArrayView<const input_t> weights;
     getIdentifierList(gnos, weights);
   }
 
@@ -357,7 +359,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
-  ArrayRCP<const StridedInput> weights_;
+  ArrayRCP<const input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 };

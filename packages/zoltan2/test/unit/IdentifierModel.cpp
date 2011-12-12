@@ -9,9 +9,11 @@
 //
 // Testing of IdentifierModel
 //
+//   TODO  test with BasicIdentifierInput with weights
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_BasicIdentifierInput.hpp>
 #include <UserInputForTests.hpp>
 
 #include <set>
@@ -64,6 +66,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
   typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
   typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
+  typedef Zoltan2::StridedInput<LNO, Scalar> input_t;
 
   RCP<const adapter_t> ia = Teuchos::rcp(new adapter_t(M));
   
@@ -92,6 +95,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   if (!fail && model->getGlobalNumIdentifiers() != nGlobalIds)
     fail = 3;
 
+  // For now, MatrixInput does not implement weights
   if (!fail && model->getIdentifierWeightDim() !=  0)
     fail = 4;
 
@@ -101,7 +105,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
     printFailureCode(comm, fail);
   
   ArrayView<const GNO> gids;
-  ArrayView<const Scalar> wgts;
+  ArrayView<const input_t> wgts;
   
   model->getIdentifierList(gids, wgts);
 

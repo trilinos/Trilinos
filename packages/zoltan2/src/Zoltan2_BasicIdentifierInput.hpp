@@ -50,18 +50,22 @@ public:
           NULL, it will be assumed that each stride is one.
    */
 
-  BasicIdentifierInput(lno_t numIds, int numWeights, const gid_t *ids, 
-    const scalar_t **weights, const int *strides): 
-      numIds_(numIds), idList_(ids), weights_(numWeights)
+  BasicIdentifierInput( lno_t numIds, int numWeights, const gid_t *idPtr, 
+    scalar_t * const *wgtPtr, const int *strides): 
+      numIds_(numIds), idList_(idPtr), weights_(numWeights)
   {
     if (numWeights){
       RCP<const Environment> env = rcp(new Environment); 
+      typedef StridedInput<lno_t,scalar_t> input_t;
       if (strides)
         for (int i=0; i < numWeights; i++)
-          weights_[0] = StridedInput(env, weights[i], strides[i]);
+          weights_[i] = rcp<input_t>(new input_t(env, 
+            ArrayView<const scalar_t>(wgtPtr[i], strides[i]*numWeights), 
+            strides[i]));
       else
         for (int i=0; i < numWeights; i++)
-          weights_[0] = StridedInput(env, weights[i], 1);
+          weights_[i] = rcp<input_t>(new input_t(env, 
+            ArrayView<const scalar_t>(wgtPtr[i], numWeights), 1));
     }
   }
 
@@ -79,30 +83,31 @@ public:
    
   int getNumWeights() const { return weights_.size(); }
 
-  size_t getIdList(const gid_t *&Ids, const scalar_t **&weights, 
-    const int *&strides) const
+  size_t getIdList(const gid_t (*Ids), const scalar_t * (*weights), 
+    int *strides) const
   {
-    gids = idList_;
+    int nweights = getNumWeights();
 
-    int len, stride;
+    Ids = idList_;
+
+    size_t len;
+    int stride;
     const scalar_t *vec;
 
-    for (int i=0; i < numWeights; i++){
-      weights_[i].getStridedList(len, vec, stride);
-      weights[i] = vec
+    for (int i=0; i < nweights; i++){
+      weights_[i]->getStridedList(len, vec, stride);
+      weights[i] = vec;
       strides[i] = stride;
     }
 
     return numIds_;
   }
 
-
-
 private:
 
   lno_t numIds_;
   const gid_t *idList_;
-  std::vector<StridedInput<scalar_t> > weights_;
+  Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
 };
   
   

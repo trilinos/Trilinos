@@ -213,7 +213,7 @@ public:
     }
     Z2_FORWARD_EXCEPTIONS;
 
-    gids_ = arcp(vtxIds, 0, numLocalVtx_, false);
+    gids_ = arcp(vtxIds, 0, numLocalVtx_);
 
     numLocalEdges_ = offsets[numLocalVtx_];
 
@@ -250,8 +250,8 @@ public:
       offArray[numLocalVtx_] = numLocalEdges_;
 
       if (nSelfEdges > 0){
-        tmpOffsets = arcp(offArray, 0, numLocalVtx_+1, true);
-        tmpEdges = arcp(edArray, 0, numLocalEdges_, true);
+        tmpOffsets = arcp(offArray, 0, numLocalVtx_+1);
+        tmpEdges = arcp(edArray, 0, numLocalEdges_);
       }
       else{
         delete [] offArray;
@@ -260,8 +260,8 @@ public:
     }
 
     if (nSelfEdges == 0){
-      offsets_ = arcp(const_cast<lno_t *>(offsets), 0, numOffsets, false);
-      edgeGids_ = arcp(const_cast<gno_t *>(nborIds), 0, numLocalEdges_, false);
+      offsets_ = arcp(const_cast<lno_t *>(offsets), 0, numOffsets);
+      edgeGids_ = arcp(const_cast<gno_t *>(nborIds), 0, numLocalEdges_);
     }
     else{
       offsets_ = tmpOffsets;
@@ -287,7 +287,7 @@ public:
     if (numLocalVtx_ && !gidsAreGnos_){
       gno_t *tmp = new gno_t [numLocalVtx_];
       Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalVtx_, tmp)
-      gnos_ = arcp(tmp, 0, numLocalVtx_, true);
+      gnos_ = arcp(tmp, 0, numLocalVtx_);
 
       try{
         // Because gidTranslate can translate gids to gnos or
@@ -303,14 +303,14 @@ public:
       if (numLocalEdges_){
         tmp = new gno_t [numLocalEdges_];
         Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, tmp)
-        edgeGnos_ = arcp(tmp, 0, numLocalEdges_, true);
+        edgeGnos_ = arcp(tmp, 0, numLocalEdges_);
       }
     }
 
     if (numLocalEdges_){
       int *p = new int [numLocalEdges_];
       Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, p)
-      procIds_ = arcp(p, 0, numLocalEdges_, true);
+      procIds_ = arcp(p, 0, numLocalEdges_);
     }
 
     try{
