@@ -49,7 +49,7 @@
 /* Hardware locality library: http://www.open-mpi.org/projects/hwloc/ */
 #include <hwloc.h>
 
-#define  REQURED_HWLOC_API_VERSION  0x000010300
+#define  REQUIRED_HWLOC_API_VERSION  0x000010300
 
 #if HWLOC_API_VERSION < REQUIRED_HWLOC_API_VERSION
 #error "Requires  http://www.open-mpi.org/projects/hwloc/  Version 1.3 or greater"

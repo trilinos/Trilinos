@@ -70,6 +70,7 @@ struct PerformanceData {
   {
     if ( rhs.mesh_time < mesh_time ) mesh_time = rhs.mesh_time ;
     if ( rhs.elem_time < elem_time ) elem_time = rhs.elem_time ;
+    if ( rhs.fill_time < fill_time ) fill_time = rhs.fill_time ;
     if ( solve_mflop_per_sec < rhs.solve_mflop_per_sec )
       solve_mflop_per_sec = rhs.solve_mflop_per_sec ;
   }
@@ -154,7 +155,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
   // Allocate device memory for linear system and element contributions.
 
   A = Kokkos::create_labeled_multivector< scalar_vector_d > ("A",A_col_h.length());
-  b = Kokkos::create_labeled_multivector< scalar_vector_d > ("b",mesh.elem_count, 8);
+  b = Kokkos::create_labeled_multivector< scalar_vector_d > ("b",mesh.node_count);
   X = Kokkos::create_labeled_multivector< scalar_vector_d > ("X",mesh.node_count);
 
   elem_stiffness =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8, 8);

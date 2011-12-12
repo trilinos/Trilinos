@@ -44,6 +44,13 @@ namespace Kokkos {
 namespace Impl {
 
 template< typename ValueType >
+class Initialize< Value< ValueType , Host > > {
+public:
+  static void run( const Value< ValueType , Host > & dst )
+  { memset( dst.ptr_on_device() , 0 , sizeof(ValueType) ); }
+};
+
+template< typename ValueType >
 class DeepCopy< Value< ValueType , Host > ,
                 Value< ValueType , Host > > {
 public:

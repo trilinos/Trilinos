@@ -130,7 +130,8 @@ public:
     work_range( const size_type work_count ) const
   {
     const size_type work_per_thread = ( work_count + m_thread_count - 1 ) / m_thread_count ;
-    const size_type work_end        = work_count - work_per_thread * m_thread_reverse_rank ;
+    const size_type work_previous   = work_per_thread * m_thread_reverse_rank ;
+    const size_type work_end        = work_count > work_previous ? work_count - work_previous : 0 ;
 
     return std::pair<size_type,size_type>( work_end > work_per_thread ?
                                            work_end - work_per_thread : 0 , work_end );

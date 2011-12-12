@@ -101,7 +101,8 @@ struct CRSMatrixGatherFill<Scalar ,KOKKOS_MACRO_DEVICE>{
       const index_type elem_id        = node_elemIDs( i, 0);
       const index_type elem_row_index = node_elemIDs( i, 1);
 
-      b(irow) += element_load(elem_id, elem_row_index);
+      const Scalar value = element_load(elem_id, elem_row_index);
+      b(irow) += value ;
 
       //  for each node in a particular related element  
       //  gather the contents of the element stiffness

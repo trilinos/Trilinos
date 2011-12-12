@@ -42,6 +42,14 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
+/** \brief  This is a device type hidden from the user to handle
+ *          host memory space with a different mdarray map.
+ *
+ *  Use case: 
+ *  class MDArray<T,Cuda> {
+ *     typedef MDArray<T,HostMapped< Cuda::mdarray_map > > HostMirror ;
+ *  };
+ */
 template< class MDArrayMapType >
 class HostMapped {
 public:

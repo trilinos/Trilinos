@@ -60,19 +60,19 @@ void test_Host(int beg, int end, int runs,int threads)
 {
   if ( 0 < threads ) {
     Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( threads ) );
+    std::cout << std::endl << "\"Host with manually set threads = \" , " << threads << std::endl ;
+    MiniImplTherm< float , Kokkos::Host >::driver( "Host-float" , beg , end , runs );
+    MiniImplTherm< double, Kokkos::Host >::driver( "Host-double" , beg , end , runs );
+    Kokkos::Host::finalize();
   }
   else {
     Kokkos::Host::initialize( Kokkos::Host::DetectAndUseAllCores() );
     threads = Kokkos::Host::detect_core_count();
+    std::cout << std::endl << "\"Host with detected sequential threads = \" , " << threads << std::endl ;
+    MiniImplTherm< float , Kokkos::Host >::driver( "Host-float" , beg , end , runs );
+    MiniImplTherm< double, Kokkos::Host >::driver( "Host-double" , beg , end , runs );
+    Kokkos::Host::finalize();
   }
-
-  std::cout << "\"Host with threads = \" , " << threads << std::endl ;
-
-  MiniImplTherm< double, Kokkos::Host >::driver( "Host-double" , beg , end , runs );
-  MiniImplTherm< float , Kokkos::Host >::driver( "Host-float" , beg , end , runs );
-
-  Kokkos::Host::finalize();
-
 } //test_host
 
 }// namespace

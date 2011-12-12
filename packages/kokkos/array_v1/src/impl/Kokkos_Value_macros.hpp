@@ -76,6 +76,12 @@ public:
   void operator()( const value_type & rhs ) const
     { * m_memory.ptr_on_device() = rhs ; }
 
+  /** \brief  Access value */
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  value_type * ptr_on_device() const
+  { return m_memory.ptr_on_device(); }
+
 #endif /* defined(KOKKOS_MACRO_DEVICE_FUNCTION) */
 
   inline
@@ -139,7 +145,12 @@ private:
 
   inline
   explicit Value( const std::string & label )
-    : m_memory() { m_memory.allocate( 1 , label ); }
+    : m_memory()
+    {
+      m_memory.allocate( 1 , label );
+
+      Impl::Initialize< Value >::run( *this );
+    }
 
   template< typename V , class D >
   friend
