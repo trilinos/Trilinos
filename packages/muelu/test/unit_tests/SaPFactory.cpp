@@ -42,7 +42,7 @@ namespace MueLuTests {
   } //GetSetMethods
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-  TEUCHOS_UNIT_TEST(SaPFactory, SaPFactory_EpetraVsTpetra)
+  TEUCHOS_UNIT_TEST(SaPFactory, EpetraVsTpetra)
   {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Compare results of Epetra and Tpetra" << std::endl;
@@ -130,11 +130,11 @@ namespace MueLuTests {
             TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
             TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",MueLu::NoFactory::get()), true);
             TEST_EQUALITY(coarseLevel->IsAvailable("R",MueLu::NoFactory::get()), true);
-            TEST_EQUALITY(coarseLevel->IsKept("A",MueLu::NoFactory::get()), true);
-            TEST_EQUALITY(coarseLevel->IsKept("P",MueLu::NoFactory::get()), true);
-            TEST_EQUALITY(coarseLevel->IsKept("PreSmoother",MueLu::NoFactory::get()), true);
-            TEST_EQUALITY(coarseLevel->IsKept("PostSmoother",MueLu::NoFactory::get()), true);
-            TEST_EQUALITY(coarseLevel->IsKept("R",MueLu::NoFactory::get()), true);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), MueLu::Final);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
             TEST_EQUALITY(coarseLevel->IsRequested("P",Pfact.get()), false);
             TEST_EQUALITY(coarseLevel->IsRequested("P",Ptentfact.get()), false);
             TEST_EQUALITY(coarseLevel->IsRequested("PreSmoother",SmooFact.get()), false);
@@ -147,12 +147,12 @@ namespace MueLuTests {
             TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",SmooFact.get()), false);
             TEST_EQUALITY(coarseLevel->IsAvailable("R",Rfact.get()), false);
             TEST_EQUALITY(coarseLevel->IsAvailable("A",Acfact.get()), false);
-            TEST_EQUALITY(coarseLevel->IsKept("P",Pfact.get()), false);
-            TEST_EQUALITY(coarseLevel->IsKept("P",Ptentfact.get()), false);
-            TEST_EQUALITY(coarseLevel->IsKept("PreSmoother",SmooFact.get()), false);
-            TEST_EQUALITY(coarseLevel->IsKept("PostSmoother",SmooFact.get()), false);
-            TEST_EQUALITY(coarseLevel->IsKept("R",Rfact.get()), false);
-            TEST_EQUALITY(coarseLevel->IsKept("A",Acfact.get()), false);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("P",Pfact.get()), 0);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("P",Ptentfact.get()), 0);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("PreSmoother",SmooFact.get()), 0);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("R",Rfact.get()), 0);
+            TEST_EQUALITY(coarseLevel->GetKeepFlag("A",Acfact.get()), 0);
             RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
             RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
             TEST_EQUALITY(P1->getGlobalNumRows(), 63);
@@ -170,11 +170,11 @@ namespace MueLuTests {
             TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
             TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",MueLu::NoFactory::get()), false);
             TEST_EQUALITY(coarseLevel2->IsAvailable("R",MueLu::NoFactory::get()), true);
-            TEST_EQUALITY(coarseLevel2->IsKept("A",MueLu::NoFactory::get()), true);
-            TEST_EQUALITY(coarseLevel2->IsKept("P",MueLu::NoFactory::get()), true);
-            TEST_EQUALITY(coarseLevel2->IsKept("PreSmoother",MueLu::NoFactory::get()), true);
-            TEST_EQUALITY(coarseLevel2->IsKept("PostSmoother",MueLu::NoFactory::get()), false);
-            TEST_EQUALITY(coarseLevel2->IsKept("R",MueLu::NoFactory::get()), true);
+            TEST_EQUALITY(coarseLevel2->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
+            TEST_EQUALITY(coarseLevel2->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
+            TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
+            TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), 0);
+            TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
             TEST_EQUALITY(coarseLevel2->IsRequested("P",Pfact.get()), false);
             TEST_EQUALITY(coarseLevel2->IsRequested("P",Ptentfact.get()), false);
             TEST_EQUALITY(coarseLevel2->IsRequested("R",Rfact.get()), false);
@@ -183,11 +183,11 @@ namespace MueLuTests {
             TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",SmooFact.get()), false);
             TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",SmooFact.get()), false);
             TEST_EQUALITY(coarseLevel2->IsAvailable("R",Rfact.get()), false);
-            TEST_EQUALITY(coarseLevel2->IsKept("P",Pfact.get()), false);
-            TEST_EQUALITY(coarseLevel2->IsKept("P",Ptentfact.get()), false);
-            TEST_EQUALITY(coarseLevel2->IsKept("PreSmoother",SmooFact.get()), false);
-            TEST_EQUALITY(coarseLevel2->IsKept("PostSmoother",SmooFact.get()), false);
-            TEST_EQUALITY(coarseLevel2->IsKept("R",Rfact.get()), false);
+            TEST_EQUALITY(coarseLevel2->GetKeepFlag("P",Pfact.get()), 0);
+            TEST_EQUALITY(coarseLevel2->GetKeepFlag("P",Ptentfact.get()), 0);
+            TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",SmooFact.get()), 0);
+            TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
+            TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",Rfact.get()), 0);
             RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
             RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
             TEST_EQUALITY(P2->getGlobalNumRows(), 21);

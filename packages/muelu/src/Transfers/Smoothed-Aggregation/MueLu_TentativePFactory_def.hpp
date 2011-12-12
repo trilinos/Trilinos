@@ -471,5 +471,7 @@ namespace MueLu {
 
 //TODO: noQR_
 
+// TODO ReUse: If only P or Nullspace is missing, TentativePFactory can be smart and skip part of the computation.
+
 #define MUELU_TENTATIVEPFACTORY_SHORT
 #endif // MUELU_TENTATIVEPFACTORY_DEF_HPP

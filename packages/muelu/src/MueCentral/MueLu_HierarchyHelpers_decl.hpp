@@ -9,6 +9,8 @@
 
 #include "MueLu_Level_fwd.hpp"
 
+// Warning: on TopRAPFactory and TopSmootherFactory constructors, Teuchos::null doesn't mean "default factory" but "no build"
+
 namespace MueLu {
 
   //! An exception safe way to call the method 'Level::SetFactoryManager()'

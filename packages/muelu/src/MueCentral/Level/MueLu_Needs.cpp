@@ -26,37 +26,48 @@ namespace MueLu {
     Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
     var->Release(requestedBy);
 
-    if (var->IsRequested() == false && var->IsKept() == false) {
+    if (var->IsRequested() == false && var->GetKeepFlag() == 0) {
       var = Teuchos::null; // free data
       dataTable_.Remove(factory, ename);
     }
   } //Release
 
-  void Needs::Keep(const std::string & ename, const FactoryBase* factory, bool keep ) {
-    if (keep) {
-      if(!dataTable_.IsKey(factory, ename)) {
-        Teuchos::RCP<MueLu::VariableContainer> newVar = Teuchos::rcp(new MueLu::VariableContainer);
-        dataTable_.Set(factory, ename, newVar);
-      }
-
-      Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
-      var->Keep();
-    } else {
-      if(!dataTable_.IsKey(factory,ename)) return;
-      Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
-      var->Keep(false);
-      if (var->IsRequested() == false) {
-        var = Teuchos::null; // free data
-        dataTable_.Remove(factory, ename);
-      }
+  void Needs::AddKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
+    if (!dataTable_.IsKey(factory, ename)) {
+      // If the entry does not exist, create it to store the keep flag
+      Teuchos::RCP<MueLu::VariableContainer> newVar = Teuchos::rcp(new MueLu::VariableContainer);
+      dataTable_.Set(factory, ename, newVar);
     }
+    
+    // Set the flag
+    Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
+    var->AddKeepFlag(keep);
+
+    std::cout << "Needs::AddKeepFlag(" << ename << "):" << keep;
   }
 
-  bool Needs::IsKept(const std::string & ename, const FactoryBase* factory) const {
+  void Needs::RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
+    // No entry = nothing to do
+    if (!dataTable_.IsKey(factory,ename)) return;
+    
+    // Remove the flag
+    Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
+    var->RemoveKeepFlag(keep);
+    
+    // Remove data if no keep flag left and counter == 0
+    if ((var->IsRequested() == false) && (var->GetKeepFlag() == 0)) {
+      var = Teuchos::null; // free data
+      dataTable_.Remove(factory, ename);
+    }
+
+    std::cout << "Needs::RemoveKeepFlag(" << ename << "):" << keep;
+  }
+
+  KeepType Needs::GetKeepFlag(const std::string & ename, const FactoryBase* factory) const {
     if(!dataTable_.IsKey(factory,ename)) return false;
     //TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory,ename), Exceptions::RuntimeError, "MueLu::Needs::Release(): " + ename + " not found. Do a request first.");
     const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
-    return var->IsKept();
+    return var->GetKeepFlag();
   }
 
   bool Needs::IsAvailable(const std::string & ename, const FactoryBase* factory) const {
@@ -70,7 +81,7 @@ namespace MueLu {
     //TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory,ename), Exceptions::RuntimeError, "MueLu::Needs::IsRequested(): " + ename + " not found. Do a request first.");
     if(!dataTable_.IsKey(factory,ename)) return false;
     const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
-    TEUCHOS_TEST_FOR_EXCEPTION(var->NumAllRequests() == 0 && var->IsKept() == false, Exceptions::RuntimeError, "MueLu::Needs::IsRequested(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
+    TEUCHOS_TEST_FOR_EXCEPTION(var->NumAllRequests() == 0 && var->GetKeepFlag() == 0, Exceptions::RuntimeError, "MueLu::Needs::IsRequested(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
     return var->IsRequested();
   }
 
@@ -78,7 +89,7 @@ namespace MueLu {
     //TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory,ename), Exceptions::RuntimeError, "MueLu::Needs::IsRequestedBy(): " + ename + " not found. Do a request first.");
     if(!dataTable_.IsKey(factory,ename)) return false;
     const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
-    TEUCHOS_TEST_FOR_EXCEPTION(var->NumAllRequests() == 0 && var->IsKept() == false, Exceptions::RuntimeError, "MueLu::Needs::IsRequestedBy(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
+    TEUCHOS_TEST_FOR_EXCEPTION(var->NumAllRequests() == 0 && var->GetKeepFlag() == 0, Exceptions::RuntimeError, "MueLu::Needs::IsRequestedBy(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
     return var->IsRequested(requestedBy);
   }
 
@@ -115,14 +126,14 @@ namespace MueLu {
   int Needs::NumRequests(const std::string & ename, const FactoryBase* factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory,ename), Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): " + ename + " not found. Do a request first.");
     const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
-    TEUCHOS_TEST_FOR_EXCEPTION(var->NumAllRequests() == 0 && var->IsKept() == false, Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
+    TEUCHOS_TEST_FOR_EXCEPTION(var->NumAllRequests() == 0 && var->GetKeepFlag() == 0, Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
     return var->NumAllRequests();
   }
 
   int Needs::NumRequestsBy(const FactoryBase* factory, const std::string & ename, const FactoryBase* requestedBy) const {
     TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory,ename), Exceptions::RuntimeError, "MueLu::Needs::NumRequestsBy(): " + ename + " not found. Do a request first.");
     const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
-    TEUCHOS_TEST_FOR_EXCEPTION(var->NumAllRequests() == 0 && var->IsKept() == false, Exceptions::RuntimeError, "MueLu::Needs::NumRequestsBy(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
+    TEUCHOS_TEST_FOR_EXCEPTION(var->NumAllRequests() == 0 && var->GetKeepFlag() == 0, Exceptions::RuntimeError, "MueLu::Needs::NumRequestsBy(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
     return var->NumRequests(requestedBy);
   }
 
@@ -159,7 +170,7 @@ namespace MueLu {
         outputter.outputField(*kt);                    // factory ptr          
         int reqcount = NumRequests(*it, *kt);          // request counter
         outputter.outputField(reqcount);
-        if (IsKept(*it, *kt)) outputter.outputField("true");
+        if (GetKeepFlag(*it, *kt) != 0) outputter.outputField("true");
         else outputter.outputField("false");
         // variable type
         std::string strType = GetType(*it, *kt);

@@ -168,7 +168,9 @@ namespace MueLu {
     // Build coarse level hierarchy
     if (!isFinestLevel) {
       TopRAPFactory coarseRAPFactory(fineManager, coarseManager);
-      coarseRAPFactory.Build(*level.GetPreviousLevel(), level);
+      if (!level.IsAvailable("A")) { // build only if not available
+        coarseRAPFactory.Build(*level.GetPreviousLevel(), level);
+      }
       GetOStream(Debug, 0) << "Debug: Level: " << coarseLevelID << " - R" << std::endl;
       level.Release(coarseRAPFactory);
     }
@@ -186,6 +188,7 @@ namespace MueLu {
       if (Ac != Teuchos::null && Ac->getRowMap()->getGlobalNumElements() <= maxCoarseSize_) { // or if (coarseLevel == lastLevel
         if (isLastLevel == false) {
           GetOStream(Debug, 0) << "Debug: Level: " << nextLevelID << " - R/S/C" << std::endl;
+
           Levels_[nextLevelID]->Release(TopRAPFactory(coarseManager, nextManager));
           Levels_[nextLevelID]->Release(TopSmootherFactory(nextManager, "Smoother"));
           Levels_[nextLevelID]->Release(TopSmootherFactory(nextManager, "CoarseSolver"));
@@ -200,17 +203,21 @@ namespace MueLu {
     TopSmootherFactory smootherFact      (coarseManager, "Smoother");
     TopSmootherFactory coarsestSolverFact(coarseManager, "CoarseSolver");
     
-    if (!isLastLevel) {
-      smootherFact.Build(level);
-    } else {
-      coarsestSolverFact.Build(level); //TODO: PRE?POST
-    } 
-
+    if (!level.IsAvailable("PreSmoother") || !level.IsAvailable("PostSmoother")) { // build only if not available
+      if (!isLastLevel) {
+        smootherFact.Build(level);
+      } else {
+        coarsestSolverFact.Build(level); //TODO: PRE?POST
+      }
+    }
+    
     GetOStream(Debug, 0) << "Debug: Level: " << coarseLevelID << " - S/C" << std::endl;
     level.Release(smootherFact);
     level.Release(coarsestSolverFact);
 
     return isLastLevel;
+
+    //TODO: optimization: request should be posted only if data not yet available (reuse)
   }
 
   // new setup routine
@@ -334,8 +341,6 @@ namespace MueLu {
     GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
 
     for (iLevel = startLevel; iLevel <= lastLevel; iLevel++) {
-      SubMonitor m(*this, "Level " + Teuchos::toString(iLevel));
-
       if(Setup(iLevel, manager, manager, manager, iLevel == startLevel, iLevel == lastLevel) == true) { 
         break;
       }
@@ -488,20 +493,27 @@ namespace MueLu {
 
     SetFactoryManager SFM(level, manager);
 
-    level.Request(smooFact);
+    level.Request("PreSmoother", &smooFact);
+    level.Request("PostSmoother", &smooFact);
+
     smooFact.BuildSmoother(level, pop);
 
     if (level.IsAvailable("PreSmoother", &smooFact)) {
       RCP<SmootherBase> Pre  = level.Get<RCP<SmootherBase> >("PreSmoother", &smooFact);
       level.Set("PreSmoother", Pre);
+      level.AddKeepFlag("PreSmoother", NoFactory::get(), MueLu::Final);
+      level.RemoveKeepFlag("PreSmoother", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
 
     if (level.IsAvailable("PostSmoother", &smooFact)) {
       RCP<SmootherBase> Post = level.Get<RCP<SmootherBase> >("PostSmoother", &smooFact);
       level.Set("PostSmoother", Post);
+      level.AddKeepFlag("PostSmoother", NoFactory::get(), MueLu::Final);
+      level.RemoveKeepFlag("PostSmoother", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
 
-    level.Release(smooFact);
+    level.Release("PreSmoother", &smooFact);
+    level.Release("PostSmoother", &smooFact);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -671,7 +683,6 @@ namespace MueLu {
     if (verbLevel & Statistics1) {
       Teuchos::OSTab tab2(out);
       for(int i = 0; i < GetNumLevels(); i++) {
-        out0 << "Level " << i << std::endl; //TODO: remove
         Levels_[i]->print(out, verbLevel);
       }
     }

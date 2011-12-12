@@ -41,17 +41,23 @@ namespace MueLu {
 
     if (PFact_ != Teuchos::null) {
       RCP<Operator> P = coarseLevel.Get<RCP<Operator> >("P", PFact_.get());
-      coarseLevel.Set("P", P);
+      coarseLevel.Set("P", P, NoFactory::get());
+      coarseLevel.AddKeepFlag("P", NoFactory::get(), MueLu::Final);       // FIXME2: Order of Remove/Add matter (data removed otherwise). Should do something about this
+      coarseLevel.RemoveKeepFlag("P", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack, I should change behavior of Level::Set() instead.
     }
 
     if (RFact_ != Teuchos::null) {
       RCP<Operator> R = coarseLevel.Get<RCP<Operator> >("R", RFact_.get());
-      coarseLevel.Set("R", R);
+      coarseLevel.Set("R", R, NoFactory::get());
+      coarseLevel.AddKeepFlag("R", NoFactory::get(), MueLu::Final);
+      coarseLevel.RemoveKeepFlag("R", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
 
     if (AcFact_ != Teuchos::null) {
       RCP<Operator> Ac = coarseLevel.Get<RCP<Operator> >("A", AcFact_.get());
-      coarseLevel.Set("A", Ac);
+      coarseLevel.Set("A", Ac, NoFactory::get());
+      coarseLevel.AddKeepFlag("A", NoFactory::get(), MueLu::Final);
+      coarseLevel.RemoveKeepFlag("A", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
   }
 
@@ -83,17 +89,28 @@ namespace MueLu {
  
     SetFactoryManager SFM(level, factoryManager_);
 
+    // Teuchos::null == skip
     if (smootherFact_ != Teuchos::null) {
-      smootherFact_->CallBuild(level);
 
-      if (level.IsAvailable("PreSmoother", smootherFact_.get())) {
-        RCP<SmootherBase2> Pre  = level.Get<RCP<SmootherBase2> >("PreSmoother", smootherFact_.get());
-        level.Set("PreSmoother", Pre);
+      // Only call factory if at least one smoother is missing (mimic behavior of level.Get<> but level.Get<> cannot be used here as we don't know if the factory will produce both Pre and Post smoother)
+      if (!level.IsAvailable("PreSmoother", smootherFact_.get()) || !level.IsAvailable("PostSmoother", smootherFact_.get())) {
+        smootherFact_->CallBuild(level);
       }
 
+      // Factory might or might not have created a pre smoother
+      if (level.IsAvailable("PreSmoother", smootherFact_.get())) {
+        RCP<SmootherBase2> Pre  = level.Get<RCP<SmootherBase2> >("PreSmoother", smootherFact_.get());
+        level.Set("PreSmoother", Pre, NoFactory::get());
+        level.AddKeepFlag("PreSmoother", NoFactory::get(), MueLu::Final);
+        level.RemoveKeepFlag("PreSmoother", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
+      }
+
+      // Factory might or might not have created a post smoother
       if (level.IsAvailable("PostSmoother", smootherFact_.get())) {
         RCP<SmootherBase2> Post = level.Get<RCP<SmootherBase2> >("PostSmoother", smootherFact_.get());
-        level.Set("PostSmoother", Post);
+        level.Set("PostSmoother", Post, NoFactory::get());
+        level.AddKeepFlag("PostSmoother", NoFactory::get(), MueLu::Final);
+        level.RemoveKeepFlag("PostSmoother", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
       }
 
     }
