@@ -28,7 +28,6 @@
 #define PTL_OP_GET_TARGET     4
 #define PTL_OP_SEND           5
 #define PTL_OP_NEW_REQUEST    6
-#define PTL_OP_RESULT         7
 #define PTL_OP_RECEIVE        8
 
 /**
@@ -72,7 +71,6 @@ typedef union {
 
 typedef enum {
     REQUEST_BUFFER,
-    RESULT_BUFFER,
     RECEIVE_BUFFER,
     SEND_BUFFER,
     GET_SRC_BUFFER,
@@ -420,7 +418,8 @@ int NNTI_ptl_disconnect (
 int NNTI_ptl_register_memory (
         const NNTI_transport_t *trans_hdl,
         char                   *buffer,
-        const uint64_t          size,
+        const uint64_t          element_size,
+        const uint64_t          num_elements,
         const NNTI_buf_ops_t    ops,
         const NNTI_peer_t      *peer,
         NNTI_buffer_t          *reg_buf)
@@ -432,7 +431,8 @@ int NNTI_ptl_register_memory (
 
     assert(trans_hdl);
     assert(buffer);
-    assert(size>0);
+    assert(element_size>0);
+    assert(num_elements>0);
     assert(ops>0);
     assert(reg_buf);
 
@@ -443,7 +443,7 @@ int NNTI_ptl_register_memory (
     reg_buf->transport_id      = trans_hdl->id;
     reg_buf->buffer_owner      = trans_hdl->me;
     reg_buf->ops               = ops;
-    reg_buf->payload_size      = size;
+    reg_buf->payload_size      = element_size;
     reg_buf->payload           = (uint64_t)buffer;
     reg_buf->transport_private = (uint64_t)ptls_mem_hdl;
     if (peer != NULL) {
@@ -455,40 +455,18 @@ int NNTI_ptl_register_memory (
     log_debug(nnti_debug_level, "rpc_buffer->payload_size=%ld",
             reg_buf->payload_size);
 
-    if (ops == NNTI_RECV_DST) {
-        if ((size > NNTI_REQUEST_BUFFER_SIZE) && (size%NNTI_REQUEST_BUFFER_SIZE) == 0) {
-            /*
-             * This is a receive-only buffer.  This buffer is divisible by
-             * NNTI_REQUEST_BUFFER_SIZE.  This buffer can hold more than
-             * one short request.  Assume this buffer is a request queue.
-             */
-            ptls_mem_hdl->type=REQUEST_BUFFER;
+    if (ops == NNTI_RECV_QUEUE) {
+        ptls_mem_hdl->type=REQUEST_BUFFER;
 
-            ptls_mem_hdl->buffer_id   = NNTI_REQ_PT_INDEX;
-            ptls_mem_hdl->match_bits  = 0;
-            ptls_mem_hdl->ignore_bits = 0;
-        } else if (size == NNTI_RESULT_BUFFER_SIZE) {
-            /*
-             * This is a receive-only buffer.  This buffer can hold exactly
-             * one short result.  Assume this buffer is a result queue.
-             */
-            ptls_mem_hdl->type=RESULT_BUFFER;
+        ptls_mem_hdl->buffer_id   = NNTI_REQ_PT_INDEX;
+        ptls_mem_hdl->match_bits  = 0;
+        ptls_mem_hdl->ignore_bits = 0;
+    } else if (ops == NNTI_RECV_DST) {
+        ptls_mem_hdl->type=RECEIVE_BUFFER;
 
-            ptls_mem_hdl->buffer_id   = NNTI_RES_PT_INDEX;
-            ptls_mem_hdl->match_bits  = mbits++;
-            ptls_mem_hdl->ignore_bits = 0;
-        } else {
-            /*
-             * This is a receive-only buffer.  This buffer doesn't look
-             * like a request buffer or a result buffer.  I don't know
-             * what it is.  Assume it is a regular data buffer.
-             */
-            ptls_mem_hdl->type=RECEIVE_BUFFER;
-
-            ptls_mem_hdl->buffer_id   = NNTI_DATA_PT_INDEX;
-            ptls_mem_hdl->match_bits  = mbits++;
-            ptls_mem_hdl->ignore_bits = 0;
-        }
+        ptls_mem_hdl->buffer_id   = NNTI_RECV_PT_INDEX;
+        ptls_mem_hdl->match_bits  = mbits++;
+        ptls_mem_hdl->ignore_bits = 0;
     } else {
         if (ops == NNTI_SEND_SRC) {
             ptls_mem_hdl->type=SEND_BUFFER;
@@ -502,6 +480,8 @@ int NNTI_ptl_register_memory (
             ptls_mem_hdl->type=PUT_DST_BUFFER;
         } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
             ptls_mem_hdl->type=RDMA_TARGET_BUFFER;
+        } else {
+            ptls_mem_hdl->type=UNKNOWN_BUFFER;
         }
 
         ptls_mem_hdl->buffer_id   = NNTI_DATA_PT_INDEX;
@@ -510,7 +490,7 @@ int NNTI_ptl_register_memory (
     }
 
     reg_buf->buffer_addr.transport_id                            = NNTI_TRANSPORT_PORTALS;
-    reg_buf->buffer_addr.NNTI_remote_addr_t_u.portals.size       = size;
+    reg_buf->buffer_addr.NNTI_remote_addr_t_u.portals.size       = element_size;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.portals.buffer_id  = (NNTI_portals_indices)ptls_mem_hdl->buffer_id;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.portals.match_bits = ptls_mem_hdl->match_bits;
 
@@ -529,8 +509,8 @@ int NNTI_ptl_register_memory (
 
         q_hdl->reg_buf=reg_buf;
 
-        q_hdl->req_size=NNTI_REQUEST_BUFFER_SIZE;
-        q_hdl->reqs_per_queue=(size/q_hdl->req_size)/NUM_REQ_QUEUES;
+        q_hdl->req_size=element_size;
+        q_hdl->reqs_per_queue=num_elements/NUM_REQ_QUEUES;
 
         /* create an event queue */
         nthread_lock(&nnti_ptl_lock);
@@ -650,7 +630,7 @@ int NNTI_ptl_register_memory (
         /* initialize the md */
         memset(&ptls_mem_hdl->md, 0, sizeof(ptl_md_t));
         ptls_mem_hdl->md.start     = buffer;
-        ptls_mem_hdl->md.length    = size;
+        ptls_mem_hdl->md.length    = element_size;
         ptls_mem_hdl->md.threshold = PTL_MD_THRESH_INF;
         ptls_mem_hdl->md.options   = PTL_MD_OP_PUT|PTL_MD_OP_GET|PTL_MD_TRUNCATE;
         ptls_mem_hdl->md.user_ptr  = NULL;
@@ -1044,7 +1024,6 @@ int NNTI_ptl_wait (
         case PTL_OP_GET_INITIATOR:
         case PTL_OP_PUT_TARGET:
         case PTL_OP_NEW_REQUEST:
-        case PTL_OP_RESULT:
         case PTL_OP_RECEIVE:
             create_peer(&status->src, event.initiator.nid, event.initiator.pid); // allocates url
             create_peer(&status->dest, transport_global_data.me.nid, transport_global_data.me.pid); // allocates url
@@ -1202,7 +1181,6 @@ int process_event(
             }
             break;
         case REQUEST_BUFFER:
-        case RESULT_BUFFER:
         case RECEIVE_BUFFER:
             switch (event->type) {
                 case PTL_EVENT_PUT_START:
@@ -1358,13 +1336,6 @@ int is_buf_op_complete(
             if ((ptls_mem_hdl->op_state.put_target.put_start==TRUE) &&
                 (ptls_mem_hdl->op_state.put_target.put_end==TRUE)) {
                 ptls_mem_hdl->last_op=PTL_OP_NEW_REQUEST;
-                rc = TRUE;
-            }
-            break;
-        case RESULT_BUFFER:
-            if ((ptls_mem_hdl->op_state.put_target.put_start==TRUE) &&
-                (ptls_mem_hdl->op_state.put_target.put_end==TRUE)) {
-                ptls_mem_hdl->last_op=PTL_OP_RESULT;
                 rc = TRUE;
             }
             break;
