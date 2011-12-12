@@ -358,9 +358,9 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
     /*-----------------------------------------*/
 
   parameterName = string("imbalance_tolerance");  
-  doubleDefault = 15.0;
+  doubleDefault = 1.1;
   doubleValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<double>(0,100));
+    Teuchos::rcp(new EnhancedNumberValidator<double>(0,2.0));
   docString.str("todo");
   entry = ParameterEntry(
         doubleDefault, isDefault, isNotList,
