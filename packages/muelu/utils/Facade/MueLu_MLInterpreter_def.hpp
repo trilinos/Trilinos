@@ -206,13 +206,13 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   }
 
   // use new Hierarchy::Setup routine
-  bIsLastLevel = hierarchy->Setup(0, Teuchos::null, vecManager[0], vecManager[1]); // true, false because first level
+  bIsLastLevel = hierarchy->Setup(0, Teuchos::null, vecManager[0].ptr(), vecManager[1].ptr()); // true, false because first level
   for(int i=1; i < maxLevels-1; i++) {
     if(bIsLastLevel == true) break;
-    bIsLastLevel = hierarchy->Setup(i, vecManager[i-1], vecManager[i], vecManager[i+1]);
+    bIsLastLevel = hierarchy->Setup(i, vecManager[i-1].ptr(), vecManager[i].ptr(), vecManager[i+1].ptr());
   }
   if(bIsLastLevel == false) {
-    if(bIsLastLevel == false) bIsLastLevel = hierarchy->Setup(maxLevels-1, vecManager[maxLevels-2], vecManager[maxLevels-1], Teuchos::null);
+    if(bIsLastLevel == false) bIsLastLevel = hierarchy->Setup(maxLevels-1, vecManager[maxLevels-2].ptr(), vecManager[maxLevels-1].ptr(), Teuchos::null);
   }
 
   //*out << *hierarchy << std::endl;

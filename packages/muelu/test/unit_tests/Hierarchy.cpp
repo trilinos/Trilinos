@@ -521,7 +521,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
   // Multigrid setup phase (using default parameters)
   FactoryManager M0; // how to build aggregates and smoother of the first level
 
-  TEST_EQUALITY(H.Setup(0, Teuchos::null,  rcpFromRef(M0), Teuchos::null), true);
+  TEST_EQUALITY(H.Setup(0, Teuchos::null,  ptrInArg(M0), Teuchos::null), true);
 
   RCP<Level> l0 = H.GetLevel(0);
 
@@ -574,8 +574,8 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
   M2.SetFactory("A", rcp(new RAPFactory()));
   M2.SetFactory("P", rcp(new SaPFactory()));
 
-  TEST_EQUALITY(H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)), false);
-  TEST_EQUALITY(H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), Teuchos::null), true);
+  TEST_EQUALITY(H.Setup(0, Teuchos::null,ptrInArg(M0), ptrInArg(M1)), false);
+  TEST_EQUALITY(H.Setup(1, ptrInArg(M0), ptrInArg(M1), Teuchos::null), true);
 
   RCP<Level> l0 = H.GetLevel(0);
   RCP<Level> l1 = H.GetLevel(1);
@@ -640,9 +640,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
 
 #ifdef HAVE_MUELU_AMESOS2
 
-  TEST_EQUALITY(H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)), false);
-  TEST_EQUALITY(H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2)), false);
-  TEST_EQUALITY(H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null ), true);
+  TEST_EQUALITY(H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)), false);
+  TEST_EQUALITY(H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2)), false);
+  TEST_EQUALITY(H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null ), true);
 
   RCP<Level> l0 = H.GetLevel(0);
   RCP<Level> l1 = H.GetLevel(1);
@@ -738,9 +738,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   M2.SetFactory("P", rcp(new SaPFactory()));
 
 #ifdef HAVE_MUELU_AMESOS
-  TEST_EQUALITY(H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)), false);
-  TEST_EQUALITY(H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2)), false);
-  TEST_EQUALITY(H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null ), true);
+  TEST_EQUALITY(H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)), false);
+  TEST_EQUALITY(H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2)), false);
+  TEST_EQUALITY(H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null ), true);
 
   RCP<Level> l0 = H.GetLevel(0);
   RCP<Level> l1 = H.GetLevel(1);

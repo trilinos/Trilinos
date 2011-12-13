@@ -121,8 +121,8 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(int coarseLevelID, const RCP<const FactoryManager> & fineLevelManager, const RCP<const FactoryManager> &coarseLevelManager,
-             const RCP<const FactoryManager> & nextLevelManager /*should be optional*/) {
+  bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManager> fineLevelManager, const Teuchos::Ptr<const FactoryManager> coarseLevelManager,
+               const Teuchos::Ptr<const FactoryManager> nextLevelManager /*should be optional*/) {
     //TODO
     typedef MueLu::TopRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TopRAPFactory;
     typedef MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TopSmootherFactory;
@@ -130,6 +130,11 @@ namespace MueLu {
     //
     // Init
     //
+
+    RCP<const FactoryManager> rcpfineLevelManager  = rcpFromPtr(fineLevelManager);
+    RCP<const FactoryManager> rcpcoarseLevelManager= rcpFromPtr(coarseLevelManager);
+    RCP<const FactoryManager> rcpnextLevelManager  = rcpFromPtr(nextLevelManager);
+
 
     //    int coarseLevelID = LastLevelID() - 1; // Level built by this function
     TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError, "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) must be build before calling this function.");
@@ -144,8 +149,8 @@ namespace MueLu {
     // Requests for finest level
     //
     if (isFinestLevel) {
-      Levels_[coarseLevelID]->Request(TopSmootherFactory(coarseLevelManager, "Smoother")); // TODO: skip this line if we know that it is the lastLevel
-      Levels_[coarseLevelID]->Request(TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
+      Levels_[coarseLevelID]->Request(TopSmootherFactory(rcpcoarseLevelManager, "Smoother")); // TODO: skip this line if we know that it is the lastLevel
+      Levels_[coarseLevelID]->Request(TopSmootherFactory(rcpcoarseLevelManager, "CoarseSolver"));
     }
 
     //
@@ -158,9 +163,9 @@ namespace MueLu {
       CheckLevel(*Levels_[nextLevelID], nextLevelID);
 
       GetOStream(Debug, 0) << "Debug: Level: " << nextLevelID << " + R/S/C" << std::endl;
-      Levels_[nextLevelID]->Request(TopRAPFactory(coarseLevelManager, nextLevelManager));
-      Levels_[nextLevelID]->Request(TopSmootherFactory(nextLevelManager, "Smoother")); // TODO: skip this line if we know that it is the lastLevel
-      Levels_[nextLevelID]->Request(TopSmootherFactory(nextLevelManager, "CoarseSolver"));
+      Levels_[nextLevelID]->Request(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+      Levels_[nextLevelID]->Request(TopSmootherFactory(rcpnextLevelManager, "Smoother")); // TODO: skip this line if we know that it is the lastLevel
+      Levels_[nextLevelID]->Request(TopSmootherFactory(rcpnextLevelManager, "CoarseSolver"));
     }
 
     //
@@ -172,7 +177,7 @@ namespace MueLu {
 
     // Build coarse level hierarchy
     if (!isFinestLevel) {
-      TopRAPFactory coarseRAPFactory(fineLevelManager, coarseLevelManager);
+      TopRAPFactory coarseRAPFactory(rcpfineLevelManager, rcpcoarseLevelManager);
       coarseRAPFactory.Build(*level.GetPreviousLevel(), level);
       GetOStream(Debug, 0) << "Debug: Level: " << coarseLevelID << " - R" << std::endl;
       level.Release(coarseRAPFactory);
@@ -191,9 +196,9 @@ namespace MueLu {
       if (Ac != Teuchos::null && Ac->getRowMap()->getGlobalNumElements() <= maxCoarseSize_) { // or if (coarseLevel == lastLevel
         if (isLastLevel == false) {
           GetOStream(Debug, 0) << "Debug: Level: " << nextLevelID << " - R/S/C" << std::endl;
-          Levels_[nextLevelID]->Release(TopRAPFactory(coarseLevelManager, nextLevelManager));
-          Levels_[nextLevelID]->Release(TopSmootherFactory(nextLevelManager, "Smoother"));
-          Levels_[nextLevelID]->Release(TopSmootherFactory(nextLevelManager, "CoarseSolver"));
+          Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+          Levels_[nextLevelID]->Release(TopSmootherFactory(rcpnextLevelManager, "Smoother"));
+          Levels_[nextLevelID]->Release(TopSmootherFactory(rcpnextLevelManager, "CoarseSolver"));
           Levels_.pop_back();
         }
 
@@ -202,8 +207,8 @@ namespace MueLu {
     }
 
     // Build coarse level smoother
-    TopSmootherFactory smootherFact (coarseLevelManager, "Smoother");
-    TopSmootherFactory coarsestSolverFact(coarseLevelManager, "CoarseSolver");
+    TopSmootherFactory smootherFact (rcpcoarseLevelManager, "Smoother");
+    TopSmootherFactory coarsestSolverFact(rcpcoarseLevelManager, "CoarseSolver");
 
     if (!isLastLevel) {
       smootherFact.Build(level);
@@ -247,14 +252,15 @@ namespace MueLu {
     int iLevel;
     GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
 
-    bool bIsLastLevel = Setup(startLevel, Teuchos::null, rcpManager, rcpManager);
+    Teuchos::Ptr<const FactoryManager> ptrmanager = Teuchos::ptrInArg(manager);
+    bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager);
     for(iLevel=startLevel + 1; iLevel < lastLevel; iLevel++) {
-      if(Setup(iLevel, rcpManager, rcpManager, rcpManager) == true) {
+      if(Setup(iLevel, ptrmanager, ptrmanager, ptrmanager) == true) {
         bIsLastLevel = true;
         break;
       }
     }
-    if(bIsLastLevel == false) Setup(lastLevel, rcpManager, rcpManager, Teuchos::null);
+    if(bIsLastLevel == false) Setup(lastLevel, ptrmanager, ptrmanager, Teuchos::null);
 
 
     // Crop. TODO: add a warning

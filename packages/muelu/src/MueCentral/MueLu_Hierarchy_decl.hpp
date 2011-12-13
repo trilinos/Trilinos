@@ -2,6 +2,7 @@
 #define MUELU_HIERARCHY_DECL_HPP
 
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Ptr.hpp>
 
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -141,11 +142,12 @@ namespace MueLu {
 
      Pre-condition:
       * FineLevel:
-         - must have keep useful data (TODO: not tested yet)
-         - must be Teuchos::null when Setup is called for finest level
+         - must have kept useful data (TODO: not tested yet)
+         - must be Teuchos::null when Setup is called for finest level (Setup then automatically calls Request for "Smoother" and "CoarseSolver")
       * CoarseLevel:
          - already allocated (using Hierarchy::AddLevel())
          - requests already posted
+           (exception: for finest level (=fineLevelManager==null) requests are called within setup routine)
       * NextLevel:
          - do not need to be allocate but could.
          - should be null when Setup is called for last level
@@ -162,9 +164,8 @@ namespace MueLu {
          - have been allocated
          - requests already posted.
     */
-    bool Setup(int coarseLevelID, const RCP<const FactoryManager> & fineLevelManager, const RCP<const FactoryManager> &coarseLevelManager,
-               const RCP<const FactoryManager> & nextLevelManager /*should be optional*/);
-
+    bool Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManager> fineLevelManager, const Teuchos::Ptr<const FactoryManager> coarseLevelManager,
+               const Teuchos::Ptr<const FactoryManager> nextLevelManager /*should be optional*/);
 
     //! 
     Teuchos::ParameterList Setup(const FactoryManager & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()

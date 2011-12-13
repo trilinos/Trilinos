@@ -91,9 +91,9 @@ int main(int argc, char *argv[]) {
   M2.SetFactory("A", rcp(new RAPFactory()));
   M2.SetFactory("P", rcp(new SaPFactory()));
 
-  H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)); // true, false bcse == first level
-  H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2));
-  H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null );  // false, true bcse == last level
+  H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); // true, false bcse == first level
+  H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2));
+  H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null );  // false, true bcse == last level
 
   //
   // Solve Ax = b
