@@ -132,47 +132,6 @@ namespace MueLu {
      *   @param fineLevelManager defines how to build missing data of the fineLevel (example: aggregates)
      *   @param coarseLevelManager defines how to build the level
      *   @param nextLevelManager defines how the next coarse level will be built. This is used to post corresponding request before building the coarse level to keep useful data.
-     *   @param isFinestLevel if true, only the smoother is built (A is not built) for coarseLevelID.
-     *   @param isLastLevel if true, request for the next level are not posted.
-
-     CoarseLevel is considered to be the last level if:
-      - input parameter isLastLevel == true 
-      or 
-      - Ac->getRowMap()->getGlobalNumElements() <= maxCoarseSize_
-     Method return true if CoarseLevel is the last level.
-
-     Pre-condition:
-      * FineLevel: 
-         - must have keep useful data (TODO: not tested yet)
-      * CoarseLevel:
-         - already allocated (using Hierarchy::AddLevel())
-         - requests already posted
-      * NextLevel:
-         - do not need to be allocate but could.
-
-     Post-condition:
-      * FineLevel:
-         - temporary data have been used and released (this condition is not tested)
-      * CoarseLevel:
-         - built, requests have been used
-         - if it is the last level (due to input parameter isLastLevel or getGlobalNumElements() <= maxCoarseSize_), 
-           then the coarse solver factory of the factory manager have been used instead of the smoother factory.
-      * NextLevel:
-        If input parameter isLastLevel == false:
-         - have been allocated
-         - requests already posted.   
-    */
-    bool Setup(int coarseLevelID, const FactoryManager & fineLevelManager, const FactoryManager &coarseLevelManager, 
-               const FactoryManager & nextLevelManager /*should be optional*/, bool isFinestLevel /*to be removed (the finestLevelManager can be customized to do the same)*/,
-               bool isLastLevel /* idem */);
-    
-    //! Multi-level setup phase: build a new level of the hierarchy.
-    /*!  This method is aimed to be used in a loop building the hierarchy level by level. See Hierarchy::Setup(manager, startLevel, numDesiredLevels) for an example of usage.
-     *
-     *   @param coarseLevelID ID of the level to be built.
-     *   @param fineLevelManager defines how to build missing data of the fineLevel (example: aggregates)
-     *   @param coarseLevelManager defines how to build the level
-     *   @param nextLevelManager defines how the next coarse level will be built. This is used to post corresponding request before building the coarse level to keep useful data.
 
      CoarseLevel is considered to be the last level if:
       - input parameter isLastLevel == true
