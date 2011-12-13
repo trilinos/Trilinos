@@ -78,7 +78,6 @@ namespace MueLu {
         
       // Level Set
       currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
-      currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother); //TODO: remove this
     }
 
     if ((preOrPost == BOTH || preOrPost == POST) && (postSmootherPrototype_ != Teuchos::null))
