@@ -508,6 +508,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
 
 TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
 {
+  MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
+    {
+#ifdef HAVE_MUELU_AMESOS2
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
@@ -543,11 +546,16 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
 
   int iterations=10;
   H.Iterate(*RHS, iterations, *X);
+#endif
+    }
 }
 
 
 TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
 {
+  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
+    {
+#ifdef HAVE_MUELU_AMESOS
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
@@ -604,10 +612,14 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
 
   int iterations=10;
   H.Iterate(*RHS, iterations, *X);
+#endif
+    }
 }
 
 TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
 {
+  MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
+    {
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
@@ -625,6 +637,8 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   FactoryManager M2; // last level (SA)
   M2.SetFactory("A", rcp(new RAPFactory()));
   M2.SetFactory("P", rcp(new SaPFactory()));
+
+#ifdef HAVE_MUELU_AMESOS2
 
   TEST_EQUALITY(H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)), false);
   TEST_EQUALITY(H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2)), false);
@@ -678,10 +692,14 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
 
   int iterations=10;
   H.Iterate(*RHS, iterations, *X);
+#endif
+    }
 }
 
 TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
 {
+  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
+    {
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
@@ -719,6 +737,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   M2.SetFactory("A", rcp(new RAPFactory()));
   M2.SetFactory("P", rcp(new SaPFactory()));
 
+#ifdef HAVE_MUELU_AMESOS
   TEST_EQUALITY(H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)), false);
   TEST_EQUALITY(H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2)), false);
   TEST_EQUALITY(H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null ), true);
@@ -769,6 +788,8 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
 
   int iterations=10;
   H.Iterate(*RHS, iterations, *X);
+#endif
+    } // test only for Epetra
 }
 
 }//namespace MueLuTests
