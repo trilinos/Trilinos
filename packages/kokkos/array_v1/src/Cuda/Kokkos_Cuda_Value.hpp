@@ -49,7 +49,7 @@ namespace Kokkos {
 namespace Impl {
 
 template< typename ValueType >
-class Initialize< Value< ValueType , Cuda > {
+class Initialize< Value< ValueType , Cuda > > {
 public:
   static void run( const Value< ValueType , Cuda > & ) {}
 };
