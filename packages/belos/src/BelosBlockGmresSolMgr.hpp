@@ -393,8 +393,10 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
+  achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxRestarts_(maxRestarts_default_),
   maxIters_(maxIters_default_),
+  numIters_(0),
   blockSize_(blockSize_default_),
   numBlocks_(numBlocks_default_),
   verbosity_(verbosity_default_),
@@ -423,8 +425,10 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
+  achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxRestarts_(maxRestarts_default_),
   maxIters_(maxIters_default_),
+  numIters_(0),
   blockSize_(blockSize_default_),
   numBlocks_(numBlocks_default_),
   verbosity_(verbosity_default_),
@@ -1267,12 +1271,13 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       pTestValues = impConvTest_->getTestValue();
     }
     TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
-      "Belos::BlockCGSolMgr::solve(): The implicit convergence test's getTestValue() "
-      "method returned NULL.  Please report this bug to the Belos developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
-      "Belos::BlockCGSolMgr::solve(): The implicit convergence test's getTestValue() "
-      "method returned a vector of length zero.  Please report this bug to the "
+      "Belos::BlockGmresSolMgr::solve(): The implicit convergence test's "
+      "getTestValue() method returned NULL.  Please report this bug to the "
       "Belos developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
+      "Belos::BlockGmresSolMgr::solve(): The implicit convergence test's "
+      "getTestValue() method returned a vector of length zero.  Please report "
+      "this bug to the Belos developers.");
 
     // FIXME (mfh 12 Dec 2011) Does pTestValues really contain the
     // achieved tolerances for all vectors in the current solve(), or
