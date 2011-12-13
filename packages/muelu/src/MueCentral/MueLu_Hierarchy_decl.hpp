@@ -203,8 +203,8 @@ namespace MueLu {
          - have been allocated
          - requests already posted.
     */
-    bool Setup(int coarseLevelID, const RCP<FactoryManager> & fineLevelManager, const RCP<FactoryManager> &coarseLevelManager,
-               const RCP<FactoryManager> & nextLevelManager /*should be optional*/);
+    bool Setup(int coarseLevelID, const RCP<const FactoryManager> & fineLevelManager, const RCP<const FactoryManager> &coarseLevelManager,
+               const RCP<const FactoryManager> & nextLevelManager /*should be optional*/);
 
 
     //! 

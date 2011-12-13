@@ -91,11 +91,9 @@ int main(int argc, char *argv[]) {
   M2.SetFactory("A", rcp(new RAPFactory()));
   M2.SetFactory("P", rcp(new SaPFactory()));
 
-  FactoryManager Mnull; // unused manager, TODO: change prototype of Hierarchy::Setup() ?
-  
-  H.Setup(0, Mnull, M0, M1,    true,  false); // true, false bcse == first level
-  H.Setup(1, M0,    M1, M2,    false, false);
-  H.Setup(2, M1,    M2, Mnull, false, true);  // false, true bcse == last level
+  H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)); // true, false bcse == first level
+  H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2));
+  H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null );  // false, true bcse == last level
 
   //
   // Solve Ax = b

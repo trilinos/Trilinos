@@ -230,8 +230,8 @@ namespace MueLu {
 
   // new setup routine
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(int coarseLevelID, const RCP<FactoryManager> & fineLevelManager, const RCP<FactoryManager> &coarseLevelManager,
-             const RCP<FactoryManager> & nextLevelManager /*should be optional*/) {
+  bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(int coarseLevelID, const RCP<const FactoryManager> & fineLevelManager, const RCP<const FactoryManager> &coarseLevelManager,
+             const RCP<const FactoryManager> & nextLevelManager /*should be optional*/) {
     //TODO
     typedef MueLu::TopRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TopRAPFactory;
     typedef MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TopSmootherFactory;
@@ -356,11 +356,15 @@ namespace MueLu {
     int iLevel;
     GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
 
-    for (iLevel = startLevel; iLevel <= lastLevel; iLevel++) {
-      if(Setup(iLevel, manager, manager, manager, iLevel == startLevel, iLevel == lastLevel) == true) { 
+    bool bIsLastLevel = Setup(startLevel, Teuchos::null, rcpManager, rcpManager);
+    for(iLevel=startLevel + 1; iLevel < lastLevel; iLevel++) {
+      if(Setup(iLevel, rcpManager, rcpManager, rcpManager) == true) {
+        bIsLastLevel = true;
         break;
       }
     }
+    if(bIsLastLevel == false) Setup(lastLevel, rcpManager, rcpManager, Teuchos::null);
+
 
     // Crop. TODO: add a warning
     Levels_.resize(iLevel + 1);
