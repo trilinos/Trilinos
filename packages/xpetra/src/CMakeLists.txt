@@ -42,8 +42,8 @@ CONFIGURE_FILE(
   )
 
 # Note: cannot use the macro TRIBITS_CONFIGURE_FILE() because 
-# Xpetra_config.h.in is not in ${PACKAGE_SOURCE_DIR}/cmake
-## TRIBITS_CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Xpetra_config.h)
+# Xpetra_config.hpp.in is not in ${PACKAGE_SOURCE_DIR}/cmake
+## TRIBITS_CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Xpetra_config.hpp)
 
 #
 # B) Define the header and source files (and directories)
@@ -114,8 +114,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 # Must glob the binary dir last to get all of the auto-generated headers
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
-# APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-# APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
+APPEND_SET(HEADERS ${DIR}/Xpetra_config.hpp)
 
 #
 # C) Define the targets for package's library(s)
