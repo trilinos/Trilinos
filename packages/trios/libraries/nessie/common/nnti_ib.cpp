@@ -1202,6 +1202,9 @@ NNTI_result_t NNTI_ib_put (
     ib_mem_hdl->ack.op    =IB_OP_PUT_TARGET;
     ib_mem_hdl->ack.offset=dest_offset;
 
+
+    log_debug(nnti_debug_level, "putting to (%s, qp=%p, qpn=%lu)", dest_buffer_hdl->buffer_owner.url, ib_mem_hdl->qp, ib_mem_hdl->qpn);
+
     trios_start_timer(call_time);
     if (ibv_post_send(ib_mem_hdl->qp, &ib_mem_hdl->sq_wr[0], &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -1260,6 +1263,9 @@ NNTI_result_t NNTI_ib_get (
 
     ib_mem_hdl->ack.op    =IB_OP_GET_TARGET;
     ib_mem_hdl->ack.offset=src_offset;
+
+
+    log_debug(nnti_debug_level, "getting from (%s, qp=%p, qpn=%lu)", src_buffer_hdl->buffer_owner.url, ib_mem_hdl->qp, ib_mem_hdl->qpn);
 
     trios_start_timer(call_time);
     if (ibv_post_send(ib_mem_hdl->qp, &ib_mem_hdl->sq_wr[0], &bad_wr)) {
@@ -2034,9 +2040,9 @@ static void transition_qp_to_ready(
     attr.qp_state = IBV_QPS_RTS;
     attr.sq_psn = 0;
     attr.max_rd_atomic = 1;
-    attr.timeout = 26;  /* 4.096us * 2^26 = 5 min */
-    attr.retry_cnt = 20;
-    attr.rnr_retry = 20;
+    attr.timeout = 7;  /* 4.096us * 2^7 */
+    attr.retry_cnt = 1;
+    attr.rnr_retry = 1;
     if (ibv_modify_qp(qp, &attr, mask)) {
         log_error(nnti_debug_level, "failed to modify qp from RTR to RTS state");
     }
