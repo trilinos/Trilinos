@@ -1,4 +1,4 @@
-<PackageDependencies>
+<PackageDependencies project="Trilinos">
   <Package name="TrilinosFramework" dir="cmake" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>

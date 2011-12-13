@@ -1,41 +1,45 @@
-/** \HEADER
- *************************************************************************
- *
- *                            Kokkos
- *                 Copyright 2010 Sandia Corporation
- *
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions are
- *  met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *  notice, this list of conditions and the following disclaimer.
- *
- *  2. Redistributions in binary form must reproduce the above copyright
- *  notice, this list of conditions and the following disclaimer in the
- *  documentation and/or other materials provided with the distribution.
- *
- *  3. Neither the name of the Corporation nor the names of the
- *  contributors may be used to endorse or promote products derived from
- *  this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
- *  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- *  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
- *  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- *  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- *  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *************************************************************************
- */
+/*
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+*/
 
 #include <cstddef>
 #include <SparseOutput.hpp>
@@ -70,6 +74,7 @@ struct PerformanceData {
   {
     if ( rhs.mesh_time < mesh_time ) mesh_time = rhs.mesh_time ;
     if ( rhs.elem_time < elem_time ) elem_time = rhs.elem_time ;
+    if ( rhs.fill_time < fill_time ) fill_time = rhs.fill_time ;
     if ( solve_mflop_per_sec < rhs.solve_mflop_per_sec )
       solve_mflop_per_sec = rhs.solve_mflop_per_sec ;
   }
@@ -84,16 +89,16 @@ static void run(int x, int y, int z, PerformanceData & perf )
   typedef device_type::size_type index_type ;
 
   typedef Kokkos::MDArray<Scalar,     device_type>  scalar_array_d;
-  typedef Kokkos::MDArray<index_type, device_type>  index_array_d;    
+  typedef Kokkos::MDArray<index_type, device_type>  index_array_d;
 
   typedef Kokkos::MultiVector<Scalar,     device_type>  scalar_vector_d;
   typedef Kokkos::MultiVector<index_type, device_type>  index_vector_d;
 
-  typedef typename scalar_array_d::HostView  scalar_array_h ;
-  typedef typename index_array_d ::HostView  index_array_h ;
+  typedef typename scalar_array_d::HostMirror  scalar_array_h ;
+  typedef typename index_array_d ::HostMirror  index_array_h ;
 
-  typedef typename scalar_vector_d::HostView  scalar_vector_h ;
-  typedef typename index_vector_d ::HostView  index_vector_h ;
+  typedef typename scalar_vector_d::HostMirror  scalar_vector_h ;
+  typedef typename index_vector_d ::HostMirror  index_vector_h ;
 
   // Problem coefficients
 
@@ -153,8 +158,8 @@ static void run(int x, int y, int z, PerformanceData & perf )
   //------------------------------
   // Allocate device memory for linear system and element contributions.
 
-  A = Kokkos::create_labeled_multivector< scalar_vector_d > ("A",A_col_h.length());  
-  b = Kokkos::create_labeled_multivector< scalar_vector_d > ("b",mesh.elem_count, 8);  
+  A = Kokkos::create_labeled_multivector< scalar_vector_d > ("A",A_col_h.length());
+  b = Kokkos::create_labeled_multivector< scalar_vector_d > ("b",mesh.node_count);
   X = Kokkos::create_labeled_multivector< scalar_vector_d > ("X",mesh.node_count);
 
   elem_stiffness =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8, 8);
@@ -240,7 +245,7 @@ static void driver( const char * label , int beg , int end , int runs )
   std::cout << std::endl ;
   std::cout << "\"MiniImplTherm with Kokkos " << label << "\"" << std::endl;
   std::cout << "\"Size\" ,     \"Setup\" ,    \"Element\" ,  \"Element\" , \"Fill\" ,   \"Fill\" ,  \"Solve\"" << std::endl
-            << "\"elements\" , \"millisec\" , \"millisec\" , \"flops\" , \"millisec\" , \"flops\" , \"Mflop/sec\"" << std::endl ; 
+            << "\"elements\" , \"millisec\" , \"millisec\" , \"flops\" , \"millisec\" , \"flops\" , \"Mflop/sec\"" << std::endl ;
 
   for(int i = beg ; i < end; ++i )
   {

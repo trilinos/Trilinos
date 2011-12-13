@@ -86,23 +86,32 @@ MESSAGE("")
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 
+#
+# Get the basic varaibles that define the project and the build
+#
+
 # We must locate the source code root directory before processing this
 # file. Once the root directory is located, we can make good guesses
-# at other properties, but this file can be executed outside of the
-# context of a CMake build. 
+# at other properties, but this file is a CTest script that is always
+# executed outside of the context of the project's CMake build. 
 #
 # We allow the environment variable TRIBITS_PROJECT_ROOT to locate the
 # root directory. If the variable doesn't exist, we fall back on the
 # default convention.
-SET(TRIBITS_PROJECT_ROOT "$ENV{TRIBITS_PROJECT_ROOT}")
+#MESSAGE("TRIBITS_PROJECT_ROOT (before env) = '${TRIBITS_PROJECT_ROOT}'")
+IF (NOT TRIBITS_PROJECT_ROOT)
+  SET(TRIBITS_PROJECT_ROOT "$ENV{TRIBITS_PROJECT_ROOT}")
+ENDIF()
+#MESSAGE("TRIBITS_PROJECT_ROOT (after env) = '${TRIBITS_PROJECT_ROOT}'")
 IF(NOT TRIBITS_PROJECT_ROOT)
   # Fall back on the default convention, in which this file is located at: 
   #   <root>/cmake/tribits/ctest.
   GET_FILENAME_COMPONENT(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
   SET(TRIBITS_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../..")
 ENDIF()
+MESSAGE("TRIBITS_PROJECT_ROOT = '${TRIBITS_PROJECT_ROOT}'")
 
-# Check that the ProjectName.cmake file exists.
+# Assert that the ProjectName.cmake file exists.
 SET(TRIBITS_PROJECT_NAME_INCLUDE "${TRIBITS_PROJECT_ROOT}/ProjectName.cmake")
 IF(NOT EXISTS "${TRIBITS_PROJECT_NAME_INCLUDE}")
   MESSAGE(FATAL_ERROR
@@ -112,6 +121,7 @@ IF(NOT EXISTS "${TRIBITS_PROJECT_NAME_INCLUDE}")
     "to point at the source root.")
 ENDIF()
 
+# Include the ProjectName.cmake file and get PROJECT_NAME
 INCLUDE(${TRIBITS_PROJECT_NAME_INCLUDE})
 IF(NOT PROJECT_NAME)
   MESSAGE(FATAL_ERROR 
@@ -127,7 +137,10 @@ MESSAGE("${PROJECT_NAME}_HOME_DIR=${${PROJECT_NAME}_HOME_DIR}")
 SET(${PROJECT_NAME}_CMAKE_DIR "${${PROJECT_NAME}_HOME_DIR}/cmake")
 MESSAGE("${PROJECT_NAME}_CMAKE_DIR = ${${PROJECT_NAME}_CMAKE_DIR}")
 
-SET(${PROJECT_NAME}_TRIBITS_DIR "$ENV{${PROJECT_NAME}_TRIBITS_DIR}")
+# Get the Tribits directory
+IF (NOT ${PROJECT_NAME}_TRIBITS_DIR)
+  SET(${PROJECT_NAME}_TRIBITS_DIR "$ENV{${PROJECT_NAME}_TRIBITS_DIR}")
+ENDIF()
 IF(NOT ${PROJECT_NAME}_TRIBITS_DIR)
   SET(${PROJECT_NAME}_TRIBITS_DIR "${${PROJECT_NAME}_CMAKE_DIR}/tribits")
 ENDIF()
@@ -149,7 +162,7 @@ INCLUDE(TribitsGlobalMacros)
 INCLUDE(TribitsConstants)
 
 # Need to include the project's version file to get some Git and CDash
-# settings specific to the given version of Trilinos
+# settings specific to the given version
 TRIBITS_PROJECT_READ_VERSION_FILE(${TRIBITS_PROJECT_ROOT})
 
 INCLUDE(TribitsFindPythonInterp)
@@ -299,7 +312,7 @@ ENDMACRO()
 #
 # OUTPUT: Sets ${PROJECT_NAME}_DEFAULT_PACKAGES
 #
-# NOTE: This macro is used to clean up the main TRILINOS_CTEST_DRIVER()
+# NOTE: This macro is used to clean up the main TRIBITS_CTEST_DRIVER()
 # macro.
 #
 
@@ -535,11 +548,11 @@ ENDMACRO()
 
 
 #
-# Call INITIALIZE_ERROR_QUEUE once at the top of TRILINOS_CTEST_DRIVER
+# Call INITIALIZE_ERROR_QUEUE once at the top of TRIBITS_CTEST_DRIVER
 #
 
 MACRO(INITIALIZE_ERROR_QUEUE)
-  SET(TRILINOS_CTEST_DRIVER_ERROR_QUEUE "")
+  SET(TRIBITS_CTEST_DRIVER_ERROR_QUEUE "")
 ENDMACRO()
 
 
@@ -556,21 +569,21 @@ ENDMACRO()
 #
 
 MACRO(QUEUE_ERROR err_msg)
-  SET(TRILINOS_CTEST_DRIVER_ERROR_QUEUE
-    ${TRILINOS_CTEST_DRIVER_ERROR_QUEUE} "${err_msg}")
+  SET(TRIBITS_CTEST_DRIVER_ERROR_QUEUE
+    ${TRIBITS_CTEST_DRIVER_ERROR_QUEUE} "${err_msg}")
 ENDMACRO()
 
 
 #
-# Call REPORT_QUEUED_ERRORS once at the bottom of TRILINOS_CTEST_DRIVER
+# Call REPORT_QUEUED_ERRORS once at the bottom of TRIBITS_CTEST_DRIVER
 #
 
 MACRO(REPORT_QUEUED_ERRORS)
-  IF("${TRILINOS_CTEST_DRIVER_ERROR_QUEUE}" STREQUAL "")
-    MESSAGE("TRILINOS_CTEST_DRIVER_ERROR_QUEUE is empty. All is well.")
+  IF("${TRIBITS_CTEST_DRIVER_ERROR_QUEUE}" STREQUAL "")
+    MESSAGE("TRIBITS_CTEST_DRIVER_ERROR_QUEUE is empty. All is well.")
   ELSE()
-    MESSAGE("error: TRILINOS_CTEST_DRIVER_ERROR_QUEUE reports the following error message queue:")
-    FOREACH(err_msg ${TRILINOS_CTEST_DRIVER_ERROR_QUEUE})
+    MESSAGE("error: TRIBITS_CTEST_DRIVER_ERROR_QUEUE reports the following error message queue:")
+    FOREACH(err_msg ${TRIBITS_CTEST_DRIVER_ERROR_QUEUE})
       MESSAGE("${err_msg}")
     ENDFOREACH()
   ENDIF()
@@ -758,9 +771,11 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE "${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT}" )
 
   IF(CTEST_TEST_TYPE STREQUAL "Nightly")
-    SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_REPOSITORY_LOCATION "software.sandia.gov:/space/git/nightly/${CTEST_SOURCE_NAME}" )
+    SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_REPOSITORY_LOCATION
+       "${${PROJECT_NAME}_REPOSITORY_LOCATION_NIGHTLY_DEFAULT}")
   ELSE()
-    SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_REPOSITORY_LOCATION "software.sandia.gov:/space/git/${CTEST_SOURCE_NAME}" )
+    SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_REPOSITORY_LOCATION
+       "${${PROJECT_NAME}_REPOSITORY_LOCATION_DEFAULT}")
   ENDIF()
 
   # Selct the ${PROJECT_NAME} packages to enable (empty means to select all available)
@@ -857,6 +872,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       FILE(MAKE_DIRECTORY "${CTEST_DASHBOARD_ROOT}")
     ENDIF()
   ENDIF()
+  PRINT_VAR(CTEST_SOURCE_DIRECTORY)
+  PRINT_VAR(CTEST_BINARY_DIRECTORY)
 
   # Set override hook for unit testing
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_SOURCE_DIRECTORY ${CTEST_SOURCE_DIRECTORY} )
@@ -864,21 +881,36 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Must be set here after CTEST_BINARY_DIRECTORY is set!
   SET(FAILED_PACKAGES_FILE_NAME "${CTEST_BINARY_DIRECTORY}/failedPackages.txt")
 
-  # For coverage dashboards, send results to /extended/cdash by default
-  IF (CTEST_DO_COVERAGE_TESTING)
-    SET_DEFAULT_AND_FROM_ENV( CTEST_DROP_SITE "testing.sandia.gov" )
-    SET_DEFAULT_AND_FROM_ENV( CTEST_DROP_LOCATION "/extended/cdash/submit.php?project=${PROJECT_NAME}" )
-  ENDIF()
-
-
   #
   # Some platform-independent setup
   #
   
-  INCLUDE("${${PROJECT_NAME}_CMAKE_DIR}/../CTestConfig.cmake")
+  INCLUDE("${${PROJECT_NAME}_HOME_DIR}/CTestConfig.cmake")
   SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
   SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
   SET(CTEST_USE_LAUNCHERS 1)
+
+  # For coverage dashboards, send results to specialized dashboard if
+  # requested
+  IF (CTEST_DO_COVERAGE_TESTING)
+    # Allow override of CDash drop site but use standard by default
+    SET_DEFAULT(CTEST_DROP_SITE_COVERAGE_DEFAULT
+      ${CTEST_DROP_SITE})
+    SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_SITE_COVERAGE
+      "${CTEST_DROP_SITE_COVERAGE_DEFAULT}")
+    SET(CTEST_DROP_SITE "${CTEST_DROP_SITE_COVERAGE}" )
+    # Allow override of CDash drop location but use standard by default
+    SET_DEFAULT(CTEST_DROP_LOCATION_COVERAGE_DEFAULT
+      ${CTEST_DROP_LOCATION})
+    SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_LOCATION_COVERAGE
+      "${CTEST_DROP_LOCATION_COVERAGE_DEFAULT}")
+    SET(CTEST_DROP_LOCATION "${CTEST_DROP_LOCATION_COVERAGE}" )
+
+    # NOTE: You must set these down below the include of
+    # CTestConfig.cmake so that CTEST_DROP_SITE and CTEST_DROP_LOCATION read
+    # from that file will set the defaults for the coverage options.
+
+  ENDIF()
   
   #
   # Setup for the VC update
@@ -1168,7 +1200,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         "-D${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON"
         "-D${PROJECT_NAME}_ENABLE_TESTS:BOOL=${${TRIBITS_PACKAGE}_ENABLE_TESTS}"
         "-D${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS:STRING=${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS}"
-        "-D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=OFF"
+        "-D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON"
         )
       IF (NOT CTEST_GENERATE_DEPS_XML_OUTPUT_FILE)
         LIST(APPEND CONFIGURE_OPTIONS

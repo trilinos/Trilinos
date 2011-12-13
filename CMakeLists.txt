@@ -65,9 +65,6 @@ INCLUDE(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
 # not in an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
-# Add support for extra repositories
-SET(${PROJECT_NAME}_SUPPORT_EXTRA_REPOS TRUE)
-
 #
 # B) Pull in the TriBITS system and execute
 #

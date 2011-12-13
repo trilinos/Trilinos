@@ -1,41 +1,45 @@
-/** \HEADER
- *************************************************************************
- *
- *                            Kokkos
- *                 Copyright 2010 Sandia Corporation
- *
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions are
- *  met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *  notice, this list of conditions and the following disclaimer.
- *
- *  2. Redistributions in binary form must reproduce the above copyright
- *  notice, this list of conditions and the following disclaimer in the
- *  documentation and/or other materials provided with the distribution.
- *
- *  3. Neither the name of the Corporation nor the names of the
- *  contributors may be used to endorse or promote products derived from
- *  this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
- *  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- *  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
- *  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- *  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- *  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *************************************************************************
- */
+/*
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+*/
 
 #include <cstddef>
 #include <SparseOutput.hpp>
@@ -56,7 +60,8 @@ struct PerformanceData {
   size_t elem_flop ;
   double fill_time ;
   size_t fill_flop ;
-  double solve_mflop_per_sec ;
+  size_t solve_flops ;
+  double gmres_solve_time ;
 
   PerformanceData()
   : mesh_time(0)
@@ -64,16 +69,10 @@ struct PerformanceData {
   , elem_flop(0)
   , fill_time(0)
   , fill_flop(0)
-  , solve_mflop_per_sec(0)
+  , solve_flops(0)
+  , gmres_solve_time(0)
   {}
 
-  void best( const PerformanceData & rhs )
-  {
-    if ( rhs.mesh_time < mesh_time ) mesh_time = rhs.mesh_time ;
-    if ( rhs.elem_time < elem_time ) elem_time = rhs.elem_time ;
-    if ( solve_mflop_per_sec < rhs.solve_mflop_per_sec )
-      solve_mflop_per_sec = rhs.solve_mflop_per_sec ;
-  }
 };
 
 template< typename Scalar >
@@ -208,7 +207,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
   // Solve linear sytem
 
   const size_t num_iters = 50 ;
-  perf.solve_mflop_per_sec = GMRES_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X, num_iters );
+  GMRES_Solve<Scalar, device_type>::run(A , A_row_d, A_col_d , b , X, num_iters , perf.solve_flops, perf.gmres_solve_time );
 
 #if  PRINT_SAMPLE_OF_SOLUTION
 
@@ -239,40 +238,154 @@ static void run(int x, int y, int z, PerformanceData & perf )
 
 static void driver( const char * label , int beg , int end , int runs )
 {
-  std::cout << std::endl ;
-  std::cout << "\"MiniImplTherm with Kokkos " << label << "\"" << std::endl;
-  std::cout << "\"Size\" ,     \"Setup\" ,    \"Element\" ,  \"Element\" , \"Fill\" ,   \"Fill\" ,  \"Solve\"" << std::endl
-            << "\"elements\" , \"millisec\" , \"millisec\" , \"flops\" , \"millisec\" , \"flops\" , \"Mflop/sec\"" << std::endl ; 
 
+  PerformanceData ** perf = new PerformanceData*[end-beg];
+  PerformanceData * mins = new PerformanceData[end-beg];
+  PerformanceData * maxes = new PerformanceData[end-beg];
+  PerformanceData * medians = new PerformanceData[end-beg];
+  int *num_elements = new int[end-beg];
+   
   for(int i = beg ; i < end; ++i )
   {
     const int ix = (int) cbrt( (double) ( 1 << i ) );
     const int iy = ix + 1 ;
     const int iz = iy + 1 ;
     const int n  = ix * iy * iz ;
-
-    PerformanceData perf , best ;
+    num_elements[i-beg] = n;
+   
+    perf[i-beg] = new PerformanceData[runs];
 
     for(int j = 0; j < runs; j++){
 
-     run(ix,iy,iz,perf);
+      run(ix,iy,iz,perf[i-beg][j]);
 
-     if( j == 0 ) {
-       best = perf ;
-     }
-     else {
-       best.best( perf );
-     }
-   }
-   std::cout << std::setw(8) << n << " , "
-             << std::setw(10) << best.mesh_time * 1000 << " , "
-             << std::setw(10) << best.elem_time * 1000 << " , "
-             << std::setw(10) << best.elem_flop << " , "
-             << std::setw(10) << best.fill_time * 1000 << " , "
-             << std::setw(10) << best.fill_flop << " , "
-             << std::setw(10) << best.solve_mflop_per_sec
+    }
+  }
+
+  double *mesh_times = new double[runs];
+  double *elem_times = new double[runs];
+  double *fill_times = new double[runs];
+  double *gmres_solve_times = new double[runs];
+  for(int i = 0 ; i < end-beg; ++i){
+ 
+    mins[i].elem_flop = perf[i][0].elem_flop;
+    maxes[i].elem_flop = perf[i][0].elem_flop;
+    medians[i].elem_flop = perf[i][0].elem_flop;
+    
+    mins[i].fill_flop = perf[i][0].fill_flop;
+    maxes[i].fill_flop = perf[i][0].fill_flop;
+    medians[i].fill_flop = perf[i][0].fill_flop;
+    
+    mins[i].solve_flops = perf[i][0].solve_flops;
+    maxes[i].solve_flops = perf[i][0].solve_flops;
+    medians[i].solve_flops = perf[i][0].solve_flops;
+
+    for(int j=0;j<runs; ++j){
+      mesh_times[j] = perf[i][j].mesh_time;
+      elem_times[j] = perf[i][j].elem_time;
+      fill_times[j] = perf[i][j].fill_time;
+      gmres_solve_times[j] = perf[i][j].gmres_solve_time;
+    }
+    std::sort(mesh_times, mesh_times+runs);
+    std::sort(elem_times, elem_times+runs);
+    std::sort(fill_times, fill_times+runs);
+    std::sort(gmres_solve_times, gmres_solve_times+runs);
+
+    mins[i].mesh_time = mesh_times[0];
+    maxes[i].mesh_time = mesh_times[runs-1];
+    medians[i].mesh_time = mesh_times[runs/2];
+
+    mins[i].elem_time = elem_times[0];
+    maxes[i].elem_time = elem_times[runs-1];
+    medians[i].elem_time = elem_times[runs/2];
+
+    mins[i].fill_time = fill_times[0];
+    maxes[i].fill_time = fill_times[runs-1];
+    medians[i].fill_time = fill_times[runs/2];
+
+    mins[i].gmres_solve_time = gmres_solve_times[0];
+    maxes[i].gmres_solve_time = gmres_solve_times[runs-1];
+    medians[i].gmres_solve_time = gmres_solve_times[runs/2];
+  }
+  delete [] mesh_times;
+  delete [] elem_times;
+  delete [] fill_times;
+  delete [] gmres_solve_times;
+
+
+
+  std::cout << std::endl ;
+  std::cout << "Minimum" << std::endl;
+  std::cout << "\"MiniImplTherm with Kokkos " << label << "\"" << std::endl;
+  std::cout << "\"Size\" ,     \"Setup\" ,    \"Element\" ,  \"Element\" , \"Fill\" ,   \"Fill\" ,      \"Solve\" ,    \"Solve\" ,     \"Solve\" "  << std::endl
+            << "\"elements\" , \"millisec\" , \"millisec\" , \"flops\" , \"millisec\" , \"flops\" ,     \"flops\" ,     \"time\" , \"Mflops/sec\" " << std::endl ; 
+
+  for(int i=0; i<end-beg; ++i){
+
+   std::cout << std::setw(8) << num_elements[i] << " , "
+             << std::setw(10) << mins[i].mesh_time * 1000 << " , "
+             << std::setw(10) << mins[i].elem_time * 1000 << " , "
+             << std::setw(10) << mins[i].elem_flop << " , "
+             << std::setw(10) << mins[i].fill_time * 1000 << " , "
+             << std::setw(10) << mins[i].fill_flop << " , "
+             << std::setw(10) << mins[i].solve_flops << " , "
+             << std::setw(10) << mins[i].gmres_solve_time << " , "
+             << std::setw(10) << 
+              (double)mins[i].solve_flops / ( mins[i].gmres_solve_time * 1.0e6)
              << std::endl ;
   }
+
+  std::cout << std::endl ;
+  std::cout << "Maximum" << std::endl;
+  std::cout << "\"MiniImplTherm with Kokkos " << label << "\"" << std::endl;
+  std::cout << "\"Size\" ,     \"Setup\" ,    \"Element\" ,  \"Element\" , \"Fill\" ,   \"Fill\" ,      \"Solve\" ,    \"Solve\" ,     \"Solve\" "  << std::endl
+            << "\"elements\" , \"millisec\" , \"millisec\" , \"flops\" , \"millisec\" , \"flops\" ,     \"flops\" ,     \"time\" , \"Mflops/sec\" " << std::endl ; 
+
+  for(int i=0; i<end-beg; ++i){
+
+   std::cout << std::setw(8) << num_elements[i] << " , "
+             << std::setw(10) << maxes[i].mesh_time * 1000 << " , "
+             << std::setw(10) << maxes[i].elem_time * 1000 << " , "
+             << std::setw(10) << maxes[i].elem_flop << " , "
+             << std::setw(10) << maxes[i].fill_time * 1000 << " , "
+             << std::setw(10) << maxes[i].fill_flop << " , "
+             << std::setw(10) << maxes[i].solve_flops << " , "
+             << std::setw(10) << maxes[i].gmres_solve_time << " , "
+             << std::setw(10) << 
+              (double)maxes[i].solve_flops / ( maxes[i].gmres_solve_time * 1.0e6)
+             << std::endl ;
+  }
+
+  std::cout << std::endl ;
+  std::cout << "Median" << std::endl;
+  std::cout << "\"MiniImplTherm with Kokkos " << label << "\"" << std::endl;
+  std::cout << "\"Size\" ,     \"Setup\" ,    \"Element\" ,  \"Element\" , \"Fill\" ,   \"Fill\" ,      \"Solve\" ,    \"Solve\" ,     \"Solve\" "  << std::endl
+            << "\"elements\" , \"millisec\" , \"millisec\" , \"flops\" , \"millisec\" , \"flops\" ,     \"flops\" ,     \"time\" , \"Mflops/sec\" " << std::endl ; 
+
+  for(int i=0; i<end-beg; ++i){
+
+   std::cout << std::setw(8) << num_elements[i] << " , "
+             << std::setw(10) << medians[i].mesh_time * 1000 << " , "
+             << std::setw(10) << medians[i].elem_time * 1000 << " , "
+             << std::setw(10) << medians[i].elem_flop << " , "
+             << std::setw(10) << medians[i].fill_time * 1000 << " , "
+             << std::setw(10) << medians[i].fill_flop << " , "
+             << std::setw(10) << medians[i].solve_flops << " , "
+             << std::setw(10) << medians[i].gmres_solve_time << " , "
+             << std::setw(10) << 
+              (double)medians[i].solve_flops / ( medians[i].gmres_solve_time * 1.0e6)
+             << std::endl ;
+  }
+
+  for(int i = beg ; i < end; ++i )
+  {
+    delete[] perf[i];
+  }
+  delete[] perf;
+  delete[] num_elements;
+  delete[] mins;
+  delete[] maxes;
+  delete[] medians;
 }
 
 };

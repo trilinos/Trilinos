@@ -1,3 +1,46 @@
+/*
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+*/
+
 
 #include <stdio.h>
 #include <iostream>
@@ -99,9 +142,9 @@ void run( int block_count , int block_size )
 
   Kokkos::multiply( graph , matrix , input , output );
 
-  vector_type::HostView h_output = Kokkos::mirror_create( output );
-  vector_type::HostView h_input  = Kokkos::mirror_create( input );
-  matrix_type::HostView h_matrix = Kokkos::mirror_create( matrix );
+  vector_type::HostMirror h_output = Kokkos::mirror_create( output );
+  vector_type::HostMirror h_input  = Kokkos::mirror_create( input );
+  matrix_type::HostMirror h_matrix = Kokkos::mirror_create( matrix );
 
   Kokkos::mirror_update( h_input , input );
   Kokkos::mirror_update( h_output , output );
@@ -190,9 +233,9 @@ void run( const int block_count ,
   graph.block_column_index  =
     Kokkos::create_multivector< graph_type::vector_type >( count );
 
-  graph_type::vector_type::HostView h_column_offset =
+  graph_type::vector_type::HostMirror h_column_offset =
     Kokkos::mirror_create( graph.block_column_offset );
-  graph_type::vector_type::HostView h_column_index  =
+  graph_type::vector_type::HostMirror h_column_index  =
     Kokkos::mirror_create( graph.block_column_index );
 
   count = 0 ;
@@ -227,9 +270,9 @@ void run( const int block_count ,
 
   perf.seconds = wall_clock.seconds();
 
-  vector_type::HostView h_output = Kokkos::mirror_create( output );
-  vector_type::HostView h_input  = Kokkos::mirror_create( input );
-  matrix_type::HostView h_matrix = Kokkos::mirror_create( matrix );
+  vector_type::HostMirror h_output = Kokkos::mirror_create( output );
+  vector_type::HostMirror h_input  = Kokkos::mirror_create( input );
+  matrix_type::HostMirror h_matrix = Kokkos::mirror_create( matrix );
 
   Kokkos::mirror_update( h_input , input );
   Kokkos::mirror_update( h_output , output );
@@ -357,9 +400,9 @@ void run( const int block_count ,
   graph.block_column_index  =
     Kokkos::create_multivector< graph_type::vector_type >( count );
 
-  graph_type::vector_type::HostView h_column_offset =
+  graph_type::vector_type::HostMirror h_column_offset =
     Kokkos::mirror_create( graph.block_column_offset );
-  graph_type::vector_type::HostView h_column_index  =
+  graph_type::vector_type::HostMirror h_column_index  =
     Kokkos::mirror_create( graph.block_column_index );
 
   count = 0 ;
@@ -394,9 +437,9 @@ void run( const int block_count ,
 
   perf.seconds = wall_clock.seconds();
 
-  vector_type::HostView h_output = Kokkos::mirror_create( output );
-  vector_type::HostView h_input  = Kokkos::mirror_create( input );
-  matrix_type::HostView h_matrix = Kokkos::mirror_create( matrix );
+  vector_type::HostMirror h_output = Kokkos::mirror_create( output );
+  vector_type::HostMirror h_input  = Kokkos::mirror_create( input );
+  matrix_type::HostMirror h_matrix = Kokkos::mirror_create( matrix );
 
   Kokkos::mirror_update( h_input , input );
   Kokkos::mirror_update( h_output , output );

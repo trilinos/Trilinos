@@ -94,6 +94,21 @@ class SolverManager : virtual public Teuchos::Describable {
   //! Return the current parameters being used for this solver manager.
   virtual Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const = 0;
 
+  /// \brief Tolerance achieved by the last \c solve() invocation.
+  /// 
+  /// This is the maximum over all right-hand sides' achieved
+  /// convergence tolerances, and is set whether or not the solve
+  /// actually managed to achieve the desired convergence tolerance.
+  ///
+  /// The default implementation throws std::runtime_error.  This is
+  /// in case the idea of a single convergence tolerance doesn't make
+  /// sense for some solvers.  It also serves as a gradual upgrade
+  /// path (since this method is a later addition to the \c
+  /// SolverManager interface).
+  virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType achievedTol() const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "achievedTol() not implemented");
+  }
+
   //! Get the iteration count for the most recent call to \c solve().
   virtual int getNumIters() const = 0;
 

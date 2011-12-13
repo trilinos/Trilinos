@@ -1536,13 +1536,17 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES  DO_PROCESS_MPI_ENABLES)
 
   IF (${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES)
     MESSAGE("")
-    MESSAGE("Setting to empty '' all package enables on reqeust ...")
+    MESSAGE("Setting to empty '' all enabled packages on reqeust ...")
     MESSAGE("")
     FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
-      SET_CACHE_ON_OFF_EMPTY(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ""
-        "Forced to empty '' by ${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES=OFF" FORCE)
-      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} "")
+      IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
+        SET_CACHE_ON_OFF_EMPTY(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ""
+          "Forced to empty '' by ${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES=ON" FORCE)
+        SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} "")
+      ENDIF()
       #PRINT_VAR(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
+      # NOTE: Above, we don't want to set to empty those packages that have hard
+      # disables because this will mess up the logic in later invocations.
     ENDFOREACH()
     ADVANCED_SET(${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES OFF CACHE BOOL
       "Forced to FALSE after use" FORCE)

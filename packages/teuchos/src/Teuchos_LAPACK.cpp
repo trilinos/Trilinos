@@ -74,7 +74,6 @@ namespace Teuchos
 {
   // BEGIN INT, FLOAT SPECIALIZATION IMPLEMENTATION //
 
-  
   void LAPACK<int, float>::PTTRF(const int n, float* d, float* e, int* info) const
   { SPTTRF_F77(&n,d,e,info); }
   

@@ -6,20 +6,17 @@ Setting up a Trilinos CDash server:
 [ These notes were recorded during the transition to the CDash installation
   on testing.sandia.gov leading up to July 2011. ]
 
-
 CDash runs as a php web app on a web server that is (or can connect to) a
 database server. Typically, this means running on a web server with a LAMP
 software stack installed. (Linux+Apache+MySQL+php)
 
 The typical setup instructions are:
 
-
 - Use a good quality database-server-grade machine as hardware:
   ...ideally, this will obviously have:
   -- fast disk, (100G or even more free for the MySQL database)
   -- lots of RAM (16G or more)
   -- fast multi-CPU
-
 
 - Make sure your server has all the pre-requisites installed
 
@@ -37,24 +34,21 @@ When first loading the CDash CDASH_ROOT/install.php page, I got this notice:
   Your PHP install does not support xslt, please install the PHP_XSLT package.
   WAMP Hint: uncomment extension=php_xsl.dll in php.ini.
 
-
 - Add a MySQL user 'cdash' specifically for the CDash code to access the CDash
 MySQL database (see notes below regarding "Creating a MySQL 'cdash' user" -
 this user needs permission to create a database, or you need to create the
 database yourself first, and then give this user permissions in the database
 as outlined below)
 
-
 - Get the source tree for CDash onto the server (trunk/HEAD from the
 repository or a release)
 
-
 - Add a minimal config file at "CDASH_ROOT/cdash/config.local.php"
-
+  - Initially, set the varibles $CDASH_PRODUCTION_MODE=false,
+    $CDASH_TESTING_MODE=true
 
 - Make this CDash instance available via http (put it in /var/www/html or
 wherever your apache htdocs go...)
-
 
 - Make sure the following directories have write access by the apache user.
 The CDash php code writes files into these directories.
@@ -63,27 +57,23 @@ The CDash php code writes files into these directories.
   CDASH_ROOT/rss
   CDASH_ROOT/upload
 
-
-- Visit "http://myserver.some.org/CDash" which runs the CDash install.php
+- Visit "http://myserver.some.org/CDash/install.php" which runs the CDash install.php
   page on the first visit
-
 
 - Correct any issues noted on the CDash install page
 
+- in cdash/config.local.php, change back to $CDASH_PRODUCTION_MODE=true,
+    $CDASH_TESTING_MODE=fasle.
 
 - Make the appropriate set of people sign up for accounts on this new CDash
 server and make them server admins
 
-
 - Create your project via the CDash admin pages
-
 
 - Try a test submission to the new CDash server
 
-
 - Switch your project's CTestConfig.cmake file to point to the new CDash
 server
-
 
 - You can monitor the status of the asynchronous submission processing by
 going to the "http://myserver.some.org/CDash/monitor.php" page. A link to
@@ -131,7 +121,6 @@ MySQL stuff:
 
   http://mysqltuner.com
 
-
 - max_allowed_packet:
 
 You should increase the size of the MySQL max_allowed_packet setting. Setting
@@ -151,7 +140,6 @@ The default is 16, the max is 1 GB.  The system will be smart about what
 packet size is actually used, so a larger max packet size than necessary
 isn't harmful.
 
-
 - Case Sensitivity
 
 On some servers, MySQL queries are case sensitive. If you are searching for
@@ -159,9 +147,7 @@ something that should be there in a CDash "filtered results" page and it is
 not there, try searching with the exact case. You may have to reset a MySQL
 server setting to get case insensitive searches.
 
-
 - MySQL error code 28 means your disk is full
-
 
 - phpmyadmin
 
@@ -172,14 +158,12 @@ see some fields that are highlighted in bold or red. Read through those
 reports carefully for suggestions on how you can tune your MySQL server to
 optimize it for the actual traffic that you're getting.
 
-
 - Slow Queries
 
 You can turn on MySQL slow query logging if you are having speed/performance
 issues, but turning it on will slow things down by a bit. So keeping if off
 for best possible performance is recommended. Turn it on only to diagnose
 issues and identify slow queries. Don't just leave it on all the time.
-
 
 - Optimizing
 

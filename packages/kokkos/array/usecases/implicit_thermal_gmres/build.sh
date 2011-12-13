@@ -4,6 +4,9 @@
 # Simple build script with options
 #-----------------------------------------------------------------------------
 
+export OLD_LIB="${LIB}"
+export LIB=""
+
 export INC_PATH="-I. -I../../src"
 export CXX_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp"
 export CXX="g++"
@@ -37,6 +40,7 @@ TPI | tpi )
   export LIB="${LIB} -lpthread"
   ;;
 CUDA | Cuda | cuda )
+  rm libCuda.so
   export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
   export NVCC_SOURCES="../../src/DeviceCuda/*.cu testCuda.cu"
   export NVCC_PATH="/usr/local/cuda"
@@ -48,6 +52,11 @@ TBB | tbb )
   export CXX_SOURCES="${CXX_SOURCES} ../../src/DeviceTBB/*.cpp testTBB.cpp"
   export LIB="${LIB} -ltbb"
   ;;
+#-------------------------------
+#-------Synchronous testing-----
+Sync | sync )
+  export TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_SYNC"
+;;
 #-------------------------------
 #----------- OPTIONS -----------
 OPT | opt | O3 | -O3 )
@@ -82,7 +91,7 @@ done
 if [ -n "${NVCC}" ] ;
 then
   echo "Building CUDA files as: " ${NVCC} ${NVCCFLAGS}
-  ${NVCC} ${NVCCFLAGS} ${INC_PATH} ${NVCC_SOURCES} ;
+  ${NVCC} ${NVCCFLAGS} ${INC_PATH} ${NVCC_SOURCES} ${TEST_MACRO} ;
 fi
 
 echo "Building regular files as: " ${CXX} ${CXXFLAGS}
@@ -93,3 +102,4 @@ rm -f *.o *.a ThreadPool_config.h
 
 #-----------------------------------------------------------------------------
 
+export LIB="${OLD_LIB}"
