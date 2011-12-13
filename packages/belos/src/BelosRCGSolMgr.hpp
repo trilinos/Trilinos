@@ -1798,6 +1798,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // Save the convergence test value ("achieved tolerance") for this solve.
   {
+    using Teuchos::rcp_dynamic_cast;
     typedef StatusTestGenResNorm<ScalarType,MV,OP> conv_test_type;
     // testValues is nonnull and not persistent.
     const std::vector<MagnitudeType>* pTestValues = 
