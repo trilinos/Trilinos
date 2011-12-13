@@ -1246,27 +1246,31 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   // Save the convergence test value ("achieved tolerance") for this
   // solve.  This requires a bit more work than for BlockCGSolMgr,
   // since for this solver, convTest_ may either be a single residual
-  // norm test, or a combination of two residual norm tests.
+  // norm test, or a combination of two residual norm tests.  In the
+  // latter case, the master convergence test convTest_ is a SEQ combo
+  // of the implicit resp. explicit tests.  If the implicit test never
+  // passes, then the explicit test won't ever be executed.  This
+  // manifests as expConvTest_->getTestValue()->size() < 1.  We deal
+  // with this case by using the values returned by
+  // impConvTest_->getTestValue().
   {
     // We'll fetch the vector of residual norms one way or the other.
     const std::vector<MagnitudeType>* pTestValues = NULL;
     if (expResTest_) {
-      // The convergence test is a combination of implicit and
-      // explicit residual tests.  Use the explicit residual test to
-      // get the residual norms from the solve.  We can't ask
-      // convTest_ because it is a StatusTestCombo in this case, not a
-      // StatusTestResNorm.
       pTestValues = expConvTest_->getTestValue();
+      if (pTestValues == NULL || pTestValues->size() < 1) {
+	pTestValues = impConvTest_->getTestValue();
+      }
     } 
     else {
       // Only the implicit residual norm test is being used.
       pTestValues = impConvTest_->getTestValue();
     }
     TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
-      "Belos::BlockCGSolMgr::solve(): The convergence test's getTestValue() "
+      "Belos::BlockCGSolMgr::solve(): The implicit convergence test's getTestValue() "
       "method returned NULL.  Please report this bug to the Belos developers.");
     TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
-      "Belos::BlockCGSolMgr::solve(): The convergence test's getTestValue() "
+      "Belos::BlockCGSolMgr::solve(): The implicit convergence test's getTestValue() "
       "method returned a vector of length zero.  Please report this bug to the "
       "Belos developers.");
 
