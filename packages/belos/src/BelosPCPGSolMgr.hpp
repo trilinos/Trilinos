@@ -226,6 +226,15 @@ namespace Belos {
       return Teuchos::tuple(timerSolve_);
     }
 
+    /// \brief Tolerance achieved by the last \c solve() invocation.
+    /// 
+    /// This is the maximum over all right-hand sides' achieved
+    /// convergence tolerances, and is set whether or not the solve
+    /// actually managed to achieve the desired convergence tolerance.
+    MagnitudeType achievedTol() const {
+      return achievedTol_;
+    }
+
     //! Get the iteration count for the most recent call to \c solve().
     int getNumIters() const {
       return numIters_;
@@ -327,9 +336,26 @@ namespace Belos {
     static const std::string orthoType_default_;
     static const Teuchos::RCP<std::ostream> outputStream_default_;
 
+    //
     // Current solver values.
-    MagnitudeType convtol_, orthoKappa_;
-    int numIters_, maxIters_, deflatedBlocks_, savedBlocks_, verbosity_, outputStyle_, outputFreq_;
+    //
+
+    //! Convergence tolerance (read from parameter list).
+    MagnitudeType convtol_;
+
+    //! Orthogonalization parameter (read from parameter list).
+    MagnitudeType orthoKappa_;
+
+    //! Tolerance achieved by the last \c solve() invocation.
+    MagnitudeType achievedTol_;
+
+    //! Number of iterations taken by the last \c solve() invocation.
+    int numIters_;
+
+    //! Maximum iteration count (read from parameter list).
+    int maxIters_;
+
+    int deflatedBlocks_, savedBlocks_, verbosity_, outputStyle_, outputFreq_;
     std::string orthoType_; 
 
     // Recycled subspace, its image and the residual
@@ -388,6 +414,8 @@ PCPGSolMgr<ScalarType,MV,OP>::PCPGSolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
+  achievedTol_(Teuchos::ScalarTraits<MagnitudeType>::zero()),
+  numIters_(0),
   maxIters_(maxIters_default_),
   deflatedBlocks_(deflatedBlocks_default_),
   savedBlocks_(savedBlocks_default_),
@@ -409,6 +437,8 @@ PCPGSolMgr<ScalarType,MV,OP>::PCPGSolMgr(
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
+  achievedTol_(Teuchos::ScalarTraits<MagnitudeType>::zero()),
+  numIters_(0),
   maxIters_(maxIters_default_),
   deflatedBlocks_(deflatedBlocks_default_),
   savedBlocks_(savedBlocks_default_),
@@ -1044,6 +1074,28 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
     Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
 #endif
 
+  // Save the convergence test value ("achieved tolerance") for this solve.
+  {
+    typedef StatusTestGenResNorm<ScalarType,MV,OP> conv_test_type;
+    // testValues is nonnull and not persistent.
+    const std::vector<MagnitudeType>* pTestValues = 
+      rcp_dynamic_cast<conv_test_type>(convTest_)->getTestValue();
+    
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
+      "Belos::PCPGSolMgr::solve(): The convergence test's getTestValue() "
+      "method returned NULL.  Please report this bug to the Belos developers.");
+    
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
+      "Belos::PCPGSolMgr::solve(): The convergence test's getTestValue() "
+      "method returned a vector of length zero.  Please report this bug to the "
+      "Belos developers.");
+
+    // FIXME (mfh 12 Dec 2011) Does pTestValues really contain the
+    // achieved tolerances for all vectors in the current solve(), or
+    // just for the vectors from the last deflation?
+    achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
+  }
+ 
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
  
