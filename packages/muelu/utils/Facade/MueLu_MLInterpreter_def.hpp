@@ -212,7 +212,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
     bIsLastLevel = hierarchy->Setup(i, vecManager[i-1], vecManager[i], vecManager[i+1]);
   }
   if(bIsLastLevel == false) {
-    if(bIsLastLevel == false) bIsLastLevel = hierarchy->Setup(maxLevels-1, vecManager[maxLevels-2], vecManager[maxLevels-1], Teuchos::null); // false, true because last level
+    if(bIsLastLevel == false) bIsLastLevel = hierarchy->Setup(maxLevels-1, vecManager[maxLevels-2], vecManager[maxLevels-1], Teuchos::null);
   }
 
   //*out << *hierarchy << std::endl;

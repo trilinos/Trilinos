@@ -144,6 +144,14 @@ namespace MueLu {
     RCP<const FactoryManager> nextManager   = rcpFromRef(nextLevelManager);
     
     //
+    // Requests for finest level
+    //
+    if (isFinestLevel) {
+      Levels_[coarseLevelID]->Request(TopSmootherFactory(coarseManager, "Smoother")); // TODO: skip this line if we know that it is the lastLevel
+      Levels_[coarseLevelID]->Request(TopSmootherFactory(coarseManager, "CoarseSolver"));
+    }
+
+    //
     // Requests for next coarse level
     //
 
@@ -240,6 +248,14 @@ namespace MueLu {
     bool isFinestLevel = false;
     if(fineLevelManager == Teuchos::null) isFinestLevel = true;
     if(nextLevelManager == Teuchos::null) isLastLevel = true;
+
+    //
+    // Requests for finest level
+    //
+    if (isFinestLevel) {
+      Levels_[coarseLevelID]->Request(TopSmootherFactory(coarseLevelManager, "Smoother")); // TODO: skip this line if we know that it is the lastLevel
+      Levels_[coarseLevelID]->Request(TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
+    }
 
     //
     // Requests for next coarse level
