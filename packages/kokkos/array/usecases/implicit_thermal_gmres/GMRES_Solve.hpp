@@ -237,12 +237,14 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
   
   // Return megaflops / second for iterations
 
-  static double run( scalar_vector & A_value ,
+  static void run( scalar_vector & A_value ,
                      index_vector  & A_row ,
                      index_vector & A_offsets ,
                      scalar_vector & b ,
                      scalar_vector & x,
-                     const size_t num_iters)
+                     const size_t num_iters, 
+ 		     size_t & num_flops,
+		     double & solve_time)
   {
 
     //Value view used for temp stuff.
@@ -286,7 +288,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     if(beta_copy == 0.0){
       std::cout << "Beta was zero\n";
       //Stuff didn't work
-      return 0.0;
+      return;
     }
 
     //Allocate space for basis vectors Q. Q has as many rows as b and m+1 
@@ -296,9 +298,9 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
     //Allocate m+1 by m matrix H, and fill it with zeros.
     scalar_vector H = Kokkos::create_labeled_multivector<scalar_vector>(
-      "r",
-      num_iters, 
-      num_iters+1);
+      "H",
+      num_iters+1, 
+      num_iters);
 
 
     //Q(:, 0) = r ./ beta (elementwise division)
@@ -309,8 +311,6 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       //Q(:,j) = A * Q(:, j-1)
       MultiVector qj1 = MultiVector(Q,j-1);
       MultiVector qj = MultiVector(Q,j);
-      //CRSMatVec<Scalar,device_type> A_mult_q(
-        //A_value, A_row , A_offsets , MultiVector(Q, j-1) , MultiVector(Q, j));
       CRSMatVec<Scalar,device_type> A_mult_q(
         A_value, A_row , A_offsets , qj1, qj);
       A_mult_q.apply();
@@ -324,9 +324,6 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
       // Q(:, j) = Q(:, j) - Q(:, 0:j-1) * H(0:j, j-1)
       for(size_t i =0; i<j; ++i){
-        //Kokkos::deep_copy(tmp, H(i,j-1));
-//        Kokkos::parallel_for(
- //         rows, YSAX(MultiVector(Q,j), tmp, MultiVector(Q,i)));
         Kokkos::parallel_for(
           rows, YSAX(MultiVector(Q,j), H,i,j-1, MultiVector(Q,i)));
       }
@@ -349,7 +346,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     Kokkos::deep_copy(tmp, syncTestValue);
     #endif
     device_type::wait_functor_completion();
-    const double iter_time = wall_clock.seconds();
+    solve_time = wall_clock.seconds();
 
     // Compute floating point operations performed during iterations
 
@@ -357,9 +354,9 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     size_t iter_matvec_flops = iteration * ( 2 * A_offsets.length() );
     size_t iter_ysax_flops = iteration * (2 * rows);
     size_t iter_scale_flops = iteration * rows;
-    size_t iter_total_flops  = iter_dot_flops + iter_matvec_flops + iter_ysax_flops + iter_scale_flops;
+    num_flops = iter_dot_flops + iter_matvec_flops + iter_ysax_flops + iter_scale_flops;
 
-    return (double) iter_total_flops / ( iter_time * 1.0e6 );
+    
   }
 };
 
