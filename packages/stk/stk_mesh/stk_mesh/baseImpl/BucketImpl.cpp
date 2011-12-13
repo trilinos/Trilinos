@@ -278,7 +278,6 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
   , m_entities(arg_capacity)
   , m_field_data(0)
 {
-
   //calculate the size of the field_data
 
   const std::vector< FieldBase * > & field_set =

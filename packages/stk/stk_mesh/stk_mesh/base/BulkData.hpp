@@ -161,7 +161,7 @@ public:
    *           - Fields that exist on the src that don't exist on the dest will
    *             be ignored
    *           - Fields that exist on the dest that don't exist on the src will
-   *             be zeroed
+   *             be zeroed or initialized with the Field-specified initial-value.
    */
   void copy_entity_fields( const Entity & src, Entity & dest) {
     //TODO fix const correctness for src
