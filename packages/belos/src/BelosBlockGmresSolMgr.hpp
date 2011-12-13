@@ -418,9 +418,9 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr( 
-  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-  const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
+BlockGmresSolMgr<ScalarType,MV,OP>::
+BlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+		  const Teuchos::RCP<Teuchos::ParameterList> &pl) : 
   problem_(problem),
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
