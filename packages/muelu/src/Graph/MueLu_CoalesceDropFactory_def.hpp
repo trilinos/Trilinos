@@ -66,10 +66,11 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
       // variable block size
       blockdim = -1; // no constant block size
       // read in and transform variable block size information
-      RCP<Vector> blkSizeInfo = currentLevel.Get<RCP<Vector> >("VariableBlockSizeInfo", MueLu::NoFactory::get());
+      RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > blkSizeInfo =
+      currentLevel.Get<RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > >("VariableBlockSizeInfo", MueLu::NoFactory::get());
       TEUCHOS_TEST_FOR_EXCEPTION(blkSizeInfo->getMap()->isSameAs(*(A->getRowMap()))==false, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Build: map of blkSizeInfo does not match the row map of A. Error.");
       RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRowMap(),A->getColMap());
-      blkSizeInfo_ = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getColMap());
+      blkSizeInfo_ = Xpetra::VectorFactory<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getColMap());
       blkSizeInfo_->doImport(*blkSizeInfo,*importer,Xpetra::INSERT);
       TEUCHOS_TEST_FOR_EXCEPTION(blkSizeInfo_->getMap()->isSameAs(*(A->getColMap()))==false, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Build: map of blkSizeInfo does not match the column map of A. Error.");
     } else {
@@ -105,7 +106,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 } // Build
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-GlobalOrdinal CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GlobalId2GlobalAmalBlockId(GlobalOrdinal gid, const RCP<Operator>& A, const RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const {
+GlobalOrdinal CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GlobalId2GlobalAmalBlockId(GlobalOrdinal gid, const RCP<Operator>& A, const RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const {
 
   if(fixedBlkSize_ == true) {
     //GetOStream(Runtime0, 0) << "fixed block size..." << std::endl;
@@ -113,7 +114,7 @@ GlobalOrdinal CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, Loc
     return globalblockid;
   } else {
     //GetOStream(Runtime0, 0) << "variable block size..." << std::endl;
-    Teuchos::ArrayRCP< Scalar > ovamalblockid_data = globalgid2globalamalblockid_vector->getDataNonConst(0);
+    Teuchos::ArrayRCP< GlobalOrdinal > ovamalblockid_data = globalgid2globalamalblockid_vector->getDataNonConst(0);
 
     Teuchos::RCP<const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > overlappingMap = globalgid2globalamalblockid_vector->getMap();
 
@@ -127,7 +128,8 @@ GlobalOrdinal CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, Loc
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-const Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A, const RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const {
+const Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > CoalesceDropFactory<Scalar, LocalOrdinal,
+GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A, const RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const {
 
   globalamalblockid2myrowid_ = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<LocalOrdinal> >);
   globalamalblockid2globalrowid_ = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >);

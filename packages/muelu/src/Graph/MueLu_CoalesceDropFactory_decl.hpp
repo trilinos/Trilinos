@@ -72,7 +72,7 @@ namespace MueLu {
     // @param A: input operator (just used to check the maps for validity)
     // @param globalgid2globalamalblockid_vector: Xpetra vector which holds block amalgamation gids for all column gids (vector lives on overlapping column map of A! needed for variable block size)
     // @param blockSize (LocalOrdinal): block size (needed for constant block size)
-    GlobalOrdinal GlobalId2GlobalAmalBlockId(GlobalOrdinal gid, const RCP<Operator>& A, const RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const;
+    GlobalOrdinal GlobalId2GlobalAmalBlockId(GlobalOrdinal gid, const RCP<Operator>& A, const RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const;
 
     //! setup amalgamation data
     // This routine fills the private members lobalamalblockid2myrowid_ and lobalamalblockid2globalrowid_
@@ -81,7 +81,7 @@ namespace MueLu {
     // @param globalgid2globalamalblockid_vector: Xpetra vector which holds block amalgamation gids for all column gids (vector lives on overlapping column map of A! needed for variable block size)
     // @param blockSize (LocalOrdinal): block size (needed for constant block size)
     // returns amalgamated map
-    const Teuchos::RCP<Map> SetupAmalgamationData(const RCP<Operator>& A, const RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const;
+    const Teuchos::RCP<Map> SetupAmalgamationData(const RCP<Operator>& A, const RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const;
 
     //! A Factory
     RCP<const FactoryBase> AFact_;
@@ -97,7 +97,7 @@ namespace MueLu {
     mutable bool fixedBlkSize_;
 
     /// blocksize vector for variable blocksize setup
-    mutable RCP<Vector> blkSizeInfo_; // lives on overlapping column map of A
+    mutable RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > blkSizeInfo_; // lives on overlapping column map of A
 
     /// pre-drop function
     RCP<PreDropFunctionBaseClass> predrop_;

@@ -209,7 +209,7 @@ namespace MueLu {
     //So to work around this, we allocate an array of Vectors.  This shouldn't be too
     //expensive, as the number of Vectors is NSDim.
     Array<RCP<Xpetra::Vector<GO,LO,GO,Node> > > ghostQcolumns(NSDim);
-    for (int i=0; i<NSDim; ++i)
+    for (size_t i=0; i<NSDim; ++i)
       ghostQcolumns[i] = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(ghostQMap);
     RCP<Xpetra::Vector<GO,LO,GO,Node> > ghostQrowNums = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(ghostQMap);
     ArrayRCP< ArrayRCP<SC> > ghostQvals;
@@ -425,7 +425,7 @@ namespace MueLu {
     importer = ImportFactory::Build(ghostQMap, reducedMap);
 
     Array<RCP<Xpetra::Vector<GO,LO,GO,Node> > > targetQcolumns(NSDim);
-    for (int i=0; i<NSDim; ++i) {
+    for (size_t i=0; i<NSDim; ++i) {
       targetQcolumns[i] = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(reducedMap);
       targetQcolumns[i]->doImport(*(ghostQcolumns[i]),*importer,Xpetra::INSERT);
     }

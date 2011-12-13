@@ -170,8 +170,8 @@ int main(int argc, char *argv[]) {
   dropFact->SetPreDropFunction(preDropFunc);
 
   // setup "variable" block size information
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalrowid2globalamalblockid_vector = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getRowMap());
-  Teuchos::ArrayRCP< Scalar > vectordata = globalrowid2globalamalblockid_vector->getDataNonConst(0);
+  RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > globalrowid2globalamalblockid_vector = Xpetra::VectorFactory<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getRowMap());
+  Teuchos::ArrayRCP< GlobalOrdinal > vectordata = globalrowid2globalamalblockid_vector->getDataNonConst(0);
   for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(Op->getRowMap()->getNodeNumElements());i++) {
     GlobalOrdinal gDofId = Op->getColMap()->getGlobalElement(i);
     GlobalOrdinal globalblockid = (GlobalOrdinal) gDofId / nDofsPerNode;
