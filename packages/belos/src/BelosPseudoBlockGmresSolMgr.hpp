@@ -484,9 +484,9 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr( 
-                                        const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-                                        const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
+PseudoBlockGmresSolMgr<ScalarType,MV,OP>::
+PseudoBlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                        const Teuchos::RCP<Teuchos::ParameterList> &pl) : 
   problem_(problem),
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
