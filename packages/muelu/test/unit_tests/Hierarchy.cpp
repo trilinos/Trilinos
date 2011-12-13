@@ -10,6 +10,7 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
@@ -660,6 +661,97 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   TEST_EQUALITY(l1->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(l1->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(l1->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l1->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+
+  TEST_EQUALITY(l2->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l2->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l2->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l2->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l2->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
+  RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);
+  RHS->setSeed(846930886);
+  RHS->randomize();
+
+  X->putScalar( (SC) 0.0);
+
+  int iterations=10;
+  H.Iterate(*RHS, iterations, *X);
+}
+
+TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
+{
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+
+  // Multigrid Hierarchy
+  Hierarchy H(A);
+  H.setVerbLevel(Teuchos::VERB_HIGH);
+
+  // setup smoother factory
+  RCP<SmootherPrototype> smooProto;
+  std::string ifpackType;
+  Teuchos::ParameterList ifpackList;
+  ifpackList.set("relaxation: sweeps", (LO) 2);
+  ifpackList.set("relaxation: damping factor", (SC) 0.9); // 0.7
+  ifpackType = "RELAXATION";
+  ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+  smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+
+  RCP<SmootherFactory> preSmooFact;
+  RCP<SmootherFactory> postSmooFact;
+  preSmooFact = rcp( new SmootherFactory(smooProto) );
+  postSmooFact = rcp( new SmootherFactory(smooProto) );
+  preSmooFact->SetSmootherPrototypes(smooProto,Teuchos::null );
+  postSmooFact->SetSmootherPrototypes(Teuchos::null,smooProto);
+
+  // Multigrid setup phase (using default parameters)
+  FactoryManager M0; // how to build aggregates and smoother of the first level
+  M0.SetFactory("Smoother", preSmooFact);
+
+  FactoryManager M1; // first coarse level (Plain aggregation)
+  M1.SetFactory("A", rcp(new RAPFactory()));
+  M1.SetFactory("P", rcp(new TentativePFactory()));
+  M1.SetFactory("Smoother", postSmooFact);
+
+  FactoryManager M2; // last level (SA)
+  M2.SetFactory("A", rcp(new RAPFactory()));
+  M2.SetFactory("P", rcp(new SaPFactory()));
+
+  TEST_EQUALITY(H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)), false);
+  TEST_EQUALITY(H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2)), false);
+  TEST_EQUALITY(H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null ), true);
+
+  RCP<Level> l0 = H.GetLevel(0);
+  RCP<Level> l1 = H.GetLevel(1);
+  RCP<Level> l2 = H.GetLevel(2);
+
+  /*RCP<Teuchos::FancyOStream> stdout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  l0->print(*stdout,Teuchos::VERB_EXTREME);
+  l1->print(*stdout,Teuchos::VERB_EXTREME);
+  l2->print(*stdout,Teuchos::VERB_EXTREME);*/
+
+  TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l2->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("P",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("R",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("R",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("A",            MueLu::NoFactory::get()), true);
+
+  TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
+  TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+
+  TEST_EQUALITY(l1->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l1->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l1->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(l1->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
 
   TEST_EQUALITY(l2->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::Final);
