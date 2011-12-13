@@ -243,9 +243,12 @@ namespace MueLu {
 
     // Check coarse levels
     // TODO: check if Ac available. If yes, issue a warning (bcse level already built...)
-    GetOStream(Debug, 0) << "Debug: Level: " << startLevel << " + S/C" << std::endl;
-    Levels_[startLevel]->Request(smootherFactory);
-    Levels_[startLevel]->Request(coarsestSolverFactory);
+
+    // 2011/12 JG: Requests on the fine level are now posted in Setup(fineLevelManager, coarseLevelManager, nextLevelManager)
+    //             I'm still not sure it is a good idea, so I keep the code of the old version commented here.
+    //     GetOStream(Debug, 0) << "Debug: Level: " << startLevel << " + S/C" << std::endl;
+    //     Levels_[startLevel]->Request(smootherFactory);
+    //     Levels_[startLevel]->Request(coarsestSolverFactory);
 
     //
     const int lastLevel = startLevel + numDesiredLevels - 1;
@@ -254,6 +257,7 @@ namespace MueLu {
 
     Teuchos::Ptr<const FactoryManager> ptrmanager = Teuchos::ptrInArg(manager);
     bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager);
+    //FIXME: bIsLastLevel is not tested for first level !!!!
     for(iLevel=startLevel + 1; iLevel < lastLevel; iLevel++) {
       if(Setup(iLevel, ptrmanager, ptrmanager, ptrmanager) == true) {
         bIsLastLevel = true;
@@ -261,7 +265,6 @@ namespace MueLu {
       }
     }
     if(bIsLastLevel == false) Setup(lastLevel, ptrmanager, ptrmanager, Teuchos::null);
-
 
     // Crop. TODO: add a warning
     Levels_.resize(iLevel + 1);
