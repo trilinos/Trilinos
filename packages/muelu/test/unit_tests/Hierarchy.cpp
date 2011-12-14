@@ -792,6 +792,53 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
     } // test only for Epetra
 }
 
+TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
+{
+  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
+    {
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+
+  // Multigrid Hierarchy
+  Hierarchy H(A);
+  H.SetMaxCoarseSize(299*comm->getSize()); // set max coarse size to fit problem size (-> 1 level method)
+  H.setVerbLevel(Teuchos::VERB_HIGH);
+
+  // Multigrid setup phase (using default parameters)
+  FactoryManager M0; // how to build aggregates and smoother of the first level
+
+  FactoryManager M1; // first coarse level (Plain aggregation)
+  M1.SetFactory("A", rcp(new RAPFactory()));
+  M1.SetFactory("P", rcp(new TentativePFactory()));
+
+#ifdef HAVE_MUELU_AMESOS
+  TEST_EQUALITY(H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)), true);
+  TEST_EQUALITY(H.GetNumLevels(),1);
+
+  RCP<Level> l0 = H.GetLevel(0);
+  TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("P",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l0->IsAvailable("R",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+
+  TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
+  TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l0->GetKeepFlag("PostSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
+  RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);
+  RHS->setSeed(846930886);
+  RHS->randomize();
+
+  X->putScalar( (SC) 0.0);
+
+  int iterations=10;
+  H.Iterate(*RHS, iterations, *X);
+#endif
+    } // test only for Epetra
+}
+
 }//namespace MueLuTests
 
 //Note from JG:

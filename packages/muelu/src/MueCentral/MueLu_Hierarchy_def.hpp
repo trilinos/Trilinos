@@ -148,6 +148,10 @@ namespace MueLu {
     //
     // Requests for finest level
     //
+    // 2011/12 TAW: Requests for finest level
+    //              In the previous version we postulated the data to be requested for the finest level as a
+    //              precondition for this Setup routine
+
     if (isFinestLevel) {
       Levels_[coarseLevelID]->Request(TopSmootherFactory(rcpcoarseLevelManager, "Smoother")); // TODO: skip this line if we know that it is the lastLevel
       Levels_[coarseLevelID]->Request(TopSmootherFactory(rcpcoarseLevelManager, "CoarseSolver"));
@@ -252,22 +256,22 @@ namespace MueLu {
 
     //
     const int lastLevel = startLevel + numDesiredLevels - 1;
-    int iLevel;
+    int iLevel = 0;  // counter for the current number of multigrid levels after Setup phase
     GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
 
+    // set multigrid levels
     Teuchos::Ptr<const FactoryManager> ptrmanager = Teuchos::ptrInArg(manager);
-    bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager);
-    //FIXME: bIsLastLevel is not tested for first level !!!!
-    for(iLevel=startLevel + 1; iLevel < lastLevel; iLevel++) {
-      if(Setup(iLevel, ptrmanager, ptrmanager, ptrmanager) == true) {
-        bIsLastLevel = true;
-        break;
+    bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager); // setup finest level (=level0)
+    if(bIsLastLevel == false) {
+      for(iLevel=startLevel + 1; iLevel < lastLevel; iLevel++) {                    // setup intermediate levels
+        bIsLastLevel = Setup(iLevel, ptrmanager, ptrmanager, ptrmanager);
+        if(bIsLastLevel == true) break;
       }
+      if(bIsLastLevel == false) Setup(lastLevel, ptrmanager, ptrmanager, Teuchos::null); // setup coarsest level
     }
-    if(bIsLastLevel == false) Setup(lastLevel, ptrmanager, ptrmanager, Teuchos::null);
 
     // Crop. TODO: add a warning
-    Levels_.resize(iLevel + 1);
+    Levels_.resize(iLevel + 1);  // resize array of multigrid levels. add 1 to iLevel for the finest level (=level0)
 
     // TODO: not exception safe: manager will still hold default factories if you exit this function with an exception
     manager.Clean();
