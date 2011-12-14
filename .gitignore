@@ -35,6 +35,7 @@ doxygen_objdb_*.tmp
 /GSYMS
 /GTAGS
 
+XTHREAD/
 AZTECOO_MPI/
 EPETRA_DEBUG/
 EPETRA_MPI/
