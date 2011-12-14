@@ -2061,9 +2061,9 @@ static void transition_qp_to_ready(
     attr.qp_state = IBV_QPS_RTS;
     attr.sq_psn = 0;
     attr.max_rd_atomic = 1;
-    attr.timeout = 7;  /* 4.096us * 2^7 */
-    attr.retry_cnt = 1;
-    attr.rnr_retry = 1;
+    attr.timeout = 12;  /* 4.096us * 2^12 */
+    attr.retry_cnt = 5;
+    attr.rnr_retry = 5;
     if (ibv_modify_qp(qp, &attr, mask)) {
         log_error(nnti_debug_level, "failed to modify qp from RTR to RTS state");
     }
