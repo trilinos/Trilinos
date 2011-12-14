@@ -191,7 +191,8 @@ void snl_fei::separate_string(const char* input_string,
     return;
   }
 
-  int len_input_string = strlen(input_string);
+  std::string std_input_string(input_string);
+  int len_input_string = std_input_string.size();
   before_substring = input_string;
 
   if (substring == NULL) {
@@ -201,19 +202,21 @@ void snl_fei::separate_string(const char* input_string,
     return;
   }
 
-  int len_substring = strlen(substring);
+  std::string std_substring(substring);
+  int len_substring = std_substring.size();
 
-  const char* s1 = strstr(input_string, substring);
-  if (s1 == NULL) {
+  size_t found = std_input_string.find(std_substring);
+  if (found == std::string::npos) {
     len_before_substring = len_input_string;
     after_substring = NULL;
     len_after_substring = 0;
     return;
   }
 
-  after_substring = skipSeparator(s1, substring[len_substring-1]);
-  len_before_substring = s1 - input_string;
-  len_after_substring = len_input_string - len_before_substring - len_substring;
+  size_t rfound = std_input_string.rfind(std_substring);
+  after_substring = input_string+rfound+std_substring.size();
+  len_before_substring = found;
+  len_after_substring = len_input_string - rfound - len_substring;
 }
 
 //----------------------------------------------------------------------------

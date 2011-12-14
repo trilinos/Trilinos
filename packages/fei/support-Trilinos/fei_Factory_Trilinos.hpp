@@ -119,6 +119,7 @@ class Factory_Trilinos : public fei::Factory {
   fei::SharedPtr<fei::LinearProblemManager> lpm_epetrabasic_;
   bool use_lpm_epetrabasic_;
   bool useAmesos_;
+  bool useBelos_;
   bool use_feiMatrixLocal_;
   bool blockEntryMatrix_;
   bool orderRowsWithLocalColsFirst_;

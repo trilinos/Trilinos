@@ -259,7 +259,7 @@ int test_Utils::serialtest3()
   fei::utils::parse_strings(stdstrings, " ", pset);
 
   err = pset.getStringParamValue("string-param", dummychars);
-  if ("garbage value" != dummychars) {
+  if ("value" != dummychars) {
     ERReturn(-1);
   }
 

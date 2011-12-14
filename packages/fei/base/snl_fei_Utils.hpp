@@ -181,7 +181,7 @@ namespace snl_fei {
 			       std::vector<char*>& attributeNames,
 			       std::vector<void*>& attributes);
 
-  /** separate a string into pieces. unsupported, for power-users only */
+  /** separate a string into two pieces, separated at the last occurrence of 'substring'. unsupported, for power-users only */
   void separate_string(const char* input_string,
 		       const char* substring,
 		       const char*& before_substring,
