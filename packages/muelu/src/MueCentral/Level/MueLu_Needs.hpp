@@ -133,6 +133,9 @@ namespace MueLu {
     //! @name Utilities.
     //@{
 
+    //! Test whether some information about (ename, factory) are stored
+    bool IsKey(const std::string & ename, const FactoryBase* factory) const;
+
     //! Test whether a need's value has been saved.
     bool IsAvailable(const std::string & ename, const FactoryBase* factory) const;
 

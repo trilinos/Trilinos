@@ -152,6 +152,10 @@ namespace MueLu {
     }
   }
 
+  bool Level::IsKey(const std::string & ename, const FactoryBase* factory) const {
+    return needs_.IsKey(ename, GetFactory(ename, factory));
+  }
+
   bool Level::IsAvailable(const std::string & ename, const FactoryBase* factory) {
     return needs_.IsAvailable(ename, GetFactory(ename, factory));
   }

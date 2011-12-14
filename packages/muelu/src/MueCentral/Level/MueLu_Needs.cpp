@@ -67,6 +67,10 @@ namespace MueLu {
     return var->GetKeepFlag();
   }
 
+  bool Needs::IsKey(const std::string & ename, const FactoryBase* factory) const {
+    return dataTable_.IsKey(factory, ename);
+  }
+
   bool Needs::IsAvailable(const std::string & ename, const FactoryBase* factory) const {
     //TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory,ename), Exceptions::RuntimeError, "MueLu::Needs::IsAvailable(): " + ename + " not found. Do a request first.");
     if(!dataTable_.IsKey(factory,ename)) return false;
