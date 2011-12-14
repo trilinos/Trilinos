@@ -1,8 +1,8 @@
 SOLVER_LIBRARY Aztec
 DATA_SOURCE HexBeam
 WHICH_FEI OLDFEI
-W 40
-D 40
+W 20
+D 20
 DofPerNode 3
 outputLevel 1
 AZ_max_iter 100
