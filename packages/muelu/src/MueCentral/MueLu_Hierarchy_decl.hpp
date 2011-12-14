@@ -24,6 +24,8 @@
 #include "MueLu_SmootherBase_fwd.hpp"
 #include "MueLu_HierarchyHelpers_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
+#include "MueLu_NoFactory.hpp"
+#include "MueLu_KeepType.hpp"
 
 namespace MueLu {
   /*!
