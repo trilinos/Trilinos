@@ -14,7 +14,6 @@ template class MueLu::CoalesceDropFactory<double, int, long long int, Kokkos::De
 # endif
 #endif
 
-/*
 #ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
 # ifdef HAVE_TEUCHOS_COMPLEX
 #include <complex>
@@ -23,4 +22,3 @@ template class MueLu::CoalesceDropFactory<std::complex<double>, int, int, Kokkos
 # warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
 # endif
 #endif
-*/
