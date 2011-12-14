@@ -149,7 +149,7 @@ namespace MueLu {
          - requests already posted
            (exception: for finest level (=fineLevelManager==null) requests are called within setup routine)
       * NextLevel:
-         - do not need to be allocate but could.
+         - do not need to be allocate but could (FIXME: will be deleted if lastlevel...).
          - should be null when Setup is called for last level
 
      Post-condition:
