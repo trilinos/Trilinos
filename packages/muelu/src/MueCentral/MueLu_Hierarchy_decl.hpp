@@ -216,6 +216,23 @@ namespace MueLu {
 
     //@}
 
+    //! @name Permanent storage
+    //@{
+
+    //! Call Level::Keep(ename, factory) for each level of the Hierarchy.
+    void Keep(const std::string & ename, const FactoryBase* factory = NoFactory::get());
+    
+    //! Call Level::Delete(ename, factory) for each level of the Hierarchy.
+    void Delete(const std::string& ename, const FactoryBase* factory = NoFactory::get()); 
+    
+    //! Call Level::AddKeepFlag for each level of the Hierarchy.      
+    void AddKeepFlag(const std::string & ename, const FactoryBase* factory = NoFactory::get(), KeepType keep = MueLu::Keep);
+
+    //! Call Level::RemoveKeepFlag for each level of the Hierarchy
+    void RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep = MueLu::All);
+
+    //@}
+
     //! @name Overridden from Teuchos::Describable
     //@{
     

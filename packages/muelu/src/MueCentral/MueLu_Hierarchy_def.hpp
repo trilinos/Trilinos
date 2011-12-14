@@ -580,6 +580,30 @@ namespace MueLu {
   } //Iterate()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Keep(const std::string & ename, const FactoryBase* factory) {
+    for (ArrayRCP<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
+      (*it)->Keep(ename, factory);
+  }
+  
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Delete(const std::string& ename, const FactoryBase* factory) {
+    for (ArrayRCP<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
+      (*it)->Delete(ename, factory);
+  }
+    
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
+    for (ArrayRCP<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
+      (*it)->AddKeepFlag(ename, factory, keep);
+  }
+  
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
+    for (ArrayRCP<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
+      (*it)->RemoveKeepFlag(ename, factory, keep);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
     std::ostringstream out;
     out << BaseClass::description();
