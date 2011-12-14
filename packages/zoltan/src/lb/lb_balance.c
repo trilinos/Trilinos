@@ -29,7 +29,6 @@ extern "C" {
 #endif
 #ifdef ZOLTAN_OVIS
 #include "ha_ovis.h"
-#include "ovis.h"
 #endif
 
 /*****************************************************************************/
@@ -263,6 +262,9 @@ struct Hash_Node **ht;
 int *export_all_procs, *export_all_to_part, *parts=NULL;
 ZOLTAN_ID_PTR all_global_ids=NULL, all_local_ids=NULL;
 ZOLTAN_ID_PTR gid;
+#ifdef ZOLTAN_OVIS
+struct OVIS_parameters ovisParameters;
+#endif
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -285,7 +287,12 @@ ZOLTAN_ID_PTR gid;
 
 #ifdef ZOLTAN_OVIS
   ovis_enabled(zz->Proc);
-  Zoltan_OVIS_Setup(zz);
+  Zoltan_OVIS_Setup(zz, &ovisParameters);
+  if (zz->Proc == 0)
+    printf("OVIS PARAMETERS %s %d %f\n", 
+           ovisParameters.hello, 
+           ovisParameters.outputLevel, 
+           ovisParameters.minVersion);
 #endif
 
   /* 

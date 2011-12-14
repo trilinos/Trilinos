@@ -31,25 +31,25 @@ static PARAM_VARS OVIS_params[] = {
 
 
 int Zoltan_OVIS_Setup(
-  ZZ *zz        /* Zoltan structure; needed for parameters */
+  ZZ *zz,       /* Input:  Zoltan structure with input parameter strings */
+  struct OVIS_parameters *ovisParameters  /* Output:  parameter values */
 ) 
 {
   /* Allow OVIS parameters to be passed to Zoltan via Zoltan_Set_Param */
   /* Three example parameters below. */
 
   /* Declare variables for parameter values; initialize to default values */
-  char   ovis_hello[MAX_PARAM_STRING_LEN];
-  int    ovis_output_level = 1;
-  double ovis_minversion = 0.1;
-  strcpy(ovis_hello, "Howdy, Shorty!");
+  ovisParameters->outputLevel = 1;
+  ovisParameters->minVersion = 0.1;
+  strcpy(ovisParameters->hello, "Howdy!");
 
   /* Tell Zoltan to associate parameter names with the variables. */
   Zoltan_Bind_Param(OVIS_params, "OVIS_HELLO", 
-                    ovis_hello);
+                    ovisParameters->hello);
   Zoltan_Bind_Param(OVIS_params, "OVIS_OUTPUT_LEVEL", 
-                    (void *) &ovis_output_level);
+                    (void *) &(ovisParameters->outputLevel));
   Zoltan_Bind_Param(OVIS_params, "OVIS_MINVERSION", 
-                    (void *) &ovis_minversion);
+                    (void *) &(ovisParameters->minVersion));
 
   /* Tell Zoltan to look for parameters matching the names above */
   Zoltan_Assign_Param_Vals(zz->Params, OVIS_params, zz->Debug_Level, zz->Proc,
