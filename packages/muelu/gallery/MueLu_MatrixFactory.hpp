@@ -37,14 +37,16 @@ namespace MueLu {
         GlobalOrdinal nx = list.get("nx", (GlobalOrdinal) -1);
         GlobalOrdinal ny = list.get("ny", (GlobalOrdinal) -1);
         if (nx == -1 || ny == -1)
-          {
-            GlobalOrdinal n = map->getGlobalNumElements();
-            nx = (GlobalOrdinal)sqrt((Scalar)n);
-            ny = nx;
-            TEUCHOS_TEST_FOR_EXCEPTION(nx*ny != n, std::logic_error, "You need to specify nx and ny.");
-          }
+        {
+          GlobalOrdinal n = map->getGlobalNumElements();
+          nx = (GlobalOrdinal)sqrt((Scalar)n);
+          ny = nx;
+          TEUCHOS_TEST_FOR_EXCEPTION(nx*ny != n, std::logic_error, "You need to specify nx and ny.");
+        }
+        bool keepBCs = list.get("keepBCs",false);
 
-        returnMatrix = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0);
+        returnMatrix = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, 4.0, -1.0, -1.0, -1.0,
+        -1.0,keepBCs);
 
       } else if (MatrixType == "Star2D") {
 

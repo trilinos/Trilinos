@@ -21,11 +21,13 @@ namespace MueLu {
 
     public:
       
-      Parameters(Teuchos::CommandLineProcessor& clp, GO nx=16, GO ny=-1, GO nz=-1, const std::string & matrixType="Laplace1D"): nx_(nx), ny_(ny), nz_(nz), matrixType_(matrixType) {
+      Parameters(Teuchos::CommandLineProcessor& clp, GO nx=16, GO ny=-1, GO nz=-1, const std::string &
+      matrixType="Laplace1D", int keepBCs=0): nx_(nx), ny_(ny), nz_(nz), matrixType_(matrixType), keepBCs_(keepBCs){
         clp.setOption("nx", &nx_, "mesh points in x-direction.");
         clp.setOption("ny", &ny_, "mesh points in y-direction.");
         clp.setOption("nz", &nz_, "mesh points in z-direction.");
         clp.setOption("matrixType", &matrixType_, "matrix type: Laplace1D, Laplace2D, Laplace3D"); //TODO: Star2D, numGlobalElements=...
+        clp.setOption("keepBCs", &keepBCs_, "keep Dirichlet boundary rows in matrix (0=false,1=true)");
       }
       
       void check() const {
@@ -62,6 +64,7 @@ namespace MueLu {
         paramList_.set("nx", static_cast<GO>(nx_));
         paramList_.set("ny", static_cast<GO>(ny_));
         paramList_.set("nz", static_cast<GO>(nz_));
+        paramList_.set("keepBCs", static_cast<bool>(keepBCs_));
 
         return paramList_;
       }
@@ -111,6 +114,8 @@ namespace MueLu {
       // GO nz_;
 
       std::string matrixType_;
+
+      int keepBCs_;
 
       mutable Teuchos::ParameterList paramList_; // only used by GetParameterList(). It's temporary data. TODO: bad design...
     };

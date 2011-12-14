@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
   std::string aggOrdering = "natural";
   int minPerAgg=2; //was 3 in simple
   int maxNbrAlreadySelected=0;
+  int writeMatrix=0;
 
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
@@ -120,6 +121,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
   clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
   clp.setOption("smooType",&smooType,"smoother type ('sgs 'or 'cheby')");
+  clp.setOption("dump",&writeMatrix,"write matrix to file");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -159,8 +161,10 @@ int main(int argc, char *argv[]) {
   /*                                                                                */
   /**********************************************************************************/
   // dump matrix to file
-  //std::string fileName = "Amat.mm";
-  //Utils::Write(fileName,*Op);
+  if (writeMatrix) {
+    std::string fileName = "Amat.mm";
+    Utils::Write(fileName,*Op);
+  }
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);

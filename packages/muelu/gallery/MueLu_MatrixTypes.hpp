@@ -251,7 +251,7 @@ namespace MueLu {
     Cross2D(const RCP<const Map> & map,
             const GlobalOrdinal nx, const GlobalOrdinal ny,
             const Scalar a, const Scalar b, const Scalar c, 
-            const Scalar d, const Scalar e)
+            const Scalar d, const Scalar e, const bool keepBCs=false)
     {
       RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 5);
 
@@ -259,43 +259,70 @@ namespace MueLu {
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
 
       GlobalOrdinal left, right, lower, upper;
-      LocalOrdinal nnz=4;
+      LocalOrdinal nnz=5;
       std::vector<Scalar> Values(nnz);
       std::vector<GlobalOrdinal> Indices(nnz);
 
       //    e
       //  b a c
       //    d
-      for (LocalOrdinal i = 0; i < NumMyElements; ++i) 
+      
+      if (keepBCs) {
+        for (LocalOrdinal i = 0; i < NumMyElements; ++i)  {
+          GlobalOrdinal NumEntries = 0;
+          GetNeighboursCartesian2d(MyGlobalElements[i], nx, ny, 
+                                   left, right, lower, upper);
+          if (left == -1 || right == -1 || lower == -1 || upper == -1) {
+            //Dirichlet unknown
+            mtx->insertGlobalValues(MyGlobalElements[i],
+                                    Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
+                                    Teuchos::tuple<Scalar>(Teuchos::ScalarTraits<Scalar>::one()) );
+          } else {
+            Indices[0] = left;
+            Values[0] = b;
+            Indices[1] = right;
+            Values[1] = c;
+            Indices[2] = lower;
+            Values[2] = d;
+            Indices[3] = upper;
+            Values[3] = e;
+            Indices[4] = MyGlobalElements[i]; //diagonal
+            Values[4] = a;
+            NumEntries=5;
+            Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
+            Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
+            mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
+          }
+            
+        }
+ 
+      } else {
+        for (LocalOrdinal i = 0; i < NumMyElements; ++i) 
         {
           GlobalOrdinal NumEntries = 0;
           GetNeighboursCartesian2d(MyGlobalElements[i], nx, ny, 
                                    left, right, lower, upper);
 
-          if (left != -1) 
-            {
-              Indices[NumEntries] = left;
-              Values[NumEntries] = b;
-              ++NumEntries;
-            }
-          if (right != -1) 
-            {
-              Indices[NumEntries] = right;
-              Values[NumEntries] = c;
-              ++NumEntries;
-            }
-          if (lower != -1) 
-            {
-              Indices[NumEntries] = lower;
-              Values[NumEntries] = d;
-              ++NumEntries;
-            }
-          if (upper != -1) 
-            {
-              Indices[NumEntries] = upper;
-              Values[NumEntries] = e;
-              ++NumEntries;
-            }
+          if (left != -1) {
+             Indices[NumEntries] = left;
+             Values[NumEntries] = b;
+             ++NumEntries;
+          }
+          if (right != -1) {
+             Indices[NumEntries] = right;
+             Values[NumEntries] = c;
+             ++NumEntries;
+          }
+          if (lower != -1) {
+             Indices[NumEntries] = lower;
+             Values[NumEntries] = d;
+             ++NumEntries;
+          }
+          if (upper != -1) {
+             Indices[NumEntries] = upper;
+             Values[NumEntries] = e;
+             ++NumEntries;
+          }
           // put the off-diagonal entries
           // Xpetra wants ArrayViews (sigh)
           Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
@@ -306,7 +333,9 @@ namespace MueLu {
           mtx->insertGlobalValues(MyGlobalElements[i],
                                   Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
                                   Teuchos::tuple<Scalar>(a) );
-        }
+        } //for (LocalOrdinal i=0...
+      } //if (keepBCs)
+
       mtx->fillComplete();
 
       return mtx;
