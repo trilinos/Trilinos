@@ -41,7 +41,7 @@ cmake \
   -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=ON \
   -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
 \
-  -D Trilinos_EXTRA_REPOSITORIES="MueLu" \
+  -D Trilinos_EXTRA_REPOSITORIES="preCopyrightTrilinos" \
   -D Trilinos_ENABLE_MueLu:BOOL=ON \
 \
   -D MueLu_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \

@@ -1,7 +1,7 @@
 export TRILINOS_HOME=${PWD}/../Trilinos
 
 cmake \
-  -D Trilinos_EXTRA_REPOSITORIES="MueLu" \
+  -D Trilinos_EXTRA_REPOSITORIES="preCopyrightTrilinos" \
   -D Trilinos_ENABLE_MueLu:BOOL=ON \
   -D MueLu_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
   -D MueLu_ENABLE_EXAMPLES:BOOL=ON \

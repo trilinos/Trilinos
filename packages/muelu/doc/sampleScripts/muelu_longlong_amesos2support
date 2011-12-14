@@ -2,7 +2,6 @@
 
 #
 # using long long int
-# amesos2 (which means you can't use amesos)
 # You must install Superlu 4.1
 #
 
@@ -39,7 +38,7 @@ cmake \
   -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
   -D CMAKE_C_FLAGS:STRING="-g" \
 \
-  -D Trilinos_EXTRA_REPOSITORIES="preCopyrightTrilinos,MueLu" \
+  -D Trilinos_EXTRA_REPOSITORIES="preCopyrightTrilinos" \
   -D Trilinos_ENABLE_MueLu:BOOL=ON \
   -D Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON \
 \
@@ -47,6 +46,7 @@ cmake \
   -D MueLu_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
 \
   -D Trilinos_ENABLE_Amesos2:BOOL=ON \
+  -D Trilinos_ENABLE_Amesos:BOOL=ON \
   -D Amesos2_ENABLE_DEBUG:BOOL=OFF \
   -D Trilinos_ENABLE_Belos:BOOL=ON \
   -D Trilinos_ENABLE_Epetra:BOOL=ON \
