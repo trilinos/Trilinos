@@ -62,8 +62,6 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; using Teuchos::rcp;
   using Teuchos::TimeMonitor;
-
-  RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
   
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -129,6 +127,8 @@ int main(int argc, char *argv[]) {
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
+  RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
+
   if (pauseForDebugger) {
     Utils::PauseForDebugger();
   }
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   // dump matrix to file
   //std::string fileName = "Amat.mm";
-  //Utils::Write(fileName,Op);
+  //Utils::Write(fileName,*Op);
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
