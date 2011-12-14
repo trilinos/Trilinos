@@ -89,7 +89,7 @@ namespace MueLu {
           Teuchos::OSTab tab1(out);
 
           out << "Matrix type: " << matrixType_ << endl
-              << "Probleme size: " << GetNumGlobalElements();
+              << "Problem size: " << GetNumGlobalElements();
 
           if (matrixType_ == "Laplace2D")       out << " (" << nx_ << "x" << ny_ << ")";
           else if (matrixType_ == "Laplace3D")  out << " (" << nx_ << "x" << ny_ << "x" << nz_ << ")";
