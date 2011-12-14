@@ -50,7 +50,6 @@ typedef enum {
 
 typedef enum {
     REQUEST_BUFFER,
-/*    RESULT_BUFFER,*/
     RECEIVE_BUFFER,
     SEND_BUFFER,
     GET_SRC_BUFFER,
@@ -68,7 +67,6 @@ typedef enum {
 #define IB_OP_GET_TARGET     4
 #define IB_OP_SEND           5
 #define IB_OP_NEW_REQUEST    6
-//#define IB_OP_RESULT         7
 #define IB_OP_RECEIVE        8
 
 typedef enum {
@@ -119,6 +117,7 @@ typedef struct {
 typedef struct {
     uint32_t op;
     uint64_t offset;
+    uint64_t length;
 } ib_rdma_ack;
 
 typedef struct {
@@ -1201,6 +1200,7 @@ NNTI_result_t NNTI_ib_put (
 
     ib_mem_hdl->ack.op    =IB_OP_PUT_TARGET;
     ib_mem_hdl->ack.offset=dest_offset;
+    ib_mem_hdl->ack.length=src_length;
 
 
     log_debug(nnti_debug_level, "putting to (%s, qp=%p, qpn=%lu)", dest_buffer_hdl->buffer_owner.url, ib_mem_hdl->qp, ib_mem_hdl->qpn);
@@ -1263,6 +1263,7 @@ NNTI_result_t NNTI_ib_get (
 
     ib_mem_hdl->ack.op    =IB_OP_GET_TARGET;
     ib_mem_hdl->ack.offset=src_offset;
+    ib_mem_hdl->ack.length=src_length;
 
 
     log_debug(nnti_debug_level, "getting from (%s, qp=%p, qpn=%lu)", src_buffer_hdl->buffer_owner.url, ib_mem_hdl->qp, ib_mem_hdl->qpn);
@@ -1307,7 +1308,7 @@ NNTI_result_t NNTI_ib_wait (
 
     trios_declare_timer(call_time);
 
-    struct ibv_wc            wc;
+    struct ibv_wc wc;
 
 
     assert(reg_buf);
@@ -1414,8 +1415,6 @@ retry:
     status->result = nnti_rc;
     if (nnti_rc==NNTI_OK) {
         status->start  = (uint64_t)reg_buf->payload;
-        status->offset = ib_mem_hdl->offset[wc.wr_id];
-        status->length = wc.byte_len;
         switch (ib_mem_hdl->last_op) {
             case IB_OP_PUT_INITIATOR:
             case IB_OP_GET_TARGET:
@@ -1426,12 +1425,29 @@ retry:
             case IB_OP_GET_INITIATOR:
             case IB_OP_PUT_TARGET:
             case IB_OP_NEW_REQUEST:
-//            case IB_OP_RESULT:
             case IB_OP_RECEIVE:
                 create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port);
                 create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
                 break;
-            }
+        }
+        switch (ib_mem_hdl->last_op) {
+            case IB_OP_NEW_REQUEST:
+                status->offset = ib_mem_hdl->offset[wc.wr_id];
+                status->length = wc.byte_len;
+                break;
+            case IB_OP_SEND:
+            case IB_OP_RECEIVE:
+                status->offset = 0;
+                status->length = wc.byte_len;
+                break;
+            case IB_OP_GET_INITIATOR:
+            case IB_OP_PUT_INITIATOR:
+            case IB_OP_GET_TARGET:
+            case IB_OP_PUT_TARGET:
+                status->offset = ib_mem_hdl->ack.offset;
+                status->length = ib_mem_hdl->ack.length;
+                break;
+        }
     }
 
     if (logging_debug(nnti_debug_level)) {
@@ -1439,12 +1455,25 @@ retry:
                 "end of NNTI_wait", status);
     }
 
-    if ((nnti_rc==NNTI_OK) && (ib_mem_hdl->type == REQUEST_BUFFER)) {
+    if (nnti_rc==NNTI_OK) {
         struct ibv_recv_wr *bad_wr;
 
-        if (ibv_post_srq_recv(transport_global_data.req_srq, &ib_mem_hdl->rq_wr[wc.wr_id], &bad_wr)) {
-            log_error(nnti_debug_level, "failed to post SRQ recv: %s", strerror(errno));
-            nnti_rc = NNTI_EIO;
+        if  (ib_mem_hdl->type == REQUEST_BUFFER) {
+            log_debug(nnti_debug_level, "re-posting srq_recv for REQUEST_BUFFER");
+            if (ibv_post_srq_recv(transport_global_data.req_srq, &ib_mem_hdl->rq_wr[wc.wr_id], &bad_wr)) {
+                log_error(nnti_debug_level, "failed to post SRQ recv: %s", strerror(errno));
+                nnti_rc = NNTI_EIO;
+            }
+        }
+
+        if  ((ib_mem_hdl->last_op == IB_OP_GET_TARGET) ||
+             (ib_mem_hdl->last_op == IB_OP_PUT_TARGET)) {
+            log_debug(nnti_debug_level, "re-posting recv for RDMA target");
+            if (ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
+                log_error(nnti_debug_level, "failed to re-post ACK recv (qp_index=%d ; ack_rq_wr=%p ; bad_wr=%p): %s",
+                        ib_mem_hdl->my_qp_index, &ib_mem_hdl->ack_rq_wr, bad_wr, strerror(errno));
+                return (NNTI_result_t)errno;
+            }
         }
     }
 
@@ -1782,13 +1811,6 @@ int process_event(
                 ib_mem_hdl->op_state = RECV_COMPLETE;
             }
             break;
-//        case RESULT_BUFFER:
-//            if (wc->opcode==IBV_WC_RECV) {
-//                log_debug(debug_level, "recv completion - wc==%p, reg_buf==%p", wc, reg_buf);
-//                ib_mem_hdl->last_op=IB_OP_RESULT;
-//                ib_mem_hdl->op_state = RECV_COMPLETE;
-//            }
-//            break;
         case RECEIVE_BUFFER:
             if (wc->opcode==IBV_WC_RECV) {
                 log_debug(debug_level, "recv completion - wc==%p, reg_buf==%p", wc, reg_buf);
@@ -1848,7 +1870,6 @@ int8_t is_buf_op_complete(
             }
             break;
         case REQUEST_BUFFER:
-//        case RESULT_BUFFER:
         case RECEIVE_BUFFER:
             if (ib_mem_hdl->op_state == RECV_COMPLETE) {
                 rc=TRUE;
