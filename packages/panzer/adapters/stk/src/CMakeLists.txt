@@ -48,6 +48,10 @@ APPEND_SET(HEADERS
   stk_interface/Panzer_STK_PeriodicBC_MatchConditions.hpp
   evaluators/Panzer_STK_GatherFields.hpp
   evaluators/Panzer_STK_GatherFieldsT.hpp
+  evaluators/Panzer_STK_ScatterCellAvgQuantity.hpp
+  evaluators/Panzer_STK_ScatterCellAvgQuantityT.hpp
+  evaluators/Panzer_STK_ScatterFields.hpp
+  evaluators/Panzer_STK_ScatterFields.hpp
   Panzer_STK_Utilities.hpp
   ) 
 
@@ -55,6 +59,8 @@ APPEND_SET(SOURCES
   Panzer_STK_Version.cpp
   Panzer_STKConnManager.cpp
   Panzer_STK_SetupUtilities.cpp
+  Panzer_STK_Utilities.cpp
+  Panzer_STK_WorksetFactory.cpp
   stk_interface/Panzer_STK_Interface.cpp
   stk_interface/Panzer_STK_LineMeshFactory.cpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.cpp
@@ -65,8 +71,7 @@ APPEND_SET(SOURCES
   stk_interface/Panzer_STK_MultiBlockMeshFactory.cpp
   stk_interface/Panzer_STK_PeriodicBC_Matcher.cpp
   stk_interface/Panzer_STK_PeriodicBC_Parser.cpp
-  Panzer_STK_Utilities.cpp
-  Panzer_STK_WorksetFactory.cpp
+  evaluators/Panzer_STK_ScatterCellAvgQuantity.cpp
   )
 
 #

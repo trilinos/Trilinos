@@ -85,6 +85,22 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
    }
 }
 
+void STK_Interface::addCellField(const std::string & fieldName,const std::string & blockId) 
+{
+   TEUCHOS_ASSERT(not initialized_);
+   TEUCHOS_TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
+                      "Unknown element block \"" << blockId << "\"");
+   std::pair<std::string,std::string> key = std::make_pair(fieldName,blockId);
+
+   // add & declare field if not already added...currently assuming linears
+   if(fieldNameToCellField_.find(key)==fieldNameToCellField_.end()) {
+      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(fieldName);
+      if(field==0)
+         field = &metaData_->declare_field<SolutionFieldType>(fieldName);     
+      fieldNameToCellField_[key] = field;
+   }
+}
+
 void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO) 
 {
    TEUCHOS_ASSERT(not initialized_);
@@ -108,17 +124,8 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    stk::mesh::put_field( *processorIdField_ , elementRank, metaData_->universal_part());
    stk::mesh::put_field( *localIdField_ , elementRank, metaData_->universal_part());
 
-   // register fields for output primarily
-   std::set<SolutionFieldType*> uniqueFields;
-   std::map<std::pair<std::string,std::string>,SolutionFieldType*>::const_iterator fieldIter;
-   for(fieldIter=fieldNameToSolution_.begin();fieldIter!=fieldNameToSolution_.end();++fieldIter)
-      uniqueFields.insert(fieldIter->second); // this makes setting up IO easier!
-
-   {
-      std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
-      for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
-         stk::mesh::put_field(*(*uniqueFieldIter), nodeRank,metaData_->universal_part());
-   }
+   initializeFieldsInSTK(fieldNameToSolution_,nodeRank,setupIO);
+   initializeFieldsInSTK(fieldNameToCellField_,elementRank,setupIO);
 
 #ifdef HAVE_IOSS
    if(setupIO) {
@@ -147,11 +154,6 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 
       stk::io::set_field_role(*coordinatesField_, Ioss::Field::MESH);
       stk::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
-
-      // add solution fields
-      std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
-      for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
-         stk::io::set_field_role(*(*uniqueFieldIter), Ioss::Field::TRANSIENT);
    }
 #endif
 
@@ -160,6 +162,30 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
       instantiateBulkData(parallelMach);
 
    initialized_ = true;
+}
+
+void STK_Interface::initializeFieldsInSTK(const std::map<std::pair<std::string,std::string>,SolutionFieldType*> & nameToField,
+                                          stk::mesh::EntityRank rank,bool setupIO)
+{
+   std::set<SolutionFieldType*> uniqueFields;
+   std::map<std::pair<std::string,std::string>,SolutionFieldType*>::const_iterator fieldIter;
+   for(fieldIter=nameToField.begin();fieldIter!=nameToField.end();++fieldIter)
+      uniqueFields.insert(fieldIter->second); // this makes setting up IO easier!
+
+   {
+      std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
+      for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
+         stk::mesh::put_field(*(*uniqueFieldIter),rank,metaData_->universal_part());
+   }
+
+#ifdef HAVE_IOSS
+   if(setupIO) {
+      // add solution fields
+      std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
+      for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
+         stk::io::set_field_role(*(*uniqueFieldIter), Ioss::Field::TRANSIENT);
+   }
+#endif
 }
 
 void STK_Interface::instantiateBulkData(stk::ParallelMachine parallelMach)
@@ -572,7 +598,21 @@ stk::mesh::Field<double> * STK_Interface::getSolutionField(const std::string & f
  
    // check to make sure field was actually found
    TEUCHOS_TEST_FOR_EXCEPTION(iter==fieldNameToSolution_.end(),std::runtime_error,
-                      "Field name \"" << fieldName << "\" in block ID \"" << blockId << "\" was not found");
+                      "Solution field name \"" << fieldName << "\" in block ID \"" << blockId << "\" was not found");
+
+   return iter->second;
+}
+
+stk::mesh::Field<double> * STK_Interface::getCellField(const std::string & fieldName,
+                                                       const std::string & blockId) const
+{
+   // look up field in map
+   std::map<std::pair<std::string,std::string>, SolutionFieldType*>::const_iterator 
+         iter = fieldNameToCellField_.find(std::make_pair(fieldName,blockId));
+ 
+   // check to make sure field was actually found
+   TEUCHOS_TEST_FOR_EXCEPTION(iter==fieldNameToCellField_.end(),std::runtime_error,
+                      "Cell field named \"" << fieldName << "\" in block ID \"" << blockId << "\" was not found");
 
    return iter->second;
 }

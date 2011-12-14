@@ -82,6 +82,10 @@ public:
      */ 
    void addSolutionField(const std::string & fieldName,const std::string & blockId);
 
+   /** Add a solution field
+     */ 
+   void addCellField(const std::string & fieldName,const std::string & blockId);
+
    //////////////////////////////////////////
 
    /** Initialize the mesh with the current dimension This also calls
@@ -297,6 +301,13 @@ public:
    stk::mesh::Field<double> * getSolutionField(const std::string & fieldName,
                                                const std::string & blockId) const;
 
+   /** Get the stk mesh field pointer associated with a particular value
+     * Assumes there is a field associated with "fieldName,blockId" pair. If none
+     * is found an exception (std::runtime_error) is raised.
+     */
+   stk::mesh::Field<double> * getCellField(const std::string & fieldName,
+                                           const std::string & blockId) const;
+
    //! Has <code>initialize</code> been called on this mesh object?
    bool isInitialized() const { return initialized_; }
 
@@ -340,6 +351,24 @@ public:
    template <typename ArrayT>
    void getSolutionFieldData(const std::string & fieldName,const std::string & blockId,
                              const std::vector<std::size_t> & localElementIds,ArrayT & solutionValues) const;
+
+   /** Writes a particular field to a cell array. Notice this is setup to work with
+     * the worksets associated with Panzer.
+     *
+     * \param[in] fieldName Name of field to be filled
+     * \param[in] blockId Name of block this set of elements belongs to
+     * \param[in] localElementIds Local element IDs for this set of solution values
+     * \param[in] solutionValues A one dimensional array object sized by (Cells)
+     *
+     * \note The block ID is not strictly needed in this context. However forcing the
+     *       user to provide it does permit an additional level of safety. The implicit
+     *       assumption is that the elements being "set" are part of the specified block.
+     *       This prevents the need to perform a null pointer check on the field data, because
+     *       the STK_Interface construction of the fields should force it to be nonnull...
+     */
+   template <typename ArrayT>
+   void setCellFieldData(const std::string & fieldName,const std::string & blockId,
+                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
 
    /** Get vertices associated with a number of elements of the same geometry.
      *
@@ -450,6 +479,12 @@ protected:
      */
    void buildMaxEntityIds();
 
+   /** Initialize STK fields using a map (allocate space for storage and writing)
+     * to a specific entity rank.
+     */ 
+   void initializeFieldsInSTK(const std::map<std::pair<std::string,std::string>,SolutionFieldType*> & nameToField,
+                             stk::mesh::EntityRank rank,bool setupIO);
+
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
 
    Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
@@ -471,6 +506,7 @@ protected:
    
    // maps field names to solution field stk mesh handles
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToSolution_;
+   std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToCellField_;
 
    unsigned dimension_;
 
@@ -558,6 +594,24 @@ void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std
          // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
          solutionValues(cell,i) = solnData[0]; 
       }
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::setCellFieldData(const std::string & fieldName,const std::string & blockId,
+                                     const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues)
+{
+   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+
+   SolutionFieldType * field = this->getCellField(fieldName,blockId);
+
+   for(std::size_t cell=0;cell<localElementIds.size();cell++) {
+      std::size_t localId = localElementIds[cell];
+      stk::mesh::Entity * element = elements[localId];
+
+      double * solnData = stk::mesh::field_data(*field,*element);
+      TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
+      solnData[0] = solutionValues[cell];
    }
 }
 

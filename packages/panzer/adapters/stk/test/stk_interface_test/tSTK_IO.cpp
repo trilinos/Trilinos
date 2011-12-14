@@ -22,6 +22,7 @@ typedef Intrepid::FieldContainer<double> FieldContainer;
 namespace panzer_stk {
 
 RCP<STK_Interface> buildMesh(int xElements,int yElements);
+RCP<STK_Interface> buildMesh_cells(int xElements,int yElements);
 void buildLocalIds(const STK_Interface & mesh,
                    std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds); 
 
@@ -62,6 +63,38 @@ TEUCHOS_UNIT_TEST(tSTK_IO, fields)
    out << "write to exodus" << std::endl;
 
    mesh->writeToExodus("output.exo");
+}
+
+TEUCHOS_UNIT_TEST(tSTK_IO, cell_fields)
+{
+   RCP<STK_Interface> mesh = buildMesh_cells(8,8);
+
+   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds; 
+   buildLocalIds(*mesh,localIds);
+
+   out << "write to exodus" << std::endl;
+
+   FieldContainer vert0, vert1;
+   out << "get vertices" << std::endl;
+   mesh->getElementVertices(*localIds["eblock-0_0"],vert0);
+   mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
+
+   FieldContainer ublock0, tblock0, tblock1;
+   ublock0.resize(localIds["eblock-0_0"]->size(),4);
+   tblock0.resize(localIds["eblock-0_0"]->size(),4);
+   tblock1.resize(localIds["eblock-1_0"]->size(),4);
+   out << "assigning" << std::endl;
+
+   assignBlock(ublock0,vert0,xval);
+   assignBlock(tblock0,vert0,yval);
+   assignBlock(tblock1,vert1,block2);
+
+   mesh->setCellFieldData("u","eblock-0_0",*localIds["eblock-0_0"],ublock0);
+   mesh->setCellFieldData("T","eblock-0_0",*localIds["eblock-0_0"],tblock0);
+   mesh->setCellFieldData("T","eblock-1_0",*localIds["eblock-1_0"],tblock1);
+   mesh->setSolutionFieldData("T","eblock-1_0",*localIds["eblock-1_0"],tblock1);
+
+   mesh->writeToExodus("output-cells.exo");
 }
 
 TEUCHOS_UNIT_TEST(tSTK_IO, exodus_factory_transient_fields)
@@ -172,6 +205,29 @@ RCP<STK_Interface> buildMesh(int xElements,int yElements)
 
     mesh->addSolutionField("u","eblock-0_0");
     mesh->addSolutionField("T","eblock-0_0");
+    mesh->addSolutionField("T","eblock-1_0");
+ 
+    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+
+    return mesh;
+}
+
+RCP<STK_Interface> buildMesh_cells(int xElements,int yElements)
+{
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("X Elements",xElements);  // in each block
+    pl->set("Y Elements",yElements);  // in each block
+
+    panzer_stk::SquareQuadMeshFactory factory;
+    factory.setParameterList(pl);
+    RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+
+    mesh->addCellField("u","eblock-0_0");
+    mesh->addCellField("T","eblock-0_0");
+    mesh->addCellField("T","eblock-1_0");
+
     mesh->addSolutionField("T","eblock-1_0");
  
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);

@@ -26,6 +26,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_GatherFields.hpp"
 #include "Panzer_STK_ScatterFields.hpp"
+#include "Panzer_STK_ScatterCellAvgQuantity.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -53,7 +54,7 @@ namespace panzer {
 
   PHX_EVALUATOR_CTOR(XCoordinate,p)
   {
-     xcoord = PHX::MDField<ScalarT,Cell,NODE>("x-coord",linBasis->functional);
+     xcoord = PHX::MDField<ScalarT,Cell,NODE>("x-coord",p.get<Teuchos::RCP<PHX::DataLayout> >("Data Layout"));
      this->addEvaluatedField(xcoord);
   }
 
@@ -72,7 +73,7 @@ namespace panzer {
   }
 
   Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize);
-  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
+  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution);
   void testInitialzation(panzer::InputPhysicsBlock& ipb,std::vector<panzer::BC>& bcs);
 
   TEUCHOS_UNIT_TEST(gs_evaluators, gather_constr)
@@ -80,7 +81,7 @@ namespace panzer {
     const std::size_t workset_size = 20;
     linBasis = buildLinearBasis(workset_size);
 
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(20,20);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(20,20,true);
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
@@ -89,6 +90,7 @@ namespace panzer {
     testInitialzation(ipb, bcs);
 
     Teuchos::ParameterList pl;
+    pl.set("Data Layout",linBasis->functional);
     Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm = 
       Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
     fm->registerEvaluator<panzer::Traits::Residual>(Teuchos::rcp(new XCoordinate<panzer::Traits::Residual,panzer::Traits>(pl)));
@@ -131,6 +133,95 @@ namespace panzer {
        mesh->writeToExodus("x-coord.exo");
   }
 
+  TEUCHOS_UNIT_TEST(gs_evaluators, cell_field)
+  {
+    const std::size_t workset_size = 20;
+    linBasis = buildLinearBasis(workset_size);
+
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(20,20,false);
+
+    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+
+     Teuchos::RCP<shards::CellTopology> topo = 
+        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+    panzer::CellData cellData(workset_size,2,topo);
+    Teuchos::RCP<panzer::IntegrationRule> intRule = Teuchos::rcp(new panzer::IntegrationRule(1,cellData));
+
+    panzer::InputPhysicsBlock ipb;
+    std::vector<panzer::BC> bcs;
+    testInitialzation(ipb, bcs);
+
+    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm = 
+      Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
+    {
+       Teuchos::ParameterList pl;
+       pl.set("Data Layout",linBasis->functional);
+       fm->registerEvaluator<panzer::Traits::Residual>(Teuchos::rcp(new XCoordinate<panzer::Traits::Residual,panzer::Traits>(pl)));
+    }
+
+    {
+       Teuchos::ParameterList pl;
+       pl.set("Data Layout",intRule->dl_scalar);
+       fm->registerEvaluator<panzer::Traits::Residual>(Teuchos::rcp(new XCoordinate<panzer::Traits::Residual,panzer::Traits>(pl)));
+    }
+
+    {
+       Teuchos::RCP<std::vector<std::string> > fieldNames
+             = Teuchos::rcp(new std::vector<std::string>);
+       fieldNames->push_back("x-coord");
+    
+       Teuchos::ParameterList pl;
+       pl.set("Mesh",mesh);
+       pl.set("IR",intRule);
+       pl.set("Field Names",fieldNames);
+       pl.set("Scatter Name", "xcoord-scatter-cell-residual");
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
+             = Teuchos::rcp(new panzer_stk::ScatterCellAvgQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
+       fm->registerEvaluator<panzer::Traits::Residual>(eval);
+       fm->requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
+    }
+
+    {
+       Teuchos::RCP<std::vector<std::string> > fieldNames
+             = Teuchos::rcp(new std::vector<std::string>);
+       fieldNames->push_back("x-coord");
+
+       Teuchos::ParameterList pl;
+       pl.set("Mesh",mesh);
+       pl.set("Basis",linBasis);
+       pl.set("Field Names",fieldNames);
+       pl.set("Scatter Name", "xcoord-scatter-residual");
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
+             = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(pl));
+       fm->registerEvaluator<panzer::Traits::Residual>(eval);
+       fm->requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
+    }
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
+    eb_id_to_ipb["eblock-0_0"] = ipb;
+    
+    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
+      volume_worksets = panzer_stk::buildWorksets(*mesh,eb_id_to_ipb, workset_size);
+
+    panzer::Traits::SetupData sd;
+    sd.worksets_ = volume_worksets["eblock-0_0"];
+    fm->postRegistrationSetupForType<panzer::Traits::Residual>(sd);
+    fm->writeGraphvizFile<panzer::Traits::Residual>("resi-eval-graph.dot");
+
+    std::vector<panzer::Workset> & worksets = *volume_worksets["eblock-0_0"];
+    for(std::size_t ws=0;ws<worksets.size();ws++) {
+       Traits::PED preEvalData;
+       fm->preEvaluate<panzer::Traits::Residual>(preEvalData);
+       fm->evaluateFields<panzer::Traits::Residual>(worksets[ws]);
+       fm->postEvaluate<panzer::Traits::Residual>(0);
+    }
+
+    if(mesh->isWritable()) 
+       mesh->writeToExodus("x-coord-cell.exo");
+  }
+
   Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize)
   {
      Teuchos::RCP<shards::CellTopology> topo = 
@@ -142,7 +233,7 @@ namespace panzer {
      return Teuchos::rcp(new panzer::Basis("Q1",intRule)); 
   }
 
-  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
+  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution)
   {
     typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
     typedef panzer_stk::STK_Interface::VectorFieldType CoordinateField;
@@ -159,6 +250,8 @@ namespace panzer {
  
     // add in some fields
     mesh->addSolutionField("x-coord","eblock-0_0");
+    if(!solution)
+       mesh->addCellField("x-coord","eblock-0_0");
 
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
 
