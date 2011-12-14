@@ -154,16 +154,18 @@ namespace MueLu {
     void Keep(const std::string & ename, const FactoryBase* factory = NoFactory::get()) { AddKeepFlag(ename, factory, MueLu::Keep); }
 
     //! Delete data that have been retained after the setup phase (using Keep(), AddKeepFlag(), or internal MueLu logic).
-    // 
+    // Special cases:
+    // - If entry (ename, factory) does not exist, nothing is done.
+    // - If entry exists but counter !=, entry cannot be desallocated before counter set to 0 (using Release()) so an exeption is thrown.
     void Delete(const std::string& ename, const FactoryBase* factory = NoFactory::get()) { 
-      // TODO: What is the right behavior to implement if (ename, factory) do not exist? Exception? Do nothing silently?
+      if (!IsKey(ename, factory)) { return; } // if entry (ename, factory) does not exist, nothing is done.
 
       // Precondition:
-      // - Delete() can only be use on kept data
-      TEUCHOS_TEST_FOR_EXCEPTION(GetKeepFlag(ename, factory) == 0, Exceptions::RuntimeError, "MueLu::Level::Delete(), Keep flag == 0. Do you meant to use Release() instead of Delete()?");
-      // - Delete() should only be called if counter == 0
+      // Delete() should only be called if counter == 0
       // Note: It better to throw an exception rather than deleting the data if counter != 0 because users are not supposed to manipulate data with counter != 0
-      TEUCHOS_TEST_FOR_EXCEPTION(IsRequested(ename, factory) == true, Exceptions::RuntimeError, "MueLu::Level::Delete(): IsRequested() == true. Ref counter != 0. You are not allow to delete data that are still in use.");
+      TEUCHOS_TEST_FOR_EXCEPTION(IsRequested(ename, factory) == true, Exceptions::RuntimeError, "MueLu::Level::Delete(): IsRequested() == true. Ref counter != 0. You are not allowed to delete data that are still in use.");
+      // If counter == 0 and entry exists, this means that a keep flag is set. Or there is an internal logic problem.
+      TEUCHOS_TEST_FOR_EXCEPTION(GetKeepFlag(ename, factory) == 0, Exceptions::RuntimeError, "MueLu::Level::Delete(), Keep flag == 0?");
 
       RemoveKeepFlag(ename, factory, MueLu::All); // will delete the data if counter == 0
 
