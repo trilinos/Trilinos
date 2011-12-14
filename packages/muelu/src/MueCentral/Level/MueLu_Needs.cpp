@@ -42,8 +42,6 @@ namespace MueLu {
     // Set the flag
     Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
     var->AddKeepFlag(keep);
-
-    std::cout << "Needs::AddKeepFlag(" << ename << "):" << keep;
   }
 
   void Needs::RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
@@ -60,7 +58,6 @@ namespace MueLu {
       dataTable_.Remove(factory, ename);
     }
 
-    std::cout << "Needs::RemoveKeepFlag(" << ename << "):" << keep;
   }
 
   KeepType Needs::GetKeepFlag(const std::string & ename, const FactoryBase* factory) const {
