@@ -56,6 +56,10 @@ namespace MueLu {
     //! returns number of transfer factories
     size_t NumTransferFactories() const;
 
+    RCP<const FactoryBase> GetPFactory() const;
+
+    RCP<const FactoryBase> GetRFactory() const;
+
     //@}
   private:
     //! P Factory
