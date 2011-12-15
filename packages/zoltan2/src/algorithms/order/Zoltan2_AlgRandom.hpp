@@ -8,19 +8,14 @@
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgRandom.hpp
 //! \brief Random ordering using the Knuth shuffle.
-//! \brief TODO: For now uses GraphModel but only needs IDs.
+//! \brief TODO: Only local permutation, should add global option.
 
-
-// Placeholder for real error handling.
-#define KDD_HANDLE_ERROR {\
-    cout << __func__ << ":" << __LINE__ << " KDDERROR" << endl;\
-    }
 
 namespace Zoltan2{
 
 template <typename Adapter>
 int AlgRandom(
-  const RCP<GraphModel<Adapter> > &model, 
+  const RCP<IdentifierModel<Adapter> > &model, 
   const RCP<OrderingSolution<typename Adapter::gid_t,
                              typename Adapter::lno_t> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
@@ -42,7 +37,7 @@ int AlgRandom(
   //   R. Durstenfeld, "Algorithm 235: Random permutation", CACM, vol. 7, 1964.
 
   // Start with the identity permutation.
-  const size_t nVtx = model->getLocalNumVertices();
+  const size_t nVtx = model->getLocalNumIdentifiers();
   lno_t *perm;
   perm = new lno_t[nVtx];
   for (lno_t i=0; i<nVtx; i++){
@@ -50,7 +45,7 @@ int AlgRandom(
   }
 
   // Swap random pairs of indices in perm.
-  lno_t j, temp;
+  lno_t temp;
   for (lno_t i=nVtx-1; i>0; i--){
     // Choose j randomly in [0,i]
     lno_t j = rand() % (i+1);
