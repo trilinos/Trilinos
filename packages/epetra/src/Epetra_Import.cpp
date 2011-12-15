@@ -282,19 +282,22 @@ Epetra_Import::~Epetra_Import()
 void Epetra_Import::Print(ostream & os) const
 {
   // mfh 14 Dec 2011: The implementation of Print() I found here
-  // previously didn't print much at all, and it included a
-  // discouraging message: "Epetra_Import::Print needs attention!!!"
-  // What you see below is a port of Tpetra::Import::print, which has
-  // a full implementation.  This should allow a side-by-side
-  // comparison of Epetra_Import with Tpetra::Import.
+  // previously didn't print much at all, and it included a message
+  // saying that it wasn't finished ("Epetra_Import::Print needs
+  // attention!!!").  What you see below is a port of
+  // Tpetra::Import::print, which does have a full implementation.
+  // This should allow a side-by-side comparison of Epetra_Import with
+  // Tpetra::Import.
 
   const Epetra_Comm& comm = SourceMap_.Comm();
-  const int myRank = comm.MyPid();
+  const int myRank = comm.MyPID();
   const int numProcs = comm.NumProc();
 
-  if (myRank == p) {
+  if (myRank == 0) {
     os << "Import Data Members:" << endl;
   }
+  // We don't need a barrier before this for loop, because Proc 0 is
+  // the first one to do anything in the for loop anyway.
   for (int p = 0; p < numProcs; ++p) {
     if (myRank == p) {
       os << "Image ID       :" << myRank << endl;
@@ -378,7 +381,14 @@ void Epetra_Import::Print(ostream & os) const
       os << "numPermuteIDs  : " << NumPermuteIDs_ << endl;
       os << "numRemoteIDs   : " << NumRemoteIDs_ << endl;
       os << "numExportIDs   : " << NumExportIDs_ << endl;
+
+      // Epetra keeps NumSend_ and NumRecv_, whereas in Tpetra, these
+      // are stored in the Distributor object.  This is why we print
+      // them here.
+      os << "Number of sends: " << NumSend_ << endl;
+      os << "Number of recvs: " << NumRecv_ << endl;
     } // if my rank is p
+
     // A few global barriers give I/O a chance to complete.
     comm.Barrier();
     comm.Barrier();
@@ -397,7 +407,7 @@ void Epetra_Import::Print(ostream & os) const
     os << endl << endl << "Target Map:" << endl << endl;
   }
   TargetMap_.Print(os);
-  
+
   if (myRank == 0) {
     os << endl << endl << "Distributor:" << endl << endl;
   }

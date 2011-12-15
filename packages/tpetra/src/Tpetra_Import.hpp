@@ -286,6 +286,15 @@ namespace Tpetra {
       os << "\nTarget Map: " << endl; 
     }
     os << *getTargetMap();
+
+    // It's also helpful for debugging to print the Distributor
+    // object.  Epetra_Import::Print() does this, so we can do a
+    // side-by-side comparison.
+    if (myImageID == 0) {
+      os << "\nDistributor: " << endl; 
+    }
+    getDistributor().describe (*(Teuchos::getFancyOStream (Teuchos::rcpFromRef (os))),
+			       Teuchos::VERB_EXTREME);
   }
 
 
