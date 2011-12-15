@@ -281,26 +281,132 @@ Epetra_Import::~Epetra_Import()
 //=============================================================================
 void Epetra_Import::Print(ostream & os) const
 {
+  // mfh 14 Dec 2011: The implementation of Print() I found here
+  // previously didn't print much at all, and it included a
+  // discouraging message: "Epetra_Import::Print needs attention!!!"
+  // What you see below is a port of Tpetra::Import::print, which has
+  // a full implementation.  This should allow a side-by-side
+  // comparison of Epetra_Import with Tpetra::Import.
 
-  os << endl << endl << "Source Map:" << endl << endl;
+  const Epetra_Comm& comm = SourceMap_.Comm();
+  const int myRank = comm.MyPid();
+  const int numProcs = comm.NumProc();
+
+  if (myRank == p) {
+    os << "Import Data Members:" << endl;
+  }
+  for (int p = 0; p < numProcs; ++p) {
+    if (myRank == p) {
+      os << "Image ID       :" << myRank << endl;
+
+      os << "permuteFromLIDs:";
+      if (PermuteFromLIDs_ == NULL) {
+	os << " NULL";
+      } else {
+	os << " {";
+	for (int i = 0; i < NumPermuteIDs_; ++i) {
+	  os << PermuteFromLIDs_[i];
+	  if (i < NumPermuteIDs_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "}";
+      }
+      os << endl;
+
+      os << "permuteToLIDs  :";
+      if (PermuteToLIDs_ == NULL) {
+	os << " NULL";
+      } else {
+	os << " {";
+	for (int i = 0; i < NumPermuteIDs_; ++i) {
+	  os << PermuteToLIDs_[i];
+	  if (i < NumPermuteIDs_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "}";
+      }
+      os << endl;
+
+      os << "remoteLIDs     :";
+      if (RemoteLIDs_ == NULL) {
+	os << " NULL";
+      } else {
+	os << " {";
+	for (int i = 0; i < NumRemoteIDs_; ++i) {
+	  os << RemoteLIDs_[i];
+	  if (i < NumRemoteIDs_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "}";
+      }
+      os << endl;
+
+      os << "exportLIDs     :";
+      if (ExportLIDs_ == NULL) {
+	os << " NULL";
+      } else {
+	os << " {";
+	for (int i = 0; i < NumExportIDs_; ++i) {
+	  os << ExportLIDs_[i];
+	  if (i < NumExportIDs_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "}";
+      }
+      os << endl;
+
+      os << "exportImageIDs :";
+      if (ExportPIDs_ == NULL) {
+	os << " NULL";
+      } else {
+	os << " {";
+	for (int i = 0; i < NumExportIDs_; ++i) {
+	  os << ExportPIDs_[i];
+	  if (i < NumExportIDs_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "}";
+      }
+      os << endl;
+
+      os << "numSameIDs     : " << NumSameIDs_ << endl;
+      os << "numPermuteIDs  : " << NumPermuteIDs_ << endl;
+      os << "numRemoteIDs   : " << NumRemoteIDs_ << endl;
+      os << "numExportIDs   : " << NumExportIDs_ << endl;
+    } // if my rank is p
+    // A few global barriers give I/O a chance to complete.
+    comm.Barrier();
+    comm.Barrier();
+    comm.Barrier();
+  } // for each rank p
+
+  // The original implementation printed the Maps first.  We moved
+  // printing the Maps to the end, for easy comparison with the output
+  // of Tpetra::Import::print().
+  if (myRank == 0) {
+    os << endl << endl << "Source Map:" << endl << endl;
+  }
   SourceMap_.Print(os);
   
-  os << endl << endl << "Target Map:" << endl << endl;
+  if (myRank == 0) {
+    os << endl << endl << "Target Map:" << endl << endl;
+  }
   TargetMap_.Print(os);
   
-  os << endl << endl << "Distributor:" << endl << endl;
-  if (Distor_==0) os << "  Is empty...." << endl;
-  else Distor_->Print(os);
-  
-  os << "Number of Same IDs = " << NumSameIDs_ << endl;
-
-  os << "Number of Permute IDs = " << NumPermuteIDs_ << endl;
-
-  os << "Number of Export IDs = " << NumExportIDs_ << endl;
-
-  os << "Number of Remote IDs = " << NumRemoteIDs_ << endl;
-  
-  os << "Epetra_Import Print Needs attention!!!!" << endl;
-  return;
+  if (myRank == 0) {
+    os << endl << endl << "Distributor:" << endl << endl;
+  }
+  if (Distor_ == NULL) {
+    if (myRank == 0) {
+      os << " is NULL." << endl;
+    }
+  } else {
+    Distor_->Print(os); // Printing the Distributor is itself distributed.
+  }
 }
 
