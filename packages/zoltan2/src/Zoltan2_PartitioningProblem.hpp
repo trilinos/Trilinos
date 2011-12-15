@@ -97,7 +97,7 @@ void PartitioningProblem<Adapter>::solve()
   size_t nObj = this->generalModel_->getLocalNumObjects();
 
   size_t numGlobalParts = 
-    partitioningParams_->get<int>(string("num_global_parts"));
+    partitioningParams_->get<size_t>(string("num_global_parts"));
 
   // Create the solution.   TODO add exception handling
 
