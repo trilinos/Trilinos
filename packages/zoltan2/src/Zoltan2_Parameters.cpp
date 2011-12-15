@@ -45,6 +45,7 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
   std::ostringstream docString;
   ParameterEntry entry;
   int intDefault;
+  size_t sizetDefault;
   double doubleDefault;
   string strDefault;
   Array<int> intArrayDefault;
@@ -372,26 +373,18 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
     /*-----------------------------------------*/
 
   parameterName = string("num_global_parts");  
-  intValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<int>(-1,INT_MAX));
+  sizetDefault = comm.getSize();
   docString.str("");
-  entry = ParameterEntry(comm.getSize(), isDefault, isNotList,
-        docString.str(), 
-        intValidatorP);
+  entry = ParameterEntry(sizetDefault, isDefault, isNotList, docString.str()) ;
 
   partitioning.setEntry(parameterName, entry);
 
     /*-----------------------------------------*/
 
   parameterName = string("num_local_parts");  
-  intDefault = 1;
-  intValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<int>(-1,INT_MAX));
+  sizetDefault = 1;
   docString.str("");
-  entry = ParameterEntry(
-        intDefault, isDefault, isNotList,
-        docString.str(), 
-        intValidatorP);
+  entry = ParameterEntry( sizetDefault, isDefault, isNotList, docString.str());
 
   partitioning.setEntry(parameterName, entry);
 
