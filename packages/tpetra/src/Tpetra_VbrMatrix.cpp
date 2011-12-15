@@ -45,8 +45,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
-
 #include "Tpetra_VbrMatrix_def.hpp"
 
 #include <Kokkos_SerialNode.hpp>
@@ -65,21 +63,6 @@
 
 namespace Tpetra {
 
-#if defined(HAVE_TPETRA_INST_FLOAT)
-  TPETRA_VBRMATRIX_INSTANT(float,int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOS_TBB)
-  TPETRA_VBRMATRIX_INSTANT(float,int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
-    TPETRA_VBRMATRIX_INSTANT(float,int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOS_OPENMP)
-    TPETRA_VBRMATRIX_INSTANT(float,int,int,Kokkos::OpenMPNode)
-#endif
-#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
-    TPETRA_VBRMATRIX_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
-#endif
-#endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   TPETRA_VBRMATRIX_INSTANT(double,int,int,Kokkos::SerialNode)
@@ -95,25 +78,22 @@ namespace Tpetra {
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
     TPETRA_VBRMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 #endif
-#endif
-
-#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-  TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
+#endif // double
+#if defined(HAVE_TPETRA_INST_FLOAT)
+  TPETRA_VBRMATRIX_INSTANT(float,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
-  TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::TBBNode)
+  TPETRA_VBRMATRIX_INSTANT(float,int,int,Kokkos::TBBNode)
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
-    TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::TPINode)
+    TPETRA_VBRMATRIX_INSTANT(float,int,int,Kokkos::TPINode)
 #endif
 #if defined(HAVE_KOKKOS_OPENMP)
-    TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::OpenMPNode)
+    TPETRA_VBRMATRIX_INSTANT(float,int,int,Kokkos::OpenMPNode)
 #endif
-// no complex on GPU support for now
-//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
-//    TPETRA_VBRMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
-//#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+    TPETRA_VBRMATRIX_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
 #endif
-
+#endif // float
 #if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
   TPETRA_VBRMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
@@ -129,7 +109,89 @@ namespace Tpetra {
 //#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
 //    TPETRA_VBRMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 //#endif
+#endif // complex double
+#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+  TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::TBBNode)
 #endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::OpenMPNode)
+#endif
+// no complex on GPU support for now
+//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//    TPETRA_VBRMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
+//#endif
+#endif // complex float 
+
+
+#ifdef HAVE_TPETRA_INST_INT_LONG
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+  TPETRA_VBRMATRIX_INSTANT(double,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_VBRMATRIX_INSTANT(double,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_VBRMATRIX_INSTANT(double,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_VBRMATRIX_INSTANT(double,int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+    TPETRA_VBRMATRIX_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
+#endif
+#endif // double
+#if defined(HAVE_TPETRA_INST_FLOAT)
+  TPETRA_VBRMATRIX_INSTANT(float,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_VBRMATRIX_INSTANT(float,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_VBRMATRIX_INSTANT(float,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_VBRMATRIX_INSTANT(float,int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+    TPETRA_VBRMATRIX_INSTANT(float,int,long,Kokkos::ThrustGPUNode)
+#endif
+#endif // float
+#if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+  TPETRA_VBRMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_VBRMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_VBRMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_VBRMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::OpenMPNode)
+#endif
+// no complex on GPU support for now
+//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//    TPETRA_VBRMATRIX_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
+//#endif
+#endif // complex double
+#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+  TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_VBRMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::OpenMPNode)
+#endif
+// no complex on GPU support for now
+//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//    TPETRA_VBRMATRIX_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
+//#endif
+#endif // complex float 
+#endif // <int,long>
 
 
 } // namespace Tpetra

@@ -45,8 +45,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
-
 #include "Tpetra_BlockMap_def.hpp"
 
 #include <Kokkos_SerialNode.hpp>
@@ -77,6 +75,23 @@ namespace Tpetra {
 #endif
 #if defined(HAVE_KOKKOS_OPENMP)
     TPETRA_BLOCKMAP_INSTANT(int,int,Kokkos::OpenMPNode)
+#endif
+
+#ifdef HAVE_TPETRA_INST_INT_LONG
+  TPETRA_BLOCKMAP_INSTANT(int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_BLOCKMAP_INSTANT(int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_BLOCKMAP_INSTANT(int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST)
+    TPETRA_BLOCKMAP_INSTANT(int,long,Kokkos::ThrustGPUNode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_BLOCKMAP_INSTANT(int,long,Kokkos::OpenMPNode)
+#endif
+
 #endif
 
 } // namespace Tpetra

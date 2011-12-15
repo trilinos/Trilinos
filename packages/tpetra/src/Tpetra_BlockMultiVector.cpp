@@ -45,8 +45,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
-
 #include "Tpetra_BlockMultiVector_def.hpp"
 
 #include <Kokkos_SerialNode.hpp>
@@ -80,7 +78,6 @@ namespace Tpetra {
     TPETRA_BLOCKMULTIVECTOR_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
 #endif
 #endif
-
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
@@ -96,7 +93,6 @@ namespace Tpetra {
     TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 #endif
 #endif
-
 #if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
   TPETRA_BLOCKMULTIVECTOR_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
@@ -113,7 +109,6 @@ namespace Tpetra {
 //    TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 //#endif
 #endif
-
 #if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
   TPETRA_BLOCKMULTIVECTOR_INSTANT(std::complex<double>,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
@@ -130,6 +125,72 @@ namespace Tpetra {
 //    TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 //#endif
 #endif
+
+
+#ifdef HAVE_TPETRA_INST_INT_LONG
+#if defined(HAVE_TPETRA_INST_FLOAT)
+  TPETRA_BLOCKMULTIVECTOR_INSTANT(float,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_BLOCKMULTIVECTOR_INSTANT(float,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_BLOCKMULTIVECTOR_INSTANT(float,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_BLOCKMULTIVECTOR_INSTANT(float,int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+    TPETRA_BLOCKMULTIVECTOR_INSTANT(float,int,long,Kokkos::ThrustGPUNode)
+#endif
+#endif
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+  TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+    TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
+#endif
+#endif
+#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+  TPETRA_BLOCKMULTIVECTOR_INSTANT(std::complex<float>,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_BLOCKMULTIVECTOR_INSTANT(std::complex<float>,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_BLOCKMULTIVECTOR_INSTANT(std::complex<float>,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_BLOCKMULTIVECTOR_INSTANT(std::complex<float>,int,long,Kokkos::OpenMPNode)
+#endif
+// no complex on GPU support for now
+//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//    TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
+//#endif
+#endif
+#if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+  TPETRA_BLOCKMULTIVECTOR_INSTANT(std::complex<double>,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_BLOCKMULTIVECTOR_INSTANT(std::complex<double>,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_BLOCKMULTIVECTOR_INSTANT(std::complex<double>,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_BLOCKMULTIVECTOR_INSTANT(std::complex<double>,int,long,Kokkos::OpenMPNode)
+#endif
+// no complex on GPU support for now
+//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//    TPETRA_BLOCKMULTIVECTOR_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
+//#endif
+#endif // COMPLEX_DOUBLE
+#endif // HAVE_TPETRA_INST_INT_LONG
 
 
 } // namespace Tpetra

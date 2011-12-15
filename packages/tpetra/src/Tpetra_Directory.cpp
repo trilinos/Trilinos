@@ -45,8 +45,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
-
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>
@@ -78,6 +76,22 @@ namespace Tpetra {
 #if defined(HAVE_KOKKOS_THRUST)
     TPETRA_DIRECTORY_INSTANT(int,int,Kokkos::ThrustGPUNode)
 #endif
+
+#ifdef HAVE_TPETRA_INST_INT_LONG
+  TPETRA_DIRECTORY_INSTANT(int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_DIRECTORY_INSTANT(int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_DIRECTORY_INSTANT(int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_DIRECTORY_INSTANT(int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST)
+    TPETRA_DIRECTORY_INSTANT(int,long,Kokkos::ThrustGPUNode)
+#endif
+#endif // <int,long>
 
 } // namespace Tpetra
 
