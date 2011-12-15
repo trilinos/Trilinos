@@ -45,6 +45,7 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
   std::ostringstream docString;
   ParameterEntry entry;
   int intDefault;
+  size_t sizetDefault;
   double doubleDefault;
   string strDefault;
   Array<int> intArrayDefault;
@@ -53,6 +54,7 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
   typedef StringToIntegralParameterEntryValidator<int> str2intValidator;
 
   RCP<const EnhancedNumberValidator<int> > intValidatorP;
+  RCP<const EnhancedNumberValidator<size_t> > sizetValidatorP;
   RCP<const EnhancedNumberValidator<double> > doubleValidatorP;
   RCP<const IntegerRangeListValidator<int> > intRangeValidatorP;
   RCP<const StringValidator> strValidatorP;
@@ -372,28 +374,35 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
     /*-----------------------------------------*/
 
   parameterName = string("num_global_parts");  
-  intValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<int>(-1,INT_MAX));
+  sizetDefault = comm.getSize();
+  sizetValidatorP = 
+    Teuchos::rcp(new EnhancedNumberValidator<size_t>(1,SIZE_MAX));
   docString.str("");
-  entry = ParameterEntry(comm.getSize(), isDefault, isNotList,
-        docString.str(), 
-        intValidatorP);
+  entry = ParameterEntry(static_cast<size_t>(sizetDefault,
+    isDefault, isNotList, docString.str(), sizetValidatorP);
 
   partitioning.setEntry(parameterName, entry);
 
     /*-----------------------------------------*/
 
   parameterName = string("num_local_parts");  
-  intDefault = 1;
-  intValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<int>(-1,INT_MAX));
+  sizetDefault = 1;
+  sizetValidatorP = 
+    Teuchos::rcp(new EnhancedNumberValidator<size_t>(1,SIZE_MAX));
   docString.str("");
   entry = ParameterEntry(
-        intDefault, isDefault, isNotList,
+        sizetDefault, isDefault, isNotList,
         docString.str(), 
-        intValidatorP);
+        sizetValidatorP);
 
   partitioning.setEntry(parameterName, entry);
+
+    /*-----------------------------------------
+
+     TODO: part_sizes array.  Strings like "1 .001, 2 .001, "
+       that is a list where list elements
+       have a part number followed by a part size.
+    -----------------------------------------*/
 
     /*-----------------------------------------*/
 

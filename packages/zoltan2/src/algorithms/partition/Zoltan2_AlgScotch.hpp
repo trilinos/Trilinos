@@ -10,13 +10,25 @@
 // but Zoltan2 not built with Scotch.
 
 namespace Zoltan2 {
+
+/*! Scotch partitioning method.
+ *
+ *  \param env  parameters for the problem and library configuration
+ *  \param problemComm  the communicator for the problem
+ *  \param model a graph
+ *  \param solution  a Solution object
+ *
+ *  Preconditions: The parameters in the environment have been
+ *    processed (committed).
+ */
+
 template <typename Adapter>
 void AlgPTScotch(
-  const RCP<const Environment> &env,        // parameters & app comm
-  const RCP<const Comm<int> > &problemComm, // problem comm
-  const RCP<GraphModel<Adapter> > &model,   // the graph
-  size_t numParts,                          // number of parts
-  ArrayView<size_t> partList                // return parts here
+  const RCP<const Environment> &env,
+  const RCP<const Comm<int> > &problemComm,
+  const RCP<GraphModel<Adapter> > &model,
+  RCP<PartitioningSolution<Adapter::gid_t, Adapter::lno_t, Adapter::gno_t> > &solution
+
 )
 {
   throw std::runtime_error(
@@ -138,20 +150,31 @@ struct SCOTCH_Num_Traits<SCOTCH_Num> {
 // Now, the actual Scotch algorithm.
 ///////////////////////////////////////////////////////////////////////
 
+/*! Scotch partitioning method.
+ *
+ *  \param env  parameters for the problem and library configuration
+ *  \param problemComm  the communicator for the problem
+ *  \param model a graph
+ *  \param solution  a Solution object
+ *
+ *  Preconditions: The parameters in the environment have been
+ *    processed (committed).
+ */
+
+template <typename Adapter>
+
 template <typename Adapter>
 void AlgPTScotch(
   const RCP<const Environment> &env,        // parameters & app comm
   const RCP<const Comm<int> > &problemComm, // problem comm
   const RCP<GraphModel<Adapter> > &model,   // the graph
-  size_t numParts,                          // number of parts
-  ArrayView<size_t> partList                // return parts here
+  RCP<PartitioningSolution<Adapter::gid_t, Adapter::lno_t, Adapter::gno_t> > &solution
 )
 {
   HELLO;
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr = 0;
@@ -229,6 +252,7 @@ void AlgPTScotch(
   }
 
   // Create array for Scotch to return results in.
+  Array<size_t> partList(nVtx, 0);
   SCOTCH_Num *partloctab;
   if (sizeof(SCOTCH_Num) == sizeof(size_t)) {
     // Can write directly into the solution's memory
@@ -262,6 +286,11 @@ void AlgPTScotch(
   if (sizeof(SCOTCH_Num) != sizeof(size_t)) {
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
   }
+
+  Array<double> imbalance(1,1.0);
+
+  solution->setParts(vtxID.view(0, nVtx), partList.view(0,nVtx), 
+    imbalance.view(0,1);
 
 #ifdef SHOW_LINUX_MEMINFO
   if (me==0){

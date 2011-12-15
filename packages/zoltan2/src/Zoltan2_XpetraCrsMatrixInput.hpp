@@ -173,8 +173,11 @@ public:
   { 
     // Get an import list
 
-    ArrayRCP<gid_t>  gidList  = solution.getGidsRCPConst();
-    ArrayRCP<size_t> partList = solution.getPartsRCPConst();
+    size_t len = solution.getNumberOfIds();
+    const gid_t *gids = solution.getGlobalIdList();
+    const size_t *parts = solution.getPartList();
+    ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false); 
+    ArrayRCP<size_t> partList = arcp(const_cast<size_t *>(parts), 0, len, false); 
     ArrayRCP<lno_t> dummyIn;
     ArrayRCP<gid_t> importList;
     ArrayRCP<lno_t> dummyOut;

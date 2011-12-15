@@ -57,7 +57,7 @@ public:
    *  or not. The Map can simply indicate that Zoltan2 global numbers are 
    *  identical to the application's global IDs.
    */
-  const RCP<const idmap_t > getIdentifierMap() { return idMap_; }
+  RCP<const idmap_t > getIdentifierMap() { return idMap_; }
 
   /*! Return the local number of objects, which may be
    *  vertices, matrix rows, identifiers, coordinates,
@@ -76,6 +76,14 @@ public:
    *  or mesh node or element IDs.
    */
   virtual void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const = 0;
+
+  /*! Return the number of weights supplied for each object.
+   */
+  virtual int getNumWeights() const = 0;
+
+  /*! Return the user-supplied weights
+   */
+  virtual void getWeights(ArrayView<const StridedInput> weights) const = 0;
 
 protected:
 

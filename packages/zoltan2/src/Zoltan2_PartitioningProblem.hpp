@@ -66,20 +66,37 @@ public:
   //    don't think I've seen this style before.
   virtual void solve();
 
-  PartitioningSolution<gid_t, lno_t> &getSolution() {
+  PartitioningSolution<gid_t, lno_t, gno_t> &getSolution() {
     return *(solution_.getRawPtr());
   };
+
+  // User sets some part sizes for the first weight.   TODO
+
+  void SetPartSizes(int len, size_t *partIds, double *partSizes) { }
+
+  // User sets some part sizes for other weights.   TODO
+
+  void SetPartSizesForCritiera(int criteria, int len, size_t *partIds, 
+    double *partSizes) {}
 
 private:
   void createPartitioningProblem();
 
   Teuchos::Ptr<Teuchos::ParameterList> generalParams_;
   Teuchos::Ptr<Teuchos::ParameterList> partitioningParams_;
-  RCP<PartitioningSolution<gid_t, lno_t> > solution_;
+  RCP<PartitioningSolution<gid_t, lno_t, gno_t> > solution_;
 
   InputAdapterType inputType_;
   ModelType modelType_;
   std::string algorithm_;
+
+  // Suppose Array<size_t> partIds = partIdsForIdx[w].  If partIds.size() > 0
+  // then the user supplied part sizes for weight index "w", and the sizes
+  // corresponding to the Ids in partIds are partSizesForIdx[w].
+  // TODO implement set methods
+
+  Array<Array<size_t> > partIdsForIdx;
+  Array<Array<double> > partSizesForIdx;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -91,49 +108,33 @@ void PartitioningProblem<Adapter>::solve()
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  size_t nObj = this->generalModel_->getLocalNumObjects();
+  // Create the solution. The algorithm will query the Solution
+  //   for part and weight information. The algorithm will
+  //   update the solution with part assignments and quality
+  //   metrics.  The Solution object itself will convert our internal
+  //   global numbers back to application global Ids.
 
-  size_t numGlobalParts = 
-    partitioningParams_->get<int>(string("num_global_parts"));
-
-  // Create the solution.   TODO add exception handling
-
-  solution_ = rcp(new PartitioningSolution<gid_t,lno_t>(numGlobalParts, nObj));
-
-  ArrayRCP<gid_t> &solnGids = solution_->getGidsRCP();
-  ArrayRCP<size_t> &solnParts = solution_->getPartsRCP();
+  solution_ = rcp(new PartitioningSolution<gid_t,lno_t,gno_t>(env_,
+   generalModel_, partIdsForIdx, partSizesForIdx));
 
   // Call the algorithm
 
   try {
     if (algorithm_ == string("scotch")){
       AlgPTScotch<base_adapter_t>(this->envConst_, this->comm_, 
-        this->graphModel_, numGlobalParts, solnParts(0, nObj));
+        this->graphModel_, numGlobalParts, solution_);
+    }
+    else if (algorithm_ == string("block")){
+      AlgPTBlock<base_adapter_t>(this->envConst_, this->comm_, 
+        this->IdentifierModel_, numGlobalParts, solution_);
+    }
+    else{
+      throw logic_error("partitioning algorithm not supported yet");
     }
   }
   Z2_FORWARD_EXCEPTIONS;
-
-  // Write User's GIDs (in the same order in which they appears in the
-  //   input adapter's "get" method) to the solution.
-
-  typedef IdentifierMap<gid_t,lno_t,gno_t> idmap_t;
-  const RCP<const idmap_t> idMap = this->generalModel_->getIdentifierMap();
-
-  ArrayView<const gno_t> vtxGNO;
-  this->generalModel_->getGlobalObjectIds(vtxGNO);
-
-  ArrayRCP<gno_t> gnos = arcpFromArrayView(av_const_cast<gno_t>(vtxGNO));
-
-  if (idMap->gnosAreGids()){
-    solnGids = arcp_reinterpret_cast<gid_t>(gnos);
-  }
-  else{
-    idMap->gidTranslate(solnGids(0, nObj), gnos(0, nObj), 
-      TRANSLATE_LIB_TO_APP);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -354,7 +355,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
       baseAdapter, this->envConst_, needConsecutiveGlobalIds, removeSelfEdges));
 
-    this->generalModel_ = rcp_implicit_cast<Model<base_adapter_t> >(
+    this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->graphModel_);
 
     break;
@@ -369,7 +370,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
       baseAdapter, this->envConst_, needConsecutiveGlobalIds));
 
-    this->generalModel_ = rcp_implicit_cast<Model<base_adapter_t> >(
+    this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->identifierModel_);
     break;
 

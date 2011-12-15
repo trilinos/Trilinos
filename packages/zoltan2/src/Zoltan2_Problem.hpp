@@ -48,7 +48,7 @@ protected:
   RCP<GraphModel<base_adapter_t> > graphModel_;  
   RCP<IdentifierModel<base_adapter_t> > identifierModel_;  
 
-  RCP<Model<base_adapter_t> > generalModel_;  
+  RCP<const Model<base_adapter_t> > generalModel_;  
 
   // KDDKDD May want other models, too, for eval, printing, etc.
   RCP<Teuchos::ParameterList> params_;

@@ -173,6 +173,32 @@ void Environment::commitParameters()
 
   errorCheckLevel_ = static_cast<AssertionLevel>( 
     params_.get<int>(string("error_check_level")));
+  
+  hasAnyParams_ = true;    // due to defaults, we always have parameters
+  hasPartitioningParams_ = true;
+  hasOrderingParams_ = true;
+  hasColoringParams_ = true;
+  hasMatchingParams_ = true;
+
+  try
+    const ParameterList &pl = params_.sublist(string("partitioning"));
+  catch(std::exception &e)
+    hasPartitioningParams = false;
+
+  try
+    const ParameterList &pl = params_.sublist(string("ordering"));
+  catch(std::exception &e)
+    hasOrderingParams = false;
+
+  try
+    const ParameterList &pl = params_.sublist(string("coloring"));
+  catch(std::exception &e)
+    hasColoringParams = false;
+
+  try
+    const ParameterList &pl = params_.sublist(string("matching"));
+  catch(std::exception &e)
+    hasMatchingParams = false;
 
   committed_ = true;
 }

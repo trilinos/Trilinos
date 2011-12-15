@@ -97,15 +97,29 @@ public:
    */
   void commitParameters();
 
+  bool hasParameters() { return hasAnyParameters_; }
+
+  bool hasPartitioningParameters() { return hasPartitioningParameters_; }
+
+  bool hasOrderingParameters() { return hasOrderingParameters_; }
+
+  bool hasMatchingParameters() { return hasMatchingParameters_; }
+
+  bool hasColoringParameters() { return hasColoringParameters_; }
+
   /*! \brief Returns a reference to the user's parameter list.
+   *
+   *   If there are no parameters, this call throws a std::exception.
    */
   const Teuchos::ParameterList &getParams() const { return params_; }
 
   /*! \brief Returns a reference to a non-const copy of the parameters.
+   *   If there are no parameters, this call throws a std::exception.
    */
   Teuchos::ParameterList &getParamsNonConst() { return params_; }
 
   /*! \brief Returns a reference to the user's partitioning parameters.
+   *   If there are no parameters, this call throws a std::exception.
    */
   const Teuchos::ParameterList &getPartitioningParams() const 
   { 
@@ -113,6 +127,7 @@ public:
   }
 
   /*! \brief Returns a reference to the user's partitioning parameters.
+   *   If there are no parameters, this call throws a std::exception.
    */
   Teuchos::ParameterList &getPartitioningParamsNonConst() 
   { 
@@ -120,6 +135,7 @@ public:
   }
 
   /*! \brief Returns a reference to the user's ordering parameters.
+   *   If there are no parameters, this call throws a std::exception.
    */
   const Teuchos::ParameterList &getOrderingParams() const 
   { 
@@ -127,6 +143,7 @@ public:
   }
 
   /*! \brief Returns a reference to the user's ordering parameters.
+   *   If there are no parameters, this call throws a std::exception.
    */
   Teuchos::ParameterList &getOrderingParamsNonConst()
   { 
@@ -134,6 +151,7 @@ public:
   }
 
   /*! \brief Returns a reference to the user's coloring parameters.
+   *   If there are no parameters, this call throws a std::exception.
    */
   const Teuchos::ParameterList &getColoringParams() const 
   { 
@@ -176,6 +194,12 @@ private:
    *            if this validation has occured.
    */
   bool committed_;
+
+  bool hasAnyParams_
+  bool hasPartitioningParams_
+  bool hasOrderingParams_
+  bool hasColoringParams_
+  bool hasMatchingParams_
 };
 
 }  // namespace Zoltan2

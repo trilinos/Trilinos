@@ -161,6 +161,8 @@ public:
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return; }
 
+  int getNumWeights() const { return 0; }
+
 };
 
 ////////////////////////////////////////////////////////////////

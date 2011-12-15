@@ -89,7 +89,7 @@ public:
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return ; }
 
-
+  int getNumWeights() const { return 0; }
 };
 
 template <typename User>
@@ -236,6 +236,9 @@ public:
     getIdentifierList(gnos, weights);
   }
 
+  int getNumWeights() const { return getIdentifierWeightDim(); }
+
+
 private:
 
   bool gnosAreGids_;
@@ -374,6 +377,8 @@ public:
     ArrayView<const input_t> weights;
     getIdentifierList(gnos, weights);
   }
+
+  int getNumWeights() const { return getIdentifierWeightDim(); }
 
 private:
 
