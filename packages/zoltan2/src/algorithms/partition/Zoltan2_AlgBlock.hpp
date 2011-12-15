@@ -52,14 +52,14 @@ void AlgBlock(
   //    are we printing out debug messages
   //    are we timing
   //    are we computing memory used
-  //
-  //    Parameters that may drive algorithm choices:
-  //      speed_versus_quality
-  //      memory_footprint_versus_runtime
 
-  bool debug = env->doStatus();
-  bool timing = env->doTiming();
-  bool memstats = env->doMemoryProfiling();
+  bool debug = env.doStatus();
+  bool timing = env.doTiming();
+  bool memstats = env.doMemoryProfiling();
+
+  // Parameters that may drive algorithm choices
+  //    speed_versus_quality
+  //    memory_footprint_versus_runtime
 
   const Teuchos::ParameterList &pl = env->getParams();
   string &mvr = pl.get(string("memory_footprint_versus_runtime"));

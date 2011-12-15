@@ -19,18 +19,6 @@
 #include <Zoltan2_config.h>
 
 //////////////////////////////////////////
-// For int*_t, INT*_MAX, INT*_MIN
-//
-// TODO: If the application includes stdint.h
-//   before including the Zoltan2 header file,
-//   then it is likely that __STD_LIMIT_MACROS
-//   was not defined, and the INT*_MAX/MIN will
-//   also not be defined.
-
-#define __STDC_LIMIT_MACROS
-#include <stdint.h>
-
-//////////////////////////////////////////
 // Frequently used Trilinos symbols
 
 #include <Tpetra_ConfigDefs.hpp>

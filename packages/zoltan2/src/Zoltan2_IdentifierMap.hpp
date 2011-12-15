@@ -760,50 +760,33 @@ template< typename GID, typename LNO, typename GNO>
 template< typename GID, typename LNO, typename GNO> 
   void IdentifierMap<GID,LNO,GNO>::setupMap(void)
 {
-  numProcs_ = comm_->getSize(); 
-  myRank_ = comm_->getRank(); 
-
   Z2_GLOBAL_INPUT_ASSERTION(*env_, 
            "application global ID type is not supported yet",
            IdentifierTraits<GID>::is_valid_id_type() == true, BASIC_ASSERTION);
 
-  localNumberOfIds_ = myGids_.size();
+  numProcs_ = comm_->getSize(); 
+  myRank_ = comm_->getRank(); 
 
-  typedef typename Teuchos::Hashtable<double, LNO> id2index_hash_t;
-
-  global_size_t gtmp = localNumberOfIds_;
-
-  try{
-    reduceAll<int, global_size_t>(*comm_, Teuchos::REDUCE_SUM, 
-      1, &gtmp, &globalNumberOfIds_);
-  } 
-  catch (const std::exception &e) {
-    Z2_THROW_OUTSIDE_ERROR(*env_, e);
-  }
-
-  // Determine whether the application's global ID data type (GID) is a 
-  // Teuchos Ordinal, and if so, whether they are consecutive, and what the
-  // GID base is.
-  //
-  // This determines whether we can use the application's IDs internally.
-
-  userGidsAreTeuchosOrdinal_ = false;
-  userGidsAreConsecutive_ = false;
-  bool baseZeroConsecutiveIds = false;
-
-  const GID *gidPtr = myGids_.get();
-
-  if (IdentifierTraits<GID>::isGlobalOrdinal()){
-
+  if (IdentifierTraits<GID>::isGlobalOrdinal())
     userGidsAreTeuchosOrdinal_ = true;
 
-    ArrayRCP<GID> tmpDist(numProcs_+1);
+  localNumberOfIds_ = myGids_.size();
+  const GID *gidPtr = myGids_.get();
+  ArrayRCP<GID> tmpDist;
+  GID minGID, maxGID;
 
-    userGidsAreConsecutive_= globallyConsecutiveOrdinals<GID>(gidPtr,
-      localNumberOfIds_,  globalNumberOfIds_, *(env_->comm_), *env_,
-      tmpDist(0, numProcs_+1));
+  userGidsAreConsecutive_ = globallyConsecutiveOrdinals<GID>(
+    *(env_->comm_), *env_, gidPtr, localNumberOfIds_,      // input
+    tmpDist, globalNumberOfIds_);                          // output
 
-    if (userGidsAreConsecutive_){    
+  bool baseZeroConsecutiveIds = false;
+
+  if (userGidsAreTeuchosOrdinal_){
+    if (!userGidsAreConsecutive_){
+      minGID = tmpDist[0];
+      maxGID = tmpDist[1];
+    }
+    else{
       // A GNO is large enough to hold GIDs, but may be a different type.
       if (sizeof(GID) == sizeof(GNO)) {
         gnoDist_ = arcp_reinterpret_cast<GNO>(tmpDist);
@@ -815,14 +798,15 @@ template< typename GID, typename LNO, typename GNO>
         }
       }
 
-      if (gnoDist_[0] == 0){
+      if (gnoDist_[0] == 0)
         baseZeroConsecutiveIds = true;
-      }
     }
   }
 
   // If user global IDs are not consecutive ordinals, create a hash table
   // mapping the global IDs to their location in myGids_.
+
+  typedef typename Teuchos::Hashtable<double, LNO> id2index_hash_t;
 
   if (!userGidsAreConsecutive_){
     id2index_hash_t *p = NULL;
@@ -849,6 +833,19 @@ template< typename GID, typename LNO, typename GNO>
   // Can we use the user's global IDs as our internal global numbers?
   // If so, we can save memory.
 
+  // TODO: we require that user's GIDs have base zero if we are to
+  //    use them as consecutive GNOs.  This can be fixed if needed.
+
+  if (consecutiveGidsAreRequired_ && userGidsAreConsecutive_ &&
+       !baseZeroConsecutiveIds){
+     // TODO - warning that we are not getting the efficiency
+     //    advantage of using the user's gids simply because
+     //   those IDs do not have base 0.  We can add a flag
+     //     about base 0 being required, and then map only
+     //     if base 0 is required.
+
+  } 
+
   userGidsAreZoltan2Gnos_ = false;
 
   if (userGidsAreTeuchosOrdinal_ &&
@@ -868,27 +865,8 @@ template< typename GID, typename LNO, typename GNO>
       maxGlobalGno_ = gnoDist_[numProcs_]-1;
     }
     else{
-      intmax_t localMin, globalMin, localMax, globalMax;
-
-      if (localNumberOfIds_ > 0){
-        std::pair<GID, GID> minMax =
-          IdentifierTraits<GID>::minMax(gidPtr, localNumberOfIds_);
-        localMin = Teuchos::as<intmax_t>(minMax.first);
-        localMax = Teuchos::as<intmax_t>(minMax.second);
-      }
-      else{
-        localMin = INTMAX_MAX;
-        localMax = INTMAX_MIN;
-      }
-
-      reduceAll<int, intmax_t>(*comm_, Teuchos::REDUCE_MAX, 
-          1, &localMax, &globalMax);
-
-      reduceAll<int, intmax_t>(*comm_, Teuchos::REDUCE_MIN, 
-          1, &localMin, &globalMin);
-
-      minGlobalGno_ = static_cast<GNO>(globalMin);
-      maxGlobalGno_ = static_cast<GNO>(globalMax);
+      minGlobalGno_ = static_cast<GNO>(minGID);
+      maxGlobalGno_ = static_cast<GNO>(maxGID);
     }
   } else{
     // We map application gids to consecutive global numbers starting with 0.

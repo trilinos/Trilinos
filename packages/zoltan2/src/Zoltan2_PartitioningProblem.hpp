@@ -90,13 +90,13 @@ private:
   ModelType modelType_;
   std::string algorithm_;
 
-  // Suppose Array<size_t> partIds = partIdsForIdx[w].  If partIds.size() > 0
+  // Suppose Array<size_t> partIds = partIdsForIdx_[w].  If partIds.size() > 0
   // then the user supplied part sizes for weight index "w", and the sizes
   // corresponding to the Ids in partIds are partSizesForIdx[w].
   // TODO implement set methods
 
-  Array<Array<size_t> > partIdsForIdx;
-  Array<Array<double> > partSizesForIdx;
+  Array<Array<size_t> > partIdsForIdx_;
+  Array<Array<double> > partSizesForIdx_;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -116,8 +116,13 @@ void PartitioningProblem<Adapter>::solve()
   //   metrics.  The Solution object itself will convert our internal
   //   global numbers back to application global Ids.
 
+  size_t nObj = this->generalModel_->getLocalNumObjects();
+
+  size_t numGlobalParts = 
+    partitioningParams_->get<size_t>(string("num_global_parts"));
+
   solution_ = rcp(new PartitioningSolution<gid_t,lno_t,gno_t>(env_,
-   generalModel_, partIdsForIdx, partSizesForIdx));
+   generalModel_, partIdsForIdx_, partSizesForIdx_));
 
   // Call the algorithm
 

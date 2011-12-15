@@ -89,6 +89,11 @@ void OrderingProblem<Adapter>::solve()
       AlgRCM<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
                       this->comm_);
   }
+  else if (method.compare("random") == 0)
+  {
+      AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_,
+                      this->comm_);
+  }
   else if (method.compare("Minimum_Degree") == 0)
   {
       string pkg = this->params_->template get<string>("ORDER_PACKAGE", "AMD");
@@ -128,7 +133,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
   //   MODEL = graph, hypergraph, geometric, ids
-  //   ALGORITHM = rcm, random
+  //   ALGORITHM = rcm, random, amd
 
   ModelType modelType = GraphModelType;
 
@@ -154,9 +159,13 @@ void OrderingProblem<Adapter>::createOrderingProblem()
       baseAdapter, this->env_, false, true));
     break;
 
+  case IdentifierModelType:
+    this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
+      baseAdapter, this->env_, false));
+    break;
+
   case HypergraphModelType:
   case GeometryModelType:
-  case IdentifierModelType:
     cout << __func__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;

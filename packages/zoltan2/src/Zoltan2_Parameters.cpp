@@ -375,11 +375,8 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
 
   parameterName = string("num_global_parts");  
   sizetDefault = comm.getSize();
-  sizetValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<size_t>(1,SIZE_MAX));
   docString.str("");
-  entry = ParameterEntry(static_cast<size_t>(sizetDefault,
-    isDefault, isNotList, docString.str(), sizetValidatorP);
+  entry = ParameterEntry(sizetDefault, isDefault, isNotList, docString.str()) ;
 
   partitioning.setEntry(parameterName, entry);
 
@@ -387,13 +384,9 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
 
   parameterName = string("num_local_parts");  
   sizetDefault = 1;
-  sizetValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<size_t>(1,SIZE_MAX));
+
   docString.str("");
-  entry = ParameterEntry(
-        sizetDefault, isDefault, isNotList,
-        docString.str(), 
-        sizetValidatorP);
+  entry = ParameterEntry( sizetDefault, isDefault, isNotList, docString.str());
 
   partitioning.setEntry(parameterName, entry);
 
