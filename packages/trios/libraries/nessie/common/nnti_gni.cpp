@@ -92,7 +92,6 @@ typedef enum {
 
 typedef enum {
     REQUEST_BUFFER,
-//    RESULT_BUFFER,
     RECEIVE_BUFFER,
     SEND_BUFFER,
     GET_SRC_BUFFER,
@@ -306,6 +305,8 @@ static NNTI_result_t register_memory(
         uint64_t len);
 static NNTI_result_t unregister_memory(
         gni_memory_handle *hdl);
+static void reset_op_state(
+        const NNTI_buffer_t *reg_buf);
 static gni_cq_handle_t get_cq(
         const NNTI_buffer_t *reg_buf);
 static int process_event(
@@ -1541,6 +1542,8 @@ NNTI_result_t NNTI_gni_wait (
     assert(q_hdl);
     assert(gni_mem_hdl);
 
+    reset_op_state(reg_buf);
+
     if (timeout < 0)
         timeout_per_call = MIN_TIMEOUT;
     else
@@ -2066,6 +2069,44 @@ static int need_mem_cq(const gni_memory_handle *gni_mem_hdl)
     return(need_cq);
 }
 
+static void reset_op_state(const NNTI_buffer_t *reg_buf)
+{
+    gni_memory_handle        *gni_mem_hdl=NULL;
+
+    assert(reg_buf);
+
+    gni_mem_hdl=(gni_memory_handle *)reg_buf->transport_private;
+
+    assert(gni_mem_hdl);
+
+    log_debug(nnti_ee_debug_level, "enter");
+
+    switch (gni_mem_hdl->type) {
+        case SEND_BUFFER:
+        case RECEIVE_BUFFER:
+        case PUT_SRC_BUFFER:
+        case PUT_DST_BUFFER:
+            gni_mem_hdl->op_state=RDMA_WRITE_INIT;
+            break;
+        case GET_SRC_BUFFER:
+        case GET_DST_BUFFER:
+            gni_mem_hdl->op_state=RDMA_READ_INIT;
+            break;
+        case RDMA_TARGET_BUFFER:
+            gni_mem_hdl->op_state=RDMA_TARGET_INIT;
+            break;
+        case REQUEST_BUFFER:
+            /* do nothing */
+            break;
+        case UNKNOWN_BUFFER:
+        default:
+            log_error(nnti_debug_level, "unknown buffer type(%llu).", gni_mem_hdl->type);
+            break;
+    }
+
+    log_debug(nnti_ee_debug_level, "exit");
+}
+
 static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
 {
     gni_memory_handle        *gni_mem_hdl=NULL;
@@ -2182,7 +2223,7 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
             break;
         case UNKNOWN_BUFFER:
         default:
-            log_debug(nnti_debug_level, "unknown buffer type(%llu).", gni_mem_hdl->type);
+            log_error(nnti_debug_level, "unknown buffer type(%llu).", gni_mem_hdl->type);
             cq_hdl=(gni_cq_handle_t)-1;
             break;
     }
