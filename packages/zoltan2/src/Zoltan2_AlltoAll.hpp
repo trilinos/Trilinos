@@ -26,24 +26,32 @@ namespace Zoltan2
 
 /*! \brief AlltoAll sends/receives a fixed number of objects to/from all processes.
  *
- * The data type T of the objects must be a type for which 
- * Teuchos::SerializationTraits are defined.  This is most likely every 
- * fundamental data type plus std::pair<T1,T2>. It does not
- * include std::vector<T2>.
+ *  \param  comm   The communicator for the process group involved
+ *  \param  env    The environment, required for error messages
+ *  \param  sendBuf  The data to be sent, in destination process rank order
+ *  \param  count    The number of Ts to sendBuf to send to each process.
+ *                   This must be the same on all processes.
+ *  \param  recvBuf  On return, recvBuf has been allocated and contains
+ *                   the packets sent to this process by others.
+ *
+ * The data type T for the objects must be a type for which assignment
+ * is defined. This includes built-in fundamental data types plus 
+ * std::pair<T1,T2>. It does not include std::vector<T>.
  *
  * AlltoAll uses only point-to-point messages.  This is to avoid the MPI 
  * limitation of integer offsets and counters in collective operations.
- * In other words, "count" can be a 64-bit integer.
+ * In other words, LNO can be a 64-bit integer.
  *
- * TODO: test that these AlltoAll methods actually work when message offsets
- *   require integral data types larger than ints.
+ * TODO: AlltoAll will fail if packetSize does not fit into a 32-bit
+ *   integer.  At this point in time, I don't think we need to check
+ *   for this and break up packetSizes.  But some day...
  */
 
 template <typename T, typename LNO>
 void AlltoAll(const Comm<int> &comm,
               const Environment &env,
-              const ArrayView<const T> &sendBuf,  // input
-              LNO count,                          // input
+              const ArrayView<const T> &sendBuf,
+              LNO count,
               ArrayRCP<T> &recvBuf)         // output - allocated here
 {
   int nprocs = comm.getSize();
@@ -54,7 +62,7 @@ void AlltoAll(const Comm<int> &comm,
   LNO n = nprocs * count;
   T *ptr = new T [n]; 
   Z2_GLOBAL_MEMORY_ASSERTION(env, n, ptr);
-  recvBuf = Teuchos::arcp<T>(ptr, 0, n, true);
+  recvBuf = Teuchos::arcp<T>(ptr, 0, n);
 
   // Do self messages
 
@@ -65,14 +73,17 @@ void AlltoAll(const Comm<int> &comm,
 #ifdef HAVE_MPI
   // Post receives
 
+  size_t packetSize = sizeof(T) * count;
   RCP<CommRequest> r;
   Array<RCP<CommRequest> > req(nprocs-1);
 
   for (int p=0; p < nprocs; p++){
     if (p != rank){
-      ArrayRCP<T> recvBufPtr(recvBuf.get() + p*count, 0, count, false);
+      ArrayRCP<char> recvBufPtr(
+        reinterpret_cast<char *>(recvBuf.get() + p*count), 
+        0, packetSize, false);
       try{
-        r  = Teuchos::ireceive<int, T>(comm, recvBufPtr, p);
+        r  = Teuchos::ireceive<int, char>(comm, recvBufPtr, p);
       }
       catch (const std::exception &e){
         Z2_THROW_OUTSIDE_ERROR(env, e);
@@ -88,10 +99,14 @@ void AlltoAll(const Comm<int> &comm,
 
   // Do ready sends.
 
+  ArrayView<const char> sendBufPtr(
+    reinterpret_cast<const char *>(sendBuf.getRawPtr()), nprocs*packetSize);
+
   for (int p=0; p < nprocs; p++){
     if (p != rank){
       try {
-        Teuchos::readySend<int, T>(comm, sendBuf.view(p*count, count), p);
+        Teuchos::readySend<int, char>(comm, 
+          sendBufPtr.view(p*packetSize, packetSize), p);
       } 
       catch (std::exception &e){
         Z2_THROW_OUTSIDE_ERROR(env, e);
@@ -112,17 +127,33 @@ void AlltoAll(const Comm<int> &comm,
 
 /*! \brief AlltoAllv sends/receives a variable number of objects to/from all processes.
  *
- * The data type T of the objects must be a type for which 
- * Teuchos::SerializationTraits are defined.  This is most likely every 
- * fundamental data type plus std::pair<T1,T2>. It does not
- * include std::vector<T2>.
+ *  \param  comm   The communicator for the process group involved
+ *  \param  env    The environment, required for error messages
+ *  \param  sendBuf  The data to be sent, in destination process rank order
+ *  \param  sendCount The number of Ts to send to process p is in sendCount[p].
+ *  \param  recvBuf  On return, recvBuf has been allocated and contains
+ *                   the packets sent to this process by others.
+ *  \param  recvCount On return, The number of Ts received from process p 
+ *                     will be in recvCount[p].
+ *
+ * The data type T for the objects must be a type for which assignment
+ * is defined. This includes built-in fundamental data types plus 
+ * std::pair<T1,T2>. It does not include std::vector<T>.
+ *
+ * AlltoAllv uses only point-to-point messages.  This is to avoid the MPI 
+ * limitation of integer offsets and counters in collective operations.
+ * In other words, LNO can be a 64-bit integer.
+ *
+ * TODO: AlltoAllv will fail if packetSize does not fit into a 32-bit
+ *   integer.  At this point in time, I don't think we need to check
+ *   for this and break up packetSizes.  But some day...
  */
 
 template <typename T, typename LNO>
 void AlltoAllv(const Comm<int> &comm,
               const Environment &env,  
-              const ArrayView<const T> &sendBuf,      // input
-              const ArrayView<const LNO> &sendCount,  // input
+              const ArrayView<const T> &sendBuf,
+              const ArrayView<const LNO> &sendCount,
               ArrayRCP<T> &recvBuf,      // output, allocated here
               ArrayRCP<LNO> &recvCount)  // output, allocated here
 {
@@ -134,10 +165,11 @@ void AlltoAllv(const Comm<int> &comm,
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  size_t totalIn=0, offsetIn=0, offsetOut=0;
+  size_t totalIn=0, totalOut=0, offsetIn=0, offsetOut=0;
 
   for (int i=0; i < nprocs; i++){
     totalIn += recvCount[i];
+    totalOut += sendCount[i];
     if (i < rank){
       offsetIn += recvCount[i];
       offsetOut += sendCount[i];
@@ -167,11 +199,15 @@ void AlltoAllv(const Comm<int> &comm,
   offsetIn = 0;
 
   for (int p=0; p < nprocs; p++){
-    if (p != rank && recvCount[p] > 0){
-      ArrayRCP<T> recvBufPtr(recvBuf.get() + offsetIn, 0, recvCount[p], false);
+    LNO packetSize = recvCount[p] * sizeof(T);
+    if (p != rank && packetSize > 0){
+      LNO packetSize = recvCount[p] * sizeof(T);
+      ArrayRCP<char> recvBufPtr(
+        reinterpret_cast<char *>(recvBuf.get() + offsetIn), 
+        0, packetSize, false);
 
       try{
-        r  = Teuchos::ireceive<int, T>(comm, recvBufPtr, p);
+        r  = Teuchos::ireceive<int, char>(comm, recvBufPtr, p);
       }
       catch (const std::exception &e){
         Z2_THROW_OUTSIDE_ERROR(env, e);
@@ -190,16 +226,21 @@ void AlltoAllv(const Comm<int> &comm,
 
   offsetOut = 0;
 
+  ArrayView<const char> sendBufPtr(
+    reinterpret_cast<const char *>(sendBuf.getRawPtr()), totalOut * sizeof(T));
+
   for (int p=0; p < nprocs; p++){
-    if (p != rank && sendCount[p] > 0){
+    LNO packetSize = sendCount[p] * sizeof(T);
+    if (p != rank && packetSize > 0){
       try{
-        Teuchos::readySend<int, T>(comm, sendBuf.view(offsetOut, sendCount[p]), p);
+        Teuchos::readySend<int, char>(comm, 
+          sendBufPtr.view(offsetOut, packetSize), p);
       }
       catch(const std::exception &e){
         Z2_THROW_OUTSIDE_ERROR(env, e);
       }
     }
-    offsetOut += sendCount[p];
+    offsetOut += packetSize;
   }
 
   if (req.size() > 0){
@@ -354,8 +395,25 @@ template <typename T, typename LNO>
 
 /*! \brief AlltoAllv sends/receives a std::vector<T> to/from all processes.
  *
+ *  \param  comm   The communicator for the process group involved.
+ *  \param  env    The environment, required for error messages.
+ *  \param  sendBuf  The data to be sent, in destination process rank order.
+ *  \param  sendCount sendCount[p] is the count of vectors to be sent 
+                       to process p.
+ *  \param  recvBuf  On return, recvBuf has been allocated and contains
+ *                   the vectors sent to this process by others.
+ *  \param  recvCount On return, The number of vectors received from process p 
+ *                     will be in recvCount[p].
+ *  \param  vLen     If all vectors are the same length, set vLen to the
+ *                  length of the vectors to make AlltoAllv more efficient.
+ *
  * The vectors need not be the same length. The data type T must be a type 
- * for which Teuchos::SerializationTraits are defined.  
+ * which is valid for the AlltoAllv<T, LNO> (above) where sendBuf is
+ * ArrayView<const T> rather than ArrayView<const std::vector<T> >.
+ *
+ * This was written to better understand Teuchos communication, but it
+ * may be useful as well. It has the same advantages described in the
+ * documentation on AlltoAll.
  */
 
 template <typename T, typename LNO>
