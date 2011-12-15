@@ -37,18 +37,18 @@ int AlgRandom(
   //   R. Durstenfeld, "Algorithm 235: Random permutation", CACM, vol. 7, 1964.
 
   // Start with the identity permutation.
-  const size_t nVtx = model->getLocalNumIdentifiers();
+  const size_t n= model->getLocalNumIdentifiers();
   lno_t *perm;
-  perm = new lno_t[nVtx];
-  for (lno_t i=0; i<nVtx; i++){
+  perm = new lno_t[n];
+  for (lno_t i=0; i<n; i++){
     perm[i] = i;
   }
 
   // Swap random pairs of indices in perm.
-  lno_t temp;
-  for (lno_t i=nVtx-1; i>0; i--){
+  lno_t j, temp;
+  for (lno_t i=n-1; i>0; i--){
     // Choose j randomly in [0,i]
-    lno_t j = rand() % (i+1);
+    j = rand() % (i+1);
     // Swap (perm[i], perm[j])
     temp = perm[i];
     perm[i] = perm[j];
@@ -56,7 +56,7 @@ int AlgRandom(
   }
 
   // Set solution.
-  solution->setPermutation(nVtx,
+  solution->setPermutation(n,
                (gid_t *) NULL, // TODO
                perm);
 
