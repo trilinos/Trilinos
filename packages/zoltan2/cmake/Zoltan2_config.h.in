@@ -41,3 +41,7 @@
  * (requires a hack to the scotch library)
  */
 #cmakedefine SHOW_SCOTCH_HIGH_WATER_MARK
+
+/* Define if this platform has data type "long long"
+ */
+#cmakedefine HAVE_LONG_LONG
