@@ -9,6 +9,7 @@
 #define _ZOLTAN2_IDENTIFIERTRAITS
 
 #include <Zoltan2_Standards.hpp>
+#include <Zoltan2_AlltoAll.hpp>
 
 #include <Teuchos_SerializationTraits.hpp>
 #include <Teuchos_HashUtils.hpp>
@@ -53,6 +54,53 @@ template <typename T>
     else if (val[i] > max) max = val[i];
   }
   return std::pair<T,T>(min,max);
+}
+
+/*! \brief helper function to find global min and max
+ */
+template <typename T>
+  void z2GlobalMinMax(const Comm<int> &comm, 
+    const T &localMin, const T &localMax, T &globalMin, T &globalMax)
+{
+  int nprocs = comm.getSize();
+
+  if (nprocs < 2){
+    globalMin = localMin;
+    globalMax = localMax;
+    return;
+  }
+  
+  // Need an environment for error messages
+  ParameterList params;
+  RCP<Comm<int> > comm2 = comm.duplicate();
+  RCP<const Comm<int> > comm2Const = rcp_const_cast<const Comm<int> >(comm2);
+  Environment env(params, comm2Const);
+
+  ArrayRCP<T> recvBufMin;
+  ArrayRCP<T> recvBufMax;
+  Array<T> sendBufMin(nprocs, localMin);
+  Array<T> sendBufMax(nprocs, localMax);
+
+  // Must use Zoltan2::AlltoAll because T may not be a valid
+  //   Teuchos packet type.
+
+  try{
+    AlltoAll<T,int>(comm, env, sendBufMin.view(0,nprocs), 1, recvBufMin);
+  }
+  Z2_FORWARD_EXCEPTIONS; 
+
+  try{
+    AlltoAll<T,int>(comm, env, sendBufMax.view(0,nprocs), 1, recvBufMax);
+  }
+  Z2_FORWARD_EXCEPTIONS; 
+
+  globalMin = recvBufMin[0];
+  globalMax = recvBufMax[0];
+
+  for (int i=0; i < nprocs; i++){
+    if (recvBufMin[i] < globalMin) globalMin = recvBufMin[i];
+    if (recvBufMax[i] > globalMax) globalMax = recvBufMax[i];
+  }
 }
 
 /*! \brief helper function to determine if values are consecutive
@@ -207,6 +255,12 @@ struct IdentifierTraits {
     return UndefIdTraits<std::pair<T, T> >::invalid();
   }
 
+  /*! \brief Find global minimum and maximum
+   */
+  static void globalMinMax(const Comm<int> &comm,
+      const T &localMin, const T &localMax, T &globalMin, T &globalMax)
+        {UndefIdTraits<std::pair<T, T> >::invalid();}
+
   /*! \brief Determine if the values are increasing consecutive
       \param val - the list of values
       \param n - the number of values in the list
@@ -242,6 +296,9 @@ struct IdentifierTraits<char> {
   static inline bool is_valid_id_type() {return true; }
   static std::pair<T, T> minMax(const T *values, size_t n) { 
    return z2LocalMinMax(values, n);}
+  static void globalMinMax(const Comm<int> &comm,
+      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
    return z2AreConsecutive(val, n); }
 };
@@ -265,6 +322,9 @@ struct IdentifierTraits<int16_t> {
   static inline bool is_valid_id_type() {return true; }
   static std::pair<T, T> minMax(
     const T *values, size_t n) {return z2LocalMinMax(values, n);}
+  static void globalMinMax(const Comm<int> &comm,
+      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
   return z2AreConsecutive(val, n); }
 };
@@ -288,6 +348,9 @@ struct IdentifierTraits<uint16_t> {
   static inline bool is_valid_id_type() {return true; }
   static std::pair<T, T> minMax(
     const T *values, size_t n) {return z2LocalMinMax(values, n);}
+  static void globalMinMax(const Comm<int> &comm,
+      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
   return z2AreConsecutive(val, n); }
 };
@@ -311,6 +374,9 @@ struct IdentifierTraits<int32_t> {
   static inline bool is_valid_id_type() {return true; }
   static std::pair<T, T> minMax(const T *values, size_t n) { 
     return z2LocalMinMax(values, n);}
+  static void globalMinMax(const Comm<int> &comm,
+      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
     return z2AreConsecutive(val, n); }
 };
@@ -334,6 +400,9 @@ struct IdentifierTraits<uint32_t> {
   static inline bool is_valid_id_type() {return true; }
   static std::pair<T, T> minMax(const T *vals, size_t n){ 
     return z2LocalMinMax(vals, n);}
+  static void globalMinMax(const Comm<int> &comm,
+      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
    return z2AreConsecutive(val, n); }
 };
@@ -363,6 +432,9 @@ struct IdentifierTraits<int64_t> {
   static inline bool is_valid_id_type() {return true; }
   static std::pair<T, T> minMax(const T *values, size_t n) { 
     return z2LocalMinMax(values, n);}
+  static void globalMinMax(const Comm<int> &comm,
+      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
     return z2AreConsecutive(val, n); }
 };
@@ -387,6 +459,9 @@ struct IdentifierTraits<uint64_t> {
   static inline bool is_valid_id_type() {return true; }
   static std::pair<T, T> minMax(const T *values, size_t n)
     {return z2LocalMinMax(values, n);}
+  static void globalMinMax(const Comm<int> &comm,
+      const T &localMin, const T &localMax, T &globalMin, T &globalMax){
+    z2GlobalMinMax(comm, localMin, localMax, globalMin, globalMax);}
   static bool areConsecutive(const T *val, size_t n){ 
     return z2AreConsecutive(val, n); }
 };
@@ -461,106 +536,116 @@ struct IdentifierTraits<std::pair<T1, T2> > {
       throw std::logic_error("invalid call");
       return pairPair_t(); }
 
+  static void globalMinMax(const Comm<int> &comm,
+      const pair_t &localMin, const pair_t &localMax, 
+      pair_t &globalMin, pair_t &globalMax){
+      throw std::logic_error("invalid call");}
+
   static bool areConsecutive(const pair_t *val, size_t n){ 
       throw std::logic_error("invalid call");
       return false; }
 };
 
 //////////////////////////////////////////////////////////////
-//  A helper function.  Are the ordinals globally consecutive?
-//    If IDs are globally consecutive, then return true and
-//    set nprocs+1 length dist array to proc starting IDs.
+//  A helper function.  If T is an ordinal, are the values
+//    globally consecutive?  If so return true, otherwise
+//    return false.
+//
+//  On return, globalLen is set to the sum of the local lengths.
+//
+//  If T is an ordinal, but the list is not globally consecutive, 
+//    on return dist[0] is set to the global minimum of
+//    the values and dist[1] to the global maximum.
+//    
+//  If T is an ordinal and the list is globally consecutive,
+//    on return dist[p] is set to val[0] on process p.  dist[nprocs]
+//    is set to one past the global maximum value.
 //////////////////////////////////////////////////////////////
 
 template <typename T>
-  bool globallyConsecutiveOrdinals(const T* val, size_t len, size_t globalLen, 
-   const Comm<int> &comm, const Environment &env, ArrayView<T> dist)
+  bool globallyConsecutiveOrdinals(
+    const Comm<int> &comm, const Environment &env, const T* val, size_t len,
+    ArrayRCP<T> &dist, size_t &globalLen)
 {
-  bool globallyConsecutive = false;
-
-  if (!IdentifierTraits<T>::isGlobalOrdinal()){
-    return globallyConsecutive;
-  }
-
-  // Are they consecutive and increasing with process rank?
-
-  bool locallyConsecutiveIncreasing =
-    IdentifierTraits<T>::areConsecutive(val, len);
-
-  if (locallyConsecutiveIncreasing && comm.getSize() == 1){
-    dist[0] = val[0];
-    dist[1] = len;
-    return locallyConsecutiveIncreasing;
-  }
-
-  int localFlag = (locallyConsecutiveIncreasing ? 1 : 0);
-  int globalFlag = 0;
-
   try{
-    reduceAll<int, int>(comm, Teuchos::REDUCE_MIN, 1, &localFlag, &globalFlag);
+    reduceAll<int, size_t>(comm, Teuchos::REDUCE_SUM, 1, &len, &globalLen);
   }
   catch (const std::exception &e) {
     Z2_THROW_OUTSIDE_ERROR(env, e);
   }
 
-  if (globalFlag == 1){
+  if (!IdentifierTraits<T>::isGlobalOrdinal()){
+    return false;
+  }
 
-    int64_t lMin = INT64_MAX, gMin;
-    int64_t lMax = INT64_MIN, gMax;
+  // Get global minimum and maximum
 
-    if (len > 0){
-      lMin = Teuchos::as<int64_t>(val[0]);
-      lMax = Teuchos::as<int64_t>(val[len-1]);
+  T gMin, gMax;
+  T v0 = val[0];
+  T v1 = val[len-1];
+
+  try{
+    IdentifierTraits<T>::globalMinMax(comm, v0, v1, gMin, gMax);
+  }
+  Z2_FORWARD_EXCEPTIONS; 
+
+  T *minMax = new T [2];
+  minMax[0] = gMin;
+  minMax[1] = gMax;
+  dist = arcp<T>(minMax, 0, 2);
+
+  size_t g0 = Teuchos::as<size_t>(gMin);
+  size_t g1 = Teuchos::as<size_t>(gMax);
+  bool globallyConsecutive = false;
+
+  if (g1 - g0 + 1 == globalLen){
+
+    size_t sentinel = g1 + 1;
+    int nprocs = comm.getSize();
+    bool locallyConsecutive = IdentifierTraits<T>::areConsecutive(val, len);
+
+    if (locallyConsecutive && nprocs==1){
+      dist[nprocs] = Teuchos::as<T>(sentinel);
+      return true;
     }
+
+    int lFlag = (locallyConsecutive ? 1 : 0);
+    int gFlag = 0;
 
     try{
-      reduceAll<int, int64_t>(comm, Teuchos::REDUCE_MIN, 1, &lMin, &gMin);
+      reduceAll<int, int>(comm, Teuchos::REDUCE_MIN, 1, &lFlag, &gFlag);
     }
-    catch (const std::exception &e) {
+    catch (std::exception &e){
       Z2_THROW_OUTSIDE_ERROR(env, e);
     }
 
+    if (gFlag == 0)  // not all processes have consecutive values
+      return false;
+
+    Array<size_t> sendBuf(nprocs);
+    ArrayRCP<size_t> recvBuf;
+
+    for (int i=0; i < nprocs; i++)
+      sendBuf[i] = Teuchos::as<size_t>(v0);
+
     try{
-      reduceAll<int, int64_t>(comm, Teuchos::REDUCE_MAX, 1, &lMax, &gMax);
+      AlltoAll<size_t, int>(comm, env, sendBuf, 1, recvBuf);
     }
-    catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(env, e);
-    }
+    Z2_FORWARD_EXCEPTIONS;
 
-    if (gMax - gMin + 1 == globalLen){
+    globallyConsecutive = true;
+    for (int i=1; globallyConsecutive && i < nprocs; i++)
+      if (recvBuf[i] < recvBuf[i-1]) globallyConsecutive = false;
 
-      int nprocs = comm.getSize();
-
-      Array<int64_t> sendBuf(1, lMin);
-      Array<int64_t> recvBuf(nprocs);
-
-      try{
-        Teuchos::gatherAll<int, int64_t>(comm, 1, sendBuf.getRawPtr(), nprocs, 
-          recvBuf.getRawPtr());
-      }
-      Z2_FORWARD_EXCEPTIONS;
-
-      globallyConsecutive = true;
-
-      for (int i=1; i < nprocs; i++){
-        if (recvBuf[i-1] < recvBuf[i])
-          continue;
-        globallyConsecutive = false;
-        break;
-      }
-
-      if (globallyConsecutive){
-        if (dist.size() <= nprocs)
-          throw std::logic_error("dist not preallocated");
-
-        for (int i=0; i < nprocs; i++){
-          dist[i] = static_cast<T>(recvBuf[i]);
-        }
- 
-        dist[nprocs] = globalLen + dist[0];
-      }
+    if (globallyConsecutive){
+      T *idDist = new T [nprocs+1];
+      for (int i=0; i < nprocs; i++)
+        idDist[i] = Teuchos::as<T>(recvBuf[i]);
+      idDist[nprocs] = Teuchos::as<T>(sentinel);
+      dist = arcp(idDist, 0, nprocs+1);
     }
   }
+
   return globallyConsecutive;
 }
 
