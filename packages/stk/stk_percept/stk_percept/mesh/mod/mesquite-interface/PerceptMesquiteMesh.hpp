@@ -14,6 +14,8 @@
 #ifndef PERCEPT_MESQUITE_MESH_HPP
 #define PERCEPT_MESQUITE_MESH_HPP
 
+// ibm can't compile mesquite
+#if !defined(__IBMCPP__)
 #ifdef STK_BUILT_IN_SIERRA
 
 // #include <mesquite/mesh/MeshInterface.hpp>
@@ -276,5 +278,5 @@ namespace stk {
 } // namespace stk
 
 #endif // STK_BUILT_IN_SIERRA
-
+#endif
 #endif //has file been included

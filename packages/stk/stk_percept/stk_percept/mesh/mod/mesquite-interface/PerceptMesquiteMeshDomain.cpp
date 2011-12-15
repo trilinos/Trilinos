@@ -14,6 +14,9 @@
 
 #ifdef STK_BUILT_IN_SIERRA
 
+// ibm can't compile mesquite
+#if !defined(__IBMCPP__)
+
 #include "PerceptMesquiteMeshDomain.hpp"
 //#include <mesquite/MsqVertex.hpp>
 #include <MsqVertex.hpp>
@@ -193,4 +196,5 @@ namespace stk {
   } // namespace percept
 } // namespace stk
 
+#endif
 #endif // STK_BUILT_IN_SIERRA

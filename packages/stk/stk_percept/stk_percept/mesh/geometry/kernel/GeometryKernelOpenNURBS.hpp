@@ -1,7 +1,8 @@
 #ifndef GEOMETRYKERNEL_OPENNURBS_HPP
 #define GEOMETRYKERNEL_OPENNURBS_HPP
 
-#include <stk_percept/mesh/geometry/opennurbs/opennurbs.h>
+//#include <stk_percept/mesh/geometry/opennurbs/opennurbs.h>
+#include <opennurbs.h>
 #include "GeometryKernel.hpp"
 
 class GeometryKernelOpenNURBS : public GeometryKernel
