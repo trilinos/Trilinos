@@ -33,6 +33,9 @@ APPEND_SET(HEADERS
   Panzer_STK_SetupUtilities.hpp
   Panzer_STK_SetupUtilitiesT.hpp
   Panzer_STK_WorksetFactory.hpp
+  Panzer_STK_IOClosureModel_Factory.hpp
+  Panzer_STK_IOClosureModel_FactoryT.hpp
+  Panzer_STK_IOClosureModel_Factory_TemplateBuilder.hpp
   stk_interface/Panzer_STK_Interface.hpp
   stk_interface/Panzer_STK_MeshFactory.hpp
   stk_interface/Panzer_STK_LineMeshFactory.hpp
@@ -61,6 +64,7 @@ APPEND_SET(SOURCES
   Panzer_STK_SetupUtilities.cpp
   Panzer_STK_Utilities.cpp
   Panzer_STK_WorksetFactory.cpp
+  Panzer_STK_IOClosureModel_Factory.cpp
   stk_interface/Panzer_STK_Interface.cpp
   stk_interface/Panzer_STK_LineMeshFactory.cpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.cpp

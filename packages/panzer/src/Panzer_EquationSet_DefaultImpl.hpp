@@ -59,6 +59,9 @@ namespace panzer {
     
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & getProvidedDOFs() const;
 
+    void setElementBlockId(const std::string & blockId);
+    std::string getElementBlockId() const;
+
   protected:
     
     const panzer::InputEquationSet m_input_eq_set;
@@ -78,6 +81,7 @@ namespace panzer {
     std::string m_scatter_name;
     Teuchos::RCP<Teuchos::ParameterList> m_eval_plist;
 
+    std::string m_block_id;
   };
   
 }

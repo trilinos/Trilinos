@@ -233,7 +233,7 @@ public:
    { 
       std::map<std::string, stk::mesh::Part*>::const_iterator itr = elementBlocks_.find(name);   // Element blocks
       if(itr==elementBlocks_.end()) return 0;
-      return elementBlocks_.find(name)->second; 
+      return itr->second; 
    }
 
    //! get the side set count

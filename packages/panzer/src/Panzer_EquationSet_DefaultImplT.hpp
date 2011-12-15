@@ -50,6 +50,7 @@ setupDOFs(int equation_dimension)
   this->m_eval_plist->set("Basis", this->m_basis);
   this->m_eval_plist->set("Equation Dimension", equation_dimension);
   this->m_eval_plist->set("DOF Names", this->m_dof_names);  
+  this->m_eval_plist->set("Block ID", this->m_block_id);  
 }
 
 // ***********************************************************************
@@ -287,6 +288,23 @@ const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > >&
 panzer::EquationSet_DefaultImpl<EvalT>::getProvidedDOFs() const
 {
   return m_provided_dofs;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+setElementBlockId(const std::string & blockId)
+{
+   TEUCHOS_ASSERT(m_block_id=="");
+   m_block_id = blockId;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+std::string panzer::EquationSet_DefaultImpl<EvalT>::
+getElementBlockId() const
+{
+   return m_block_id;
 }
 
 // ***********************************************************************

@@ -37,6 +37,7 @@
 #include "Panzer_STK_NOXObserverFactory.hpp"
 #include "Panzer_STK_RythmosObserverFactory.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
+#include "Panzer_STK_IOClosureModel_Factory_TemplateBuilder.hpp"
 
 #include <vector>
 
@@ -79,8 +80,9 @@ namespace panzer_stk {
       pl->sublist("Mesh").disableRecursiveValidation();
       pl->sublist("Initial Conditions").disableRecursiveValidation();
       pl->sublist("Initial Conditions").sublist("Transient Parameters").disableRecursiveValidation();
-      pl->sublist("Output").disableRecursiveValidation();
+      // pl->sublist("Output").disableRecursiveValidation();
       pl->sublist("Output").set("File Name","panzer.exo"); 
+      pl->sublist("Output").sublist("Cell Average Quantities").disableRecursiveValidation();
  
       // Assembly sublist
       {
@@ -107,7 +109,7 @@ namespace panzer_stk {
   void  ModelEvaluatorFactory_Epetra<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                                             const panzer::EquationSetFactory & eqset_factory,
                                                             const panzer::BCStrategyFactory & bc_factory,
-                                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory)
+                                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(this->getParameterList()), std::runtime_error,
 		       "ParameterList must be set before objects can be built!");
@@ -176,6 +178,10 @@ namespace panzer_stk {
 			       eqset_factory,
 			       is_transient,
 			       physicsBlocks);
+
+    panzer_stk::IOClosureModelFactory_TemplateBuilder<panzer::Traits> io_cm_builder(user_cm_factory,mesh,p.sublist("Output"));
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
+    cm_factory.buildObjects(io_cm_builder);
 
     // finish building mesh, set required field variables and mesh bulk data
     ////////////////////////////////////////////////////////////////////////
