@@ -136,8 +136,8 @@ template <typename T>
  */
 template<typename T>
 struct UndefIdTraits
-{ 
-static inline T invalid() { return T::Error(); } 
+{
+static inline T invalid() { return T::Error(); }
 };
 
 
@@ -153,8 +153,8 @@ struct IdentifierTraits {
       \param the id
       \result the integer code, need not be unique for each id
    */
-  static int hashCode(const T id) { 
-   return UndefIdTraits<int>::invalid(); 
+  static int hashCode(const T id) {
+   return UndefIdTraits<int>::invalid();
   }
 
   /*! \brief Compute a key which will be unique for each id.
@@ -163,7 +163,7 @@ struct IdentifierTraits {
       Assumption: Any integer value can fit in a double.
    */
   static double key(const T id){
-   return UndefIdTraits<double>::invalid(); 
+   return UndefIdTraits<double>::invalid();
   }
 
   /*! \brief Convert a key back to the identifier that generated it.
@@ -171,28 +171,28 @@ struct IdentifierTraits {
       \result the identifier that would have generated this key
    */
   static T keyToGid(const double x){
-   return UndefIdTraits<T>::invalid(); 
+   return UndefIdTraits<T>::invalid();
   }
 		
   /*! \brief The name of the identifier data type.
       \result The name
    */
-  static inline std::string name() { 
-    return UndefIdTraits<std::string>::invalid(); 
+  static inline std::string name() {
+    return UndefIdTraits<std::string>::invalid();
   }
 		
   /*! \brief A string representing the value.
       \result The  string
    */
-  static std::string stringify(T val) { 
-    return UndefIdTraits<std::string>::invalid(); 
+  static std::string stringify(T val) {
+    return UndefIdTraits<std::string>::invalid();
   }
 
   /*! \brief Determine whether the data type can be used by Teuchos::hashCode.
       \result true if the data type can be used with Teuchos::hashCode
    */
   static inline bool isHashKeyType() {
-    return UndefIdTraits<bool>::invalid(); 
+    return UndefIdTraits<bool>::invalid();
   }
 
   /*! \brief Determine whether the data type can be a Teuchos Ordinal
@@ -202,27 +202,27 @@ struct IdentifierTraits {
       can be used as Ordinals in Teuchos.
    */
   static inline bool isGlobalOrdinal() {
-    return UndefIdTraits<bool>::invalid(); 
+    return UndefIdTraits<bool>::invalid();
   }
 
-  /*! 
-      \brief Determine whether the data type can be used in 
+  /*!
+      \brief Determine whether the data type can be used in
                   Teuchos communication.
-      \param T the data type 
+      \param T the data type
       \result true if it can be a Teuchos Packet type
 
-      Packet data types used in Teuchos_CommHelpers.hpp must have a 
+      Packet data types used in Teuchos_CommHelpers.hpp must have a
      definition in SerializationTraits.
    */
   static inline bool isPacketType() {
-    return UndefIdTraits<bool>::invalid(); 
+    return UndefIdTraits<bool>::invalid();
   }
 
   /*! \brief Determine if two identifiers of the same type are equal.
       \result true if they are the same.
    */
   static inline bool equal(const T a, const T b) {
-    return UndefIdTraits<bool>::invalid(); 
+    return UndefIdTraits<bool>::invalid();
   }
 
   /*! \brief Determine if a < b.
@@ -231,17 +231,17 @@ struct IdentifierTraits {
              can be ordered
    */
   static inline bool lessThan(const T a, const T b) {
-    return UndefIdTraits<bool>::invalid(); 
+    return UndefIdTraits<bool>::invalid();
   }
 
   /*! \brief Compute b - a, if possible
       \result b-a if that's a valid operation, throw an error otherwise.
    */
   static inline T difference(const T a, const T b) {
-    return UndefIdTraits<bool>::invalid(); 
+    return UndefIdTraits<bool>::invalid();
   }
 
-  /*! \brief Determine if data type can be used by Zoltan2 caller an 
+  /*! \brief Determine if data type can be used by Zoltan2 caller an
         application global ID.
       \result true if they can.
    */
@@ -251,7 +251,7 @@ struct IdentifierTraits {
       \result A pair with the minimum value followed by the
         maximum value if T can be ordered, otherwise an error.
    */
-  static std::pair<T, T> minMax(const T *values, size_t numValues) { 
+  static std::pair<T, T> minMax(const T *values, size_t numValues) {
     return UndefIdTraits<std::pair<T, T> >::invalid();
   }
 
@@ -287,14 +287,14 @@ struct IdentifierTraits<char> {
   static std::string stringify(T val) {return stringifyOrdinal(val);}
   static inline bool isHashKeyType() {return false; }
   static inline bool isGlobalOrdinal() {return true; }
-  static inline bool isPacketType() { 
+  static inline bool isPacketType() {
    return SerializationTraits<int, T>::supportsDirectSerialization;
   }
   static inline bool equal(const T  a, const T  b) {return (a==b); }
   static inline bool lessThan(const T  a, const T  b) {return (a<b); }
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
-  static std::pair<T, T> minMax(const T *values, size_t n) { 
+  static std::pair<T, T> minMax(const T *values, size_t n) {
    return z2LocalMinMax(values, n);}
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
@@ -313,7 +313,7 @@ struct IdentifierTraits<int16_t> {
   static std::string stringify(T val) {return stringifyOrdinal(val);}
   static inline bool isHashKeyType() {return false; }
   static inline bool isGlobalOrdinal() {return true; }
-  static inline bool isPacketType() { 
+  static inline bool isPacketType() {
   return SerializationTraits<int, T>::supportsDirectSerialization;
   }
   static inline bool equal(const T a, const T b) {return (a==b);}
@@ -339,7 +339,7 @@ struct IdentifierTraits<uint16_t> {
   static std::string stringify(T val) {return stringifyOrdinal(val);}
   static inline bool isHashKeyType() {return false; }
   static inline bool isGlobalOrdinal() {return true; }
-  static inline bool isPacketType() { 
+  static inline bool isPacketType() {
   return SerializationTraits<int, T>::supportsDirectSerialization;
   }
   static inline bool equal(const T a, const T b) {return (a==b);}
@@ -365,14 +365,14 @@ struct IdentifierTraits<int32_t> {
   static std::string stringify(T val) {return stringifyOrdinal(val);}
   static inline bool isHashKeyType() {return true; }
   static inline bool isGlobalOrdinal() {return true; }
-  static inline bool isPacketType() { 
+  static inline bool isPacketType() {
     return SerializationTraits<int, T>::supportsDirectSerialization;
   }
   static inline bool equal(const T a, const  T b) {return (a==b);}
   static inline bool lessThan(const T a, const T b) {return (a<b);}
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
-  static std::pair<T, T> minMax(const T *values, size_t n) { 
+  static std::pair<T, T> minMax(const T *values, size_t n) {
     return z2LocalMinMax(values, n);}
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
@@ -398,7 +398,7 @@ struct IdentifierTraits<uint32_t> {
   static inline bool lessThan(const T a, const T b) {return (a<b);}
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
-  static std::pair<T, T> minMax(const T *vals, size_t n){ 
+  static std::pair<T, T> minMax(const T *vals, size_t n){
     return z2LocalMinMax(vals, n);}
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
@@ -408,9 +408,62 @@ struct IdentifierTraits<uint32_t> {
 };
 
 template<>
+struct IdentifierTraits<long> {
+  typedef long T;
+  static inline int hashCode(const T a) {
+    unsigned total=0;
+    for (unsigned i=0, bits=0; i < sizeof(T); i++, bits += 8){
+      total += static_cast<unsigned>((a & (0xff << bits) ) >> bits);
+    }
+    return static_cast<int>(total);
+  }
+  static inline double key(const T a){return static_cast<double>(a); }
+  static T keyToGid(const double key){return static_cast<T>(key); }
+  static inline std::string name()    {return("long");}
+  static std::string stringify(T val) {return stringifyOrdinal(val);}
+  static inline bool isHashKeyType() {return false; }
+  static inline bool isGlobalOrdinal() {return true; }
+  static inline bool isPacketType() {
+    return SerializationTraits<int, T>::supportsDirectSerialization;
+  }
+  static inline bool equal(const T a, const T b) {return (a==b);}
+  static inline bool lessThan(const T a, const T b) {return (a<b);}
+  static inline T difference(const T a, const T b) { return (b-a); }
+  static inline bool is_valid_id_type() {return true; }
+  static std::pair<T, T> minMax(const T *values, size_t n) {
+    return z2LocalMinMax(values, n);}
+  static bool areConsecutive(const T *val, size_t n){
+    return z2AreConsecutive(val, n); }
+};
+
+template<>
+struct IdentifierTraits<unsigned long> {
+  typedef unsigned long T;
+  static inline int hashCode(const T a) {
+    return IdentifierTraits<long>::hashCode(static_cast<long>(a)); }
+  static inline double key(const T a){return static_cast<double>(a);}
+  static T keyToGid(const double key){return static_cast<T>(key);}
+  static inline std::string name()   {return("unsigned long");}
+  static std::string stringify(T val) {return stringifyOrdinal(val);}
+  static inline bool isHashKeyType() {return false; }
+  static inline bool isGlobalOrdinal() {return true; }
+  static inline bool isPacketType() {
+    return SerializationTraits<int, T>::supportsDirectSerialization;
+  }
+  static inline bool equal(const T a, const T b) {return (a==b);}
+  static inline bool lessThan(const T a, const T b) {return (a<b);}
+  static inline T difference(const T a, const T b) { return (b-a); }
+  static inline bool is_valid_id_type() {return true; }
+  static std::pair<T, T> minMax(const T *values, size_t n)
+    {return z2LocalMinMax(values, n);}
+  static bool areConsecutive(const T *val, size_t n){
+    return z2AreConsecutive(val, n); }
+};
+
+template<>
 struct IdentifierTraits<int64_t> {
   typedef int64_t T;
-  static inline int hashCode(const T a) { 
+  static inline int hashCode(const T a) {
     unsigned total=0;
     for (unsigned i=0, bits=0; i < sizeof(T); i++, bits += 8){
       total += static_cast<unsigned>((a & (0xff << bits) ) >> bits);
@@ -423,14 +476,14 @@ struct IdentifierTraits<int64_t> {
   static std::string stringify(T val) {return stringifyOrdinal(val);}
   static inline bool isHashKeyType() {return false; }
   static inline bool isGlobalOrdinal() {return true; }
-  static inline bool isPacketType() { 
+  static inline bool isPacketType() {
     return SerializationTraits<int, T>::supportsDirectSerialization;
   }
   static inline bool equal(const T a, const T b) {return (a==b);}
   static inline bool lessThan(const T a, const T b) {return (a<b);}
   static inline T difference(const T a, const T b) { return (b-a); }
   static inline bool is_valid_id_type() {return true; }
-  static std::pair<T, T> minMax(const T *values, size_t n) { 
+  static std::pair<T, T> minMax(const T *values, size_t n) {
     return z2LocalMinMax(values, n);}
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax){
@@ -442,7 +495,7 @@ struct IdentifierTraits<int64_t> {
 template<>
 struct IdentifierTraits<uint64_t> {
   typedef uint64_t T;
-  static inline int hashCode(const T a) { 
+  static inline int hashCode(const T a) {
     return IdentifierTraits<int64_t>::hashCode(static_cast<int64_t>(a)); }
   static inline double key(const T a){return static_cast<double>(a);}
   static T keyToGid(const double key){return static_cast<T>(key);}
@@ -450,7 +503,7 @@ struct IdentifierTraits<uint64_t> {
   static std::string stringify(T val) {return stringifyOrdinal(val);}
   static inline bool isHashKeyType() {return false; }
   static inline bool isGlobalOrdinal() {return true; }
-  static inline bool isPacketType() { 
+  static inline bool isPacketType() {
     return SerializationTraits<int, T>::supportsDirectSerialization;
   }
   static inline bool equal(const T a, const T b) {return (a==b);}
@@ -472,7 +525,7 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   typedef typename std::pair<pair_t, pair_t> pairPair_t;
 
   static inline int hashCode(const pair_t p)  {
-    return IdentifierTraits<T1>::hashCode(p.first) + 
+    return IdentifierTraits<T1>::hashCode(p.first) +
       IdentifierTraits<T2>::hashCode(p.second);
   }
 
@@ -493,7 +546,7 @@ struct IdentifierTraits<std::pair<T1, T2> > {
     T2 part2 = static_cast<T2>((ikey & ~t1_size_mask) >> sizeof(T1)*8);
     return std::pair<T1,T2>(part1, part2);
   }
-    
+
   static inline std::string name() {
      std::string s("std::pair<");
      s += IdentifierTraits<T1>::name();
@@ -503,7 +556,7 @@ struct IdentifierTraits<std::pair<T1, T2> > {
      return s;
   }
 
-  static std::string stringify(pair_t val) { 
+  static std::string stringify(pair_t val) {
     std::ostringstream oss;
     oss << "pair<" << IdentifierTraits<T1>::name();
     oss << "," << IdentifierTraits<T2>::name();
@@ -514,25 +567,25 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   static inline bool isHashKeyType() {return false; }
   static inline bool isGlobalOrdinal() {return false; }
 
-  static inline bool isPacketType() { 
+  static inline bool isPacketType() {
     return SerializationTraits<int,pair_t >::supportsDirectSerialization;
   }
 
-  static inline bool equal( const pair_t a, const pair_t b) { 
+  static inline bool equal( const pair_t a, const pair_t b) {
     return ((a.first==b.first) && (a.second==b.second)); }
 
-  static inline bool lessThan( const pair_t a, const pair_t b) { 
+  static inline bool lessThan( const pair_t a, const pair_t b) {
       throw std::logic_error("invalid call");
       return false;}
 
-  static inline pair_t difference( const pair_t a, const pair_t b) { 
+  static inline pair_t difference( const pair_t a, const pair_t b) {
       throw std::logic_error("invalid call");
       return false;}
 
-  static inline bool is_valid_id_type() { 
+  static inline bool is_valid_id_type() {
     return (sizeof(T1)+sizeof(T2) <= sizeof(int64_t)); }
 
-  static pairPair_t minMax(const pair_t *values, size_t n) { 
+  static pairPair_t minMax(const pair_t *values, size_t n) {
       throw std::logic_error("invalid call");
       return pairPair_t(); }
 
