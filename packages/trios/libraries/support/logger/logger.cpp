@@ -179,13 +179,11 @@ void log_output(const char *prefix,
     char buf1[256];
     char buf2[256];
 
-
-    /* we don't want an invalid logfile */
-    if (log_file == NULL) {
-        log_file = stdout;
+    if (logger_not_initialized()) {
+        logger_init(LOG_ERROR, NULL);
     }
 
-        /* path from last '/' */
+    /* path from last '/' */
     file = strrchr(file_name, '/');
 
     va_start(ap, msg);

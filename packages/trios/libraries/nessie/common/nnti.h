@@ -88,7 +88,8 @@ NNTI_result_t NNTI_disconnect (
 NNTI_result_t NNTI_register_memory (
         const NNTI_transport_t *trans_hdl,
         char                   *buffer,
-        const uint64_t          size,
+        const uint64_t          element_size,
+        const uint64_t          num_elements,
         const NNTI_buf_ops_t    ops,
         const NNTI_peer_t      *peer,
         NNTI_buffer_t          *reg_buf);

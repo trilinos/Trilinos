@@ -76,7 +76,8 @@ namespace details {
 ///
 /// This enum is an implementation detail of \c SolverFactory.
 /// Users of \c SolverFactory should not refer to this enum or
-/// rely on the symbols or integer values therein.
+/// rely on the symbols or integer values therein.  We declare 
+/// it here for later use by \c SolverFactory.
 ///
 /// Belos developers who have implemented a new solver (i.e., a new
 /// subclass of \c SolverManager) and who want to make the solver
@@ -84,6 +85,9 @@ namespace details {
 /// symbol corresponding to their solver to the end of the list.  They
 /// should then follow the instructions provided in the \c
 /// SolverFactory documentation.
+///
+/// \c SolverFactory was written to be independent of the actual enum
+/// values, so Belos developers are allowed to rearrange the symbols.
 enum EBelosSolverType {
   SOLVER_TYPE_BLOCK_GMRES,
   SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
@@ -224,20 +228,29 @@ public:
   ///
   /// \param solverParams [in/out] List of parameters with which to
   ///   configure the solver.  If null, we configure the solver with
-  ///   default parameters.
-  ///
+  ///   default parameters.  If nonnull, the solver may modify the
+  ///   list by filling in missing parameters with default values.
+  ///   You can then inspect the resulting list to learn what
+  ///   parameters the solver accepts.
+  /// 
   /// Some solvers may be accessed by multiple names ("aliases").
   /// Each solver has a canonical name, and zero or more aliases.
-  /// Using some aliases (such as those that access flexible versions
-  /// of solvers) may make this method set certain parameters in your
-  /// parameter list.
+  /// Using some aliases (such as those that access Flexible GMRES
+  /// capability in GMRES-type solvers) may make this method set
+  /// certain parameters in your parameter list.
   ///
-  /// We recommend providing a non-null parameter list, since in that
-  /// case, the solver will fill in your list with any missing
-  /// parameters and their default values.  You can then inspect the
-  /// parameter names, modify their default values, and change the
-  /// solver's parameters by calling its setParameters() method with
-  /// the modified list.
+  /// The input parameter list is passed in as an \c RCP because the
+  /// factory passes it to the solver, and Belos solvers all keep a
+  /// persisting reference to their input parameter lists.  (This
+  /// behavior differs from that of the AztecOO linear solver
+  /// interface; AztecOO merely reads parameters from its input
+  /// parameter list without modifying it.)  We allow a null parameter
+  /// list only for convenience, but we recommend that you provide a
+  /// non-null parameter list.  If the list is not null, the solver
+  /// will fill it in with any missing parameters and their default
+  /// values.  You can then inspect the parameter names, modify their
+  /// default values, and change the returned solver's parameters by
+  /// calling its \c setParameters() method with the modified list.
   Teuchos::RCP<solver_base_type>
   create (const std::string& solverName, 
 	  const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
@@ -261,13 +274,15 @@ public:
 
   //! @name Implementation of Teuchos::Describable interface
   //@{
+
+  //! A string description of this SolverFactory object.
   std::string description() const;
 
   /// \brief Describe this SolverFactory object.
   ///
-  /// At higher verbosity levels, the describe() method will print out
-  /// the list of names of supported solvers.  You can also get this
-  /// list directly by using the \c supportedSolverNames() method.
+  /// At higher verbosity levels, this method will print out the list
+  /// of names of supported solvers.  You can also get this list
+  /// directly by using the \c supportedSolverNames() method.
   void describe (Teuchos::FancyOStream& out, 
 		 const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
   //@}
@@ -275,15 +290,41 @@ public:
 private:
   /// \brief Map from solver name alias to canonical solver name.
   ///
-  /// A canonical solver name need not be an alias.  If a candidate
-  /// name isn't a key in this map, then it must be a canonical name
-  /// in order to be valid.
+  /// The keys of this map do not necessarily include canonical solver
+  /// names.  If a candidate name isn't a key in this map, then it
+  /// must be a canonical name in order to be valid.  There doesn't
+  /// need to be an alias for each solver.
+  ///
+  /// Note to Belos developers: If you want to add a new alias, first
+  /// add the mapping from alias to canonical solver name in the \c
+  /// SolverFactory constructor.  Then, edit \c
+  /// reviseParameterListForAlias() to do any modifications of the
+  /// input ParameterList associated with that alias.
   std::map<std::string, std::string> aliasToCanonicalName_;
 
   /// \brief Map from canonical solver name to solver enum value.
   ///
   /// Access the keys to get the list of canonical solver names.
+  ///
+  /// Note to Belos developers: If you add a new solver, start with
+  /// the documentation of \c details::EBelosSolverType for
+  /// instructions.  Each new solver needs a canonical name (a
+  /// string), which is a key into this map.  The map from canonical
+  /// name to enum value is set up in the \c SolverFactory
+  /// constructor.  The \c details::makeSolverManagerFromEnum()
+  /// function in turn takes the enum value and parameter list, and
+  /// returns an instance of the appropriate subclass of \c
+  /// SolverManager.
   std::map<std::string, details::EBelosSolverType> canonicalNameToEnum_;
+
+  /// \brief Modify the input ParameterList appropriately for the given alias.
+  ///
+  /// Some aliases include modifications or special checking of the
+  /// input ParameterList.  All alias-related ParameterList revision
+  /// happens in this method.
+  void
+  reviseParameterListForAlias (const std::string& aliasName,
+			       const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
   //! List of canonical solver names.
   Teuchos::Array<std::string> canonicalSolverNames () const;
@@ -424,7 +465,6 @@ makeSolverManagerTmpl (const Teuchos::RCP<Teuchos::ParameterList>& params)
 template<class Scalar, class MV, class OP>
 SolverFactory<Scalar, MV, OP>::SolverFactory()
 {
-  // We don't need to add the canonical names to the list of aliases.
   aliasToCanonicalName_["GMRES"] = "Pseudoblock GMRES";
   // NOTE (mfh 29 Nov 2011) Accessing the flexible capability requires
   // setting a parameter in the solver's parameter list.  This affects
@@ -451,6 +491,26 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   canonicalNameToEnum_["MINRES"] = details::SOLVER_TYPE_MINRES;
   canonicalNameToEnum_["LSQR"] = details::SOLVER_TYPE_LSQR;
 }
+
+
+template<class Scalar, class MV, class OP>
+void
+SolverFactory<Scalar, MV, OP>::
+reviseParameterListForAlias (const std::string& aliasName,
+			     const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(solverParams.is_null(), std::logic_error,
+    "Belos::SolverFactory::reviseParameterListForAlias: the input "
+    "ParameterList is supposed to be nonnull.  Please report this "
+    "bug to the Belos developers.");
+  if (aliasName == "Flexible GMRES") {
+    // "Gmres" uses title case in this solver's parameter list.  For
+    // our alias, we prefer the all-capitals "GMRES" that the
+    // algorithm's authors (Saad and Schultz) used.
+    solverParams->set ("Flexible Gmres", true);
+  }
+}
+
 
 template<class Scalar, class MV, class OP>
 Teuchos::RCP<typename SolverFactory<Scalar, MV, OP>::solver_base_type>
@@ -479,19 +539,19 @@ create (const std::string& solverName,
     "Please report this bug to the Belos developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(! validCanonicalName && ! isAnAlias, 
     std::invalid_argument, "Invalid solver name \"" << solverName << "\".");
-  //
-  // Special case for certain alias(es) requires possibly modifying
-  // the input parameter list.  If the input list is null, we create a
-  // new list and use that.  This is OK because the effect of a null
-  // parameter list input is to use default parameter values.  Thus,
-  // we can always replace a null list with an empty list.
-  //
+
+  // If the input list is null, we create a new list and use that.
+  // This is OK because the effect of a null parameter list input is
+  // to use default parameter values.  Thus, we can always replace a
+  // null list with an empty list.
   Teuchos::RCP<Teuchos::ParameterList> pl = 
     solverParams.is_null() ? Teuchos::parameterList() : solverParams;
-  if (solverName == "Flexible GMRES") {
-    // "Gmres" uses title case in this solver's parameter list.
-    pl->set ("Flexible Gmres", true);
+
+  // Possibly modify the input parameter list as needed.
+  if (isAnAlias) {
+    reviseParameterListForAlias (solverName, pl);
   }
+
   return details::makeSolverManagerFromEnum<Scalar, MV, OP> (canonicalIter->second, pl);
 }
 

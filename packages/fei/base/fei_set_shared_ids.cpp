@@ -42,7 +42,7 @@ void copy_remotelyowned_ids_into_CommMap(int myProc,
                                          const snl_fei::RecordCollection& records,
                                          fei::CommMap<int>::Type& procs_to_shared_ids)
 {
-  for(int i=0; i<records.getNumRecords(); ++i) {
+  for(size_t i=0; i<records.getNumRecords(); ++i) {
     int ID = records.getRecordWithLocalID(i)->getID();
     int proc = lindecomp.which_proc(ID);
     if (proc != myProc) {

@@ -19,8 +19,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS fei_test_utils
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  beam_oldfei
+  SOURCES beam_oldfei.cpp
+  ARGS "-i beam_msr_aztec.i"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  DEPLIBS fei_test_utils
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyexamplebeamfeifiles
-  SOURCE_FILES beam_crs_aztecoo.i
+  SOURCE_FILES beam_crs_aztecoo.i beam_msr_aztec.i
   )
 
 ENDIF()

@@ -82,11 +82,11 @@ int main(int argc, char** argv)
 
   if (errcode != 0) {
     fei::console_out() << "Failed to find one or more required parameters in input-file."
-	     << FEI_ENDL << "Required parameters:"<<FEI_ENDL
-	     << "SOLVER_LIBRARY" << FEI_ENDL
-	     << "DATA_SOURCE" << FEI_ENDL
-	     << "CONSTRAINT_FORM" << FEI_ENDL
-	     << "W" << FEI_ENDL << "D" << FEI_ENDL << "DofPerNode" << FEI_ENDL;
+	     << std::endl << "Required parameters:"<<std::endl
+	     << "SOLVER_LIBRARY" << std::endl
+	     << "DATA_SOURCE" << std::endl
+	     << "CONSTRAINT_FORM" << std::endl
+	     << "W" << std::endl << "D" << std::endl << "DofPerNode" << std::endl;
 
 #ifndef FEI_SER
     MPI_Finalize();
@@ -114,22 +114,22 @@ int main(int argc, char** argv)
   if (localProc == 0) {
     int numCRs = (W+1)*(W+1)* ((numProcs*2)-1);
     if (hexcube.getNumCRs() < 1) numCRs = 0;
-    //macros FEI_COUT and FEI_ENDL are aliases for std::cout and std::endl,
+    //macros std::cout and std::endl are aliases for std::cout and std::endl,
     //defined in fei_iostream.hpp.
-    FEI_COUT << FEI_ENDL;
-    FEI_COUT << "========================================================\n";
-    FEI_COUT << "FEI version: " << fei::utils::version() << FEI_ENDL;
-    FEI_COUT << "--------------------------------------------------------\n";
-    FEI_COUT << "Size W: " << W << " (num-elements-along-side-of-cube)\n";
-    FEI_COUT << "Size D: " << D << " (num-elements-along-depth-of-cube)\n";
-    FEI_COUT << "DOF per node: " << DofPerNode <<"\n";
-    FEI_COUT << "Num local  elements: " << hexcube.localNumElems_ << "\n";
-    FEI_COUT << "Num global elements: " << hexcube.totalNumElems_ << "\n";
-    FEI_COUT << "Num local  DOF: " << hexcube.numLocalDOF_ << "\n";
-    FEI_COUT << "Num global DOF: " << hexcube.numGlobalDOF_ << "\n";
-    FEI_COUT << "Num global CRs: " << numCRs << "\n";
-    FEI_COUT << "========================================================" 
-	 << FEI_ENDL;
+    std::cout << std::endl;
+    std::cout << "========================================================\n";
+    std::cout << "FEI version: " << fei::utils::version() << std::endl;
+    std::cout << "--------------------------------------------------------\n";
+    std::cout << "Size W: " << W << " (num-elements-along-side-of-cube)\n";
+    std::cout << "Size D: " << D << " (num-elements-along-depth-of-cube)\n";
+    std::cout << "DOF per node: " << DofPerNode <<"\n";
+    std::cout << "Num local  elements: " << hexcube.localNumElems_ << "\n";
+    std::cout << "Num global elements: " << hexcube.totalNumElems_ << "\n";
+    std::cout << "Num local  DOF: " << hexcube.numLocalDOF_ << "\n";
+    std::cout << "Num global DOF: " << hexcube.numGlobalDOF_ << "\n";
+    std::cout << "Num global CRs: " << numCRs << "\n";
+    std::cout << "========================================================" 
+	 << std::endl;
   }
 
   double start_init_time = fei::utils::cpu_time();
@@ -139,7 +139,7 @@ int main(int argc, char** argv)
     factory = fei::create_fei_Factory(comm, solverName.c_str());
   }
   catch (...) {
-    FEI_COUT << "library " << solverName << " not available."<<FEI_ENDL;
+    std::cout << "library " << solverName << " not available."<<std::endl;
 
 #ifndef FEI_SER
     MPI_Finalize();
@@ -148,7 +148,7 @@ int main(int argc, char** argv)
     return(-1);
   }
   if (factory.get() == NULL) {
-    FEI_COUT << "fei::Factory allocation failed." << FEI_ENDL;
+    std::cout << "fei::Factory allocation failed." << std::endl;
 
 #ifndef FEI_SER
     MPI_Finalize();
@@ -204,8 +204,8 @@ int main(int argc, char** argv)
   double fei_init_time = fei::utils::cpu_time() - start_init_time;
 
   if (localProc == 0) {
-    FEI_COUT.setf(IOS_FIXED, IOS_FLOATFIELD);
-    FEI_COUT << "Initialization cpu time:   " << fei_init_time << FEI_ENDL;
+    std::cout.setf(IOS_FIXED, IOS_FLOATFIELD);
+    std::cout << "Initialization cpu time:   " << fei_init_time << std::endl;
   }
 
   //Now the initialization phase is complete. Next we'll do the load phase,
@@ -219,8 +219,8 @@ int main(int argc, char** argv)
 
   double fei_creatematrix_time = fei::utils::cpu_time() - fei_creatematrix_start_time;
   if (localProc == 0) {
-    FEI_COUT.setf(IOS_FIXED, IOS_FLOATFIELD);
-    FEI_COUT << "Create-Matrix cpu time:   " << fei_creatematrix_time << FEI_ENDL;
+    std::cout.setf(IOS_FIXED, IOS_FLOATFIELD);
+    std::cout << "Create-Matrix cpu time:   " << fei_creatematrix_time << std::endl;
   }
 
   double start_load_time = fei::utils::cpu_time();
@@ -253,10 +253,10 @@ int main(int argc, char** argv)
 
   if (localProc == 0) {
     //IOS macros are defined in fei_stdinc.h
-    FEI_COUT.setf(IOS_FIXED, IOS_FLOATFIELD);
-    FEI_COUT << "Coef. loading cpu time:    " << fei_load_time << FEI_ENDL;
-    FEI_COUT << "Total assembly wall time:   "
-	 << fei_init_time + fei_creatematrix_time + fei_load_time << FEI_ENDL;
+    std::cout.setf(IOS_FIXED, IOS_FLOATFIELD);
+    std::cout << "Coef. loading cpu time:    " << fei_load_time << std::endl;
+    std::cout << "Total assembly wall time:   "
+	 << fei_init_time + fei_creatematrix_time + fei_load_time << std::endl;
   }
 
   //
@@ -280,7 +280,7 @@ int main(int argc, char** argv)
   int status;
   int itersTaken = 0;
 
-  if (localProc==0) FEI_COUT << "solve..." << FEI_ENDL;
+  if (localProc==0) std::cout << "solve..." << std::endl;
   double start_solve_time = fei::utils::cpu_time();
 
   int err = solver->solve(linSys.get(),
@@ -292,12 +292,12 @@ int main(int argc, char** argv)
   double solve_time = fei::utils::cpu_time()-start_solve_time;
 
   if (err!=0 && localProc==0) {
-    FEI_COUT << "solve returned err: " << err <<", status: "
-			   << status << FEI_ENDL;
+    std::cout << "solve returned err: " << err <<", status: "
+			   << status << std::endl;
   }
 
   if (localProc==0) {
-    FEI_COUT << " cpu-time in solve: " << solve_time << FEI_ENDL;
+    std::cout << " cpu-time in solve: " << solve_time << std::endl;
   }
 
   CHK_ERR( solnVec->scatterToOverlap() );
@@ -307,14 +307,14 @@ int main(int argc, char** argv)
   double elapsed_cpu_time = fei::utils::cpu_time() - start_time;
 
   //The following IOS_... macros are defined in base/fei_iostream.hpp
-  FEI_COUT.setf(IOS_FIXED, IOS_FLOATFIELD);
+  std::cout.setf(IOS_FIXED, IOS_FLOATFIELD);
   if (localProc==0) {
-    FEI_COUT << "Proc0 cpu times (seconds):" << FEI_ENDL
-	 << "   FEI initialize:    " << fei_init_time << FEI_ENDL
-         << "   FEI create-matrix: " << fei_creatematrix_time << FEI_ENDL
-         << "   FEI load:          " << fei_load_time << FEI_ENDL
-         << "      solve:          " << solve_time << FEI_ENDL
-         << "Total program time:   " << elapsed_cpu_time << FEI_ENDL;
+    std::cout << "Proc0 cpu times (seconds):" << std::endl
+	 << "   FEI initialize:    " << fei_init_time << std::endl
+         << "   FEI create-matrix: " << fei_creatematrix_time << std::endl
+         << "   FEI load:          " << fei_load_time << std::endl
+         << "      solve:          " << solve_time << std::endl
+         << "Total program time:   " << elapsed_cpu_time << std::endl;
 
   }
 

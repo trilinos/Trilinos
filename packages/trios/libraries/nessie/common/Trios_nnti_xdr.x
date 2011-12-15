@@ -326,7 +326,7 @@ typedef uint64_t NNTI_match_bits;
  */
 enum NNTI_portals_indices {
     NNTI_REQ_PT_INDEX = 1,   /* where to send requests */
-    NNTI_RES_PT_INDEX,       /* where to send results */
+    NNTI_RECV_PT_INDEX,      /* where to receive data */
     NNTI_DATA_PT_INDEX,      /* where to put/get data */
     NNTI_LONG_ARGS_PT_INDEX, /* where to fetch long args */
     NNTI_LONG_RES_PT_INDEX   /* where to fetch long results */
@@ -467,7 +467,9 @@ enum NNTI_buf_ops_t {
     /** @brief this buffer can be sent from */
     NNTI_SEND_SRC=16,
     /** @brief this buffer can be received into */
-    NNTI_RECV_DST=32
+    NNTI_RECV_DST=32,
+    /** @brief this buffer has multiple receive slots */
+    NNTI_RECV_QUEUE=64
 };
 
 

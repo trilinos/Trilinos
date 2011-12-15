@@ -6,11 +6,6 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_BINARY_
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../base/)
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../support-Trilinos)
 
-#ADD_SUBDIRECTORY(remEssBCs)
-
-# 2009/05/03: rabartl: Above, commented out because there is no
-# CMakeLists.txt file in that directory
-
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../teuchos/src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../teuchos/src)
@@ -25,6 +20,23 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 IF(FEI_ENABLE_AztecOO)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(FEITestBasicAztec
+    DEST_FILES
+    parameters.Trilinos basic_aztecoo.i basic.in.1.0
+    basic.input basic.soln.node.correct.1.1.0
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/basic_aztecoo
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/basic_aztecoo
+    EXEDEPS fei_test
+  )
+
+  TRIBITS_ADD_TEST(
+    fei_test FEITestBasicAztec
+    NAME basic_aztecoo
+    ARGS "-d ./basic_aztecoo -i basic_aztecoo.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(FEITestRemEssBCsCopyFiles
     DEST_FILES
@@ -348,30 +360,6 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-#  TRIBITS_ADD_TEST(
-#    fei_test FEITestCRSlave20QuadCopyFiles
-#    NAME slave_20quad
-#    ARGS "-d ./cr_slave_20quad -i slave.i"
-#    COMM serial mpi
-#    NUM_MPI_PROCS 1
-#    )
-#
-#  TRIBITS_ADD_TEST(
-#    fei_test FEITestCRSlave20QuadCopyFiles
-#    NAME slave_20quad
-#    ARGS "-d ./cr_slave_20quad -i slave.i"
-#    COMM serial mpi
-#    NUM_MPI_PROCS 2
-#    )
-#
-#  TRIBITS_ADD_TEST(
-#    fei_test FEITestCRSlave20QuadCopyFiles
-#    NAME slave_20quad
-#    ARGS "-d ./cr_slave_20quad -i slave.i"
-#    COMM serial mpi
-#    NUM_MPI_PROCS 4
-#    )
-
   TRIBITS_COPY_FILES_TO_BINARY_DIR( FEITestCRSlave20QuadOldCopyFiles
     DEST_FILES
     parameters.Trilinos slave.i slave.in.1.0 slave.in.2.0 slave.in.2.1
@@ -404,6 +392,27 @@ IF(FEI_ENABLE_AztecOO)
     ARGS "-d ./cr_slave_20quad -i slave.i"
     COMM serial mpi
     NUM_MPI_PROCS 4
+    )
+
+ENDIF()
+
+IF(FEI_ENABLE_Belos)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(FEITestBasicBelos
+    DEST_FILES
+    parameters.Trilinos basic_belos.i basic.in.1.0
+    basic.input basic.soln.node.correct.1.1.0
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/basic_belos
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/basic_belos
+    EXEDEPS fei_test
+  )
+
+  TRIBITS_ADD_TEST(
+    fei_test FEITestBasicBelos
+    NAME basic_belos
+    ARGS "-d ./basic_belos -i basic_belos.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
     )
 
 ENDIF()

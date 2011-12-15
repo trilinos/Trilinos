@@ -393,8 +393,10 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
+  achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxRestarts_(maxRestarts_default_),
   maxIters_(maxIters_default_),
+  numIters_(0),
   blockSize_(blockSize_default_),
   numBlocks_(numBlocks_default_),
   verbosity_(verbosity_default_),
@@ -416,15 +418,17 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr( 
-  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-  const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
+BlockGmresSolMgr<ScalarType,MV,OP>::
+BlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+		  const Teuchos::RCP<Teuchos::ParameterList> &pl) : 
   problem_(problem),
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
+  achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxRestarts_(maxRestarts_default_),
   maxIters_(maxIters_default_),
+  numIters_(0),
   blockSize_(blockSize_default_),
   numBlocks_(numBlocks_default_),
   verbosity_(verbosity_default_),
@@ -1246,29 +1250,34 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   // Save the convergence test value ("achieved tolerance") for this
   // solve.  This requires a bit more work than for BlockCGSolMgr,
   // since for this solver, convTest_ may either be a single residual
-  // norm test, or a combination of two residual norm tests.
+  // norm test, or a combination of two residual norm tests.  In the
+  // latter case, the master convergence test convTest_ is a SEQ combo
+  // of the implicit resp. explicit tests.  If the implicit test never
+  // passes, then the explicit test won't ever be executed.  This
+  // manifests as expConvTest_->getTestValue()->size() < 1.  We deal
+  // with this case by using the values returned by
+  // impConvTest_->getTestValue().
   {
     // We'll fetch the vector of residual norms one way or the other.
     const std::vector<MagnitudeType>* pTestValues = NULL;
     if (expResTest_) {
-      // The convergence test is a combination of implicit and
-      // explicit residual tests.  Use the explicit residual test to
-      // get the residual norms from the solve.  We can't ask
-      // convTest_ because it is a StatusTestCombo in this case, not a
-      // StatusTestResNorm.
       pTestValues = expConvTest_->getTestValue();
+      if (pTestValues == NULL || pTestValues->size() < 1) {
+	pTestValues = impConvTest_->getTestValue();
+      }
     } 
     else {
       // Only the implicit residual norm test is being used.
       pTestValues = impConvTest_->getTestValue();
     }
     TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
-      "Belos::BlockCGSolMgr::solve(): The convergence test's getTestValue() "
-      "method returned NULL.  Please report this bug to the Belos developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
-      "Belos::BlockCGSolMgr::solve(): The convergence test's getTestValue() "
-      "method returned a vector of length zero.  Please report this bug to the "
+      "Belos::BlockGmresSolMgr::solve(): The implicit convergence test's "
+      "getTestValue() method returned NULL.  Please report this bug to the "
       "Belos developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
+      "Belos::BlockGmresSolMgr::solve(): The implicit convergence test's "
+      "getTestValue() method returned a vector of length zero.  Please report "
+      "this bug to the Belos developers.");
 
     // FIXME (mfh 12 Dec 2011) Does pTestValues really contain the
     // achieved tolerances for all vectors in the current solve(), or

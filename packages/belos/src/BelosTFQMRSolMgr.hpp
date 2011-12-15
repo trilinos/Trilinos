@@ -168,14 +168,28 @@ namespace Belos {
     Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
       return Teuchos::tuple(timerSolve_);
     }
-    
+
+    /// \brief Tolerance achieved by the last \c solve() invocation.
+    /// 
+    /// This is the maximum over all right-hand sides' achieved
+    /// convergence tolerances, and is set whether or not the solve
+    /// actually managed to achieve the desired convergence tolerance.
+    MagnitudeType achievedTol() const {
+      return achievedTol_;
+    }
+
     //! Get the iteration count for the most recent call to \c solve().
     int getNumIters() const {
       return numIters_;
     }
     
-    /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
-     */
+    /// \brief Whether loss of accuracy was detected during the last \c solve() invocation.
+    ///
+    /// In solvers that can detect a loss of accuracy, this method
+    /// would say whether the solver detected it in the most recent \c
+    /// solve() invocation.  However, our TFQMR implementation does
+    /// not currently detect a loss of accuracy, so this method always
+    /// returns false.
     bool isLOADetected() const { return false; }
     
     //@}
@@ -267,7 +281,7 @@ namespace Belos {
     static const Teuchos::RCP<std::ostream> outputStream_default_;
 
     // Current solver values.
-    MagnitudeType convtol_;
+    MagnitudeType convtol_, achievedTol_;
     int maxIters_, numIters_;
     int verbosity_, outputStyle_, outputFreq_;
     int blockSize_;
@@ -320,7 +334,9 @@ template<class ScalarType, class MV, class OP>
 TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
+  achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxIters_(maxIters_default_),
+  numIters_(0),
   verbosity_(verbosity_default_),
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
@@ -342,7 +358,9 @@ TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr(
   problem_(problem),
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
+  achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxIters_(maxIters_default_),
+  numIters_(0),
   verbosity_(verbosity_default_),
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
@@ -812,6 +830,43 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
  
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
+
+  // Save the convergence test value ("achieved tolerance") for this
+  // solve.  For this solver, convTest_ may either be a single
+  // (implicit) residual norm test, or a combination of two residual
+  // norm tests.  In the latter case, the master convergence test
+  // convTest_ is a SEQ combo of the implicit resp. explicit tests.
+  // If the implicit test never passes, then the explicit test won't
+  // ever be executed.  This manifests as
+  // expConvTest_->getTestValue()->size() < 1.  We deal with this case
+  // by using the values returned by impConvTest_->getTestValue().
+  {
+    // We'll fetch the vector of residual norms one way or the other.
+    const std::vector<MagnitudeType>* pTestValues = NULL;
+    if (expResTest_) {
+      pTestValues = expConvTest_->getTestValue();
+      if (pTestValues == NULL || pTestValues->size() < 1) {
+	pTestValues = impConvTest_->getTestValue();
+      }
+    } 
+    else {
+      // Only the implicit residual norm test is being used.
+      pTestValues = impConvTest_->getTestValue();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
+      "Belos::TFQMRSolMgr::solve(): The implicit convergence test's "
+      "getTestValue() method returned NULL.  Please report this bug to the "
+      "Belos developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
+      "Belos::TMQMRSolMgr::solve(): The implicit convergence test's "
+      "getTestValue() method returned a vector of length zero.  Please report "
+      "this bug to the Belos developers.");
+
+    // FIXME (mfh 12 Dec 2011) Does pTestValues really contain the
+    // achieved tolerances for all vectors in the current solve(), or
+    // just for the vectors from the last deflation?
+    achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
+  }
  
   if (!isConverged) {
     return Unconverged; // return from TFQMRSolMgr::solve() 

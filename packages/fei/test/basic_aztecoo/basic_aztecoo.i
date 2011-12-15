@@ -1,0 +1,1 @@
+basic.input 1

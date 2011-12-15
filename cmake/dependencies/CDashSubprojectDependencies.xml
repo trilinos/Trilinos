@@ -325,6 +325,7 @@
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
+    <Dependency name="Belos" type="LO"/>
     <EmailAddresses>
       <Email address="fei-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -433,6 +434,7 @@
     <Dependency name="Pamgen" type="ILO"/>
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="ILO"/>
+    <Dependency name="Belos" type="ILO"/>
     <Dependency name="FEI" type="LO"/>
     <Dependency name="Intrepid" type="LO"/>
     <EmailAddresses>

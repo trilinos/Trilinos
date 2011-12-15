@@ -278,22 +278,29 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
   LSQRIter<ScalarType,MV,OP>* solver = dynamic_cast< LSQRIter<ScalarType,MV,OP>* > (iSolver);
   LSQRIterationState< ScalarType, MV > state = solver->getState();
   //
-  //   LSQR solves a least squares problem.  A converged preconditioned residual norm
-  // suffices for convergence, but is not necessary.  LSQR sometimes returns a larger
-  // relative residual norm than what would have been returned by a linear solver.
-  // This section evaluates three stopping criteria.  In the Solver Manager, this test
-  // is combined with a generic number of iteration test.
-  //   If the linear system includes a preconditioner, then the least squares problem
-  // is solved for the preconditioned linear system.  Preconditioning changes the least
-  // squares problem (in the sense of changing the norms), and the solution depends
-  // on the preconditioner in this sense.
-  //   In the context of Linear Least Squares problems, preconditioning refers
-  // to the regularization matrix.  Here the regularization matrix is always a scalar
-  // multiple of the identity (standard form least squres).
-  //   The "loss of accuracy" concept is not yet implemented here, becuase it is unclear
-  // what this means for linear least squares.  LSQR solves an inconsistent system
-  // in a least-squares sense.  "Loss of accuracy" would correspond to
-  // the difference between the preconditioned residual and the unpreconditioned residual.
+  // LSQR solves a least-squares problem.  A converged preconditioned
+  // residual norm suffices for convergence, but is not necessary.
+  // LSQR sometimes returns a larger relative residual norm than what
+  // would have been returned by a linear solver.  This method
+  // evaluates three stopping criteria.  In the Solver Manager, this
+  // test is combined with a generic number of iteration test.
+  //
+  // If the linear system includes a preconditioner, then the
+  // least-squares problem is solved for the preconditioned linear
+  // system.  Preconditioning changes the least squares problem (in
+  // the sense of changing the norms), and the solution depends on the
+  // preconditioner in this sense.
+  //
+  // In the context of linear least-squares problems,
+  // "preconditioning" refers to the regularization matrix.  Here the
+  // regularization matrix is always a scalar multiple of the identity
+  // (standard form least squares).
+  //
+  // The "loss of accuracy" concept is not yet implemented here,
+  // becuase it is unclear what this means for linear least squares.
+  // LSQR solves an inconsistent system in a least-squares sense.
+  // "Loss of accuracy" would correspond to the difference between the
+  // preconditioned residual and the unpreconditioned residual.
   //
 
 /*
