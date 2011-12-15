@@ -300,7 +300,7 @@ void Epetra_Import::Print(ostream & os) const
   // the first one to do anything in the for loop anyway.
   for (int p = 0; p < numProcs; ++p) {
     if (myRank == p) {
-      os << "Image ID       :" << myRank << endl;
+      os << "Image ID       : " << myRank << endl;
 
       os << "permuteFromLIDs:";
       if (PermuteFromLIDs_ == NULL) {
@@ -399,18 +399,23 @@ void Epetra_Import::Print(ostream & os) const
   // printing the Maps to the end, for easy comparison with the output
   // of Tpetra::Import::print().
   if (myRank == 0) {
-    os << endl << endl << "Source Map:" << endl << endl;
+    os << endl << endl << "Source Map:" << endl << std::flush;
   }
+  comm.Barrier();
   SourceMap_.Print(os);
+  comm.Barrier();
   
   if (myRank == 0) {
-    os << endl << endl << "Target Map:" << endl << endl;
+    os << endl << endl << "Target Map:" << endl << std::flush;
   }
+  comm.Barrier();
   TargetMap_.Print(os);
+  comm.Barrier();
 
   if (myRank == 0) {
-    os << endl << endl << "Distributor:" << endl << endl;
+    os << endl << endl << "Distributor:" << endl << std::flush;
   }
+  comm.Barrier();
   if (Distor_ == NULL) {
     if (myRank == 0) {
       os << " is NULL." << endl;
@@ -418,5 +423,6 @@ void Epetra_Import::Print(ostream & os) const
   } else {
     Distor_->Print(os); // Printing the Distributor is itself distributed.
   }
+  comm.Barrier();
 }
 
