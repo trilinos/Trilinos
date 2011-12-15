@@ -1,3 +1,4 @@
+#include "Panzer_config.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
@@ -13,6 +14,7 @@
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #ifdef HAVE_STOKHOS
    #include "Stokhos_EpetraVectorOrthogPoly.hpp"
@@ -327,6 +329,8 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
+    PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f and J)");
+
     // Set the targets
     epGlobalContainer->f = f_out;
     epGlobalContainer->A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out);
@@ -339,6 +343,8 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   }
   else if(!Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
 
+    PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f)");
+
     epGlobalContainer->f = f_out;
 
     // Zero values in ghosted container objects
@@ -349,6 +355,8 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     f_out->Update(1.0, *(epGlobalContainer->f), 0.0);
   }
   else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
+
+    PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(J)");
 
     // this dummy nonsense is needed only for scattering dirichlet conditions
     if (Teuchos::is_null(dummy_f_))

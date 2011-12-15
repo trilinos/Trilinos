@@ -12,6 +12,8 @@ TRIBITS_PACKAGE(Panzer)
 # B) Set up package-specific options
 #
 
+TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   PANZER_DEBUG
   "Build with debug code enabled."
