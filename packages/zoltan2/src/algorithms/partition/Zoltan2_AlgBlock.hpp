@@ -60,8 +60,8 @@ void AlgBlock(
 
   string &objective = pl.get(string("objective"));
   double &imbalanceTolerance = pl.get(string("imbalance_tolerance"));
-  int &numGlobalParts = pl.get(string("num_global_parts"));
-  int &numLocalParts = pl.get(string("num_local_parts"));
+  size_t &numGlobalParts = pl.get(string("num_global_parts"));
+  size_t &numLocalParts = pl.get(string("num_local_parts"));
 
   // TODO - need a method to tell me local number of parts based
   //       on the value of those last two parameters.
