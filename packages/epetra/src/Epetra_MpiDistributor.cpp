@@ -1225,53 +1225,105 @@ int Epetra_MpiDistributor::DoReversePosts( char * export_objs,
 //==============================================================================
 void Epetra_MpiDistributor::Print( ostream & os) const
 {
-  int i, j;
-  os << "nsends: " << nsends_ << endl;
-  os << "procs_to: ";
-  for( i = 0; i < nsends_; i++ )
-    os << " " << procs_to_[i];
-  os << endl;
-  os<< "lengths_to: ";
-  for( i = 0; i < nsends_; i++ )
-    os << " " << lengths_to_[i];
-  os << endl;
-  os << "indices_to: ";
-  int k = 0;
-  if( indices_to_ )
-  {
-    for( i = 0; i < nsends_; i++ )
-    {
-      for( j = 0; j < lengths_to_[i]; j++ )
-        os << " " << indices_to_[j+k];
-      k += lengths_to_[i];
-    }
-  }
-  os << endl;
-  os << "nrecvs: " << nrecvs_ << endl;
-  os << "procs_from: ";
-  for( i = 0; i < nrecvs_; i++ )
-    os << " " << procs_from_[i];
-  os << endl;
-  os << "lengths_from: ";
-  for( i = 0; i < nrecvs_; i++ )
-    os << " " << lengths_from_[i];
-  os << endl;
-/*
-  os << "indices_from: ";
-  k = 0;
-  for( i = 0; i < nrecvs_; i++ )
-  {
-    for( j = 0; j < lengths_from_[i]; j++ )
-      os << " " << indices_from_[j+k];
-    k += lengths_from_[i];
-  }
-*/
-  os << "self_msg: " << self_msg_ << endl;
-  os << "max_send_length: " << max_send_length_ << endl;
-  os << "total_recv_length: " << total_recv_length_ << endl;
-  os << endl;
+  using std::endl;
 
-  return;
+  int myRank = 0, numProcs = 1;
+  MPI_Comm_rank (comm_, &myRank);
+  MPI_Comm_size (comm_, &numProcs);
+
+  if (myRank == 0) {
+    os << "Epetra_MpiDistributor (implements Epetra_Distributor)" << endl;
+  }
+  // Let each MPI process print its data.  We assume that all
+  // processes can print to the given output stream, and execute
+  // barriers to make it more likely that the output will be in the
+  // right order.
+  for (int p = 0; p < numProcs; ++p) {
+    if (myRank == p) {
+      os << "[Node " << p << " of " << numProcs << "]" << endl;
+      os << " selfMessage: " << self_msg_ << endl;
+      os << " numSends: " << nsends_ << endl;
+
+      os << " imagesTo: [";
+      for (int i = 0; i < nsends_; ++i) {
+	os << procs_to_[i];
+	if (i < nsends_ - 1) {
+	  os << " ";
+	}
+      }
+      os << "]" << endl;
+
+      os << " lengthsTo: [";
+      for (int i = 0; i < nsends_; ++i) {
+	os << lengths_to_[i];
+	if (i < nsends_ - 1) {
+	  os << " ";
+	}
+      }
+      os << "]" << endl;
+
+      os << " maxSendLength: " << max_send_length_ << endl;
+
+      os << " indicesTo: ";
+      if (indices_to_ == NULL) {
+	os << "(NULL)" << endl;
+      } else {
+	os << "[";
+	int k = 0;
+	for (int i = 0; i < nsends_; ++i) {
+	  for (int j = 0; j < lengths_to_[i]; ++j) {
+	    os << " " << indices_to_[j+k];
+	  }
+	  k += lengths_to_[i];
+	}
+	os << "]" << endl;
+      }
+
+      os << " numReceives: " << nrecvs_ << endl;
+      os << " totalReceiveLength: " << total_recv_length_ << endl;
+
+      os << " lengthsFrom: [";
+      for (int i = 0; i < nrecvs_; ++i) {
+	os << lengths_from_[i];
+	if (i < nrecvs_ - 1) {
+	  os << " ";
+	}
+      }
+      os << "]" << endl;
+
+      os << " imagesFrom: [";
+      for (int i = 0; i < nrecvs_; ++i) {
+	os << procs_from_[i];
+	if (i < nrecvs_ - 1) {
+	  os << " ";
+	}
+      }
+      os << "]" << endl;
+
+      // mfh 16 Dec 2011: I found this commented out here; not sure if
+      // we want to print this, so I'm leaving it commented out.
+      /*
+	os << "indices_from: ";
+	k = 0;
+	for( i = 0; i < nrecvs_; i++ )
+	{
+	for( j = 0; j < lengths_from_[i]; j++ )
+	os << " " << indices_from_[j+k];
+	k += lengths_from_[i];
+	}
+      */
+
+      // Last output is a flush; it leaves a space and also 
+      // helps synchronize output.
+      os << std::flush;
+    } // if it's my process' turn to print
+
+    // Execute barriers to give output time to synchronize.
+    // One barrier generally isn't enough.
+    MPI_Barrier (comm_);
+    MPI_Barrier (comm_);
+    MPI_Barrier (comm_);
+  }
 }
 
 //---------------------------------------------------------------------------
