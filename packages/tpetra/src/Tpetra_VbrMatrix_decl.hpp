@@ -250,7 +250,7 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
 
     This method may be called any time (before or after fillComplete()).
   */
-  void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
+  void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry);
 
   //!Copy the contents of the input block-entry into the matrix.
   /*!
@@ -260,7 +260,7 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
     The coefficients of the specified block-entry will be
     over-written (replaced) by the input block-entry.
   */
-  void setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry);
+  void setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry);
 
   //!Add the contents of the input block-entry into the matrix.
   /*!
@@ -278,7 +278,7 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
 
     This method may be called any time (before or after fillComplete()).
   */
-  void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
+  void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry);
 
   //!Add the contents of the input block-entry into the matrix.
   /*!
@@ -288,7 +288,7 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
     The contents of the input block-entry will be added to the values that are
     already present in the matrix.
   */
-  void sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry);
+  void sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry);
 
   //!Copy the contents of the input block-entry into the matrix.
   /*!

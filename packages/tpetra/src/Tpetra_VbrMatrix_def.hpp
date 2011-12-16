@@ -970,7 +970,7 @@ void set_array_values(ArrayType1& dest, ArrayType2& src, Ordinal rows, Ordinal c
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -986,7 +986,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEnt
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -1002,7 +1002,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntr
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -1018,7 +1018,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBloc
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
