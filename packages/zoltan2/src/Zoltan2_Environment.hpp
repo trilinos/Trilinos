@@ -97,15 +97,15 @@ public:
    */
   void commitParameters();
 
-  bool hasParameters() { return hasAnyParameters_; }
+  bool hasParameters() { return hasAnyParams_; }
 
-  bool hasPartitioningParameters() { return hasPartitioningParameters_; }
+  bool hasPartitioningParameters() { return hasPartitioningParams_; }
 
-  bool hasOrderingParameters() { return hasOrderingParameters_; }
+  bool hasOrderingParameters() { return hasOrderingParams_; }
 
-  bool hasMatchingParameters() { return hasMatchingParameters_; }
+  bool hasMatchingParameters() { return hasMatchingParams_; }
 
-  bool hasColoringParameters() { return hasColoringParameters_; }
+  bool hasColoringParameters() { return hasColoringParams_; }
 
   /*! \brief Returns a reference to the user's parameter list.
    *
@@ -195,12 +195,22 @@ private:
    */
   bool committed_;
 
-  bool hasAnyParams_
-  bool hasPartitioningParams_
-  bool hasOrderingParams_
-  bool hasColoringParams_
-  bool hasMatchingParams_
+  bool hasAnyParams_;
+  bool hasPartitioningParams_;
+  bool hasOrderingParams_;
+  bool hasColoringParams_;
+  bool hasMatchingParams_;
 };
+
+/*! A helper function to return a default environment.
+ *
+ *    A default environment has the default communicator and the
+ *    the default parameters.  This is helpful when writing tests
+ *    of classes or methods that need an environment.
+ */
+
+Teuchos::RCP<const Environment> getDefaultEnvironment();
+
 
 }  // namespace Zoltan2
 

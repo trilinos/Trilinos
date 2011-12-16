@@ -97,6 +97,7 @@ void Environment::commitParameters()
   using std::string;
   using Teuchos::Array;
   using Teuchos::rcp;
+  using Teuchos::ParameterList;
   string noOutStream("/dev/null");
   string noFile();
 
@@ -180,25 +181,33 @@ void Environment::commitParameters()
   hasColoringParams_ = true;
   hasMatchingParams_ = true;
 
-  try
-    const ParameterList &pl = params_.sublist(string("partitioning"));
-  catch(std::exception &e)
-    hasPartitioningParams = false;
+  try{
+    params_.sublist(string("partitioning"));
+  }
+  catch(std::exception &e){
+    hasPartitioningParams_ = false;
+  }
 
-  try
-    const ParameterList &pl = params_.sublist(string("ordering"));
-  catch(std::exception &e)
-    hasOrderingParams = false;
+  try{
+    params_.sublist(string("ordering"));
+  }
+  catch(std::exception &e){
+    hasOrderingParams_ = false;
+  }
 
-  try
-    const ParameterList &pl = params_.sublist(string("coloring"));
-  catch(std::exception &e)
-    hasColoringParams = false;
+  try{
+    params_.sublist(string("coloring"));
+  }
+  catch(std::exception &e){
+    hasColoringParams_ = false;
+  }
 
-  try
-    const ParameterList &pl = params_.sublist(string("matching"));
-  catch(std::exception &e)
-    hasMatchingParams = false;
+  try{
+    params_.sublist(string("matching"));
+  }
+  catch(std::exception &e){
+    hasMatchingParams_ = false;
+  }
 
   committed_ = true;
 }
@@ -228,6 +237,30 @@ static void makeDebugManager(int rank, bool iPrint,
     mgr = Teuchos::rcp(new DebugManager(rank, iPrint, dbgFile, lvl));
   else
     mgr = Teuchos::rcp(new DebugManager(rank, false, std::cout, lvl));
+}
+
+// A helper function to return a default environment.
+
+Teuchos::RCP<const Environment> getDefaultEnvironment()
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+    Teuchos::DefaultComm<int>::getComm();
+
+  Teuchos::ParameterList params;   // an empty parameter list;
+
+  Environment *defaultEnv = NULL;
+
+  try{
+    defaultEnv = new Environment(params, comm);
+  }
+  catch (std::exception &e){
+    throw std::runtime_error("getDefaultEnvironment");
+  }
+
+  defaultEnv->commitParameters();   // will set parameters to defaults
+
+  Teuchos::RCP<const Environment> env = Teuchos::rcp(defaultEnv);
+  return env;
 }
   
 }  //namespace Zoltan2
