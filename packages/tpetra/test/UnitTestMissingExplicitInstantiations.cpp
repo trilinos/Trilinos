@@ -172,6 +172,7 @@ namespace Tpetra {
 
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
+#ifndef HAVE_TPETRA_INST_INT_LONG
 template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
 createContigMap<int,long>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
@@ -183,6 +184,7 @@ TPETRA_DIRECTORY_INSTANT(int,long,Node)
 namespace Ext {
 TPETRAEXT_BLOCKEXTRACTION_INSTANT(double,int,long,Node)
 }
+#endif
 
 }
 
