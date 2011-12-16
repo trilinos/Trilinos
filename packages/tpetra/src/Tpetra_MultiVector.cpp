@@ -153,7 +153,20 @@ namespace Tpetra {
 #endif
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
   TPETRA_MULTIVECTOR_INSTANT(int,int,long,Kokkos::ThrustGPUNode)
-#endif // int 
+#endif // int
+  TPETRA_MULTIVECTOR_INSTANT(long,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_MULTIVECTOR_INSTANT(long,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+  TPETRA_MULTIVECTOR_INSTANT(long,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MULTIVECTOR_INSTANT(long,int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+  TPETRA_MULTIVECTOR_INSTANT(long,int,long,Kokkos::ThrustGPUNode)
+#endif // long
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   TPETRA_MULTIVECTOR_INSTANT(double,int,long,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
