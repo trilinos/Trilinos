@@ -47,6 +47,8 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Util.h"
 
+#include <algorithm>
+#include <vector>
 
 //==============================================================================
 // Epetra_Import constructor for a Epetra_BlockMap object
@@ -289,10 +291,18 @@ void Epetra_Import::Print(ostream & os) const
   // This should allow a side-by-side comparison of Epetra_Import with
   // Tpetra::Import.
 
+  // If true, then copy the array data and sort it before printing.
+  // Otherwise, leave the data in its original order.  
+  //
+  // NOTE: Do NOT sort the arrays in place!  Only sort in the copy.
+  // Epetra depends on the order being preserved, and some arrays'
+  // orders are coupled.
+  const bool sortIDs = true;
+
   const Epetra_Comm& comm = SourceMap_.Comm();
   const int myRank = comm.MyPID();
   const int numProcs = comm.NumProc();
-
+  
   if (myRank == 0) {
     os << "Import Data Members:" << endl;
   }
@@ -306,9 +316,15 @@ void Epetra_Import::Print(ostream & os) const
       if (PermuteFromLIDs_ == NULL) {
 	os << " NULL";
       } else {
+	std::vector<int> permuteFromLIDs (NumPermuteIDs_);
+	std::copy (PermuteFromLIDs_, PermuteFromLIDs_ + NumPermuteIDs_, 
+		   permuteFromLIDs.begin());
+	if (sortIDs) {
+	  std::sort (permuteFromLIDs.begin(), permuteFromLIDs.end());
+	}
 	os << " {";
 	for (int i = 0; i < NumPermuteIDs_; ++i) {
-	  os << PermuteFromLIDs_[i];
+	  os << permuteFromLIDs[i];
 	  if (i < NumPermuteIDs_ - 1) {
 	    os << " ";
 	  }
@@ -321,9 +337,15 @@ void Epetra_Import::Print(ostream & os) const
       if (PermuteToLIDs_ == NULL) {
 	os << " NULL";
       } else {
+	std::vector<int> permuteToLIDs (NumPermuteIDs_);
+	std::copy (PermuteToLIDs_, PermuteToLIDs_ + NumPermuteIDs_, 
+		   permuteToLIDs.begin());
+	if (sortIDs) {
+	  std::sort (permuteToLIDs.begin(), permuteToLIDs.end());
+	}
 	os << " {";
 	for (int i = 0; i < NumPermuteIDs_; ++i) {
-	  os << PermuteToLIDs_[i];
+	  os << permuteToLIDs[i];
 	  if (i < NumPermuteIDs_ - 1) {
 	    os << " ";
 	  }
@@ -336,9 +358,15 @@ void Epetra_Import::Print(ostream & os) const
       if (RemoteLIDs_ == NULL) {
 	os << " NULL";
       } else {
+	std::vector<int> remoteLIDs (NumRemoteIDs_);
+	std::copy (RemoteLIDs_, RemoteLIDs_ + NumRemoteIDs_, 
+		   remoteLIDs.begin());
+	if (sortIDs) {
+	  std::sort (remoteLIDs.begin(), remoteLIDs.end());
+	}
 	os << " {";
 	for (int i = 0; i < NumRemoteIDs_; ++i) {
-	  os << RemoteLIDs_[i];
+	  os << remoteLIDs[i];
 	  if (i < NumRemoteIDs_ - 1) {
 	    os << " ";
 	  }
@@ -347,13 +375,30 @@ void Epetra_Import::Print(ostream & os) const
       }
       os << endl;
 
+      // If sorting for output, the export LIDs and export PIDs have
+      // to be sorted together.  We can use Epetra_Util::Sort, using
+      // the PIDs as the keys to match Tpetra::Import.
+      std::vector<int> exportLIDs (NumExportIDs_);
+      std::vector<int> exportPIDs (NumExportIDs_);
+      if (ExportLIDs_ != NULL) {
+	std::copy (ExportLIDs_, ExportLIDs_ + NumExportIDs_, exportLIDs.begin());
+	std::copy (ExportPIDs_, ExportPIDs_ + NumExportIDs_, exportPIDs.begin());
+
+	if (sortIDs && NumExportIDs_ > 0) {
+	  int* intCompanions[1]; // Input for Epetra_Util::Sort().
+	  intCompanions[0] = &exportLIDs[0];
+	  Epetra_Util::Sort (true, NumExportIDs_, &exportPIDs[0], 
+			     0, (double**) NULL, 1, intCompanions);
+	}
+      }
+
       os << "exportLIDs     :";
       if (ExportLIDs_ == NULL) {
 	os << " NULL";
       } else {
 	os << " {";
 	for (int i = 0; i < NumExportIDs_; ++i) {
-	  os << ExportLIDs_[i];
+	  os << exportLIDs[i];
 	  if (i < NumExportIDs_ - 1) {
 	    os << " ";
 	  }
@@ -368,7 +413,7 @@ void Epetra_Import::Print(ostream & os) const
       } else {
 	os << " {";
 	for (int i = 0; i < NumExportIDs_; ++i) {
-	  os << ExportPIDs_[i];
+	  os << exportPIDs[i];
 	  if (i < NumExportIDs_ - 1) {
 	    os << " ";
 	  }
