@@ -24,6 +24,30 @@ namespace panzer {
     s.zero();
   }
 
+  //! Specialization for Jacobian
+  inline void zeroSensitivities(Sacado::CacheFad::DFad<double>& s) 
+  {
+    //cout << "Zeroing out fad!" << endl;
+    //s.setIsConstant(true);
+    s.zero();
+  }
+
+  //! Specialization for Jacobian
+  inline void zeroSensitivities(Sacado::ELRFad::DFad<double>& s) 
+  {
+    //cout << "Zeroing out fad!" << endl;
+    //s.setIsConstant(true);
+    s.zero();
+  }
+
+  //! Specialization for Jacobian
+  inline void zeroSensitivities(Sacado::ELRCacheFad::DFad<double>& s) 
+  {
+    //cout << "Zeroing out fad!" << endl;
+    //s.setIsConstant(true);
+    s.zero();
+  }
+
 #ifdef HAVE_STOKHOS
   //! Specialization for Residual
   inline void zeroSensitivities(Traits::SGType & s)

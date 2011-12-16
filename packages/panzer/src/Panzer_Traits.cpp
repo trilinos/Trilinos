@@ -20,6 +20,15 @@ const std::string PHX::TypeString<double>::value = "double";
 const std::string PHX::TypeString< Sacado::Fad::DFad<double> >::value = 
   "Sacado::Fad::DFad<double>";
 
+const std::string PHX::TypeString< Sacado::CacheFad::DFad<double> >::value = 
+  "Sacado::CacheFad::DFad<double>";
+
+const std::string PHX::TypeString< Sacado::ELRFad::DFad<double> >::value = 
+  "Sacado::ELRFad::DFad<double>";
+
+const std::string PHX::TypeString< Sacado::ELRCacheFad::DFad<double> >::value = 
+  "Sacado::ELRCacheFad::DFad<double>";
+
 const std::string PHX::TypeString<panzer::Traits::Value>::value = "Value";
 
 const std::string PHX::TypeString<panzer::Traits::Derivative>::value = "Derivative";

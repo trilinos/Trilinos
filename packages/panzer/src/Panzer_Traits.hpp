@@ -19,6 +19,9 @@
 
 // Scalar types
 #include "Sacado.hpp"
+#include "Sacado_CacheFad_DFad.hpp"
+#include "Sacado_ELRFad_DFad.hpp"
+#include "Sacado_ELRCacheFad_DFad.hpp"
 
 // traits Base Class
 #include "Phalanx_Traits_Base.hpp"
@@ -50,6 +53,9 @@ namespace panzer {
     // Scalar types we plan to use
     typedef double RealType;
     typedef Sacado::Fad::DFad<double> FadType;
+    //typedef Sacado::CacheFad::DFad<double> FadType;
+    //typedef Sacado::ELRFad::DFad<double> FadType;
+    //typedef Sacado::ELRCacheFad::DFad<double> FadType;
 
     #ifdef HAVE_STOKHOS
        typedef Stokhos::StandardStorage<int,RealType> SGStorageType;
@@ -168,6 +174,15 @@ namespace PHX {
   { static const std::string value; };
 
   template<> struct TypeString< Sacado::Fad::DFad<double> > 
+  { static const std::string value; };
+
+  template<> struct TypeString< Sacado::CacheFad::DFad<double> > 
+  { static const std::string value; };
+
+  template<> struct TypeString< Sacado::ELRFad::DFad<double> > 
+  { static const std::string value; };
+
+  template<> struct TypeString< Sacado::ELRCacheFad::DFad<double> > 
   { static const std::string value; };
 
   #ifdef HAVE_STOKHOS

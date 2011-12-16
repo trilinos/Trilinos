@@ -228,7 +228,7 @@ evaluateFields(typename Traits::EvalData workset)
             int lid = LIDs[offset];
 
             // set the value and seed the FAD object
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = Sacado::Fad::DFad<double>(GIDs.size(), (*x)[lid]);
+            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = ScalarT(GIDs.size(), (*x)[lid]);
             (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
          }
       }
