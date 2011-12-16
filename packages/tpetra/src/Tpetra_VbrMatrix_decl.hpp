@@ -51,6 +51,7 @@
 #include "Tpetra_BlockMap.hpp"
 #include "Tpetra_BlockCrsGraph.hpp"
 #include "Tpetra_VbrUtils.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 /** \file Tpetra_VbrMatrix_decl.hpp
 
