@@ -17,6 +17,7 @@ buildClosureModels(const std::string& model_id,
   using Teuchos::rcp;
   using Teuchos::ParameterList;
   using PHX::Evaluator;
+  static bool justOnce = false;
 
   // build user evaluators
   RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > user_evals = 
@@ -32,7 +33,9 @@ buildClosureModels(const std::string& model_id,
   // if a requested field is found then add in cell avg quantity evaluator
   std::map<std::string,std::vector<std::string> >::const_iterator bi2FieldsItr  
      = blockIdToFields_.find(block_id);
-  if(bi2FieldsItr!=blockIdToFields_.end()) {
+  // if(bi2FieldsItr!=blockIdToFields_.end() && !justOnce) {
+  if(bi2FieldsItr!=blockIdToFields_.end() && !blockIdEvaluated_[block_id]) {
+     justOnce = true;
      Teuchos::RCP<panzer::IntegrationRule> intRule = default_params.get<Teuchos::RCP<panzer::IntegrationRule> >("IR");
      Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(bi2FieldsItr->second));
 
@@ -48,6 +51,8 @@ buildClosureModels(const std::string& model_id,
      fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
 
      evaluators->push_back(eval);
+
+     blockIdEvaluated_[block_id] = true;
   } 
 
   evaluators->insert(evaluators->end(),user_evals->begin(),user_evals->end()); 

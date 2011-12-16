@@ -51,7 +51,8 @@ void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
   const std::vector<panzer::InputEquationSet>& input_eq_sets = ipb.eq_sets;
 
   TEUCHOS_TEST_FOR_EXCEPTION(input_eq_sets.size() < 1, std::runtime_error,
-		     "There are no equation sets in the input file.  In order to use the phalanx assembly routines, you must add equation sets to a physics block!");
+		     "There are no equation sets in the input file.  In order to use the phalanx "
+                     "assembly routines, you must add equation sets to a physics block!");
 
   m_equation_sets.clear();
   for (std::size_t i=0; i < input_eq_sets.size(); ++i) {

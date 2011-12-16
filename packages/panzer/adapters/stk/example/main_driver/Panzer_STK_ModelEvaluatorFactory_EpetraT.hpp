@@ -22,6 +22,7 @@
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_WorksetContainer.hpp"
+#include "Panzer_String_Utilities.hpp"
 
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_LineMeshFactory.hpp"
@@ -132,6 +133,7 @@ namespace panzer_stk {
     Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
     Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
     Teuchos::ParameterList & volume_responses = p.sublist("Volume Responses");
+    Teuchos::ParameterList & output_list = p.sublist("Output");
 
     Teuchos::ParameterList & user_data_params = p.sublist("User Data");
     Teuchos::ParameterList & panzer_data_params = user_data_params.sublist("Panzer Data");
@@ -179,9 +181,24 @@ namespace panzer_stk {
 			       is_transient,
 			       physicsBlocks);
 
-    panzer_stk::IOClosureModelFactory_TemplateBuilder<panzer::Traits> io_cm_builder(user_cm_factory,mesh,p.sublist("Output"));
+    panzer_stk::IOClosureModelFactory_TemplateBuilder<panzer::Traits> io_cm_builder(user_cm_factory,mesh,output_list);
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     cm_factory.buildObjects(io_cm_builder);
+
+    Teuchos::ParameterList & cellAvgQuants = output_list.sublist("Cell Average Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=cellAvgQuants.begin();
+        itr!=cellAvgQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+ 
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++) 
+          mesh->addCellField(tokens[i],blockId);
+    }
+     
 
     // finish building mesh, set required field variables and mesh bulk data
     ////////////////////////////////////////////////////////////////////////
@@ -242,7 +259,7 @@ namespace panzer_stk {
     /////////////////////////////////////////////////////////////
  
     fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
-    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
+    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,user_cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
 
     // Print Phalanx DAGs
     {
@@ -272,7 +289,7 @@ namespace panzer_stk {
        user_data.set<int>("Workset Size",workset_size);
 
        m_response_library->buildVolumeFieldManagersFromResponses(physicsBlocks,
-  					                         cm_factory,
+  					                         user_cm_factory,
                                                                  p.sublist("Closure Models"),
   					                         *linObjFactory,
   					                         user_data,write_dot_files,prefix);
@@ -311,7 +328,7 @@ namespace panzer_stk {
       std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
       panzer::setupInitialConditionFieldManagers(*wkstContainer,
 						 physicsBlocks,
-						 cm_factory,
+						 user_cm_factory,
 						 p.sublist("Initial Conditions"),
 						 *linObjFactory,
 						 p.sublist("User Data"),

@@ -41,6 +41,16 @@ namespace panzer_stk {
     //! Map showing which fields need to be written out for each element block
     std::map<std::string,std::vector<std::string> > blockIdToFields_;
 
+    /** Map stating if an evaluator for a particular block ID has been included.
+      *
+      * This is a bit of hack that is done to gurantee only one evaluator is
+      * added to each field manager. However, if an instantiation of this closure model factory is
+      * used in multiple places then the appropriate evaluator will be added and
+      * required only once. So its likely that not every field manager will have (and require)
+      * the scatter cell evaluators.
+      */    
+    mutable std::map<std::string,bool> blockIdEvaluated_;
+
     //! we will reuse the drekar closure model factory
     Teuchos::RCP<const panzer::ClosureModelFactory<EvalT> > userCMF_;
   };

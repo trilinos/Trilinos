@@ -8,8 +8,8 @@ namespace panzer {
 
   void StringTokenizer(std::vector<std::string>& tokens,
 		       const std::string& str,
-		       const std::string delimiter = ",");
-  
+		       const std::string delimiter = ",",bool trim=false);
+
 }
 
 #endif

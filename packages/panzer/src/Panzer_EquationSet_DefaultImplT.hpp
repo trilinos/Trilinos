@@ -50,7 +50,7 @@ setupDOFs(int equation_dimension)
   this->m_eval_plist->set("Basis", this->m_basis);
   this->m_eval_plist->set("Equation Dimension", equation_dimension);
   this->m_eval_plist->set("DOF Names", this->m_dof_names);  
-  this->m_eval_plist->set("Block ID", this->m_block_id);  
+  this->m_eval_plist->set("Block ID", getElementBlockId());  
 }
 
 // ***********************************************************************
@@ -297,6 +297,8 @@ setElementBlockId(const std::string & blockId)
 {
    TEUCHOS_ASSERT(m_block_id=="");
    m_block_id = blockId;
+   this->m_eval_plist->set("Block ID", getElementBlockId());  // set the value in parameter list
+                                                              // used by closure model factory
 }
 
 // ***********************************************************************

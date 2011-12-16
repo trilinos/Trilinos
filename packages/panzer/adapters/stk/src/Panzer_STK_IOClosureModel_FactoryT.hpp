@@ -30,7 +30,9 @@ parseOutputList(const Teuchos::ParameterList & pl)
       std::vector<std::string> & tokens = blockIdToFields_[blockId];
  
       // break up comma seperated fields
-      panzer::StringTokenizer(tokens,fields);
+      panzer::StringTokenizer(tokens,fields,",",true);
+
+      blockIdEvaluated_[blockId] = false; // initialize this value
    }
 }
 
