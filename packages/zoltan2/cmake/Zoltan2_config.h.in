@@ -1,3 +1,5 @@
+#include <Teuchos_config.h>
+
 /* define if we have MPI */
 #cmakedefine HAVE_MPI
 
@@ -42,6 +44,13 @@
  */
 #cmakedefine SHOW_SCOTCH_HIGH_WATER_MARK
 
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
 /* Define if this platform has data type "long long"
+ *  Because of our heavy dependence on Teuchos, we
+ *  can't use LONG_LONG unless Teuchos is using
+ *  long long.
  */
 #cmakedefine HAVE_LONG_LONG
+
+#endif
