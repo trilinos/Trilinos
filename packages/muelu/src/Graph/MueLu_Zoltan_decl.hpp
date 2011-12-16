@@ -84,7 +84,7 @@ namespace MueLu {
     @param ierr (out) error code
     */
     static void GetLocalNumberOfNonzeros(void *data, int NumGidEntries, int NumLidEntries, ZOLTAN_ID_PTR gids,
-                                         ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr); //GetLocalNumberOfNonzeros()
+                                         ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr);
 
     /*! Callback function that returns the problem dimension. Required by Zoltan.
 
@@ -103,7 +103,7 @@ namespace MueLu {
     TODO -- should I return a view of the coordinates instead of copying them?
     */
     static void GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs, 
-                                   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr); //GetProblemGeometry
+                                   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr);
 
     //@}
 

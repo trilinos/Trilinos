@@ -14,8 +14,9 @@ namespace MueLu {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact)
-    : AFact_(AFact) {
+  ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact) : AFact_(AFact)
+  {
 
     Zoltan_Initialize(0, NULL, &zoltanVersion_);
     //TODO define zoltanComm_ as a subcommunicator?!;
@@ -23,22 +24,28 @@ namespace MueLu {
     zoltanComm_ = comm_->getRawMpiComm();
     zoltanObj_ = rcp( new Zoltan( (*zoltanComm_)() ) );  //extract the underlying MPI_Comm handle and create a Zoltan object
     if (zoltanObj_==Teuchos::null) throw(Exceptions::RuntimeError("MueLu::Zoltan : Unable to create Zoltan data structure"));
-  }
+  } //ctor
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & level) const {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  DeclareInput(Level & level) const
+  {
     level.DeclareInput("A", AFact_.get()); // use DeclareInput instead of Request!!!
-  }
+  } //DeclareInput()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetNumberOfPartitions(GO const numPartitions) {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  SetNumberOfPartitions(GO const numPartitions)
+  {
     std::stringstream ss;
     ss << numPartitions;
     zoltanObj_->Set_Param("num_global_partitions",ss.str());
-  }
+  } //SetNumberOfPartitions()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  Build(Level &level)
+  {
     // Tell Zoltan what kind of local/global IDs we will use.
     // In our case, each GID is two ints and there are no local ids.
     // One can skip this step if the IDs are just single ints.
@@ -104,7 +111,9 @@ namespace MueLu {
   } //Build()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetLocalNumberOfRows(void *data, int *ierr) {
+  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  GetLocalNumberOfRows(void *data, int *ierr)
+  {
     if (data == NULL) {
       *ierr = ZOLTAN_FATAL;
       return -1;
@@ -114,11 +123,13 @@ namespace MueLu {
     //Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> *A = (Operator*) data;
     Operator *A = (Operator*) data;
     return A->getRowMap()->getNodeNumElements();
-  }
+  } //GetLocalNumberOfRows()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetLocalNumberOfNonzeros(void *data, int NumGidEntries, int NumLidEntries, ZOLTAN_ID_PTR gids,
-                                                                                                 ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr) {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  GetLocalNumberOfNonzeros(void *data, int NumGidEntries, int NumLidEntries, ZOLTAN_ID_PTR gids,
+                           ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr)
+  {
     if (data == NULL || NumGidEntries < 1) {
       *ierr = ZOLTAN_FATAL;
       return;
@@ -140,16 +151,20 @@ namespace MueLu {
   } //GetLocalNumberOfNonzeros()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetProblemDimension(void *data, int *ierr) {
+  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  GetProblemDimension(void *data, int *ierr)
+  {
     //TODO is there a safer way to cast?
     int dim = *((int*)data);
     *ierr = ZOLTAN_OK; /* set error flag */
     return(dim);
-  }
+  } //GetProblemDimension
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs, 
-                                                                                           ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr) {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs, 
+                     ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr)
+  {
     if (data == NULL) {
       *ierr = ZOLTAN_FATAL;
       return;
