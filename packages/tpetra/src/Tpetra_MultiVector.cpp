@@ -5,8 +5,8 @@
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -45,8 +45,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
-
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>
@@ -77,24 +75,7 @@ namespace Tpetra {
 #endif
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
   TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::ThrustGPUNode)
-#endif
-
-#if defined(HAVE_TPETRA_INST_FLOAT)
-  TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOS_TBB)
-  TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
-    TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOS_OPENMP)
-    TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::OpenMPNode)
-#endif
-#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
-    TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
-#endif
-#endif
-
+#endif // int 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   TPETRA_MULTIVECTOR_INSTANT(double,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
@@ -109,25 +90,22 @@ namespace Tpetra {
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
     TPETRA_MULTIVECTOR_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 #endif
-#endif
-
-#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-  TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
+#endif // double
+#if defined(HAVE_TPETRA_INST_FLOAT)
+  TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
-  TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,int,Kokkos::TBBNode)
+  TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::TBBNode)
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
-    TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,int,Kokkos::TPINode)
+    TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::TPINode)
 #endif
 #if defined(HAVE_KOKKOS_OPENMP)
-    TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,int,Kokkos::OpenMPNode)
+    TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::OpenMPNode)
 #endif
-// no complex on GPU support for now
-//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
-//    TPETRA_MULTIVECTOR_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
-//#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+    TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
 #endif
-
+#endif // float
 #if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
   TPETRA_MULTIVECTOR_INSTANT(std::complex<double>,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
@@ -143,8 +121,115 @@ namespace Tpetra {
 //#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
 //    TPETRA_MULTIVECTOR_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 //#endif
+#endif // complex double
+#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+  TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,int,Kokkos::TBBNode)
 #endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,int,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,int,Kokkos::OpenMPNode)
+#endif
+// no complex on GPU support for now
+//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//    TPETRA_MULTIVECTOR_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
+//#endif
+#endif // complex float
 
+
+#ifdef HAVE_TPETRA_INST_INT_LONG
+  TPETRA_MULTIVECTOR_INSTANT(int,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_MULTIVECTOR_INSTANT(int,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+  TPETRA_MULTIVECTOR_INSTANT(int,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MULTIVECTOR_INSTANT(int,int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+  TPETRA_MULTIVECTOR_INSTANT(int,int,long,Kokkos::ThrustGPUNode)
+#endif // int
+  TPETRA_MULTIVECTOR_INSTANT(long,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_MULTIVECTOR_INSTANT(long,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+  TPETRA_MULTIVECTOR_INSTANT(long,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+  TPETRA_MULTIVECTOR_INSTANT(long,int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+  TPETRA_MULTIVECTOR_INSTANT(long,int,long,Kokkos::ThrustGPUNode)
+#endif // long
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+  TPETRA_MULTIVECTOR_INSTANT(double,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_MULTIVECTOR_INSTANT(double,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_MULTIVECTOR_INSTANT(double,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_MULTIVECTOR_INSTANT(double,int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+    TPETRA_MULTIVECTOR_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
+#endif
+#endif // double
+#if defined(HAVE_TPETRA_INST_FLOAT)
+  TPETRA_MULTIVECTOR_INSTANT(float,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_MULTIVECTOR_INSTANT(float,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_MULTIVECTOR_INSTANT(float,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_MULTIVECTOR_INSTANT(float,int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+    TPETRA_MULTIVECTOR_INSTANT(float,int,long,Kokkos::ThrustGPUNode)
+#endif
+#endif // float
+#if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+  TPETRA_MULTIVECTOR_INSTANT(std::complex<double>,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_MULTIVECTOR_INSTANT(std::complex<double>,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_MULTIVECTOR_INSTANT(std::complex<double>,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_MULTIVECTOR_INSTANT(std::complex<double>,int,long,Kokkos::OpenMPNode)
+#endif
+// no complex on GPU support for now
+//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//    TPETRA_MULTIVECTOR_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
+//#endif
+#endif // complex double
+#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+  TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_MULTIVECTOR_INSTANT(std::complex<float>,int,long,Kokkos::OpenMPNode)
+#endif
+// no complex on GPU support for now
+//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//    TPETRA_MULTIVECTOR_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
+//#endif
+#endif // complex float
+#endif // <int,long>
 
 } // namespace Tpetra
 

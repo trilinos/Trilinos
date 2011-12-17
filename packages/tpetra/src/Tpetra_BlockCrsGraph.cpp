@@ -5,8 +5,8 @@
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -45,8 +45,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
-
 #include "Tpetra_BlockCrsGraph_def.hpp"
 
 #include <Kokkos_SerialNode.hpp>
@@ -77,6 +75,22 @@ namespace Tpetra {
 #endif
 #if defined(HAVE_KOKKOS_OPENMP)
     TPETRA_BLOCKCRSGRAPH_INSTANT(int,int,Kokkos::OpenMPNode)
+#endif
+
+#ifdef HAVE_TPETRA_INST_INT_LONG
+  TPETRA_BLOCKCRSGRAPH_INSTANT(int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_BLOCKCRSGRAPH_INSTANT(int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_BLOCKCRSGRAPH_INSTANT(int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST)
+    TPETRA_BLOCKCRSGRAPH_INSTANT(int,long,Kokkos::ThrustGPUNode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_BLOCKCRSGRAPH_INSTANT(int,long,Kokkos::OpenMPNode)
+#endif
 #endif
 
 } // namespace Tpetra

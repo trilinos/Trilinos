@@ -63,18 +63,34 @@ import os
 import shutil
 import sys
 
-# SCRIPT_DIR is the directory where *this* script is:
+# See if we should be verbose and print everything!
+if "TDD_DEBUG_VERBOSE" in os.environ:
+  verboseEnvValue = os.environ["TDD_DEBUG_VERBOSE"]
+  if verboseEnvValue == "1":
+    verbose = True
+  else:
+    verbose = False
+else:
+  verbose = False
+
+
+# tribitsTddDriverDir is the directory where *this* script is:
 #
 this_path = os.path.abspath(os.path.realpath(__file__))
-SCRIPT_DIR = os.path.dirname(this_path)
-sys.path.insert(0, SCRIPT_DIR+"/../../python")
+tribitsTddDriverDir = os.path.dirname(this_path)
+print "tribitsTddDriverDir = '"+tribitsTddDriverDir+"'"
+
+
+# Load the general script support python code
+sys.path.insert(0, tribitsTddDriverDir+"/../../python")
 from GeneralScriptSupport import *
 
-def invoke_ctest(ctest_exe, script, working_dir, environment = {}, verbose=False):
+
+def invoke_ctest(ctestExe, script, tddDashboardRootDir, environment = {}):
   """
-  Invokes CTest using the executable given by the ctest_exe argument,
+  Invokes CTest using the executable given by the ctestExe argument,
   the script file specified by the script argument, in the working
-  directory specified by the working_dir argument and the set of
+  directory specified by the tddDashboardRootDir argument and the set of
   environment variables specified in the environment map.
   """
   # We have to pass parameters to CTest through environment
@@ -83,37 +99,38 @@ def invoke_ctest(ctest_exe, script, working_dir, environment = {}, verbose=False
   # how it has to be done.
   ctest_environ = None
   if environment:
+    print "environment =", environment
     # Use a dictionary that is distinct from the os environment dictionary.
     ctest_environ = os.environ.copy()
     # Append additional environment variables to the
     ctest_environ.update(environment)
 
-  cmd = ctest_exe
+  cmd = ctestExe
   if verbose:
-    cmd = ctest_exe + " -VV"
-  CTEST_RESULT = echoRunSysCmnd(
+    cmd = ctestExe + " -VV"
+  ctestRtn = echoRunSysCmnd(
     cmd + " -S" + " " + script,
     throwExcept=False,
     timeCmnd=True,
-    workingDir=working_dir,
+    workingDir=tddDashboardRootDir,
     environment = ctest_environ
     )
 
-  print "CTEST_RESULT: +" + str(CTEST_RESULT) + "+"
+  print "ctestRtn: '" + str(ctestRtn) + "'"
   
-  if CTEST_RESULT != 0:
-    print "error: ctest returned non-zero error value, script will exit with " + str(CTEST_RESULT)
+  if ctestRtn != 0:
+    print "error: ctest returned non-zero error value, script will exit with " + str(ctestRtn)
     
   # Propagate ctest return value
   #
-  return CTEST_RESULT
+  return ctestRtn
 
 
-def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
+def run_driver(ctestSourceDirectory, projectRepoBaseDir):
   """
-  Run the dashboard driver. The ctest_directory argument specifies
+  Run the dashboard driver. The ctestSourceDirectory argument specifies
   where the directory that CTest will run over. There should be a
-  CMakeLists.txt file in this location. The repo_directory argument
+  CMakeLists.txt file in this location. The projectRepoBaseDir argument
   specifies root of the source code repository for the project.
   """
   origDir = os.getcwd()
@@ -123,43 +140,41 @@ def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
     print "******************************************************************\n"
 
     print "\nPWD=\""+os.getcwd()+"\"...\n"
+    print "projectRepoBaseDir = '" + projectRepoBaseDir + "'"
+    print "tribitsTddDriverDir = '" + tribitsTddDriverDir + "'"
 
-    # TRIBITS_DIR is the root directory of the TriBITS system:
+    # tribitsDir is the root directory of the TriBITS system:
     #
-    TRIBITS_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+    tribitsDir = os.path.dirname(os.path.dirname(tribitsTddDriverDir))
+    print "tribitsDir = '"+tribitsDir+"'"
 
-    # REPO_DIR is the root directory of the source code repository.
+    # dashboardBaseDir is the parent directory of our containing source tree,
+    # which we compute relative to tribitsDir:
     #
-    REPO_DIR = repo_directory
+    tddDashboardRootDir = os.path.dirname(projectRepoBaseDir)
+    if "TDD_DASHBOARD_ROOT" in os.environ:
+      tddDashboardRootDir = os.environ["TDD_DASHBOARD_ROOT"]
+    print "tddDashboardRootDir = '"+tddDashboardRootDir+"'"
 
-    # BASE_DIR is the parent directory of our containing source tree,
-    # which we compute relative to TRIBITS_DIR:
+    # dashboardToolsDir is the directory to which any needed tools will be downloaded.
     #
-    BASE_DIR = os.path.dirname(REPO_DIR)
-
-    # TOOLS_DIR is the directory to which any needed tools will be downloaded.
-    #
-    TOOLS_DIR = BASE_DIR + "/tools"
+    dashboardToolsDir = tddDashboardRootDir + "/tools"
+    print "dashboardToolsDir = '"+dashboardToolsDir+"'"
 
     # Make sure tools directory exists:
     #
-    if not os.path.exists(TOOLS_DIR):
-      os.makedirs(TOOLS_DIR)
-      if not os.path.exists(TOOLS_DIR):
-        print "error: could not create directory \"" + TOOLS_DIR + "\""
+    if not os.path.exists(dashboardToolsDir):
+      os.makedirs(dashboardToolsDir)
+      if not os.path.exists(dashboardToolsDir):
+        print "error: could not create directory \"" + dashboardToolsDir + "\""
         sys.exit(1)
 
-    os.chdir(BASE_DIR)
+    os.chdir(tddDashboardRootDir)
+    if verbose: "\nNew PWD = '"+os.getcwd()+"'"
 
-    print "SCRIPT_DIR: +" + SCRIPT_DIR + "+"
-    print "TRIBITS_DIR: +" + TRIBITS_DIR + "+"
-    print "BASE_DIR: +" + BASE_DIR + "+"
-    print "TOOLS_DIR: +" + TOOLS_DIR + "+"
-    print "REPO_DIR: +" + REPO_DIR + "+"
-
-    # Download and install CMake/CTest 'release' build
+    # Download and install CMake/CTest to use for the outer driver
     #
-    CMAKE_DIR = TOOLS_DIR + "/cmake-TDD"
+    cmakeTddDownloadBaseDir = dashboardToolsDir + "/cmake-TDD"
 
     TDD_CMAKE_INSTALLER_TYPE = "release"
     if "TDD_CMAKE_INSTALLER_TYPE" in os.environ:
@@ -178,16 +193,16 @@ def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
     #
 
     print "\n***"
-    print "*** Downloading and installing CMake to \"" + CMAKE_DIR + "\"..."
+    print "*** Downloading and installing CMake to \"" + cmakeTddDownloadBaseDir + "\"..."
     print "***\n"
 
     installMasterCMake = False
-    if not os.path.exists(CMAKE_DIR):
-      print "Forcing install of master CMake because '"+CMAKE_DIR+"' does not exist!"
+    if not os.path.exists(cmakeTddDownloadBaseDir):
+      print "Forcing install of master CMake because '"+cmakeTddDownloadBaseDir+"' does not exist!"
       installMasterCMake = True
-    elif TDD_FORCE_CMAKE_INSTALL != "0":
+    elif TDD_FORCE_CMAKE_INSTALL == "1":
       print "Forcing install of master CMake because" \
-        + " TDD_FORCE_CMAKE_INSTALL="+TDD_FORCE_CMAKE_INSTALL+" != 0!"
+        + " TDD_FORCE_CMAKE_INSTALL == 1!"
       installMasterCMake = True
     else:
       print "Leaving current CMake in place ..." \
@@ -195,9 +210,9 @@ def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
     if installMasterCMake:
 
       cmnd =  sys.executable + " " \
-        + TRIBITS_DIR + "/python/download-cmake.py" \
+        + tribitsDir + "/python/download-cmake.py" \
         + " --skip-detect" \
-        + " --install-dir="+CMAKE_DIR \
+        + " --install-dir="+cmakeTddDownloadBaseDir \
         + " --installer-type="+TDD_CMAKE_INSTALLER_TYPE
 
       if TDD_HTTP_PROXY:
@@ -206,42 +221,42 @@ def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
       try:
         echoRunSysCmnd( cmnd,
           timeCmnd = True,
-          workingDir = TOOLS_DIR \
+          workingDir = dashboardToolsDir \
           )
       except Exception, e:
         print "WARNING! The following command failed!\n"+cmnd
         print "However, not updating CMake is not the end of the world!"
 
 
-    # Find ctest under CMAKE_DIR:
+    # Find ctest under cmakeTddDownloadBaseDir:
     #
-    gr = glob.glob(CMAKE_DIR + "/bin/ctest*")
-    if 0 == len(gr):
-      gr = glob.glob(CMAKE_DIR + "/*/bin/ctest*")
-    if 0 == len(gr):
-      gr = glob.glob(CMAKE_DIR + "/*/*/bin/ctest*")
-    if 1 != len(gr):
+    ctestGlobStr = glob.glob(cmakeTddDownloadBaseDir + "/bin/ctest*")
+    if 0 == len(ctestGlobStr):
+      ctestGlobStr = glob.glob(cmakeTddDownloadBaseDir + "/*/bin/ctest*")
+    if 0 == len(ctestGlobStr):
+      ctestGlobStr = glob.glob(cmakeTddDownloadBaseDir + "/*/*/bin/ctest*")
+    if 1 != len(ctestGlobStr):
       print "error: could not find ctest executable after download..."
       sys.exit(2)
 
-    CTEST_EXE = gr[0]
-    print "\nCTEST_EXE: +" + CTEST_EXE + "+"
+    ctestExe = ctestGlobStr[0]
+    print "\nctestExe = '" + ctestExe + "'"
 
-    if not os.path.exists(CTEST_EXE):
+    if not os.path.exists(ctestExe):
       print "error: ctest does not exist after installation..."
       sys.exit(3)
 
     # Escape any spaces in the path of the ctest exe. This has to be done
-    # here instead of where we set the CTEST_EXE the first time because
+    # here instead of where we set the ctestExe the first time because
     # the check for existence cannot handle the "\"
     #
-    CTEST_EXE = CTEST_EXE.replace(" ",  "\ ")
+    ctestExe = ctestExe.replace(" ",  "\ ")
 
     # Verify ctest works with a simple --version call first:
     #
 
-    CTEST_VERSION = getCmndOutput(CTEST_EXE+" --version", True, False)
-    print "CTEST_VERSION: +" + CTEST_VERSION + "+"
+    ctestVersion = getCmndOutput(ctestExe+" --version", True, False)
+    print "ctestVersion = '"+ctestVersion+"'"
 
     # Run one driver dashboard for this source tree:
     #
@@ -249,11 +264,18 @@ def run_driver(ctest_directory, repo_directory, ctest_is_verbose=False):
     print "\n***"
     print "*** Running the main dashboards as CTest tests .."
     print "***\n"
-    sys.exit(invoke_ctest(CTEST_EXE,
-                           os.path.join(SCRIPT_DIR, "TribitsDriverDashboard.cmake"),
-                           BASE_DIR,
-                           {"CTEST_SOURCE_DIRECTORY": ctest_directory}))
+    sys.exit(
+      invoke_ctest(ctestExe,
+        os.path.join(tribitsTddDriverDir, "TribitsDriverDashboard.cmake"),
+        tddDashboardRootDir,
+        {
+         "TDD_DASHBOARD_ROOT" : tddDashboardRootDir,
+         "CTEST_SOURCE_DIRECTORY" : ctestSourceDirectory,
+         "CTEST_UPDATE_DIRECTORY" : projectRepoBaseDir,
+         "CTEST_BINARY_DIRECTORY" : tddDashboardRootDir+"/TDD_BUILD",
+         }
+        )
+      )
     
   finally:
     os.chdir(origDir)
-

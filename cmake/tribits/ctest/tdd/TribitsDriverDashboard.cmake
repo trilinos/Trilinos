@@ -60,12 +60,19 @@ MESSAGE(
  "\n***\n"
  )
 
+# Ge the directly where this file lives in the TriBITS tree.  We use this
+# to figure out where everything in in the TriBITS directory tree.
+get_filename_component(CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+# Get the Tribits base directory
+SET(TRIBITS_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
+GET_FILENAME_COMPONENT(TRIBITS_ROOT "${TRIBITS_ROOT}" ABSOLUTE)
+MESSAGE("TRIBITS_ROOT = '${TRIBITS_ROOT}'")
+
 # Get the directory containing the TriBITS CMake utilities using this
 # script's location as the reference point.
-SET(TRIBITS_CMAKE_UTILS_DIR "${CTEST_SCRIPT_DIRECTORY}/../../utils")
-GET_FILENAME_COMPONENT(TRIBITS_CMAKE_UTILS_DIR "${TRIBITS_CMAKE_UTILS_DIR}" ABSOLUTE)
-
-MESSAGE("TRIBITS_CMAKE_UTILS_DIR = ${TRIBITS_CMAKE_UTILS_DIR}")
+SET(TRIBITS_CMAKE_UTILS_DIR "${TRIBITS_ROOT}/utils")
+MESSAGE("TRIBITS_CMAKE_UTILS_DIR = '${TRIBITS_CMAKE_UTILS_DIR}'")
 
 SET( CMAKE_MODULE_PATH
   "${TRIBITS_CMAKE_UTILS_DIR}"
@@ -116,6 +123,9 @@ if("${CTEST_CMAKE_GENERATOR}" STREQUAL "")
     set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
   endif()
 endif()
+  
+# Extra directories to pull updates from
+SET_DEFAULT_AND_FROM_ENV( TDD_EXTRA_GIT_PULL_DIRS "" )
 
 set(CTEST_TEST_TIMEOUT "$ENV{CTEST_TEST_TIMEOUT}")
 if("${CTEST_TEST_TIMEOUT}" STREQUAL "")
@@ -148,8 +158,7 @@ get_filename_component(CTEST_BINARY_DIRECTORY
   "${CTEST_SCRIPT_DIRECTORY}/../../../../../TDD_BUILD" ABSOLUTE)
 SET_DEFAULT_AND_FROM_ENV(CTEST_BINARY_DIRECTORY ${CTEST_BINARY_DIRECTORY})
 
-get_filename_component(CTEST_NOTES_FILES
-  "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" ABSOLUTE)
+SET(CTEST_NOTES_FILES)
 if(NOT "$ENV{TDD_CRON_DRIVER_LOGFILE}" STREQUAL "")
   set(CTEST_NOTES_FILES ${CTEST_NOTES_FILES} "$ENV{TDD_CRON_DRIVER_LOGFILE}")
 endif()
@@ -184,10 +193,34 @@ ctest_start("${TDD_CTEST_TEST_TYPE}")
 message("\nB) Update ${CTEST_UPDATE_DIRECTORY} ...")
 message("      CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
 message("      CTEST_UPDATE_TYPE='${CTEST_UPDATE_TYPE}'")
-if(NOT TDD_IN_TESTING_MODE)
+
+if (NOT TDD_IN_TESTING_MODE)
+
   ctest_update(SOURCE "${CTEST_UPDATE_DIRECTORY}")
+
+  foreach(EXTRA_PULL_DIR ${TDD_EXTRA_GIT_PULL_DIRS})
+    SET(EXTRA_PULL_DIR_ABS "${CTEST_UPDATE_DIRECTORY}/${EXTRA_PULL_DIR}")
+    SET(PULL_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRA_PULL_DIR}.pull.out")
+    set(CTEST_NOTES_FILES ${CTEST_NOTES_FILES} ${PULL_OUT_FILE}) 
+    MESSAGE("Pull extra updates in '${EXTRA_PULL_DIR_ABS}' ...")
+    execute_process(
+      COMMAND ${git_exe} pull
+      WORKING_DIRECTORY "${EXTRA_PULL_DIR_ABS}"
+      TIMEOUT 60 # seconds
+      OUTPUT_FILE "${PULL_OUT_FILE}"
+      ERROR_FILE "${PULL_OUT_FILE}"
+      RESULT_VARIABLE PULL_RESULT
+      )
+    IF (NOT PULL_RESULT STREQUAL 0)
+      MESSAGE(SEND_ERROR
+        "The pull of '${EXTRA_PULL_DIR}' failed with error code ${PULL_RESULT}")
+    ENDIF()
+  endforeach()
+
 else()
-  message("In testing mode no update will be performed.")
+
+  message("\nTesting mode: no updates of outer sources being performed!")
+
 endif()
 
 message("\nC) Configure ${CTEST_BINARY_DIRECTORY} ...")
@@ -208,7 +241,7 @@ if (TDD_DO_SUBMIT)
   endif()
   ctest_submit(PARTS update configure notes build)
 else()
-  message("\nSkipping submit!")
+  message("\nSkipping submit on request!")
 endif()
 
 message("\nF) Run tests (which run all everything really): PARALLEL_LEVEL ${parallel_level} from ${CTEST_BINARY_DIRECTORY} ...")
@@ -218,7 +251,7 @@ message("\nG) Submitting Test ...")
 if (TDD_DO_SUBMIT)
   ctest_submit(PARTS Test)
 else()
-  message("\nSkipping submit!")
+  message("\nSkipping submit on request!")
 endif()
 
 MESSAGE(

@@ -1,5 +1,5 @@
 ======================================
-Submitting a TrilinosDriver dashboard:
+Submitting a TribitsDriver dashboard:
 ======================================
 
 
@@ -16,29 +16,24 @@ First, manually ensure that the following prerequisites are satisfied:
 B) Create a base directory:
 ===========================
 
-Create a directory as a base. I always use "T" in my home directory,
-or "C:\T" on Windows, as the base directory. Inside there, clone the
-Trilinos repository and checkout whatever branch you will be testing.
+Create a directory as a base and clone the sources
 
-  $ cd ~    # cd \" on Windows
-  $ mkdir T
-  $ cd T
-  $ git clone software.sandia.gov:/space/git/nightly/Trilinos
-
-See the Trilinos developers website for instructions on how to set up
-ssh so that the git clone call works using just software.sandia.gov
-without a user name and without you having to type a password.
+  $ cd <somebasedir>
+  $ mkdir Dashboards
+  $ cd Dashboards
+  $ git clone something.blah.gov/<PROJECT>
+  # Also, clone any other sources as well needed.
 
 
 C) Create machine specific content:
 ===================================
 
-Add a subdirectory named after your machine in
-Trilinos/cmake/ctest/drivers. If you name the directory exactly as
-your machine is named by `uname -n` then you simply need to add some
-files to that directory. You can drop ".domain.gov" stuff from the end
-of the machine name, as long as the name does not conflict with any
-other directory names already in the drivers directory.
+Add a subdirectory (optionally) named after your machine in
+<PROJECT>/cmake/ctest/drivers. If you name the directory exactly as your
+machine is named by `uname -n` then you simply need to add some files to that
+directory. You can drop ".domain.gov" stuff from the end of the machine name,
+as long as the name does not conflict with any other directory names already
+in the drivers directory.
 
 Add some ctest -S scripts to run as tests. You can base the *.cmake
 files in this directory on those used on an existing machine that is
@@ -51,26 +46,26 @@ s903186):
 
   # Initially:
   #
-  TRILINOS_DRIVER_SETUP()
+  TRIBITS_DRIVER_SETUP()
 
   # Make one of these calls for each script
   #
-  TRILINOS_DRIVER_ADD_DASHBOARD(
+  TRIBITS_DRIVER_ADD_DASHBOARD(
     MPI_OPT
     ctest_mac_nightly_mpi_opt_s903186.cmake
   )
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
+  TRIBITS_DRIVER_ADD_DASHBOARD(
     SERIAL_DEBUG
     ctest_mac_nightly_serial_debug_s903186.cmake
   )
 
   # Finally:
   #
-  TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()
+  TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS()
 
-The first argument to TRILINOS_DRIVER_ADD_DASHBOARD calls is the test
-name as it will appear on the TrilinosDriver dashboard. The second
+The first argument to TRIBITS_DRIVER_ADD_DASHBOARD calls is the test
+name as it will appear on the <Project>Driver dashboard. The second
 argument is the name of the script in the same directory that will be
 run as a ctest -S script as a test on the driver dashboard.
 
@@ -79,7 +74,7 @@ dashboards being run in parallel, then you should pass the RUN_SERIAL
 argument.
 
 For more details on other optional arguments, see the comments at the
-function definition for TRILINOS_DRIVER_ADD_DASHBOARD in
+function definition for TRIBITS_DRIVER_ADD_DASHBOARD in
 TribitsDriverSupport.cmake.
 
 WARNING: The name of the build (the first argument, e.g. MPI_OPT)
@@ -92,7 +87,7 @@ Next, add a cron_driver.sh for your machine. (Or cron_driver.bat on
 Windows.)
 
 You can set the environment variable TDD_PARALLEL_LEVEL to control how
-many dashboards are run in parallel (as tests) by the TrilinosDriver
+many dashboards are run in parallel (as tests) by the <Project>Driver
 dashboard.
 
 You may also need to set the environment variable TDD_HTTP_PROXY for
@@ -117,67 +112,65 @@ D) Run the scripts manually to test them:
 =========================================
 
 Before setting up the final cron job, you should test the individual
-CTest driver scripts and the outer TrilinosDriver script.
+CTest driver scripts and the outer <Project>Driver script.
 
 
 D.1) Test out individual CTest dashboard builds first:
 ------------------------------------------------------
 
-Before running your outer cron driver script, you would be wise to
-first test out your individual CTest driver scripts (e.g. MPI_OPT,
-SERIAL_DEBUG, etc.).  You can test individual basic ctest driver
-scripts to clone Trilinos and create the BUILD directroy by creating
-your own temp base directory and then overridding CTEST_DASHBOARD_ROOT
-for example as:
+Before running your outer cron driver script, you would be wise to first test
+out your individual CTest driver scripts (e.g. MPI_OPT, SERIAL_DEBUG, etc.).
+You can test individual basic ctest driver scripts to clone the project and
+create the BUILD directroy by creating your own temp base directory and then
+overridding CTEST_DASHBOARD_ROOT for example as:
 
   $ mkdir MOCK_MPI_OPT
   $ cd MOCK_MPI_OPT
-  $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  <Project>_PACKAGES=Teuchos \
      CTEST_TEST_TYPE=Experimental \
-     Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
+     <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
      CTEST_DO_UPDATES=TRUE  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
-     ctest -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+     ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
-Running the above will clone Trilinos into MOCK_MPI_OPT/Trilinos and
-will create the build directory in MOCK_MPI_OPT/BUILD.  After the
-initial clone is performed above, you can speed up subsequent testing by
-additionally setting CTEST_DO_UPDATES=FALSE and
-CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE on the environment.  You
-can keep running this 'env ... ctest -S ...' command until you get
-everything working.  All of the info needed to debug problems should
-be present in the output from 'ctest -VV -S' (which you should pipe to
+Running the above will clone <Project> into MOCK_MPI_OPT/<Project> and will
+create the build directory in MOCK_MPI_OPT/BUILD.  After the initial clone is
+performed above, you can speed up subsequent testing by additionally setting
+CTEST_DO_UPDATES=FALSE and CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE on
+the environment.  You can keep running this 'env ... ctest -S ...' command
+until you get everything working.  All of the info needed to debug problems
+should be present in the output from 'ctest -VV -S' (which you should pipe to
 a file and then examine).
 
-If you want to test the exact state of the local changes in ${TRILINOS_SRC},
+If you want to test the exact state of the local changes in <somedir>,
 you can avoid pulling commits by creating a symbolic link and running as:
 
   $ mkdir MOCK_MPI_OPT
   $ cd MOCK_MPI_OPT
-  $ ln -s  ${TRILINOS_SRC} Trilinos
-  $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
+  $ ln -s  <somedir> <Project>
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  <Project>_PACKAGES=Teuchos \
      CTEST_TEST_TYPE=Experimental \
-     Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
+     <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
      CTEST_DO_UPDATES=OFF  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
-     ctest -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+     ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 Note that above it is critical that you set CTEST_DO_UPDATES=OFF so that it
 will not try to reset your repos and wipe out your changes or have merge
 conflicts for extra repos.  Also, it is crticial that you make sure that the
-version of Trilinos in ${TRILINOS_SRC} has all of the extra repos cloned that
+version of the project in in <somedir> has all of the extra repos cloned that
 would be cloned if CTEST_DO_UPDATES=ON or the script will fail with a
 configure failure.
 
 After the local CTest processes are working, just to make sure the
 submit works, you can run a final trial build with:
 
-  $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  <Project>_PACKAGES=Teuchos \
      CTEST_TEST_TYPE=Experimental CTEST_DO_UPDATES=FALSE \
-     Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
+     <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
      CTEST_DO_SUBMIT=ON CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
-     ctest -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+     ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 If this submits to the 'Experimental' CDash dashbaord, you should be
 in good shape for the nightly test.  If you can't find you
@@ -200,7 +193,7 @@ back to the 'nightly' repo, you must delete the locally cloned Trilinos repo
 so that when the script runs with CTEST_TEST_TYPE=Nightly, it will clone from
 the 'nightly' repo and do subsequent updates form the 'nightly' repo.  If you
 want to totally override which repo gets pulled form, you can set that with
-the variable Trilinos_REPOSITORY_LOCATION.
+the variable <Project>_REPOSITORY_LOCATION.
 
 
 D.2) Testing the outer cron driver script:
@@ -208,57 +201,51 @@ D.2) Testing the outer cron driver script:
 
 To test this script manually, so something like:
 
-on Linux/Mac:
-
-  $ cd ~
-  $ cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
-  $ ./cron_driver.sh
-
-on Windows:
-
-  $ cd \
-  $ cd T\Trilinos\cmake\ctest\drivers\MACHINE_NAME
-  $ cron_driver.bat
-
-The first time you run this it *will* take a long time because it will
-do a separate git clone of the Trilinos repository for each ctest
-dashboard script that it runs.  In this first run, make it go faster
-by setting Trilinos_PACKAGES=Teuchos and CTEST_DO_SUBMIT=FALSE on the
-environment such as:
-
-  $ cd ~
-  $ cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
-  $ env  Trilinos_PACKAGES=Teuchos \
+  $ cd <somebasedir>
+  $ mkdir MOCK_DASHBOARD_DRIVER
+  $ cd MOCK_DASHBOARD_DRIVER
+  $ env \
+      TDD_DASHBOARD_ROOT=$PWD \
+      <PROJECT_NAME>_PACKAGES=Teuchos \
       TDD_IN_TESTING_MODE=ON \
+      TDD_CTEST_TEST_TYPE=Experimental \
       CTEST_TEST_TYPE=Experimental \
       CTEST_DO_UPDATES=TRUE \
       TDD_DO_SUBMIT=FALSE \
       CTEST_DO_SUBMIT=FALSE  \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
       CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
-      ./cron_driver.sh
+      <yourdirverssroucedir>/cron_driver_somemachine.sh
 
 Once you are done with the initial run, you can test it out
 interactively in a rapid, iterative process by setting up the
 following additionial environment variables:
 
-  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_UPDATES=FALSE \
+  $ env \
+      TDD_DASHBOARD_ROOT=$PWD \
+      <Project>_PACKAGES=Teuchos \
+      CTEST_DO_UPDATES=FALSE \
       CTEST_DO_SUBMIT=FALSE \
-      TDD_DO_SUBMIT=FALSE TDD_IN_TESTING_MODE=ON \
+      TDD_DO_SUBMIT=FALSE \
+      TDD_IN_TESTING_MODE=ON \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+      TDD_CTEST_TEST_TYPE=Experimental \
       CTEST_TEST_TYPE=Experimental \
       TDD_FORCE_CMAKE_INSTALL=0 \
+      TDD_FORCE_INNER_CMAKE_INSTALL=0 \
       CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
-      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
-      ./cron_driver.sh
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+      <yourdirverssroucedir>/cron_driver_somemachine.sh
 
 (of course you must use set commands on Windows).
 
 NOTES:
 
-(*) Set TDD_FORCE_CMAKE_INSTALL=1 to force a global CMake reinstall.
+(*) Set TDD_FORCE_CMAKE_INSTALL=0 to skip global CMake reinstall.
+(*) Set TDD_FORCE_INNER_CMAKE_INSTALL=0 to skip tests that install
+    the inner CMake/CTest used by individual builds.
 (*) Set CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=FALSE if you only
-    want to process the exact packages set with Trilinos_PACKAGES
+    want to process the exact packages set with <Project>_PACKAGES
 (*) Set CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE after a first round of builds
     to speed up subsequent builds.
 
@@ -269,21 +256,21 @@ Once you are confident that your driver script is working correctly,
 you should try to run this as a cron job using the command (see the
 entire command below in the "cron driver" section):
 
-  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=ON  TDD_DO_SUBMIT=ON \
+  $ env  <Project>_PACKAGES=Teuchos  CTEST_DO_SUBMIT=ON  TDD_DO_SUBMIT=ON \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
       CTEST_TEST_TYPE=Experimental \
       TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade \
-      ./cron_driver.sh
+      <yourdirverssroucedir>/cron_driver_somemachine.sh
 
-Note the submits variables are turned on which means that the inner
-and outer submits will be performed to the Trilinos and TrilinosDriver
-dashboards, respectively.  If this submits to the CDash dashboards,
-you should be ready to set up your final cron job driver (see below).
+Note the submits variables are turned on which means that the inner and outer
+submits will be performed to the <Project> and <Project>Driver dashboards,
+respectively.  If this submits to the CDash dashboards, you should be ready to
+set up your final cron job driver (see below).
 
-WARNING: Blow away all of the base dashboard directories that get
-created during this process before running the final cron job!  You
-must do this so that the correct Trilinos git nightly repository will
-get cloned in the inner CTest dashboards.  You would do this with:
+WARNING: Blow away all of the base dashboard directories that get created
+during this process before running the final cron job!  You must do this so
+that the correct git nightly repository will get cloned in the inner CTest
+dashboards.  You would do this with:
 
   $ cd ~/T
   $ rm -rf MPI_DEBUG SERIAL_RELEASE ...
@@ -295,12 +282,12 @@ E) Debugging problems:
 Debugging the inner CTest dashbaords should be more straightforward as
 described in D.1 above.
 
-When first getting the outer TrilinosDriver script to run, there can
-be problems that you will have to debug.  The output to the console
-from the cron_driver.py script is very sparse but will be of some
-help.  Almost all of the output from the various stages are contained
-under the base build/test directory.  The base build directory for the
-outer CTest TrilinosDriver script is in:
+When first getting the outer <Project>Driver script to run, there can be
+problems that you will have to debug.  The output to the console from the
+cron_driver.py script is very sparse but will be of some help.  Almost all of
+the output from the various stages are contained under the base build/test
+directory.  The base build directory for the outer CTest <Project>Driver
+script is in:
 
   ~/T/TDD_BUILD
 
@@ -335,23 +322,22 @@ in whole.
 The contents of your cron driver should look like:
 
   MAILTO=youremail@yourorg.org
-  10 00 * * * cd  ~/T/Trilinos/cmake/ctest/drivers/MACHINE_NAME && ./cron_driver.sh &> ~/T/cron_driver.log
+  10 00 * * * cd  ~/T/<Project>/cmake/ctest/drivers/MACHINE_NAME && ./cron_driver.sh &> ~/T/cron_driver.log
 
-Typical values are MM=10 and HH=00 which starts things off at 10
-minutes after midnight.  The Trilinos testing day time may move
-earlier (e.g. 8 PM MST) but it will not start after Midnight so that
-value is safe.  You can start your cron driver at any time after the
-beginning of a new testing day (as defined by CTest/CDash
-configuration).
+Typical values are MM=10 and HH=00 which starts things off at 10 minutes after
+midnight.  The testing day time may move earlier (e.g. 8 PM MST) but it will
+not start after Midnight so that value is safe.  You can start your cron
+driver at any time after the beginning of a new testing day (as defined by
+CTest/CDash configuration).
 
 
 G) Commit changes to the driver scripts:
 ========================================
 
-You must commit and push changes in Trilinos/cmake/ctest/drivers into
-the main Trilinos git repository.  To do this, do:
+You must commit and push changes in <Project>/cmake/ctest/drivers into the
+main Trilinos git repository.  To do this, do:
 
-  $ cd ~/T/Trilinos
+  $ cd ~/T/<Project>
   $ eg remote add trilinos software:/space/git/Trilinos
   $ eg pull trilinos
   $ eg commit

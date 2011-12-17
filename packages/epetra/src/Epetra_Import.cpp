@@ -47,6 +47,8 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Util.h"
 
+#include <algorithm>
+#include <vector>
 
 //==============================================================================
 // Epetra_Import constructor for a Epetra_BlockMap object
@@ -281,26 +283,191 @@ Epetra_Import::~Epetra_Import()
 //=============================================================================
 void Epetra_Import::Print(ostream & os) const
 {
+  // mfh 14 Dec 2011: The implementation of Print() I found here
+  // previously didn't print much at all, and it included a message
+  // saying that it wasn't finished ("Epetra_Import::Print needs
+  // attention!!!").  What you see below is a port of
+  // Tpetra::Import::print, which does have a full implementation.
+  // This should allow a side-by-side comparison of Epetra_Import with
+  // Tpetra::Import.
 
-  os << endl << endl << "Source Map:" << endl << endl;
+  // If true, then copy the array data and sort it before printing.
+  // Otherwise, leave the data in its original order.  
+  //
+  // NOTE: Do NOT sort the arrays in place!  Only sort in the copy.
+  // Epetra depends on the order being preserved, and some arrays'
+  // orders are coupled.
+  const bool sortIDs = true;
+
+  const Epetra_Comm& comm = SourceMap_.Comm();
+  const int myRank = comm.MyPID();
+  const int numProcs = comm.NumProc();
+  
+  if (myRank == 0) {
+    os << "Import Data Members:" << endl;
+  }
+  // We don't need a barrier before this for loop, because Proc 0 is
+  // the first one to do anything in the for loop anyway.
+  for (int p = 0; p < numProcs; ++p) {
+    if (myRank == p) {
+      os << "Image ID       : " << myRank << endl;
+
+      os << "permuteFromLIDs:";
+      if (PermuteFromLIDs_ == NULL) {
+	os << " NULL";
+      } else {
+	std::vector<int> permuteFromLIDs (NumPermuteIDs_);
+	std::copy (PermuteFromLIDs_, PermuteFromLIDs_ + NumPermuteIDs_, 
+		   permuteFromLIDs.begin());
+	if (sortIDs) {
+	  std::sort (permuteFromLIDs.begin(), permuteFromLIDs.end());
+	}
+	os << " {";
+	for (int i = 0; i < NumPermuteIDs_; ++i) {
+	  os << permuteFromLIDs[i];
+	  if (i < NumPermuteIDs_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "}";
+      }
+      os << endl;
+
+      os << "permuteToLIDs  :";
+      if (PermuteToLIDs_ == NULL) {
+	os << " NULL";
+      } else {
+	std::vector<int> permuteToLIDs (NumPermuteIDs_);
+	std::copy (PermuteToLIDs_, PermuteToLIDs_ + NumPermuteIDs_, 
+		   permuteToLIDs.begin());
+	if (sortIDs) {
+	  std::sort (permuteToLIDs.begin(), permuteToLIDs.end());
+	}
+	os << " {";
+	for (int i = 0; i < NumPermuteIDs_; ++i) {
+	  os << permuteToLIDs[i];
+	  if (i < NumPermuteIDs_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "}";
+      }
+      os << endl;
+
+      os << "remoteLIDs     :";
+      if (RemoteLIDs_ == NULL) {
+	os << " NULL";
+      } else {
+	std::vector<int> remoteLIDs (NumRemoteIDs_);
+	std::copy (RemoteLIDs_, RemoteLIDs_ + NumRemoteIDs_, 
+		   remoteLIDs.begin());
+	if (sortIDs) {
+	  std::sort (remoteLIDs.begin(), remoteLIDs.end());
+	}
+	os << " {";
+	for (int i = 0; i < NumRemoteIDs_; ++i) {
+	  os << remoteLIDs[i];
+	  if (i < NumRemoteIDs_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "}";
+      }
+      os << endl;
+
+      // If sorting for output, the export LIDs and export PIDs have
+      // to be sorted together.  We can use Epetra_Util::Sort, using
+      // the PIDs as the keys to match Tpetra::Import.
+      std::vector<int> exportLIDs (NumExportIDs_);
+      std::vector<int> exportPIDs (NumExportIDs_);
+      if (ExportLIDs_ != NULL) {
+	std::copy (ExportLIDs_, ExportLIDs_ + NumExportIDs_, exportLIDs.begin());
+	std::copy (ExportPIDs_, ExportPIDs_ + NumExportIDs_, exportPIDs.begin());
+
+	if (sortIDs && NumExportIDs_ > 0) {
+	  int* intCompanions[1]; // Input for Epetra_Util::Sort().
+	  intCompanions[0] = &exportLIDs[0];
+	  Epetra_Util::Sort (true, NumExportIDs_, &exportPIDs[0], 
+			     0, (double**) NULL, 1, intCompanions);
+	}
+      }
+
+      os << "exportLIDs     :";
+      if (ExportLIDs_ == NULL) {
+	os << " NULL";
+      } else {
+	os << " {";
+	for (int i = 0; i < NumExportIDs_; ++i) {
+	  os << exportLIDs[i];
+	  if (i < NumExportIDs_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "}";
+      }
+      os << endl;
+
+      os << "exportImageIDs :";
+      if (ExportPIDs_ == NULL) {
+	os << " NULL";
+      } else {
+	os << " {";
+	for (int i = 0; i < NumExportIDs_; ++i) {
+	  os << exportPIDs[i];
+	  if (i < NumExportIDs_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "}";
+      }
+      os << endl;
+
+      os << "numSameIDs     : " << NumSameIDs_ << endl;
+      os << "numPermuteIDs  : " << NumPermuteIDs_ << endl;
+      os << "numRemoteIDs   : " << NumRemoteIDs_ << endl;
+      os << "numExportIDs   : " << NumExportIDs_ << endl;
+
+      // Epetra keeps NumSend_ and NumRecv_, whereas in Tpetra, these
+      // are stored in the Distributor object.  This is why we print
+      // them here.
+      os << "Number of sends: " << NumSend_ << endl;
+      os << "Number of recvs: " << NumRecv_ << endl;
+    } // if my rank is p
+
+    // A few global barriers give I/O a chance to complete.
+    comm.Barrier();
+    comm.Barrier();
+    comm.Barrier();
+  } // for each rank p
+
+  // The original implementation printed the Maps first.  We moved
+  // printing the Maps to the end, for easy comparison with the output
+  // of Tpetra::Import::print().
+  if (myRank == 0) {
+    os << endl << endl << "Source Map:" << endl << std::flush;
+  }
+  comm.Barrier();
   SourceMap_.Print(os);
+  comm.Barrier();
   
-  os << endl << endl << "Target Map:" << endl << endl;
+  if (myRank == 0) {
+    os << endl << endl << "Target Map:" << endl << std::flush;
+  }
+  comm.Barrier();
   TargetMap_.Print(os);
-  
-  os << endl << endl << "Distributor:" << endl << endl;
-  if (Distor_==0) os << "  Is empty...." << endl;
-  else Distor_->Print(os);
-  
-  os << "Number of Same IDs = " << NumSameIDs_ << endl;
+  comm.Barrier();
 
-  os << "Number of Permute IDs = " << NumPermuteIDs_ << endl;
-
-  os << "Number of Export IDs = " << NumExportIDs_ << endl;
-
-  os << "Number of Remote IDs = " << NumRemoteIDs_ << endl;
-  
-  os << "Epetra_Import Print Needs attention!!!!" << endl;
-  return;
+  if (myRank == 0) {
+    os << endl << endl << "Distributor:" << endl << std::flush;
+  }
+  comm.Barrier();
+  if (Distor_ == NULL) {
+    if (myRank == 0) {
+      os << " is NULL." << endl;
+    }
+  } else {
+    Distor_->Print(os); // Printing the Distributor is itself distributed.
+  }
+  comm.Barrier();
 }
 

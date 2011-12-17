@@ -4,8 +4,8 @@
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -263,11 +263,11 @@ namespace Tpetra {
           os << "Import Data Members:" << endl;
         }
         os << "Image ID       : " << myImageID << endl;
-        os << "permuteFromLIDs: {"; av = getPermuteFromLIDs(); std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << " }" << endl;
-        os << "permuteToLIDs  : {"; av = getPermuteToLIDs();   std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << " }" << endl;
-        os << "remoteLIDs     : {"; av = getRemoteLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << " }" << endl;
-        os << "exportLIDs     : {"; av = getExportLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << " }" << endl;
-        os << "exportImageIDs : {"; avi = getExportImageIDs();  std::copy(avi.begin(),avi.end(),std::ostream_iterator<int>(os," ")); os << " }" << endl;
+        os << "permuteFromLIDs: {"; av = getPermuteFromLIDs(); std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+        os << "permuteToLIDs  : {"; av = getPermuteToLIDs();   std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+        os << "remoteLIDs     : {"; av = getRemoteLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+        os << "exportLIDs     : {"; av = getExportLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+        os << "exportImageIDs : {"; avi = getExportImageIDs();  std::copy(avi.begin(),avi.end(),std::ostream_iterator<int>(os," ")); os << "}" << endl;
         os << "numSameIDs     : " << getNumSameIDs() << endl;
         os << "numPermuteIDs  : " << getNumPermuteIDs() << endl;
         os << "numRemoteIDs   : " << getNumRemoteIDs() << endl;
@@ -279,13 +279,28 @@ namespace Tpetra {
       comm->barrier();
     }
     if (myImageID == 0) {
-      os << "\nSource Map: " << endl; 
+      os << endl << endl << "Source Map:" << endl << std::flush; 
     }
+    comm->barrier();
     os << *getSourceMap();
+    comm->barrier();
+
     if (myImageID == 0) {
-      os << "\nTarget Map: " << endl; 
+      os << endl << endl << "Target Map:" << endl << std::flush; 
     }
+    comm->barrier();
     os << *getTargetMap();
+    comm->barrier();
+
+    // It's also helpful for debugging to print the Distributor
+    // object.  Epetra_Import::Print() does this, so we can do a
+    // side-by-side comparison.
+    if (myImageID == 0) {
+      os << endl << endl << "Distributor:" << endl << std::flush;
+    }
+    comm->barrier();
+    getDistributor().describe (*(Teuchos::getFancyOStream (Teuchos::rcpFromRef (os))),
+			       Teuchos::VERB_EXTREME);
   }
 
 
