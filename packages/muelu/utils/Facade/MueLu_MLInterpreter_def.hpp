@@ -71,10 +71,11 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   if(params.isParameter("max levels")) maxLevels = params.get<int>("max levels");
   if(params.isParameter("coarse: max size")) maxCoarseSize = params.get<int>("coarse: max size");
   if(params.isParameter("PDE equations")) nDofsPerNode = params.get<int>("PDE equations");
-  if(params.isParameter("aggregation: threshold"))       agg_threshold       = params.get<int>("aggregation: threshold");
-  if(params.isParameter("aggregation: damping factor"))  agg_damping         = params.get<double>("aggregation: damping factor");
-  if(params.isParameter("aggregation: smoothing sweeps"))agg_smoothingsweeps = params.get<int>   ("aggregation: smoothing sweeps");
-  if(params.isParameter("aggregation: type"))            agg_type            = params.get<std::string> ("aggregation: type");
+  if(params.isParameter("aggregation: threshold"))          agg_threshold       = params.get<double>("aggregation: threshold");
+  if(params.isParameter("aggregation: damping factor"))     agg_damping         = params.get<double>("aggregation: damping factor");
+  if(params.isParameter("aggregation: smoothing sweeps"))   agg_smoothingsweeps = params.get<int>   ("aggregation: smoothing sweeps");
+  if(params.isParameter("aggregation: type"))               agg_type            = params.get<std::string> ("aggregation: type");
+  //if(params.isParameter("aggregation: nodes per aggregate"))minPerAgg           = params.get<int>("aggregation: nodes per aggregate");
   if(params.isParameter("energy minimization: enable"))  bEnergyMinimization = params.get<bool>("energy minimization: enable");
 
   TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::Interpreter: only 'Uncoupled' aggregation supported. error.");
@@ -107,8 +108,10 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
     RFact = rcp( new TransPFactory(PFact) );
   } else if(agg_damping != 0.0 && bEnergyMinimization == false) {
     // smoothed aggregation (SA-AMG)
-    RCP<PFactory> PtentFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
+    RCP<PFactory>  PtentFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
     PFact  = rcp( new SaPFactory(PtentFact) );
+    RCP<SaPFactory> SaPFact = Teuchos::rcp_dynamic_cast<SaPFactory>(PFact);
+    SaPFact->SetDampingFactor(agg_damping);
     RFact  = rcp( new TransPFactory(PFact) );
   } else if(bEnergyMinimization == true) {
     // Petrov Galerkin PG-AMG smoothed aggregation (energy minimization in ML)

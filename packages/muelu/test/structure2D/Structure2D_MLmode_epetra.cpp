@@ -77,7 +77,7 @@ void FillMLParameterList(Teuchos::ParameterList & params) {
   params.set("PDE equations",2);
   params.set("aggregation: damping factor", 1.33);
   params.set("aggregation: nodes per aggregate", 27);
-  params.set("aggregation: threshold", 0);
+  params.set("aggregation: threshold", 0.0);
   params.set("aggregation: type", "Uncoupled");
   params.set("coarse: max size", 50);
   params.set("coarse: pre or post", "post");
