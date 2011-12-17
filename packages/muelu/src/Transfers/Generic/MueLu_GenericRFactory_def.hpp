@@ -33,8 +33,7 @@ namespace MueLu {
     // so we have to request the dependencies of PFact first!
     // The dependencies are (automatically) cleaned up after the second
     // run of PFact_.Build in coarseLevel.Get<RCP<Operator> >("R",PFact_.get())!
-    // So we only do request but not release dependencies here!
-    coarseLevel.DeclareDependencies(PFact_.get(),true,false);
+    coarseLevel.DeclareDependencies(PFact_.get());
 
     coarseLevel.DeclareInput("R", PFact_.get(), this);  // we expect the prolongation operator factory to produce "R" as output
     // call declareInput is called within DeclareInput call
