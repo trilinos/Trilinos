@@ -36,7 +36,7 @@ APPEND_SET(SOURCES
   Smoothers/MueLu_TestHelpersSmoothers.cpp
   Utilities
   VariableContainer.cpp
-  # Zoltan.cpp
+  Zoltan.cpp
 )
 
 ### Tests that require other Trilinos packages
