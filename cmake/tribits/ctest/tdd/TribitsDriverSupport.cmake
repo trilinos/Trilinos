@@ -57,7 +57,8 @@ INCLUDE(GetCurrentListDir)
 INCLUDE(ParseVariableArguments)
 INCLUDE(SetDefaultAndFromEnv)
 
-SET_DEFAULT_AND_FROM_ENV(TDD_FORCE_CMAKE_INSTALL 1)
+# Set if the inner CMake installs are performed or not
+SET_DEFAULT_AND_FROM_ENV(TDD_FORCE_INNER_CMAKE_INSTALL 1)
 
 # Get this value outside of any functions so it will be the path to
 # *this* file and not the path to the file calling any of these
@@ -155,6 +156,8 @@ endfunction()
 #
 function(TRIBITS_DRIVER_ADD_DASHBOARD testname scriptname)
 
+  MESSAGE("TRIBITS_DRIVER_ADD_DASHBOARD:  '${testname}'  '${scriptname}' [${ARGN}]")
+
   # Uncomment this line to see output of below PARSE_ARGUMENTS:
   #
   #set(PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED TRUE)
@@ -233,6 +236,7 @@ function(TRIBITS_DRIVER_ADD_DASHBOARD testname scriptname)
   # Track the required cmake installer types in a global property:
   #
   set_property(GLOBAL APPEND PROPERTY TD_CMAKE_INSTALLER_TYPES "${ctest_type}")
+
 endfunction()
 
 
@@ -244,7 +248,7 @@ endfunction()
 #
 function(TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS)
 
-  IF (TDD_FORCE_CMAKE_INSTALL STREQUAL 1) 
+  IF (TDD_FORCE_INNER_CMAKE_INSTALL STREQUAL 1) 
 
     get_property(types GLOBAL PROPERTY TD_CMAKE_INSTALLER_TYPES)
   
@@ -262,7 +266,7 @@ function(TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS)
 
   ELSE()
 
-    MESSAGE(STATUS "Skipping CMake install tests because TDD_FORCE_CMAKE_INSTALL!=1")
+    MESSAGE(STATUS "Skipping CMake install tests because TDD_FORCE_INNER_CMAKE_INSTALL!=1")
 
   ENDIF()
 
