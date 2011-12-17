@@ -9,6 +9,7 @@
 #include "MueLu_GalleryUtils.hpp"
 
 #include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_ExportFactory.hpp"
 
 #include "MueLu_UseShortNames.hpp"
 
