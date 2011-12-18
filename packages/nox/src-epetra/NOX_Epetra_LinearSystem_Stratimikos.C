@@ -295,9 +295,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-#ifdef NOX_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("NOX: Total Linear Solve Time");
-#endif
+  NOX_FUNC_TIME_MONITOR("NOX: Total Linear Solve Time");
 
   double startTime = timer.WallTime();
 
@@ -428,9 +426,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-#ifdef NOX_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("NOX: Total Preconditioner Generation Time");
-#endif
+  NOX_FUNC_TIME_MONITOR("NOX: Total Preconditioner Generation Time");
 
   double startTime = timer.WallTime();  
 

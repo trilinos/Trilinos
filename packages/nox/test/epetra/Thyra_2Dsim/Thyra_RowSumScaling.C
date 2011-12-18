@@ -59,6 +59,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -244,6 +245,8 @@ int main(int argc, char *argv[])
     std::cout << "Test passed!" << std::endl;
 
   std::cout << *p << std::endl;
+
+  Teuchos::TimeMonitor::summarize();
 
   // Final return value (0 = successfull, non-zero = failure)
   return status;
