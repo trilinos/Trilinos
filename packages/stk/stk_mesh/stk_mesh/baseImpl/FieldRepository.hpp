@@ -83,7 +83,6 @@ class FieldRepository {
         const void     * arg_init_value = NULL)
     {
       arg_field.m_impl.insert_restriction( arg_method, arg_entity_rank, arg_part, arg_stride, arg_init_value);
-      verify_and_clean_restrictions( arg_method, arg_all_parts );
     }
 
     void declare_field_restriction(

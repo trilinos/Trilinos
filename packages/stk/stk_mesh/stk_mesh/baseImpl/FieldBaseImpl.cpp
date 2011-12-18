@@ -180,10 +180,10 @@ void FieldBaseImpl::insert_restriction(
   }
 
   {
-    FieldRestrictionVector & rMap = restrictions();
+    FieldRestrictionVector & restrs = restrictions();
 
-    FieldRestrictionVector::iterator restr = rMap.begin();
-    FieldRestrictionVector::iterator last_restriction = rMap.end();
+    FieldRestrictionVector::iterator restr = restrs.begin();
+    FieldRestrictionVector::iterator last_restriction = restrs.end();
 
     restr = std::lower_bound(restr,last_restriction,tmp);
 
@@ -192,7 +192,42 @@ void FieldBaseImpl::insert_restriction(
     if ( new_restriction ) {
       // New field restriction, verify we are not committed:
       ThrowRequireMsg(!m_meta_data->is_commit(), "mesh MetaData has been committed.");
-      rMap.insert( restr , tmp );
+      unsigned num_subsets = 0;
+      for(FieldRestrictionVector::iterator i=restrs.begin(), iend=restrs.end(); i!=iend; ++i) {
+        const Part& partI = *m_meta_data->get_parts()[i->part_ordinal()];
+        bool found_subset = contain(arg_part.subsets(), partI);
+        if (found_subset) {
+          ThrowErrorMsgIf( i->not_equal_stride(tmp),
+            arg_method << " FAILED for " << *this << " " <<
+            print_restriction( *i, arg_entity_rank, arg_part, m_field_rank ) <<
+            " WITH INCOMPATIBLE REDECLARATION " <<
+            print_restriction( tmp, arg_entity_rank, arg_part, m_field_rank ));
+          *i = tmp;
+          ++num_subsets;
+        }
+
+        bool found_superset = contain(arg_part.supersets(), partI);
+        if (found_superset) {
+          ThrowErrorMsgIf( i->not_equal_stride(tmp),
+            arg_method << " FAILED for " << *this << " " <<
+            print_restriction( *i, arg_entity_rank, arg_part, m_field_rank ) <<
+            " WITH INCOMPATIBLE REDECLARATION " <<
+            print_restriction( tmp, arg_entity_rank, arg_part, m_field_rank ));
+          //if there's already a restriction for a superset of this part, then 
+          //there's nothing to do and we're out of here..
+          return;
+        }
+      }
+      if (num_subsets == 0) {
+        restrs.insert( restr , tmp );
+      }
+      else {
+        //if subsets were found, we replaced them with the new restriction. so now we need
+        //to sort and unique the vector, and trim it to remove any duplicates:
+        std::sort(restrs.begin(), restrs.end());
+        FieldRestrictionVector::iterator it = std::unique(restrs.begin(), restrs.end());
+        restrs.resize(it - restrs.begin());
+      }
     }
     else {
       ThrowErrorMsgIf( restr->not_equal_stride(tmp),
