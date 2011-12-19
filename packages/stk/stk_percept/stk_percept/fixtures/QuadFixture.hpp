@@ -362,7 +362,7 @@ namespace stk {
 
                               if (0)
                                 {
-                                  std::cout << "P[" <<  bulk_data.parallel_rank() << "]"
+                                  std::cout << "P[" <<  bulk_data.parallel_rank() << "] name= " << side_parts[i_side]->name()
                                             << " ix= " << ix
                                             << " iy= " << iy
                                             << " i_side= " << i_side
@@ -399,7 +399,7 @@ namespace stk {
 
                               if (0)
                                 {
-                                  std::cout << "P[" <<  bulk_data.parallel_rank() << "]"
+                                  std::cout << "P[" <<  bulk_data.parallel_rank() << "] name= " << side_parts[i_side]->name()
                                             << " ix= " << ix
                                             << " iy= " << iy
                                             << " i_side= " << i_side

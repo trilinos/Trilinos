@@ -12,7 +12,7 @@
 // Owner         : Steve Kennon
 //-------------------------------------------------------------------------
 #ifndef PERCEPT_MESQUITE_MESH_DOMAIN_HPP
-#define PERCEPT_MESQUITE_Mesh_DOMAIN_HPP
+#define PERCEPT_MESQUITE_MESH_DOMAIN_HPP
 
 // ibm can't compile mesquite
 #if !defined(__IBMCPP__)
@@ -41,14 +41,15 @@ namespace stk {
 
     public:
 
-      PerceptMesquiteMeshDomain(PerceptMesh *eMesh, MeshGeometry *meshGeometry=0);
+      PerceptMesquiteMeshDomain(PerceptMesh *eMesh, MeshGeometry *meshGeometry=0) : m_eMesh(eMesh), m_meshGeometry(meshGeometry) {}
+
       //       void init(PerceptMesh *eMesh);
       //       int setup();
       //       bool is_on_my_patch_boundary(stk::mesh::Entity *node_ptr);
       //       void clean_out();
 
     public:
-      virtual ~PerceptMesquiteMeshDomain();
+      virtual ~PerceptMesquiteMeshDomain() {}
   
       
       //! Modifies "coordinate" so that it lies on the

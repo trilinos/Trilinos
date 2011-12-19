@@ -22,6 +22,8 @@
 #include <map>
 #include <algorithm>
 
+#define DEBUG_PRINT 0
+
 namespace stk {
   namespace percept {
 
@@ -65,7 +67,7 @@ namespace stk {
     // Author: sjowen
     // Date: 03/30/2011, 11/15/11
     //============================================================================
-    PerceptMesquiteMesh::PerceptMesquiteMesh(PerceptMesh *eMesh)
+    PerceptMesquiteMesh::PerceptMesquiteMesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector) : m_boundarySelector(boundarySelector)
     {  
       init(eMesh);
     }
@@ -81,26 +83,6 @@ namespace stk {
       return 0;
     }
 
-    //============================================================================
-    // Description: determine whether a node is at the boundary of the elementArray
-    // Notes: based on whether all elements surrounding a node are in the includedElements set
-    // Author: sjowen, srkennon
-    // Date: 04/19/2011
-    //============================================================================
-    bool PerceptMesquiteMesh::is_on_my_patch_boundary(stk::mesh::Entity *node_ptr)
-    {
-      return false;
-    }
-
-    //============================================================================
-    // Description: clean out the data to call setup again
-    // Author: sjowen, srkennon
-    // Date: 5/19/2011
-    //============================================================================
-    void PerceptMesquiteMesh::clean_out()
-    {
-  
-    }
 
     //============================================================================
     // Description: destructor
@@ -110,7 +92,7 @@ namespace stk {
     PerceptMesquiteMesh::~PerceptMesquiteMesh()
     {
     
-      clean_out();
+      //clean_out();
     
     }
 
@@ -194,6 +176,9 @@ namespace stk {
       elements.clear();
 
       const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->getBulkData()->buckets( m_eMesh->element_rank() );
+      unsigned buckets_size = buckets.size();
+      if (DEBUG_PRINT) std::cout << "tmp srk buckets_size= " << buckets_size << std::endl;
+      
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
@@ -205,6 +190,10 @@ namespace stk {
             for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
               {
                 stk::mesh::Entity& element = bucket[ientity];
+                if (DEBUG_PRINT) {
+                  std::cout << "tmp srk printing entity: ";
+                  m_eMesh->printEntity(std::cout, element, m_eMesh->getCoordinatesField() );
+                }
                 elements.push_back(reinterpret_cast<Mesquite::Mesh::VertexHandle>( &element ) );
               }
           }
@@ -230,12 +219,14 @@ namespace stk {
   
       unsigned int i;
 
+      /* if no boundary selector is set, this implies we allow all nodes to move...
       if(!m_boundarySelector)
         {     
           MSQ_SETERR(err)("PerceptMesquiteMesh::vertex_is_on_boundary: No selector to determine vertex fixed-ness.", Mesquite::MsqError::INVALID_STATE);
           PRINT_ERROR(" PerceptMesquiteMesh::vertex_is_on_boundary: No selector to determine vertex fixed-ness.\n");
           return;
         }
+      */
     
       for (i = 0; i < num_vtx; ++i)
         {
@@ -251,7 +242,7 @@ namespace stk {
     
           //if the owner is something other than the top-level owner, the node
           // is on the boundary; otherwise, it isn't.
-          if ((*m_boundarySelector)(*node_ptr))
+          if (m_boundarySelector && ((*m_boundarySelector)(*node_ptr)) )
             fixed_flag_array.push_back(true);
           else
             fixed_flag_array.push_back(false);
@@ -519,7 +510,7 @@ namespace stk {
 
           for (unsigned iele=0; iele < elements_of_node.size(); iele++)
             {
-              stk::mesh::Entity& ele = *elements_of_node[i].entity();
+              stk::mesh::Entity& ele = *elements_of_node[iele].entity();
 
               // only return hexes in the includedElements set
               //if (includedElements.find(ent_ptr) != includedElements.end())
@@ -574,19 +565,42 @@ namespace stk {
         {
           offsets.push_back(offset_counter);
           element_ptr = reinterpret_cast<stk::mesh::Entity*>(elem_handles[i]);
+          if(element_ptr==NULL){
+            PRINT_ERROR("elements_get_attached_vertices: unexpected null pointer, element_ptr.\n");
+            MSQ_SETERR(err)("elements_get_attached_vertices: unexpected null pointer, element_ptr.",
+                            Mesquite::MsqError::INVALID_STATE);
+            return;
+          }
 
           VertexHandle temp_v_handle = NULL;
 
           stk::mesh::PairIterRelation nodes = element_ptr->relations(m_eMesh->node_rank());
+          if (DEBUG_PRINT) {
+            std::cout << "tmp srk in elements_get_attached_vertices, nodes.size= " << nodes.size() 
+                      << " elem= ";
+            m_eMesh->printEntity(std::cout, *element_ptr, m_eMesh->getCoordinatesField() );
+          }
+
           for (unsigned inode=0; inode < nodes.size(); inode++)
             {
-              stk::mesh::Entity& node = *nodes[i].entity();
+              if (!nodes[inode].entity()){
+                std::cout << "elements_get_attached_vertices: unexpected null pointer,  node= " << nodes[inode].entity()
+                          << " elem= " << *element_ptr << " nodes.size= " << nodes.size()
+                          << std::endl;
+                PRINT_ERROR("elements_get_attached_vertices: unexpected null pointer, nodes[inode].entity().\n");
+                MSQ_SETERR(err)("elements_get_attached_vertices: unexpected null pointer, nodes[inode].entity().",
+                                Mesquite::MsqError::INVALID_STATE);
+              }
+              stk::mesh::Entity& node = *nodes[inode].entity();
         
               temp_v_handle = reinterpret_cast<VertexHandle>(&node);
       
               if(temp_v_handle==NULL){
-                PRINT_ERROR("Unexpected null pointer.\n");
-                MSQ_SETERR(err)("Unexpected null pointer.",
+                std::cout << "elements_get_attached_vertices: unexpected null pointer, temp_v_handle= " << temp_v_handle << " &node= " << &node 
+                          << " elem= " << *element_ptr << " nodes.size= " << nodes.size()
+                          << std::endl;
+                PRINT_ERROR("elements_get_attached_vertices: unexpected null pointer, temp_v_handle.\n");
+                MSQ_SETERR(err)("elements_get_attached_vertices: unexpected null pointer, temp_v_handle.",
                                 Mesquite::MsqError::INVALID_STATE);
                 return;
               }
@@ -616,16 +630,16 @@ namespace stk {
         {
           ent = reinterpret_cast<stk::mesh::Entity*>(element_handle_array[num_elements]);
           if(ent==NULL){
-            PRINT_ERROR("Unexpected null pointer.\n");
-            MSQ_SETERR(err)("Unexpected null pointer.",
+            PRINT_ERROR("elements_get_topologies: unexpected null pointer.\n");
+            MSQ_SETERR(err)("elements_get_topologies: unexpected null pointer.",
                             Mesquite::MsqError::INVALID_STATE);
             return;
           }
     
           const CellTopologyData * cell_topo_data = m_eMesh->get_cell_topology(*ent);
           if(cell_topo_data == NULL){
-            PRINT_ERROR("Unexpected null topology.\n");
-            MSQ_SETERR(err)("Unexpected null topology.",
+            PRINT_ERROR("elements_get_topologies: unexpected null topology.\n");
+            MSQ_SETERR(err)("elements_get_topologies: unexpected null topology.",
                             Mesquite::MsqError::INVALID_STATE);
             return;
           }
@@ -650,6 +664,7 @@ namespace stk {
               element_topologies[num_elements]=Mesquite::TETRAHEDRON;
             }
           else {
+            std::cout << "elements_get_topologies: Type not recognized, cell_topo= " << cell_topo << std::endl;
             PRINT_ERROR("Type not recognized.\n");
             MSQ_SETERR(err)("Type not recognized.", Mesquite::MsqError::UNSUPPORTED_ELEMENT);
             return;

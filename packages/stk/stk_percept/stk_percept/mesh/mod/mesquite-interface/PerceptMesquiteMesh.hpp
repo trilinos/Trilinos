@@ -38,11 +38,13 @@ namespace stk {
 
     public:
 
-      PerceptMesquiteMesh(PerceptMesh *eMesh);
+      PerceptMesquiteMesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector=0);
       void init(PerceptMesh *eMesh);
       int setup();
-      bool is_on_my_patch_boundary(stk::mesh::Entity *node_ptr);
-      void clean_out();
+
+      stk::mesh::Selector *getBoundarySelector() { return m_boundarySelector; }
+      void setBoundarySelector(stk::mesh::Selector *sel) { m_boundarySelector = sel; }
+      
 
     public:
       virtual ~PerceptMesquiteMesh();
@@ -78,11 +80,25 @@ namespace stk {
       //virtual Mesquite::ElementIterator* element_iterator(Mesquite::MsqError &err);
   
   
+      //! Returns true or false, indicating whether the vertex
+      //! is a higher-order node that should be slaved to the logical
+      //! mid-point of the element side it lies on or not, respectively.  
+      //!
+      //! Note: This function will never be called unless this behavior is
+      //! requested by calling:
+      //! InstructionQueue::set_slaved_ho_node_mode( Settings::SLAVE_FLAG )
       virtual void vertices_get_fixed_flag(const Mesquite::Mesh::VertexHandle vert_array[], 
                                            std::vector<bool>& fixed_flag_array,
                                            size_t num_vtx, 
                                            Mesquite::MsqError &err );
   
+      //! Returns true or false, indicating whether the vertex
+      //! is a higher-order node that should be slaved to the logical
+      //! mid-point of the element side it lies on or not, respectively.  
+      //!
+      //! Note: This function will never be called unless this behavior is
+      //! requested by calling:
+      //! InstructionQueue::set_slaved_ho_node_mode( Settings::SLAVE_FLAG )
       virtual void vertices_get_slaved_flag(const VertexHandle vert_array[], 
                                             std::vector<bool>& slaved_flag_array,
                                             size_t num_vtx, 

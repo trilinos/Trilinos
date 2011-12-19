@@ -11,6 +11,8 @@
 
 #include <stk_percept/MeshUtil.hpp>
 
+#include <stk_adapt/NodeRegistryDef.hpp>
+
 #if defined( STK_ADAPT_HAS_GEOMETRY )
 // #include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
 // #include <stk_adapt/geometry/MeshGeometry.hpp>
@@ -18,9 +20,15 @@
 #include <stk_percept/mesh/geometry/kernel/GeometryKernelOpenNURBS.hpp>
 #include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
 #include <stk_percept/mesh/geometry/kernel/GeometryFactory.hpp>
-#endif
 
-#include <stk_adapt/NodeRegistryDef.hpp>
+#define StackTraceTmp StackTrace
+#undef StackTrace
+#include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMeshDomain.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother.hpp>
+#define StackTrace StackTraceTmp
+
+#endif
 
 namespace stk {
 
@@ -1319,6 +1327,25 @@ namespace stk {
 
             }
         }
+      // check for any null entities
+      //std::cout << "check for any null entities..." << std::endl;
+      const vector<stk::mesh::Bucket*> & elem_buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = elem_buckets.begin() ; k != elem_buckets.end() ; ++k ) 
+        {
+          stk::mesh::Bucket & bucket = **k ;
+
+          const unsigned num_nodes_in_bucket = bucket.size();
+          for (unsigned iElement = 0; iElement < num_nodes_in_bucket; iElement++)
+            {
+              stk::mesh::Entity& elem = bucket[iElement];
+              const stk::mesh::PairIterRelation& rels = elem.relations(m_eMesh.node_rank());
+              for (unsigned j=0; j < rels.size(); j++)
+                {
+                  if (rels[j].entity() == 0) throw std::runtime_error("bad node in an element");
+                }
+            }
+        }
 
 
     }
@@ -1379,6 +1406,14 @@ namespace stk {
 #if defined( STK_ADAPT_HAS_GEOMETRY )
     void Refiner::smoothGeometry(MeshGeometry& mesh_geometry)
     {
+      if (0)
+        {
+           PMMLaplaceSmoother ls;
+           PerceptMesquiteMesh pmm(&m_eMesh);
+           PerceptMesquiteMeshDomain pmd(&m_eMesh, &mesh_geometry);
+           ls.run(pmm, pmd);
+           return;
+        }
       /**
        *  0. cache set of nodes involved in moving/snapping to geometry
        *  1. get parent elements touching the boundary - just the set of elements with a node in the set from (0)

@@ -37,6 +37,7 @@ namespace stk {
     snap_to(Mesquite::Mesh::VertexHandle entity_handle,
             Mesquite::Vector3D &coordinate) const {
 
+      if (!m_meshGeometry) return;
       stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(entity_handle);
       stk::mesh::FieldBase* field = m_eMesh->getCoordinatesField();
       double *f_data = PerceptMesh::field_data(field, *node_ptr);
@@ -70,7 +71,11 @@ namespace stk {
       coordinate[0] = 0.0;
       coordinate[1] = 0.0;
       if (m_eMesh->getSpatialDim() > 2)
-        coordinate[2] = 0.0;
+        {
+          coordinate[2] = 0.0;
+        }
+      else
+        coordinate[2] = 1.0;
     }
     void PerceptMesquiteMeshDomain::
     element_normal_at(Mesquite::Mesh::ElementHandle entity_handle,
@@ -79,7 +84,11 @@ namespace stk {
       coordinate[0] = 0.0;
       coordinate[1] = 0.0;
       if (m_eMesh->getSpatialDim() > 2)
-        coordinate[2] = 0.0;
+        {
+          coordinate[2] = 0.0;
+        }
+      else
+        coordinate[2] = 1.0;
     }
                           
     /**\brief evaluate surface normals
@@ -128,6 +137,16 @@ namespace stk {
       stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(handle);
       stk::mesh::FieldBase* field = m_eMesh->getCoordinatesField();
       double *f_data = PerceptMesh::field_data(field, *node_ptr);
+      if (!m_meshGeometry)
+        {
+          for (int isd=0; isd < m_eMesh->getSpatialDim(); isd++)
+            {
+              closest[isd] = f_data[isd];
+              normal[isd]=0;  // FIXME
+            }
+          return;
+        }
+
       // save coordinates, set to "position", project, copy to closest, set back to saved
       double save_coords[3] = {f_data[0], f_data[1], 0};
       if (m_eMesh->getSpatialDim() > 2) save_coords[2] = f_data[2];
@@ -139,6 +158,7 @@ namespace stk {
       static std::vector<stk::mesh::Entity *> nodes(1);
       nodes[0] = node_ptr;
       m_meshGeometry->snap_points_to_geometry(m_eMesh, nodes);
+
       closest[0] = f_data[0];
       closest[1] = f_data[1];
       if (m_eMesh->getSpatialDim() > 2) 
@@ -178,7 +198,12 @@ namespace stk {
       for (size_t i = 0; i < num_handles; i++)
         {
           stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(handle_array[i]);
-          int dof = m_meshGeometry->classify_node(*node_ptr, curveEvaluators, surfEvaluators);
+          int dof = 0;
+          if (m_meshGeometry)
+            dof = m_meshGeometry->classify_node(*node_ptr, curveEvaluators, surfEvaluators);
+          else
+            dof = m_eMesh->getSpatialDim();
+
           if (dof < 0)
             {
               PRINT_ERROR("dof < 0");

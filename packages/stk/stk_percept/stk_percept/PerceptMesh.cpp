@@ -350,6 +350,11 @@ namespace stk {
                 if (count.size() >= 4) stream << " Elem = " << count[ 3 ] ;
                 if (count.size() >= 5) stream << " FamilyTree = " << count[ 4 ] ;
                 stream << " }" << mendl ;
+
+                if (0)
+                {
+                  dumpElements(part.name());
+                }
               }
             }
         }
@@ -1829,24 +1834,28 @@ namespace stk {
           if (partName.size() > 0 && part.name() != partName)
             continue;
 
-          std::cout << "tmp UniformRefiner::dumpElements: part = " << part.name() << std::endl;
-          const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank() );
-
-          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          for (unsigned irank=1; irank < element_rank(); irank++)
             {
-              if (selector(**k))
-              {
-                stk::mesh::Bucket & bucket = **k ;
-                const unsigned num_elements_in_bucket = bucket.size();
+              std::cout << "tmp PerceptMesh::dumpElements: part = " << part.name() << " rank= " << irank << std::endl;
 
-                for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
-                  {
-                    stk::mesh::Entity& element = bucket[iElement];
+              const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( irank );
 
-                    std::cout << "tmp UniformRefiner::dumpElements: newElement: " << element << std::endl;
-                    printEntity(std::cout, element, getCoordinatesField() );
-                  }
-              }
+              for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+                {
+                  if (selector(**k))
+                    {
+                      stk::mesh::Bucket & bucket = **k ;
+                      const unsigned num_elements_in_bucket = bucket.size();
+
+                      for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                        {
+                          stk::mesh::Entity& element = bucket[iElement];
+
+                          std::cout << "tmp element: " << element << std::endl;
+                          printEntity(std::cout, element, getCoordinatesField() );
+                        }
+                    }
+                }
             }
         }
     }
