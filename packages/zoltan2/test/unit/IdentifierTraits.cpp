@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     long int li_other=11024;
     long unsigned int lui =1024;
     long unsigned int lui_other =11024;
-#ifdef HAVE_LONG_LONG
+#ifdef ZOLTAN2_HAVE_LONG_LONG
     long long int lli = 3000000000;
     long long int lli_other = 3102400000000;
 #endif
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
     check_traits(ui, ui_other);
     check_traits(li, li_other);
     check_traits(lui, lui_other);
-#ifdef HAVE_LONG_LONG
+#ifdef ZOLTAN2_HAVE_LONG_LONG
     check_traits(lli, lli_other);
 #endif
     check_traits(pairVals, pairVals_other);

@@ -51,6 +51,6 @@
  *  can't use LONG_LONG unless Teuchos is using
  *  long long.
  */
-#cmakedefine HAVE_LONG_LONG
+#cmakedefine ZOLTAN2_HAVE_LONG_LONG
 
 #endif
