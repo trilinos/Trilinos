@@ -13,7 +13,7 @@
 
 namespace MueLu {
   /*!
-    @class RAPFactory class.
+    @class RAPFactory
     @brief Factory for building coarse matrices.
   */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
@@ -22,7 +22,8 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-    //@{ Constructors/Destructors.
+    //! @name Constructors/Destructors.
+    //@{
     /*RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null)
       : PFact_(PFact), RFact_(RFact),
       implicitTranspose_(false);*/
@@ -32,32 +33,40 @@ namespace MueLu {
     virtual ~RAPFactory();
     //@}
 
-    //! Input
+    //! @name Input
     //@{
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
 
-    //@{ Build methods.
+    //! @name Build methods.
+    //@{
     void Build(Level &fineLevel, Level &coarseLevel) const;
     //@}
 
+    //! @name Handling of user-defined transfer factories
+    //@{
+
+    //! Indicate that the restriction operator action should be implicitly defined by the transpose of the prolongator.
     void SetImplicitTranspose(bool const &implicit);
 
-    //@{ Handling of user-defined transfer factories
+    /*! @brief Add transfer factory in the end of list of transfer factories in RAPFactory.
 
-    //! add transfer factory in the end of list of transfer factories in RAPFactory
-    //! Transfer factories are derived from TwoLevelFactoryBase and project some data from the fine level to the next coarser level
+    Transfer factories are derived from TwoLevelFactoryBase and project some data from the fine level to
+    the next coarser level.
+    */
     void AddTransferFactory(const RCP<FactoryBase>& factory);
 
     // TODO add a function to remove a specific transfer factory?
 
-    //! returns number of transfer factories
+    //! Returns number of transfer factories.
     size_t NumTransferFactories() const;
 
+    //! Returns factory that generates P.
     RCP<const FactoryBase> GetPFactory() const;
 
+    //! Returns factory that generates R.
     RCP<const FactoryBase> GetRFactory() const;
 
     //@}
@@ -74,6 +83,7 @@ namespace MueLu {
     //! list of user-defined transfer Factories
     std::vector<RCP<FactoryBase> > TransferFacts_;
 
+    //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
     bool implicitTranspose_;
 
   }; //class RAPFactory

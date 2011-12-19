@@ -21,10 +21,11 @@
 namespace MueLu {
 
   /*!
-    @class ZoltanInterface class
+    @class ZoltanInterface
     @brief Interface to Zoltan library.
 
-    Currently, this interface provides access only to the RCB partitioning in Zoltan.
+    This interface provides access to partitioning methods in Zoltan.
+    Currently, it supports the RCB algorithm only.
   */
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType,
@@ -54,12 +55,13 @@ namespace MueLu {
 
     //! @name Set / Get methods.
     //@{
+    //! Set the number of partitions over which the data should be divided.
     void SetNumberOfPartitions(GO const numPartitions);
     //@}
 
     //! @name Build methods.
     //@{
-    void Build(Level &level); //Build()
+    void Build(Level &level);
 
     //@}
 
