@@ -48,9 +48,9 @@ setup(const panzer::PhysicsBlock& side_pb,
   this->residual_to_target_field_map[residual_name] = "Constant_" + this->m_bc.equationSetName();
 
   // find the basis for this dof 
-  const vector<pair<string,RCP<panzer::Basis> > >& dofs = side_pb.getProvidedDOFs();
+  const vector<pair<string,RCP<panzer::PureBasis> > >& dofs = side_pb.getProvidedDOFs();
 
-  for (vector<pair<string,RCP<panzer::Basis> > >::const_iterator dof_it = 
+  for (vector<pair<string,RCP<panzer::PureBasis> > >::const_iterator dof_it = 
 	 dofs.begin(); dof_it != dofs.end(); ++dof_it) {
     if (dof_it->first == this->m_bc.equationSetName())
       this->basis = dof_it->second;

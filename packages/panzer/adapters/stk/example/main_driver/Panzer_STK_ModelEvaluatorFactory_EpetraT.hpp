@@ -521,14 +521,14 @@ namespace panzer_stk {
       std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
       for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
 	Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
-	const std::vector<panzer::StrBasisPair> & blockFields = pb->getProvidedDOFs();
+	const std::vector<panzer::StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
 	
 	// insert all fields into a set
-	std::set<panzer::StrBasisPair,panzer::StrBasisComp> fieldNames;
+	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp> fieldNames;
 	fieldNames.insert(blockFields.begin(),blockFields.end());
 	
 	// add basis to DOF manager: block specific
-	std::set<panzer::StrBasisPair,panzer::StrBasisComp>::const_iterator fieldItr;
+	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp>::const_iterator fieldItr;
 	for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr)
 	  mesh.addSolutionField(fieldItr->first,pb->elementBlockID());
       }

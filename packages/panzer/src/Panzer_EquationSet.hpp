@@ -56,11 +56,13 @@ namespace panzer {
     
     virtual const std::vector<std::string> & getDOFNames() const = 0;
     
-    virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & getProvidedDOFs() const = 0;
+    virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const = 0;
 
     virtual void setElementBlockId(const std::string & blockId) = 0;
 
     virtual std::string getElementBlockId() const = 0;
+
+    virtual Teuchos::RCP<panzer::IntegrationRule> getIntegrationRule() const = 0;
 
   };
   

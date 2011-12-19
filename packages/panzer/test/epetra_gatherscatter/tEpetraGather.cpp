@@ -9,7 +9,7 @@
 
 #include "Panzer_GatherSolution_Epetra.hpp"
 
-#include "Panzer_Basis.hpp"
+#include "Panzer_PureBasis.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_CellData.hpp"
 
@@ -32,7 +32,6 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
    int cubatureDegree = 2;
    std::string basisType = "Q1";
    panzer::CellData cellData(numCells,baseCellDim,topo);
-   panzer::IntegrationRule intRule(cubatureDegree,cellData);
 
    // build DOF names
    RCP<std::vector<std::string> > dofNames = rcp(new std::vector<std::string>); 
@@ -40,13 +39,13 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
    dofNames->push_back("p");
 
    // build basis
-   RCP<panzer::Basis> basis = rcp(new panzer::Basis(basisType,intRule));
+   RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
 
    // build gather parameter list
    Teuchos::ParameterList gatherParams;
    gatherParams.set<RCP<std::vector<std::string> > >("DOF Names",dofNames);
    gatherParams.set<RCP<std::vector<std::string> > >("Indexer Names",dofNames);
-   gatherParams.set<RCP<panzer::Basis> >("Basis",basis);
+   gatherParams.set<RCP<panzer::PureBasis> >("Basis",basis);
 
    // test residual gather evaluator
    {

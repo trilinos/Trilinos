@@ -57,10 +57,12 @@ namespace panzer {
     
     virtual const std::vector<std::string> & getDOFNames() const;
     
-    virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & getProvidedDOFs() const;
+    virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const;
 
     void setElementBlockId(const std::string & blockId);
     std::string getElementBlockId() const;
+
+    virtual Teuchos::RCP<panzer::IntegrationRule> getIntegrationRule() const;
 
   protected:
     
@@ -71,9 +73,10 @@ namespace panzer {
     std::string m_eqset_prefix;
     
     Teuchos::RCP<panzer::IntegrationRule> m_int_rule;
+    Teuchos::RCP<panzer::PureBasis> m_pure_basis;
     Teuchos::RCP<panzer::Basis> m_basis;
     
-    std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > >  m_provided_dofs;
+    std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >  m_provided_dofs;
     Teuchos::RCP< std::vector<std::string> > m_dof_names;
     Teuchos::RCP< std::vector<std::string> > m_dof_gradient_names;
     Teuchos::RCP< std::vector<std::string> > m_dof_time_derivative_names;

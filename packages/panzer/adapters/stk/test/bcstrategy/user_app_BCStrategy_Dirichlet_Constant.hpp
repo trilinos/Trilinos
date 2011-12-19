@@ -8,7 +8,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Panzer_BCStrategy_Dirichlet_DefaultImpl.hpp"
 #include "Panzer_Traits.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_PureBasis.hpp"
 #include "Phalanx_FieldManager.hpp"
 
 namespace user_app {
@@ -30,7 +30,7 @@ namespace user_app {
 				    const Teuchos::ParameterList& user_data) const;
 
     std::string residual_name;
-    Teuchos::RCP<panzer::Basis> basis;
+    Teuchos::RCP<panzer::PureBasis> basis;
 
   };
 

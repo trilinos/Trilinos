@@ -10,8 +10,6 @@
 #include "Panzer_Traits.hpp"
 
 // for testing gather/scatter construction
-#include "Panzer_Basis.hpp"
-#include "Panzer_CellData.hpp"
 #include "Panzer_PauseToAttach.hpp"
 
 #include "UnitTest_UniqueGlobalIndexer.hpp"

@@ -1,40 +1,31 @@
-
-#ifndef PANZER_BASIS_HPP
-#define PANZER_BASIS_HPP
+#ifndef PANZER_PureBasis_HPP
+#define PANZER_PureBasis_HPP
 
 #include <string>
 #include "Teuchos_RCP.hpp"
+
 #include "Phalanx_DataLayout.hpp"
+
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_Basis.hpp"
 
 #include "Panzer_Dimension.hpp"
-#include "Panzer_PureBasis.hpp"
+#include "Panzer_CellData.hpp"
 
 namespace panzer {
 
-  class IntegrationRule;
-
-  class Basis { 
+  class PureBasis { 
 
   public:
     
-    Basis(std::string basis_type, const panzer::IntegrationRule& int_rule);
-    Basis(const panzer::PureBasis & pBasis, const panzer::IntegrationRule& int_rule);
-
-    void setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > & iBasis,
-               const panzer::IntegrationRule & int_rule);
+    PureBasis(std::string basis_type,const CellData & cell_data);
 
     int getCardinality() const;
-    
+
     int getNumCells() const;
-    
-    int getNumIntPoints() const;
     
     int getDimension() const;
 
-    int integrationRuleDegree() const;
-    
     std::string name() const;
     
     std::string fieldName() const;
@@ -47,19 +38,6 @@ namespace panzer {
     getIntrepidBasis() const;
 
   public:
-    
-    //! <BASIS,IP>
-    Teuchos::RCP<PHX::DataLayout> basis_ref;
-    //! <Cell,BASIS,IP>
-    Teuchos::RCP<PHX::DataLayout> basis;
-    //! <BASIS,IP,Dim>
-    Teuchos::RCP<PHX::DataLayout> basis_grad_ref;
-    //! <Cell,BASIS,IP,Dim>
-    Teuchos::RCP<PHX::DataLayout> basis_grad;
-    //! <BASIS,IP,Dim,Dim>
-    Teuchos::RCP<PHX::DataLayout> basis_D2_ref;
-    //! <Cell,BASIS,IP,Dim,Dim>
-    Teuchos::RCP<PHX::DataLayout> basis_D2;
     //! <Cell,Basis>
     Teuchos::RCP<PHX::DataLayout> functional;
     //! <Cell,Basis,Dim>
@@ -68,7 +46,9 @@ namespace panzer {
     Teuchos::RCP<PHX::DataLayout> functional_D2;
 
   private:
+    Teuchos::RCP<const shards::CellTopology> topology;
     Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepid_basis;
+
     const std::string basis_name;
     const std::string field_basis_name;
     const std::string field_basis_name_D1;
@@ -76,16 +56,14 @@ namespace panzer {
 
     int cardinality;
     int num_cells;
-    int num_ip;
     int dimension;
-    int int_rule_degree;
   };
 
-  typedef std::pair<std::string,Teuchos::RCP<panzer::Basis> > StrBasisPair;
+  typedef std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > StrPureBasisPair;
 
   //! Simple binary comparison class to help with sorting
-  struct StrBasisComp {
-    bool operator() (const StrBasisPair & lhs, const StrBasisPair & rhs) const
+  struct StrPureBasisComp {
+    bool operator() (const StrPureBasisPair & lhs, const StrPureBasisPair & rhs) const
     {return lhs.first<rhs.first;}
   };
 

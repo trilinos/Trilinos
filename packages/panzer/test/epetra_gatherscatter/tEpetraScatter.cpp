@@ -10,7 +10,7 @@
 
 #include "Panzer_ScatterResidual_Epetra.hpp"
 
-#include "Panzer_Basis.hpp"
+#include "Panzer_PureBasis.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_CellData.hpp"
 
@@ -33,10 +33,9 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
    int cubatureDegree = 2;
    std::string basisType = "Q1";
    panzer::CellData cellData(numCells,baseCellDim,topo);
-   panzer::IntegrationRule intRule(cubatureDegree,cellData);
 
    // build basis
-   RCP<panzer::Basis> basis = rcp(new panzer::Basis(basisType,intRule));
+   RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
 
    std::string scatterName = "Residual_NS";
 
@@ -55,7 +54,7 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
    scatterParams.set<std::string>("Scatter Name",scatterName);
    scatterParams.set<RCP<std::vector<std::string> > >("Dependent Names",evaluatedNames);
    scatterParams.set<RCP<std::map<std::string,std::string> > >("Dependent Map",evaluatedMap);
-   scatterParams.set<RCP<panzer::Basis> >("Basis",basis);
+   scatterParams.set<RCP<panzer::PureBasis> >("Basis",basis);
 
    // test residual scatter evaluator
    {

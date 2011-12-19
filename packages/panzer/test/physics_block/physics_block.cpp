@@ -110,7 +110,7 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
 
-    const std::vector<panzer::StrBasisPair>& basis = 
+    const std::vector<panzer::StrPureBasisPair>& basis = 
       physics_block->getProvidedDOFs();
 
     TEST_EQUALITY(basis.size(), 2);
@@ -127,7 +127,7 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
       panzer_test_utils::createPhysicsBlock();
 
-    const std::map<std::string,Teuchos::RCP<panzer::Basis> >& unique_basis = 
+    const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& unique_basis = 
       physics_block->getBases();
 
     TEST_EQUALITY(unique_basis.size(), 2);

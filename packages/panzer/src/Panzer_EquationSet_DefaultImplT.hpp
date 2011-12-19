@@ -37,14 +37,15 @@ setupDOFs(int equation_dimension)
     Teuchos::rcp(new panzer::IntegrationRule(m_input_eq_set.integration_order,
 					     m_cell_data));
   
-  this->m_basis = Teuchos::rcp(new panzer::Basis(m_input_eq_set.basis,
+  this->m_pure_basis = Teuchos::rcp(new panzer::PureBasis(m_input_eq_set.basis,m_cell_data));
+  this->m_basis = Teuchos::rcp(new panzer::Basis(*m_pure_basis,
 						 *(this->m_int_rule)));
   
   this->m_provided_dofs.clear();
   int index = 0;
   for (std::vector<std::string>::const_iterator i = this->m_dof_names->begin();
        i != this->m_dof_names->end(); ++i, ++index)
-    this->m_provided_dofs.push_back(std::make_pair((*(this->m_dof_names))[index], this->m_basis));
+    this->m_provided_dofs.push_back(std::make_pair((*(this->m_dof_names))[index], this->m_pure_basis));
 
   this->m_eval_plist->set("IR", this->m_int_rule);
   this->m_eval_plist->set("Basis", this->m_basis);
@@ -78,7 +79,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Gather, includes construction of orientation gathers
   {
     ParameterList p("Gather");
-    p.set("Basis", m_basis);
+    p.set("Basis", m_pure_basis);
     p.set("DOF Names", m_dof_names);
     p.set("Indexer Names", m_dof_names);
     
@@ -100,7 +101,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
      {
        ParameterList p("Scatter");
        p.set("Scatter Name", this->m_scatter_name);
-       p.set("Basis", this->m_basis);
+       p.set("Basis", this->m_pure_basis);
        p.set("Dependent Names", this->m_residual_names);
        p.set("Dependent Map", names_map);
    
@@ -159,7 +160,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Gather of time derivative terms
   {
     ParameterList p("Gather");
-    p.set("Basis", m_basis);
+    p.set("Basis", m_pure_basis);
     p.set("DOF Names", m_dof_time_derivative_names);
     p.set("Indexer Names", m_dof_names);
     p.set("Use Time Derivative Solution Vector", true);
@@ -240,7 +241,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
   {
     Teuchos::ParameterList p("Scatter");
     p.set("Scatter Name", this->m_scatter_name);
-    p.set("Basis", this->m_basis);
+    p.set("Basis", this->m_pure_basis);
     p.set("Dependent Names", this->m_dof_names);
 
     Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterInitialCondition<EvalT>(p);
@@ -284,7 +285,7 @@ panzer::EquationSet_DefaultImpl<EvalT>::getDOFNames() const
 }
 // ***********************************************************************
 template <typename EvalT>
-const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > >&
+const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >&
 panzer::EquationSet_DefaultImpl<EvalT>::getProvidedDOFs() const
 {
   return m_provided_dofs;
@@ -307,6 +308,14 @@ std::string panzer::EquationSet_DefaultImpl<EvalT>::
 getElementBlockId() const
 {
    return m_block_id;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+Teuchos::RCP<panzer::IntegrationRule> panzer::EquationSet_DefaultImpl<EvalT>::
+getIntegrationRule() const
+{
+   return m_int_rule;
 }
 
 // ***********************************************************************

@@ -29,7 +29,7 @@ ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
   Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::Basis> >("Basis")->functional;
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
@@ -143,7 +143,7 @@ ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
   Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::Basis> >("Basis")->functional;
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());

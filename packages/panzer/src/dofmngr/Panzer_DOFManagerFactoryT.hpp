@@ -20,14 +20,14 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
    for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
       Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
        
-      const std::vector<StrBasisPair> & blockFields = pb->getProvidedDOFs();
+      const std::vector<StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
 
       // insert all fields into a set
-      std::set<StrBasisPair,StrBasisComp> fieldNames;
+      std::set<StrPureBasisPair,StrPureBasisComp> fieldNames;
       fieldNames.insert(blockFields.begin(),blockFields.end()); 
 
       // add basis to DOF manager: block specific
-      std::set<StrBasisPair,StrBasisComp>::const_iterator fieldItr; 
+      std::set<StrPureBasisPair,StrPureBasisComp>::const_iterator fieldItr; 
       for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
          Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepidBasis 
                = fieldItr->second->getIntrepidBasis();

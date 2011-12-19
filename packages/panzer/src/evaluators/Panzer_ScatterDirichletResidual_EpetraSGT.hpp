@@ -25,7 +25,7 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
   Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::Basis> >("Basis")->functional;
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
 
   side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
   local_side_id_ = p.get<int>("Local Side ID");
@@ -172,7 +172,7 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
   Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::Basis> >("Basis")->functional;
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
 
   side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
   local_side_id_ = p.get<int>("Local Side ID");

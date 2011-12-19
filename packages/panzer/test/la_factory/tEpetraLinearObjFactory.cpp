@@ -10,7 +10,7 @@
 #include "Panzer_Traits.hpp"
 
 // for testing gather/scatter construction
-#include "Panzer_Basis.hpp"
+#include "Panzer_PureBasis.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_CellData.hpp"
 
@@ -161,7 +161,6 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       int cubatureDegree = 2;
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,baseCellDim,topo);
-      panzer::IntegrationRule intRule(cubatureDegree,cellData);
 
       // build DOF names
       RCP<std::vector<std::string> > dofNames = rcp(new std::vector<std::string>);
@@ -169,12 +168,12 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       dofNames->push_back("p");
 
       // build basis
-      RCP<panzer::Basis> basis = rcp(new panzer::Basis(basisType,intRule));
+      RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
 
       // build gather parameter list
       gatherParams.set<RCP<std::vector<std::string> > >("DOF Names",dofNames);
       gatherParams.set<RCP<std::vector<std::string> > >("Indexer Names",dofNames);
-      gatherParams.set<RCP<panzer::Basis> >("Basis",basis);
+      gatherParams.set<RCP<panzer::PureBasis> >("Basis",basis);
    }
 
    Teuchos::ParameterList scatterParams;
@@ -186,10 +185,9 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       int cubatureDegree = 2;
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,baseCellDim,topo);
-      panzer::IntegrationRule intRule(cubatureDegree,cellData);
    
       // build basis
-      RCP<panzer::Basis> basis = rcp(new panzer::Basis(basisType,intRule));
+      RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
    
       std::string scatterName = "Residual_NS";
    
@@ -207,7 +205,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       scatterParams.set<std::string>("Scatter Name",scatterName);
       scatterParams.set<RCP<std::vector<std::string> > >("Dependent Names",evaluatedNames);
       scatterParams.set<RCP<std::map<std::string,std::string> > >("Dependent Map",evaluatedMap);
-      scatterParams.set<RCP<panzer::Basis> >("Basis",basis);
+      scatterParams.set<RCP<panzer::PureBasis> >("Basis",basis);
    }
 
    Teuchos::ParameterList scatterDirichletParams;
@@ -219,10 +217,9 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       int cubatureDegree = 2;
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,baseCellDim,topo);
-      panzer::IntegrationRule intRule(cubatureDegree,cellData);
    
       // build basis
-      RCP<panzer::Basis> basis = rcp(new panzer::Basis(basisType,intRule));
+      RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
    
       std::string scatterName = "Residual_NS";
    
@@ -240,7 +237,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       scatterDirichletParams.set<std::string>("Scatter Name",scatterName);
       scatterDirichletParams.set<RCP<std::vector<std::string> > >("Dependent Names",evaluatedNames);
       scatterDirichletParams.set<RCP<std::map<std::string,std::string> > >("Dependent Map",evaluatedMap);
-      scatterDirichletParams.set<RCP<panzer::Basis> >("Basis",basis);
+      scatterDirichletParams.set<RCP<panzer::PureBasis> >("Basis",basis);
       scatterDirichletParams.set<int>("Side Subcell Dimension",1);
       scatterDirichletParams.set<int>("Local Side ID",2);
    }

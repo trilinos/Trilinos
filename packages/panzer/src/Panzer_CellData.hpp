@@ -15,25 +15,6 @@ namespace panzer {
     
   public:
     
-/*
-    explicit CellData(std::size_t num_cells, int base_cell_dimension) :
-      m_num_cells(num_cells),
-      m_dimension(base_cell_dimension),
-      m_is_side(false),
-      m_side(-1),
-      m_cell_topo(Teuchos::null)
-    { }
-    
-    explicit CellData(std::size_t num_cells, int base_cell_dimension,
-		      int local_side_id) : 
-      m_num_cells(num_cells),
-      m_dimension(base_cell_dimension),
-      m_is_side(true),
-      m_side(local_side_id),
-      m_cell_topo(Teuchos::null)
-    { }
-*/
-
     /** Build cell data that uses volume data.  CellTopology is on the
       * volume cells!
       */

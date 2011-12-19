@@ -28,7 +28,7 @@ namespace Example {
 				    const Teuchos::ParameterList& user_data) const;
 
     std::string residual_name;
-    Teuchos::RCP<panzer::Basis> basis;
+    Teuchos::RCP<panzer::PureBasis> basis;
   };
 
 }

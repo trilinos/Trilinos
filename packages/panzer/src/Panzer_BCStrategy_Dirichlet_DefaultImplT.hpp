@@ -61,9 +61,9 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("DOF Names", gather_names_vec);
     p.set("Indexer Names", gather_names_vec);
     
-    const vector<pair<string,RCP<panzer::Basis> > >& dofBasisPair = pb.getProvidedDOFs();
-    RCP<panzer::Basis> basis;
-    for (vector<pair<string,RCP<panzer::Basis> > >::const_iterator it = 
+    const vector<pair<string,RCP<panzer::PureBasis> > >& dofBasisPair = pb.getProvidedDOFs();
+    RCP<panzer::PureBasis> basis;
+    for (vector<pair<string,RCP<panzer::PureBasis> > >::const_iterator it = 
 	   dofBasisPair.begin(); it != dofBasisPair.end(); ++it) {
       if (it->first == *dof_name)
 	basis = it->second;
@@ -91,9 +91,9 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("DOF Name", res_to_dof->second);
     p.set("Value Name", res_to_target->second);
 
-    const vector<pair<string,RCP<panzer::Basis> > >& dofBasisPair = pb.getProvidedDOFs();
-    RCP<panzer::Basis> basis;
-    for (vector<pair<string,RCP<panzer::Basis> > >::const_iterator it = 
+    const vector<pair<string,RCP<panzer::PureBasis> > >& dofBasisPair = pb.getProvidedDOFs();
+    RCP<panzer::PureBasis> basis;
+    for (vector<pair<string,RCP<panzer::PureBasis> > >::const_iterator it = 
 	   dofBasisPair.begin(); it != dofBasisPair.end(); ++it) {
       if (it->first == res_to_dof->second)
 	basis = it->second;
@@ -125,9 +125,9 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Scatter Name", scatter_field_name);
 
     // Set basis
-    const vector<pair<string,RCP<panzer::Basis> > >& dofBasisPair = pb.getProvidedDOFs();
-    RCP<panzer::Basis> basis;
-    for (vector<pair<string,RCP<panzer::Basis> > >::const_iterator it = 
+    const vector<pair<string,RCP<panzer::PureBasis> > >& dofBasisPair = pb.getProvidedDOFs();
+    RCP<panzer::PureBasis> basis;
+    for (vector<pair<string,RCP<panzer::PureBasis> > >::const_iterator it = 
 	   dofBasisPair.begin(); it != dofBasisPair.end(); ++it) {
       if (it->first == res_to_dof->second)
 	basis = it->second;

@@ -30,8 +30,8 @@ GatherSolution_Epetra(
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
 
-  Teuchos::RCP<panzer::Basis> basis = 
-    p.get< Teuchos::RCP<panzer::Basis> >("Basis");
+  Teuchos::RCP<panzer::PureBasis> basis = 
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
 
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
@@ -158,7 +158,7 @@ GatherSolution_Epetra(
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
 
   Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::Basis> >("Basis")->functional;
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
 
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {

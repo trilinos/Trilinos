@@ -1,4 +1,3 @@
-
 #include "Panzer_Basis.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
@@ -13,7 +12,26 @@ Basis(std::string basis_type, const panzer::IntegrationRule& int_rule) :
   field_basis_name_D1("Grad Basis: " + basis_type),
   field_basis_name_D2("D2 Basis: " + basis_type)
 {
-  intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, int_rule.spatial_dimension,int_rule.topology);
+  Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > iBasis 
+     = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, int_rule.spatial_dimension,int_rule.topology);
+  setup(iBasis,int_rule);
+}
+
+panzer::Basis::
+Basis(const panzer::PureBasis & basis, const panzer::IntegrationRule& int_rule) :
+  basis_name(basis.name()),
+  field_basis_name(basis.fieldName()),
+  field_basis_name_D1(basis.fieldNameD1()),
+  field_basis_name_D2(basis.fieldNameD2())
+{
+  setup(basis.getIntrepidBasis(),int_rule);
+}
+
+void panzer::Basis::
+setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > & iBasis,
+      const panzer::IntegrationRule & int_rule)
+{
+  intrepid_basis = iBasis;
 
   cardinality = intrepid_basis->getCardinality();
   num_cells = int_rule.dl_vector->dimension(0);

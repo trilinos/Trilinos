@@ -19,6 +19,7 @@
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
+#include "Panzer_PureBasis.hpp"
 
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
@@ -51,8 +52,8 @@ int main(int argc,char * argv[])
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
-   using panzer::StrBasisPair;
-   using panzer::StrBasisComp;
+   using panzer::StrPureBasisPair;
+   using panzer::StrPureBasisComp;
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -113,14 +114,14 @@ int main(int argc,char * argv[])
    {
       RCP<panzer::PhysicsBlock> pb = physicsBlocks[0]; // we are assuming only one physics block
 
-      const std::vector<StrBasisPair> & blockFields = pb->getProvidedDOFs();
+      const std::vector<StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
 
       // insert all fields into a set
-      std::set<StrBasisPair,StrBasisComp> fieldNames;
+      std::set<StrPureBasisPair,StrPureBasisComp> fieldNames;
       fieldNames.insert(blockFields.begin(),blockFields.end());
 
       // add basis to DOF manager: block specific
-      std::set<StrBasisPair,StrBasisComp>::const_iterator fieldItr;
+      std::set<StrPureBasisPair,StrPureBasisComp>::const_iterator fieldItr;
       for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr)
          mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
 
