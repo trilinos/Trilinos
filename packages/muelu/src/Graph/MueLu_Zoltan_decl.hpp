@@ -120,7 +120,7 @@ namespace MueLu {
 
 } //namespace MueLu
 
+#define MUELU_ZOLTANINTERFACE_SHORT
 #endif //if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
-#define MUELU_ZOLTANINTERFACE_SHORT
 #endif // MUELU_ZOLTAN_DECL_HPP

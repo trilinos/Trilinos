@@ -20,7 +20,8 @@ namespace MueLuTests {
 
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<Zoltan> zoltan = rcp(new Zoltan);
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(comm));
     TEST_EQUALITY(zoltan != Teuchos::null, true);
 
   } //Constructor
