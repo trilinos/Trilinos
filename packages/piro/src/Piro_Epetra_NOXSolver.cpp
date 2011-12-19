@@ -32,7 +32,6 @@
 #include "Piro_ValidPiroParameters.hpp"
 #include "Piro_Epetra_MatrixFreeDecorator.hpp"
 #include "Piro_Epetra_SensitivityOperator.hpp"
-#include "NOX_Epetra_LinearSystem_Stratimikos.H"
 
 #include "LOCA_Epetra_TransposeLinearSystem_Factory.H"
 #include "LOCA_Epetra_Factory.H"
@@ -124,7 +123,6 @@ Piro::Epetra::NOXSolver::NOXSolver(
     WPrec = model->create_WPrec(); 
 
   // Create the linear system
-  Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
   if (custom_linsys != Teuchos::null)
     linsys = custom_linsys;
   else {
@@ -323,16 +321,19 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
     static int stepNum=0;
     int NewtonIters = piroParams->sublist("NOX").
       sublist("Output").get("Nonlinear Iterations", -1000);
-    int KrylovIters = piroParams->sublist("NOX").sublist("Direction").sublist("Newton").
-      sublist("Linear Solver").sublist("Output").
-      get("Total Number of Linear Iterations", -1000);
+
+    int KrylovIters = linsys->getLinearItersTotal() - totalKrylovIters;
+    int lastSolveKrylovIters = linsys->getLinearItersLastSolve();
+
     totalNewtonIters += NewtonIters;
     totalKrylovIters += KrylovIters;
     stepNum++;
-    
-    utils.out() << "Convergence Stats: for step  #" << stepNum << " : Newton, Krylov, Kr/Ne: " 
+
+    utils.out() << "Convergence Stats: for step  #" << stepNum << " : Newton, Krylov, Kr/Ne; LastKrylov, LastTol: " 
 	 << NewtonIters << "  " << KrylovIters << "  " 
-	 << (double) KrylovIters / (double) NewtonIters << endl;
+	 << (double) KrylovIters / (double) NewtonIters << "  " 
+         << lastSolveKrylovIters << " " <<  linsys->getAchievedTol() << endl;
+
     if (stepNum > 1)
      utils.out() << "Convergence Stats: running total: Newton, Krylov, Kr/Ne, Kr/Step: " 
            << totalNewtonIters << "  " << totalKrylovIters << "  " 
