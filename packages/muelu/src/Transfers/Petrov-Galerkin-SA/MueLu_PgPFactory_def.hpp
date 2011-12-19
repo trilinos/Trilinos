@@ -117,7 +117,6 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeRowBasedOmegas(const RCP<Operator>& A, const RCP<Operator>& Ptent, const RCP<Operator>& DinvAPtent,const Teuchos::ArrayRCP<Scalar>& diagA, Teuchos::ArrayRCP<Scalar>& RowBasedOmegas) const
   {
-
     std::map<GlobalOrdinal, GlobalOrdinal> GID2localgid;
     BuildLocalReplicatedColMap(DinvAPtent,GID2localgid);
 
@@ -313,6 +312,7 @@ namespace MueLu {
   RCP<Teuchos::Array<Scalar> > PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, const std::map<GlobalOrdinal,GlobalOrdinal>& GID2localgid) const
   {
 
+    //std::cout << left->getRowMap()->getComm()->getRank() << " MultiplyAll" << std::endl;
 
     TEUCHOS_TEST_FOR_EXCEPTION(!left->getDomainMap()->isSameAs(*right->getDomainMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: domain maps of left and right do not match. Error.");
     TEUCHOS_TEST_FOR_EXCEPTION(!left->getRowMap()->isSameAs(*right->getRowMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: row maps of left and right do not match. Error.");
@@ -324,6 +324,9 @@ namespace MueLu {
       leftTright->describe(*fos,Teuchos::VERB_EXTREME);*/
 
     Teuchos::Array<Scalar> InnerProd_local(GID2localgid.size(),Teuchos::ScalarTraits<Scalar>::zero());
+
+    //std::cout << left->getRowMap()->getComm()->getRank() << " MultiplyAll: GID2localgid.size()=" << GID2localgid.size() << std::endl;
+    //std::cout << left->getRowMap()->getComm()->getRank() << " MultiplyAll: getNodeNumRows()=" << left->getNodeNumRows() << std::endl;
 
     for(size_t n=0; n<left->getNodeNumRows(); n++)
       {
@@ -356,6 +359,8 @@ namespace MueLu {
     /////////////// sum up all values to global
     Teuchos::reduceAll(*(left->getRowMap()->getComm()),Teuchos::REDUCE_SUM, Teuchos::as<int>(InnerProd->size()) ,&InnerProd_local[0], &(*InnerProd)[0]);
 
+    //std::cout << left->getRowMap()->getComm()->getRank() << " MultiplyAll END" << std::endl;
+
     return InnerProd;
   }
 
@@ -373,12 +378,13 @@ namespace MueLu {
     GlobalOrdinal curLocalGid = 0;
 
     for (size_t i = 0; i<Teuchos::as<size_t>(localreplicatedcolgids.size()); i++)
-      {
-        GID2localgid[localreplicatedcolgids[i]] = curLocalGid;
-        //std::cout << "GID " << localreplicatedcolgids[i] << " localgid " << GID2localgid[localreplicatedcolgids[i]] << std::endl;
-        curLocalGid++;
-      }
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(localreplicatedcolgids[i] != Teuchos::as<GlobalOrdinal>(i), Xpetra::Exceptions::RuntimeError, "PgPFactory::BuildLocalReplicatedColMap: local replication of GIDs failed. This may be a problem with the aggregates?? It is localreplicatedcolgids[XYZ]=0 with XYZ neq 0. Then the size of GID2localgid does not match the number of total aggregates. error.");
 
+      GID2localgid[localreplicatedcolgids[i]] = curLocalGid;
+      //std::cout << comm->getRank() << "GID " << localreplicatedcolgids[i] << " localgid " << GID2localgid[localreplicatedcolgids[i]] << std::endl;
+      curLocalGid++;
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
