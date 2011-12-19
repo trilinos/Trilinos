@@ -66,7 +66,7 @@ Group(const NOX::Thyra::Vector& initial_guess,
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
-  // To support function scaling, all vectors must be copy
+  // To support implicit function scaling, all vectors must be copy
   // constructed/cloned from a NOX::Thyra::Vector that already has the
   // weight vector set or you must manually set the weighting vector.
   // Here we set the x_vec_ to have the weighting and clone that for
