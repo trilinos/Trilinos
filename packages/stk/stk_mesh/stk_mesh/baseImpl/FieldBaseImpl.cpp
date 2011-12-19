@@ -194,6 +194,8 @@ void FieldBaseImpl::insert_restriction(
       ThrowRequireMsg(!m_meta_data->is_commit(), "mesh MetaData has been committed.");
       unsigned num_subsets = 0;
       for(FieldRestrictionVector::iterator i=restrs.begin(), iend=restrs.end(); i!=iend; ++i) {
+        if (i->entity_rank() != arg_entity_rank) continue;
+
         const Part& partI = *m_meta_data->get_parts()[i->part_ordinal()];
         bool found_subset = contain(arg_part.subsets(), partI);
         if (found_subset) {
@@ -330,50 +332,36 @@ void FieldBaseImpl::insert_restriction(
 
 void FieldBaseImpl::verify_and_clean_restrictions(
   const char       * arg_method ,
+  const Part& superset,
+  const Part& subset,
   const PartVector & arg_all_parts )
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::verify_and_clean_restrictions", LOG_FIELD, m_ordinal);
 
-  const FieldRestriction invalid_restr ;
-  FieldRestrictionVector & rMap = restrictions();
+  FieldRestrictionVector & restrs = restrictions();
 
-  // Search for redundant field restrictions. A restriction R is redundant if there exists
-  // another restriction on a superset of R's part that is for entities of the same rank as R.
-  for (FieldRestrictionVector::iterator i = rMap.begin() ; i != rMap.end() ; ++i ) {
-    if ( *i != invalid_restr ) {
-      const EntityRank rankI = i->entity_rank();
-      const Part     & partI = * arg_all_parts[ i->part_ordinal() ];
-      bool    found_superset = false ;
-
-      for (FieldRestrictionVector::iterator j = i + 1 ; j != rMap.end() && ! found_superset ; ++j ) {
-        if ( *j != invalid_restr ) {
-          const EntityRank rankJ = j->entity_rank();
-          const Part     & partJ = * arg_all_parts[ j->part_ordinal() ];
-
-          if ( rankI == rankJ ) {
-            const bool found_subset = contain( partI.subsets() , partJ );
-            found_superset = ! found_subset &&
-                             contain( partI.supersets() , partJ );
-
-            if ( found_subset || found_superset ) {
-              ThrowErrorMsgIf( i->not_equal_stride(*j),
-                  arg_method << "[" << *this << "] FAILED: " <<
-                  print_restriction( *i, rankI, partI, m_field_rank ) <<
-                  ( found_subset ? " INCOMPATIBLE SUBSET " : " INCOMPATIBLE SUPERSET ") <<
-                  print_restriction( *j, rankJ, partJ, m_field_rank ));
-            }
-
-            if ( found_subset ) { *j = invalid_restr; }
-          }
-        }
-        if ( found_superset ) { *i = invalid_restr; }
-      }
+  //Check whether both 'superset' and 'subset' are in this field's restrictions.
+  //If they are, make sure they are compatible and remove the subset restriction.
+  FieldRestrictionVector::iterator superset_restriction = restrs.end();
+  FieldRestrictionVector::iterator subset_restriction = restrs.end();
+  for (FieldRestrictionVector::iterator i = restrs.begin() ; i != restrs.end() ; ++i ) {
+    if (i->part_ordinal() == superset.mesh_meta_data_ordinal()) {
+      superset_restriction = i;
+      if (subset_restriction != restrs.end() && subset_restriction->entity_rank() == superset_restriction->entity_rank()) break;
+    }
+    if (i->part_ordinal() == subset.mesh_meta_data_ordinal()) {
+      subset_restriction = i;
+      if (superset_restriction != restrs.end() && subset_restriction->entity_rank() == superset_restriction->entity_rank()) break;
     }
   }
 
-  // Clean out redundant entries:
-  FieldRestrictionVector::iterator new_end = std::remove(rMap.begin(), rMap.end(), invalid_restr);
-  rMap.erase(new_end, rMap.end());
+  if (superset_restriction != restrs.end() && subset_restriction != restrs.end() &&
+      superset_restriction->entity_rank() == subset_restriction->entity_rank()) {
+    ThrowErrorMsgIf( superset_restriction->not_equal_stride(*subset_restriction),
+      "Incompatible field restrictions for parts "<<superset.name()<<" and "<<subset.name());
+
+    restrs.erase(subset_restriction);
+  }
 }
 
 const void* FieldBaseImpl::get_initial_value() const

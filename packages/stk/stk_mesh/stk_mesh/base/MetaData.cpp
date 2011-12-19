@@ -238,7 +238,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
 
   // The new superset / subset relationship can cause a
   // field restriction to become incompatible or redundant.
-  m_field_repo.verify_and_clean_restrictions(method, m_part_repo.get_all_parts());
+  m_field_repo.verify_and_clean_restrictions(method, superset, subset, m_part_repo.get_all_parts());
 }
 
 void MetaData::declare_part_relation(

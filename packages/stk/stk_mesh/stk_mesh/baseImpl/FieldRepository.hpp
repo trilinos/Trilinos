@@ -53,6 +53,7 @@ class FieldRepository {
 
     void verify_and_clean_restrictions(
         const char       * arg_method ,
+        const Part& superset, const Part& subset,
         const PartVector & arg_all_parts );
 
     const FieldVector & get_fields() const {

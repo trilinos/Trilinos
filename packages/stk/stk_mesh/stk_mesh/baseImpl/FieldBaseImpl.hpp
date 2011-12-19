@@ -106,6 +106,7 @@ public:
                            const void*        arg_init_value = NULL);
 
   void verify_and_clean_restrictions( const char       * arg_method ,
+                                      const Part& superset, const Part& subset,
                                       const PartVector & arg_all_parts );
 
   const void* get_initial_value() const;
