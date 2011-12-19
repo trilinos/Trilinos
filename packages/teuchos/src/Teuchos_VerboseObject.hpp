@@ -85,8 +85,8 @@ public:
   //@{
   
   /** \brief . */
-  virtual ~VerboseObjectBase() {}
-  
+  virtual ~VerboseObjectBase();
+
   /** \brief Calls <tt>initializeVerboseObject()</tt>.
    */
   explicit
