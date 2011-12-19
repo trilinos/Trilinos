@@ -80,11 +80,20 @@ namespace {
   //
   // Report statistics for the given timing data.
   //
-  // label: 
-  // times: array of length numOuterLoops.  Each entry is the total
-  //   times for numInnerLoops trials of whatever operation was timed.
+  // out: Output stream to which to write.
   //
-
+  // label: Timing label (to print first).
+  //
+  // times: array of length numOuterLoops.  Each entry is the _total_
+  //   time (not averaged yet) for numInnerLoops trials of whatever
+  //   operation was timed.  We compute and display averages here.
+  //
+  // numInnerLoops: Each entry of the times array is the total time in
+  //   seconds of numInnerLoops runs.
+  //
+  // numOuterLoops: Number of entries in the times array; the number
+  //   of trials (where each trial measures the total time of
+  //   numInnerLoops runs).
   void
   report (std::ostream& out, 
 	  const std::string& label, 
@@ -105,16 +114,17 @@ namespace {
     out << label << endl
 	<< "Number of (outer) trials: " << numOuterLoops << endl
 	<< "Number of (inner) runs per trial: " << numInnerLoops << endl;
-    out << "Min: " << minTime << endl
-	<< "Max: " << maxTime << endl
-	<< "Median: " << median << endl
+    out << "Min: " << minTime / numInnerLoops << endl
+	<< "Max: " << maxTime / numInnerLoops << endl
+	<< "Median: " << median / numInnerLoops << endl
 	<< "Times: [";
     for (int i = 0; i < numOuterLoops; ++i) {
+      out << times[i] / numInnerLoops;
       if (i == numOuterLoops - 1) {
-	out << times[i] << "]" << endl;
+	out << "]" << endl;
       }
       else {
-	out << times[i] << ", ";
+	out << ", ";
       }
     }
     out << endl; // Leave a space for the next report() call.
@@ -143,6 +153,7 @@ test_run (const std::string& testName,
   }
   cout << testName << endl << endl;
 
+  std::vector<double> timerResTimes (numOuterLoops);
   std::vector<double> kernelLaunchTimes (numOuterLoops);
   std::vector<double> copyTimes (numOuterLoops);
 
@@ -162,6 +173,40 @@ test_run (const std::string& testName,
 
   // Carter helpfully provides a gettimeofday() wrapper.
   Kokkos::Impl::Timer wall_clock;
+
+  //
+  // Measure timer resolution.  We do this over outerLoop trials.
+  // Each trial loops until the timer has changed.  There's an upper
+  // bound on the inner loop count, just in case the timer is broken.
+  //
+  for (int outerLoop = 0; outerLoop < numOuterLoops; ++outerLoop) {
+    const double startTime = wall_clock.seconds();
+    double endTime;
+    // 10^9 iterations should take no more than a few seconds on
+    // modern computers, unless the timer overhead is huge.
+    const size_t maxTimerResolutionIters = 1000000000;
+
+    for (size_t k = 0; k < maxTimerResolutionIters; ++k) {
+      endTime = wall_clock.seconds();
+      if (endTime > startTime) {
+	break;
+      }
+    }
+    if (k == maxTimerResolutionIters) {
+      cerr << "Failed to measure timer resolution; loop exceeded "
+	   << maxTimerResolutionIters << " iterations with no change "
+	   << "in timer value." << endl;
+      return;
+    } else if (endTime <= startTime) {
+      cerr << "Failed to measure timer resolution; endTime = " << endTime
+	   << " <= startTime = " << startTime << "." << endl;
+      return;
+    }
+    timerResTimes[outerLoop] = endTime - startTime;
+  }
+  // Report timer resolution results.
+  report (cout, "Timer resolution (seconds)", timerResTimes, 
+	  numInnerLoops, numOuterLoops);
 
   //
   // Measure kernel launch + wait time.
