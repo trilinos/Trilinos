@@ -14,6 +14,7 @@
 
 // User application evaluators for this factory
 #include "user_app_ConstantModel.hpp"
+#include "Panzer_Parameter.hpp"
 #include "Panzer_GlobalStatistics.hpp"
 
 // ********************************************************************
@@ -88,6 +89,30 @@ buildClosureModels(const std::string& model_id,
     }
     else 
     #endif
+    if (plist.isType<std::string>("Method")) {
+      
+      if (plist.get<std::string>("Method") == "Parameter") {
+	{ // at IP
+	  input.set("Name", key);
+	  input.set("Value", plist.get<double>("Value"));
+	  input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+	  RCP< Evaluator<panzer::Traits> > e = 
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+	}
+	{ // at BASIS
+	  input.set("Name", key);
+	  input.set("Value", plist.get<double>("Value"));
+	  input.set("Data Layout", default_params.get<RCP<panzer::Basis> >("Basis")->functional);
+	  RCP< Evaluator<panzer::Traits> > e = 
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+	}
+	
+	found = true;
+      }
+  
+    }
     if (plist.isType<double>("Value")) {
       { // at IP
 	input.set("Name", key);
