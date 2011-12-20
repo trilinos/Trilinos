@@ -302,15 +302,16 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherFactory(const Teuchos::ParameterList & params, int level) {
 #include "MueLu_UseShortNames.hpp" // TODO don't know why this is needed here
-  char levelstr[11];
-  sprintf(levelstr,"(level %d)",level);
+  char levelchar[11];
+  sprintf(levelchar,"(level %d)",level);
+  std::string levelstr(levelchar);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(params.isSublist("smoother: list "+(string)levelstr)==false, Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother parameter list for level. error.");
+  TEUCHOS_TEST_FOR_EXCEPTION(params.isSublist("smoother: list " + levelstr)==false, Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother parameter list for level. error.");
 
-  std::string type = params.sublist("smoother: list "+(string)levelstr).get<std::string>("smoother: type");
+  std::string type = params.sublist("smoother: list " + levelstr).get<std::string>("smoother: type");
   TEUCHOS_TEST_FOR_EXCEPTION(type.empty(), Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother type for level. error.");
 
-  const Teuchos::ParameterList smolevelsublist = params.sublist("smoother: list "+(string)levelstr);
+  const Teuchos::ParameterList smolevelsublist = params.sublist("smoother: list " + levelstr);
   RCP<SmootherPrototype> smooProto;
   std::string ifpackType;
   Teuchos::ParameterList ifpackList;

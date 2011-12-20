@@ -27,7 +27,7 @@ namespace Xpetra {
   //
 
   class EpetraMap
-    : public Map<int, int>
+    : public virtual Map<int, int>
   {
 
     typedef int LocalOrdinal;
