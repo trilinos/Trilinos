@@ -750,8 +750,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # The root of the dasbhoard where ${PROJECT_NAME} will be cloned and the
   # BUILD directory will be create (only override for separate testing)
-  IF (TDD_DASHBOARD_ROOT)
-    MESSAGE("Hard setting CTEST_DASHBOARD_ROOT because TDD_DASHBOARD_ROOT is set!")
+  IF (TDD_DASHBOARD_ROOT AND BUILD_DIR_NAME)
+    MESSAGE("Hard setting CTEST_DASHBOARD_ROOT because TDD_DASHBOARD_ROOT and BUILD_DIR_NAME is set!")
     SET(CTEST_DASHBOARD_ROOT "${TDD_DASHBOARD_ROOT}/${BUILD_DIR_NAME}")
     PRINT_VAR(CTEST_DASHBOARD_ROOT)
   ELSE()
