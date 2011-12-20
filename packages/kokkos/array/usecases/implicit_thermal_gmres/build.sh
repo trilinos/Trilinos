@@ -10,7 +10,7 @@ export LIB=""
 export INC_PATH="-I. -I../../src"
 export CXX_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp"
 export CXX="g++"
-export CXXFLAGS="-Wall"
+export CXXFLAGS="-Wall -O3"
 
 #-----------------------------------------------------------------------------
 
