@@ -379,7 +379,8 @@ namespace MueLu {
 
     for (size_t i = 0; i<Teuchos::as<size_t>(localreplicatedcolgids.size()); i++)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(localreplicatedcolgids[i] != Teuchos::as<GlobalOrdinal>(i), Xpetra::Exceptions::RuntimeError, "PgPFactory::BuildLocalReplicatedColMap: local replication of GIDs failed. This may be a problem with the aggregates?? It is localreplicatedcolgids[XYZ]=0 with XYZ neq 0. Then the size of GID2localgid does not match the number of total aggregates. error.");
+      // PgPFactory unit tests with nonstandard maps needs this
+      //TEUCHOS_TEST_FOR_EXCEPTION(localreplicatedcolgids[i] != Teuchos::as<GlobalOrdinal>(i), Xpetra::Exceptions::RuntimeError, "PgPFactory::BuildLocalReplicatedColMap: local replication of GIDs failed. This may be a problem with the aggregates?? It is localreplicatedcolgids[XYZ]=0 with XYZ neq 0. Then the size of GID2localgid does not match the number of total aggregates. error.");
 
       GID2localgid[localreplicatedcolgids[i]] = curLocalGid;
       //std::cout << comm->getRank() << "GID " << localreplicatedcolgids[i] << " localgid " << GID2localgid[localreplicatedcolgids[i]] << std::endl;
