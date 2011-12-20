@@ -8,6 +8,8 @@ INCLUDE(TribitsAddOptionAndDefine)
 
 TRIBITS_PACKAGE(FEI)
 
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 #
 # B) Set up package-specific options
 #

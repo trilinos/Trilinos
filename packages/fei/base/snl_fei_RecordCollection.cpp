@@ -21,6 +21,8 @@
 snl_fei::RecordCollection::RecordCollection(int localProc)
   : m_records(),
     m_global_to_local(),
+    m_global_to_local_map_(),
+    doesSomeoneHaveMyMap(false),
     localProc_(localProc),
     debugOutput_(false),
     dbgOut_(NULL)
@@ -32,6 +34,8 @@ snl_fei::RecordCollection::RecordCollection(int localProc)
 snl_fei::RecordCollection::RecordCollection(const RecordCollection& src)
   : m_records(src.m_records),
     m_global_to_local(src.m_global_to_local),
+    m_global_to_local_map_(),
+    doesSomeoneHaveMyMap(false),
     localProc_(src.localProc_),
     debugOutput_(src.debugOutput_),
     dbgOut_(src.dbgOut_)
@@ -62,10 +66,12 @@ void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
     fieldMasks.push_back(mask);
   }
 
+  
+  syncFrom();
   for(int i=0; i<numIDs; ++i) {
     int local_id;
-    std::map<int,int>::iterator iter = m_global_to_local.lower_bound(IDs[i]);
-    if (iter == m_global_to_local.end() || iter->first != IDs[i]) {
+    fei::IndexType<int,int>::iterator iter = m_global_to_local.find(IDs[i]);
+    if (iter == m_global_to_local.end() ) {
       //record doesn't exist, so we'll add a new one.
       local_id = m_records.size();
       m_global_to_local.insert(iter, std::make_pair(IDs[i], local_id));
@@ -81,6 +87,7 @@ void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
 
     if (recordLocalIDs != NULL) recordLocalIDs[i] = local_id;
   }
+  syncTo();
 }
 
 //----------------------------------------------------------------------------
@@ -106,10 +113,11 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
   int lastMaskID = maskID;
   fei::FieldMask* lastMask = mask;
 
+  syncFrom();
   for(int i=0; i<numIDs; ++i) {
     int local_id;
-    std::map<int,int>::iterator iter = m_global_to_local.lower_bound(IDs[i]);
-    if (iter == m_global_to_local.end() || iter->first != IDs[i]) {
+    fei::IndexType<int,int>::iterator iter = m_global_to_local.find(IDs[i]);
+    if (iter == m_global_to_local.end() ) {
       //record doesn't exist, so we'll add a new one.
       local_id = m_records.size();
       m_global_to_local.insert(iter, std::make_pair(IDs[i], local_id));
@@ -170,6 +178,7 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
       }
     }
   }
+  syncTo();
 }
 
 //----------------------------------------------------------------------------
@@ -202,7 +211,8 @@ setOwners_lowestSharing(fei::SharedIDs<int>& sharedIDs)
 
 fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID)
 {
-  std::map<int,int>::iterator iter = m_global_to_local.find(ID);
+  syncFrom();
+  fei::IndexType<int,int>::iterator iter = m_global_to_local.find(ID);
 
   if (iter == m_global_to_local.end()) {
     return( NULL );
@@ -213,7 +223,8 @@ fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID)
 
 const fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID) const
 {
-  std::map<int,int>::const_iterator iter = m_global_to_local.find(ID);
+  syncFrom();
+  fei::IndexType<int,int>::const_iterator iter = m_global_to_local.find(ID);
 
   if (iter == m_global_to_local.end()) {
     return( NULL );
@@ -279,4 +290,27 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
   }
 
   return(globalIndex);
+}
+
+
+//----------------------------------------------------------------------------
+std::map<int,int>& snl_fei::RecordCollection::getGlobalToLocalMap() const 
+{       
+  if (m_global_to_local.isStdMap()) 
+    return(m_global_to_local.asMap(m_global_to_local_map_));
+  m_global_to_local.resyncToMap(m_global_to_local_map_);
+  return(m_global_to_local_map_ );
+}
+
+//----------------------------------------------------------------------------
+const std::map<int,int>& snl_fei::RecordCollection::getGlobalToLocalMap() 
+{
+  if (m_global_to_local.isStdMap()) 
+    return(m_global_to_local.asMap(m_global_to_local_map_));
+      
+  // This will cause a lot of work once this is set
+  doesSomeoneHaveMyMap=true;
+
+  m_global_to_local.resyncToMap(m_global_to_local_map_);
+  return(m_global_to_local_map_ );
 }
