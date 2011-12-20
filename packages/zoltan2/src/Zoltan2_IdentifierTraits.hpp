@@ -495,7 +495,7 @@ struct IdentifierTraits<unsigned long> {
     return z2AreConsecutive(val, n); }
 };
 
-#ifdef HAVE_LONG_LONG
+#ifdef ZOLTAN2_HAVE_LONG_LONG
 
 template<>
 struct IdentifierTraits<long long> {
@@ -569,21 +569,28 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   }
 
   static inline double key(const pair_t p)  {
-    int nbits = sizeof(T1)*8;
-    intmax_t part1(p.first);
-    intmax_t part2(p.second);
-    return static_cast<double>((part2 << nbits) | part1);
+    if (sizeof(T1) + sizeof(T2) > sizeof(double))
+      throw std::runtime_error("pair gid is invalid");
+
+    double keyVal;
+    char *cx = reinterpret_cast<char *>(&keyVal);
+    T1 *xpos = reinterpret_cast<T1 *>(cx);
+    T2 *ypos = reinterpret_cast<T2 *>(cx + sizeof(T1));
+    *xpos = p.first;
+    *ypos = p.second;
+    
+    return keyVal;
   }
 
   static pair_t keyToGid(const double key){
-    intmax_t t1_size_mask = 0xff;
-    for (unsigned n=1; n < sizeof(T1); n++){
-      t1_size_mask |= (0xff << n);
-    }
-    intmax_t ikey = static_cast<intmax_t>(key);
-    T1 part1 = static_cast<T1>(ikey & t1_size_mask);
-    T2 part2 = static_cast<T2>((ikey & ~t1_size_mask) >> sizeof(T1)*8);
-    return std::pair<T1,T2>(part1, part2);
+    if (sizeof(T1) + sizeof(T2) > sizeof(double))
+      throw std::runtime_error("pair gid is invalid");
+
+    const char *cx = reinterpret_cast<const char *>(&key);
+    const T1 *xpos = reinterpret_cast<const T1 *>(cx);
+    const T2 *ypos = reinterpret_cast<const T2 *>(cx + sizeof(T1));
+
+    return std::pair<T1,T2>(*xpos, *ypos);
   }
 
   static inline std::string name() {

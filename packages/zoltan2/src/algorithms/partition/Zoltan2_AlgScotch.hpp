@@ -39,6 +39,7 @@ void AlgPTScotch(
 
 #else  //HAVE_SCOTCH
 
+#include <stdint.h>
 #ifndef HAVE_MPI
 #include "scotch.h"
 #else

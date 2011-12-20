@@ -3,17 +3,13 @@
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
+#include <queue>
 
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgRCM.hpp
 //! \brief RCM ordering of a graph (serial)
 
-
-// Placeholder for real error handling.
-#define KDD_HANDLE_ERROR {\
-    cout << __func__ << ":" << __LINE__ << " KDDERROR" << endl;\
-    }
 
 namespace Zoltan2{
 
@@ -40,8 +36,55 @@ int AlgRCM(
   lno_t *perm;
   perm = new lno_t[nVtx];
   for (lno_t i=0; i<nVtx; i++){
+#ifdef RCM
+    perm[i] = -1;
+#else
     perm[i] = i;
+#endif
   }
+
+#ifdef RCM
+  // This is the real RCM algorithm.
+  // Get local graph
+  ArrayView<const lno_t> &edgeIds;
+  ArrayView<const lno_t> &offsets;
+  ArrayView<const scalar_t> &wgts;
+  getLocalEdgeList(&edgeIds, &offsets, &wgts);
+
+  // TODO: Find pseudo-peripheral root vertex.
+  lno_t root = 0;
+
+  // Do BFS from root
+  queue<lno_t> Q;
+  lno_t count = n-1; // start numbering from n-1 (Reverse CM)
+  lno_t next = 0;
+
+  while (count){ // Some vertex remains unlabelled
+
+    // Label connected component starting at root
+    Q.push(root);
+    perm[root] = count--;
+
+    while (Q.size()){
+      // Get a vertex from the queue
+      lno_t v = Q.front();
+      Q.pop();
+
+      // Add unmarked nbors to queue
+      // TODO: Sort nbors by degree
+      for (lno_t *w = edgeIds[offset[v]]; w<edgeIds[offset[v+1]]; w++){
+        if (*w != -1){
+          perm[*w] = count--; // Label as we push on Q
+          Q.push(*w);
+        }
+      }
+    }
+
+    // Find an unmarked vertex, use as new root
+    while (perm[next] != -1) next++;
+    root = next;
+  }
+#endif
 
   // Set solution.
   solution->setPermutation(nVtx,
