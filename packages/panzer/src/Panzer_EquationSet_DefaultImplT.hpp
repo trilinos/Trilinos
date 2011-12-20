@@ -319,5 +319,16 @@ getIntegrationRule() const
 }
 
 // ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+setFieldLayoutLibrary(const FieldLibrary & fieldLibrary)
+{
+   m_field_layout_lib = fieldLibrary.buildFieldLayoutLibrary(*m_int_rule);
+
+   this->m_eval_plist->set("Field Layout Library", m_field_layout_lib);  // set the value in parameter list
+                                                                         // used by closure model factory
+}
+
+// ***********************************************************************
 
 #endif

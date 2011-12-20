@@ -60,9 +60,12 @@ namespace panzer {
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const;
 
     void setElementBlockId(const std::string & blockId);
+
     std::string getElementBlockId() const;
 
     virtual Teuchos::RCP<panzer::IntegrationRule> getIntegrationRule() const;
+
+    virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary);
 
   protected:
     
@@ -83,6 +86,7 @@ namespace panzer {
     Teuchos::RCP< std::vector<std::string> > m_residual_names;
     std::string m_scatter_name;
     Teuchos::RCP<Teuchos::ParameterList> m_eval_plist;
+    Teuchos::RCP<const FieldLayoutLibrary> m_field_layout_lib;
 
     std::string m_block_id;
   };

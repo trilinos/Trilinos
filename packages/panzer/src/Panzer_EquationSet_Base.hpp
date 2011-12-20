@@ -10,6 +10,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_FieldLibrary.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -72,6 +73,7 @@ namespace panzer {
 
     virtual Teuchos::RCP<panzer::IntegrationRule> getIntegrationRule() const = 0;
 
+    virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary) = 0;
   };
   
 }

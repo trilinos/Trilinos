@@ -5,6 +5,8 @@
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_CellData.hpp"
 
+#include "Panzer_FieldLibrary.hpp"
+
 namespace PHX {
   template<typename Traits> class FieldManager;
 }
@@ -63,6 +65,11 @@ namespace panzer {
     virtual std::string getElementBlockId() const = 0;
 
     virtual Teuchos::RCP<panzer::IntegrationRule> getIntegrationRule() const = 0;
+
+    /** Allows user to specify the Basis IR (integ rule) library for 
+      * different degrees of freedom.
+      */
+    virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary) = 0;
 
   };
   

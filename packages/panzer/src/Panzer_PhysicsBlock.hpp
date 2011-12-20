@@ -12,6 +12,7 @@
 #include "Panzer_EquationSet.hpp"
 #include "Panzer_EquationSet_TemplateManager.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_FieldLibrary.hpp"
 
 namespace shards {
   class CellTopology;
@@ -127,6 +128,7 @@ namespace panzer {
     std::map<std::string,Teuchos::RCP<panzer::PureBasis> > m_bases;
     
     std::vector< Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > > m_equation_sets;
+    FieldLibrary m_field_lib;
 
   };
   

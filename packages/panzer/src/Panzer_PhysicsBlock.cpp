@@ -60,11 +60,6 @@ void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
     RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set
       = factory.buildEquationSet(input_eq_sets[i], m_cell_data, build_transient_support);
 
-    // setup element blocks: for each evaluation type
-    for(panzer::EquationSet_TemplateManager<panzer::Traits>::iterator itr=eq_set->begin();
-        itr!=eq_set->end();++itr)
-       itr->setElementBlockId(element_block_id);
- 
     // add this equation set in
     m_equation_sets.push_back(eq_set);
 
@@ -83,6 +78,23 @@ void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
       m_bases[sbNames[j].second->name()] = sbNames[j].second;
 
   }
+
+  // build up field library
+  for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator itr=m_bases.begin();
+      itr!=m_bases.end();++itr) 
+     m_field_lib.addFieldAndBasis(itr->first,itr->second);
+
+  // setup element blocks: for each evaluation type
+  for(std::size_t eq_i=0;eq_i<m_equation_sets.size();eq_i++) {
+     RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set = m_equation_sets[eq_i];
+     for(panzer::EquationSet_TemplateManager<panzer::Traits>::iterator itr=eq_set->begin();
+         itr!=eq_set->end();++itr) {
+        itr->setElementBlockId(element_block_id);
+        itr->setFieldLayoutLibrary(m_field_lib); // this will build marriage between basis
+                                                  // and integration rule.
+     }
+  }
+ 
 }
 
 // *******************************************************************

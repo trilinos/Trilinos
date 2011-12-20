@@ -66,6 +66,7 @@ APPEND_SET(HEADERS
   Panzer_ExplicitTemplateInstantiation.hpp
   Panzer_FieldManagerBuilder.hpp
   Panzer_FieldManagerBuilderT.hpp
+  Panzer_FieldLibrary.hpp
   Panzer_InitialCondition_Builder.hpp
   Panzer_InitialCondition_BuilderT.hpp
   Panzer_InputEquationSet.hpp
@@ -181,6 +182,7 @@ APPEND_SET(SOURCES
   Panzer_EquationSet_DefaultImpl.cpp
   Panzer_GlobalData.cpp
   Panzer_GlobalDataAcceptor_DefaultImpl.cpp
+  Panzer_FieldLibrary.cpp
   Panzer_InputEquationSet.cpp
   Panzer_InputPhysicsBlock.cpp
   Panzer_IntegrationRule.cpp
