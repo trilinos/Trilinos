@@ -24,19 +24,23 @@ namespace panzer {
     /** \brief Sacado scalar parameter library */
     Teuchos::RCP<panzer::ParamLib> pl;
     
-    /** \brief Sacado scalar parameter vector library */
-    Teuchos::RCP<panzer::ParamVec> pv;
-    
   };
   
   /** \brief Nonmember constructor
       
     Allocates a new global data object.  Automatically allocates the
-    sacado scalar and vector parameter libraries.
+    sacado parameter libraries.
+
+    \param [in] build_default_os If set to true, the os object will be
+    allocated with a pointer to cout.
+
+    \param [in] print_process Sets the print process if the os object
+    is built by this method.
 
     \relates GlobalData
   */
-  Teuchos::RCP<panzer::GlobalData> createGlobalData();
+  Teuchos::RCP<panzer::GlobalData> createGlobalData(bool build_default_os = true,
+						    int print_process = 0);
 
 }
 

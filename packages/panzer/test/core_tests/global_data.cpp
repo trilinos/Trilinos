@@ -27,13 +27,33 @@ namespace panzer {
 
   };
   
-  TEUCHOS_UNIT_TEST(global_data_accessor, default_impl)
+  TEUCHOS_UNIT_TEST(global_data, builder)
   {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
+    Teuchos::RCP<panzer::GlobalData> gd;
 
+    TEST_ASSERT(is_null(gd));
+
+    {
+      gd = panzer::createGlobalData(false);
+
+      TEST_ASSERT(nonnull(gd));
+      TEST_ASSERT(nonnull(gd->pl));
+      TEST_ASSERT(is_null(gd->os));
+    }
+
+    {
+      gd = panzer::createGlobalData(true);
+
+      TEST_ASSERT(nonnull(gd));
+      TEST_ASSERT(nonnull(gd->pl));
+      TEST_ASSERT(nonnull(gd->os));
+    }
+  }
+
+  TEUCHOS_UNIT_TEST(global_data, accessor_default_impl)
+  {
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-
+    
     TestObject t;
     t.setGlobalData(gd);
 
