@@ -171,24 +171,23 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
 
   double* residPtr = &(residValues[0]);
 
-  std::map<int,int>& fieldDB = problemStructure_->getFieldDatabase();
-  int numDBFields = fieldDB.size();
-  std::map<int,int>::const_iterator
-    db_iter = fieldDB.begin(),
-    db_end = fieldDB.end();
+  const std::vector<int>& pfieldIDs = problemStructure_->getFieldIDs();
+  int numDBFields = pfieldIDs.size();
+  std::vector<int>::const_iterator
+    f_iter = pfieldIDs.begin(),
+    f_end = pfieldIDs.end();
 
   int DBFieldSize = 0;
 
   int offset = 0;
-  for(; db_iter != db_end; ++db_iter) {
-    const std::pair<const int,int>& dbpair = *db_iter;
+  for(; f_iter != f_end; ++f_iter) {
 
-    if (offset == 0) DBFieldSize = dbpair.second;
+    if (offset == 0) DBFieldSize = problemStructure_->getFieldSize(*f_iter);
 
-    if (dbpair.first > -1) {
+    if (*f_iter > -1) {
       if (offset < numFields) {
-	fieldIDs[offset] = dbpair.first;
-	tmpNormsPtr[offset++] = 0.0;
+        fieldIDs[offset] = *f_iter;
+        tmpNormsPtr[offset++] = 0.0;
       }
     }
   }

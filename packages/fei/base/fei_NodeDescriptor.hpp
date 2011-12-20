@@ -12,7 +12,7 @@
 #include <fei_macros.hpp>
 
 #include <fei_ArrayUtils.hpp>
-
+#include <iostream>
 /**
   The NodeDescriptor class holds the information that the FEI implementation
   needs to know about the nodes in the finite element problem:
@@ -41,29 +41,29 @@ class NodeDescriptor {
     : nodeID_(src.nodeID_), nodeNumber_(src.nodeNumber_),
       numNodalDOF_(0), fieldIDList_(NULL),
       fieldEqnNumbers_(NULL), numFields_(0), blkEqnNumber_(0),
-      ownerProc_(src.ownerProc_), blockList_(NULL), numBlocks_(0)
+      ownerProc_(src.ownerProc_), blockList_()
    {}
 
    virtual ~NodeDescriptor();
 
-   GlobalID getGlobalNodeID() const {return(nodeID_);};
-   void setGlobalNodeID(GlobalID node) {nodeID_ = node;};
+   GlobalID getGlobalNodeID() const {return(nodeID_);}
+   void setGlobalNodeID(GlobalID node) {nodeID_ = node;}
 
-   int getNodeNumber() const {return(nodeNumber_);};
+   int getNodeNumber() const {return(nodeNumber_);}
    void setNodeNumber(int nn) {nodeNumber_ = nn;};
 
    int getBlkEqnNumber() const {return(blkEqnNumber_);}
    void setBlkEqnNumber(int blkEqn) {blkEqnNumber_ = blkEqn;}
 
-   int getNumNodalDOF() const {return(numNodalDOF_);};
-   void setNumNodalDOF(int dof) {numNodalDOF_ = dof;};
+   int getNumNodalDOF() const {return(numNodalDOF_);}
+   void setNumNodalDOF(int dof) {numNodalDOF_ = dof;}
 
    void addField(int fieldID);
    void setFieldEqnNumber(int fieldID, int eqn);
 
-   int getNumFields() const {return(numFields_);};
-   const int* getFieldIDList() const {return(fieldIDList_);};
-   const int* getFieldEqnNumbers() const {return(fieldEqnNumbers_);};
+   int getNumFields() const {return(numFields_);}
+   const int* getFieldIDList() const {return(fieldIDList_);}
+   const int* getFieldEqnNumbers() const {return(fieldEqnNumbers_);}
 
    /** Given a fieldID, return the first equation number associated with that
        field at this node.
@@ -90,18 +90,15 @@ class NodeDescriptor {
    bool operator>(const NodeDescriptor& nd) const
      { return( nodeID_ > nd.nodeID_ ); }
 
-   int getOwnerProc() const {return(ownerProc_);};
-   void setOwnerProc(int proc) {ownerProc_ = proc;};
+   int getOwnerProc() const {return(ownerProc_);}
+   void setOwnerProc(int proc) {ownerProc_ = proc;}
 
-   void addBlock(GlobalID blk)
-     {
-       int allocLen = numBlocks_;
-       fei::sortedListInsert(blk, blockList_, numBlocks_, allocLen);
-     }
+   void addBlockIndex(unsigned blk_idx)
+     { fei::sortedListInsert(blk_idx, blockList_); }
 
-   int getNumBlocks() const {return(numBlocks_);};
-   const GlobalID* getBlockList() const {return(blockList_);};
-   bool containedInBlock(GlobalID blk) const;
+   size_t getNumBlocks() const {return blockList_.size();}
+   const std::vector<unsigned>& getBlockIndexList() const {return(blockList_);}
+   bool hasBlockIndex(unsigned blk_idx) const;
 
  private:
    NodeDescriptor& operator=(const NodeDescriptor& src);
@@ -126,8 +123,7 @@ class NodeDescriptor {
 
    int ownerProc_;        //processor that owns the equations for this node
 
-   GlobalID* blockList_;       //blocks that contain this node
-   int numBlocks_;
+   std::vector<unsigned> blockList_;  //indexes of blocks that contain this node
 };
 
 #endif
