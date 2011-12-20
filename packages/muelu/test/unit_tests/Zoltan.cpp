@@ -55,7 +55,7 @@ namespace MueLuTests {
     RCP<Xpetra::Vector<LO,LO,GO,NO> > entriesPerRow = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(map,false);
     Teuchos::ArrayRCP<LO> eprData = entriesPerRow->getDataNonConst(0);
     for (Teuchos::ArrayRCP<LO>::iterator i=eprData.begin(); i!=eprData.end(); ++i) {
-      *i = Teuchos::as<LO>(std::floor(((ST::random()+1)*0.5*maxEntriesPerRow)+1));
+      *i = (LO)(std::floor(((ST::random()+1)*0.5*maxEntriesPerRow)+1));
     }
 
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
