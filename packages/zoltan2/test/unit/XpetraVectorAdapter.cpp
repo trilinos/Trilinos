@@ -129,6 +129,32 @@ int main(int argc, char *argv[])
   size_t vlen = tV->getLocalLength();
   Teuchos::ArrayView<const gno_t> rowGids = tV->getMap()->getNodeElementList();
 
+  // To test migration in the input adapter we need a Solution
+  // object.  The Solution needs an IdentifierMap.
+
+  Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> UserTypes;
+
+  typedef Zoltan2::IdentifierMap<UserTypes> idmap_t;
+  typedef Zoltan2::PartitioningSolution<UserTypes> soln_t;
+
+  RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
+
+  ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
+  RCP<const idmap_t> idMap = rcp(new idmap_t(env, gidArray));
+
+  int weightDim = 1;
+  scalar_t *imbal = new scalar_t [weightDim];
+  imbal[0] = 1.0;
+  ArrayRCP<scalar_t> metric(imbal, 0, 1, true);
+
+  size_t *p = new size_t [nvtx];
+  memset(p, 0, sizeof(size_t) * nvtx);
+  ArrayRCP<size_t> solnParts(p, 0, nvtx, true);
+
+  soln_t solution(env, idMap, weightDim);
+
+  solution.setParts(rowGids, solnParts, metric);
+
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::Vector
   if (!gfail){ 
@@ -152,12 +178,6 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Zoltan2::PartitioningSolution<gno_t, lno_t> solution(nprocs, vlen);
-      ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
-      ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
-      for (size_t i = 0; i < vlen; i++) solnGids[i] = rowGids[i];
-      memset(solnParts.getRawPtr(), 0, sizeof(size_t) * vlen);
-
       tvector_t *vMigrate = NULL;
       try{
         tVInput->applyPartitioningSolution(*tV, vMigrate, solution);
@@ -219,12 +239,6 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Zoltan2::PartitioningSolution<gno_t, lno_t> solution(nprocs, vlen);
-      ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
-      ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
-      for (size_t i = 0; i < vlen; i++) solnGids[i] = rowGids[i];
-      memset(solnParts.getRawPtr(), 0, sizeof(size_t) * vlen);
-
       xvector_t *vMigrate =NULL;
       try{
         xVInput->applyPartitioningSolution(*xV, vMigrate, solution);
@@ -286,12 +300,6 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
   
     if (!gfail){
-      Zoltan2::PartitioningSolution<gno_t, lno_t> solution(nprocs, vlen);
-      ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
-      ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
-      for (size_t i = 0; i < vlen; i++) solnGids[i] = rowGids[i];
-      memset(solnParts.getRawPtr(), 0, sizeof(size_t) * vlen);
-      
       evector_t *vMigrate =NULL;
       try{
         eVInput->applyPartitioningSolution(*eV, vMigrate, solution);

@@ -101,7 +101,7 @@ public:
   typedef typename IdentifierInput<User>::gno_t     gno_t;
   typedef typename IdentifierInput<User>::lno_t     lno_t;
   typedef typename IdentifierInput<User>::gid_t     gid_t;
-  typedef IdentifierMap<gid_t, lno_t, gno_t> idmap_t;
+  typedef IdentifierMap<User> idmap_t;
   typedef StridedInput<lno_t, scalar_t> input_t;
   
   IdentifierModel( const IdentifierInput<User> *ia, 
@@ -238,7 +238,6 @@ public:
 
   int getNumWeights() const { return getIdentifierWeightDim(); }
 
-
 private:
 
   bool gnosAreGids_;
@@ -260,7 +259,7 @@ public:
   typedef typename MatrixInput<User>::gno_t     gno_t;
   typedef typename MatrixInput<User>::lno_t     lno_t;
   typedef typename MatrixInput<User>::gid_t     gid_t;
-  typedef IdentifierMap<gid_t, lno_t, gno_t> idmap_t;
+  typedef IdentifierMap<User> idmap_t;
   typedef StridedInput<lno_t, scalar_t> input_t;
   
   IdentifierModel( const MatrixInput<User> *ia, 

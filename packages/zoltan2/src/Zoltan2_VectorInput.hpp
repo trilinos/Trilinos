@@ -49,6 +49,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
+  typedef User user_t;
 
   enum InputAdapterType inputAdapterType() const {return VectorAdapterType;}
 
@@ -89,7 +90,7 @@ public:
    *  TODO   documentation
    */
   size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<gid_t, lno_t> &solution)
+         const PartitioningSolution<User> &solution)
   {
     return 0;
   } 

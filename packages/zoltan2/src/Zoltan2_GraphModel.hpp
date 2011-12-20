@@ -162,7 +162,6 @@ public:
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return; }
 
   int getNumWeights() const { return 0; }
-
 };
 
 ////////////////////////////////////////////////////////////////
@@ -186,7 +185,7 @@ public:
   typedef typename MatrixInput<User>::lno_t     lno_t;
   typedef typename MatrixInput<User>::gid_t     gid_t;
   typedef typename MatrixInput<User>::node_t    node_t;
-  typedef IdentifierMap<gid_t, lno_t, gno_t>     idmap_t;
+  typedef IdentifierMap<User>     idmap_t;
 
   /*! Constructor
    *  All processes in the communicator must call the constructor.
@@ -429,6 +428,8 @@ public:
     ArrayView<const scalar_t> xyz, wgts;
     getVertexList(gnos, xyz, wgts);
   }
+
+  int getNumWeights() const { return 0; }
 
 private:
 

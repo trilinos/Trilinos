@@ -25,7 +25,6 @@
 #include <Teuchos_RCP.hpp>   
 #include <Teuchos_ArrayRCP.hpp>   
 #include <Teuchos_Comm.hpp>   
-#include <Teuchos_ParameterList.hpp>   
 #include <Teuchos_DefaultComm.hpp>   
 
 using namespace std;
@@ -39,12 +38,8 @@ int main(int argc, char *argv[])
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
-  Teuchos::ParameterList params;
-  params.set(std::string("ERROR_CHECK_LEVEL"), 1);
-  params.set(std::string("DEBUG_LEVEL"), 0);
-        
-  Teuchos::RCP<Zoltan2::Environment> envPtr = 
-    Teuchos::rcp(new Zoltan2::Environment(params, comm));
+  Teuchos::RCP<const Zoltan2::Environment> envPtr = 
+    Zoltan2::getDefaultEnvironment();
 
   // In this test, our local IDs are ints and our global IDs are longs.
 

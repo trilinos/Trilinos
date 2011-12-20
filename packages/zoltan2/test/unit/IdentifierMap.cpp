@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int nprocs = comm->getSize();
   int rank = comm->getRank();
-  RCP<Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
 
   long numLocalObjects = 10;
   long numRemoteObjects = 3;   // numRemoteObjects < numLocalObjects
@@ -257,6 +257,8 @@ int main(int argc, char *argv[])
 
   using Zoltan2::IdentifierMap;
 
+  Zoltan2::BasicUserTypes<float, long, int, long> UserLongGids;
+
   //////////////////////////////////////////////////////////
   //  Ids are non-consecutive ordinals.
 
@@ -270,7 +272,7 @@ int main(int argc, char *argv[])
     if (i == numLocalObjects/2) base = base2;
   }
 
-  typedef IdentifierMap<long, int, long> mapLongGids_t;
+  typedef IdentifierMap<UserLongGids> mapLongGids_t;
 
   mapLongGids_t *idMap = NULL;
 
@@ -361,6 +363,7 @@ int main(int argc, char *argv[])
   //   when GIDs are std::pair<int,int>
   //////////////////////////////////////////////////////////
   //  Ids are not ordinals.  
+  Zoltan2::BasicUserTypes<float, std::pair<int,int>, int, long> UserPairGids;
 
   ArrayRCP<std::pair<int,int> > nonOrdinalGids(
      new std::pair<int,int> [numLocalObjects],
@@ -370,7 +373,7 @@ int main(int argc, char *argv[])
     nonOrdinalGids[i] = std::pair<int, int>(rank, i);
   }
 
-  typedef IdentifierMap<int, std::pair<int,int>, int, long> mapPairGids_t;
+  typedef IdentifierMap<UserPairGids> mapPairGids_t;
 
   mapPairGids_t *idMap2 = NULL;
 

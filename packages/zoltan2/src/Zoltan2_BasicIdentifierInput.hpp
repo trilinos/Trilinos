@@ -37,6 +37,7 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef IdentifierInput<User>       base_adapter_t;
+  typedef User user_t;
 
   /*! Constructor
       \param numIds is the number of identifiers in the list

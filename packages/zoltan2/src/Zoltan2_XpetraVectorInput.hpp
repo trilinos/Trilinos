@@ -44,6 +44,7 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef VectorInput<User>       base_adapter_t;
+  typedef User user_t;
 
   typedef Xpetra::Vector<
     scalar_t, lno_t, gno_t, node_t> x_vector_t;
@@ -133,7 +134,7 @@ public:
    *   be on the list, or the Import will fail.
    */
   size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<gid_t, lno_t> &solution)
+         const PartitioningSolution<User> &solution)
   { 
     // Get an import list
 

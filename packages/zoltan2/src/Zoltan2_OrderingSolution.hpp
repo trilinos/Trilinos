@@ -24,7 +24,7 @@ namespace Zoltan2 {
 */
 
 template <typename gid_t, typename lno_t, typename gno_t>
-  class OrderingSolution : public Solution<gid_t, lno_t, gno_t>
+  class OrderingSolution : public Solution
 {
 public:
 

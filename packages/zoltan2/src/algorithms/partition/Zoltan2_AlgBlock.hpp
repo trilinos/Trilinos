@@ -12,13 +12,14 @@ namespace Zoltan2{
 
 /*! Block partitioning method.
  *
- *  \param env  parameters for the problem and library configuration
+ *  \param env   library configuration and problem parameters
  *  \param problemComm  the communicator for the problem
  *  \param ids    an Identifier model
  *  \param solution is the Solution object
  *
  *  Preconditions: The parameters in the environment have been
- *    processed (committed).
+ *    processed (committed).  No special requirements on the
+ *    identifiers.
  */
 
 
@@ -27,18 +28,21 @@ void AlgBlock(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<const IdentifierModel<Adapter> > &ids, 
-  RCP<PartitioningSolution<Adapter::gid_t, Adapter::lno_t, Adapter::gno_t> > &solution
+  RCP<PartitioningSolution<Adapter::user_t> > &solution
 ) 
 {
-  if (debug){
-    ostringstream oss << "Entering AlgBlock" << std::endl;
-    env->debugOut_->print(DETAILED_STATUS, oss.str());
-  }
-
   using std::string;
+  using std::ostringstream;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
+
+  bool debug = env.doStatus();
+  bool timing = env.doTiming();
+  bool memstats = env.doMemoryProfiling();
+
+  if (debug)
+    env->debugOut_->print(DETAILED_STATUS, string("Entering AlgBlock"));
 
   Z2_GLOBAL_BUG_ASSERTION(env, "parameters are not committed",
     env->parametersAreCommitted(), DEBUG_MODE_ASSERTION);
@@ -53,9 +57,6 @@ void AlgBlock(
   //    are we timing
   //    are we computing memory used
 
-  bool debug = env.doStatus();
-  bool timing = env.doTiming();
-  bool memstats = env.doMemoryProfiling();
 
   // Parameters that may drive algorithm choices
   //    speed_versus_quality
@@ -203,42 +204,35 @@ void AlgBlock(
     wtsum += gnoWeight;
   }
 
-  // Compute the imbalance - taken from Zoltan's object_metrics function.
-
-  ArrayRCP<scalar_t> globalPartTotal(nprocs); 
-
-  Teuchos::reduceAll<int, scalar_t>(*problemComm, Teuchos::REDUCE_SUM, 
-    numGlobalParts, partTotal.getRawPtr(), globalPartTotal.getRawPtr());
-
-  bool emptyParts = false;
-  for (int p=0; p < numGlobalParts; p++){
-    if (globalPartTotal[p] == 0){
-      emptyParts = true;
-      break;
-    }
-  }
-
-  scalar_t imbal = 0.0;
-  if (!emptyParts){
-    if (globalTotalWeight > 0){
-      for (int i=0; i < numGlobalParts; i++){
-        if (part_sizes[i] > 0){
-          scalar_t tmp = 
-            globalPartTotal[i] / (globalTotalWeight * part_sizes[]);
-          if (tmp > imbal) imbal = tmp;
-        }
-      }
-    }
-    imbal = (imbal > 0 ? imbal : 1.0);
-  }
-  else{
-    imbal= -1;  /* flag some part_sizes are zero */
-  }
+  ////////////////////////////////////////////////////////////
+  // Compute the imbalance.
 
   Array<double> imbalance(weightDim);
 
-  imbalance[0] = imbal;
+  // TODO - get part sizes from the solution object.  For now, 
+  //    an empty part size array means uniform parts.
 
+  ArrayView<double> defaultPartSizes(Teuchos::null);
+  Array<ArrayView<double> > partSizes(weightDim, defaultPartSizes);
+
+  // TODO have partNums default to 0 through numGlobalParts-1 in
+  //    imbalances() call.
+  Array<size_t> partNums(numGlobalParts);
+  for (size_t i=0; i < numGlobalParts; i++) partNums[i] = i;
+
+  Array<ArrayView<double> > partWeights(1);
+  partWeights[0] = partTotal.view(0, numGlobalParts);
+
+  try{
+    imbalances(env, comm, numGlobalParts, partSizes, partNums,
+         partWeights, imbalance.view(0, weightDim));
+  }
+  Z2_FORWARD_EXCEPTIONS;
+  
+
+  ////////////////////////////////////////////////////////////
+  // Done
+  
   if (debug){
     if (imbalance[0] > Teuchos::as<scalar_t>(imbalanceTolerance)){
       ostringstream oss << "Warning: imbalance is " << imbal << std::endl;
@@ -254,10 +248,8 @@ void AlgBlock(
 
   solution.setParts(idList, gnoPart, imbalance.view(0, weightDim));
 
-  if (debug){
-    ostringstream oss << "Exiting AlgBlock" << std::endl;
-    env->debugOut_->print(DETAILED_STATUS, oss.str());
-  }
+  if (debug)
+    env->debugOut_->print(DETAILED_STATUS, string("Exiting AlgBlock");
 }
 
 }   // namespace Zoltan2

@@ -27,7 +27,7 @@ void AlgPTScotch(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<GraphModel<Adapter> > &model,
-  RCP<PartitioningSolution<Adapter::gid_t, Adapter::lno_t, Adapter::gno_t> > &solution
+  RCP<PartitioningSolution<Adapter::user_t> > &solution
 
 )
 {
@@ -168,7 +168,7 @@ void AlgPTScotch(
   const RCP<const Environment> &env,        // parameters & app comm
   const RCP<const Comm<int> > &problemComm, // problem comm
   const RCP<GraphModel<Adapter> > &model,   // the graph
-  RCP<PartitioningSolution<Adapter::gid_t, Adapter::lno_t, Adapter::gno_t> > &solution
+  RCP<PartitioningSolution<Adapter::user_t> > &solution
 )
 {
   HELLO;

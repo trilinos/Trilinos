@@ -17,6 +17,7 @@
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_IdentifierMap.hpp>
+#include <Zoltan2_StridedInput.hpp>
 
 namespace Zoltan2 {
 
@@ -42,7 +43,10 @@ public:
   typedef typename Adapter::lno_t    lno_t;
   typedef typename Adapter::gno_t    gno_t;
   typedef typename Adapter::gid_t    gid_t;
-  typedef IdentifierMap<gid_t, lno_t, gno_t> idmap_t;
+  typedef typename Adapter::scalar_t    scalar_t;
+  typedef typename Adapter::user_t    user_t;
+  typedef StridedInput<lno_t, scalar_t> input_t;
+  typedef IdentifierMap<user_t> idmap_t;
 
   /*! Pure virtual destructor
    */
@@ -80,10 +84,6 @@ public:
   /*! Return the number of weights supplied for each object.
    */
   virtual int getNumWeights() const = 0;
-
-  /*! Return the user-supplied weights
-   */
-  virtual void getWeights(ArrayView<const StridedInput> weights) const = 0;
 
 protected:
 

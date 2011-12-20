@@ -5,10 +5,11 @@
 //
 // ***********************************************************************
 // @HEADER
+//
 
-/*! \file Zoltan2_Model.hpp
+/*! \file Zoltan2_PartitioningSolution.hpp
 
-    \brief The abstract interface for a computational model.
+    \brief A solution to a partitioning problem
 */
 
 
@@ -16,28 +17,58 @@
 #define _ZOLTAN2_PARTITIONINGSOLUTION_HPP_
 
 #include <Zoltan2_IdentifierMap.hpp>
-#include <Zoltan2_Model.hpp>
-#include <Teuchos_Ptr.hpp>
+#include <Zoltan2_Solution.hpp>
 
 namespace Zoltan2 {
 
-/*! Zoltan2::PartitioningSolution
-    Just a placeholder for now.
+/*! \brief A PartitioningSolution is a solution to a partitioning problem.
+
+    It is initialized by a PartitioningProblem,
+    written to by an algorithm, and may be read by the user or by
+    a data migration routine in an input adapter.
 */
 
 // TODO can we template on User?
-template <typename gid_t, typename lno_t, typename gno_t>
-  class PartitioningSolution : public Solution<gid_t, lno_t, gno_t>
+
+template <typename User_t>
+  class PartitioningSolution : public Solution
 {
 public:
 
+  typedef typename InputTraits<User_t>::scalar_t scalar_t;
+  typedef typename InputTraits<User_t>::gno_t gno_t;
+  typedef typename InputTraits<User_t>::lno_t lno_t;
+  typedef typename InputTraits<User_t>::gid_t gid_t;
+
 /*! Constructor
  *
- *   The Solution constructor can require global communication.
- *   The rest of the Solution methods must not.
+ *   The Solution constructor may require global communication.
+ *   The rest of the Solution methods do not.
  *
  *    \param env the environment for the application
- *    \param model  the computational model for the problem
+ *    \param idMap  the IdentifierMap corresponding to the solution
+ *    \param objWeightDim  the number of weights supplied by the application
+ *                         for each object.
+ *
+ *   It is assumed that the parameters in the Environment have
+ *   already been committed by the Problem.  
+ *
+ *   It is assumed that part sizes are uniform.
+ */
+ 
+  PartitioningSolution( RCP<const Environment> &env,
+    RCP<const IdentifierMap<User_t> > &idMap,
+    int userWeightDim);
+
+/*! Constructor
+ *
+ *   The Solution constructor may require global communication.
+ *   The rest of the Solution methods do not.
+ *
+ *    \param env the environment for the application
+ *    \param idMap  the IdentifierMap corresponding to the solution
+ *    \param objWeightDim  the number of weights supplied by the application
+ *                         for each object.
  *    \param reqPartIds  if the user specified part sizes using
  *          a Problem set method, the reqPartIds[i] is a list of
  *          of part numbers for weight dimension i.
@@ -51,35 +82,18 @@ public:
  *
  *   If reqPartIds[i].size() and reqPartSizes[i].size() are zero for 
  *   all processes, it is assumed that part sizes for weight 
- *   dimension "i" are all equal.
+ *   dimension "i" are uniform.
  *
  *   If across the application there are some part numbers that are not
  *   included in the reqPartIds lists, then those part sizes are assumed
  *   to be the average of the supplied part sizes.
  */
  
-PartitioningSolution(
-  RCP<const Environment> &env,
-  RPC<const Model> &model,
-  ArrayView<Array<size_t> > &reqPartIds,
-  ArrayView<Array<double> > &reqPartSizes 
-)
-  : env_(env), idMap_(model->getIdentifierMap()), 
-    nGlobalParts_(), nLocalParts_(), weightDim_(),
-    partDist_(), procDist_(), partSizes_(), gids_(), parts_(), imbalance_()
-{
-  using std::string;
-  numGlobalParts_ = env_->numProcs_;
-  numLocalParts_ = 1;
-  int userWeightDim = model->getNumWeights();
-  weightDim_ = (userWeightDim ? userWeightDim : 1); 
-
-  // TODO:
-  // Compute number of parts, part/proc assignments and part size info.
-  // Take this from Zoltan function Zoltan_LB.
-  // This requires global information.
-}
-
+  PartitioningSolution( RCP<const Environment> &env,
+    RCP<const IdentifierMap<User_t> > &idMap,
+    int userWeightDim, ArrayView<Array<size_t> > &reqPartIds,
+    ArrayView<Array<scalar_t> > &reqPartSizes );
+  
   ////////////////////////////////////////////////////////////////////
   // Information that is setup by the Problem for the algorithm.
   // It describes the parts to be created.  The algorithm may
@@ -95,13 +109,132 @@ PartitioningSolution(
   
   bool criteriaHasUniformPartSizes(int idx) { return !partSizes_[idx].size();}
   
-  double *getCriteriaPartSizes(int idx) { return partSizes_[idx].getRawPtr();}
-
+  scalar_t *getCriteriaPartSizes(int idx) { return partSizes_[idx].getRawPtr();}
+  
   ////////////////////////////////////////////////////////////////////
-  // Results that are set by the algorithm.
+  // Method used by the algorithm to set results.
 
-void setParts(ArrayView<const gno_t> &gnoList, ArrayView<size_t> &partList,
-  ArrayView<double> &imbalance)
+  /*! \brief The algorithm uses setParts to set the solution.
+   *
+   *   \param gnoList  A view of the list of global numbers that was
+   *     supplied to the algorithm by the model. If the model used
+   *     the application's global IDs as our internal global numbers,
+   *     this may be a view of the global IDs in the application's memory.
+   *     Otherwise it is a view of the internal global numbers created
+   *     by the IdentifierMap, or a re-ordered set of global numbers
+   *     created during the course of the algorithm.
+   *
+   *   \param partList  The part assigned to gnoList[i] by the algorithm
+   *      should be in partList[i].  The partList is allocated and written
+   *      by the algorithm.
+   *
+   *   \param  imbalance  The algorithm computes one imbalance for each
+   *      weight dimension.  It allocates and writes the imbalance array.
+   *
+   *  TODO: add edge cuts and other metrics of interest as well.
+   *      
+   */
+  
+  void setParts(ArrayView<const gno_t> gnoList, ArrayRCP<size_t> &partList,
+    ArrayRCP<scalar_t> &imbalance);
+  
+  ////////////////////////////////////////////////////////////////////
+  // Results that may be queried by the user or by migration methods.
+  // We return raw pointers so users don't have to learn about our
+  // pointer wrappers.
+
+  size_t getNumberOfIds() { return gids_.size(); }
+
+  const gid_t *getGlobalIdList() { return gids_.getRawPtr(); }
+
+  const size_t *getPartList() { return parts_.getRawPtr();}
+
+  scalar_t *getImbalance() { return imbalance_.getRawPtr(); }
+
+private:
+
+  RCP<const Environment> env_;
+  RCP<const IdentifierMap<User_t> > idMap_;
+
+  size_t nGlobalParts_;
+  size_t nLocalParts_;
+  int weightDim_;        // if user has no weights, this is 1
+
+  // proc p's first part is partDist_[p], if p has no parts, partDist[p] is -1,
+  // partDist[nprocs] is nparts
+
+  ArrayRCP<int>    partDist_;
+
+  // part i belongs to process procDist_[i], procDist_[nparts] is nprocs
+
+  ArrayRCP<size_t> procDist_;
+
+  // If part sizes were provided for weight i, then partSizes_[i] is a
+  //   list of nGlobalParts_ relative sizes.  Sizes sum to 1.0.
+  //   If part sizes for weight i are uniform, partSizes_[i] has length zero.
+  //
+  // NOTE: Although in Zoltan we store part size information for all parts on
+  // each process, we should avoid that in Zoltan2.  Perhaps part size
+  // information needs to be in a Tpetra_Vector, with remote information
+  // obtained if necessary at limited synchronization points in the algorithm.
+
+  ArrayRCP<Array<scalar_t> > partSizes_;  // nGlobalParts_ * weightDim_ sizes
+
+  ////////////////////////////////////////////////////////////////
+  // The algorithm sets these values upon completion.
+
+  ArrayRCP<const gid_t>  gids_; // User's global IDs from adapter "get" method
+  ArrayRCP<size_t> parts_;      // part number assigned to gids_[i]
+  ArrayRCP<scalar_t> imbalance_;  // weightDim_ imbalance measures
+};
+
+////////////////////////////////////////////////////////////////////
+// Definitions
+////////////////////////////////////////////////////////////////////
+
+template <typename User_t>
+  PartitioningSolution<User_t>::PartitioningSolution(
+    RCP<const Environment> &env, 
+    RCP<const IdentifierMap<User_t> > &idMap, int userWeightDim)
+    : env_(env), idMap_(idMap),
+      nGlobalParts_(), nLocalParts_(), weightDim_(),
+      partDist_(), procDist_(), partSizes_(), gids_(), parts_(), imbalance_()
+{
+  using std::string;
+  nGlobalParts_ = env_->numProcs_;
+  nLocalParts_ = 1;
+  weightDim_ = (userWeightDim ? userWeightDim : 1); 
+
+  // TODO:
+  // Figure out part/proc assignments from parameters.
+  // Set part size information to uniform.
+}
+
+template <typename User_t>
+  PartitioningSolution<User_t>::PartitioningSolution(
+    RCP<const Environment> &env, 
+    RCP<const IdentifierMap<User_t> > &idMap, int userWeightDim,
+    ArrayView<Array<size_t> > &reqPartIds, 
+    ArrayView<Array<scalar_t> > &reqPartSizes)
+    : env_(env), idMap_(idMap),
+      nGlobalParts_(), nLocalParts_(), weightDim_(),
+      partDist_(), procDist_(), partSizes_(), gids_(), parts_(), imbalance_()
+{
+  using std::string;
+  nGlobalParts_ = env_->numProcs_;
+  nLocalParts_ = 1;
+  weightDim_ = (userWeightDim ? userWeightDim : 1); 
+
+  // TODO:
+  // Compute number of parts, part/proc assignments and part size info.
+  // Take this from Zoltan function Zoltan_LB.
+  // This requires global information.
+}
+
+template <typename User_t>
+  void PartitioningSolution<User_t>::setParts(
+    ArrayView<const gno_t> gnoList, ArrayRCP<size_t> &partList,
+    ArrayRCP<scalar_t> &imbalance)
 {
   size_t ngnos = gnoList.size();
   
@@ -138,73 +271,13 @@ void setParts(ArrayView<const gno_t> &gnoList, ArrayView<size_t> &partList,
 
   // Create imbalance list: one for each weight dimension: weights_
   
-  double *imbList = new double [weightDim_];
+  scalar_t *imbList = new scalar_t [weightDim_];
   Z2_LOCAL_MEMORY_ASSERTION(*env_, weightDim_, imbList);
-  memcpy(imbList, imbalance.getRawPtr(), sizeof(double) * weightDim_);
+  memcpy(imbList, imbalance.getRawPtr(), sizeof(scalar_t) * weightDim_);
   
-  imbalance_ = arcp<double>(imbList, 0, weightDim_);
+  imbalance_ = arcp<scalar_t>(imbList, 0, weightDim_);
 }
-  ////////////////////////////////////////////////////////////////////
-  // Results that may be queried by the user or by migration methods.
-  // We return raw pointers so users don't have to learn about our
-  // pointer wrappers.
 
-  size_t getNumberOfIds() { return gids_.size(); }
-
-  const gid_t *getGlobalIdList() { return gids_.getRawPtr(); }
-
-  const size_t *getPartList() { return parts_.getRawPtr();}
-
-  double *getImbalance() { return imbalance_.getRawPtr(); }
-
-private:
-
-  ////////////////////////////////////////////////////////////////
-  // The Problem gives us the Environment and the Model in the
-  // constructor.  We get the IdentifierMap from the Model.
-  
-  RCP<const Environment> env_;
-  RCP<const IdentifierMap> idMap_;  
-  
-  ////////////////////////////////////////////////////////////////
-  // We set the following information in the constructor. Some
-  // of it we get from the parameters (which are in the Environment).  
-  // We get the number of weights from the Model.  We get the part size 
-  // information, if any from arguments to the constructor. Part size 
-  // information can be set by the user with Problem set methods.
-  
-  size_t nGlobalParts_;
-  size_t nLocalParts_;
-  int weightDim_;
-  
-  // proc p's first part is partDist_[p], if p has no parts, partDist[p] is -1,
-  // partDist[nprocs] is nparts
-  
-  ArrayRCP<int>    partDist_;
-  
-  // part i belongs to process procDist_[i], procDist_[nparts] is nprocs
-  
-  ArrayRCP<size_t> procDist_;
-  
-  // If part sizes were provided for weight i, then partSizes_[i] is a
-  //   list of nGlobalParts_ relative sizes.  Sizes sum to 1.0.
-  //   If part sizes for weight i are uniform, partSizes_[i] has length zero.
-  //
-  // NOTE: Although in Zoltan we store part size information for all parts on
-  // each process, we should avoid that in Zoltan2.  Perhaps part size
-  // information needs to be in a Tpetra_Vector, with remote information
-  // obtained if necessary at limited synchronization points in the algorithm.
-  
-  ArrayRCP<Array<double> > partSizes_;  // nGlobalParts_ * weightDim_ sizes
-  
-  ////////////////////////////////////////////////////////////////
-  // The algorithm sets these values upon completion.
-  
-  ArrayRCP<const gid_t>  gids_; // User's global IDs from adapter "get" method
-  ArrayRCP<size_t> parts_;      // part number assigned to gids_[i]
-  ArrayRCP<double> imbalance_;  // weightDim_ imbalance measures
-};
-
-}
+}  // namespace Zoltan2
 
 #endif

@@ -51,9 +51,8 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   int nprocs = comm->getSize();
   int fail = 0;
 
-  // A default environment 
   RCP<const Zoltan2::Environment> default_env = 
-    Teuchos::rcp(new Zoltan2::Environment);
+    Zoltan2::getDefaultEnvironment();
 
   // User data
   typedef Tpetra::CrsMatrix<Scalar, LNO, GNO> tcrsMatrix_t;

@@ -13,7 +13,8 @@
 
 
 #include <Zoltan2_XpetraCrsGraphInput.hpp>
-#include <Zoltan2_InputTraits.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
+
 #include <UserInputForTests.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
@@ -28,6 +29,8 @@ using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
+using Teuchos::Array;
+using Teuchos::ArrayView;
 
 typedef double scalar_t;
 typedef int lno_t;
@@ -119,7 +122,7 @@ int main(int argc, char *argv[])
   int nprocs = comm->getSize();
   int fail = 0, gfail=0;
 
-  // Create object that can give us test Tpetra, Xpetra
+  // Create an object that can give us test Tpetra, Xpetra
   // and Epetra graphs for testing.
 
   RCP<uinput_t> uinput;
@@ -137,8 +140,34 @@ int main(int argc, char *argv[])
 
   tG = uinput->getTpetraCrsGraph();
   size_t nvtx = tG->getNodeNumRows();
-  Teuchos::ArrayView<const gno_t> rowGids =
-    tG->getRowMap()->getNodeElementList();
+  ArrayView<const gno_t> rowGids = tG->getRowMap()->getNodeElementList();
+
+  // To test migration in the input adapter we need a Solution
+  // object.  The Solution needs an IdentifierMap.
+
+  Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> UserTypes;
+
+  typedef Zoltan2::IdentifierMap<UserTypes> idmap_t;
+  typedef Zoltan2::PartitioningSolution<UserTypes> soln_t;
+
+  RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
+
+  ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
+  RCP<const idmap_t> idMap = rcp(new idmap_t(env, gidArray));
+
+  int weightDim = 1;
+
+  scalar_t *imbal = new scalar_t [weightDim];
+  imbal[0] = 1.0;
+  ArrayRCP<scalar_t> metric(imbal, 0, 1, true);
+
+  size_t *p = new size_t [nvtx];
+  memset(p, 0, sizeof(size_t) * nvtx);
+  ArrayRCP<size_t> solnParts(p, 0, nvtx, true);
+
+  soln_t solution(env, idMap, weightDim);
+
+  solution.setParts(rowGids, solnParts, metric);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsGraph
@@ -163,12 +192,6 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
 
     if (!gfail){
-      Zoltan2::PartitioningSolution<gno_t, lno_t> solution(nprocs, nvtx);
-      ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
-      ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
-      for (size_t i = 0; i < nvtx; i++) solnGids[i] = rowGids[i];
-      memset(solnParts.getRawPtr(), 0, sizeof(size_t) * nvtx);
-
       tgraph_t *mMigrate = NULL;
       try{
         tGInput->applyPartitioningSolution(*tG, mMigrate, solution);
@@ -230,12 +253,6 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
 
     if (!gfail){
-      Zoltan2::PartitioningSolution<gno_t, lno_t> solution(nprocs, nvtx);
-      ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
-      ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
-      for (size_t i = 0; i < nvtx; i++) solnGids[i] = rowGids[i];
-      memset(solnParts.getRawPtr(), 0, sizeof(size_t) * nvtx);
-
       xgraph_t *mMigrate =NULL;
       try{
         xGInput->applyPartitioningSolution(*xG, mMigrate, solution);
@@ -297,12 +314,6 @@ int main(int argc, char *argv[])
     gfail = globalFail(comm, fail);
 
     if (!gfail){
-      Zoltan2::PartitioningSolution<gno_t, lno_t> solution(nprocs, nvtx);
-      ArrayRCP<gno_t> &solnGids = solution.getGidsRCP();
-      ArrayRCP<size_t> &solnParts = solution.getPartsRCP();
-      for (size_t i = 0; i < nvtx; i++) solnGids[i] = rowGids[i];
-      memset(solnParts.getRawPtr(), 0, sizeof(size_t) * nvtx);
-
       egraph_t *mMigrate =NULL;
       try{
         eGInput->applyPartitioningSolution(*eG, mMigrate, solution);

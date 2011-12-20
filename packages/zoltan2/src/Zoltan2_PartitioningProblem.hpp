@@ -37,6 +37,7 @@ public:
 
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::user_t user_t;
 
   // Destructor
   virtual ~PartitioningProblem() {};
@@ -66,7 +67,7 @@ public:
   //    don't think I've seen this style before.
   virtual void solve();
 
-  PartitioningSolution<gid_t, lno_t, gno_t> &getSolution() {
+  PartitioningSolution<user_t> &getSolution() {
     return *(solution_.getRawPtr());
   };
 
@@ -84,7 +85,7 @@ private:
 
   Teuchos::Ptr<Teuchos::ParameterList> generalParams_;
   Teuchos::Ptr<Teuchos::ParameterList> partitioningParams_;
-  RCP<PartitioningSolution<gid_t, lno_t, gno_t> > solution_;
+  RCP<PartitioningSolution<user_t> > solution_;
 
   InputAdapterType inputType_;
   ModelType modelType_;
@@ -108,6 +109,7 @@ void PartitioningProblem<Adapter>::solve()
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::user_t user_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // Create the solution. The algorithm will query the Solution
@@ -121,7 +123,7 @@ void PartitioningProblem<Adapter>::solve()
   size_t numGlobalParts = 
     partitioningParams_->get<size_t>(string("num_global_parts"));
 
-  solution_ = rcp(new PartitioningSolution<gid_t,lno_t,gno_t>(env_,
+  solution_ = rcp(new PartitioningSolution<user_t>(env_,
    generalModel_, partIdsForIdx_, partSizesForIdx_));
 
   // Call the algorithm

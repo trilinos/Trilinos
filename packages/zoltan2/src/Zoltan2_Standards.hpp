@@ -29,6 +29,7 @@ using Tpetra::global_size_t;
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_Tuple.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -44,6 +45,7 @@ using Teuchos::rcp_const_cast;
 using Teuchos::rcp_implicit_cast;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::Array;
+using Teuchos::Tuple;
 using Teuchos::ArrayRCP;
 using Teuchos::arcp_const_cast;
 using Teuchos::arcp_reinterpret_cast;

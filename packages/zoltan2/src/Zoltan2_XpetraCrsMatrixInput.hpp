@@ -46,6 +46,7 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
   typedef MatrixInput<User>       base_adapter_t;
+  typedef User user_t;
 
   /*! Destructor
    */
@@ -169,7 +170,7 @@ public:
    *   TODO : params etc
    */
   size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<gid_t, lno_t> &solution)
+         const PartitioningSolution<User> &solution)
   { 
     // Get an import list
 

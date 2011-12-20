@@ -38,9 +38,8 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   int rank = comm->getRank();
   int fail = 0, gfail = 0;
 
-  // A default environment 
   RCP<const Zoltan2::Environment> default_env = 
-    Teuchos::rcp(new Zoltan2::Environment);
+    Zoltan2::getDefaultEnvironment();
 
   //////////////////////////////////////////////////////////////
   // Use an Tpetra::CrsMatrix for the user data.

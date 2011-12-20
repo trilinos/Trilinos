@@ -48,6 +48,8 @@ public:
 
   enum InputAdapterType inputAdapterType() const {return GraphAdapterType;}
 
+  typedef User user_t;
+
   /*! \brief Pure virtual destructor
    */
   virtual ~GraphInput() {};
@@ -117,7 +119,7 @@ public:
    */
 
   size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<gid_t, lno_t> &solution)
+         const PartitioningSolution<User> &solution)
   {
     return 0;
   }

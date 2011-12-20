@@ -45,6 +45,7 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
   typedef GraphInput<User>       base_adapter_t;
+  typedef User user_t;
 
   /*! \brief Destructor
    */
@@ -338,7 +339,7 @@ public:
    *   the graph that instantiated this input adapter.
    */
   size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<gid_t, lno_t> &solution)
+         const PartitioningSolution<User> &solution)
   {
     // Get an import list
 
