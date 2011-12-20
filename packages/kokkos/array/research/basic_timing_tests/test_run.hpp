@@ -288,8 +288,8 @@ test_run (const std::string& testName,
     const double startTime = wall_clock.seconds();
     Scalar source (1), target (1);
     for (int i = 0; i < numInnerLoops; ++i) {
-      Kokkos::deep_copy (source, x);
-      Kokkos::deep_copy (x, target);
+      Kokkos::deep_copy (x, source);
+      Kokkos::deep_copy (target, x);
     }
     Device::wait_functor_completion();
     copyTimes[outerLoop] = wall_clock.seconds() - startTime;
@@ -307,9 +307,9 @@ test_run (const std::string& testName,
     // copyTime will be the total time of of numInnerLoops one-way
     // copies.
     const double startTime = wall_clock.seconds();
-    Scalar source (1);
+    Scalar target (1);
     for (int i = 0; i < numInnerLoops; ++i) {
-      Kokkos::deep_copy (source, x);
+      Kokkos::deep_copy (target, x);
     }
     Device::wait_functor_completion();
     copyTimes[outerLoop] = wall_clock.seconds() - startTime;
