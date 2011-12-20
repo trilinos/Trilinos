@@ -77,11 +77,13 @@ main (int argc, char ** argv)
   // iz = iy + 1;
   // // Total number of elements
   // n = ix * iy * iz;
-
-
+  //
   // runs: Number of trials (entire runs, from assembly to solve)
+  //
   // num_iters: Number of (GMRES) solver iterations
+  //
   // threads: Number of threads (only applies to Pthread, TPI, and TBB devices)
+  //
   if (argc > 1) {
     beg = atoi (argv[1]);
   }    
