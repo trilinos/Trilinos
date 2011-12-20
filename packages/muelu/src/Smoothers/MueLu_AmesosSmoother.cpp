@@ -19,13 +19,32 @@ namespace MueLu {
   AmesosSmoother::AmesosSmoother(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact)
     : type_(type), paramList_(paramList), AFact_(AFact)
   {
-
+    // set default solver type
 #if defined(HAVE_AMESOS_SUPERLU)
-    type_ = "Superlu";
+    if(type_ == "") type_ = "Superlu";    // 1. default smoother (if Superlu is available)
 #elif defined(HAVE_AMESOS_KLU)
-    type_ = "Klu";
+    if(type_ == "") type_ = "Klu";        // 2. default smoother (if KLU is available)
+#elif defined(HAVE_AMESOS_SUPERLUDIST)
+    if(type_ == "") type_ = "Superludist";// 3. default smoother (if Superludist is available)
 #endif
-    TEUCHOS_TEST_FOR_EXCEPTION(type_ == "", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU and SuperLU. Cannot define a solver by default for this AmesosSmoother object");
+
+    // check for valid direct solver type
+    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Amesos_Klu", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): type of Amesos direct solver can be 'Klu' or 'Superlu'");
+    if (type_ == "Superlu") {
+#if not defined(HAVE_AMESOS_SUPERLU)
+      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU. Cannot define a solver by default for this AmesosSmoother object");
+#endif
+    }
+    if (type_ == "Superludist") {
+#if not defined(HAVE_AMESOS_SUPERLUDIST)
+      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU_DIST. Cannot define a solver by default for this AmesosSmoother object");
+#endif
+    }
+    if (type_ == "Klu" || type_ == "Amesos_Klu") {
+#if not defined(HAVE_AMESOS_KLU)
+      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU. Cannot define a solver by default for this AmesosSmoother object");
+#endif
+    }
 
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
   }

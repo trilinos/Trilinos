@@ -199,8 +199,6 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
 
     vecManager[i] = rcp(new FactoryManager());
     vecManager[i]->SetFactory("Smoother" ,  SmooFactFine);    // Hierarchy.Setup uses TOPSmootherFactory, that only needs "Smoother"
-    //vecManager[i]->SetFactory("PreSmoother", SmooFactFine);
-    //vecManager[i]->SetFactory("PostSmoother", SmooFactFine);
     vecManager[i]->SetFactory("CoarseSolver", coarsestSmooFact);
     vecManager[i]->SetFactory("A", AcFact);       // same RAP factory
     vecManager[i]->SetFactory("P", PFact);    // same prolongator and restrictor factories
@@ -277,6 +275,9 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
   } else if(type == "Amesos-Superlu") {
     Teuchos::ParameterList coarsestSmooList;
     smooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
+  } else if(type == "Amesos-Superludist") {
+    Teuchos::ParameterList coarsestSmooList;
+    smooProto = Teuchos::rcp( new DirectSolver("Superludist", coarsestSmooList) );
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown coarsest solver type. not supported by MueLu.");
   }
