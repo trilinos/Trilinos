@@ -22,6 +22,7 @@ namespace panzer {
   class MaterialModel;
   class Basis;
   class EquationSetFactory;
+  class GlobalData;
 }
 
 namespace panzer {
@@ -35,6 +36,7 @@ namespace panzer {
                  const std::string & element_block_id,
 		 const panzer::CellData & cell_data,
 		 const panzer::EquationSetFactory& factory,
+		 const Teuchos::RCP<panzer::GlobalData>& global_data,
 		 const bool build_transient_support);
 
     PhysicsBlock(const panzer::PhysicsBlock & pb,
@@ -121,6 +123,7 @@ namespace panzer {
     panzer::CellData m_cell_data;
     panzer::InputPhysicsBlock m_initializer;
     const bool m_build_transient_support;
+    const Teuchos::RCP<panzer::GlobalData>& m_global_data;
 
     std::vector<std::string> m_dof_names;
     std::vector<StrBasisPair> m_provided_dofs;

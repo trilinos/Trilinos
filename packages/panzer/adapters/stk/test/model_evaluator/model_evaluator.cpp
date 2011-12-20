@@ -28,6 +28,7 @@ using Teuchos::rcp;
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -101,12 +102,15 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
 
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
                                  physics_id_to_input_physics_blocks,
                                  Teuchos::as<int>(mesh->getDimension()), workset_size,
                                  eqset_factory,
+				 gd,
 			         build_transient_support,
                                  physicsBlocks);
     }

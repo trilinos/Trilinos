@@ -27,6 +27,7 @@ using Teuchos::rcp;
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -133,12 +134,15 @@ int main(int argc,char * argv[])
    
       physics_id_to_input_physics_blocks["test physics"] = ipb; // copying
 
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
       // build physicsBlocks map
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
 			         physics_id_to_input_physics_blocks,
 			         base_cell_dimension, workset_size,
 			         eqset_factory,
+				 gd,
 			         true,
 			         physicsBlocks);
    }

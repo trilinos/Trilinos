@@ -29,6 +29,7 @@ using Teuchos::rcp;
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "user_app_RythmosObserver_Epetra.hpp"
@@ -100,6 +101,8 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
       bool build_transient_support = false;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
@@ -107,6 +110,7 @@ namespace panzer {
                                  Teuchos::as<int>(mesh->getDimension()),
 		   	         workset_size,
                                  eqset_factory,
+				 gd,
 		   	         build_transient_support,
                                  physicsBlocks);
 
@@ -198,7 +202,7 @@ namespace panzer {
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
-    Teuchos::updateParametersFromXmlFile("solver_nox.xml", piro_params.get());
+    Teuchos::updateParametersFromXmlFile("solver_nox.xml", piro_params.ptr());
     
     // Build stratimikos solver
     std::string& solver = piro_params->get("Piro Solver","NOX");
@@ -388,6 +392,8 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
+       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
@@ -395,6 +401,7 @@ namespace panzer {
                                  Teuchos::as<int>(mesh->getDimension()),
 			         workset_size,
                                  eqset_factory,
+				 gd,
 			         build_transient_support,
                                  physicsBlocks);
     }
@@ -488,7 +495,7 @@ namespace panzer {
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
-    Teuchos::updateParametersFromXmlFile("solver_rythmos.xml", piro_params.get());
+    Teuchos::updateParametersFromXmlFile("solver_rythmos.xml", piro_params.ptr());
     
     // Build stratimikos solver
     std::string& solver = piro_params->get("Piro Solver","NOX");

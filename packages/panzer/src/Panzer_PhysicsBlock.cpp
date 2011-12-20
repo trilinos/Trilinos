@@ -15,12 +15,14 @@ PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
              const std::string & element_block_id,
 	     const panzer::CellData & cell_data,
 	     const panzer::EquationSetFactory& factory,
+	     const Teuchos::RCP<panzer::GlobalData>& global_data,
 	     const bool build_transient_support) :
   m_physics_id(ipb.physics_block_id),
   m_element_block_id(element_block_id),
   m_cell_data(cell_data),
   m_initializer(ipb),
-  m_build_transient_support(build_transient_support)
+  m_build_transient_support(build_transient_support),
+  m_global_data(global_data)
 {
   initialize(m_initializer,element_block_id,cell_data,factory, 
 	     build_transient_support);
@@ -34,7 +36,8 @@ PhysicsBlock(const panzer::PhysicsBlock& pb,
   m_element_block_id(pb.m_element_block_id),
   m_cell_data(cell_data),
   m_initializer(pb.m_initializer),
-  m_build_transient_support(pb.m_build_transient_support)
+  m_build_transient_support(pb.m_build_transient_support),
+  m_global_data(pb.m_global_data)
 {
   initialize(m_initializer,m_element_block_id,cell_data,factory,
 	     m_build_transient_support);

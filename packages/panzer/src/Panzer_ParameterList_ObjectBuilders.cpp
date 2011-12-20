@@ -79,6 +79,7 @@ namespace panzer {
                           const int base_cell_dimension,
                           const std::size_t workset_size,
                           const panzer::EquationSetFactory & eqset_factory,
+			  const Teuchos::RCP<panzer::GlobalData>& global_data,
                           const bool build_transient_support,
                           std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks)
   {
@@ -113,7 +114,7 @@ namespace panzer {
   
         const panzer::InputPhysicsBlock& ipb = ipb_it->second;
         RCP<panzer::PhysicsBlock> pb = 
-    	   rcp(new panzer::PhysicsBlock(ipb, element_block_id, volume_cell_data, eqset_factory, build_transient_support));
+	  rcp(new panzer::PhysicsBlock(ipb, element_block_id, volume_cell_data, eqset_factory, global_data, build_transient_support));
         physicsBlocks.push_back(pb);
      }
   }

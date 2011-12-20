@@ -9,6 +9,7 @@
 
 #include "Panzer_config.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_AssemblyEngine.hpp"
@@ -99,9 +100,12 @@ int main(int argc,char * argv[])
       int base_cell_dimension = mesh->getCellTopology("eblock-0_0")->getDimension();
       const panzer::CellData volume_cell_data(workset_size, base_cell_dimension,mesh->getCellTopology("eblock-0_0"));
 
+      // GobalData sets ostream and parameter interface to physics
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
       // the physics block nows how to build and register evaluator with the field manager
       RCP<panzer::PhysicsBlock> pb 
-         = rcp(new panzer::PhysicsBlock(ipb, "eblock-0_0", volume_cell_data, eqset_factory, build_transient_support));
+	= rcp(new panzer::PhysicsBlock(ipb, "eblock-0_0", volume_cell_data, eqset_factory, gd, build_transient_support));
 
       // we can have more than one physics block, one per element block
       physicsBlocks.push_back(pb);

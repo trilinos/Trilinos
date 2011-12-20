@@ -184,6 +184,7 @@ namespace panzer_stk {
 			       Teuchos::as<int>(mesh->getDimension()),
 			       workset_size,
 			       eqset_factory,
+			       global_data,
 			       is_transient,
 			       physicsBlocks);
 
