@@ -237,25 +237,22 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
   typedef DotSingle< Scalar, device_type > dot_single ;
 
-
-  
-  // Return megaflops / second for iterations
-
-  static void run( scalar_vector & A_value ,
-                     index_vector  & A_row ,
-                     index_vector & A_offsets ,
-                     scalar_vector & b ,
-                     scalar_vector & x,
-                     const size_t num_iters, 
- 		     size_t & num_flops,
-		     double & solve_time)
+  //
+  // Return the time in seconds for one solve.
+  //
+  static double
+  run (scalar_vector & A_value ,
+       index_vector  & A_row ,
+       index_vector & A_offsets ,
+       scalar_vector & b ,
+       scalar_vector & x,
+       const size_t num_iters)
   {
-
     //Value view used for temp stuff.
     value tmp = Kokkos::create_value<Scalar , device_type>();
 
-
-    const size_t rows = A_row.length()-1;
+    // Number of rows in the sparse matrix.
+    const size_t rows = A_row.length() - 1;
 
     int iteration = 0 ;
     
@@ -284,12 +281,14 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     value beta  = Kokkos::create_value<Scalar , device_type>();
     Kokkos::deep_copy( zero, Scalar( 0 ) );
 
-    // compute norm2 of r
+    // Compute ||r||_2.  dot_single computes the dot product of r with
+    // itself, and Norm2 is a post-processing kernel that takes the
+    // square root of the result.
     Kokkos::parallel_reduce(rows, dot_single(r), Norm2(beta) );
 
-    Scalar beta_copy;
-    Kokkos::deep_copy(beta_copy,beta);
-    if(beta_copy == 0.0){
+    Scalar beta_h;
+    Kokkos::deep_copy (beta_h,beta);
+    if (beta_h == 0.0) {
       std::cout << "Beta was zero\n";
       //Stuff didn't work
       return;
@@ -305,7 +304,6 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       "H",
       num_iters+1, 
       num_iters);
-
 
     //Q(:, 0) = r ./ beta (elementwise division)
     Kokkos::parallel_for(rows, InvScale(MultiVector(Q,0), beta));
@@ -350,17 +348,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     Kokkos::deep_copy(tmp, syncTestValue);
     #endif
     device_type::wait_functor_completion();
-    solve_time = wall_clock.seconds();
-
-    // Compute floating point operations performed during iterations
-
-    size_t iter_dot_flops    = ( 3 * iteration ) * ( 2 * rows );
-    size_t iter_matvec_flops = iteration * ( 2 * A_offsets.length() );
-    size_t iter_ysax_flops = iteration * (2 * rows);
-    size_t iter_scale_flops = iteration * rows;
-    num_flops = iter_dot_flops + iter_matvec_flops + iter_ysax_flops + iter_scale_flops;
-
-    
+    return wall_clock.seconds();
   }
 };
 

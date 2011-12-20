@@ -68,20 +68,24 @@
 
 namespace Test{
 
-void test_TPI( int beg, int end, int runs, int threads )
-{
-  Kokkos::DeviceTPI::initialize( threads );
+  void 
+  test_TPI (const int beg, 
+	    const int end, 
+	    const int runs, 
+	    const int num_iters, 
+	    const int threads)
+  {
+    Kokkos::DeviceTPI::initialize (threads);
 
-  std::ostringstream label_double , label_float;
-  label_double << "TPI[" << threads << "]-double" ;
-  label_float  << "TPI[" << threads << "]-float" ;
+    std::ostringstream label_double, label_float;
+    label_double << "TPI[" << threads << "]-double";
+    label_float  << "TPI[" << threads << "]-float";
 
-  MiniImplTherm< double , Kokkos::DeviceTPI >::driver( label_double.str().c_str(), beg , end , runs );
-  MiniImplTherm< float  , Kokkos::DeviceTPI >::driver( label_float.str().c_str() , beg , end , runs );
+    MiniImplTherm<double, Kokkos::DeviceTPI >::driver (label_double.str().c_str(), beg, end, runs, num_iters);
+    MiniImplTherm<float , Kokkos::DeviceTPI >::driver (label_float.str().c_str() , beg, end, runs, num_iters);
 
-  Kokkos::DeviceTPI::finalize();
-
-}//test_TPI
+    Kokkos::DeviceTPI::finalize();
+  }
 
 }// namespace
 

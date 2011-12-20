@@ -2206,13 +2206,15 @@ int FEDataFilter::putBlockNodeSolution(GlobalID elemBlockID,
    //traverse the node list, checking for nodes associated with this block
    //when an associated node is found, put its 'answers' into the linear system.
 
+   int blk_idx = problemStructure_->getIndexOfBlock(elemBlockID);
+
    for(int i=0; i<numNodes; i++) {
      NodeDescriptor* node = NULL;
      int err = nodeDB.getNodeWithID(nodeIDs[i], node);
 
       if (err != 0) continue;
    
-      if (!node->containedInBlock(elemBlockID)) continue;
+      if (!node->hasBlockIndex(blk_idx)) continue;
 
       if (node->getOwnerProc() != localRank_) continue;
 
@@ -2233,11 +2235,6 @@ int FEDataFilter::putBlockNodeSolution(GlobalID elemBlockID,
                int reducedEqn;
                problemStructure_->
                  translateToReducedEqn(fieldEqnNumbers[j]+k, reducedEqn);
-
-//                if (useLinSysCore_) {
-//                   CHK_ERR( lsc_->putInitialGuess(&reducedEqn,
-//                                             &estimates[offs+k], 1) );
-//                }
             }
          }
          offs += size;

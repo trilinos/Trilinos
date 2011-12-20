@@ -1158,12 +1158,13 @@ int FEI_Implementation::getBlockNodeIDList(GlobalID elemBlockID,
   int numActiveNodes = problemStructure_->getNumActiveNodes();
   NodeDatabase& nodeDB = problemStructure_->getNodeDatabase();
 
+  int blk_idx = problemStructure_->getIndexOfBlock(elemBlockID);
   int offset = 0;
   for(int i=0; i<numActiveNodes; i++) {
     const NodeDescriptor* node = NULL;
     nodeDB.getNodeAtIndex(i, node);
     if (node==NULL) continue;
-    if (node->containedInBlock(elemBlockID))
+    if (node->hasBlockIndex(blk_idx))
       nodeIDs[offset++] = node->getGlobalNodeID();
     if (offset == numNodes) break;
   }

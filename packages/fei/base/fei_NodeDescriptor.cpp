@@ -22,8 +22,7 @@ NodeDescriptor::NodeDescriptor()
    numFields_(0),
    blkEqnNumber_(0),
    ownerProc_(-1),
-   blockList_(NULL),
-   numBlocks_(0)
+   blockList_()
 {
    //There's nothing for this constructor to do, apart from the
    //above initializations.
@@ -34,9 +33,6 @@ NodeDescriptor::~NodeDescriptor() {
   delete [] fieldIDList_;
   delete [] fieldEqnNumbers_;
   numFields_ = 0;
-
-  delete [] blockList_;
-  numBlocks_ = 0;
 }
 
 //==============================================================================
@@ -132,12 +128,11 @@ void NodeDescriptor::getFieldID(int eqnNumber, int& fieldID, int& offset_into_fi
 }
 
 //==============================================================================
-bool NodeDescriptor::containedInBlock(GlobalID blk) const
+bool NodeDescriptor::hasBlockIndex(unsigned blk_idx) const
 {
-  //return true if this node is contained in element-block 'blk'.
+  //return true if this node is contained in element-block-index 'blk_idx'.
 
-   int insert;
-   int index = fei::binarySearch(blk, blockList_, numBlocks_, insert);
+   int index = fei::binarySearch(blk_idx, &blockList_[0], blockList_.size());
    if (index >= 0) return(true);
    else return(false);
 }

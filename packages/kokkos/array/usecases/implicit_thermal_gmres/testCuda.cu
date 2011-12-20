@@ -69,11 +69,17 @@ __global__ void dummy_kernel(){}
 
 namespace Test {
 
-void test_Cuda(int beg, int end, int runs)
-{
-  MiniImplTherm<double, Kokkos::DeviceCuda >::driver( "CUDA-double" , beg , end , runs );
-  MiniImplTherm<float,  Kokkos::DeviceCuda >::driver( "CUDA-float" , beg , end , runs );
-}
+  void 
+  test_Cuda (const int beg, 
+	     const int end, 
+	     const int runs,
+	     const int num_iters)
+  {
+    MiniImplTherm<double, Kokkos::DeviceCuda>::driver ("CUDA-double", beg, end, 
+						       runs, num_iters);
+    MiniImplTherm<float,  Kokkos::DeviceCuda>::driver ("CUDA-float",  beg, end, 
+						       runs, num_iters);
+  }
 
 }// namespace
 

@@ -71,6 +71,28 @@ struct ScalarTraits<int>
   static inline __device__ __host__ int pow(int x, int y) { return (int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
 };
 
+template<>
+struct ScalarTraits<long int>
+{
+  typedef long int magnitudeType;
+  typedef long int halfPrecision;
+  typedef long int doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline __device__ __host__ magnitudeType magnitude(long int a) { return (long int)fabsf((float)a); }
+  static inline __device__ __host__ long int zero()  { return 0; }
+  static inline __device__ __host__ long int one()   { return 1; }
+  static inline __device__ __host__ long int conjugate(long int x) { return x; }
+  static inline __device__ __host__ long int real(long int x) { return x; }
+  static inline __device__ __host__ long int imag(long int) { return 0; }
+  static inline __device__ __host__ bool isnaninf(int) { return false; }
+  static inline __device__ __host__ long int squareroot(long int x) { return (long int)sqrtf((float)x); }          // perhaps this cast should be replaced by an explicit call like __float2int_rn
+  static inline __device__ __host__ long int pow(long int x, long int y) { return (long int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
+};
+
 #ifdef HAVE_KOKKOS_CUDA_FLOAT
 template<>
 struct ScalarTraits<float>
