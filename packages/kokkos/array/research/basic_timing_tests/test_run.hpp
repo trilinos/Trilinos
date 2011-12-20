@@ -87,6 +87,8 @@ namespace {
   // times: array of length numOuterLoops.  Each entry is the _total_
   //   time (not averaged yet) for numInnerLoops trials of whatever
   //   operation was timed.  We compute and display averages here.
+  //   Side effect: This array is sorted on output, but the values are
+  //   not changed.
   //
   // numInnerLoops: Each entry of the times array is the total time in
   //   seconds of numInnerLoops runs.
@@ -97,17 +99,19 @@ namespace {
   void
   report (std::ostream& out, 
 	  const std::string& label, 
-	  const std::vector<double>& times,
-	  const int numInnerLoops)
+	  std::vector<double>& times,
+	  const int numInnerLoops,
 	  const int numOuterLoops)
   {
+    using std::endl;
+    const bool verbose = false;
     //
     // Sort times to find min, median, and max.
     //
     std::sort (times.begin(), times.end());
-    median   = times[numOuterLoops / 2];
-    maxTime = times[numOuterLoops - 1];
-    minTime = times[0];
+    const double minTime = times.front();
+    const double median  = times[numOuterLoops / 2];
+    const double maxTime = times.back();
     //
     // Report statistics.
     //
@@ -115,21 +119,49 @@ namespace {
 	<< "Number of (outer) trials: " << numOuterLoops << endl
 	<< "Number of (inner) runs per trial: " << numInnerLoops << endl;
     out << "Min: " << minTime / numInnerLoops << endl
-	<< "Max: " << maxTime / numInnerLoops << endl
 	<< "Median: " << median / numInnerLoops << endl
-	<< "Times: [";
-    for (int i = 0; i < numOuterLoops; ++i) {
-      out << times[i] / numInnerLoops;
-      if (i == numOuterLoops - 1) {
-	out << "]" << endl;
-      }
-      else {
-	out << ", ";
+	<< "Max: " << maxTime / numInnerLoops << endl;
+    if (verbose) {
+      out << "Times: [";
+      for (int i = 0; i < numOuterLoops; ++i) {
+	out << times[i] / numInnerLoops;
+	if (i == numOuterLoops - 1) {
+	  out << "]" << endl;
+	}
+	else {
+	  out << ", ";
+	}
       }
     }
     out << endl; // Leave a space for the next report() call.
   }
-}
+
+  // Report timer resolution results.
+  void
+  reportTimerResolution (std::ostream& out, 
+			 std::vector<double>& times, 
+			 const int numOuterLoops)
+  {
+    using std::endl;
+    //
+    // Sort times to find min, median, and max.
+    //
+    std::sort (times.begin(), times.end());
+    const double minTime = times.front();
+    const double median  = times[numOuterLoops / 2];
+    const double maxTime = times.back();
+    //
+    // Report statistics.
+    //
+    out << "Timer resolution (seconds):" << endl
+	<< "Number of (outer) trials: " << numOuterLoops << endl;
+    out << "Min: " << minTime << endl
+	<< "Median: " << median << endl
+	<< "Max: " << maxTime << endl;
+    out << endl; // Leave a space for the next report() call.
+  }
+
+} // namespace (anonymous)
 
 
 
@@ -186,7 +218,10 @@ test_run (const std::string& testName,
     // modern computers, unless the timer overhead is huge.
     const size_t maxTimerResolutionIters = 1000000000;
 
-    for (size_t k = 0; k < maxTimerResolutionIters; ++k) {
+    // Keep k after the loop to test whether max iteration count was
+    // reached.
+    size_t k = 0; 
+    for (k = 0; k < maxTimerResolutionIters; ++k) {
       endTime = wall_clock.seconds();
       if (endTime > startTime) {
 	break;
@@ -205,8 +240,7 @@ test_run (const std::string& testName,
     timerResTimes[outerLoop] = endTime - startTime;
   }
   // Report timer resolution results.
-  report (cout, "Timer resolution (seconds)", timerResTimes, 
-	  numInnerLoops, numOuterLoops);
+  reportTimerResolution (cout, timerResTimes, numOuterLoops);
 
   //
   // Measure kernel launch + wait time.

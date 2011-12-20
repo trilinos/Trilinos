@@ -5,7 +5,7 @@ export CXX_SOURCES="../../src/impl/*.cpp"
 case ${1} in
 HOST | Host | host )
   HOST_SOURCES="../../src/DeviceHost/*.cpp"
-  g++ -Wall -o host_test.exe ${INC_PATH} ${CXX_SOURCES} ${HOST_SOURCES} mainHost.cpp
+  g++ -O3 -Wall -o host_test.exe ${INC_PATH} ${CXX_SOURCES} ${HOST_SOURCES} mainHost.cpp
   ;;
 CUDA | Cuda | cuda )
   export NVCC_SOURCES="../../src/DeviceCuda/*.cu"
