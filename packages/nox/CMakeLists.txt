@@ -12,6 +12,8 @@ TRIBITS_PACKAGE(NOX)
 # B) Set up package-specific options
 #
 
+TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION()
+
 # Prerelease code
 OPTION(${PACKAGE_NAME}_BUILD_PRERELEASE
   "Build experimental code"
@@ -34,11 +36,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MF
   HAVE_LOCA_MF
   "Enable Multifario (MF) support in LOCA"
   ${NOX_ENABLE_MF_default} )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
-  NOX_TEUCHOS_TIME_MONITOR
-  "Build with Teuchos TimeMonitors enabled."
-  "${${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR}" )
 
 # Ignoring these flags - should be fixed in more recent compilers
 # AC_CXX_STL_MAP_KEY_CONST

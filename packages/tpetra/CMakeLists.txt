@@ -110,6 +110,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_INT_LONG
+  HAVE_TPETRA_INST_INT_LONG
+  "If explicit instantiation is enabled, instantiate over global ordinal long."
+  ON
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Threaded_MKL
   HAVE_TPETRA_THREADED_MKL
   "Indicates that the linked BLAS is a threaded version of the MKL."

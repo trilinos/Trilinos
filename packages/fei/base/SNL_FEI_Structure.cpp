@@ -52,6 +52,8 @@ SNL_FEI_Structure::SNL_FEI_Structure(MPI_Comm comm)
    localProc_(0),
    masterProc_(0),
    numProcs_(1),
+   fieldIDs_(),
+   fieldSizes_(),
    fieldDatabase_(new std::map<int,int>),
    fieldDofMap_(),
    workarray_(),
@@ -130,7 +132,7 @@ SNL_FEI_Structure::SNL_FEI_Structure(MPI_Comm comm)
   slaveVars_ = new std::vector<SlaveVariable*>;
   slaveEqns_ = new EqnBuffer;
 
-  nodeCommMgr_ = new NodeCommMgr(comm_);
+  nodeCommMgr_ = new NodeCommMgr(comm_, *this);
 
   eqnCommMgr_ = new EqnCommMgr(comm_);
   eqnCommMgr_->setNumRHSs(1);
@@ -385,6 +387,9 @@ int SNL_FEI_Structure::initFields(int numFields,
 
   for (int i=0; i<numFields; i++) {
     fieldDatabase_->insert(std::pair<int,int>(fieldIDs[i], fieldSizes[i]));
+    int offs = fei::sortedListInsert(fieldIDs[i], fieldIDs_); 
+    if (offs >= 0) fieldSizes_.insert(fieldSizes_.begin()+offs, fieldSizes[i]);
+
     if (fieldIDs[i] >= 0) {
       if (fieldTypes != NULL) {
         fieldDofMap_.add_field(fieldIDs[i], fieldSizes[i], fieldTypes[i]);
@@ -2837,7 +2842,7 @@ int SNL_FEI_Structure::getBlockDescriptor(GlobalID blockID,
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::getIndexOfBlock(GlobalID blockID)
+int SNL_FEI_Structure::getIndexOfBlock(GlobalID blockID) const
 {
   int index = fei::binarySearch(blockID, blockIDs_);
   return(index);
@@ -2939,8 +2944,8 @@ int SNL_FEI_Structure::finalizeActiveNodes()
     if (numElems > 0) {
       elemConn = &((*conn.elem_conn_ids)[0]);
       if (!activeNodesInitialized_) {
-	int elemConnLen = conn.elem_conn_ids->size();
-	conn.elem_conn_ptrs = new std::vector<NodeDescriptor*>(elemConnLen);
+        int elemConnLen = conn.elem_conn_ids->size();
+        conn.elem_conn_ptrs = new std::vector<NodeDescriptor*>(elemConnLen);
       }
       elemNodeDescPtrs = &((*conn.elem_conn_ptrs)[0]);
     }
@@ -2972,30 +2977,33 @@ int SNL_FEI_Structure::finalizeActiveNodes()
       NodeDescriptor** elemNodePtrs = &(elemNodeDescPtrs[elem*nodesPerElem]);
 
       for(int n=0; n<nodesPerElem; n++) {
-	NodeDescriptor* node = NULL;
-	int index = nodeDatabase_->getNodeWithID( elemNodes[n], node );
-	if (index < 0) {
-	  fei::console_out() << "ERROR in SNL_FEI_Structure::initializeActiveNodes, "
-	       << FEI_ENDL << "failed to find node "
-	       << (int)(elemNodes[n]) << FEI_ENDL;
-	}
+        NodeDescriptor* node = NULL;
+        int index = nodeDatabase_->getNodeWithID( elemNodes[n], node );
+        if (index < 0) {
+          fei::console_out() << "ERROR in SNL_FEI_Structure::initializeActiveNodes, "
+            << FEI_ENDL << "failed to find node "
+            << (int)(elemNodes[n]) << FEI_ENDL;
+        }
 
-	if (numDistinctFields == 1) {
-	  node->addField(fieldID);
-	}
-	else {
-	  for(int i=0; i<fieldsPerNodePtr[n]; i++) {
-	    node->addField(fieldIDsTablePtr[n][i]);
-	  }
-	}
+        if (numDistinctFields == 1) {
+          node->addField(fieldID);
+        }
+        else {
+          for(int i=0; i<fieldsPerNodePtr[n]; i++) {
+            node->addField(fieldIDsTablePtr[n][i]);
+          }
+        }
 
-	node->addBlock(blockID);
+        int blk_idx = getIndexOfBlock(blockID);
+        if (blk_idx >= 0) {
+          node->addBlockIndex(blk_idx);
+        }
 
-	//now store this NodeDescriptor pointer, for fast future lookups
-	elemNodePtrs[n] = node;
+        //now store this NodeDescriptor pointer, for fast future lookups
+        elemNodePtrs[n] = node;
 
-	node->setOwnerProc(localProc_);
-	if (numProcs_ > 1) nodeCommMgr_->informLocal(*node);
+        node->setOwnerProc(localProc_);
+        if (numProcs_ > 1) nodeCommMgr_->informLocal(*node);
       }
     }
   }
@@ -3097,22 +3105,17 @@ int SNL_FEI_Structure::setNumNodesAndEqnsPerBlock()
 
      int numFields = node->getNumFields();
 
-     for(int blk=0; blk<numBlocks; blk++) {
-       GlobalID blockID = blockIDsPtr[blk];
-
-       if (node->containedInBlock(blockID)) {
-	 nodesPerBlock[blk]++;
-       }
-       else {
-	 continue;
-       }
+     const std::vector<unsigned>& blkIndices = node->getBlockIndexList();
+     for(std::vector<unsigned>::const_iterator b=blkIndices.begin(), bend=blkIndices.end();
+         b!=bend; ++b) {
+       nodesPerBlock[*b]++;
 
        for(int fld=0; fld<numFields; fld++) {
-	 if (blocks_[blk]->containsField(fieldIDList[fld])) {
-	   int fSize = getFieldSize(fieldIDList[fld]);
-	   assert(fSize >= 0);
-	   eqnsPerBlock[blk] += fSize;
-	 }
+         if (blocks_[*b]->containsField(fieldIDList[fld])) {
+           int fSize = getFieldSize(fieldIDList[fld]);
+           assert(fSize >= 0);
+           eqnsPerBlock[*b] += fSize;
+         }
        }
      }
    }

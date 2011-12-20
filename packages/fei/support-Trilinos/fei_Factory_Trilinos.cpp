@@ -18,6 +18,9 @@
 #ifdef HAVE_FEI_AZTECOO
 #include <fei_Solver_AztecOO.hpp>
 #endif
+#ifdef HAVE_FEI_BELOS
+#include <fei_Solver_Belos.hpp>
+#endif
 #ifdef HAVE_FEI_AMESOS
 #include <fei_Solver_Amesos.hpp>
 #endif
@@ -31,6 +34,7 @@ Factory_Trilinos::Factory_Trilinos(MPI_Comm comm)
     lpm_epetrabasic_(),
     use_lpm_epetrabasic_(false),
     useAmesos_(false),
+    useBelos_(false),
     use_feiMatrixLocal_(false),
     blockEntryMatrix_(false),
     orderRowsWithLocalColsFirst_(false),
@@ -76,6 +80,10 @@ void Factory_Trilinos::parameters(const fei::ParameterSet& parameterset)
       std::string::size_type ii = strval.find("Amesos");
       if (ii != std::string::npos) {
         useAmesos_ = true;
+      }
+      ii = strval.find("Belos");
+      if (ii != std::string::npos) {
+        useBelos_ = true;
       }
     }
   }
@@ -341,37 +349,41 @@ Factory_Trilinos::createSolver(const char* name)
 {
   fei::SharedPtr<fei::Solver> solver;
 
-  if (useAmesos_ || name != 0) {
-    if (name != 0) {
-      std::string sname(name);
-      std::string::size_type ii = sname.find("Amesos");
-      if (ii == std::string::npos) {
-#ifdef HAVE_FEI_AZTECOO
-        solver.reset(new Solver_AztecOO);
-        return(solver);
-#else
-        fei::console_out() << "fei_Factory_Trilinos::createSolver: ERROR, AztecOO not "
-           << "available." << FEI_ENDL; 
-        return(solver);
-#endif
-      }
-    }
+  std::string::size_type ii_amesos = std::string::npos;
+  std::string::size_type ii_belos = std::string::npos;
+
+  if (name != 0) {
+    std::string sname(name);
+    ii_amesos = sname.find("Amesos");
+    ii_belos = sname.find("Belos");
+  }
+
+  if (useAmesos_ || ii_amesos != std::string::npos) {
 #ifdef HAVE_FEI_AMESOS
     solver.reset(new Solver_Amesos);
+    return solver;
 #else
-    fei::console_out() << "fei_Factory_Trilinos::createSolver: ERROR, Amesos requested,"
-      << " but HAVE_FEI_AMESOS is not defined so Amesos is not available."
-      <<FEI_ENDL;
-    return(solver);
-#endif
-  }
-  else {
-#ifdef HAVE_FEI_AZTECOO
-    solver.reset(new Solver_AztecOO);
+    fei::console_out() << "fei_Factory_Trilinos::createSolver: ERROR, Amesos not available (not enabled at compile-time?)"<<FEI_ENDL;
 #endif
   }
 
-  return(solver);
+  if (useBelos_ || ii_belos != std::string::npos) {
+#ifdef HAVE_FEI_BELOS
+    solver.reset(new Solver_Belos);
+    return solver;
+#else
+    fei::console_out() << "fei_Factory_Trilinos::createSolver: ERROR, Belos not available (not enabled at compile-time?)"<<FEI_ENDL;
+#endif
+  }
+
+#ifdef HAVE_FEI_AZTECOO
+  solver.reset(new Solver_AztecOO);
+  return solver;
+#else
+  fei::console_out() << "fei_Factory_Trilinos::createSolver: ERROR, AztecOO not "
+         << "available." << FEI_ENDL; 
+  return solver;
+#endif
 }
 
 void Factory_Trilinos::create_LinProbMgr(bool replace_if_already_created)

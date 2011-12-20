@@ -58,6 +58,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -158,6 +159,8 @@ int main(int argc, char *argv[])
 
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
     std::cout << "Test passed!" << std::endl;
+
+  Teuchos::TimeMonitor::summarize();
 
   // Final return value (0 = successfull, non-zero = failure)
   return status;

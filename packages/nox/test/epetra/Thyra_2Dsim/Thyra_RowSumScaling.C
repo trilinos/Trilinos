@@ -59,6 +59,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -154,6 +155,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Teuchos::ParameterList> nl_params =
     Teuchos::rcp(new Teuchos::ParameterList);
   nl_params->set("Nonlinear Solver", "Line Search Based");
+  nl_params->sublist("Line Search").set("Method", "Polynomial");
 
   Teuchos::ParameterList& printParams = nl_params->sublist("Printing");
   printParams.set("Output Information", 
@@ -234,16 +236,18 @@ int main(int argc, char *argv[])
   // Test total num iterations
   {
     // Problem converges in 7 nonlinear iterations with NO scaling
-    // Problem converges in 7 nonlinear iterations with RS scaling (bad test problem - too easy)
+    // Problem converges in 6 nonlinear iterations with RS scaling (bad test problem - too easy)
     Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver = 
       Teuchos::rcp_dynamic_cast< ::Thyra::NOXNonlinearSolver>(solver);
-    TEUCHOS_ASSERT(thyra_nox_solver->getNOXSolver()->getNumIterations() == 7);
+    TEUCHOS_ASSERT(thyra_nox_solver->getNOXSolver()->getNumIterations() == 6);
   }
 
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
     std::cout << "Test passed!" << std::endl;
 
   std::cout << *p << std::endl;
+
+  Teuchos::TimeMonitor::summarize();
 
   // Final return value (0 = successfull, non-zero = failure)
   return status;

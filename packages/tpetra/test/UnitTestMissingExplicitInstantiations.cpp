@@ -5,8 +5,8 @@
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -172,6 +172,7 @@ namespace Tpetra {
 
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
+#ifndef HAVE_TPETRA_INST_INT_LONG
 template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
 createContigMap<int,long>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
@@ -183,6 +184,7 @@ TPETRA_DIRECTORY_INSTANT(int,long,Node)
 namespace Ext {
 TPETRAEXT_BLOCKEXTRACTION_INSTANT(double,int,long,Node)
 }
+#endif
 
 }
 

@@ -34,5 +34,4 @@
 /* If optional MF TPL library is available */
 #cmakedefine HAVE_LOCA_MF
 
-/* Define if Teuchos timers are enabled */
-#cmakedefine NOX_TEUCHOS_TIME_MONITOR
+@NOX_TEUCHOS_TIME_MONITOR_DECLARATIONS@

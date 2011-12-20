@@ -228,6 +228,18 @@ public:
    */
   virtual void setPrecOperatorForSolve(const 
 		 Teuchos::RCP<const Epetra_Operator>& solvePrecOp) = 0;
+
+  //! Statistics for number of times the linear solver has been called (def: 0)
+  virtual int getNumLinearSolves() {return 0;};
+
+  //! Statistics for number of iterations taken in last linear solve (def: 0)
+  virtual int getLinearItersLastSolve() {return 0;};
+
+  //! Statistics for cumulative number of iterations in all linear solve (def: 0)
+  virtual int getLinearItersTotal() {return 0;};
+
+  //! Statistics for the achieved tolerance of last linear solve (def: 0.0)
+  virtual double getAchievedTol() {return 0.0;};
 };
 
 } // namespace Epetra

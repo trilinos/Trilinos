@@ -139,6 +139,7 @@ class LOCASolver
    Teuchos::RCP<LOCA::StatusTest::Abstract> locaStatusTest;
    NOX::Utils utils;
 
+   Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
    Teuchos::RCP<LOCA::Stepper> stepper;
    Teuchos::RCP<NOX::Epetra::Vector> currentSolution;
    Teuchos::RCP<LOCA::Epetra::ModelEvaluatorInterface> interface;

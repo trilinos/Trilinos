@@ -38,7 +38,7 @@ class NodeCommMgr : public fei::MessageHandler<int> {
  public:
    enum { STRICTLY_LOW_PROC, PROC_WITH_LOCAL_ELEM };
 
-   NodeCommMgr(MPI_Comm comm, int sharedNodeOwnership=STRICTLY_LOW_PROC);
+   NodeCommMgr(MPI_Comm comm, const SNL_FEI_Structure& problemStructure, int sharedNodeOwnership=STRICTLY_LOW_PROC);
    virtual ~NodeCommMgr();
 
    size_t getNumSharedNodes() {return(sharedNodeIDs.size());}
@@ -147,6 +147,7 @@ class NodeCommMgr : public fei::MessageHandler<int> {
    int maxSubdomains_;
 
    bool initCompleteCalled_;
+   const SNL_FEI_Structure& probStruc;
 };
 
 #endif

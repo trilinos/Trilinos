@@ -74,21 +74,26 @@ public:
    * \param argc  [in] Argment passed into <tt>main(argc,argv)</tt>
    * \param argv  [in] Argment passed into <tt>main(argc,argv)</tt>
    * \param out   [in] If <tt>out!=NULL</tt>, then a small message on each
-   *              processor will be printed to this stream.  The default is <tt>&std::cout</tt>.
-   *
+   *              processor will be printed to this stream.  The default is 
+   *              <tt>&std::cout</tt>.
+   * 
    * If the option <tt>--teuchos-suppress-startup-banner</tt> is found, the
    * this option will be removed from <tt>argv[]</tt> before being passed to
    * <tt>MPI_Init(...)</tt> and the startup output message to <tt>*out</tt>
    * will be suppressed.
    *
-   * <b>Warning!</b> This constructor can only be called once per
-   * executable or an error is printed to <tt>*out</tt> and an std::exception will
-   * be thrown!
+   * If Teuchos was <i>not</i> built with MPI support, the constructor
+   * just prints a startup banner (unless the banner was suppressed --
+   * see previous paragraph).  You can always use this class, whether
+   * or not Teuchos was built with MPI.
+   * 
+   * \warning This constructor can only be called once per executable.
+   *   Otherwise, an error is printed to <tt>*out</tt> and an
+   *   std::exception will be thrown!
    */
   GlobalMPISession( int* argc, char*** argv, std::ostream *out = &std::cout );
   
-  /** \brief Calls <tt>MPI_Finalize()</tt> if MPI is enabled.
-   */
+  //! Call <tt>MPI_Finalize()</tt> if MPI is enabled.
   ~GlobalMPISession();
     
   //@}
@@ -96,10 +101,10 @@ public:
   //! @name Static functions 
   //@{
 
-  /** \brief Return if MPI is initialized or not. */
+  //! Return whether MPI was initialized.
   static bool mpiIsInitialized();
 
-  /** \brief Return if MPI has already been finalized. */
+  //! Return whether MPI was already finalized.
   static bool mpiIsFinalized();
   
   /** \brief Returns the process rank relative to <tt>MPI_COMM_WORLD</tt>

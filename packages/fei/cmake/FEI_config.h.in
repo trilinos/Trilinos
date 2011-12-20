@@ -12,6 +12,9 @@
 /* Define to build with fei-aztecoo support enabled */
 #cmakedefine HAVE_FEI_AZTECOO
 
+/* Define to build with fei-aztecoo support enabled */
+#cmakedefine HAVE_FEI_BELOS
+
 /* Define to build with fei-ml support enabled */
 #cmakedefine HAVE_FEI_ML
 

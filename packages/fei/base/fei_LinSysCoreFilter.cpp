@@ -3244,13 +3244,15 @@ int LinSysCoreFilter::putBlockNodeSolution(GlobalID elemBlockID,
    //traverse the node list, checking for nodes associated with this block
    //when an associated node is found, put its 'answers' into the linear system.
 
+   unsigned blk_idx = problemStructure_->getIndexOfBlock(elemBlockID);
+
    for(int i=0; i<numNodes; i++) {
      const NodeDescriptor* node = NULL;
      int err = nodeDB.getNodeWithID(nodeIDs[i], node);
 
       if (err != 0) continue;
    
-      if (!node->containedInBlock(elemBlockID)) continue;
+      if (!node->hasBlockIndex(blk_idx)) continue;
 
       if (node->getOwnerProc() != localRank_) continue;
 

@@ -90,9 +90,9 @@ NOX::Abstract::Vector&
 NOX::Thyra::Vector::
 operator=(const NOX::Thyra::Vector& src)
 {
+  // NOTE that we only copy over values, we never copy over weighting.
+  // Weighting property only transfers via clone or copy ctor!
   ::Thyra::copy(*src.thyraVec, thyraVec.ptr());
-  weightVec_ = src.weightVec_;
-  do_implicit_weighting_ = src.do_implicit_weighting_;
   return *this;
 }
 

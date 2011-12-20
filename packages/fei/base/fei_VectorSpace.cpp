@@ -918,7 +918,6 @@ void fei::VectorSpace::getGlobalIndicesL(const fei::Pattern* pattern,
   }
   else if (pType == fei::Pattern::SIMPLE) {
     const int* fieldIDs = pattern->getFieldIDs();
-    const int* idTypes = pattern->getIDTypes();
 
     int fieldID = fieldIDs[0];
     unsigned fieldSize = getFieldSize(fieldID);
@@ -928,7 +927,6 @@ void fei::VectorSpace::getGlobalIndicesL(const fei::Pattern* pattern,
                      numIndices, indices_ptr, numIndices);
   }
   else if (pType == fei::Pattern::NO_FIELD) {
-    const int* idTypes = pattern->getIDTypes();
     getGlobalBlkIndicesL(numRecords, recordCollections, records, numIndices, indices_ptr, numIndices);
   }
 }

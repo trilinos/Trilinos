@@ -5,8 +5,8 @@
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -45,8 +45,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
-
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>
@@ -66,14 +64,24 @@
 namespace Tpetra {
 
   // for default node
+  // <int,int>
   template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-  createNonContigMap<int,int>(const Teuchos::ArrayView<const int> &elementList, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+    createNonContigMap<int,int>(const Teuchos::ArrayView<const int> &elementList, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
   template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-  createContigMap<int,int>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+    createContigMap<int,int>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
   template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-  createLocalMap<int,int>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+    createLocalMap<int,int>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
   template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-  createUniformContigMap<int,int>(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+    createUniformContigMap<int,int>(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  // <int,long>
+  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
+    createNonContigMap<int,long>(const Teuchos::ArrayView<const long> &elementList, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
+    createContigMap<int,long>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
+    createLocalMap<int,long>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
+    createUniformContigMap<int,long>(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
   TPETRA_MAP_INSTANT(int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
@@ -88,6 +96,22 @@ namespace Tpetra {
 #if defined(HAVE_KOKKOS_THRUST)
     TPETRA_MAP_INSTANT(int,int,Kokkos::ThrustGPUNode)
 #endif
+
+#ifdef HAVE_TPETRA_INST_INT_LONG
+  TPETRA_MAP_INSTANT(int,long,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_MAP_INSTANT(int,long,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_MAP_INSTANT(int,long,Kokkos::TPINode)
+#endif
+#if defined(HAVE_KOKKOS_OPENMP)
+    TPETRA_MAP_INSTANT(int,long,Kokkos::OpenMPNode)
+#endif
+#if defined(HAVE_KOKKOS_THRUST)
+    TPETRA_MAP_INSTANT(int,long,Kokkos::ThrustGPUNode)
+#endif
+#endif // <int,long>
 
 } // namespace Tpetra
 

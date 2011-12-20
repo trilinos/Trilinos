@@ -763,6 +763,15 @@ AztecOOLinearOpWithSolve::solveImpl(
     << " total CPU time of "<<totalTimer.totalElapsedTime()<<" sec.";
   overallSolveStatus.message = oss.str();
 
+  // Added these statistics following what was done for Belos
+  if (overallSolveStatus.extraParameters.is_null()) {
+    overallSolveStatus.extraParameters = Teuchos::parameterList ();
+  }
+  overallSolveStatus.extraParameters->set ("AztecOO/Iteration Count",
+                                            totalIterations);
+  overallSolveStatus.extraParameters->set ("AztecOO/Achieved Tolerance",
+                                            overallSolveStatus.achievedTol);
+
   //
   // Report the overall time
   //

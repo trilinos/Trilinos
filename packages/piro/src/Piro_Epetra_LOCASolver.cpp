@@ -135,7 +135,6 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
 
   // Create the linear system
   // also Build shifted linear system for eigensolver
-  Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> linsys;
   Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> shiftedLinSys;
   if (WPrec != Teuchos::null) {
     Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface;
@@ -327,32 +326,39 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
   // Don't explicitly observe finalSolution:
   // This is already taken care of by the stepper which observes the solution after each
   // continuation step by default.
-
+ 
   // Print stats
-  {
+  bool print_stats = piroParams->get("Print Convergence Stats", true);
+  if (print_stats) {
     static int totalNewtonIters=0;
     static int totalKrylovIters=0;
+    static int totalLinSolves = 0;
     static int stepNum=0;
     int NewtonIters = piroParams->sublist("NOX").
       sublist("Output").get("Nonlinear Iterations", -1000);
-    int KrylovIters = piroParams->sublist("NOX").sublist("Direction").sublist("Newton").
-      sublist("Linear Solver").sublist("Output").
-      get("Total Number of Linear Iterations", -1000);
+
+    int KrylovIters = linsys->getLinearItersTotal() - totalKrylovIters;
+    int lastSolveKrylovIters = linsys->getLinearItersLastSolve();
+    int linSolves = linsys->getNumLinearSolves() - totalLinSolves;
+
     totalNewtonIters += NewtonIters;
     totalKrylovIters += KrylovIters;
+    totalLinSolves += linSolves;
     stepNum++;
-    
-    utils.out() << "Convergence Stats: for step  #" << stepNum << " : Newton, Krylov, Kr/Ne: " 
-	 << NewtonIters << "  " << KrylovIters << "  " 
-	 << (double) KrylovIters / (double) NewtonIters << endl;
+
+    utils.out() << "Convergence Stats: for step  #" << stepNum << " : NumLinSolves, Krylov, Kr/Solve; LastKrylov, LastTol: " 
+	 << linSolves << "  " << KrylovIters << "  " 
+	 << (double) KrylovIters / (double) linSolves << "  " 
+         << lastSolveKrylovIters << " " <<  linsys->getAchievedTol() << endl;
+
     if (stepNum > 1)
-      utils.out() << "Convergence Stats: running total: Newton, Krylov, Kr/Ne, Kr/Step: " 
-           << totalNewtonIters << "  " << totalKrylovIters << "  " 
-           << (double) totalKrylovIters / (double) totalNewtonIters 
+     utils.out() << "Convergence Stats: running total: NumLinSolves, Krylov, Kr/Solve, Kr/Step: " 
+           << totalLinSolves << "  " << totalKrylovIters << "  " 
+           << (double) totalKrylovIters / (double) totalLinSolves 
            << "  " << (double) totalKrylovIters / (double) stepNum << endl;
     
   }
-    
+
   //
   // Do Sensitivity Calc, if requested. See 3 main steps 
   //

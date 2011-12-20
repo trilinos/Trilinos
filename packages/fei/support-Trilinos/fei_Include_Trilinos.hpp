@@ -44,6 +44,11 @@
 #include <AztecOO.h>
 #endif
 
+#ifdef HAVE_FEI_BELOS
+#include <BelosSolverFactory.hpp>
+#include <BelosEpetraAdapter.hpp>
+#endif
+
 #undef PACKAGE
 #undef PACKAGE_BUGREPORT
 #undef PACKAGE_NAME

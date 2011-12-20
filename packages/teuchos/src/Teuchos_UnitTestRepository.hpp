@@ -82,6 +82,9 @@ public:
   static void addUnitTest(UnitTestBase *unitTest, const std::string groupName,
     const std::string testName);
 
+  /** \brief . */
+  static bool verboseUnitTests();
+
 private:
 
   UnitTestRepository();

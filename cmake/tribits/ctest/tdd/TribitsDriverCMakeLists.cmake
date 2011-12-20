@@ -1,4 +1,6 @@
-# Definition of the CMakeLists.txt body used by the TriBITS driver job.
+#
+# CMakeLists.txt body used by the TriBITS driver job.
+#
 
 # The base directory is the parent of the binary directory.  
 # FIXME This is duplicated information. The base directory is set in
@@ -15,8 +17,10 @@ if( NOT DEFINED CMAKE_CURRENT_LIST_DIR )
 endif()
 
 # Locate the TriBITS dependencies.
-get_filename_component(TRIBITS_ROOT
-  "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+IF (NOT TRIBITS_ROOT)
+  get_filename_component(TRIBITS_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
+ENDIF()
+get_filename_component(TRIBITS_ROOT "${TRIBITS_ROOT}" ABSOLUTE)
 
 set(CMAKE_MODULE_PATH
   ${CMAKE_CURRENT_LIST_DIR}
@@ -33,11 +37,14 @@ include(TribitsConfigureCTestCustom)
 
 TRIBITS_CONFIGURE_CTEST_CUSTOM(${CMAKE_CURRENT_BINARY_DIR})
 
+
 # Function to make exactly one add_subdirectory call based on the site
 # name of the machine we're running on. By default, the subdirectory
 # is taken to be the site name. The environment variable
 # TDD_DRIVER_SUBDIRECTORY can be used to override the default value.
+#
 FUNCTION(TDD_PROJECT)
+
   site_name(site)
   set(subdir "${site}")
   message("site='${site}'")
@@ -78,4 +85,5 @@ FUNCTION(TDD_PROJECT)
   endif()
 
   add_subdirectory("${TDD_DRIVER_SUBDIRECTORY}")
+
 ENDFUNCTION()

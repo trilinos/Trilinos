@@ -5,8 +5,8 @@
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -68,20 +68,24 @@
 
 namespace Test{
 
-void test_Pthread( int beg, int end, int runs, int threads )
-{
-  Kokkos::DevicePthread::initialize( threads );
+  void 
+  test_Pthread (const int beg, 
+		const int end, 
+		const int runs, 
+		const int num_iters, 
+		const int threads)
+  {
+    Kokkos::DevicePthread::initialize (threads);
 
-  std::ostringstream label_double , label_float;
-  label_double << "Pthread[" << threads << "]-double" ;
-  label_float  << "Pthread[" << threads << "]-float" ;
+    std::ostringstream label_double , label_float;
+    label_double << "Pthread[" << threads << "]-double" ;
+    label_float  << "Pthread[" << threads << "]-float" ;
 
-  MiniImplTherm< double , Kokkos::DevicePthread >::driver( label_double.str().c_str(), beg , end , runs );
-  MiniImplTherm< float  , Kokkos::DevicePthread >::driver( label_float.str().c_str() , beg , end , runs );
+    MiniImplTherm<double, Kokkos::DevicePthread >::driver (label_double.str().c_str(), beg , end , runs, num_iters);
+    MiniImplTherm<float , Kokkos::DevicePthread >::driver (label_float.str().c_str() , beg , end , runs, num_iters);
 
-  Kokkos::DevicePthread::finalize();
-
-}//test_Pthread
+    Kokkos::DevicePthread::finalize();
+  }
 
 }// namespace
 

@@ -5,8 +5,8 @@
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -49,15 +49,34 @@
 #include <Kokkos_DeviceCuda_ParallelReduce.hpp>
 
 #include <Kokkos_DeviceCuda_macros.hpp>
+#include <sstream>
 #include "test_run.hpp"
 
 __global__ void dummy_kernel(){}
 
-int main(int argc, char* argv[]){
-  unsigned int runs = 1;
-  if(argc >1){
-    runs = atoi(argv[1]);
+int main (int argc, char* argv[]) {
+  using std::cerr;
+  using std::endl;
+
+  int numInnerLoops = 1000;
+  int numOuterLoops = 10;
+  if (argc > 1) {
+    std::istringstream is (argv[1]);
+    is >> numInnerLoops;
+    if (! is) {
+      cerr << "Failed to read number of inner loops (first argument)" << endl;
+      return -1;
+    }
   }
-  test_run<double, Kokkos::DeviceCuda >("Cuda", runs);
+  if (argc > 2) {
+    std::istringstream is (argv[2]);
+    is >> numOuterLoops;
+    if (! is) {
+      cerr << "Failed to read number of outer loops (second argument)" << endl;
+      return -2;
+    }
+  }
+
+  test_run<double, Kokkos::DeviceCuda> ("DeviceCuda", numInnerLoops, numOuterLoops);
   return 0;
 }
