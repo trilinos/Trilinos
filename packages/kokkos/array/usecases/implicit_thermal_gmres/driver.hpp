@@ -256,7 +256,11 @@ struct MiniImplTherm< Scalar , KOKKOS_MACRO_DEVICE > {
    
       perf[i-beg].resize (runs);
 
-      for(int j = 0; j < runs; j++) {
+      cout << "Test (" << runs << " runs):" << endl
+	   << "  " << ix << " x " << iy << " x " << iz << " mesh" << endl
+	   << "  " << num_iters << " iterations of GMRES" << endl;
+
+      for (int j = 0; j < runs; j++) {
 	run (ix, iy, iz, num_iters, perf[i-beg][j]);
       }
     }

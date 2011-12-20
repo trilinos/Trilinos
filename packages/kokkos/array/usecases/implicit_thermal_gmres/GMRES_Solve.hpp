@@ -291,7 +291,7 @@ struct GMRES_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     if (beta_h == 0.0) {
       std::cout << "Beta was zero\n";
       //Stuff didn't work
-      return;
+      return 0.0;
     }
 
     //Allocate space for basis vectors Q. Q has as many rows as b and m+1 
