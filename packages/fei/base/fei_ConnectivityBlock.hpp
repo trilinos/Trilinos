@@ -13,7 +13,6 @@
 #include <fei_IndexType.hpp>
 #include <map>
 #include <vector>
-#include <boost/unordered_map.hpp>
 
 namespace fei {
   class Pattern;
