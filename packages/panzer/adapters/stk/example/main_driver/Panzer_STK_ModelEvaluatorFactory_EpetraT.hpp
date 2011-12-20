@@ -7,6 +7,7 @@
 
 #include "Panzer_config.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -111,13 +112,17 @@ namespace panzer_stk {
   void  ModelEvaluatorFactory_Epetra<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                                             const panzer::EquationSetFactory & eqset_factory,
                                                             const panzer::BCStrategyFactory & bc_factory,
-                                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory)
+                                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
+							    const Teuchos::RCP<panzer::GlobalData>& global_data)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(this->getParameterList()), std::runtime_error,
 		       "ParameterList must be set before objects can be built!");
 
-    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
-    fout.setOutputToRootOnly(0); 
+    TEUCHOS_ASSERT(nonnull(global_data));
+    TEUCHOS_ASSERT(nonnull(global_data->os));
+    TEUCHOS_ASSERT(nonnull(global_data->pl));
+
+    Teuchos::FancyOStream& fout = *global_data->os;
 
     // for convience cast to an MPI comm
     const Teuchos::RCP<const Teuchos::MpiComm<int> > mpi_comm = 
