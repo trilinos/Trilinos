@@ -21,6 +21,8 @@
    #include "Stokhos_EpetraOperatorOrthogPoly.hpp"
 #endif
 
+#include <sstream>
+
 panzer::ModelEvaluator_Epetra::
 ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
@@ -42,6 +44,14 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 
   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,lof);
   ae_tm_.buildObjects(builder);
+
+  // Setup parameters
+  parameter_vector_.resize(p_names_.size());
+  parameter_library_ = Teuchos::rcp(new panzer::ParamLib);
+  for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::size_type p = 0; 
+       p < p_names_.size(); ++p) {
+    parameter_library_->fillVector<panzer::Traits::Residual>(*(p_names_[p]), parameter_vector_[p]);
+  }
 
   // initailize maps, x_dot_init, x0, p_init, g_map, and W_graph
   initializeEpetraObjs();
@@ -66,6 +76,14 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 
   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,lof);
   ae_tm_.buildObjects(builder);
+
+  // Setup parameters
+  parameter_vector_.resize(p_names_.size());
+  parameter_library_ = Teuchos::rcp(new panzer::ParamLib);
+  for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::size_type p = 0; 
+       p < p_names_.size(); ++p) {
+    parameter_library_->fillVector<panzer::Traits::Residual>(*(p_names_[p]), parameter_vector_[p]);
+  }
 
   // initailize maps, x_dot_init, x0, p_init, g_map, and W_graph
   initializeEpetraObjs();
@@ -302,6 +320,15 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     ae_inargs.beta = inArgs.get_beta();
     ae_inargs.time = inArgs.get_t();
     ae_inargs.evaluate_transient_terms = true;
+  }
+  
+  // Set input parameters
+  for (int i=0; i<inArgs.Np(); i++) {
+    Teuchos::RCP<const Epetra_Vector> p = inArgs.get_p(i);
+    if ( nonnull(p) ) {
+      for (unsigned int j=0; j < parameter_vector_[i].size(); j++)
+	parameter_vector_[i][j].baseValue = (*p)[j];
+    }
   }
   
   // here we are building a container, this operation is fast, simply allocating a struct

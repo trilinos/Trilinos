@@ -9,6 +9,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
+#include "Panzer_ParameterLibrary.hpp"
 #include <vector>
 #include <string>
 
@@ -135,6 +136,8 @@ namespace panzer {
     mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
     mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm_;   // they control and provide access to evaluate
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
+    Teuchos::RCP<panzer::ParamLib> parameter_library_;
+    mutable Teuchos::Array<panzer::ParamVec> parameter_vector_;
     bool build_transient_support_;
 
     // basic specific linear object objects
