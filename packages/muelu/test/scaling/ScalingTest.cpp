@@ -341,7 +341,7 @@ int main(int argc, char *argv[]) {
 
       RCP< Belos::SolverManager<SC,MV,OP> > solver = rcp( new Belos::BlockCGSolMgr<SC,MV,OP>(problem, rcp(&belosList,false)) );
     
-      Belos::ReturnType ret;
+      Belos::ReturnType ret=Belos::Unconverged;
       bool badRes = false;
 
       try {
