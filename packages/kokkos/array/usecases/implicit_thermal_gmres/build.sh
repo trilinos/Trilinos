@@ -60,23 +60,28 @@ Sync | sync )
 #-------------------------------
 #----------- OPTIONS -----------
 OPT | opt | O3 | -O3 )
-  CXXFLAGS="${CXXFLAGS} -O3"
-  NVCCFLAGS="${NVCCFLAGS} -O3"
+  export CXXFLAGS="${CXXFLAGS} -O3"
+  export NVCCFLAGS="${NVCCFLAGS} -O3"
   ;;
 DBG | dbg | g | -g )
-  CXXFLAGS="${CXXFLAGS} -g"
-  NVCCFLAGS="${NVCCFLAGS} -g"
+  export CXXFLAGS="${CXXFLAGS} -g"
+  export NVCCFLAGS="${NVCCFLAGS} -g"
   ;;
 #-------------------------------
 #---------- COMPILERS ----------
-GNU | gnu | g++ )
+GNU | gnu | g++ | gcc )
   export CXX="g++"
-  export CXXFLAGS="-Wall"
   ;;
-INTEL | intel | icc )
+INTEL | intel | icc | icpc )
   export CXX="icc"
-  # -xW = use SSE and SSE2 instructions
-  export CXXFLAGS="-Wall -xW"
+  # The Intel compiler should be smart enough to do its own
+  # optimizations.  Otherwise, without the proper vectorization
+  # pragmas, it won't figure out how to make effective use of the (>=)
+  # SSE2 instructions.  Thus, we don't bother with the -xW flag (that
+  # would tell the compiler to use the SSE and SSE2 instructions).
+  # However, we _do_ tell the compiler to generate the best code for
+  # the host platform.
+  export CXXFLAGS="${CXXFLAGS} -fast -vec-report1"
   export LIB="${LIB} -lstdc++"
   ;;
 #-------------------------------
@@ -95,7 +100,6 @@ then
 fi
 
 echo "Building regular files as: " ${CXX} ${CXXFLAGS}
-
 ${CXX} ${CXXFLAGS} ${INC_PATH} ${TEST_MACRO} -o mini_test.exe main.cpp ${CXX_SOURCES} ${LIB}
 
 rm -f *.o *.a ThreadPool_config.h

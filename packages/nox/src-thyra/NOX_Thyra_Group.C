@@ -41,6 +41,7 @@
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Ptr.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -65,7 +66,7 @@ Group(const NOX::Thyra::Vector& initial_guess,
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
-  // To support function scaling, all vectors must be copy
+  // To support implicit function scaling, all vectors must be copy
   // constructed/cloned from a NOX::Thyra::Vector that already has the
   // weight vector set or you must manually set the weighting vector.
   // Here we set the x_vec_ to have the weighting and clone that for
@@ -589,11 +590,15 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 
   this->scaleResidualAndJacobian();
 
-  const ::Thyra::SolveStatus<double> solve_status = 
-    ::Thyra::solve(*shared_jacobian_->getObject(), 
-		   ::Thyra::NOTRANS, input, 
-		   Teuchos::ptrFromRef(result), 
-		   Teuchos::constPtr(solveCriteria));
+  ::Thyra::SolveStatus<double> solve_status;
+  {
+    NOX_FUNC_TIME_MONITOR("NOX Total Linear Solve");
+
+    solve_status = ::Thyra::solve(*shared_jacobian_->getObject(), 
+				  ::Thyra::NOTRANS, input, 
+				  Teuchos::ptrFromRef(result), 
+				  Teuchos::constPtr(solveCriteria));
+  }
 
   this->unscaleResidualAndJacobian();
 
@@ -635,19 +640,23 @@ void NOX::Thyra::Group::updateLOWS() const
 
   this->scaleResidualAndJacobian();
 
-  if (Teuchos::nonnull(prec_factory_)) {
-    prec_factory_->initializePrec(losb_, prec_.get());
+  {
+    NOX_FUNC_TIME_MONITOR("NOX Total Preconditioner Construction");
     
-    ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
-						lop_,
-						prec_,
-						shared_jacobian_->getObject(this).ptr());
-  }
-  else {
-    ::Thyra::initializeOp<double>(*lows_factory_,
-				  lop_,
-				  shared_jacobian_->getObject(this).ptr());
-
+    if (Teuchos::nonnull(prec_factory_)) {
+      prec_factory_->initializePrec(losb_, prec_.get());
+      
+      ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
+						  lop_,
+						  prec_,
+						  shared_jacobian_->getObject(this).ptr());
+    }
+    else {
+      ::Thyra::initializeOp<double>(*lows_factory_,
+				    lop_,
+				    shared_jacobian_->getObject(this).ptr());
+    }
+    
   }
 
   this->unscaleResidualAndJacobian();

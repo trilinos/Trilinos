@@ -10,6 +10,7 @@
 #define _snl_fei_RecordCollection_hpp_
 
 #include <fei_iosfwd.hpp>
+#include <fei_IndexType.hpp>
 #include <fei_Pool_alloc.hpp>
 #include <fei_FieldMask.hpp>
 #include <fei_Record.hpp>
@@ -64,12 +65,35 @@ namespace snl_fei {
       return( m_records.size() );
     }
 
-    /** Get the map of global-to-local ids */
-    std::map<int,int>& getGlobalToLocalMap()
+    /** Get the native version of global-to-local ids */
+    fei::IndexType<int,int>& getNativeGlobalToLocalMap()
     { return m_global_to_local; }
 
-    const std::map<int,int>& getGlobalToLocalMap() const
+    const fei::IndexType<int,int>& getNativeGlobalToLocalMap() const
     { return m_global_to_local; }
+
+  private:
+    /** If someone has a reference to std::map of our data and we are using 
+	something else, sync from that map to us 
+     */
+    void syncFrom() const {
+      if (doesSomeoneHaveMyMap)
+	m_global_to_local.resyncFromMap(m_global_to_local_map_);
+    }
+
+    /** If someone has a reference to std::map of our data and we are using 
+	something else, sync to that map from us 
+     */
+    void syncTo() {
+      if (doesSomeoneHaveMyMap)
+	m_global_to_local.resyncToMap(m_global_to_local_map_);
+    }
+  public:
+
+    /** Get the std::map version of global-to-local ids */
+    FEI_DEPRECATED std::map<int,int>& getGlobalToLocalMap() const ;
+
+    FEI_DEPRECATED const std::map<int,int>& getGlobalToLocalMap() ;
 
     /** Get the vector containing the records */
     std::vector<fei::Record<int> >& getRecords()
@@ -97,7 +121,7 @@ namespace snl_fei {
 
     int getLocalID(int global_id) const
     {
-      std::map<int,int>::const_iterator iter = m_global_to_local.find(global_id);
+      fei::IndexType<int,int>::const_iterator iter = m_global_to_local.find(global_id);
       if (iter == m_global_to_local.end()) {
         return -1;
       }
@@ -125,7 +149,13 @@ namespace snl_fei {
   private:
 
     std::vector<fei::Record<int> > m_records;
-    std::map<int,int> m_global_to_local;
+    /// This has to be mutable to maintain backwards compatability when 
+    /// people give out refs to private data which breaks const anyway
+    mutable     fei::IndexType<int, int> m_global_to_local;
+    /// this is for backwards compatability for an outdated send reference
+    mutable     std::map<int, int> m_global_to_local_map_;
+    /// This will cause a lot of work once this is set
+    bool doesSomeoneHaveMyMap;
 
     int localProc_;
 

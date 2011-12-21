@@ -60,13 +60,17 @@
 
 namespace Test{
 
-void test_Host(int beg, int end, int runs)
-{
-  MiniImplTherm< double, Kokkos::DeviceHost >::driver( "Host-double" , beg , end , runs );
-  MiniImplTherm< float , Kokkos::DeviceHost >::driver( "Host-float" , beg , end , runs );
-
-} //test_host
-
+  void 
+  test_Host (const int beg, 
+	     const int end, 
+	     const int runs, 
+	     const int num_iters)
+  {
+    MiniImplTherm<double, Kokkos::DeviceHost>::driver ("Host-double", beg, end, 
+						       runs, num_iters);
+    MiniImplTherm<float , Kokkos::DeviceHost>::driver ("Host-float",  beg, end, 
+						       runs, num_iters);
+  }
 }// namespace
 
 

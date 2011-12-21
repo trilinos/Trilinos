@@ -27,6 +27,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int blockID,
     colPattern_(NULL),
     isSymmetric_(true),
     isDiagonal_(false),
+    doesSomeoneHaveMyMap(false),
     connIDsOffsetMap_(),
     connectivityOffsets_(),
     numRecordsPerConnectivity_(pattern->getNumIDs()),
@@ -48,6 +49,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int blockID,
     colPattern_(colpattern),
     isSymmetric_(false),
     isDiagonal_(false),
+    doesSomeoneHaveMyMap(false),
     connIDsOffsetMap_(),
     connectivityOffsets_(),
     numRecordsPerConnectivity_(rowpattern->getNumIDs()),
@@ -69,6 +71,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int numRowIDs,
     colPattern_(NULL),
     isSymmetric_(false),
     isDiagonal_(false),
+    doesSomeoneHaveMyMap(false),
     connIDsOffsetMap_(),
     connectivityOffsets_(),
     numRecordsPerConnectivity_(0),
@@ -93,6 +96,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int numRowIDs,
 
   colConnectivities_.resize(clen);
 
+  syncFrom();
   int i;
   if (offsets_are_lengths) {
     int offset = 0;
@@ -110,6 +114,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int numRowIDs,
     }
     connectivityOffsets_[numRowIDs] = rowOffsets[numRowIDs];
   }
+  syncTo();
 }
 
 //----------------------------------------------------------------------------
@@ -123,6 +128,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int fldID,
     colPattern_(NULL),
     isSymmetric_(false),
     isDiagonal_(false),
+    doesSomeoneHaveMyMap(false),
     connIDsOffsetMap_(),
     connectivityOffsets_(),
     numRecordsPerConnectivity_(0),
@@ -147,6 +153,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int fldID,
 
   colConnectivities_.resize(clen);
 
+  syncFrom();
   int i;
   if (offsets_are_lengths) {
     int offset = 0;
@@ -164,6 +171,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int fldID,
     }
     connectivityOffsets_[numRowIDs] = rowOffsets[numRowIDs];
   }
+  syncTo();
 }
 
 //----------------------------------------------------------------------------
@@ -174,7 +182,9 @@ fei::ConnectivityBlock::~ConnectivityBlock()
 //----------------------------------------------------------------------------
 const int* fei::ConnectivityBlock::getRowConnectivity(int ID) const
 {
-  std::map<int,int>::const_iterator
+
+  syncFrom();
+  IndexType<int,int>::const_iterator
     iter = connIDsOffsetMap_.find(ID);
   if (iter == connIDsOffsetMap_.end()) {
     return(NULL);
@@ -188,7 +198,8 @@ const int* fei::ConnectivityBlock::getRowConnectivity(int ID) const
 //----------------------------------------------------------------------------
 int* fei::ConnectivityBlock::getRowConnectivity(int ID)
 {
-  std::map<int,int>::const_iterator
+  syncFrom();
+  IndexType<int,int>::const_iterator
     iter = connIDsOffsetMap_.find(ID);
   if (iter == connIDsOffsetMap_.end()) {
     return(NULL);
@@ -202,7 +213,8 @@ int* fei::ConnectivityBlock::getRowConnectivity(int ID)
 //----------------------------------------------------------------------------
 const int* fei::ConnectivityBlock::getColConnectivity(int ID) const
 {
-  std::map<int,int>::const_iterator
+  syncFrom();
+  IndexType<int,int>::const_iterator
     iter = connIDsOffsetMap_.find(ID);
   if (iter == connIDsOffsetMap_.end()) {
     return(NULL);
@@ -216,7 +228,8 @@ const int* fei::ConnectivityBlock::getColConnectivity(int ID) const
 //----------------------------------------------------------------------------
 int* fei::ConnectivityBlock::getColConnectivity(int ID)
 {
-  std::map<int,int>::const_iterator
+  syncFrom();
+  IndexType<int,int>::const_iterator
     iter = connIDsOffsetMap_.find(ID);
   if (iter == connIDsOffsetMap_.end()) {
     return(NULL);
@@ -227,3 +240,22 @@ int* fei::ConnectivityBlock::getColConnectivity(int ID)
   return(ptr+ind*numRecordsPerColConnectivity_);
 }
 
+//----------------------------------------------------------------------------
+const std::map<int,int>& fei::ConnectivityBlock::getConnectivityIDs() const {
+  if (connIDsOffsetMap_.isStdMap()) 
+    return(connIDsOffsetMap_.asMap(connIDsOffsetMap_map_));
+  connIDsOffsetMap_.resyncToMap(connIDsOffsetMap_map_);
+  return(connIDsOffsetMap_map_ );
+}
+
+//----------------------------------------------------------------------------
+std::map<int,int>& fei::ConnectivityBlock::getConnectivityIDs() {
+  if (connIDsOffsetMap_.isStdMap()) 
+    return(connIDsOffsetMap_.asMap(connIDsOffsetMap_map_));
+      
+  // This will cause a lot of work once this is set
+  doesSomeoneHaveMyMap=true;
+
+  connIDsOffsetMap_.resyncToMap(connIDsOffsetMap_map_);
+  return(connIDsOffsetMap_map_ );
+}

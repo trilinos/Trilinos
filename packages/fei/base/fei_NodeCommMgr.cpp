@@ -17,6 +17,7 @@
 #include <fei_CommUtils.hpp>
 #include <fei_NodeDescriptor.hpp>
 #include <fei_NodeCommMgr.hpp>
+#include <SNL_FEI_Structure.hpp>
 
 #include <fei_NodeDatabase.hpp>
 
@@ -25,7 +26,7 @@
 #include <fei_ErrMacros.hpp>
 
 //------Constructor-------------------------------------------------------------
-NodeCommMgr::NodeCommMgr(MPI_Comm comm, int sharedNodeOwnership)
+NodeCommMgr::NodeCommMgr(MPI_Comm comm, const SNL_FEI_Structure& problemStructure, int sharedNodeOwnership)
   : sharedNodes_(NULL),
     sharedNodesAllocated_(false),
     sharedNodeOwnership_(sharedNodeOwnership),
@@ -46,7 +47,8 @@ NodeCommMgr::NodeCommMgr(MPI_Comm comm, int sharedNodeOwnership)
     maxFields_(0),
     maxBlocks_(0),
     maxSubdomains_(0),
-    initCompleteCalled_(false)
+    initCompleteCalled_(false),
+    probStruc(problemStructure)
 {
   numProcs_ = fei::numProcs(comm_);
   localProc_= fei::localProc(comm_);
@@ -259,7 +261,11 @@ int NodeCommMgr::processRecvMessage(int srcProc, std::vector<int>& message)
     }
 
     for(int blk=0; blk<numBlocks; blk++) {
-      node->addBlock(msgPtr[numNodes+offset++]);
+      int blk_idx = probStruc.getIndexOfBlock(msgPtr[numNodes+offset++]);
+      //if blk_idx < 0 it means the incoming blockID doesn't exist on this proc
+      if (blk_idx >= 0) {
+        node->addBlockIndex(blk_idx);
+      }
     }
 
     sharedNodeSubdomains[nIndex].resize(numSubdomains);
@@ -363,7 +369,7 @@ void NodeCommMgr::packLocalNodesAndData(int* data,
       const int* fieldEqnNums = node->getFieldEqnNumbers();
       int blkEqnNumber = node->getBlkEqnNumber();
 
-      const GlobalID* nodeBlocks = node->getBlockList();
+      const std::vector<unsigned>& nodeBlocks = node->getBlockIndexList();
       std::vector<int>& subdomains = sharedNodeSubdomains[i];
 
       data[numNodes+offset++] = nodeNum;
@@ -385,7 +391,8 @@ void NodeCommMgr::packLocalNodesAndData(int* data,
       }
 
       for(int kk=0; kk<numBlocks; kk++) {
-	data[numNodes+offset++] = nodeBlocks[kk];
+        GlobalID blkID = probStruc.getBlockID(nodeBlocks[kk]);
+        data[numNodes+offset++] = blkID;
       }
 
       for(unsigned k=0; k<subdomains.size(); k++) {
@@ -438,7 +445,7 @@ void NodeCommMgr::packRemoteNodesAndData(GlobalID* data,
       int numBlocks = node->getNumBlocks();
       const int* fieldIDsPtr = node->getFieldIDList();
 
-      const GlobalID* nodeBlocks = node->getBlockList();
+      const std::vector<unsigned>& nodeBlocks = node->getBlockIndexList();
       int lindex = fei::binarySearch(sharedNodeIDs[i], &localNodeIDs[0], localNodeIDs.size());
 
       data[numNodes+offset++] = (lindex >= 0) ? 1 : 0;
@@ -461,7 +468,7 @@ void NodeCommMgr::packRemoteNodesAndData(GlobalID* data,
                  << " offset >= len." << FEI_ENDL;
          }
 
-         data[numNodes+offset++] = nodeBlocks[k];
+         data[numNodes+offset++] = probStruc.getBlockID(nodeBlocks[k]);
       }
    }
 }
@@ -1020,13 +1027,17 @@ int NodeCommMgr::exchangeSharedRemoteFieldsBlks()
  	     setNumNodalDOF((int)recvData[index][numNodes+offset++]);
 
       for(int fld=0; fld<numFields; fld++) {
-	int fieldID = (int)recvData[index][numNodes+offset++];
+        int fieldID = (int)recvData[index][numNodes+offset++];
 
-	sharedNodes_[nIndex]->addField(fieldID);
+        sharedNodes_[nIndex]->addField(fieldID);
       }
 
       for(int blk=0; blk<numBlocks; blk++) {
-	sharedNodes_[nIndex]->addBlock(recvData[index][numNodes+offset++]);
+        int blk_idx = probStruc.getIndexOfBlock(recvData[index][numNodes+offset++]);
+        //if blk_idx < 0 it means the incoming blockID doesn't exist on this proc
+        if (blk_idx >= 0) {
+          sharedNodes_[nIndex]->addBlockIndex(blk_idx);
+        }
       }
     }
   }

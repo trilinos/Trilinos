@@ -119,7 +119,8 @@ class SNL_FEI_Structure : public Lookup {
 
    int initComplete(bool generateGraph = true);
 
-   std::map<int,int>& getFieldDatabase() { return(*fieldDatabase_); };
+   const std::vector<int>& getFieldIDs() const
+     { return fieldIDs_; }
 
    /** implementation of Lookup::getFieldIDsPtr */
    const int* getFieldIDsPtr()
@@ -200,8 +201,14 @@ class SNL_FEI_Structure : public Lookup {
     */
    int getBlockDescriptor_index(int index, BlockDescriptor*& block);
 
-   /** Given a blockID, return its index. */
-   int getIndexOfBlock(GlobalID blockID);
+   /** Given a blockID, return its index. Returns -1 if blockID not found. */
+   int getIndexOfBlock(GlobalID blockID) const;
+   /** Given an index, return a blockID. Returns -1 if index out of range. */
+   int getBlockID(unsigned index) const
+   {
+     if (index < blockIDs_.size()) return blockIDs_[index];
+     return -1;
+   }
 
    int allocateBlockConnectivity(GlobalID blockID);
    void destroyConnectivityTables();
@@ -624,6 +631,8 @@ class SNL_FEI_Structure : public Lookup {
 
    int localProc_, masterProc_, numProcs_;
 
+   std::vector<int> fieldIDs_;
+   std::vector<int> fieldSizes_;
    std::map<int,int>* fieldDatabase_;
    fei::FieldDofMap<int> fieldDofMap_;
    std::vector<int> workarray_;

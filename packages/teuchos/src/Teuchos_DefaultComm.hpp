@@ -50,38 +50,48 @@
 
 namespace Teuchos {
 
-/** \brief Returns a default global communicator appropriate for the
- * enviroment.
- *
- * If HAVE_MPI is defined, then an instance of <tt>MpiComm</tt> will be
- * created from <tt>MPI_COMM_WORLD</tt>.  Otherwise, a <tt>SerialComm</tt>
- * is returned.
- */
+/// \class DefaultComm
+/// \brief Return a default global communicator appropriate for the build.
+///
+/// Use this class to get a \c Teuchos::Comm instance representing the
+/// default global communicator.  If Teuchos was built with MPI (i.e.,
+/// if the HAVE_MPI macro is defined), then the default communicator
+/// wraps MPI_COMM_WORLD.  Otherwise, it is a "serial" communicator
+/// (containing one process, whose rank is zero).
 template<typename Ordinal>
 class DefaultComm {
 public:
 
-  /** \brief Return the default glocal communicator.
-   *
-   * Note that this function can not be called until after MPI has been
-   * initialized if MPI is expected!
-   */
+  /// \brief Return the default global communicator.
+  ///
+  /// \warning When running with MPI, do not call this function until
+  ///   after MPI has been initialized!  You can use \c
+  ///   GlobalMPISesssion to initialize MPI without explicitly
+  ///   depending on the MPI interface or the mpi.h header file.  (If
+  ///   Trilinos was not built with MPI, \c GlobalMPISession will do
+  ///   the right thing, so you can use it unconditionally.)
   static Teuchos::RCP<const Comm<Ordinal> > getComm();
 
-  /** \brief Return a serial comm if the input comm in null.
-   */
+  /// \brief Return a serial comm if the input comm is null.
+  ///
+  /// If the input communicator \c comm is null, return the default
+  /// serial communicator.  Otherwise, just return the input.
   static Teuchos::RCP<const Comm<Ordinal> >
   getDefaultSerialComm( const Teuchos::RCP<const Comm<Ordinal> > &comm );
 
 private:
 
+  /// \brief The default global communicator.  
+  ///
+  /// If Teuchos was built with MPI, this is a wrapper for
+  /// MPI_COMM_WORLD.  Otherwise, this is a "serial" communicator
+  /// (containing one process, whose rank is zero).
   static Teuchos::RCP<const Comm<Ordinal> > comm_;
-  static Teuchos::RCP<const Comm<Ordinal> > defaultSerialComm_;
 
+  //! A "serial" communicator (containing one process, whose rank is zero).
+  static Teuchos::RCP<const Comm<Ordinal> > defaultSerialComm_;
 };
 
-// ///////////////////////////
-// Template Implementations
 
 template<typename Ordinal>
 Teuchos::RCP<const Teuchos::Comm<Ordinal> >

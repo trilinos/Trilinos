@@ -8,6 +8,7 @@
 #include "NOX_Thyra.H"
 #include "NOX_PrePostOperator_Vector.H"
 #include "NOX_PrePostOperator_RowSumScaling.H"
+#include "NOX_MeritFunction_Weighted.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
 // ****************************************************************
@@ -310,21 +311,30 @@ void Thyra::NOXNonlinearSolver::setupRowSumScalingObjects()
   Teuchos::ParameterList& nox_parameters = *param_list_;
   
   if (nox_parameters.sublist("Solver Options").
-      isType<Teuchos::RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator")) {
+      isType< RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator")) {
     
-    Teuchos::RCP<NOX::Abstract::PrePostOperator> user_observer = 
-      nox_parameters.sublist("Solver Options").get<Teuchos::RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator");
+    RCP<NOX::Abstract::PrePostOperator> user_observer = 
+      nox_parameters.sublist("Solver Options").get< RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator");
     
-    Teuchos::RCP<NOX::PrePostOperatorVector> observer_vector = Teuchos::rcp(new NOX::PrePostOperatorVector);
+    RCP<NOX::PrePostOperatorVector> observer_vector = Teuchos::rcp(new NOX::PrePostOperatorVector);
     observer_vector->pushBack(row_sum_observer);
     observer_vector->pushBack(user_observer);
     
-    nox_parameters.sublist("Solver Options").set<Teuchos::RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator", observer_vector);
+    nox_parameters.sublist("Solver Options").set< RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator", observer_vector);
 
   }
   else
-    nox_parameters.sublist("Solver Options").set<Teuchos::RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator", row_sum_observer);
+    nox_parameters.sublist("Solver Options").set< RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator", row_sum_observer);
   
+
+  // Set the weighted merit function.  Throw error if a user defined
+  // merit funciton is present.
+  TEUCHOS_ASSERT( !(nox_parameters.sublist("Solver Options").isType<RCP<NOX::MeritFunction::Generic> >("User Defined Merit Function")));
+  
+  RCP<NOX::MeritFunction::Generic> mf = rcp(new NOX::Thyra::WeightedMeritFunction(scaling_vector_));
+
+  nox_parameters.sublist("Solver Options").set<RCP<NOX::MeritFunction::Generic> >("User Defined Merit Function",mf);
+
 }
 
 // ****************************************************************

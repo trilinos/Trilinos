@@ -85,13 +85,13 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
 
   IF (NOT PARSE_SKIP_STANDARD_DEPS_CHECK)
     SET(TEST_BLOCKS ${TEST_BLOCKS}
-      "Dumping the XML dependencies file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/TrilinosPackageDependencies.xml"
-      "CDASH_SUBPROJECT_XML_FILE='${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/CDashSubprojectDependencies.xml'"
+      "Dumping the XML dependencies file .*${TEST_NAME}/TrilinosPackageDependencies.xml"
+      "CDASH_SUBPROJECT_XML_FILE='.*${TEST_NAME}/CDashSubprojectDependencies.xml'"
       )
     IF (PYTHON_EXECUTABLE)
       SET(TEST_BLOCKS ${TEST_BLOCKS}
-        "Dumping the HTML dependencies webpage file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/TrilinosPackageDependenciesTable.html"
-        "Dumping the CDash XML dependencies file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/CDashSubprojectDependencies.xml"
+        "Dumping the HTML dependencies webpage file .*${TEST_NAME}/TrilinosPackageDependenciesTable.html"
+        "Dumping the CDash XML dependencies file .*${TEST_NAME}/CDashSubprojectDependencies.xml"
         )
     ENDIF()
   ENDIF()
@@ -245,8 +245,12 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "preCopyrightTrilinos: Doing GIT update from URL 'url1:/git/preCopyrightTrilinos' to dir '.*/MockTrilinos/preCopyrightTrilinos'"
     "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/cmake/tribits/ctest/UnitTests/TrilinosFramework_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/preCopyrightTrilinos.update.out."
+    "EXECUTE_PROCESS.COMMAND;/somebasedir/git.log.--pretty=format:.*.-C.HEAD..ORIG_HEAD.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY;.*/tribits/package_arch/UnitTests/MockTrilinos/preCopyrightTrilinos."
     "Dakota: Doing initial SVN clone/checkout from URL 'url3/somedirpath/trunk' to dir 'packages/TriKota/Dakota'"
     "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/MockTrilinos.OUTPUT_FILE..*/cmake/tribits/ctest/UnitTests/TrilinosFramework_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/Dakota.update.out."
+    "EXECUTE_PROCESS.echo.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY.*/tribits/package_arch/UnitTests/MockTrilinos/packages/TriKota/Dakota."
+    ".... preCopyrightTrilinos updates."
+    "... Dakota cloned version."
     "Adding extra Continuous repository preCopyrightTrilinos"
     "Adding extra Continuous repository Dakota"
     "Trilinos_NUM_PACKAGES='23'"
@@ -260,6 +264,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 24"
     "Final set of non-enabled packages:  Stokhos 1"
+    "CTEST_NOTES_FILES=.*/Updates.txt.*/CMakeCache.clean.txt"
     "Procesing current package Phalanx: libs='ON', tests='ON'"
     "Procesing current package Stalix: libs='ON', tests='ON'"
   )

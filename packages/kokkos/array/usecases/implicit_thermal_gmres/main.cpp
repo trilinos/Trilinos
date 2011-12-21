@@ -45,41 +45,75 @@
 #include <cstdlib>
 
 namespace Test{
-  void test_Host(int beg, int end, int r);
-  void test_TPI (int beg, int end, int r, int t);
-  void test_Pthread (int beg, int end, int r, int t);
-  void test_TBB(int beg, int end, int r, int t);
-  void test_Cuda(int beg, int end, int r);
+  void test_Host (const int beg, const int end, const int runs, const int num_iters);
+  void test_TPI (const int beg, const int end, const int runs, const int num_iters, const int threads);
+  void test_Pthread (const int beg, const int end, const int runs, const int num_iters, const int threads);
+  void test_TBB (const int beg, const int end, const int runs, const int num_iters, const int threads);
+  void test_Cuda (const int beg, const int end, const int runs, const int num_iters);
 }
 
-int main(int argc, char ** argv)
+int 
+main (int argc, char ** argv)
 {
-  int beg = 10 ;
-  int end = 15 ;
-  int runs = 1 ;
-  int threads = 4;
+  int beg = 10;
+  int end = 15;
+  int runs = 3;
+  int num_iters = 30;
+  int threads = 0; // Let the library guess
 
-  if ( argc == 5) {
-    beg = atoi(argv[1]);
-    end = atoi(argv[2]);
-    runs = atoi(argv[3]);
-    threads = atoi(argv[4]);
-  }
+  //
+  // Command-line arguments:
+  //
+  // [beg, end] form an (intger) range of problem sizes.  Tests are
+  // run for each integer i in that range.  The problem dimensions are
+  // calculated as
+  //
+  // // Number of elements along the x direction: 
+  // // cube root of 2^i.  
+  // ix = (int) cbrt (static_cast<double> (1 << i)); 
+  // // Number of elements along the y direction
+  // iy = ix + 1;
+  // // Number of elements along the z direction
+  // iz = iy + 1;
+  // // Total number of elements
+  // n = ix * iy * iz;
+  //
+  // runs: Number of trials (entire runs, from assembly to solve)
+  //
+  // num_iters: Number of (GMRES) solver iterations
+  //
+  // threads: Number of threads (only applies to Pthread, TPI, and TBB devices)
+  //
+  if (argc > 1) {
+    beg = atoi (argv[1]);
+  }    
+  if (argc > 2) {
+    end = atoi (argv[2]);
+  }    
+  if (argc > 3) {
+    runs = atoi (argv[3]);
+  }    
+  if (argc > 4) {
+    num_iters = atoi (argv[4]);
+  }    
+  if (argc > 5) {
+    threads = atoi (argv[5]);
+  }    
 
 #ifdef TEST_KOKKOS_HOST
-  Test::test_Host(beg, end, runs);
+  Test::test_Host (beg, end, runs, num_iters);
 #endif
 #ifdef TEST_KOKKOS_PTHREAD
-  Test::test_Pthread (beg, end, runs, threads);
+  Test::test_Pthread (beg, end, runs, num_iters, threads);
 #endif
 #ifdef TEST_KOKKOS_TPI
-  Test::test_TPI (beg, end, runs, threads);
+  Test::test_TPI (beg, end, runs, num_iters, threads);
 #endif
 #ifdef TEST_KOKKOS_TBB
-  Test::test_TBB (beg, end, runs, threads);
+  Test::test_TBB (beg, end, runs, num_iters, threads);
 #endif
 #ifdef TEST_KOKKOS_CUDA
-  Test::test_Cuda(beg , end, runs);
+  Test::test_Cuda (beg , end, runs, num_iters);
 #endif
 
   return 0;
