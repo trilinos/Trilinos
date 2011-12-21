@@ -37,9 +37,9 @@ int AlgRandom(
   //   R. Durstenfeld, "Algorithm 235: Random permutation", CACM, vol. 7, 1964.
 
   // Start with the identity permutation.
-  const size_t n= model->getLocalNumIdentifiers();
-  lno_t *perm;
-  perm = new lno_t[n];
+  const size_t n = model->getLocalNumIdentifiers();
+  RCP<lno_t> perm;
+  perm = solution->getPermRCP();
   for (lno_t i=0; i<n; i++){
     perm[i] = i;
   }
@@ -54,13 +54,6 @@ int AlgRandom(
     perm[i] = perm[j];
     perm[j] = temp;
   }
-
-  // Set solution.
-  solution->setPermutation(n,
-               (gid_t *) NULL, // TODO
-               perm);
-
-  // delete [] perm; // Can't delete perm yet, RCP would help here?
 
   return ierr;
 }
