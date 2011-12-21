@@ -4545,6 +4545,29 @@ Set preconditioner operator for solve.
 Note: This should only be called if hasPreconditioner() returns true.
 ";
 
+%feature("docstring")  NOX::Epetra::LinearSystem::getNumLinearSolves "virtual int NOX::Epetra::LinearSystem::getNumLinearSolves()
+
+Statistics for number of times the linear solver has been called (def:
+0) ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystem::getLinearItersLastSolve "virtual int
+NOX::Epetra::LinearSystem::getLinearItersLastSolve()
+
+Statistics for number of iterations taken in last linear solve (def:
+0) ";
+
+%feature("docstring")  NOX::Epetra::LinearSystem::getLinearItersTotal
+"virtual int NOX::Epetra::LinearSystem::getLinearItersTotal()
+
+Statistics for cumulative number of iterations in all linear solve
+(def: 0) ";
+
+%feature("docstring")  NOX::Epetra::LinearSystem::getAchievedTol "virtual double NOX::Epetra::LinearSystem::getAchievedTol()
+
+Statistics for the achieved tolerance of last linear solve (def: 0.0)
+";
+
 
 // File: classNOX_1_1Epetra_1_1LinearSystemAztecOO.xml
 %feature("docstring") NOX::Epetra::LinearSystemAztecOO "
