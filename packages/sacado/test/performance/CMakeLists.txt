@@ -7,7 +7,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
 
   TRIBITS_ADD_EXECUTABLE(
     fad_expr_depth
-    SOURCES fad_expr_depth.cpp
+    SOURCES fad_expr_depth.cpp fad_expr_funcs.hpp fad_expr_funcs.cpp
     COMM serial mpi
     XHOSTTYPE AIX
     )
