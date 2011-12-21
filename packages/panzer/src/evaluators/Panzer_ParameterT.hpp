@@ -6,15 +6,15 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Parameter,p)
-{
-  std::string target_name = p.get<std::string>("Name");
-  Teuchos::RCP<PHX::DataLayout> data_layout = 
-    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
-  
-  initial_value = ScalarT(p.get<double>("Value"));
+template<typename EvalT, typename Traits>
+Parameter<EvalT, Traits>::
+Parameter(const std::string name,
+	  const Teuchos::RCP<PHX::DataLayout>& data_layout,
+	  const double in_initial_value)
+{ 
+  initial_value = ScalarT(in_initial_value);
 
-  target_field = PHX::MDField<ScalarT, Cell, Point>(target_name, data_layout);
+  target_field = PHX::MDField<ScalarT, Cell, Point>(name, data_layout);
   
   this->addEvaluatedField(target_field);
  
@@ -26,13 +26,18 @@ PHX_EVALUATOR_CTOR(Parameter,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Parameter,worksets,fm)
+template<typename EvalT, typename Traits>
+void Parameter<EvalT, Traits>::
+postRegistrationSetup(typename Traits::SetupData worksets,
+		      PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(target_field,fm);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Parameter,workset)
+template<typename EvalT, typename Traits>
+void Parameter<EvalT, Traits>::
+evaluateFields(typename Traits::EvalData workset)
 { 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;
