@@ -131,6 +131,9 @@ namespace Sacado {
       template <int Arg>
       bool isActive() const { return false; }
 
+      //! Return whether expression is linear
+      bool isLinear() const { return true; }
+
     protected:
       
       //! The constant
