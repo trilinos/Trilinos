@@ -99,11 +99,11 @@ public:
    *           of global Ids to processes that matches that of the input
    *           data that instantiated this InputAdapter.
    *  \param out On return this should point to a newly created object 
-   *            with the specified partitioning.
-   *  \return   Returns the number of Ids in the new partitioning.
+   *            with the specified partition.
+   *  \return   Returns the number of Ids in the new partition.
    *
-   * TODO - A solution needs to be more than a list of partitions, but
-   *   also how those partitions map to processes.  For now it's
+   * TODO - A solution needs to be more than a list of parts, but
+   *   also how those parts map to processes.  For now,
    *   process "p" gets part "p".
    */
 
