@@ -26,7 +26,8 @@ namespace panzer {
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set;
   
     user_app::MyFactory my_factory;
-    eq_set = my_factory.buildEquationSet(ies, cell_data, false);
+    Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
+    eq_set = my_factory.buildEquationSet(ies, cell_data, global_data, false);
   }
 
   TEUCHOS_UNIT_TEST(equation_set, transient)
@@ -46,7 +47,8 @@ namespace panzer {
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set;
   
     user_app::MyFactory my_factory;
-    eq_set = my_factory.buildEquationSet(ies, cell_data, true);
+    Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
+    eq_set = my_factory.buildEquationSet(ies, cell_data, global_data, true);
   }
 
 }

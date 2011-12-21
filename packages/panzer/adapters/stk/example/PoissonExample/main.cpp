@@ -20,6 +20,7 @@
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
+#include "Panzer_GlobalData.hpp"
 
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"

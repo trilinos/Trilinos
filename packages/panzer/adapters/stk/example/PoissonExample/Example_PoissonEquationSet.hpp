@@ -33,6 +33,7 @@ public:
      */
    PoissonEquationSet(const panzer::InputEquationSet& ies,
                       const panzer::CellData& cell_data,
+		      const Teuchos::RCP<panzer::GlobalData>& global_data,
                       const bool build_transient_support);
     
    /** The specific evaluators are registered with the field manager argument.

@@ -61,7 +61,7 @@ void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
   for (std::size_t i=0; i < input_eq_sets.size(); ++i) {
  
     RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set
-      = factory.buildEquationSet(input_eq_sets[i], m_cell_data, build_transient_support);
+      = factory.buildEquationSet(input_eq_sets[i], m_cell_data, m_global_data, build_transient_support);
 
     // setup element blocks: for each evaluation type
     for(panzer::EquationSet_TemplateManager<panzer::Traits>::iterator itr=eq_set->begin();
