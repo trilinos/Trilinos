@@ -243,7 +243,11 @@ int main(int argc, char *argv[]) {
   RCP<SmootherPrototype> coarsestSmooProto;
   std::string type = "";
   Teuchos::ParameterList coarsestSmooList;
+#if defined(HAVE_AMESOS_SUPERLU)
   coarsestSmooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
+#else
+  coarsestSmooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
+#endif
   RCP<SmootherFactory> coarsestSmooFact;
   coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto));
   H->SetCoarsestSolver(*coarsestSmooFact);
