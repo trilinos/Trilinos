@@ -39,9 +39,9 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    if (comm->getSize() < 2 || comm->getSize() > 5) {
+    if (comm->getSize() > 5) {
       out << std::endl;
-      out << "This test must be run on 2 to 5 processes." << std::endl;
+      out << "This test must be run on 1 to 5 processes." << std::endl;
       TEST_EQUALITY(true, true);
       return;
     }
@@ -49,7 +49,6 @@ namespace MueLuTests {
     Level level;
     RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
     level.SetFactoryManager(factoryHandler);
-    //int nx=199;
     int nx=7;
     int ny=nx;
     GO numGlobalElements = nx*ny;
@@ -69,12 +68,10 @@ namespace MueLuTests {
     Teuchos::ArrayRCP<LO> eprData = entriesPerRow->getDataNonConst(0);
     for (Teuchos::ArrayRCP<LO>::iterator i=eprData.begin(); i!=eprData.end(); ++i) {
       *i = (LO)(std::floor(((ST::random()+1)*0.5*maxEntriesPerRow)+1));
-      //*i = maxEntriesPerRow*(comm->getRank()+1);
     }
 
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     fos->setOutputToRootOnly(-1);
-    //entriesPerRow->describe(*fos,Teuchos::VERB_EXTREME);
 
     Teuchos::Array<Scalar> vals(maxEntriesPerRow);
     Teuchos::Array<GO> cols(maxEntriesPerRow);
@@ -90,21 +87,15 @@ namespace MueLuTests {
     }
 
     A->fillComplete();
-    //A->describe(*fos, Teuchos::VERB_EXTREME);
     level.Set("A",A);
 
     //build coordinates
     RCP<const Map> rowMap = A->getRowMap();
-    //RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    //fos->setOutputToRootOnly(-1);
-    //rowMap->describe(*fos,Teuchos::VERB_EXTREME);
     Teuchos::ParameterList list;
     list.set("nx",nx);
     list.set("ny",ny);
     RCP<MultiVector> XYZ = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map>("2D",rowMap,list);
-    //std::cout << "pid " << comm->getRank() << ": XYZ local leng = " << XYZ->getLocalLength() << std::endl;
     level.Set("coordinates",XYZ);
-    //XYZ->describe(*fos,Teuchos::VERB_EXTREME);
 
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(comm));
     LO numPartitions = comm->getSize();
@@ -113,7 +104,6 @@ namespace MueLuTests {
     zoltan->Build(level);
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = level.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition");
-    //decomposition->describe(*fos,Teuchos::VERB_EXTREME);
     /* //TODO temporary code to have the trivial decomposition (no change)
     ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
     for (ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
@@ -161,6 +151,10 @@ namespace MueLuTests {
 
     ArrayRCP<GO> expectedResults(numPartitions);
     switch (comm->getSize()) {
+       case 1:
+         expectedResults[0] = 807;
+         break;
+
        case 2:
          expectedResults[0] = 364;
          expectedResults[1] = 363;
@@ -197,7 +191,6 @@ namespace MueLuTests {
     ArrayRCP<const LO> gtvData = globalTallyVec->getData(0);
 
     for (int i=0; i<numPartitions; ++i) {
-      // if pid 0, compare expectedResults[i] to gtvData[i].
       if (comm->getRank() == 0) TEST_EQUALITY( expectedResults[i], gtvData[i]);
     }
 
