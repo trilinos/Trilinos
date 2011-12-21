@@ -62,17 +62,14 @@ void set_shared_ids(MPI_Comm comm,
   if (numProcs < 2) return;
   int myProc = fei::localProc(comm);
 
-  const std::map<int,int>& rmap = records.getGlobalToLocalMap();
+  const fei::IndexType<int,int>& rmap = records.getNativeGlobalToLocalMap();
   int local_rmap_size = rmap.size();
   int global_rmap_size = 0;
   fei::GlobalMax(comm, local_rmap_size, global_rmap_size);
   if (global_rmap_size == 0) return;
 
-  std::map<int,int>::const_iterator highest = rmap.end();
-  if (local_rmap_size > 0) --highest;
-
-  int lowest_local_id = local_rmap_size>0 ? rmap.begin()->first : 0;
-  int highest_local_id = local_rmap_size>0 ? highest->first : 0;
+  int lowest_local_id  = local_rmap_size>0 ? rmap.getMinKey() : 0;
+  int highest_local_id = local_rmap_size>0 ? rmap.getMaxKey() : 0;
 
   int lowest_global_id = 0;
   int highest_global_id = 0;

@@ -30,194 +30,399 @@
 // @HEADER
 
 #include "Sacado_Random.hpp"
-#include "Sacado_Fad_DFad.hpp"
-#include "Sacado_ELRFad_DFad.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Fad/fad.h"
+
 #include "Teuchos_Time.hpp"
+#include "Teuchos_Array.hpp"
+#include <fstream>
+
+#include "fad_expr_funcs.hpp"
 
 // A simple performance test that computes the derivative of expressions of
 // various depths.
 
-void FAD::error(const char *msg) {
-  std::cout << msg << std::endl;
+template <typename T>
+void do_times_mult(const T x[], int nloop, Teuchos::Array<double>& times)
+{
+  times.resize(ExprFuncs<T>::nfunc);
+    
+  T y = 0.0;
+  Teuchos::Time timer("mult", false);
+  int i = 0;
+
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::mult1(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::mult2(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::mult3(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::mult4(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::mult5(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::mult10(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::mult15(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::mult20(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
 }
 
 template <typename T>
-inline void
-mult1(const T& x1, const T& x2, T& y) {
-  y = x1*x2;
+void do_times_add(const T x[], int nloop, Teuchos::Array<double>& times)
+{
+  times.resize(ExprFuncs<T>::nfunc);
+    
+  T y = 0.0;
+  Teuchos::Time timer("add", false);
+  int i = 0;
+
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::add1(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::add2(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::add3(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::add4(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::add5(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::add10(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::add15(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::add20(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
 }
 
 template <typename T>
-inline void
-mult2(const T& x1, const T& x2, T& y) {
-  y = x1*x2*x1;
-}
+void do_times_nest(const T x[], int nloop, Teuchos::Array<double>& times)
+{
+  times.resize(ExprFuncs<T>::nfunc);
+    
+  T y = 0.0;
+  Teuchos::Time timer("nest", false);
+  int i = 0;
 
-template <typename T>
-inline void
-mult3(const T& x1, const T& x2, T& y) {
-  y = x1*x2*x1*x2;
-}
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::nest1(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
 
-template <typename T>
-inline void
-mult4(const T& x1, const T& x2, T& y) {
-  y = x1*x2*x1*x2*x1;
-}
-
-template <typename T>
-inline void
-mult5(const T& x1, const T& x2, T& y) {
-  y = x1*x2*x1*x2*x1*x2;
-}
-
-template <typename T>
-inline void
-mult10(const T& x1, const T& x2, T& y) {
-  y = x1*x2*x1*x2*x1*x2*x1*x2*x1*x2*x1;
-}
-
-template <typename T>
-inline void
-mult15(const T& x1, const T& x2, T& y) {
-  y = x1*x2*x1*x2*x1*x2*x1*x2*x1*x2*x1*x2*x1*x2*x1*x2;
-}
-
-template <typename T>
-inline void
-mult20(const T& x1, const T& x2, T& y) {
-  y = x1*x2*x1*x2*x1*x2*x1*x2*x1*x2*x1*x2*x1*x2*x1*x2*x1*x2*x1*x2*x1;
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::nest2(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::nest3(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::nest4(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::nest5(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::nest10(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::nest15(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
+  
+  timer.start(true);
+  for (int j=0; j<nloop; j++)
+    ExprFuncs<T>::nest20(x, y);
+  timer.stop();
+  times[i++] = timer.totalElapsedTime() / nloop;
+  y = 0.0;
 }
 
 template <typename FadType>
-void
-do_times(const std::string& name)
+void print_times(const std::string& screen_name, const std::string& file_name)
 {
-  const int nfunc = 8;
   const int nderiv = 10;
-  int deriv_dim[nderiv];
-  int nloop[nderiv];
-  double times[nfunc][nderiv];
+  int deriv_dim[nderiv] = { 0, 1, 3, 5, 10, 15, 20, 30, 40, 50 };
+  Sacado::Random<double> urand(0.0, 1.0);
   int p = 1;
   int w = p+7;
+  std::ofstream file(file_name.c_str(), std::ios::out);
 
+  {
   std::cout.setf(std::ios::scientific);
   std::cout.precision(p);
-  std::cout << name << " Times (sec): " << std::endl;
-  std::cout << std::setw(5) << "deriv" << " "
-	    << std::setw(w) << "mult1" << " "
-	    << std::setw(w) << "mult2" << " "
-	    << std::setw(w) << "mult3" << " "
-	    << std::setw(w) << "mult4" << " "
-	    << std::setw(w) << "mult5" << " "
-	    << std::setw(w) << "mult10" << " "
-	    << std::setw(w) << "mult15" << " "
-	    << std::setw(w) << "mult20" << std::endl;
+  std::cout << screen_name << " Relative times (time/(func_time*nderiv)): " 
+	    << std::endl;
+  std::cout << std::setw(5) << "deriv" << " ";
+  for (int i=0; i<ExprFuncs<FadType>::nfunc; i++)
+    std::cout << std::setw(w) << ExprFuncs<FadType>::mult_names[i] << " ";
+  std::cout << std::endl;
   std::cout << "===== ";
-  for (int i=0; i<nfunc; i++) {
+  for (int i=0; i<ExprFuncs<FadType>::nfunc; i++) {
     for (int j=0; j<w; j++)
       std::cout << '=';
     std::cout << " ";
   }
   std::cout << std::endl;
+
+  // Get function evaluation times
+  double x[ExprFuncs<double>::nx_max];
+  for (int i=0; i<ExprFuncs<double>::nx_max; i++)
+    x[i] = urand.number();
+  int nloop_func = 10000000;
+  Teuchos::Array<double> times_func;
+  do_times_mult(x, nloop_func, times_func);
   
-  for (int i=0; i<5; i++)
-    deriv_dim[i] = i;
-  for (int i=5; i<nderiv; i++)
-    deriv_dim[i] = 5*(i-4);
-  for (int i=0; i<nderiv; i++)
-    nloop[i] = static_cast<int>(1000000.0/(deriv_dim[i]+1));
-
-  FadType x1, x2, y;
-  Sacado::Random<double> urand(0.0, 1.0);
+  // Get times for each derivative dimension
   for (int i=0; i<nderiv; i++) {
-    std::cout << std::setw(5) << deriv_dim[i] << " ";
-
-    x1 = FadType(deriv_dim[i],  urand.number());
-    x2 = FadType(deriv_dim[i],  urand.number());
-    y = 0.0;
-    for (int j=0; j<deriv_dim[i]; j++) {
-      x1.fastAccessDx(j) = urand.number();
-      x2.fastAccessDx(j) = urand.number();
+    FadType fx[ExprFuncs<FadType>::nx_max];
+    for (int k=0; k<ExprFuncs<FadType>::nx_max; k++) {
+      fx[k] = FadType(deriv_dim[i],  urand.number());
+      for (int j=0; j<deriv_dim[i]; j++) {
+	fx[k].fastAccessDx(j) = urand.number();
+      }
     }
+    
+    int nloop = static_cast<int>(1000000.0/(deriv_dim[i]+1));
+    Teuchos::Array<double> times;
+    do_times_mult(fx, nloop, times);
+     
+    // Print times
+    int d = deriv_dim[i];
+    if (d == 0)
+      d = 1;
+    std::cout << std::setw(5) << deriv_dim[i] << " ";
+    file << deriv_dim[i] << " ";
+    for (int j=0; j<times.size(); j++) {
+      double rel_time = times[j]/(times_func[j]*d);
+      std::cout << std::setw(w) << rel_time << " ";
+      file << rel_time << " ";
+    }
+    std::cout << std::endl;
+    file << std::endl;
+  }
+  }
 
-    Teuchos::Time timer("mult", false);
+  {
+  std::cout.setf(std::ios::scientific);
+  std::cout.precision(p);
+  std::cout << screen_name << " Relative times (time/(func_time*nderiv)): " 
+	    << std::endl;
+  std::cout << std::setw(5) << "deriv" << " ";
+  for (int i=0; i<ExprFuncs<FadType>::nfunc; i++)
+    std::cout << std::setw(w) << ExprFuncs<FadType>::add_names[i] << " ";
+  std::cout << std::endl;
+  std::cout << "===== ";
+  for (int i=0; i<ExprFuncs<FadType>::nfunc; i++) {
+    for (int j=0; j<w; j++)
+      std::cout << '=';
+    std::cout << " ";
+  }
+  std::cout << std::endl;
 
-    timer.start(true);
-    for (int j=0; j<nloop[i]; j++)
-      mult1(x1, x2, y);
-    timer.stop();
-    times[0][i] = timer.totalElapsedTime() / nloop[i];
-    y = 0.0;
-    std::cout << std::setw(w) << times[0][i] << " ";
+  // Get function evaluation times
+  double x[ExprFuncs<double>::nx_max];
+  for (int i=0; i<ExprFuncs<double>::nx_max; i++)
+    x[i] = urand.number();
+  int nloop_func = 10000000;
+  Teuchos::Array<double> times_func;
+  do_times_add(x, nloop_func, times_func);
+  
+  // Get times for each derivative dimension
+  for (int i=0; i<nderiv; i++) {
+    FadType fx[ExprFuncs<FadType>::nx_max];
+    for (int k=0; k<ExprFuncs<FadType>::nx_max; k++) {
+      fx[k] = FadType(deriv_dim[i],  urand.number());
+      for (int j=0; j<deriv_dim[i]; j++) {
+	fx[k].fastAccessDx(j) = urand.number();
+      }
+    }
+    
+    int nloop = static_cast<int>(1000000.0/(deriv_dim[i]+1));
+    Teuchos::Array<double> times;
+    do_times_add(fx, nloop, times);
+     
+    // Print times
+    int d = deriv_dim[i];
+    if (d == 0)
+      d = 1;
+    std::cout << std::setw(5) << deriv_dim[i] << " ";
+    file << deriv_dim[i] << " ";
+    for (int j=0; j<times.size(); j++) {
+      double rel_time = times[j]/(times_func[j]*d);
+      std::cout << std::setw(w) << rel_time << " ";
+      file << rel_time << " ";
+    }
+    std::cout << std::endl;
+    file << std::endl;
+  }
+  }
 
-    timer.start(true);
-    for (int j=0; j<nloop[i]; j++)
-      mult2(x1, x2, y);
-    timer.stop();
-    times[1][i] = timer.totalElapsedTime() / nloop[i];
-    y = 0.0;
-    std::cout << std::setw(w) << times[1][i] << " ";
+  {
+  std::cout.setf(std::ios::scientific);
+  std::cout.precision(p);
+  std::cout << screen_name << " Relative times (time/(func_time*nderiv)): " 
+	    << std::endl;
+  std::cout << std::setw(5) << "deriv" << " ";
+  for (int i=0; i<ExprFuncs<FadType>::nfunc; i++)
+    std::cout << std::setw(w) << ExprFuncs<FadType>::nest_names[i] << " ";
+  std::cout << std::endl;
+  std::cout << "===== ";
+  for (int i=0; i<ExprFuncs<FadType>::nfunc; i++) {
+    for (int j=0; j<w; j++)
+      std::cout << '=';
+    std::cout << " ";
+  }
+  std::cout << std::endl;
 
-    timer.start(true);
-    for (int j=0; j<nloop[i]; j++)
-      mult3(x1, x2, y);
-    timer.stop();
-    times[2][i] = timer.totalElapsedTime() / nloop[i];
-    y = 0.0;
-    std::cout << std::setw(w) << times[2][i] << " ";
-
-    timer.start(true);
-    for (int j=0; j<nloop[i]; j++)
-      mult4(x1, x2, y);
-    timer.stop();
-    times[3][i] = timer.totalElapsedTime() / nloop[i];
-    y = 0.0;
-    std::cout << std::setw(w) << times[3][i] << " ";
-
-    timer.start(true);
-    for (int j=0; j<nloop[i]; j++)
-      mult5(x1, x2, y);
-    timer.stop();
-    times[4][i] = timer.totalElapsedTime() / nloop[i];
-    y = 0.0;
-    std::cout << std::setw(w) << times[4][i] << " ";
-
-    timer.start(true);
-    for (int j=0; j<nloop[i]; j++)
-      mult10(x1, x2, y);
-    timer.stop();
-    times[5][i] = timer.totalElapsedTime() / nloop[i];
-    y = 0.0;
-    std::cout << std::setw(w) << times[5][i] << " ";
-
-    timer.start(true);
-    for (int j=0; j<nloop[i]; j++)
-      mult15(x1, x2, y);
-    timer.stop();
-    times[6][i] = timer.totalElapsedTime() / nloop[i];
-    y = 0.0;
-    std::cout << std::setw(w) << times[6][i] << " ";
-
-    timer.start(true);
-    for (int j=0; j<nloop[i]; j++)
-      mult20(x1, x2, y);
-    timer.stop();
-    times[7][i] = timer.totalElapsedTime() / nloop[i];
-    y = 0.0;
-    std::cout << std::setw(w) << times[7][i] << " ";
-
-    std::cout << endl;
+  // Get function evaluation times
+  double x[ExprFuncs<double>::nx_max];
+  for (int i=0; i<ExprFuncs<double>::nx_max; i++)
+    x[i] = urand.number();
+  int nloop_func = 10000000;
+  Teuchos::Array<double> times_func;
+  do_times_nest(x, nloop_func, times_func);
+  
+  // Get times for each derivative dimension
+  for (int i=0; i<nderiv; i++) {
+    FadType fx[ExprFuncs<FadType>::nx_max];
+    for (int k=0; k<ExprFuncs<FadType>::nx_max; k++) {
+      fx[k] = FadType(deriv_dim[i],  urand.number());
+      for (int j=0; j<deriv_dim[i]; j++) {
+	fx[k].fastAccessDx(j) = urand.number();
+      }
+    }
+    
+    int nloop = static_cast<int>(1000000.0/(deriv_dim[i]+1));
+    Teuchos::Array<double> times;
+    do_times_nest(fx, nloop, times);
+     
+    // Print times
+    int d = deriv_dim[i];
+    if (d == 0)
+      d = 1;
+    std::cout << std::setw(5) << deriv_dim[i] << " ";
+    file << deriv_dim[i] << " ";
+    for (int j=0; j<times.size(); j++) {
+      double rel_time = times[j]/(times_func[j]*d);
+      std::cout << std::setw(w) << rel_time << " ";
+      file << rel_time << " ";
+    }
+    std::cout << std::endl;
+    file << std::endl;
+  }
   }
 }
 
 int main() {
-  do_times< FAD::Fad<double> >("FAD::Fad");
-  do_times< Sacado::Fad::DFad<double> >("Sacado::Fad::DFad");
-  do_times< Sacado::ELRFad::DFad<double> >("Sacado::ELRFad::DFad");
-  do_times< Sacado::CacheFad::DFad<double> >("Sacado::CacheFad::DFad");
+  print_times< Sacado::Fad::DFad<double> >(
+    "Sacado::Fad::DFad", "fad_expr_depth_dfad.txt");
+  print_times< Sacado::ELRFad::DFad<double> >(
+    "Sacado::ELRFad::DFad", "fad_expr_depth_elr_dfad.txt");
+  print_times< Sacado::CacheFad::DFad<double> >(
+    "Sacado::CacheFad::DFad", "fad_expr_depth_cache_dfad.txt");
+  print_times< Sacado::ELRCacheFad::DFad<double> >(
+    "Sacado::ELRCacheFad::DFad", "fad_expr_depth_elr_cache_dfad.txt");
 
   return 0;
 }

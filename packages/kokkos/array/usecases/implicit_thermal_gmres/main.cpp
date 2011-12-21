@@ -63,11 +63,27 @@ main (int argc, char ** argv)
 
   //
   // Command-line arguments:
-  // beg: whatever Kurtis thinks that is, I have no idea
-  // end: ditto
+  //
+  // [beg, end] form an (intger) range of problem sizes.  Tests are
+  // run for each integer i in that range.  The problem dimensions are
+  // calculated as
+  //
+  // // Number of elements along the x direction: 
+  // // cube root of 2^i.  
+  // ix = (int) cbrt (static_cast<double> (1 << i)); 
+  // // Number of elements along the y direction
+  // iy = ix + 1;
+  // // Number of elements along the z direction
+  // iz = iy + 1;
+  // // Total number of elements
+  // n = ix * iy * iz;
+  //
   // runs: Number of trials (entire runs, from assembly to solve)
+  //
   // num_iters: Number of (GMRES) solver iterations
+  //
   // threads: Number of threads (only applies to Pthread, TPI, and TBB devices)
+  //
   if (argc > 1) {
     beg = atoi (argv[1]);
   }    
