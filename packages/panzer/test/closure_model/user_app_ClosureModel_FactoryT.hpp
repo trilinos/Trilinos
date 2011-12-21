@@ -94,19 +94,13 @@ buildClosureModels(const std::string& model_id,
       
       if (plist.get<std::string>("Method") == "Parameter") {
 	{ // at IP
-// 	  input.set("Name", key);
-// 	  input.set("Value", plist.get<double>("Value"));
-// 	  input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
 	  RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar,plist.get<double>("Value")));
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar,plist.get<double>("Value"),*global_data->pl));
 	  evaluators->push_back(e);
 	}
 	{ // at BASIS
-// 	  input.set("Name", key);
-// 	  input.set("Value", plist.get<double>("Value"));
-// 	  input.set("Data Layout", default_params.get<RCP<panzer::Basis> >("Basis")->functional);
 	  RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::Basis> >("Basis")->functional,plist.get<double>("Value")));
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::Basis> >("Basis")->functional,plist.get<double>("Value"),*global_data->pl));
 	  evaluators->push_back(e);
 	}
 	

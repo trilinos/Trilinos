@@ -14,7 +14,7 @@ namespace panzer {
     if (!pl.isParameter(name))
       pl.addParameterFamily(name,true,false);
     
-    pl.addEntry<EvaluationType>("viscosity",entry);
+    pl.addEntry<EvaluationType>(name,entry);
 
     return entry;
   }

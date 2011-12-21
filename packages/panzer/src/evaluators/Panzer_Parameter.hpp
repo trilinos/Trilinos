@@ -19,7 +19,8 @@ namespace panzer {
     
     Parameter(const std::string name,
 	      const Teuchos::RCP<PHX::DataLayout>& data_layout,
-	      const double initial_value);
+	      const double initial_value,
+	      panzer::ParamLib& param_lib);
     
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& vm);

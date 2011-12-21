@@ -1,4 +1,5 @@
 #include "Panzer_ScalarParameterEntry.hpp"
+#include "Panzer_ParameterLibraryUtilities.hpp"
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -10,7 +11,8 @@ template<typename EvalT, typename Traits>
 Parameter<EvalT, Traits>::
 Parameter(const std::string name,
 	  const Teuchos::RCP<PHX::DataLayout>& data_layout,
-	  const double in_initial_value)
+	  const double in_initial_value,
+	  panzer::ParamLib& param_lib)
 { 
   initial_value = ScalarT(in_initial_value);
 
@@ -18,8 +20,7 @@ Parameter(const std::string name,
   
   this->addEvaluatedField(target_field);
  
-  param = Teuchos::rcp(new panzer::ScalarParameterEntry<EvalT>);
-  // need to register with parmeter library
+  param = panzer::createAndRegisterScalarParameter<EvalT>(name,param_lib);
 
   std::string n = "Parameter Evaluator";
   this->setName(n);
@@ -42,7 +43,7 @@ evaluateFields(typename Traits::EvalData workset)
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;
 	 pt < target_field.dimension(1); ++pt) {
-      target_field(cell,pt) = initial_value;
+      target_field(cell,pt) = param->getValue();
     }
   }
 
