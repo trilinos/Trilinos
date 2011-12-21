@@ -122,7 +122,7 @@ public:
 
   template< typename ResultScalarType >
   KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator() (ResultScalarType& input) const {
+  void operator() (const ResultScalarType& input) const {
     ResultScalarType output = sqrt (input);
     *out_ = output;
     next_ (output);
@@ -149,7 +149,7 @@ public:
 
   template< typename ResultScalarType >
   KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator() (ResultScalarType& input) const {
+  void operator() (const ResultScalarType& input) const {
     ResultScalarType output = ResultScalarType(1) / input;
     *out_ = output;
     next_ (output);
@@ -164,24 +164,35 @@ private:
   NextKernel next_;
 };
 
-
+//
+// Store delays storing input to A(i,j) until execution of its op().
+//
+// If I understood monads better, perhaps I could conclude that Store
+// is a kind of monad?
+//
+// TODO (mfh 21 Dec 2011) Explore, instead of having three template
+// parameters, just having one, which is the NextKernel.  That way,
+// the template parameters nest.  Also, this means the scalar_type and
+// device_type template parameters don't have to be repeated (which is
+// an occasion for typos); they just come from the innermost kernel
+// type (which should be Noop<S,D> or something like that).
+//
 template<class Scalar, class Device, class NextKernel>
 class Store {
 public:
+  typedef Scalar scalar_type;
   typedef Device device_type;
   typedef typename device_type::size_type size_type;
-  typedef Kokkos::ValueView<Scalar, Device> value;
-  typedef ??? matrix;
+  typedef Kokkos::MultiVectorView<Scalar, Device> matrix_type;
 
-  Store (matrix& A, size_type i, size_type j, NextKernel next) 
+  Store (matrix_type& A, size_type i, size_type j, NextKernel next) 
     : A_ (A), i_ (i), j_ (j), next_ (next) {}
 
   template<typename ResultScalarType>
   KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator() (ResultScalarType& input) const {
-    ResultScalarType output = ResultScalarType(1) / input;
-    A_(i_, j_) = output;
-    next_ (output);
+  void operator() (const ResultScalarType& input) const {
+    A_(i_, j_) = input;
+    next_ (input);
   }
 
   value result() const {
@@ -189,11 +200,10 @@ public:
   }
 
 private:
-  matrix A_;
+  matrix_type A_;
   size_type i_, j_;
   NextKernel next_;
 };
-
 
 // Don't really need this class anymore.
 // It's just a trivial wrapper for ValueView.
@@ -203,9 +213,9 @@ public:
   typedef Scalar scalar_type;
   typedef Device device_type;
   typedef typename device_type::size_type size_type;
-  typedef Kokkos::ValueView<Scalar, Device> value;
+  typedef Kokkos::ValueView<Scalar, Device> value_type;
 
-  Val (const value& x) :
+  Val (const value_type& x) :
     : x_ (x) {}
 
   const scalar_type&
@@ -215,7 +225,7 @@ public:
   }
 
 private:
-  value x_;
+  value_type x_;
 };
 
 // Delay accessing the entry of the given matrix until in the kernel.
@@ -227,10 +237,9 @@ public:
   typedef Scalar scalar_type;
   typedef Device device_type;
   typedef typename device_type::size_type size_type;
-  typedef Kokkos::ValueView<Scalar, Device> value;
-  typedef ??? matrix;
+  typedef Kokkos::MultiVectorView<Scalar, Device> matrix_type;
 
-  Val (matrix& A, size_type i, size_type j) :
+  Val (matrix_type& A, size_type i, size_type j) :
     : A_ (A), i_ (i), j_ (j) {}
 
   const scalar_type&
@@ -389,6 +398,14 @@ struct GMRES_Solve<Scalar, KOKKOS_MACRO_DEVICE>
       // Modified Gram-Schmidt (MGS) projection step.
       for (size_t k = 0; k <= j-1; ++k) { 
 	MultiVector qk = MultiVector(Q, k);
+	// 
+	// TODO (mfh 21 Dec 2011) We could use expression templates to
+	// rewrite this loop, so that the parallel_for for updating qj
+	// in this iteration is fused with the parallel_reduce for
+	// computing the dot product in the next iteration.  The last
+	// update could then be followed by computing the norm.
+	//
+
 	// Compute dot(qk,qj) and store the result in H(k,j-1).
         parallel_reduce (rows, Dot<S, D> (qk, qj), Store<S, D> (H, k, j-1));
 	// Apply the result stored in H(k,j-1) (from the previous
@@ -408,6 +425,7 @@ struct GMRES_Solve<Scalar, KOKKOS_MACRO_DEVICE>
       // Store.  Store's constructor takes the next kernel as its
       // input, which is Inv.  Inv's constructor takes the target
       // value view as its input.)
+      //
       parallel_reduce (rows, Dot<S, D> (qj, qj), Sqrt<S, D, Store<S, D, Inv<S, D> > > (Store<S, D> (H, j+1, j, Inv<S, D> (H_jp1j_inv))));
 
       // Normalize Q(:,j).
