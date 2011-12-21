@@ -139,10 +139,8 @@ int main(int argc, char *argv[])
   // To test migration in the input adapter we need a Solution
   // object.  The Solution needs an IdentifierMap.
 
-  Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> UserTypes;
-
-  typedef Zoltan2::IdentifierMap<UserTypes> idmap_t;
-  typedef Zoltan2::PartitioningSolution<UserTypes> soln_t;
+  typedef Zoltan2::IdentifierMap<tvector_t> idmap_t;
+  typedef Zoltan2::PartitioningSolution<tvector_t> soln_t;
 
   RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
 
@@ -150,13 +148,13 @@ int main(int argc, char *argv[])
   RCP<const idmap_t> idMap = rcp(new idmap_t(env, gidArray));
 
   int weightDim = 1;
-  scalar_t *imbal = new scalar_t [weightDim];
+  float *imbal = new float [weightDim];
   imbal[0] = 1.0;
-  ArrayRCP<scalar_t> metric(imbal, 0, 1, true);
+  ArrayRCP<float> metric(imbal, 0, 1, true);
 
-  size_t *p = new size_t [nvtx];
-  memset(p, 0, sizeof(size_t) * nvtx);
-  ArrayRCP<size_t> solnParts(p, 0, nvtx, true);
+  size_t *p = new size_t [vlen];
+  memset(p, 0, sizeof(size_t) * vlen);
+  ArrayRCP<size_t> solnParts(p, 0, vlen, true);
 
   soln_t solution(env, idMap, weightDim);
 
@@ -187,7 +185,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       tvector_t *vMigrate = NULL;
       try{
-        tVInput->applyPartitioningSolution(*tV, vMigrate, solution);
+        tVInput->applyPartitioningSolution<tvector_t>(*tV, vMigrate, solution);
         newV = rcp(vMigrate);
       }
       catch (std::exception &e){
@@ -248,7 +246,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       xvector_t *vMigrate =NULL;
       try{
-        xVInput->applyPartitioningSolution(*xV, vMigrate, solution);
+        xVInput->applyPartitioningSolution<tvector_t>(*xV, vMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -309,7 +307,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       evector_t *vMigrate =NULL;
       try{
-        eVInput->applyPartitioningSolution(*eV, vMigrate, solution);
+        eVInput->applyPartitioningSolution<tvector_t>(*eV, vMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;

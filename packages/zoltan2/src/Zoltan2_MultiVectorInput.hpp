@@ -99,8 +99,9 @@ public:
    *    use it redistribute your multi vector. 
    *  TODO   documentation
    */
-  size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<User> &solution)
+  template <typename User2>
+    size_t applyPartitioningSolution(User &in, User *&out,
+         const PartitioningSolution<User2> &solution)
   {
     return 0;
   } 

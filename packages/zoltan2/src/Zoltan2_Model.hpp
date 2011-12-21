@@ -61,7 +61,7 @@ public:
    *  or not. The Map can simply indicate that Zoltan2 global numbers are 
    *  identical to the application's global IDs.
    */
-  RCP<const idmap_t > getIdentifierMap() { return idMap_; }
+  RCP<const idmap_t > getIdentifierMap() const { return idMap_; }
 
   /*! Return the local number of objects, which may be
    *  vertices, matrix rows, identifiers, coordinates,

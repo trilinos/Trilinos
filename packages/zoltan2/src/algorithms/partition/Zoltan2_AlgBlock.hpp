@@ -3,6 +3,12 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_Metric.hpp>
+
+#include <Teuchos_ParameterList.hpp>
+
+#include <sstream>
+#include <string>
 
 /*! \file Zoltan2_AlgBlock.hpp
  *  \brief The algorithm for block partitioning.
@@ -15,7 +21,7 @@ namespace Zoltan2{
  *  \param env   library configuration and problem parameters
  *  \param problemComm  the communicator for the problem
  *  \param ids    an Identifier model
- *  \param solution is the Solution object
+ *  \param solution  a Solution object, containing part information
  *
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).  No special requirements on the
@@ -24,11 +30,11 @@ namespace Zoltan2{
 
 
 template <typename Adapter>
-void AlgBlock(
+void AlgPTBlock(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<const IdentifierModel<Adapter> > &ids, 
-  RCP<PartitioningSolution<Adapter::user_t> > &solution
+  RCP<PartitioningSolution<typename Adapter::user_t> > &solution
 ) 
 {
   using std::string;
@@ -37,14 +43,14 @@ void AlgBlock(
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
 
-  bool debug = env.doStatus();
-  bool timing = env.doTiming();
-  bool memstats = env.doMemoryProfiling();
+  bool debug = env->doStatus();
+  bool timing = env->doTiming();
+  bool memstats = env->doMemoryProfiling();
 
   if (debug)
     env->debugOut_->print(DETAILED_STATUS, string("Entering AlgBlock"));
 
-  Z2_GLOBAL_BUG_ASSERTION(env, "parameters are not committed",
+  Z2_GLOBAL_BUG_ASSERTION(*env, "parameters are not committed",
     env->parametersAreCommitted(), DEBUG_MODE_ASSERTION);
 
   int rank = env->myRank_;
@@ -63,14 +69,14 @@ void AlgBlock(
   //    memory_footprint_versus_runtime
 
   const Teuchos::ParameterList &pl = env->getParams();
-  string &mvr = pl.get(string("memory_footprint_versus_runtime"));
-  string &svq = pl.get(string("speed_versus_quality"));
+  string mvr = pl.get<string>(string("memory_footprint_versus_runtime"));
+  string svq = pl.get<string>(string("speed_versus_quality"));
 
   bool fastSolution = (svq==string("speed"));
   bool goodSolution = (svq==string("quality"));
   bool balancedSolution = (svq==string("balance"));
   
-  bool lowMemory = (mvr==string("memory") || (mvr==string("memory_footprint"));
+  bool lowMemory = (mvr==string("memory")) || (mvr==string("memory_footprint"));
   bool lowRunTime = (mvr==string("runtime"));
   bool balanceMemoryRunTime = (svq==string("balance"));
 
@@ -84,8 +90,8 @@ void AlgBlock(
 
   if (env->hasPartitioningParameters()){
     const Teuchos::ParameterList &pl = env->getPartitioningParams();
-    objective = *(pl.getPtr(string("objective")));
-    imbalanceTolerance = *(pl.getPtr(string("imbalance_tolerance")));
+    objective = pl.get<string>(string("objective"));
+    imbalanceTolerance = pl.get<double>(string("imbalance_tolerance"));
   }
 
   ////////////////////////////////////////////////////////
@@ -95,17 +101,15 @@ void AlgBlock(
   //    the weights
   // TODO: modify algorithm for weight dimension greater than 1.
 
-  size_t numGnos = getLocalNumIdentifiers();
+  size_t numGnos = ids->getLocalNumIdentifiers();
   int wtflag = ids->getIdentifierWeightDim();
 
-  int numWeights = (wtflag ? wtflag : 1);
+  int weightDim = (wtflag ? wtflag : 1);
 
   ArrayView<const gno_t> idList;
-  ArrayView <const StridedInput> wgtList;
+  ArrayView<const StridedInput<lno_t, scalar_t> > wgtList;
   
   ids->getIdentifierList(idList, wgtList);
-
-  const StridedInput weight0 = wgtList[0];  // the first weight
 
   ////////////////////////////////////////////////////////
   // From the Solution we get part information.
@@ -113,8 +117,8 @@ void AlgBlock(
   //   TODO: for now, we have 1 part per proc and all
   //   part sizes are the same.
 
-  size_t &numGlobalParts = solution->getGlobalNumberOfParts();
-  size_t &numLocalParts = solution->getLocalNumberOfParts();
+  size_t numGlobalParts = solution->getGlobalNumberOfParts();
+  size_t numLocalParts = solution->getLocalNumberOfParts();
 
   //const int *partDist = solution->getPartDistribution();
   //const size_t *procDist = solution->getProcsParts();
@@ -152,7 +156,7 @@ void AlgBlock(
 
   if (wtflag){
     for (size_t i=0; i<numGnos; i++)
-      wtsum += weight0[i];          // [] operator knows stride
+      wtsum += wgtList[0][i];          // [] operator knows stride
   }
   else
     wtsum = static_cast<scalar_t>(numGnos);
@@ -173,11 +177,11 @@ void AlgBlock(
   /* A cleaner way is to make a copy, but this works. */
 
   Array<scalar_t> part_sizes(numGlobalParts, 1.0/numGlobalParts); 
-  for (i=1; i<numGlobalParts; i++)
+  for (int i=1; i<numGlobalParts; i++)
     part_sizes[i] += part_sizes[i-1];
 
   if (debug){
-    ostringstream oss << "Part sizes: ";
+    ostringstream oss("Part sizes: ");
     for (int i=0; i <= nprocs; i++)
       oss << part_sizes[i];
     oss << std::endl << "Weights : ";
@@ -190,9 +194,10 @@ void AlgBlock(
   size_t part = 0;
   wtsum = scansum[rank];
   Array<scalar_t> partTotal(numGlobalParts, 0);
+  ArrayRCP<size_t> gnoPart= arcp(new size_t [numGnos], 0, numGnos);
 
   for (size_t i=0; i<numGnos; i++){
-    scalar_t gnoWeight = (wtflag? weight0[i] : 1.0);
+    scalar_t gnoWeight = (wtflag? wgtList[0][i] : 1.0);
     /* wtsum is now sum of all lower-ordered object */
     /* determine new partition number for this object,
        using the "center of gravity" */
@@ -207,24 +212,25 @@ void AlgBlock(
   ////////////////////////////////////////////////////////////
   // Compute the imbalance.
 
-  Array<double> imbalance(weightDim);
+  ArrayRCP<float> imbalance = arcp(new float[weightDim], 0, weightDim);
 
   // TODO - get part sizes from the solution object.  For now, 
   //    an empty part size array means uniform parts.
 
-  ArrayView<double> defaultPartSizes(Teuchos::null);
-  Array<ArrayView<double> > partSizes(weightDim, defaultPartSizes);
+  ArrayView<float> defaultPartSizes(Teuchos::null);
+  Array<ArrayView<float> > partSizes(weightDim, defaultPartSizes);
 
   // TODO have partNums default to 0 through numGlobalParts-1 in
   //    imbalances() call.
   Array<size_t> partNums(numGlobalParts);
   for (size_t i=0; i < numGlobalParts; i++) partNums[i] = i;
 
-  Array<ArrayView<double> > partWeights(1);
+  Array<ArrayView<scalar_t> > partWeights(1);
   partWeights[0] = partTotal.view(0, numGlobalParts);
 
   try{
-    imbalances(env, comm, numGlobalParts, partSizes, partNums,
+    imbalances<scalar_t>(env, problemComm, numGlobalParts, 
+      partSizes, partNums.view(0, numGlobalParts),
          partWeights, imbalance.view(0, weightDim));
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -235,21 +241,23 @@ void AlgBlock(
   
   if (debug){
     if (imbalance[0] > Teuchos::as<scalar_t>(imbalanceTolerance)){
-      ostringstream oss << "Warning: imbalance is " << imbal << std::endl;
+      ostringstream oss("Warning: imbalance is ");
+      oss << imbalance[0] << std::endl;
       env->debugOut_->print(BASIC_STATUS, oss.str());
     }
     else{
-      ostringstream oss << "Imbalance: " << imbal << std::endl;
+      ostringstream oss("Imbalance: ");
+      oss << imbalance[0] << std::endl;
       env->debugOut_->print(DETAILED_STATUS, oss.str());
     }
   }
 
   // Done, update the solution
 
-  solution.setParts(idList, gnoPart, imbalance.view(0, weightDim));
+  solution->setParts(idList, gnoPart, imbalance);
 
   if (debug)
-    env->debugOut_->print(DETAILED_STATUS, string("Exiting AlgBlock");
+    env->debugOut_->print(DETAILED_STATUS, string("Exiting AlgBlock"));
 }
 
 }   // namespace Zoltan2

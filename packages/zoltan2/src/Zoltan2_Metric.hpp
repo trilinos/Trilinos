@@ -18,13 +18,6 @@
 
 namespace Zoltan2{
 
-#if 0
-void imbalance(RCP<const Comm<int> > &comm, ArrayView<size_t> partNum, 
-  ArrayView<double> partWeight, double &imbalance)
-{
-}
-#endif
-
 /*! Compute the global imbalance, one per weight dimension.
  *  All processes in the communicator must call this.
  *
@@ -78,10 +71,11 @@ void imbalance(RCP<const Comm<int> > &comm, ArrayView<size_t> partNum,
  */
 
 template <typename SCALAR>
-  void imbalances(RCP<const Environment> &env, RCP<const Comm<int> > &comm, 
-    size_t numGlobalParts, Array<ArrayView<SCALAR> > &partSizes,
+  void imbalances(const RCP<const Environment> &env, 
+    const RCP<const Comm<int> > &comm, 
+    size_t numGlobalParts, Array<ArrayView<float> > &partSizes,
     ArrayView<size_t> partNums, Array<ArrayView<SCALAR> > &partWeights, 
-    ArrayView<SCALAR> result)
+    ArrayView<float> result)
 {
   // Minimum and maximum actual part numbers
 

@@ -23,7 +23,7 @@ namespace Zoltan2 {
 /*! Zoltan2::OrderingSolution
 */
 
-template <typename gid_t, typename lno_t, typename gno_t>
+template <typename gid_t, typename lno_t>
   class OrderingSolution : public Solution
 {
 public:

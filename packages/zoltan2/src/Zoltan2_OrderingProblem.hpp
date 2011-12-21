@@ -57,14 +57,14 @@ public:
   virtual void solve();
   // virtual void redistribute();
 
-  OrderingSolution<scalar_t, gid_t, lno_t, gno_t> *getSolution() {
+  OrderingSolution<gid_t, lno_t> *getSolution() {
     return solution_.getRawPtr();
   };
 
 private:
   void createOrderingProblem();
 
-  RCP<OrderingSolution<scalar_t, gid_t, lno_t, gno_t> > solution_;
+  RCP<OrderingSolution<gid_t, lno_t> > solution_;
 
 };
 
@@ -74,7 +74,7 @@ void OrderingProblem<Adapter>::solve()
 {
   HELLO;
 
-  this->solution_ = rcp(new OrderingSolution<scalar_t, gid_t, lno_t, gno_t>);
+  this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>);
 
   // Determine which algorithm to use based on defaults and parameters.
   // For now, assuming RCM.

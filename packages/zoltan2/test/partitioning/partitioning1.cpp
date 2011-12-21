@@ -221,17 +221,10 @@ int main(int narg, char** arg)
 
   ////// Basic metric checking of the partitioning solution
   ////// Not ordinarily done in application code; just doing it for testing here.
-  size_t checkNparts = problem.getSolution().getNumParts();
-  size_t checkLength;
-  size_t  *checkParts = problem.getSolution().getParts(&checkLength);
-
-  // Check number of parts
-  if (me == 0) 
-    cout << "Number of parts:  " << checkNparts 
-         << (checkNparts != comm->getSize()
-                         ? "Wrong number of parts; FAIL"
-                         : " ")
-         << endl;
+  size_t checkNparts = comm->getSize();
+  
+  size_t  checkLength = problem.getSolution().getNumberOfIds();
+  const size_t  *checkParts = problem.getSolution().getPartList();
 
   // Check for load balance
   size_t *countPerPart = new size_t[checkNparts];

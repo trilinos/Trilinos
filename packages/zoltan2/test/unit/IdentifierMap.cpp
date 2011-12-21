@@ -257,7 +257,8 @@ int main(int argc, char *argv[])
 
   using Zoltan2::IdentifierMap;
 
-  Zoltan2::BasicUserTypes<float, long, int, long> UserLongGids;
+  typedef Zoltan2::BasicUserTypes<float, long, int, long> UserTypes;
+  UserTypes UserLongGids;
 
   //////////////////////////////////////////////////////////
   //  Ids are non-consecutive ordinals.
@@ -272,7 +273,7 @@ int main(int argc, char *argv[])
     if (i == numLocalObjects/2) base = base2;
   }
 
-  typedef IdentifierMap<UserLongGids> mapLongGids_t;
+  typedef IdentifierMap<UserTypes> mapLongGids_t;
 
   mapLongGids_t *idMap = NULL;
 

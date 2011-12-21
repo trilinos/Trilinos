@@ -90,26 +90,24 @@ public:
 
   /*! Apply the solution to a partitioning problem to an input.  
    *
-   *  This is not a required part of the MatrixInput interface.  However
-   *  if the PartitioningProblem::redistribute() method is called, it 
-   *  will use this method to redistribute the data.  If the user has 
-   *  no intention of calling redistribute(), then it is not necessary to 
-   *  define applyPartitioningSolution in the InputAdapter.
+   *  This is not a required part of the MatrixInput interface.  
    *
    *  \param in  An input object with a structure and assignment of
    *           of global Ids to processes that matches that of the input
    *           data that instantiated this InputAdapter.
    *  \param out On return this should point to a newly created object 
    *            with the specified partitioning.
+   *  \param solution  The Solution object created by a Problem should
+   *      be supplied as the third argument.  It must have been templated
+   *      on user data that has the same global ID distribution as this
+   *      user data.
+
    *  \return   Returns the number of Ids in the new partitioning.
-   *
-   * TODO - A solution needs to be more than a list of partitions, but
-   *   also how those partitions map to processes.  For now it's
-   *   process "p" gets part "p".
    */
 
-  size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User> &solution)
+  template <typename User2>
+    size_t applyPartitioningSolution(const User &in, User *&out,
+         const PartitioningSolution<User2> &solution)
   {
     return 0;
   }

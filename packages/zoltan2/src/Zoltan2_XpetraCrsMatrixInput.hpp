@@ -169,8 +169,9 @@ public:
    *
    *   TODO : params etc
    */
-  size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User> &solution)
+  template <typename User2>
+    size_t applyPartitioningSolution(const User &in, User *&out,
+         const PartitioningSolution<User2> &solution)
   { 
     // Get an import list
 

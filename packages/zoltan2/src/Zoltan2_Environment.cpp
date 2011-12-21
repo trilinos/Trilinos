@@ -10,10 +10,10 @@
     \brief The definition of the Environment object.
 */
 
-#ifndef _ZOLTAN2_ENVIRONMENT_HPP_
-#define _ZOLTAN2_ENVIRONMENT_HPP_
+#ifndef _ZOLTAN2_ENVIRONMENT_CPP_
+#define _ZOLTAN2_ENVIRONMENT_CPP_
 
-/*! \file Zoltan2_Environment.hpp
+/*! \file Zoltan2_Environment.cpp
   
   \brief Defines the Zoltan2::Environment class.
 
@@ -25,6 +25,7 @@
 #include <ostream>
 
 namespace Zoltan2 {
+
 
 Environment::Environment( Teuchos::ParameterList &problemParams,
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm):

@@ -14,6 +14,7 @@
     \brief IdentifierMap class.
 */
 #include <Zoltan2_IdentifierTraits.hpp>
+#include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_AlltoAll.hpp>
 
 #include <vector>
@@ -77,7 +78,7 @@ public:
                           bool gidsMustBeConsecutive=false);
 
   /*! Destructor */
-  ~IdentifierMap();
+  ~IdentifierMap() {};
 
   /*! Copy Constructor */
   IdentifierMap(const IdentifierMap &id);
@@ -258,13 +259,13 @@ template< typename User>
 }
 
 template< typename User>
-  gno_t IdentifierMap<User>::getMinimumGlobalId() const
+  typename InputTraits<User>::gno_t IdentifierMap<User>::getMinimumGlobalId() const
 {
   return minGlobalGno_;
 }
 
 template< typename User>
-  gno_t IdentifierMap<User>::getMaximumGlobalId() const
+  typename InputTraits<User>::gno_t IdentifierMap<User>::getMaximumGlobalId() const
 {
   return maxGlobalGno_;
 }

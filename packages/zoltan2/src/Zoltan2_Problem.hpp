@@ -53,7 +53,16 @@ protected:
   // KDDKDD May want other models, too, for eval, printing, etc.
   RCP<Teuchos::ParameterList> params_;
   RCP<const Teuchos::Comm<int> > comm_;
+
+  // The Problem has a non const Environment object.  This is because
+  //   the Problem creates the Environment and may update it before
+  //   finally calling the algorithm.
+
   RCP<Environment> env_;
+
+  // The Problem needs a const version of the Environment.  No other
+  //    methods are permitted to change the Environment.
+
   RCP<const Environment> envConst_;
 
 private:

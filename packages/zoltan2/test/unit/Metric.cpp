@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 
   // Answer
 
-  Array<scalar_t> answer(weightDim, 0.0);
+  Array<float> answer(weightDim, 0.0);
 
   // Compute imbalances
 

@@ -56,7 +56,8 @@ public:
   //! Constructor with InputAdapter Interface
   PartitioningProblem(Adapter *A, Teuchos::ParameterList *p): 
     Problem<Adapter>(A,p), generalParams_(), partitioningParams_(),solution_(),
-    inputType_(InvalidAdapterType), modelType_(InvalidModel), algorithm_()
+    inputType_(InvalidAdapterType), modelType_(InvalidModel), algorithm_(),
+    numberOfWeights_()
   {
     HELLO;
     createPartitioningProblem();
@@ -71,14 +72,34 @@ public:
     return *(solution_.getRawPtr());
   };
 
-  // User sets some part sizes for the first weight.   TODO
+  // User sets some part sizes for the first weight. 
 
-  void SetPartSizes(int len, size_t *partIds, double *partSizes) { }
+  void SetPartSizes(int len, size_t *partIds, float *partSizes) 
+  { 
+    SetPartSizesForCritiera(0, len, partIds, partSizes);
+  }
 
-  // User sets some part sizes for other weights.   TODO
+  // User sets some part sizes for other weights. 
+  // TODO - decide whether we copy or view
 
   void SetPartSizesForCritiera(int criteria, int len, size_t *partIds, 
-    double *partSizes) {}
+    float *partSizes) 
+  {
+    if (len && criteria < 0 && criteria >= numberOfWeights_)
+      throw std::runtime_error("invalid criteria");
+
+    if (len){
+      Array<size_t> ids(len);
+      Array<float> sizes(len);
+      for (int i=0; i < len; i++){
+        ids[i] = partIds[i];
+        sizes[i] = partSizes[i];
+      }
+
+      partIdsForIdx_[criteria] = ids;
+      partSizesForIdx_[criteria] = sizes;
+    }
+  }
 
 private:
   void createPartitioningProblem();
@@ -91,13 +112,15 @@ private:
   ModelType modelType_;
   std::string algorithm_;
 
+  int numberOfWeights_;
+
   // Suppose Array<size_t> partIds = partIdsForIdx_[w].  If partIds.size() > 0
   // then the user supplied part sizes for weight index "w", and the sizes
   // corresponding to the Ids in partIds are partSizesForIdx[w].
   // TODO implement set methods
 
   Array<Array<size_t> > partIdsForIdx_;
-  Array<Array<double> > partSizesForIdx_;
+  Array<Array<float> > partSizesForIdx_;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -119,26 +142,31 @@ void PartitioningProblem<Adapter>::solve()
   //   global numbers back to application global Ids.
 
   size_t nObj = this->generalModel_->getLocalNumObjects();
+  int weightDim = this->generalModel_->getNumWeights();
+
+  RCP<const IdentifierMap<user_t> > idMap = 
+    this->generalModel_->getIdentifierMap();
 
   size_t numGlobalParts = 
     partitioningParams_->get<size_t>(string("num_global_parts"));
 
-  solution_ = rcp(new PartitioningSolution<user_t>(env_,
-   generalModel_, partIdsForIdx_, partSizesForIdx_));
+  solution_ = rcp(new PartitioningSolution<user_t>( this->envConst_,
+    idMap, weightDim, partIdsForIdx_.view(0, numberOfWeights_), 
+    partSizesForIdx_.view(0, numberOfWeights_)));
 
   // Call the algorithm
 
   try {
     if (algorithm_ == string("scotch")){
       AlgPTScotch<base_adapter_t>(this->envConst_, this->comm_, 
-        this->graphModel_, numGlobalParts, solution_);
+        this->graphModel_, solution_);
     }
     else if (algorithm_ == string("block")){
       AlgPTBlock<base_adapter_t>(this->envConst_, this->comm_, 
-        this->IdentifierModel_, numGlobalParts, solution_);
+        this->identifierModel_, solution_);
     }
     else{
-      throw logic_error("partitioning algorithm not supported yet");
+      throw std::logic_error("partitioning algorithm not supported yet");
     }
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -384,6 +412,13 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
   default:
     cout << __func__ << " Invalid model" << modelType_ << endl;
     break;
+  }
+
+  numberOfWeights_ = this->generalModel_->getNumWeights();
+
+  for (int i=0; i < numberOfWeights_; i++){
+    partIdsForIdx_.push_back(Array<size_t>(Teuchos::null));
+    partSizesForIdx_.push_back(Array<float>(Teuchos::null));
   }
 }
 

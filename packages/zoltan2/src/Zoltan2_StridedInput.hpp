@@ -47,7 +47,7 @@ public:
 
   /*! Access an element of the input array.
    */
-  scalar_t operator[](lno_t idx) { return vec_[idx*stride_]; }
+  scalar_t operator[](lno_t idx) const { return vec_[idx*stride_]; }
 
   /*! Create a contiguous array of the required type, perhaps for a TPL.
    *

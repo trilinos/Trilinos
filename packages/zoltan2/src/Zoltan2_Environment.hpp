@@ -11,10 +11,10 @@
     \brief The Environment object, which governs library behavior.
 */
 
-#ifndef _ZOLTAN2_ENVIRONMENT_DECL_HPP_
-#define _ZOLTAN2_ENVIRONMENT_DECL_HPP_
+#ifndef _ZOLTAN2_ENVIRONMENT_HPP_
+#define _ZOLTAN2_ENVIRONMENT_HPP_
 
-/*! \file Zoltan2_Environment_decl.hpp
+/*! \file Zoltan2_Environment.hpp
   
   \brief Declares the Zoltan2::Environment class.
 
@@ -97,15 +97,15 @@ public:
    */
   void commitParameters();
 
-  bool hasParameters() { return hasAnyParams_; }
+  bool hasParameters() const { return hasAnyParams_; }
 
-  bool hasPartitioningParameters() { return hasPartitioningParams_; }
+  bool hasPartitioningParameters() const { return hasPartitioningParams_; }
 
-  bool hasOrderingParameters() { return hasOrderingParams_; }
+  bool hasOrderingParameters() const {return hasOrderingParams_; }
 
-  bool hasMatchingParameters() { return hasMatchingParams_; }
+  bool hasMatchingParameters() const { return hasMatchingParams_; }
 
-  bool hasColoringParameters() { return hasColoringParams_; }
+  bool hasColoringParameters() const { return hasColoringParams_; }
 
   /*! \brief Returns a reference to the user's parameter list.
    *

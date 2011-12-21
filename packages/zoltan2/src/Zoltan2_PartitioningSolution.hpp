@@ -35,7 +35,6 @@ template <typename User_t>
 {
 public:
 
-  typedef typename InputTraits<User_t>::scalar_t scalar_t;
   typedef typename InputTraits<User_t>::gno_t gno_t;
   typedef typename InputTraits<User_t>::lno_t lno_t;
   typedef typename InputTraits<User_t>::gid_t gid_t;
@@ -88,28 +87,28 @@ public:
  *   included in the reqPartIds lists, then those part sizes are assumed
  *   to be the average of the supplied part sizes.
  */
- 
+
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const IdentifierMap<User_t> > &idMap,
-    int userWeightDim, ArrayView<Array<size_t> > &reqPartIds,
-    ArrayView<Array<scalar_t> > &reqPartSizes );
+    int userWeightDim, ArrayView<Array<size_t> > reqPartIds,
+    ArrayView<Array<float> > reqPartSizes );
   
   ////////////////////////////////////////////////////////////////////
   // Information that is setup by the Problem for the algorithm.
   // It describes the parts to be created.  The algorithm may
   // query for this information.
   
-  size_t getGlobalNumberOfParts() { return nGlobalParts_; }
+  size_t getGlobalNumberOfParts() const { return nGlobalParts_; }
   
-  size_t getLocalNumberOfParts() { return nLocalParts_; }
+  size_t getLocalNumberOfParts() const { return nLocalParts_; }
   
-  const int *getPartDistribution() { return partDist_.getRawPtr(); }
+  const int *getPartDistribution() const { return partDist_.getRawPtr(); }
   
-  const size_t *getProcsParts() { return procDist_.getRawPtr(); }
+  const size_t *getProcsParts() const { return procDist_.getRawPtr(); }
   
-  bool criteriaHasUniformPartSizes(int idx) { return !partSizes_[idx].size();}
+  bool criteriaHasUniformPartSizes(int idx) const { return !partSizes_[idx].size();}
   
-  scalar_t *getCriteriaPartSizes(int idx) { return partSizes_[idx].getRawPtr();}
+  float *getCriteriaPartSizes(int idx) const { return partSizes_[idx].getRawPtr();}
   
   ////////////////////////////////////////////////////////////////////
   // Method used by the algorithm to set results.
@@ -136,20 +135,20 @@ public:
    */
   
   void setParts(ArrayView<const gno_t> gnoList, ArrayRCP<size_t> &partList,
-    ArrayRCP<scalar_t> &imbalance);
+    ArrayRCP<float> &imbalance);
   
   ////////////////////////////////////////////////////////////////////
   // Results that may be queried by the user or by migration methods.
   // We return raw pointers so users don't have to learn about our
   // pointer wrappers.
 
-  size_t getNumberOfIds() { return gids_.size(); }
+  size_t getNumberOfIds() const { return gids_.size(); }
 
-  const gid_t *getGlobalIdList() { return gids_.getRawPtr(); }
+  const gid_t *getGlobalIdList() const { return gids_.getRawPtr(); }
 
-  const size_t *getPartList() { return parts_.getRawPtr();}
+  const size_t *getPartList() const { return parts_.getRawPtr();}
 
-  scalar_t *getImbalance() { return imbalance_.getRawPtr(); }
+  const float *getImbalance() const { return imbalance_.getRawPtr(); }
 
 private:
 
@@ -178,14 +177,14 @@ private:
   // information needs to be in a Tpetra_Vector, with remote information
   // obtained if necessary at limited synchronization points in the algorithm.
 
-  ArrayRCP<Array<scalar_t> > partSizes_;  // nGlobalParts_ * weightDim_ sizes
+  ArrayRCP<Array<float> > partSizes_;  // nGlobalParts_ * weightDim_ sizes
 
   ////////////////////////////////////////////////////////////////
   // The algorithm sets these values upon completion.
 
   ArrayRCP<const gid_t>  gids_; // User's global IDs from adapter "get" method
   ArrayRCP<size_t> parts_;      // part number assigned to gids_[i]
-  ArrayRCP<scalar_t> imbalance_;  // weightDim_ imbalance measures
+  ArrayRCP<float> imbalance_;  // weightDim_ imbalance measures
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -214,8 +213,8 @@ template <typename User_t>
   PartitioningSolution<User_t>::PartitioningSolution(
     RCP<const Environment> &env, 
     RCP<const IdentifierMap<User_t> > &idMap, int userWeightDim,
-    ArrayView<Array<size_t> > &reqPartIds, 
-    ArrayView<Array<scalar_t> > &reqPartSizes)
+    ArrayView<Array<size_t> > reqPartIds, 
+    ArrayView<Array<float> > reqPartSizes)
     : env_(env), idMap_(idMap),
       nGlobalParts_(), nLocalParts_(), weightDim_(),
       partDist_(), procDist_(), partSizes_(), gids_(), parts_(), imbalance_()
@@ -234,7 +233,7 @@ template <typename User_t>
 template <typename User_t>
   void PartitioningSolution<User_t>::setParts(
     ArrayView<const gno_t> gnoList, ArrayRCP<size_t> &partList,
-    ArrayRCP<scalar_t> &imbalance)
+    ArrayRCP<float> &imbalance)
 {
   size_t ngnos = gnoList.size();
   
@@ -243,7 +242,7 @@ template <typename User_t>
     // Create list of application's global IDs: gids_
   
     if (idMap_->gnosAreGids()){
-      gids_ = arcp_reinterpret_cast<const gid_t>(gnoList);
+      gids_ = Teuchos::arcpFromArrayView<const gid_t>(gnoList);
     }
     else{
       ArrayView<gno_t> gnoView = av_const_cast<gno_t>(gnoList);
@@ -271,11 +270,11 @@ template <typename User_t>
 
   // Create imbalance list: one for each weight dimension: weights_
   
-  scalar_t *imbList = new scalar_t [weightDim_];
+  float *imbList = new float [weightDim_];
   Z2_LOCAL_MEMORY_ASSERTION(*env_, weightDim_, imbList);
-  memcpy(imbList, imbalance.getRawPtr(), sizeof(scalar_t) * weightDim_);
+  memcpy(imbList, imbalance.getRawPtr(), sizeof(float) * weightDim_);
   
-  imbalance_ = arcp<scalar_t>(imbList, 0, weightDim_);
+  imbalance_ = arcp<float>(imbList, 0, weightDim_);
 }
 
 }  // namespace Zoltan2

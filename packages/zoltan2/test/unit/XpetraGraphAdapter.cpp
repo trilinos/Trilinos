@@ -144,11 +144,10 @@ int main(int argc, char *argv[])
 
   // To test migration in the input adapter we need a Solution
   // object.  The Solution needs an IdentifierMap.
+  // Our solution just assigns all objects to part zero.
 
-  Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> UserTypes;
-
-  typedef Zoltan2::IdentifierMap<UserTypes> idmap_t;
-  typedef Zoltan2::PartitioningSolution<UserTypes> soln_t;
+  typedef Zoltan2::IdentifierMap<tgraph_t> idmap_t;
+  typedef Zoltan2::PartitioningSolution<tgraph_t> soln_t;
 
   RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
 
@@ -157,9 +156,9 @@ int main(int argc, char *argv[])
 
   int weightDim = 1;
 
-  scalar_t *imbal = new scalar_t [weightDim];
+  float *imbal = new float [weightDim];
   imbal[0] = 1.0;
-  ArrayRCP<scalar_t> metric(imbal, 0, 1, true);
+  ArrayRCP<float> metric(imbal, 0, 1, true);
 
   size_t *p = new size_t [nvtx];
   memset(p, 0, sizeof(size_t) * nvtx);
@@ -194,7 +193,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       tgraph_t *mMigrate = NULL;
       try{
-        tGInput->applyPartitioningSolution(*tG, mMigrate, solution);
+        tGInput->applyPartitioningSolution<tgraph_t>(*tG, mMigrate, solution);
         newG = rcp(mMigrate);
       }
       catch (std::exception &e){
@@ -255,7 +254,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       xgraph_t *mMigrate =NULL;
       try{
-        xGInput->applyPartitioningSolution(*xG, mMigrate, solution);
+        xGInput->applyPartitioningSolution<tgraph_t>(*xG, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -316,7 +315,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       egraph_t *mMigrate =NULL;
       try{
-        eGInput->applyPartitioningSolution(*eG, mMigrate, solution);
+        eGInput->applyPartitioningSolution<tgraph_t>(*eG, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;

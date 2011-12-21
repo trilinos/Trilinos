@@ -145,8 +145,8 @@ int main(int argc, char *argv[])
   // To test migration in the input adapter we need a Solution
   // object.  The Solution needs an IdentifierMap.
 
-  typedef Zoltan2::IdentifierMap<gno_t, lno_t, gno_t> idmap_t;
-  typedef Zoltan2::PartitioningSolution<scalar_t, gno_t, lno_t, gno_t> soln_t;
+  typedef Zoltan2::IdentifierMap<tmatrix_t> idmap_t;
+  typedef Zoltan2::PartitioningSolution<tmatrix_t> soln_t;
 
   RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
 
@@ -155,13 +155,13 @@ int main(int argc, char *argv[])
 
   int weightDim = 1;
 
-  scalar_t *imbal = new scalar_t [weightDim];
+  float *imbal = new float [weightDim];
   imbal[0] = 1.0;
-  ArrayRCP<scalar_t> metric(imbal, 0, 1, true);
+  ArrayRCP<float> metric(imbal, 0, 1, true);
 
-  size_t *p = new size_t [nvtx];
-  memset(p, 0, sizeof(size_t) * nvtx);
-  ArrayRCP<size_t> solnParts(p, 0, nvtx, true);
+  size_t *p = new size_t [nrows];
+  memset(p, 0, sizeof(size_t) * nrows);
+  ArrayRCP<size_t> solnParts(p, 0, nrows, true);
 
   soln_t solution(env, idMap, weightDim);
 
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       tmatrix_t *mMigrate = NULL;
       try{
-        tMInput->applyPartitioningSolution(*tM, mMigrate, solution);
+        tMInput->applyPartitioningSolution<tmatrix_t>(*tM, mMigrate, solution);
         newM = rcp(mMigrate);
       }
       catch (std::exception &e){
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       xmatrix_t *mMigrate =NULL;
       try{
-        xMInput->applyPartitioningSolution(*xM, mMigrate, solution);
+        xMInput->applyPartitioningSolution<tmatrix_t>(*xM, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       ematrix_t *mMigrate =NULL;
       try{
-        eMInput->applyPartitioningSolution(*eM, mMigrate, solution);
+        eMInput->applyPartitioningSolution<tmatrix_t>(*eM, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;

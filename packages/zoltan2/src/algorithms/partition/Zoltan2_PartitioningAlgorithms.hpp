@@ -3,6 +3,7 @@
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_AlgScotch.hpp>
+#include <Zoltan2_AlgBlock.hpp>
 
 
 #endif

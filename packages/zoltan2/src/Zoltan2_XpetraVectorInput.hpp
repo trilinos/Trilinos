@@ -133,8 +133,9 @@ public:
    *   Every gid that was belongs to this process must
    *   be on the list, or the Import will fail.
    */
-  size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User> &solution)
+  template <typename User2>
+    size_t applyPartitioningSolution(const User &in, User *&out,
+         const PartitioningSolution<User2> &solution)
   { 
     // Get an import list
 

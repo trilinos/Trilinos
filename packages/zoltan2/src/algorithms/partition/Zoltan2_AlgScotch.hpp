@@ -163,13 +163,11 @@ struct SCOTCH_Num_Traits<SCOTCH_Num> {
  */
 
 template <typename Adapter>
-
-template <typename Adapter>
 void AlgPTScotch(
   const RCP<const Environment> &env,        // parameters & app comm
   const RCP<const Comm<int> > &problemComm, // problem comm
   const RCP<GraphModel<Adapter> > &model,   // the graph
-  RCP<PartitioningSolution<Adapter::user_t> > &solution
+  RCP<PartitioningSolution<typename Adapter::user_t> > &solution
 )
 {
   HELLO;
@@ -179,8 +177,12 @@ void AlgPTScotch(
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr = 0;
+
+  size_t numGlobalParts = solution->getGlobalNumberOfParts();
+  int weightDim = model->getNumWeights();
+
   SCOTCH_Num partnbr;
-  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numParts, env);
+  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);
 
 #ifdef HAVE_MPI
 
@@ -253,7 +255,7 @@ void AlgPTScotch(
   }
 
   // Create array for Scotch to return results in.
-  Array<size_t> partList(nVtx, 0);
+  ArrayRCP<size_t> partList(new size_t [nVtx], 0, nVtx,true);
   SCOTCH_Num *partloctab;
   if (sizeof(SCOTCH_Num) == sizeof(size_t)) {
     // Can write directly into the solution's memory
@@ -288,10 +290,10 @@ void AlgPTScotch(
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
   }
 
-  Array<double> imbalance(1,1.0);
+  ArrayRCP<float> imbalance(new float [weightDim],0, weightDim, true);
+  imbalance[0] = 1.0;  // TODO calculate imbalance.
 
-  solution->setParts(vtxID.view(0, nVtx), partList.view(0,nVtx), 
-    imbalance.view(0,1);
+  solution->setParts(vtxID, partList, imbalance);
 
 #ifdef SHOW_LINUX_MEMINFO
   if (me==0){

@@ -85,8 +85,9 @@ public:
    *    This method is optional, and only needs to be 
    *    defined if you want to redistribute your objects. 
    */
-  size_t applyPartitioningSolution(User &in, User *&out,
-    const PartitioningSolution<User> &solution)
+  template <typename User2>
+    size_t applyPartitioningSolution(User &in, User *&out,
+      const PartitioningSolution<User2> &solution)
   {
     return 0;
   } 

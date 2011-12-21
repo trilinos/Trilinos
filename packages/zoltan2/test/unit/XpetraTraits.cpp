@@ -149,7 +149,6 @@ int main(int argc, char *argv[])
       roundRobinMap<lno_t,gno_t,node_t>(xmap);
   
     gno_t localNumRows = newRowIds.size();
-    gno_t base = M->getIndexBase();
   
     RCP<const tmatrix_t> newM;
     try{
@@ -193,7 +192,6 @@ int main(int argc, char *argv[])
       roundRobinMap<lno_t,gno_t,node_t>(xmap);
   
     gno_t localNumRows = newRowIds.size();
-    gno_t base = G->getIndexBase();
   
     RCP<const tgraph_t> newG;
     try{
@@ -234,7 +232,6 @@ int main(int argc, char *argv[])
       roundRobinMap<lno_t,gno_t,node_t>(xmap);
   
     gno_t localNumRows = newRowIds.size();
-    gno_t base = V->getMap()->getIndexBase();
   
     RCP<const tvector_t> newV;
     try{
@@ -275,7 +272,6 @@ int main(int argc, char *argv[])
       roundRobinMap<lno_t,gno_t,node_t>(xmap);
   
     gno_t localNumRows = newRowIds.size();
-    gno_t base = MV->getMap()->getIndexBase();
   
     RCP<const tmvector_t> newMV;
     try{
@@ -322,7 +318,6 @@ int main(int argc, char *argv[])
       roundRobinMap<lno_t,gno_t,node_t>(M->getRowMap());
   
     gno_t localNumRows = newRowIds.size();
-    gno_t base = (M->getRowMap())->getIndexBase();
   
     RCP<const xmatrix_t> newM;
     try{
@@ -365,7 +360,6 @@ int main(int argc, char *argv[])
       roundRobinMap<lno_t,gno_t,node_t>(G->getRowMap());
   
     gno_t localNumRows = newRowIds.size();
-    gno_t base = G->getIndexBase();
   
     RCP<const xgraph_t> newG;
     try{
@@ -405,7 +399,6 @@ int main(int argc, char *argv[])
       roundRobinMap<lno_t,gno_t,node_t>(V->getMap());
   
     gno_t localNumRows = newRowIds.size();
-    gno_t base = V->getMap()->getIndexBase();
   
     RCP<const xvector_t> newV;
     try{
@@ -445,7 +438,6 @@ int main(int argc, char *argv[])
       roundRobinMap<lno_t,gno_t,node_t>(MV->getMap());
   
     gno_t localNumRows = newRowIds.size();
-    gno_t base = MV->getMap()->getIndexBase();
   
     RCP<const xmvector_t> newMV;
     try{
@@ -515,7 +507,6 @@ int main(int argc, char *argv[])
       roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
   
     epetra_gno_t localNumRows = newRowIds.size();
-    epetra_gno_t base = M->RowMap().IndexBase();
   
     RCP<const ematrix_t> newM;
     try{
@@ -557,7 +548,6 @@ int main(int argc, char *argv[])
       roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
   
     epetra_gno_t localNumRows = newRowIds.size();
-    epetra_gno_t base = G->IndexBase();
   
     RCP<const egraph_t> newG;
     try{
@@ -599,7 +589,6 @@ int main(int argc, char *argv[])
       roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
   
     epetra_gno_t localNumRows = newRowIds.size();
-    epetra_gno_t base = V->Map().IndexBase();
   
     RCP<const evector_t> newV;
     try{
@@ -641,7 +630,6 @@ int main(int argc, char *argv[])
       roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
   
     epetra_gno_t localNumRows = newRowIds.size();
-    epetra_gno_t base = MV->Map().IndexBase();
   
     RCP<const emvector_t> newMV;
     try{

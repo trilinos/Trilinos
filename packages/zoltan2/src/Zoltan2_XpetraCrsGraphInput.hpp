@@ -338,8 +338,9 @@ public:
   /*! \brief Repartition a graph that has the same structure as
    *   the graph that instantiated this input adapter.
    */
-  size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User> &solution)
+  template<typename User2>
+    size_t applyPartitioningSolution(const User &in, User *&out,
+         const PartitioningSolution<User2> &solution)
   {
     // Get an import list
 
