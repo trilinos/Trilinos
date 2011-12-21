@@ -8,6 +8,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_ClosureModel_Factory.hpp"
@@ -60,23 +61,25 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
     PHX::FieldManager<panzer::Traits> fm;
 
-    evaluators = mf.buildClosureModels(ies.model_id, ies, p, default_params, user_data, fm);
+    evaluators = mf.buildClosureModels(ies.model_id, ies, p, default_params, user_data, gd, fm);
 
     TEST_EQUALITY(evaluators->size(), 8);
 
     user_app::MyModelFactory_TemplateBuilder builder;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> model_factory;
     model_factory.buildObjects(builder);
-    evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params, user_data, fm);
+    evaluators = model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params, user_data, gd, fm);
 
     TEST_EQUALITY(evaluators->size(), 8);
 
     // Add an unsupported type
     p.sublist("fluid model").sublist("garbage").set<std::string>("Value","help!");
     
-    TEST_THROW(model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params, user_data, fm), std::logic_error);
+    TEST_THROW(model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params, user_data, gd, fm), std::logic_error);
 
   }
 

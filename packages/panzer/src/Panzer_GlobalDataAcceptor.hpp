@@ -14,9 +14,9 @@ namespace panzer {
     
     virtual ~GlobalDataAcceptor() {}
 
-    virtual void setGlobalData(const Teuchos::RCP<const panzer::GlobalData>& gd) = 0;
+    virtual void setGlobalData(const Teuchos::RCP<panzer::GlobalData>& gd) = 0;
 
-    virtual Teuchos::RCP<const panzer::GlobalData> getGlobalData() const = 0;
+    virtual Teuchos::RCP<panzer::GlobalData> getGlobalData() const = 0;
 
   };
 

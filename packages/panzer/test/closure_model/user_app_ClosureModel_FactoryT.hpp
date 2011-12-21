@@ -27,6 +27,7 @@ buildClosureModels(const std::string& model_id,
 		   const Teuchos::ParameterList& models, 
 		   const Teuchos::ParameterList& default_params,
 		   const Teuchos::ParameterList& user_data,
+		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   PHX::FieldManager<panzer::Traits>& fm) const
 {
 

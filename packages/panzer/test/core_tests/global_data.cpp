@@ -19,7 +19,7 @@ namespace panzer {
 
   public:
 
-    TestObject2(const Teuchos::RCP<const panzer::GlobalData>& gd) : 
+    TestObject2(const Teuchos::RCP<panzer::GlobalData>& gd) : 
       panzer::GlobalDataAcceptorDefaultImpl(gd)
     {
       

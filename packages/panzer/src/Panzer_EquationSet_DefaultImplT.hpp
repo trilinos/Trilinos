@@ -15,7 +15,7 @@ template <typename EvalT>
 panzer::EquationSet_DefaultImpl<EvalT>::
 EquationSet_DefaultImpl(const panzer::InputEquationSet& ies,
 			const panzer::CellData& cell_data,
-			const Teuchos::RCP<const panzer::GlobalData>& global_data,
+			const Teuchos::RCP<panzer::GlobalData>& global_data,
 			const bool build_transient_support) :
   panzer::GlobalDataAcceptorDefaultImpl(global_data),
   m_input_eq_set(ies),
@@ -221,7 +221,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 {
   Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
     factory.getAsObject<EvalT>()->buildClosureModels(model_name, this->m_input_eq_set, models, 
-                                                     *(this->m_eval_plist), user_data, fm);
+                                                     *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
     
   for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
     fm.template registerEvaluator<EvalT>((*evaluators)[i]);
@@ -261,7 +261,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
   // Add in closure models
   {
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
-      factory.getAsObject<EvalT>()->buildClosureModels(model_name, this->m_input_eq_set, models, *(this->m_eval_plist), user_data, fm);
+      factory.getAsObject<EvalT>()->buildClosureModels(model_name, this->m_input_eq_set, models, *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
     
     for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
       fm.template registerEvaluator<EvalT>((*evaluators)[i]);

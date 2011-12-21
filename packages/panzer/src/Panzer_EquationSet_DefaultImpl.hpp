@@ -18,7 +18,7 @@ namespace panzer {
     
   public:    
     
-    EquationSet_DefaultImpl(const panzer::InputEquationSet& ies, const panzer::CellData& cell_data, const Teuchos::RCP<const panzer::GlobalData>& global_data, const bool build_transient_support);
+    EquationSet_DefaultImpl(const panzer::InputEquationSet& ies, const panzer::CellData& cell_data, const Teuchos::RCP<panzer::GlobalData>& global_data, const bool build_transient_support);
     
     virtual ~EquationSet_DefaultImpl() {}
     

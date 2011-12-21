@@ -8,18 +8,18 @@ namespace panzer {
   { }  
   
   
-  GlobalDataAcceptorDefaultImpl::GlobalDataAcceptorDefaultImpl(const Teuchos::RCP<const panzer::GlobalData>& gd) : m_gd(gd)
+  GlobalDataAcceptorDefaultImpl::GlobalDataAcceptorDefaultImpl(const Teuchos::RCP<panzer::GlobalData>& gd) : m_gd(gd)
   { }
   
   GlobalDataAcceptorDefaultImpl::~GlobalDataAcceptorDefaultImpl()
   { }
   
-  void GlobalDataAcceptorDefaultImpl::setGlobalData(const Teuchos::RCP<const panzer::GlobalData>& gd)
+  void GlobalDataAcceptorDefaultImpl::setGlobalData(const Teuchos::RCP<panzer::GlobalData>& gd)
   {
     m_gd = gd;
   }
   
-  Teuchos::RCP<const panzer::GlobalData> GlobalDataAcceptorDefaultImpl::getGlobalData() const
+  Teuchos::RCP<panzer::GlobalData> GlobalDataAcceptorDefaultImpl::getGlobalData() const
   {
     TEUCHOS_ASSERT(nonnull(m_gd));
     return m_gd;
