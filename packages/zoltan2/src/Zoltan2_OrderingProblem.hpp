@@ -77,7 +77,7 @@ void OrderingProblem<Adapter>::solve()
   size_t nVtx = this->graphModel_->getLocalNumVertices();
 
   // TODO: Assuming one MPI process now. nVtx = ngids = nlids
-  this->solution_ = rcp(new OrderingSolution<gid_t, lid_t>(nVtx, nVtx, nVtx));
+  this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>(nVtx, nVtx));
 
   // Determine which algorithm to use based on defaults and parameters.
   // For now, assuming RCM.

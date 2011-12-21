@@ -38,7 +38,7 @@ public:
     HELLO;
     perm_size_ = perm_size;
     gids_   = ArrayRCP<gid_t>(ngids);
-    perm_  = ArrayRCP<size_t>(perm_size_);
+    perm_  = ArrayRCP<lno_t>(perm_size_);
   }
 
 
@@ -74,10 +74,10 @@ public:
 protected:
   // Ordering solution consists of GIDs, LIDs, and permutation vector(s).
   size_t perm_size_;
-  ArrayView<gid_t>  gids_;
-  ArrayView<lno_t> perm_;    // zero-based local permutation
-  //ArrayView<size_t> invperm_; // inverse of permutation above
-}
+  ArrayRCP<gid_t>  gids_;
+  ArrayRCP<lno_t> perm_;    // zero-based local permutation
+  //ArrayRCP<size_t> invperm_; // inverse of permutation above
+};
 
 }
 

@@ -33,8 +33,8 @@ int AlgRCM(
 
   // TEST: return the identity permutation.
   const size_t nVtx = model->getLocalNumVertices();
-  RCP<lno_t> perm;
-  perm = solution->getPermRCP();
+  lno_t *perm;
+  perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
   for (lno_t i=0; i<nVtx; i++){
 #ifdef RCM
     perm[i] = -1;

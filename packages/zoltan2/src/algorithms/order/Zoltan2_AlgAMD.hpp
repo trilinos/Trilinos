@@ -86,7 +86,7 @@ int AlgAMD(
   amd_control(Control);
 
   lno_t *perm;
-  perm = (lno_t *) (solution->getPermRCP().getRawPtr());
+  perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
 
   lno_t result = AMDobj.order(nVtx, offsets.getRawPtr(),
                          edgeIds.getRawPtr(), perm, Control, Info);
