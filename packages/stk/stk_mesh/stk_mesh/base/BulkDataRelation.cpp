@@ -225,12 +225,12 @@ bool BulkData::destroy_relation( Entity & e_from ,
 
     // For all relations that are *not* being deleted, add induced parts for
     // these relations to the 'keep' vector
-    for ( PairIterRelation i = e_to.relations();
-          !i.empty() && e_to.entity_rank() < i->entity_rank();
-          ++i ) {
-      if ( !( i->entity() == & e_from && i->identifier() == local_id ) ) {
-        induced_part_membership( * i->entity(), empty, e_to.entity_rank(),
-                                 i->identifier(), keep );
+    for ( PairIterRelation i = e_to.relations(); !i.empty(); ++i ) {
+      if (e_to.entity_rank() < i->entity_rank()) { // Need to look at back rels only
+        if ( !( i->entity() == & e_from && i->identifier() == local_id ) ) {
+          induced_part_membership( * i->entity(), empty, e_to.entity_rank(),
+                                   i->identifier(), keep );
+        }
       }
     }
 

@@ -198,7 +198,7 @@ void induced_part_membership( Part & part ,
                               PartVector & induced_parts )
 {
   if ( entity_rank_to < entity_rank_from &&
-       part.primary_entity_rank() == entity_rank_from ) {
+       part.primary_entity_rank() != InvalidEntityRank ) {
 
     // Direct relationship:
 
@@ -253,7 +253,7 @@ void induced_part_membership( const Entity           & entity_from ,
       ThrowAssertMsg( *i < all_parts.size(), "Index " << *i << " out of bounds" );
       Part & part = * all_parts[*i] ;
 
-      if ( part.primary_entity_rank() == entity_rank_from &&
+      if ( part.primary_entity_rank() != InvalidEntityRank &&
            ! contain( omit , part )) {
         induced_part_membership( part,
                                  entity_rank_from ,
