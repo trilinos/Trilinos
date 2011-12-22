@@ -71,6 +71,7 @@ SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #Stokhos is explicitly disabled below to prevent the package from being
 #implicitly enabled.  Sundance depends on Stokhos.
 #SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance)
+SET_DEFAULT(Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE Continuous)
 
 SET(Trilinos_PACKAGES Zoltan2)
 
