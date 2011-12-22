@@ -215,7 +215,16 @@ public:
   /// the critical path (i.e., on the "slowest MPI process").
   ///
   /// \param comm [in] Communicator whose process(es) will participate
-  ///   in the gathering of timer statistics.
+  ///   in the gathering of timer statistics.  This is a Ptr and not
+  ///   an RCP, because RCP would suggest that TimeMonitor were
+  ///   keeping the communicator around after return of this method.
+  ///   Ptr suggests instead that TimeMonitor will only reference the
+  ///   communicator during this method.  If you have an RCP, you can
+  ///   turn it into a Ptr by calling its \c ptr() method:
+  ///   \code
+  ///   RCP<const Comm<int> > myComm = ...;
+  ///   TimeMonitor::summarize (myComm.ptr());
+  ///   \endcode
   ///
   /// \param out [out] Output stream to which to write.  This will
   ///   only be used on the process with Rank 0 in the communicator.
@@ -250,7 +259,7 @@ public:
   ///   called by all processes in the communicator.  This method will
   ///   <i>only</i> perform communication if writeGlobalStats is true.
   static void 
-  summarize (const RCP<const Comm<int> >& comm,
+  summarize (Ptr<const Comm<int> > comm,
              std::ostream &out=std::cout, 
 	     const bool alwaysWriteLocal=false,
 	     const bool writeGlobalStats=true,

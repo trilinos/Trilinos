@@ -161,7 +161,7 @@ namespace Teuchos {
 
 
   void 
-  TimeMonitor::summarize (const RCP<const Comm<int> >& comm,
+  TimeMonitor::summarize (Ptr<const Comm<int> > comm,
 			  std::ostream& out,
 			  const bool alwaysWriteLocal,
 			  const bool writeGlobalStats,
@@ -634,7 +634,8 @@ namespace Teuchos {
     }
 #endif // HAVE_MPI
 
-    summarize (comm, out, alwaysWriteLocal, writeGlobalStats, writeZeroTimers, setOp);
+    summarize (comm.ptr(), out, alwaysWriteLocal, 
+	       writeGlobalStats, writeZeroTimers, setOp);
   }
 
 
