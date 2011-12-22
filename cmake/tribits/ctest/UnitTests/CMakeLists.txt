@@ -76,6 +76,7 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
         ${MOCK_PROJECT_NAME}_PACKAGES=               # Must turn off in env
         CTEST_DO_SUBMIT=OFF                          # Must turn off in env
         CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=OFF  # Must turn off in env
+        CTEST_DASHBOARD_ROOT=                        # Must turn off in env
         ${PARSE_ARGS}
         ${CMAKE_CTEST_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/unit_test_driver.cmake
       PASS_REGULAR_EXPRESSION_ALL ${PARSE_PASS_REGULAR_EXPRESSION_ALL}
