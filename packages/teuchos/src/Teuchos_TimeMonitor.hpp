@@ -47,7 +47,7 @@
  *
  * \brief Scope protection wrapper for a Teuchos::Time object.
  *
- * TimeMonitor wraps a nonconst reference to a Teuchos::Time timer
+ * This class wraps a nonconst reference to a \c Teuchos::Time timer
  * object.  The TimeMonitor's constructor starts the timer, and its
  * destructor stops the timer.  This ensures scope safety of timers,
  * so that no matter how a scope is exited (whether the normal way or
