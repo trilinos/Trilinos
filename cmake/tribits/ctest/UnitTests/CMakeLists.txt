@@ -8,6 +8,8 @@ INCLUDE(AdvancedSet)
 ADVANCED_SET(Trilinos_CTEST_COMMAND ctest CACHE STRING
   "CTest executable used to drive unit tests")
 
+# The mock test project 
+SET(MOCK_PROJECT_NAME Trilinos)
 
 SET(MOCK_TRILINOS_DIR ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
 
@@ -68,18 +70,13 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
   SET(TEST_BLOCKS ${TEST_BLOCKS}
     TEST_${TEST_IDX} CMND env
       ARGS
-        Trilinos_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
-        Trilinos_PACKAGES_FILE=${MOCK_TRILINOS_DIR}/PackagesList.cmake
-        Trilinos_EXTRAREPOS_FILE=${MOCK_TRILINOS_DIR}/cmake/ExtraRepositoriesList.cmake
-        Trilinos_SOURCE_DIRECTORY=${MOCK_TRILINOS_DIR}
+        ${MOCK_PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
         CTEST_DEPENDENCY_HANDLING_UNIT_TESTING=ON
-        #CTEST_DO_UPDATES=OFF
-        CTEST_DO_SUBMIT=OFF
-        Trilinos_CTEST_COMMAND=${Trilinos_CTEST_COMMAND}
-        Trilinos_WARNINGS_AS_ERRORS_FLAGS=-DummyErrFlags
-        Trilinos_PACKAGES=  # Must turn off in case in env
+        ${MOCK_PROJECT_NAME}_CTEST_COMMAND=${CMAKE_CTEST_COMMAND}
+        ${MOCK_PROJECT_NAME}_PACKAGES=  # Must turn off in env
+        CTEST_DO_SUBMIT=OFF             # Must turn off in env
         ${PARSE_ARGS}
-        ${Trilinos_CTEST_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/unit_test_driver.cmake
+        ${CMAKE_CTEST_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/unit_test_driver.cmake
       PASS_REGULAR_EXPRESSION_ALL ${PARSE_PASS_REGULAR_EXPRESSION_ALL}
     )
 
@@ -313,8 +310,8 @@ IF (PYTHON_EXECUTABLE)
     COPY_FILES
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.Teuchos.txt modifiedFiles.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
-    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+    ARGS  Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous  CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
       CTEST_UPDATE_RETURN_VAL=1
     PASS_REGULAR_EXPRESSION_ALL
       "Directly modified or failing non-disabled packages that need to be tested:  Teuchos 1"
