@@ -63,7 +63,7 @@ int Teuchos_startTimer( char timerName[], int timerID )
   try {
     if( timerID < 0 ) {
       // The timer does not exist so create it!
-      timerArray.push_back(Teuchos::TimeMonitor::getNewTimer(timerName));
+      timerArray.push_back(Teuchos::TimeMonitor::getNewCounter(timerName));
       timerArray.back()->start();
       return timerArray.size()-1;
     }
