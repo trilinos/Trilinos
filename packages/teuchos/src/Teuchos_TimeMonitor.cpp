@@ -159,8 +159,9 @@ namespace Teuchos {
     }
   } // namespace (anonymous)
 
+
   void 
-  TimeMonitor::summarize (std::ostream &out,
+  TimeMonitor::summarize (const RCP<const Comm<int> >& comm,
 			  const bool alwaysWriteLocal,
 			  const bool writeGlobalStats,
 			  const bool writeZeroTimers,
@@ -172,61 +173,17 @@ namespace Teuchos {
     using std::string;
     
     const bool debug = false;
+    const int numProcs = comm->getSize();
+    const int myRank = comm->getRank();
 
-    // The default communicator.  If Trilinos was built with MPI
-    // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
-    // be a "serial" (no MPI, one "process") communicator.
-    RCP<const Comm<int> > pComm = DefaultComm<int>::getComm ();
-
-    // Callers may or may not have initialized MPI before calling
-    // summarize().  Just because they built with MPI, doesn't mean
-    // they want to use MPI.  It's not my responsibility to initialize
-    // MPI for them, and I don't have the context I need in order to
-    // do so anyway.  Thus, if Trilinos was built with MPI and MPI has
-    // not yet been initialized, make pComm a "serial" communicator.
-#ifdef HAVE_MPI
-    {
-      int mpiHasBeenStarted = 0;
-      MPI_Initialized (&mpiHasBeenStarted);
-      if (! mpiHasBeenStarted)
-        {
-	  // mfh 19 Jul 2011
-	  //
-	  // The first line commented out below compiles and runs
-	  // correctly with GCC 4.5.1, but gives a compiler error with
-	  // Intel's C++ compiler (version 11.1).  Intel's compiler
-	  // also rejects the two commented-out lines that follow.  It
-	  // seems that as of 19 July 2011, this code is the only code
-	  // in Trilinos that uses getDefaultSerialComm().  Intel's
-	  // compiler claims that the "Ordinal" template parameter of
-	  // DefaultComm is really the Teuchos::Ordinal typedef; the
-	  // Ordinal template parameter _should_ shadow the typedef in
-	  // Teuchos, and does with GCC, but does not in Intel's
-	  // compiler.  This may be the case with other compilers as
-	  // well, but I haven't tested them yet.
-	  //
-	  //pComm = DefaultComm<int>::getDefaultSerialComm (null);
-	  //
-	  //RCP<const Comm<int> > nullComm; // is null.
-	  //pComm = DefaultComm<int>::getDefaultSerialComm (nullComm);
-
-	  pComm = rcp_implicit_cast<const Comm<int> > (rcp (new SerialComm<int> ()));
-	}
+    if (debug && myRank == 0) {
+      cerr << "summarize (out, "
+	   << "alwaysWriteLocal=" << alwaysWriteLocal 
+	   << ", writeGlobalStats=" << writeGlobalStats 
+	   << ", writeZeroTimers=" << writeZeroTimers 
+	   << ", setOp=" << (setOp==Union ? "Union" : "Intersection") 
+	   << ")" << endl;
     }
-#endif // HAVE_MPI
-
-    const int numProcs = pComm->getSize();
-    const int myRank = pComm->getRank();
-
-    if (debug && myRank == 0)
-      {
-	cerr << "summarize (out, "
-	     << "alwaysWriteLocal=" << alwaysWriteLocal 
-	     << ", writeGlobalStats=" << writeGlobalStats 
-	     << ", writeZeroTimers=" << writeZeroTimers 
-	     << ", setOp=" << (setOp==Union ? "Union" : "Intersection") 
-	     << ")" << endl;
-      }
 
     // Collect and sort local timer data by timer names.
     timer_map_t localTimerData;
@@ -234,79 +191,72 @@ namespace Teuchos {
 
     // In debug mode, print out local timer data on each process,
     // before possibly filtering out data with zero call counts.
-    if (debug)
-      {
-	for (int p = 0; p < numProcs; ++p)
-	  {
-	    if (myRank == p)
-	      {
-		cerr << "Proc " << myRank << ": Local timer data:" << endl;
-		for (timer_map_t::const_iterator it = localTimerData.begin(); 
-		     it != localTimerData.end(); ++it)
-		  cerr << "-- " << it->first << ", " << it->second.first 
-		       << ", " << it->second.second << endl;
-	      }
-	    // Two barriers generally synchronize output, at least
-	    // when debugging with multiple MPI processes on one node.
-	    barrier (*pComm);
-	    barrier (*pComm);
+    if (debug) {
+      for (int p = 0; p < numProcs; ++p) {
+	if (myRank == p) {
+	  cerr << "Proc " << myRank << ": Local timer data:" << endl;
+	  for (timer_map_t::const_iterator it = localTimerData.begin(); 
+	       it != localTimerData.end(); ++it) {
+	    cerr << "-- " << it->first << ", " << it->second.first 
+		 << ", " << it->second.second << endl;
 	  }
+	}
+	// Two barriers generally synchronize output, at least when
+	// debugging with multiple MPI processes on one node.
+	barrier (*comm);
+	barrier (*comm);
       }
+    }
 
     // Filter out zero data locally first.  This ensures that if we
     // are writing global stats, and if a timer name exists in the set
     // of global names, then that timer has a nonzero call count on at
     // least one MPI process.
-    if (! writeZeroTimers)
-      {
-	filterZeroData (localTimerData);
+    if (! writeZeroTimers) {
+      filterZeroData (localTimerData);
 
-	// In debug mode, print out local timer data on each process,
-	// after possibly filtering out data with zero call counts.
-	if (debug)
-	  {
-	    for (int p = 0; p < numProcs; ++p)
-	      {
-		if (myRank == p)
-		  {
-		    cerr << "Proc " << myRank << ": Local timer data, "
-		      "after filtering zero call counts:" << endl;
-		    for (timer_map_t::const_iterator it = localTimerData.begin(); 
-			 it != localTimerData.end(); ++it)
-		      cerr << "-- " << it->first << ", " << it->second.first 
-			   << ", " << it->second.second << endl;
-		  }
-		// Two barriers generally synchronize output, at least
-		// when debugging with multiple MPI processes on one node.
-		barrier (*pComm);
-		barrier (*pComm);
-	      }
+      // In debug mode, print out local timer data on each process,
+      // after possibly filtering out data with zero call counts.
+      if (debug) {
+	for (int p = 0; p < numProcs; ++p) {
+	  if (myRank == p) {
+	    cerr << "Proc " << myRank << ": Local timer data, "
+	      "after filtering zero call counts:" << endl;
+	    for (timer_map_t::const_iterator it = localTimerData.begin(); 
+		 it != localTimerData.end(); ++it) {
+	      cerr << "-- " << it->first << ", " << it->second.first 
+		   << ", " << it->second.second << endl;
+	    }
 	  }
+	  // Two barriers generally synchronize output, at least
+	  // when debugging with multiple MPI processes on one node.
+	  barrier (*comm);
+	  barrier (*comm);
+	}
       }
+    }
 
     // Extract the set of local timer names.  The std::map keeps them
     // sorted alphabetically.
     Array<string> localTimerNames;
     localTimerNames.reserve (localTimerData.size());
     for (timer_map_t::const_iterator it = localTimerData.begin(); 
-     	 it != localTimerData.end(); ++it)
+     	 it != localTimerData.end(); ++it) {
       localTimerNames.push_back (it->first);
+    }
 
-    if (debug)
-      {
-	for (int p = 0; p < numProcs; ++p)
-	  {
-	    if (myRank == p)
-	      {
-		cerr << "Proc " << myRank << ": Local timer names:" << endl;
-		for (Array<string>::const_iterator it = localTimerNames.begin(); 
-		     it != localTimerNames.end(); ++it)
-		  cerr << "-- " << *it << endl;
-	      }
-	    barrier (*pComm);
-	    barrier (*pComm);
-	  }
+    if (debug) {
+      for (int p = 0; p < numProcs; ++p) {
+	if (myRank == p) {
+	  cerr << "Proc " << myRank << ": Local timer names:" << endl;
+	  for (Array<string>::const_iterator it = localTimerNames.begin(); 
+	       it != localTimerNames.end(); ++it)
+	    cerr << "-- " << *it << endl;
+	}
+	barrier (*comm);
+	barrier (*comm);
       }
+    }
 
     // globalTimerData and globalTimerNames are only valid if
     // writeGlobalStats is true.
@@ -328,167 +278,159 @@ namespace Teuchos {
     // expectation of writeZeroTimers == false for the local call
     // counts.  However, writeZeroTimers == false will still do what
     // it says for the global call counts.
-    if (writeGlobalStats)
-      { 
-	// This does the correct and inexpensive thing (just copies
-	// the timer data) if numProcs == 1.  Otherwise, it initiates
-	// a communication with \f$O(\log P)\f$ messages along the
-	// critical path.
-	mergeCounterNames (*pComm, localTimerNames, globalTimerNames, setOp);
+    if (writeGlobalStats) {
+      // This does the correct and inexpensive thing (just copies the
+      // timer data) if numProcs == 1.  Otherwise, it initiates a
+      // communication with \f$O(\log P)\f$ messages along the
+      // critical path, where \f$P\f$ is the number of participating
+      // processes.
+      mergeCounterNames (*comm, localTimerNames, globalTimerNames, setOp);
 
-	if (debug)
-	  {
-	    // Sanity check that all MPI procs have the name number of
-	    // global timer names.
-	    const timer_map_t::size_type myNumGlobalNames = globalTimerNames.size();
-	    timer_map_t::size_type minNumGlobalNames = 0;
-	    timer_map_t::size_type maxNumGlobalNames = 0;
-	    reduceAll (*pComm, REDUCE_MIN, myNumGlobalNames, 
-		       outArg (minNumGlobalNames));
-	    reduceAll (*pComm, REDUCE_MAX, myNumGlobalNames, 
-		       outArg (maxNumGlobalNames));
-	    TEUCHOS_TEST_FOR_EXCEPTION(minNumGlobalNames != maxNumGlobalNames,
-			       std::logic_error,
-			       "Min # global timer names = " << minNumGlobalNames 
-			       << " != max # global timer names = " << maxNumGlobalNames
-			       << ".  Please report this bug to the Teuchos developers.");
-	    TEUCHOS_TEST_FOR_EXCEPTION(myNumGlobalNames != minNumGlobalNames,
-			       std::logic_error,
-			       "My # global timer names = " << myNumGlobalNames 
-			       << " != min # global timer names = " << minNumGlobalNames
-			       << ".  Please report this bug to the Teuchos developers.");
+      if (debug) {
+	// Sanity check that all MPI procs have the name number of
+	// global timer names.
+	const timer_map_t::size_type myNumGlobalNames = globalTimerNames.size();
+	timer_map_t::size_type minNumGlobalNames = 0;
+	timer_map_t::size_type maxNumGlobalNames = 0;
+	reduceAll (*comm, REDUCE_MIN, myNumGlobalNames, 
+		   outArg (minNumGlobalNames));
+	reduceAll (*comm, REDUCE_MAX, myNumGlobalNames, 
+		   outArg (maxNumGlobalNames));
+	TEUCHOS_TEST_FOR_EXCEPTION(minNumGlobalNames != maxNumGlobalNames,
+          std::logic_error, "Min # global timer names = " << minNumGlobalNames 
+	  << " != max # global timer names = " << maxNumGlobalNames
+	  << ".  Please report this bug to the Teuchos developers.");
+	TEUCHOS_TEST_FOR_EXCEPTION(myNumGlobalNames != minNumGlobalNames,
+	  std::logic_error, "My # global timer names = " << myNumGlobalNames 
+	  << " != min # global timer names = " << minNumGlobalNames
+	  << ".  Please report this bug to the Teuchos developers.");
+      }
+
+      // mergeCounterNames() just merges the counters' names, not
+      // their actual data.  Now we need to fill globalTimerData with
+      // this MPI process' timer data for those timers in
+      // globalTimerNames.
+      //
+      // All processes need the full list of global timers, since
+      // there may be some global timers that are not local timers.
+      // That's why mergeCounterNames() has to be an all-reduce, not
+      // just a reduction to Proc 0.
+      //
+      // If there are some global timers that are not local timers,
+      // and if we want to print local timers, we insert a local timer
+      // datum with zero elapsed time and zero call count into
+      // localTimerData as well, for the reason mentioned above.
+      //
+      // Insertion optimization; if the iterator given to map::insert
+      // points right before where we want to insert, insertion is
+      // O(1).  globalTimerNames is sorted, so feeding the iterator
+      // output of map::insert into the next invocation's input should
+      // make the whole insertion O(N) where N is the number of
+      // entries in globalTimerNames.
+      timer_map_t::iterator globalMapIter = globalTimerData.begin();
+      timer_map_t::iterator localMapIter;
+      for (Array<string>::const_iterator it = globalTimerNames.begin(); 
+	   it != globalTimerNames.end(); ++it) {
+	const std::string& globalName = *it;
+	localMapIter = localTimerData.find (globalName);
+
+	if (localMapIter == localTimerData.end()) {
+	  if (alwaysWriteLocal) {
+	    // We really only need to do this on MPI Proc 0, which is
+	    // the only process that currently may print local timers.
+	    // However, we do it on all MPI processes, just in case
+	    // someone later wants to modify this function to print
+	    // out local timer data for some MPI process other than
+	    // Rank 0.  This extra computation won't affect the cost
+	    // along the critical path, for future computations in
+	    // which Proc 0 participates.
+	    localMapIter = 
+	      localTimerData.insert (localMapIter, 
+				     makeEmptyTimerDatum (globalName));
+
+	    // Make sure the missing global name gets added to
+	    // the list of local names.  We'll resort it below.
+	    localTimerNames.push_back (globalName);
 	  }
+	  globalMapIter = 
+	    globalTimerData.insert (globalMapIter, 
+				    makeEmptyTimerDatum (globalName));
+	}
+	else {
+	  globalMapIter = 
+	    globalTimerData.insert (globalMapIter, 
+				    make_pair (globalName, 
+					       localMapIter->second));
+	}
+      }
 
-	// mergeCounterNames() just merges the counters' names, not
-	// their actual data.  Now we need to fill globalTimerData
-	// with this MPI process' timer data for those timers in
-	// globalTimerNames.
-	//
-	// All processes need the full list of global timers, since
-	// there may be some global timers that are not local timers.
-	// That's why mergeCounterNames() has to be an all-reduce, not
-	// just a reduction to Proc 0.
-	//
-	// If there are some global timers that are not local timers,
-	// and if we want to print local timers, we insert a local
-	// timer datum with zero elapsed time and zero call count into
-	// localTimerData as well, for the reason mentioned above.
-	//
-	// Insertion optimization; if the iterator given to
-	// map::insert points right before where we want to insert,
-	// insertion is O(1).  globalTimerNames is sorted, so feeding
-	// the iterator output of map::insert into the next
-	// invocation's input should make the whole insertion O(N)
-	// where N is the number of entries in globalTimerNames.
-	timer_map_t::iterator globalMapIter = globalTimerData.begin();
-	timer_map_t::iterator localMapIter;
-	for (Array<string>::const_iterator it = globalTimerNames.begin(); 
-	     it != globalTimerNames.end(); ++it)
-	  {
-	    const std::string& globalName = *it;
-	    localMapIter = localTimerData.find (globalName);
+      if (alwaysWriteLocal) {
+	// Re-sort the list of local timer names, since we may have
+	// inserted "missing" names above.
+	std::sort (localTimerNames.begin(), localTimerNames.end());
+      }
 
-	    if (localMapIter == localTimerData.end())
-	      {
-		if (alwaysWriteLocal)
-		  {
-		    // We really only need to do this on MPI Proc 0, which is
-		    // the only process that currently may print local timers.
-		    // However, we do it on all MPI processes, just in case
-		    // someone later wants to modify this function to print
-		    // out local timer data for some MPI process other than
-		    // Rank 0.  This extra computation won't affect the cost
-		    // along the critical path, for future computations in
-		    // which Proc 0 participates.
-		    localMapIter = 
-		      localTimerData.insert (localMapIter, 
-					     makeEmptyTimerDatum (globalName));
-
-		    // Make sure the missing global name gets added to
-		    // the list of local names.  We'll resort it below.
-		    localTimerNames.push_back (globalName);
-		  }
-		globalMapIter = 
-		  globalTimerData.insert (globalMapIter, 
-					  makeEmptyTimerDatum (globalName));
-	      }
-	    else
-	      globalMapIter = 
-		globalTimerData.insert (globalMapIter, 
-					make_pair (globalName, 
-						   localMapIter->second));
-	  }
-
-	if (alwaysWriteLocal)
-	  // Resort the list of local timer names, since we may have
-	  // inserted "missing" names above.
-	  std::sort (localTimerNames.begin(), localTimerNames.end());
-
-	if (debug)
-	  {
-	    // Sanity check that all MPI procs have the name number of
-	    // global timers.
-	    const timer_map_t::size_type myNumGlobalTimers = globalTimerData.size();
-	    timer_map_t::size_type minNumGlobalTimers = 0;
-	    timer_map_t::size_type maxNumGlobalTimers = 0;
-	    reduceAll (*pComm, REDUCE_MIN, myNumGlobalTimers, 
-		       outArg (minNumGlobalTimers));
-	    reduceAll (*pComm, REDUCE_MAX, myNumGlobalTimers, 
-		       outArg (maxNumGlobalTimers));
-	    TEUCHOS_TEST_FOR_EXCEPTION(minNumGlobalTimers != maxNumGlobalTimers,
-			       std::logic_error,
-			       "Min # global timers = " << minNumGlobalTimers 
-			       << " != max # global timers = " << maxNumGlobalTimers
-			       << ".  Please report this bug to the Teuchos developers.");
-	    TEUCHOS_TEST_FOR_EXCEPTION(myNumGlobalTimers != minNumGlobalTimers,
-			       std::logic_error,
-			       "My # global timers = " << myNumGlobalTimers 
-			       << " != min # global timers = " << minNumGlobalTimers
-			       << ".  Please report this bug to the Teuchos developers.");
-	  }
-      } // if (writeGlobalStats)
+      if (debug) {
+	// Sanity check that all MPI procs have the name number of
+	// global timers.
+	const timer_map_t::size_type myNumGlobalTimers = globalTimerData.size();
+	timer_map_t::size_type minNumGlobalTimers = 0;
+	timer_map_t::size_type maxNumGlobalTimers = 0;
+	reduceAll (*comm, REDUCE_MIN, myNumGlobalTimers, 
+		   outArg (minNumGlobalTimers));
+	reduceAll (*comm, REDUCE_MAX, myNumGlobalTimers, 
+		   outArg (maxNumGlobalTimers));
+	TEUCHOS_TEST_FOR_EXCEPTION(minNumGlobalTimers != maxNumGlobalTimers,
+	  std::logic_error, "Min # global timers = " << minNumGlobalTimers 
+	  << " != max # global timers = " << maxNumGlobalTimers
+	  << ".  Please report this bug to the Teuchos developers.");
+	TEUCHOS_TEST_FOR_EXCEPTION(myNumGlobalTimers != minNumGlobalTimers,
+	  std::logic_error, "My # global timers = " << myNumGlobalTimers 
+	  << " != min # global timers = " << minNumGlobalTimers
+	  << ".  Please report this bug to the Teuchos developers.");
+      }
+    } // if (writeGlobalStats)
 
     // Extract the timer names (global or local) into a single array
     // of strings, representing the column labels in the table.
     Array<string> timerNames;
     timerNames.reserve (globalTimerData.size());
-    if (writeGlobalStats) 
+    if (writeGlobalStats) {
       // Use global timer names as the column names.
       std::copy (globalTimerNames.begin(), globalTimerNames.end(), 
 		 std::back_inserter (timerNames));
-    else 
+    } 
+    else {
       // Use local timer names as the column labels.
       std::copy (localTimerNames.begin(), localTimerNames.end(), 
 		 std::back_inserter (timerNames));
+    }
 
-    if (debug)
-      {
-	for (int p = 0; p < numProcs; ++p)
-	  {
-	    if (myRank == p)
-	      {
-		cerr << "Proc " << myRank << ": Global timer names:" << endl;
-		for (Array<std::string>::const_iterator it = globalTimerNames.begin(); 
-		     it != globalTimerNames.end(); ++it)
-		  cerr << "-- " << *it << endl;
-	      }
-	    barrier (*pComm);
-	    barrier (*pComm);
+    if (debug) {
+      for (int p = 0; p < numProcs; ++p) {
+	if (myRank == p) {
+	  cerr << "Proc " << myRank << ": Global timer names:" << endl;
+	  for (Array<std::string>::const_iterator it = globalTimerNames.begin(); 
+	       it != globalTimerNames.end(); ++it) {
+	    cerr << "-- " << *it << endl;
 	  }
-	for (int p = 0; p < numProcs; ++p)
-	  {
-	    if (myRank == p)
-	      {
-		cerr << "Proc " << myRank << ": Global timer data:" << endl;
-		for (timer_map_t::const_iterator it = globalTimerData.begin(); 
-		     it != globalTimerData.end(); ++it)
-		  cerr << "-- " << it->first << ", " << it->second.first 
-		       << ", " << it->second.second << endl;
-	      }
-	    barrier (*pComm);
-	    barrier (*pComm);
-	  }
+	}
+	barrier (*comm);
+	barrier (*comm);
       }
+      for (int p = 0; p < numProcs; ++p) {
+	if (myRank == p) {
+	  cerr << "Proc " << myRank << ": Global timer data:" << endl;
+	  for (timer_map_t::const_iterator it = globalTimerData.begin(); 
+	       it != globalTimerData.end(); ++it) {
+	    cerr << "-- " << it->first << ", " << it->second.first 
+		 << ", " << it->second.second << endl;
+	  }
+	}
+	barrier (*comm);
+	barrier (*comm);
+      }
+    }
 
     const int precision = format().precision();
 
@@ -509,9 +451,9 @@ namespace Teuchos {
       TableColumn nameCol (timerNames);
       tableColumns.append (nameCol);
 
-      // Each column is as wide as it needs to be to hold both its title
-      // and all of the column data.  This column's title is the current
-      // last entry of the titles array.
+      // Each column is as wide as it needs to be to hold both its
+      // title and all of the column data.  This column's title is the
+      // current last entry of the titles array.
       columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
 								nameCol));
     }
@@ -521,161 +463,177 @@ namespace Teuchos {
     // if there is more than one MPI process in the communicator
     // (otherwise local stats == global stats, so we just print the
     // global stats).
-    if (alwaysWriteLocal && numProcs > 1 && myRank == 0)
-      {
-	titles.append ("Local time (num calls)");
+    if (alwaysWriteLocal && numProcs > 1 && myRank == 0) {
+      titles.append ("Local time (num calls)");
 
-	// Copy local timer data out of the array-of-structs into
-	// separate arrays, for display in the table.
-	Array<double> localTimings;
-	Array<double> localNumCalls;
-	for (timer_map_t::const_iterator it = localTimerData.begin();
-	     it != localTimerData.end(); ++it)
-	  {
-	    localTimings.push_back (it->second.first);
-	    localNumCalls.push_back (static_cast<double> (it->second.second));
-	  }
-	TableColumn timeAndCalls (localTimings, localNumCalls, precision, true);
+      // Copy local timer data out of the array-of-structs into
+      // separate arrays, for display in the table.
+      Array<double> localTimings;
+      Array<double> localNumCalls;
+      for (timer_map_t::const_iterator it = localTimerData.begin();
+	   it != localTimerData.end(); ++it) {
+	localTimings.push_back (it->second.first);
+	localNumCalls.push_back (static_cast<double> (it->second.second));
+      }
+      TableColumn timeAndCalls (localTimings, localNumCalls, precision, true);
+      tableColumns.append (timeAndCalls);
+      columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
+								timeAndCalls));
+    }
+
+    if (writeGlobalStats) {
+      const timer_map_t::size_type numGlobalTimers = globalTimerData.size();
+
+      // Copy global timer data out of the array-of-structs into
+      // separate arrays, for display in the table and/or for
+      // computing statistics.
+      Array<double> globalTimings;
+      Array<double> globalNumCalls;
+      for (timer_map_t::const_iterator it = globalTimerData.begin();
+	   it != globalTimerData.end(); ++it) {
+	globalTimings.push_back (it->second.first);
+	globalNumCalls.push_back (static_cast<double> (it->second.second));
+      }
+
+      if (numProcs == 1) {
+	// Don't display statistics in the case of only 1 MPI process.
+	// Just display the elapsed times and the call counts.
+	titles.append ("Global time (num calls)");
+	TableColumn timeAndCalls (globalTimings, globalNumCalls, precision, true);
 	tableColumns.append (timeAndCalls);
 	columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
 								  timeAndCalls));
       }
+      else { // numProcs > 1
+	// Table column containing min of global timer stats, if
+	// applicable.
+	//
+	// NOTE (mfh 18 Jul 2011) The report minimum global number of
+	// calls may be for a different MPI process than the minimum
+	// global timing.  Ditto for the other statistics.  What this
+	// means is that you should not divide the reported (minimum,
+	// mean, maximum) elapsed time by the reported (minimum, mean,
+	// maximum) call count to get an "average," since those
+	// quantities are not necessarily comparable.
+	{
+	  titles.append ("Min over procs");
+	  Array<double> minGlobalTimings (numGlobalTimers);
+	  Array<double> minGlobalNumCalls (numGlobalTimers);
 
-    if (writeGlobalStats)
-      {
-	const timer_map_t::size_type numGlobalTimers = globalTimerData.size();
-
-	// Copy global timer data out of the array-of-structs into
-	// separate arrays, for display in the table and/or for
-	// computing statistics.
-	Array<double> globalTimings;
-	Array<double> globalNumCalls;
-	for (timer_map_t::const_iterator it = globalTimerData.begin();
-	     it != globalTimerData.end(); ++it)
-	  {
-	    globalTimings.push_back (it->second.first);
-	    globalNumCalls.push_back (static_cast<double> (it->second.second));
+	  // Teuchos_CommHelpers.hpp doesn't currently have a reduce(); it
+	  // only has a reduceAll().  It would be better just to reduce to
+	  // Proc 0, but that has to wait until reduce() is implemented.
+	  if (numGlobalTimers > 0) {
+	    reduceAll (*comm, REDUCE_MIN, static_cast<int> (numGlobalTimers),
+		       &globalTimings[0], &minGlobalTimings[0]);
+	    reduceAll (*comm, REDUCE_MIN, static_cast<int> (numGlobalTimers),
+		       &globalNumCalls[0], &minGlobalNumCalls[0]);
 	  }
+	  TableColumn timeAndCalls (minGlobalTimings, minGlobalNumCalls, 
+				    precision, true);
+	  tableColumns.append (timeAndCalls);
+	  columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
+								    timeAndCalls));
+	}
+	// Table column containing arithmetic mean of global timer
+	// stats, if applicable.
+	{
+	  titles.append ("Mean over procs");
 
-	if (numProcs == 1)
-	  { 
-	    // Don't display statistics in the case of only 1 MPI process.
-	    // Just display the elapsed times and the call counts.
-	    titles.append ("Global time (num calls)");
-	    TableColumn timeAndCalls (globalTimings, globalNumCalls, precision, true);
-	    tableColumns.append (timeAndCalls);
-	    columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
-								      timeAndCalls));
+	  // Scale first, so that the reduction can sum.  This avoids
+	  // unnecessary overflow, in case the sum is large but the number
+	  // of processors is also large.
+	  Array<double> scaledGlobalTimings (numGlobalTimers);
+	  Array<double> scaledGlobalNumCalls (numGlobalTimers);
+	  std::transform (globalTimings.begin(), globalTimings.end(), 
+			  scaledGlobalTimings.begin(), 
+			  std::bind2nd (std::divides<double>(), 
+					static_cast<double> (numProcs)));
+	  std::transform (globalNumCalls.begin(), globalNumCalls.end(), 
+			  scaledGlobalNumCalls.begin(), 
+			  std::bind2nd (std::divides<double>(), 
+					static_cast<double> (numProcs)));
+	  Array<double> avgGlobalTimings (numGlobalTimers);
+	  Array<double> avgGlobalNumCalls (numGlobalTimers);
+	  if (numGlobalTimers > 0) {
+	    reduceAll (*comm, REDUCE_SUM, static_cast<int> (numGlobalTimers),
+		       &scaledGlobalTimings[0], &avgGlobalTimings[0]);
+	    reduceAll (*comm, REDUCE_SUM, static_cast<int> (numGlobalTimers),
+		       &scaledGlobalNumCalls[0], &avgGlobalNumCalls[0]);
 	  }
-	else // numProcs > 1
-	  {
-	    // Table column containing min of global timer stats, if
-	    // applicable.
-	    //
-	    // NOTE (mfh 18 Jul 2011) The report minimum global number
-	    // of calls may be for a different MPI process than the
-	    // minimum global timing.  Ditto for the other statistics.
-	    // What this means is that you should not divide the
-	    // reported (minimum, mean, maximum) elapsed time by the
-	    // reported (minimum, mean, maximum) call count to get an
-	    // "average," since those quantities are not necessarily
-	    // comparable.
-	    {
-	      titles.append ("Min over procs");
-	      Array<double> minGlobalTimings (numGlobalTimers);
-	      Array<double> minGlobalNumCalls (numGlobalTimers);
+	  TableColumn timeAndCalls (avgGlobalTimings, avgGlobalNumCalls, 
+				    precision, true);
+	  tableColumns.append (timeAndCalls);
+	  columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
+								    timeAndCalls));
+	}
 
-	      // Teuchos_CommHelpers.hpp doesn't currently have a reduce(); it
-	      // only has a reduceAll().  It would be better just to reduce to
-	      // Proc 0, but that has to wait until reduce() is implemented.
-	      if (numGlobalTimers > 0)
-		{
-		  reduceAll (*pComm, REDUCE_MIN, 
-			     static_cast<int> (numGlobalTimers), 
-			     &globalTimings[0], &minGlobalTimings[0]);
-		  reduceAll (*pComm, REDUCE_MIN, 
-			     static_cast<int> (numGlobalTimers),
-			     &globalNumCalls[0], &minGlobalNumCalls[0]);
-		}
-	      TableColumn timeAndCalls (minGlobalTimings, minGlobalNumCalls, 
-					precision, true);
-	      tableColumns.append (timeAndCalls);
-	      columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
-									timeAndCalls));
-	    }
-	    // Table column containing arithmetic mean of global timer
-	    // stats, if applicable.
-	    {
-	      titles.append ("Mean over procs");
+	// Table column containing max of global timer stats, if
+	// applicable.
+	{
+	  titles.append("Max over procs");
+	  Array<double> maxGlobalTimings (numGlobalTimers);
+	  Array<double> maxGlobalNumCalls (numGlobalTimers);
 
-	      // Scale first, so that the reduction can sum.  This avoids
-	      // unnecessary overflow, in case the sum is large but the number
-	      // of processors is also large.
-	      Array<double> scaledGlobalTimings (numGlobalTimers);
-	      Array<double> scaledGlobalNumCalls (numGlobalTimers);
-	      std::transform (globalTimings.begin(), globalTimings.end(), 
-			      scaledGlobalTimings.begin(), 
-			      std::bind2nd (std::divides<double>(), 
-					    static_cast<double> (numProcs)));
-	      std::transform (globalNumCalls.begin(), globalNumCalls.end(), 
-			      scaledGlobalNumCalls.begin(), 
-			      std::bind2nd (std::divides<double>(), 
-					    static_cast<double> (numProcs)));
-	      Array<double> avgGlobalTimings (numGlobalTimers);
-	      Array<double> avgGlobalNumCalls (numGlobalTimers);
-	      if (numGlobalTimers > 0)
-		{
-		  reduceAll (*pComm, REDUCE_SUM, 
-			     static_cast<int> (numGlobalTimers),
-			     &scaledGlobalTimings[0], &avgGlobalTimings[0]);
-		  reduceAll (*pComm, REDUCE_SUM, 
-			     static_cast<int> (numGlobalTimers),
-			     &scaledGlobalNumCalls[0], &avgGlobalNumCalls[0]);
-		}
-	      TableColumn timeAndCalls (avgGlobalTimings, avgGlobalNumCalls, 
-					precision, true);
-	      tableColumns.append (timeAndCalls);
-	      columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
-									timeAndCalls));
-	    }
-
-	    // Table column containing max of global timer stats, if
-	    // applicable.
-	    {
-	      titles.append("Max over procs");
-	      Array<double> maxGlobalTimings (numGlobalTimers);
-	      Array<double> maxGlobalNumCalls (numGlobalTimers);
-
-	      // Teuchos_CommHelpers.hpp doesn't currently have a reduce(); it
-	      // only has a reduceAll().  It would be better just to reduce to
-	      // Proc 0, but that has to wait until reduce() is implemented.
-	      if (numGlobalTimers > 0)
-		{
-		  reduceAll (*pComm, REDUCE_MAX, 
-			     static_cast<int> (numGlobalTimers),
-			     &globalTimings[0], &maxGlobalTimings[0]);
-		  reduceAll (*pComm, REDUCE_MAX, 
-			     static_cast<int> (numGlobalTimers),
-			     &globalNumCalls[0], &maxGlobalNumCalls[0]);
-		}
-	      TableColumn timeAndCalls (maxGlobalTimings, maxGlobalNumCalls, 
-					precision, true);
-	      tableColumns.append (timeAndCalls);
-	      columnWidths.append (format ().computeRequiredColumnWidth (titles.back(), 
-									 timeAndCalls));
-	    }
+	  // Teuchos_CommHelpers.hpp doesn't currently have a reduce(); it
+	  // only has a reduceAll().  It would be better just to reduce to
+	  // Proc 0, but that has to wait until reduce() is implemented.
+	  if (numGlobalTimers > 0) {
+	    reduceAll (*comm, REDUCE_MAX, static_cast<int> (numGlobalTimers),
+		       &globalTimings[0], &maxGlobalTimings[0]);
+	    reduceAll (*comm, REDUCE_MAX, static_cast<int> (numGlobalTimers),
+		       &globalNumCalls[0], &maxGlobalNumCalls[0]);
 	  }
+	  TableColumn timeAndCalls (maxGlobalTimings, maxGlobalNumCalls, 
+				    precision, true);
+	  tableColumns.append (timeAndCalls);
+	  columnWidths.append (format ().computeRequiredColumnWidth (titles.back(), 
+								     timeAndCalls));
+	}
       }
+    }
 
     // Print the whole table to the given output stream on MPI Rank 0.
     format ().setColumnWidths (columnWidths);
-    if (myRank == 0)
-      {
-	std::ostringstream theTitle;
-	theTitle << "TimeMonitor results over " << numProcs << " processor" 
-		 << (numProcs > 1 ? "s" : "");
-	format().writeWholeTable (out, theTitle.str(), titles, tableColumns);
+    if (myRank == 0) {
+      std::ostringstream theTitle;
+      theTitle << "TimeMonitor results over " << numProcs << " processor" 
+	       << (numProcs > 1 ? "s" : "");
+      format().writeWholeTable (out, theTitle.str(), titles, tableColumns);
+    }
+  }
+
+
+  void 
+  TimeMonitor::summarize (std::ostream &out,
+			  const bool alwaysWriteLocal,
+			  const bool writeGlobalStats,
+			  const bool writeZeroTimers,
+			  const ECounterSetOp setOp)
+  {
+    // The default communicator.  If Trilinos was built with MPI
+    // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
+    // be a "serial" (no MPI, one "process") communicator.
+    RCP<const Comm<int> > comm = DefaultComm<int>::getComm ();
+
+    // Callers may or may not have initialized MPI before calling
+    // summarize().  Just because they built with MPI, doesn't mean
+    // they want to use MPI.  It's not my responsibility to initialize
+    // MPI for them, and I don't have the context I need in order to
+    // do so anyway.  Thus, if Trilinos was built with MPI and MPI has
+    // not yet been initialized, make pComm a "serial" communicator.
+#ifdef HAVE_MPI
+    {
+      int mpiHasBeenStarted = 0;
+      MPI_Initialized (&mpiHasBeenStarted);
+      if (! mpiHasBeenStarted) {
+	// Make pComm a new "serial communicator."
+	comm = rcp_implicit_cast<const Comm<int> > (rcp (new SerialComm<int> ()));
       }
+    }
+#endif // HAVE_MPI
+
+    summarize (comm, alwaysWriteLocal, writeGlobalStats, writeZeroTimers, setOp);
   }
 
 
