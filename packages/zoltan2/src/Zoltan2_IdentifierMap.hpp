@@ -416,7 +416,6 @@ template< typename GID, typename LNO, typename GNO>
     ArrayView<int> out_proc) const
 {
   typedef typename Teuchos::Hashtable<double, LNO> id2index_hash_t;
-  cout << "I am here" << endl;
 
   size_t len=in_gid.size();
 
@@ -430,7 +429,6 @@ template< typename GID, typename LNO, typename GNO>
     (out_proc.size() >= len) && (skipGno || (out_gno.size() >= len)),
     BASIC_ASSERTION);
 
-  cout << "I am here 1" << endl;
   if (userGidsAreZoltan2Gnos_ && (gnoDist_.size() > 0)){
 
     // Easy case - communication is not needed.
@@ -440,20 +438,11 @@ template< typename GID, typename LNO, typename GNO>
     typename std::map<GNO, int> firstGnoToProc;
     typename std::map<GNO, int>::iterator pos;
 
-  cout << "I am here 11" << endl;
     for (int p=0; p <= numProcs_; p++){
       firstGnoToProc[gnoDist_[p]] = p;
     }
 
-  cout << "I am here 12" << endl;
     for (size_t i=0; i < len; i++){
-        cout << i << endl;
-        cout << "in _gid" << in_gid << endl;
-        cout << "skipGNO" << skipGno << endl;
-        cout << "out_proc" << out_proc << endl;
-         if (!skipGno) cout << "out_gno" << out_gno << endl;
-        cout << "out_proc size" << out_proc.size() << endl;
-        cout << "out_proc" << out_proc << endl;
       GNO globalNumber = Teuchos::as<GNO>(in_gid[i]);;
       if (!skipGno)
         out_gno[i] = globalNumber;
@@ -461,7 +450,6 @@ template< typename GID, typename LNO, typename GNO>
       out_proc[i] = pos->second - 1;
     }
 
-  cout << "I am here 13" << endl;
     return;
   }
 
@@ -485,7 +473,6 @@ template< typename GID, typename LNO, typename GNO>
   ArrayRCP<GNO> gnoInBuf;
   ArrayRCP<LNO> countInBuf;
 
-  cout << "I am here 2" << endl;
   if (localNumberOfIds_ > 0){
 
     try{ 
@@ -525,7 +512,6 @@ template< typename GID, typename LNO, typename GNO>
     hashProc.clear();
   }
 
-  cout << "I am here 3" << endl;
   // Z2::AlltoAllv comment: Buffers are in process rank contiguous order.
 
   try{
@@ -547,7 +533,6 @@ template< typename GID, typename LNO, typename GNO>
     Z2_FORWARD_EXCEPTIONS;
   }
 
-  cout << "I am here 4" << endl;
   gnoOutBuf.clear();
   countOutBuf.clear();
 
@@ -579,7 +564,6 @@ template< typename GID, typename LNO, typename GNO>
     }
   }
 
-  cout << "I am here 5" << endl;
   // Keep gnoInBuf.  We're done with the others.
 
   gidInBuf.release();
@@ -629,7 +613,6 @@ template< typename GID, typename LNO, typename GNO>
     catch(...)
       Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
   
-  cout << "I am here 6" << endl;
     LNO idx = 0;
     for (next = gidIndices.begin(); next != gidIndices.end(); ++next, ++idx){
       double key = next->first;
@@ -650,7 +633,6 @@ template< typename GID, typename LNO, typename GNO>
     catch(...)
       Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
   
-  cout << "I am here 7" << endl;
     idx = 0;
     for (next = gidIndices.begin(); next != gidIndices.end(); ++next, ++idx){
       double key = next->first;
@@ -672,7 +654,6 @@ template< typename GID, typename LNO, typename GNO>
 
   gidOutBuf.clear();
 
-  cout << "I am here 8" << endl;
   ///////////////////////////////////////////////////////////////////////
   // Create and send answers to the processes that made requests of me.
   ///////////////////////////////////////////////////////////////////////
@@ -728,7 +709,6 @@ template< typename GID, typename LNO, typename GNO>
     gnoInBuf.release();
   }
 
-  cout << "I am here 9" << endl;
   try{
     ArrayView<const int> procView = procOutBuf();
     ArrayView<const LNO> countView = countOutBuf();
@@ -755,7 +735,6 @@ template< typename GID, typename LNO, typename GNO>
   // Done.  Process the replies to my queries
   ///////////////////////////////////////////////////////////////////////
 
-  cout << "I am here 10" << endl;
   LNO idx = 0;
   for (next = gidIndices.begin(); next != gidIndices.end(); ++next, ++idx){
     double key = next->first;
