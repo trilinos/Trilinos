@@ -73,6 +73,7 @@ int AlgAMD(
 
   //const size_t nEdgs = model->getEdgeList( edgeIds,
   //                      procIds, offsets, wgts);
+  // TODO: Should use the local graph
   model->getEdgeList( edgeIds, procIds, offsets, wgts);
 
 

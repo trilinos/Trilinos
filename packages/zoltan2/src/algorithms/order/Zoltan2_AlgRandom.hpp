@@ -37,7 +37,7 @@ int AlgRandom(
   //   R. Durstenfeld, "Algorithm 235: Random permutation", CACM, vol. 7, 1964.
 
   // Start with the identity permutation.
-  const size_t n = model->getLocalNumVertices();
+  const size_t n = model->getLocalNumIdentifiers();
   lno_t *perm;
   perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
   for (lno_t i=0; i<n; i++){
