@@ -76,8 +76,8 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
         #CTEST_DO_UPDATES=OFF
         CTEST_DO_SUBMIT=OFF
         Trilinos_CTEST_COMMAND=${Trilinos_CTEST_COMMAND}
-        Trilinos_PACKAGES=  # Must turn off in case in env
         Trilinos_WARNINGS_AS_ERRORS_FLAGS=-DummyErrFlags
+        Trilinos_PACKAGES=  # Must turn off in case in env
         ${PARSE_ARGS}
         ${Trilinos_CTEST_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/unit_test_driver.cmake
       PASS_REGULAR_EXPRESSION_ALL ${PARSE_PASS_REGULAR_EXPRESSION_ALL}
@@ -85,13 +85,13 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
 
   IF (NOT PARSE_SKIP_STANDARD_DEPS_CHECK)
     SET(TEST_BLOCKS ${TEST_BLOCKS}
-      "Dumping the XML dependencies file .*${TEST_NAME}/TrilinosPackageDependencies.xml"
-      "CDASH_SUBPROJECT_XML_FILE='.*${TEST_NAME}/CDashSubprojectDependencies.xml'"
+      "Dumping the XML dependencies file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/TrilinosPackageDependencies.xml"
+      "CDASH_SUBPROJECT_XML_FILE='${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/CDashSubprojectDependencies.xml'"
       )
     IF (PYTHON_EXECUTABLE)
       SET(TEST_BLOCKS ${TEST_BLOCKS}
-        "Dumping the HTML dependencies webpage file .*${TEST_NAME}/TrilinosPackageDependenciesTable.html"
-        "Dumping the CDash XML dependencies file .*${TEST_NAME}/CDashSubprojectDependencies.xml"
+        "Dumping the HTML dependencies webpage file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/TrilinosPackageDependenciesTable.html"
+        "Dumping the CDash XML dependencies file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/CDashSubprojectDependencies.xml"
         )
     ENDIF()
   ENDIF()

@@ -745,18 +745,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # The name of the site in the dashboard (almost never need to override this)
   SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
 
-  # When run in by the TDD system, gives the root directory
-  SET_DEFAULT_AND_FROM_ENV( TDD_DASHBOARD_ROOT "" )
-
   # The root of the dasbhoard where ${PROJECT_NAME} will be cloned and the
   # BUILD directory will be create (only override for separate testing)
-  IF (TDD_DASHBOARD_ROOT)
-    MESSAGE("Hard setting CTEST_DASHBOARD_ROOT because TDD_DASHBOARD_ROOT is set!")
-    SET(CTEST_DASHBOARD_ROOT "${TDD_DASHBOARD_ROOT}/${BUILD_DIR_NAME}")
-    PRINT_VAR(CTEST_DASHBOARD_ROOT)
-  ELSE()
-    SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
-  ENDIF()
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
 
   # The build type (e.g. DEBUG, RELEASE, NONE)
   SET_DEFAULT_AND_FROM_ENV( BUILD_TYPE NONE )

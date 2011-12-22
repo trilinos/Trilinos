@@ -15,7 +15,7 @@ A) TriBITS Units
 There are some important concepts that are part of the TriBITS system that
 must be clearly defined.
 
-1) Project: a global, top-level CMake build
+A.1) Project: a global, top-level CMake build
 * This defines a build, consisting of one or more Repositories (see 2)
 * Example: Trilinos, as far as the nightly build is concerned
 * Defines PROJECT_NAME CMake variable (defined in ProjectName.cmake)
@@ -42,7 +42,7 @@ must be clearly defined.
       ctest/
         CTestCustom.ctest.in  # [Optional] Custom ctest settings
 
-2) Repository: a collection of packages and/or files
+A.2) Repository: a collection of packages and/or files
 * This defines an association between one or more packages
 * Example: Trilinos, as far as its packages are concerned
 * Defines a CMake variable specific to the collection referred to the
@@ -62,12 +62,10 @@ must be clearly defined.
     Copyright.txt  # [Optional] Only needed if creating version header file
     Version.cmake  # [Optional] Info inserted into ${REPO_NAME}_version.h
     cmake/
-       CallBack<A>.cmake # [Optional] Only included once
-       CallBack<B>.cmake # [Optional] Only included once
-       CallBack<C>.cmake # [Optional] Only included once
-       ...
+       CallbackSetupExtraOptions.cmake # [Optional] Called after tribits options
+       CallbackDefinePackaging.cmake # [Optioinal] Called after packages configured
 
-3) Package:
+A.3) Package:
 * Defines a set of libraries and/or headers and/or executables and/or tests
   with cmake build targets for building these and publishes the list of include
   directories and libraries that are created (along with CMake dependencies).
@@ -81,7 +79,7 @@ must be clearly defined.
        Dependencies.cmake  # Always processed if the package is listed in the
                            # enclosing Repository
 
-4) TPL:
+A.4) TPL:
 * Defines a set of pre-built libraries and/or executables
 * Publishes the include directories and/or libraries and/or executables
   provided by the TPL
@@ -99,8 +97,13 @@ NOTES:
     is just one list of packages, then the file NativeRepositoriesList.cmake is
     unnecessary.
 
+* The number of and the names of the call-back files may change in the future
+  repository-specific requirements change.  However, we will try to only add files
+  and not change existing ones.
 
-B) CMake Variables
+
+B) CMake Variables:
+-------------------
 
 The variables below fall into one of two types:
 * "Fixed variable" are used temporarily in the processing of a TriBITS unit.
@@ -115,7 +118,7 @@ The variables below fall into one of two types:
   They are part of the TriBITS dependency system, allowing downstream units 
   to access properties of their known upstream dependencies.
 
-1) Project unit variables:
+B.1) Project unit variables:
 
 These are top-level (non-cache) CMake variables that are available once a
 Project is defined:
@@ -128,7 +131,7 @@ Project is defined:
   ${PROJECT_NAME}_SOURCE_DIR: Set to ${PROJECT_SOURCE_DIR}
   ${PROJECT_NAME}_BINARY_DIR: Set to ${PROJECT_BINARY_DIR}
 
-2) Repository unit variables:
+B.2) Repository unit variables:
 
 These are the variables that are available once each Repository is defined:
 
@@ -147,7 +150,7 @@ These are the variables that are available once each Repository is defined:
     RepoX_SOURCE_DIR.  This makes such CMake code independent of where the
     Repository is in relation to the Project.
 
-3) Package unit variables:
+B.3) Package unit variables:
 
 These are top-level (non-cache) CMake variables that are available once a
 Package is processed.
@@ -177,3 +180,23 @@ Package is processed.
   PARENT_PACKAGE_BINARY_DIR:
     The absolute path to the parent package's binary directory.
     This is useful for access by subpackages.
+
+
+C) Open issues:
+---------------
+
+C.1) Should there be a concept of a "Repository" at the package level?
+
+Currently, a Package can refer to its containing Repository and refer to its
+source and binary directories.  This is so that it can refer to
+repository-level resources (e.g. like the Trilinos_version.h file).  This may
+be undesirable because it will make it very hard to pull a package out of one
+Repository and place it in another repository for a different use.  In this
+case, we might eliminate the defined varibles <REPOSITORY_NAME>_SOURCE_DIR and
+<REPOSITORY_NAME>_BINARY_DIR and make Packages oblivious to the Repository
+that they are in.
+
+Note that the concept of Repositories would remain an important concept at the
+Project level because the project needs to know what packages and TPLs to
+define and needs to know where to find call-backs that might be specific to
+the repository.
