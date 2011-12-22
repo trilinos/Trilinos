@@ -335,7 +335,7 @@ namespace panzer_stk {
     }
 
     Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,ep_lof, p_names, is_transient));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,ep_lof, p_names, global_data, is_transient));
 
     // Setup initial conditions
     /////////////////////////////////////////////////////////////
