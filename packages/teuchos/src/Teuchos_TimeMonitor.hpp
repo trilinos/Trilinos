@@ -276,6 +276,14 @@ public:
   ///   use this method in parallel, you should first initialize MPI.
   ///   (We cannot initialize MPI for you, because we have no way to
   ///   know whether you intend to run an MPI-enabled build serially.)
+  ///
+  /// \warning If you call this method when MPI is running, you
+  ///   <i>must</i> call it on all processes in MPI_COMM_WORLD.
+  ///   Otherwise, the method will never finish, since it will be
+  ///   waiting forever for the non-participating processes.  If you
+  ///   want to use \c summarize() on a subcommunicator, please use
+  ///   the overloaded version above that takes a communicator as an
+  ///   input argument.
   static void 
   summarize (std::ostream &out=std::cout, 
 	     const bool alwaysWriteLocal=false,
