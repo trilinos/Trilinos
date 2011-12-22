@@ -162,6 +162,7 @@ namespace Teuchos {
 
   void 
   TimeMonitor::summarize (const RCP<const Comm<int> >& comm,
+			  std::ostream& out,
 			  const bool alwaysWriteLocal,
 			  const bool writeGlobalStats,
 			  const bool writeZeroTimers,

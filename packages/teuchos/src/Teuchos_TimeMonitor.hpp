@@ -285,7 +285,7 @@ public:
   ///   the overloaded version above that takes a communicator as an
   ///   input argument.
   static void 
-  summarize (std::ostream &out=std::cout, 
+  summarize (std::ostream& out=std::cout, 
 	     const bool alwaysWriteLocal=false,
 	     const bool writeGlobalStats=true,
 	     const bool writeZeroTimers=true,
