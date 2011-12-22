@@ -1037,7 +1037,7 @@ private:
      // "Stop iterating if the maximum number of iterations has been
      // reached, or if the convergence test passes."
      sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, 
-					  maxIterTest_, convTest_);
+					  maxIterTest_, convTest_));
      // Create the status test output class.
      // This class manages and formats the output from the status test.
      StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
@@ -2044,13 +2044,13 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<ScalarType>& dlist, i
 		try{
 //KMS******************************************************************8
 std::cout << "Here are the current residuals before block_gmres" << std::endl;
-{
-        std::vector<MagnitudeType> norms;
-        block_gmres_iter -> getNativeResiduals( &norms );
-        for(int jj=0; jj<norms.size(); jj++){
-                std::cout << "norms[" << jj << "]=" << norms[jj] << std::endl;
-        }
-}
+ {
+   std::vector<MagnitudeType> norms;
+   block_gmres_iter -> getNativeResiduals( &norms );
+   for (size_t jj = 0; jj < norms.size(); ++jj) {
+     std::cout << "norms[" << jj << "]=" << norms[jj] << std::endl;
+   }
+ }
 //***********************************************************************
 
 
@@ -2061,13 +2061,13 @@ std::cout << "Here are the current residuals before block_gmres" << std::endl;
 
 //KMS**********************************************************************
 std::cout << "Here are the current residuals after block GMRES" << std::endl;
-{
-        std::vector<MagnitudeType> norms;
-        block_gmres_iter -> getNativeResiduals( &norms );
-        for(int jj=0; jj<norms.size(); jj++){
-                std::cout << "norms[" << jj << "]=" << norms[jj] << std::endl;
-        }
-}
+ {
+   std::vector<MagnitudeType> norms;
+   block_gmres_iter -> getNativeResiduals( &norms );
+   for (size_t jj = 0; jj < norms.size(); ++jj) {
+     std::cout << "norms[" << jj << "]=" << norms[jj] << std::endl;
+   }
+ }
 //************************************************************************8
 
 			//////////////////////////////////////////////
@@ -2292,13 +2292,13 @@ std::cout << "Here are the current residuals after block GMRES" << std::endl;
 
 //KMS**********************************************************************
   std::cout << "Here are the current residuals after a block GCRODR cycle" << std::endl;
-{
-        std::vector<MagnitudeType> norms;
-        block_gcrodr_iter -> getNativeResiduals( &norms );
-        for(int jj=0; jj<norms.size(); jj++){
-                std::cout << "norms[" << jj << "]=" << norms[jj] << std::endl;
-        }
-}
+  {
+    std::vector<MagnitudeType> norms;
+    block_gcrodr_iter -> getNativeResiduals( &norms );
+    for (size_t jj = 0; jj < norms.size(); ++jj) {
+      std::cout << "norms[" << jj << "]=" << norms[jj] << std::endl;
+    }
+  }
 //************************************************************************8
 				//Update recycled space even if we have reached max number of restarts
 

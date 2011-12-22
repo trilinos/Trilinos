@@ -47,7 +47,7 @@
 // 
 #include <BelosConfigDefs.hpp>
 #include <BelosTpetraAdapter.hpp>
-#include <BelosBlockGCRODRSolMgr.hpp"
+#include <BelosBlockGCRODRSolMgr.hpp>
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -79,11 +79,11 @@ main (int argc, char *argv[])
   //  
   // bool verbose = false;
   //bool debug = false;
-  CommandLineProcessor cmdp (false, true);
+  Teuchos::CommandLineProcessor cmdp (false, true);
   //cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   //cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
 
-  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     out << "\nEnd Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
@@ -99,7 +99,7 @@ main (int argc, char *argv[])
   // with defaults.
   //
   RCP<ParameterList> params = parameterList ();
-  solver->setParameters (params);
+  solver.setParameters (params);
 
   if (success) {
     out << "\nEnd Result: TEST PASSED" << endl;
