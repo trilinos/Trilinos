@@ -3,7 +3,7 @@
 INCLUDE(TribitsAddAdvancedTest)
 
 
-SET(MOCK_TRILINOS_DIR ${Trilinos_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
+SET(MOCK_TRILINOS_DIR ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
 
 
 IF (WIN23 AND NOT CYGWIN)
@@ -26,7 +26,7 @@ TRIBITS_ADD_ADVANCED_TEST( XmlHtmlCDashOutputTest
       -D Trilinos_ENABLE_C:BOOL=OFF
       -D Trilinos_ENABLE_CXX:BOOL=OFF
       -D Trilinos_ENABLE_Fortran:BOOL=OFF
-      ${${PROJECT_NAME}_HOME_DIR}
+      ${Trilinos_SOURCE_DIR}
     PASS_REGULAR_EXPRESSION "Shortcircuiting after dependency tracking ..."
   TEST_1 CMND ${DIFF_COMMAND_STUFF}
     ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependencies.gold.xml
