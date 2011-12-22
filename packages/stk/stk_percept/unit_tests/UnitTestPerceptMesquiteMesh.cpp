@@ -42,6 +42,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMeshDomain.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #define StackTrace StackTraceTmp
 
 #endif
@@ -124,7 +125,7 @@ namespace stk
             stk::mesh::Selector boundarySelector_4(*eMesh.getNonConstPart("surface_4") );
             stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
-            PerceptMesquiteMesh pmm(&eMesh, &boundarySelector);
+            PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
             PerceptMesquiteMeshDomain pmd(&eMesh, 0);
             percept::PMMLaplaceSmoother ls;
             ls.run(pmm, pmd);
@@ -133,6 +134,75 @@ namespace stk
             STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[1], 1.0);
 
             eMesh.saveAs(input_files_loc+"quad_smooth.1.e");
+          }
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_2)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size == 1 || p_size == 3)
+        if (p_size <= 1)
+          {
+            //const unsigned p_rank = stk::parallel_machine_rank( pm );
+            //const unsigned p_size = stk::parallel_machine_size( pm );
+
+            const unsigned n = 3;
+            //const unsigned nx = n , ny = n , nz = p_size*n ;
+            const unsigned nx = n , ny = n;
+
+            bool sidesets=true;
+            percept::QuadFixture<double> fixture( pm , nx , ny, sidesets);
+            fixture.meta_data.commit();
+            fixture.generate_mesh();
+
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
+            eMesh.printInfo("quad fixture",  2);
+            eMesh.saveAs(input_files_loc+"quad_2_smooth.0.e");
+
+            unsigned center_node_id[4] = {6,7,10,11};
+            for (int ii=0; ii < 4; ii++)
+              {
+                stk::mesh::Entity* node = eMesh.getBulkData()->get_entity(0, center_node_id[ii]);
+                double * data = stk::mesh::field_data( *eMesh.getCoordinatesField() , *node );
+                std::cout << "tmp srk  center node= " << data[0] << " " << data[1] << std::endl;
+                //exit(1);
+                data[0] += .02*(ii+1);
+                data[1] += .03*(ii+1);
+              }
+
+            eMesh.saveAs(input_files_loc+"quad_2_smooth.0_perturbed.e");
+
+            stk::mesh::Selector boundarySelector_1(*eMesh.getNonConstPart("surface_1") );
+            stk::mesh::Selector boundarySelector_2(*eMesh.getNonConstPart("surface_2") );
+            stk::mesh::Selector boundarySelector_3(*eMesh.getNonConstPart("surface_3") );
+            stk::mesh::Selector boundarySelector_4(*eMesh.getNonConstPart("surface_4") );
+            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+
+            bool do_jacobi = true;
+            PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
+            //pmm.setDoJacobiIterations(do_jacobi);
+            PerceptMesquiteMeshDomain pmd(&eMesh, 0);
+            percept::PMMLaplaceSmoother1 ls;
+            if (do_jacobi) 
+              ls.get_smoother().do_jacobi_optimization();
+            ls.run(pmm, pmd);
+
+            //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[0], 1.0);
+            //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[1], 1.0);
+
+            eMesh.saveAs(input_files_loc+"quad_2_smooth.1.e");
           }
       }
 

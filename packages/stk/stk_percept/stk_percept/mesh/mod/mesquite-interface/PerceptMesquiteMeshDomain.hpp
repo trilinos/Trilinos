@@ -126,6 +126,7 @@ namespace stk {
                                size_t num_handles,
                                Mesquite::MsqError& err ) const ;
                              
+      int classify_node(stk::mesh::Entity& node, std::vector<size_t>& curveEvaluators, std::vector<size_t>& surfEvaluators) const;
 
     };
 

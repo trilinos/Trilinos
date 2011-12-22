@@ -42,6 +42,19 @@ namespace stk {
       stk::mesh::FieldBase* field = m_eMesh->getCoordinatesField();
       double *f_data = PerceptMesh::field_data(field, *node_ptr);
 
+      double f_data_save[3] = {f_data[0], f_data[1], 0};
+      if (m_eMesh->getSpatialDim() > 2) f_data_save[2] = f_data[2];
+
+//       if (node_ptr->identifier() == 584)
+//         {
+//           std::cout << "tmp snap_to: node= " << node_ptr->identifier() << std::endl;
+//         }
+
+      f_data[0] = coordinate[0];
+      f_data[1] = coordinate[1];
+      if (m_eMesh->getSpatialDim() > 2) 
+        f_data[2] = coordinate[2];
+
       static std::vector<stk::mesh::Entity *> nodes(1);
       nodes[0] = node_ptr;
       m_meshGeometry->snap_points_to_geometry(m_eMesh, nodes);
@@ -49,6 +62,29 @@ namespace stk {
       coordinate[1] = f_data[1];
       if (m_eMesh->getSpatialDim() > 2)
         coordinate[2] = f_data[2];
+
+      //if (node_ptr->identifier() == 584)
+      if (0)
+        {
+          std::cout << "tmp snap_to: node= " << node_ptr->identifier() << " orig= " 
+                    << f_data_save[0] << " "
+                    << f_data_save[1] << " "
+                    << f_data_save[2] << " "
+                    << " new= " 
+                    << f_data[0] << " "
+                    << f_data[1] << " "
+                    << f_data[2] << " diff1= " 
+                    << (std::fabs(f_data[0] - f_data_save[0])+
+                        std::fabs(f_data[1] - f_data_save[1])+
+                        std::fabs(f_data[2] - f_data_save[2]))
+                    << std::endl;
+        }
+
+      f_data[0] = f_data_save[0];
+      f_data[1] = f_data_save[1];
+      if (m_eMesh->getSpatialDim() > 2)
+        f_data[2] = f_data_save[2];
+
     }
     
     //! Returns the normal of the domain to which
@@ -170,12 +206,36 @@ namespace stk {
       if (m_eMesh->getSpatialDim() > 2) 
         normal[2] = 0;
 
+      if (0)
+        {
+          std::cout << "tmp closest_point: orig= " 
+                    << save_coords[0] << " "
+                    << save_coords[1] << " "
+                    << save_coords[2] << " "
+                    << " new= " 
+                    << f_data[0] << " "
+                    << f_data[1] << " "
+                    << f_data[2] 
+                    << std::endl;
+        }
+
       f_data[0] = save_coords[0];
       f_data[1] = save_coords[1];
       if (m_eMesh->getSpatialDim() > 2) 
         f_data[2] = save_coords[2];
     }
                                 
+    int PerceptMesquiteMeshDomain::
+    classify_node(stk::mesh::Entity& node, std::vector<size_t>& curveEvaluators, std::vector<size_t>& surfEvaluators) const
+    {
+      int dof =0;
+      if (m_meshGeometry)
+        dof = m_meshGeometry->classify_node(node, curveEvaluators, surfEvaluators);
+      else
+        dof = m_eMesh->getSpatialDim();
+      return dof;
+    }
+
     /**\brief Get degrees of freedom in vertex movement.
      *
      * Given a vertex, return how the domain constrains the
@@ -198,11 +258,7 @@ namespace stk {
       for (size_t i = 0; i < num_handles; i++)
         {
           stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(handle_array[i]);
-          int dof = 0;
-          if (m_meshGeometry)
-            dof = m_meshGeometry->classify_node(*node_ptr, curveEvaluators, surfEvaluators);
-          else
-            dof = m_eMesh->getSpatialDim();
+          int dof = classify_node(*node_ptr, curveEvaluators, surfEvaluators);
 
           if (dof < 0)
             {

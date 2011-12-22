@@ -84,7 +84,7 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, std::vector<s
     {
       // This bucket represents a geometric curve.  Snap to it.
       //std::cout << "Snapping to curve" << curveEvaluators[0] << std::endl;
-      //snap_nodes( mesh_data, bucket, curveEvaluators[0] );
+      //snap_nodes( eMesh, bucket, curveEvaluators[0] );
       return 1;
     }
 
@@ -92,22 +92,22 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, std::vector<s
     {
       //std::cout << "Snapping to surface" << surfEvaluators[0] << std::endl;
       // This bucket represents a geometric surface.  Snap to it.
-      //snap_nodes( mesh_data, bucket, surfEvaluators[0] );
+      //snap_nodes( eMesh, bucket, surfEvaluators[0] );
       return 2;
     }
-  return -1;  // error condition
+  return -1;  // error condition, or it is an interior node
 }
 
-void MeshGeometry::snap_points_to_geometry(PerceptMesh* mesh_data)
+void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 {
-  BulkData& bulkData = *mesh_data->getBulkData();
+  BulkData& bulkData = *eMesh->getBulkData();
 
   const std::vector<Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
   for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
   {
     Bucket& bucket = **k;
-    if ( contains_dbg_node( mesh_data, bucket ) )
+    if ( contains_dbg_node( eMesh, bucket ) )
     {
       std::cout << "     DBG Node FOUND" << std::endl;
     }
@@ -126,16 +126,16 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* mesh_data)
     case 1:
       // This bucket represents a geometric curve.  Snap to it.
       //std::cout << "Snapping to curve" << curveEvaluators[0] << std::endl;
-      snap_nodes( mesh_data, bucket, curveEvaluators[0] );
+      snap_nodes( eMesh, bucket, curveEvaluators[0] );
       break;
     case 2:
       //std::cout << "Snapping to surface" << surfEvaluators[0] << std::endl;
       // This bucket represents a geometric surface.  Snap to it.
-      snap_nodes( mesh_data, bucket, surfEvaluators[0] );
+      snap_nodes( eMesh, bucket, surfEvaluators[0] );
       break;
     case -1:
     default:
-      printf( "ERROR: A bucket found without a geometric evaluator.\n" );
+      //printf( "ERROR: A bucket found without a geometric evaluator.\n" );
       break;
     }
 
@@ -143,13 +143,13 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* mesh_data)
   }
 }
 
-void MeshGeometry::snap_points_to_geometry(PerceptMesh* mesh_data, std::vector<stk::mesh::Entity *>& nodes)
+void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::mesh::Entity *>& nodes)
 {
   for (unsigned inode=0; inode < nodes.size(); inode++)
   {
     Bucket& bucket = nodes[inode]->bucket();
 
-    if ( contains_dbg_node( mesh_data, bucket ) )
+    if ( contains_dbg_node( eMesh, bucket ) )
     {
       std::cout << "     DBG Node FOUND" << std::endl;
     }
@@ -175,16 +175,16 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* mesh_data, std::vector<s
     case 1:
       // This bucket represents a geometric curve.  Snap to it.
       //std::cout << "Snapping to curve" << curveEvaluators[0] << std::endl;
-      snap_node( mesh_data, *nodes[inode], curveEvaluators[0] );
+      snap_node( eMesh, *nodes[inode], curveEvaluators[0] );
       break;
     case 2:
       //std::cout << "Snapping to surface" << surfEvaluators[0] << std::endl;
       // This bucket represents a geometric surface.  Snap to it.
-      snap_node( mesh_data, *nodes[inode], surfEvaluators[0] );
+      snap_node( eMesh, *nodes[inode], surfEvaluators[0] );
       break;
     case -1:
     default:
-      printf( "ERROR: A bucket found without a geometric evaluator.\n" );
+      //printf( "ERROR: A bucket found without a geometric evaluator.\n" );
       break;
     }
 
@@ -194,14 +194,14 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* mesh_data, std::vector<s
 
 void MeshGeometry::snap_node
 (
-  PerceptMesh *mesh_data,
+  PerceptMesh *eMesh,
   Entity & node,
   size_t evaluator_idx
 )
 {
-  VectorFieldType* coordField = mesh_data->getCoordinatesField();
+  VectorFieldType* coordField = eMesh->getCoordinatesField();
 
-  Part* new_nodes_part = mesh_data->getNonConstPart("refine_new_nodes_part");
+  Part* new_nodes_part = eMesh->getNonConstPart("refine_new_nodes_part");
   Selector new_nodes_part_selector;
   if (new_nodes_part) new_nodes_part_selector = Selector(*new_nodes_part);
 
@@ -245,15 +245,15 @@ void MeshGeometry::snap_node
 
 void MeshGeometry::snap_nodes
 (
-  PerceptMesh *mesh_data,
+  PerceptMesh *eMesh,
   Bucket &bucket,
   size_t evaluator_idx
 )
 {
-  //VectorFieldType* coordField = mesh_data->getCoordinatesField();
+  //VectorFieldType* coordField = eMesh->getCoordinatesField();
   const unsigned num_nodes_in_bucket = bucket.size();
 
-  Part* new_nodes_part = mesh_data->getNonConstPart("refine_new_nodes_part");
+  Part* new_nodes_part = eMesh->getNonConstPart("refine_new_nodes_part");
   Selector new_nodes_part_selector;
   if (new_nodes_part) new_nodes_part_selector = Selector(*new_nodes_part);
 
@@ -262,17 +262,17 @@ void MeshGeometry::snap_nodes
   {
     Entity& node = bucket[iNode];
 
-    snap_node(mesh_data, node, evaluator_idx);
+    snap_node(eMesh, node, evaluator_idx);
   }
 }
 
 bool MeshGeometry::contains_dbg_node
 (
-  PerceptMesh *mesh_data,
+  PerceptMesh *eMesh,
   Bucket &bucket
 )
 {
-  VectorFieldType* coordField = mesh_data->getCoordinatesField();
+  VectorFieldType* coordField = eMesh->getCoordinatesField();
   const unsigned num_nodes_in_bucket = bucket.size();
 
   for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)

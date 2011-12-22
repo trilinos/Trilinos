@@ -16,6 +16,7 @@
 // ibm can't compile mesquite
 #if !defined(__IBMCPP__)
 #include "PerceptMesquiteMesh.hpp"
+#include "PerceptMesquiteMeshDomain.hpp"
 //#include <mesquite/MsqVertex.hpp>
 #include <MsqVertex.hpp>
 
@@ -38,6 +39,7 @@ namespace stk {
     void PerceptMesquiteMesh::init(PerceptMesh *eMesh)
     {
       m_eMesh = eMesh;
+
 #if 0
       isSetup = false;
       mOwners = entities;
@@ -67,7 +69,8 @@ namespace stk {
     // Author: sjowen
     // Date: 03/30/2011, 11/15/11
     //============================================================================
-    PerceptMesquiteMesh::PerceptMesquiteMesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector) : m_boundarySelector(boundarySelector)
+    PerceptMesquiteMesh::PerceptMesquiteMesh(PerceptMesh *eMesh, PerceptMesquiteMeshDomain *domain, stk::mesh::Selector *boundarySelector) 
+      : m_meshDomain(domain), m_boundarySelector(boundarySelector)
     {  
       init(eMesh);
     }
@@ -122,6 +125,28 @@ namespace stk {
       return (size_t) m_eMesh->getNumberNodes();
     }
 
+    bool PerceptMesquiteMesh::select_bucket(stk::mesh::Bucket& bucket) const
+    {
+      const CellTopologyData * cell_topo_data = m_eMesh->get_cell_topology(bucket);
+      shards::CellTopology cell_topo(cell_topo_data);
+
+      if (cell_topo.getKey() == shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()->key
+          || cell_topo.getKey() == shards::getCellTopologyData<shards::ShellLine<2> >()->key
+          || cell_topo.getKey() == shards::getCellTopologyData<shards::Beam<2> >()->key)
+        {
+          return false;
+        }
+      else
+        {
+          return true;
+        }
+    }
+    bool PerceptMesquiteMesh::select_element(stk::mesh::Entity& element) const
+    {
+      return select_bucket(element.bucket());
+    }
+
+
     //============================================================================
     // Description: Returns the number of elements for the entity.
     // Author: sjowen, srkennon
@@ -130,7 +155,38 @@ namespace stk {
     size_t PerceptMesquiteMesh::get_total_element_count(
                                                         Mesquite::MsqError &/*err*/) const
     {
-      return (size_t) m_eMesh->getNumberElements();
+      //return (size_t) m_eMesh->getNumberElements();
+      size_t num_elem=0;
+
+      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->getBulkData()->buckets( m_eMesh->element_rank() );
+      unsigned buckets_size = buckets.size();
+      if (DEBUG_PRINT) std::cout << "tmp srk buckets_size= " << buckets_size << std::endl;
+
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          //if (removePartSelector(**k))
+          {
+            stk::mesh::Bucket & bucket = **k ;
+
+            if (select_bucket(bucket))
+              {
+                const unsigned num_entity_in_bucket = bucket.size();
+
+                for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+                  {
+                    stk::mesh::Entity& element = bucket[ientity];
+                    if (m_eMesh->hasFamilyTree(element) && m_eMesh->isParentElement(element, false))
+                      continue;
+                    ++num_elem;
+                  }
+              }
+          }
+        }
+
+      if (DEBUG_PRINT) std::cout << "tmp srk num_elem= " << num_elem << std::endl;
+
+      return num_elem;
+
     }
 
     //============================================================================
@@ -186,19 +242,29 @@ namespace stk {
           {
             stk::mesh::Bucket & bucket = **k ;
 
-            const unsigned num_entity_in_bucket = bucket.size();
-            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+            if (select_bucket(bucket))
               {
-                stk::mesh::Entity& element = bucket[ientity];
-                if (DEBUG_PRINT) {
-                  std::cout << "tmp srk printing entity: ";
-                  m_eMesh->printEntity(std::cout, element, m_eMesh->getCoordinatesField() );
-                }
-                elements.push_back(reinterpret_cast<Mesquite::Mesh::VertexHandle>( &element ) );
+                const CellTopologyData * cell_topo_data = m_eMesh->get_cell_topology(bucket);
+                shards::CellTopology cell_topo(cell_topo_data);
+                //std::cout << "tmp srk selected topo= " << cell_topo << std::endl;
+
+                const unsigned num_entity_in_bucket = bucket.size();
+                for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+                  {
+                    stk::mesh::Entity& element = bucket[ientity];
+                    if (DEBUG_PRINT) {
+                      std::cout << "tmp srk printing entity: ";
+                      m_eMesh->printEntity(std::cout, element, m_eMesh->getCoordinatesField() );
+                    }
+                    if (m_eMesh->hasFamilyTree(element) && m_eMesh->isParentElement(element, false))
+                      continue;
+                    elements.push_back(reinterpret_cast<Mesquite::Mesh::VertexHandle>( &element ) );
+                  }
               }
           }
         }
 
+      if (DEBUG_PRINT) std::cout << "tmp srk get_all_elements num_elem= " << elements.size() << std::endl;
     }
 
     //============================================================================
@@ -240,12 +306,51 @@ namespace stk {
               return;
             }
     
+          int dof = -1;
+          bool fixed=true;
           //if the owner is something other than the top-level owner, the node
           // is on the boundary; otherwise, it isn't.
-          if (m_boundarySelector && ((*m_boundarySelector)(*node_ptr)) )
-            fixed_flag_array.push_back(true);
+          if (m_boundarySelector)
+            {
+              if ((*m_boundarySelector)(*node_ptr))
+                fixed=true;
+              else
+                fixed=false;
+            }
           else
-            fixed_flag_array.push_back(false);
+            {
+              if (m_meshDomain)
+                {
+                  static std::vector<size_t> curveEvaluators;
+                  static std::vector<size_t> surfEvaluators;
+                  dof = m_meshDomain->classify_node(*node_ptr, curveEvaluators, surfEvaluators);
+                  //std::cout << "tmp srk classify node= " << node_ptr->identifier() << " dof= " << dof << std::endl;
+                  // vertex
+                  if (dof == 0)
+                    fixed=true;
+                  // curve (for now we hold these fixed)
+                  else if (dof == 1)
+                    fixed=true;
+                  // surface - free to move
+                  else if (dof == 2)
+                    {
+                      fixed=false;
+                      if (DEBUG_PRINT) std::cout << "tmp srk found surface node unfixed= " << node_ptr->identifier() << std::endl;
+                    }
+                  // interior/volume
+                  else
+                    fixed=false;
+                    
+                }
+              else
+                {
+                  fixed=false;
+                }
+            }
+
+          if (DEBUG_PRINT) std::cout << "tmp srk classify node= " << node_ptr->identifier() << " dof= " << dof << " fixed= " << fixed << std::endl;
+
+          fixed_flag_array.push_back(fixed);
         }
    
     }
@@ -514,6 +619,7 @@ namespace stk {
 
               // only return hexes in the includedElements set
               //if (includedElements.find(ent_ptr) != includedElements.end())
+              if (select_element(ele))
               {
                 temp_e_handle = reinterpret_cast<ElementHandle>(&ele);
                 elements.push_back(temp_e_handle);
@@ -651,6 +757,10 @@ namespace stk {
             {
               element_topologies[num_elements]=Mesquite::QUADRILATERAL;
             }
+          else if(cell_topo.getKey() == shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()->key )
+            {
+              element_topologies[num_elements]=Mesquite::QUADRILATERAL;
+            }
           else if(cell_topo.getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key )
             {
               element_topologies[num_elements]=Mesquite::TRIANGLE;
@@ -664,7 +774,7 @@ namespace stk {
               element_topologies[num_elements]=Mesquite::TETRAHEDRON;
             }
           else {
-            std::cout << "elements_get_topologies: Type not recognized, cell_topo= " << cell_topo << std::endl;
+            std::cout << "elements_get_topologies: Type not recognized, cell_topo= " << cell_topo << " num_elements= " << num_elements << std::endl;
             PRINT_ERROR("Type not recognized.\n");
             MSQ_SETERR(err)("Type not recognized.", Mesquite::MsqError::UNSUPPORTED_ELEMENT);
             return;
@@ -689,22 +799,18 @@ namespace stk {
                                                         Mesquite::MsqError &err)
     {
       Mesquite::TagHandle handle = 0;
-#if 0
+#if 1
+      //int numNodes = get_total_vertex_count(err);
+      if (DEBUG_PRINT) std::cout << "tmp srk tag_create 0, length = " << length << std::endl;
       if (tag_name == "msq_jacobi_temp_coords" && type == DOUBLE && length == 3)
         {
-          if (jacobiCoords == NULL)
-            {
-              jacobiCoords = new double [3*numNodes];
-              for (int ii=0; ii<numNodes*3; ii++)
-                jacobiCoords[ii] = 0;
-              nextJacobiCoordsIndex = 0;
-              jacobiCoordsMap.clear();
-            }
-          handle = reinterpret_cast<Mesquite::TagHandle>(jacobiCoords);
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_create 1, length = " << length << std::endl;
+          handle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords);
+          m_nodeCoords.clear();
         }
       else
         {
-          PRINT_ERROR("Unknown Tag %s in tag_create\n", tag_name.c_str());
+          //PRINT_ERROR("Unknown Tag %s in tag_create\n", tag_name.c_str());
           MSQ_SETERR(err)("Tag not implemented.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
         }
 #endif
@@ -721,14 +827,12 @@ namespace stk {
     void PerceptMesquiteMesh::tag_delete(Mesquite::TagHandle handle,
                                          Mesquite::MsqError& err ) 
     {
-#if 0
-      Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(jacobiCoords); 
+#if 1
+      Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords); 
       if (jhandle == handle)
         {
-          delete [] jacobiCoords;
-          jacobiCoords = NULL;
-          nextJacobiCoordsIndex = 0;
-          jacobiCoordsMap.clear();
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_delete " << std::endl;
+          m_nodeCoords.clear();
         }
       else
         {
@@ -751,11 +855,10 @@ namespace stk {
                                                      Mesquite::MsqError& err )
     {
       Mesquite::TagHandle handle = 0;
-#if 0
+#if 1
       if (name == "msq_jacobi_temp_coords")
         {
-          if (jacobiCoords)
-            handle = reinterpret_cast<Mesquite::TagHandle>(jacobiCoords);
+          handle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords);
         }
 #endif
       return handle;
@@ -774,8 +877,8 @@ namespace stk {
                                              unsigned &length_out,
                                              Mesquite::MsqError& err )
     {
-#if 0
-      Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(jacobiCoords); 
+#if 1
+      Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords); 
       if (jhandle == handle)
         {
           name_out = "msq_jacobi_temp_coords";
@@ -819,9 +922,10 @@ namespace stk {
                                                    const void* tag_data,
                                                    Mesquite::MsqError& err )
     {
-#if 0
+#if 1
+      //int numNodes = get_total_vertex_count(err);
 
-      Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(jacobiCoords); 
+      Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords); 
       if (jhandle != handle)
         {
           PRINT_ERROR("Unknown tag handle in PerceptMesquiteMesh::tag_set_vertex_data\n");
@@ -829,27 +933,31 @@ namespace stk {
         }
       else
         {
-          int inode;
-          for(inode = 0; inode < (int)num_nodes; inode++)
+          double *coords_0 = (double *)tag_data;
+          for(int inode = 0; inode < (int)num_nodes; inode++)
             {
-              double *coords = (double *)tag_data;
-              int idx;
+              double *coords = &coords_0[inode*3];
               Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
-              std::map<Mesquite::Mesh::VertexHandle, int>::iterator iter = jacobiCoordsMap.find(vhandle);
-              if (iter == jacobiCoordsMap.end())
+              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              NodeCoordsType::iterator iter = m_nodeCoords.find(node_ptr);
+              if (iter == m_nodeCoords.end())
                 {
-                  assert(nextJacobiCoordsIndex < numNodes);
-                  jacobiCoordsMap.insert(std::pair<Mesquite::Mesh::VertexHandle, int>(vhandle, nextJacobiCoordsIndex));
-                  idx = nextJacobiCoordsIndex;
-                  nextJacobiCoordsIndex++;
+                  Array3 coords_save;
+                  coords_save[2] = 0;
+                  coords_save[0] = coords[0];
+                  coords_save[1] = coords[1];
+                  //if (m_eMesh->getSpatialDim() == 3) 
+                    coords_save[2] = coords[2];
+                  m_nodeCoords[node_ptr] = coords_save;
                 }
               else
                 {
-                  idx = iter->second;
+                  Array3 &coords_save = m_nodeCoords[node_ptr];
+                  coords_save[0] = coords[0];
+                  coords_save[1] = coords[1];
+                  //if (m_eMesh->getSpatialDim() == 3) 
+                    coords_save[2] = coords[2];
                 }
-              jacobiCoords[idx*3] = coords[0];
-              jacobiCoords[idx*3+1] = coords[1];
-              jacobiCoords[idx*3+2] = coords[2];
             }
         }
 #endif
@@ -885,8 +993,10 @@ namespace stk {
                                                    void* tag_data,
                                                    Mesquite::MsqError& err )
     {
-#if 0
-      Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(jacobiCoords); 
+#if 1
+      //int numNodes = get_total_vertex_count(err);
+
+      Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords);
       if (jhandle != handle)
         {
           PRINT_ERROR("Unknown tag handle in PerceptMesquiteMesh::tag_get_vertex_data\n");
@@ -894,14 +1004,14 @@ namespace stk {
         }
       else
         {
-          double *coords = (double *)tag_data;
-          int inode;
-          for(inode = 0; inode < (int)num_nodes; inode++)
+          double *coords_0 = (double *)tag_data;
+          for(int inode = 0; inode < (int)num_nodes; inode++)
             {
-              int idx;
+              double *coords = &coords_0[inode*3];
               Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
-              std::map<Mesquite::Mesh::VertexHandle, int>::iterator iter = jacobiCoordsMap.find(vhandle);
-              if (iter == jacobiCoordsMap.end())
+              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              NodeCoordsType::iterator iter = m_nodeCoords.find(node_ptr);
+              if (iter == m_nodeCoords.end())
                 {
                   MSQ_SETERR(err)("PerceptMesquiteMesh::tag_get_vertex_data: invalid vertex handle.",Mesquite::MsqError::INVALID_STATE);
                   PRINT_ERROR("PerceptMesquiteMesh::tag_get_vertex_data: invalid vertex handle.\n");
@@ -909,11 +1019,12 @@ namespace stk {
                 }
               else
                 {
-                  idx = iter->second;
+                  Array3 &coords_save = m_nodeCoords[node_ptr];
+                  coords[0] = coords_save[0];
+                  coords[1] = coords_save[1];
+                  //if (m_eMesh->getSpatialDim() == 3) 
+                    coords[2] = coords_save[2];
                 }
-              coords[inode*3] = jacobiCoords[idx*3];
-              coords[inode*3+1] = jacobiCoords[idx*3+1];
-              coords[inode*3+2] = jacobiCoords[idx*3+2];
             }
 
         }

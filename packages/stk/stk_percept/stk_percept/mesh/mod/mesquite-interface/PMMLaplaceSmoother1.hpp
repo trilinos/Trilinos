@@ -5,8 +5,8 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#ifndef PMMLaplaceSmoother_hpp
-#define PMMLaplaceSmoother_hpp
+#ifndef PMMLaplaceSmoother1_hpp
+#define PMMLaplaceSmoother1_hpp
 
 #if !defined(__IBMCPP__)
 #ifdef STK_BUILT_IN_SIERRA
@@ -23,6 +23,7 @@
 #include <InstructionQueue.hpp>
 #include <TerminationCriterion.hpp>
 #include <MsqError.hpp>
+#include <Wrapper.hpp>
 
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMeshDomain.hpp>
@@ -45,20 +46,36 @@
 namespace stk {
   namespace percept {
 
-    class PMMLaplaceSmoother
+    class PMMLaplaceSmoother1 : public Mesquite::LaplaceWrapper
     {
+      Mesquite::LaplacianSmoother m_smoother;
     public:
-      PMMLaplaceSmoother() {}
+  
+      PMMLaplaceSmoother1() : Mesquite::LaplaceWrapper() {}
+
+      virtual ~PMMLaplaceSmoother1() {}
+      Mesquite::LaplacianSmoother& get_smoother() { return m_smoother; }
 
       void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain)
       {
         Mesquite::MsqError mErr;
-        Mesquite::LaplaceWrapper lw;
-        lw.set_iteration_limit(1);
-
-        lw.run_instructions(&mesh, &domain, mErr);
+        this->set_iteration_limit(1);
+        this->run_instructions(&mesh, &domain, mErr);
       }
+      
+    protected:
+
+      virtual void run_wrapper( Mesquite::Mesh* mesh,
+                                Mesquite::ParallelMesh* pmesh,
+                                Mesquite::MeshDomain* geom,
+                                Mesquite::Settings* settings,
+                                Mesquite::QualityAssessor* qa,
+                                Mesquite::MsqError& err );
+  
+    private:
+  
     };
+
 
   }
 }

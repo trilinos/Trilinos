@@ -25,20 +25,30 @@
 
 #include <stk_percept/PerceptMesh.hpp>
 #include <map>
-
+#include <boost/unordered_map.hpp>
+#include <boost/array.hpp>
 
 namespace stk {
   namespace percept {
 
+    class PerceptMesquiteMeshDomain;
+
     class PerceptMesquiteMesh : public Mesquite::Mesh
     {
       PerceptMesh *m_eMesh;
+      PerceptMesquiteMeshDomain *m_meshDomain;
       stk::mesh::Selector *m_boundarySelector;
-      std::map<stk::mesh::Entity *, std::pair<stk::mesh::EntityId, unsigned char> > m_mesquiteNodeDataMap;
+      //std::map<stk::mesh::Entity *, std::pair<stk::mesh::EntityId, unsigned char> > m_mesquiteNodeDataMap;
+      typedef boost::unordered_map<stk::mesh::Entity *, std::pair<stk::mesh::EntityId, unsigned char> > MesquiteNodeDataMapType;
+      MesquiteNodeDataMapType m_mesquiteNodeDataMap;
+
+      typedef boost::array<double,3> Array3;
+      typedef boost::unordered_map<stk::mesh::Entity *, Array3> NodeCoordsType;
+      NodeCoordsType m_nodeCoords;
 
     public:
 
-      PerceptMesquiteMesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector=0);
+      PerceptMesquiteMesh(PerceptMesh *eMesh, PerceptMesquiteMeshDomain* domain=0, stk::mesh::Selector *boundarySelector=0);
       void init(PerceptMesh *eMesh);
       int setup();
 
@@ -241,6 +251,10 @@ namespace stk {
       */
   
     private:
+
+      bool select_bucket(stk::mesh::Bucket& bucket) const;
+      bool select_element(stk::mesh::Entity& element) const;
+
 #if 0
       // sjowen debug
       bool dump_hexes(DLIList<CMLHex *> &hex_list, DLIList<CMLNode *> &node_list, int rank);
