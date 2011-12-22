@@ -90,9 +90,9 @@ buildClosureModels(const std::string& model_id,
     }
     else 
     #endif
-    if (plist.isType<std::string>("Method")) {
+    if (plist.isType<std::string>("Type")) {
       
-      if (plist.get<std::string>("Method") == "Parameter") {
+      if (plist.get<std::string>("Type") == "Parameter") {
 	{ // at IP
 	  RCP< Evaluator<panzer::Traits> > e = 
 	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar,plist.get<double>("Value"),*global_data->pl));

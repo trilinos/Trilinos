@@ -149,6 +149,7 @@ namespace panzer {
     cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","Parameter");
     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
     closure_models.sublist("solid").sublist("DENSITY").set<double>("Value",1.0);
     closure_models.sublist("solid").sublist("HEAT_CAPACITY").set<double>("Value",1.0);
