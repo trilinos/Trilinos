@@ -634,7 +634,7 @@ namespace Teuchos {
     }
 #endif // HAVE_MPI
 
-    summarize (comm, alwaysWriteLocal, writeGlobalStats, writeZeroTimers, setOp);
+    summarize (comm, out, alwaysWriteLocal, writeGlobalStats, writeZeroTimers, setOp);
   }
 
 
