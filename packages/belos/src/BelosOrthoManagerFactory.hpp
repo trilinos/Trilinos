@@ -187,7 +187,7 @@ namespace Belos {
     ///   new parameter list will be created.  You can save the
     ///   parameter list yourself if you want to reuse it.
     Teuchos::RCP<const Teuchos::ParameterList> 
-    getDefaultParameters (const std::string& name)
+    getDefaultParameters (const std::string& name) const
     {
       if (name == "DGKS") {
 	DGKSOrthoManager<Scalar, MV, OP> orthoMan;
