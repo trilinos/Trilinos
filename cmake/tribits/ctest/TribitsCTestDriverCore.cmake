@@ -112,6 +112,9 @@ ENDIF()
 GET_FILENAME_COMPONENT(TRIBITS_PROJECT_ROOT "${TRIBITS_PROJECT_ROOT}" ABSOLUTE)
 MESSAGE("TRIBITS_PROJECT_ROOT = '${TRIBITS_PROJECT_ROOT}'")
 
+SET(PROJECT_SOURCE_DIR ${TRIBITS_PROJECT_ROOT})
+MESSAGE("PROJECT_SOURCE_DIR = ${PROJECT_SOURCE_DIR}")
+
 # Assert that the ProjectName.cmake file exists.
 SET(TRIBITS_PROJECT_NAME_INCLUDE "${TRIBITS_PROJECT_ROOT}/ProjectName.cmake")
 IF(NOT EXISTS "${TRIBITS_PROJECT_NAME_INCLUDE}")
@@ -393,9 +396,6 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   # list of core packages may be more recent in what was checked out.
   # Second, the extra repos do not even exist in the master source
   # tree.
-  IF (NOT ${PROJECT_NAME}_DEPS_HOME_DIR)
-    SET(${PROJECT_NAME}_DEPS_HOME_DIR "${CTEST_SOURCE_DIRECTORY}")
-  ENDIF()
 
   SET(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
   SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
@@ -857,11 +857,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # ${PROJECT_NAME}_PACKAGES always be the full set of packages as defined by
   # the basic readin process
 
-  # Override the location of the base directory where the package dependency
-  # related files will be read relative to.  If left "", then this will be reset
-  # to CTEST_SORUCE_DIRECTORY.
-  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_DEPS_HOME_DIR "")
-
   # Set the file that the extra repos will be read from
   #
   # NOTE: Here, we have no choice but to point into the master
@@ -869,14 +864,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # even been checked out yet!  Unless, of course, we are unit testing
   # in which case we will use whatever has been passed in.
 
-  IF (NOT ${PROJECT_NAME}_DEPS_HOME_DIR)
-    SET(${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT
-      "${${PROJECT_NAME}_CMAKE_DIR}/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
-  ELSE()
-    SET(${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT
-      "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
-  ENDIF()
-  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRAREPOS_FILE ${${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT})
+  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRAREPOS_FILE
+    "${${PROJECT_NAME}_CMAKE_DIR}/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
 
   # Select the set of extra external repos to add in packages.
   # These are the same types as CTEST_TEST_TYPE (e.g. 'Continuous' and
