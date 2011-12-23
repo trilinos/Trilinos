@@ -37,12 +37,15 @@
 //#include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
 //#include <stk_percept/mesh/geometry/kernel/GeometryFactory.hpp>
 
+// place Mesquite-related headers between the StackTrace redefinitions
 #define StackTraceTmp StackTrace
 #undef StackTrace
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMeshDomain.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
+#include <MsqDebug.hpp>
 #define StackTrace StackTraceTmp
 
 #endif
@@ -113,11 +116,10 @@ namespace stk
             stk::mesh::Entity* node = eMesh.getBulkData()->get_entity(0, center_node_id);
             double * data = stk::mesh::field_data( *eMesh.getCoordinatesField() , *node );
             std::cout << "tmp srk  center node= " << data[0] << " " << data[1] << std::endl;
-            //exit(1);
             data[0] += .2;
             data[1] += .3;
 
-            eMesh.saveAs(input_files_loc+"quad_smooth.0_perturbed.e");
+            eMesh.saveAs(output_files_loc+"quad_smooth.0_perturbed.e");
 
             stk::mesh::Selector boundarySelector_1(*eMesh.getNonConstPart("surface_1") );
             stk::mesh::Selector boundarySelector_2(*eMesh.getNonConstPart("surface_2") );
@@ -133,7 +135,7 @@ namespace stk
             STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[0], 1.0);
             STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[1], 1.0);
 
-            eMesh.saveAs(input_files_loc+"quad_smooth.1.e");
+            eMesh.saveAs(output_files_loc+"quad_smooth.1.e");
           }
       }
 
@@ -177,7 +179,6 @@ namespace stk
                 stk::mesh::Entity* node = eMesh.getBulkData()->get_entity(0, center_node_id[ii]);
                 double * data = stk::mesh::field_data( *eMesh.getCoordinatesField() , *node );
                 std::cout << "tmp srk  center node= " << data[0] << " " << data[1] << std::endl;
-                //exit(1);
                 data[0] += .02*(ii+1);
                 data[1] += .03*(ii+1);
               }
@@ -190,7 +191,7 @@ namespace stk
             stk::mesh::Selector boundarySelector_4(*eMesh.getNonConstPart("surface_4") );
             stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
-            bool do_jacobi = true;
+            bool do_jacobi = false;
             PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
             //pmm.setDoJacobiIterations(do_jacobi);
             PerceptMesquiteMeshDomain pmd(&eMesh, 0);
@@ -202,7 +203,39 @@ namespace stk
             //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[0], 1.0);
             //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[1], 1.0);
 
-            eMesh.saveAs(input_files_loc+"quad_2_smooth.1.e");
+            eMesh.saveAs(output_files_loc+"quad_2_smooth.1.e");
+          }
+
+        if (p_size <= 1)
+          {
+            percept::PerceptMesh eMesh(2);
+            eMesh.open(input_files_loc+"quad_2_smooth.0_perturbed.e");
+            eMesh.commit();
+
+            stk::mesh::Selector boundarySelector_1(*eMesh.getNonConstPart("surface_1") );
+            stk::mesh::Selector boundarySelector_2(*eMesh.getNonConstPart("surface_2") );
+            stk::mesh::Selector boundarySelector_3(*eMesh.getNonConstPart("surface_3") );
+            stk::mesh::Selector boundarySelector_4(*eMesh.getNonConstPart("surface_4") );
+            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+
+            //bool do_jacobi = true;
+            Mesquite::MsqDebug::enable(1);
+            Mesquite::MsqDebug::enable(2);
+            Mesquite::MsqDebug::enable(3);
+            PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
+            //pmm.setDoJacobiIterations(do_jacobi);
+            PerceptMesquiteMeshDomain pmd(&eMesh, 0);
+            percept::PMMShapeImprover si;
+            si.run(pmm, pmd);
+            eMesh.saveAs(output_files_loc+"quad_si_smooth.1.e");
+
+//             percept::PMMShapeImprover si2;
+//             si2.run(pmm, pmd);
+//             eMesh.saveAs(output_files_loc+"quad_si2_smooth.1.e");
+
+            //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[0], 1.0);
+            //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[1], 1.0);
+
           }
       }
 

@@ -27,6 +27,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMeshDomain.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
 #define StackTrace StackTraceTmp
 
 #endif
@@ -1407,15 +1408,25 @@ namespace stk {
 #if defined( STK_ADAPT_HAS_GEOMETRY )
     void Refiner::smoothGeometry(MeshGeometry& mesh_geometry)
     {
-      if (1)
+      bool do_mesquite_smoothing = true;
+      if (do_mesquite_smoothing)
         {
+          bool do_laplace = false;
           bool do_jacobi = true;
-          PMMLaplaceSmoother1 ls;
-          if (do_jacobi) ls.get_smoother().do_jacobi_optimization();
           PerceptMesquiteMeshDomain pmd(&m_eMesh, &mesh_geometry);
           PerceptMesquiteMesh pmm(&m_eMesh, &pmd);
           //pmm.setDoJacobiIterations(do_jacobi);
-          ls.run(pmm, pmd);
+          if (do_laplace)
+            {
+              PMMLaplaceSmoother1 ls;
+              if (do_jacobi) ls.get_smoother().do_jacobi_optimization();
+              ls.run(pmm, pmd);
+            }
+          else
+            {
+              PMMShapeImprover si;
+              si.run(pmm, pmd);
+            }
           return;
         }
       /**

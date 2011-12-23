@@ -421,7 +421,7 @@ namespace stk {
         stk::mesh::FieldBase* field = m_eMesh->getCoordinatesField();
         double *f_data = PerceptMesh::field_data(field, *node_ptr);
 
-        coordinates[i].set(f_data[0], f_data[1], f_data[2]);
+        coordinates[i].set(f_data[0], f_data[1], (m_eMesh->getSpatialDim() == 2 ? 0 : f_data[2]) );
       }
     }
 
@@ -451,7 +451,8 @@ namespace stk {
 
       f_data[0] = coordinates[0];
       f_data[1] = coordinates[1];
-      f_data[2] = coordinates[2];
+      if (m_eMesh->getSpatialDim() == 3 ) 
+        f_data[2] =  coordinates[2];
 
     }
 
@@ -943,11 +944,9 @@ namespace stk {
               if (iter == m_nodeCoords.end())
                 {
                   Array3 coords_save;
-                  coords_save[2] = 0;
                   coords_save[0] = coords[0];
                   coords_save[1] = coords[1];
-                  //if (m_eMesh->getSpatialDim() == 3) 
-                    coords_save[2] = coords[2];
+                  coords_save[2] = (m_eMesh->getSpatialDim() == 2 ? 0 : coords[2]);
                   m_nodeCoords[node_ptr] = coords_save;
                 }
               else
@@ -955,8 +954,7 @@ namespace stk {
                   Array3 &coords_save = m_nodeCoords[node_ptr];
                   coords_save[0] = coords[0];
                   coords_save[1] = coords[1];
-                  //if (m_eMesh->getSpatialDim() == 3) 
-                    coords_save[2] = coords[2];
+                  coords_save[2] = (m_eMesh->getSpatialDim() == 2 ? 0 : coords[2]);
                 }
             }
         }
@@ -1022,8 +1020,10 @@ namespace stk {
                   Array3 &coords_save = m_nodeCoords[node_ptr];
                   coords[0] = coords_save[0];
                   coords[1] = coords_save[1];
-                  //if (m_eMesh->getSpatialDim() == 3) 
+                  if (m_eMesh->getSpatialDim() == 3) 
                     coords[2] = coords_save[2];
+                  else
+                    coords[2] = 0;
                 }
             }
 
