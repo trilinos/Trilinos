@@ -88,6 +88,9 @@ namespace Sacado {
       //! Number of arguments
       static const int num_args = 1;
 
+      //! Is expression linear
+      static const bool is_linear = true;
+
       /*!
        * @name Initialization methods
        */

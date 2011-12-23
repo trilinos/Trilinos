@@ -255,20 +255,35 @@ namespace Sacado {
       // Functor for mpl::for_each to compute the local accumulation
       // of a tangent derivative
       template <typename ExprT>
-      struct LocalAccumOp {
+      struct FastLocalAccumOp {
 	typedef typename ExprT::value_type value_type;
 	static const int N = ExprT::num_args;
 	const ExprT& x;
 	mutable value_type t;
 	value_type partials[N];
+	const typename ExprT::base_expr_type* args[N];
 	int i;
-	inline LocalAccumOp(const ExprT& x_) :
-	  x(x_) { x.computePartials(value_type(1.), partials); }
+	inline FastLocalAccumOp(const ExprT& x_) : x(x_) { 
+	  x.computePartials(value_type(1.), partials); 
+	  for (int j=0; j<N; j++)
+	    args[j] = &(x.getArg(j));
+	}
 	template <typename ArgT>
 	inline void operator () (ArgT arg) const {
 	  const int Arg = ArgT::value;
-	  if (x.template isActive<Arg>())
-	    t += partials[Arg] * x.template getTangent<Arg>(i);
+	  t += partials[Arg] * args[Arg]->fastAccessDx(i);
+	}
+      };
+
+      template <typename ExprT>
+      struct SlowLocalAccumOp : FastLocalAccumOp<ExprT> {
+	inline SlowLocalAccumOp(const ExprT& x_) : 
+	  FastLocalAccumOp<ExprT>(x_) {}
+	template <typename ArgT>
+	inline void operator () (ArgT arg) const {
+	  const int Arg = ArgT::value;
+	  if (this->x.template isActive<Arg>())
+	    this->t += this->partials[Arg] * this->args[Arg]->fastAccessDx(this->i);
 	}
       };
 

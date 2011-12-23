@@ -78,6 +78,8 @@ namespace Sacado {
 
       static const int num_args = ExprT::num_args;
 
+      static const bool is_linear = true;
+
       Expr(const ExprT& expr_) : expr(expr_)  {}
 
       int size() const { return expr.size(); }
@@ -124,6 +126,10 @@ namespace Sacado {
         return expr.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr.getArg(j);
+      }
+
     protected:
 
       const ExprT& expr;
@@ -153,6 +159,8 @@ namespace Sacado {
       typedef typename ExprT::base_expr_type base_expr_type;
 
       static const int num_args = ExprT::num_args;
+
+      static const bool is_linear = true;
 
       Expr(const ExprT& expr_) : expr(expr_)  {}
 
@@ -200,6 +208,10 @@ namespace Sacado {
         return -expr.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr.getArg(j);
+      }
+
     protected:
 
       const ExprT& expr;
@@ -230,6 +242,8 @@ namespace Sacado {
       typedef typename ExprT::base_expr_type base_expr_type;
 
       static const int num_args = ExprT::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT& expr_) : expr(expr_)  {}
 
@@ -282,6 +296,10 @@ namespace Sacado {
         return v_pos ? expr.fastAccessDx(i) : -expr.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr.getArg(j);
+      }
+
     protected:
 
       const ExprT& expr;
@@ -314,6 +332,8 @@ namespace Sacado {
       typedef typename ExprT::base_expr_type base_expr_type;
 
       static const int num_args = ExprT::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT& expr_) : expr(expr_)  {}
 
@@ -366,6 +386,10 @@ namespace Sacado {
         return v_pos ? expr.fastAccessDx(i) : -expr.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr.getArg(j);
+      }
+
     protected:
 
       const ExprT& expr;
@@ -401,6 +425,8 @@ namespace Sacado {							\
       typedef typename ExprT::base_expr_type base_expr_type;		\
 									\
       static const int num_args = ExprT::num_args;			\
+									\
+      static const bool is_linear = false;				\
 									\
       Expr(const ExprT& expr_) : expr(expr_)  {}			\
 									\
@@ -449,6 +475,10 @@ namespace Sacado {							\
       const value_type fastAccessDx(int i) const {                      \
         return expr.fastAccessDx(i)*a;					\
       }                                                                 \
+									\
+      const base_expr_type& getArg(int j) const {			\
+	return expr.getArg(j);						\
+      }									\
 									\
     protected:								\
 									\
@@ -567,6 +597,8 @@ namespace Sacado {
       static const int num_args2 = ExprT2::num_args;
       static const int num_args = num_args1 + num_args2;
 
+      static const bool is_linear = ExprT1::is_linear && ExprT2::is_linear;
+
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
 
@@ -631,6 +663,13 @@ namespace Sacado {
         return expr1.fastAccessDx(i) + expr2.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	if (j < num_args1)
+	  return expr1.getArg(j);
+	else
+	  return expr2.getArg(j-num_args1);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -655,6 +694,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT1::num_args;
+
+      static const bool is_linear = ExprT1::is_linear;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -708,6 +749,10 @@ namespace Sacado {
         return expr1.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr1.getArg(j);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -732,6 +777,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT2::num_args;
+
+      static const bool is_linear = ExprT2::is_linear;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -785,6 +832,10 @@ namespace Sacado {
         return expr2.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr2.getArg(j);
+      }
+
     protected:
 
       ExprT1 expr1;
@@ -817,6 +868,8 @@ namespace Sacado {
       static const int num_args1 = ExprT1::num_args;
       static const int num_args2 = ExprT2::num_args;
       static const int num_args = num_args1 + num_args2;
+
+      static const bool is_linear = ExprT1::is_linear && ExprT2::is_linear;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -882,6 +935,13 @@ namespace Sacado {
         return expr1.fastAccessDx(i) - expr2.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	if (j < num_args1)
+	  return expr1.getArg(j);
+	else
+	  return expr2.getArg(j-num_args1);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -906,6 +966,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT1::num_args;
+
+      static const bool is_linear = ExprT1::is_linear;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -959,6 +1021,10 @@ namespace Sacado {
         return expr1.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr1.getArg(j);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -983,6 +1049,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT2::num_args;
+
+      static const bool is_linear = ExprT2::is_linear;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1036,6 +1104,10 @@ namespace Sacado {
         return -expr2.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr2.getArg(j);
+      }
+
     protected:
 
       ExprT1 expr1;
@@ -1068,6 +1140,8 @@ namespace Sacado {
       static const int num_args1 = ExprT1::num_args;
       static const int num_args2 = ExprT2::num_args;
       static const int num_args = num_args1 + num_args2;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1140,6 +1214,13 @@ namespace Sacado {
         return v1*expr2.fastAccessDx(i) + expr1.fastAccessDx(i)*v2;
       }
 
+      const base_expr_type& getArg(int j) const {
+	if (j < num_args1)
+	  return expr1.getArg(j);
+	else
+	  return expr2.getArg(j-num_args1);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -1166,6 +1247,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT1::num_args;
+
+      static const bool is_linear = ExprT1::is_linear;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1219,6 +1302,10 @@ namespace Sacado {
         return expr1.fastAccessDx(i)*expr2.val();
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr1.getArg(j);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -1243,6 +1330,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT2::num_args;
+
+      static const bool is_linear = ExprT2::is_linear;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1296,6 +1385,10 @@ namespace Sacado {
         return expr1.val()*expr2.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr2.getArg(j);
+      }
+
     protected:
 
       ExprT1 expr1;
@@ -1328,6 +1421,8 @@ namespace Sacado {
       static const int num_args1 = ExprT1::num_args;
       static const int num_args2 = ExprT2::num_args;
       static const int num_args = num_args1 + num_args2;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1403,6 +1498,13 @@ namespace Sacado {
         return  expr1.fastAccessDx(i)*a + expr2.fastAccessDx(i)*b;
       }
 
+      const base_expr_type& getArg(int j) const {
+	if (j < num_args1)
+	  return expr1.getArg(j);
+	else
+	  return expr2.getArg(j-num_args1);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -1430,6 +1532,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT1::num_args;
+
+      static const bool is_linear = ExprT1::is_linear;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1486,6 +1590,10 @@ namespace Sacado {
         return expr1.fastAccessDx(i)*a;
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr1.getArg(j);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -1512,6 +1620,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT2::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1568,6 +1678,10 @@ namespace Sacado {
         return expr2.fastAccessDx(i)*b;
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr2.getArg(j);
+      }
+
     protected:
 
       ExprT1 expr1;
@@ -1602,6 +1716,8 @@ namespace Sacado {
       static const int num_args1 = ExprT1::num_args;
       static const int num_args2 = ExprT2::num_args;
       static const int num_args = num_args1 + num_args2;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1678,6 +1794,13 @@ namespace Sacado {
         return expr1.fastAccessDx(i)*a + expr2.fastAccessDx(i)*b;
       }
 
+      const base_expr_type& getArg(int j) const {
+	if (j < num_args1)
+	  return expr1.getArg(j);
+	else
+	  return expr2.getArg(j-num_args1);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -1705,6 +1828,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT1::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1762,6 +1887,10 @@ namespace Sacado {
         return expr1.fastAccessDx(i)*a;
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr1.getArg(j);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -1788,6 +1917,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT2::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1845,6 +1976,10 @@ namespace Sacado {
         return expr2.fastAccessDx(i)*b;
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr2.getArg(j);
+      }
+
     protected:
 
       ExprT1 expr1;
@@ -1879,6 +2014,8 @@ namespace Sacado {
       static const int num_args1 = ExprT1::num_args;
       static const int num_args2 = ExprT2::num_args;
       static const int num_args = num_args1 + num_args2;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -1960,6 +2097,13 @@ namespace Sacado {
         return expr1.fastAccessDx(i)*a + expr2.fastAccessDx(i)*b;
       }
 
+      const base_expr_type& getArg(int j) const {
+	if (j < num_args1)
+	  return expr1.getArg(j);
+	else
+	  return expr2.getArg(j-num_args1);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -1987,6 +2131,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT1::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -2049,6 +2195,10 @@ namespace Sacado {
         return expr1.fastAccessDx(i)*a;
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr1.getArg(j);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -2075,6 +2225,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT2::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -2137,6 +2289,10 @@ namespace Sacado {
         return expr2.fastAccessDx(i)*b;
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr2.getArg(j);
+      }
+
     protected:
 
       ExprT1 expr1;
@@ -2171,6 +2327,8 @@ namespace Sacado {
       static const int num_args1 = ExprT1::num_args;
       static const int num_args2 = ExprT2::num_args;
       static const int num_args = num_args1 + num_args2;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -2248,6 +2406,13 @@ namespace Sacado {
         return max_v1 ? expr1.fastAccessDx(i) : expr2.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	if (j < num_args1)
+	  return expr1.getArg(j);
+	else
+	  return expr2.getArg(j-num_args1);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -2274,6 +2439,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT1::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -2334,6 +2501,10 @@ namespace Sacado {
         return max_v1 ? expr1.fastAccessDx(i) : value_type(0);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr1.getArg(j);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -2360,6 +2531,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT2::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -2420,6 +2593,10 @@ namespace Sacado {
         return max_v1 ? value_type(0) : expr2.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	return expr2.getArg(j);
+      }
+
     protected:
 
       ExprT1 expr1;
@@ -2454,6 +2631,8 @@ namespace Sacado {
       static const int num_args1 = ExprT1::num_args;
       static const int num_args2 = ExprT2::num_args;
       static const int num_args = num_args1 + num_args2;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -2531,6 +2710,13 @@ namespace Sacado {
         return min_v1 ? expr1.fastAccessDx(i) : expr2.fastAccessDx(i);
       }
 
+      const base_expr_type& getArg(int j) const {
+	if (j < num_args1)
+	  return expr1.getArg(j);
+	else
+	  return expr2.getArg(j-num_args1);
+      }
+
     protected:
 
       const ExprT1& expr1;
@@ -2557,6 +2743,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT1::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -2616,6 +2804,10 @@ namespace Sacado {
       const value_type fastAccessDx(int i) const {
         return min_v1 ? expr1.fastAccessDx(i) : value_type(0);
       }
+      
+      const base_expr_type& getArg(int j) const {
+	return expr1.getArg(j);
+      }
 
     protected:
 
@@ -2643,6 +2835,8 @@ namespace Sacado {
 				   base_expr_type_2>::type base_expr_type;
 
       static const int num_args = ExprT2::num_args;
+
+      static const bool is_linear = false;
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
@@ -2701,6 +2895,10 @@ namespace Sacado {
 
       const value_type fastAccessDx(int i) const {
         return min_v1 ? value_type(0) : expr2.fastAccessDx(i);
+      }
+
+      const base_expr_type& getArg(int j) const {
+	return expr2.getArg(j);
       }
 
     protected:

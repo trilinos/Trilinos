@@ -88,6 +88,9 @@ namespace Sacado {
       //! Number of arguments
       static const int num_args = 1;
 
+      //! Is expression linear
+      static const bool is_linear = true;
+
       /*!
        * @name Initialization methods
        */
@@ -221,7 +224,7 @@ namespace Sacado {
 
       //! Return tangent component \c i of argument \c Arg
       template <int Arg>
-      T getTangent(int i) const { return this->dx_[i]; }
+      const T& getTangent(int i) const { return this->dx_[i]; }
     
       //@}
 
@@ -301,6 +304,7 @@ namespace Sacado {
 	int i;
 	inline LocalAccumOp(const ExprT& x_) :
 	  x(x_) { x.computePartials(value_type(1.), partials); }
+	inline void getTangents(int i_) { i = i_; }
 	template <typename ArgT>
 	inline void operator () (ArgT arg) const {
 	  const int Arg = ArgT::value;

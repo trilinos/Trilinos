@@ -75,6 +75,8 @@ namespace Sacado {							\
       typedef typename ExprT::base_expr_type base_expr_type;		\
 									\
       static const int num_args = ExprT::num_args;			\
+      									\
+      static const bool is_linear = LINEAR;				\
 									\
       Expr(const ExprT& expr_) : expr(expr_)  {}			\
 									\
@@ -82,6 +84,8 @@ namespace Sacado {							\
 									\
       template <int Arg>						\
       bool isActive() const { return expr.template isActive<Arg>(); }	\
+									\
+      bool isActive2(int j) const { return expr.template isActive2(j); } \
 									\
       bool updateValue() const { return expr.updateValue(); }		\
 									\
@@ -98,7 +102,7 @@ namespace Sacado {							\
 	expr.getTangents(i, dots); }					\
 									\
       template <int Arg>						\
-      value_type getTangent(int i) const {				\
+      const value_type& getTangent(int i) const {			\
 	return expr.template getTangent<Arg>(i);			\
       }									\
 									\
@@ -117,6 +121,23 @@ namespace Sacado {							\
       const value_type fastAccessDx(int i) const {                      \
         return FASTACCESSDX;                                            \
       }                                                                 \
+									\
+      const value_type* getDx(int j) const {				\
+	return expr.getDx(j);						\
+      }									\
+									\
+      const base_expr_type& getArg(int j) const {			\
+	return expr.getArg(j);						\
+      }									\
+									\
+      int numActiveArgs() const {					\
+	return expr.numActiveArgs();					\
+      }									\
+									\
+      void computeActivePartials(const value_type& bar,			\
+				 value_type *partials) const {		\
+        expr.computePartials(ADJOINT, partials);			\
+      }									\
                                                                         \
     protected:								\
 									\
@@ -274,7 +295,7 @@ FAD_UNARYOP_MACRO(abs,
 		  AbsOp, 
 		  std::abs(expr.val()),
 		  (expr.val() >= value_type(0.)) ? bar : value_type(-bar),
-                  expr.isLinear(),
+                  false,
                   expr.val() >= 0 ? value_type(+expr.dx(i)) :
                     value_type(-expr.dx(i)),
                   expr.val() >= 0 ? value_type(+expr.fastAccessDx(i)) :
@@ -283,7 +304,7 @@ FAD_UNARYOP_MACRO(fabs,
 		  FAbsOp, 
 		  std::fabs(expr.val()),
 		  (expr.val() >= value_type(0.)) ? bar : value_type(-bar),
-                  expr.isLinear(),
+                  false,
                   expr.val() >= 0 ? value_type(+expr.dx(i)) :
                     value_type(-expr.dx(i)),
                   expr.val() >= 0 ? value_type(+expr.fastAccessDx(i)) :
@@ -291,10 +312,12 @@ FAD_UNARYOP_MACRO(fabs,
 
 #undef FAD_UNARYOP_MACRO
 
-#define FAD_BINARYOP_MACRO(OPNAME,OP,VALUE,LADJOINT,RADJOINT,           \
-    LINEAR,CONST_LINEAR_1, CONST_LINEAR_2,                              \
-    DX,FASTACCESSDX,CONST_DX_1,CONST_DX_2,                              \
-    CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2)		                \
+#define FAD_BINARYOP_MACRO(						\
+  OPNAME,OP,VALUE,LADJOINT,RADJOINT,					\
+  LINEAR,CONST_LINEAR_1, CONST_LINEAR_2,				\
+  LINEAR_2,CONST_LINEAR_1_2, CONST_LINEAR_2_2,				\
+  DX,FASTACCESSDX,CONST_DX_1,CONST_DX_2,				\
+  CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2)		                \
 namespace Sacado {							\
   namespace ELRFad {							\
 									\
@@ -320,6 +343,8 @@ namespace Sacado {							\
       static const int num_args2 = ExprT2::num_args;			\
       static const int num_args = num_args1 + num_args2;		\
 									\
+      static const bool is_linear = LINEAR_2;				\
+									\
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
 	expr1(expr1_), expr2(expr2_) {}					\
 									\
@@ -333,6 +358,13 @@ namespace Sacado {							\
 	  return expr1.template isActive<Arg>();			\
 	else								\
 	  return expr2.template isActive<Arg-num_args1>();		\
+      }									\
+									\
+      bool isActive2(int j) const {					\
+	if (j < num_args1)						\
+	  return expr1.template isActive2(j);				\
+	else								\
+	  return expr2.template isActive2(j);				\
       }									\
 									\
       bool updateValue() const {					\
@@ -356,7 +388,7 @@ namespace Sacado {							\
 	expr2.getTangents(i, dots+num_args1);				\
       }									\
 									\
-      template <int Arg> value_type getTangent(int i) const {		\
+      template <int Arg> const value_type& getTangent(int i) const {	\
 	if (Arg < num_args1)						\
 	  return expr1.template getTangent<Arg>(i);			\
 	else								\
@@ -379,6 +411,31 @@ namespace Sacado {							\
         return FASTACCESSDX;                                            \
       }                                                                 \
                                                                         \
+      const value_type* getDx(int j) const {				\
+	if (j < num_args1)						\
+	  return expr1.getDx(j);					\
+	else								\
+	  return expr2.getDx(j-num_args1);				\
+      }									\
+									\
+      const base_expr_type& getArg(int j) const {			\
+	if (j < num_args1)						\
+	  return expr1.getArg(j);					\
+	else								\
+	  return expr2.getArg(j-num_args1);				\
+      }									\
+									\
+      int numActiveArgs() const {					\
+	return expr1.numActiveArgs() + expr2.numActiveArgs();		\
+      }									\
+									\
+      void computeActivePartials(const value_type& bar,			\
+				 value_type *partials) const {		\
+	if (expr1.numActiveArgs() > 0)					\
+	  expr1.computePartials(LADJOINT, partials);			\
+	if (expr2.numActiveArgs() > 0)					\
+	  expr2.computePartials(RADJOINT, partials+expr2.numActiveArgs()); \
+      }									\
     protected:								\
 									\
       typename ExprConstRef<ExprT1>::type expr1;			\
@@ -404,6 +461,8 @@ namespace Sacado {							\
 									\
       static const int num_args = ExprT1::num_args;			\
 									\
+      static const bool is_linear = CONST_LINEAR_2_2;			\
+									\
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
 	expr1(expr1_), expr2(expr2_) {}					\
 									\
@@ -414,6 +473,8 @@ namespace Sacado {							\
       template <int Arg> bool isActive() const {			\
 	return expr1.template isActive<Arg>();				\
       }									\
+									\
+      bool isActive2(int j) const { return expr1.template isActive2(j); } \
 									\
       bool updateValue() const {					\
 	return expr1.updateValue();					\
@@ -432,7 +493,7 @@ namespace Sacado {							\
 	expr1.getTangents(i, dots);					\
       }									\
 									\
-      template <int Arg> value_type getTangent(int i) const {		\
+      template <int Arg> const value_type& getTangent(int i) const {	\
 	return expr1.template getTangent<Arg>(i);			\
       }									\
 									\
@@ -451,6 +512,23 @@ namespace Sacado {							\
       const value_type fastAccessDx(int i) const {                      \
         return CONST_FASTACCESSDX_2;                                    \
       }                                                                 \
+									\
+      const value_type* getDx(int j) const {				\
+	return expr1.getDx(j);						\
+      }									\
+									\
+      const base_expr_type& getArg(int j) const {			\
+	return expr1.getArg(j);						\
+      }									\
+									\
+      int numActiveArgs() const {					\
+	return expr1.numActiveArgs();					\
+      }									\
+									\
+      void computeActivePartials(const value_type& bar,			\
+				 value_type *partials) const {		\
+        expr1.computePartials(LADJOINT, partials);			\
+      }									\
                                                                         \
     protected:								\
 									\
@@ -477,6 +555,8 @@ namespace Sacado {							\
 									\
       static const int num_args = ExprT2::num_args;			\
 									\
+      static const bool is_linear = CONST_LINEAR_1_2;			\
+									\
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
 	expr1(expr1_), expr2(expr2_) {}					\
 									\
@@ -487,6 +567,8 @@ namespace Sacado {							\
       template <int Arg> bool isActive() const {			\
 	return expr2.template isActive<Arg>();				\
       }									\
+									\
+      bool isActive2(int j) const { return expr2.template isActive2(j); } \
 									\
       bool updateValue() const {					\
 	return expr2.updateValue();					\
@@ -505,7 +587,7 @@ namespace Sacado {							\
 	expr2.getTangents(i, dots);					\
       }									\
 									\
-      template <int Arg> value_type getTangent(int i) const {		\
+      template <int Arg> const value_type& getTangent(int i) const {	\
 	return expr2.template getTangent<Arg>(i);			\
       }									\
 									\
@@ -524,7 +606,24 @@ namespace Sacado {							\
       const value_type fastAccessDx(int i) const {                      \
         return CONST_FASTACCESSDX_1;                                    \
       }                                                                 \
+									\
+      const value_type* getDx(int j) const {				\
+	return expr2.getDx(j);						\
+      }									\
                                                                         \
+									\
+      const base_expr_type& getArg(int j) const {			\
+	return expr2.getArg(j);						\
+      }									\
+									\
+      int numActiveArgs() const {					\
+	return expr2.numActiveArgs();					\
+      }									\
+									\
+      void computeActivePartials(const value_type& bar,			\
+				 value_type *partials) const {		\
+        expr2.computePartials(RADJOINT, partials);			\
+      }									\
     protected:								\
 									\
       typename ExprConstRef<ExprT1>::type expr1;			\
@@ -585,6 +684,9 @@ FAD_BINARYOP_MACRO(operator+,
                    expr1.isLinear() && expr2.isLinear(),
                    expr2.isLinear(),
                    expr1.isLinear(),
+		   ExprT1::is_linear && ExprT2::is_linear,
+		   ExprT2::is_linear,
+		   ExprT1::is_linear,
                    expr1.dx(i) + expr2.dx(i),
                    expr1.fastAccessDx(i) + expr2.fastAccessDx(i),
                    expr2.dx(i),
@@ -599,6 +701,9 @@ FAD_BINARYOP_MACRO(operator-,
                    expr1.isLinear() && expr2.isLinear(),
                    expr2.isLinear(),
                    expr1.isLinear(),
+		   ExprT1::is_linear && ExprT2::is_linear,
+		   ExprT2::is_linear,
+		   ExprT1::is_linear,
                    expr1.dx(i) - expr2.dx(i),
                    expr1.fastAccessDx(i) - expr2.fastAccessDx(i),
                    -expr2.dx(i),
@@ -613,6 +718,9 @@ FAD_BINARYOP_MACRO(operator*,
                    false,
                    expr2.isLinear(),
                    expr1.isLinear(),
+		   false,
+		   ExprT2::is_linear,
+		   ExprT1::is_linear,
                    expr1.val()*expr2.dx(i) + expr1.dx(i)*expr2.val(),
                    expr1.val()*expr2.fastAccessDx(i) + 
                      expr1.fastAccessDx(i)*expr2.val(),
@@ -628,6 +736,9 @@ FAD_BINARYOP_MACRO(operator/,
                    false,
                    false,
                    expr1.isLinear(),
+		   false,
+		   false,
+		   ExprT1::is_linear,
                    (expr1.dx(i)*expr2.val() - expr2.dx(i)*expr1.val()) /
                      (expr2.val()*expr2.val()),
                    (expr1.fastAccessDx(i)*expr2.val() -
@@ -647,6 +758,9 @@ FAD_BINARYOP_MACRO(atan2,
                    false,
                    false,
                    false,
+		   false,
+                   false,
+                   false,
                    (expr2.val()*expr1.dx(i) - expr1.val()*expr2.dx(i))/                              (expr1.val()*expr1.val() + expr2.val()*expr2.val()),
                    (expr2.val()*expr1.fastAccessDx(i) - expr1.val()*expr2.fastAccessDx(i))/
                      (expr1.val()*expr1.val() + expr2.val()*expr2.val()),
@@ -660,6 +774,9 @@ FAD_BINARYOP_MACRO(pow,
 		   expr1.val() == 0 ? value_type(0) : value_type(bar*std::pow(expr1.val(),expr2.val())*expr2.val()/expr1.val()),
                    expr1.val() == 0 ? value_type(0) : value_type(bar*std::pow(expr1.val(),expr2.val())*std::log(expr1.val())),
                    false,
+                   false,
+                   false,
+		   false,
                    false,
                    false,
                    expr1.val() == value_type(0) ? value_type(0) : value_type((expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
@@ -676,6 +793,9 @@ FAD_BINARYOP_MACRO(max,
                    expr1.isLinear() && expr2.isLinear(),
                    expr2.isLinear(),
                    expr1.isLinear(),
+		   ExprT1::is_linear && ExprT2::is_linear,
+		   ExprT2::is_linear,
+		   ExprT1::is_linear,
                    expr1.val() >= expr2.val() ? expr1.dx(i) : expr2.dx(i),
                    expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) :
                                                 expr2.fastAccessDx(i),
@@ -693,6 +813,9 @@ FAD_BINARYOP_MACRO(min,
                    expr1.isLinear() && expr2.isLinear(),
                    expr2.isLinear(),
                    expr1.isLinear(),
+		   ExprT1::is_linear && ExprT2::is_linear,
+		   ExprT2::is_linear,
+		   ExprT1::is_linear,
                    expr1.val() <= expr2.val() ? expr1.dx(i) : expr2.dx(i),
                    expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) :
                                                 expr2.fastAccessDx(i),
