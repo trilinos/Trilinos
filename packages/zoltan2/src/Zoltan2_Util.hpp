@@ -13,7 +13,7 @@
 #include <Zoltan2_AlltoAll.hpp>
 
 #include <Teuchos_OpaqueWrapper.hpp>
-#include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
 namespace Zoltan2{
 

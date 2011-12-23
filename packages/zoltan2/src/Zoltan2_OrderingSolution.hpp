@@ -29,43 +29,54 @@ template <typename gid_t, typename lno_t>
 public:
 
   //////////////////////////////////////////////
-  void setPermutation(
-    size_t length,// Length of arrays
-    gid_t *gids,  // User's IDs, same order as appeared in adapter "get" method
-    lno_t *perm   // perm[i] = k means k is the i'th element in the perm.
+  // Constructor allocates memory for the solution.
+  OrderingSolution(
+    size_t perm_size, // TODO: Is this always equal to nlids ?
+    size_t ngids
   )
   {
     HELLO;
-
-    if (gids != NULL)
-      gids_ = ArrayView<gid_t>(gids, length);
-    else     // gids cannot be NULL
-      gids_ = ArrayView<gid_t>(Teuchos::null);
-      // throw std::logic_error("invalid gids");
-
-    perm_ = ArrayView<lno_t>(perm, length);
+    perm_size_ = perm_size;
+    gids_   = ArrayRCP<gid_t>(ngids);
+    perm_  = ArrayRCP<lno_t>(perm_size_);
   }
 
+
   //////////////////////////////////////////////
-  void getPermutation(
-    size_t *length,  // returned: Length of arrays
-    gid_t **gids,    // returned: GIDs
-    lno_t **perm     // returned: Permutation
-  )
+  // Accessor functions, allowing algorithms to get ptrs to solution memory.
+  // Algorithms can then load the memory.
+  // Non-RCP versions are provided for applications to use.
+  inline size_t getPermutationSize() {return perm_size_;}
+
+  inline ArrayRCP<gid_t>  &getGidsRCP()  {return gids_;}
+  inline ArrayRCP<lno_t> &getPermutationRCP() {return perm_;}
+
+  inline ArrayRCP<gid_t>  &getGidsRCPConst()  const
+  {
+    return const_cast<ArrayRCP<gid_t>& > (gids_);
+  }
+  inline ArrayRCP<lno_t> &getPermutationRCPConst() const
+  {
+    return const_cast<ArrayRCP<lno_t>& > (perm_);
+  }
+
+  inline gid_t  *getGids(size_t *length)
+  {
+    *length = gids_.size();
+    return gids_.getRawPtr();
+  }
+  inline lno_t *getPermutation(size_t *length)
   {
     *length = perm_.size();
-    *gids   = gids_.getRawPtr();
-
-    *perm  = perm_.getRawPtr();
+    return perm_.getRawPtr();
   }
 
 protected:
-  // Ordering solution is GIDs listed in the same order in which they were
-  // provided in the input adapter's "get" method, and permutation vector(s).
-  size_t nParts_;
-  ArrayView<gid_t>  gids_;
-  ArrayView<lno_t> perm_;    // zero-based local permutation
-  //ArrayView<size_t> invperm_; // inverse of permutation above
+  // Ordering solution consists of GIDs, LIDs, and permutation vector(s).
+  size_t perm_size_;
+  ArrayRCP<gid_t>  gids_;
+  ArrayRCP<lno_t> perm_;    // zero-based local permutation
+  //ArrayRCP<size_t> invperm_; // inverse of permutation above
 };
 
 }

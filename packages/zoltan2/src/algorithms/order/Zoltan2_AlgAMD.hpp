@@ -73,10 +73,9 @@ int AlgAMD(
 
   //const size_t nEdgs = model->getEdgeList( edgeIds,
   //                      procIds, offsets, wgts);
+  // TODO: Should use the local graph
   model->getEdgeList( edgeIds, procIds, offsets, wgts);
 
-  lno_t *perm;
-  perm = new lno_t[nVtx];
 
 #ifdef HAVE_AMD
   cout << "AMD is enabled" << endl;
@@ -86,18 +85,15 @@ int AlgAMD(
 
   amd_defaults(Control);
   amd_control(Control);
+
+  lno_t *perm;
+  perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
+
   lno_t result = AMDobj.order(nVtx, offsets.getRawPtr(),
                          edgeIds.getRawPtr(), perm, Control, Info);
 
   if (result != AMD_OK && result != AMD_OK_BUT_JUMBLED)
       ierr = -1; // TODO: Change return value to lno_t
-  else
-  {
-      // Set solution.
-      solution->setPermutation(nVtx,
-                   (gid_t *) NULL, // TODO
-                   perm);
-  }
 #else
   cout << "Zoltan2 is not built with AMD." << endl;
   ierr = -2; // TODO: Need better error numbers ?

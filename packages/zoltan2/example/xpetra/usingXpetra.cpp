@@ -3,8 +3,11 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_RCP.hpp>
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
+#else
 #include <Epetra_SerialComm.h>
+#endif
 #include <Epetra_CrsMatrix.h>
 #include <Tpetra_CrsMatrix.hpp>
 #include <MueLu_config.hpp>   // For HAVE_MUELU_TPETRA HAVE_MUELU_EPETRA

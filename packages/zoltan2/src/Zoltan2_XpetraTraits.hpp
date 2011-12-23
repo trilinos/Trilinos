@@ -206,9 +206,9 @@ struct XpetraTraits<Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
   static RCP<const x_matrix_t> doMigration(const RCP<const x_matrix_t> &from,
       lno_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib l = from->getRowMap()->lib();
+    Xpetra::UnderlyingLib lib = from->getRowMap()->lib();
 
-    if (l == Xpetra::UseEpetra){
+    if (lib == Xpetra::UseEpetra){
        throw std::logic_error("compiler should have used specialization");
     } else{
       // Do the import with the Tpetra::CrsMatrix traits object
@@ -251,10 +251,10 @@ struct XpetraTraits<Xpetra::CrsMatrix<double, int, int, node_t> >
   static RCP<const x_matrix_t> doMigration(const RCP<const x_matrix_t> &from,
       lno_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib l = from->getRowMap()->lib();
+    Xpetra::UnderlyingLib lib = from->getRowMap()->lib();
     const x_matrix_t *xm = from.get();
 
-    if (l == Xpetra::UseEpetra){
+    if (lib == Xpetra::UseEpetra){
       // Do the import with the Epetra_CrsMatrix traits object
       const xe_matrix_t *xem = dynamic_cast<const xe_matrix_t *>(xm);
       RCP<const e_matrix_t> em = xem->getEpetra_CrsMatrix();
@@ -426,9 +426,9 @@ struct XpetraTraits<Xpetra::CrsGraph<lno_t, gno_t, node_t> >
   static RCP<const x_graph_t> doMigration(const RCP<const x_graph_t> &from,
       lno_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib l = from->getRowMap()->lib();
+    Xpetra::UnderlyingLib lib = from->getRowMap()->lib();
 
-    if (l == Xpetra::UseEpetra){
+    if (lib == Xpetra::UseEpetra){
        throw std::logic_error("compiler should have used specialization");
     } else{
       // Do the import with the Tpetra::CrsGraph traits object
@@ -468,10 +468,10 @@ struct XpetraTraits<Xpetra::CrsGraph<int, int, node_t> >
   static RCP<const x_graph_t> doMigration(const RCP<const x_graph_t> &from,
       lno_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib l = from->getRowMap()->lib();
+    Xpetra::UnderlyingLib lib = from->getRowMap()->lib();
     const x_graph_t *xg = from.get();
 
-    if (l == Xpetra::UseEpetra){
+    if (lib == Xpetra::UseEpetra){
       // Do the import with the Epetra_CrsGraph traits object
       const xe_graph_t *xeg = dynamic_cast<const xe_graph_t *>(xg);
       RCP<const e_graph_t> eg = xeg->getEpetra_CrsGraph();
@@ -611,9 +611,9 @@ struct XpetraTraits<Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
   static RCP<const x_vector_t> doMigration(const RCP<const x_vector_t> &from,
       lno_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib l = from->getMap()->lib();
+    Xpetra::UnderlyingLib lib = from->getMap()->lib();
 
-    if (l == Xpetra::UseEpetra){
+    if (lib == Xpetra::UseEpetra){
        throw std::logic_error("compiler should have used specialization");
     } else{
       // Do the import with the Tpetra::Vector traits object
@@ -655,10 +655,10 @@ struct XpetraTraits<Xpetra::Vector<double, int, int, node_t> >
   static RCP<const x_vector_t> doMigration(const RCP<const x_vector_t> &from,
       lno_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib l = from->getMap()->lib();
+    Xpetra::UnderlyingLib lib = from->getMap()->lib();
     const x_vector_t *vec = from.get();
 
-    if (l == Xpetra::UseEpetra){
+    if (lib == Xpetra::UseEpetra){
       // Do the import with the Epetra_Vector traits object
       const xe_vector_t *xev = dynamic_cast<const xe_vector_t *>(vec);
       RCP<const e_vector_t> ev = rcp(xev->getEpetra_Vector());
@@ -801,9 +801,9 @@ struct XpetraTraits<Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
   static RCP<const x_mvector_t> doMigration(const RCP<const x_mvector_t> &from,
       lno_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib l = from->getMap()->lib();
+    Xpetra::UnderlyingLib lib = from->getMap()->lib();
 
-    if (l == Xpetra::UseEpetra){
+    if (lib == Xpetra::UseEpetra){
        throw std::logic_error("compiler should have used specialization");
     } else{
       // Do the import with the Tpetra::MultiVector traits object
@@ -846,10 +846,10 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
   static RCP<const x_mvector_t> doMigration(const RCP<const x_mvector_t> &from,
       lno_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib l = from->getMap()->lib();
+    Xpetra::UnderlyingLib lib = from->getMap()->lib();
     const x_mvector_t *xmv = from.get();
 
-    if (l == Xpetra::UseEpetra){
+    if (lib == Xpetra::UseEpetra){
       // Do the import with the Epetra_MultiVector traits object
       const xe_mvector_t *xev = dynamic_cast<const xe_mvector_t *>(xmv);
       RCP<e_mvector_t> ev = xev->getEpetra_MultiVector();

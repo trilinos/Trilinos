@@ -108,6 +108,7 @@ int main(int narg, char** arg)
                  "echoing the input/generated matrix.");
   cmdp.setOption("verbose", "quiet", &verbose,
                  "Print messages and results.");
+  cout << "Starting everything" << endl;
 
   //////////////////////////////////
   // Even with cmdp option "true", I get errors for having these
@@ -216,17 +217,23 @@ int main(int narg, char** arg)
   }
 #endif
 
+  cout << "Going to solve" << endl;
   problem.solve();
 
   ////// Basic metric checking of the ordering solution
   size_t checkLength;
+  size_t dummy;
   z2TestGO *checkGIDs;
   z2TestLO *checkPerm;
   Zoltan2::OrderingSolution<z2TestGO, z2TestLO> *soln = problem.getSolution();
 
+  cout << "Going to get results" << endl;
   // Check that the solution is really a permutation
-  soln->getPermutation(&checkLength, &checkGIDs, &checkPerm);
+  checkLength = soln->getPermutationSize();
+  checkGIDs = soln->getGids(&dummy);
+  checkPerm = soln->getPermutation(&dummy);
 
+  cout << "Going to validate the soln" << endl;
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
 
