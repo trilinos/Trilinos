@@ -267,4 +267,11 @@ Teuchos::RCP<panzer::PhysicsBlock> panzer::PhysicsBlock::copyWithCellData(const 
 {
   return Teuchos::rcp(new panzer::PhysicsBlock(*this,cell_data,factory));
 }
+
+// *******************************************************************
+Teuchos::RCP<panzer::GlobalData> panzer::PhysicsBlock::globalData() const
+{
+  return m_global_data;
+}
+
 // *******************************************************************

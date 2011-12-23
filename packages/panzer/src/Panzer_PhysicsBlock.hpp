@@ -111,6 +111,8 @@ namespace panzer {
     Teuchos::RCP<PhysicsBlock> copyWithCellData(const panzer::CellData & cell_data,
                                                 const panzer::EquationSetFactory & factory) const;
 
+    Teuchos::RCP<panzer::GlobalData> globalData() const;
+
   protected:
     void initialize(const panzer::InputPhysicsBlock & ipb,
                     const std::string & element_block_id,

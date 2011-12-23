@@ -8,6 +8,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Panzer_BCStrategy.hpp"
+#include "Panzer_GlobalDataAcceptor_DefaultImpl.hpp"
 #include "Panzer_Traits.hpp"
 
 #include "Phalanx_FieldManager.hpp"
@@ -15,11 +16,12 @@
 namespace panzer {
   
   template <typename EvalT>
-    class BCStrategy_Dirichlet_DefaultImpl : public panzer::BCStrategy<EvalT> {
+    class BCStrategy_Dirichlet_DefaultImpl : public panzer::BCStrategy<EvalT>,
+					     public panzer::GlobalDataAcceptorDefaultImpl {
 
   public:    
 
-    BCStrategy_Dirichlet_DefaultImpl(const panzer::BC& bc);
+      BCStrategy_Dirichlet_DefaultImpl(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
     
     virtual ~BCStrategy_Dirichlet_DefaultImpl();
     

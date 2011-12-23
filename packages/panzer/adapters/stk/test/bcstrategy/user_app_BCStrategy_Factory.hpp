@@ -6,6 +6,7 @@
 #include "Panzer_BCStrategy_TemplateManager.hpp"
 #include "Panzer_BCStrategy_Factory.hpp"
 #include "Panzer_BCStrategy_Factory_Defines.hpp"
+#include "Panzer_GlobalData.hpp"
 
 // Add my bcstrategies here
 #include "user_app_BCStrategy_Dirichlet_Constant.hpp"
@@ -19,7 +20,7 @@ namespace user_app {
   struct BCFactory : public panzer::BCStrategyFactory {
 
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
-    buildBCStrategy(const panzer::BC& bc) const
+    buildBCStrategy(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) const
     {
 
       Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs_tm = 

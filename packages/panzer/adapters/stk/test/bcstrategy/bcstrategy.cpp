@@ -56,8 +56,10 @@ namespace panzer {
 
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs;
   
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
     user_app::BCFactory my_factory;
-    bcs = my_factory.buildBCStrategy(bc);
+    bcs = my_factory.buildBCStrategy(bc,gd);
 
   }
 

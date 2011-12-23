@@ -125,17 +125,17 @@ setupBCFieldManagers(WorksetContainer & wkstContainer,
 
       PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
       
-      // register evaluators from strategy
-      Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs = 
-	bc_factory.buildBCStrategy(*bc);
-      
+      // register evaluators from strategy      
       const panzer::CellData side_cell_data(wkst->second.num_cells,
 					    base_cell_dimension,
 					    wkst->first,volume_cell_topology);      
 
       Teuchos::RCP<panzer::PhysicsBlock> side_pb 
             = volume_pb->copyWithCellData(side_cell_data, eqset_factory);
-      
+
+      Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs = 
+	bc_factory.buildBCStrategy(*bc,side_pb->globalData());
+
       // Iterate over evaluation types
       for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator 
 	     bcs_type = bcs->begin(); bcs_type != bcs->end(); ++bcs_type) {

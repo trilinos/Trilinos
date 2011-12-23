@@ -17,8 +17,8 @@
 // ***********************************************************************
 template <typename EvalT>
 Example::BCStrategy_Dirichlet_Constant<EvalT>::
-BCStrategy_Dirichlet_Constant(const panzer::BC& bc) :
-  panzer::BCStrategy_Dirichlet_DefaultImpl<EvalT>(bc)
+BCStrategy_Dirichlet_Constant(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) :
+  panzer::BCStrategy_Dirichlet_DefaultImpl<EvalT>(bc,global_data)
 {
   TEUCHOS_ASSERT(this->m_bc.strategy() == "Constant");
 }
