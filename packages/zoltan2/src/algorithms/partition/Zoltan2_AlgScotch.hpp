@@ -57,24 +57,30 @@ extern void Zoltan_get_linux_meminfo(char *msg, char **result);
 #endif
 
 #ifdef SHOW_SCOTCH_HIGH_WATER_MARK
-extern "C"{
 //
 // Scotch keeps track of memory high water mark, but doesn't
 // provide a way to get that number.  So add this function:
 //   "size_t SCOTCH_getMemoryMax() { return memorymax;}"
+// to src/libscotch/common_memory.c
 //
 // and this macro:
 //   "#define HAVE_SCOTCH_GETMEMORYMAX
+// to include/ptscotch.h
 //
-// to src/libscotch/common_memory.c
 // and compile scotch with -DCOMMON_MEMORY_TRACE
 //
 #ifdef HAVE_SCOTCH_GETMEMORYMAX
+
+extern "C"{
 extern size_t SCOTCH_getMemoryMax();
-#else
-#error "Turn off SHOW_SCOTCH_HIGH_WATER_MARK in cmake configure, or see SCOTCH_HIGH_WATER_MARK info in Zoltan2_AlgScotch.hpp"
-#endif
 }
+
+#else
+
+#error "Turn off SHOW_SCOTCH_HIGH_WATER_MARK in cmake configure, or see SCOTCH_HIGH_WATER_MARK info in Zoltan2_AlgScotch.hpp"
+
+#endif
+
 #endif
 
 
@@ -206,7 +212,7 @@ void AlgPTScotch(
   SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
   ierr = SCOTCH_dgraphInit(gr, mpicomm);
 
-  Z2_GLOBAL_INPUT_ASSERTION(env, "SCOTCH_dgraphInit", !ierr, BASIC_ASSERTION);
+  Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphInit", !ierr, BASIC_ASSERTION);
 
   // Get vertex info
   ArrayView<const gno_t> vtxID;
@@ -255,7 +261,7 @@ void AlgPTScotch(
                             edgelocnbr, edgelocsize,
                             edgeloctab, edgegsttab, edloloctab);
 
-  Z2_GLOBAL_INPUT_ASSERTION(env, "SCOTCH_dgraphBuild", !ierr, BASIC_ASSERTION);
+  Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphBuild", !ierr, BASIC_ASSERTION);
 
   // Create array for Scotch to return results in.
   ArrayRCP<size_t> partList(new size_t [nVtx], 0, nVtx,true);
@@ -273,7 +279,7 @@ void AlgPTScotch(
   // TODO:  Use SCOTCH_dgraphMap so can include a machine model in partitioning
   ierr = SCOTCH_dgraphPart(gr, partnbr, &stratstr, partloctab);
 
-  Z2_GLOBAL_INPUT_ASSERTION(env, "SCOTCH_dgraphPart", !ierr, BASIC_ASSERTION);
+  Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphPart", !ierr, BASIC_ASSERTION);
 
 #ifdef SHOW_SCOTCH_HIGH_WATER_MARK
 #ifdef HAVE_SCOTCH_GETMEMORYMAX

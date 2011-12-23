@@ -52,7 +52,7 @@ public:
 
   int  numProcs_;           /*!< number of processes in original problem */
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm_; /*!< from original problem */
+  Teuchos::RCP<const Teuchos::Comm<int> > comm_; /*!< for application */
 
   Teuchos::RCP<DebugManager> debugOut_;  /*!< output for status messages */
 

@@ -18,6 +18,7 @@
 #include <Zoltan2_AlltoAll.hpp>
 
 #include <vector>
+#include <algorithm>
 #include <map>
 #include <iostream>
 using namespace std;
@@ -437,20 +438,17 @@ template< typename User>
     // Easy case - communication is not needed.
     // Global numbers are the application global IDs and
     // they are increasing consecutively with rank.
- 
-    typename std::map<gno_t, int> firstGnoToProc;
-    typename std::map<gno_t, int>::iterator pos;
 
-    for (int p=0; p <= numProcs_; p++){
-      firstGnoToProc[gnoDist_[p]] = p;
-    }
+    gno_t *gnos = gnoDist_.getRawPtr();
+    gno_t *final = gnos + numProcs_ + 1;
 
     for (size_t i=0; i < len; i++){
-      gno_t globalNumber = Teuchos::as<gno_t>(in_gid[i]);;
+      gno_t gno = Teuchos::as<gno_t>(in_gid[i]);
       if (!skipGno)
-        out_gno[i] = globalNumber;
-      pos = firstGnoToProc.upper_bound(globalNumber);
-      out_proc[i] = pos->second - 1;
+        out_gno[i] = gno;
+
+      gno_t *ub = std::upper_bound(gnos, final, gno);
+      out_proc[i] = (ub - gnos - 1);
     }
 
     return;
@@ -525,7 +523,7 @@ template< typename User>
   Z2_FORWARD_EXCEPTIONS;
 
   gidOutBuf.clear();
-  
+
   if (needGnoInfo){
     countInBuf.release();
     ArrayView<const gno_t> gnoView = gnoOutBuf();
@@ -543,16 +541,19 @@ template< typename User>
   // Save the information that was hashed to me so I can do lookups.
   //
 
-  std::map<lno_t, int> firstIndexToProc;
-  typename std::map<lno_t, int>::iterator indexProcCurr;
+  std::vector<lno_t> firstIndex;
+  std::vector<int> sendProc;
   lno_t indexTotal = 0;
 
   for (int p=0; p < numProcs_; p++){
-    firstIndexToProc[indexTotal] = p;
-    indexTotal += countInBuf[p];
+    lno_t len = countInBuf[p];
+    if (len > 0){
+      firstIndex.push_back(indexTotal);
+      sendProc.push_back(p);
+      indexTotal += len;
+    }
   }
-
-  firstIndexToProc[indexTotal] = numProcs_;
+  firstIndex.push_back(indexTotal);
 
   id2index_hash_t gidToIndex(indexTotal);
 
@@ -560,7 +561,8 @@ template< typename User>
   for (int p=0; p < numProcs_; p++){
     for (lno_t i=0; i < countInBuf[p]; i++, total++){
       try{
-        gidToIndex.put(IdentifierTraits<gid_t>::key(gidInBuf[total]), total);
+        double keyVal = IdentifierTraits<gid_t>::key(gidInBuf[total]);
+        gidToIndex.put(keyVal, total);
       }
       catch (const std::exception &e) 
         Z2_THROW_OUTSIDE_ERROR(*env_, e);
@@ -682,6 +684,7 @@ template< typename User>
   if (total > 0){
   
     total=0;
+    typename std::vector<lno_t>::iterator indexFound;
   
     for (int p=0; p < numProcs_; p++){
       for (lno_t i=0; i < countInBuf[p]; i++, total++){
@@ -696,9 +699,10 @@ template< typename User>
 
         Z2_LOCAL_BUG_ASSERTION(*env_, "gidToIndex table", 
           (index >= 0)&&(index<=indexTotal), BASIC_ASSERTION);
+
         
-        indexProcCurr = firstIndexToProc.upper_bound(index);
-        procOutBuf[total] = indexProcCurr->second-1;
+        indexFound = upper_bound(firstIndex.begin(), firstIndex.end(), index);
+        procOutBuf[total] = sendProc[indexFound - firstIndex.begin() - 1];
   
         if (needGnoInfo){
           gnoOutBuf[total] = gnoInBuf[index];
