@@ -233,16 +233,7 @@ namespace panzer {
 			 "Error: Unknown Piro Solver : " << solver);
     }
     
-    // Now the (somewhat cumbersome) setting of inputs and outputs
     Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
-    const Thyra::ModelEvaluatorBase::InArgs<double> inArgsNominal = piro->getNominalValues();
-    int num_p = inArgs.Np();     // Number of *vectors* of parameters
-    assert (num_p == 1);  // Logic needs to be generalized -- hardwire to 1 p vector in model
-    RCP<Thyra::VectorBase<double> > p1 = Thyra::createMember(*piro->get_p_space(0));
-    Thyra::copy(*inArgsNominal.get_p(0), p1.ptr());
-    //int numParams = p1->space()->dim(); // Number of parameters in p1 vector
-      
-    inArgs.set_p(0,p1);
 
     // Set output arguments to evalModel call
     Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
@@ -524,16 +515,7 @@ namespace panzer {
 			 "Error: Unknown Piro Solver : " << solver);
     }
     
-    // Now the (somewhat cumbersome) setting of inputs and outputs
     Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
-    const Thyra::ModelEvaluatorBase::InArgs<double> inArgsNominal = piro->getNominalValues();
-    int num_p = inArgs.Np();     // Number of *vectors* of parameters
-    assert (num_p == 1);  // Logic needs to be generalized -- hardwire to 1 p vector in model
-    RCP<Thyra::VectorBase<double> > p1 = Thyra::createMember(*piro->get_p_space(0));
-    Thyra::copy(*inArgsNominal.get_p(0), p1.ptr());
-    //int numParams = p1->space()->dim(); // Number of parameters in p1 vector
-      
-    inArgs.set_p(0,p1);
 
     // Set output arguments to evalModel call
     Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
