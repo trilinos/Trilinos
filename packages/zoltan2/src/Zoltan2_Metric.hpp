@@ -52,7 +52,7 @@ namespace Zoltan2{
  *     for weight dimension w.
  *
  *  The weight dimension (partSizes.size(), partWeights.size(),
- *  and imbalances.size()) should be the same on all processes.
+ *  and result.size()) should be the same on all processes.
  *
  *  For each weight dimension "w", partSizes[w].size() may either
  *  be zero or numGlobalParts.
@@ -179,6 +179,58 @@ template <typename SCALAR>
     else
       result[w] = max;
   }
+}
+
+/*! Compute the global imbalance.  Number of weights per object is one.
+ *
+ *  \param  env    library environment information
+ *
+ *  \param  comm   the communicator
+ *
+ *  \param  numGlobalParts   the desired global number of parts
+ *
+ *  \param  partSizes If partSizes.size() is zero, then we assume 
+ *     uniform part sizes are desired. Otherwise partSizes has
+ *     size numGlobalParts, partSizes[p] is the part size desired for 
+ *     partition p, and the part sizes for sum to 1.0.
+ *
+ *  \param  partNums  is the list of part numbers for the weights
+ *     which are provided in partWeights.
+ *
+ *  \param  partWeights[i] is the weight for part partNums[i].
+ *     Other processes may also have contributions to the weight of partNums[i].
+ *
+ *  \param result On return, result will have the global imbalance.
+ *
+ *  partSizes.size() may either be zero or numGlobalParts.
+ *
+ *  partNums.size() should equal partWeights.size(), since the latter
+ *  is the weight corresponding to each of the former.
+ *
+ *  A technicality: It is possible to compute the imbalance of the
+ *  current partitioning to a desired partitioning.  In that case
+ *  numGlobalParts and partSizes describes the ideal partitioning.
+ *  The current partitioning (partNums and partWeights) may have more 
+ *  or fewer parts than numGlobalParts.  In either case we compute
+ *  a reasonable value for the imbalance in the current partitioning
+ *  with respect to the desired partitioning.
+ */
+
+template <typename SCALAR>
+  void imbalances(const RCP<const Environment> &env, 
+    const RCP<const Comm<int> > &comm, 
+    size_t numGlobalParts, ArrayView<float> partSizes,
+    ArrayView<size_t> partNums, ArrayView<SCALAR> partWeights, 
+    float &result)
+{
+  Array<ArrayView<float> > partSizeLists(1, partSizes);
+  Array<ArrayView<SCALAR> > partWeightLists(1, partWeights);
+  Array<float> resultList(1, 0);
+
+  imbalances(env, comm, numGlobalParts, partSizeLists, partNums,
+    partWeightLists, resultList.view(0, 1));
+
+  result = resultList[0];
 }
 
 } //namespace Zoltan2

@@ -39,6 +39,9 @@ void AlgPTScotch(
 
 #else  //HAVE_SCOTCH
 
+
+// stdint.h for int64_t in scotch header
+
 #include <stdint.h>
 #ifndef HAVE_MPI
 #include "scotch.h"
@@ -59,10 +62,18 @@ extern "C"{
 // Scotch keeps track of memory high water mark, but doesn't
 // provide a way to get that number.  So add this function:
 //   "size_t SCOTCH_getMemoryMax() { return memorymax;}"
+//
+// and this macro:
+//   "#define HAVE_SCOTCH_GETMEMORYMAX
+//
 // to src/libscotch/common_memory.c
 // and compile scotch with -DCOMMON_MEMORY_TRACE
 //
+#ifdef HAVE_SCOTCH_GETMEMORYMAX
 extern size_t SCOTCH_getMemoryMax();
+#else
+#error "Turn off SHOW_SCOTCH_HIGH_WATER_MARK in cmake configure, or see SCOTCH_HIGH_WATER_MARK info in Zoltan2_AlgScotch.hpp"
+#endif
 }
 #endif
 
@@ -70,12 +81,6 @@ extern size_t SCOTCH_getMemoryMax();
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_Scotch.hpp
 //! \brief Parallel graph partitioning using Scotch.
-
-
-// Placeholder for real error handling.
-#define KDD_HANDLE_ERROR {\
-    cout << __func__ << ":" << __LINE__ << " KDDERROR" << endl;\
-    }
 
 namespace Zoltan2{
 
@@ -180,6 +185,7 @@ void AlgPTScotch(
 
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
   int weightDim = model->getNumWeights();
+  int weightFlag = (weightDim ? weightDim : 1);
 
   SCOTCH_Num partnbr;
   SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);
@@ -199,9 +205,8 @@ void AlgPTScotch(
   // Allocate & initialize PTScotch data structure.
   SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
   ierr = SCOTCH_dgraphInit(gr, mpicomm);
-  if (ierr) {
-    KDD_HANDLE_ERROR;
-  }
+
+  Z2_GLOBAL_INPUT_ASSERTION(env, "SCOTCH_dgraphInit", !ierr, BASIC_ASSERTION);
 
   // Get vertex info
   ArrayView<const gno_t> vtxID;
@@ -234,7 +239,6 @@ void AlgPTScotch(
   SCOTCH_Num *vlblloctab = NULL;  // Vertex label array
   SCOTCH_Num *edgegsttab = NULL;  // Array for ghost vertices
 
-
   // Get weight info.
   // TODO:  Actually get the weights; for now, not using weights.
   SCOTCH_Num *veloloctab = NULL;  // Vertex weights
@@ -250,9 +254,8 @@ void AlgPTScotch(
                             vertloctab, vendloctab, veloloctab, vlblloctab,
                             edgelocnbr, edgelocsize,
                             edgeloctab, edgegsttab, edloloctab);
-  if (ierr) {
-    KDD_HANDLE_ERROR;
-  }
+
+  Z2_GLOBAL_INPUT_ASSERTION(env, "SCOTCH_dgraphBuild", !ierr, BASIC_ASSERTION);
 
   // Create array for Scotch to return results in.
   ArrayRCP<size_t> partList(new size_t [nVtx], 0, nVtx,true);
@@ -269,15 +272,18 @@ void AlgPTScotch(
   // Call partitioning; result returned in partloctab.
   // TODO:  Use SCOTCH_dgraphMap so can include a machine model in partitioning
   ierr = SCOTCH_dgraphPart(gr, partnbr, &stratstr, partloctab);
-  if (ierr) KDD_HANDLE_ERROR;
+
+  Z2_GLOBAL_INPUT_ASSERTION(env, "SCOTCH_dgraphPart", !ierr, BASIC_ASSERTION);
 
 #ifdef SHOW_SCOTCH_HIGH_WATER_MARK
+#ifdef HAVE_SCOTCH_GETMEMORYMAX
   int me = env->comm_->getRank();
   if (me == 0){
     size_t scotchBytes = SCOTCH_getMemoryMax();
     std::cout << "Rank " << me << ": Maximum bytes used by Scotch: ";
     std::cout << scotchBytes << std::endl;
   }
+#endif
 #endif
 
   // Clean up PTScotch
@@ -290,7 +296,7 @@ void AlgPTScotch(
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
   }
 
-  ArrayRCP<float> imbalance(new float [weightDim],0, weightDim, true);
+  ArrayRCP<float> imbalance(new float [weightFlag],0, weightFlag, true);
   imbalance[0] = 1.0;  // TODO calculate imbalance.
 
   solution->setParts(vtxID, partList, imbalance);

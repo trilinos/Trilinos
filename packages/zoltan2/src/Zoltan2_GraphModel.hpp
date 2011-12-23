@@ -199,11 +199,12 @@ public:
   GraphModel(const MatrixInput<User> *ia,
     const RCP<const Environment> &env, bool consecutiveIdsRequired=false,
     bool removeSelfEdges=false) :
-     input_(ia), env_(env), gids_(), gnos_(),
-     edgeGnos_(), procIds_(), offsets_(),
-     gnosConst_(), edgeGnosConst_(), procIdsConst_(),
-     numLocalEdges_(0), numGlobalEdges_(0), numLocalVtx_(0),
-     gidsAreGnos_(false)
+     input_(ia), env_(env), gids_(), gnos_(), edgeGnos_(), procIds_(), 
+     offsets_(), gnosConst_(), edgeGnosConst_(), procIdsConst_(), 
+     numLocalEdges_(0), numGlobalEdges_(0), numLocalVtx_(0), 
+     gidsAreGnos_(false), nearEdgeLnos_(), nearEdgeOffsets_(), 
+     numNearLocalEdges_(0)
+
   {
     // Get the matrix from the input adapter
 
@@ -398,6 +399,7 @@ public:
     edgeIds = ArrayView<const gno_t>(Teuchos::null);
     procIds = procIdsConst_(0, numLocalVtx_+1);
     offsets = offsets_(0, numLocalVtx_+1);
+    wgts = ArrayView<const scalar_t>(Teuchos::null);
 
     if (numLocalEdges_){
       if (edgeGnos_.size() == 0)
@@ -407,6 +409,78 @@ public:
     }
 
     return numLocalEdges_;
+  }
+
+  size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
+    ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) const 
+  {
+    int nvtx = numLocalVtx_;
+    wgts = ArrayView<const scalar_t>(Teuchos::null);
+
+    if (nearEdgeOffsets_.size() > 0){
+      if (numNearLocalEdges_ > 0)
+        edgeIds = nearEdgeLnos_.view(0, numNearLocalEdges_);
+      else
+        edgeIds = ArrayView<const lno_t>(Teuchos::null);
+
+      offsets = nearEdgeOffsets_.view(0, nvtx + 1);
+    }
+    else{
+      lno_t *offs = new lno_t [nvtx + 1];
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, nvtx+1, offs);
+      memset(offs, 0, nvtx+1 * sizeof(lno_t));
+      numNearLocalEdges_ = 0;
+
+      if (nvtx > 0){
+        for (lno_t i=0; i < nvtx; i++){
+          for (lno_t j=offsets_[i]; j < offsets_[i+1]; j++){
+            if (procIds_[j] == env_->myRank_){
+              offs[i+1]++;
+              numNearLocalEdges_++;
+            }
+          }
+        }
+
+        if (numNearLocalEdges_ > 0){
+          gno_t *gnos = new gno_t [numNearLocalEdges_];
+          Z2_LOCAL_MEMORY_ASSERTION(*env_, numNearLocalEdges_, gnos);
+          ArrayView<gno_t> gnoList(gnos, numNearLocalEdges_);
+
+          for (lno_t i=2; i < nvtx; i++){
+            offs[i] += offs[i-1];
+          }
+
+          for (lno_t i=0; i < nvtx; i++){
+            for (lno_t j=offsets_[i]; j < offsets_[i+1]; j++){
+              if (procIds_[j] == env_->myRank_){
+                gnoList[offs[i]] = edgeGnos_[j];
+                offs[i]++;
+              }
+            }
+          }
+
+          lno_t *lnos = new lno_t [numNearLocalEdges_];
+          Z2_LOCAL_MEMORY_ASSERTION(*env_, numNearLocalEdges_, lnos);
+          ArrayRCP<lno_t> lnoList(lnos, 0, numNearLocalEdges_, true);
+          RCP<const idmap_t > idMap = this->getIdentifierMap();
+
+          idMap->lnoTranslate(lnoList.view(0, numNearLocalEdges_), gnoList, 
+             TRANSLATE_LIB_TO_APP);
+
+          delete [] gnos;
+          nearEdgeLnos_ = arcp_const_cast<const lno_t>(lnoList);
+          
+          for (lno_t i = nvtx; i > 0; i--){
+            offs[i] = offs[i-1];
+          }
+          offs[0] = 0;
+        }
+      }
+
+      nearEdgeOffsets_ = arcp(offs, 0, nvtx+1);
+    }
+    return numNearLocalEdges_;
   }
 
   ////////////////////////////////////////////////////
@@ -428,6 +502,7 @@ public:
     ArrayView<const scalar_t> xyz, wgts;
     getVertexList(gnos, xyz, wgts);
   }
+      }
 
   int getNumWeights() const { return 0; }
 
@@ -453,6 +528,13 @@ private:
   size_t numLocalVtx_;
 
   bool gidsAreGnos_;
+
+  // For local graphs (graph restricted to local process).  Only
+  // create these arrays if required by the algorithm.
+
+  ArrayRCP<const lno_t> nearEdgeLnos_;
+  ArrayRCP<const lno_t> nearEdgeOffsets_;
+  size_t numNearLocalEdges_;
 };
 
 }   // namespace Zoltan2
