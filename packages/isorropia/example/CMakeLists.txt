@@ -1,5 +1,6 @@
 
 INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
 ADD_SUBDIRECTORY(geometric)
@@ -52,4 +53,13 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES probe_tridiag.cpp
   DEPLIBS isorropia_test_utils
   COMM mpi
+  )
+TRIBITS_ADD_EXECUTABLE(
+  order_example
+  SOURCES order_example.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(IsorropiaExampleFiles
+  SOURCE_FILES orderer.xml simple.mtx
   )
