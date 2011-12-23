@@ -84,6 +84,8 @@ namespace panzer {
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
 
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
     // build physics blocks
     //////////////////////////////////////////////////////////////
     user_app::MyFactory eqset_factory;
@@ -101,8 +103,6 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
-      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-
       bool build_transient_support = false;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
@@ -192,13 +192,9 @@ namespace panzer {
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-    {
-      Teuchos::RCP<Teuchos::Array<std::string> > p_0 = Teuchos::rcp(new Teuchos::Array<std::string>);
-      p_0->push_back("viscosity");
-      p_names.push_back(p_0);
-    }
+
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, false));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, gd, false));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
@@ -375,6 +371,8 @@ namespace panzer {
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
 
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+       
     // build physics blocks
     //////////////////////////////////////////////////////////////
     user_app::MyFactory eqset_factory;
@@ -392,8 +390,6 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
-       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
@@ -485,13 +481,9 @@ namespace panzer {
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-    {
-      Teuchos::RCP<Teuchos::Array<std::string> > p_0 = Teuchos::rcp(new Teuchos::Array<std::string>);
-      p_0->push_back("viscosity");
-      p_names.push_back(p_0);
-    }
+
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, true));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, gd, true));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));

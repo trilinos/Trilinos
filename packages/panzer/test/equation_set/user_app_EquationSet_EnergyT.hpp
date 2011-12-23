@@ -13,6 +13,7 @@
 
 // include evaluators here
 #include "Panzer_Integrator_BasisTimesScalar.hpp"
+#include "Panzer_Integrator_TransientBasisTimesScalar.hpp"
 #include "Panzer_Integrator_GradBasisDotVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_Sum.hpp"
@@ -105,7 +106,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set< Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers",fms);
 
     RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
+      rcp(new panzer::Integrator_TransientBasisTimesScalar<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }

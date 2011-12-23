@@ -336,7 +336,11 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
 	parameter_vector_[i][j].baseValue = (*p)[j];
     }
   }
-  
+
+  for (Teuchos::Array<panzer::ParamVec>::size_type i=0; i < parameter_vector_.size(); i++)
+    for (unsigned int j=0; j < parameter_vector_[i].size(); j++)
+      parameter_vector_[i][j].family->setRealValueForAllTypes(parameter_vector_[i][j].baseValue);
+
   // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::EpetraLinearObjContainer> epGlobalContainer = 
     Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_);

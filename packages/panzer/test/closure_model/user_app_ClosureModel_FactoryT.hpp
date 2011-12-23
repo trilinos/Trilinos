@@ -108,7 +108,7 @@ buildClosureModels(const std::string& model_id,
       }
   
     }
-    if (plist.isType<double>("Value")) {
+    else if (plist.isType<double>("Value")) {
       { // at IP
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
