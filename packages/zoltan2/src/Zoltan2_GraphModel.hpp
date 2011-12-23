@@ -127,23 +127,24 @@ public:
   /*! getLocalEdgeList:
       Sets pointers to this process' local-only edge (neighbor) LNOs, using
       the same implied vertex LNOs returned in getVertexList.
-      \param edgeIds This is the list of local neighbor Ids corresponding
-        to the vertices listed in getVertexList.
-        Off-process edges are not returned.
+      \param edgeIds lists the only neighbors of the vertices in getVertexList
+        which are on this process.  The Id returned is not the neighbor's 
+        global Id, but rather the index of the neighbor in the list 
+        returned by getVertexList.
       \param offsets offsets[i] is the offset into edgeIds to the start
-        of neighbors for ith vertex.
+        of neighbors for ith vertex returned in getVertexList.
       \param wgts will on return point to a list of the weight or weights
          associated with each edge in the edgeIds list.  Weights are listed by
          edge by weight component.
        \return The number of ids in the edgeIds list.
+
+       This method is not const, because the local edge list is not created
+       unless this method is called.
    */
-  // Implied Vertex LNOs from getVertexList are used as indices to offsets 
-  // array.
-  // Vertex LNOs are returned as neighbors in edgeIds.
 
   size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
     ArrayView<const lno_t> &offsets,
-    ArrayView<const scalar_t> &wgts) const { return 0; }
+    ArrayView<const scalar_t> &wgts) { return 0; }
 
   ////////////////////////////////////////////////////
   // The Model interface.
@@ -315,14 +316,22 @@ public:
       procIds_ = arcp(p, 0, numLocalEdges_);
     }
 
-    if (!gidsAreGnos_){
-      try{
-        // All processes must make this call.
-        idMap->gidGlobalTranslate(edgeGids_(0,numLocalEdges_), 
-          edgeGnos_(0,numLocalEdges_), procIds_(0,numLocalEdges_));
-      }
-      Z2_FORWARD_EXCEPTIONS;
+    ArrayView<const gid_t> gidArray(Teuchos::null);
+    ArrayView<gno_t> gnoArray(Teuchos::null);
+    ArrayView<int> procArray(Teuchos::null);
+
+    if (numLocalEdges_){
+      gidArray = edgeGids_.view(0, numLocalEdges_);
+      procArray = procIds_.view(0, numLocalEdges_);
+      if (!gidsAreGnos_)
+        gnoArray = edgeGnos_.view(0, numLocalEdges_);
     }
+      
+    try{
+      // All processes must make this call.
+      idMap->gidGlobalTranslate(gidArray, gnoArray, procArray);
+    }
+    Z2_FORWARD_EXCEPTIONS;
 
     this->setIdentifierMap(idMap);   // Zoltan2::Model method
 
@@ -397,7 +406,7 @@ public:
     ArrayView<const scalar_t> &wgts) const
   {
     edgeIds = ArrayView<const gno_t>(Teuchos::null);
-    procIds = procIdsConst_(0, numLocalVtx_+1);
+    procIds = procIdsConst_(0, numLocalEdges_);
     offsets = offsets_(0, numLocalVtx_+1);
     wgts = ArrayView<const scalar_t>(Teuchos::null);
 
@@ -413,27 +422,28 @@ public:
 
   size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
     ArrayView<const lno_t> &offsets,
-    ArrayView<const scalar_t> &wgts) const 
+    ArrayView<const scalar_t> &wgts)
   {
     int nvtx = numLocalVtx_;
+    
+    edgeIds = ArrayView<const lno_t>(Teuchos::null);
     wgts = ArrayView<const scalar_t>(Teuchos::null);
 
     if (nearEdgeOffsets_.size() > 0){
-      if (numNearLocalEdges_ > 0)
+      if (numNearLocalEdges_ > 0)  // Teuchos bug: view(0,0) crashes
         edgeIds = nearEdgeLnos_.view(0, numNearLocalEdges_);
-      else
-        edgeIds = ArrayView<const lno_t>(Teuchos::null);
 
       offsets = nearEdgeOffsets_.view(0, nvtx + 1);
     }
     else{
       lno_t *offs = new lno_t [nvtx + 1];
       Z2_LOCAL_MEMORY_ASSERTION(*env_, nvtx+1, offs);
-      memset(offs, 0, nvtx+1 * sizeof(lno_t));
       numNearLocalEdges_ = 0;
 
+      offs[0] = 0;
       if (nvtx > 0){
         for (lno_t i=0; i < nvtx; i++){
+          offs[i+1] = 0;
           for (lno_t j=offsets_[i]; j < offsets_[i+1]; j++){
             if (procIds_[j] == env_->myRank_){
               offs[i+1]++;
@@ -451,10 +461,16 @@ public:
             offs[i] += offs[i-1];
           }
 
+          const gno_t *graphGnos = NULL;
+          if (edgeGnos_.size() == 0)
+            graphGnos = reinterpret_cast<const gno_t *>(edgeGids_.getRawPtr());
+          else
+            graphGnos = edgeGnosConst_.getRawPtr();
+
           for (lno_t i=0; i < nvtx; i++){
             for (lno_t j=offsets_[i]; j < offsets_[i+1]; j++){
               if (procIds_[j] == env_->myRank_){
-                gnoList[offs[i]] = edgeGnos_[j];
+                gnoList[offs[i]] = graphGnos[j];
                 offs[i]++;
               }
             }
@@ -470,6 +486,7 @@ public:
 
           delete [] gnos;
           nearEdgeLnos_ = arcp_const_cast<const lno_t>(lnoList);
+          edgeIds = nearEdgeLnos_.view(0, numNearLocalEdges_);
           
           for (lno_t i = nvtx; i > 0; i--){
             offs[i] = offs[i-1];
@@ -479,6 +496,7 @@ public:
       }
 
       nearEdgeOffsets_ = arcp(offs, 0, nvtx+1);
+      offsets = nearEdgeOffsets_.view(0, nvtx + 1);
     }
     return numNearLocalEdges_;
   }
@@ -502,7 +520,6 @@ public:
     ArrayView<const scalar_t> xyz, wgts;
     getVertexList(gnos, xyz, wgts);
   }
-      }
 
   int getNumWeights() const { return 0; }
 
@@ -529,7 +546,7 @@ private:
 
   bool gidsAreGnos_;
 
-  // For local graphs (graph restricted to local process).  Only
+  // For local graphs (graph restricted to local process).  We only
   // create these arrays if required by the algorithm.
 
   ArrayRCP<const lno_t> nearEdgeLnos_;
