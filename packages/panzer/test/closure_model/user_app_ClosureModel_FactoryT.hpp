@@ -14,6 +14,7 @@
 
 // User application evaluators for this factory
 #include "user_app_ConstantModel.hpp"
+#include "Panzer_Parameter.hpp"
 #include "Panzer_GlobalStatistics.hpp"
 
 // ********************************************************************
@@ -26,6 +27,7 @@ buildClosureModels(const std::string& model_id,
 		   const Teuchos::ParameterList& models, 
 		   const Teuchos::ParameterList& default_params,
 		   const Teuchos::ParameterList& user_data,
+		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   PHX::FieldManager<panzer::Traits>& fm) const
 {
 
@@ -88,7 +90,25 @@ buildClosureModels(const std::string& model_id,
     }
     else 
     #endif
-    if (plist.isType<double>("Value")) {
+    if (plist.isType<std::string>("Type")) {
+      
+      if (plist.get<std::string>("Type") == "Parameter") {
+	{ // at IP
+	  RCP< Evaluator<panzer::Traits> > e = 
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar,plist.get<double>("Value"),*global_data->pl));
+	  evaluators->push_back(e);
+	}
+	{ // at BASIS
+	  RCP< Evaluator<panzer::Traits> > e = 
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::Basis> >("Basis")->functional,plist.get<double>("Value"),*global_data->pl));
+	  evaluators->push_back(e);
+	}
+	
+	found = true;
+      }
+  
+    }
+    else if (plist.isType<double>("Value")) {
       { // at IP
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));

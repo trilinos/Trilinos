@@ -1,4 +1,4 @@
-<ParameterList name="Heilios">
+<ParameterList name="Drekar">
 
     <ParameterList name="Mesh">
        
@@ -88,6 +88,7 @@
         <ParameterList name="fluid model">
 
             <ParameterList name="SOURCE_TEMPERATURE">
+                <Parameter name="Type" type="string" value="Parameter"/>
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
             <ParameterList name="Heat Capacity">
@@ -155,6 +156,14 @@
     <ParameterList name="Options">
         <Parameter name="Write Volume Assembly Graphs" type="bool" value="true"/>
         <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss_"/> 
+    </ParameterList>
+
+    <ParameterList name="Active Parameters">
+        <Parameter name="Number of Parameter Vectors" type="int" value="1"/>
+        <ParameterList name="Parameter Vector 0">
+            <Parameter name="Number" type="int" value="1"/>
+            <Parameter name="Parameter 0" type="string" value="SOURCE_TEMPERATURE"/>
+        </ParameterList>
     </ParameterList>
 
 <ParameterList name="Solution Control">

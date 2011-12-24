@@ -7,8 +7,8 @@
 namespace panzer {
   
   class BC;
-  
   template<typename T> class BCStrategy_TemplateManager;
+  class GlobalData;
 
   struct BCStrategyFactory {
 
@@ -16,7 +16,8 @@ namespace panzer {
     virtual ~BCStrategyFactory() {}
 
     virtual Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
-    buildBCStrategy(const panzer::BC& bc) const = 0;
+    buildBCStrategy(const panzer::BC& bc,
+		    const Teuchos::RCP<panzer::GlobalData>& global_data) const = 0;
 
   };
   

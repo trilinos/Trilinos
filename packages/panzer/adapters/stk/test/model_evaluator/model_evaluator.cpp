@@ -28,6 +28,7 @@ using Teuchos::rcp;
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -49,6 +50,7 @@ using Teuchos::rcp;
 #include "Teuchos_OpaqueWrapper.hpp"
 
 #include <cstdio> // for get char
+#include <fstream>
 
 namespace panzer {
 
@@ -56,6 +58,9 @@ namespace panzer {
   RCP<Epetra_Vector> basic_trans_f;
   RCP<Epetra_CrsMatrix> basic_ss_J;
   RCP<Epetra_CrsMatrix> basic_trans_J;
+
+  // store steady-state me for testing parameters
+  RCP<panzer::ModelEvaluator_Epetra> ss_me;
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
@@ -87,6 +92,7 @@ namespace panzer {
     const std::size_t workset_size = 20;
     user_app::MyFactory eqset_factory;
     user_app::BCFactory bc_factory;
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     {
       std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -107,6 +113,7 @@ namespace panzer {
                                  physics_id_to_input_physics_blocks,
                                  Teuchos::as<int>(mesh->getDimension()), workset_size,
                                  eqset_factory,
+				 gd,
 			         build_transient_support,
                                  physicsBlocks);
     }
@@ -145,6 +152,7 @@ namespace panzer {
     cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","Parameter");
     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
     closure_models.sublist("solid").sublist("DENSITY").set<double>("Value",1.0);
     closure_models.sublist("solid").sublist("HEAT_CAPACITY").set<double>("Value",1.0);
@@ -156,6 +164,9 @@ namespace panzer {
 
     fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
     fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+
+    //cout << *fmb->getVolumeFieldManagers()[0]<< endl;
+    //(fmb->getVolumeFieldManagers()[0])->writeGraphvizFile("test1",".dot",true,true);
 
     typedef double ScalarT;
     typedef std::size_t LO;
@@ -171,7 +182,7 @@ namespace panzer {
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,gd,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -219,9 +230,14 @@ namespace panzer {
 
     // Test a steady-state me
     {
-      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
+      p_names[0] = Teuchos::rcp(new Teuchos::Array<std::string>(1));
+      (*p_names[0])[0] = "SOURCE_TEMPERATURE";
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,gd,build_transient_support));
+      
+      // store to test parameter capabilities
+      ss_me = me;
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -263,6 +279,78 @@ namespace panzer {
     }
 
   }
+  
+  bool testEqualityOfEpetraVectorValues(Epetra_Vector& a, Epetra_Vector& b, double tolerance, bool write_to_cout = false);
+
+
+  // Test for parameters and residual consistency
+  /////////////////////////////////////////////
+
+  TEUCHOS_UNIT_TEST(model_evaluator, parameter_library)
+  {
+    // NOTE: this test must be run AFTER the basic test above so that
+    // ss_me is created!
+    RCP<panzer::ModelEvaluator_Epetra> me = ss_me;
+    TEUCHOS_ASSERT(nonnull(me));
+
+    EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
+    EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
+      
+    // solution
+    RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+    x->PutScalar(1.0);
+    
+    // parameter
+    TEST_ASSERT(in_args.Np() == 1);
+    RCP<Epetra_Vector> p = Teuchos::rcp(new Epetra_Vector(*me->get_p_map(0)));
+    p->PutScalar(1.0);
+
+    // create f
+    RCP<Epetra_Vector> f1 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+    RCP<Epetra_Vector> f2 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+    RCP<Epetra_Vector> f3 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+    RCP<Epetra_Vector> f4 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+
+    // set values and evaluate
+    in_args.set_x(x);
+    in_args.set_p(0,p);
+
+    std::cout << "evalModel(f1)" << std::endl;
+    out_args.set_f(f1);
+    me->evalModel(in_args,out_args);
+    
+    std::cout << "evalModel(f2)" << std::endl;
+    out_args.set_f(f2);
+    me->evalModel(in_args,out_args);
+    
+    std::cout << "evalModel(f3)" << std::endl;
+    p->PutScalar(20.0);
+    out_args.set_f(f3);
+    me->evalModel(in_args,out_args);
+    
+    std::cout << "evalModel(f4)" << std::endl;
+    p->PutScalar(1.0);
+    out_args.set_f(f4);
+    me->evalModel(in_args,out_args);
+    
+    // f1 == f2 == f4, f3 is evaluated with p=20 instead of p=1
+
+    double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
+
+    // f1 == f2
+    // ROGER: This demonstrates the broken functionality!!!
+    // Uncomment line below when fixed!!!
+    TEST_EQUALITY_CONST(testEqualityOfEpetraVectorValues(*f1,*f2,tol), true);
+
+    // f2 == f4
+    TEST_EQUALITY_CONST(testEqualityOfEpetraVectorValues(*f2,*f4,tol), true);
+
+    // f2 != f3
+    TEST_EQUALITY_CONST(testEqualityOfEpetraVectorValues(*f2,*f3,tol), false);
+
+  }
+
+
 
 #ifdef HAVE_STOKHOS
   Teuchos::RCP<Stokhos::SGModelEvaluator> buildStochModel(const Teuchos::RCP<const Epetra_Comm> & Comm,
@@ -295,6 +383,8 @@ namespace panzer {
     RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(2,4,fullExpansion);
     RCP<panzer::FieldManagerBuilder<int,int> > fmb = rcp(new panzer::FieldManagerBuilder<int,int>);
 
+    RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
     // build physics blocks
     //////////////////////////////////////////////////////////////
     const std::size_t workset_size = 20;
@@ -320,6 +410,7 @@ namespace panzer {
                                  physics_id_to_input_physics_blocks,
                                  Teuchos::as<int>(mesh->getDimension()), workset_size,
                                  eqset_factory,
+				 gd,
 			         build_transient_support,
                                  physicsBlocks);
     }
@@ -382,7 +473,7 @@ namespace panzer {
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,gd,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -431,7 +522,7 @@ namespace panzer {
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,gd,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -476,7 +567,7 @@ namespace panzer {
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> pan_me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> pan_me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sgLinObjFactory,p_names,gd,build_transient_support));
       RCP<EpetraExt::ModelEvaluator> me = buildStochModel(Comm,pan_me,sgExpansion,fullExpansion);
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
@@ -500,6 +591,9 @@ namespace panzer {
     }
 
   }
+
+  // Hepler functions
+  ////////////////////////////////////////////////////////////
 
   Teuchos::RCP<Stokhos::SGModelEvaluator> buildStochModel(const Teuchos::RCP<const Epetra_Comm> & Comm,
                                                           const Teuchos::RCP<EpetraExt::ModelEvaluator> & model,
@@ -562,7 +656,7 @@ namespace panzer {
   {
     panzer::InputEquationSet ies_1;
     ies_1.name = "Energy";
-    ies_1.basis = "Q2";
+    ies_1.basis = "Q1";
     ies_1.integration_order = 1;
     ies_1.model_id = "solid";
     ies_1.prefix = "";
@@ -621,6 +715,34 @@ namespace panzer {
 		    strategy, p);
       bcs.push_back(bc);
     }
+  }
+  
+  /** Compares Epetra_Vector values and returns true if difference is
+      less than tolerance
+  */
+  bool testEqualityOfEpetraVectorValues(Epetra_Vector& a, Epetra_Vector& b, double tolerance, bool write_to_cout)
+  {  
+    bool is_equal = true;
+
+    TEUCHOS_ASSERT(a.Map().NumMyElements() == b.Map().NumMyElements());
+
+    for (int i = 0; i < a.Map().NumMyElements(); ++i) {
+      
+      std::string output = "    equal!: ";
+      
+      if (std::fabs(a[i] - b[i]) > tolerance) {
+	is_equal = false;
+	output = "NOT equal!: ";
+      }
+      
+      if (write_to_cout)
+	std::cout << output << a[i] << " - " << b[i] << " = " << (a[i] - b[i]) << std::endl;
+    }
+
+    int globalSuccess = -1;
+    Teuchos::RCP<const Teuchos::Comm<Teuchos::Ordinal> > comm = Teuchos::DefaultComm<Teuchos::Ordinal>::getComm();
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, is_equal ? 0 : 1, Teuchos::outArg(globalSuccess) );
+    return (globalSuccess==0);
   }
 
 }

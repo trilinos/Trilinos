@@ -7,6 +7,7 @@
 
 #include "Panzer_config.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -98,6 +99,7 @@ namespace panzer_stk {
       pl->sublist("Block ID to Physics ID Mapping").disableRecursiveValidation();
       pl->sublist("Options").disableRecursiveValidation();
       pl->sublist("Volume Responses").disableRecursiveValidation();
+      pl->sublist("Active Parameters").disableRecursiveValidation();
       pl->sublist("User Data").disableRecursiveValidation();
       pl->sublist("User Data").sublist("Panzer Data").disableRecursiveValidation();
      
@@ -110,13 +112,17 @@ namespace panzer_stk {
   void  ModelEvaluatorFactory_Epetra<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                                             const panzer::EquationSetFactory & eqset_factory,
                                                             const panzer::BCStrategyFactory & bc_factory,
-                                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory)
+                                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
+							    const Teuchos::RCP<panzer::GlobalData>& global_data)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(this->getParameterList()), std::runtime_error,
 		       "ParameterList must be set before objects can be built!");
 
-    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
-    fout.setOutputToRootOnly(0); 
+    TEUCHOS_ASSERT(nonnull(global_data));
+    TEUCHOS_ASSERT(nonnull(global_data->os));
+    TEUCHOS_ASSERT(nonnull(global_data->pl));
+
+    Teuchos::FancyOStream& fout = *global_data->os;
 
     // for convience cast to an MPI comm
     const Teuchos::RCP<const Teuchos::MpiComm<int> > mpi_comm = 
@@ -178,6 +184,7 @@ namespace panzer_stk {
 			       Teuchos::as<int>(mesh->getDimension()),
 			       workset_size,
 			       eqset_factory,
+			       global_data,
 			       is_transient,
 			       physicsBlocks);
 
@@ -301,14 +308,34 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
+    // Setup active parameters
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-    {
-      Teuchos::RCP<Teuchos::Array<std::string> > p_0 = Teuchos::rcp(new Teuchos::Array<std::string>);
-      p_0->push_back("viscosity");
-      p_names.push_back(p_0);
+    if (p.isSublist("Active Parameters")) {
+      Teuchos::ParameterList& active_params = p.sublist("Active Parameters");
+
+      int num_param_vecs = active_params.get<int>("Number of Parameter Vectors",0);
+      p_names.resize(num_param_vecs);
+      for (int i=0; i<num_param_vecs; i++) {
+	std::stringstream ss;
+	ss << "Parameter Vector " << i;
+	Teuchos::ParameterList& pList = active_params.sublist(ss.str());
+	int numParameters = pList.get<int>("Number");
+	TEUCHOS_TEST_FOR_EXCEPTION(numParameters == 0, 
+				   Teuchos::Exceptions::InvalidParameter,
+				   std::endl << "Error!  panzer::ModelEvaluator::ModelEvaluator():  " <<
+				   "Parameter vector " << i << " has zero parameters!" << std::endl);
+	p_names[i] = 
+	  Teuchos::rcp(new Teuchos::Array<std::string>(numParameters));
+	for (int j=0; j<numParameters; j++) {
+	  std::stringstream ss2;
+	  ss2 << "Parameter " << j;
+	  (*p_names[i])[j] = pList.get<std::string>(ss2.str());
+	}
+      }
     }
+
     Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,ep_lof, p_names, is_transient));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,ep_lof, p_names, global_data, is_transient));
 
     // Setup initial conditions
     /////////////////////////////////////////////////////////////

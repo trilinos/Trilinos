@@ -9,6 +9,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
+#include "Panzer_ParameterLibrary.hpp"
 #include <vector>
 #include <string>
 
@@ -22,6 +23,7 @@ namespace panzer {
   template<typename>  class ResponseLibrary;
   class EpetraLinearObjContainer;
   class SGEpetraLinearObjContainer;
+  class GlobalData;
 
   class ModelEvaluator_Epetra : public EpetraExt::ModelEvaluator {
   public:
@@ -30,6 +32,7 @@ namespace panzer {
                           const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 			  const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
 			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+			  const Teuchos::RCP<panzer::GlobalData>& global_data,
 			  bool build_transient_support);
 
     #ifdef HAVE_STOKHOS
@@ -37,6 +40,7 @@ namespace panzer {
                              const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
    			     const Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> >& sg_lof,
    			     const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+			     const Teuchos::RCP<panzer::GlobalData>& global_data,
 			     bool build_transient_support);
     #endif
     
@@ -72,6 +76,10 @@ namespace panzer {
       * \note Requires lof_ to be set.
       */
     void initializeEpetraObjs();
+
+    /** Initialize the parameter vector object */
+    void initializeParameterVector(const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+				   const Teuchos::RCP<panzer::ParamLib>& parameter_library);
 
     // /////////////////////////////////////
     // Private evaluation methods
@@ -135,6 +143,9 @@ namespace panzer {
     mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
     mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm_;   // they control and provide access to evaluate
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
+    //Teuchos::RCP<panzer::ParamLib> parameter_library_;
+    mutable Teuchos::Array<panzer::ParamVec> parameter_vector_;
+    Teuchos::RCP<panzer::GlobalData> global_data_;
     bool build_transient_support_;
 
     // basic specific linear object objects
@@ -157,6 +168,7 @@ namespace panzer {
                 const Teuchos::RCP<ResponseLibrary<panzer::Traits> >& rLibrary,
 	        const Teuchos::RCP<LinearObjFactory<panzer::Traits> >& lof,
 	        const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+		const Teuchos::RCP<panzer::GlobalData>& global_data,
 	        bool build_transient_support);
   
 }

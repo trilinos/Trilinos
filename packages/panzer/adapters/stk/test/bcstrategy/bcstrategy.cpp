@@ -28,6 +28,7 @@
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 
@@ -55,8 +56,10 @@ namespace panzer {
 
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs;
   
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
     user_app::BCFactory my_factory;
-    bcs = my_factory.buildBCStrategy(bc);
+    bcs = my_factory.buildBCStrategy(bc,gd);
 
   }
 
@@ -102,11 +105,14 @@ namespace panzer {
         physics_id_to_input_physics_blocks;
       physics_id_to_input_physics_blocks["test physics"] = ipb;
   
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
                                  physics_id_to_input_physics_blocks,
                                  Teuchos::as<int>(mesh->getDimension()), workset_size,
                                  eqset_factory,
+				 gd,
 		   	         false,
                                  physicsBlocks);
     }

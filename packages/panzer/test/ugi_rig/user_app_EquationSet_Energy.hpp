@@ -18,6 +18,7 @@ namespace user_app {
 
     EquationSet_Energy(const panzer::InputEquationSet& ies,
 		       const panzer::CellData& cell_data,
+		       const Teuchos::RCP<panzer::GlobalData>& global_data,
 		       const bool build_transient_support);
     
       void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm, const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,

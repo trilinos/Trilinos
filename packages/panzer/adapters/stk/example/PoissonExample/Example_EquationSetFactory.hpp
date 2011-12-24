@@ -23,6 +23,7 @@ public:
    Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
    buildEquationSet(const panzer::InputEquationSet& ies,
                     const panzer::CellData& cell_data,
+		    const Teuchos::RCP<panzer::GlobalData>& global_data,
                     const bool build_transient_support) const
    {
       Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set= 

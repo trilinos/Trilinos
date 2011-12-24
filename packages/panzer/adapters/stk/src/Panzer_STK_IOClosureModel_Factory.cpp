@@ -11,6 +11,7 @@ buildClosureModels(const std::string& model_id,
 		   const Teuchos::ParameterList& models, 
 		   const Teuchos::ParameterList& default_params, 
 		   const Teuchos::ParameterList& user_data,
+		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   PHX::FieldManager<panzer::Traits>& fm) const
 {
   using Teuchos::RCP;
@@ -21,7 +22,7 @@ buildClosureModels(const std::string& model_id,
 
   // build user evaluators
   RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > user_evals = 
-     userCMF_->buildClosureModels(model_id,set,models,default_params,user_data,fm);
+    userCMF_->buildClosureModels(model_id,set,models,default_params,user_data,global_data,fm);
 
   // add user evaluators to evaluator list
   RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 

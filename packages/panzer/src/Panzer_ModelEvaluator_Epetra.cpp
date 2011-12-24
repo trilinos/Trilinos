@@ -7,6 +7,7 @@
 #include "Panzer_SGEpetraLinearObjContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_GlobalData.hpp"
 
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MpiComm.h"
@@ -21,16 +22,20 @@
    #include "Stokhos_EpetraOperatorOrthogPoly.hpp"
 #endif
 
+#include <sstream>
+
 panzer::ModelEvaluator_Epetra::
 ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 		      const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
 		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+		      const Teuchos::RCP<panzer::GlobalData>& global_data,
 		      bool build_transient_support)
   : t_init_(0.0)
   , fmb_(fmb)
   , responseLibrary_(rLibrary)
   , p_names_(p_names)
+  , global_data_(global_data)
   , build_transient_support_(build_transient_support)
   , lof_(lof)
   #ifdef HAVE_STOKHOS
@@ -43,6 +48,9 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,lof);
   ae_tm_.buildObjects(builder);
 
+  // Setup parameters
+  this->initializeParameterVector(p_names_,global_data->pl);
+
   // initailize maps, x_dot_init, x0, p_init, g_map, and W_graph
   initializeEpetraObjs();
 }
@@ -53,10 +61,12 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 		      const Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> >& lof,
 		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+		      const Teuchos::RCP<panzer::GlobalData>& global_data,
 		      bool build_transient_support) : 
   fmb_(fmb),
   responseLibrary_(rLibrary),
   p_names_(p_names),
+  global_data_(global_data),
   build_transient_support_(build_transient_support),
   lof_(lof->getEpetraFactory()),
   sg_lof_(lof)
@@ -66,6 +76,9 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 
   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,lof);
   ae_tm_.buildObjects(builder);
+
+  // Setup parameters
+  this->initializeParameterVector(p_names_,global_data->pl);
 
   // initailize maps, x_dot_init, x0, p_init, g_map, and W_graph
   initializeEpetraObjs();
@@ -108,6 +121,17 @@ void panzer::ModelEvaluator_Epetra::initializeEpetraObjs()
 
   // Initialize the graph for W CrsMatrix object
   W_graph_ = lof_->getGraph();
+}
+
+void panzer::ModelEvaluator_Epetra::
+initializeParameterVector(const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+			  const Teuchos::RCP<panzer::ParamLib>& parameter_library)
+{
+  parameter_vector_.resize(p_names.size());
+  for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::size_type p = 0; 
+       p < p_names.size(); ++p) {
+    parameter_library->fillVector<panzer::Traits::Residual>(*(p_names[p]), parameter_vector_[p]);
+  }
 }
 
 // Overridden from EpetraExt::ModelEvaluator
@@ -304,6 +328,19 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     ae_inargs.evaluate_transient_terms = true;
   }
   
+  // Set input parameters
+  for (int i=0; i<inArgs.Np(); i++) {
+    Teuchos::RCP<const Epetra_Vector> p = inArgs.get_p(i);
+    if ( nonnull(p) ) {
+      for (unsigned int j=0; j < parameter_vector_[i].size(); j++)
+	parameter_vector_[i][j].baseValue = (*p)[j];
+    }
+  }
+
+  for (Teuchos::Array<panzer::ParamVec>::size_type i=0; i < parameter_vector_.size(); i++)
+    for (unsigned int j=0; j < parameter_vector_[i].size(); j++)
+      parameter_vector_[i][j].family->setRealValueForAllTypes(parameter_vector_[i][j].baseValue);
+
   // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::EpetraLinearObjContainer> epGlobalContainer = 
     Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_);
@@ -582,6 +619,7 @@ panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
       	              const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
 	              const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+		      const Teuchos::RCP<panzer::GlobalData>& global_data,
 	              bool build_transient_support)
 {
    using Teuchos::RCP;
@@ -596,7 +634,7 @@ panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 
    // if you can, build from an epetra linear object factory
    if(ep_lof!=Teuchos::null) 
-     return rcp(new ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,build_transient_support));
+     return rcp(new ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,global_data,build_transient_support));
 
    ss << "\"EpetraLinearObjFactory\", ";
 
@@ -606,7 +644,7 @@ panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 
    // if you can, build from an SG epetra linear object factory
    if(sg_lof!=Teuchos::null) 
-     return rcp(new ModelEvaluator_Epetra(fmb,rLibrary,sg_lof,p_names,build_transient_support));
+     return rcp(new ModelEvaluator_Epetra(fmb,rLibrary,sg_lof,p_names,global_data,build_transient_support));
 
    ss << "\"SGEpetraLinearObjFactory\", ";
 #endif

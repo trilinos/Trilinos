@@ -8,6 +8,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_InputEquationSet.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 
@@ -57,8 +58,11 @@ namespace panzer_test_utils {
     user_app::MyFactory eqs_factory;
     
     std::string element_block_id = "eblock_id";
+
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
-      Teuchos::rcp(new panzer::PhysicsBlock(ipb,element_block_id,cd,eqs_factory, false));
+      Teuchos::rcp(new panzer::PhysicsBlock(ipb,element_block_id,cd,eqs_factory,gd,false));
     
     return physics_block;
   }

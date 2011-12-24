@@ -18,7 +18,7 @@ namespace user_app {
     
   public:    
     
-    BCStrategy_Dirichlet_Constant(const panzer::BC& bc);
+    BCStrategy_Dirichlet_Constant(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
     
     void setup(const panzer::PhysicsBlock& side_pb,
 	       const Teuchos::ParameterList& user_data);

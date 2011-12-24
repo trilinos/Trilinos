@@ -3,6 +3,7 @@
 
 #include "Panzer_EquationSet.hpp"
 #include "Panzer_InputEquationSet.hpp"
+#include "Panzer_GlobalDataAcceptor_DefaultImpl.hpp"
 #include "Panzer_CellData.hpp"
 
 namespace PHX {
@@ -12,11 +13,12 @@ namespace PHX {
 namespace panzer {
 
   template <typename EvalT>
-  class EquationSet_DefaultImpl : public panzer::EquationSet<EvalT> {
+  class EquationSet_DefaultImpl : public panzer::EquationSet<EvalT>,
+				  public panzer::GlobalDataAcceptorDefaultImpl {
     
   public:    
     
-    EquationSet_DefaultImpl(const panzer::InputEquationSet& ies, const panzer::CellData& cell_data, const bool build_transient_support);
+    EquationSet_DefaultImpl(const panzer::InputEquationSet& ies, const panzer::CellData& cell_data, const Teuchos::RCP<panzer::GlobalData>& global_data, const bool build_transient_support);
     
     virtual ~EquationSet_DefaultImpl() {}
     

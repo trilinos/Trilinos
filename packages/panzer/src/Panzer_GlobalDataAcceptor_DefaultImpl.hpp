@@ -13,17 +13,17 @@ namespace panzer {
 
     GlobalDataAcceptorDefaultImpl();
 
-    GlobalDataAcceptorDefaultImpl(const Teuchos::RCP<const panzer::GlobalData>& gd);
+    GlobalDataAcceptorDefaultImpl(const Teuchos::RCP<panzer::GlobalData>& gd);
 
     ~GlobalDataAcceptorDefaultImpl();
 
-    void setGlobalData(const Teuchos::RCP<const panzer::GlobalData>& gd);
+    void setGlobalData(const Teuchos::RCP<panzer::GlobalData>& gd);
 
-    Teuchos::RCP<const panzer::GlobalData> getGlobalData() const;
+    Teuchos::RCP<panzer::GlobalData> getGlobalData() const;
 
   private:
 
-    Teuchos::RCP<const panzer::GlobalData> m_gd;
+    Teuchos::RCP<panzer::GlobalData> m_gd;
 
   };
 

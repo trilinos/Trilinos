@@ -15,6 +15,7 @@ namespace panzer {
   class BC;
   class EquationSetFactory;
   class PhysicsBlock;
+  class GlobalData;
 
   void buildInputPhysicsBlocks(std::map<std::string,panzer::InputPhysicsBlock>& ipb,
 			       const Teuchos::ParameterList& p);
@@ -49,6 +50,7 @@ namespace panzer {
                           const int base_cell_dimension, 
                           const std::size_t workset_size,
                           const panzer::EquationSetFactory & eqset_factory,
+			  const Teuchos::RCP<panzer::GlobalData>& global_data,
 	                  const bool build_transient_support,
                           std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
 

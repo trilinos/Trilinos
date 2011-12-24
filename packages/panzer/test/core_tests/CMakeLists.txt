@@ -109,8 +109,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  global_data_acceptor
-  SOURCES global_data_acceptor.cpp ${UNIT_TEST_DRIVER}
+  global_data
+  SOURCES global_data.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
 

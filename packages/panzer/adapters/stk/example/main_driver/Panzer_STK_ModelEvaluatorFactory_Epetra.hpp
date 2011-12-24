@@ -25,6 +25,10 @@ namespace Thyra {
   template<typename ScalarT> class ModelEvaluator;
 }
 
+namespace panzer {
+  class GlobalData;
+}
+
 namespace panzer_stk {
   
   template<typename ScalarT>
@@ -41,7 +45,8 @@ namespace panzer_stk {
     void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                       const panzer::EquationSetFactory & eqset_factory,
                       const panzer::BCStrategyFactory & bc_factory,
-                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory);
+                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
+		      const Teuchos::RCP<panzer::GlobalData>& global_data);
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
     

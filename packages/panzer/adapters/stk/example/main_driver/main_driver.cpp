@@ -94,6 +94,9 @@ int main(int argc, char *argv[])
     // Add in the application specific bc factory
     user_app::BCFactory bc_factory; 
 
+    // Create the global data
+    Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
+
     // A GlobalStatistics closure model requires the comm to be set in the user data.
     input_params->sublist("User Data").set("Comm", comm);
 
@@ -113,7 +116,7 @@ int main(int argc, char *argv[])
     {
       panzer_stk::ModelEvaluatorFactory_Epetra<double> me_factory;
       me_factory.setParameterList(input_params);
-      me_factory.buildObjects(comm,eqset_factory,bc_factory,cm_factory); 
+      me_factory.buildObjects(comm,eqset_factory,bc_factory,cm_factory,global_data); 
       physics = me_factory.getPhysicsModelEvaluator();
       solver = me_factory.getResponseOnlyModelEvaluator();
       rLibrary = me_factory.getResponseLibrary();

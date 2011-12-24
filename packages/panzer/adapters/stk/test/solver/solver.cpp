@@ -29,6 +29,7 @@ using Teuchos::rcp;
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "user_app_RythmosObserver_Epetra.hpp"
@@ -83,6 +84,8 @@ namespace panzer {
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
 
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+
     // build physics blocks
     //////////////////////////////////////////////////////////////
     user_app::MyFactory eqset_factory;
@@ -107,6 +110,7 @@ namespace panzer {
                                  Teuchos::as<int>(mesh->getDimension()),
 		   	         workset_size,
                                  eqset_factory,
+				 gd,
 		   	         build_transient_support,
                                  physicsBlocks);
 
@@ -188,17 +192,13 @@ namespace panzer {
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-    {
-      Teuchos::RCP<Teuchos::Array<std::string> > p_0 = Teuchos::rcp(new Teuchos::Array<std::string>);
-      p_0->push_back("viscosity");
-      p_names.push_back(p_0);
-    }
+
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, false));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, gd, false));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
-    Teuchos::updateParametersFromXmlFile("solver_nox.xml", piro_params.get());
+    Teuchos::updateParametersFromXmlFile("solver_nox.xml", piro_params.ptr());
     
     // Build stratimikos solver
     std::string& solver = piro_params->get("Piro Solver","NOX");
@@ -233,16 +233,7 @@ namespace panzer {
 			 "Error: Unknown Piro Solver : " << solver);
     }
     
-    // Now the (somewhat cumbersome) setting of inputs and outputs
     Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
-    const Thyra::ModelEvaluatorBase::InArgs<double> inArgsNominal = piro->getNominalValues();
-    int num_p = inArgs.Np();     // Number of *vectors* of parameters
-    assert (num_p == 1);  // Logic needs to be generalized -- hardwire to 1 p vector in model
-    RCP<Thyra::VectorBase<double> > p1 = Thyra::createMember(*piro->get_p_space(0));
-    Thyra::copy(*inArgsNominal.get_p(0), p1.ptr());
-    //int numParams = p1->space()->dim(); // Number of parameters in p1 vector
-      
-    inArgs.set_p(0,p1);
 
     // Set output arguments to evalModel call
     Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
@@ -371,6 +362,8 @@ namespace panzer {
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
       Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
 
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+       
     // build physics blocks
     //////////////////////////////////////////////////////////////
     user_app::MyFactory eqset_factory;
@@ -395,6 +388,7 @@ namespace panzer {
                                  Teuchos::as<int>(mesh->getDimension()),
 			         workset_size,
                                  eqset_factory,
+				 gd,
 			         build_transient_support,
                                  physicsBlocks);
     }
@@ -478,17 +472,13 @@ namespace panzer {
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-    {
-      Teuchos::RCP<Teuchos::Array<std::string> > p_0 = Teuchos::rcp(new Teuchos::Array<std::string>);
-      p_0->push_back("viscosity");
-      p_names.push_back(p_0);
-    }
+
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, true));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, gd, true));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
-    Teuchos::updateParametersFromXmlFile("solver_rythmos.xml", piro_params.get());
+    Teuchos::updateParametersFromXmlFile("solver_rythmos.xml", piro_params.ptr());
     
     // Build stratimikos solver
     std::string& solver = piro_params->get("Piro Solver","NOX");
@@ -525,16 +515,7 @@ namespace panzer {
 			 "Error: Unknown Piro Solver : " << solver);
     }
     
-    // Now the (somewhat cumbersome) setting of inputs and outputs
     Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
-    const Thyra::ModelEvaluatorBase::InArgs<double> inArgsNominal = piro->getNominalValues();
-    int num_p = inArgs.Np();     // Number of *vectors* of parameters
-    assert (num_p == 1);  // Logic needs to be generalized -- hardwire to 1 p vector in model
-    RCP<Thyra::VectorBase<double> > p1 = Thyra::createMember(*piro->get_p_space(0));
-    Thyra::copy(*inArgsNominal.get_p(0), p1.ptr());
-    //int numParams = p1->space()->dim(); // Number of parameters in p1 vector
-      
-    inArgs.set_p(0,p1);
 
     // Set output arguments to evalModel call
     Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();

@@ -23,8 +23,9 @@ template <typename EvalT>
 Example::PoissonEquationSet<EvalT>::
 PoissonEquationSet(const panzer::InputEquationSet& ies,
 		   const panzer::CellData& cell_data,
+		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   const bool build_transient_support) :
-  panzer::EquationSet_DefaultImpl<EvalT>(ies, cell_data, build_transient_support )
+  panzer::EquationSet_DefaultImpl<EvalT>(ies, cell_data, global_data, build_transient_support )
 {
    TEUCHOS_ASSERT(ies.prefix==""); // have an assertion to gurantee no prefix
    this->m_eqset_prefix = "";      // for simplicity assume no prefix
