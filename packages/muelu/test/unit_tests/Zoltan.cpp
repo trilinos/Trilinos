@@ -31,16 +31,28 @@ namespace MueLuTests {
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
     out << "version: " << MueLu::Version() << std::endl;
+    out << std::endl;
+    out << "This tests that the partitioning produced by Zoltan is \"reasonable\" for a matrix" << std::endl;
+    out << "that has a random number of nonzeros per row.  Good results have been precomputed" << std::endl;
+    out << "for up to 5 processors.  The results are the number of nonzeros in the local matrix" << std::endl;
+    out << "once the Zoltan repartitioning has been applied." << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    if (comm->getSize() > 5) {
+      out << std::endl;
+      out << "This test must be run on 1 to 5 processes." << std::endl;
+      TEST_EQUALITY(true, true);
+      return;
+    }
+
     Level level;
     RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
     level.SetFactoryManager(factoryHandler);
-    //int nx=199;
     int nx=7;
     int ny=nx;
     GO numGlobalElements = nx*ny;
-    size_t maxEntriesPerRow=10;
+    size_t maxEntriesPerRow=30;
 
     // Populate CrsMatrix with random number of entries (up to maxEntriesPerRow) per row.
     RCP<const Map> map = MapFactory::createUniformContigMap(TestHelpers::Parameters::getLib(), numGlobalElements, comm);
@@ -51,16 +63,15 @@ namespace MueLuTests {
                                                     // ensures that no zeros are being stored.  Thus, from
                                                     // Zoltan's perspective the matrix is imbalanced.
     // Create a vector with random integer entries in [1,maxEntriesPerRow].
-    ST::seedrandom(8675309);
+    ST::seedrandom(666*comm->getRank());
     RCP<Xpetra::Vector<LO,LO,GO,NO> > entriesPerRow = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(map,false);
     Teuchos::ArrayRCP<LO> eprData = entriesPerRow->getDataNonConst(0);
     for (Teuchos::ArrayRCP<LO>::iterator i=eprData.begin(); i!=eprData.end(); ++i) {
-      *i = Teuchos::as<LO>(std::floor(((ST::random()+1)*0.5*maxEntriesPerRow)+1));
+      *i = (LO)(std::floor(((ST::random()+1)*0.5*maxEntriesPerRow)+1));
     }
 
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     fos->setOutputToRootOnly(-1);
-    //entriesPerRow->describe(*fos,Teuchos::VERB_EXTREME);
 
     Teuchos::Array<Scalar> vals(maxEntriesPerRow);
     Teuchos::Array<GO> cols(maxEntriesPerRow);
@@ -76,30 +87,29 @@ namespace MueLuTests {
     }
 
     A->fillComplete();
-    //A->describe(*fos, Teuchos::VERB_EXTREME);
     level.Set("A",A);
 
     //build coordinates
     RCP<const Map> rowMap = A->getRowMap();
-    //RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    //fos->setOutputToRootOnly(-1);
-    //rowMap->describe(*fos,Teuchos::VERB_EXTREME);
     Teuchos::ParameterList list;
     list.set("nx",nx);
     list.set("ny",ny);
     RCP<MultiVector> XYZ = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map>("2D",rowMap,list);
-    //std::cout << "pid " << comm->getRank() << ": XYZ local leng = " << XYZ->getLocalLength() << std::endl;
     level.Set("coordinates",XYZ);
-    //XYZ->describe(*fos,Teuchos::VERB_EXTREME);
 
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(comm));
-    LO numPartitions = 5;
+    LO numPartitions = comm->getSize();
     zoltan->SetNumberOfPartitions(numPartitions);
     //zoltan->SetOutputLevel(0); //options are 0=none, 1=summary, 2=every pid prints
     zoltan->Build(level);
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = level.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition");
-    //decomposition->describe(*fos,Teuchos::VERB_EXTREME);
+    /* //TODO temporary code to have the trivial decomposition (no change)
+    ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
+    for (ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
+      *i = comm->getRank();
+    decompEntries=Teuchos::null;
+    */ //TODO end of temporary code
 
     //Create vector whose local length is the global number of partitions.
     //This vector will record the local number of nonzeros associated with each partition.
@@ -139,58 +149,48 @@ namespace MueLuTests {
     RCP<const Export> exporter = ExportFactory::Build( partitionMap, globalTallyMap);
     globalTallyVec->doExport(*localPartsVec,*exporter,Xpetra::ADD);
 
-    //globalTallyVec->describe(*fos,Teuchos::VERB_EXTREME);
-    //FIXME cool ... this next line causes a hang if locally the globalyTallyVec has no data.
-    //FIXME I get around this by making mysize (above) 1 instead of 0. Is this a bug or feature
-    //FIXME in getData?
-    ArrayRCP<const LO> gtvData = globalTallyVec->getData(0);
     ArrayRCP<GO> expectedResults(numPartitions);
     switch (comm->getSize()) {
        case 1:
-         expectedResults[0] = 54;
-         expectedResults[1] = 54;
-         expectedResults[2] = 55;
-         expectedResults[3] = 50;
-         expectedResults[4] = 54;
+         expectedResults[0] = 807;
          break;
+
        case 2:
-         expectedResults[0] = 49;
-         expectedResults[1] = 47;
-         expectedResults[2] = 46;
-         expectedResults[3] = 51;
-         expectedResults[4] = 48;
+         expectedResults[0] = 364;
+         expectedResults[1] = 363;
          break;
 
        case 3:
-         expectedResults[0] = 46;
-         expectedResults[1] = 40;
-         expectedResults[2] = 47;
-         expectedResults[3] = 44;
-         expectedResults[4] = 40;
+         expectedResults[0] = 277;
+         expectedResults[1] = 261;
+         expectedResults[2] = 269;
          break;
 
        case 4:
-         expectedResults[0] = 39;
-         expectedResults[1] = 36;
-         expectedResults[2] = 41;
-         expectedResults[3] = 42;
-         expectedResults[4] = 41;
+         expectedResults[0] = 195;
+         expectedResults[1] = 186;
+         expectedResults[2] = 177;
+         expectedResults[3] = 168;
          break;
 
        case 5:
-         expectedResults[0] = 42;
-         expectedResults[1] = 44;
-         expectedResults[2] = 43;
-         expectedResults[3] = 42;
-         expectedResults[4] = 43;
+         expectedResults[0] = 161;
+         expectedResults[1] = 145;
+         expectedResults[2] = 148;
+         expectedResults[3] = 159;
+         expectedResults[4] = 157;
          break;
 
        default:
          break;
     };
 
+    //FIXME cool ... this next line causes a hang if locally the globalyTallyVec has no data.
+    //FIXME I get around this by making mysize (above) 1 instead of 0. Is this a bug or feature
+    //FIXME in getData?
+    ArrayRCP<const LO> gtvData = globalTallyVec->getData(0);
+
     for (int i=0; i<numPartitions; ++i) {
-      // if pid 0, compare expectedResults[i] to gtvData[i].
       if (comm->getRank() == 0) TEST_EQUALITY( expectedResults[i], gtvData[i]);
     }
 
