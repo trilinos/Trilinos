@@ -237,8 +237,6 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList status;
   status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
 
-
-#if 1
   // create coarsest smoother
   RCP<SmootherPrototype> coarsestSmooProto;
   std::string type = "";
@@ -251,11 +249,6 @@ int main(int argc, char *argv[]) {
   RCP<SmootherFactory> coarsestSmooFact;
   coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto));
   H->SetCoarsestSolver(*coarsestSmooFact);
-#else
-  H->SetCoarsestSolver(*SmooFact,MueLu::PRE); // just use SmooFact also for coarsest level
-#endif
-
-
 
   *out << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
