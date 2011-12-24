@@ -26,6 +26,14 @@
 
 namespace Zoltan2 {
 
+template <typename metric_t>
+  static void makeMetricOutputManager(int rank, bool iPrint, std::string fname,
+    std::string osname, Teuchos::RCP<MetricOutputManager<metric_t> > &mgr);
+
+static void makeDebugManager(int rank, bool iPrint,
+  int level, std::string fname, std::string osname,
+  Teuchos::RCP<DebugManager> &mgr);
+
 
 Environment::Environment( Teuchos::ParameterList &problemParams,
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm):
@@ -90,9 +98,6 @@ void Environment::addParameters(Teuchos::ParameterList &params)
   params_.setParameters(params);
 }
 
-static void makeDebugManager(int rank, bool iPrint, int level,
-  std::string fname, std::string osname, Teuchos::RCP<DebugManager> &mgr);
-
 void Environment::commitParameters()
 {
   using std::string;
@@ -127,6 +132,7 @@ void Environment::commitParameters()
     debugOut_ = rcp(new DebugManager(myRank_, false, std::cout, NO_STATUS));
   }
 
+  // TODO instead of level, either do timing or don't do timing
   level = params_.get<int>(string("timing_level"));
 
   if (level > NO_STATUS){
@@ -136,7 +142,7 @@ void Environment::commitParameters()
     string &osname = params_.get<string>(string("timing_output_stream"));
 
     try{
-      makeDebugManager(myRank_, iPrint, level, fname, osname, timerOut_);
+      makeMetricOutputManager<double>(myRank_, iPrint, fname, osname, timerOut_);
     }
     catch (std::exception &e){
       std::ostringstream oss;
@@ -146,9 +152,10 @@ void Environment::commitParameters()
     }
   }
   else{
-    timerOut_ = rcp(new DebugManager(myRank_, false, std::cout, NO_STATUS));
+    timerOut_ = rcp(new MetricOutputManager<double>(myRank_, false, std::cout, false));
   }
 
+  // TODO instead of level, either output memory used info or don't
   level = params_.get<int>(string("memory_profiling_level"));
 
   if (level > NO_STATUS){
@@ -160,7 +167,7 @@ void Environment::commitParameters()
       params_.get<string>(string("memory_profiling_output_stream"));
 
     try{
-      makeDebugManager(myRank_, iPrint, level, fname, osname, memoryOut_);
+      makeMetricOutputManager<long>(myRank_, iPrint, fname, osname, memoryOut_);
     }
     catch (std::exception &e){
       std::ostringstream oss;
@@ -170,7 +177,7 @@ void Environment::commitParameters()
     }
   }
   else{
-    memoryOut_ = rcp(new DebugManager(myRank_, false, std::cout, NO_STATUS));
+    memoryOut_ = rcp(new MetricOutputManager<long>(myRank_, false, std::cout, false));
   }
 
   errorCheckLevel_ = static_cast<AssertionLevel>( 
@@ -213,6 +220,31 @@ void Environment::commitParameters()
   committed_ = true;
 }
 
+template<typename metric_t>
+  static void makeMetricOutputManager(int rank, bool iPrint, std::string fname, 
+    std::string osname, Teuchos::RCP<MetricOutputManager<metric_t> > &mgr)
+{
+  std::ofstream oFile;
+  if (fname.size() > 0){
+    try{
+      oFile.open(fname.c_str(), std::ios::out|std::ios::trunc);
+    }
+    catch(std::exception &e){
+      throw std::runtime_error(e.what());
+    }
+  }
+
+  typedef MetricOutputManager<metric_t> manager_t;
+
+  if (osname == std::string("std::cout"))
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true));
+  else if (osname == std::string("std::cerr"))
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cerr, true));
+  else if (osname != std::string("/dev/null"))
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, oFile, true));
+  else
+    mgr = Teuchos::rcp(new manager_t(rank, false, std::cout, true));
+}
 
 static void makeDebugManager(int rank, bool iPrint,
   int level, std::string fname, std::string osname,

@@ -23,6 +23,7 @@
 #include <Zoltan2_config.h>
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_DebugManager.hpp>
+#include <Zoltan2_MetricOutputManager.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -56,9 +57,9 @@ public:
 
   Teuchos::RCP<DebugManager> debugOut_;  /*!< output for status messages */
 
-  Teuchos::RCP<DebugManager> timerOut_;  /*!< output for timing messages */
+  Teuchos::RCP<MetricOutputManager<double> > timerOut_;  /*!< output for timing messages */
 
-  Teuchos::RCP<DebugManager> memoryOut_; /*!< output for memory usage messages*/
+  Teuchos::RCP<MetricOutputManager<long> > memoryOut_; /*!< output for memory usage messages*/
 
   AssertionLevel errorCheckLevel_; /*!< level of error checking to do */
 
@@ -167,18 +168,20 @@ public:
    */
   bool parametersAreCommitted() const { return committed_; }
 
-  /*! \brief Return true if timing was requested.
+  /*! \brief Return true if timing was requested, even if this
+   *    process is not printing out timing messages.
    */
-  bool doTiming() const { return timerOut_->getDebugLevel() > NO_STATUS;}
+  bool doTiming() const { return timerOut_->getMetricsOn(); }
 
-  /*! \brief Return true if debug output was requested.
+  /*! \brief Return true if debug output was requested, even if
+   *     this process is not printing out debug messages.
    */
-  bool doStatus() const { return timerOut_->getDebugLevel() > NO_STATUS;}
+  bool doStatus() const { return debugOut_->getDebugLevel() > NO_STATUS;}
 
-  /*! \brief Return true if memory usage output was requested.
+  /*! \brief Return true if memory usage output was requested, even if
+   *     this process is not printing out memory used messages.
    */
-  bool doMemoryProfiling() const { 
-    return memoryOut_->getDebugLevel() > NO_STATUS;}
+  bool doMemoryProfiling() const { return memoryOut_->getMetricsOn(); }
 
 private:
   /*! \brief The Zoltan2 parameters supplied by the user.
