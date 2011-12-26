@@ -25,6 +25,8 @@ PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PgPFactory(R
   }
 
   min_norm_ = DINVANORM;
+
+  bReUseRowBasedOmegas_ = false;
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -50,6 +52,24 @@ template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
   fineLevel.DeclareInput("A",AFact_.get(),this);
   coarseLevel.DeclareInput("P",initialPFact_.get(),this);
+
+  /* If PgPFactory is reusing the row based damping parameters omega for
+   * restriction, it has to request the data here.
+   * we have the following scenarios:
+   * 1) Reuse omegas:
+   * PgPFactory.DeclareInput for prolongation mode requests A and P0
+   * PgPFactory.DeclareInput for restriction mode requests A, P0 and RowBasedOmega (call triggered by GenericRFactory)
+   * PgPFactory.Build for prolongation mode calculates RowBasedOmega and stores it (as requested)
+   * PgPFactory.Build for restriction mode reuses RowBasedOmega (and Releases the data with the Get call)
+   * 2) do not reuse omegas
+   * PgPFactory.DeclareInput for prolongation mode requests A and P0
+   * PgPFactory.DeclareInput for restriction mode requests A and P0
+   * PgPFactory.Build for prolongation mode calculates RowBasedOmega for prolongation operator
+   * PgPFactory.Build for restriction mode calculates RowBasedOmega for restriction operator
+   */
+  if( bReUseRowBasedOmegas_ == true && restrictionMode_ == true ) {
+    coarseLevel.DeclareInput("RowBasedOmega", this, this); // RowBasedOmega is calculated by this PgPFactory and requested by this PgPFactory
+  }
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -81,6 +101,74 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
 
   /////////////////// calculate local damping factors omega
 
+  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmega = Teuchos::null;
+
+  if(restrictionMode_ == false || bReUseRowBasedOmegas_ == false) {
+    // if in prolongation mode: calculate row based omegas
+    // if in restriction mode: calculate omegas only if row based omegas are not used from prolongation mode
+    ComputeRowBasedOmega(fineLevel, coarseLevel, A, Ptent, DinvAP0, RowBasedOmega);
+  } // if(bReUseRowBasedOmegas == false)
+  else  {
+    // reuse row based omegas, calculated by this factory in the run before (with restrictionMode_ == false)
+    RowBasedOmega = coarseLevel.Get<Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >("RowBasedOmega", this /*MueLu::NoFactory::get()*/);
+
+    // RowBasedOmega is now based on row map of A (not transposed)
+    // for restriction we use A^T instead of A
+    // -> recommunicate row based omega
+
+    // exporter: overlapping row map to nonoverlapping domain map (target map is unique)
+    // since A is already transposed we use the RangeMap of A
+    Teuchos::RCP<const Export> exporter =
+        Xpetra::ExportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(RowBasedOmega->getMap(), A->getRangeMap());
+
+    Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > noRowBasedOmega =
+        Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRangeMap());
+
+    noRowBasedOmega->doExport(*RowBasedOmega,*exporter,Xpetra::INSERT);
+
+    // importer: nonoverlapping map to overlapping map
+
+    // importer: source -> target maps
+    Teuchos::RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer =
+        Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRangeMap(),A->getRowMap());
+
+    // doImport target->doImport(*source, importer, action)
+    RowBasedOmega->doImport(*noRowBasedOmega,*importer,Xpetra::INSERT);
+  }
+
+  Teuchos::ArrayRCP< Scalar > RowBasedOmega_local = RowBasedOmega->getDataNonConst(0);
+
+  /////////////////// prolongator smoothing using local damping parameters omega
+  RCP<Operator> P_smoothed = Teuchos::null;
+  Utils::MyOldScaleMatrix(DinvAP0,RowBasedOmega_local,false,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
+
+  Utils::TwoMatrixAdd(Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
+      DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
+      P_smoothed);
+  P_smoothed->fillComplete(Ptent->getDomainMap(), Ptent->getRangeMap());
+
+  //////////////////// store results in Level
+
+  // Level Set
+  if(!restrictionMode_)
+  {
+    // prolongation factory is in prolongation mode
+    coarseLevel.Set("P", P_smoothed, this);
+  }
+  else
+  {
+    // prolongation factory is in restriction mode
+    RCP<Operator> R = Utils2::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
+    coarseLevel.Set("R", R, this);
+  }
+
+  timer->stop();
+  MemUtils::ReportTimeAndMemory(*timer, *(P_smoothed->getRowMap()->getComm()));
+
+}
+
+template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P0, const RCP<Operator>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const {
   Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Numerator = Teuchos::null;
   Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Denominator = Teuchos::null;
 
@@ -97,10 +185,10 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
     //
     // expensive, since we have to recalculate AP0 due to the lack of an explicit scaling routine for DinvAP0
 
-    // calculate A * Ptent
+    // calculate A * P0
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    RCP<Operator> AP0 = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
+    RCP<Operator> AP0 = Utils::TwoMatrixMultiply(A,false,P0,false,doFillComplete,optimizeStorage);
 
     // compute A * D^{-1} * A * P0
     RCP<Operator> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
@@ -121,7 +209,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
     //
     Numerator =   Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvAP0->getColMap(),true);
     Denominator = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvAP0->getColMap(),true);
-    MultiplyAll(Ptent, DinvAP0, Numerator);
+    MultiplyAll(P0, DinvAP0, Numerator);
     MultiplySelfAll(DinvAP0, Denominator);
   }
   break;
@@ -168,11 +256,13 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
     if(ColBasedOmega_local[i] < Teuchos::ScalarTraits<Scalar>::zero()) ColBasedOmega_local[i] = Teuchos::ScalarTraits<Scalar>::zero();
   }
 
-  coarseLevel.Set("ColBasedOmega", ColBasedOmega, this);
+  if(coarseLevel.IsRequested("ColBasedOmega", this)) {
+    coarseLevel.Set("ColBasedOmega", ColBasedOmega, this);
+  }
 
   //////////// build Row based omegas /////////////
   // transform column based omegas to row based omegas
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmega =
+  RowBasedOmega =
       Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvAP0->getRowMap(),true);
 
   RowBasedOmega->putScalar(-666*Teuchos::ScalarTraits<Scalar>::one());
@@ -197,34 +287,9 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
     }
   }
 
-
-  /////////////////// prolongator smoothing using local damping parameters omega
-  RCP<Operator> P_smoothed = Teuchos::null;
-  Utils::MyOldScaleMatrix(DinvAP0,RowBasedOmega_local,false,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
-
-  Utils::TwoMatrixAdd(Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
-      DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
-      P_smoothed);
-  P_smoothed->fillComplete(Ptent->getDomainMap(), Ptent->getRangeMap());
-
-  //////////////////// store results in Level
-
-  // Level Set
-  if(!restrictionMode_)
-  {
-    // prolongation factory is in prolongation mode
-    coarseLevel.Set("P", P_smoothed, this);
+  if(coarseLevel.IsRequested("RowBasedOmega", this)) {
+    coarseLevel.Set("RowBasedOmega", RowBasedOmega, this);
   }
-  else
-  {
-    // prolongation factory is in restriction mode
-    RCP<Operator> R = Utils2::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
-    coarseLevel.Set("R", R, this);
-  }
-
-  timer->stop();
-  MemUtils::ReportTimeAndMemory(*timer, *(P_smoothed->getRowMap()->getComm()));
-
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -372,6 +437,11 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multipl
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
   std::cout << "TODO: remove me" << std::endl;
+}
+
+template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReUseDampingParameters(bool bReuse) {
+  bReUseRowBasedOmegas_ = bReuse;
 }
 
 #if 0

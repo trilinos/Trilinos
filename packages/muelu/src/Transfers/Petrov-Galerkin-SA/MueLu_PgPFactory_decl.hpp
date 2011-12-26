@@ -85,13 +85,15 @@ enum MinimizationNorm {
 
     //@}
 
+    void ReUseDampingParameters(bool bReuse);
+
   private:
 
     void MultiplySelfAll(const RCP<Operator>& Op, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
 
     void MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
 
-
+    void ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P0, const RCP<Operator>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
 
   private:
 
@@ -104,6 +106,9 @@ enum MinimizationNorm {
 
     //! minimization norm
     MinimizationNorm min_norm_;
+
+    //! flag: reuse row based omegas from prolongator for restriction operator
+    bool bReUseRowBasedOmegas_;
   };
 
 } //namespace MueLu
