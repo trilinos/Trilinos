@@ -84,6 +84,7 @@ namespace MueLu {
     //! decrement request counter and try to remove reqFactory from list of
     //! requesting factories
     void Release(const FactoryBase* reqFactory) {
+      TEUCHOS_TEST_FOR_EXCEPTION(requests_.count(reqFactory) == 0, Exceptions::RuntimeError, "MueLu::VariableContainer::Release(): cannot call Release if factory has not been requested before by factory " << reqFactory);
       if(requests_.count(reqFactory) > 0) {
         int cnt = requests_[reqFactory];
         requests_[reqFactory] = --cnt;
