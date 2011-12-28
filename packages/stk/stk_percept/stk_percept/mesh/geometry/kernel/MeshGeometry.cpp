@@ -143,6 +143,49 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
   }
 }
 
+void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::vector<double>& normal)
+{
+  {
+    Bucket& bucket = node->bucket();
+
+    // Each bucket contains the set of nodes with unique part intersections.
+    // This means that every nodes will be in exactly one bucket.  But, the
+    // nodes on curves are also in the part for the adjacent surfaces which
+    // means more than one evaluator will be selected for those buckets which
+    // are on the boundary of an entity (i.e. buckets representing curves
+    // and vertices).  We first create a list of all the evaluators that
+    // might be relevant.
+    std::vector<size_t> curveEvaluators;
+    std::vector<size_t> surfEvaluators;
+
+    int type = classify_bucket(bucket, curveEvaluators, surfEvaluators);
+    switch (type) {
+    case 0:
+      // This is a bucket representing a vertex.  No need to do anything
+      // since the node will already be on the vertex, and no new nodes
+      // ever get created assigned to vertices during refinement.
+      //std::cout << "Vertex node encountered" << std::endl;
+      break;
+    case 1:
+      // This bucket represents a geometric curve.  Snap to it.
+      //std::cout << "Snapping to curve" << curveEvaluators[0] << std::endl;
+      normal_at( eMesh, *node, curveEvaluators[0], normal );
+      break;
+    case 2:
+      //std::cout << "Snapping to surface" << surfEvaluators[0] << std::endl;
+      // This bucket represents a geometric surface.  Snap to it.
+      normal_at( eMesh, *node, surfEvaluators[0], normal );
+      break;
+    case -1:
+    default:
+      //printf( "ERROR: A bucket found without a geometric evaluator.\n" );
+      break;
+    }
+
+
+  }
+}
+
 void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::mesh::Entity *>& nodes)
 {
   for (unsigned inode=0; inode < nodes.size(); inode++)
@@ -234,6 +277,50 @@ void MeshGeometry::snap_node
                 << " delta= " << delta[0] << " " << delta[1] << " " << delta[2] 
                 << " deltaTot= " << dtot
                 << " " << str.substr(6,5)
+                << std::endl;
+      //if (str.substr(6,5)=="20004") block_20004
+      //{
+      //  std::cout << "found 20004" << std::endl;
+      //}
+    }
+  }
+}
+
+void MeshGeometry::normal_at
+(
+  PerceptMesh *eMesh,
+  Entity & node,
+  size_t evaluator_idx,
+  std::vector<double>& normal
+)
+{
+  VectorFieldType* coordField = eMesh->getCoordinatesField();
+
+  Part* new_nodes_part = eMesh->getNonConstPart("refine_new_nodes_part");
+  Selector new_nodes_part_selector;
+  if (new_nodes_part) new_nodes_part_selector = Selector(*new_nodes_part);
+
+  std::string str = geomKernel->get_attribute(evaluator_idx);
+  {
+
+    double * coord = stk::mesh::field_data( *coordField , node );
+    bool doPrint = DEBUG_GEOM_SNAP && new_nodes_part_selector(node);
+    if (doPrint)
+    {
+      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier() 
+                << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2];
+    }
+
+    if ( is_dbg_node( coord ) )
+    {
+      std::cout << "Node in question being projected" << std::endl;
+    }
+
+    geomKernel->normal_at(coord, geomEvaluators[evaluator_idx]->mGeometry, normal);
+
+    if (doPrint)
+    {
+      std::cout << " normal = " << normal[0] << " " << normal[1] << " " << normal[2] 
                 << std::endl;
       //if (str.substr(6,5)=="20004") block_20004
       //{

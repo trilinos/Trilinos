@@ -106,13 +106,25 @@ namespace stk {
       // FIXME srk
       coordinate[0] = 0.0;
       coordinate[1] = 0.0;
-      if (m_eMesh->getSpatialDim() > 2)
+      coordinate[2] = 1.0;
+      if (m_eMesh->getSpatialDim() == 3)
         {
-          coordinate[2] = 0.0;
+          stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(entity_handle);
+          //stk::mesh::FieldBase* field = m_eMesh->getCoordinatesField();
+          //double *f_data = PerceptMesh::field_data(field, *node_ptr);
+          if (!m_meshGeometry)
+            {
+              return;
+            }
+
+          std::vector<double> normal(3,0.0);
+          m_meshGeometry->normal_at(m_eMesh, node_ptr, normal);
+          coordinate[0] = normal[0];
+          coordinate[1] = normal[1];
+          coordinate[2] = normal[2];
         }
-      else
-        coordinate[2] = 1.0;
     }
+
     void PerceptMesquiteMeshDomain::
     element_normal_at(Mesquite::Mesh::ElementHandle entity_handle,
                       Mesquite::Vector3D &coordinate) const {
@@ -124,7 +136,27 @@ namespace stk {
           coordinate[2] = 0.0;
         }
       else
-        coordinate[2] = 1.0;
+        {
+          coordinate[2] = 1.0;
+          return;
+        }
+      if (!m_meshGeometry) return;
+
+      stk::mesh::Entity* element_ptr = reinterpret_cast<stk::mesh::Entity*>(entity_handle);
+
+      stk::mesh::PairIterRelation nodes = element_ptr->relations(m_eMesh->node_rank());
+      double nodes_size = nodes.size();
+
+      for (unsigned inode=0; inode < nodes.size(); inode++)
+        {
+          stk::mesh::Entity& node = *nodes[inode].entity();
+
+          std::vector<double> normal(3,0.0);
+          m_meshGeometry->normal_at(m_eMesh, &node, normal);
+          coordinate[0] += normal[0]/nodes_size;
+          coordinate[1] += normal[1]/nodes_size;
+          coordinate[2] += normal[2]/nodes_size;
+        }
     }
                           
     /**\brief evaluate surface normals
@@ -180,6 +212,7 @@ namespace stk {
               closest[isd] = f_data[isd];
               normal[isd]=0;  // FIXME
             }
+          normal[2]=1.0;
           return;
         }
 
@@ -203,8 +236,15 @@ namespace stk {
       // FIXME srk
       normal[0] = 0;
       normal[1] = 0;
+      normal[2] = 1;
       if (m_eMesh->getSpatialDim() > 2) 
-        normal[2] = 0;
+        {
+          std::vector<double> norm(3,0.0);
+          m_meshGeometry->normal_at(m_eMesh, node_ptr, norm);
+          normal[0] = norm[0];
+          normal[1] = norm[1];
+          normal[2] = norm[2];
+        }
 
       if (0)
         {

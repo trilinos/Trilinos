@@ -17,6 +17,7 @@ public:
     virtual std::string get_attribute(GeometryHandle geom);
 
     virtual void snap_to(KernelPoint& point, GeometryHandle geom);
+    virtual void normal_at(KernelPoint& point, GeometryHandle geom, std::vector<double>& normal);
 
     virtual bool is_curve(GeometryHandle geom) const;
 

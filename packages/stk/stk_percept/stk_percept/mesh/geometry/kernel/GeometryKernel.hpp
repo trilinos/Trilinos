@@ -20,6 +20,8 @@ public:
 
     virtual void snap_to(KernelPoint& point, GeometryHandle geom) = 0;
 
+    virtual void normal_at(KernelPoint& point, GeometryHandle geom, std::vector<double>& normal) = 0;
+
     virtual bool is_curve(GeometryHandle geom) const = 0;
 
     virtual bool is_surface(GeometryHandle geom) const = 0;

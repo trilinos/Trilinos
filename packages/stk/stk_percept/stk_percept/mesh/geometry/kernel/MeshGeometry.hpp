@@ -36,6 +36,9 @@ public:
     // snaps only specified points in the mesh to their associated geometry
     void snap_points_to_geometry(PerceptMesh* mesh_data, std::vector<stk::mesh::Entity *>& nodes);
 
+    // gets normal at a surface (or curve, in which case it returns the curvature vector)
+    void normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::vector<double>& normal);
+
   /**
    * Return 0,1,2,3 if the node or bucket is on a geometry vertex, curve, surface or domain.
    * Return the found evaluators in the curveEvaluators and surfEvaluators.
@@ -66,6 +69,11 @@ private:
     void snap_node( PerceptMesh* mesh_data,
                     Entity &node,
                     size_t evalautor_idx );
+
+    void normal_at( PerceptMesh* mesh_data,
+                    Entity &node,
+                    size_t evalautor_idx,
+                    std::vector<double>& normal);
 };
 
 #endif // MESHGEOMETRY_HPP

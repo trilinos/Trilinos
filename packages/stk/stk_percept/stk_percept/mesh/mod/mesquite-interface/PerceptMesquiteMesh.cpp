@@ -131,6 +131,7 @@ namespace stk {
       shards::CellTopology cell_topo(cell_topo_data);
 
       if (cell_topo.getKey() == shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()->key
+          || cell_topo.getKey() == shards::getCellTopologyData<shards::ShellTriangle<3> >()->key
           || cell_topo.getKey() == shards::getCellTopologyData<shards::ShellLine<2> >()->key
           || cell_topo.getKey() == shards::getCellTopologyData<shards::Beam<2> >()->key)
         {
@@ -662,7 +663,7 @@ namespace stk {
         }      
   
       size_t i;
-      stk::mesh::Entity* element_ptr;
+      stk::mesh::Entity* element_ptr=0;
 
   
       //get a list of all nodes that are in these elements (the elements
@@ -766,6 +767,10 @@ namespace stk {
             {
               element_topologies[num_elements]=Mesquite::TRIANGLE;
             }
+          else if(cell_topo.getKey() == shards::getCellTopologyData<shards::ShellTriangle<3> >()->key )
+            {
+              element_topologies[num_elements]=Mesquite::TRIANGLE;
+            }
           else if(cell_topo.getKey() == shards::getCellTopologyData<shards::Hexahedron<8> >()->key )
             {
               element_topologies[num_elements]=Mesquite::HEXAHEDRON;
@@ -775,9 +780,11 @@ namespace stk {
               element_topologies[num_elements]=Mesquite::TETRAHEDRON;
             }
           else {
-            std::cout << "elements_get_topologies: Type not recognized, cell_topo= " << cell_topo << " num_elements= " << num_elements << std::endl;
-            PRINT_ERROR("Type not recognized.\n");
-            MSQ_SETERR(err)("Type not recognized.", Mesquite::MsqError::UNSUPPORTED_ELEMENT);
+            std::ostringstream ostr;
+            ostr << "elements_get_topologies: Type not recognized, cell_topo= " << cell_topo << " num_elements= " << num_elements << "\n";
+            std::cout << ostr.str() << std::endl;
+            PRINT_ERROR(ostr.str());
+            MSQ_SETERR(err)(ostr.str(), Mesquite::MsqError::UNSUPPORTED_ELEMENT);
             return;
           }
     

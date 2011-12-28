@@ -109,6 +109,42 @@ void GeometryKernelOpenNURBS::snap_to
   }
 }
 
+void GeometryKernelOpenNURBS::normal_at(KernelPoint& point, GeometryHandle geom, std::vector<double>& normal)
+{
+  const ON_Surface* surface = dynamic_cast<const ON_Surface*>(onModel.m_object_table[geom].m_object);
+  const ON_Curve* curve = dynamic_cast<const ON_Curve*>(onModel.m_object_table[geom].m_object);
+  if (surface)
+  {
+    ON_3dPoint p(point);
+    double u, v;
+
+    surface->GetClosestPoint(p, &u, &v);
+    //surface->EvPoint(u, v, p);
+    ON_3dVector norm;
+    surface->EvNormal(u, v, norm);
+    normal[0] = norm[0];
+    normal[1] = norm[1];
+    normal[2] = norm[2];
+  }
+  else if (curve)
+  {
+    ON_3dPoint p(point);
+    double u;
+
+    curve->GetClosestPoint(p, &u);
+    //curve->EvPoint(u, p);
+    ON_3dVector tangent;
+    ON_3dVector kappa;
+    //curve->EvTangent(u, p, tangent);
+    curve->EvCurvature(u, p, tangent, kappa);
+
+    // FIXME
+    normal[0] = kappa[0];
+    normal[1] = kappa[1];
+    normal[2] = kappa[2];
+  }
+}
+
 bool GeometryKernelOpenNURBS::is_curve
 (
   GeometryHandle geom

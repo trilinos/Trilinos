@@ -13,6 +13,7 @@
 
 #include <Mesquite.hpp>
 #include <MsqError.hpp>
+#include <MsqDebug.hpp>
 #include <InstructionQueue.hpp>
 #include <ShapeImprovementWrapper.hpp>
 
@@ -34,8 +35,14 @@ namespace stk {
     public:
       PMMShapeImprover() {}
 
-      void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain)
+      void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain, bool debug=false)
       {
+        if (debug)
+          {
+            Mesquite::MsqDebug::enable(1);
+            Mesquite::MsqDebug::enable(2);
+            Mesquite::MsqDebug::enable(3);
+          }
         Mesquite::MsqError mErr;
         Mesquite::ShapeImprovementWrapper siw(mErr);
         //siw.set_iteration_limit(1);
