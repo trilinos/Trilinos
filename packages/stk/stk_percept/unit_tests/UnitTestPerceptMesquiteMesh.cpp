@@ -26,7 +26,7 @@
 #include <stk_percept/fixtures/QuadFixture.hpp>
 #include <stk_percept/fixtures/WedgeFixture.hpp>
 
-#ifdef STK_BUILT_IN_SIERRA
+#if defined(STK_BUILT_IN_SIERRA) && !defined(__IBMCPP__)
 #define STK_ADAPT_HAS_GEOMETRY
 #else
 #undef STK_ADAPT_HAS_GEOMETRY

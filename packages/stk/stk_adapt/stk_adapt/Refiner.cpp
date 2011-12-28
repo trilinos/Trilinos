@@ -1425,7 +1425,8 @@ namespace stk {
           else
             {
               PMMShapeImprover si;
-              si.run(pmm, pmd);
+              bool debug = false;
+              si.run(pmm, pmd, debug);
             }
           return;
         }

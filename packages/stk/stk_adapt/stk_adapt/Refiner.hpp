@@ -12,7 +12,8 @@
 #include <set>
 #include <vector>
 
-#ifdef STK_BUILT_IN_SIERRA
+// ibm can't compile mesquite
+#if defined(STK_BUILT_IN_SIERRA) && !defined(__IBMCPP__)
 #define STK_ADAPT_HAS_GEOMETRY
 #else
 #undef STK_ADAPT_HAS_GEOMETRY
