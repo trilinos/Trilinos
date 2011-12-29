@@ -251,9 +251,36 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
   Teuchos::ArrayRCP< const Scalar > Numerator_local = Numerator->getData(0);
   Teuchos::ArrayRCP< const Scalar > Denominator_local = Denominator->getData(0);
   Teuchos::ArrayRCP< Scalar >       ColBasedOmega_local = ColBasedOmega->getDataNonConst(0);
+  LocalOrdinal zero_local = Teuchos::ScalarTraits<Scalar>::zero();
+  Scalar min_local = Teuchos::ScalarTraits<Scalar>::one() * 1000000;
+  Scalar max_local = Teuchos::ScalarTraits<Scalar>::zero();
   for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(Numerator->getLocalLength()); i++) {
     ColBasedOmega_local[i] = Numerator_local[i] / Denominator_local[i];
-    if(ColBasedOmega_local[i] < Teuchos::ScalarTraits<Scalar>::zero()) ColBasedOmega_local[i] = Teuchos::ScalarTraits<Scalar>::zero();
+    if(ColBasedOmega_local[i] < Teuchos::ScalarTraits<Scalar>::zero()) { // negative omegas are not valid. set them to zero
+      ColBasedOmega_local[i] = Teuchos::ScalarTraits<Scalar>::zero();
+      zero_local++; // count zero omegas
+    }
+    if(ColBasedOmega_local[i] < min_local) { min_local = ColBasedOmega_local[i]; }
+    if(ColBasedOmega_local[i] > max_local) { max_local = ColBasedOmega_local[i]; }
+  }
+
+  { // be verbose
+    GlobalOrdinal zero_all;
+    Scalar min_all;
+    Scalar max_all;
+    sumAll(A->getRowMap()->getComm(),zero_local,zero_all);
+    minAll(A->getRowMap()->getComm(),min_local, min_all);
+    maxAll(A->getRowMap()->getComm(),max_local, max_all);
+
+    GetOStream(MueLu::Statistics1,0) << "PgPFactory: smoothed aggregation (scheme: ";
+    switch (min_norm_)
+    {
+    case ANORM:     { GetOStream(MueLu::Statistics1,0) << "Anorm)"     << std::endl;   }   break;
+    case L2NORM:    { GetOStream(MueLu::Statistics1,0) << "L2norm)"    << std::endl;   }   break;
+    case DINVANORM: { GetOStream(MueLu::Statistics1,0) << "DinvAnorm)" << std::endl;   }    break;
+    default:          GetOStream(MueLu::Statistics1,0) << "unknown)" << std::endl;
+    }
+    GetOStream(MueLu::Statistics1,0) << "Damping parameter: min = " << min_all << ", max = " << max_all << ", (" << zero_all << " zeros out of " << ColBasedOmega->getGlobalLength() << " column-based omegas)" << std::endl;
   }
 
   if(coarseLevel.IsRequested("ColBasedOmega", this)) {
