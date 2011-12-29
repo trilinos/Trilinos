@@ -258,14 +258,14 @@ IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
   TRIBITS_ADD_EXECUTABLE(
     example_raw_cpp_pointers
     SOURCES
-      ${${PROJECT_NAME}_HOME_DIR}/doc/RefCountPtr/example/example_raw_cpp_pointers.cpp
+      ${Trilinos_SOURCE_DIR}/doc/RefCountPtr/example/example_raw_cpp_pointers.cpp
     )
 
   # The RCP version should run just fine
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_ref_count_ptr
     SOURCES
-      ${${PROJECT_NAME}_HOME_DIR}/doc/RefCountPtr/example/example_ref_count_ptr.cpp
+      ${Trilinos_SOURCE_DIR}/doc/RefCountPtr/example/example_ref_count_ptr.cpp
     NUM_MPI_PROCS 1
     )
 ENDIF()
