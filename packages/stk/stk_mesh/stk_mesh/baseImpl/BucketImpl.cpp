@@ -37,30 +37,26 @@ void memory_zero( unsigned char * dst , unsigned n )
 
 void BucketImpl::update_state()
 {
-  bool this_is_first_bucket_in_family = ( bucket_counter() == 0 );
-  if (this_is_first_bucket_in_family) {
+  const MetaData & meta = MetaData::get(m_mesh);
+  const std::vector<FieldBase*> & field_set = meta.get_fields();
 
-    const MetaData & S = MetaData::get(m_mesh);
-    const std::vector<FieldBase*> & field_set = S.get_fields();
+  for ( unsigned i = 0 ; i < field_set.size() ; ) {
 
-    for ( unsigned i = 0 ; i < field_set.size() ; ) {
+    DataMap * const tmp = &m_field_map[0] + i ;
+    const FieldBase & field = * field_set[i] ;
+    const unsigned num_state = field.number_of_states();
+    i += num_state ;
 
-      DataMap * const tmp = &m_field_map[0] + i ;
-      const FieldBase & field = * field_set[i] ;
-      const unsigned num_state = field.number_of_states();
-      i += num_state ;
+    if ( 1 < num_state && tmp->m_size ) {
+      unsigned offset[ MaximumFieldStates ] ;
 
-      if ( 1 < num_state && tmp->m_size ) {
-        unsigned offset[ MaximumFieldStates ] ;
+      for ( unsigned j = 0 ; j < num_state ; ++j ) {
+        offset[j] = tmp[j].m_base ;
+      }
 
-        for ( unsigned j = 0 ; j < num_state ; ++j ) {
-          offset[j] = tmp[j].m_base ;
-        }
-
-        for ( unsigned j = 0 ; j < num_state ; ++j ) {
-          const unsigned j_new = ( j + num_state - 1 ) % num_state ;
-          tmp[j_new].m_base = offset[j] ;
-        }
+      for ( unsigned j = 0 ; j < num_state ; ++j ) {
+        const unsigned j_new = ( j + num_state - 1 ) % num_state ;
+        tmp[j_new].m_base = offset[j] ;
       }
     }
   }
