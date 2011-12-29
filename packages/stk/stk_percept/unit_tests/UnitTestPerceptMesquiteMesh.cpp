@@ -85,9 +85,6 @@ namespace stk
       STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_1)
       {
         EXCEPTWATCH;
-        MPI_Barrier( MPI_COMM_WORLD );
-
-        EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
 
@@ -145,9 +142,6 @@ namespace stk
 
       STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_2)
       {
-        EXCEPTWATCH;
-        MPI_Barrier( MPI_COMM_WORLD );
-
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
