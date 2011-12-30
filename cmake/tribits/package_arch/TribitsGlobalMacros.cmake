@@ -949,11 +949,16 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
       MESSAGE("Reading a list of extra packages from ${EXTRAREPO_PACKAGES_FILE} ... ")
       MESSAGE("")
   
-      IF (NOT EXISTS "${EXTRAREPO_PACKAGES_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
-        MESSAGE(
-          "\n***"
-          "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_PACKAGES_FILE}' on request!"
-          "\n***\n")
+      IF (NOT EXISTS "${EXTRAREPO_PACKAGES_FILE}")
+        IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+          MESSAGE(
+            "\n***"
+            "\n*** WARNING!  Ignoring missing extra repo '${EXTRA_REPO}' packages list file '${EXTRAREPO_PACKAGES_FILE}' on request!"
+            "\n***\n")
+        ELSE()
+          MESSAGE( SEND_ERROR
+            "ERROR: Skipping missing extra repo '${EXTRA_REPO}' packages list file '${EXTRAREPO_PACKAGES_FILE}'!")
+        ENDIF()
       ELSE()
         INCLUDE("${EXTRAREPO_PACKAGES_FILE}")  # Writes the variable ???
         SET(APPEND_TO_PACKAGES_LIST TRUE)
@@ -969,11 +974,16 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
       MESSAGE("Reading a list of extra TPLs from ${EXTRAREPO_TPLS_FILE} ... ")
       MESSAGE("")
   
-      IF (NOT EXISTS "${EXTRAREPO_TPLS_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
-        MESSAGE(
-          "\n***"
-          "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_TPLS_FILE}' on request!"
-          "\n***\n")
+      IF (NOT EXISTS "${EXTRAREPO_TPLS_FILE}")
+        IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+          MESSAGE(
+            "\n***"
+            "\n*** WARNING!  Ignoring missing extra repo '${EXTRA_REPO}' TPLs list file '${EXTRAREPO_TPLS_FILE}' on request!"
+            "\n***\n")
+        ELSE()
+          MESSAGE( SEND_ERROR
+            "ERROR: Skipping missing extra repo '${EXTRA_REPO}' TPLs list file '${EXTRAREPO_TPLS_FILE}'!")
+        ENDIF()
       ELSE()
         INCLUDE("${EXTRAREPO_TPLS_FILE}")  # Writes the varaible ???
         SET(APPEND_TO_TPLS_LIST TRUE)

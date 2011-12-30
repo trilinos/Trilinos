@@ -430,9 +430,12 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
   SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR "${PROJECT_BINARY_DIR}")
 
-  # Ignore missing extra repos in case someone messed up the git URL or
-  # something.  We don't want a sloppy commit to bring down automated testing.
-  SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES ON)
+  # Don't ignore missing repos.  This will allow processing to continue but this outer
+  # CTest script will fail (thereby sending a CDash email from the TDD
+  # system).  However, when we configure actual packages, we do set this to
+  # TRUE so that the package configures will not fail due to missing extra
+  # repositories.
+  SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES FALSE)
 
   TRIBITS_READ_IN_NATIVE_REPOSITORIES()
   TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
@@ -1311,6 +1314,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       ENDIF()
       LIST(APPEND CONFIGURE_OPTIONS
         "-D${PROJECT_NAME}_EXTRAREPOS_FILE:STRING=${${PROJECT_NAME}_EXTRAREPOS_FILE}")
+      LIST(APPEND CONFIGURE_OPTIONS # See TRIBITS_SETUP_PACKAGES
+        "-D${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON")
       LIST(APPEND CONFIGURE_OPTIONS
         "-D${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE}")
       IF (DEFINED ${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)

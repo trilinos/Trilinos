@@ -416,6 +416,29 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  MissingExtraRepositoryFail
+  ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=MissingExtraRepo
+    -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=OFF
+  PASS_REGULAR_EXPRESSION_ALL
+    "ERROR: Skipping missing extra repo 'MissingExtraRepo' packages list file"
+    "ERROR: Skipping missing extra repo 'MissingExtraRepo' TPLs list file"
+    "Configuring incomplete, errors occurred"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  MissingExtraRepositoryIgnore
+  ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=MissingExtraRepo
+    -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "WARNING!  Ignoring missing extra repo 'MissingExtraRepo' packages list file ..+/tribits/package_arch/UnitTests/MockTrilinos/MissingExtraRepo/PackagesList.cmake. on request!"
+    "WARNING!  Ignoring missing extra repo 'MissingExtraRepo' TPLs list file ..+/tribits/package_arch/UnitTests/MockTrilinos/MissingExtraRepo/TPLsList.cmake. on request!"
+    "Configuring done"
+    "Generating done"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   extraTrilinosRepo_EnableExtraPack
   ARGS "-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos,extraTrilinosRepo"
     -DTrilinos_ENABLE_ExtraPack=ON
