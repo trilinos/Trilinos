@@ -1010,7 +1010,7 @@ int Epetra_VbrMatrix::OptimizeStorage() {
 
   if ( ConstantShape ) {
 
-    int numMyNonzeros = Graph_->NumMyNonzeros();
+    int numMyNonzeros = Graph_->NumMyEntries();
     int coef_len = MyColDim*MyRowDim*numMyNonzeros;
     All_Values_ = new double[coef_len];
     All_Values_Orig_ = All_Values_ ;
