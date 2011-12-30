@@ -360,7 +360,8 @@ c.....do a series of SPAXPYs (sparse saxpys)
 *     --------------------------
 *
       if (nrhs.eq.1) then
-!$omp parallel default(private) shared (m, pntr, val, x, indx, y)
+!$omp parallel default(private) 
+!$omp&shared (m, pntr, val, x, indx, y)
 !$omp do 
          do 110 j = 0, m-1
             jbgn = pntr(j)
@@ -375,7 +376,8 @@ c.....do a series of SPAXPYs (sparse saxpys)
          
 
       else if (nrhs.eq.2) then
-!$omp parallel default(private) shared (m, pntr, val, x, indx, y)
+!$omp parallel default(private) 
+!$omp&shared (m, pntr, val, x, indx, y, ldx, ldy, nrhs)
 !$omp do
          do 210 j = 0, m-1
             jbgn = pntr(j)
@@ -397,7 +399,8 @@ c.....do a series of SPAXPYs (sparse saxpys)
 !$omp end parallel
          
       else if (nrhs.eq.3) then
-!$omp parallel default(private) shared (m, pntr, val, x, indx, y)
+!$omp parallel default(private)
+!$omp&shared (m, pntr, val, x, indx, y, ldx, ldy, nrhs)
 !$omp do
          do 310 j = 0, m-1
             jbgn = pntr(j)
@@ -425,7 +428,8 @@ c.....do a series of SPAXPYs (sparse saxpys)
 !$omp end parallel
 
       else if (nrhs.eq.4) then
-!$omp parallel default(private) shared (m, pntr, val, x, indx, y)
+!$omp parallel default(private)
+!$omp&shared (m, pntr, val, x, indx, y, ldx, ldy, nrhs)
 !$omp do
          do 410 j = 0, m-1
             jbgn = pntr(j)
@@ -457,7 +461,8 @@ c.....do a series of SPAXPYs (sparse saxpys)
 !$omp end parallel
 
       else if (nrhs.eq.5) then
-!$omp parallel default(private) shared (m, pntr, val, x, indx, y)
+!$omp parallel default(private)
+!$omp&shared (m, pntr, val, x, indx, y, ldx, ldy, nrhs)
 !$omp do
          do 510 j = 0, m-1
             jbgn = pntr(j)
