@@ -6,6 +6,14 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#if defined(STK_BUILT_IN_SIERRA) && !defined(__IBMCPP__)
+#define STK_ADAPT_HAS_GEOMETRY
+#else
+#undef STK_ADAPT_HAS_GEOMETRY
+#endif
+
+#if defined( STK_ADAPT_HAS_GEOMETRY )
+
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
@@ -26,13 +34,6 @@
 #include <stk_percept/fixtures/QuadFixture.hpp>
 #include <stk_percept/fixtures/WedgeFixture.hpp>
 
-#if defined(STK_BUILT_IN_SIERRA) && !defined(__IBMCPP__)
-#define STK_ADAPT_HAS_GEOMETRY
-#else
-#undef STK_ADAPT_HAS_GEOMETRY
-#endif
-
-#if defined( STK_ADAPT_HAS_GEOMETRY )
 //#include <stk_percept/mesh/geometry/kernel/GeometryKernelOpenNURBS.hpp>
 //#include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
 //#include <stk_percept/mesh/geometry/kernel/GeometryFactory.hpp>
@@ -47,8 +48,6 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
 #include <MsqDebug.hpp>
 #define StackTrace StackTraceTmp
-
-#endif
 
 #include <stdexcept>
 #include <sstream>
@@ -237,3 +236,5 @@ namespace stk
     }
   }
 }
+#endif
+
