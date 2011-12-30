@@ -70,13 +70,13 @@ namespace stk {
           maxVtxMovement( max_vertex_movement )
       {}
 
-      void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain, bool debug=true)
+      void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain, int debug=0)
       {
         if (debug)
           {
             Mesquite::MsqDebug::enable(1);
-            Mesquite::MsqDebug::enable(2);
-            Mesquite::MsqDebug::enable(3);
+            if (debug > 1) Mesquite::MsqDebug::enable(2);
+            if (debug > 2) Mesquite::MsqDebug::enable(3);
           }
         Mesquite::MsqError mErr;
 

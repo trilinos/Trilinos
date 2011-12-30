@@ -25,6 +25,7 @@
 #include <MsqError.hpp>
 #include <Wrapper.hpp>
 
+#include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMeshDomain.hpp>
 
@@ -56,11 +57,41 @@ namespace stk {
       virtual ~PMMLaplaceSmoother1() {}
       Mesquite::LaplacianSmoother& get_smoother() { return m_smoother; }
 
-      void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain)
+      void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain, bool always_smooth=true, int debug=0)
       {
+        if (debug)
+          {
+            Mesquite::MsqDebug::enable(1);
+            if (debug > 1) Mesquite::MsqDebug::enable(2);
+            if (debug > 2) Mesquite::MsqDebug::enable(3);
+          }
+
         Mesquite::MsqError mErr;
-        this->set_iteration_limit(1);
-        this->run_instructions(&mesh, &domain, mErr);
+
+        int num_invalid = 0;
+        bool check_quality=true;
+        if (check_quality)
+          {
+            num_invalid = PMMShapeImprover::count_invalid_elements(mesh, domain);
+            std::cout << "tmp srk PMMLaplaceSmoother1 num_invalid before= " << num_invalid 
+                      << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : " ")
+                      << std::endl;
+          }
+
+        if (num_invalid || always_smooth)
+          {
+
+            this->set_iteration_limit(1);
+            this->run_instructions(&mesh, &domain, mErr);
+            if (check_quality)
+              {
+                num_invalid = PMMShapeImprover::count_invalid_elements(mesh, domain);
+                std::cout << "tmp srk PMMLaplaceSmoother1 num_invalid after= " << num_invalid << " " 
+                          << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 
+                              " SUCCESS: smoothed and removed invalid elements ")
+                          << std::endl;
+              }
+          }
       }
       
     protected:

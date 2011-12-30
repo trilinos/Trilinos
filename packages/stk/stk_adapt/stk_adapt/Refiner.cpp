@@ -1412,25 +1412,26 @@ namespace stk {
       bool do_mesquite_smoothing = true;
       if (do_mesquite_smoothing)
         {
-          bool do_laplace = false;
-          bool do_jacobi = true;
+          int  msq_debug             = 2; // 1,2,3 for more debug info
+          bool always_smooth         = false;
+          bool do_laplace            = false;
+          bool do_jacobi             = true;
+
           PerceptMesquiteMeshDomain pmd(&m_eMesh, &mesh_geometry);
           PerceptMesquiteMesh pmm(&m_eMesh, &pmd);
-          //pmm.setDoJacobiIterations(do_jacobi);
+
           if (do_laplace)
             {
               PMMLaplaceSmoother1 ls;
               if (do_jacobi) ls.get_smoother().do_jacobi_optimization();
-              ls.run(pmm, pmd);
+              ls.run(pmm, pmd, always_smooth, msq_debug);
             }
           else
             {
               PMMShapeImprover si;
               //const double max_vertex_movement_term_crit=10;
               //PMMShapeSizeOrientImprover si(10);
-              bool debug = true;
-              bool always_smooth =false;
-              si.run(pmm, pmd, always_smooth, debug);
+              si.run(pmm, pmd, always_smooth, msq_debug);
             }
           return;
         }

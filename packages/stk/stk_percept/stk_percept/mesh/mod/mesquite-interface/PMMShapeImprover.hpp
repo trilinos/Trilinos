@@ -62,13 +62,13 @@ namespace stk {
         return num_invalid;
       }
 
-      void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain, bool always_smooth=true, bool debug=false)
+      void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain, bool always_smooth=true, int debug=0)
       {
         if (debug)
           {
             Mesquite::MsqDebug::enable(1);
-            Mesquite::MsqDebug::enable(2);
-            Mesquite::MsqDebug::enable(3);
+            if (debug > 1) Mesquite::MsqDebug::enable(2);
+            if (debug > 2) Mesquite::MsqDebug::enable(3);
           }
         Mesquite::MsqError mErr;
         int num_invalid = 0;
@@ -76,7 +76,9 @@ namespace stk {
         if (check_quality)
           {
             num_invalid = count_invalid_elements(mesh, domain);
-            std::cout << "tmp srk PMMShapeImprover num_invalid before= " << num_invalid << std::endl;
+            std::cout << "tmp srk PMMShapeImprover num_invalid before= " << num_invalid 
+                      << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : " ")
+                      << std::endl;
           }
 
         if (num_invalid || always_smooth)
@@ -89,7 +91,10 @@ namespace stk {
             if (check_quality)
               {
                 num_invalid = count_invalid_elements(mesh, domain);
-                std::cout << "tmp srk PMMShapeImprover num_invalid after= " << num_invalid << std::endl;
+                std::cout << "tmp srk PMMShapeImprover num_invalid after= " << num_invalid << " " 
+                          << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 
+                              " SUCCESS: smoothed and removed invalid elements ")
+                          << std::endl;
               }
           }
       }
