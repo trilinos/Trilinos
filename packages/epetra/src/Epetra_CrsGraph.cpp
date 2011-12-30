@@ -1365,13 +1365,13 @@ int Epetra_CrsGraph::OptimizeStorage() {
 		
     if (!(StaticProfile())) {
 #ifdef EPETRA_HAVE_OMP
-#pragma omp parallel for default(none) shared(curNumIndices,indexOffset,all_indices,indices)
+#pragma omp parallel for default(none) shared(indexOffset,all_indices,indices)
 #endif   
       for(int i = 0; i < numMyBlockRows; i++) {
-	curNumIndices = indexOffset[i+1] - indexOffset[i];
+	int numColIndices = indexOffset[i+1] - indexOffset[i];
         int* ColIndices = indices[i];
         int *newColIndices = all_indices+indexOffset[i];
-        for(int j = 0; j < curNumIndices; j++) newColIndices[j] = ColIndices[j];
+        for(int j = 0; j < numColIndices; j++) newColIndices[j] = ColIndices[j];
       }
       for(int i = 0; i < numMyBlockRows; i++) {
         if (indices[i]!=0) {
@@ -1379,33 +1379,47 @@ int Epetra_CrsGraph::OptimizeStorage() {
           indices[i] = 0;
         }
      }
-   } // End of contiguous non-static section	 
+   } // End of non-contiguous non-static section	 
    else {
 
      for(int i = 0; i < numMyBlockRows; i++) {
-       curNumIndices = indexOffset[i+1] - indexOffset[i];
+       int numColIndices = indexOffset[i+1] - indexOffset[i];
        int* ColIndices = indices[i];
        int *newColIndices = all_indices+indexOffset[i];
        if (ColIndices!=newColIndices) // No need to copy if pointing to same space
-       for(int j = 0; j < curNumIndices; j++) newColIndices[j] = ColIndices[j];
+       for(int j = 0; j < numColIndices; j++) newColIndices[j] = ColIndices[j];
        indices[i] = 0;
      }
-   } // End of Contiguous static section
-  } // End of !Contiguous section
-  else {
-    //if contiguous, set All_Indices_ from CrsGraphData_->Indices_[0].
-    const int numMyNonzeros = NumMyNonzeros();
+   } // End of non-Contiguous static section
+  } // End of non-Contiguous section
+  else { // Start of Contiguous section
+    // if contiguous, set All_Indices_ from CrsGraphData_->Indices_[0].
+    // Execute the assignment block in parallel using the same pattern as SpMV
+    // in order to improve page placement
     if (numMyBlockRows > 0 && !(StaticProfile())) {
+      const int numMyNonzeros = NumMyNonzeros();
       int errorcode = CrsGraphData_->All_Indices_.Size(numMyNonzeros);
       if(errorcode != 0)  throw ReportError("Error with All_Indices_ allocation.", -99);
-      int* all_indices_values = CrsGraphData_->All_Indices_.Values();
-      int* indices_values = CrsGraphData_->Indices_[0];
-#ifdef EPETREPETRA_OMP
-#pragma omp parallel for default(none) shared(all_indices_values,indices_values)
-#endif   
-      for(int ii=0; ii<numMyNonzeros; ++ii) {
-        all_indices_values[ii] = indices_values[ii];
-      }
+      int* new_all_indices = CrsGraphData_->All_Indices_.Values();
+      int* old_all_indices = CrsGraphData_->Indices_[0];
+      int * indexOffset = CrsGraphData_->IndexOffset_.Values();
+
+#ifdef EPETRA_HAVE_OMP
+#pragma omp parallel for default(none) shared(indexOffset,old_all_indices,new_all_indices)
+#endif
+     for(int i = 0; i < numMyBlockRows; i++) {
+       int numColIndices = indexOffset[i+1] - indexOffset[i];
+       int *oldColIndices = old_all_indices+indexOffset[i];
+       int *newColIndices = new_all_indices+indexOffset[i];
+       for(int j = 0; j < numColIndices; j++) newColIndices[j] = oldColIndices[j];
+     }
+
+//#ifdef EPETRA_HAVE_OMP
+//#pragma omp parallel for default(none) shared(all_indices_values,indices_values)
+//#endif   
+//      for(int ii=0; ii<numMyNonzeros; ++ii) {
+//        all_indices_values[ii] = indices_values[ii];
+//      }
     }
   }
 
