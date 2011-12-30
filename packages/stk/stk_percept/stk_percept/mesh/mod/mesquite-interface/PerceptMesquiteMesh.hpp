@@ -45,6 +45,7 @@ namespace stk {
       typedef boost::array<double,3> Array3;
       typedef boost::unordered_map<stk::mesh::Entity *, Array3> NodeCoordsType;
       NodeCoordsType m_nodeCoords;
+      bool m_nodeCoords_tag_is_created;
 
     public:
 

@@ -70,7 +70,7 @@ namespace stk {
     // Date: 03/30/2011, 11/15/11
     //============================================================================
     PerceptMesquiteMesh::PerceptMesquiteMesh(PerceptMesh *eMesh, PerceptMesquiteMeshDomain *domain, stk::mesh::Selector *boundarySelector) 
-      : m_meshDomain(domain), m_boundarySelector(boundarySelector)
+      : m_meshDomain(domain), m_boundarySelector(boundarySelector), m_nodeCoords_tag_is_created(false)
     {  
       init(eMesh);
     }
@@ -809,12 +809,15 @@ namespace stk {
       Mesquite::TagHandle handle = 0;
 #if 1
       //int numNodes = get_total_vertex_count(err);
-      if (DEBUG_PRINT) std::cout << "tmp srk tag_create 0, length = " << length << std::endl;
+      if (1 || DEBUG_PRINT) std::cout << "tmp srk tag_create 0, length = " << length << " tag_name= " << tag_name 
+                                      << " type= " << type << " DOUBLE= " << DOUBLE
+                                      << std::endl;
       if (tag_name == "msq_jacobi_temp_coords" && type == DOUBLE && length == 3)
         {
           if (DEBUG_PRINT) std::cout << "tmp srk tag_create 1, length = " << length << std::endl;
           handle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords);
           m_nodeCoords.clear();
+          m_nodeCoords_tag_is_created = true;
         }
       else
         {
@@ -841,6 +844,7 @@ namespace stk {
         {
           if (DEBUG_PRINT) std::cout << "tmp srk tag_delete " << std::endl;
           m_nodeCoords.clear();
+          m_nodeCoords_tag_is_created = false;
         }
       else
         {
@@ -866,7 +870,14 @@ namespace stk {
 #if 1
       if (name == "msq_jacobi_temp_coords")
         {
-          handle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords);
+          if (m_nodeCoords_tag_is_created)
+            {
+              handle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords);
+            }
+          else
+            {
+              MSQ_SETERR(err)("tag not found in PerceptMesquiteMesh::tag_get.\n",Mesquite::MsqError::TAG_NOT_FOUND);
+            }
         }
 #endif
       return handle;
@@ -887,6 +898,10 @@ namespace stk {
     {
 #if 1
       Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords); 
+      if (!m_nodeCoords_tag_is_created)
+        {
+          MSQ_SETERR(err)("tag not yet created in PerceptMesquiteMesh::tag_properties.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+        }
       if (jhandle == handle)
         {
           name_out = "msq_jacobi_temp_coords";
@@ -934,6 +949,11 @@ namespace stk {
       //int numNodes = get_total_vertex_count(err);
 
       Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords); 
+      if (!m_nodeCoords_tag_is_created)
+        {
+          PRINT_ERROR("tag not yet created in PerceptMesquiteMesh::tag_set_vertex_data\n");
+          MSQ_SETERR(err)("tag not yet created in PerceptMesquiteMesh::tag_set_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+        }
       if (jhandle != handle)
         {
           PRINT_ERROR("Unknown tag handle in PerceptMesquiteMesh::tag_set_vertex_data\n");
@@ -1002,6 +1022,11 @@ namespace stk {
       //int numNodes = get_total_vertex_count(err);
 
       Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords);
+      if (!m_nodeCoords_tag_is_created)
+        {
+          PRINT_ERROR("tag not yet created in PerceptMesquiteMesh::tag_get_vertex_data\n");
+          MSQ_SETERR(err)("tag not yet created in PerceptMesquiteMesh::tag_get_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+        }
       if (jhandle != handle)
         {
           PRINT_ERROR("Unknown tag handle in PerceptMesquiteMesh::tag_get_vertex_data\n");

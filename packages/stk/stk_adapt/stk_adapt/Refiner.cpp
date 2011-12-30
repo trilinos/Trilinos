@@ -28,6 +28,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMShapeSizeOrientImprover.hpp>
 #define StackTrace StackTraceTmp
 
 #endif
@@ -1425,8 +1426,11 @@ namespace stk {
           else
             {
               PMMShapeImprover si;
-              bool debug = false;
-              si.run(pmm, pmd, debug);
+              //const double max_vertex_movement_term_crit=10;
+              //PMMShapeSizeOrientImprover si(10);
+              bool debug = true;
+              bool always_smooth =false;
+              si.run(pmm, pmd, always_smooth, debug);
             }
           return;
         }
