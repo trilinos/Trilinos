@@ -224,7 +224,7 @@ MACRO(TRIBITS_PROJECT_IMPL)
   
   IF (${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
     MESSAGE("")
-    MESSAGE(SEND_ERROR "Shortcircuiting after dependency tracking ...")
+    MESSAGE("Shortcircuiting after dependency tracking ...")
     RETURN()
   ENDIF()
   
