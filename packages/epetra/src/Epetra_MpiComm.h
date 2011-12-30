@@ -52,6 +52,9 @@ class Epetra_Directory;
 class Epetra_BlockMap;
 #include <mpi.h>
 #include "Epetra_MpiCommData.h"
+#ifdef EPETRA_HAVE_OMP
+#include <omp.h>
+#endif
 
 //! Epetra_MpiComm:  The Epetra MPI Communication Class.
 /*! The Epetra_MpiComm class is an implementation of Epetra_Comm that encapsulates the general
@@ -407,7 +410,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@{ 
   //! Print method that implements Epetra_Object virtual Print method
   inline void Print(ostream & os) const {
-  os << "  Processor "<< MyPID()<<" of " << NumProc() << " total processors"; 
+#ifdef EPETRA_HAVE_OMP
+#pragma omp parallel 
+{
+  int numThreads = omp_get_num_threads();
+  int threadNum = omp_get_thread_num();
+#pragma omp critical
+                os << "\n   Thread/TotalThreads " << threadNum << "/" << numThreads << " on Processor/TotalProcs "
+		<<  MyPID() << "/" << NumProc();
+}
+#else
+                os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors.";
+#endif
   return;}
   //! Print method that implements Epetra_Comm virtual PrintInfo method
   void PrintInfo(ostream & os) const {Epetra_MpiComm::Print(os);return;};
