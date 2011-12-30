@@ -380,8 +380,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
 {
   int numThreads = omp_get_num_threads();
   int threadNum = omp_get_thread_num();
-		os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors."
-                   << "\n   Thread " << threadNum << " of " << numThreads << " total threads."; 
+#pragma omp single
+               os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors.";
+#pragma omp critical
+                os << "\n   Thread " << threadNum << " of " << numThreads << " total threads."; 
 }
 #else
 		os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors."; 
