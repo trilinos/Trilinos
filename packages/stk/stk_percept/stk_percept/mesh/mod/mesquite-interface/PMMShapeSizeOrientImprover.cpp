@@ -1,3 +1,5 @@
+#if defined(STK_BUILT_IN_SIERRA) && !defined(__IBMCPP__)
+
 #include <stk_percept/mesh/mod/mesquite-interface/PMMShapeSizeOrientImprover.hpp>
 
 #include <Mesquite.hpp>
@@ -112,3 +114,4 @@ namespace stk {
 
   }
 }
+#endif
