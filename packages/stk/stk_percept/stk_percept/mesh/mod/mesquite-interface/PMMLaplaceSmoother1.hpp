@@ -50,9 +50,10 @@ namespace stk {
     class PMMLaplaceSmoother1 : public Mesquite::LaplaceWrapper
     {
       Mesquite::LaplacianSmoother m_smoother;
+      int m_numIterMax;
     public:
   
-      PMMLaplaceSmoother1() : Mesquite::LaplaceWrapper() {}
+      PMMLaplaceSmoother1(int numIterMax=1) : Mesquite::LaplaceWrapper(), m_numIterMax(numIterMax) {}
 
       virtual ~PMMLaplaceSmoother1() {}
       Mesquite::LaplacianSmoother& get_smoother() { return m_smoother; }
@@ -81,7 +82,7 @@ namespace stk {
         if (num_invalid || always_smooth)
           {
 
-            this->set_iteration_limit(1);
+            this->set_iteration_limit(m_numIterMax);
             this->run_instructions(&mesh, &domain, mErr);
             if (check_quality)
               {

@@ -214,7 +214,7 @@ namespace stk
             //bool do_jacobi = true;
             Mesquite::MsqDebug::enable(1);
             Mesquite::MsqDebug::enable(2);
-            Mesquite::MsqDebug::enable(3);
+            //Mesquite::MsqDebug::enable(3);
             PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
             //pmm.setDoJacobiIterations(do_jacobi);
             PerceptMesquiteMeshDomain pmd(&eMesh, 0);
@@ -232,6 +232,117 @@ namespace stk
           }
       }
 
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      STKUNIT_UNIT_TEST(unit_perceptMesquite, hex_1)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //if (p_size == 1 || p_size == 3)
+        if (p_size <= 1)
+          {
+            //const unsigned p_rank = stk::parallel_machine_rank( pm );
+            //const unsigned p_size = stk::parallel_machine_size( pm );
+
+            unsigned n = 4;
+            std::cout << "tmp srk doing Laplace smoothing for hex_1 case, n = " << n << std::endl;
+            unsigned nn = n+1;
+            std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n*p_size)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
+            PerceptMesh eMesh(3);
+            eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
+            eMesh.commit();
+            eMesh.saveAs(input_files_loc+"hex_1_smooth.0.e");
+
+            stk::mesh::Selector boundarySelector_1(*eMesh.getNonConstPart("surface_1") );
+            stk::mesh::Selector boundarySelector_2(*eMesh.getNonConstPart("surface_2") );
+            stk::mesh::Selector boundarySelector_3(*eMesh.getNonConstPart("surface_3") );
+            stk::mesh::Selector boundarySelector_4(*eMesh.getNonConstPart("surface_4") );
+            stk::mesh::Selector boundarySelector_5(*eMesh.getNonConstPart("surface_5") );
+            stk::mesh::Selector boundarySelector_6(*eMesh.getNonConstPart("surface_6") );
+            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
+
+            double delta_max = 0.01/(double(n));
+            for (unsigned ii=1; ii <= (nn*nn*nn); ii++)
+              {
+                stk::mesh::Entity* node = eMesh.getBulkData()->get_entity(0, ii);
+                if (boundarySelector(*node)) continue;
+                double * data = stk::mesh::field_data( *eMesh.getCoordinatesField() , *node );
+                //std::cout << "tmp srk  center node= " << data[0] << " " << data[1] << std::endl;
+                data[0] += delta_max*double(ii)/double(n);
+                data[1] += 2*delta_max*double(ii)/double(n);
+                data[2] += 3*delta_max*double(ii)/double(n);
+              }
+
+
+            eMesh.saveAs(input_files_loc+"hex_1_smooth.0_perturbed.e");
+
+#if 1
+            bool do_jacobi = true;
+            PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
+            //pmm.setDoJacobiIterations(do_jacobi);
+            PerceptMesquiteMeshDomain pmd(&eMesh, 0);
+            int numIterMax = 20;
+            percept::PMMLaplaceSmoother1 ls(numIterMax);
+            if (do_jacobi) 
+              ls.get_smoother().do_jacobi_optimization();
+            ls.run(pmm, pmd);
+            std::cout << "tmp srk doing Laplace smoothing for hex_1 case ... done " << std::endl;
+
+            //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[0], 1.0);
+            //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[1], 1.0);
+
+            eMesh.saveAs(output_files_loc+"hex_1_smooth.1.e");
+#endif
+          }
+
+#if 1
+        if (p_size <= 1)
+          {
+            percept::PerceptMesh eMesh(3);
+            eMesh.open(input_files_loc+"hex_1_smooth.0_perturbed.e");
+            eMesh.commit();
+
+            std::cout << "tmp srk doing Shape smoothing for hex_1 case..." << std::endl;
+
+
+            stk::mesh::Selector boundarySelector_1(*eMesh.getNonConstPart("surface_1") );
+            stk::mesh::Selector boundarySelector_2(*eMesh.getNonConstPart("surface_2") );
+            stk::mesh::Selector boundarySelector_3(*eMesh.getNonConstPart("surface_3") );
+            stk::mesh::Selector boundarySelector_4(*eMesh.getNonConstPart("surface_4") );
+            stk::mesh::Selector boundarySelector_5(*eMesh.getNonConstPart("surface_5") );
+            stk::mesh::Selector boundarySelector_6(*eMesh.getNonConstPart("surface_6") );
+            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
+
+            //bool do_jacobi = true;
+            Mesquite::MsqDebug::enable(1);
+            Mesquite::MsqDebug::enable(2);
+            //Mesquite::MsqDebug::enable(3);
+            PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
+            //pmm.setDoJacobiIterations(do_jacobi);
+            PerceptMesquiteMeshDomain pmd(&eMesh, 0);
+            percept::PMMShapeImprover si;
+            si.run(pmm, pmd);
+
+            std::cout << "tmp srk doing Shape smoothing for hex_1 case... done " << std::endl;
+            eMesh.saveAs(output_files_loc+"hex_1_si_smooth.1.e");
+
+//             percept::PMMShapeImprover si2;
+//             si2.run(pmm, pmd);
+//             eMesh.saveAs(output_files_loc+"quad_si2_smooth.1.e");
+
+            //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[0], 1.0);
+            //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[1], 1.0);
+
+          }
+#endif
+      }
 
     }
   }
