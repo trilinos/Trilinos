@@ -30,6 +30,13 @@ to type 'egdist status'.
 
 NOTE: This script has no other depenenices so it can be copied and moved
 anywhere and used.
+
+TIPS:
+
+ - Use 'egdist --no-pager <command> ...' to get the full output from
+   all extra repos in one contiguous stream which can then be piped
+   to 'less' or to a file to be read with emacs or vi.
+
 """
 
 import sys
