@@ -30,9 +30,9 @@ int main(int argc, char *argv[]) {
 
   // linear algebra library
   // this example require Tpetra+Ifpack2+Amesos2 or Epetra+Ifpack+Amesos
-#if   defined(HAVE_MUELU_TPETRA)
+#if   defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   Xpetra::UnderlyingLib lib = Xpetra::UseTpetra; 
-#elif defined(HAVE_MUELU_EPETRA)
+#elif defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)  && defined(HAVE_MUELU_AMESOS)
   Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
 #endif
 
