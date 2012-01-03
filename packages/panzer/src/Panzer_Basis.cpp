@@ -12,19 +12,21 @@ Basis(std::string basis_type, const panzer::IntegrationRule& int_rule) :
   field_basis_name_D1("Grad Basis: " + basis_type),
   field_basis_name_D2("D2 Basis: " + basis_type)
 {
-  Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > iBasis 
-     = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, int_rule.spatial_dimension,int_rule.topology);
-  setup(iBasis,int_rule);
+  basis_data = Teuchos::rcp(new PureBasis(basis_type,int_rule.workset_size,int_rule.topology));
+
+  setup(basis_data->getIntrepidBasis(),int_rule);
 }
 
 panzer::Basis::
-Basis(const panzer::PureBasis & basis, const panzer::IntegrationRule& int_rule) :
-  basis_name(basis.name()),
-  field_basis_name(basis.fieldName()),
-  field_basis_name_D1(basis.fieldNameD1()),
-  field_basis_name_D2(basis.fieldNameD2())
+Basis(const Teuchos::RCP<const panzer::PureBasis> & b, const panzer::IntegrationRule& int_rule) :
+  basis_name(b->name()),
+  field_basis_name(b->fieldName()),
+  field_basis_name_D1(b->fieldNameD1()),
+  field_basis_name_D2(b->fieldNameD2())
 {
-  setup(basis.getIntrepidBasis(),int_rule);
+  basis_data = b;
+
+  setup(basis_data->getIntrepidBasis(),int_rule);
 }
 
 void panzer::Basis::
@@ -127,4 +129,10 @@ Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > >
 panzer::Basis::getIntrepidBasis() const
 {
    return intrepid_basis;
+}
+
+Teuchos::RCP< const panzer::PureBasis>
+panzer::Basis::getBasis() const
+{
+   return basis_data;
 }

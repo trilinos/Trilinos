@@ -6,7 +6,36 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 panzer::PureBasis::
-PureBasis(std::string basis_type,const CellData & cell_data) :
+PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const shards::CellTopology> & cellTopo) :
+  basis_name(basis_type),
+  field_basis_name("Basis: " + basis_type),
+  field_basis_name_D1("Grad Basis: " + basis_type),
+  field_basis_name_D2("D2 Basis: " + basis_type)
+{
+  using Teuchos::rcp;
+  using PHX::MDALayout;
+
+  dimension = cellTopo->getDimension();
+
+  intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, dimension, cellTopo);
+
+  cardinality = intrepid_basis->getCardinality();
+  num_cells = numCells;
+
+  functional = rcp(new MDALayout<Cell,BASIS>(num_cells, cardinality));
+
+  functional_grad = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
+						      cardinality,
+						      dimension));
+
+  functional_D2 = rcp(new MDALayout<Cell,BASIS,Dim,Dim>(num_cells,
+							cardinality,
+							dimension,
+							dimension));
+}
+
+panzer::PureBasis::
+PureBasis(const std::string & basis_type,const CellData & cell_data) :
   basis_name(basis_type),
   field_basis_name("Basis: " + basis_type),
   field_basis_name_D1("Grad Basis: " + basis_type),

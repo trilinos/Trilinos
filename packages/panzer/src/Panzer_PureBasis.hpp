@@ -18,7 +18,8 @@ namespace panzer {
 
   public:
     
-    PureBasis(std::string basis_type,const CellData & cell_data);
+    PureBasis(const std::string & basis_type,const CellData & cell_data);
+    PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const shards::CellTopology> & cellTopo);
 
     int getCardinality() const;
 

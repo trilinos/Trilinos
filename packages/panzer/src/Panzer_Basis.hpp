@@ -19,8 +19,8 @@ namespace panzer {
 
   public:
     
-    Basis(std::string basis_type, const panzer::IntegrationRule& int_rule);
-    Basis(const panzer::PureBasis & pBasis, const panzer::IntegrationRule& int_rule);
+    Basis(std::string basis_type, const IntegrationRule& int_rule);
+    Basis(const Teuchos::RCP<const PureBasis> & b, const IntegrationRule& int_rule);
 
     void setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > & iBasis,
                const panzer::IntegrationRule & int_rule);
@@ -45,6 +45,8 @@ namespace panzer {
 
     Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > 
     getIntrepidBasis() const;
+
+    Teuchos::RCP<const PureBasis> getBasis() const;
 
   public:
     
@@ -79,6 +81,8 @@ namespace panzer {
     int num_ip;
     int dimension;
     int int_rule_degree;
+
+    Teuchos::RCP<const PureBasis> basis_data;
   };
 
   typedef std::pair<std::string,Teuchos::RCP<panzer::Basis> > StrBasisPair;

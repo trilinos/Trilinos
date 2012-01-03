@@ -83,9 +83,10 @@ void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
   }
 
   // build up field library
-  for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator itr=m_bases.begin();
-      itr!=m_bases.end();++itr) 
-     m_field_lib.addFieldAndBasis(itr->first,itr->second);
+  m_field_lib = Teuchos::rcp(new FieldLibrary);
+  for(std::vector<StrPureBasisPair>::const_iterator itr=m_provided_dofs.begin();
+      itr!=m_provided_dofs.end();++itr) 
+     m_field_lib->addFieldAndBasis(itr->first,itr->second);
 
   // setup element blocks: for each evaluation type
   for(std::size_t eq_i=0;eq_i<m_equation_sets.size();eq_i++) {
@@ -93,7 +94,7 @@ void panzer::PhysicsBlock::initialize(const panzer::InputPhysicsBlock & ipb,
      for(panzer::EquationSet_TemplateManager<panzer::Traits>::iterator itr=eq_set->begin();
          itr!=eq_set->end();++itr) {
         itr->setElementBlockId(element_block_id);
-        itr->setFieldLayoutLibrary(m_field_lib); // this will build marriage between basis
+        itr->setFieldLayoutLibrary(*m_field_lib); // this will build marriage between basis
                                                   // and integration rule.
      }
   }
@@ -125,7 +126,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       if(providedDOFs.size()==0) {
          Teuchos::RCP<IntegrationRule> intRule = eval_type->getIntegrationRule();
          for(std::size_t i=0;i<m_provided_dofs.size();i++) {
-            Teuchos::RCP<panzer::Basis> basis = Teuchos::rcp(new panzer::Basis(*m_provided_dofs[i].second,*intRule));
+            Teuchos::RCP<panzer::Basis> basis = Teuchos::rcp(new panzer::Basis(m_provided_dofs[i].second,*intRule));
             providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
          }
       }
@@ -161,7 +162,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       if(providedDOFs.size()==0) {
          Teuchos::RCP<IntegrationRule> intRule = eval_type->getIntegrationRule();
          for(std::size_t i=0;i<m_provided_dofs.size();i++) {
-            Teuchos::RCP<panzer::Basis> basis = Teuchos::rcp(new panzer::Basis(*m_provided_dofs[i].second,*intRule));
+            Teuchos::RCP<panzer::Basis> basis = Teuchos::rcp(new panzer::Basis(m_provided_dofs[i].second,*intRule));
             providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
          }
       }
@@ -197,7 +198,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       if(providedDOFs.size()==0) {
          Teuchos::RCP<IntegrationRule> intRule = eval_type->getIntegrationRule();
          for(std::size_t i=0;i<m_provided_dofs.size();i++) {
-            Teuchos::RCP<panzer::Basis> basis = Teuchos::rcp(new panzer::Basis(*m_provided_dofs[i].second,*intRule));
+            Teuchos::RCP<panzer::Basis> basis = Teuchos::rcp(new panzer::Basis(m_provided_dofs[i].second,*intRule));
             providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
          }
       }
@@ -235,7 +236,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       if(providedDOFs.size()==0) {
          Teuchos::RCP<IntegrationRule> intRule = eval_type->getIntegrationRule();
          for(std::size_t i=0;i<m_provided_dofs.size();i++) {
-            Teuchos::RCP<panzer::Basis> basis = Teuchos::rcp(new panzer::Basis(*m_provided_dofs[i].second,*intRule));
+            Teuchos::RCP<panzer::Basis> basis = Teuchos::rcp(new panzer::Basis(m_provided_dofs[i].second,*intRule));
             providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
          }
       }

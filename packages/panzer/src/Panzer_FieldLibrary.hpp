@@ -10,9 +10,15 @@
 
 namespace panzer {
 
+class FieldLibraryBase {
+public:
+   //! Get the basis associated with a particular field.
+   virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const = 0;
+};
+
 /** There is one of these objects per equation set.
   */
-class FieldLayoutLibrary {
+class FieldLayoutLibrary : public FieldLibraryBase {
 public:
    /** Add a field associated with a basis to the library.
      */
@@ -20,12 +26,21 @@ public:
                          const Teuchos::RCP<panzer::Basis> & basis);   
 
    //! Get the basis associated with a particular field.
-   Teuchos::RCP<panzer::Basis> lookup(const std::string & fieldName) const;
+   virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const;
+
+   //! Get the basis associated with a particular field.
+   Teuchos::RCP<panzer::Basis> lookupLayout(const std::string & fieldName) const;
+
+   /** Print information about the basis functions and fields contained in
+     * the field library.
+     */
+   void print(std::ostream & os) const;
 
 private:
 
    //! Basic mapped storage.
    std::map<std::string,Teuchos::RCP<panzer::Basis> > fieldToLayout_;
+
 };
 
 /** Build a container that holds, and provides
@@ -35,28 +50,45 @@ private:
   * rule objects. There is one of these objects per
   * physics block.
   */
-class FieldLibrary {
+class FieldLibrary : public FieldLibraryBase {
 public:
 
    //! Get the basis associated with a particular field.
-   Teuchos::RCP<panzer::PureBasis> lookup(const std::string & fieldName) const;
+   virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const;
 
    /** Add a field associated witha basis to the library.
      */
    void addFieldAndBasis(const std::string & fieldName,
                  const Teuchos::RCP<panzer::PureBasis> & basis);   
 
-   /** Given an integration rule build a BasisIRLibrary which
+   /** Given an integration rule build a FieldLayoutLibrary which
      * oversees the marriage of the integration rule and the basis
      * into a BasisIRLayout.
      */
    Teuchos::RCP<const FieldLayoutLibrary> buildFieldLayoutLibrary(panzer::IntegrationRule & ir) const;
+
+   /** Print information about the basis functions and fields contained in
+     * the field library.
+     */
+   void print(std::ostream & os) const;
 
 private:
 
    //! Basic mapped storage.
    std::map<std::string,Teuchos::RCP<panzer::PureBasis> > fieldToBasis_;
 };
+
+inline std::ostream & operator<<(std::ostream & os,const FieldLayoutLibrary & fl)
+{
+   fl.print(os);
+   return os;
+}
+
+inline std::ostream & operator<<(std::ostream & os,const FieldLibrary & fl)
+{
+   fl.print(os);
+   return os;
+}
 
 }
 

@@ -40,7 +40,7 @@ setupDOFs(int equation_dimension)
 					     m_cell_data));
   
   this->m_pure_basis = Teuchos::rcp(new panzer::PureBasis(m_input_eq_set.basis,m_cell_data));
-  this->m_basis = Teuchos::rcp(new panzer::Basis(*m_pure_basis,
+  this->m_basis = Teuchos::rcp(new panzer::Basis(m_pure_basis,
 						 *(this->m_int_rule)));
   
   this->m_provided_dofs.clear();
