@@ -1629,7 +1629,7 @@ NNTI_result_t NNTI_gni_wait (
         /* case 3: failure */
         else {
             char errstr[1024];
-            uint32_t recoverable=111;
+            uint32_t recoverable=0;
             GNI_CqErrorStr(ev_data, errstr, 1024);
             GNI_CqErrorRecoverable(ev_data, &recoverable);
 
@@ -1759,6 +1759,8 @@ static NNTI_result_t register_memory(gni_memory_handle *hdl, void *buf, uint64_t
 {
     int rc=GNI_RC_SUCCESS; /* return code */
 
+    int cq_cnt=1;
+
     trios_declare_timer(call_time);
 
     gni_connection *conn=NULL;
@@ -1776,14 +1778,14 @@ static NNTI_result_t register_memory(gni_memory_handle *hdl, void *buf, uint64_t
 
 #if defined(USE_RDMA_EVENTS)
     if (need_mem_cq(hdl) == 1) {
-        rc=GNI_CqCreate (conn->nic_hdl, 1, 0, GNI_CQ_BLOCKING, NULL, NULL, &hdl->mem_cq_hdl);
+        rc=GNI_CqCreate (conn->nic_hdl, cq_cnt, 0, GNI_CQ_BLOCKING, NULL, NULL, &hdl->mem_cq_hdl);
         if (rc!=GNI_RC_SUCCESS) {
             log_error(nnti_debug_level, "CqCreate(mem_cq_hdl) failed: %d", rc);
             goto cleanup;
         }
     }
 #endif
-    rc=GNI_CqCreate (conn->nic_hdl, 1, 0, GNI_CQ_BLOCKING, NULL, NULL, &hdl->ep_cq_hdl);
+    rc=GNI_CqCreate (conn->nic_hdl, cq_cnt, 0, GNI_CQ_BLOCKING, NULL, NULL, &hdl->ep_cq_hdl);
     if (rc!=GNI_RC_SUCCESS) {
         log_error(nnti_debug_level, "CqCreate(ep_cq_hdl) failed: %d", rc);
         goto cleanup;
@@ -1814,13 +1816,13 @@ static NNTI_result_t register_memory(gni_memory_handle *hdl, void *buf, uint64_t
     trios_stop_timer("buf register", call_time);
 
     if (need_mem_cq(hdl) == 1) {
-        rc=GNI_CqCreate (conn->nic_hdl, 1, 0, GNI_CQ_BLOCKING, NULL, NULL, &hdl->wc_mem_cq_hdl);
+        rc=GNI_CqCreate (conn->nic_hdl, cq_cnt, 0, GNI_CQ_BLOCKING, NULL, NULL, &hdl->wc_mem_cq_hdl);
         if (rc!=GNI_RC_SUCCESS) {
             log_error(nnti_debug_level, "CqCreate(wc_mem_cq_hdl) failed: %d", rc);
             goto cleanup;
         }
     }
-    rc=GNI_CqCreate (conn->nic_hdl, 1, 0, GNI_CQ_BLOCKING, NULL, NULL, &hdl->wc_cq_hdl);
+    rc=GNI_CqCreate (conn->nic_hdl, cq_cnt, 0, GNI_CQ_BLOCKING, NULL, NULL, &hdl->wc_cq_hdl);
     if (rc!=GNI_RC_SUCCESS) {
         log_error(nnti_debug_level, "CqCreate(wc_cq_hdl) failed: %d", rc);
         goto cleanup;
