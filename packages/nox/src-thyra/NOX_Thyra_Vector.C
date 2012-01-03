@@ -373,6 +373,7 @@ setWeightVector(const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weightVe
 {
   weightVec_ = weightVec;
   tmpVec_ = weightVec_->clone_v();
+  do_implicit_weighting_ = true;
 }
 
 bool NOX::Thyra::Vector::hasWeightVector() const
