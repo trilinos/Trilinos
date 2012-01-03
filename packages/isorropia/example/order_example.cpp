@@ -40,9 +40,6 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
     Teuchos::GlobalMPISession mpiSession(&argc, &argv, 0);
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-    Epetra_SerialComm Comm;
-#endif
     using Teuchos::RCP;
     using Teuchos::rcp;
 
@@ -103,5 +100,6 @@ int main(int argc, char *argv[])
     delete A;
     delete orderer;
 
+#endif
     return 0;
 }
