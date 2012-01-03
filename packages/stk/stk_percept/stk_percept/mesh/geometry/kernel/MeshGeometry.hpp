@@ -4,6 +4,7 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include "GeometryKernel.hpp"
 
+#include <boost/unordered_map.hpp>
 
 #define DEBUG_GEOM_SNAP 0
 
@@ -24,7 +25,9 @@ struct GeometryEvaluator
 class MeshGeometry
 {
 public:
-    MeshGeometry(GeometryKernel* geom);
+  typedef boost::unordered_map<const stk::mesh::Bucket *, bool> CacheBucketSelectorType;
+
+    MeshGeometry(GeometryKernel* geom, bool cache_bucket_selectors_is_active=false);
     ~MeshGeometry();
 
     void add_evaluator(GeometryEvaluator* evaluator);
@@ -51,7 +54,10 @@ public:
 protected:
     std::vector<GeometryEvaluator*> geomEvaluators;
     GeometryKernel* geomKernel;
-
+    std::vector<CacheBucketSelectorType> m_cache_bucket_selectors;
+public:
+    bool m_cache_bucket_selectors_is_active;
+protected:
     void snap_point_to_geometry(stk::mesh::Entity *node);
 
 private:

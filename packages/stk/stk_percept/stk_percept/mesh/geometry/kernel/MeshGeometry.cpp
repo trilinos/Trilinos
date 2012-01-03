@@ -1,11 +1,13 @@
 #include "MeshGeometry.hpp"
 
-MeshGeometry::MeshGeometry(GeometryKernel* geom)
+MeshGeometry::MeshGeometry(GeometryKernel* geom, bool cache_bucket_selectors_is_active)
 {
   geomKernel = geom;
   mDbgNodeCoords[0] = -0.00477133907617983;
   mDbgNodeCoords[1] = -0.00477133907617983;
   mDbgNodeCoords[2] =  0.260484055257467;
+
+  m_cache_bucket_selectors_is_active = cache_bucket_selectors_is_active;
 }
 
 MeshGeometry::~MeshGeometry()
@@ -56,10 +58,33 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, std::vector<s
   curveEvaluators.resize(0);
   surfEvaluators.resize(0);
 
+  if (m_cache_bucket_selectors_is_active)
+    m_cache_bucket_selectors.resize(geomEvaluators.size());
+    
   size_t s;
   for (s=0; s<geomEvaluators.size(); s++)
     {
-      if (geomEvaluators[s]->mMesh(bucket))
+      bool selector_has_bucket = false;
+      if (m_cache_bucket_selectors_is_active)
+        {
+          CacheBucketSelectorType::const_iterator iter = m_cache_bucket_selectors[s].find(&bucket);
+          if (iter == m_cache_bucket_selectors[s].end())
+            {
+              selector_has_bucket = geomEvaluators[s]->mMesh(bucket);
+              m_cache_bucket_selectors[s][&bucket] = selector_has_bucket;
+            }
+          else 
+            {
+              selector_has_bucket = iter->second; //m_cache_bucket_selectors[s][&bucket];
+            }
+        }
+      else
+        {
+          selector_has_bucket = geomEvaluators[s]->mMesh(bucket);
+        }
+//       if (selector_has_bucket != geomEvaluators[s]->mMesh(bucket))
+//         exit(123);
+      if (selector_has_bucket)
         {
           if (geomKernel->is_curve(s))
             {
@@ -244,18 +269,20 @@ void MeshGeometry::snap_node
 {
   VectorFieldType* coordField = eMesh->getCoordinatesField();
 
+  /*
   Part* new_nodes_part = eMesh->getNonConstPart("refine_new_nodes_part");
   Selector new_nodes_part_selector;
   if (new_nodes_part) new_nodes_part_selector = Selector(*new_nodes_part);
+  */
 
-  std::string str = geomKernel->get_attribute(evaluator_idx);
   {
 
     double * coord = stk::mesh::field_data( *coordField , node );
     double delta[3] = {coord[0], coord[1], coord[2]};
-    bool doPrint = DEBUG_GEOM_SNAP && new_nodes_part_selector(node);
+    bool doPrint = DEBUG_GEOM_SNAP;
     if (doPrint)
     {
+      std::string str = geomKernel->get_attribute(evaluator_idx);
       std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier() 
                 << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2];
     }
@@ -269,6 +296,7 @@ void MeshGeometry::snap_node
 
     if (doPrint)
     {
+      std::string str = geomKernel->get_attribute(evaluator_idx);
       delta[0] = coord[0] - delta[0];
       delta[1] = coord[1] - delta[1];
       delta[2] = coord[2] - delta[2];
@@ -296,17 +324,13 @@ void MeshGeometry::normal_at
 {
   VectorFieldType* coordField = eMesh->getCoordinatesField();
 
-  Part* new_nodes_part = eMesh->getNonConstPart("refine_new_nodes_part");
-  Selector new_nodes_part_selector;
-  if (new_nodes_part) new_nodes_part_selector = Selector(*new_nodes_part);
-
-  std::string str = geomKernel->get_attribute(evaluator_idx);
   {
 
     double * coord = stk::mesh::field_data( *coordField , node );
-    bool doPrint = DEBUG_GEOM_SNAP && new_nodes_part_selector(node);
+    bool doPrint = DEBUG_GEOM_SNAP;
     if (doPrint)
     {
+      std::string str = geomKernel->get_attribute(evaluator_idx);
       std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier() 
                 << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2];
     }
@@ -340,11 +364,7 @@ void MeshGeometry::snap_nodes
   //VectorFieldType* coordField = eMesh->getCoordinatesField();
   const unsigned num_nodes_in_bucket = bucket.size();
 
-  Part* new_nodes_part = eMesh->getNonConstPart("refine_new_nodes_part");
-  Selector new_nodes_part_selector;
-  if (new_nodes_part) new_nodes_part_selector = Selector(*new_nodes_part);
-
-  std::string str = geomKernel->get_attribute(evaluator_idx);
+  //std::string str = geomKernel->get_attribute(evaluator_idx);
   for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
   {
     Entity& node = bucket[iNode];
