@@ -134,12 +134,15 @@ baseRepoName = baseDirArray[-1]
 
 print "" 
 print "*** Base Git Repo: "+txtbld+txtblu+baseRepoName+txtrst
+sys.stdout.flush()
+
 os.system("eg "+cmndLineArgs)
 
 for extraRepo in extraReposFullList:
   if os.path.isdir(extraRepo):
     print "" 
     print "*** Git Repo: "+txtbld+txtblu+extraRepo+txtrst
+    sys.stdout.flush()
     os.chdir(extraRepo)
     cmnd = "eg "+cmndLineArgs
     #print cmnd
@@ -147,3 +150,4 @@ for extraRepo in extraReposFullList:
     os.chdir(baseDir)
 
 print ""
+sys.stdout.flush()
