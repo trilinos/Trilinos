@@ -196,17 +196,29 @@ namespace Belos {
                         RecycleSubspace = 0x2    /*!< Destroy any existing subspace inside the solver. */
   };
 
-  //! The string name corresponding to the given StatusType enum value.
-  const char* 
+  /// \brief The string name corresponding to the given StatusType enum value.
+  ///
+  /// This method is DEPRECATED because the generic-sounding name of
+  /// this function makes it easy to pass in the wrong enum type.  Use
+  /// \c convertStatusTypeToString() instead.
+  const char* TEUCHOS_DEPRECATED
   toString (const StatusType status);
 
+  //! The string name corresponding to the given StatusType enum value.
+  std::string
+  convertStatusTypeToString (const StatusType status);
+
+  //! The StatusType enum value corresponding to the given string name.
+  StatusType
+  convertStringToStatusType (const std::string& status);
+
   //! Convert the given string to its \c ScaleType enum value.
-  Belos::ScaleType 
-  convertStringToScaleType (std::string& scaleType);
+  ScaleType 
+  convertStringToScaleType (const std::string& scaleType);
 
   //! Convert the given \c ScaleType enum value to its corresponding string.
   std::string
-  convertScaleTypeToString (const Belos::ScaleType scaleType);
+  convertScaleTypeToString (const ScaleType scaleType);
   
   /// \enum ConjType
   /// \brief Whether or not to conjugate the transpose for block inner products.
@@ -254,7 +266,7 @@ namespace Belos {
   /// comma-delimited, human-readable list of names.  This is useful
   /// for debugging.
   std::string 
-  msgTypeToString (const int msgType);
+  convertMsgTypeToString (const MsgType msgType);
 
 } // end Belos namespace
 

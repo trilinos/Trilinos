@@ -43,24 +43,54 @@
 
 namespace Belos {
 
-  const char* 
+  namespace {
+    const char*
+    convertStatusTypeToRawString (const StatusType status)
+    {
+      if (status == Passed) {
+	return "Passed";
+      } else if (status == Failed) {
+	return "Failed";
+      } else if (status == Undefined) {
+	return "Undefined";
+      } else {
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+          "Belos::convertStatusTypeToRawString: Invalid StatusType enum value "
+          << status << ".");
+      }
+    }
+  } // namespace (anonymous)
+
+  const char* TEUCHOS_DEPRECATED
   toString (const StatusType status)
   {
-    if (status == Passed) {
-      return "Passed";
-    } else if (status == Failed) {
-      return "Failed";
-    } else if (status == Undefined) {
-      return "Undefined";
+    return convertStatusTypeToRawString (status);
+  }
+
+  std::string
+  convertStatusTypeToString (const StatusType status)
+  {
+    return convertStatusTypeToRawString (status);
+  }
+
+  StatusType
+  convertStringToStatusType (const std::string& status)
+  {
+    if (status == "Passed") {
+      return Passed;
+    } else if (status == "Failed") {
+      return Failed;
+    } else if (status == "Undefined") {
+      return Undefined;
     } else {
-      TEUCHOS_TEST_FOR_EXCEPT(true, std::invalid_argument, 
-        "Belos::toString: Invalid StatusType enum value " 
-        << status << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Belos::convertStringToStatusType: Invalid string \"" << status 
+        << "\".");
     }
   }
 
-  Belos::ScaleType 
-  convertStringToScaleType (std::string& scaleType)
+  ScaleType 
+  convertStringToScaleType (const std::string& scaleType)
   {
     if (scaleType == "Norm of Initial Residual") {
       return Belos::NormOfInitRes;
@@ -78,7 +108,7 @@ namespace Belos {
   }
 
   std::string
-  convertScaleTypeToString (const Belos::ScaleType scaleType)
+  convertScaleTypeToString (const ScaleType scaleType)
   {
     if (scaleType == Belos::NormOfInitRes) {
       return "Norm of Initial Residual";
@@ -96,8 +126,10 @@ namespace Belos {
   }
 
   std::string 
-  msgTypeToString (const int msgType)
+  convertMsgTypeToString (const MsgType msgType)
   {
+    typedef std::vector<int>::size_type size_type;
+
     // Wouldn't it be nice if C++ enums had introspection and could
     // be enumerated?
     const size_type numValidTypes = 8;
@@ -127,7 +159,6 @@ namespace Belos {
     // uses the indices of the valid names, rather than the valid
     // names themselves, in order to save space and time.  We use
     // size_type for the indices to avoid signed/unsigned comparisons.
-    typedef std::vector<int>::size_type size_type;
     std::vector<size_type> theList;
     for (size_type nameIndex = 0; nameIndex < numValidTypes; ++nameIndex) {
       if (msgType & validTypes[nameIndex]) {
@@ -147,4 +178,3 @@ namespace Belos {
 
 } // end Belos namespace
 
-#endif /* BELOS_TYPES_HPP */
