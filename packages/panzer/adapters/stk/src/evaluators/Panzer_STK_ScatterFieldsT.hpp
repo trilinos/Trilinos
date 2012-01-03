@@ -23,8 +23,8 @@ PHX_EVALUATOR_CTOR(ScatterFields,p) :
   const std::vector<std::string> & names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
 
-  Teuchos::RCP<panzer::Basis> basis = 
-    p.get< Teuchos::RCP<panzer::Basis> >("Basis");
+  Teuchos::RCP<panzer::BasisIRLayout> basis = 
+    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis");
 
   // build dependent fields
   scatterFields_.resize(names.size());

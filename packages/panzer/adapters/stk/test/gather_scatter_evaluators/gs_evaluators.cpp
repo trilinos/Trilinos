@@ -62,7 +62,7 @@ namespace panzer {
       comm->barrier();
    }
 
-  Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize);
+  Teuchos::RCP<panzer::BasisIRLayout> buildLinearBasis(std::size_t worksetSize);
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
@@ -72,7 +72,7 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(gs_evaluators, gather_constr)
   {
     const std::size_t workset_size = 20;
-    Teuchos::RCP<panzer::Basis> linBasis = buildLinearBasis(workset_size);
+    Teuchos::RCP<panzer::BasisIRLayout> linBasis = buildLinearBasis(workset_size);
 
     Teuchos::RCP<std::vector<std::string> > fieldNames
         = Teuchos::rcp(new std::vector<std::string>);
@@ -185,7 +185,7 @@ namespace panzer {
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
   }
 
-  Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize)
+  Teuchos::RCP<panzer::BasisIRLayout> buildLinearBasis(std::size_t worksetSize)
   { 
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -193,7 +193,7 @@ namespace panzer {
      panzer::CellData cellData(worksetSize,2,topo);
      panzer::IntegrationRule intRule(1,cellData);
 
-     return Teuchos::rcp(new panzer::Basis("Q1",intRule)); 
+     return Teuchos::rcp(new panzer::BasisIRLayout("Q1",intRule)); 
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)

@@ -45,7 +45,7 @@ using Teuchos::rcp;
 #include <string>
 
 namespace panzer {
-  Teuchos::RCP<panzer::Basis> linBasis;
+  Teuchos::RCP<panzer::BasisIRLayout> linBasis;
 
   //! Interpolates basis DOF values to IP DOF values
   PHX_EVALUATOR_CLASS(XCoordinate)
@@ -72,7 +72,7 @@ namespace panzer {
      }
   }
 
-  Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize);
+  Teuchos::RCP<panzer::BasisIRLayout> buildLinearBasis(std::size_t worksetSize);
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution);
   void testInitialzation(panzer::InputPhysicsBlock& ipb,std::vector<panzer::BC>& bcs);
 
@@ -222,7 +222,7 @@ namespace panzer {
        mesh->writeToExodus("x-coord-cell.exo");
   }
 
-  Teuchos::RCP<panzer::Basis> buildLinearBasis(std::size_t worksetSize)
+  Teuchos::RCP<panzer::BasisIRLayout> buildLinearBasis(std::size_t worksetSize)
   {
      Teuchos::RCP<shards::CellTopology> topo = 
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -230,7 +230,7 @@ namespace panzer {
      panzer::CellData cellData(worksetSize,2,topo);
      panzer::IntegrationRule intRule(1,cellData);
 
-     return Teuchos::rcp(new panzer::Basis("Q1",intRule)); 
+     return Teuchos::rcp(new panzer::BasisIRLayout("Q1",intRule)); 
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution)

@@ -21,8 +21,8 @@ panzer_stk::GatherFields<panzer::Traits::Residual, Traits>::
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
 
-  Teuchos::RCP<panzer::Basis> basis = 
-    p.get< Teuchos::RCP<panzer::Basis> >("Basis");
+  Teuchos::RCP<panzer::BasisIRLayout> basis = 
+    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis");
 
   gatherFields_.resize(names.size());
   stkFields_.resize(names.size());

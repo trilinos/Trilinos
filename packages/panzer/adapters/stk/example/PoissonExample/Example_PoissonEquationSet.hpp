@@ -39,7 +39,7 @@ public:
    /** The specific evaluators are registered with the field manager argument.
      */
    void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                              const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+                                              const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
                                               const Teuchos::ParameterList& user_data) const;
 
 protected:

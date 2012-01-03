@@ -19,7 +19,7 @@ namespace panzer_stk {
   * The constructor takes a STK_Interface RCP and parameter list
   * that is required to contain the following two fields
   * "Field Names" of type <code>Teuchos::RCP<std::vector<std::string> ></code>,
-  * "Basis" of type <code>Teuchos::RCP<panzer::Basis></code> and
+  * "Basis" of type <code>Teuchos::RCP<panzer::BasisIRLayout></code> and
   * "Mesh" of type <code>Teuchos::RCP<const panzer_stk::STK_Interface></code>.
   */
 PHX_EVALUATOR_CLASS(ScatterFields)
