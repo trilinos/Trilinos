@@ -322,9 +322,8 @@ namespace stk {
             {
               if (m_meshDomain)
                 {
-                  static std::vector<size_t> curveEvaluators;
-                  static std::vector<size_t> surfEvaluators;
-                  dof = m_meshDomain->classify_node(*node_ptr, curveEvaluators, surfEvaluators);
+                  size_t curveOrSurfaceEvaluator;
+                  dof = m_meshDomain->classify_node(*node_ptr, curveOrSurfaceEvaluator);
                   //std::cout << "tmp srk classify node= " << node_ptr->identifier() << " dof= " << dof << std::endl;
                   // vertex
                   if (dof == 0)

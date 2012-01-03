@@ -266,11 +266,11 @@ namespace stk {
     }
                                 
     int PerceptMesquiteMeshDomain::
-    classify_node(stk::mesh::Entity& node, std::vector<size_t>& curveEvaluators, std::vector<size_t>& surfEvaluators) const
+    classify_node(stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator) const
     {
       int dof =0;
       if (m_meshGeometry)
-        dof = m_meshGeometry->classify_node(node, curveEvaluators, surfEvaluators);
+        dof = m_meshGeometry->classify_node(node, curveOrSurfaceEvaluator);
       else
         dof = m_eMesh->getSpatialDim();
       return dof;
@@ -292,13 +292,12 @@ namespace stk {
                 size_t num_handles,
                 Mesquite::MsqError& err ) const {
 
-      static std::vector<size_t> curveEvaluators;
-      static std::vector<size_t> surfEvaluators;
+      size_t curveOrSurfaceEvaluator;
 
       for (size_t i = 0; i < num_handles; i++)
         {
           stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(handle_array[i]);
-          int dof = classify_node(*node_ptr, curveEvaluators, surfEvaluators);
+          int dof = classify_node(*node_ptr, curveOrSurfaceEvaluator);
 
           if (dof < 0)
             {

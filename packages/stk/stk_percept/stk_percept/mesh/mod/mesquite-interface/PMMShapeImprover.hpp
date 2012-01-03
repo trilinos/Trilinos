@@ -124,7 +124,7 @@ namespace stk {
 
           // Run untangler
           std::cout << "tmp srk PMMShapeImprovementWrapper: running untangler... " << std::endl;
-          bool use_untangle_wrapper = true;
+          bool use_untangle_wrapper = false;
           if (use_untangle_wrapper)
             {
               UntangleWrapper uw;

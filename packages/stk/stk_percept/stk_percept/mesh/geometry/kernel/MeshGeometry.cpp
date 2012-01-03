@@ -36,16 +36,55 @@ const std::vector<GeometryEvaluator*>& MeshGeometry::getGeomEvaluators()
 /**
  * Return 0,1,2,3 if the node is on a geometry vertex, curve, surface or domain.
  */
-int MeshGeometry::classify_node(const stk::mesh::Entity& node, std::vector<size_t>& curveEvaluators, std::vector<size_t>& surfEvaluators)
+int MeshGeometry::classify_node(const stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator)
 {
   const stk::mesh::Bucket& bucket = node.bucket();
-  return classify_bucket(bucket, curveEvaluators, surfEvaluators);
+  return classify_bucket(bucket, curveOrSurfaceEvaluator);
 }
 
 /**
  * Return 0,1,2,3 if the bucket is on a geometry vertex, curve, surface or domain.
  */
-int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, std::vector<size_t>& curveEvaluators, std::vector<size_t>& surfEvaluators)
+int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator)
+{
+  int classify_value = 0;
+   if (m_cache_bucket_selectors_is_active)
+     {
+       CacheBucketClassifyType::iterator iter = m_cache_bucket_classify.find(&bucket);
+       if (iter == m_cache_bucket_classify.end())
+         {
+           classify_value = classify_bucket_internal(bucket, curveOrSurfaceEvaluator);
+           m_cache_bucket_classify[&bucket] = CacheBucketClassifyValueType(classify_value, curveOrSurfaceEvaluator);
+         }
+       else
+         {
+           CacheBucketClassifyValueType& val = iter->second;
+           classify_value = val.first;
+           curveOrSurfaceEvaluator = val.second;
+           bool debug=false;
+           if (debug)
+             {
+               size_t t;
+               int cv=classify_bucket_internal(bucket, t);
+               if (cv != classify_value || t != curveOrSurfaceEvaluator)
+                 {
+                   std::cout << "cv = " << cv << " classify_value= " << classify_value << " t= " << t << " curveOrSurfaceEvaluator= " << curveOrSurfaceEvaluator << std::endl;
+                   exit(123);
+                 }
+             }
+         }
+     }
+   else
+    {
+      classify_value = classify_bucket_internal(bucket, curveOrSurfaceEvaluator);
+    }
+   return classify_value;
+}
+
+/**
+ * Return 0,1,2,3 if the bucket is on a geometry vertex, curve, surface or domain.
+ */
+int MeshGeometry::classify_bucket_internal(const stk::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator)
 {
   // Each bucket contains the set of nodes with unique part intersections.
   // This means that every nodes will be in exactly one bucket.  But, the
@@ -55,6 +94,8 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, std::vector<s
   // and vertices).  We first create a list of all the evaluators that
   // might be relevant.
 
+  static std::vector<size_t> curveEvaluators(0);
+  static std::vector<size_t> surfEvaluators(0);
   curveEvaluators.resize(0);
   surfEvaluators.resize(0);
 
@@ -97,12 +138,14 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, std::vector<s
         }
     }
 
+  curveOrSurfaceEvaluator = 0;
   if ( curveEvaluators.size() > 1 )
     {
       // This is a bucket representing a vertex.  No need to do anything
       // since the node will already be on the vertex, and no new nodes
       // ever get created assigned to vertices during refinement.
       //std::cout << "Vertex node encountered" << std::endl;
+      curveOrSurfaceEvaluator = 0;
       return 0;
     }
   if ( curveEvaluators.size() == 1 )
@@ -110,6 +153,7 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, std::vector<s
       // This bucket represents a geometric curve.  Snap to it.
       //std::cout << "Snapping to curve" << curveEvaluators[0] << std::endl;
       //snap_nodes( eMesh, bucket, curveEvaluators[0] );
+      curveOrSurfaceEvaluator = curveEvaluators[0];
       return 1;
     }
 
@@ -118,6 +162,7 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, std::vector<s
       //std::cout << "Snapping to surface" << surfEvaluators[0] << std::endl;
       // This bucket represents a geometric surface.  Snap to it.
       //snap_nodes( eMesh, bucket, surfEvaluators[0] );
+      curveOrSurfaceEvaluator = surfEvaluators[0];
       return 2;
     }
   return -1;  // error condition, or it is an interior node
@@ -137,10 +182,8 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
       std::cout << "     DBG Node FOUND" << std::endl;
     }
 
-    std::vector<size_t> curveEvaluators;
-    std::vector<size_t> surfEvaluators;
-
-    int type = classify_bucket(bucket, curveEvaluators, surfEvaluators);
+    size_t curveOrSurfaceEvaluator;
+    int type = classify_bucket(bucket, curveOrSurfaceEvaluator);
     switch (type) {
     case 0:
       // This is a bucket representing a vertex.  No need to do anything
@@ -151,12 +194,12 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
     case 1:
       // This bucket represents a geometric curve.  Snap to it.
       //std::cout << "Snapping to curve" << curveEvaluators[0] << std::endl;
-      snap_nodes( eMesh, bucket, curveEvaluators[0] );
+      snap_nodes( eMesh, bucket, curveOrSurfaceEvaluator );
       break;
     case 2:
       //std::cout << "Snapping to surface" << surfEvaluators[0] << std::endl;
       // This bucket represents a geometric surface.  Snap to it.
-      snap_nodes( eMesh, bucket, surfEvaluators[0] );
+      snap_nodes( eMesh, bucket, curveOrSurfaceEvaluator );
       break;
     case -1:
     default:
@@ -180,10 +223,9 @@ void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::
     // are on the boundary of an entity (i.e. buckets representing curves
     // and vertices).  We first create a list of all the evaluators that
     // might be relevant.
-    std::vector<size_t> curveEvaluators;
-    std::vector<size_t> surfEvaluators;
 
-    int type = classify_bucket(bucket, curveEvaluators, surfEvaluators);
+    size_t curveOrSurfaceEvaluator;
+    int type = classify_bucket(bucket, curveOrSurfaceEvaluator);
     switch (type) {
     case 0:
       // This is a bucket representing a vertex.  No need to do anything
@@ -194,12 +236,12 @@ void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::
     case 1:
       // This bucket represents a geometric curve.  Snap to it.
       //std::cout << "Snapping to curve" << curveEvaluators[0] << std::endl;
-      normal_at( eMesh, *node, curveEvaluators[0], normal );
+      normal_at( eMesh, *node, curveOrSurfaceEvaluator, normal );
       break;
     case 2:
       //std::cout << "Snapping to surface" << surfEvaluators[0] << std::endl;
       // This bucket represents a geometric surface.  Snap to it.
-      normal_at( eMesh, *node, surfEvaluators[0], normal );
+      normal_at( eMesh, *node, curveOrSurfaceEvaluator, normal );
       break;
     case -1:
     default:
@@ -229,10 +271,9 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::
     // are on the boundary of an entity (i.e. buckets representing curves
     // and vertices).  We first create a list of all the evaluators that
     // might be relevant.
-    std::vector<size_t> curveEvaluators;
-    std::vector<size_t> surfEvaluators;
 
-    int type = classify_bucket(bucket, curveEvaluators, surfEvaluators);
+    size_t curveOrSurfaceEvaluator;
+    int type = classify_bucket(bucket, curveOrSurfaceEvaluator);
     switch (type) {
     case 0:
       // This is a bucket representing a vertex.  No need to do anything
@@ -243,12 +284,12 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::
     case 1:
       // This bucket represents a geometric curve.  Snap to it.
       //std::cout << "Snapping to curve" << curveEvaluators[0] << std::endl;
-      snap_node( eMesh, *nodes[inode], curveEvaluators[0] );
+      snap_node( eMesh, *nodes[inode], curveOrSurfaceEvaluator );
       break;
     case 2:
       //std::cout << "Snapping to surface" << surfEvaluators[0] << std::endl;
       // This bucket represents a geometric surface.  Snap to it.
-      snap_node( eMesh, *nodes[inode], surfEvaluators[0] );
+      snap_node( eMesh, *nodes[inode], curveOrSurfaceEvaluator );
       break;
     case -1:
     default:

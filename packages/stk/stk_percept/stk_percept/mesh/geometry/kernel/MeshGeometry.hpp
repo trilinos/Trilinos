@@ -6,7 +6,7 @@
 
 #include <boost/unordered_map.hpp>
 
-#define DEBUG_GEOM_SNAP 0
+#define DEBUG_GEOM_SNAP false
 
 
 typedef std::vector<double> PointSet;
@@ -27,6 +27,9 @@ class MeshGeometry
 public:
   typedef boost::unordered_map<const stk::mesh::Bucket *, bool> CacheBucketSelectorType;
 
+  typedef std::pair<int, size_t> CacheBucketClassifyValueType;
+  typedef boost::unordered_map<const stk::mesh::Bucket *, CacheBucketClassifyValueType > CacheBucketClassifyType;
+
     MeshGeometry(GeometryKernel* geom, bool cache_bucket_selectors_is_active=false);
     ~MeshGeometry();
 
@@ -46,15 +49,21 @@ public:
    * Return 0,1,2,3 if the node or bucket is on a geometry vertex, curve, surface or domain.
    * Return the found evaluators in the curveEvaluators and surfEvaluators.
    */
-  int classify_node(const stk::mesh::Entity& node, std::vector<size_t>& curveEvaluators, std::vector<size_t>& surfEvaluators);
-  int classify_bucket(const stk::mesh::Bucket& bucket, std::vector<size_t>& curveEvaluators, std::vector<size_t>& surfEvaluators);
+  int classify_node(const stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator);
+  int classify_bucket(const stk::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator);
 
     const std::vector<GeometryEvaluator*>& getGeomEvaluators();
+private:
+
+  int classify_bucket_internal(const stk::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator);
+  //int classify_bucket_internal(const stk::mesh::Bucket& bucket, std::vector<size_t>& curveEvaluators, std::vector<size_t>& surfEvaluators);
 
 protected:
     std::vector<GeometryEvaluator*> geomEvaluators;
     GeometryKernel* geomKernel;
     std::vector<CacheBucketSelectorType> m_cache_bucket_selectors;
+    CacheBucketClassifyType m_cache_bucket_classify;
+
 public:
     bool m_cache_bucket_selectors_is_active;
 protected:
