@@ -17,7 +17,7 @@ namespace panzer {
   template<>
   inline
   void panzer::BasisValues<double,Intrepid::FieldContainer<double> >::
-  setupArrays(const Teuchos::RCP<panzer::Basis>& b)
+  setupArrays(const Teuchos::RCP<panzer::BasisIRLayout>& b)
   {
     panzer_basis = b;
     

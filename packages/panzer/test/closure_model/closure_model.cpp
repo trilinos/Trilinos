@@ -41,8 +41,8 @@ namespace panzer {
       Teuchos::RCP<panzer::IntegrationRule> ir = 
 	Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
       default_params.set("IR",ir);
-      Teuchos::RCP<panzer::Basis> basis = 
-	Teuchos::rcp(new panzer::Basis("Q1", *ir));
+      Teuchos::RCP<panzer::BasisIRLayout> basis = 
+	Teuchos::rcp(new panzer::BasisIRLayout("Q1", *ir));
       default_params.set("Basis",basis);
       
     }

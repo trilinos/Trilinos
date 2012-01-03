@@ -106,8 +106,8 @@ panzer::buildWorksets(const std::string& block_id,
 
      for (std::size_t j = 0; j < basis_names.size(); ++j) {
     
-       RCP<panzer::Basis> cb = 
-          rcp(new panzer::Basis(basis_names[j], *(degree_to_int_rule[basis_to_int_order[basis_names[j]]])));
+       RCP<panzer::BasisIRLayout> cb = 
+          rcp(new panzer::BasisIRLayout(basis_names[j], *(degree_to_int_rule[basis_to_int_order[basis_names[j]]])));
     
        i->bases[j] = 
   	  rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >);
@@ -219,8 +219,8 @@ panzer::buildWorksets(const std::string& block_id,
 
   for (std::size_t i = 0; i < basis_names.size(); ++i) {
     
-    RCP<panzer::Basis> cb = 
-      rcp(new panzer::Basis(basis_names[i], *(degree_to_int_rule[basis_to_int_order[basis_names[i]]])));
+    RCP<panzer::BasisIRLayout> cb = 
+      rcp(new panzer::BasisIRLayout(basis_names[i], *(degree_to_int_rule[basis_to_int_order[basis_names[i]]])));
     
     for (std::size_t wkst = 0; wkst < worksets.size(); ++wkst) {
 
@@ -380,8 +380,8 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 				basis_to_int_order[basis_names[i]]));
 
       
-      RCP<panzer::Basis> cb = 
-	rcp(new panzer::Basis(basis_names[i], *(wkst->second.int_rules[int_degree_index]->int_rule)));
+      RCP<panzer::BasisIRLayout> cb = 
+	rcp(new panzer::BasisIRLayout(basis_names[i], *(wkst->second.int_rules[int_degree_index]->int_rule)));
       
       wkst->second.basis_names = rcp_basis_names;
 

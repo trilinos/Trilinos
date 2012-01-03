@@ -10,10 +10,10 @@ namespace panzer {
 //**********************************************************************
 PHX_EVALUATOR_CTOR(Integrator_BasisTimesScalar,p) :
   residual( p.get<std::string>("Residual Name"), 
-	    p.get< Teuchos::RCP<panzer::Basis> >("Basis")->functional),
+	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   scalar( p.get<std::string>("Value Name"), 
 	  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar),
-  basis_name(p.get< Teuchos::RCP<panzer::Basis> >("Basis")->name())
+  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
@@ -96,7 +96,7 @@ Integrator_BasisTimesScalar<EvalT, Traits>::getValidParameters() const
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);
   p->set<std::string>("Residual Name", "?");
   p->set<std::string>("Value Name", "?");
-  Teuchos::RCP<panzer::Basis> basis;
+  Teuchos::RCP<panzer::BasisIRLayout> basis;
   p->set("Basis", basis);
   Teuchos::RCP<panzer::IntegrationRule> ir;
   p->set("IR", ir);

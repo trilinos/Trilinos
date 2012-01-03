@@ -126,13 +126,13 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(evaluators, DOF)
   {
     using panzer::IntegrationRule;
-    using panzer::Basis;
+    using panzer::BasisIRLayout;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     RCP<panzer::IntegrationRule> ir;
-    RCP<panzer::Basis> basis;
+    RCP<panzer::BasisIRLayout> basis;
     {
       std::size_t numCells = 10;
       int baseCellDim = 2;
@@ -140,7 +140,7 @@ namespace panzer {
       panzer::CellData cellData(numCells,baseCellDim,topo);
       ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
-      basis = rcp(new Basis(basisType,*ir));
+      basis = rcp(new BasisIRLayout(basisType,*ir));
     }
 
     ParameterList p("DOF Test");
@@ -155,12 +155,12 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(evaluators, DOFGradient)
   {
     using panzer::IntegrationRule;
-    using panzer::Basis;
+    using panzer::BasisIRLayout;
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     RCP<panzer::IntegrationRule> ir;
-    RCP<panzer::Basis> basis;
+    RCP<panzer::BasisIRLayout> basis;
     {
       std::size_t numCells = 10;
       int baseCellDim = 2;
@@ -168,7 +168,7 @@ namespace panzer {
       panzer::CellData cellData(numCells,baseCellDim,topo);
       ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
-      basis = rcp(new Basis(basisType,*ir));
+      basis = rcp(new BasisIRLayout(basisType,*ir));
     }
 
     ParameterList p("DOFGradient Test");
@@ -184,13 +184,13 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(evaluators, Integrator_BasisTimesScalar)
   {
     using panzer::IntegrationRule;
-    using panzer::Basis;
+    using panzer::BasisIRLayout;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     RCP<panzer::IntegrationRule> ir;
-    RCP<panzer::Basis> basis;
+    RCP<panzer::BasisIRLayout> basis;
     {
       std::size_t numCells = 10;
       int baseCellDim = 2;
@@ -198,7 +198,7 @@ namespace panzer {
       panzer::CellData cellData(numCells,baseCellDim,topo);
       ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
-      basis = rcp(new Basis(basisType,*ir));
+      basis = rcp(new BasisIRLayout(basisType,*ir));
     }
 
     ParameterList p("Integrator_BasisTimesScalar Test");
@@ -218,13 +218,13 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(evaluators, Integrator_GradBasisDotVector)
   {
     using panzer::IntegrationRule;
-    using panzer::Basis;
+    using panzer::BasisIRLayout;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     RCP<panzer::IntegrationRule> ir;
-    RCP<panzer::Basis> basis;
+    RCP<panzer::BasisIRLayout> basis;
     {
       std::size_t numCells = 10;
       int baseCellDim = 2;
@@ -232,7 +232,7 @@ namespace panzer {
       panzer::CellData cellData(numCells,baseCellDim,topo);
       ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
-      basis = rcp(new Basis(basisType,*ir));
+      basis = rcp(new BasisIRLayout(basisType,*ir));
     }
 
     ParameterList p("Integrator_GradBasisDotVector Test");

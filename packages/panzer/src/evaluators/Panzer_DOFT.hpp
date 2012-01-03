@@ -9,10 +9,10 @@ namespace panzer {
 //**********************************************************************
 PHX_EVALUATOR_CTOR(DOF,p) :
   dof_basis( p.get<std::string>("Name"), 
-	     p.get< Teuchos::RCP<panzer::Basis> >("Basis")->functional),
+	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   dof_ip( p.get<std::string>("Name"), 
 	  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar),
-  basis_name(p.get< Teuchos::RCP<panzer::Basis> >("Basis")->name())
+  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
   this->addEvaluatedField(dof_ip);
   this->addDependentField(dof_basis);

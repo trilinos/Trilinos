@@ -2,7 +2,7 @@
 #include "Phalanx_DataLayout.hpp"
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_PureBasis.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -18,8 +18,8 @@ GatherOrientation(
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
 
-  Teuchos::RCP<panzer::Basis> basis = 
-    p.get< Teuchos::RCP<panzer::Basis> >("Basis");
+  Teuchos::RCP<panzer::PureBasis> basis = 
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
 
   gatherFieldOrientations_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {

@@ -68,7 +68,7 @@ namespace panzer {
     
     const std::string basis_type = "Q2";
   
-    RCP<panzer::Basis> basis = rcp(new panzer::Basis(basis_type, *int_rule));
+    RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
 

@@ -5,8 +5,8 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
-panzer::Basis::
-Basis(std::string basis_type, const panzer::IntegrationRule& int_rule) :
+panzer::BasisIRLayout::
+BasisIRLayout(std::string basis_type, const panzer::IntegrationRule& int_rule) :
   basis_name(basis_type),
   field_basis_name("Basis: " + basis_type),
   field_basis_name_D1("Grad Basis: " + basis_type),
@@ -17,8 +17,8 @@ Basis(std::string basis_type, const panzer::IntegrationRule& int_rule) :
   setup(basis_data->getIntrepidBasis(),int_rule);
 }
 
-panzer::Basis::
-Basis(const Teuchos::RCP<const panzer::PureBasis> & b, const panzer::IntegrationRule& int_rule) :
+panzer::BasisIRLayout::
+BasisIRLayout(const Teuchos::RCP<const panzer::PureBasis> & b, const panzer::IntegrationRule& int_rule) :
   basis_name(b->name()),
   field_basis_name(b->fieldName()),
   field_basis_name_D1(b->fieldNameD1()),
@@ -29,7 +29,7 @@ Basis(const Teuchos::RCP<const panzer::PureBasis> & b, const panzer::Integration
   setup(basis_data->getIntrepidBasis(),int_rule);
 }
 
-void panzer::Basis::
+void panzer::BasisIRLayout::
 setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > & iBasis,
       const panzer::IntegrationRule & int_rule)
 {
@@ -80,59 +80,59 @@ setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double
 							dimension));
 }
 
-int panzer::Basis::getCardinality() const
+int panzer::BasisIRLayout::getCardinality() const
 {
   return cardinality;
 }
 
-int panzer::Basis::integrationRuleDegree() const
+int panzer::BasisIRLayout::integrationRuleDegree() const
 {
   return int_rule_degree;
 }
 
-int panzer::Basis::getNumCells() const
+int panzer::BasisIRLayout::getNumCells() const
 {
   return num_cells;
 }
 
-int panzer::Basis::getNumIntPoints() const
+int panzer::BasisIRLayout::getNumIntPoints() const
 {
   return num_ip;
 }
 
-int panzer::Basis::getDimension() const
+int panzer::BasisIRLayout::getDimension() const
 {
   return dimension;
 }
 
-std::string panzer::Basis::name() const
+std::string panzer::BasisIRLayout::name() const
 {
   return basis_name;
 }
 
-std::string panzer::Basis::fieldName() const
+std::string panzer::BasisIRLayout::fieldName() const
 {
   return field_basis_name;
 }
 
-std::string panzer::Basis::fieldNameD1() const
+std::string panzer::BasisIRLayout::fieldNameD1() const
 {
   return field_basis_name_D1;
 }    
  
-std::string panzer::Basis::fieldNameD2() const
+std::string panzer::BasisIRLayout::fieldNameD2() const
 {
   return field_basis_name_D2;
 }    
 
 Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > 
-panzer::Basis::getIntrepidBasis() const
+panzer::BasisIRLayout::getIntrepidBasis() const
 {
    return intrepid_basis;
 }
 
 Teuchos::RCP< const panzer::PureBasis>
-panzer::Basis::getBasis() const
+panzer::BasisIRLayout::getBasis() const
 {
    return basis_data;
 }

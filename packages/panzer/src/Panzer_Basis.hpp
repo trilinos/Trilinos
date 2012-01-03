@@ -15,12 +15,12 @@ namespace panzer {
 
   class IntegrationRule;
 
-  class Basis { 
+  class BasisIRLayout { 
 
   public:
     
-    Basis(std::string basis_type, const IntegrationRule& int_rule);
-    Basis(const Teuchos::RCP<const PureBasis> & b, const IntegrationRule& int_rule);
+    BasisIRLayout(std::string basis_type, const IntegrationRule& int_rule);
+    BasisIRLayout(const Teuchos::RCP<const PureBasis> & b, const IntegrationRule& int_rule);
 
     void setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > & iBasis,
                const panzer::IntegrationRule & int_rule);
@@ -85,7 +85,7 @@ namespace panzer {
     Teuchos::RCP<const PureBasis> basis_data;
   };
 
-  typedef std::pair<std::string,Teuchos::RCP<panzer::Basis> > StrBasisPair;
+  typedef std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > StrBasisPair;
 
   //! Simple binary comparison class to help with sorting
   struct StrBasisComp {

@@ -40,7 +40,7 @@ setupDOFs(int equation_dimension)
 					     m_cell_data));
   
   this->m_pure_basis = Teuchos::rcp(new panzer::PureBasis(m_input_eq_set.basis,m_cell_data));
-  this->m_basis = Teuchos::rcp(new panzer::Basis(m_pure_basis,
+  this->m_basis = Teuchos::rcp(new panzer::BasisIRLayout(m_pure_basis,
 						 *(this->m_int_rule)));
   
   this->m_provided_dofs.clear();
@@ -60,7 +60,7 @@ setupDOFs(int equation_dimension)
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+					const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
                                         const LinearObjFactory<panzer::Traits> & lof,
 					const Teuchos::ParameterList& user_data) const
 {
@@ -193,7 +193,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+				       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
 				       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 				       const Teuchos::ParameterList& models,
 				       const Teuchos::ParameterList& user_data) const
@@ -214,7 +214,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				   const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+				   const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
 				   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 				   const std::string& model_name,
 				   const Teuchos::ParameterList& models,
@@ -232,7 +232,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					   const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+					   const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
 					   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 					   const std::string& model_name,
 					   const Teuchos::ParameterList& models,

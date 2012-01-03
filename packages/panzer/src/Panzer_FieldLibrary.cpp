@@ -4,20 +4,20 @@ namespace panzer {
 
 Teuchos::RCP<const panzer::PureBasis> FieldLayoutLibrary::lookupBasis(const std::string & fieldName) const
 {
-   Teuchos::RCP<panzer::Basis> layout = lookupLayout(fieldName);
+   Teuchos::RCP<panzer::BasisIRLayout> layout = lookupLayout(fieldName);
 
    return layout->getBasis();
 }
 
 void FieldLayoutLibrary::addFieldAndLayout(const std::string & fieldName,
-                                      const Teuchos::RCP<panzer::Basis> & layout)
+                                      const Teuchos::RCP<panzer::BasisIRLayout> & layout)
 {
    fieldToLayout_[fieldName] = layout; 
 }
 
-Teuchos::RCP<panzer::Basis> FieldLayoutLibrary::lookupLayout(const std::string & fieldName) const
+Teuchos::RCP<panzer::BasisIRLayout> FieldLayoutLibrary::lookupLayout(const std::string & fieldName) const
 {
-   typedef std::map<std::string,Teuchos::RCP<panzer::Basis> > Map;
+   typedef std::map<std::string,Teuchos::RCP<panzer::BasisIRLayout> > Map;
    Map::const_iterator itr = fieldToLayout_.find(fieldName);
    if(itr!=fieldToLayout_.end())
       return itr->second;
@@ -27,11 +27,11 @@ Teuchos::RCP<panzer::Basis> FieldLayoutLibrary::lookupLayout(const std::string &
 
 void FieldLayoutLibrary::print(std::ostream & os) const
 {
-   typedef std::map<std::string,Teuchos::RCP<panzer::Basis> > Map;
+   typedef std::map<std::string,Teuchos::RCP<panzer::BasisIRLayout> > Map;
    
    for(Map::const_iterator itr=fieldToLayout_.begin();itr!=fieldToLayout_.end();++itr) {
       std::string fieldName = itr->first; 
-      Teuchos::RCP<Basis> basis = itr->second;
+      Teuchos::RCP<BasisIRLayout> basis = itr->second;
 
       os << "\"" << fieldName << "\"" << " {" << basis->name() 
          << "(dim=" << basis->getDimension() 
@@ -64,7 +64,7 @@ Teuchos::RCP<const FieldLayoutLibrary> FieldLibrary::buildFieldLayoutLibrary(pan
 
    // loop over each member of the map, create a new FieldLayout and addit to layout library
    for(Map::const_iterator itr=fieldToBasis_.begin();itr!=fieldToBasis_.end();++itr) {
-      Teuchos::RCP<Basis> layout = Teuchos::rcp(new Basis(itr->second,ir));
+      Teuchos::RCP<BasisIRLayout> layout = Teuchos::rcp(new BasisIRLayout(itr->second,ir));
       layoutLibrary->addFieldAndLayout(itr->first,layout);
    }
  

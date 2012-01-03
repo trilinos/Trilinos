@@ -1,7 +1,6 @@
 
 #include <algorithm>
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Basis.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 

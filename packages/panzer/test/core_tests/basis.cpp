@@ -23,7 +23,7 @@ namespace panzer {
     
     const std::string basis_type = "Q2";
     
-    panzer::Basis basis(basis_type, int_rule);
+    panzer::BasisIRLayout basis(basis_type, int_rule);
 
     TEST_ASSERT(basis.getCardinality() == 9);
     TEST_ASSERT(basis.getNumCells() == 20);
@@ -69,7 +69,7 @@ namespace panzer {
     
     const std::string basis_type = "Q2";
     
-    panzer::Basis basis(basis_type, int_rule);
+    panzer::BasisIRLayout basis(basis_type, int_rule);
 
     std::cout << "ROGER = " << basis.basis_ref->size();
 

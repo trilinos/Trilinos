@@ -26,29 +26,29 @@ namespace panzer {
     virtual void setupDOFs(int equation_dimension);
 
     virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
 						       const Teuchos::ParameterList& user_data) const = 0;
 
     virtual void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+							 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
                                                          const LinearObjFactory<panzer::Traits> & lof,
 							 const Teuchos::ParameterList& user_data) const;
     
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
 							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 							const Teuchos::ParameterList& models,
 							const Teuchos::ParameterList& user_data) const;
 
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
 							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
                                                         const std::string & model_name,
 							const Teuchos::ParameterList& models,
 							const Teuchos::ParameterList& user_data) const;
 
     virtual void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							    const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+							    const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
 							    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 							    const std::string& model_name,
 							    const Teuchos::ParameterList& models,
@@ -79,7 +79,7 @@ namespace panzer {
     
     Teuchos::RCP<panzer::IntegrationRule> m_int_rule;
     Teuchos::RCP<panzer::PureBasis> m_pure_basis;
-    Teuchos::RCP<panzer::Basis> m_basis;
+    Teuchos::RCP<panzer::BasisIRLayout> m_basis;
     
     std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >  m_provided_dofs;
     Teuchos::RCP< std::vector<std::string> > m_dof_names;

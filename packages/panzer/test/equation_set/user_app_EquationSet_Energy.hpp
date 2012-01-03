@@ -21,7 +21,7 @@ namespace user_app {
 		       const Teuchos::RCP<panzer::GlobalData>& gd,
 		       const bool build_transient_support);
     
-      void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm, const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+      void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm, const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
 						 const Teuchos::ParameterList& user_data) const;
 
   protected:

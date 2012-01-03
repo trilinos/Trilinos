@@ -7,10 +7,10 @@ namespace panzer {
 //**********************************************************************
 PHX_EVALUATOR_CTOR(DOFGradient,p) :
   dof_value( p.get<std::string>("Name"), 
-	     p.get< Teuchos::RCP<panzer::Basis> >("Basis")->functional),
+	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   dof_gradient( p.get<std::string>("Gradient Name"), 
 		p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector ),
-  basis_name(p.get< Teuchos::RCP<panzer::Basis> >("Basis")->name())
+  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
   this->addEvaluatedField(dof_gradient);
   this->addDependentField(dof_value);

@@ -10,10 +10,10 @@ namespace panzer {
 //**********************************************************************
 PHX_EVALUATOR_CTOR(Integrator_GradBasisDotVector,p) :
   residual( p.get<std::string>("Residual Name"), 
-	    p.get< Teuchos::RCP<panzer::Basis> >("Basis")->functional),
+	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   flux( p.get<std::string>("Flux Name"), 
 	p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector ),
-  basis_name(p.get< Teuchos::RCP<panzer::Basis> >("Basis")->name())
+  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
   this->addEvaluatedField(residual);
   this->addDependentField(flux);

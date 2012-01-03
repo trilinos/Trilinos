@@ -81,7 +81,7 @@ buildClosureModels(const std::string& model_id,
 	input.set("Value", plist.get<double>("Value"));
 	input.set("UQ", plist.get<double>("UQ"));
 	input.set("Expansion", plist.get<Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > >("Expansion"));
-	input.set("Data Layout", default_params.get<RCP<panzer::Basis> >("Basis")->functional);
+	input.set("Data Layout", default_params.get<RCP<panzer::BasisIRLayout> >("Basis")->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
@@ -100,7 +100,7 @@ buildClosureModels(const std::string& model_id,
 	}
 	{ // at BASIS
 	  RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::Basis> >("Basis")->functional,plist.get<double>("Value"),*global_data->pl));
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,default_params.get<RCP<panzer::BasisIRLayout> >("Basis")->functional,plist.get<double>("Value"),*global_data->pl));
 	  evaluators->push_back(e);
 	}
 	
@@ -120,7 +120,7 @@ buildClosureModels(const std::string& model_id,
       { // at BASIS
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
-	input.set("Data Layout", default_params.get<RCP<panzer::Basis> >("Basis")->functional);
+	input.set("Data Layout", default_params.get<RCP<panzer::BasisIRLayout> >("Basis")->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);

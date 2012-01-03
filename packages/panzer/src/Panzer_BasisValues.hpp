@@ -13,7 +13,7 @@ namespace panzer {
   struct BasisValues { 
     
     //! Sizes/allocates memory for arrays
-    void setupArrays(const Teuchos::RCP<panzer::Basis>& basis);
+    void setupArrays(const Teuchos::RCP<panzer::BasisIRLayout>& basis);
    
     void evaluateValues(const Array& cub_points,
 			const Array& jac_inv,
@@ -41,7 +41,7 @@ namespace panzer {
     */
     Array basis_coordinates;         // <Cell,BASIS,Dim>
 
-    Teuchos::RCP<panzer::Basis> panzer_basis;
+    Teuchos::RCP<panzer::BasisIRLayout> panzer_basis;
     
     Teuchos::RCP<Intrepid::Basis<double,Array> > intrepid_basis;
   };

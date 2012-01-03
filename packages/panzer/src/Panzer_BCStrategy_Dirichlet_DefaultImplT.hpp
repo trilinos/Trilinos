@@ -5,7 +5,7 @@
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
-#include "Panzer_Basis.hpp"
+#include "Panzer_PureBasis.hpp"
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"

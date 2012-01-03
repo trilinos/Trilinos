@@ -23,13 +23,13 @@ public:
    /** Add a field associated with a basis to the library.
      */
    void addFieldAndLayout(const std::string & fieldName,
-                         const Teuchos::RCP<panzer::Basis> & basis);   
+                         const Teuchos::RCP<panzer::BasisIRLayout> & basis);   
 
    //! Get the basis associated with a particular field.
    virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const;
 
    //! Get the basis associated with a particular field.
-   Teuchos::RCP<panzer::Basis> lookupLayout(const std::string & fieldName) const;
+   Teuchos::RCP<panzer::BasisIRLayout> lookupLayout(const std::string & fieldName) const;
 
    /** Print information about the basis functions and fields contained in
      * the field library.
@@ -39,7 +39,7 @@ public:
 private:
 
    //! Basic mapped storage.
-   std::map<std::string,Teuchos::RCP<panzer::Basis> > fieldToLayout_;
+   std::map<std::string,Teuchos::RCP<panzer::BasisIRLayout> > fieldToLayout_;
 
 };
 
