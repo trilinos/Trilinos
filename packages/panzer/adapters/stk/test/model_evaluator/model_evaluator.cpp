@@ -256,11 +256,6 @@ namespace panzer {
       x->Update(1.0, *(me->get_x_init()), 0.0);
       in_args.set_x(x);
       
-      RCP<Epetra_Vector> f1 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
-      RCP<Epetra_Vector> f2 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
-      RCP<Epetra_Vector> f3 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
-
-
       RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
       RCP<Epetra_Operator> J_tmp = me->create_W();
       RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(J_tmp);
@@ -320,20 +315,20 @@ namespace panzer {
     in_args.set_x(x);
     in_args.set_p(0,p);
 
-    std::cout << "evalModel(f1)" << std::endl;
+    out << "evalModel(f1)" << std::endl;
     out_args.set_f(f1);
     me->evalModel(in_args,out_args);
     
-    std::cout << "evalModel(f2)" << std::endl;
+    out << "evalModel(f2)" << std::endl;
     out_args.set_f(f2);
     me->evalModel(in_args,out_args);
     
-    std::cout << "evalModel(f3)" << std::endl;
+    out << "evalModel(f3)" << std::endl;
     p->PutScalar(20.0);
     out_args.set_f(f3);
     me->evalModel(in_args,out_args);
     
-    std::cout << "evalModel(f4)" << std::endl;
+    out << "evalModel(f4)" << std::endl;
     p->PutScalar(1.0);
     out_args.set_f(f4);
     me->evalModel(in_args,out_args);
