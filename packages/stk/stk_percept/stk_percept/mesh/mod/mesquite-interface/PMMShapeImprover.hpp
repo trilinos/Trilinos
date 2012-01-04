@@ -104,7 +104,7 @@ namespace stk {
           untangle_inner.add_absolute_quality_improvement( 0.0 );
           untangle_inner.add_absolute_gradient_L2_norm( gradNorm );
           //untangle_inner.add_absolute_successive_improvement( successiveEps );
-          untangle_inner.add_iteration_limit( 500 );
+          untangle_inner.add_iteration_limit( 100 );
           untangle_inner.write_iterations("untangle.gpt", err);
           untangle_inner.add_untangled_mesh();
           untangle_outer.add_iteration_limit( 1 );
@@ -135,7 +135,7 @@ namespace stk {
           Timer totalTimer;
 
           // Run untangler
-          std::cout << "tmp srk PMMShapeImprovementWrapper: running untangler... " << std::endl;
+          std::cout << "\ntmp srk PMMShapeImprovementWrapper: running untangler...\n " << std::endl;
           bool use_untangle_wrapper = false;
           if (use_untangle_wrapper)
             {
@@ -150,8 +150,19 @@ namespace stk {
               q1.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
               q1.run_common( mesh, pmesh, domain, settings, err ); 
             }
-          std::cout << "tmp srk PMMShapeImprovementWrapper: running untangler... done " << std::endl;
-          std::cout << "tmp srk PMMShapeImprovementWrapper: MsqError after untangler: " << err << std::endl;
+          std::cout << "\ntmp srk PMMShapeImprovementWrapper: running untangler... done\n " << std::endl;
+          std::cout << "\ntmp srk PMMShapeImprovementWrapper: MsqError after untangler: " << err << std::endl;
+
+          bool check_quality_after_untangler = true;
+          if (check_quality_after_untangler)
+            {
+              int num_invalid = count_invalid_elements(*mesh, *domain);
+              std::cout << "\ntmp srk PMMShapeImprover num_invalid after untangler= " << num_invalid << " " 
+                        << (num_invalid ? " ERROR still have invalid elements after Mesquite untangle" : 
+                            " SUCCESS: untangled invalid elements ")
+                        << std::endl;
+              if (num_invalid) return;
+            }
           if (m_do_untangle_only) return;
           MSQ_ERRRTN(err);
   
@@ -168,12 +179,12 @@ namespace stk {
   
           // Run shape improver
           InstructionQueue q2;
-          std::cout << "tmp srk PMMShapeImprovementWrapper: running shape improver... " << std::endl;
+          std::cout << "\ntmp srk PMMShapeImprovementWrapper: running shape improver... \n" << std::endl;
           q2.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
           q2.set_master_quality_improver( &shape_solver, err ); MSQ_ERRRTN(err);
           q2.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
           q2.run_common( mesh, pmesh, domain, settings, err ); 
-          std::cout << "tmp srk PMMShapeImprovementWrapper: running shape improver... done " << std::endl;
+          std::cout << "\ntmp srk PMMShapeImprovementWrapper: running shape improver... done \n" << std::endl;
           MSQ_ERRRTN(err);
         }
       
@@ -190,7 +201,7 @@ namespace stk {
 
       };
 
-      static int count_invalid_elements(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain)
+      static int count_invalid_elements(Mesh &mesh, MeshDomain &domain)
       {
         MsqError err;
         InstructionQueue q;
@@ -230,7 +241,7 @@ namespace stk {
         if (check_quality)
           {
             num_invalid = count_invalid_elements(mesh, domain);
-            std::cout << "tmp srk PMMShapeImprover num_invalid before= " << num_invalid 
+            std::cout << "\ntmp srk PMMShapeImprover num_invalid before= " << num_invalid 
                       << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : " ")
                       << std::endl;
           }
@@ -251,12 +262,12 @@ namespace stk {
                 siw.run_instructions(&mesh, &domain, mErr);
               }
 
-            std::cout << "tmp srk PMMShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;
+            std::cout << "\ntmp srk PMMShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;
 
             if (check_quality)
               {
                 num_invalid = count_invalid_elements(mesh, domain);
-                std::cout << "tmp srk PMMShapeImprover num_invalid after= " << num_invalid << " " 
+                std::cout << "\ntmp srk PMMShapeImprover num_invalid after= " << num_invalid << " " 
                           << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 
                               " SUCCESS: smoothed and removed invalid elements ")
                           << std::endl;
