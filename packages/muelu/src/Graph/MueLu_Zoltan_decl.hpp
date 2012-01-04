@@ -117,6 +117,7 @@ namespace MueLu {
     RCP<Zoltan> zoltanObj_;
     float zoltanVersion_;
     size_t problemDimension_;
+    GO numPartitions_;
 
   };  //class ZoltanInterface
 
