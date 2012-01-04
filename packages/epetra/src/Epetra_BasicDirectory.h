@@ -53,7 +53,7 @@
 /*! For Epetra_BlockMap objects, a Epetra_Directory object must be created to allow referencing
     of non-local elements.  The Epetra_BasicDirectory produces and contains a uniform linear
     Epetra_BlockMap and a ProcList_ allowing blocks of non-local elements to be accessed
-    by dereferencing throught the Epetra_BasicDirectory.
+    by dereferencing through the Epetra_BasicDirectory.
 
   This class currently has one constructor, taking a Epetra_BlockMap object.
 

@@ -52,13 +52,16 @@ namespace Tpetra {
   /// \class Directory
   /// \brief Implement mapping from global ID to process ID and local ID.
   ///
-  /// This class implements looking up the process IDs and local IDs
+  /// This class is an implementation detail of \c Map.  It is mainly
+  /// of interest to Tpetra developers and does not normally appear in
+  /// users' code.
+  ///
+  /// Directory implements looking up the process IDs and local IDs
   /// corresponding to a given list of global IDs.  Each Map owns a
   /// Directory object that does this.  Map::getRemoteIndexList()
   /// calls the Map's directory's getDirectoryEntries() method
-  /// directly.
-  ///
-  /// Directory has three different ways to perform this lookup.
+  /// directly.  Directory has three different ways to perform this
+  /// lookup, depending on the kind of Map.
   ///
   /// 1. If the user's Map is not distributed (i.e., is serial or
   ///    locally replicated), then my process ID is the process ID for
@@ -86,6 +89,16 @@ namespace Tpetra {
   /// Map, the \c LocalOrdinal type defaults to \c int if omitted.
   /// The \c GlobalOrdinal type defaults to the \c LocalOrdinal type,
   /// and the Node type defaults to Kokkos' default node type.
+  ///
+  /// \note (mfh 04 Jan 2012) To Epetra developers: This class
+  ///   corresponds roughly to \c Epetra_Directory or \c
+  ///   Epetra_BasicDirectory.  \c Epetra_BlockMap creates its \c
+  ///   Epetra_Directory object on demand whenever the map's \c
+  ///   RemoteIDList() method is called.  \c Tpetra::Map's
+  ///   getRemoteIndexList() method assumes that the map's directory
+  ///   already exists.  \c Epetra_Directory is an abstract interface
+  ///   with one implementation (\c Epetra_BasicDirectory); \c
+  ///   Tpetra::Directory is a concrete implementation.
   template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Directory : public Teuchos::Describable {
   public:
@@ -146,14 +159,15 @@ namespace Tpetra {
     ///   number of entries as \c globalIDs.  On output, nodeIDs[i] is
     ///   the ID of the process which owns globalIDs[i].  If
     ///   globalIDs[i] is not present in the directory (i.e., is not
-    ///   owned by any process in the Directory's communicator),
-    ///   nodeIDs[i] is -1.
+    ///   owned by any process in the Directory's communicator), then
+    ///   <tt>nodeIDs[i] == -1</tt>.
     ///
     /// \param localIDs [out] On input, an array view with the same
-    /// number of entries as \c globalIDs.  On output, localIDs[i] is
-    /// the local identifier corresponding to the global identifier
-    /// globalIDs[i].  If globalIDs[i] is not present in the directory, 
-    /// localIDs[i] = Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+    ///   number of entries as \c globalIDs.  On output, \c
+    ///   localIDs[i] is the local identifier corresponding to the
+    ///   global identifier \c globalIDs[i].  If globalIDs[i] is not
+    ///   present in the directory, then <tt>localIDs[i] ==
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>.
     ///
     /// \return If at least one GID was not present in the directory,
     ///   return IDNotPresent.  Otherwise, return AllIDsPresent.
@@ -193,7 +207,7 @@ namespace Tpetra {
     //! The communicator over which the Directory is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
-    /// \brief Minimum GID for each node in the communicator.
+    /// \brief Minimum global ID for each node in the communicator.
     ///
     /// This array is only valid if the user's Map (\c map_) is
     /// distributed and contiguous.  Otherwise, it remains empty.  It
