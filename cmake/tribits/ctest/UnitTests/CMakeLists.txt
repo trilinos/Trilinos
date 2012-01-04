@@ -107,6 +107,7 @@ ENDFUNCTION()
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAllDefault
+  ARGS Trilinos_ENABLE_ALL_PACKAGES=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 19"
@@ -116,7 +117,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAllSecondaryStable
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+  ARGS Trilinos_ENABLE_ALL_PACKAGES=ON Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 22"
@@ -173,7 +174,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAll_EnablePhalanx
-  ARGS Trilinos_ADDITIONAL_PACKAGES=Phalanx
+  ARGS Trilinos_ENABLE_ALL_PACKAGES=ON Trilinos_ADDITIONAL_PACKAGES=Phalanx
   PASS_REGULAR_EXPRESSION_ALL
     "Enabling explicitly set package Phalanx"
     "Explicitly enabled packages on input .*  Phalanx 1"
@@ -189,7 +190,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAll_EnableStokhos
-  ARGS Trilinos_ADDITIONAL_PACKAGES=Stokhos
+  ARGS Trilinos_ENABLE_ALL_PACKAGES=ON Trilinos_ADDITIONAL_PACKAGES=Stokhos
   PASS_REGULAR_EXPRESSION_ALL
     "Enabling explicitly set package Stokhos"
     "Explicitly enabled packages on input .*  Stokhos 1"
@@ -221,7 +222,8 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   CI_EnableAllSecondaryStable
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
+  ARGS Trilinos_ENABLE_ALL_PACKAGES=ON Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
   PASS_REGULAR_EXPRESSION_ALL
     "EXECUTE_PROCESS.+git.+preCopyrightTrilinos.+preCopyrightTrilinos.update.out"
     "Explicitly enabled packages on input .*  0"
@@ -241,8 +243,8 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 # Check with an extra repo enabled and assert all of the internal logic
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   CI_EnableAllSecondaryStable_EnableStalix
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
-    Trilinos_ADDITIONAL_PACKAGES=Stalix
+  ARGS Trilinos_ENABLE_ALL_PACKAGES=ON Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous Trilinos_ADDITIONAL_PACKAGES=Stalix
   PASS_REGULAR_EXPRESSION_ALL
     "preCopyrightTrilinos: Doing GIT update from URL 'url1:/git/preCopyrightTrilinos' to dir '.*/MockTrilinos/preCopyrightTrilinos'"
     "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/cmake/tribits/ctest/UnitTests/TrilinosFramework_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/preCopyrightTrilinos.update.out."
@@ -273,7 +275,8 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   Nightly_EnableAllSecondaryStable
-  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
+  ARGS Trilinos_ENABLE_ALL_PACKAGES=ON Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
   PASS_REGULAR_EXPRESSION_ALL
     "EXECUTE_PROCESS.+git.+preCopyrightTrilinos.+preCopyrightTrilinos.update.out"
     "EXECUTE_PROCESS.+git.+extraTrilinosRepo.+extraTrilinosRepo.update.out"
