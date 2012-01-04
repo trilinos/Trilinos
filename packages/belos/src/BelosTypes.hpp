@@ -146,9 +146,14 @@ namespace Belos {
   ///
   /// \note This enum is part of the public interface of all Belos
   ///   solvers.
-  enum ReturnType  { Converged,     /*!< Convergence was reached for all linear systems. */
-                     Unconverged    /*!< Convergence was not reached for some or all linear systems. */
+  enum ReturnType { 
+    Converged,  /*!< Convergence was reached for all linear systems. */
+    Unconverged /*!< Convergence was not reached for some or all linear systems. */
   };
+
+  //! Convert the given \c ReturnType enum value to its corresponding string.
+  std::string 
+  convertReturnTypeToString (const ReturnType result);
   
   /// \enum StatusType 
   /// \brief Whether the \c StatusTest wants iteration to stop.

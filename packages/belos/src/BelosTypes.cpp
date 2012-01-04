@@ -176,5 +176,19 @@ namespace Belos {
     return os.str();
   }
 
+  std::string 
+  convertReturnTypeToString (const ReturnType result)
+  {
+    if (result == Belos::Converged) {
+      return "Converged";
+    } else if (result == Belos::Unconverged) {
+      return "Unconverged";
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+        "Belos::convertReturnTypeToString: Invalid ReturnType enum value " 
+        << result << ".");
+    }
+  }
+
 } // end Belos namespace
 

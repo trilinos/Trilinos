@@ -265,9 +265,48 @@ public:
   //! @name Set methods
   //@{
 
-  //! Set the linear problem to solve on the next call to \c solve().
-  void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) {
-    return;
+  /// \brief Set the linear problem to solve on the next call to \c solve().
+  ///
+  /// \warning (mfh 03 Jan 2012) For whatever reason, the original
+  ///   author provided a trivial implementation of this method (it
+  ///   just returned without doing anything).  This probably means
+  ///   that it doesn't work at all.  I've done my best to provide a
+  ///   sensible implementation.
+  void 
+  setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
+      "Belos::BlockGCRODRSolMgr::setProblem: The input LinearProblem is null.  "
+      "Please give us a non-null linear problem to solve next time.");
+
+    // It might be helpful in the future to know whether the matrix A
+    // or preconditioner(s) changed.  If they didn't change, then
+    // perhaps we can reuse existing subspace storage.  Of course,
+    // data could have been redistributed without changing the
+    // pointers, so the below checks are necessary but not sufficient.
+    bool changedMatrix = true;
+    // If problem_ is null, then the user hasn't set a LinearProblem
+    // to solve yet, meaning that this must be the first call to
+    // setProblem().
+    if (! problem_.is_null()) {
+      if (problem_->getOperator() == problem->getOperator() &&
+	  problem_->getLeftPrec() == problem->getLeftPrec() &&
+	  problem_->getRightPrec() == problem->getRightPrec()) {
+	changedMatrix = false;
+      }
+    }
+    if (! problem->isProblemSet()) {
+      const bool success = problem->setProblem();
+      TEUCHOS_TEST_FOR_EXCEPTION(success, std::runtime_error,
+        "Belos::BlockGCRODRSolMgr::setProblem: Calling the input LinearProblem"
+        "'s setProblem() method failed.  This likely means that the "
+        "LinearProblem has a missing (null) matrix A, missing current solution "
+	"vector X, and/or missing right-hand side vector B.  Please set these "
+        "items in the LinearProblem and try again.");
+    }
+    // Defer side effects on the solver's state until we know that the
+    // input LinearProblem is valid.
+    problem_ = problem;
   }
 
   //! Set the parameters the solver should use to solve the linear problem.
@@ -283,9 +322,22 @@ public:
    * This informs the solver manager that the solver should prepare
    * for the next call to solve by resetting certain elements of the
    * iterative solver strategy.
+   *
+   * \warning (mfh 03 Jan 2012) For whatever reason, the original
+   *   author provided a trivial implementation of this method (it
+   *   just returned without doing anything).  This probably means
+   *   that it doesn't work at all.  I've done my best to provide a
+   *   sensible implementation.
    */
-  void reset( const ResetType type ) {
-    return;
+  void 
+  reset (const ResetType type) 
+  {
+    if ((type & Belos::Problem) && ! problem_.is_null ()) {
+      problem_->setProblem();
+    }
+    else if (type & Belos::RecycleSubspace) {
+      keff = 0;
+    }
   }
 
   //@}
