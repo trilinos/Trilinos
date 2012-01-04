@@ -9,6 +9,7 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Panzer_config.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
@@ -108,6 +109,8 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   int myRank = eComm->MyPID();
   int numProc = eComm->NumProc();
 
+  Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
+
   RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
   RCP<unit_test::UniqueGlobalIndexer> indexer
         = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
@@ -144,6 +147,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
                                physics_id_to_input_physics_blocks,
                                Teuchos::as<int>(2), workset_size,
                                eqset_factory,
+                               global_data,
 			       false,
                                physicsBlocks);
   }
