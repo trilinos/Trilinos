@@ -25,8 +25,6 @@ struct GeometryEvaluator
 class MeshGeometry
 {
 public:
-  typedef boost::unordered_map<const stk::mesh::Bucket *, bool> CacheBucketSelectorType;
-
   typedef std::pair<int, size_t> CacheBucketClassifyValueType;
   typedef boost::unordered_map<const stk::mesh::Bucket *, CacheBucketClassifyValueType > CacheBucketClassifyType;
 
@@ -61,11 +59,10 @@ private:
 protected:
     std::vector<GeometryEvaluator*> geomEvaluators;
     GeometryKernel* geomKernel;
-    std::vector<CacheBucketSelectorType> m_cache_bucket_selectors;
     CacheBucketClassifyType m_cache_bucket_classify;
 
 public:
-    bool m_cache_bucket_selectors_is_active;
+  bool m_cache_classify_bucket_is_active;
 protected:
     void snap_point_to_geometry(stk::mesh::Entity *node);
 

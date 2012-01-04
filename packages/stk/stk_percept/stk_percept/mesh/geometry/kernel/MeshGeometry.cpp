@@ -1,13 +1,13 @@
 #include "MeshGeometry.hpp"
 
-MeshGeometry::MeshGeometry(GeometryKernel* geom, bool cache_bucket_selectors_is_active)
+MeshGeometry::MeshGeometry(GeometryKernel* geom, bool cache_classify_bucket_is_active)
 {
   geomKernel = geom;
   mDbgNodeCoords[0] = -0.00477133907617983;
   mDbgNodeCoords[1] = -0.00477133907617983;
   mDbgNodeCoords[2] =  0.260484055257467;
 
-  m_cache_bucket_selectors_is_active = cache_bucket_selectors_is_active;
+  m_cache_classify_bucket_is_active = cache_classify_bucket_is_active;
 }
 
 MeshGeometry::~MeshGeometry()
@@ -48,7 +48,7 @@ int MeshGeometry::classify_node(const stk::mesh::Entity& node, size_t& curveOrSu
 int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator)
 {
   int classify_value = 0;
-   if (m_cache_bucket_selectors_is_active)
+   if (m_cache_classify_bucket_is_active)
      {
        CacheBucketClassifyType::iterator iter = m_cache_bucket_classify.find(&bucket);
        if (iter == m_cache_bucket_classify.end())
@@ -99,32 +99,10 @@ int MeshGeometry::classify_bucket_internal(const stk::mesh::Bucket& bucket, size
   curveEvaluators.resize(0);
   surfEvaluators.resize(0);
 
-  if (m_cache_bucket_selectors_is_active)
-    m_cache_bucket_selectors.resize(geomEvaluators.size());
-    
   size_t s;
   for (s=0; s<geomEvaluators.size(); s++)
     {
-      bool selector_has_bucket = false;
-      if (m_cache_bucket_selectors_is_active)
-        {
-          CacheBucketSelectorType::const_iterator iter = m_cache_bucket_selectors[s].find(&bucket);
-          if (iter == m_cache_bucket_selectors[s].end())
-            {
-              selector_has_bucket = geomEvaluators[s]->mMesh(bucket);
-              m_cache_bucket_selectors[s][&bucket] = selector_has_bucket;
-            }
-          else 
-            {
-              selector_has_bucket = iter->second; //m_cache_bucket_selectors[s][&bucket];
-            }
-        }
-      else
-        {
-          selector_has_bucket = geomEvaluators[s]->mMesh(bucket);
-        }
-//       if (selector_has_bucket != geomEvaluators[s]->mMesh(bucket))
-//         exit(123);
+      bool selector_has_bucket = geomEvaluators[s]->mMesh(bucket);
       if (selector_has_bucket)
         {
           if (geomKernel->is_curve(s))
@@ -177,10 +155,12 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
   for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
   {
     Bucket& bucket = **k;
+#if CONTAINS_DEBGU_NODE
     if ( contains_dbg_node( eMesh, bucket ) )
     {
       std::cout << "     DBG Node FOUND" << std::endl;
     }
+#endif
 
     size_t curveOrSurfaceEvaluator;
     int type = classify_bucket(bucket, curveOrSurfaceEvaluator);
@@ -259,10 +239,12 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::
   {
     Bucket& bucket = nodes[inode]->bucket();
 
+#if CONTAINS_DEBGU_NODE
     if ( contains_dbg_node( eMesh, bucket ) )
     {
       std::cout << "     DBG Node FOUND" << std::endl;
     }
+#endif
 
     // Each bucket contains the set of nodes with unique part intersections.
     // This means that every nodes will be in exactly one bucket.  But, the

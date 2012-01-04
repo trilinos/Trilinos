@@ -36,6 +36,11 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMeshDomain.hpp>
 
+#undef USE_CALLGRIND
+//#define USE_CALLGRIND
+#ifdef USE_CALLGRIND
+#include "/usr/netpub/valgrind-3.6.0/include/valgrind/callgrind.h"
+#endif
 
 namespace stk {
   namespace percept {
@@ -93,28 +98,35 @@ namespace stk {
           // Define an untangler
           UntangleBetaQualityMetric untangle_metric( untBeta );
           LPtoPTemplate untangle_func( 2, &untangle_metric );
-          ConjugateGradient untangle_global( &untangle_func );
+          ConjugateGradient untangle_solver( &untangle_func );
           TerminationCriterion untangle_inner, untangle_outer;
-          untangle_global.use_global_patch();
+          untangle_solver.use_global_patch();
           untangle_inner.add_absolute_quality_improvement( 0.0 );
-          untangle_inner.add_absolute_successive_improvement( successiveEps );
+          untangle_inner.add_absolute_gradient_L2_norm( gradNorm );
+          //untangle_inner.add_absolute_successive_improvement( successiveEps );
+          untangle_inner.add_iteration_limit( 500 );
+          untangle_inner.write_iterations("untangle.gpt", err);
+          untangle_inner.add_untangled_mesh();
           untangle_outer.add_iteration_limit( 1 );
-          untangle_global.set_inner_termination_criterion( &untangle_inner );
-          untangle_global.set_outer_termination_criterion( &untangle_outer );
+          untangle_solver.set_inner_termination_criterion( &untangle_inner );
+          untangle_solver.set_outer_termination_criterion( &untangle_outer );
 
           // define shape improver
           IdealWeightInverseMeanRatio inverse_mean_ratio;
           inverse_mean_ratio.set_averaging_method( QualityMetric::LINEAR );
           LPtoPTemplate obj_func( 2, &inverse_mean_ratio );
-          FeasibleNewton feas_newt( &obj_func );
+          //FeasibleNewton shape_solver( &obj_func );
+          ConjugateGradient shape_solver( &obj_func );
           TerminationCriterion term_inner, term_outer;
-          feas_newt.use_global_patch();
+          shape_solver.use_global_patch();
           qa->add_quality_assessment( &inverse_mean_ratio );
           term_inner.add_absolute_gradient_L2_norm( gradNorm );
-          term_inner.add_relative_successive_improvement( successiveEps );
+          //term_inner.add_relative_successive_improvement( successiveEps );
+          term_inner.add_iteration_limit( 50 );
+          term_inner.write_iterations("shape.gpt", err);
           term_outer.add_iteration_limit( pmesh ? parallelIterations : 1 );
-          feas_newt.set_inner_termination_criterion( &term_inner );
-          feas_newt.set_outer_termination_criterion( &term_outer );
+          shape_solver.set_inner_termination_criterion( &term_inner );
+          shape_solver.set_outer_termination_criterion( &term_outer );
 
           // Apply CPU time limit to untangler
           if (maxTime > 0.0)
@@ -128,12 +140,13 @@ namespace stk {
           if (use_untangle_wrapper)
             {
               UntangleWrapper uw;
+              //uw.set_untangle_metric(UntangleWrapper::BETA);
               uw.run_instructions(mesh, domain, err);
             }
           else
             {
               InstructionQueue q1;
-              q1.set_master_quality_improver( &untangle_global, err ); MSQ_ERRRTN(err);
+              q1.set_master_quality_improver( &untangle_solver, err ); MSQ_ERRRTN(err);
               q1.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
               q1.run_common( mesh, pmesh, domain, settings, err ); 
             }
@@ -157,7 +170,7 @@ namespace stk {
           InstructionQueue q2;
           std::cout << "tmp srk PMMShapeImprovementWrapper: running shape improver... " << std::endl;
           q2.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
-          q2.set_master_quality_improver( &feas_newt, err ); MSQ_ERRRTN(err);
+          q2.set_master_quality_improver( &shape_solver, err ); MSQ_ERRRTN(err);
           q2.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
           q2.run_common( mesh, pmesh, domain, settings, err ); 
           std::cout << "tmp srk PMMShapeImprovementWrapper: running shape improver... done " << std::endl;
@@ -201,6 +214,10 @@ namespace stk {
 
       void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain, bool always_smooth=true, int debug=0)
       {
+#ifdef USE_CALLGRIND
+  CALLGRIND_START_INSTRUMENTATION
+  CALLGRIND_TOGGLE_COLLECT
+#endif
         if (debug)
           {
             Mesquite::MsqDebug::enable(1);
@@ -236,8 +253,6 @@ namespace stk {
 
             std::cout << "tmp srk PMMShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;
 
-            MSQ_ERRRTN(mErr);
-
             if (check_quality)
               {
                 num_invalid = count_invalid_elements(mesh, domain);
@@ -246,7 +261,14 @@ namespace stk {
                               " SUCCESS: smoothed and removed invalid elements ")
                           << std::endl;
               }
+
+            MSQ_ERRRTN(mErr);
+
           }
+#ifdef USE_CALLGRIND
+  CALLGRIND_TOGGLE_COLLECT
+  CALLGRIND_STOP_INSTRUMENTATION
+#endif
       }
     };
 

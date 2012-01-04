@@ -44,7 +44,7 @@ namespace stk {
       PerceptMesquiteMeshDomain(PerceptMesh *eMesh, MeshGeometry *meshGeometry=0) : m_eMesh(eMesh), m_meshGeometry(meshGeometry) 
       {
         if (m_meshGeometry) 
-          m_meshGeometry->m_cache_bucket_selectors_is_active = true;
+          m_meshGeometry->m_cache_classify_bucket_is_active = true;
       }
 
       //       void init(PerceptMesh *eMesh);
