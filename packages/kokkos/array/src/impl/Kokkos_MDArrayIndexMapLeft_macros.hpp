@@ -54,23 +54,19 @@
 namespace Kokkos {
 namespace Impl {
 
-template< unsigned Align >
-class MDArrayIndexMap< KOKKOS_MACRO_DEVICE_MEMORY ,
-                       MDArrayIndexMapLeft , Align > {
+template<>
+class MDArrayIndexMapLeft< KOKKOS_MACRO_DEVICE::memory_space > {
 public:
 
   /** \brief  The size type most appropriate for the device memory space. */
-  typedef KOKKOS_MACRO_DEVICE_MEMORY::size_type size_type ;
-
-  /** \brief  Whether the mapping is contigous; i.e., no padding */
-  enum { Contiguous = Align <= 1 };
+  typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
 
 private:
 
   // Stride for the rank #0 index,
   // If contiguous then the rank #0 dimension.
   // If padded to the alignment then rank #0 dimension + padding.
-  enum { S0 = Contiguous ? 0 : MDArrayMaxRank };
+  enum { S0 = MDArrayMaxRank };
 
 public:
 
@@ -85,7 +81,7 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension( const iType & ordinal ) const
   {
-    KOKKOS_MACRO_CHECK( require_less( ordinal , m_rank ) );
+    KOKKOS_MACRO_CHECK( require_less( ordinal , MDArrayMaxRank ) );
     return m_dims[ordinal];
   }
 
@@ -287,106 +283,35 @@ public:
 
   //--------------------------------------
 
-private:
-
-  // Padding to the given alignment.
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  void set_padded_alignment()
-  {
-    if ( ! Contiguous ) {
-      m_dims[S0] = m_dims[0] ;
-      if ( m_dims[S0] % Align ) {
-        m_dims[S0] += Align - m_dims[S0] % Align ;
-      }
-    }
-  }
-
-public:
-
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  MDArrayIndexMap()
+  MDArrayIndexMapLeft()
     : m_rank(0)
   {
     m_dims[0] = 0 ; m_dims[1] = 0 ;
     m_dims[2] = 0 ; m_dims[3] = 0 ;
     m_dims[4] = 0 ; m_dims[5] = 0 ;
     m_dims[6] = 0 ; m_dims[7] = 0 ;
-
-    set_padded_alignment();
+    m_dims[S0] = 0 ;
   }
 
+  template< typename ValueType >
   inline
-  MDArrayIndexMap( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-                   size_t n4 , size_t n5 , size_t n6 , size_t n7 )
-    : m_rank( mdarray_deduce_rank( n0, n1, n2, n3, n4, n5, n6, n7 ) )
+  void assign( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
+               size_t n4 , size_t n5 , size_t n6 , size_t n7 )
   {
+    typedef KOKKOS_MACRO_DEVICE::memory_space   memory_space ;
+    typedef Impl::MemoryManager< memory_space > memory_manager ;
+
+    m_rank = mdarray_deduce_rank( n0, n1, n2, n3, n4, n5, n6, n7 );
     m_dims[0] = n0 ; m_dims[1] = n1 ; m_dims[2] = n2 ; m_dims[3] = n3 ;
     m_dims[4] = n4 ; m_dims[5] = n5 ; m_dims[6] = n6 ; m_dims[7] = n7 ;
-
-    set_padded_alignment();
-  }
-
-  inline
-  MDArrayIndexMap( size_t arg_rank, const size_t * const arg_dims )
-    : m_rank(arg_rank)
-  {
-    KOKKOS_MACRO_CHECK( require_less( arg_rank , MDArrayMaxRank ) );
-    size_type i = 0 ;
-    for ( ; i < m_rank ; ++i ) {
-      m_dims[i] = arg_dims[i] ;
-      KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
-    }
-    for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
-
-    set_padded_alignment();
-  }
-
-  template < class IndexMap >
-  explicit
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  MDArrayIndexMap( const IndexMap & rhs )
-    : m_rank( rhs.rank() )
-  {
-    KOKKOS_MACRO_CHECK( require_less( m_rank , MDArrayMaxRank ) );
-    size_type i = 0 ;
-    for ( ; i < m_rank ; ++i ) {
-      m_dims[i] = rhs.dimension(i);
-      KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
-    }
-    for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
-
-    set_padded_alignment();
-  }
-
-  template < class IndexMap >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  MDArrayIndexMap & operator = ( const IndexMap & rhs )
-  {
-    if (this != & rhs ) {
-      m_rank = rhs.rank();
-      KOKKOS_MACRO_CHECK( require_less( m_rank , MDArrayMaxRank ) );
-      size_type i = 0 ;
-      for ( ; i < m_rank ; ++i ) {
-        m_dims[i] = rhs.m_dims[i] ;
-        KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
-      }
-      for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
-
-      set_padded_alignment();
-    }
-    return *this;
+    m_dims[S0] = memory_manager::preferred_alignment< ValueType >( n0 );
   }
 
 private:
-
-  enum { N = MDArrayMaxRank + ( Contiguous ? 0 : 1 ) };
-
   size_type  m_rank ;
-  size_type  m_dims[ N ];
+  size_type  m_dims[ MDArrayMaxRank + 1 ];
 };
 
 } // Impl namespace

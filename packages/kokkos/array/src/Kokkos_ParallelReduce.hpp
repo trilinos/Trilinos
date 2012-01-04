@@ -46,7 +46,6 @@
 
 #include <cstddef>
 
-#include <Kokkos_ValueView.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 namespace Kokkos {

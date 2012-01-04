@@ -45,7 +45,6 @@
 #define KOKKOS_BOXMESHFIXTURE_HPP
 
 #include <stdexcept>
-#include <Kokkos_MDArrayView.hpp>
 
 //  construct a structured, rectangular prism mesh of Hex elements,
 //  with dimensions given by elems_x, elems_y, elems_z
@@ -233,7 +232,7 @@ public:
 
     int_mdarray node_elem_count = Kokkos::create_mdarray< int_mdarray >( nnodes );
 
-    for(int i = 0; i < nnodes + 1 ; i++){
+    for(int i = 0; i < nnodes ; i++){
       node_elem_count( i ) = 0 ;
     }
 

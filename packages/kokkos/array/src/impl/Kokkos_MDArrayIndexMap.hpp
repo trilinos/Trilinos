@@ -47,17 +47,8 @@
 namespace Kokkos {
 namespace Impl {
 
-enum { MDArrayMaxRank = 8 };
-
-class MDArrayIndexMapRight ;
-class MDArrayIndexMapLeft ;
-
-/** \brief  MDArray index space mapping to a block of memory.
- *          Alignment requirements given by 
- *          ArrayAlignment< ScalarType , MemorySpace >::value
- */
-template < class MemorySpace , class MDArrayMapOption , unsigned Align >
-class MDArrayIndexMap ;
+template< class MemorySpace > class MDArrayIndexMapRight ;
+template< class MemorySpace > class MDArrayIndexMapLeft ;
 
 } // namespace Impl
 } // namespace Kokkos

@@ -48,11 +48,11 @@
 template<class Scalar, class DeviceType>
 struct CRSMatVec
 {
-  typedef DeviceType                                       device_type;
-  typedef typename device_type::size_type                  index_type ;
-  typedef Scalar                                           scalar_type ;
-  typedef Kokkos::MultiVectorView<index_type,  device_type> index_vector;   
-  typedef Kokkos::MultiVectorView<scalar_type, device_type> scalar_vector;
+  typedef DeviceType                                    device_type;
+  typedef typename device_type::size_type               index_type ;
+  typedef Scalar                                        scalar_type ;
+  typedef Kokkos::MultiVector<index_type,  device_type> index_vector;   
+  typedef Kokkos::MultiVector<scalar_type, device_type> scalar_vector;
   
 
   scalar_vector A ;
@@ -104,8 +104,8 @@ struct CRSMatVec<Scalar , Kokkos::DeviceCuda>
 {
   typedef Kokkos::DeviceCuda      device_type ;
   typedef device_type::size_type  index_type ;
-  typedef Kokkos::MultiVectorView<Scalar, device_type>     scalar_vector;
-  typedef Kokkos::MultiVectorView<index_type, device_type> index_vector;   
+  typedef Kokkos::MultiVector<Scalar, device_type>     scalar_vector;
+  typedef Kokkos::MultiVector<index_type, device_type> index_vector;   
   
   Scalar * value, *x , *b ;
   int * row ,* col;

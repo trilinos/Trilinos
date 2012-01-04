@@ -48,17 +48,18 @@
 #include <stdexcept>
 #include <string>
 
-#include <Kokkos_DeviceCuda.hpp>
-#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
+#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Host.hpp>
+
 #include <impl/Kokkos_Timer.hpp>
 
 #include <bbcsr.hpp>
 #include <bsbcsr.hpp>
 
-typedef Kokkos::BigBlockCRSGraph<Kokkos::DeviceCuda>           graph_type ;
-typedef Kokkos::MultiVectorView< float , Kokkos::DeviceCuda >  matrix_type ;
-typedef Kokkos::MultiVectorView< double , Kokkos::DeviceCuda > vector_type ;
+typedef Kokkos::BigBlockCRSGraph<Kokkos::Cuda>       graph_type ;
+typedef Kokkos::MultiVector< float , Kokkos::Cuda >  matrix_type ;
+typedef Kokkos::MultiVector< double , Kokkos::Cuda > vector_type ;
 
 template< class VectorView >
 void print_vector( const VectorView v )
@@ -141,9 +142,9 @@ void run( int block_count , int block_size )
 
   Kokkos::multiply( graph , matrix , input , output );
 
-  vector_type::HostView h_output = Kokkos::mirror_create( output );
-  vector_type::HostView h_input  = Kokkos::mirror_create( input );
-  matrix_type::HostView h_matrix = Kokkos::mirror_create( matrix );
+  vector_type::HostMirror h_output = Kokkos::mirror_create( output );
+  vector_type::HostMirror h_input  = Kokkos::mirror_create( input );
+  matrix_type::HostMirror h_matrix = Kokkos::mirror_create( matrix );
 
   Kokkos::mirror_update( h_input , input );
   Kokkos::mirror_update( h_output , output );
@@ -232,9 +233,9 @@ void run( const int block_count ,
   graph.block_column_index  =
     Kokkos::create_multivector< graph_type::vector_type >( count );
 
-  graph_type::vector_type::HostView h_column_offset =
+  graph_type::vector_type::HostMirror h_column_offset =
     Kokkos::mirror_create( graph.block_column_offset );
-  graph_type::vector_type::HostView h_column_index  =
+  graph_type::vector_type::HostMirror h_column_index  =
     Kokkos::mirror_create( graph.block_column_index );
 
   count = 0 ;
@@ -265,13 +266,13 @@ void run( const int block_count ,
     Kokkos::multiply( graph , matrix , input , output );
   }
 
-  Kokkos::DeviceCuda::wait_functor_completion();
+  Kokkos::Cuda::fence();
 
   perf.seconds = wall_clock.seconds();
 
-  vector_type::HostView h_output = Kokkos::mirror_create( output );
-  vector_type::HostView h_input  = Kokkos::mirror_create( input );
-  matrix_type::HostView h_matrix = Kokkos::mirror_create( matrix );
+  vector_type::HostMirror h_output = Kokkos::mirror_create( output );
+  vector_type::HostMirror h_input  = Kokkos::mirror_create( input );
+  matrix_type::HostMirror h_matrix = Kokkos::mirror_create( matrix );
 
   Kokkos::mirror_update( h_input , input );
   Kokkos::mirror_update( h_output , output );
@@ -316,7 +317,7 @@ namespace bsbcsr_test {
 
 __global__
 void initialize(
-  const Kokkos::BigSymmetricBlockCSRGraph< Kokkos::DeviceCuda > graph ,
+  const Kokkos::BigSymmetricBlockCSRGraph< Kokkos::Cuda > graph ,
   const matrix_type matrix ,
   const vector_type input )
 {
@@ -365,7 +366,7 @@ void run( const int block_count ,
   }
 #endif
 
-  Kokkos::BigSymmetricBlockCSRGraph< Kokkos::DeviceCuda > graph ;
+  Kokkos::BigSymmetricBlockCSRGraph< Kokkos::Cuda > graph ;
   matrix_type matrix ;
   vector_type input , output ;
 
@@ -399,9 +400,9 @@ void run( const int block_count ,
   graph.block_column_index  =
     Kokkos::create_multivector< graph_type::vector_type >( count );
 
-  graph_type::vector_type::HostView h_column_offset =
+  graph_type::vector_type::HostMirror h_column_offset =
     Kokkos::mirror_create( graph.block_column_offset );
-  graph_type::vector_type::HostView h_column_index  =
+  graph_type::vector_type::HostMirror h_column_index  =
     Kokkos::mirror_create( graph.block_column_index );
 
   count = 0 ;
@@ -432,13 +433,13 @@ void run( const int block_count ,
     Kokkos::multiply( graph , matrix , input , output );
   }
 
-  Kokkos::DeviceCuda::wait_functor_completion();
+  Kokkos::Cuda::fence();
 
   perf.seconds = wall_clock.seconds();
 
-  vector_type::HostView h_output = Kokkos::mirror_create( output );
-  vector_type::HostView h_input  = Kokkos::mirror_create( input );
-  matrix_type::HostView h_matrix = Kokkos::mirror_create( matrix );
+  vector_type::HostMirror h_output = Kokkos::mirror_create( output );
+  vector_type::HostMirror h_input  = Kokkos::mirror_create( input );
+  matrix_type::HostMirror h_matrix = Kokkos::mirror_create( matrix );
 
   Kokkos::mirror_update( h_input , input );
   Kokkos::mirror_update( h_output , output );

@@ -46,7 +46,7 @@
 
 #include <stdexcept>
 #include <sstream>
-#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
+#include <Kokkos_Cuda_MultiVector.hpp>
 
 namespace Kokkos {
 
@@ -76,7 +76,7 @@ public:
   typedef Device                     device_type ;
   typedef typename Device::size_type index_type ;
 
-  typedef MultiVectorView< index_type , device_type > vector_type ;
+  typedef MultiVector< index_type , device_type > vector_type ;
 
   /** \brief  Index to the begining of the block */
   index_type offset_block( index_type block_row , index_type block_column ) const ;
@@ -104,9 +104,9 @@ class BigBlockCRSMultiply ;
 
 template< class Device , typename MatrixScalar , typename VectorScalar >
 void multiply( const BigBlockCRSGraph<Device> & A_graph ,
-               const MultiVectorView<MatrixScalar,Device> & A_coeff ,
-               const MultiVectorView<VectorScalar,Device> & input ,
-               const MultiVectorView<VectorScalar,Device> & output )
+               const MultiVector<MatrixScalar,Device> & A_coeff ,
+               const MultiVector<VectorScalar,Device> & input ,
+               const MultiVector<VectorScalar,Device> & output )
 {
   BigBlockCRSMultiply< Device , MatrixScalar , VectorScalar >
     ( A_graph , A_coeff , input , output );
@@ -115,12 +115,12 @@ void multiply( const BigBlockCRSGraph<Device> & A_graph ,
 //----------------------------------------------------------------------------
 
 template< typename MatrixScalar , typename VectorScalar >
-class BigBlockCRSMultiply< DeviceCuda , MatrixScalar , VectorScalar > {
+class BigBlockCRSMultiply< Cuda , MatrixScalar , VectorScalar > {
 public:
-  typedef DeviceCuda::size_type                        index_type ;
-  typedef BigBlockCRSGraph< DeviceCuda >               graph_type ;
-  typedef MultiVectorView< MatrixScalar , DeviceCuda > matrix_type ;
-  typedef MultiVectorView< VectorScalar , DeviceCuda > vector_type ;
+  typedef Cuda::size_type                        index_type ;
+  typedef BigBlockCRSGraph< Cuda >               graph_type ;
+  typedef MultiVector< MatrixScalar , Cuda > matrix_type ;
+  typedef MultiVector< VectorScalar , Cuda > vector_type ;
 
   const graph_type  m_graph ;
   const matrix_type m_matrix ;
@@ -147,18 +147,18 @@ public:
       throw std::runtime_error( std::string("block is too small") );
     }
 
-    const index_type warp_count = m_graph.block_size / Impl::DeviceCudaTraits::WarpSize +
-                                ( m_graph.block_size % Impl::DeviceCudaTraits::WarpSize ? 1 : 0 );
+    const index_type warp_count = m_graph.block_size / Impl::CudaTraits::WarpSize +
+                                ( m_graph.block_size % Impl::CudaTraits::WarpSize ? 1 : 0 );
 
-    if ( DeviceCuda::maximum_warp_count() < warp_count ) {
+    if ( Cuda::maximum_warp_count() < warp_count ) {
       throw std::runtime_error( std::string("block is too big") );
     }
 
 /*
-    if ( DeviceCuda::maximum_grid_count() < m_graph.block_system_size ) {
+    if ( Cuda::maximum_grid_count() < m_graph.block_system_size ) {
       std::ostringstream msg ;
       msg << "Too many CUDA blocks: max = "
-          << DeviceCuda::maximum_grid_count()
+          << Cuda::maximum_grid_count()
           << " , requested = " << m_graph.block_system_size ;
 
       throw std::runtime_error( msg.str() );
@@ -166,7 +166,7 @@ public:
 */
 
     const index_type thread_block_count = m_graph.block_system_size ;
-    const index_type thread_per_block   = warp_count * Impl::DeviceCudaTraits::WarpSize ;
+    const index_type thread_per_block   = warp_count * Impl::CudaTraits::WarpSize ;
     const index_type shmem_size = sizeof(VectorScalar) * m_graph.block_size +
                                   sizeof(index_type) *   m_graph.block_maximum_columns ;
 
@@ -176,7 +176,7 @@ public:
   __device__
   void execute_on_device() const
   {
-    extern __shared__ DeviceCuda::size_type shared_data[] ;
+    extern __shared__ Cuda::size_type shared_data[] ;
 
     VectorScalar * const shared_input = (VectorScalar *) shared_data ;
 

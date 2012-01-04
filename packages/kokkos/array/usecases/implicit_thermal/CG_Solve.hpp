@@ -60,13 +60,13 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
   typedef KOKKOS_MACRO_DEVICE    device_type;
   typedef device_type::size_type index_type ;
-  typedef Kokkos::MultiVectorView<Scalar , device_type>  scalar_vector;
-  typedef Kokkos::MultiVectorView<index_type , device_type>    index_vector;
+  typedef Kokkos::MultiVector<Scalar , device_type>  scalar_vector;
+  typedef Kokkos::MultiVector<index_type , device_type>    index_vector;
 
-  typedef Kokkos::ValueView<Scalar , device_type>     value;
-  typedef Kokkos::ValueView<Scalar , Kokkos::DeviceHost> host_val;
+  typedef Kokkos::Value<Scalar , device_type>     value;
+  typedef typename Kokkos::Value<Scalar , device_type>::HostMirror host_val;
 
-  
+
   // Return megaflops / second for iterations
 
   static double run( scalar_vector & A_value ,
@@ -93,22 +93,22 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
 
     value rtrans    = Kokkos::create_value<Scalar , device_type>();
     value ptrans    = Kokkos::create_value<Scalar , device_type>();
-    value oldrtrans = Kokkos::create_value<Scalar , device_type>();  
-    value alpha     = Kokkos::create_value<Scalar , device_type>();          
-    value beta      = Kokkos::create_value<Scalar , device_type>();  
+    value oldrtrans = Kokkos::create_value<Scalar , device_type>();
+    value alpha     = Kokkos::create_value<Scalar , device_type>();
+    value beta      = Kokkos::create_value<Scalar , device_type>();
 
-    double normr = 1000; 
-    
+    double normr = 1000;
+
     Kokkos::deep_copy( p , x );
 
     // create CRSMatVec object for A * p
     CRSMatVec<Scalar,device_type> A_mult_p(A_value, A_row , A_col , p , Ap);
 
     A_mult_p.apply(); // Ap = A * p
-  
+
     // r = b - Ap
     Kokkos::parallel_for(rows , WAXSBY<Scalar , device_type>(one , b , one , Ap , r) );
-    
+
     // p = r
     Kokkos::deep_copy( p , r );
 
@@ -124,30 +124,30 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
       // avoid the device-host synchronization
       // required by a copy-back of residual data.
 
-      for(k = 0; k < 25 ; k++) 
+      for(k = 0; k < 25 ; k++)
       {
         // Ap = A*p
         A_mult_p.apply();
-        
+
         // ptrans = p • Ap
         Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(p , Ap) , ptrans );
 
         // oldrtrans = r • r
         // alpha = rtrans / ptrans
-        Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(r , r) ,  
+        Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(r , r) ,
                         Divide<Scalar , device_type>(ptrans,alpha,oldrtrans));
 
-        // x = x + alpha * p 
+        // x = x + alpha * p
         Kokkos::parallel_for(rows , WAXPBY<Scalar , device_type>(one , x , alpha , p , x) );
-    
+
         // r = rk - alpha * Ap
         Kokkos::parallel_for(rows , WAXSBY<Scalar , device_type>(one , r , alpha , Ap , r) );
 
         // rtrans = r • r
         // beta = rtrans / oldrtrans
-        Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(r , r) , 
+        Kokkos::parallel_reduce(rows , Dot<Scalar , device_type>(r , r) ,
                         Divide<Scalar , device_type>(oldrtrans , beta, rtrans) );
-                                  
+
         // p = r + beta * p
         Kokkos::parallel_for(rows , WAXPBY<Scalar , device_type>(one , r , beta , p , p) );
       }

@@ -45,10 +45,10 @@
 #define KOKKOS_BOXMESHFIXTURE_HPP
 
 #include <stdexcept>
-#include <Kokkos_MDArrayView.hpp>
-#include <Kokkos_MultiVectorView.hpp>
+#include <Kokkos_MDArray.hpp>
+#include <Kokkos_MultiVector.hpp>
 
-//  construct a structured, rectangular prism mesh of Hex elements, 
+//  construct a structured, rectangular prism mesh of Hex elements,
 //  with dimensions given by elems_x, elems_y, elems_z
 
 template < class IndexArray , class ScalarArray >
@@ -68,11 +68,11 @@ public:
   typedef typename Device::size_type  index_type ;
   typedef Scalar                      scalar_type ;
 
-  typedef Kokkos::MDArrayView< index_type ,  Device > index_array_d ;
-  typedef Kokkos::MDArrayView< scalar_type , Device > scalar_array_d ;
+  typedef Kokkos::MDArray< index_type ,  Device > index_array_d ;
+  typedef Kokkos::MDArray< scalar_type , Device > scalar_array_d ;
 
-  typedef typename index_array_d  ::HostView  index_array_h ;
-  typedef typename scalar_array_d ::HostView  scalar_array_h ;
+  typedef typename index_array_d  ::HostMirror  index_array_h ;
+  typedef typename scalar_array_d ::HostMirror  scalar_array_h ;
 
   MeshFixture< index_array_d , scalar_array_d > d_mesh ;
   MeshFixture< index_array_h , scalar_array_h > h_mesh ;
@@ -136,7 +136,7 @@ public:
   void verify_connectivity_and_coordinates() const
   {
     for ( index_type node_index = 0 ; node_index < node_count; ++node_index ) {
-      for ( index_type j = h_mesh.node_elem_offset( node_index ) ; 
+      for ( index_type j = h_mesh.node_elem_offset( node_index ) ;
                 j < h_mesh.node_elem_offset( node_index + 1 ) ; ++j ) {
         const index_type elem_index = h_mesh.node_elem_ids(j,0);
         const index_type node_local = h_mesh.node_elem_ids(j,1);
@@ -236,10 +236,10 @@ public:
     d_mesh.node_elem_offset = Kokkos::create_mdarray< index_array_d >( node_count + 1 );
     d_mesh.node_elem_ids    = Kokkos::create_mdarray< index_array_d >( count_node_elem , 2 );
 
-    h_mesh.node_coords      = Kokkos::mirror_create( d_mesh.node_coords );
-    h_mesh.elem_node_ids    = Kokkos::mirror_create( d_mesh.elem_node_ids );
-    h_mesh.node_elem_offset = Kokkos::mirror_create( d_mesh.node_elem_offset );
-    h_mesh.node_elem_ids    = Kokkos::mirror_create( d_mesh.node_elem_ids );
+    h_mesh.node_coords      = Kokkos::create_mirror( d_mesh.node_coords );
+    h_mesh.elem_node_ids    = Kokkos::create_mirror( d_mesh.elem_node_ids );
+    h_mesh.node_elem_offset = Kokkos::create_mirror( d_mesh.node_elem_offset );
+    h_mesh.node_elem_ids    = Kokkos::create_mirror( d_mesh.node_elem_ids );
 
     // Initialize node coordinates of grid.
 
@@ -269,28 +269,28 @@ public:
 
     verify_connectivity_and_coordinates();
 
-    Kokkos::mirror_update( d_mesh.node_coords ,      h_mesh.node_coords );
-    Kokkos::mirror_update( d_mesh.elem_node_ids ,    h_mesh.elem_node_ids );
-    Kokkos::mirror_update( d_mesh.node_elem_offset , h_mesh.node_elem_offset );
-    Kokkos::mirror_update( d_mesh.node_elem_ids ,    h_mesh.node_elem_ids );
+    Kokkos::deep_copy( d_mesh.node_coords ,      h_mesh.node_coords );
+    Kokkos::deep_copy( d_mesh.elem_node_ids ,    h_mesh.elem_node_ids );
+    Kokkos::deep_copy( d_mesh.node_elem_offset , h_mesh.node_elem_offset );
+    Kokkos::deep_copy( d_mesh.node_elem_ids ,    h_mesh.node_elem_ids );
   }
 
 
   template< typename ValueType >
-  void init_dirichlet_z( Kokkos::MultiVectorView< index_type, Device > & node_flag ,
-                         Kokkos::MultiVectorView< ValueType , Device > & node_value ) const
+  void init_dirichlet_z( Kokkos::MultiVector< index_type, Device > & node_flag ,
+                         Kokkos::MultiVector< ValueType , Device > & node_value ) const
   {
-    typedef Kokkos::MultiVectorView< index_type, Device > index_vector_d ;
-    typedef Kokkos::MultiVectorView< ValueType , Device > value_vector_d ;
+    typedef Kokkos::MultiVector< index_type, Device > index_vector_d ;
+    typedef Kokkos::MultiVector< ValueType , Device > value_vector_d ;
 
-    typedef typename value_vector_d::HostView  value_vector_h ;
-    typedef typename index_vector_d::HostView  index_vector_h ;
+    typedef typename value_vector_d::HostMirror  value_vector_h ;
+    typedef typename index_vector_d::HostMirror  index_vector_h ;
 
     node_flag  = Kokkos::create_multivector< index_vector_d >( node_count );
     node_value = Kokkos::create_multivector< value_vector_d >( node_count );
 
-    index_vector_h flag_h  = Kokkos::mirror_create( node_flag );
-    value_vector_h value_h = Kokkos::mirror_create( node_value );
+    index_vector_h flag_h  = Kokkos::create_mirror( node_flag );
+    value_vector_h value_h = Kokkos::create_mirror( node_value );
 
     index_type ig , jg , kg ;
     for ( index_type i = 0 ; i < node_count ; ++i ) {
@@ -301,8 +301,8 @@ public:
       }
     }
 
-    Kokkos::mirror_update( node_flag ,  flag_h );
-    Kokkos::mirror_update( node_value , value_h );
+    Kokkos::deep_copy( node_flag ,  flag_h );
+    Kokkos::deep_copy( node_value , value_h );
   }
 };
 

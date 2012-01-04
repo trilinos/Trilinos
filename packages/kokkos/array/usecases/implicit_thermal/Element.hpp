@@ -218,12 +218,12 @@ struct ElementComp ;
 template<typename Scalar , typename ScalarCoord >
 struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
 
-  typedef KOKKOS_MACRO_DEVICE                            device_type;
-  typedef Scalar                                         scalar_type ;
-  typedef device_type::size_type                         index_type ;
-  typedef Kokkos::MDArrayView<index_type,device_type>    index_array ;
-  typedef Kokkos::MDArrayView<Scalar,      device_type>  scalar_array ;
-  typedef Kokkos::MDArrayView<ScalarCoord, device_type>  coord_array ;
+  typedef KOKKOS_MACRO_DEVICE                        device_type;
+  typedef Scalar                                     scalar_type ;
+  typedef device_type::size_type                     index_type ;
+  typedef Kokkos::MDArray<index_type,device_type>    index_array ;
+  typedef Kokkos::MDArray<Scalar,      device_type>  scalar_array ;
+  typedef Kokkos::MDArray<ScalarCoord, device_type>  coord_array ;
   typedef ShapeFunctionEvaluation< Scalar > shape_function_data ;
 
   enum { SpatialDimension = shape_function_data::SpatialDimension };

@@ -98,14 +98,14 @@ void explicit_dynamics_app( const size_t ex,
                             const size_t steps ,
                             PerformanceData & perf )
 {
-  typedef typename Kokkos::MDArrayView<Scalar,device_type>::HostView  scalar_array_h;
-  typedef typename Kokkos::MDArrayView<int,device_type>::HostView     int_array_h;
+  typedef typename Kokkos::MDArray<Scalar,device_type>::HostMirror  scalar_array_h;
+  typedef typename Kokkos::MDArray<int,device_type>::HostMirror     int_array_h;
 
-  typedef typename Kokkos::MDArrayView<Scalar,device_type>            scalar_array_d;
-  typedef typename Kokkos::MDArrayView<int,device_type>               int_array_d;
+  typedef typename Kokkos::MDArray<Scalar,device_type>            scalar_array_d;
+  typedef typename Kokkos::MDArray<int,device_type>               int_array_d;
 
-  typedef typename Kokkos::ValueView<Scalar,device_type>::HostView   scalar_h;
-  typedef typename Kokkos::ValueView<Scalar,device_type>             scalar_d;
+  typedef typename Kokkos::Value<Scalar,device_type>::HostMirror   scalar_h;
+  typedef typename Kokkos::Value<Scalar,device_type>             scalar_d;
 
   const int NumStates = 2;
 
@@ -236,7 +236,7 @@ void explicit_dynamics_app( const size_t ex,
                                         ),
         set_next_time_step<Scalar,device_type>(region));
 
-    device_type::wait_functor_completion();
+    device_type::fence();
 
     perf.internal_force_time += wall_clock.seconds();
     wall_clock.reset();
@@ -253,7 +253,7 @@ void explicit_dynamics_app( const size_t ex,
                                           next_state
                                         ));
 
-    device_type::wait_functor_completion();
+    device_type::fence();
     perf.central_diff += wall_clock.seconds();
     wall_clock.reset();
 
@@ -267,7 +267,7 @@ void explicit_dynamics_app( const size_t ex,
     }
 #endif
 
-    device_type::wait_functor_completion();
+    device_type::fence();
     perf.copy_to_host_time += wall_clock.seconds();
     wall_clock.reset();
 
