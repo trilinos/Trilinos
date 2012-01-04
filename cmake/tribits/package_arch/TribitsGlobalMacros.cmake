@@ -1511,6 +1511,13 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
     # Configure the file with everything set
     CONFIGURE_FILE(${${PROJECT_NAME}_TRIBITS_DIR}/Tribits_version.h.in
       ${OUTPUT_VERSION_HEADER_FILE})
+      
+    # Install version header file
+    INSTALL(
+      FILES ${OUTPUT_VERSION_HEADER_FILE}
+      DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
+      COMPONENT ${PROJECT_NAME}
+      )
 
   ENDIF()
 
