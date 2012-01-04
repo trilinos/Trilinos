@@ -1335,12 +1335,13 @@ int Epetra_CrsGraph::OptimizeStorage() {
   if((CrsGraphData_->CV_ == View) && !Contiguous) 
     return(3);  // This is user data, it's not contiguous and we can't make it so.
 
-  if(CrsGraphData_->IndexOffset_ .Values() != CrsGraphData_->NumIndicesPerRow_.Values())
-    CrsGraphData_->IndexOffset_.MakeViewOf(CrsGraphData_->NumIndicesPerRow_);
-
   // This next step constructs the scan sum of the number of indices per row.  Note that the
   // storage associated with NumIndicesPerRow is used by IndexOffset, so we have to be
   // careful with this sum operation
+
+  if(CrsGraphData_->IndexOffset_.Values() != CrsGraphData_->NumIndicesPerRow_.Values())
+    CrsGraphData_->IndexOffset_.MakeViewOf(CrsGraphData_->NumIndicesPerRow_);
+
   int * numIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
   int curNumIndices = numIndicesPerRow[0];
   numIndicesPerRow[0] = 0;
@@ -1350,6 +1351,9 @@ int Epetra_CrsGraph::OptimizeStorage() {
     curNumIndices = nextNumIndices;
   }
 
+// *******************************
+// Data NOT contiguous, make it so
+// *******************************
   if(!Contiguous) { // Must pack indices if not already contiguous
 
     // Allocate one big integer array for all index values
