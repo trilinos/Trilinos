@@ -21,17 +21,6 @@
 /* define if we have the Ovis library*/
 #cmakedefine HAVE_OVIS
 
-/* define if we have built Zoltan2 with 64-bit
- * third party libraries.  Needed by tests
- * which use third party libraries.
- */
-#cmakedefine HAVE_TPL64
-
-/* define if malloc.h has mallinfo() and you 
- * want to build Zoltan_Mallinfo.cpp.
- */
-#cmakedefine HAVE_MALLINFO
-
 /* define to turn on runtime display of
  * total memory committed at points throughout
  * the execution of zoltan2
