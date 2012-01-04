@@ -68,7 +68,7 @@ SET(BUILD_DIR_NAME SERIAL_OPT_DEV1)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
-SET(Trilinos_PACKAGES FEApp Mesquite Didasko MOOCHO Moertel NOX RBGen Stratimikos ML Komplex Ifpack Pamgen Amesos Galeri AztecOO Claps Pliris OptiPack EpetraExt Triutils GlobiPack Shards Zoltan Kokkos RTOp ThreadPool TrilinosFramework)
+SET(Trilinos_PACKAGES FEApp Mesquite Didasko MOOCHO Moertel NOX RBGen Stratimikos ML Komplex Ifpack Pamgen Amesos Galeri AztecOO Pliris OptiPack EpetraExt Triutils GlobiPack Shards Zoltan Kokkos RTOp ThreadPool TrilinosFramework)
 
 SET( EXTRA_EXCLUDE_PACKAGES Rythmos Piro)
 
