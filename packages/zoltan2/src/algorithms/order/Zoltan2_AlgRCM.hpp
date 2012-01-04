@@ -4,11 +4,12 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <queue>
+//#define RCM
 
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgRCM.hpp
-//! \brief RCM ordering of a graph (serial)
+//! \brief RCM ordering of a graph (serial, local graph only)
 
 
 namespace Zoltan2{
@@ -45,18 +46,18 @@ int AlgRCM(
 
 #ifdef RCM
   // This is the real RCM algorithm.
-  // Get local graph
-  ArrayView<const lno_t> &edgeIds;
-  ArrayView<const lno_t> &offsets;
-  ArrayView<const scalar_t> &wgts;
-  getLocalEdgeList(&edgeIds, &offsets, &wgts);
+  // Get local graph.
+  ArrayView<const lno_t> edgeIds;
+  ArrayView<const lno_t> offsets;
+  ArrayView<const scalar_t> wgts;
+  size_t nEdges = model->getLocalEdgeList(edgeIds, offsets, wgts);
 
   // TODO: Find pseudo-peripheral root vertex.
   lno_t root = 0;
 
   // Do BFS from root
   queue<lno_t> Q;
-  lno_t count = n-1; // start numbering from n-1 (Reverse CM)
+  lno_t count = nVtx-1; // start numbering from n-1 (Reverse CM)
   lno_t next = 0;
 
   while (count){ // Some vertex remains unlabelled
@@ -72,7 +73,7 @@ int AlgRCM(
 
       // Add unmarked nbors to queue
       // TODO: Sort nbors by degree
-      for (lno_t *w = edgeIds[offset[v]]; w<edgeIds[offset[v+1]]; w++){
+      for (lno_t *w = edgeIds[offsets[v]]; w<edgeIds[offsets[v+1]]; w++){
         if (*w != -1){
           perm[*w] = count--; // Label as we push on Q
           Q.push(*w);
