@@ -308,13 +308,21 @@ namespace Tpetra {
     bool distributed_;
     //! A direct mapping from local IDs to global IDs.
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
-    //! A mapping from global IDs to local IDs.
+    /// \brief A mapping from global IDs to local IDs.
+    ///
+    /// This is a local mapping.  \c Directory implements the global
+    /// mapping for all global IDs.  This object corresponds roughly
+    /// to Epetra_BlockMapData's LIDHash_ hash table (which also maps
+    /// from global IDs to local IDs).
     std::map<GlobalOrdinal, LocalOrdinal> glMap_;
     /// \brief A Directory for looking up nodes for this Map. 
     ///
-    /// This directory is a non-owning RCP and is therefore not
-    /// allowed to persist beyond the lifetime of this Map. Do not
-    /// under any circumstance pass this outside of the Map.
+    /// This directory is a nonowning RCP and is therefore not allowed
+    /// to persist beyond the lifetime of this Map.  Never allow this
+    /// pointer to escape the Map.  It must be a nonowning RCP since
+    /// the directory in turn must hold an RCP to this Map; making
+    /// this an owning RCP would cause a circular dependency which
+    /// would break reference counting.
     Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
