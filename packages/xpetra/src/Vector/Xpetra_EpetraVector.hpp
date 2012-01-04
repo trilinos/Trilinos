@@ -24,7 +24,7 @@ namespace Xpetra {
   //
 
   class EpetraVector
-    : public Vector<double,int,int>, public EpetraMultiVector
+    : public virtual Vector<double,int,int>, public EpetraMultiVector
   {
 
     typedef double Scalar;
