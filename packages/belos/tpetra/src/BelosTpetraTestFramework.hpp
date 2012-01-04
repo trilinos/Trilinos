@@ -279,11 +279,12 @@ namespace Belos {
 	RCP<const map_type> domainMap = 
 	  createUniformContigMapWithNode<LO, GO, NT> (numCols, comm_, node_);
 	// Convert the read-in matrix data into a Tpetra::CrsMatrix.
-	typedef Teuchos::ArrayView<const int>::size_type size_type;
-	return convert (rowMap, domainMap, rangeMap, 
-			ArrayView<const double> (val, static_cast<size_type> (nnz)),
-			ArrayView<const double> (ind, static_cast<size_type> (nnz)),
-			ArrayView<const int> (ptr, static_cast<size_type> (numCols+1)));
+	typedef ArrayView<const int>::size_type size_type;
+	ArrayView<const double> valView (val, static_cast<size_type> (nnz));
+	ArrayView<const double> indView (ind, static_cast<size_type> (nnz));
+	ArrayView<const int> ptrView (ptr, static_cast<size_type> (numCols+1));
+	return convert<double, int> (rowMap, domainMap, rangeMap, 
+				     valView, indView, ptrView);
       }
 
     private:
@@ -294,10 +295,12 @@ namespace Belos {
 
       /// \brief Convert the Harwell-Boeing data to a Tpetra::CrsMatrix.
       ///
-      /// \note We allow the indices read from the file to have a
-      ///   different integer type than the type of the sparse
-      ///   matrix's global indices.
-      template<class IndexType>
+      /// \note We allow the values and indices read from the file to
+      ///   have different types than the types of the sparse matrix's
+      ///   values resp. global indices.  This is why this method is
+      ///   templated on ValueType and IndexType, which are the types
+      ///   of values resp. indices found in the file.
+      template<class ValueType, class IndexType>
       Teuchos::RCP<sparse_matrix_type> 
       convert (const Teuchos::RCP<const map_type>& rowMap,
 	       const Teuchos::RCP<const map_type>& domainMap,
@@ -322,10 +325,9 @@ namespace Belos {
 	  // storage to CrsMatrix's compressed sparse row storage.
 	  for (global_size_t curCol = 0; curCol < numCols; ++curCol) {
 	    for (IndexType k = ptr[curCol]; k < ptr[curCol+1]; ++k) {
-	      const IndexType curRow = ind[k];
-	      const scalar_type curVal = val[k];
-	      A->insertGlobalValues (static_cast<global_ordinal_type> (curRow),
-				     tuple (curCol), tuple (curVal));
+	      const global_ordinal_type curRow = static_cast<global_ordinal_type> (ind[k]);
+	      const scalar_type curVal = static_cast<scalar_type> (val[k]);
+	      A->insertGlobalValues (curRow, tuple (curCol), tuple (curVal));
 	    }
 	  }
 	}
