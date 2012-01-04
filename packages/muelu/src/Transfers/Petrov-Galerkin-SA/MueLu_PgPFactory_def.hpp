@@ -251,7 +251,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
   Teuchos::ArrayRCP< const Scalar > Numerator_local = Numerator->getData(0);
   Teuchos::ArrayRCP< const Scalar > Denominator_local = Denominator->getData(0);
   Teuchos::ArrayRCP< Scalar >       ColBasedOmega_local = ColBasedOmega->getDataNonConst(0);
-  LocalOrdinal zero_local = Teuchos::ScalarTraits<Scalar>::zero();
+  LocalOrdinal zero_local = 0;
   Scalar min_local = Teuchos::ScalarTraits<Scalar>::one() * 1000000;
   Scalar max_local = Teuchos::ScalarTraits<Scalar>::zero();
   for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(Numerator->getLocalLength()); i++) {
