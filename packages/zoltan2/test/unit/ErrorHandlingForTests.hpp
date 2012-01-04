@@ -20,7 +20,7 @@ using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::reduceAll;
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
 
 #define TEST_FAIL_AND_THROW(comm, ok, s){ \
 int gval, lval=( (ok) ? 0 : 1);       \

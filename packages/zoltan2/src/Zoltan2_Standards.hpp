@@ -52,7 +52,7 @@ using Teuchos::arcp_reinterpret_cast;
 using Teuchos::arcp;
 using Teuchos::ArrayView;
 using Teuchos::av_const_cast;
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
 using Teuchos::MpiComm;
 #endif
 using Teuchos::Comm;

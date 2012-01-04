@@ -4,7 +4,7 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
-#ifndef HAVE_SCOTCH
+#ifndef HAVE_ZOLTAN2_SCOTCH
 
 // Error handling for when Scotch is requested
 // but Zoltan2 not built with Scotch.
@@ -37,26 +37,26 @@ void AlgPTScotch(
 }
 }
 
-#else  //HAVE_SCOTCH
+#else  //HAVE_ZOLTAN2_SCOTCH
 
 
 // stdint.h for int64_t in scotch header
 
 #include <stdint.h>
-#ifndef HAVE_MPI
+#ifndef HAVE_ZOLTAN2_MPI
 #include "scotch.h"
 #else
 #include "ptscotch.h"
 #endif
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
 extern "C"{
 static char *z2_meminfo=NULL;
 extern void Zoltan_get_linux_meminfo(char *msg, char **result);
 }
 #endif
 
-#ifdef SHOW_SCOTCH_HIGH_WATER_MARK
+#ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
 //
 // Scotch keeps track of memory high water mark, but doesn't
 // provide a way to get that number.  So add this function:
@@ -69,7 +69,7 @@ extern void Zoltan_get_linux_meminfo(char *msg, char **result);
 //
 // and compile scotch with -DCOMMON_MEMORY_TRACE
 //
-#ifdef HAVE_SCOTCH_GETMEMORYMAX
+#ifdef HAVE_SCOTCH_ZOLTAN2_GETMEMORYMAX
 
 extern "C"{
 extern size_t SCOTCH_getMemoryMax();
@@ -77,7 +77,7 @@ extern size_t SCOTCH_getMemoryMax();
 
 #else
 
-#error "Turn off SHOW_SCOTCH_HIGH_WATER_MARK in cmake configure, or see SCOTCH_HIGH_WATER_MARK info in Zoltan2_AlgScotch.hpp"
+#error "Either turn off ZOLTAN2_ENABLE_SCOTCH_MEMORY_REPORT in cmake configure, or see SHOW_ZOLTAN2_SCOTCH_MEMORY comment in Zoltan2_AlgScotch.hpp"
 
 #endif
 
@@ -196,7 +196,7 @@ void AlgPTScotch(
   SCOTCH_Num partnbr;
   SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
 
   const SCOTCH_Num  baseval = 0;  // Base value for array indexing.
                                   // GraphModel returns GNOs from base 0.
@@ -281,8 +281,8 @@ void AlgPTScotch(
 
   Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphPart", !ierr, BASIC_ASSERTION);
 
-#ifdef SHOW_SCOTCH_HIGH_WATER_MARK
-#ifdef HAVE_SCOTCH_GETMEMORYMAX
+#ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
+#ifdef HAVE_SCOTCH_ZOLTAN2_GETMEMORYMAX
   int me = env->comm_->getRank();
   if (me == 0){
     size_t scotchBytes = SCOTCH_getMemoryMax();
@@ -307,7 +307,7 @@ void AlgPTScotch(
 
   solution->setParts(vtxID, partList, imbalance);
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me==0){
     Zoltan_get_linux_meminfo("After creating solution", &z2_meminfo);
     if (z2_meminfo){
@@ -347,5 +347,5 @@ void AlgPTScotch(
 }
 
 }
-#endif // HAVE_SCOTCH
+#endif // HAVE_ZOLTAN2_SCOTCH
 #endif

@@ -23,7 +23,7 @@
 
 #include <Teuchos_Ptr.hpp>
 
-#ifdef HAVE_OVIS
+#ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
 #endif
 
@@ -74,15 +74,15 @@ public:
 
   // User sets some part sizes for the first weight. 
 
-  void SetPartSizes(int len, size_t *partIds, float *partSizes) 
+  void setPartSizes(int len, size_t *partIds, float *partSizes) 
   { 
-    SetPartSizesForCritiera(0, len, partIds, partSizes);
+    setPartSizesForCritiera(0, len, partIds, partSizes);
   }
 
   // User sets some part sizes for other weights. 
   // TODO - decide whether we copy or view
 
-  void SetPartSizesForCritiera(int criteria, int len, size_t *partIds, 
+  void setPartSizesForCritiera(int criteria, int len, size_t *partIds, 
     float *partSizes) 
   {
     if (len && criteria < 0 && criteria >= numberOfWeights_)
@@ -184,7 +184,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
   HELLO;
   using std::string;
 
-#ifdef HAVE_OVIS
+#ifdef HAVE_ZOLTAN2_OVIS
   ovis_enabled(this->comm_->getRank());
 #endif
 
@@ -291,7 +291,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
     }
     else if (model == string("graph")){
       modelType_ = GraphModelType;
-#ifdef HAVE_SCOTCH
+#ifdef HAVE_ZOLTAN2_SCOTCH
       if (this->comm_->getSize() > 1)
         algorithm_ = string("ptscotch"); 
       else
@@ -299,7 +299,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #else
-#ifdef HAVE_PARMETIS
+#ifdef HAVE_ZOLTAN2_PARMETIS
       if (this->comm_->getSize() > 1)
         algorithm_ = string("parmetis"); 
       else

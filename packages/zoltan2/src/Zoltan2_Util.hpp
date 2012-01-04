@@ -22,7 +22,7 @@ namespace Zoltan2{
 /*! Convert an MPI communicator to a MpiComm object.
  */
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
 template <typename Ordinal>
   RCP<MpiComm<Ordinal> >
     getTeuchosMpiComm(const MPI_Comm &comm)

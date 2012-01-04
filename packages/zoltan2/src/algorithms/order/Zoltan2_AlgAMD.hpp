@@ -4,7 +4,7 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 
-#ifdef HAVE_AMD
+#ifdef HAVE_ZOLTAN2_AMD
 #include "amd.h"
 #endif
 
@@ -16,7 +16,7 @@ class AMDTraits
                 Ordinal *perm, double *control, double *info);
 };
 
-#ifdef HAVE_AMD
+#ifdef HAVE_ZOLTAN2_AMD
 template <>
 class AMDTraits<int>
 {
@@ -77,7 +77,7 @@ int AlgAMD(
   model->getEdgeList( edgeIds, procIds, offsets, wgts);
 
 
-#ifdef HAVE_AMD
+#ifdef HAVE_ZOLTAN2_AMD
   cout << "AMD is enabled" << endl;
   AMDTraits<lno_t> AMDobj;
   double Control[AMD_CONTROL];

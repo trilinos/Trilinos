@@ -1,123 +1,56 @@
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-INCLUDE(CheckTypeSize)
-CHECK_TYPE_SIZE("long long" LONG_LONG)
-
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
-SET(CURRENT_PACKAGE ZOLTAN2)
-CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
-  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
-
-ASSERT_DEFINED(HAVE_LONG_LONG)
-SET(${CURRENT_PACKAGE}_HAVE_LONG_LONG ${HAVE_LONG_LONG})
-
-ASSERT_DEFINED(TPL_ENABLE_MPI)
-SET(HAVE_MPI TPL_ENABLE_MPI)
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_METIS)
-SET(HAVE_METIS ${${PACKAGE_NAME}_ENABLE_METIS})
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ParMETIS)
-SET(HAVE_PARMETIS ${${PACKAGE_NAME}_ENABLE_ParMETIS})
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_PaToH)
-SET(HAVE_PATOH ${${PACKAGE_NAME}_ENABLE_PaToH})
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Scotch)
-SET(HAVE_SCOTCH ${${PACKAGE_NAME}_ENABLE_Scotch})
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AMD)
-SET(HAVE_AMD ${${PACKAGE_NAME}_ENABLE_AMD})
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_LINUX_MEMORY_REPORT)
-SET(SHOW_LINUX_MEMINFO ${${PACKAGE_NAME}_ENABLE_LINUX_MEMORY_REPORT})
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_SCOTCH_MEMORY_REPORT)
-SET(SHOW_SCOTCH_HIGH_WATER_MARK ${${PACKAGE_NAME}_ENABLE_SCOTCH_MEMORY_REPORT})
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_OVIS)
-SET(HAVE_OVIS ${${PACKAGE_NAME}_ENABLE_OVIS})
-
 #
-# If linking with 64-bit TPLs, include
-# Zoltan2_HAVE_TPL64::BOOL=ON
-# in cmake configuration parameters
-#
-# The default is 32-bit third party libraries
-#
-ASSERT_DEFINED(${PACKAGE_NAME}_HAVE_TPL64)
-SET(HAVE_TPL64 ${${PACKAGE_NAME}_HAVE_TPL64})
-
-#
-# B) Define the header and source files (and include directories)
+# B) Define the header files, the source files, and the include directories
 #
 
 SET(HEADERS "")
 SET(SOURCES "")
 
-# Set the base Trilinos directory in order to find Trilinos_version.h
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-ASSERT_DEFINED(PROJECT_SOURCE_DIR)
-ASSERT_DEFINED(PROJECT_BINARY_DIR)
+APPEND_GLOB(HEADERS ${DIR}/algorithms/order/*.hpp)
+APPEND_GLOB(HEADERS ${DIR}/algorithms/partition/*.hpp)
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
+APPEND_GLOB(HEADERS ${DIR}/environment/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/environment/*.cpp)
 
-#
-# Include packages/src directory
-#
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+APPEND_GLOB(HEADERS ${DIR}/input/*.hpp)
+
+APPEND_GLOB(HEADERS ${DIR}/models/*.hpp)
+
+APPEND_GLOB(HEADERS ${DIR}/problems/*.hpp)
+
+APPEND_GLOB(HEADERS ${DIR}/util/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/util/*.cpp)
 
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+# for Trilinos_version.h
+ASSERT_DEFINED(PROJECT_BINARY_DIR)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR})
 
-APPEND_SET(HEADERS
-      Zoltan2_AlltoAll.hpp
-      Zoltan2_DebugManager.hpp
-      Zoltan2_Environment.hpp
-      Zoltan2_Exceptions.hpp
-      Zoltan2_GraphInput.hpp
-      Zoltan2_GraphModel.hpp
-      Zoltan2_IdentifierMap.hpp
-      Zoltan2_IdentifierTraits.hpp
-      Zoltan2_InputAdapter.hpp
-      Zoltan2_InputTraits.hpp
-      Zoltan2_MatrixInput.hpp
-      Zoltan2_Memory.hpp
-      Zoltan2_Model.hpp
-      Zoltan2_OrderingProblem.hpp
-      Zoltan2_OrderingSolution.hpp
-      Zoltan2_Parameters.hpp
-      Zoltan2_PartitioningProblem.hpp
-      Zoltan2_PartitioningSolution.hpp
-      Zoltan2_Problem.hpp
-      Zoltan2_Solution.hpp
-      Zoltan2_Standards.hpp
-      Zoltan2_StridedInput.hpp
-      Zoltan2_TemplateMacros.hpp
-      Zoltan2_Util.hpp
-      Zoltan2_XpetraCrsGraphInput.hpp
-      Zoltan2_XpetraCrsMatrixInput.hpp
-  )
+# for Zoltan2_config.h
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
-APPEND_SET(HEADERS
-      algorithms/order/Zoltan2_OrderingAlgorithms.hpp
-      algorithms/order/Zoltan2_AlgRandom.hpp
-      algorithms/order/Zoltan2_AlgRCM.hpp
-      algorithms/order/Zoltan2_AlgAMD.hpp
-      algorithms/partition/Zoltan2_PartitioningAlgorithms.hpp
-      algorithms/partition/Zoltan2_AlgScotch.hpp
-  )
-
+# for zoltan2 header files
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/partition)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/order)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/environment)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/input)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/models)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/problems)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/util)
 
-
+# for header files of trilinos packages we may use
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/tpetra/src)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/teuchos/src)
@@ -134,16 +67,10 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/ThreadPool/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/ThreadPool/src)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/triutils/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/triutils/src)
-INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/preCopyrightTrilinos/zoltan2/src)
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/preCopyrightTrilinos/zoltan2/src)
 
-# Set sources
-
-APPEND_SET(SOURCES
-  Zoltan2_Environment.cpp
-  Zoltan2_Parameters.cpp
-  Zoltan2_Version.cpp
-  )
+#
+# C) Define the targets for package's library(s)
+#
 
 TRIBITS_ADD_LIBRARY(
   zoltan2

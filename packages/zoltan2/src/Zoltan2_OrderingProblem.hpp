@@ -22,7 +22,7 @@
 
 #include <Zoltan2_GraphModel.hpp>
 #include <string>
-#ifdef HAVE_OVIS
+#ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
 #endif
 
@@ -129,7 +129,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 //       << this->inputAdapter_->inputAdapterType() << " " 
 //       << this->inputAdapter_->inputAdapterName() << endl;
 
-#ifdef HAVE_OVIS
+#ifdef HAVE_ZOLTAN2_OVIS
   ovis_enabled(this->comm_->getRank());
 #endif
 

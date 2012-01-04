@@ -70,7 +70,7 @@ void AlltoAll(const Comm<int> &comm,
     recvBuf.get()[offset] = sendBuf.getRawPtr()[offset];
   }
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
   // Post receives
 
   size_t packetSize = sizeof(T) * count;
@@ -190,7 +190,7 @@ void AlltoAllv(const Comm<int> &comm,
     in[i] = out[i];
   }
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
   // Post receives
 
   RCP<CommRequest> r;

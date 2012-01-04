@@ -1,37 +1,37 @@
 #include <Teuchos_config.h>
 
 /* define if we have MPI */
-#cmakedefine HAVE_MPI
+#cmakedefine HAVE_ZOLTAN2_MPI
 
 /* define if we have the METIS library*/
-#cmakedefine HAVE_METIS
+#cmakedefine HAVE_ZOLTAN2_METIS
 
 /* define if we have the PaToH library*/
-#cmakedefine HAVE_PATOH
+#cmakedefine HAVE_ZOLTAN2_PATOH
 
 /* define if we have the Scotch library*/
-#cmakedefine HAVE_SCOTCH
+#cmakedefine HAVE_ZOLTAN2_SCOTCH
 
 /* define if we have the ParMETIS library*/
-#cmakedefine HAVE_PARMETIS
+#cmakedefine HAVE_ZOLTAN2_PARMETIS
 
 /* define if we have the AMD library*/
-#cmakedefine HAVE_AMD
+#cmakedefine HAVE_ZOLTAN2_AMD
 
 /* define if we have the Ovis library*/
-#cmakedefine HAVE_OVIS
+#cmakedefine HAVE_ZOLTAN2_OVIS
 
 /* define to turn on runtime display of
  * total memory committed at points throughout
  * the execution of zoltan2
  */
-#cmakedefine SHOW_LINUX_MEMINFO
+#cmakedefine SHOW_ZOLTAN2_LINUX_MEMORY
 
 /* define to turn on runtime display of
  * maximum memory used by scotch
  * (requires a hack to the scotch library)
  */
-#cmakedefine SHOW_SCOTCH_HIGH_WATER_MARK
+#cmakedefine SHOW_ZOLTAN2_SCOTCH_MEMORY
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 
@@ -40,6 +40,6 @@
  *  can't use LONG_LONG unless Teuchos is using
  *  long long.
  */
-#cmakedefine ZOLTAN2_HAVE_LONG_LONG
+#cmakedefine HAVE_ZOLTAN2_LONG_LONG
 
 #endif

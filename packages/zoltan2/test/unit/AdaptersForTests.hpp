@@ -33,7 +33,7 @@
 
 #include <Epetra_SerialComm.h>
 #include <Teuchos_DefaultComm.hpp>
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
 #include <Zoltan2_Util.hpp>
 #include <Epetra_MpiComm.h>
 #endif
@@ -87,15 +87,8 @@ private:
     // not implemented, waiting for Tpetra::Map bug fix
     RCP<TpetraCrsMatrixInput > tmi_64_;
 
-#ifdef HAVE_MALLINFO
-    size_t mBytes_;
-#endif
-
     void readMatrixMarketFile()
     {
-#ifdef HAVE_MALLINFO
-        mBytes_ = Zoltan2::getAllocatedMemory();
-#endif
       try{
         M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
                  fname_, tcomm_, node_);
@@ -103,18 +96,12 @@ private:
       catch (std::exception &e) {
         TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
       }
-#ifdef HAVE_MALLINFO
-        mBytes_ = Zoltan2::getAllocatedMemory() - mBytes_;
-#endif
       RCP<xtcrsMatrix_t> xtcrs = rcp(new xtcrsMatrix_t(M_));
       xM_ = rcp_implicit_cast<xcrsMatrix_t>(xtcrs);
     }
 
     void buildCrsMatrix()
     {
-#ifdef HAVE_MALLINFO
-        mBytes_ = Zoltan2::getAllocatedMemory();
-#endif
       Teuchos::CommandLineProcessor tclp;
       MueLu::Gallery::Parameters<GNO> params(tclp,
          xdim_, ydim_, zdim_, std::string("Laplace3D"));
@@ -131,9 +118,6 @@ private:
       catch (std::exception &e) {    // Probably not enough memory
         TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
       }
-#ifdef HAVE_MALLINFO
-        mBytes_ = Zoltan2::getAllocatedMemory() - mBytes_;
-#endif
       RCP<xtcrsMatrix_t> xtcrs = rcp(new xtcrsMatrix_t(M_));
       xM_ = rcp_implicit_cast<xcrsMatrix_t>(xtcrs);
     }
@@ -184,17 +168,6 @@ public:
        createMatrix();
       return xM_;
     }
-
-#ifdef HAVE_MALLINFO
-    // A count of memory bytes should be a size_t, but
-    // mallinfo() predates size_t.
-    int getMatrixSize()
-    {
-      if (M_.is_null())
-       createMatrix();
-      return mBytes_;
-    }
-#endif
 
     RCP<EpetraCrsGraphInput > getEpetraCrsGraphInputAdapter()
     {

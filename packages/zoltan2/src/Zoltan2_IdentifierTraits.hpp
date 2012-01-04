@@ -495,7 +495,7 @@ struct IdentifierTraits<unsigned long> {
     return z2AreConsecutive(val, n); }
 };
 
-#ifdef ZOLTAN2_HAVE_LONG_LONG
+#ifdef HAVE_ZOLTAN2_LONG_LONG
 
 template<>
 struct IdentifierTraits<long long> {

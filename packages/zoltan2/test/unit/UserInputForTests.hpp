@@ -38,7 +38,7 @@
 #include <MueLu_GalleryParameters.hpp>
 
 #include <Xpetra_EpetraUtils.hpp>
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>
