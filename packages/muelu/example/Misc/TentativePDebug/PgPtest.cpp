@@ -141,6 +141,7 @@ int main(int argc, char *argv[]) {
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<PgPFactory>        Pfact = Teuchos::rcp( new PgPFactory(TentPFact) );
+  //Pfact->SetMinimizationMode(MueLu::PgPFactory::L2NORM);
   //Pfact->SetDampingFactor(0.);
   RCP<RFactory>          Rfact = rcp( new GenericRFactory(Pfact) );
   //RCP<GenericPRFactory>  PRfact = rcp( new GenericPRFactory(Pfact,Rfact));

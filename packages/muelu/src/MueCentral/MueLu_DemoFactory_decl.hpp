@@ -29,15 +29,15 @@ namespace MueLu {
 
     //@}
 
-    //! Input
+    //! @name Input
     //@{
 
     void DeclareInput(Level &currentLevel) const;
 
     //@}
 
-    //@{
     //! @name Build methods.
+    //@{
 
     //! Build an object with this factory.
     void Build(Level & currentLevel) const;

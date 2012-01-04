@@ -36,7 +36,6 @@ APPEND_SET(SOURCES
   Smoothers/MueLu_TestHelpersSmoothers.cpp
   Utilities
   VariableContainer.cpp
-  Zoltan.cpp
 )
 
 ### Tests that require other Trilinos packages
@@ -51,6 +50,7 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_EpetraExt
   ${PACKAGE_NAME}_ENABLE_Tpetra
   ${PACKAGE_NAME}_ENABLE_Belos
+  ${PACKAGE_NAME}_ENABLE_Zoltan
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack2)
@@ -71,6 +71,10 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Belos)
   APPEND_SET(SOURCES BelosAdapters.cpp)
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
+  APPEND_SET(SOURCES Zoltan.cpp)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE(

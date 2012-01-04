@@ -18,14 +18,35 @@ namespace MueLu {
   Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amesos2Smoother(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact)
     : type_(type), paramList_(paramList), AFact_(AFact)
   {
-
+    // set default solver type
 #if defined(HAVE_AMESOS2_SUPERLU)
-    type_ = "Superlu";
+    if(type_ == "") type_ = "Superlu";    // 1. default smoother (if Superlu is available)
 #elif defined(HAVE_AMESOS2_KLU)
-    type_ = "Klu";
+    if(type_ == "") type_ = "Klu";        // 2. default smoother (if KLU is available)
+#elif defined(HAVE_AMESOS2_SUPERLUDIST)
+    if(type_ == "") type_ = "Superludist";// 3. default smoother (if Superludist is available)
 #endif
-    TEUCHOS_TEST_FOR_EXCEPTION(type_ == "", Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): Amesos2 compiled without KLU and SuperLU. Cannot define a solver by default for this Amesos2Smoother object");
 
+    // check for valid direct solver type
+    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" &&
+        type_ != "Superludist" &&
+        type_ != "Klu",
+        Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): type of Amesos2 direct solver can be 'Klu', 'Superlu' or 'Superludist'");
+    if (type_ == "Superlu") {
+#if not defined(HAVE_AMESOS2_SUPERLU)
+      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): Amesos2 compiled without SuperLU. Cannot define a solver by default for this Amesos2Smoother object");
+#endif
+    }
+    if (type_ == "Superludist") {
+#if not defined(HAVE_AMESOS2_SUPERLUDIST)
+      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): Amesos2 compiled without SuperLU_DIST. Cannot define a solver by default for this Amesos2Smoother object");
+#endif
+    }
+    if (type_ == "Klu") {
+#if not defined(HAVE_AMESOS2_KLU)
+      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): Amesos2 compiled without KLU. Cannot define a solver by default for this Amesos2Smoother object");
+#endif
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

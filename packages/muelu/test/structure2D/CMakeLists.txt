@@ -5,7 +5,17 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Graph) # we need this 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../utils/Facade) # TAW: not sure if we need this
 
-IF (${PACKAGE_NAME}_ENABLE_EpetraExt) 
+# first ensure that these cmake boolean variables are defined
+ASSERT_DEFINED(
+  ${PACKAGE_NAME}_ENABLE_Epetra
+  ${PACKAGE_NAME}_ENABLE_EpetraExt
+  ${PACKAGE_NAME}_ENABLE_Amesos
+  )
+
+
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND
+    ${PACKAGE_NAME}_ENABLE_EpetraExt AND
+    ${PACKAGE_NAME}_ENABLE_Amesos) 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Structure2D_Test

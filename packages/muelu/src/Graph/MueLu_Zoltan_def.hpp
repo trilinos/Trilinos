@@ -91,17 +91,21 @@ namespace MueLu {
     //TODO check that A's row map is 1-1.  Zoltan requires this.
     RCP<const Map> rowMap = A->getRowMap();
     int mypid = rowMap->getComm()->getRank();
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,false);
-    ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition;
     if (newDecomp) {
+      decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,false); //Don't bother initializing, as this will just be overwritten.
       //TODO Right now, the new partition is numbered 0 ... n.  Will Zoltan let us used different partitioning
       //numbers, e.g., the processor ID?  I can imagine cases where we'd like migrate to a nonconsecutive subset
       //of processors.
       //Answer -- no.   So, we'll have to look at make decisions here about which PIDs should be active.
+      ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
       for (typename ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
         *i = mypid;
       for (int i=0; i< num_exported; ++i)
         decompEntries[ rowMap->getLocalElement(export_gids[i]) ] = export_to_part[i];
+    } else {
+      //Running on one processor, so decomposition is the trivial one, all zeros.
+      decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,true);
     }
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
 

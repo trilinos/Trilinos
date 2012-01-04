@@ -1,10 +1,3 @@
-/*
- * MueLu_Interpreter_def.hpp
- *
- *  Created on: Dec 7, 2011
- *      Author: wiesner
- */
-
 #ifndef MUELU_MLINTERPRETER_DEF_HPP_
 #define MUELU_MLINTERPRETER_DEF_HPP_
 
@@ -50,12 +43,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const Teuchos::ParameterList & params, const RCP<Operator> & A, const RCP<MultiVector> nsp) {
 #include "MueLu_UseShortNames.hpp" // TODO don't know why this is needed here
 
-  //Teuchos::ParameterList params;
-  //FillMLParameterList(params);
-
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-
-
 
   // read in common parameters
   int maxLevels = 10;       // multigrid prameters
@@ -81,9 +69,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::Interpreter: only 'Uncoupled' aggregation supported. error.");
 
   // create factories
-
   RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory());
-
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(/*Teuchos::null,nspFact*/));
   dropFact->SetVerbLevel(MueLu::Extreme);
   dropFact->SetFixedBlockSize(nDofsPerNode);
@@ -123,30 +109,8 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   RCP<RAPFactory> AcFact = rcp( new RAPFactory(PFact, RFact) );
   AcFact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  // create coarsest smoother
-  /*RCP<SmootherPrototype> coarsestSmooProto;
-  std::string type = "";
-  if(params.isParameter("coarse: type")) params.get<std::string>("coarse: type");
-  if (type == "Jacobi") {
-
-  } else if (type == "Gauss-Seidel") {
-
-  } else if (type == "symmetric Gauss-Seidel") {
-
-  } else if(type == "Amesos-Superlu") {
-    Teuchos::ParameterList coarsestSmooList;
-    coarsestSmooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
-  } else {
-    AcFact->GetOStream(Warnings0, 0) << "only Superlu as coarsest solver supported!" << std::endl;
-    Teuchos::ParameterList coarsestSmooList;
-    coarsestSmooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
-  }
-  RCP<SmootherFactory> coarsestSmooFact;
-  coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto));*/
-
   RCP<SmootherFactory> coarsestSmooFact;
   coarsestSmooFact = GetCoarsestSolverFactory(params);
-
 
   ///////////////////////////////////////////////////
 
@@ -199,8 +163,6 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
 
     vecManager[i] = rcp(new FactoryManager());
     vecManager[i]->SetFactory("Smoother" ,  SmooFactFine);    // Hierarchy.Setup uses TOPSmootherFactory, that only needs "Smoother"
-    //vecManager[i]->SetFactory("PreSmoother", SmooFactFine);
-    //vecManager[i]->SetFactory("PostSmoother", SmooFactFine);
     vecManager[i]->SetFactory("CoarseSolver", coarsestSmooFact);
     vecManager[i]->SetFactory("A", AcFact);       // same RAP factory
     vecManager[i]->SetFactory("P", PFact);    // same prolongator and restrictor factories
@@ -277,6 +239,12 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
   } else if(type == "Amesos-Superlu") {
     Teuchos::ParameterList coarsestSmooList;
     smooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
+  } else if(type == "Amesos-Superludist") {
+    Teuchos::ParameterList coarsestSmooList;
+    smooProto = Teuchos::rcp( new DirectSolver("Superludist", coarsestSmooList) );
+  } else if(type == "Amesos-KLU") {
+    Teuchos::ParameterList coarsestSmooList;
+    smooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown coarsest solver type. not supported by MueLu.");
   }
@@ -301,15 +269,16 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherFactory(const Teuchos::ParameterList & params, int level) {
 #include "MueLu_UseShortNames.hpp" // TODO don't know why this is needed here
-  char levelstr[11];
-  sprintf(levelstr,"(level %d)",level);
+  char levelchar[11];
+  sprintf(levelchar,"(level %d)",level);
+  std::string levelstr(levelchar);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(params.isSublist("smoother: list "+(string)levelstr)==false, Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother parameter list for level. error.");
+  TEUCHOS_TEST_FOR_EXCEPTION(params.isSublist("smoother: list " + levelstr)==false, Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother parameter list for level. error.");
 
-  std::string type = params.sublist("smoother: list "+(string)levelstr).get<std::string>("smoother: type");
+  std::string type = params.sublist("smoother: list " + levelstr).get<std::string>("smoother: type");
   TEUCHOS_TEST_FOR_EXCEPTION(type.empty(), Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother type for level. error.");
 
-  const Teuchos::ParameterList smolevelsublist = params.sublist("smoother: list "+(string)levelstr);
+  const Teuchos::ParameterList smolevelsublist = params.sublist("smoother: list " + levelstr);
   RCP<SmootherPrototype> smooProto;
   std::string ifpackType;
   Teuchos::ParameterList ifpackList;
