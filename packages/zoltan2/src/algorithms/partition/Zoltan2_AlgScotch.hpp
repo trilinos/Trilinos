@@ -69,7 +69,7 @@ extern void Zoltan_get_linux_meminfo(char *msg, char **result);
 //
 // and compile scotch with -DCOMMON_MEMORY_TRACE
 //
-#ifdef HAVE_SCOTCH_ZOLTAN2_GETMEMORYMAX
+#ifdef HAVE_SCOTCH_GETMEMORYMAX
 
 extern "C"{
 extern size_t SCOTCH_getMemoryMax();
@@ -281,15 +281,21 @@ void AlgPTScotch(
 
   Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphPart", !ierr, BASIC_ASSERTION);
 
+  // TODO - use metric output facility of environment
 #ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
-#ifdef HAVE_SCOTCH_ZOLTAN2_GETMEMORYMAX
   int me = env->comm_->getRank();
+#else
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
+  int me = env->comm_->getRank();
+#endif
+#endif
+
+#ifdef HAVE_SCOTCH_ZOLTAN2_GETMEMORYMAX
   if (me == 0){
     size_t scotchBytes = SCOTCH_getMemoryMax();
     std::cout << "Rank " << me << ": Maximum bytes used by Scotch: ";
     std::cout << scotchBytes << std::endl;
   }
-#endif
 #endif
 
   // Clean up PTScotch

@@ -50,6 +50,12 @@ using Teuchos::rcp_implicit_cast;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp;
 
+#define Z2CLASS_TEMPLATE \
+        typename Scalar=float, \
+        typename LNO=int, typename GNO=int, \
+        typename LID=LNO, typename GID=GNO, \
+        typename Node=Kokkos::DefaultNode::DefaultNodeType
+
 template <Z2CLASS_TEMPLATE>
 class TestAdapters{
 

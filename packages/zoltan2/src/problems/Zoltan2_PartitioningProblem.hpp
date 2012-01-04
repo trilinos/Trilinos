@@ -141,14 +141,10 @@ void PartitioningProblem<Adapter>::solve()
   //   metrics.  The Solution object itself will convert our internal
   //   global numbers back to application global Ids.
 
-  size_t nObj = this->generalModel_->getLocalNumObjects();
   int weightDim = this->generalModel_->getNumWeights();
 
   RCP<const IdentifierMap<user_t> > idMap = 
     this->generalModel_->getIdentifierMap();
-
-  size_t numGlobalParts = 
-    partitioningParams_->get<size_t>(string("num_global_parts"));
 
   solution_ = rcp(new PartitioningSolution<user_t>( this->envConst_,
     idMap, weightDim, partIdsForIdx_.view(0, numberOfWeights_), 
