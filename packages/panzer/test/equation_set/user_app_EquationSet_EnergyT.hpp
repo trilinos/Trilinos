@@ -65,7 +65,7 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
       );
 
     // Don't corrupt original input, create a copy
-    Teuchos::ParameterList tmp_ies_params = ies.params;
+    Teuchos::ParameterList tmp_ies_params = this->getInputEquationSet().params;
     tmp_ies_params.setName(ies.prefix+"ENERGY");
     tmp_ies_params.validateParametersAndSetDefaults(valid_parameters);
     

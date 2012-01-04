@@ -332,5 +332,13 @@ setFieldLayoutLibrary(const FieldLibrary & fieldLibrary)
 }
 
 // ***********************************************************************
+template <typename EvalT>
+const panzer::InputEquationSet& 
+panzer::EquationSet_DefaultImpl<EvalT>::getInputEquationSet() const
+{
+  return m_input_eq_set;
+}
+
+// ***********************************************************************
 
 #endif

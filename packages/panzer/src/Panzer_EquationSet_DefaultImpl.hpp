@@ -69,6 +69,8 @@ namespace panzer {
 
     virtual void setFieldLayoutLibrary(const FieldLibrary & fieldLibrary);
 
+    const panzer::InputEquationSet& getInputEquationSet() const;
+
   protected:
     
     const panzer::InputEquationSet m_input_eq_set;
