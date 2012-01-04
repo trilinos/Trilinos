@@ -158,31 +158,46 @@ namespace Tpetra {
     //! Return the maximum global index over all nodes
     inline GlobalOrdinal getMaxAllGlobalIndex() const { return maxAllGID_; }
 
-    //! \brief Return the local index for a given global index
-    /** If the global index is not owned by this node, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid(). */
+    /// \brief Return the local index for a given global index.  
+    ///
+    /// If the global index is not owned by this node, return
+    /// <tt>Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>.
     LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
 
-    //! Return the global index for a given local index
-    /** If the local index is not valid for this node, returns Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(). */
+    /// \brief Return the global index for a given local index.
+    ///
+    /// If the local index is not valid for this node, return
+    /// <tt>Teuchos::OrdinalTraits<GlobalOrdinal>::invalid()</tt>.
     GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
 
-    //! Returns the node IDs and corresponding local indices for a given list of global indices.
-    /** 
-      \pre nodeIDList.size() == GIDList.size()
-      \pre LIDList.size() == GIDList.size()
-      \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
-               Otherwise, returns AllIDsPresent.
-     */
+    /// \brief Return the node IDs and corresponding local IDs for a given list of global IDs.
+    ///
+    /// \pre nodeIDList.size() == GIDList.size()
+    /// \pre LIDList.size() == GIDList.size()
+    ///
+    /// \return IDNotPresent indicates that at least one global ID was
+    ///   not present in the directory.  Otherwise, return
+    ///   AllIDsPresent.
+    ///
+    /// \note For a distributed noncontiguous Map, this operation
+    ///   requires communication.  This is crucial technology used in
+    ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                                     const Teuchos::ArrayView<                int> & nodeIDList, 
                                     const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const;
 
-    //! Returns the node IDs for a given list of global indices.
-    /** 
-      \pre nodeIDList.size() == GIDList.size()
-      \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
-               Otherwise, returns AllIDsPresent.
-     */
+    /// \brief Return the node IDs for a given list of global IDs.
+    ///
+    /// \pre nodeIDList.size() == GIDList.size()
+    /// \pre nodeIDList.size() == GIDList.size()
+    ///
+    /// \return IDNotPresent indicates that at least one global ID was
+    ///   not present in the directory.  Otherwise, return
+    ///   AllIDsPresent.
+    ///
+    /// \note For a distributed noncontiguous Map, this operation
+    ///   requires communication.  This is crucial technology used in
+    ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                                     const Teuchos::ArrayView<                int> & nodeIDList) const;
 
@@ -270,26 +285,30 @@ namespace Tpetra {
 
   private:
 
-    //! Setup the associated Directory.
+    //! Create this Map's Directory, if it hasn't been created already.
     void setupDirectory();
 
-    //! Perform communication to determine whether this is globally distributed or locally replicated.
+    //! Perform communication to determine whether this map is globally distributed or locally replicated.
     bool checkIsDist() const;
 
-    //! Declared but not defined; do not use.
+    //! Copy constructor (declared but not defined; do not use).
     Map(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
-    //! Declared but not defined; do not use.
+    //! Assignment operator (declared but not defined; do not use).
     Map<LocalOrdinal,GlobalOrdinal,Node>& operator=(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
     // some of the following are globally coherent: that is, they have been guaranteed to 
     // match across all images, and may be assumed to do so
+
+    //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
-    // Map doesn't need node yet, but it likely will later. In the
-    // meantime, passing a Node to Map means that we don't have to
-    // pass a Node to downstream classes such as MultiVector, Vector,
-    // CrsGraph and CrsMatrix.
+    /// \brief The Kokkos Node instance (for shared-memory parallelism).
+    ///
+    /// Map doesn't need node yet, but it likely will later. In the
+    /// meantime, passing a Node to Map means that we don't have to
+    /// pass a Node to downstream classes such as MultiVector, Vector,
+    /// CrsGraph and CrsMatrix.
     Teuchos::RCP<Node> node_;
 
     //! The index base for global IDs in this Map.
@@ -306,15 +325,38 @@ namespace Tpetra {
     bool contiguous_;
     //! Whether this map's global indices are non-identically distributed among different nodes.
     bool distributed_;
-    //! A direct mapping from local IDs to global IDs.
+
+    /// \brief A mapping from local IDs to global IDs.
+    ///
+    /// By definition, this mapping is local; it only contains global
+    /// IDs owned by this process.  This mapping is created in two
+    /// cases:
+    ///
+    /// 1. It is always created for a noncontiguous Map, in the
+    ///    noncontiguous version of the Map constructor.
+    ///
+    /// 2. In \c getNodeElementList(), on demand (if it wasn't created
+    ///    before).  
+    ///
+    /// The potential for on-demand creation is why this member datum
+    /// is declared "mutable".  Note that other methods, such as \c
+    /// describe(), may invoke \c getNodeElementList().  
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
+
     /// \brief A mapping from global IDs to local IDs.
     ///
     /// This is a local mapping.  \c Directory implements the global
-    /// mapping for all global IDs.  This object corresponds roughly
-    /// to Epetra_BlockMapData's LIDHash_ hash table (which also maps
-    /// from global IDs to local IDs).
+    /// mapping for all global IDs (both remote and locally owned).
+    /// This object corresponds roughly to Epetra_BlockMapData's
+    /// LIDHash_ hash table (which also maps from global IDs to local
+    /// IDs).
+    ///
+    /// This mapping is built only for a noncontiguous map, by the
+    /// noncontiguous map constructor.  For noncontiguous maps, the \c
+    /// getLocalElement() and \c isNodeGlobalElement() methods use
+    /// this mapping.
     std::map<GlobalOrdinal, LocalOrdinal> glMap_;
+
     /// \brief A Directory for looking up nodes for this Map. 
     ///
     /// This directory is a nonowning RCP and is therefore not allowed
