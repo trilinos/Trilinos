@@ -83,37 +83,38 @@ namespace Tpetra {
     //! \name Gather/Scatter Constructors
     //@{ 
 
-    //! \brief Set up a Distributor object using list of node IDs to send to
-    /*! Take a list of node IDs and construct a plan for efficiently scattering to those nodes.
-        Return the number of IDs being sent to me.
+    /// \brief Set up Distributor using list of node IDs to which this node will send.
+    ///
+    /// Take a list of node IDs and construct a plan for efficiently
+    /// scattering to those nodes.  Return the number of nodes which
+    /// will send me data.
+    ///
+    /// \param exportNodeIDs [in] List of nodes that will get the
+    ///   exported data.  A node ID greater than or equal to the
+    ///   number of nodes will result in a \c std::runtime_error on
+    ///   all nodes.  Node IDs less than zero are ignored; their
+    ///   placement corresponds to null sends in any future
+    ///   exports. That is, if <tt>exportNodeIDs[0] == -1</tt>, then
+    ///   the corresponding position in the export array is ignored
+    ///   during a call to doPosts() or doPostsAndWaits().  For this
+    ///   reason, a negative entry is sufficient to break contiguity.
+    ///
+    /// \return Number of imports this node will be receiving.
+    size_t createFromSends (const ArrayView<const int>& exportNodeIDs);
 
-      \param exportNodeIDs [in]
-             List of nodes that will get the exported data. 
-             A node ID greater than or equal to the number of nodes will 
-             result in a \c std::runtime_error on all nodes.
-             Node IDs less than zero
-             are ignored; their placement corresponds to null sends in any
-             future exports. That is, if <tt>exportNodeIDs[0] == -1</tt>, then 
-             the corresponding position in the export array is ignored during a call to
-             doPosts() or doPostsAndWaits() is skipped.
-             For this reason, a negative entry is sufficient to break contiguity.
-
-      \return Number of imports this node will be receiving.
-
-    */
-    size_t createFromSends(const ArrayView<const int> &exportNodeIDs);
-
-    //! \brief Create Distributor object using list of node IDs to receive from
-    /*! Take a list of node IDs and construct a plan for efficiently scattering to those nodes.
-        Return the number and list of IDs being sent by me.
+    //! \brief Set up Distributor using list of node IDs from which to receive.
+    /*! Take a list of node IDs and construct a plan for efficiently
+        scattering to those nodes.  Return the number and list of IDs
+        being sent by me.
 
       \param remoteIDs [in]
              List of remote IDs wanted. 
 
       \param remoteNodeIDs [in]
-             List of nodes that will send the corresponding remote IDs. Node IDs less than zero
-             are ignored; their placement corresponds to null sends in any
-             future exports. A node ID greater than or equal to the number of nodes will 
+             List of nodes that will send the corresponding remote
+             IDs. Node IDs less than zero are ignored; their placement
+             corresponds to null sends in any future exports. A node
+             ID greater than or equal to the number of nodes will
              result in a \c std::runtime_error on all nodes.
 
       \param exportIDs [out]
@@ -122,7 +123,9 @@ namespace Tpetra {
       \param exportNodeIDs [out]
              List of nodes that will get the exported IDs.
 
-      \note \c exportGIDs and \c exportNodeIDs are allocated by the Distributor, but they are reference counted and will be automatically deallocated.
+      \note \c exportGIDs and \c exportNodeIDs are allocated by the
+        Distributor, but they are reference counted and will be
+        automatically deallocated.
     */
     template <class Ordinal>
     void createFromRecvs(const ArrayView<const Ordinal> &remoteIDs, 
@@ -174,7 +177,7 @@ namespace Tpetra {
     /*! This method creates the reverse Distributor the first time the function
         is called.
     */
-    const RCP<Distributor> & getReverse() const;
+    const RCP<Distributor>& getReverse() const;
 
     //@}
 

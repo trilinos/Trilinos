@@ -67,10 +67,12 @@ namespace Tpetra {
   Distributor::~Distributor() 
   {
     // We shouldn't have any outstanding communication requests at
-    // this point.  Verify this.
+    // this point.
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::~Distributor(): Destructor called with "
-      "outstanding posts.");
+      "Tpetra::Distributor: Destructor called with " << requests_.size() 
+      << " outstanding posts (unfulfilled communication requests).  There "
+      "should be none at this point.  Please report this bug to the Tpetra "
+      "developers.");
   }
 
   size_t Distributor::getTotalReceiveLength() const 
@@ -257,16 +259,16 @@ namespace Tpetra {
     }
   }
 
-
-  //////////////////////////////////////////////////////////////////////////////////////////
-  void Distributor::computeReceives()
+  void 
+  Distributor::computeReceives()
   {
     int myImageID = comm_->getRank();
     int numImages = comm_->getSize();
 
-    // to_nodes_from_me[i] == number of messages sent by this node to node i
-    // the info in numSends_, imagesTo_, lengthsTo_ concerns the contiguous sends
-    // therefore, each node will be listed in imagesTo_ at most once
+    // to_nodes_from_me[i] == the number of messages sent by this node
+    // to node i.  The data in numSends_, imagesTo_, lengthsTo_
+    // concern the contiguous sends.  Therefore, each node will be
+    // listed in imagesTo_ at most once.
     {
       Teuchos::Array<size_t> to_nodes_from_me(numImages,0);
 #     ifdef HAVE_TEUCHOS_DEBUG 
@@ -287,11 +289,12 @@ namespace Tpetra {
           "other nodes.  Please report this bug to the Tpetra developers.", 
           *comm_);
 #     endif
-      // each proc will get back only one item (hence, counts = ones) from the array of globals sums, 
-      // namely that entry corresponding to the node, and detailing how many receives it has.
-      // this total includes self sends
-      Teuchos::Array<int> counts(numImages, 1);
-      Teuchos::reduceAllAndScatter<int,size_t>(*comm_,Teuchos::REDUCE_SUM,numImages,&to_nodes_from_me[0],&counts[0],&numReceives_);
+      // Each process will get back only one item (hence, counts =
+      // ones) from the array of global sums, namely that entry
+      // corresponding to the process, and detailing how many receives
+      // it has.  This total includes self sends.
+      Teuchos::Array<int> counts (numImages, 1);
+      Teuchos::reduceAllAndScatter<int,size_t> (*comm_, Teuchos::REDUCE_SUM, numImages, &to_nodes_from_me[0], &counts[0], &numReceives_);
     }
 
     // assign these to length numReceives, with zero entries
@@ -323,7 +326,10 @@ namespace Tpetra {
     }
     comm_->barrier();
 
-    sort2(imagesFrom_.begin(), imagesFrom_.end(), lengthsFrom_.begin());
+    // Sort the imagesFrom_ array, and apply the same permutation to
+    // lengthsFrom_.  This ensures that imagesFrom_[i] and
+    // lengthsFrom_[i] refers to the same thing.
+    sort2 (imagesFrom_.begin(), imagesFrom_.end(), lengthsFrom_.begin());
 
     // Compute indicesFrom_
     totalReceiveLength_ = std::accumulate(lengthsFrom_.begin(), lengthsFrom_.end(), 0);
@@ -345,52 +351,51 @@ namespace Tpetra {
     comm_->barrier();
   }
 
-
-  //////////////////////////////////////////////////////////////////////////////////////////
-  size_t Distributor::createFromSends(const Teuchos::ArrayView<const int> &exportNodeIDs) {
+  size_t 
+  Distributor::createFromSends (const Teuchos::ArrayView<const int> &exportNodeIDs) 
+  {
     using Teuchos::outArg;
     numExports_ = exportNodeIDs.size();
 
     const int myImageID = comm_->getRank();
     const int numImages = comm_->getSize();
 
-    // exportNodeIDs tells us the communication pattern for this distributor
-    // it dictates the way that the export data will be interpretted in doPosts()
-    // we want to perform at most one communication per node; this is for two
-    // reasons:
+    // exportNodeIDs tells us the communication pattern for this
+    // distributor.  It dictates the way that the export data will be
+    // interpreted in doPosts().  We want to perform at most one
+    // communication per node; this is for two reasons:
     //   * minimize latency/overhead in the comm routines (nice)
     //   * match the number of receives and sends between nodes (necessary)
-    // Teuchos::Comm requires that the data for a send is contiguous in a send
-    // buffer.
-    // Therefore, if the data in the send buffer for doPosts() is not
-    // contiguous, it will need to be copied into a contiguous buffer.
-    // 
-    // The user has specified this pattern and we can't do anything about it.
-    // 
-    // However, if they do not provide an efficient pattern, we will warn them 
-    // if one of
-    //    HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS 
-    //    HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS 
-    // is on.
+    //
+    // Teuchos::Comm requires that the data for a send is contiguous
+    // in a send buffer.  Therefore, if the data in the send buffer
+    // for doPosts() is not contiguous, it will need to be copied into
+    // a contiguous buffer.  The user has specified this noncontiguous
+    // pattern and we can't do anything about it.  However, if they do
+    // not provide an efficient pattern, we will warn them if one of
+    // the following compile-time options has been set:
+    //   * HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS 
+    //   * HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS 
     //
     // If the data is contiguous, then we can post the sends in situ.
     // 
     // Determine contiguity. There are a number of ways to do this:
-    // * if the export IDs are sorted, then all exports to a particular 
-    //   node must be contiguous. This is how Epetra does it. 
-    // * if the export ID of the current export already has been listed,
-    //   then the previous listing should correspond to the same export.
-    //   This tests contiguity, but not sortedness.
-    // Both of these tests require O(n), where n is the number of 
+    // * If the export IDs are sorted, then all exports to a
+    //   particular node must be contiguous. This is what Epetra does.
+    // * If the export ID of the current export already has been
+    //   listed, then the previous listing should correspond to the
+    //   same export.  This tests contiguity, but not sortedness.
+    //
+    // Both of these tests require O(n), where n is the number of
     // exports. However, the latter will positively identify a greater
     // portion of contiguous patterns. We will use the latter method.
     // 
     // Check to see if values are grouped by images without gaps
     // If so, indices_to -> 0.
 
-    // Setup data structures for quick traversal of arrays.
+    // Set up data structures for quick traversal of arrays.
     // This contains the number of sends for each image id.
-    Teuchos::Array<size_t> starts(numImages + 1, 0);
+    Teuchos::Array<size_t> starts (numImages + 1, 0);
 
     // numActive is the number of sends that are not Null
     size_t numActive = 0;
