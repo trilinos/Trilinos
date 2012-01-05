@@ -132,7 +132,8 @@ namespace Tpetra {
     <li>A templated toString function, which is mainly used to easily
     output the contents of STL containers.
 
-    <li>A multiple-array sort function, similar to the one found in Epetra_Util.
+    <li>A multiple-array sort function, similar to the one found in
+    Epetra_Util.  
     </ul>
   */
 
@@ -156,17 +157,22 @@ namespace Tpetra {
     }
   }
 
-
-  namespace SortDetails{
-
+  /// \namespace SortDetails
+  /// \brief Implementation details of sort routines used by Tpetra.
+  ///
+  /// \warning The contents of this namespace are an implementation
+  ///   detail of Tpetra.  Tpetra users should not use this namespace
+  ///   or any of its contents, as they may change at any time without
+  ///   deprecation warnings.
+  namespace SortDetails {
 
   /**
-   * \brief Determines whether or not a data structure is already sorted.
+   * \brief Determines whether or not a random access sequence is already sorted.
    *
-   * @param first An iterator pointing to the beginning of the 
-   * data structure.
-   * @param last An iterator pointing to the end of the data structure.
-   * @return True if the datasctructure is already sorted, false otherwise.
+   * @param first An iterator pointing to the beginning of the sequence.
+   * @param last An iterator pointing to the end of the sequence.
+   *
+   * @return True if the sequence is already sorted, else false.
    */
   template<class IT1>
   bool isAlreadySorted(const IT1& first, const IT1& last){
@@ -199,8 +205,11 @@ namespace Tpetra {
   }
 
   /**
-   * \brief Preforms the partition operation that is part of the quicksort routine
-   * for two arrays
+   * \brief Partition operation for \c quicksort2().
+   *
+   * This is a helper routine for \c quicksort2().  It performs the
+   * partition step in Quicksort.  All of the input argument iterators
+   * are random access iterators.
    *
    * @param first1 An iterator pointing to the beginning of the first array.
    * @param last1 An iterator pointing to the end of the first array.
@@ -234,8 +243,11 @@ namespace Tpetra {
   }
 
   /**
-   * \brief Preforms the partition operation that is part of the quicksort routine
-   * for three arrays
+   * \brief Partition operation for \c quicksort3().
+   *
+   * This is a helper routine for \c quicksort3().  It performs the
+   * partition step in Quicksort.  All of the input argument iterators
+   * are random access iterators.
    *
    * @param first1 An iterator pointing to the beginning of the first array.
    * @param last1 An iterator pointing to the end of the first array.
@@ -276,11 +288,12 @@ namespace Tpetra {
   }
 
   /**
-   * \brief Prefoms a quick sort on the two arrays using the permutations
-   * that are done on the first array on the second array as well.
+   * \brief Sort the first array using Quicksort, and apply the resulting permutation to the second array.
+   *
+   * All of the input argument iterators are random access iterators.
    *
    * @param first1 An iterator pointing to the beginning of the first array.
-   * @param last1 An iterator pointing to the end of the first array.
+   * @param last1 An iterator pointing to the end (exclusive) of the first array.
    * @param first2 An iterator pointing to the beginning of the second array.
    * @param last2 An iterator pointing to the end of the second array.
    */
@@ -302,8 +315,9 @@ namespace Tpetra {
   }
 
   /**
-   * \brief Prefoms a quick sort on the three arrays using the permutations
-   * that are done on the first array on the second and third arrays as well.
+   * \brief Sort the first array using Quicksort, and apply the resulting permutation to the second and third arrays.
+   *
+   * All of the input argument iterators are random access iterators.
    *
    * @param first1 An iterator pointing to the beginning of the first array.
    * @param last1 An iterator pointing to the end of the first array.
@@ -336,18 +350,29 @@ namespace Tpetra {
 
 
   /** 
-   * \brief Sort function for two arrays.
+   * \brief Sort the first array, and apply the resulting permutation to the second array.
    *
-   * The values in sortVals will be sorted in ascending order.
-   * The same permutation required to sort sortVals will be applied
-   * to otherVals.
-   * 
-   * @param first1 An iterator pointing to the beginning of the first array.
-   * @param last1 An iterator pointing to the end of the first array.
-   * @param first2 An iterator pointing to the beginning of the second array.
+   * Sort the values in the first array (represented by the exclusive
+   * iterator range first1,last1) in ascending order.  Apply the
+   * permutation resulting from the sort to the second array
+   * (represented by a starting iterator first2).
+   *
+   * @param first1 A random access iterator pointing to the beginning
+   *   of the first array.
+   * @param last1 A random access iterator pointing to the end
+   *   (exclusive) of the first array.
+   * @param first2 A random access iterator pointing to the beginning
+   *   of the second array.  The second array must have no fewer
+   *   elements than the first array.  If the first array has N
+   *   elements, then the permutation will only be applied to the
+   *   first N elements of the second array.
    */
   template<class IT1, class IT2>
   void sort2(const IT1 &first1, const IT1 &last1, const IT2 &first2) {
+    // Quicksort uses best-case N log N time whether or not the input
+    // data is sorted.  However, the common case in Tpetra is that the
+    // input data are sorted, so we first check whether this is the
+    // case before reverting to Quicksort.
     if(SortDetails::isAlreadySorted(first1, last1)){
       return;
     }
@@ -356,20 +381,26 @@ namespace Tpetra {
 
   
   /** 
-   * \brief Sort function for three arrays
+   * \brief Sort the first array, and apply the same permutation to the second and third arrays.
    *
-   * The values in sortVals will be sorted in ascending order.
-   * The same permutation required to sort sortVals will be applied
-   * to otherVals.
+   * Sort the values in the first array (represented by the exclusive
+   * iterator range first1,last1) in ascending order.  Apply the
+   * permutation resulting from the sort to the second array
+   * (represented by a starting iterator first2) and third array
+   * (represented by a starting iterator first3).
    *
-   * @param first1 An iterator pointing to the beginning of the first array.
-   * @param last1 An iterator pointing to the end of the first array.
-   * @param first2 An iterator pointing to the beginning of the second array.
-   * @param first3 An iterator pointing to the beginning of the third array.
+   * @param first1 A random access iterator pointing to the beginning of the first array.
+   * @param last1 A random access iterator pointing to the end (exclusive) of the first array.
+   * @param first2 A random access iterator pointing to the beginning of the second array.
+   * @param first3 A random access iterator pointing to the beginning of the third array.
    */
   template<class IT1, class IT2, class IT3>
   void sort3(const IT1 &first1, const IT1 &last1, const IT2 &first2, const IT3 &first3)
   {
+    // Quicksort uses best-case N log N time whether or not the input
+    // data is sorted.  However, the common case in Tpetra is that the
+    // input data are sorted, so we first check whether this is the
+    // case before reverting to Quicksort.
     if(SortDetails::isAlreadySorted(first1, last1)){
       return;
     }
