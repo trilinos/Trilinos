@@ -66,9 +66,11 @@ namespace Tpetra {
 
   Distributor::~Distributor() 
   {
-  // we shouldn't have any outstanding requests at this point; verify
+    // We shouldn't have any outstanding communication requests at
+    // this point.  Verify this.
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-        Teuchos::typeName(*this) << "::Distributor~(): Destructor called with outstanding posts.");
+      Teuchos::typeName(*this) << "::~Distributor(): Destructor called with "
+      "outstanding posts.");
   }
 
   size_t Distributor::getTotalReceiveLength() const 
@@ -112,21 +114,28 @@ namespace Tpetra {
 
     reverseDistributor_ = Teuchos::rcp(new Distributor(comm_));
 
-    // compute new totalSendLength
+    // The total length of all the sends of this Distributor.  We
+    // calculate it because it's the total length of all the receives
+    // of the reverse Distributor.
     size_t totalSendLength = std::accumulate(lengthsTo_.begin(),lengthsTo_.end(),0);
 
-    // compute new maxReceiveLength
+    // The maximum length of any of the receives of this Distributor.
+    // We calculate it because it's the maximum length of any of the
+    // sends of the reverse Distributor.
     size_t maxReceiveLength = 0;
     const int myImageID = comm_->getRank();
     for (size_t i=0; i < numReceives_; ++i) {
       if (imagesFrom_[i] != myImageID) {
+	// Don't count receives for messages sent by myself to myself.
         if (lengthsFrom_[i] > maxReceiveLength) {
           maxReceiveLength = lengthsFrom_[i];
         }
       }
     }
 
-    // initialize all of reverseDistributor's data members
+    // Initialize all of reverseDistributor's data members.  This
+    // mainly just involves flipping "send" and "receive," or the
+    // equivalent "to" and "from."
     reverseDistributor_->lengthsTo_ = lengthsFrom_;
     reverseDistributor_->imagesTo_ = imagesFrom_;
     reverseDistributor_->indicesTo_ = indicesFrom_;
@@ -152,13 +161,18 @@ namespace Tpetra {
       Teuchos::waitAll(*comm_,requests_());
       // Requests should all be null, clear them
 #ifdef HAVE_TEUCHOS_DEBUG
-      for (Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> >::const_iterator i = requests_.begin(); 
+      using Teuchos::Array;
+      using Teuchos::CommRequest;
+      using Teuchos::RCP;
+      for (Array<RCP<CommRequest> >::const_iterator i = requests_.begin();
            i != requests_.end(); ++i) 
       {
         TEUCHOS_TEST_FOR_EXCEPTION(*i != Teuchos::null, std::runtime_error,
-            Teuchos::typeName(*this) << "::doWaits(): Requests should be null after call to Teuchos::waitAll().");
+          Teuchos::typeName(*this) << "::doWaits(): Communication requests "
+          "should all be null aftr calling Teuchos::waitAll() on them, but "
+          "at least one request is not null.");
       }
-#endif
+#endif // HAVE_TEUCHOS_DEBUG
       requests_.clear();
     }
   }
@@ -167,7 +181,7 @@ namespace Tpetra {
   void Distributor::doReverseWaits() 
   {
     // call doWaits() on the reverse Distributor, if it exists
-    if (reverseDistributor_ != Teuchos::null) {
+    if (! reverseDistributor_.is_null()) {
       reverseDistributor_->doWaits();
     }
   }
@@ -260,13 +274,18 @@ namespace Tpetra {
 #     endif
       for (size_t i=0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
 #       ifdef HAVE_TEUCHOS_DEBUG
-          if (to_nodes_from_me[imagesTo_[i]] != 0) counting_error = true;
+	if (to_nodes_from_me[imagesTo_[i]] != 0) {
+	  counting_error = true;
+	}
 #       endif
         to_nodes_from_me[imagesTo_[i]] = 1;
       }
 #     ifdef HAVE_TEUCHOS_DEBUG
         SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
-            "Tpetra::Distributor::createFromSends: logic error. Please notify the Tpetra team.",*comm_);
+          "Tpetra::Distributor::computeReceives: There was an error on at least "
+          "one node in counting the number of messages send by that node to the "
+          "other nodes.  Please report this bug to the Tpetra developers.", 
+          *comm_);
 #     endif
       // each proc will get back only one item (hence, counts = ones) from the array of globals sums, 
       // namely that entry corresponding to the node, and detailing how many receives it has.

@@ -52,22 +52,26 @@
 
 namespace Tpetra {
 
-  //! \brief The Tpetra gather/scatter setup class.
-  /*! The Distributor class is an interface that encapsulates the general
-        information and services needed for other Tpetra classes to perform gather/scatter
-        operations on a parallel computer.
-  */
-
+  /// \class Distributor
+  /// \brief Class that sets up gathers and scatters for Tpetra communication.
+  ///
+  /// This class encapsulates the general information and services
+  /// needed for other Tpetra classes to perform gather/scatter
+  /// operations on a parallel computer.
   class Distributor : public Teuchos::Describable {
   public:
 
     //! @name Constructor/Destructor
     //@{ 
 
-    //! Construct the Distributor using the specified communicator.
+    /// \brief Construct the Distributor using the specified communicator.
+    ///
+    /// This doesn't actually set up the distribution pattern.  You
+    /// need to call one of the "gather / scatter 'constructors'" to
+    /// do that.
     explicit Distributor(const RCP<const Comm<int> > & comm);
 
-    //! Copy Constructor
+    //! Copy constructor.
     Distributor(const Distributor &distributor);
 
     //! Destructor.
@@ -76,10 +80,10 @@ namespace Tpetra {
     //@}
 
 
-    //! @name Gather/Scatter Constructors
+    //! \name Gather/Scatter Constructors
     //@{ 
 
-    //! \brief Create a Distributor object using list of node IDs to send to
+    //! \brief Set up a Distributor object using list of node IDs to send to
     /*! Take a list of node IDs and construct a plan for efficiently scattering to those nodes.
         Return the number of IDs being sent to me.
 
@@ -337,14 +341,15 @@ namespace Tpetra {
     //@}
 
   private:
-
-    // private data members
+    //! The communicator over which to perform distributions.
     RCP<const Comm<int> > comm_;
 
     size_t numExports_;
-    // selfMessage_ is whether I have a send for myself
+    //! Whether I am supposed to send a message to myself.
     bool selfMessage_;
-    // numSends_ is number of sends to other nodes; is less than or equal to the number of nodes
+    /// \brief The number of sends to other nodes.
+    ///
+    /// This is always less than or equal to the number of nodes.
     size_t numSends_;
     // imagesTo_, startsTo_ and lengthsTo_ each have size 
     //   numSends_ + selfMessage_
@@ -370,23 +375,26 @@ namespace Tpetra {
     Array<size_t> startsFrom_;
     Array<size_t> indicesFrom_;
 
-    // requests associated with non-blocking receives
+    //! Communication requests associated with nonblocking receives.
     Array<RCP<Teuchos::CommRequest> > requests_;
 
+    /// \brief The reverse distributor.
+    ///
+    /// This is created on demand in \c getReverse() and cached for
+    /// later reuse.  This is why it is declared "mutable".
     mutable RCP<Distributor> reverseDistributor_;
 
-    // compute receive info from sends
+    //! Compute receive info from sends.
     void computeReceives();
 
-    // compute send info from receives
+    //! Compute send info from receives.
     template <class Ordinal>
-    void computeSends(const ArrayView<const Ordinal> &importIDs,
-                      const ArrayView<const int> &importNodeIDs,
-                            ArrayRCP<Ordinal> &exportIDs,
-                            ArrayRCP<int> &exportNodeIDs);
+    void computeSends (const ArrayView<const Ordinal> &importIDs,
+		       const ArrayView<const int> &importNodeIDs,
+		       ArrayRCP<Ordinal> &exportIDs,
+		       ArrayRCP<int> &exportNodeIDs);
 
-    // create a distributor for the reverse communciation pattern (pretty much
-    // swap all send and receive info)
+    //! Create a distributor for the reverse communciation pattern.
     void createReverseDistributor() const;
 
   }; // class Distributor

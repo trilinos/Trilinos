@@ -53,27 +53,30 @@
 
 namespace Tpetra {
 
-  //! A base class for distributed objects that support import and export operations.
-
-  /*! The DistObject is a base class for all Tpetra distributed global objects.  It provides the basic
-      mechanisms and interface specifications for importing and exporting operations using Tpetra::Import and
-      Tpetra::Export objects.
-    
-    <b> Distributed Global vs. Replicated Local.</b>
-    
-    <ul>
-    <li> Distributed Global objects - In most instances, a distributed object will be partitioned
-    across multiple memory images associated with multiple processors.  In this case, there is 
-    a unique copy of each element and elements are spread across all images specified by 
-    the Teuchos::Comm object.
-    <li> Replicated Local Objects - Some algorithms use objects that are too small to
-    be distributed across all processors, the Hessenberg matrix in a GMRES
-    computation.  In other cases, such as with block iterative methods,  block dot product 
-    functions produce small dense matrices that are required by all images.  
-    Replicated local objects handle these types of situation.
-    </ul>
-  */
-
+  /// \class DistObject
+  /// \brief A base class for distributed objects that support import and export operations.
+  ///
+  /// DistObject is a base class for all Tpetra distributed global
+  /// objects.  It provides the basic mechanisms and interface
+  /// specifications for importing and exporting operations using \c
+  /// Tpetra::Import and \c Tpetra::Export objects.
+  ///
+  /// <b> Distributed Global vs. Replicated Local.</b>
+  ///
+  /// <ul>
+  /// <li> Distributed Global objects - In most instances, a
+  /// distributed object will be partitioned across multiple memory
+  /// images associated with multiple processors.  In this case, there
+  /// is a unique copy of each element and elements are spread across
+  /// all images specified by the Teuchos::Comm communicator object.
+  /// <li> Replicated Local Objects - Some algorithms use objects that
+  /// are too small to be distributed across all processors.  The
+  /// upper Hessenberg matrix in a GMRES iterative solve is a good
+  /// example.  computation.  In other cases, such as with block
+  /// iterative methods, block dot product functions produce small
+  /// dense matrices that are required by all images.  Replicated
+  /// local objects handle these situations.
+  /// </ul>
   template <class Packet, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class DistObject : virtual public Teuchos::Describable {
 
@@ -97,12 +100,15 @@ namespace Tpetra {
     //@{ 
 
     //! Import
-    void doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
-                  const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM);
+    void 
+    doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
+	      const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, 
+	      CombineMode CM);
 
     //! Export
-    void doExport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &dest, 
-                  const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter, CombineMode CM);
+    void doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &dest, 
+		   const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter, 
+		   CombineMode CM);
 
     //! Import (using an Exporter)
     void doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source,
@@ -117,11 +123,15 @@ namespace Tpetra {
     //! @name Attribute Accessor Methods
     //@{ 
 
-    //! Accessor for whether or not this is a global object
+    /// \brief True if this is a globally distributed object, else false.
+    ///
+    /// For a definition of "globally distributed" (and its opposite,
+    /// "locally replicated"), see the documentation of \c Map.
     inline bool isDistributed() const;
 
-    //! Access function for the Tpetra::Map this DistObject was constructed with.
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getMap() const { return map_; }
+    //! The Map with which this DistObject was constructed.
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& 
+    getMap() const { return map_; }
 
     //@}
 
@@ -136,10 +146,11 @@ namespace Tpetra {
 
   protected:
 
-    //! Enum indicating whether the transer should be performed in forward or reverse mode.
+    /// \enum ReverseOption
+    /// \brief Whether the data transfer should be performed in forward or reverse mode.
     enum ReverseOption {
-      DoForward, //*!< Indicates that the transfer should be performed in forward mode.
-      DoReverse  //*!< Indicates that the transfer should be performed in reverse mode.
+      DoForward, //*!< Perform the transfer in forward mode.
+      DoReverse  //*!< Perform the transfer in reverse mode.
     };
 
     //! Perform transfer (redistribution) of data across memory images.
@@ -155,24 +166,26 @@ namespace Tpetra {
 
     // The following four methods must be implemented by the derived class
 
-    //! Allows the source and target (\e this) objects to be compared for compatibility.
-    /*! Return true if they are compatible, return false if they aren't. */ 
-    virtual bool checkSizes(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & source) = 0;
+    /// \brief Compare the source and target (\e this) objects for compatibility.
+    ///
+    /// \return True if they are compatible, else false.
+    virtual bool 
+    checkSizes (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source) = 0;
 
     //! Perform copies and permutations that are local to this image.
     /*!
-      \param source In
+      \param source [in]
              On entry, the DistObject that we are importing from.
-      \param numSameIDs In
+      \param numSameIDs [in]
              On entry, the number of elements that are the same on the source and dest objects.
          (i.e. The element is owned by the same image in both source and dest, 
          and no permutation occurs.)
-      \param numPermuteIDs In
+      \param numPermuteIDs [in]
              On entry, the number of elements that are locally permuted between source and dest objects.
-      \param permuteToLIDs In
+      \param permuteToLIDs [in]
              On entry, contains a list of the elements that are permuted. (Listed by their LID in the
          destination DistObject.)
-      \param permuteFromLIDs In
+      \param permuteFromLIDs [in]
              On entry, contains a list of the elements that are permuted. (Listed by their LID in the
          source DistObject.)
     */
@@ -183,21 +196,21 @@ namespace Tpetra {
 
     //! Perform any packing or preparation required for communication.
     /*!
-      \param source In
+      \param source [in]
              On entry, the DistObject that we are importing from.
-      \param exportLIDs In
+      \param exportLIDs [in]
              On entry, a list of the entries we will be sending to other images.
              (Listed by their LID in the source DistObject.)
-      \param exports Out
+      \param exports [out]
              On exit, buffer for data we will be sending out.
-      \param numPacketsPerLID Out
+      \param numPacketsPerLID [out]
              On exit, numPacketsPerLID[i] contains the number of packets to be exported for
              exportLIDs[i].
-      \param constantNumPackets Out
+      \param constantNumPackets [out]
              On exit, 0 if numPacketsPerLID has variable contents (different size for each LID).
              If nonzero, then it is expected that num-packets-per-LID is constant, and
              constantNumPackets holds that value.
-      \param distor In
+      \param distor [in]
              On entry, contains the Distributor object we are using.         
     */
     virtual void packAndPrepare(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & source,
@@ -209,35 +222,36 @@ namespace Tpetra {
 
     //! Perform any unpacking and combining after communication.
     /*!
-      \param importLIDs In
+      \param importLIDs [in]
              On entry, a list of the entries we received from other images.
              (Listed by their LID in the target DistObject.)
-      \param imports In
+      \param imports [in]
              Buffer containing data we received.
-      \param numPacketsPerLID In
+      \param numPacketsPerLID [in]
              numPacketsPerLID[i] contains the number of packets imported for
              importLIDs[i].
-      \param constantNumPackets In
+      \param constantNumPackets [in]
              If nonzero, then numPacketsPerLID is constant (same value in all entries)
              and constantNumPackets is that value.
-      \param distor In
+      \param distor [in]
              The Distributor object we are using.
-      \param CM In
+      \param CM [in]
              The Tpetra::CombineMode to use when combining the imported entries with existing entries.
     */
-    virtual void unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                                  const Teuchos::ArrayView<const Packet> &imports,
-                                  const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                                  size_t constantNumPackets,
-                                  Distributor &distor,
-                                  CombineMode CM) = 0;
+    virtual void 
+    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+		      const Teuchos::ArrayView<const Packet> &imports,
+		      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+		      size_t constantNumPackets,
+		      Distributor &distor,
+		      CombineMode CM) = 0;
 
     virtual void createViews() const {}
     virtual void createViewsNonConst(Kokkos::ReadWriteOption rwo) {}
     virtual void releaseViews() const {}
 
   private:
-
+    //! The Map over which this object is distributed.
     Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_;
     // buffers into which packed data is imported
     Teuchos::Array<Packet> imports_;
@@ -263,8 +277,11 @@ namespace Tpetra {
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
-                                            const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, CombineMode CM) 
+  void 
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
+	    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, 
+	    CombineMode CM) 
   {
     TEUCHOS_TEST_FOR_EXCEPTION(   *getMap() != *importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
     TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
@@ -278,8 +295,11 @@ namespace Tpetra {
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doExport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
-                                            const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, CombineMode CM) 
+  void 
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
+	    const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
+	    CombineMode CM) 
   {
     TEUCHOS_TEST_FOR_EXCEPTION(   *getMap() != *exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
     TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
@@ -293,10 +313,12 @@ namespace Tpetra {
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doImport(
-                                                const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
-                                                const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
-                                                CombineMode CM) {
+  void 
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
+	    const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
+	    CombineMode CM) 
+  {
     TEUCHOS_TEST_FOR_EXCEPTION(  * getMap() != *exporter.getSourceMap(), std::runtime_error, "Target Maps don't match.");
     TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getTargetMap(), std::runtime_error, "Source Maps don't match.");
     size_t numSameIDs = exporter.getNumSameIDs();
@@ -309,9 +331,12 @@ namespace Tpetra {
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doExport(
-                                                const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
-                                                const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, CombineMode CM) {
+  void 
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
+	    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, 
+	    CombineMode CM) 
+  {
     TEUCHOS_TEST_FOR_EXCEPTION( *  getMap() != *importer.getSourceMap(), std::runtime_error, "Target Maps don't match.");
     TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *importer.getTargetMap(), std::runtime_error, "Source Maps don't match.");
     size_t numSameIDs = importer.getNumSameIDs();
