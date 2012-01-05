@@ -327,10 +327,15 @@ namespace stk {
                   //std::cout << "tmp srk classify node= " << node_ptr->identifier() << " dof= " << dof << std::endl;
                   // vertex
                   if (dof == 0)
-                    fixed=true;
+                    {
+                      fixed=true;
+                    }
                   // curve (for now we hold these fixed)
                   else if (dof == 1)
-                    fixed=true;
+                    {
+                      fixed=true;
+                      //fixed=false;   // FIXME 
+                    }
                   // surface - free to move
                   else if (dof == 2)
                     {
@@ -339,8 +344,9 @@ namespace stk {
                     }
                   // interior/volume
                   else
-                    fixed=false;
-                    
+                    {
+                      fixed=false;
+                    }
                 }
               else
                 {
