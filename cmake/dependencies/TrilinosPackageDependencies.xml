@@ -1113,7 +1113,7 @@
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,ThyraCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="EpetraExt,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Sacado,Stratimikos,NOX"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="EpetraExt,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Sacado,Stratimikos,Belos,NOX"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="GaaspTpl,Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>

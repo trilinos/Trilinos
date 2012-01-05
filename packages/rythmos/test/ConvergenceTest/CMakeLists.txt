@@ -13,8 +13,11 @@ SET(TEST_NAMES
   ForwardEuler
   ImplicitBDF
   ExplicitRK
-  ImplicitRK
   )
+
+IF (${PACKAGE_NAME}_ENABLE_Stratimikos  AND ${PACKAGE_NAME}_ENABLE_Belos)
+  SET(TEST_NAMES ${TEST_NAMES}  ImplicitRK )
+ENDIF()
 
 FOREACH(TEST_NAME ${TEST_NAMES})
   
@@ -24,8 +27,9 @@ FOREACH(TEST_NAME ${TEST_NAMES})
       ${COMMON_SOURCES}
       Rythmos_${TEST_NAME}_ConvergenceTest.cpp
     DEPLIBS rythmos_test_models
-    COMM serial
+    NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     )
 
 ENDFOREACH()
+
