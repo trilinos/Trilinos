@@ -56,7 +56,7 @@
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward dec
+  // Forward declaration of Directory.
   template <class LO, class GO, class N> class Directory;
 #endif
 
@@ -131,42 +131,42 @@ namespace Tpetra {
     //! @name Map Attribute Methods
     //@{ 
 
-    //! Returns the number of elements in this Map.
+    //! The number of elements in this Map.
     inline global_size_t getGlobalNumElements() const { return numGlobalElements_; }
 
-    //! Returns the number of elements belonging to the calling node.
+    //! The number of elements belonging to the calling node.
     inline size_t getNodeNumElements() const { return numLocalElements_; }
 
-    //! Returns the index base for this Map.
+    //! The index base for this Map.
     inline GlobalOrdinal getIndexBase() const { return indexBase_; }
 
-    //! Returns minimum local index
+    //! The minimum local index.
     inline LocalOrdinal getMinLocalIndex() const { return Teuchos::OrdinalTraits<LocalOrdinal>::zero(); }
 
-    //! Returns maximum local index
+    //! The maximum local index.
     inline LocalOrdinal getMaxLocalIndex() const { return Teuchos::as<LocalOrdinal>(numLocalElements_-1); }
 
-    //! Returns minimum global index owned by this node
+    //! The minimum global index owned by this node.
     inline GlobalOrdinal getMinGlobalIndex() const { return minMyGID_; }
 
-    //! Returns maximum global index owned by this node
+    //! The maximum global index owned by this node
     inline GlobalOrdinal getMaxGlobalIndex() const { return maxMyGID_; }
 
-    //! Return the minimum global index over all nodes
+    //! The minimum global index over all nodes.
     inline GlobalOrdinal getMinAllGlobalIndex() const { return minAllGID_; }
 
-    //! Return the maximum global index over all nodes
+    //! The maximum global index over all nodes.
     inline GlobalOrdinal getMaxAllGlobalIndex() const { return maxAllGID_; }
 
-    /// \brief Return the local index for a given global index.  
+    /// \brief The local index corresponding to the given global index.  
     ///
-    /// If the global index is not owned by this node, return
+    /// If the given global index is not owned by this node, return
     /// <tt>Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>.
     LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
 
-    /// \brief Return the global index for a given local index.
+    /// \brief The global index corresponding to the given local index.
     ///
-    /// If the local index is not valid for this node, return
+    /// If the given local index is not valid for this node, return
     /// <tt>Teuchos::OrdinalTraits<GlobalOrdinal>::invalid()</tt>.
     GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
 
@@ -201,19 +201,47 @@ namespace Tpetra {
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                                     const Teuchos::ArrayView<                int> & nodeIDList) const;
 
-    //! Return a list of the global indices owned by this node.
+    //! Return a view of the global indices owned by this node.
     Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const;
 
-    //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
+    //! True if the local index is valid for this Map on this node, else false.
     bool isNodeLocalElement(LocalOrdinal localIndex) const;
 
-    //! Returns true if the global index is found in this Map on this node; returns false if it isn't.
+    //! True if the global index is found in this Map on this node, else false.
     bool isNodeGlobalElement(GlobalOrdinal globalIndex) const;
 
-    //! True if this Map is distributed contiguously, else false.
+    /// \brief True if this Map is distributed contiguously, else false.
+    ///
+    /// Currently, creating this Map using the constructor for a
+    /// user-defined arbitrary distribution (that takes a list of
+    /// global elements owned on each process) means that this method
+    /// always returns false.  We currently make no effort to test
+    /// whether the user-provided global indices are actually
+    /// contiguous on all the processes.  Many operations may be
+    /// faster for contiguous Maps.  Thus, if you know the indices are
+    /// contiguous on all processes, you should consider using one of
+    /// the constructors for contiguous elements.
     bool isContiguous() const;
 
-    //! True if this Map is distributed across more than one node, else false.
+    /// \brief Whether this Map is globally distributed or locally replicated.
+    ///
+    /// \return True if this Map is globally distributed, else false.
+    ///
+    /// "Globally distributed" means that <i>all</i> of the following
+    /// are true:
+    ///
+    /// 1. The map's communicator has more than one process.
+    ///
+    /// 2. There is at least one process in the map's communicator,
+    ///    whose local number of elements does not equal the number of
+    ///    global elements.  (That is, not all the elements are
+    ///    replicated over all the processes.)
+    ///
+    /// If at least one of the above are not true, then the map is
+    /// "locally replicated."  (The two are mutually exclusive.)
+    ///
+    /// Calling this method requires no communication or computation,
+    /// because the result is precomputed in Map's constructors.
     bool isDistributed() const;
 
     //@}
@@ -227,9 +255,9 @@ namespace Tpetra {
     /// 1. They have the same global number of elements.
     /// 2. They have the same number of local elements on each process.
     ///
-    /// Determining #2 requires a reduction.  The reduction uses this
-    /// Map's communicator.  (We assume that the input Map is valid on
-    /// all processes in this Map's communicator.)
+    /// Determining #2 requires communication (a reduction over this
+    /// Map's communicator).  This method assumes that the input Map
+    /// is valid on all processes in this Map's communicator.
     ///
     /// Compatibility is useful for determining correctness of certain
     /// operations, like assigning one MultiVector X to another Y.  If
@@ -288,7 +316,20 @@ namespace Tpetra {
     //! Create this Map's Directory, if it hasn't been created already.
     void setupDirectory();
 
-    //! Perform communication to determine whether this map is globally distributed or locally replicated.
+    /// \brief Determine whether this map is globally distributed or locally replicated.
+    /// 
+    /// \return True if the map is globally distributed, else false.
+    ///
+    /// This operation requires communication (a single all-reduce).
+    /// See the documentation of \c isDistributed() for definitions
+    /// of "globally distributed" and "locally replicated."
+    ///
+    /// Map invokes this method in its constructors if necessary, to
+    /// set the \c distributed_ flag (and thus the return value of \c
+    /// isDistributed()).  Map doesn't need to call \c checkIsDist()
+    /// when using the uniform contiguous constructor with
+    /// lg=GloballyDistributed, since then checking the number of
+    /// processes in the communicator suffices.
     bool checkIsDist() const;
 
     //! Copy constructor (declared but not defined; do not use).
@@ -296,9 +337,6 @@ namespace Tpetra {
 
     //! Assignment operator (declared but not defined; do not use).
     Map<LocalOrdinal,GlobalOrdinal,Node>& operator=(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
-
-    // some of the following are globally coherent: that is, they have been guaranteed to 
-    // match across all images, and may be assumed to do so
 
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;

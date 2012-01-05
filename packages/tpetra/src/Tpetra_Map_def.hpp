@@ -658,13 +658,18 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const GlobalOrdinal>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList() const {
-    // if so (and we have local entries), then fill it.
+    // If the local-to-global mapping doesn't exist yet, and if we
+    // have local entries, then create and fill the local-to-global
+    // mapping.
     if (lgMap_ == Teuchos::null && numLocalElements_ > 0) {
 #ifdef HAVE_TEUCHOS_DEBUG
-      // this would have been set up for a non-contiguous map
+      // The local-to-global mapping should have been set up already
+      // for a noncontiguous map.
       TEUCHOS_TEST_FOR_EXCEPTION(contiguous_ != true, std::logic_error,
-          "Tpetra::Map::getNodeElementList: logic error. Please notify the Tpetra team.");
-#endif
+        "Tpetra::Map::getNodeElementList: The local-to-global mapping (lgMap_) "
+        "should have been set up already for a noncontiguous Map.  Please report"
+        " this bug to the Tpetra team.");
+#endif // HAVE_TEUCHOS_DEBUG
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
       Teuchos::ArrayRCP<GlobalOrdinal> lgptr = lgMap_;
       for (GlobalOrdinal gid=minMyGID_; gid <= maxMyGID_; ++gid) {
