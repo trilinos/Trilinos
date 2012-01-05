@@ -4,6 +4,7 @@
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_String_Utilities.hpp"
+#include "Panzer_Workset_Utilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -68,11 +69,7 @@ PHX_POST_REGISTRATION_SETUP(GlobalStatistics,sd,fm)
        field != field_values.end(); ++field)
     this->utils.setFieldData(*field,fm);
 
-  ir_index = 
-    std::distance((*sd.worksets_)[0].ir_degrees->begin(),
-		  std::find((*sd.worksets_)[0].ir_degrees->begin(),
-			    (*sd.worksets_)[0].ir_degrees->end(),
-			    ir_order));
+  ir_index = panzer::getIntegrationRuleIndex(ir_order,(*sd.worksets_)[0]);
 
   for (typename PHX::MDField<ScalarT,Cell,IP>::size_type cell = 0; cell < ones.dimension(0); ++cell)
     for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < ones.dimension(1); ++ip)

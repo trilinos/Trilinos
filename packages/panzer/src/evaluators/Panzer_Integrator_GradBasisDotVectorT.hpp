@@ -4,6 +4,7 @@
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Basis.hpp"
+#include "Panzer_Workset_Utilities.hpp"
 
 namespace panzer {
 
@@ -57,11 +58,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisDotVector,sd,fm)
   num_qp = flux.dimension(1);
   num_dim = flux.dimension(2);
 
-  basis_index = 
-    std::distance((*sd.worksets_)[0].basis_names->begin(),
-		  std::find((*sd.worksets_)[0].basis_names->begin(),
-			    (*sd.worksets_)[0].basis_names->end(),
-			    basis_name));
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 
   tmp = Intrepid::FieldContainer<ScalarT>(flux.dimension(0), num_qp, num_dim); 
 }

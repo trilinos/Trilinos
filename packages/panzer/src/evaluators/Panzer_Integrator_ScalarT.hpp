@@ -3,6 +3,7 @@
 
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
+#include "Panzer_Workset_Utilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 namespace panzer {
@@ -61,11 +62,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
 
   tmp = Intrepid::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
 
-  quad_index =  
-    std::distance((*sd.worksets_)[0].ir_degrees->begin(),
-		  std::find((*sd.worksets_)[0].ir_degrees->begin(),
-			    (*sd.worksets_)[0].ir_degrees->end(),
-			    quad_order));
+  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0]);
 }
 
 //**********************************************************************

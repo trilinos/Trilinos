@@ -1,6 +1,7 @@
 
 #include <algorithm>
 #include "Panzer_IntegrationRule.hpp"
+#include "Panzer_Workset_Utilities.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 
@@ -38,11 +39,7 @@ PHX_POST_REGISTRATION_SETUP(Normals,sd,fm)
   num_qp  = normals.dimension(1);
   num_dim = normals.dimension(2);
   
-  quad_index =  
-    std::distance((*sd.worksets_)[0].ir_degrees->begin(),
-		  std::find((*sd.worksets_)[0].ir_degrees->begin(),
-			    (*sd.worksets_)[0].ir_degrees->end(),
-			    quad_order));
+  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0]);
 }
 
 //**********************************************************************

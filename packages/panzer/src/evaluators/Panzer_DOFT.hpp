@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Basis.hpp"
+#include "Panzer_Workset_Utilities.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 
 namespace panzer {
@@ -30,11 +31,7 @@ PHX_POST_REGISTRATION_SETUP(DOF,sd,fm)
   cell_data_size = dof_basis.size() / 
     dof_basis.fieldTag().dataLayout().dimension(0);
 
-  basis_index = 
-    std::distance((*sd.worksets_)[0].basis_names->begin(),
-		  std::find((*sd.worksets_)[0].basis_names->begin(),
-			    (*sd.worksets_)[0].basis_names->end(),
-			    basis_name));
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
 
 //**********************************************************************
