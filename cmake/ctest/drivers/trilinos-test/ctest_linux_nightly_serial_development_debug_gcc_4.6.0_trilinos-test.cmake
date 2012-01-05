@@ -76,7 +76,7 @@ SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #Stratimikos there was one test failure
 #Rythmos Disabling Stratimikos caused a lot of build errors
 #stokhos there was one build error
-SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Piro Zoltan2)
+SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Piro Stratimikos Rythmos Zoltan2)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/gcc4.6.0/bin/g++"
@@ -88,10 +88,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost_1_46_1"
   "-DTrilinos_ENABLE_MOOCHO:BOOL=OFF"
   "-DTrilinos_ENABLE_Piro:BOOL=OFF"
-  "-DTrilinos_ENABLE_Amesos:BOOL=OFF"
   "-DTrilinos_ENABLE_Stratimikos:BOOL=OFF"
   "-DTrilinos_ENABLE_Rythmos:BOOL=OFF"
-  "-DTrilinos_ENABLE_Stokhos:BOOL=OFF"
   )
 
 #
