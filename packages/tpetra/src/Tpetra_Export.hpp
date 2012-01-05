@@ -52,34 +52,65 @@
 
 namespace Tpetra {
 
-  //! \brief This class builds an object containing information necesary for efficiently exporting entries off-processor.
-  /*! Export is used to construct a communication plan that can be called repeatedly by computational
-      classes to efficiently export entries to other nodes.
-      For example, an exporter is used when we start out with a multiple-ownership distribution,
-      and we want to merge that into a uniquely-owned distribution.
-
-      This class currently has one constructor, taking two Map objects
-      specifying the distributions of the distributed objects on which the Export class will operate.
-
-      This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
-      The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
-   */
+  /// \brief Communication plan for data redistribution from a multiply-owned to a uniquely-owned distribution.
+  ///
+  /// Tpetra users should use this class to construct a communication
+  /// plan between two data distributions (i.e., two \c Map objects).
+  /// The plan can be called repeatedly by computational classes to
+  /// perform communication according to the same pattern.
+  /// Constructing the plan may be expensive, but it can be reused
+  /// inexpensively.
+  ///
+  /// Tpetra has two classes for data redistribution: \c Import and \c
+  /// Export.  \c Import is for redistributing data from a
+  /// uniquely-owned distribution to a possibly multiply-owned
+  /// distribution.  \c Export is for redistributing data from a
+  /// possibly multiply-owned distribution to a uniquely-owned
+  /// distribution.
+  ///
+  /// A use case of Import is bringing in remote source vector data
+  /// for a sparse matrix-vector multiply.  The source vector itself
+  /// is uniquely owned, but must be brought in into an overlapping
+  /// distribution so that each process can compute its part of the
+  /// target vector without further communication.
+  ///
+  /// A use case of Export is finite element assembly.  For example,
+  /// one way to compute a distributed forcing term vector is to use
+  /// an overlapping distribution for the basis functions' domains.
+  /// An Export with the SUM combine mode combines each process'
+  /// contribution to the integration into a single nonoverlapping
+  /// distribution.
+  ///
+  /// Epetra separated \c Import and \c Export for performance
+  /// reasons.  The implementation is different, depending on which
+  /// direction is the uniquely-owned Map.  Tpetra retains this
+  /// convention.
+  ///
+  /// This class is templated on the same template arguments as \c
+  /// Map: the local ordinal type (\c LocalOrdinal), the global
+  /// ordinal type (\c GlobalOrdinal), and the Kokkos Node type (\c
+  /// Node).
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Export: public Teuchos::Describable {
 
   public:
-
     //! @name Constructor/Destructor Methods
     //@{ 
 
-    //! Constructs a Export object from the source and target Map.
-    Export(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source, 
-           const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target);
+    /// \brief Construct a Export object from the source and target Map.
+    ///
+    /// \param source [in] The source distribution.  This may be an
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    Export (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source, 
+	    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target);
 
-    //! copy constructor. 
-    Export(const Export<LocalOrdinal,GlobalOrdinal,Node> & import);
+    //! Copy constructor. 
+    Export (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
-    //! destructor.
+    //! Destructor.
     ~Export();
 
     //@}
@@ -87,10 +118,10 @@ namespace Tpetra {
     //! @name Export Attribute Methods
     //@{ 
 
-    //! Returns the number of entries that are identical between the source and target maps, up to the first different ID.
+    //! The number of entries that are identical between the source and target maps, up to the first different ID.
     inline size_t getNumSameIDs() const;
 
-    //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
+    //! The number of entries that are local to the calling image, but not part of the first \c getNumSameIDs() entries.
     inline size_t getNumPermuteIDs() const;
 
     //! List of entries in the source Map that are permuted. (non-persisting view)
@@ -99,13 +130,13 @@ namespace Tpetra {
     //! List of entries in the target Map that are permuted. (non-persisting view)
     inline ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
 
-    //! Returns the number of entries that are not on the calling image.
+    //! The number of entries that are not on the calling image.
     inline size_t getNumRemoteIDs() const;
 
     //! List of entries in the target Map that are coming from other images. (non-persisting view)
     inline ArrayView<const LocalOrdinal> getRemoteLIDs() const;
 
-    //! Returns the number of entries that must be sent by the calling image to other images.
+    //! The number of entries that must be sent by the calling image to other images.
     inline size_t getNumExportIDs() const;
 
     //! List of entries in the source Map that will be sent to other images. (non-persisting view)
@@ -114,24 +145,40 @@ namespace Tpetra {
     //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view)
     inline ArrayView<const int> getExportImageIDs() const;
 
-    //! Returns the Source Map used to construct this exporter.
+    //! The source \c Map used to construct this exporter.
     inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getSourceMap() const;
 
-    //! Returns the Target Map used to construct this exporter.
+    //! The target \c Map used to construct this exporter.
     inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getTargetMap() const;
 
+    //! The Distributor that this \c Export object uses to move data.
     inline Distributor & getDistributor() const;
 
     //! Assignment operator
-    Export<LocalOrdinal,GlobalOrdinal,Node>& operator = (const Export<LocalOrdinal,GlobalOrdinal,Node> & Source);
+    Export<LocalOrdinal,GlobalOrdinal,Node>& 
+    operator= (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
     //@}
 
     //! @name I/O Methods
     //@{ 
 
-    //! Print method
-    virtual void print(std::ostream& os) const;
+    /// \brief Print the Export's data to the given output stream.
+    ///
+    /// This method assumes that the given output stream can be
+    /// written on all process(es) in the Export's communicator.  The
+    /// resulting output is useful mainly for debugging.
+    ///
+    /// \note This method tries its best (by using barriers at the end
+    ///   of each iteration of a for loop over all communicator ranks)
+    ///   to ensure ordered deterministic output.  However, the
+    ///   assumption that all processes can write to the stream means
+    ///   that there are no ordering guarantees other than what the
+    ///   operating and run-time system provide.  (MPI synchronization
+    ///   may be separate from output stream synchronization, so the
+    ///   barriers only improve the chances that output can complete
+    ///   before the next process starts writing.)
+    virtual void print (std::ostream& os) const;
 
     //@}
 
@@ -238,8 +285,17 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>& 
-  Export<LocalOrdinal,GlobalOrdinal,Node>::operator=(const Export<LocalOrdinal,GlobalOrdinal,Node> & source) {
-    ExportData_ = source.ExportData_;
+  Export<LocalOrdinal,GlobalOrdinal,Node>::operator=(const Export<LocalOrdinal,GlobalOrdinal,Node> & rhs) {
+    if (&rhs != this) {
+      // It's bad form to clobber your own data in a self-assignment.
+      // This can result in dangling pointers if some member data are
+      // raw pointers that the class deallocates in the constructor.
+      // It doesn't matter in this case, because ExportData_ is an
+      // RCP, which defines self-assignment sensibly.  Nevertheless,
+      // we include the check for self-assignment, because it's good
+      // form and not expensive (just a raw pointer comparison).
+      ExportData_ = source.ExportData_;
+    }
     return *this;
   }
 
