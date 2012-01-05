@@ -16,7 +16,7 @@
 
 #include <useMueLuGallery.hpp>
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
 extern "C"{
 static char *meminfo=NULL;
 extern void Zoltan_get_linux_meminfo(char *msg, char **result);
@@ -38,13 +38,8 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // Eventually want to use Teuchos unit tests to vary z2TestLO and
 // GO.  For now, we set them at compile time.
-#ifdef HAVE_TPL64
-typedef long z2TestLO;
+typedef int  z2TestLO;
 typedef long z2TestGO;
-#else
-typedef int z2TestLO;
-typedef int z2TestGO;
-#endif
 
 typedef double Scalar;
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
@@ -137,7 +132,7 @@ int main(int narg, char** arg)
   cmdp.parse(narg, arg);
 
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me == 0){
     Zoltan_get_linux_meminfo("Before creating matrix", &meminfo);
     if (meminfo){
@@ -177,7 +172,7 @@ int main(int narg, char** arg)
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
          << "NumProcs = " << comm->getSize() << endl;
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me == 0){
     Zoltan_get_linux_meminfo("After creating matrix", &meminfo);
     if (meminfo){
@@ -206,7 +201,7 @@ int main(int narg, char** arg)
   ////// Create and solve ordering problem
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me == 0){
     Zoltan_get_linux_meminfo("After creating problem", &meminfo);
     if (meminfo){

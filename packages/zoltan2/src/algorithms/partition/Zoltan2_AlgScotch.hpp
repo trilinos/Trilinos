@@ -4,19 +4,31 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
-#ifndef HAVE_SCOTCH
+#ifndef HAVE_ZOLTAN2_SCOTCH
 
 // Error handling for when Scotch is requested
 // but Zoltan2 not built with Scotch.
 
 namespace Zoltan2 {
+
+/*! Scotch partitioning method.
+ *
+ *  \param env  parameters for the problem and library configuration
+ *  \param problemComm  the communicator for the problem
+ *  \param model a graph
+ *  \param solution  a Solution object
+ *
+ *  Preconditions: The parameters in the environment have been
+ *    processed (committed).
+ */
+
 template <typename Adapter>
 void AlgPTScotch(
-  const RCP<const Environment> &env,        // parameters & app comm
-  const RCP<const Comm<int> > &problemComm, // problem comm
-  const RCP<GraphModel<Adapter> > &model,   // the graph
-  size_t numParts,                          // number of parts
-  ArrayView<size_t> partList                // return parts here
+  const RCP<const Environment> &env,
+  const RCP<const Comm<int> > &problemComm,
+  const RCP<GraphModel<Adapter> > &model,
+  RCP<PartitioningSolution<typename Adapter::user_t> > &solution
+
 )
 {
   throw std::runtime_error(
@@ -25,45 +37,56 @@ void AlgPTScotch(
 }
 }
 
-#else  //HAVE_SCOTCH
+#else  //HAVE_ZOLTAN2_SCOTCH
+
+
+// stdint.h for int64_t in scotch header
 
 #include <stdint.h>
-#ifndef HAVE_MPI
+#ifndef HAVE_ZOLTAN2_MPI
 #include "scotch.h"
 #else
 #include "ptscotch.h"
 #endif
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
 extern "C"{
 static char *z2_meminfo=NULL;
 extern void Zoltan_get_linux_meminfo(char *msg, char **result);
 }
 #endif
 
-#ifdef SHOW_SCOTCH_HIGH_WATER_MARK
-extern "C"{
+#ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
 //
 // Scotch keeps track of memory high water mark, but doesn't
 // provide a way to get that number.  So add this function:
 //   "size_t SCOTCH_getMemoryMax() { return memorymax;}"
 // to src/libscotch/common_memory.c
+//
+// and this macro:
+//   "#define HAVE_SCOTCH_GETMEMORYMAX
+// to include/ptscotch.h
+//
 // and compile scotch with -DCOMMON_MEMORY_TRACE
 //
+#ifdef HAVE_SCOTCH_GETMEMORYMAX
+
+extern "C"{
 extern size_t SCOTCH_getMemoryMax();
 }
+
+#else
+
+#error "Either turn off ZOLTAN2_ENABLE_SCOTCH_MEMORY_REPORT in cmake configure, or see SHOW_ZOLTAN2_SCOTCH_MEMORY comment in Zoltan2_AlgScotch.hpp"
+
+#endif
+
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_Scotch.hpp
 //! \brief Parallel graph partitioning using Scotch.
-
-
-// Placeholder for real error handling.
-#define KDD_HANDLE_ERROR {\
-    cout << __func__ << ":" << __LINE__ << " KDDERROR" << endl;\
-    }
 
 namespace Zoltan2{
 
@@ -139,27 +162,41 @@ struct SCOTCH_Num_Traits<SCOTCH_Num> {
 // Now, the actual Scotch algorithm.
 ///////////////////////////////////////////////////////////////////////
 
+/*! Scotch partitioning method.
+ *
+ *  \param env  parameters for the problem and library configuration
+ *  \param problemComm  the communicator for the problem
+ *  \param model a graph
+ *  \param solution  a Solution object
+ *
+ *  Preconditions: The parameters in the environment have been
+ *    processed (committed).
+ */
+
 template <typename Adapter>
 void AlgPTScotch(
   const RCP<const Environment> &env,        // parameters & app comm
   const RCP<const Comm<int> > &problemComm, // problem comm
   const RCP<GraphModel<Adapter> > &model,   // the graph
-  size_t numParts,                          // number of parts
-  ArrayView<size_t> partList                // return parts here
+  RCP<PartitioningSolution<typename Adapter::user_t> > &solution
 )
 {
   HELLO;
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr = 0;
-  SCOTCH_Num partnbr;
-  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numParts, env);
 
-#ifdef HAVE_MPI
+  size_t numGlobalParts = solution->getGlobalNumberOfParts();
+  int weightDim = model->getNumWeights();
+  int weightFlag = (weightDim ? weightDim : 1);
+
+  SCOTCH_Num partnbr;
+  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);
+
+#ifdef HAVE_ZOLTAN2_MPI
 
   const SCOTCH_Num  baseval = 0;  // Base value for array indexing.
                                   // GraphModel returns GNOs from base 0.
@@ -174,9 +211,8 @@ void AlgPTScotch(
   // Allocate & initialize PTScotch data structure.
   SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
   ierr = SCOTCH_dgraphInit(gr, mpicomm);
-  if (ierr) {
-    KDD_HANDLE_ERROR;
-  }
+
+  Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphInit", !ierr, BASIC_ASSERTION);
 
   // Get vertex info
   ArrayView<const gno_t> vtxID;
@@ -209,7 +245,6 @@ void AlgPTScotch(
   SCOTCH_Num *vlblloctab = NULL;  // Vertex label array
   SCOTCH_Num *edgegsttab = NULL;  // Array for ghost vertices
 
-
   // Get weight info.
   // TODO:  Actually get the weights; for now, not using weights.
   SCOTCH_Num *veloloctab = NULL;  // Vertex weights
@@ -225,11 +260,11 @@ void AlgPTScotch(
                             vertloctab, vendloctab, veloloctab, vlblloctab,
                             edgelocnbr, edgelocsize,
                             edgeloctab, edgegsttab, edloloctab);
-  if (ierr) {
-    KDD_HANDLE_ERROR;
-  }
+
+  Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphBuild", !ierr, BASIC_ASSERTION);
 
   // Create array for Scotch to return results in.
+  ArrayRCP<size_t> partList(new size_t [nVtx], 0, nVtx,true);
   SCOTCH_Num *partloctab;
   if (sizeof(SCOTCH_Num) == sizeof(size_t)) {
     // Can write directly into the solution's memory
@@ -243,10 +278,19 @@ void AlgPTScotch(
   // Call partitioning; result returned in partloctab.
   // TODO:  Use SCOTCH_dgraphMap so can include a machine model in partitioning
   ierr = SCOTCH_dgraphPart(gr, partnbr, &stratstr, partloctab);
-  if (ierr) KDD_HANDLE_ERROR;
 
-#ifdef SHOW_SCOTCH_HIGH_WATER_MARK
+  Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphPart", !ierr, BASIC_ASSERTION);
+
+  // TODO - use metric output facility of environment
+#ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
   int me = env->comm_->getRank();
+#else
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
+  int me = env->comm_->getRank();
+#endif
+#endif
+
+#ifdef HAVE_SCOTCH_ZOLTAN2_GETMEMORYMAX
   if (me == 0){
     size_t scotchBytes = SCOTCH_getMemoryMax();
     std::cout << "Rank " << me << ": Maximum bytes used by Scotch: ";
@@ -264,7 +308,12 @@ void AlgPTScotch(
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
   }
 
-#ifdef SHOW_LINUX_MEMINFO
+  ArrayRCP<float> imbalance(new float [weightFlag],0, weightFlag, true);
+  imbalance[0] = 1.0;  // TODO calculate imbalance.
+
+  solution->setParts(vtxID, partList, imbalance);
+
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me==0){
     Zoltan_get_linux_meminfo("After creating solution", &z2_meminfo);
     if (z2_meminfo){
@@ -304,5 +353,5 @@ void AlgPTScotch(
 }
 
 }
-#endif // HAVE_SCOTCH
+#endif // HAVE_ZOLTAN2_SCOTCH
 #endif

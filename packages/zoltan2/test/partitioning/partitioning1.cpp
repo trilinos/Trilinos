@@ -15,7 +15,7 @@
 
 #include <useMueLuGallery.hpp>
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
 extern "C"{
 static char *meminfo=NULL;
 extern void Zoltan_get_linux_meminfo(char *msg, char **result);
@@ -102,7 +102,7 @@ int main(int narg, char** arg)
   cmdp.parse(narg, arg);
 
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me == 0){
     Zoltan_get_linux_meminfo("Before creating matrix", &meminfo);
     if (meminfo){
@@ -142,7 +142,7 @@ int main(int narg, char** arg)
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
          << "NumProcs = " << comm->getSize() << endl;
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me == 0){
     Zoltan_get_linux_meminfo("After creating matrix", &meminfo);
     if (meminfo){
@@ -174,7 +174,7 @@ int main(int narg, char** arg)
   ////// Create and solve partitioning problem
   Zoltan2::PartitioningProblem<SparseMatrixAdapter> problem(&adapter, &params);
 
-#ifdef SHOW_LINUX_MEMINFO
+#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me == 0){
     Zoltan_get_linux_meminfo("After creating problem", &meminfo);
     if (meminfo){
@@ -221,17 +221,10 @@ int main(int narg, char** arg)
 
   ////// Basic metric checking of the partitioning solution
   ////// Not ordinarily done in application code; just doing it for testing here.
-  size_t checkNparts = problem.getSolution().getNumParts();
-  size_t checkLength;
-  size_t  *checkParts = problem.getSolution().getParts(&checkLength);
-
-  // Check number of parts
-  if (me == 0) 
-    cout << "Number of parts:  " << checkNparts 
-         << (checkNparts != comm->getSize()
-                         ? "Wrong number of parts; FAIL"
-                         : " ")
-         << endl;
+  size_t checkNparts = comm->getSize();
+  
+  size_t  checkLength = problem.getSolution().getNumberOfIds();
+  const size_t  *checkParts = problem.getSolution().getPartList();
 
   // Check for load balance
   size_t *countPerPart = new size_t[checkNparts];

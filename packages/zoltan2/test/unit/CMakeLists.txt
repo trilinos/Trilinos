@@ -1,72 +1,31 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
-# TODO
-# We want to emit "NOTRUN" when a test is skipped
-# for some reason. How do we tell cmake?
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/helpers)
 
+#
+# Tests for src/algorithms
+#
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
-SET(HEADERS
-  AdaptersForTests.hpp
-)
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  IdentifierMap
-  SOURCES IdentifierMap.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  IdentifierTraits
-  SOURCES IdentifierTraits.cpp 
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  XpetraTraits
-  SOURCES XpetraTraits.cpp UserInputForTests.hpp ErrorHandlingForTests.hpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  AlltoAll
-  SOURCES AlltoAll.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CommTest
-  SOURCES CommTest.cpp
-  NUM_MPI_PROCS 4
-  COMM mpi serial
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+#
+# Tests for src/environment
+#
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Parameters
-  SOURCES Parameters.cpp
+  SOURCES environment/Parameters.cpp
   NUM_MPI_PROCS 1
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
- 
+
+#
+# Tests for src/input
+#
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  XpetraMatrixAdapter
-  SOURCES XpetraMatrixAdapter.cpp UserInputForTests.hpp ErrorHandlingForTests.hpp
+  XpetraTraits
+  SOURCES input/XpetraTraits.cpp 
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -74,8 +33,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
  
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  XpetraGraphAdapter
-  SOURCES XpetraGraphAdapter.cpp UserInputForTests.hpp ErrorHandlingForTests.hpp
+  XpetraMatrixInput
+  SOURCES input/XpetraMatrixInput.cpp 
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  XpetraGraphInput
+  SOURCES input/XpetraGraphInput.cpp 
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -83,8 +51,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  XpetraVectorAdapter
-  SOURCES XpetraVectorAdapter.cpp UserInputForTests.hpp ErrorHandlingForTests.hpp
+  XpetraVectorInput
+  SOURCES input/XpetraVectorInput.cpp 
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -92,17 +60,31 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  XpetraMultiVectorAdapter
-  SOURCES XpetraMultiVectorAdapter.cpp UserInputForTests.hpp ErrorHandlingForTests.hpp
+  XpetraMultiVectorInput
+  SOURCES input/XpetraMultiVectorInput.cpp 
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BasicIdentifierInput
+  SOURCES input/BasicIdentifierInput.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+#
+# Tests for src/models
+#
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   GraphModel
-  SOURCES GraphModel.cpp AdaptersForTests.hpp ErrorHandlingForTests.hpp
+  SOURCES models/GraphModel.cpp 
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -111,19 +93,54 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   IdentifierModel
-  SOURCES IdentifierModel.cpp AdaptersForTests.hpp ErrorHandlingForTests.hpp
+  SOURCES models/IdentifierModel.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+#
+# Tests for src/problems
+#
+
+#
+# Tests for src/util
+#
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BasicIdentifierAdapter
-  SOURCES BasicIdentifierAdapter.cpp AdaptersForTests.hpp ErrorHandlingForTests.hpp
+  Metric
+  SOURCES util/Metric.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  IdentifierMap
+  SOURCES util/IdentifierMap.cpp 
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  IdentifierTraits
+  SOURCES util/IdentifierTraits.cpp 
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  AlltoAll
+  SOURCES util/AlltoAll.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+

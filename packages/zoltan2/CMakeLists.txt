@@ -1,4 +1,3 @@
-
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 
@@ -12,82 +11,58 @@ TRIBITS_PACKAGE(Zoltan2)
 # B) Set up package-specific options
 #
 
+TRIBITS_ADD_OPTION_AND_DEFINE(TPL_ENABLE_MPI
+  HAVE_${PACKAGE_NAME_UC}_MPI
+  "MPI is present"
+  OFF )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_METIS
-  HAVE_METIS
+  HAVE_${PACKAGE_NAME_UC}_METIS
   "Metis is present"
   OFF )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PaToH
-  HAVE_PATOH
+  HAVE_${PACKAGE_NAME_UC}_PATOH
   "PaToH is present"
   OFF )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ParMETIS
-  HAVE_PARMETIS
+  HAVE_${PACKAGE_NAME_UC}_PARMETIS
   "ParMetis is present"
   OFF )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Scotch
-  HAVE_SCOTCH
+  HAVE_${PACKAGE_NAME_UC}_SCOTCH
   "Scotch is present"
   OFF )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_OVIS
-  HAVE_OVIS
+  HAVE_${PACKAGE_NAME_UC}_OVIS
   "Ovis is present"
   OFF )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_HAVE_MALLINFO
-  HAVE_MALLINFO
-  "malloc.h supports mallinfo()"
-  OFF )
-
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_AMD
-  HAVE_AMD
+  HAVE_${PACKAGE_NAME_UC}_AMD
   "AMD is present"
   OFF )
 
-#
-# The Zoltan library (in zz/zz_util.h) has utilities that
-# read /proc/meminfo at runtime.  There is code in Zoltan2
-# tests and algorithms that checks this and prints out memory
-# currently committed on the compute node.  
-# Turning on this option at cmake configure time turns on
-# the printing of that info.
-#
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_LINUX_MEMORY_REPORT
-  SHOW_LINUX_MEMINFO
+  SHOW_${PACKAGE_NAME_UC}_LINUX_MEMORY
   "turn on runtime display of proc/meminfo data"
   OFF )
 
 #
-# The Scotch library keeps track of the maximum amount of memory
-# used by Scotch in the memory wrappers in common_memory.c.  But
-# there is no function that returns that maximum.  Add this function
-# to src/libscotch/common_memory.c:
-#
-#   size_t SCOTCH_getMemoryMax() { return memorymax; }
-#
-# and compile scotch with -DCOMMON_MEMORY_TRACE
-# The Zoltan2 scotch algorithms will call getMemoryMax and report
-# the maximum memory used by Scotch if this cmake option is enabled.
+# See the comment in Zoltan2_AlgScotch.hpp to learn how to
+# modify the scotch library to return the maximum memory used.
 #
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SCOTCH_MEMORY_REPORT
-  SHOW_SCOTCH_HIGH_WATER_MARK
+  SHOW_${PACKAGE_NAME_UC}_SCOTCH_MEMORY
   "turn on runtime display maximum memory used by scotch"
   OFF )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_HAVE_TPL64
-  HAVE_TPL64
-  "64-bit third-party libraries are present"
-  OFF )
 
-# 
-# Include Fortran support and Fortran tests
-#
-# IF(Trilinos_ENABLE_Fortran)
-# ENDIF()
-#
+INCLUDE(CheckTypeSize)
+CHECK_TYPE_SIZE("long long" HAVE_${PACKAGE_NAME_UC}_LONG_LONG)
 
 #
 # C) Add the libraries, tests, and examples
@@ -98,6 +73,12 @@ ADD_SUBDIRECTORY(src)
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+
+#
+# Exclude files for source package.
+#
+#TRIBITS_EXCLUDE_FILES()
+
 
 #
 # D) Do standard postprocessing

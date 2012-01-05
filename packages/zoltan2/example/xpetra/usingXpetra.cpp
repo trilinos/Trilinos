@@ -3,7 +3,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_RCP.hpp>
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>
@@ -109,7 +109,7 @@ template<typename Scalar, typename LO, typename GO>
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
   Teuchos::GlobalMPISession session(&argc, &argv);
   Epetra_MpiComm commObj(MPI_COMM_WORLD);
 #else
