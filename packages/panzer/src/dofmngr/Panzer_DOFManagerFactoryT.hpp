@@ -34,8 +34,8 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
          Teuchos::RCP<IntrepidFieldPattern> fp = Teuchos::rcp(new IntrepidFieldPattern(intrepidBasis));
          dofManager->addField(pb->elementBlockID(),fieldItr->first,fp);
 
-         *pout << "\"" << fieldItr->first << "\" Field Pattern = \n";
-         fp->print(*pout);
+         // *pout << "\"" << fieldItr->first << "\" Field Pattern = \n";
+         // fp->print(*pout);
       }
    } 
 
@@ -62,7 +62,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
    }
 
    dofManager->buildGlobalUnknowns();
-   dofManager->printFieldInformation(*pout);
+   // dofManager->printFieldInformation(*pout);
 
    return dofManager;
 }

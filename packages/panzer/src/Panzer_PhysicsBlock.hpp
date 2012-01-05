@@ -117,6 +117,9 @@ namespace panzer {
     Teuchos::RCP<const FieldLibrary> getFieldLibrary() const 
     { return m_field_lib.getConst(); }
 
+    Teuchos::RCP<const FieldLibraryBase> getFieldLibraryBase() const 
+    { return m_field_lib.getConst(); }
+
   protected:
     void initialize(const panzer::InputPhysicsBlock & ipb,
                     const std::string & element_block_id,
