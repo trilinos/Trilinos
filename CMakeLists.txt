@@ -298,6 +298,13 @@ TRILINOS_DEFINE_PACKAGING()
 IF(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
   PACKAGE_ARCH_WRITE_CONFIG_FILE()
 
+  #Install the Trilinos version file
+  INSTALL(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/Trilinos_version.h"
+    DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
+    COMPONENT ${PROJECT_NAME}
+    )
+
   # TEMPORARY: Install a compatibility copy of TrilinosConfig.cmake
   # where was previously installed to warn and load the new file.
   INSTALL(
