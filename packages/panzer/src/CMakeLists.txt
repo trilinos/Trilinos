@@ -102,6 +102,7 @@ APPEND_SET(HEADERS
   Panzer_Workset_BuilderT.hpp
   Panzer_WorksetContainer.hpp
   Panzer_WorksetFactoryBase.hpp
+  Panzer_Workset_Utilities.hpp
   Panzer_ZeroSensitivities.hpp
   dofmngr/Panzer_FieldPattern.hpp
   dofmngr/Panzer_IntrepidFieldPattern.hpp
@@ -197,6 +198,7 @@ APPEND_SET(SOURCES
   Panzer_Traits.cpp
   Panzer_Version.cpp
   Panzer_WorksetContainer.cpp
+  Panzer_Workset_Utilities.cpp
   dofmngr/Panzer_FieldPattern.cpp
   dofmngr/Panzer_IntrepidFieldPattern.cpp
   dofmngr/Panzer_GeometricAggFieldPattern.cpp
