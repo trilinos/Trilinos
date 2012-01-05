@@ -407,23 +407,6 @@ namespace Tpetra {
     SortDetails::quicksort3(first1, last1, first2, first2+(last1-first1), first3, first3+(last1-first1));
   }
 
-  /**
-   * \brief Preforms a binary search.
-   *
-   * Preforms a binary search for value amount the entries between
-   * the first iterator and the last iterator.
-   */
-  template<class IT1, class T>
-  IT1 binary_serach(IT1 first, IT1 last, const T& value){
-	first = std::lower_bound(first,last,value);
-	if(first!=last && !(value<*first)){
-		return first;
-	}
-	else{
-		return last;
-	}
-  }
-  
 } // namespace Tpetra
 
 
