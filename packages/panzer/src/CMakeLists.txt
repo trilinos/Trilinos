@@ -209,10 +209,12 @@ APPEND_SET(SOURCES
   responses/Panzer_ResponseUtilities.cpp
   responses/Panzer_ResponseFunctional_Aggregator.cpp
   evaluators/Panzer_Constant.cpp
+  evaluators/Panzer_Parameter.cpp
   )
 
 IF(${PACKAGE_NAME}_ENABLE_Stokhos)
   APPEND_SET(HEADERS
+    Panzer_SGUtilities.hpp
     dofmngr/Panzer_SGEpetraLinearObjFactory.hpp
     dofmngr/Panzer_SGEpetraLinearObjFactoryT.hpp
     dofmngr/Panzer_SGEpetraLinearObjContainer.hpp
