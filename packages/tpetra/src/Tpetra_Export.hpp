@@ -52,7 +52,7 @@
 
 namespace Tpetra {
 
-  /// \brief Communication plan for data redistribution from a multiply-owned to a uniquely-owned distribution.
+  /// \brief Communication plan for data redistribution from a (possibly) multiply-owned to a uniquely-owned distribution.
   ///
   /// Tpetra users should use this class to construct a communication
   /// plan between two data distributions (i.e., two \c Map objects).
@@ -68,13 +68,7 @@ namespace Tpetra {
   /// possibly multiply-owned distribution to a uniquely-owned
   /// distribution.
   ///
-  /// A use case of Import is bringing in remote source vector data
-  /// for a sparse matrix-vector multiply.  The source vector itself
-  /// is uniquely owned, but must be brought in into an overlapping
-  /// distribution so that each process can compute its part of the
-  /// target vector without further communication.
-  ///
-  /// A use case of Export is finite element assembly.  For example,
+  /// One use case of Export is finite element assembly.  For example,
   /// one way to compute a distributed forcing term vector is to use
   /// an overlapping distribution for the basis functions' domains.
   /// An Export with the SUM combine mode combines each process'
@@ -186,13 +180,17 @@ namespace Tpetra {
 
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ExportData_;
 
-    // subfunctions used by constructor
+    //! @name Initialization helper functions (called by the constructor)
+    //@{ 
+
     //==============================================================================
     // sets up numSameIDs_, numPermuteIDs_, and the export IDs
     // these variables are already initialized to 0 by the ImportExportData ctr.
     // also sets up permuteToLIDs_, permuteFromLIDs_, exportGIDs_, and exportLIDs_
     void setupSamePermuteExport();
     void setupRemote();
+
+    //@}
   };
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -301,7 +299,10 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Export<LocalOrdinal,GlobalOrdinal,Node>::print(std::ostream& os) const {
+    using Teuchos::getFancyOStream;
+    using Teuchos::rcpFromRef;
     using std::endl;
+
     ArrayView<const LocalOrdinal> av;
     ArrayView<const int> avi;
     const RCP<const Comm<int> > & comm = getSourceMap()->getComm();
@@ -310,7 +311,7 @@ namespace Tpetra {
     for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
       if (myImageID == imageCtr) {
         os << endl;
-        if(myImageID == 0) { // this is the root node (only output this info once)
+        if (myImageID == 0) { // this is the root node (only output this info once)
           os << "Export Data Members:" << endl;
         }
         os << "Image ID       : " << myImageID << endl;
@@ -330,13 +331,29 @@ namespace Tpetra {
       comm->barrier();
     }
     if (myImageID == 0) {
-      os << "\nSource Map: " << endl; 
+      os << endl << endl << "Source Map:" << endl << std::flush; 
     }
+    comm->barrier();
     os << *getSourceMap();
+    comm->barrier();
+
     if (myImageID == 0) {
-      os << "\nTarget Map: " << endl; 
+      os << endl << endl << "Target Map:" << endl << std::flush; 
     }
+    comm->barrier();
     os << *getTargetMap();
+    comm->barrier();
+
+    // It's also helpful for debugging to print the Distributor
+    // object.  Epetra_Import::Print() does this (or _should_ do this,
+    // but doesn't, as of 05 Jan 2012), so we can do a side-by-side
+    // comparison.
+    if (myImageID == 0) {
+      os << endl << endl << "Distributor:" << endl << std::flush;
+    }
+    comm->barrier();
+    getDistributor().describe (*(getFancyOStream (rcpFromRef (os))),
+			       Teuchos::VERB_EXTREME);
   }
 
 

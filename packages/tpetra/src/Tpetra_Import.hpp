@@ -53,18 +53,37 @@
 
 namespace Tpetra {
 
-  //! \brief This class builds an object containing information necesary for efficiently importing off-processor entries.
-  /*! Import is used to construct a communication plan that can be called repeatedly by computational
-      classes to efficiently import entries from other nodes.
-      For example, an exporter is used when we start out with a multiple-ownership distribution,
-      and we want to merge that into a uniquely-owned distribution.
-
-      This class currently has one constructor, taking two Map objects
-      specifying the distributions of the distributed objects on which the Export class will operate.
-
-      This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
-      The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
-  */
+  /// \brief Communication plan for data redistribution from a uniquely-owned to a (possibly) multiply-owned distribution.
+  ///
+  /// Tpetra users should use this class to construct a communication
+  /// plan between two data distributions (i.e., two \c Map objects).
+  /// The plan can be called repeatedly by computational classes to
+  /// perform communication according to the same pattern.
+  /// Constructing the plan may be expensive, but it can be reused
+  /// inexpensively.
+  ///
+  /// Tpetra has two classes for data redistribution: \c Import and \c
+  /// Export.  \c Import is for redistributing data from a
+  /// uniquely-owned distribution to a possibly multiply-owned
+  /// distribution.  \c Export is for redistributing data from a
+  /// possibly multiply-owned distribution to a uniquely-owned
+  /// distribution.
+  ///
+  /// One use case of Import is bringing in remote source vector data
+  /// for a distributed sparse matrix-vector multiply.  The source
+  /// vector itself is uniquely owned, but must be brought in into an
+  /// overlapping distribution so that each process can compute its
+  /// part of the target vector without further communication.
+  ///
+  /// Epetra separated \c Import and \c Export for performance
+  /// reasons.  The implementation is different, depending on which
+  /// direction is the uniquely-owned Map.  Tpetra retains this
+  /// convention.
+  ///
+  /// This class is templated on the same template arguments as \c
+  /// Map: the local ordinal type (\c LocalOrdinal), the global
+  /// ordinal type (\c GlobalOrdinal), and the Kokkos Node type (\c
+  /// Node).
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Import: public Teuchos::Describable {
 
@@ -141,13 +160,17 @@ namespace Tpetra {
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
     RCP<Array<GlobalOrdinal> > remoteGIDs_;
 
-    // subfunctions used by constructor
+    //! @name Initialization helper functions (called by the constructor)
+    //@{ 
+
     //==============================================================================
     // sets up numSameIDs_, numPermuteIDs_, and numRemoteIDs_
     // these variables are already initialized to 0 by the ImportExportData ctr.
     // also sets up permuteToLIDs_, permuteFromLIDs_, and remoteLIDs_
     void setupSamePermuteRemote();
     void setupExport();
+
+    //@}
   };
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -249,17 +272,19 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Import<LocalOrdinal,GlobalOrdinal,Node>::print(std::ostream& os) const {
+    using Teuchos::getFancyOStream;
+    using Teuchos::rcpFromRef;
     using std::endl;
+
     ArrayView<const LocalOrdinal> av;
     ArrayView<const int> avi;
     const RCP<const Comm<int> > & comm = getSourceMap()->getComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-      if (myImageID == imageCtr) 
-      {
+      if (myImageID == imageCtr) {
         os << endl;
-        if(myImageID == 0) { // this is the root node (only output this info once)
+        if (myImageID == 0) { // this is the root node (only output this info once)
           os << "Import Data Members:" << endl;
         }
         os << "Image ID       : " << myImageID << endl;
@@ -299,7 +324,7 @@ namespace Tpetra {
       os << endl << endl << "Distributor:" << endl << std::flush;
     }
     comm->barrier();
-    getDistributor().describe (*(Teuchos::getFancyOStream (Teuchos::rcpFromRef (os))),
+    getDistributor().describe (*(getFancyOStream (rcpFromRef (os))),
 			       Teuchos::VERB_EXTREME);
   }
 
