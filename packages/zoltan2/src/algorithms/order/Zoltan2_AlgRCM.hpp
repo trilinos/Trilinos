@@ -50,7 +50,7 @@ int AlgRCM(
   ArrayView<const lno_t> edgeIds;
   ArrayView<const lno_t> offsets;
   ArrayView<const scalar_t> wgts;
-  size_t nEdges = model->getLocalEdgeList(edgeIds, offsets, wgts);
+  model->getLocalEdgeList(edgeIds, offsets, wgts);
 
   // TODO: Find pseudo-peripheral root vertex.
   lno_t root = 0;
@@ -73,10 +73,11 @@ int AlgRCM(
 
       // Add unmarked nbors to queue
       // TODO: Sort nbors by degree
-      for (lno_t *w = edgeIds[offsets[v]]; w<edgeIds[offsets[v+1]]; w++){
-        if (*w != -1){
-          perm[*w] = count--; // Label as we push on Q
-          Q.push(*w);
+      for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
+        lno_t nbor = edgeIds[ptr];
+        if (perm[nbor] != -1){
+          perm[nbor] = count--; // Label as we push on Q
+          Q.push(nbor);
         }
       }
     }
