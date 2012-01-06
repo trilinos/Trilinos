@@ -408,7 +408,6 @@ namespace stk
               }
             std::cout << "tmp srk doing Shape smoothing for hex_1 case... done " << std::endl;
             eMesh.saveAs(output_files_loc+"hex_1_si_smooth.1.e");
-            exit(123);
           }
       }
 
