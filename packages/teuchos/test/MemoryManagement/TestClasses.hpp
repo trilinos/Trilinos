@@ -93,6 +93,7 @@ class A {
 	int A_g_, A_f_;
 public:
 	A() : A_g_(A_g_return), A_f_(A_f_return) {}
+  static Teuchos::RCP<A> create() { return Teuchos::rcp(new A); }
 	virtual ~A(); // See below
 	virtual int A_g() { return A_g_; }
 	virtual int A_f() const { return A_f_; }
@@ -109,6 +110,7 @@ class B1 : virtual public A {
 public:
 	B1() : B1_g_(B1_g_return), B1_f_(B1_f_return) {}
 	~B1() { B1_g_ = -1; B1_f_ = -1; }
+  static Teuchos::RCP<B1> create() { return Teuchos::rcp(new B1); }
 	virtual int B1_g() { return B1_g_; }
 	virtual int B1_f() const { return B1_f_; }
 };
@@ -118,6 +120,7 @@ class B2 : virtual public A {
 	int B2_g_, B2_f_;
 public:
 	B2() : B2_g_(B2_g_return), B2_f_(B2_f_return) {}
+  static Teuchos::RCP<B2> create() { return Teuchos::rcp(new B2); }
 	~B2() { B2_g_ = -1; B2_f_ = -1; }
 	virtual int B2_g() { return B2_g_; }
 	virtual int B2_f() const { return B2_f_; }
@@ -132,6 +135,7 @@ public:
     {
       A_g_on_delete_ = -2;
     }
+  static Teuchos::RCP<C> create() { return Teuchos::rcp(new C); }
 	~C()
     {
       C_g_ = -1; C_f_ = -1;
