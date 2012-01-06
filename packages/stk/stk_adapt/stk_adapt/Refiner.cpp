@@ -1418,8 +1418,14 @@ namespace stk {
           bool do_jacobi             = true;
 
           PerceptMesquiteMeshDomain pmd(&m_eMesh, &mesh_geometry);
-          PerceptMesquiteMesh pmm(&m_eMesh, &pmd);
 
+#define ALWAYS_PMM_PARALLEL 1
+#if ALWAYS_PMM_PARALLEL
+          PerceptMesquiteMesh pmm0(&m_eMesh, &pmd);
+          PerceptMesquiteMesh::PMMParallelMesh pmm(&pmm0);
+#else
+          PerceptMesquiteMesh pmm(&m_eMesh, &pmd);
+#endif
           if (do_laplace)
             {
               PMMLaplaceSmoother1 ls;
