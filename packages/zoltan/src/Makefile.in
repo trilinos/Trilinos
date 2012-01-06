@@ -95,10 +95,10 @@ libzoltan_a_DEPENDENCIES =
 am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/coloring/coloring.c $(srcdir)/coloring/color_test.c \
 	$(srcdir)/coloring/bucket.c $(srcdir)/coloring/g2l_hash.c \
-	$(srcdir)/graph/graph.c $(srcdir)/ha/build_machine_desc.c \
-	$(srcdir)/ha/divide_machine.c \
-	$(srcdir)/ha/get_processor_name.c $(srcdir)/ha/ha_drum.c \
-	$(srcdir)/hier/hier.c $(srcdir)/hier/hier_free_struct.c \
+	$(srcdir)/graph/graph.c $(srcdir)/ha/divide_machine.c \
+	$(srcdir)/ha/get_processor_name.c $(srcdir)/ha/ha_ovis.c \
+	$(srcdir)/ha/ha_drum.c $(srcdir)/hier/hier.c \
+	$(srcdir)/hier/hier_free_struct.c \
 	$(srcdir)/hsfc/hsfc_box_assign.c $(srcdir)/hsfc/hsfc.c \
 	$(srcdir)/hsfc/hsfc_hilbert.c \
 	$(srcdir)/hsfc/hsfc_point_assign.c $(srcdir)/lb/lb_balance.c \
@@ -199,8 +199,8 @@ am__objects_1 = all_allo.$(OBJEXT)
 am__objects_2 = coloring.$(OBJEXT) color_test.$(OBJEXT) \
 	bucket.$(OBJEXT) g2l_hash.$(OBJEXT)
 am__objects_3 = graph.$(OBJEXT)
-am__objects_4 = build_machine_desc.$(OBJEXT) divide_machine.$(OBJEXT) \
-	get_processor_name.$(OBJEXT) ha_drum.$(OBJEXT)
+am__objects_4 = divide_machine.$(OBJEXT) get_processor_name.$(OBJEXT) \
+	ha_ovis.$(OBJEXT) ha_drum.$(OBJEXT)
 am__objects_5 = hier.$(OBJEXT) hier_free_struct.$(OBJEXT)
 am__objects_6 = hsfc_box_assign.$(OBJEXT) hsfc.$(OBJEXT) \
 	hsfc_hilbert.$(OBJEXT) hsfc_point_assign.$(OBJEXT)
@@ -464,12 +464,13 @@ GRAPH = \
 
 HA_H = \
 	$(srcdir)/ha/ha_const.h \
+	$(srcdir)/ha/ha_ovis.h \
 	$(srcdir)/ha/ha_drum.h
 
 HA = \
-	$(srcdir)/ha/build_machine_desc.c \
 	$(srcdir)/ha/divide_machine.c \
 	$(srcdir)/ha/get_processor_name.c \
+	$(srcdir)/ha/ha_ovis.c \
 	$(srcdir)/ha/ha_drum.c
 
 HIER_H = \
@@ -1286,7 +1287,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/box_assign.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bucket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_graph.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_machine_desc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccolamd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_param.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/color_test.Po@am__quote@
@@ -1313,6 +1313,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_processor_name.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/graph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ha_drum.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ha_ovis.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hier_free_struct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hsfc.Po@am__quote@
@@ -1526,20 +1527,6 @@ graph.obj: $(srcdir)/graph/graph.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o graph.obj `if test -f '$(srcdir)/graph/graph.c'; then $(CYGPATH_W) '$(srcdir)/graph/graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/graph/graph.c'; fi`
 
-build_machine_desc.o: $(srcdir)/ha/build_machine_desc.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT build_machine_desc.o -MD -MP -MF $(DEPDIR)/build_machine_desc.Tpo -c -o build_machine_desc.o `test -f '$(srcdir)/ha/build_machine_desc.c' || echo '$(srcdir)/'`$(srcdir)/ha/build_machine_desc.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/build_machine_desc.Tpo $(DEPDIR)/build_machine_desc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/build_machine_desc.c' object='build_machine_desc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o build_machine_desc.o `test -f '$(srcdir)/ha/build_machine_desc.c' || echo '$(srcdir)/'`$(srcdir)/ha/build_machine_desc.c
-
-build_machine_desc.obj: $(srcdir)/ha/build_machine_desc.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT build_machine_desc.obj -MD -MP -MF $(DEPDIR)/build_machine_desc.Tpo -c -o build_machine_desc.obj `if test -f '$(srcdir)/ha/build_machine_desc.c'; then $(CYGPATH_W) '$(srcdir)/ha/build_machine_desc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/build_machine_desc.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/build_machine_desc.Tpo $(DEPDIR)/build_machine_desc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/build_machine_desc.c' object='build_machine_desc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o build_machine_desc.obj `if test -f '$(srcdir)/ha/build_machine_desc.c'; then $(CYGPATH_W) '$(srcdir)/ha/build_machine_desc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/build_machine_desc.c'; fi`
-
 divide_machine.o: $(srcdir)/ha/divide_machine.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT divide_machine.o -MD -MP -MF $(DEPDIR)/divide_machine.Tpo -c -o divide_machine.o `test -f '$(srcdir)/ha/divide_machine.c' || echo '$(srcdir)/'`$(srcdir)/ha/divide_machine.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/divide_machine.Tpo $(DEPDIR)/divide_machine.Po
@@ -1567,6 +1554,20 @@ get_processor_name.obj: $(srcdir)/ha/get_processor_name.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/get_processor_name.c' object='get_processor_name.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_processor_name.obj `if test -f '$(srcdir)/ha/get_processor_name.c'; then $(CYGPATH_W) '$(srcdir)/ha/get_processor_name.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/get_processor_name.c'; fi`
+
+ha_ovis.o: $(srcdir)/ha/ha_ovis.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ha_ovis.o -MD -MP -MF $(DEPDIR)/ha_ovis.Tpo -c -o ha_ovis.o `test -f '$(srcdir)/ha/ha_ovis.c' || echo '$(srcdir)/'`$(srcdir)/ha/ha_ovis.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ha_ovis.Tpo $(DEPDIR)/ha_ovis.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/ha_ovis.c' object='ha_ovis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ha_ovis.o `test -f '$(srcdir)/ha/ha_ovis.c' || echo '$(srcdir)/'`$(srcdir)/ha/ha_ovis.c
+
+ha_ovis.obj: $(srcdir)/ha/ha_ovis.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ha_ovis.obj -MD -MP -MF $(DEPDIR)/ha_ovis.Tpo -c -o ha_ovis.obj `if test -f '$(srcdir)/ha/ha_ovis.c'; then $(CYGPATH_W) '$(srcdir)/ha/ha_ovis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/ha_ovis.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ha_ovis.Tpo $(DEPDIR)/ha_ovis.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/ha_ovis.c' object='ha_ovis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ha_ovis.obj `if test -f '$(srcdir)/ha/ha_ovis.c'; then $(CYGPATH_W) '$(srcdir)/ha/ha_ovis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/ha_ovis.c'; fi`
 
 ha_drum.o: $(srcdir)/ha/ha_drum.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ha_drum.o -MD -MP -MF $(DEPDIR)/ha_drum.Tpo -c -o ha_drum.o `test -f '$(srcdir)/ha/ha_drum.c' || echo '$(srcdir)/'`$(srcdir)/ha/ha_drum.c
