@@ -19,6 +19,9 @@ namespace panzer_stk {
 
     virtual ~RythmosObserverFactory() {}
 
+    //! Use the NOX observer as well?
+    virtual bool useNOXObserver() const = 0;
+
     virtual Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 			 const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,

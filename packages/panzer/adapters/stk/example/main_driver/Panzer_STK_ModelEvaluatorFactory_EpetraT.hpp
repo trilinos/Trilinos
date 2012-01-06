@@ -457,6 +457,7 @@ namespace panzer_stk {
 
     Teuchos::RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params));
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
+
     if (solver=="NOX") {
       Teuchos::RCP<const panzer_stk::NOXObserverFactory> observer_factory = 
 	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
@@ -467,6 +468,16 @@ namespace panzer_stk {
     else if (solver=="Rythmos") {
       Teuchos::RCP<const panzer_stk::RythmosObserverFactory> observer_factory = 
 	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::RythmosObserverFactory> >("Rythmos Observer Factory");
+
+      // install the nox observer
+      if(observer_factory->useNOXObserver()) {
+         Teuchos::RCP<const panzer_stk::NOXObserverFactory> nox_observer_factory = 
+   	    p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
+         
+         Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(mesh,dofManager,ep_lof);
+         piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
+      }
+
       piro = Teuchos::rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer_factory->buildRythmosObserver(mesh,dofManager,linObjFactory)));
     } 
     else {
