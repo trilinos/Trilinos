@@ -169,7 +169,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - time spent restarting
    */
    Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-     return tuple(_timerSolve, _timerRestarting);
+     return Teuchos::tuple(_timerSolve, _timerRestarting);
    }
 
   //@}
