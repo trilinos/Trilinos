@@ -81,7 +81,11 @@ namespace stk {
         Mesquite::MsqError mErr;
 
         //this->set_iteration_limit(1);
-        this->run_instructions(&mesh, &domain, mErr);
+        Mesquite::ParallelMesh *pmesh = dynamic_cast<Mesquite::ParallelMesh *>(&mesh);
+        if (pmesh)
+          this->run_instructions(pmesh, &domain, mErr);
+        else
+          this->run_instructions(&mesh, &domain, mErr);
 
         //siw.run_instructions(&mesh, &domain, mErr);
       }

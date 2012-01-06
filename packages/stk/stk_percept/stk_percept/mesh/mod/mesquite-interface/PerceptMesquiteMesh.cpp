@@ -70,7 +70,8 @@ namespace stk {
     // Date: 03/30/2011, 11/15/11
     //============================================================================
     PerceptMesquiteMesh::PerceptMesquiteMesh(PerceptMesh *eMesh, PerceptMesquiteMeshDomain *domain, stk::mesh::Selector *boundarySelector) 
-      : m_meshDomain(domain), m_boundarySelector(boundarySelector), m_nodeCoords_tag_is_created(false)
+      : m_meshDomain(domain), m_boundarySelector(boundarySelector), m_nodeCoords_tag_is_created(false), m_is_proc_id_active(false),
+        m_is_global_id_active(false), m_parallelHelperLocalIdMap_is_created(false)
     {  
       init(eMesh);
     }
@@ -812,24 +813,48 @@ namespace stk {
                                                         Mesquite::MsqError &err)
     {
       Mesquite::TagHandle handle = 0;
-#if 1
+
       //int numNodes = get_total_vertex_count(err);
       if (1 || DEBUG_PRINT) std::cout << "tmp srk tag_create 0, length = " << length << " tag_name= " << tag_name 
-                                      << " type= " << type << " DOUBLE= " << DOUBLE
+                                      << " type= " << type << " DOUBLE= " << DOUBLE << " INT= " << INT << " HANDLE= " << HANDLE
                                       << std::endl;
       if (tag_name == "msq_jacobi_temp_coords" && type == DOUBLE && length == 3)
         {
-          if (DEBUG_PRINT) std::cout << "tmp srk tag_create 1, length = " << length << std::endl;
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_create msq_jacobi_temp_coords, length = " << length << std::endl;
           handle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords);
           m_nodeCoords.clear();
           m_nodeCoords_tag_is_created = true;
         }
+      else if (tag_name == "LOCAL_ID" && type == INT && length == 1)
+        {
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_create LOCAL_ID length = " << length << std::endl;
+          handle = reinterpret_cast<Mesquite::TagHandle>(&m_parallelHelperLocalIdMap);
+          m_parallelHelperLocalIdMap.clear();
+          m_parallelHelperLocalIdMap_is_created = true;
+        }
+      else if (tag_name == "msq_parallel_proc_id" && type == INT && length == 1)
+        {
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_create msq_parallel_proc_id, length = " << length << std::endl;
+
+          handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_proc_id_active);
+          m_is_proc_id_active = true;
+        }
+      else if (tag_name == "msq_parallel_global_id" && type == HANDLE && length == 1)
+        {
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_create msq_parallel_global_id, length = " << length << std::endl;
+
+          handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_global_id_active);
+          m_is_global_id_active = true;
+        }
       else
         {
           //PRINT_ERROR("Unknown Tag %s in tag_create\n", tag_name.c_str());
-          MSQ_SETERR(err)("Tag not implemented.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+          std::ostringstream ost;
+          ost << "Unknown Tag" << tag_name << " in tag_create\n";
+          ost << " Tag not implemented.\n";
+          MSQ_SETERR(err)(ost.str(),Mesquite::MsqError::NOT_IMPLEMENTED);
         }
-#endif
+
       return handle;
     }
 
@@ -843,20 +868,39 @@ namespace stk {
     void PerceptMesquiteMesh::tag_delete(Mesquite::TagHandle handle,
                                          Mesquite::MsqError& err ) 
     {
-#if 1
+
       Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords); 
+      Mesquite::TagHandle ph_handle = reinterpret_cast<Mesquite::TagHandle>(&m_parallelHelperLocalIdMap); 
+      Mesquite::TagHandle proc_id_handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_proc_id_active); 
+      Mesquite::TagHandle global_id_handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_global_id_active); 
       if (jhandle == handle)
         {
-          if (DEBUG_PRINT) std::cout << "tmp srk tag_delete " << std::endl;
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_delete jacobi handle" << std::endl;
           m_nodeCoords.clear();
           m_nodeCoords_tag_is_created = false;
+        }
+      if (ph_handle == handle)
+        {
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_delete ph_handle handle" << std::endl;
+          m_parallelHelperLocalIdMap.clear();
+          m_parallelHelperLocalIdMap_is_created = false;
+        }
+      else if (proc_id_handle == handle)
+        {
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_delete proc_id_handle" << std::endl;
+          m_is_proc_id_active = false;
+        }
+      else if (global_id_handle == handle)
+        {
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_delete global_id_handle" << std::endl;
+          m_is_global_id_active = false;
         }
       else
         {
           PRINT_ERROR("Unknown tag sent to PerceptMesquiteMesh::tag_delete\n");
           MSQ_SETERR(err)("Unknown tag sent to PerceptMesquiteMesh::tag_delete\n",Mesquite::MsqError::NOT_IMPLEMENTED);
         }
-#endif
+
     }
 
     //============================================================================
@@ -872,7 +916,9 @@ namespace stk {
                                                      Mesquite::MsqError& err )
     {
       Mesquite::TagHandle handle = 0;
-#if 1
+      if (1 || DEBUG_PRINT) std::cout << "tmp srk tag_get tag_name= " << name
+                                      << std::endl;
+
       if (name == "msq_jacobi_temp_coords")
         {
           if (m_nodeCoords_tag_is_created)
@@ -881,10 +927,47 @@ namespace stk {
             }
           else
             {
-              MSQ_SETERR(err)("tag not found in PerceptMesquiteMesh::tag_get.\n",Mesquite::MsqError::TAG_NOT_FOUND);
+              MSQ_SETERR(err)("tag msq_jacobi_temp_coords not found in PerceptMesquiteMesh::tag_get.\n",Mesquite::MsqError::TAG_NOT_FOUND);
             }
         }
-#endif
+      else if (name == "LOCAL_ID")
+        {
+          if (m_parallelHelperLocalIdMap_is_created)
+            {
+              handle = reinterpret_cast<Mesquite::TagHandle>(&m_parallelHelperLocalIdMap);
+            }
+          else
+            {
+              MSQ_SETERR(err)("tag LOCAL_ID not found in PerceptMesquiteMesh::tag_get.\n",Mesquite::MsqError::TAG_NOT_FOUND);
+            }
+        }
+      else if (name == "msq_parallel_proc_id")
+        {
+          handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_proc_id_active);
+          if (!m_is_proc_id_active)
+            {
+              int default_pid_value = 0;
+              Mesquite::MsqError err;
+              this->tag_create(PMM_proc_id_name, INT, 1, &default_pid_value, err);
+              //MSQ_SETERR(err)("tag msq_parallel_proc_id not found in PerceptMesquiteMesh::tag_get.\n",Mesquite::MsqError::TAG_NOT_FOUND);
+            }
+        }
+      else if (name == "msq_parallel_global_id")
+        {
+          handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_global_id_active);
+          if (!m_is_global_id_active)
+            {
+              size_t default_gid_value = 0;
+              Mesquite::MsqError err;
+              this->tag_create(PMM_global_id_name, HANDLE, 1, &default_gid_value, err);
+              //MSQ_SETERR(err)("tag msq_parallel_global_id not found in PerceptMesquiteMesh::tag_get.\n",Mesquite::MsqError::TAG_NOT_FOUND);
+            }
+        }
+      else 
+        {
+          MSQ_SETERR(err)("tag not found in PerceptMesquiteMesh::tag_get.\n",Mesquite::MsqError::TAG_NOT_FOUND);
+        }
+
       return handle;
     }
 
@@ -901,23 +984,68 @@ namespace stk {
                                              unsigned &length_out,
                                              Mesquite::MsqError& err )
     {
-#if 1
+
       Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords); 
-      if (!m_nodeCoords_tag_is_created)
-        {
-          MSQ_SETERR(err)("tag not yet created in PerceptMesquiteMesh::tag_properties.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
-        }
+      Mesquite::TagHandle ph_handle = reinterpret_cast<Mesquite::TagHandle>(&m_parallelHelperLocalIdMap); 
+      Mesquite::TagHandle proc_id_handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_proc_id_active); 
+      Mesquite::TagHandle global_id_handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_global_id_active); 
       if (jhandle == handle)
         {
-          name_out = "msq_jacobi_temp_coords";
-          type_out = Mesquite::Mesh::DOUBLE;
-          length_out = 3;
+          if (!m_nodeCoords_tag_is_created)
+            {
+              MSQ_SETERR(err)("tag not yet created in PerceptMesquiteMesh::tag_properties.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+            }
+          else
+            {
+              name_out = "msq_jacobi_temp_coords";
+              type_out = Mesquite::Mesh::DOUBLE;
+              length_out = 3;
+            }
+        }
+      else if (ph_handle == handle)
+        {
+          if (!m_parallelHelperLocalIdMap_is_created)
+            {
+              MSQ_SETERR(err)("tag LOCAL_ID not yet created in PerceptMesquiteMesh::tag_properties.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+            }
+          else
+            {
+              name_out = "LOCAL_ID";
+              type_out = Mesquite::Mesh::INT;
+              length_out = 1;
+            }
+        }
+      else if (proc_id_handle == handle)
+        {
+          if (!m_is_proc_id_active)
+            {
+              MSQ_SETERR(err)("tag msq_parallel_proc_id not yet created in PerceptMesquiteMesh::tag_properties.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+            }
+          else
+            {
+              name_out = "msq_parallel_proc_id";
+              type_out = Mesquite::Mesh::INT;
+              length_out = 1;
+            }
+        }
+      else if (global_id_handle == handle)
+        {
+          if (!m_is_global_id_active)
+            {
+              MSQ_SETERR(err)("tag msq_parallel_global_id not yet created in PerceptMesquiteMesh::tag_properties.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+            }
+          else
+            {
+              name_out = "msq_parallel_global_id";
+              type_out = Mesquite::Mesh::HANDLE;
+              length_out = 1;
+            }
         }
       else
         { 
           MSQ_SETERR(err)("Unknown tag in PerceptMesquiteMesh::tag_properties.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
         }
-#endif
+
     }
 
     //============================================================================
@@ -935,6 +1063,7 @@ namespace stk {
     {
       assert(0); 
       MSQ_SETERR(err)("Function not yet implemented.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+      throw std::runtime_error("Function not yet ipmlemented, PerceptMesquiteMesh::tag_set_element_data");
     }
 
     //============================================================================
@@ -950,22 +1079,21 @@ namespace stk {
                                                    const void* tag_data,
                                                    Mesquite::MsqError& err )
     {
-#if 1
+
       //int numNodes = get_total_vertex_count(err);
 
       Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords); 
-      if (!m_nodeCoords_tag_is_created)
+      Mesquite::TagHandle ph_handle = reinterpret_cast<Mesquite::TagHandle>(&m_parallelHelperLocalIdMap); 
+      Mesquite::TagHandle proc_id_handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_proc_id_active); 
+      Mesquite::TagHandle global_id_handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_global_id_active); 
+
+      if (jhandle == handle)
         {
-          PRINT_ERROR("tag not yet created in PerceptMesquiteMesh::tag_set_vertex_data\n");
-          MSQ_SETERR(err)("tag not yet created in PerceptMesquiteMesh::tag_set_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
-        }
-      if (jhandle != handle)
-        {
-          PRINT_ERROR("Unknown tag handle in PerceptMesquiteMesh::tag_set_vertex_data\n");
-          MSQ_SETERR(err)("Unknown tag handle in PerceptMesquiteMesh::tag_set_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
-        }
-      else
-        {
+          if (!m_nodeCoords_tag_is_created)
+            {
+              PRINT_ERROR("tag not yet created in PerceptMesquiteMesh::tag_set_vertex_data\n");
+              MSQ_SETERR(err)("tag not yet created in PerceptMesquiteMesh::tag_set_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+            }
           double *coords_0 = (double *)tag_data;
           for(int inode = 0; inode < (int)num_nodes; inode++)
             {
@@ -990,7 +1118,56 @@ namespace stk {
                 }
             }
         }
-#endif
+      else if (ph_handle == handle)
+        {
+          if (!m_parallelHelperLocalIdMap_is_created)
+            {
+              PRINT_ERROR("tag LOCAL_ID not yet created in PerceptMesquiteMesh::tag_set_vertex_data\n");
+              MSQ_SETERR(err)("tag LOCAL_ID not yet created in PerceptMesquiteMesh::tag_set_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+            }
+          int *lid = (int *)tag_data;
+          for(int inode = 0; inode < (int)num_nodes; inode++)
+            {
+              Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
+              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              m_parallelHelperLocalIdMap[node_ptr] = lid[inode];
+            }
+        }
+      else if (proc_id_handle == handle)
+        {
+          int *proc_id = (int *)tag_data;
+          for(int inode = 0; inode < (int)num_nodes; inode++)
+            {
+              Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
+              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              if (!proc_id || !node_ptr || (int)node_ptr->owner_rank() != proc_id[inode])
+                {
+                  PRINT_ERROR("proc_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_set_vertex_data\n");
+                  MSQ_SETERR(err)("proc_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_set_vertex_data\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+                }
+            }
+        }
+      else if (global_id_handle == handle)
+        {
+          size_t *global_id = (size_t *)tag_data;
+          for(int inode = 0; inode < (int)num_nodes; inode++)
+            {
+              Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
+              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              if (!global_id || !node_ptr || (size_t)node_ptr->identifier() != global_id[inode])
+                {
+                  PRINT_ERROR("global_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_set_vertex_data\n");
+                  MSQ_SETERR(err)("global_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_set_vertex_data\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+                }
+            }
+        }
+      else
+        {
+          PRINT_ERROR("Unknown tag handle in PerceptMesquiteMesh::tag_set_vertex_data\n");
+          MSQ_SETERR(err)("Unknown tag handle in PerceptMesquiteMesh::tag_set_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+        }
+
+
     }
 
     //============================================================================
@@ -1008,6 +1185,7 @@ namespace stk {
     {
       assert(0); 
       MSQ_SETERR(err)("Function not yet implemented.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+      throw std::runtime_error("Function not yet ipmlemented, PerceptMesquiteMesh::tag_get_element_data");
     }
 
     //============================================================================
@@ -1023,22 +1201,20 @@ namespace stk {
                                                    void* tag_data,
                                                    Mesquite::MsqError& err )
     {
-#if 1
+
       //int numNodes = get_total_vertex_count(err);
 
       Mesquite::TagHandle jhandle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords);
-      if (!m_nodeCoords_tag_is_created)
+      Mesquite::TagHandle ph_handle = reinterpret_cast<Mesquite::TagHandle>(&m_parallelHelperLocalIdMap); 
+      Mesquite::TagHandle proc_id_handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_proc_id_active); 
+      Mesquite::TagHandle global_id_handle = reinterpret_cast<Mesquite::TagHandle>(&m_is_global_id_active); 
+      if (jhandle == handle)
         {
-          PRINT_ERROR("tag not yet created in PerceptMesquiteMesh::tag_get_vertex_data\n");
-          MSQ_SETERR(err)("tag not yet created in PerceptMesquiteMesh::tag_get_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
-        }
-      if (jhandle != handle)
-        {
-          PRINT_ERROR("Unknown tag handle in PerceptMesquiteMesh::tag_get_vertex_data\n");
-          MSQ_SETERR(err)("Unknown tag handle in PerceptMesquiteMesh::tag_get_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
-        }
-      else
-        {
+          if (!m_nodeCoords_tag_is_created)
+            {
+              PRINT_ERROR("tag not yet created in PerceptMesquiteMesh::tag_get_vertex_data\n");
+              MSQ_SETERR(err)("tag not yet created in PerceptMesquiteMesh::tag_get_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+            }
           double *coords_0 = (double *)tag_data;
           for(int inode = 0; inode < (int)num_nodes; inode++)
             {
@@ -1065,7 +1241,67 @@ namespace stk {
             }
 
         }
-#endif
+      else if (ph_handle == handle)
+        {
+          if (!m_parallelHelperLocalIdMap_is_created)
+            {
+              PRINT_ERROR("tag LOCAL_ID not yet created in PerceptMesquiteMesh::tag_get_vertex_data\n");
+              MSQ_SETERR(err)("tag LOCAL_ID not yet created in PerceptMesquiteMesh::tag_get_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+            }
+          int *lid = (int *)tag_data;
+          for(int inode = 0; inode < (int)num_nodes; inode++)
+            {
+              Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
+              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              ParallelHelperLocalIdType::iterator iter = m_parallelHelperLocalIdMap.find(node_ptr);
+              if (iter == m_parallelHelperLocalIdMap.end())
+                {
+                  MSQ_SETERR(err)("PerceptMesquiteMesh::tag_get_vertex_data: LOCAL_ID invalid vertex handle.",Mesquite::MsqError::INVALID_STATE);
+                  PRINT_ERROR("PerceptMesquiteMesh::tag_get_vertex_data: LOCAL_ID invalid vertex handle.\n");
+                  return;
+                }
+              else
+                {
+                  lid[inode] = m_parallelHelperLocalIdMap[node_ptr];
+                }
+            }
+        }
+      else if (proc_id_handle == handle)
+        {
+          int *proc_id = (int *)tag_data;
+          for(int inode = 0; inode < (int)num_nodes; inode++)
+            {
+              Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
+              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              if (!proc_id || !node_ptr)
+                {
+                  PRINT_ERROR("proc_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_get_vertex_data\n");
+                  MSQ_SETERR(err)("proc_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_get_vertex_data\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+                }
+              proc_id[inode] = node_ptr->owner_rank();
+            }
+        }
+      else if (global_id_handle == handle)
+        {
+          size_t *global_id = (size_t *)tag_data;
+          for(int inode = 0; inode < (int)num_nodes; inode++)
+            {
+              Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
+              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              if (!global_id || !node_ptr)
+                {
+                  PRINT_ERROR("global_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_get_vertex_data\n");
+                  MSQ_SETERR(err)("global_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_get_vertex_data\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+                }
+              global_id[inode] = (size_t)node_ptr->identifier();
+            }
+        }
+      else
+        {
+          PRINT_ERROR("Unknown tag handle in PerceptMesquiteMesh::tag_get_vertex_data\n");
+          MSQ_SETERR(err)("Unknown tag handle in PerceptMesquiteMesh::tag_get_vertex_data.\n",Mesquite::MsqError::NOT_IMPLEMENTED);
+        }
+
     }
 
 

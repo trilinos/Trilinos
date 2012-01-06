@@ -51,7 +51,7 @@ namespace stk {
     public:
       PMMLaplaceSmoother() {}
 
-      void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain, bool always_smooth=true, int debug=0)
+      void run(Mesquite::Mesh &mesh, Mesquite::MeshDomain &domain, bool always_smooth=true, int debug=0)
       {
         if (debug)
           {
@@ -74,7 +74,11 @@ namespace stk {
           {
             Mesquite::LaplaceWrapper lw;
             lw.set_iteration_limit(1);
-            lw.run_instructions(&mesh, &domain, mErr);
+            Mesquite::ParallelMesh *pmesh = dynamic_cast<Mesquite::ParallelMesh *>(&mesh);
+            if (pmesh)
+              lw.run_instructions(pmesh, &domain, mErr);
+            else
+              lw.run_instructions(&mesh, &domain, mErr);
             if (check_quality)
               {
                 num_invalid = PMMShapeImprover::count_invalid_elements(mesh, domain);

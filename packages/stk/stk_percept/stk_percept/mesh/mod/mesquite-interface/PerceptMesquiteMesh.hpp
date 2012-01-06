@@ -22,6 +22,8 @@
 // #include <mesquite/MsqError.hpp>
 #include <MeshInterface.hpp>
 #include <MsqError.hpp>
+#include <ParallelMeshImpl.hpp>
+#include <ParallelHelper.hpp>
 
 #include <stk_percept/PerceptMesh.hpp>
 #include <map>
@@ -30,6 +32,9 @@
 
 namespace stk {
   namespace percept {
+
+    static const std::string PMM_global_id_name = "msq_parallel_global_id";
+    static const std::string PMM_proc_id_name = "msq_parallel_proc_id";
 
     class PerceptMesquiteMeshDomain;
 
@@ -46,6 +51,12 @@ namespace stk {
       typedef boost::unordered_map<stk::mesh::Entity *, Array3> NodeCoordsType;
       NodeCoordsType m_nodeCoords;
       bool m_nodeCoords_tag_is_created;
+      bool m_is_proc_id_active;
+      bool m_is_global_id_active;
+
+      typedef boost::unordered_map<stk::mesh::Entity *, int > ParallelHelperLocalIdType;
+      ParallelHelperLocalIdType m_parallelHelperLocalIdMap;
+      bool m_parallelHelperLocalIdMap_is_created;
 
     public:
 
@@ -56,7 +67,26 @@ namespace stk {
       stk::mesh::Selector *getBoundarySelector() { return m_boundarySelector; }
       void setBoundarySelector(stk::mesh::Selector *sel) { m_boundarySelector = sel; }
       
+      class PMMParallelMesh : public Mesquite::ParallelMeshImpl
+      {
+        Mesquite::ParallelHelperImpl& helper;
+      public:
+        
+        PMMParallelMesh(Mesquite::Mesh *mesh) : Mesquite::ParallelMeshImpl(mesh, PMM_global_id_name.c_str(), PMM_proc_id_name.c_str()),
+                                                helper(* new Mesquite::ParallelHelperImpl)
+        {
+          /* create parallel mesh instance, specifying tags
+           * containing parallel data */
+          helper.set_communicator(MPI_COMM_WORLD);
+          helper.set_parallel_mesh(this);
+          this->set_parallel_helper(&helper);
+        }
 
+        ~PMMParallelMesh() { delete &helper; }
+
+      };
+
+      
     public:
       virtual ~PerceptMesquiteMesh();
   

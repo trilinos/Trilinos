@@ -111,7 +111,7 @@ namespace stk {
 
       static int count_invalid_elements(Mesh &mesh, MeshDomain &domain);
 
-      void run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain, bool always_smooth=true, int debug=0);
+      void run(Mesquite::Mesh &mesh, Mesquite::MeshDomain &domain, bool always_smooth=true, int debug=0);
 
     };
 

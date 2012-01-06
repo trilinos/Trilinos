@@ -20,17 +20,24 @@ namespace stk {
       LPtoPTemplate untangle_func( 2, &untangle_metric );
       ConjugateGradient untangle_solver( &untangle_func );
       //SteepestDescent untangle_solver( &untangle_func );
+      //TerminationCriterion untangle_inner("<type:inner>"), untangle_outer("<type:outer>");
       TerminationCriterion untangle_inner, untangle_outer;
       untangle_solver.use_global_patch();
       untangle_inner.add_absolute_quality_improvement( 0.0 );
-      untangle_inner.add_absolute_gradient_L2_norm( gradNorm );
-      untangle_inner.add_absolute_successive_improvement( successiveEps );
+      //untangle_inner.add_absolute_gradient_L2_norm( gradNorm );
+      //untangle_inner.add_absolute_successive_improvement( successiveEps );
+      //untangle_inner.add_relative_successive_improvement( 1.e-6 );
       untangle_inner.add_iteration_limit( 20 );
       untangle_inner.write_iterations("untangle.gpt", err);
       untangle_inner.add_untangled_mesh();
-      untangle_outer.add_iteration_limit( 1 );
+
+      untangle_outer.add_absolute_quality_improvement( 0.0 );
+      untangle_outer.add_iteration_limit( pmesh ? parallelIterations : 1 );
+
+      std::cout << "tmp srk pmesh= " << pmesh << std::endl;
       untangle_solver.set_inner_termination_criterion( &untangle_inner );
       untangle_solver.set_outer_termination_criterion( &untangle_outer );
+      //exit(123);
 
       // define shape improver
       IdealWeightInverseMeanRatio inverse_mean_ratio;
@@ -38,6 +45,7 @@ namespace stk {
       LPtoPTemplate obj_func( 2, &inverse_mean_ratio );
       //FeasibleNewton shape_solver( &obj_func );
       ConjugateGradient shape_solver( &obj_func );
+      //TerminationCriterion term_inner("<type:inner>"), term_outer("<type:outer>");
       TerminationCriterion term_inner, term_outer;
       shape_solver.use_global_patch();
       qa->add_quality_assessment( &inverse_mean_ratio );
@@ -115,24 +123,29 @@ namespace stk {
       MsqError err;
       InstructionQueue q;
   
+#if 1      
+      IdealWeightInverseMeanRatio metric;
+      metric.set_averaging_method( QualityMetric::LINEAR );
+#else
       // Set up barrier metric to see if mesh contains inverted elements
       TShapeB1 mu_b;
       IdealShapeTarget w_ideal;
-      TQualityMetric barrier( &w_ideal, &mu_b );
-  
+      TQualityMetric metric( &w_ideal, &mu_b );
+#endif  
+
       // Check for inverted elements in the mesh
-      QualityAssessor inv_check( &barrier );
+      QualityAssessor inv_check( &metric );
       //inv_check.disable_printing_results();
       q.add_quality_assessor( &inv_check, err );  MSQ_ERRZERO(err);
       Settings settings;
       q.run_common( &mesh, 0, &domain, &settings, err ); MSQ_ERRZERO(err);
       //q.remove_quality_assessor( 0, err ); MSQ_ERRZERO(err);
-      const QualityAssessor::Assessor* inv_b = inv_check.get_results( &barrier );
+      const QualityAssessor::Assessor* inv_b = inv_check.get_results( &metric );
       int num_invalid = inv_b->get_invalid_element_count();
       return num_invalid;
     }
 
-    void PMMShapeImprover::run(PerceptMesquiteMesh &mesh, PerceptMesquiteMeshDomain &domain, bool always_smooth, int debug)
+    void PMMShapeImprover::run(Mesquite::Mesh &mesh, Mesquite::MeshDomain &domain, bool always_smooth, int debug)
     {
 #ifdef USE_CALLGRIND
       CALLGRIND_START_INSTRUMENTATION
@@ -144,6 +157,10 @@ namespace stk {
             if (debug > 1) Mesquite::MsqDebug::enable(2);
             if (debug > 2) Mesquite::MsqDebug::enable(3);
           }
+
+      Mesquite::ParallelMesh *pmesh = dynamic_cast<Mesquite::ParallelMesh *>(&mesh);
+      std::cout << "tmp srk PMMShapeImprover::run: pmesh= " << pmesh << std::endl;
+
       Mesquite::MsqError mErr;
       int num_invalid = 0;
       bool check_quality=true;
@@ -161,7 +178,10 @@ namespace stk {
           if (use_canned_wrapper)
             {
               Mesquite::ShapeImprovementWrapper siw(mErr);
-              siw.run_instructions(&mesh, &domain, mErr);
+              if (pmesh)
+                siw.run_instructions(pmesh, &domain, mErr);
+              else
+                siw.run_instructions(&mesh, &domain, mErr);
             }
           else
             {
@@ -182,7 +202,10 @@ namespace stk {
               bool do_untangle_only = false;
               PMMShapeImprovementWrapper siw(mErr);
               siw.m_do_untangle_only = do_untangle_only;
-              siw.run_instructions(&mesh, &domain, mErr);
+              if (pmesh)
+                siw.run_instructions(pmesh, &domain, mErr);
+              else
+                siw.run_instructions(&mesh, &domain, mErr);
             }
 
           std::cout << "\ntmp srk PMMShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;

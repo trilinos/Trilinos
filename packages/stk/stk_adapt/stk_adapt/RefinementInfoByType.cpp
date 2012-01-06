@@ -12,6 +12,8 @@ namespace stk {
      */
     void RefinementInfoByType::printTable(std::ostream& os, std::vector< RefinementInfoByType >& refinementInfoByType, int iRefinePass, bool printAll)
     {
+      if (refinementInfoByType.size() == 0) return;
+
       RefinementInfoCount numOrigTot = 0;
       RefinementInfoCount numNewTot = 0;
       for (unsigned irank = 0; irank < refinementInfoByType.size(); irank++)
