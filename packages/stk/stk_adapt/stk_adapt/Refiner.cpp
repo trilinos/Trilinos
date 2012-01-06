@@ -1413,7 +1413,7 @@ namespace stk {
       if (do_mesquite_smoothing)
         {
           int  msq_debug             = 2; // 1,2,3 for more debug info
-          bool always_smooth         = false;
+          bool always_smooth         = true;
           bool do_laplace            = false;
           bool do_jacobi             = true;
 

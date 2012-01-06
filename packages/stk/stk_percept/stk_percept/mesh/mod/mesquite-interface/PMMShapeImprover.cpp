@@ -168,7 +168,8 @@ namespace stk {
         {
           num_invalid = count_invalid_elements(mesh, domain);
           std::cout << "\ntmp srk PMMShapeImprover num_invalid before= " << num_invalid 
-                    << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : " ")
+                    << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : 
+                        (!always_smooth ? "WARNING: no smoothing requested since always_smooth=false" : " "))
                     << std::endl;
         }
 
