@@ -78,7 +78,7 @@ void doAlgorithmStuff( Teuchos::ParameterList *algoParams = 0 )
 }
 
 //
-// Test that static initailziation of VerboseObjectBase and VerboseObject works!
+// Test that static initialization of VerboseObjectBase and VerboseObject works!
 //
 
 class TestVerboseObjectBaseInitialization {
