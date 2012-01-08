@@ -12,6 +12,7 @@ namespace user_app {
   class RythmosObserverFactory_Epetra : public panzer_stk::RythmosObserverFactory {
 
   public:
+    bool useNOXObserver() const { return false; }
     
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
