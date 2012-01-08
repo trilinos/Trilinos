@@ -136,6 +136,7 @@ APPEND_SET(HEADERS
   Teuchos_SerializationTraitsHelpers.hpp
   Teuchos_Serializer.hpp
   Teuchos_SerializerHelpers.hpp
+  Teuchos_SimpleObjectDB.hpp
   Teuchos_SimpleObjectTable.hpp
   Teuchos_StandardCatchMacros.hpp
   Teuchos_StandardCompositionMacros.hpp

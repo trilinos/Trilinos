@@ -187,6 +187,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MemoryManagementExt_UnitTests
+  SOURCES
+    SimpleObjectDB_UnitTests.cpp
+    TestClasses.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ArrayRCP_test  
   SOURCES ArrayRCP_test.cpp
