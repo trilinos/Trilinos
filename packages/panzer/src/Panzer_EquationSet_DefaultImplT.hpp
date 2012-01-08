@@ -103,7 +103,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
      {
        ParameterList p("Scatter");
        p.set("Scatter Name", this->m_scatter_name);
-       p.set("Basis", this->m_pure_basis);
+       p.set("Basis", this->m_pure_basis.getConst());
        p.set("Dependent Names", this->m_residual_names);
        p.set("Dependent Map", names_map);
    
@@ -241,9 +241,11 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
 {
 
   {
+    Teuchos::RCP<const PureBasis> basis = m_field_layout_lib->lookupBasis((*m_dof_names)[0]);
+
     Teuchos::ParameterList p("Scatter");
     p.set("Scatter Name", this->m_scatter_name);
-    p.set("Basis", this->m_pure_basis);
+    p.set("Basis", basis);
     p.set("Dependent Names", this->m_dof_names);
 
     Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterInitialCondition<EvalT>(p);

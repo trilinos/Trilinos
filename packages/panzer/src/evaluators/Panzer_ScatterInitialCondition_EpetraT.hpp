@@ -34,7 +34,7 @@ ScatterInitialCondition_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalInde
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
 
   Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
+    p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
@@ -110,6 +110,7 @@ evaluateFields(typename Traits::EvalData workset)
    
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
 	    if (lid != -1)
@@ -141,7 +142,7 @@ ScatterInitialCondition_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,G
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
   Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
+    p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());

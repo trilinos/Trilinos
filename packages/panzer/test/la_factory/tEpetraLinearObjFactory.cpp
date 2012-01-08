@@ -187,7 +187,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       panzer::CellData cellData(numCells,baseCellDim,topo);
    
       // build basis
-      RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
+      RCP<const panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,cellData));
    
       std::string scatterName = "Residual_NS";
    
@@ -205,7 +205,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       scatterParams.set<std::string>("Scatter Name",scatterName);
       scatterParams.set<RCP<std::vector<std::string> > >("Dependent Names",evaluatedNames);
       scatterParams.set<RCP<std::map<std::string,std::string> > >("Dependent Map",evaluatedMap);
-      scatterParams.set<RCP<panzer::PureBasis> >("Basis",basis);
+      scatterParams.set("Basis",basis);
    }
 
    Teuchos::ParameterList scatterDirichletParams;
