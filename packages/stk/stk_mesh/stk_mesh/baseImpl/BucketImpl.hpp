@@ -110,6 +110,9 @@ class BucketImpl {
   Entity*const* begin() const { return &m_entities[0]; }
   Entity*const* end() const { return &m_entities[0] + m_size; }
 
+  //temporary accessor, will be removed as sierra migration progresses
+  std::vector<unsigned char>& get_char_field_data() { return m_field_data; }
+
   private:
   BucketImpl();
 
