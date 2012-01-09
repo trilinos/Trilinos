@@ -145,7 +145,7 @@ void box_global_bounds(
 {
   enum { Dim = 3 };
 
-  const bool symmetric = static_cast<const void * const>(arg_range_boxes) == static_cast<const void *const>(arg_domain_boxes ) ||
+  const bool symmetric = static_cast<const void * >(arg_range_boxes) == static_cast<const void *>(arg_domain_boxes ) ||
     arg_range_boxes == NULL;
 
 

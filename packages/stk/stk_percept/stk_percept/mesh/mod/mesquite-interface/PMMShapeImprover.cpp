@@ -187,7 +187,7 @@ namespace stk {
           else
             {
               int  msq_debug             = 2; // 1,2,3 for more debug info
-              bool always_smooth         = false;
+              bool always_smooth_local   = false;
               bool do_laplace            = false;
               bool do_jacobi             = true;
 
@@ -197,7 +197,7 @@ namespace stk {
                   int num_laplace_iter = 1;
                   PMMLaplaceSmoother1 ls(num_laplace_iter);
                   if (do_jacobi) ls.get_smoother().do_jacobi_optimization();
-                  ls.run(mesh, domain, always_smooth, msq_debug);
+                  ls.run(mesh, domain, always_smooth_local, msq_debug);
                 }
 
               bool do_untangle_only = false;

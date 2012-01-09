@@ -6,7 +6,7 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 
 #define EDGE_BREAKER_Q4_Q9_1 1
 #if EDGE_BREAKER_Q4_Q9_1

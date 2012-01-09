@@ -947,7 +947,6 @@ namespace stk {
           if (!m_is_proc_id_active)
             {
               int default_pid_value = 0;
-              Mesquite::MsqError err;
               this->tag_create(PMM_proc_id_name, INT, 1, &default_pid_value, err);
               //MSQ_SETERR(err)("tag msq_parallel_proc_id not found in PerceptMesquiteMesh::tag_get.\n",Mesquite::MsqError::TAG_NOT_FOUND);
             }
@@ -958,7 +957,6 @@ namespace stk {
           if (!m_is_global_id_active)
             {
               size_t default_gid_value = 0;
-              Mesquite::MsqError err;
               this->tag_create(PMM_global_id_name, HANDLE, 1, &default_gid_value, err);
               //MSQ_SETERR(err)("tag msq_parallel_global_id not found in PerceptMesquiteMesh::tag_get.\n",Mesquite::MsqError::TAG_NOT_FOUND);
             }

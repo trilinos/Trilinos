@@ -14,7 +14,7 @@
 #endif
 
 #if STK_ADAPT_SUBDIMCELL_USES_BOOST_ARRAY
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 #endif
 
 #include <vector>

@@ -53,7 +53,7 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
 
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 
 #include <boost/tuple/tuple_io.hpp>
 #include <boost/tuple/tuple_comparison.hpp>

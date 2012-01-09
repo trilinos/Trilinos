@@ -5,7 +5,7 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 
 #define FACE_BREAKER_HEX8_HEX27_1 1
 #if FACE_BREAKER_HEX8_HEX27_1

@@ -28,7 +28,7 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include <map>
 #include <boost/unordered_map.hpp>
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 
 namespace stk {
   namespace percept {

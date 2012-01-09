@@ -12,7 +12,7 @@
 #include <vector>
 #include <iostream>
 
-#include <boost/array.hpp>
+#include <stk_percept/PerceptBoostArray.hpp>
 
 #include <Shards_Array.hpp>
 #include <Shards_ArrayVector.hpp>

@@ -18,9 +18,7 @@
 #include <stk_percept/stk_mesh.hpp>
 #include <boost/tuple/tuple_io.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
-#include <boost/array.hpp>
-#include <boost/multi_array.hpp>
-
+#include <stk_percept/PerceptBoostArray.hpp>
 
 
 #include <Shards_BasicTopologies.hpp>
