@@ -391,12 +391,14 @@ ZZ_H = \
 	$(srcdir)/zz/zz_id_const.h \
 	$(srcdir)/zz/zz_rand.h \
 	$(srcdir)/zz/zz_sort.h \
+	$(srcdir)/zz/murmur3.h \
 	$(srcdir)/zz/zz_util_const.h
 
 ZZ = \
 	$(srcdir)/zz/zz_coord.c \
 	$(srcdir)/zz/zz_gen_files.c \
 	$(srcdir)/zz/zz_hash.c \
+	$(srcdir)/zz/murmur3.c \
 	$(srcdir)/zz/zz_map.c \
 	$(srcdir)/zz/zz_heap.c \
 	$(srcdir)/zz/zz_init.c \

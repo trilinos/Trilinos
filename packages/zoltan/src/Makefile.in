@@ -187,13 +187,13 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/Utilities/shared/zoltan_align.c \
 	$(srcdir)/Utilities/shared/zoltan_id.c $(srcdir)/zz/zz_coord.c \
 	$(srcdir)/zz/zz_gen_files.c $(srcdir)/zz/zz_hash.c \
-	$(srcdir)/zz/zz_map.c $(srcdir)/zz/zz_heap.c \
-	$(srcdir)/zz/zz_init.c $(srcdir)/zz/zz_obj_list.c \
-	$(srcdir)/zz/zz_rand.c $(srcdir)/zz/zz_set_fn.c \
-	$(srcdir)/zz/zz_sort.c $(srcdir)/zz/zz_struct.c \
-	$(srcdir)/zz/zz_back_trace.c $(srcdir)/zz/zz_util.c \
-	$(srcdir)/fort/ztypes.f90 $(srcdir)/fort/cwrap.c \
-	$(srcdir)/fort/zoltan_user_data.f90 \
+	$(srcdir)/zz/murmur3.c $(srcdir)/zz/zz_map.c \
+	$(srcdir)/zz/zz_heap.c $(srcdir)/zz/zz_init.c \
+	$(srcdir)/zz/zz_obj_list.c $(srcdir)/zz/zz_rand.c \
+	$(srcdir)/zz/zz_set_fn.c $(srcdir)/zz/zz_sort.c \
+	$(srcdir)/zz/zz_struct.c $(srcdir)/zz/zz_back_trace.c \
+	$(srcdir)/zz/zz_util.c $(srcdir)/fort/ztypes.f90 \
+	$(srcdir)/fort/cwrap.c $(srcdir)/fort/zoltan_user_data.f90 \
 	$(srcdir)/fort/lb_user_const.f90 $(srcdir)/fort/fwrap.f90
 am__objects_1 = all_allo.$(OBJEXT)
 am__objects_2 = coloring.$(OBJEXT) color_test.$(OBJEXT) \
@@ -269,10 +269,10 @@ am__objects_25 = comm_exchange_sizes.$(OBJEXT) \
 	DD_Set_Neighbor_Hash_Fn1.$(OBJEXT) mem.$(OBJEXT) \
 	zoltan_align.$(OBJEXT) zoltan_id.$(OBJEXT)
 am__objects_26 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
-	zz_hash.$(OBJEXT) zz_map.$(OBJEXT) zz_heap.$(OBJEXT) \
-	zz_init.$(OBJEXT) zz_obj_list.$(OBJEXT) zz_rand.$(OBJEXT) \
-	zz_set_fn.$(OBJEXT) zz_sort.$(OBJEXT) zz_struct.$(OBJEXT) \
-	zz_back_trace.$(OBJEXT) zz_util.$(OBJEXT)
+	zz_hash.$(OBJEXT) murmur3.$(OBJEXT) zz_map.$(OBJEXT) \
+	zz_heap.$(OBJEXT) zz_init.$(OBJEXT) zz_obj_list.$(OBJEXT) \
+	zz_rand.$(OBJEXT) zz_set_fn.$(OBJEXT) zz_sort.$(OBJEXT) \
+	zz_struct.$(OBJEXT) zz_back_trace.$(OBJEXT) zz_util.$(OBJEXT)
 am__objects_27 = ztypes.$(OBJEXT) cwrap.$(OBJEXT) \
 	zoltan_user_data.$(OBJEXT) lb_user_const.$(OBJEXT) \
 	fwrap.$(OBJEXT)
@@ -784,12 +784,14 @@ ZZ_H = \
 	$(srcdir)/zz/zz_id_const.h \
 	$(srcdir)/zz/zz_rand.h \
 	$(srcdir)/zz/zz_sort.h \
+	$(srcdir)/zz/murmur3.h \
 	$(srcdir)/zz/zz_util_const.h
 
 ZZ = \
 	$(srcdir)/zz/zz_coord.c \
 	$(srcdir)/zz/zz_gen_files.c \
 	$(srcdir)/zz/zz_hash.c \
+	$(srcdir)/zz/murmur3.c \
 	$(srcdir)/zz/zz_map.c \
 	$(srcdir)/zz/zz_heap.c \
 	$(srcdir)/zz/zz_init.c \
@@ -1349,6 +1351,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/migreg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/migtags.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/msg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/murmur3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oct_plot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oct_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/octant.Po@am__quote@
@@ -3528,6 +3531,20 @@ zz_hash.obj: $(srcdir)/zz/zz_hash.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/zz_hash.c' object='zz_hash.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zz_hash.obj `if test -f '$(srcdir)/zz/zz_hash.c'; then $(CYGPATH_W) '$(srcdir)/zz/zz_hash.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/zz_hash.c'; fi`
+
+murmur3.o: $(srcdir)/zz/murmur3.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT murmur3.o -MD -MP -MF $(DEPDIR)/murmur3.Tpo -c -o murmur3.o `test -f '$(srcdir)/zz/murmur3.c' || echo '$(srcdir)/'`$(srcdir)/zz/murmur3.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/murmur3.Tpo $(DEPDIR)/murmur3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/murmur3.c' object='murmur3.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o murmur3.o `test -f '$(srcdir)/zz/murmur3.c' || echo '$(srcdir)/'`$(srcdir)/zz/murmur3.c
+
+murmur3.obj: $(srcdir)/zz/murmur3.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT murmur3.obj -MD -MP -MF $(DEPDIR)/murmur3.Tpo -c -o murmur3.obj `if test -f '$(srcdir)/zz/murmur3.c'; then $(CYGPATH_W) '$(srcdir)/zz/murmur3.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/murmur3.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/murmur3.Tpo $(DEPDIR)/murmur3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/murmur3.c' object='murmur3.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o murmur3.obj `if test -f '$(srcdir)/zz/murmur3.c'; then $(CYGPATH_W) '$(srcdir)/zz/murmur3.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/murmur3.c'; fi`
 
 zz_map.o: $(srcdir)/zz/zz_map.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zz_map.o -MD -MP -MF $(DEPDIR)/zz_map.Tpo -c -o zz_map.o `test -f '$(srcdir)/zz/zz_map.c' || echo '$(srcdir)/'`$(srcdir)/zz/zz_map.c
