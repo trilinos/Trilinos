@@ -35,11 +35,40 @@ namespace Xpetra {
     //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
     virtual size_t getNumPermuteIDs() const = 0;
 
+    //! List of entries in the source Map that are permuted. (non-persisting view).
+    virtual ArrayView< const LocalOrdinal > getPermuteFromLIDs() const = 0;
+
+    //! List of entries in the target Map that are permuted. (non-persisting view).
+    virtual ArrayView< const LocalOrdinal > getPermuteToLIDs() const = 0;
+
+    //! Returns the number of entries that are not on the calling image.
+    virtual size_t getNumRemoteIDs() const = 0;
+
+    //! List of entries in the target Map that are coming from other images. (non-persisting view).
+    virtual ArrayView< const LocalOrdinal > getRemoteLIDs() const = 0;
+
+    //! Returns the number of entries that must be sent by the calling image to other images.
+    virtual size_t getNumExportIDs() const = 0;
+
+    //! List of entries in the source Map that will be sent to other images. (non-persisting view).
+    virtual ArrayView< const LocalOrdinal > getExportLIDs() const = 0;
+
+    //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view).
+    virtual ArrayView< const int > getExportImageIDs() const = 0;
+
     //! Returns the Source Map used to construct this exporter.
     virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const = 0;
 
     //! Returns the Target Map used to construct this exporter.
     virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const = 0;
+
+    //@}
+
+    //! @name I/O Methods
+    //@{
+
+    //! Print method.
+    virtual void print(std::ostream &os) const = 0;
 
     //@}
 
