@@ -79,6 +79,7 @@ IF (${PACKAGE_NAME}_ENABLE_TESTS)
   IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
 
     INCLUDE_DIRECTORIES( 
+      REQUIRED_DURING_INSTALLATION_TESTING
       ${PACKAGE_SOURCE_DIR}/../epetraext/example/model_evaluator/DiagonalTransient
       )
   
