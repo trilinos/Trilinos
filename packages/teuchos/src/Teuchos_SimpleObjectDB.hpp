@@ -206,6 +206,14 @@ private:
 };
 
 
+/** \brief Nonmember constructor */
+template <class T>
+RCP<SimpleObjectDB<T> > createSimpleObjectDB()
+{
+  return rcp(new SimpleObjectDB<T>);
+}
+
+
 //
 // Template definitions
 //

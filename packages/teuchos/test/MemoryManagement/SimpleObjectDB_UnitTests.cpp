@@ -82,6 +82,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleObjectDB, defaultConstruct, T )
 
 
 //
+// createSimpleObjectDB()
+//
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleObjectDB, createSimpleObjectDB, T )
+{
+  ECHO(RCP<SimpleObjectDB<T> > sot = Teuchos::createSimpleObjectDB<T>());
+  TEST_EQUALITY_CONST(sot->numObjects(), 0);
+}
+
+
+//
 // SimpleObjectDB::storeNonconstObj()
 //
 
@@ -453,6 +465,7 @@ TEUCHOS_UNIT_TEST( SimpleObjectDB, recycleIndex3 )
 
 #define UNIT_TEST_GROUP( T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SimpleObjectDB, defaultConstruct, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SimpleObjectDB, createSimpleObjectDB, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SimpleObjectDB, storeNonconstObj, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SimpleObjectDB, getNonconstObjRCP, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SimpleObjectDB, getConstObjRCP, T ) \
