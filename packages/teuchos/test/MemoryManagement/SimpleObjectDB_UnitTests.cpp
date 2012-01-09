@@ -210,9 +210,20 @@ TEUCHOS_UNIT_TEST( SimpleObjectDB, removeObj_storeNonconstObj_1_0 )
   TEST_EQUALITY(sot.getNonconstObjRCP(id1).ptr(), obj.ptr());
   ECHO(sot.removeObj(id1));
   TEST_EQUALITY_CONST(sot.numObjects(), 0);
-  ECHO(const int id2 = sot.storeNonconstObj(obj));
+}
+
+
+TEUCHOS_UNIT_TEST( SimpleObjectDB, removeObj_storeConstObj_1_0 )
+{
+  ECHO(SimpleObjectDB<A> sot);
+  ECHO(const RCP<A> obj = A::create());
+  ECHO(const int id1 = sot.storeConstObj(obj));
+  TEST_EQUALITY(sot.getConstObjRCP(id1).ptr(), obj.ptr());
+  ECHO(sot.removeObj(id1));
+  TEST_EQUALITY_CONST(sot.numObjects(), 0);
+  ECHO(const int id2 = sot.storeConstObj(obj));
   TEST_EQUALITY_CONST(id2, 0);
-  TEST_EQUALITY(sot.getNonconstObjRCP(id2).ptr(), obj.ptr());
+  TEST_EQUALITY(sot.getConstObjRCP(id2).ptr(), obj.ptr());
   TEST_EQUALITY_CONST(sot.numObjects(), 1);
 }
 
@@ -273,6 +284,33 @@ TEUCHOS_UNIT_TEST( SimpleObjectDB, removeNonconstObjInvalid3 )
   ECHO(SimpleObjectDB<A> sot);
   ECHO(int id = 0);
   TEST_THROW(sot.removeNonconstObj(id), RangeError);
+}
+
+
+TEUCHOS_UNIT_TEST( SimpleObjectDB, removeObjTwice )
+{
+  ECHO(SimpleObjectDB<A> sot);
+  ECHO(const int id = sot.storeNonconstObj(A::create()));
+  ECHO(sot.removeObj(id));
+  TEST_THROW(sot.removeObj(id), NullReferenceError);
+}
+
+
+TEUCHOS_UNIT_TEST( SimpleObjectDB, removeNonconstObjTwice )
+{
+  ECHO(SimpleObjectDB<A> sot);
+  ECHO(const int id = sot.storeNonconstObj(A::create()));
+  ECHO(sot.removeNonconstObj(id));
+  TEST_THROW(sot.removeNonconstObj(id), NullReferenceError);
+}
+
+
+TEUCHOS_UNIT_TEST( SimpleObjectDB, removeConstObjTwice )
+{
+  ECHO(SimpleObjectDB<A> sot);
+  ECHO(const int id = sot.storeNonconstObj(A::create()));
+  ECHO(sot.removeConstObj(id));
+  TEST_THROW(sot.removeConstObj(id), NullReferenceError);
 }
 
 

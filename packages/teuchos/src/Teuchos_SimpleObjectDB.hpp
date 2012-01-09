@@ -45,6 +45,7 @@
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
+#include "Teuchos_as.hpp"
 
 
 /*! \file Teuchos_SimpleObjectDB.hpp
@@ -203,6 +204,8 @@ private:
   template <class T2>
   int storeObjectImpl(const RCP<T2> &robj);
   
+  void removeObjImpl(const int index);
+
 };
 
 
@@ -270,8 +273,8 @@ int SimpleObjectDB<T>::storeCastedNonconstObj(const RCP<TOld> & robj_old)
 template <class T>
 void SimpleObjectDB<T>::removeObj(const int index)
 {
-  tableOfObjects_[index] = null;
-  freedIndices_.push_back(index);
+  validateIndex(index);
+  removeObjImpl(index);
 }
 
 
@@ -280,7 +283,7 @@ RCP<T> SimpleObjectDB<T>::removeNonconstObj(const int index)
 {
   validateIndex(index);
   const RCP<T> obj = tableOfObjects_[index].getNonconstObj();
-  removeObj(index);
+  removeObjImpl(index);
   return obj;
 }
 
@@ -290,7 +293,7 @@ RCP<const T> SimpleObjectDB<T>::removeConstObj(const int index)
 {
   validateIndex(index);
   const RCP<const T> obj = tableOfObjects_[index].getConstObj();
-  removeObj(index);
+  removeObjImpl(index);
   return obj;
 }
 
@@ -301,7 +304,7 @@ int SimpleObjectDB<T>::removeRCP(int &index)
   const int index_in = index;
   validateIndex(index);
   const int cnt = tableOfObjects_[index_in].count();
-  removeObj(index_in);
+  removeObjImpl(index_in);
   index = -1;
   return (cnt - 1);
 }
@@ -355,6 +358,12 @@ void SimpleObjectDB<T>::purge()
 template <class T>
 void SimpleObjectDB<T>::validateIndex(const int index) const
 {
+  using Teuchos::as;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !(0 <= index && index < as<int>(tableOfObjects_.size())),
+    RangeError,
+    "Error, the object index = " << index << " falls outside of the range"
+    << " of valid objects [0,"<<tableOfObjects_.size()<<"]");
   const RCP<const T> &obj = tableOfObjects_[index].getConstObj();
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError,
     "Error, the object at index "<<index<<" of type "
@@ -381,6 +390,14 @@ int SimpleObjectDB<T>::storeObjectImpl(const RCP<T2> & robj)
   }
 
   return index;
+}
+
+
+template <class T>
+void SimpleObjectDB<T>::removeObjImpl(const int index)
+{
+  tableOfObjects_[index] = null;
+  freedIndices_.push_back(index);
 }
 
 
