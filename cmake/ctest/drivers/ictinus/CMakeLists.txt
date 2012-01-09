@@ -1,4 +1,4 @@
-INCLUDE("../../../TrilinosVersion.cmake")
+INCLUDE("../../../Version.cmake")
 
 TRILINOS_DRIVER_SETUP()
 
