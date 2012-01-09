@@ -230,6 +230,16 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   return *declared_entity ;
 }
 
+void BulkData::change_entity_id( EntityId id, Entity & entity)
+{
+  require_ok_to_modify();
+  require_good_rank_and_id(entity.entity_rank(),id);
+
+  EntityKey key(entity.entity_rank(),id);
+
+  m_entity_repo.update_entity_key(key,entity);
+}
+
 //----------------------------------------------------------------------
 
 // TODO Change the methods below to requirements (private, const invariant checkers)

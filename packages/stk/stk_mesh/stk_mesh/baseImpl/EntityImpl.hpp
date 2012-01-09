@@ -150,9 +150,11 @@ public:
 
   bool marked_for_destruction() const;
 
+  void update_key(EntityKey key);
+
  private:
 
-  const EntityKey         m_key ;        ///< Globally unique key
+  EntityKey               m_key ;        ///< Globally unique key
   RelationVector          m_relation ;   ///< This entity's relationships
   EntityCommInfoVector    m_comm ;       ///< This entity's communications
   Bucket                * m_bucket ;     ///< Bucket for the entity's field data

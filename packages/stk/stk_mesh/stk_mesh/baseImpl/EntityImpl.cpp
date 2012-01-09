@@ -316,6 +316,25 @@ bool EntityImpl::declare_relation( Entity & e_to,
   }
 }
 
+void EntityImpl::update_key(EntityKey key)
+{
+  m_key = key;
+
+  std::sort(m_relation.begin(), m_relation.end(), LessRelation());
+  log_modified_and_propagate();
+
+  for ( RelationVector::iterator i = m_relation.begin(), e = m_relation.end();
+        i != e;
+        ++i
+      )
+  {
+    EntityImpl & entity = i->entity()->m_entityImpl;
+    std::sort(entity.m_relation.begin(), entity.m_relation.end(), LessRelation());
+  }
+
+
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

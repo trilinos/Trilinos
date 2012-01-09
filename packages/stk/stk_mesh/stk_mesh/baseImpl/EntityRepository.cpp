@@ -218,6 +218,24 @@ void EntityRepository::declare_relation( Entity & e_from,
   }
 }
 
+void EntityRepository::update_entity_key(EntityKey key, Entity & entity)
+{
+  EntityKey old_key = entity.key();
+
+  EntityMap::iterator old_itr = m_entities.find( old_key );
+
+  ThrowRequireMsg( m_entities.end() == m_entities.find(key), "Already in map " << key.raw_key() );
+
+  m_entities.insert(std::make_pair(key,&entity));
+
+  entity.m_entityImpl.update_key(key);
+
+  old_itr->second = new Entity(old_key);
+
+  old_itr->second->m_entityImpl.log_deleted();
+
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

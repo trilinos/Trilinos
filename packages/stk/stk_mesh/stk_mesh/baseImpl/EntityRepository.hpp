@@ -105,6 +105,8 @@ class EntityRepository {
                            const RelationIdentifier local_id,
                            unsigned sync_count );
 
+    void update_entity_key(EntityKey key, Entity & entity);
+
   private:
     void internal_expunge_entity( EntityMap::iterator i);
 

@@ -219,6 +219,8 @@ public:
   Entity & declare_entity( EntityRank ent_rank ,
       EntityId ent_id , const PartVector& parts);
 
+  void change_entity_id( EntityId id, Entity & entity);
+
   /** \brief  Change the parallel-locally-owned entity's
    *          part membership by adding and/or removing parts
    *
