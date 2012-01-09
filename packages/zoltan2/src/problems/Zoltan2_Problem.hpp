@@ -104,7 +104,7 @@ template <typename Adapter>
     params_(RCP<ParameterList>(params,false)), comm_(), env_(), envConst_()
 {
   HELLO;
-  env_->setParameters(*params);
+  env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
   envConst_ = rcp_const_cast<const Environment>(env_);
   comm_ = DefaultComm<int>::getComm();
 }
