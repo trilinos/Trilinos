@@ -104,6 +104,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # Tests for src/problems
 #
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PartitioningSolution
+  SOURCES problems/PartitioningSolution.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 #
 # Tests for src/util
 #

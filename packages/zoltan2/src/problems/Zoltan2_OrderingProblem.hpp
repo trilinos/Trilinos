@@ -44,17 +44,19 @@ public:
   virtual ~OrderingProblem() {};
 
   //! Constructor with InputAdapter Interface
-  OrderingProblem(Adapter *A, Teuchos::ParameterList *p) 
-                      : Problem<Adapter>(A, p) 
+#ifdef HAVE_ZOLTAN2_MPI
+  OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm comm=MPI_COMM_WORLD) 
+                      : Problem<Adapter>(A, p, comm) 
+#else
+  OrderingProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
+#endif
   {
     HELLO;
     createOrderingProblem();
   };
 
   // Other methods
-  //   LRIESEN - Do we restate virtual in the concrete class?  I
-  //    don't think I've seen this style before.
-  virtual void solve();
+  void solve();
   // virtual void redistribute();
 
   OrderingSolution<gid_t, lno_t> *getSolution() {
@@ -142,29 +144,17 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  // TODO: This doesn't work.  baseInputAdapter_.getRawPtr() is NULL.
-  //
-  // RCP<const base_adapter_t> baseInputAdapter_ =
-  //   rcp_implicit_cast<const base_adapter_t>(this->inputAdapter_);
-  //
-  // So to pass the InputAdapter to the Model we use a raw pointer.
-  // Since the Problem creates the Model and will destroy it when
-  // done, the Model doesn't really need an RCP to the InputAdapter.
-  // But it would be nice if that worked.
-
-  const base_adapter_t *baseAdapter = this->inputAdapter_.getRawPtr();
-
   // Select Model based on parameters and InputAdapter type
   switch (modelType) {
 
   case GraphModelType:
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      baseAdapter, this->env_, false, true));
+      this->baseInputAdapter_, this->env_, this->comm_, false, true));
     break;
 
   case IdentifierModelType:
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-      baseAdapter, this->env_, false));
+      this->baseInputAdapter_, this->env_, this->comm_, false));
     break;
 
   case HypergraphModelType:

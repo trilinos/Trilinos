@@ -105,9 +105,10 @@ public:
   typedef StridedInput<lno_t, scalar_t> input_t;
   
   IdentifierModel( const IdentifierInput<User> *ia, 
-    const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
-      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
-      comm_(env->comm_), gids_(), weights_(), gnos_(), gnosConst_()
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+     bool gnosMustBeConsecutive=false):
+      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
+      gids_(), weights_(), gnos_(), gnosConst_()
   {
     int weightDim = ia->getNumWeights();
     size_t nLocalIds = ia->getLocalNumIds();
@@ -144,7 +145,7 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env_, gids_, gnosMustBeConsecutive));
+      idMap = rcp(new idmap_t(env_, comm_, gids_, gnosMustBeConsecutive));
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -263,9 +264,10 @@ public:
   typedef StridedInput<lno_t, scalar_t> input_t;
   
   IdentifierModel( const MatrixInput<User> *ia, 
-    const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    bool gnosMustBeConsecutive=false):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
-      comm_(env->comm_), gids_(), weights_(), gnos_(), gnosConst_()
+      comm_(comm), gids_(), weights_(), gnos_(), gnosConst_()
   {
     size_t nLocalIds;
     const gid_t *gids;
@@ -284,7 +286,7 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env_, gids_, gnosMustBeConsecutive));
+      idMap = rcp(new idmap_t(env_, comm_, gids_, gnosMustBeConsecutive));
     }
     Z2_FORWARD_EXCEPTIONS;
 

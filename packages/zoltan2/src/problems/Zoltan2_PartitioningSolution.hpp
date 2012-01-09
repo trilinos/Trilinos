@@ -47,6 +47,7 @@ public:
  *   The rest of the Solution methods do not.
  *
  *    \param env the environment for the application
+ *    \param comm the communicator for the problem associated with this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
  *    \param objWeightDim  the number of weights supplied by the application
  *                         for each object.
@@ -60,6 +61,7 @@ public:
  */
  
   PartitioningSolution( RCP<const Environment> &env,
+    RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<User_t> > &idMap,
     int userWeightDim);
 
@@ -69,6 +71,7 @@ public:
  *   The rest of the Solution methods do not.
  *
  *    \param env the environment for the application
+ *    \param comm the communicator for the problem associated with this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
  *    \param objWeightDim  the number of weights supplied by the application
  *                         for each object.
@@ -91,6 +94,7 @@ public:
  */
 
   PartitioningSolution( RCP<const Environment> &env,
+    RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<User_t> > &idMap,
     int userWeightDim, ArrayView<Array<size_t> > reqPartIds,
     ArrayView<Array<float> > reqPartSizes );
@@ -110,44 +114,66 @@ public:
  */
   size_t getLocalNumberOfParts() const { return nLocalParts_; }
   
-/*! \brief Get the distribution of parts across processes.
+/*! \brief Return whether or not the part to process distribution is one-to-one.
+     \return true if Process p owns part p for all p, and false if the part
+                  to process distribution is more complex.
+ */
+
+  bool oneToOnePartDistribution() { return onePartPerProc_; }
+  
+/*! \brief If we do not have simply one part per process, then get the 
+        distribution of parts across processes.
+
     \return an array A such that A[i] is process owning part i.  The
        length of the array is one greater than the global number of parts.
        The value of the last element is the number of processes that have parts.
+
+     If Process p has part p for all p, then getPartDistribution returns NULL.
  */
   const int *getPartDistribution() const { return partDist_.getRawPtr(); }
   
-/*! \brief Get the distribution of processes to parts.
+/*! \brief If we do not have simply one part per process, then get the 
+                 distribution of processes to parts.
+
     \return an array A such that A[i] is the first part 
       assigned to process i.  (Parts are assigned sequentially to processes.)
       However if A[i+1] is equal to A[i], there
       are no parts assigned to process i.  The length of the array is
       one greater than the number of processes.  The last element of
       the array is the global number of parts.
+
+     If Process p has part p for all p, then getProcDistribution returns NULL.
  */
-  const size_t *getProcsParts() const { return procDist_.getRawPtr(); }
+  const size_t *getProcDistribution() const { return procDist_.getRawPtr(); }
   
 /*! \brief Determine if balancing criteria (weight dimension) has uniform
                 parts.
-    \param idx   A value from 0 to one less than the number of weights per object.
+    \param idx   A value from 0 to one less than the number of weights per 
+                   object.
     \return true if part sizes are uniform for this criteria.
  */
   bool criteriaHasUniformPartSizes(int idx) const { return pSizeUniform_[idx];}
   
 /*! \brief Get the size for a given weight dimension and a given part.
                 parts.
-    \param idx   A value from 0 to one less than the number of weights per object.
-    \param part  A value from 0 to one less than the global number of parts to be computed
-    \return   The size for that part.  Part sizes for a given weight dimension sum to 1.0.
+    \param idx   A value from 0 to one less than the number of weights per 
+                       object.
+    \param part  A value from 0 to one less than the global number of parts 
+                   to be computed
+    \return   The size for that part.  Part sizes for a given weight 
+                    dimension sum to 1.0.
  */
-  float *getCriteriaPartSize(int idx, size_t part) const { 
+  float getCriteriaPartSize(int idx, size_t part) const { 
     if (pSizeUniform_[idx]) 
       return 1.0 / nGlobalParts_;
     else if (pCompactIndex_[idx].size())
-      return pSize_[idx][pCompactIndex[idx][part]];
+      return pSize_[idx][pCompactIndex_[idx][part]];
     else
       return pSize_[idx][part];
   }
+
+  // TODO: It would be useful to algorithms to get the sum of
+  //         part sizes from a to b, or the sum or a list of parts.
   
   ////////////////////////////////////////////////////////////////////
   // Method used by the algorithm to set results.
@@ -197,11 +223,12 @@ private:
     ArrayView<Array<float> > reqPartSizes);
 
   void computePartSizes(int wdim, ArrayView<size_t> ids, 
-    ArrayView<float> sizes, size_t nparts);
+    ArrayView<float> sizes);
 
-  void broadcastPartSizes(int wdim, size_t nparts);
+  void broadcastPartSizes(int wdim);
 
-  RCP<const Environment> env_;
+  RCP<const Environment> env_;             // has application communicator
+  RCP<const Comm<int> > comm_;             // the problem communicator
   RCP<const IdentifierMap<User_t> > idMap_;
 
   size_t nGlobalParts_;
@@ -273,9 +300,10 @@ private:
 template <typename User_t>
   PartitioningSolution<User_t>::PartitioningSolution(
     RCP<const Environment> &env, 
+    RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<User_t> > &idMap, int userWeightDim)
-    : env_(env), idMap_(idMap),
-      nGlobalParts_(), nLocalParts_(), weightDim_(),
+    : env_(env), comm_(comm), idMap_(idMap),
+      nGlobalParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), imbalance_()
@@ -298,11 +326,12 @@ template <typename User_t>
 template <typename User_t>
   PartitioningSolution<User_t>::PartitioningSolution(
     RCP<const Environment> &env, 
+    RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<User_t> > &idMap, int userWeightDim,
     ArrayView<Array<size_t> > reqPartIds, 
     ArrayView<Array<float> > reqPartSizes)
-    : env_(env), idMap_(idMap),
-      nGlobalParts_(), nLocalParts_(), weightDim_(),
+    : env_(env), comm_(comm), idMap_(idMap),
+      nGlobalParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), imbalance_()
@@ -319,65 +348,106 @@ template <typename User_t>
 {
   int rank = env_->myRank_;
   int nprocs = env_->numProcs_;
-  const Comm<int> *comm = env_->comm_.getRawPtr();
   
-  // num_global_parts and num_local_parts are always defined and 
-  // they default to number of processes and one, respectively.
+  // Did the caller define num_global_parts and/or num_local_parts?
 
   const ParameterList &params = env_->getPartitioningParams();
-  nGlobalParts_ = params.get<size_t>(string("num_global_parts"));
-  nLocalParts_ = params.get<size_t>(string("num_local_parts"));
+  size_t haveGlobalNumParts=0, haveLocalNumParts=0;
 
-  size_t vals[2] = {nGlobalParts_, nLocalParts_};
-  size_t reducevals[2];
+  const size_t *entry1 = params.getPtr<size_t>(string("num_global_parts"));
+  const size_t *entry2 = params.getPtr<size_t>(string("num_local_parts"));
+
+  if (entry1){
+    haveGlobalNumParts = 1;
+    nGlobalParts_ = *entry1;
+  }
+
+  if (entry2){
+    haveLocalNumParts = 1;
+    nLocalParts_ = *entry2;
+  }
+
+  size_t vals[4] = {haveGlobalNumParts, haveLocalNumParts, 
+    nGlobalParts_, nLocalParts_};
+  size_t reducevals[4];
 
   try{
-    reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 2, vals, reducevals);
+    reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_SUM, 4, vals, reducevals);
   }
   Z2_THROW_OUTSIDE_ERROR(*env_, e);
 
-  if (reducevals[0] == nprocs * nprocs && reducevals[1] == nprocs){
-    onePartPerProc_ = true;
+  size_t sumHaveGlobal = reducevals[0];
+  size_t sumHaveLocal = reducevals[1];
+  size_t sumGlobal = reducevals[2];
+  size_t sumLocal = reducevals[3];
+
+  Z2_LOCAL_INPUT_ASSERTION(*env_, 
+    "Either all procs specify num_global/local_parts or none do",
+    (sumHaveGlobal == 0 || sumHaveGlobal == nprocs) &&
+    (sumHaveLocal == 0 || sumHaveLocal == nprocs), 
+    BASIC_ASSERTION);
+
+  if (sumHaveGlobal == 0 && sumHaveLocal == 0){
+    onePartPerProc_ = true;   // default if user did not specify
+    nGlobalParts_ = nprocs;
+    nLocalParts_ = 1;
     return;
+  }
+
+  if (sumHaveGlobal == nprocs){
+    vals[0] = nGlobalParts_;
+    vals[1] = nLocalParts_;
+    try{
+      reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_MAX, 2, vals, reducevals);
+    }
+    Z2_THROW_OUTSIDE_ERROR(*env_, e);
+
+    size_t maxGlobal = reducevals[0];
+    size_t maxLocal = reducevals[1];
+
+    Z2_LOCAL_INPUT_ASSERTION(*env_, 
+      "Value for num_global_parts is different on different processes.",
+      maxGlobal * nprocs == sumGlobal, BASIC_ASSERTION);
+
+    if (sumLocal){
+      Z2_LOCAL_INPUT_ASSERTION(*env_, 
+        "Sum of num_local_parts does not equal requested num_global_parts",
+        sumLocal == nGlobalParts_, BASIC_ASSERTION);
+
+      if (sumLocal == nprocs && maxLocal == 1){
+        onePartPerProc_ = true;   // user specified one part per proc
+        return;
+      }
+    }
+    else{
+      if (sumHaveGlobal == nprocs){
+        onePartPerProc_ = true;   // user specified num parts is num procs
+        nLocalParts_ = 1;
+        return;
+      }
+    }
   }
 
   size_t *nparts = new size_t [nprocs];
   Z2_GLOBAL_MEMORY_ASSERTION(*env_, nprocs, nparts);
 
-  if (nLocalParts_ > nprocs){
+  if (sumHaveLocal == nprocs){
     //
     // We will go by the number of local parts specified.
     //
 
-    Z2_GLOBAL_INPUT_ASSERTION(*env_, "num_local_parts must not be negative",
-      nLocalParts_ >= 0, COMPLEX_ASSERTION);
-
     try{
-      gatherAll<int, size_t>(*comm, 1, &nLocalParts_, nprocs, nparts); 
+      gatherAll<int, size_t>(*comm_, 1, &nLocalParts_, nprocs, nparts); 
     }
     Z2_THROW_OUTSIDE_ERROR(*env_, e);
 
-    nGlobalParts_ = 0;
-    for (int i=0; i < nprocs; i++){
-      nGlobalParts_ += nparts[i];
-    }
+    nGlobalParts_ = sumLocal;
+
   }
   else{
     //
     // We will divide the global number of parts across the processes.
     //
-    if (env_->errorCheckLevel_ >= COMPLEX_ASSERTION){
-      vals[0] = nGlobalParts_;
-      vals[1] = -nGlobalParts_;
-      try{
-        reduceAll<int, size_t>(*comm, Teuchos::REDUCE_MAX, 2, vals, reducevals);
-      }
-      Z2_THROW_OUTSIDE_ERROR(*env_, e);
-  
-      Z2_GLOBAL_INPUT_ASSERTION(*env_, 
-        "num_global_parts parameter differs on different processes",
-        reducevals[0] == -reducevals[1], COMPLEX_ASSERTION);
-    }
 
     float f1 = nGlobalParts_;
     float f2 = nprocs;
@@ -387,9 +457,9 @@ template <typename User_t>
 
     for (int p=0; p < nprocs; p++){
       if (p < extra)
-        nparts[p] = each + 1;
+        nparts[p] = size_t(each + 1);
       else
-        nparts[p] = each;
+        nparts[p] = size_t(each);
     }
 
     nLocalParts_ = nparts[rank];
@@ -404,8 +474,8 @@ template <typename User_t>
   Z2_GLOBAL_MEMORY_ASSERTION(*env_, nprocs+nGlobalParts_+2,
     partArray && procArray);
 
-  partDist_ = arcp(partArray, 0, nGlobalParts_+1);
-  procDist_ = arcp(procArray, 0, nprocs+1);
+  partDist_ = arcp(partArray, 0, nGlobalParts_+1, true);
+  procDist_ = arcp(procArray, 0, nprocs+1, true);
 
   procDist_[0] = 0;
 
@@ -439,14 +509,12 @@ template <typename User_t>
   Z2_GLOBAL_BUG_ASSERTION(*env_, "bad argument arrays", fail==0, 
     COMPLEX_ASSERTION);
 
-  int nparts = nGlobalParts_;
-
   // Are all part sizes the same?  This is the common case.
 
-  Array<float> *emptySizes= new Array<float> [wdim];
+  ArrayRCP<float> *emptySizes= new ArrayRCP<float> [wdim];
   pSize_ = arcp(emptySizes, 0, wdim);
 
-  Array<unsigned char > *emptyIndices= new Array<unsigned char> [wdim];
+  ArrayRCP<unsigned char> *emptyIndices= new ArrayRCP<unsigned char> [wdim];
   pCompactIndex_ = arcp(emptyIndices, 0, wdim);
 
   bool *info = new bool [wdim];
@@ -454,10 +522,12 @@ template <typename User_t>
   for (int w=0; w < wdim; w++)
     pSizeUniform_[w] = true;
 
-  const Comm<int> *comm = env_->comm_.getRawPtr();
+  if (nGlobalParts_ == 1){   
+    return;   // there's only one part in the whole problem
+  }
 
   try{
-    reduceAll<int, size_t>(*comm, Teuchos::REDUCE_MAX, wdim, counts, 
+    reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_MAX, wdim, counts, 
       counts + wdim);
   }
   Z2_THROW_OUTSIDE_ERROR(*env_, e);
@@ -476,8 +546,8 @@ template <typename User_t>
   // Compute the part sizes for criteria for which part sizes were
   // supplied.  Normalize for each criteria so part sizes sum to one.
 
-  int nprocs = comm->getSize();
-  int rank = comm->getRank();
+  int nprocs = comm_->getSize();
+  int rank = comm_->getRank();
   Array<long> sendCount(nprocs, 0);
   ArrayRCP<long> recvCount;
   ArrayRCP<float> recvSizes;
@@ -492,30 +562,31 @@ template <typename User_t>
     sendCount[0] = len;
 
     try{
-      AlltoAllv<size_t, long>(*comm, *env_, ids[w].view(0, len),
+      AlltoAllv<size_t, long>(*comm_, *env_, ids[w].view(0, len),
         sendCount.view(0, nprocs), recvIds, recvCount);
     }
     Z2_FORWARD_EXCEPTIONS
 
     try{
-      AlltoAllv<float, long>(*comm, *env_, sizes[w].view(0, len),
+      AlltoAllv<float, long>(*comm_, *env_, sizes[w].view(0, len),
         sendCount.view(0, nprocs), recvSizes, recvCount);
     }
     Z2_FORWARD_EXCEPTIONS
 
     if (rank == 0){
       try{
-        computePartSizes(w, recvIds, recvSizes, nparts);
+        size_t numVals = recvIds.size();
+        computePartSizes(w, recvIds.view(0,numVals), recvSizes.view(0,numVals));
       }
       Z2_FORWARD_EXCEPTIONS
     }
 
-    broadcastPartSizes(w, nparts);
+    broadcastPartSizes(w);
   } 
 }
 
 template <typename User_t>
-  void PartitioningSolution<User_t>::broadcastPartSizes(int wdim, int nparts)
+  void PartitioningSolution<User_t>::broadcastPartSizes(int wdim)
 {
   Z2_LOCAL_BUG_ASSERTION(*env_, "preallocations", pSize_.size()>wdim && 
     pSizeUniform_.size()>wdim && pCompactIndex_.size()>wdim, 
@@ -523,7 +594,7 @@ template <typename User_t>
 
   int rank = env_->myRank_;
   int nprocs = env_->numProcs_;
-  const Comm<int> *comm = env_->comm_.getRawPtr();
+  size_t nparts = nGlobalParts_;
 
   if (nprocs < 2)
     return;
@@ -540,7 +611,7 @@ template <typename User_t>
   }
 
   try{
-    Teuchos::broadcast<int, char>(*comm, 0, 1, &flag);
+    Teuchos::broadcast<int, char>(*comm_, 0, 1, &flag);
   }
   Z2_THROW_OUTSIDE_ERROR(*env_, e);
 
@@ -568,7 +639,9 @@ template <typename User_t>
     }
 
     try{
-      Teuchos::broadcast<int, unsigned char>(*comm, 0, nparts, idxbuf);
+      // broadcast of unsigned char is not supported
+      Teuchos::broadcast<int, char>(*comm_, 0, nparts, 
+        reinterpret_cast<char *>(idxbuf));
     }
     Z2_THROW_OUTSIDE_ERROR(*env_, e);
 
@@ -597,7 +670,7 @@ template <typename User_t>
     }
 
     try{
-      Teuchos::broadcast<int, float>(*comm, 0, numSizes, sizeList);
+      Teuchos::broadcast<int, float>(*comm_, 0, numSizes, sizeList);
     }
     Z2_THROW_OUTSIDE_ERROR(*env_, e);
 
@@ -625,7 +698,7 @@ template <typename User_t>
     }
 
     try{
-      Teuchos::broadcast<int, float>(*comm, 0, nparts, sizeList);
+      Teuchos::broadcast<int, float>(*comm_, 0, nparts, sizeList);
     }
     Z2_THROW_OUTSIDE_ERROR(*env_, e);
 
@@ -638,7 +711,7 @@ template <typename User_t>
 
 template <typename User_t>
   void PartitioningSolution<User_t>::computePartSizes(int wdim,
-    ArrayView<size_t> ids, ArrayView<float> sizes, int nparts)
+    ArrayView<size_t> ids, ArrayView<float> sizes)
 {
   int len = ids.size();
 
@@ -646,8 +719,6 @@ template <typename User_t>
     pSizeUniform_[wdim] = true;
     return;
   }
-
-  int nprocs = env_->numProcs_;
 
   Z2_LOCAL_BUG_ASSERTION(*env_, "bad array sizes", len>0 && sizes.size()==len,
     COMPLEX_ASSERTION);
@@ -659,9 +730,11 @@ template <typename User_t>
 
   // Check ids and sizes and find min, max and average sizes.
 
+  size_t nparts = nGlobalParts_;
   unsigned char *buf = new unsigned char [nparts];
   Z2_LOCAL_MEMORY_ASSERTION(*env_, nparts, buf);
-  Array<unsigned char> flags(buf, 0, nparts);
+  memset(buf, 0, nparts);
+  ArrayRCP<unsigned char> partIdx(buf, 0, nparts, true);
 
   float min, max, sum;
 
@@ -679,12 +752,12 @@ template <typename User_t>
     // add them or take the max.
 
     Z2_LOCAL_INPUT_ASSERTION(*env_, "multiple sizes provided for one part",
-      flags[id]==0, BASIC_ASSERTION);
+      partIdx[id]==0, BASIC_ASSERTION);
 
-    flags[id] = 1;
+    partIdx[id] = 1;
 
-    if (i==0 || size < min) min == size;
-    if (i==0 || size > max) max == size;
+    if (i==0 || size < min) min = size;
+    if (i==0 || size > max) max = size;
     sum += size;
   }
 
@@ -693,8 +766,7 @@ template <typename User_t>
     float *allSizes = new float [2];
     Z2_LOCAL_MEMORY_ASSERTION(*env_, 2, allSizes);
 
-    ArrayRCP<float> sizeArray(allSizes, 0, 2);
-    ArrayRCP<unsigned char> sizeIndex(buf, 0, nparts);
+    ArrayRCP<float> sizeArray(allSizes, 0, 2, true);
 
     allSizes[0] = 0.0;
     allSizes[1] = 1.0 / (nparts - len);
@@ -706,7 +778,7 @@ template <typename User_t>
       buf[ids[i]] = 0;            // index to part size zero
     
     pSize_[wdim] = sizeArray;
-    pCompactIndex_[wdim] = sizeIndex;
+    pCompactIndex_[wdim] = partIdx;
 
     return;
   }
@@ -728,7 +800,7 @@ template <typename User_t>
   float *tmp = new float [len];
   Z2_LOCAL_MEMORY_ASSERTION(*env_, len, tmp);
   memcpy(tmp, sizes.getRawPtr(), sizeof(float) * len);
-  ArrayView<float> partSizes(tmp, 0, len);
+  ArrayRCP<float> partSizes(tmp, 0, len, true);
 
   std::sort(partSizes.begin(), partSizes.end());
 
@@ -769,11 +841,11 @@ template <typename User_t>
     
     float *allSizes = new float [sizeArrayLen];
     Z2_LOCAL_MEMORY_ASSERTION(*env_, sizeArrayLen, allSizes);
-    ArrayRCP<float> sizeArray(allSizes, 0, sizeArrayLen);
+    ArrayRCP<float> sizeArray(allSizes, 0, sizeArrayLen, true);
 
     int newAvgIndex = sizeArrayLen;
 
-    for (int i=numSizes-1, idx=0; i >= 0; i++){
+    for (int i=numSizes-1, idx=0; i >= 0; i--){
 
       if (newAvgIndex == sizeArrayLen){
 
@@ -792,10 +864,8 @@ template <typename User_t>
     Z2_LOCAL_BUG_ASSERTION(*env_, "finding average in list", 
       newAvgIndex < sizeArrayLen, COMPLEX_ASSERTION);
 
-    ArrayRCP<unsigned char> sizeIndex = arcp(buf, 0, nparts); 
-
     for (int i=0; i < nparts; i++){
-      buf[i] = newAvgIndex;   // default part size
+      buf[i] = newAvgIndex;   // index to default part size
     }
 
     sum = (nparts - len) * allSizes[newAvgIndex];
@@ -807,7 +877,7 @@ template <typename User_t>
 
       // Find the first size greater than or equal to this size.
 
-      if (avg - size <= epsilon)
+      if (size < avg && avg - size <= epsilon)
         index = newAvgIndex;
       else{
         ArrayRCP<float>::iterator found = std::lower_bound(sizeArray.begin(),
@@ -827,14 +897,14 @@ template <typename User_t>
       sizeArray[i] /= sum;
     }
 
-    pCompactIndex_[w] = sizeIndex;
-    pSize_[w] = sizeArray;
+    pCompactIndex_[wdim] = partIdx;
+    pSize_[wdim] = sizeArray;
   }
   else{
     // To have access to part sizes, we must store nparts floats on 
     // every process.  We expect this is a rare case.
 
-    buf.clear();
+    partIdx.clear();
 
     tmp = new float [nparts];
     Z2_LOCAL_MEMORY_ASSERTION(*env_, nparts, tmp);

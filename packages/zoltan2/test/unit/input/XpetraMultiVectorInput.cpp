@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
   RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
 
   ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
-  RCP<const idmap_t> idMap = rcp(new idmap_t(env, gidArray));
+  RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
   int weightDim = 1;
   float *imbal = new float [weightDim];
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
   memset(p, 0, sizeof(size_t) * vlen);
   ArrayRCP<size_t> solnParts(p, 0, vlen, true);
 
-  soln_t solution(env, idMap, weightDim);
+  soln_t solution(env, comm, idMap, weightDim);
 
   solution.setParts(rowGids, solnParts, metric);
 

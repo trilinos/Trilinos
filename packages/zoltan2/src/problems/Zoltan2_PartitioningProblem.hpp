@@ -42,31 +42,17 @@ public:
   // Destructor
   virtual ~PartitioningProblem() {};
 
-#if 0  // KDDKDD Don't know how to use shortcut with Adapter template
-  //! Constructor with Tpetra Matrix interface.
-  PartitioningProblem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &A,
-    ParameterList &p
-  ) : Problem<Adapter>(A, p) 
-  {
-    HELLO;
-    createPartitioningProblem();
-  }
+#ifdef HAVE_ZOLTAN2_MPI
+  //! Constructor for MPI builds
+  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p, 
+    MPI_Comm comm=MPI_COMM_WORLD); 
+#else
+  //! Constructor for serial builds
+  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) ;
 #endif
 
-  //! Constructor with InputAdapter Interface
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p): 
-    Problem<Adapter>(A,p), generalParams_(), partitioningParams_(),solution_(),
-    inputType_(InvalidAdapterType), modelType_(InvalidModel), algorithm_(),
-    numberOfWeights_()
-  {
-    HELLO;
-    createPartitioningProblem();
-  };
-
   // Other methods
-  //   LRIESEN - Do we restate virtual in the concrete class?  I
-  //    don't think I've seen this style before.
-  virtual void solve();
+  void solve();
 
   PartitioningSolution<user_t> &getSolution() {
     return *(solution_.getRawPtr());
@@ -83,23 +69,7 @@ public:
   // TODO - decide whether we copy or view
 
   void setPartSizesForCritiera(int criteria, int len, size_t *partIds, 
-    float *partSizes) 
-  {
-    if (len && criteria < 0 && criteria >= numberOfWeights_)
-      throw std::runtime_error("invalid criteria");
-
-    if (len){
-      Array<size_t> ids(len);
-      Array<float> sizes(len);
-      for (int i=0; i < len; i++){
-        ids[i] = partIds[i];
-        sizes[i] = partSizes[i];
-      }
-
-      partIdsForIdx_[criteria] = ids;
-      partSizesForIdx_[criteria] = sizes;
-    }
-  }
+    float *partSizes) ;
 
 private:
   void createPartitioningProblem();
@@ -122,8 +92,50 @@ private:
   Array<Array<size_t> > partIdsForIdx_;
   Array<Array<float> > partSizesForIdx_;
 };
-
 ////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_ZOLTAN2_MPI
+template <typename Adapter>
+  PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
+    ParameterList *p, MPI_Comm comm):
+      Problem<Adapter>(A,p,comm), 
+      generalParams_(), partitioningParams_(),solution_(),
+      inputType_(InvalidAdapterType), modelType_(InvalidModel), algorithm_(),
+      numberOfWeights_(), partIdsForIdx_(), partSizesForIdx_()
+#else
+template <typename Adapter>
+  PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
+    ParameterList *p):
+      Problem<Adapter>(A,p), 
+      generalParams_(), partitioningParams_(),solution_(),
+      inputType_(InvalidAdapterType), modelType_(InvalidModel), algorithm_(),
+      numberOfWeights_(), partIdsForIdx_(), partSizesForIdx_()
+#endif
+{
+  HELLO;
+  createPartitioningProblem();
+}
+
+template <typename Adapter>
+  void PartitioningProblem<Adapter>::setPartSizesForCritiera(
+    int criteria, int len, size_t *partIds, float *partSizes) 
+{
+  if (len && criteria < 0 && criteria >= numberOfWeights_)
+    throw std::runtime_error("invalid criteria");
+
+  if (len){
+    Array<size_t> ids(len);
+    Array<float> sizes(len);
+    for (int i=0; i < len; i++){
+      ids[i] = partIds[i];
+      sizes[i] = partSizes[i];
+    }
+
+    partIdsForIdx_[criteria] = ids;
+    partSizesForIdx_[criteria] = sizes;
+  }
+}
+
 template <typename Adapter>
 void PartitioningProblem<Adapter>::solve()
 {
@@ -147,7 +159,7 @@ void PartitioningProblem<Adapter>::solve()
     this->generalModel_->getIdentifierMap();
 
   solution_ = rcp(new PartitioningSolution<user_t>( this->envConst_,
-    idMap, weightDim, partIdsForIdx_.view(0, numberOfWeights_), 
+    this->comm_, idMap, weightDim, partIdsForIdx_.view(0, numberOfWeights_), 
     partSizesForIdx_.view(0, numberOfWeights_)));
 
   // Call the algorithm
@@ -183,11 +195,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
 #ifdef HAVE_ZOLTAN2_OVIS
   ovis_enabled(this->comm_->getRank());
 #endif
-
-  // The problem communicator is this->comm_.  
-  // Set the application communicator to MPI_COMM_WORLD.
-
-  this->env_->setCommunicator(DefaultComm<int>::getComm());
 
   // Finalize parameters.  If the Problem wants to set or
   // change any parameters, do it before this call.
@@ -363,28 +370,21 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
     }
   }
 
-  // TODO: This doesn't work.  baseInputAdapter_.getRawPtr() is NULL.
-  //
-  // RCP<const base_adapter_t> baseInputAdapter_ = 
-  //   rcp_implicit_cast<const base_adapter_t>(this->inputAdapter_);
-  //
-  // So to pass the InputAdapter to the Model we use a raw pointer.
-  // Since the Problem creates the Model and will destroy it when
-  // done, the Model doesn't really need an RCP to the InputAdapter.
-  // But it would be nice if that worked.
+  // Create the computational model.
+  // Models are instantiated for base input adapter types (mesh,
+  // matrix, graph, and so on).  We pass a pointer to the input
+  // adapter, cast as the base input type.
 
   // TODO - check for exceptions
 
   typedef typename Adapter::base_adapter_t base_adapter_t;
-  const base_adapter_t *baseAdapter = this->inputAdapter_.getRawPtr();
-
-  // Create the computational model.
 
   switch (modelType_) {
 
   case GraphModelType:
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      baseAdapter, this->envConst_, needConsecutiveGlobalIds, removeSelfEdges));
+      this->baseInputAdapter_, this->envConst_, this->comm_, 
+      needConsecutiveGlobalIds, removeSelfEdges));
 
     this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->graphModel_);
@@ -399,7 +399,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
 
   case IdentifierModelType:
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-      baseAdapter, this->envConst_, needConsecutiveGlobalIds));
+      this->baseInputAdapter_, this->envConst_, this->comm_,
+      needConsecutiveGlobalIds));
 
     this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->identifierModel_);

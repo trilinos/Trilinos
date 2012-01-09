@@ -63,8 +63,8 @@ public:
 
   /*! Constructor - Must be called by all processes 
    *
-   * \param comm the problem communicator
    * \param env  the problem and library environment
+   * \param comm the problem communicator
    * \param gids  the application global IDs
    * \param gidsMustBeConsecutive  set to true if the algorithm
    *           or third party library requires consective ids
@@ -77,6 +77,7 @@ public:
   typedef typename InputTraits<User>::gid_t gid_t;
 
   explicit IdentifierMap( const RCP<const Environment > &env, 
+                          const RCP<const Comm<int> > &comm,
                           const ArrayRCP<const gid_t> &gids, 
                           bool gidsMustBeConsecutive=false);
 
@@ -176,13 +177,13 @@ public:
 
 private:
 
-  // Input communicator
-
-  const RCP<const Comm<int> > comm_;
-
   // Problem parameters, library configuration.
 
   const RCP<const Environment> env_;
+
+  // Problem communicator
+
+  const RCP<const Comm<int> > comm_;
 
   // Application global IDs
 
@@ -229,8 +230,9 @@ private:
 
 template<typename User>
   IdentifierMap<User>::IdentifierMap( const RCP<const Environment> &env,
+    const RCP<const Comm<int> > &comm,
     const ArrayRCP<const gid_t> &gids, bool idsMustBeConsecutive) 
-         : comm_(env->comm_),  env_(env), myGids_(gids), gnoDist_(), gidHash_(),
+         : env_(env), comm_(comm), myGids_(gids), gnoDist_(), gidHash_(),
            globalNumberOfIds_(0), localNumberOfIds_(0),
            myRank_(0), numProcs_(1),
            userGidsAreTeuchosOrdinal_(false), userGidsAreConsecutive_(false), 

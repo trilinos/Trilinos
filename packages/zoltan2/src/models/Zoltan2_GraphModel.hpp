@@ -192,15 +192,17 @@ public:
    *  All processes in the communicator must call the constructor.
    *  \param  inputAdapter  an encapsulation of the user data
    *  \param  env           environment (library configuration settings)
+   *  \param  comm       communicator for the problem
    *  \param  consecutiveIdsRequired  set to true if the algorithm or
    *           third party library requires consecutive global vertex Ids.
    *  \param removeSelfEdges set to true if the algorithm or the third party
    *           library cannot handle self edges
    */
   GraphModel(const MatrixInput<User> *ia,
-    const RCP<const Environment> &env, bool consecutiveIdsRequired=false,
-    bool removeSelfEdges=false) :
-     input_(ia), env_(env), gids_(), gnos_(), edgeGnos_(), procIds_(), 
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    bool consecutiveIdsRequired=false, bool removeSelfEdges=false) :
+     input_(ia), env_(env), comm_(comm), 
+     gids_(), gnos_(), edgeGnos_(), procIds_(), 
      offsets_(), gnosConst_(), edgeGnosConst_(), procIdsConst_(), 
      numLocalEdges_(0), numGlobalEdges_(0), numLocalVtx_(0), 
      gidsAreGnos_(false), nearEdgeLnos_(), nearEdgeOffsets_(), 
@@ -271,7 +273,7 @@ public:
       edgeGids_ =  tmpEdges;
     }
 
-    reduceAll<int, size_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1,
+    reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_SUM, 1,
       &numLocalEdges_, &numGlobalEdges_);
 
     // Create an IdentifierMap, which will map the user's global IDs to
@@ -281,7 +283,7 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env, gids_, consecutiveIdsRequired));
+      idMap = rcp(new idmap_t(env, comm_, gids_, consecutiveIdsRequired));
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -527,6 +529,7 @@ private:
 
   const MatrixInput<User> *input_;
   const RCP<const Environment > env_;
+  const RCP<const Comm<int> > comm_;
 
   ArrayRCP<const gid_t> gids_;
   ArrayRCP<gno_t> gnos_;

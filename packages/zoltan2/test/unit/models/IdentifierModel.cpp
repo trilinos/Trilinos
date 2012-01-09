@@ -74,7 +74,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
   try{
     model = new Zoltan2::IdentifierModel<base_adapter_t>(
-      base_ia, default_env, consecutiveIds);
+      base_ia, default_env, comm, consecutiveIds);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;

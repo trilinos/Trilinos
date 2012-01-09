@@ -107,7 +107,7 @@ template <typename Scalar, typename LNO, typename GNO>
 
   try{
     model = new Zoltan2::GraphModel<base_adapter_t>(baseTmi, default_env, 
-      consecutiveIdsRequested, noSelfEdges);
+      comm, consecutiveIdsRequested, noSelfEdges);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
