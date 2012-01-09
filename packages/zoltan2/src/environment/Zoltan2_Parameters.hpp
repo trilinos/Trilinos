@@ -166,7 +166,7 @@ template <typename Integral>
 template <typename Integral>
   bool IntegerRangeListValidator<Integral>::listSaysAll(std::string &l)
 {
-  std::transform(l.begin(), l.end(), l.begin(), tolower);
+  std::transform(l.begin(), l.end(), l.begin(), (int(*)(int)) tolower);
   if (l.find(allText_) != std::string::npos)
     return true;  // "all" is in the string
   else
