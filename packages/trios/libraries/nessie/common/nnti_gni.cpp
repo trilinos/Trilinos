@@ -35,6 +35,20 @@
 
 
 
+/* if undefined, the ACK message is NOT sent to the RDMA target when
+ * the RDMA op is complete.  this creates one-side semantics for RDMA
+ * ops.  in this mode, the target has no idea when the RDMA op is
+ * complete and what data was addressed.
+ */
+#undef USE_RDMA_TARGET_ACK
+/* if defined, the RDMA initiator will send an ACK message to the RDMA
+ * target when the RDMA op is complete.  the target process must wait
+ * on the target buffer in order to get the ACK.  this creates two-side
+ * semantics for RDMA ops.   in this mode, when the wait returns the
+ * the RDMA op is complete and status indicates what data was addressed.
+ */
+//#define USE_RDMA_TARGET_ACK
+
 #undef USE_RDMA_EVENTS
 #define USE_RDMA_EVENTS
 
@@ -1385,7 +1399,9 @@ NNTI_result_t NNTI_gni_put (
 
     gni_mem_hdl->last_op=GNI_OP_PUT_INITIATOR;
 
+#if defined(USE_RDMA_TARGET_ACK)
     send_rdma_wc(src_buffer_hdl);
+#endif
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -1492,7 +1508,9 @@ NNTI_result_t NNTI_gni_get (
 
     gni_mem_hdl->last_op=GNI_OP_GET_INITIATOR;
 
+#if defined(USE_RDMA_TARGET_ACK)
     send_rdma_wc(dest_buffer_hdl);
+#endif
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -1541,6 +1559,15 @@ NNTI_result_t NNTI_gni_wait (
 
     assert(q_hdl);
     assert(gni_mem_hdl);
+
+#if !defined(USE_RDMA_TARGET_ACK)
+    if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
+        memset(status, 0, sizeof(NNTI_status_t));
+        status->op     = remote_op;
+        status->result = NNTI_EINVAL;
+        return(NNTI_EINVAL);
+    }
+#endif
 
     reset_op_state(reg_buf);
 
@@ -1968,6 +1995,7 @@ static NNTI_result_t unregister_memory(gni_memory_handle *hdl)
     return ((NNTI_result_t)rc);
 }
 
+#if defined(USE_RDMA_TARGET_ACK)
 static void send_rdma_wc (
         const NNTI_buffer_t *reg_buf)
 {
@@ -2028,6 +2056,7 @@ static void send_rdma_wc (
 
     return;
 }
+#endif
 
 
 static int need_mem_cq(const gni_memory_handle *gni_mem_hdl)
@@ -2391,8 +2420,13 @@ static int process_event(
                     print_post_desc(gni_mem_hdl->post_desc_ptr);
 
                     log_debug(debug_level, "RDMA write (initiator) completion - reg_buf==%p", reg_buf);
+#if defined(USE_RDMA_TARGET_ACK)
                     gni_mem_hdl->op_state=RDMA_WRITE_NEED_ACK;
-//                    send_rdma_wc(reg_buf);
+#else
+                    gni_mem_hdl->op_state = RDMA_WRITE_COMPLETE;
+                    wc->byte_len   =gni_mem_hdl->wc.byte_len;
+                    wc->byte_offset=gni_mem_hdl->wc.src_offset;
+#endif
                 } else if (gni_mem_hdl->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - reg_buf==%p", reg_buf);
 
@@ -2418,8 +2452,13 @@ static int process_event(
                 print_post_desc(gni_mem_hdl->post_desc_ptr);
 
                 log_debug(debug_level, "RDMA write (initiator) completion - reg_buf==%p", reg_buf);
+#if defined(USE_RDMA_TARGET_ACK)
                 gni_mem_hdl->op_state=RDMA_WRITE_NEED_ACK;
-//                send_rdma_wc(reg_buf);
+#else
+                gni_mem_hdl->op_state = RDMA_WRITE_COMPLETE;
+                wc->byte_len   =gni_mem_hdl->wc.byte_len;
+                wc->byte_offset=gni_mem_hdl->wc.src_offset;
+#endif
             } else if (gni_mem_hdl->op_state==RDMA_WRITE_NEED_ACK) {
                 log_debug(debug_level, "RDMA write ACK (initiator) completion - reg_buf==%p", reg_buf);
 
@@ -2444,10 +2483,13 @@ static int process_event(
                 print_post_desc(gni_mem_hdl->post_desc_ptr);
 
                 log_debug(debug_level, "RDMA read (initiator) completion - reg_buf==%p", reg_buf);
+#if defined(USE_RDMA_TARGET_ACK)
                 gni_mem_hdl->op_state=RDMA_READ_NEED_ACK;
-
-//                send_rdma_wc(reg_buf);
-
+#else
+                gni_mem_hdl->op_state = RDMA_READ_COMPLETE;
+                wc->byte_len   =gni_mem_hdl->wc.byte_len;
+                wc->byte_offset=gni_mem_hdl->wc.dest_offset;
+#endif
             } else if (gni_mem_hdl->op_state==RDMA_READ_NEED_ACK) {
                 log_debug(debug_level, "RDMA read ACK (initiator) completion - reg_buf==%p", reg_buf);
 
@@ -2553,7 +2595,13 @@ static int process_event(
             if (gni_mem_hdl->op_state==RDMA_WRITE_INIT) {
                 log_debug(debug_level, "RDMA write event - reg_buf==%p, op_state==%d", reg_buf, gni_mem_hdl->op_state);
                 log_debug(debug_level, "RDMA write (target) completion - reg_buf==%p", reg_buf);
+#if defined(USE_RDMA_TARGET_ACK)
                 gni_mem_hdl->op_state=RDMA_WRITE_NEED_ACK;
+#else
+                gni_mem_hdl->op_state = RDMA_WRITE_COMPLETE;
+                wc->byte_len   =gni_mem_hdl->wc.byte_len;
+                wc->byte_offset=gni_mem_hdl->wc.dest_offset;
+#endif
             } else if (gni_mem_hdl->op_state==RDMA_WRITE_NEED_ACK) {
                 log_debug(debug_level, "RDMA write ACK (target) completion - reg_buf==%p", reg_buf);
 
@@ -2575,7 +2623,13 @@ static int process_event(
             if (gni_mem_hdl->op_state==RDMA_WRITE_INIT) {
                 log_debug(debug_level, "RDMA write event - reg_buf==%p, op_state==%d", reg_buf, gni_mem_hdl->op_state);
                 log_debug(debug_level, "RDMA write (target) completion - reg_buf==%p", reg_buf);
+#if defined(USE_RDMA_TARGET_ACK)
                 gni_mem_hdl->op_state=RDMA_WRITE_NEED_ACK;
+#else
+                gni_mem_hdl->op_state = RDMA_WRITE_COMPLETE;
+                wc->byte_len   =gni_mem_hdl->wc.byte_len;
+                wc->byte_offset=gni_mem_hdl->wc.dest_offset;
+#endif
             } else if (gni_mem_hdl->op_state==RDMA_WRITE_NEED_ACK) {
                 log_debug(debug_level, "RDMA write ACK (target) completion - reg_buf==%p", reg_buf);
 
@@ -2597,7 +2651,13 @@ static int process_event(
             if (gni_mem_hdl->op_state==RDMA_READ_INIT) {
                 log_debug(debug_level, "RDMA read event - reg_buf==%p, op_state==%d", reg_buf, gni_mem_hdl->op_state);
                 log_debug(debug_level, "RDMA read (tagret) completion - reg_buf==%p", reg_buf);
+#if defined(USE_RDMA_TARGET_ACK)
                 gni_mem_hdl->op_state=RDMA_READ_NEED_ACK;
+#else
+                gni_mem_hdl->op_state = RDMA_READ_COMPLETE;
+                wc->byte_len   =gni_mem_hdl->wc.byte_len;
+                wc->byte_offset=gni_mem_hdl->wc.src_offset;
+#endif
             } else if (gni_mem_hdl->op_state==RDMA_READ_NEED_ACK) {
                 log_debug(debug_level, "RDMA read ACK (target) completion - reg_buf==%p", reg_buf);
 
@@ -2627,10 +2687,13 @@ static int process_event(
                     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(post_desc_ptr) failed: %d", rc);
                     print_post_desc(gni_mem_hdl->post_desc_ptr);
 
+#if defined(USE_RDMA_TARGET_ACK)
                     gni_mem_hdl->op_state=RDMA_TARGET_NEED_ACK;
-
-//                    send_rdma_wc(reg_buf);
-
+#else
+                    gni_mem_hdl->op_state = RDMA_TARGET_COMPLETE;
+                    wc->byte_len   =gni_mem_hdl->wc.byte_len;
+                    wc->byte_offset=gni_mem_hdl->wc.dest_offset;
+#endif
                 } else if (gni_mem_hdl->op_state==RDMA_TARGET_NEED_ACK) {
 
                     log_debug(debug_level, "RDMA target ACK completion - reg_buf==%p", reg_buf);
@@ -2643,15 +2706,19 @@ static int process_event(
                     gni_mem_hdl->op_state = RDMA_TARGET_COMPLETE;
                     wc->byte_len   =gni_mem_hdl->wc.byte_len;
                     wc->byte_offset=gni_mem_hdl->wc.dest_offset;
-
                 }
             } else {
 #if defined(USE_RDMA_EVENTS)
                 if (gni_mem_hdl->op_state==RDMA_TARGET_INIT) {
 
                     log_debug(debug_level, "RDMA target event - reg_buf==%p, op_state==%d", reg_buf, gni_mem_hdl->op_state);
+#if defined(USE_RDMA_TARGET_ACK)
                     gni_mem_hdl->op_state=RDMA_TARGET_NEED_ACK;
-
+#else
+                    gni_mem_hdl->op_state = RDMA_TARGET_COMPLETE;
+                    wc->byte_len   =gni_mem_hdl->wc.byte_len;
+                    wc->byte_offset=gni_mem_hdl->wc.dest_offset;
+#endif
                 } else if (gni_mem_hdl->op_state==RDMA_TARGET_NEED_ACK) {
 
                     log_debug(debug_level, "RDMA target completion - reg_buf==%p", reg_buf);
@@ -2659,7 +2726,6 @@ static int process_event(
                     gni_mem_hdl->op_state = RDMA_TARGET_COMPLETE;
                     wc->byte_len   =gni_mem_hdl->wc.byte_len;
                     wc->byte_offset=gni_mem_hdl->wc.dest_offset;
-
                 }
 #else
                 log_debug(debug_level, "RDMA target completion - reg_buf==%p", reg_buf);
