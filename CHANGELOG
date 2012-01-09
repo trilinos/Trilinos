@@ -4,6 +4,29 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.8.5 January 9, 2012
+
+1. Epetra          - Fix large overestimated size allocation for VbrMatrix
+                     array.
+
+2. Epetra          - Fixed several private/shared scoping issues with OpenMP
+
+3. Epetra          - Readability clean up of OpenMP code and output from comm
+                     objects for OpenMP.
+
+4. Framework Level - Fixed an issue where the Trilinos_version.h file was not
+                     always installed.
+
+5. Optika          - Fix an issue where item values weren't being displayed
+                     except when they were being edited.
+
+6. Optika          - Fix an bug with TwoDArrays typeId in the TreeItem.
+
+7. Optika          - Fix an issue where array parameters with visual
+                     dependencies weren't being evaluated correctly.
+
+-------------------------------------------------------------------------------
+
 Release update 10.8.4 December 8, 2011
 
 1.  Belos       - Extended valid parameters of PseudoBlockCGSolMgr to make it
