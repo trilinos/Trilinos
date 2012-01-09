@@ -13,6 +13,7 @@
 
 #include <map>
 #include <algorithm>
+#include <functional>
 
 #ifdef HAVE_FEI_BOOST
 #include <boost/unordered_map.hpp>
