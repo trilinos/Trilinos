@@ -67,6 +67,21 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentNames ) {
 */
 
 
+TEUCHOS_UNIT_TEST( createParameterList, empty )
+{
+  RCP<ParameterList> pl = createParameterList();
+  TEST_ASSERT(nonnull(pl));
+}
+
+
+TEUCHOS_UNIT_TEST( createParameterList, withName )
+{
+  RCP<ParameterList> pl = createParameterList("dummyName");
+  TEST_ASSERT(nonnull(pl));
+  TEST_EQUALITY_CONST(pl->name(), "dummyName");
+}
+
+
 TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityWithEmpty )
 {
   // An empty list should not be equal to a full list

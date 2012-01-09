@@ -638,6 +638,28 @@ RCP<ParameterList> parameterList(const ParameterList& source)
 }
 
 
+/** \brief Nonmember constructor.
+ *
+ * \relates ParameterList
+ */
+inline
+RCP<ParameterList> createParameterList()
+{
+  return rcp(new ParameterList);
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates ParameterList
+ */
+inline
+RCP<ParameterList> createParameterList(const std::string &name)
+{
+  return rcp(new ParameterList(name));
+}
+
+
 /** \brief Traits specialization.
  *
  * \relates ParameterList
