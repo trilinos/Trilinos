@@ -102,31 +102,38 @@ namespace Tpetra {
     /// \return Number of imports this node will be receiving.
     size_t createFromSends (const ArrayView<const int>& exportNodeIDs);
 
-    //! \brief Set up Distributor using list of node IDs from which to receive.
-    /*! Take a list of node IDs and construct a plan for efficiently
-        scattering to those nodes.  Return the number and list of IDs
-        being sent by me.
-
-      \param remoteIDs [in]
-             List of remote IDs wanted. 
-
-      \param remoteNodeIDs [in]
-             List of nodes that will send the corresponding remote
-             IDs. Node IDs less than zero are ignored; their placement
-             corresponds to null sends in any future exports. A node
-             ID greater than or equal to the number of nodes will
-             result in a \c std::runtime_error on all nodes.
-
-      \param exportIDs [out]
-             List of IDs that need to be sent from this node.
-
-      \param exportNodeIDs [out]
-             List of nodes that will get the exported IDs.
-
-      \note \c exportGIDs and \c exportNodeIDs are allocated by the
-        Distributor, but they are reference counted and will be
-        automatically deallocated.
-    */
+    /// \brief Set up Distributor using list of node IDs from which to receive.
+    ///
+    /// Take a list of node IDs and construct a plan for efficiently
+    /// scattering to those nodes.  Return the number and list of IDs
+    /// being sent by me.
+    ///
+    /// \c Import invokes this method in order to creating a \c
+    /// Distributor from a list of receive neighbors and IDs.  A
+    /// common use case for this process is setting up sends and
+    /// receives for the remote entries of the source vector in a
+    /// distributed sparse matrix-vector multiply.  The Mantevo HPCCG
+    /// miniapp shows an annotated and simplified version of this
+    /// process for that special case.
+    ///
+    /// \param remoteIDs [in] List of remote IDs wanted. 
+    ///
+    /// \param remoteNodeIDs [in] List of the nodes that will send the
+    ///   remote IDs listed in \remoteIDs. Node IDs less than zero are
+    ///   ignored; their placement corresponds to null sends in any
+    ///   future exports. A node ID greater than or equal to the
+    ///   number of nodes will result in an \c std::runtime_error on
+    ///   all nodes.
+    ///
+    /// \param exportIDs [out] List of IDs that need to be sent from
+    ///   this node.
+    ///
+    /// \param exportNodeIDs [out] List of nodes that will get the
+    ///   exported IDs in \c exportIDs.
+    ///
+    /// The \c exportGIDs and \c exportNodeIDs arrays are allocated by
+    /// the Distributor, which is why they are passed in a nonconst
+    /// reference to an ArrayRCP.  They may be null on entry.
     template <class Ordinal>
     void createFromRecvs(const ArrayView<const Ordinal> &remoteIDs, 
                          const ArrayView<const int> &remoteNodeIDs, 
