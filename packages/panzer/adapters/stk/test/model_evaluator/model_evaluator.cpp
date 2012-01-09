@@ -30,6 +30,7 @@ using Teuchos::rcp;
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_WorksetContainer.hpp"
+#include "Panzer_PauseToAttach.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -60,7 +61,7 @@ namespace panzer {
   RCP<Epetra_CrsMatrix> basic_trans_J;
 
   // store steady-state me for testing parameters
-  RCP<panzer::ModelEvaluator_Epetra> ss_me;
+  // RCP<panzer::ModelEvaluator_Epetra> ss_me;
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
@@ -76,6 +77,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(model_evaluator, basic)
   {
     using Teuchos::RCP;
+
+    // panzer::pauseToAttach();
 
     bool parameter_on = true;
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb;  
@@ -144,7 +147,7 @@ namespace panzer {
       RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,gd,build_transient_support));
       
       // store to test parameter capabilities
-      ss_me = me;
+      // ss_me = me;
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -318,7 +321,24 @@ namespace panzer {
   {
     // NOTE: this test must be run AFTER the basic test above so that
     // ss_me is created!
-    RCP<panzer::ModelEvaluator_Epetra> me = ss_me;
+    // RCP<panzer::ModelEvaluator_Epetra> me = ss_me; This appears to cause seg faults for some reason!!!!
+
+    RCP<panzer::ModelEvaluator_Epetra> me;
+    {
+      bool parameter_on = true;
+      Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb;  
+      Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
+      Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
+      Teuchos::RCP<panzer::GlobalData> gd;
+    
+      buildAssemblyPieces(parameter_on,fmb,rLibrary,gd,ep_lof);
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
+      p_names[0] = Teuchos::rcp(new Teuchos::Array<std::string>(1));
+      (*p_names[0])[0] = "SOURCE_TEMPERATURE";
+      bool build_transient_support = false;
+      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,gd,build_transient_support));
+    }
+
     TEUCHOS_ASSERT(nonnull(me));
 
     EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
