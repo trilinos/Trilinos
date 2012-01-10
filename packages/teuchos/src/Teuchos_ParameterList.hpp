@@ -1162,11 +1162,12 @@ Array<T> getArrayFromStringParameter(
 */
 inline
 RCP<ParameterList> sublist(
-  const RCP<ParameterList> &paramList, const std::string& name, bool mustAlreadyExist = false
+  const RCP<ParameterList> &paramList, const std::string& name,
+  bool mustAlreadyExist = false, const std::string& docString = ""
   )
 {
   return rcpWithEmbeddedObjPostDestroy(
-    &paramList->sublist(name,mustAlreadyExist), paramList, false );
+    &paramList->sublist(name, mustAlreadyExist, docString), paramList, false );
 }
 
 /*! \relates ParameterList
