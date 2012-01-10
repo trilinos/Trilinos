@@ -5,10 +5,12 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
 
-#include "Panzer_STK_Interface.hpp"
+#include "Panzer_config.hpp"
+#include "Panzer_Traits.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 
+#include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_Utilities.hpp"
 
 namespace panzer_stk {
