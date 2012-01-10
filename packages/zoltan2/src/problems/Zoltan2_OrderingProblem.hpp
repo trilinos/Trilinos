@@ -135,6 +135,11 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   ovis_enabled(this->comm_->getRank());
 #endif
 
+  // Finalize parameters.  If the Problem wants to set or
+  // change any parameters, do it before this call.
+
+  this->env_->commitParameters();
+
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
   //   MODEL = graph, hypergraph, geometric, ids
@@ -149,12 +154,22 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   case GraphModelType:
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      this->baseInputAdapter_, this->env_, this->comm_, false, true));
+      this->baseInputAdapter_, this->envConst_, this->comm_, false, true));
+
+    this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+      this->graphModel_);
+
     break;
+
+
 
   case IdentifierModelType:
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-      this->baseInputAdapter_, this->env_, this->comm_, false));
+      this->baseInputAdapter_, this->envConst_, this->comm_, false));
+
+    this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+      this->identifierModel_);
+
     break;
 
   case HypergraphModelType:
