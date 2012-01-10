@@ -155,7 +155,8 @@ fei::MatrixGraph_Impl2::MatrixGraph_Impl2(fei::SharedPtr<fei::VectorSpace> rowSp
    name_(),
    dbgprefix_("MatGrph: "),
    tmpIntArray1_(),
-   tmpIntArray2_()
+   tmpIntArray2_(),
+   includeAllSlaveConstraints_(false)
 {
   localProc_ = fei::localProc(comm_);
   numProcs_ = fei::numProcs(comm_);
@@ -243,6 +244,13 @@ void fei::MatrixGraph_Impl2::setParameters(const fei::ParameterSet& params)
       blockEntryGraph_ = true;
     }
   }
+
+  param = params.get("INCLUDE_ALL_SLAVE_CONSTRAINTS");
+  ptype = param != NULL ? param->getType() : fei::Param::BAD_TYPE;
+  if (ptype != fei::Param::BAD_TYPE) {
+    includeAllSlaveConstraints_ = true;
+  }
+  
 }
 
 //----------------------------------------------------------------------------
@@ -1481,7 +1489,8 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
 
     offset = 0;
     for(size_t jj=0; jj<masterEqns.size(); ++jj) {
-      if (std::abs(masterWtPtr[jj]) > fei_eps) {
+      if ( includeAllSlaveConstraints_ || 
+	   (std::abs(masterWtPtr[jj]) > fei_eps) ) {
         masterCoefsPtr[offset] = masterWtPtr[jj];
         masterEqnsPtr[offset++] = masterEqnsPtr[jj];
       }
@@ -1511,7 +1520,8 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
 
     local_D->putRow(slaveEqn, masterEqnsPtr, masterCoefsPtr, offset);
 
-    if (std::abs(cr->getRHSValue()) > fei_eps) {
+    if ( includeAllSlaveConstraints_ || 
+	 (std::abs(cr->getRHSValue()) > fei_eps) ) {
       fei::put_entry(*local_g, slaveEqn, cr->getRHSValue());
     }
   }
@@ -1568,7 +1578,8 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
   g_nonzero_ = false;
   for(size_t j=0; j<g_->size(); ++j) {
     double coef = g_->coefs()[j];
-    if (std::abs(coef) > fei_eps) {
+    if ( includeAllSlaveConstraints_ || 
+	 (std::abs(coef) > fei_eps) ) {
       g_nonzero_ = true;
     }
   }
