@@ -94,10 +94,13 @@ void OrderingProblem<Adapter>::solve()
       AlgRCM<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
                       this->comm_);
   }
-  else if (method.compare("random") == 0)
+  else if (method.compare("Natural") == 0)
   {
-      AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_,
-                      this->comm_);
+      AlgNatural<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, this->comm_);
+  }
+  else if (method.compare("Random") == 0)
+  {
+      AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, this->comm_);
   }
   else if (method.compare("Minimum_Degree") == 0)
   {
