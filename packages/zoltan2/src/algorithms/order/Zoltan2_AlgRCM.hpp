@@ -4,7 +4,6 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <queue>
-//#define RCM
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -32,20 +31,13 @@ int AlgRCM(
 
   HELLO;
 
-  // TEST: return the identity permutation.
   const size_t nVtx = model->getLocalNumVertices();
   lno_t *perm;
   perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
   for (lno_t i=0; i<nVtx; i++){
-#ifdef RCM
     perm[i] = -1;
-#else
-    perm[i] = i;
-#endif
   }
 
-#ifdef RCM
-  // This is the real RCM algorithm.
   // Get local graph.
   ArrayView<const lno_t> edgeIds;
   ArrayView<const lno_t> offsets;
@@ -105,7 +97,6 @@ int AlgRCM(
       perm[nVtx-1-i] = temp;
     }
   }
-#endif
 
   return ierr;
 }
