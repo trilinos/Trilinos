@@ -93,7 +93,7 @@ int AlgRCM(
     while (perm[next] != -1) next++;
     root = next;
   }
-#endif
+
   // Reverse labels for RCM
   bool reverse = true; // TODO: Make parameter
   if (reverse) {
@@ -105,6 +105,7 @@ int AlgRCM(
       perm[nVtx-i] = temp;
     }
   }
+#endif
 
   return ierr;
 }
