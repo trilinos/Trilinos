@@ -162,7 +162,8 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
     RCP<SmootherFactory> SmooFactFine   = GetSmootherFactory(params, i);
 
     vecManager[i] = rcp(new FactoryManager());
-    vecManager[i]->SetFactory("Smoother" ,  SmooFactFine);    // Hierarchy.Setup uses TOPSmootherFactory, that only needs "Smoother"
+    if(SmooFactFine != Teuchos::null)
+    	vecManager[i]->SetFactory("Smoother" ,  SmooFactFine);    // Hierarchy.Setup uses TOPSmootherFactory, that only needs "Smoother"
     vecManager[i]->SetFactory("CoarseSolver", coarsestSmooFact);
     vecManager[i]->SetFactory("A", AcFact);       // same RAP factory
     vecManager[i]->SetFactory("P", PFact);    // same prolongator and restrictor factories
@@ -171,15 +172,20 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   }
 
   // use new Hierarchy::Setup routine
-  bIsLastLevel = hierarchy->Setup(0, Teuchos::null, vecManager[0].ptr(), vecManager[1].ptr()); // true, false because first level
-  for(int i=1; i < maxLevels-1; i++) {
-    if(bIsLastLevel == true) break;
-    bIsLastLevel = hierarchy->Setup(i, vecManager[i-1].ptr(), vecManager[i].ptr(), vecManager[i+1].ptr());
+  if(maxLevels == 1) {
+	  bIsLastLevel = hierarchy->Setup(0, Teuchos::null, vecManager[0].ptr(), Teuchos::null);
   }
-  if(bIsLastLevel == false) {
-    if(bIsLastLevel == false) bIsLastLevel = hierarchy->Setup(maxLevels-1, vecManager[maxLevels-2].ptr(), vecManager[maxLevels-1].ptr(), Teuchos::null);
+  else
+  {
+	  bIsLastLevel = hierarchy->Setup(0, Teuchos::null, vecManager[0].ptr(), vecManager[1].ptr()); // true, false because first level
+	  for(int i=1; i < maxLevels-1; i++) {
+		if(bIsLastLevel == true) break;
+		bIsLastLevel = hierarchy->Setup(i, vecManager[i-1].ptr(), vecManager[i].ptr(), vecManager[i+1].ptr());
+	  }
+	  if(bIsLastLevel == false) {
+		bIsLastLevel = hierarchy->Setup(maxLevels-1, vecManager[maxLevels-2].ptr(), vecManager[maxLevels-1].ptr(), Teuchos::null);
+	  }
   }
-
   //*out << *hierarchy << std::endl;
 
   for(int i=0; i<hierarchy->GetNumLevels(); i++) {
@@ -273,7 +279,9 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
   sprintf(levelchar,"(level %d)",level);
   std::string levelstr(levelchar);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(params.isSublist("smoother: list " + levelstr)==false, Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother parameter list for level. error.");
+  if(params.isSublist("smoother: list " + levelstr)==false)
+	  return Teuchos::null;
+  //TEUCHOS_TEST_FOR_EXCEPTION(params.isSublist("smoother: list " + levelstr)==false, Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother parameter list for level. error.");
 
   std::string type = params.sublist("smoother: list " + levelstr).get<std::string>("smoother: type");
   TEUCHOS_TEST_FOR_EXCEPTION(type.empty(), Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother type for level. error.");
