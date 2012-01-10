@@ -53,9 +53,9 @@ int AlgRCM(
   model->getLocalEdgeList(edgeIds, offsets, wgts);
   //model->getLocalEdgeList(edgeIds, offsets);
 
-  cout << "Debug: Local graph from getLocalEdgeList" << endl;
-  cout << "edgeIds: " << edgeIds << endl;
-  cout << "offsets: " << offsets << endl;
+  //cout << "Debug: Local graph from getLocalEdgeList" << endl;
+  //cout << "edgeIds: " << edgeIds << endl;
+  //cout << "offsets: " << offsets << endl;
 
   // TODO: Find pseudo-peripheral root vertex.
   lno_t root = 0;
@@ -82,7 +82,7 @@ int AlgRCM(
       for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
         lno_t nbor = edgeIds[ptr];
         if (perm[nbor] == -1){
-          cout << "Debug: perm[" << nbor << "] = " << count << endl;
+          //cout << "Debug: perm[" << nbor << "] = " << count << endl;
           perm[nbor] = count++; // Label as we push on Q
           Q.push(nbor);
         }
@@ -90,7 +90,7 @@ int AlgRCM(
     }
 
     // Find an unmarked vertex, use as new root
-    while (perm[next] != -1) next++;
+    while ((next < nVtx) && (perm[next] != -1)) next++;
     root = next;
   }
 
@@ -101,8 +101,8 @@ int AlgRCM(
     for (lno_t i=0; i < nVtx/2; ++i) {
       // Swap (perm[i], perm[nVtx-i])
       temp = perm[i];
-      perm[i] = perm[nVtx-i];
-      perm[nVtx-i] = temp;
+      perm[i] = perm[nVtx-1-i];
+      perm[nVtx-1-i] = temp;
     }
   }
 #endif
