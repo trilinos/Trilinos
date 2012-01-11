@@ -47,6 +47,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
 
   // read in common parameters
   int maxLevels = 10;       // multigrid prameters
+  int verbosityLevel = 10;  // verbosity level
   int maxCoarseSize = 50;
   int nDofsPerNode = 1;         // coalesce and drop parameters
   double agg_threshold = 0.0;   // aggregation parameters
@@ -57,6 +58,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   std::string agg_type = "Uncoupled";
   bool   bEnergyMinimization = false; // PGAMG
   if(params.isParameter("max levels")) maxLevels = params.get<int>("max levels");
+  if(params.isParameter("ML output"))  verbosityLevel = params.get<int>("ML output");
   if(params.isParameter("coarse: max size")) maxCoarseSize = params.get<int>("coarse: max size");
   if(params.isParameter("PDE equations")) nDofsPerNode = params.get<int>("PDE equations");
   if(params.isParameter("aggregation: threshold"))          agg_threshold       = params.get<double>("aggregation: threshold");
@@ -66,12 +68,20 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   //if(params.isParameter("aggregation: nodes per aggregate"))minPerAgg           = params.get<int>("aggregation: nodes per aggregate");
   if(params.isParameter("energy minimization: enable"))  bEnergyMinimization = params.get<bool>("energy minimization: enable");
 
+  // translate verbosity parameter
+  Teuchos::EVerbosityLevel eVerbLevel = Teuchos::VERB_NONE;
+  if(verbosityLevel == 0) eVerbLevel = Teuchos::VERB_NONE;
+  if(verbosityLevel > 0 ) eVerbLevel = Teuchos::VERB_LOW;
+  if(verbosityLevel > 4 ) eVerbLevel = Teuchos::VERB_MEDIUM;
+  if(verbosityLevel > 7 ) eVerbLevel = Teuchos::VERB_HIGH;
+  if(verbosityLevel > 9 ) eVerbLevel = Teuchos::VERB_EXTREME;
+
   TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::Interpreter: only 'Uncoupled' aggregation supported. error.");
 
   // create factories
   RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory());
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(/*Teuchos::null,nspFact*/));
-  dropFact->SetVerbLevel(MueLu::Extreme);
+  dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
   dropFact->SetFixedBlockSize(nDofsPerNode);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
@@ -107,7 +117,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   }
 
   RCP<RAPFactory> AcFact = rcp( new RAPFactory(PFact, RFact) );
-  AcFact->setVerbLevel(Teuchos::VERB_HIGH);
+  AcFact->setVerbLevel(eVerbLevel); //(toMueLuVerbLevel(eVerbLevel)); TODO: check me
 
   RCP<SmootherFactory> coarsestSmooFact;
   coarsestSmooFact = GetCoarsestSolverFactory(params);
@@ -116,7 +126,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
 
   // fill hierarchy
   RCP<Hierarchy> hierarchy = Teuchos::rcp(new Hierarchy(A));
-  hierarchy->SetVerbLevel(Teuchos::VERB_HIGH);
+  hierarchy->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
   hierarchy->SetMaxCoarseSize(Teuchos::as<Xpetra::global_size_t>(maxCoarseSize));
 
   ///////////////////////////////////////////////////////////
@@ -150,6 +160,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
 
     RCP<MueLu::Level> Finest = hierarchy->GetLevel();  // get finest level
     Finest->Set("Nullspace",nspVector);                       // set user given null space
+    Finest->setDefaultVerbLevel(eVerbLevel);
   }
 
   ////////////////////////////////////
@@ -188,13 +199,14 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   }
   //*out << *hierarchy << std::endl;
 
-  for(int i=0; i<hierarchy->GetNumLevels(); i++) {
-    RCP<Level> l = hierarchy->GetLevel(i);
-    l->print(*out, Teuchos::VERB_EXTREME);
+
+  //for(int i=0; i<hierarchy->GetNumLevels(); i++) {
+    /*RCP<Level> l = hierarchy->GetLevel(i);
+    l->print(*out, Teuchos::VERB_EXTREME);*/
     /*RCP<SmootherBase> preSmoo = l->Get< RCP<SmootherBase> >("PreSmoother");
     RCP<TrilinosSmoother> tPreSmoo = Teuchos::rcp_dynamic_cast<TrilinosSmoother>(preSmoo);
     if(tPreSmoo!=Teuchos::null) tPreSmoo->print(*out, MueLu::toMueLuVerbLevel(Teuchos::VERB_EXTREME));*/
-  }
+  //}
 
   return hierarchy;
 }
