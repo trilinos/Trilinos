@@ -30,15 +30,15 @@
 
 # Create the PyTrilinos_LIST string
 SET(PyTrilinos_LIST "")
-FOREACH(PACKAGE ${PyTrilinos_PACKAGES})
-  SET(PyTrilinos_LIST "${PyTrilinos_LIST}    ${PACKAGE}\n")
-ENDFOREACH(PACKAGE ${PyTrilinos_PACKAGES})
+FOREACH(TRIBITS_PACKAGE ${PyTrilinos_PACKAGES})
+  SET(PyTrilinos_LIST "${PyTrilinos_LIST}    ${TRIBITS_PACKAGE}\n")
+ENDFOREACH(TRIBITS_PACKAGE ${PyTrilinos_PACKAGES})
 
 # Create the PyTrilinos_ALL string
 SET(PyTrilinos_ALL "__all__ = [")
-FOREACH(PACKAGE ${PyTrilinos_PACKAGES})
-  SET(PyTrilinos_ALL "${PyTrilinos_ALL}'${PACKAGE}',\n          ")
-ENDFOREACH(PACKAGE ${PyTrilinos_PACKAGES})
+FOREACH(TRIBITS_PACKAGE ${PyTrilinos_PACKAGES})
+  SET(PyTrilinos_ALL "${PyTrilinos_ALL}'${TRIBITS_PACKAGE}',\n          ")
+ENDFOREACH(TRIBITS_PACKAGE ${PyTrilinos_PACKAGES})
 SET(PyTrilinos_ALL "${PyTrilinos_ALL}]")
 
 # Define a trigger target

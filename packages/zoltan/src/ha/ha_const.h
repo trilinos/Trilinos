@@ -24,10 +24,6 @@ extern "C" {
 /* Function prototypes */
 
 extern int Zoltan_Get_Processor_Name(ZZ *, char *);
-extern int Zoltan_Build_Machine_Desc(ZZ *);
-
-extern int Zoltan_Free_Machine_Desc(MachineType **desc);
-extern int Zoltan_Copy_Machine_Desc(MachineType **to, MachineType const *from);
 
 extern int Zoltan_Divide_Machine(ZZ *, int, float *, int, MPI_Comm, int *, 
                                  int *, int *, int *, int *, int *, int *,
@@ -37,7 +33,6 @@ extern int Zoltan_Divide_Parts(ZZ *, int, float *, int, int *, int *, double *);
 
 /* Misc. constants */
 #define MAX_PROC_NAME_LEN (MPI_MAX_PROCESSOR_NAME+1)
-#define MACHINE_DESC_FILE_DEFAULT "/etc/local/Zoltan_Machine_Desc"
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

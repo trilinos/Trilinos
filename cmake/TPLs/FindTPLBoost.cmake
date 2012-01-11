@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( Boost
+TRIBITS_TPL_DECLARE_LIBRARIES( Boost
   REQUIRED_HEADERS boost/version.hpp boost/mpl/at.hpp
   )
 

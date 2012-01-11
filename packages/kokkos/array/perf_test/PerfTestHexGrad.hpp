@@ -1,60 +1,63 @@
-/** \HEADER
- *************************************************************************
- *
- *                            Kokkos
- *                 Copyright 2010 Sandia Corporation
- *
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions are
- *  met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *  notice, this list of conditions and the following disclaimer.
- *
- *  2. Redistributions in binary form must reproduce the above copyright
- *  notice, this list of conditions and the following disclaimer in the
- *  documentation and/or other materials provided with the distribution.
- *
- *  3. Neither the name of the Corporation nor the names of the
- *  contributors may be used to endorse or promote products derived from
- *  this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
- *  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- *  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
- *  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- *  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- *  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *************************************************************************
- */
+/*
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+*/
 
 namespace Test {
 
-template< typename Scalar , class DeviceType >
-struct HexSimpleFill ;
+template< class DeviceType > struct HexSimpleFill ;
 
 //each element is a unit cube
-template< typename Scalar >
-struct HexSimpleFill< Scalar , KOKKOS_MACRO_DEVICE >
+template<>
+struct HexSimpleFill< KOKKOS_MACRO_DEVICE >
 {
   typedef KOKKOS_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
 
   // 3D array : ( ParallelWork , Space , Node )
-  typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
+  typedef Kokkos::MDArray<double,device_type> d_array ;
 
-  array_type coords ;
+  Kokkos::MDArray<double,device_type> coords ;
 
-  HexSimpleFill( const array_type & arg_coords )
+  HexSimpleFill( const Kokkos::MDArray<double,device_type> & arg_coords )
     : coords( arg_coords ) {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -97,13 +100,12 @@ struct HexSimpleFill< Scalar , KOKKOS_MACRO_DEVICE >
 
 //----------------------------------------------------------------------------
 
-template< typename Scalar , class DeviceType >
-struct HexGrad ;
+template< class DeviceType > struct HexGrad ;
 
 #define TEST_HEXGRAD_NORMAL 0
 
-template< typename Scalar >
-struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
+template<>
+struct HexGrad< KOKKOS_MACRO_DEVICE >
 {
   typedef KOKKOS_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
@@ -111,15 +113,15 @@ struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
   enum { N_Space = 3 , N_Node = 8 };
 
   // 3D array : ( ParallelWork , Space , Node )
-  typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
 
-  array_type coords ;
-  array_type grad_op ;
+  Kokkos::MDArray<double,device_type> coords ;
+  Kokkos::MDArray<float,device_type>  grad_op ;
 
-  HexGrad( const array_type & arg_coords,
-           const array_type & arg_grad_op )
+  HexGrad( const Kokkos::MDArray<double,device_type> & arg_coords ,
+           const Kokkos::MDArray<float,device_type>  & arg_grad_op )
     : coords( arg_coords )
-    , grad_op( arg_grad_op ) {}
+    , grad_op( arg_grad_op )
+    {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( size_type ielem ) const
@@ -127,7 +129,7 @@ struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
     // Repeated re-use of nodal coordinates,
     // copy them into local storage.
         
-    Scalar a[N_Node];
+    double a[N_Node];
     
     //Z
     a[0] = coords(ielem,2,0);
@@ -140,29 +142,29 @@ struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
     a[7] = coords(ielem,2,7);
     
     // z difference vectors
-    Scalar R42=(a[3] - a[1]);
-    Scalar R52=(a[4] - a[1]);
-    Scalar R54=(a[4] - a[3]);
+    float R42=(a[3] - a[1]);
+    float R52=(a[4] - a[1]);
+    float R54=(a[4] - a[3]);
 
-    Scalar R63=(a[5] - a[2]);
-    Scalar R83=(a[7] - a[2]);
-    Scalar R86=(a[7] - a[5]);
+    float R63=(a[5] - a[2]);
+    float R83=(a[7] - a[2]);
+    float R86=(a[7] - a[5]);
     
-    Scalar R31=(a[2] - a[0]);
-    Scalar R61=(a[5] - a[0]);
-    Scalar R74=(a[6] - a[3]);
+    float R31=(a[2] - a[0]);
+    float R61=(a[5] - a[0]);
+    float R74=(a[6] - a[3]);
 
-    Scalar R72=(a[6] - a[1]);
-    Scalar R75=(a[6] - a[4]);
-    Scalar R81=(a[7] - a[0]);
+    float R72=(a[6] - a[1]);
+    float R75=(a[6] - a[4]);
+    float R81=(a[7] - a[0]);
 
-    Scalar t1=(R63 + R54);
-    Scalar t2=(R61 + R74);
-    Scalar t3=(R72 + R81);
+    float t1=(R63 + R54);
+    float t2=(R61 + R74);
+    float t3=(R72 + R81);
 
-    Scalar t4 =(R86 + R42);
-    Scalar t5 =(R83 + R52);
-    Scalar t6 =(R75 + R31);
+    float t4 =(R86 + R42);
+    float t5 =(R83 + R52);
+    float t6 =(R75 + R31);
     
     //Y
     a[0] = coords(ielem,1,0);
@@ -280,16 +282,18 @@ struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
 
   static double test( int count )
   {
-    array_type coord = Kokkos::create_mdarray< array_type >( count , 3 , 8 );
-    array_type grad  = Kokkos::create_mdarray< array_type >( count , 3 , 8 );
+    Kokkos::MDArray<double,device_type> coord =
+      Kokkos::create_mdarray< double , device_type >( count , 3 , 8 );
+    Kokkos::MDArray<float, device_type> grad =
+      Kokkos::create_mdarray< float , device_type >( count , 3 , 8 );
 
     // Execute the parallel kernels on the arrays:
 
     double seconds = 0.0;
     
-    Kokkos::parallel_for( count , HexSimpleFill<Scalar,device_type>( coord ) , seconds );
+    Kokkos::parallel_for( count , HexSimpleFill<device_type>( coord ) , seconds );
 
-    Kokkos::parallel_for( count , HexGrad<Scalar,device_type>( coord , grad ) , seconds );
+    Kokkos::parallel_for( count , HexGrad<device_type>( coord , grad ) , seconds );
 
     return seconds ;
   }

@@ -6657,6 +6657,16 @@ namespace {
     return len;
   }
   
+  size_t get_number(const std::string &suffix)
+  {
+    int N = 0;
+    bool all_dig = suffix.find_first_not_of("0123456789") == std::string::npos;
+    if (all_dig) {
+      N = std::strtol(suffix.c_str(), NULL, 10);
+    } 
+    return N;
+  }
+
   const Ioss::VariableType *match_composite_field(char** names, Ioss::IntVector &which_names,
 						  const char suffix_separator)
   {
@@ -6681,11 +6691,16 @@ namespace {
       return NULL;
     
     assert(tokens.size() > 2);
-    size_t N = std::strtol(tokens[tokens.size()-1].c_str(), NULL, 10);
+
+    // Check that suffix is a number -- all digits
+    size_t N = get_number(tokens[tokens.size()-1]);
+    
     if (N == 0)
       return NULL;
 
-    assert(N > 0 && which_names.size() % N == 0);
+    if (which_names.size() % N != 0) {
+      return NULL;
+    }
 
     size_t inner_token = tokens.size() - 2;
     size_t inner_comp = which_names.size() / N;

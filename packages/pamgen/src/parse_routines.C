@@ -145,7 +145,7 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
   sdimension = incoming_dim;
   parse_error_count = & sparse_error_count;
   
-  Parse_Table * parse_table = new Parse_Table;
+  Parse_Table parse_table;
 
   Keyword keyword_table[] = {
     {"MESH", 0, PAMGEN_NEVADA::Parse_Inline_Mesh_Tok},
@@ -153,14 +153,14 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
     {"THREE D MESH", 0, PAMGEN_NEVADA::Parse_Inline_Mesh_3D_Tok},
   };
 
-  parse_table->merge(keyword_table,3);
+  parse_table.merge(keyword_table,3);
 
-  InputBlock * input_tree = new InputBlock;
-  input_tree->set( file_name.c_str(), 0 );
+  InputBlock input_tree;
+  input_tree.set( file_name.c_str(), 0 );
   
-  Token_Stream token_stream(input_stream, Inline_Mesh_Desc::echo_stream, input_tree,0,0,true);
+  Token_Stream token_stream(input_stream, Inline_Mesh_Desc::echo_stream, &input_tree,0,0,true);
   
-  PAMGEN_NEVADA::Parse(&token_stream,parse_table,TK_EXIT);
+  PAMGEN_NEVADA::Parse(&token_stream,&parse_table,TK_EXIT);
 
   if(!Inline_Mesh_Desc::static_storage)return Inline_Mesh_Desc::static_storage;
 
@@ -218,8 +218,7 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
       Inline_Mesh_Desc::static_storage->info_stream << " Edges.\n";
     }
 }
-  if(parse_table)delete parse_table;
-    return Inline_Mesh_Desc::static_storage;
+  return Inline_Mesh_Desc::static_storage;
 }
 
 /****************************************************************************/

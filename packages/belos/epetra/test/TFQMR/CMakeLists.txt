@@ -1,11 +1,11 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
     
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     tfqmr_hb
     SOURCES test_tfqmr_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -17,7 +17,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF (${PACKAGE_NAME}_ENABLE_Ifpack)
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ptfqmr_hb
     SOURCES test_ptfqmr_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -29,8 +29,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestTFQMRFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockGmres
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestTFQMRFiles
+    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
     SOURCE_FILES orsirr1.hb orsirr1_scaled.hb
     EXEDEPS tfqmr_hb
     )

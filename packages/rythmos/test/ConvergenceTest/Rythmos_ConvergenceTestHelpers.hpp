@@ -236,7 +236,7 @@ class DiagonalModelFactory : public virtual ModelFactoryBase<double>
       RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
       RCP<Teuchos::ParameterList> stratPl = sublist(pl,Stratimikos_name);
       RCP<Teuchos::ParameterList> modelPl = sublist(pl,DiagonalTransientModel_name);
-      stratPl->set("Linear Solver Type","AztecOO");
+      stratPl->set("Linear Solver Type","Belos");
       stratPl->set("Preconditioner Type","None");
       modelPl->set("NumElements",2);
       RCP<ModelEvaluator<double> > model = getDiagonalModel<double>(pl);
@@ -247,7 +247,7 @@ class DiagonalModelFactory : public virtual ModelFactoryBase<double>
       RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
       RCP<Teuchos::ParameterList> stratPl = sublist(pl,Stratimikos_name);
       RCP<Teuchos::ParameterList> modelPl = sublist(pl,DiagonalTransientModel_name);
-      stratPl->set("Linear Solver Type","AztecOO");
+      stratPl->set("Linear Solver Type","Belos");
       stratPl->set("Preconditioner Type","None");
       modelPl->set("NumElements",2);
       RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory =

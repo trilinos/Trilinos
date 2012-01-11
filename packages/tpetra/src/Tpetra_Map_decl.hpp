@@ -4,26 +4,39 @@
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
 
 #ifndef TPETRA_MAP_DECL_HPP
@@ -61,35 +74,53 @@ namespace Tpetra {
     //@{ 
 
     /** \brief Map constructor with Tpetra-defined contiguous uniform distribution.
-     *   The elements are distributed among nodes so that the subsets of global elements
-     *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
-     *   possible.
+     *
+     *   The elements are distributed among nodes so that the subsets
+     *   of global elements are non-overlapping and contiguous and as
+     *   evenly distributed across the nodes as possible.
      */
-    Map(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-        LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+    Map (global_size_t numGlobalElements, 
+	 GlobalOrdinal indexBase, 
+	 const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+	 LocalGlobal lg=GloballyDistributed, 
+	 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
     /** \brief Map constructor with a user-defined contiguous distribution.
-     *  The elements are distributed among the nodes so that the subsets of global elements
-     *  are non-overlapping and contiguous 
+     * 
+     *  The elements are distributed among the nodes so that the
+     *  subsets of global elements are non-overlapping and contiguous.
      *  
-     *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local elements across all 
-     *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
-     *  If this verification fails, a std::invalid_argument exception will be thrown.
+     *  If numGlobalElements ==
+     *  Teuchos::OrdinalTraits<global_size_t>::invalid(), the number
+     *  of global elements will be computed via a global
+     *  communication.  Otherwise, it must be equal to the sum of the
+     *  local elements across all nodes. This will only be verified if
+     *  Trilinos' Teuchos package was built with debug support (CMake
+     *  Boolean option TEUCHOS_ENABLE_DEBUG=ON).  If verification
+     *  fails, a std::invalid_argument exception will be thrown.
      */
-    Map(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, 
-        const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
-        
+    Map (global_size_t numGlobalElements, 
+	 size_t numLocalElements, 
+	 GlobalOrdinal indexBase, 
+	 const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+	 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
     /** \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
      *  
-     *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local elements across all 
-     *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
-     *  If this verification fails, a std::invalid_argument exception will be thrown.
+     *  If numGlobalElements ==
+     *  Teuchos::OrdinalTraits<global_size_t>::invalid(), the number
+     *  of global elements will be computed via a global
+     *  communication.  Otherwise, it must be equal to the sum of the
+     *  local elements across all nodes. This will only be verified if
+     *  Trilinos' Teuchos package was built with debug support (CMake
+     *  Boolean option TEUCHOS_ENABLE_DEBUG=ON).  If verification
+     *  fails, a std::invalid_argument exception will be thrown.
      */
-    Map(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, 
-        const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+    Map (global_size_t numGlobalElements, 
+	 const Teuchos::ArrayView<const GlobalOrdinal> &elementList, 
+	 GlobalOrdinal indexBase, 
+	 const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+	 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
     //! Map destructor. 
     ~Map();
@@ -164,10 +195,10 @@ namespace Tpetra {
     //! Returns true if the global index is found in this Map on this node; returns false if it isn't.
     bool isNodeGlobalElement(GlobalOrdinal globalIndex) const;
 
-    //! Returns true if this Map is distributed contiguously; returns false otherwise.
+    //! True if this Map is distributed contiguously, else false.
     bool isContiguous() const;
 
-    //! Returns true if this Map is distributed across more than one node; returns false otherwise.
+    //! True if this Map is distributed across more than one node, else false.
     bool isDistributed() const;
 
     //@}
@@ -175,10 +206,43 @@ namespace Tpetra {
     //! @name Boolean Tests
     //@{ 
 
-    //! Returns true if \c map is compatible with this Map.
+    /// \brief True if and only if \c map is compatible with this Map.
+    ///
+    /// Two Maps are "compatible" if all of the following are true:
+    /// 1. They have the same global number of elements.
+    /// 2. They have the same number of local elements on each process.
+    ///
+    /// Determining #2 requires a reduction.  The reduction uses this
+    /// Map's communicator.  (We assume that the input Map is valid on
+    /// all processes in this Map's communicator.)
+    ///
+    /// Compatibility is useful for determining correctness of certain
+    /// operations, like assigning one MultiVector X to another Y.  If
+    /// X and Y have the same number of columns, and if their Maps are
+    /// compatible, then it is legal to assign X to Y or to assign Y
+    /// to X.
     bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
-    //! Returns true if \c map is identical to this Map.
+    /// \brief True if and only if \c map is identical to this Map.
+    ///
+    /// "Identical" is stronger than "compatible."  Two Maps are
+    /// identical if all of the following are true:
+    /// 1. They have the same min and max global indices.
+    /// 2. They have the same global number of elements.
+    /// 3. They are either both distributed, or both not distributed.
+    /// 4. Their index bases are the same.
+    /// 5. They have the same number of local elements on each process.
+    /// 6. They have the same global indices on each process.
+    ///
+    /// #2 and #5 are exactly "compatibility" (see \c isCompatible()).
+    /// Thus, "identical" includes, but is stronger than,
+    /// "compatible."  
+    ///
+    /// A Map corresponds to a "two-dimensional" or block permutation
+    /// over process ranks and global element indices.  Two Maps with
+    /// different numbers of processes in their communicators cannot
+    /// be compatible, let alone identical.  Two identical Maps
+    /// correspond to the same permutation.
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //@}
@@ -212,41 +276,46 @@ namespace Tpetra {
     //! Perform communication to determine whether this is globally distributed or locally replicated.
     bool checkIsDist() const;
 
-		//! Declared but not defined; do not use.
-		Map(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
+    //! Declared but not defined; do not use.
+    Map(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
-		//! Declared but not defined; do not use.
-		Map<LocalOrdinal,GlobalOrdinal,Node>& operator=(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
+    //! Declared but not defined; do not use.
+    Map<LocalOrdinal,GlobalOrdinal,Node>& operator=(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
     // some of the following are globally coherent: that is, they have been guaranteed to 
     // match across all images, and may be assumed to do so
-		Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
-    // Map doesn't need node yet, but it likely will later. In the meantime, passing a Node to Map means that we don't have to 
-    // pass a Node to downstream classes such as MultiVector, Vector, CrsGraph and CrsMatrix
+    // Map doesn't need node yet, but it likely will later. In the
+    // meantime, passing a Node to Map means that we don't have to
+    // pass a Node to downstream classes such as MultiVector, Vector,
+    // CrsGraph and CrsMatrix.
     Teuchos::RCP<Node> node_;
 
-    // The based for global IDs in this Map.
-		GlobalOrdinal indexBase_;
+    //! The index base for global IDs in this Map.
+    GlobalOrdinal indexBase_;
     //! The number of global IDs located in this Map across all nodes.
-		global_size_t numGlobalElements_;
+    global_size_t numGlobalElements_;
     //! The number of global IDs located in this Map on this node.
-		size_t numLocalElements_;
+    size_t numLocalElements_;
     //! The minimum and maximum global IDs located in this Map on this node.
     GlobalOrdinal minMyGID_, maxMyGID_;
     //! The minimum and maximum global IDs located in this Map across all nodes.
     GlobalOrdinal minAllGID_, maxAllGID_;
-    //! Indicates that the range of global indices are contiguous and ordered.
+    //! Whether the range of global indices are contiguous and ordered.
     bool contiguous_;
-    //! Indicates that global indices of the map are non-identically distributed among different nodes.
+    //! Whether this map's global indices are non-identically distributed among different nodes.
     bool distributed_;
     //! A direct mapping from local IDs to global IDs.
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
     //! A mapping from global IDs to local IDs.
     std::map<GlobalOrdinal, LocalOrdinal> glMap_;
-    //! A Directory for looking up nodes for this Map. This directory has an rcp(this,false) and is therefore not allowed to persist beyond
-    //! the lifetime of this Map. Do not under any circumstance pass this outside of the Map.
-    Teuchos::RCP< Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
+    /// \brief A Directory for looking up nodes for this Map. 
+    ///
+    /// This directory is a non-owning RCP and is therefore not
+    /// allowed to persist beyond the lifetime of this Map. Do not
+    /// under any circumstance pass this outside of the Map.
+    Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
 
@@ -293,7 +362,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createUniformContigMapWithNode(global_size_t numElements,
-                                 const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+                                 const Teuchos::RCP< const Teuchos::Comm< int > > &comm, 
+				 const Teuchos::RCP< Node > &node);
 
   /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
 
@@ -304,8 +374,10 @@ namespace Tpetra {
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
-  createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+  createContigMap (global_size_t numElements, 
+		   size_t localNumElements, 
+		   const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
   /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
 
@@ -314,9 +386,11 @@ namespace Tpetra {
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
-                          const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createContigMapWithNode (global_size_t numElements, 
+			   size_t localNumElements, 
+			   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+			   const Teuchos::RCP<Node> &node);
 
   /** \brief Non-member function to create a non-contiguous Map with the default node.
 
@@ -327,9 +401,9 @@ namespace Tpetra {
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
-  createNonContigMap(const ArrayView<const GlobalOrdinal> &elementList,
-                     const RCP<const Teuchos::Comm<int> > &comm);
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+  createNonContigMap (const ArrayView<const GlobalOrdinal> &elementList,
+		      const RCP<const Teuchos::Comm<int> > &comm);
 
   /** \brief Non-member function to create a non-contiguous Map with a user-specified node.
 
@@ -339,9 +413,9 @@ namespace Tpetra {
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createNonContigMapWithNode(const ArrayView<const GlobalOrdinal> &elementList,
-                             const RCP<const Teuchos::Comm<int> > &comm, 
-                             const RCP<Node> &node);
+  createNonContigMapWithNode (const ArrayView<const GlobalOrdinal> &elementList,
+			      const RCP<const Teuchos::Comm<int> > &comm, 
+			      const RCP<Node> &node);
 
   /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
 
@@ -351,21 +425,25 @@ namespace Tpetra {
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createWeightedContigMapWithNode(int thisNodeWeight, global_size_t numElements, 
-                                  const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+  createWeightedContigMapWithNode (int thisNodeWeight, 
+				   global_size_t numElements, 
+				   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+				   const Teuchos::RCP<Node> &node);
 
 } // Tpetra namespace
 
 /** \brief  Returns true if \c map is identical to this map. Implemented in Tpetra::Map::isSameAs().
     \relatesalso Tpetra::Map */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
+bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, 
+		 const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return map1.isSameAs(map2); }
 
 /** \brief Returns true if \c map is not identical to this map. Implemented in Tpetra::Map::isSameAs().
     \relatesalso Tpetra::Map */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
+bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, 
+		 const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return !map1.isSameAs(map2); }
 
 #endif // TPETRA_MAP_DECL_HPP

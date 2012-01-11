@@ -1,11 +1,11 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	RowMatrixTansposer_test
 	SOURCES main.cpp)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RowMatrixTransposer_UnitTests
   SOURCES
     RowMatrixTransposer_UnitTests
@@ -15,7 +15,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetratestlib
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(TransposeFileCopies
+TRIBITS_COPY_FILES_TO_BINARY_DIR(TransposeFileCopies
   SOURCE_FILES a.mtx atrans.mtx
   EXEDEPS RowMatrixTransposer_UnitTests
   )

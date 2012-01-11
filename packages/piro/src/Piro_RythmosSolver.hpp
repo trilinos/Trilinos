@@ -102,7 +102,8 @@ class RythmosSolver
    //These are set in the constructor and used in evalModel
    mutable Teuchos::RCP<Teuchos::ParameterList> appParams;
    Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
-
+   Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer;
+  
    int num_p;
    int num_g;
 

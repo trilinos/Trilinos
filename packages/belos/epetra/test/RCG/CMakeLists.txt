@@ -1,12 +1,12 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     rcg_hb
     SOURCES test_rcg_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -15,8 +15,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     STANDARD_PASS_OUTPUT 
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestRCGFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/RCG
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestRCGFiles
+    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/RCG
     SOURCE_FILES bcsstk14.hb
     EXEDEPS rcg_hb
     )

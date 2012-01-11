@@ -50,10 +50,9 @@
 
 void Teuchos::updateParametersFromXmlFile(
   const std::string &xmlFileName,
-  ParameterList *paramList
+  const Ptr<ParameterList> &paramList
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(paramList==NULL);
   XMLParameterListReader xmlPLReader;
   FileInputSource xmlFile(xmlFileName);
   XMLObject xmlParams = xmlFile.getObject();
@@ -63,13 +62,12 @@ void Teuchos::updateParametersFromXmlFile(
 
 void Teuchos::updateParametersFromXmlFileAndBroadcast(
   const std::string &xmlFileName,
-  ParameterList *paramList,
+  const Ptr<ParameterList> &paramList,
   const Comm<int> &comm
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(paramList==NULL);
   if (comm.getSize()==1)
-    updateParametersFromXmlFile(xmlFileName,paramList);
+    updateParametersFromXmlFile(xmlFileName, paramList);
   else {
     if (comm.getRank()==0) {
       XMLParameterListReader xmlPLReader;
@@ -94,10 +92,10 @@ void Teuchos::updateParametersFromXmlFileAndBroadcast(
 
 
 Teuchos::RCP<Teuchos::ParameterList>
-Teuchos::getParametersFromXmlFile( const std::string &xmlFileName )
+Teuchos::getParametersFromXmlFile(const std::string &xmlFileName)
 {
   RCP<ParameterList> pl = parameterList();
-  updateParametersFromXmlFile( xmlFileName, &*pl );
+  updateParametersFromXmlFile(xmlFileName, pl.ptr());
   return pl;
 }
 
@@ -116,10 +114,9 @@ Teuchos::getParametersFromXmlFile(
 
 void Teuchos::updateParametersFromXmlString(
   const std::string &xmlStr,
-  ParameterList *paramList
+  const Ptr<ParameterList> &paramList
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(paramList==NULL);
   XMLParameterListReader xmlPLReader;
   StringInputSource xmlStrSrc(xmlStr);
   XMLObject xmlParams = xmlStrSrc.getObject();
@@ -128,16 +125,16 @@ void Teuchos::updateParametersFromXmlString(
 
 
 Teuchos::RCP<Teuchos::ParameterList>
-Teuchos::getParametersFromXmlString( const std::string &xmlStr )
+Teuchos::getParametersFromXmlString(const std::string &xmlStr)
 {
   RCP<ParameterList> pl = parameterList();
-  updateParametersFromXmlString( xmlStr, &*pl );
+  updateParametersFromXmlString(xmlStr, pl.ptr());
   return pl;
 }
 
 
 Teuchos::RCP<Teuchos::ParameterList>
-Teuchos::getParametersFromXmlString( const std::string &xmlStr,
+Teuchos::getParametersFromXmlString(const std::string &xmlStr,
   RCP<DependencySheet> depSheet)
 {
   XMLParameterListReader xmlPLReader;

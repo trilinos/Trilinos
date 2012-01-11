@@ -182,7 +182,15 @@ namespace Belos {
      *   - time spent in solve() routine
      */
     Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-      return tuple(timerSolve_);
+      return Teuchos::tuple(timerSolve_);
+    }
+
+    /// \brief Tolerance achieved by the last \c solve() invocation.
+    /// 
+    /// This is set whether or not the solve actually managed to
+    /// achieve the desired convergence tolerance.
+    MagnitudeType achievedTol() const {
+      return achievedTol_;
     }
 
     //! Get the iteration count for the most recent call to \c solve().
@@ -298,9 +306,25 @@ namespace Belos {
     static const std::string label_default_;
     static const Teuchos::RCP<std::ostream> outputStream_default_;
 
+    //
     // Current solver values.
+    //
+
+    //! Convergence tolerance (read from parameter list).
     MagnitudeType convtol_;
-    int maxIters_, numIters_;
+
+    /// \brief Tolerance achieved by the last \c solve() invocation.
+    /// 
+    /// This is set whether or not the solve actually managed to
+    /// achieve the desired convergence tolerance.
+    MagnitudeType achievedTol_;
+
+    //! Maximum iteration count (read from parameter list).
+    int maxIters_;
+
+    //! Number of iterations taken by the last \c solve() invocation.
+    int numIters_;
+
     int numBlocks_, recycleBlocks_;
     bool showMaxResNormOnly_;
     int verbosity_, outputStyle_, outputFreq_;
@@ -1771,6 +1795,29 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
+
+  // Save the convergence test value ("achieved tolerance") for this solve.
+  {
+    using Teuchos::rcp_dynamic_cast;
+    typedef StatusTestGenResNorm<ScalarType,MV,OP> conv_test_type;
+    // testValues is nonnull and not persistent.
+    const std::vector<MagnitudeType>* pTestValues = 
+      rcp_dynamic_cast<conv_test_type>(convTest_)->getTestValue();
+    
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
+      "Belos::RCGSolMgr::solve(): The convergence test's getTestValue() "
+      "method returned NULL.  Please report this bug to the Belos developers.");
+    
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
+      "Belos::RCGSolMgr::solve(): The convergence test's getTestValue() "
+      "method returned a vector of length zero.  Please report this bug to the "
+      "Belos developers.");
+
+    // FIXME (mfh 12 Dec 2011) Does pTestValues really contain the
+    // achieved tolerances for all vectors in the current solve(), or
+    // just for the vectors from the last deflation?
+    achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
+  }
   
   if (!isConverged) {
     return Unconverged; // return from RCGSolMgr::solve() 

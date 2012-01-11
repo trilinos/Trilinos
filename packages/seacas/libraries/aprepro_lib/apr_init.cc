@@ -160,7 +160,7 @@ struct init_c arith_c_fncts[] =
 };
 #endif
 
-extern char
+extern const char
   *do_dumpsym(),
   *do_dumpfunc(),
   *do_dumpvar(),

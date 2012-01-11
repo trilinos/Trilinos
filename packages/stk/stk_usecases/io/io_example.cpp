@@ -168,7 +168,7 @@ namespace stk_example_io {
     Ioss::Init::Initializer init_db;
 
     std::cout << "========================================================================\n"
-	      << " Use Case: Subsetting with df and attribute field input/output          \n"
+	      << " Copy input mesh to output mesh.                                        \n"
 	      << "========================================================================\n";
 
     std::string dbtype("exodusII");
@@ -180,6 +180,7 @@ namespace stk_example_io {
       std::exit(EXIT_FAILURE);
     }
 
+    std::cout << "Reading input file:   " << in_filename << "\n";
     // NOTE: 'in_region' owns 'dbi' pointer at this time...
     Ioss::Region in_region(dbi, "input_model");
 
@@ -188,6 +189,7 @@ namespace stk_example_io {
     // entity is subsetted or not...
 
 
+#if 0
     // Example command line in current code corresponding to behavior below:
     std::cout << "\nWhen processing file multi-block.g for use case 2, the blocks below will be omitted:\n";
     std::cout << "\tOMIT BLOCK Cblock Eblock I1 I2\n\n";
@@ -206,6 +208,7 @@ namespace stk_example_io {
     eb = in_region.get_element_block("i2");
     if (eb != NULL)
       eb->property_add(Ioss::Property(std::string("omitted"), 1));
+#endif
 
 #if 0
     // Example for subsetting -- omit "odd" blocks
@@ -248,6 +251,7 @@ namespace stk_example_io {
     //----------------------------------
     // OUTPUT...Create the output "mesh" portion
 
+    std::cout << "Creating output file: " << out_filename << "\n";
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(dbtype, out_filename,
 						    Ioss::WRITE_RESULTS,
 						    comm);
@@ -256,6 +260,23 @@ namespace stk_example_io {
 		<< "' of type '" << dbtype << "'\n";
       std::exit(EXIT_FAILURE);
     }
+
+#if 0
+    {
+      // Code to test the remove_io_part_attribute functionality.
+      // Hook this up to a command line option at some point to test nightly...
+      const stk::mesh::PartVector & all_parts = meta_data.get_parts();
+      for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+	stk::mesh::Part * const part = *ip;
+	const stk::mesh::EntityRank part_rank = part->primary_entity_rank();
+	
+	if (stk::io::is_part_io_part(*part) && part_rank == 2) {
+	  std::cout << "Removing part attribute from " << part->name() << "\n";
+	  stk::io::remove_io_part_attribute(*part);
+	}
+      }
+    }
+#endif
 
     // NOTE: 'out_region' owns 'dbo' pointer at this time...
     Ioss::Region out_region(dbo, "results_output");
@@ -405,10 +426,6 @@ namespace stk_example_io {
 	std::string cell_topo_name = "UNKNOWN";
 	if (cell_topo != NULL)
 	  cell_topo_name = cell_topo->name;
-
-	std::cout << entity->type_string() << ": " << entity->name()
-		  << " , celltop = " << cell_topo_name
-		  << std::endl ;
       }
     }
   }
@@ -474,7 +491,6 @@ namespace stk_example_io {
     for (int i=0; i < block_count; i++) {
       Ioss::SideBlock *side_block = sset->get_block(i);
       if (stk::io::include_entity(side_block)) {
-	std::cout << side_block->type_string() << " " << side_block->name() << "\n";
 	stk::mesh::Part * const side_block_part = meta.get_part(side_block->name());
 	assert(side_block_part != NULL);
 	meta.declare_part_subset(*fs_part, *side_block_part);
@@ -673,6 +689,7 @@ namespace stk_example_io {
 	std::vector<int> elem_side ;
 
 	stk::mesh::Part * const side_block_part = meta.get_part(block->name());
+	stk::mesh::EntityRank side_rank = side_block_part->primary_entity_rank();
 
 	block->get_field_data("ids", side_ids);
 	block->get_field_data("element_side", elem_side);
@@ -685,19 +702,24 @@ namespace stk_example_io {
 	for(size_t is=0; is<side_count; ++is) {
 
 	  stk::mesh::Entity* const elem = bulk.get_entity(element_rank, elem_side[is*2]);
-	  // If NULL, then the element was probably assigned to an
-	  // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
-	  // Hence the '-1' in the following line.
-	  int side_ordinal = elem_side[is*2+1] - 1 ;
 
+	  // If NULL, then the element was probably assigned to an
 	  // element block that appears in the database, but was
 	  // subsetted out of the analysis mesh. Only process if
 	  // non-null.
 	  if (elem != NULL) {
-	    stk::mesh::Entity& side =
-	      stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-	    bulk.change_entity_parts( side, add_parts );
-	    sides[is] = &side;
+	    // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
+	    // Hence the '-1' in the following line.
+	    int side_ordinal = elem_side[is*2+1] - 1 ;
+
+	    stk::mesh::Entity *side = NULL;
+	    if (side_rank == 2) {
+	      side = &stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+	    } else {
+	      side = &stk::mesh::fem::declare_element_edge(bulk, side_ids[is], *elem, side_ordinal);
+	    }
+	    bulk.change_entity_parts( *side, add_parts );
+	    sides[is] = side;
 	  } else {
 	    sides[is] = NULL;
 	  }

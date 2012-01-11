@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # B) Define the header and source files (and directories)
@@ -465,7 +465,7 @@ SET(SOURCES ${SOURCES}
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   simpi
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

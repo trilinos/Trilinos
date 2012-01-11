@@ -1,12 +1,12 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     gcrodr_hb
     SOURCES test_gcrodr_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -15,8 +15,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     STANDARD_PASS_OUTPUT 
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestGCRODRFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/GCRODR
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestGCRODRFiles
+    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/GCRODR
     SOURCE_FILES sherman5.hb
     EXEDEPS gcrodr_hb
     )
@@ -24,7 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       prec_gcrodr_hb
       SOURCES test_prec_gcrodr_hb.cpp createEpetraProblem.cpp
       COMM serial mpi

@@ -50,15 +50,8 @@ C   --   NVAREL - IN - the number of element variables
 
       INTEGER NVARGL, NVARNP, NVAREL
 
-C   --Definition for the ENTRY routine parameters
-      CHARACTER ITYP, TYP
-      INTEGER   IID, ID
-      INTEGER   IIX, IX
-
       INTEGER IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
-      SAVE    IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
-
-      DATA    IXGV, IXNV, IXEV / -1, -1, -1 /
+      common /dbv/ IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
 
       IXGV  = 1
       IXGVE = IXGV + NVARGL - 1
@@ -68,9 +61,10 @@ C   --Definition for the ENTRY routine parameters
       IXEVE = IXEV + NVAREL - 1
 
       RETURN
+      END
 
 C=======================================================================
-      ENTRY DBVTYP (IIX, TYP, ID)
+      SUBROUTINE DBVTYP (IIX, TYP, ID)
 C=======================================================================
 
 C   --*** DBVTYP *** (EXOLIB) Return the variable type and number
@@ -88,6 +82,12 @@ C   --   IIX - IN  - the variable index
 C   --   TYP - OUT - the variable type: 'G'lobal, 'N'odal, 'E'lement
 C   --   ID  - OUT - the variable number within the type
 
+      INTEGER IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
+      common /dbv/ IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
+
+      INTEGER IIX, ID
+      CHARACTER TYP
+      
       IF ((IXGV .LE. 0) .AND. (IXNV .LE. 0)
      &    .AND. (IXEV .LE. 0)) RETURN
 
@@ -106,9 +106,10 @@ C   --   ID  - OUT - the variable number within the type
       END IF
 
       RETURN
+      END
 
 C=======================================================================
-      ENTRY DBVIX (ITYP, IID, IX)
+      SUBROUTINE DBVIX (ITYP, IID, IX)
 C=======================================================================
 
 C   --*** DBVIX *** (EXOLIB) Return the variable index
@@ -126,6 +127,12 @@ C   --   ITYP - IN  - the variable type: 'G'lobal, 'N'odal, 'E'lement
 C   --   IID  - IN  - the variable number within the type
 C   --   IX   - OUT - the variable index
 
+      INTEGER IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
+      common /dbv/ IXGV, IXNV, IXEV, IXGVE, IXNVE, IXEVE
+
+      CHARACTER ITYP
+      INTEGER IID, IX
+      
       IF ((IXGV .LE. 0) .AND. (IXNV .LE. 0)
      &    .AND. (IXEV .LE. 0)) RETURN
 

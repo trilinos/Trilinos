@@ -103,9 +103,9 @@ int main (int argc, char *argv[]){
   io_word_size=0;
   /* QA records */
   ext=".exo";
-  line = (char *) calloc ((MAX_LINE_LENGTH+1),sizeof(char *));
+  line = (char *) calloc (2049,sizeof(char *));
   strcpy(line,argv[1]);
-  strtok(line,".");  /* QA records */
+  strtok(line,".");  
   strcat(line,ext);
   exo_file = ex_create(line,EX_CLOBBER,&cpu_word_size,&io_word_size);
   if (exo_file < 0){

@@ -1,5 +1,5 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
@@ -10,7 +10,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     INCLUDE_DIRECTORIES(../MVOPTester)
 
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       OrthoManagerComplexTester
       SOURCES cxx_main_complex.cpp 
       COMM serial
@@ -24,7 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT
       )
 
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       OrthoManagerComplexMatTester
       SOURCES cxx_mattest_complex.cpp 
       COMM serial
@@ -38,13 +38,13 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT
       )
 
-    PACKAGE_ADD_EXECUTABLE(
+    TRIBITS_ADD_EXECUTABLE(
       OrthoManagerComplexGenTester
       SOURCES cxx_gentest_complex.cpp 
       COMM serial mpi
       )
 
-    PACKAGE_ADD_TEST(
+    TRIBITS_ADD_TEST(
       OrthoManagerComplexGenTester
       COMM serial
       ARGS
@@ -53,8 +53,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT
       )
 
-    PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestOrthoManagerTesterComplexFiles
-      SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestOrthoManagerTesterComplexFiles
+      SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
       SOURCE_FILES mhd1280b.cua 
       EXEDEPS OrthoManagerComplexGenTester
       )

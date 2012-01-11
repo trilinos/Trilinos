@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -17,10 +17,13 @@ SET(HAVE_PATOH ${${PACKAGE_NAME}_ENABLE_PaToH})
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Scotch)
 SET(HAVE_SCOTCH ${${PACKAGE_NAME}_ENABLE_Scotch})
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_OVIS)
+SET(HAVE_OVIS ${${PACKAGE_NAME}_ENABLE_OVIS})
+
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zlib)
 SET(HAVE_GZIP ${${PACKAGE_NAME}_ENABLE_Zlib})
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -136,13 +139,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ha)
 APPEND_SET(NOINSTALLHEADERS
   ha/ha_const.h
   ha/ha_drum.h
+  ha/ha_ovis.h
   )
 
 APPEND_SET(SOURCES
-  ha/build_machine_desc.c
   ha/divide_machine.c
   ha/get_processor_name.c
   ha/ha_drum.c
+  ha/ha_ovis.c
   )
 
 #
@@ -596,7 +600,7 @@ APPEND_SET(SOURCES
 # src/fort
 #
 
-IF(Trilinos_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
+IF(${PROJECT_NAME}_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/fort)
 
   APPEND_SET(NOINSTALLHEADERS
@@ -774,7 +778,7 @@ IF (NOT TPL_ENABLE_MPI)
   SET(DEPLIBS simpi)
 ENDIF()
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   zoltan
   HEADERS ${HEADERS}
   NOINSTALLHEADERS ${NOINSTALLHEADERS}

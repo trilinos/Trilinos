@@ -1,7 +1,7 @@
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddAdvancedTest)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddAdvancedTest)
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   show_stack
   SOURCES cxx_main.cpp
   )
@@ -29,7 +29,7 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
   ENDIF()
 
   
-  PACKAGE_ADD_ADVANCED_TEST(
+  TRIBITS_ADD_ADVANCED_TEST(
     show_stack
     TEST_0 EXEC show_stack
       PASS_REGULAR_EXPRESSION_ALL

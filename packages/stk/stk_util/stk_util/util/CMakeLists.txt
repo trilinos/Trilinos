@@ -1,11 +1,11 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-# PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -18,7 +18,7 @@ INCLUDE(PackageLibraryMacros)
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp)
+FILE(GLOB HEADERS *.hpp *.h)
 FILE(GLOB SOURCES *.cpp)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -40,7 +40,7 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   stk_util_util
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}

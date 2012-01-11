@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -8,11 +8,11 @@ INCLUDE(PackageLibraryMacros)
 SET(HAVE_BOOL ON)
 SET(HAVE_STL ON)
 
-IF (Trilinos_ENABLE_Fortran)
+IF (${PROJECT_NAME}_ENABLE_Fortran)
   SET(HAVE_FORTRAN_SUPPORT ON)
 ENDIF()
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -152,7 +152,7 @@ SET(SOURCES ${SOURCES}
   az_sort.c 
   )
 
-IF (Trilinos_ENABLE_Fortran)
+IF (${PROJECT_NAME}_ENABLE_Fortran)
 
   SET(SOURCES ${SOURCES}
     az_reorder.f
@@ -172,7 +172,7 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   aztecoo
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

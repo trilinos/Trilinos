@@ -42,7 +42,7 @@
 #include "elb_elem_const.h"
 
 /* Maximum length of a filename */
-#define MAX_FNL 1024
+#define MAX_FNL 2048
 
 #define ELB_VERSION	"3.37"
 #define UTIL_NAME	"nem_slice"

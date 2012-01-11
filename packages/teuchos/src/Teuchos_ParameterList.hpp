@@ -638,6 +638,28 @@ RCP<ParameterList> parameterList(const ParameterList& source)
 }
 
 
+/** \brief Nonmember constructor.
+ *
+ * \relates ParameterList
+ */
+inline
+RCP<ParameterList> createParameterList()
+{
+  return rcp(new ParameterList);
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates ParameterList
+ */
+inline
+RCP<ParameterList> createParameterList(const std::string &name)
+{
+  return rcp(new ParameterList(name));
+}
+
+
 /** \brief Traits specialization.
  *
  * \relates ParameterList
@@ -1140,11 +1162,12 @@ Array<T> getArrayFromStringParameter(
 */
 inline
 RCP<ParameterList> sublist(
-  const RCP<ParameterList> &paramList, const std::string& name, bool mustAlreadyExist = false
+  const RCP<ParameterList> &paramList, const std::string& name,
+  bool mustAlreadyExist = false, const std::string& docString = ""
   )
 {
   return rcpWithEmbeddedObjPostDestroy(
-    &paramList->sublist(name,mustAlreadyExist), paramList, false );
+    &paramList->sublist(name, mustAlreadyExist, docString), paramList, false );
 }
 
 /*! \relates ParameterList

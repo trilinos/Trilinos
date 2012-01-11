@@ -1,5 +1,6 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -7,13 +8,13 @@ SET(SOURCES "")
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 # Must glob the binary src dir last to get all of the generated headers
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   globipack_test_meritfuncs
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

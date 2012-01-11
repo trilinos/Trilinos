@@ -108,23 +108,52 @@ inline Sacado::ELRFad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
 
   if (sz) {
 
-    // Number of arguments
-    const int N = Expr<S>::num_args;
+    if (Expr<S>::is_linear) {
+      if (x.hasFastAccess())
+        for(int i=0; i<sz; ++i)
+          this->fastAccessDx(i) = x.fastAccessDx(i);
+      else
+        for(int i=0; i<sz; ++i)
+          this->fastAccessDx(i) = x.dx(i);
+    }
+    else {
 
-    // Compute partials
-    LocalAccumOp< Expr<S> > op(x);
+      // Number of arguments
+      const int N = Expr<S>::num_args;
+
+      if (x.hasFastAccess()) {
+	// Compute partials
+	FastLocalAccumOp< Expr<S> > op(x);
   
-    // Compute each tangent direction
-    for(int i=0; i<sz; ++i) {
-      op.t = T(0.);
-      op.i = i;
+	// Compute each tangent direction
+	for(op.i=0; op.i<sz; ++op.i) {
+	  op.t = T(0.);
 
-      // Automatically unrolled loop that computes
-      // for (int j=0; j<N; j++)
-      //   op.t += op.partials[j] * x.getTangent<j>(i);
-      Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  // Automatically unrolled loop that computes
+	  // for (int j=0; j<N; j++)
+	  //   op.t += op.partials[j] * x.getTangent<j>(i);
+	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	  this->fastAccessDx(op.i) = op.t;
+	}
+      }
+      else {
+	// Compute partials
+	SlowLocalAccumOp< Expr<S> > op(x);
+  
+	// Compute each tangent direction
+	for(op.i=0; op.i<sz; ++op.i) {
+	  op.t = T(0.);
 
-      this->fastAccessDx(i) = op.t;
+	  // Automatically unrolled loop that computes
+	  // for (int j=0; j<N; j++)
+	  //   op.t += op.partials[j] * x.getTangent<j>(i);
+	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	  this->fastAccessDx(op.i) = op.t;
+	}
+      }
+ 
     }
 
   }
@@ -183,26 +212,53 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator=(const Expr<S>& x)
     this->resize(sz);
 
   if (sz) {
-
-    // Number of arguments
-    const int N = Expr<S>::num_args;
-
-    // Compute partials
-    LocalAccumOp< Expr<S> > op(x);
-  
-    // Compute each tangent direction
-    for(int i=0; i<sz; ++i) {
-      op.t = T(0.);
-      op.i = i;
-
-      // Automatically unrolled loop that computes
-      // for (int j=0; j<N; j++)
-      //   op.t += op.partials[j] * x.getTangent<j>(i);
-      Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-
-      this->fastAccessDx(i) = op.t;
+ 
+    if (Expr<S>::is_linear) {
+      if (x.hasFastAccess())
+        for(int i=0; i<sz; ++i)
+          this->fastAccessDx(i) = x.fastAccessDx(i);
+      else
+        for(int i=0; i<sz; ++i)
+          this->fastAccessDx(i) = x.dx(i);
     }
+    else {
 
+      // Number of arguments
+      const int N = Expr<S>::num_args;
+
+      if (x.hasFastAccess()) {
+	// Compute partials
+	FastLocalAccumOp< Expr<S> > op(x);
+  
+	// Compute each tangent direction
+	for(op.i=0; op.i<sz; ++op.i) {
+	  op.t = T(0.);
+
+	  // Automatically unrolled loop that computes
+	  // for (int j=0; j<N; j++)
+	  //   op.t += op.partials[j] * x.getTangent<j>(i);
+	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	  this->fastAccessDx(op.i) = op.t;
+	}
+      }
+      else {
+	// Compute partials
+	SlowLocalAccumOp< Expr<S> > op(x);
+  
+	// Compute each tangent direction
+	for(op.i=0; op.i<sz; ++op.i) {
+	  op.t = T(0.);
+
+	  // Automatically unrolled loop that computes
+	  // for (int j=0; j<N; j++)
+	  //   op.t += op.partials[j] * x.getTangent<j>(i);
+	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	  this->fastAccessDx(op.i) = op.t;
+	}
+      }
+    }
   }
   
   // Compute value
@@ -326,48 +382,72 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator += (
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
 
-  // Number of arguments
-  const int N = Expr<S>::num_args;
-
-  if (xsz) {
-
-    // Compute partials
-    LocalAccumOp< Expr<S> > op(x);
-
-    if (sz) {
-
-      // Compute each tangent direction
-      for(int i=0; i<xsz; ++i) {
-	op.t = T(0.);
-	op.i = i;
-	
-	// Automatically unrolled loop that computes
-	// for (int j=0; j<N; j++)
-	//   op.t += op.partials[j] * x.getTangent<j>(i);
-	Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	
-	this->fastAccessDx(i) += op.t;
+  if (Expr<S>::is_linear) {
+    if (xsz) {
+      if (sz) {
+	if (x.hasFastAccess())
+	  for (int i=0; i<sz; ++i)
+	    this->fastAccessDx(i) += x.fastAccessDx(i);
+	else
+	  for (int i=0; i<sz; ++i)
+	    this->fastAccessDx(i) += x.dx(i);
       }
-
+      else {
+	this->resize(xsz);
+	if (x.hasFastAccess())
+	  for (int i=0; i<xsz; ++i)
+	    this->fastAccessDx(i) = x.fastAccessDx(i);
+	else
+	  for (int i=0; i<xsz; ++i)
+	    this->fastAccessDx(i) = x.dx(i);
+      }
     }
+  }
+  else {
 
-    else {
+    // Number of arguments
+    const int N = Expr<S>::num_args;
+    
+    if (xsz) {
 
-      this->resize(xsz);
-
-      // Compute each tangent direction
-      for(int i=0; i<xsz; ++i) {
-	op.t = T(0.);
-	op.i = i;
-	
-	// Automatically unrolled loop that computes
-	// for (int j=0; j<N; j++)
-	//   op.t += op.partials[j] * x.getTangent<j>(i);
-	Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	
-	this->fastAccessDx(i) = op.t;
+      if (sz != xsz) {
+	this->resize(xsz);
+	this->zero();
       }
 
+      if (x.hasFastAccess()) {
+	// Compute partials
+	FastLocalAccumOp< Expr<S> > op(x);
+	
+	// Compute each tangent direction
+	for(op.i=0; op.i<xsz; ++op.i) {
+	  op.t = T(0.);
+	  
+	  // Automatically unrolled loop that computes
+	  // for (int j=0; j<N; j++)
+	  //   op.t += op.partials[j] * x.getTangent<j>(i);
+	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	  this->fastAccessDx(op.i) += op.t;
+	}
+      }
+      else {
+	// Compute partials
+	SlowLocalAccumOp< Expr<S> > op(x);
+  
+	// Compute each tangent direction
+	for(op.i=0; op.i<xsz; ++op.i) {
+	  op.t = T(0.);
+
+	  // Automatically unrolled loop that computes
+	  // for (int j=0; j<N; j++)
+	  //   op.t += op.partials[j] * x.getTangent<j>(i);
+	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	  this->fastAccessDx(op.i) += op.t;
+	}
+      }
+      
     }
 
   }
@@ -393,48 +473,70 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator -= (
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
 
-  // Number of arguments
-  const int N = Expr<S>::num_args;
-
-  if (xsz) {
-
-    // Compute partials
-    LocalAccumOp< Expr<S> > op(x);
-
-    if (sz) {
-
-      // Compute each tangent direction
-      for(int i=0; i<xsz; ++i) {
-	op.t = T(0.);
-	op.i = i;
-	
-	// Automatically unrolled loop that computes
-	// for (int j=0; j<N; j++)
-	//   op.t += op.partials[j] * x.getTangent<j>(i);
-	Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	
-	this->fastAccessDx(i) -= op.t;
+  if (Expr<S>::is_linear) {
+    if (xsz) {
+      if (sz) {
+	if (x.hasFastAccess())
+	  for(int i=0; i<sz; ++i)
+	    this->fastAccessDx(i) -= x.fastAccessDx(i);
+	else
+	  for (int i=0; i<sz; ++i)
+	    this->fastAccessDx(i) -= x.dx(i);
       }
-
+      else {
+	this->resize(xsz);
+	if (x.hasFastAccess())
+	  for(int i=0; i<xsz; ++i)
+	    this->fastAccessDx(i) = -x.fastAccessDx(i);
+	else
+	  for (int i=0; i<xsz; ++i)
+	    this->fastAccessDx(i) = -x.dx(i);
+      }
     }
-
-    else {
-
-      this->resize(xsz);
-
-      // Compute each tangent direction
-      for(int i=0; i<xsz; ++i) {
-	op.t = T(0.);
-	op.i = i;
-	
-	// Automatically unrolled loop that computes
-	// for (int j=0; j<N; j++)
-	//   op.t += op.partials[j] * x.getTangent<j>(i);
-	Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	
-	this->fastAccessDx(i) = -op.t;
+  }
+  else {
+    // Number of arguments
+    const int N = Expr<S>::num_args;
+    
+    if (xsz) {
+      
+      if (sz != xsz) {
+	this->resize(xsz);
+	this->zero();
       }
 
+      if (x.hasFastAccess()) {
+	// Compute partials
+	FastLocalAccumOp< Expr<S> > op(x);
+	
+	// Compute each tangent direction
+	for(op.i=0; op.i<xsz; ++op.i) {
+	  op.t = T(0.);
+	  
+	  // Automatically unrolled loop that computes
+	  // for (int j=0; j<N; j++)
+	  //   op.t += op.partials[j] * x.getTangent<j>(i);
+	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	  this->fastAccessDx(op.i) -= op.t;
+	}
+      }
+      else {
+	// Compute partials
+	SlowLocalAccumOp< Expr<S> > op(x);
+  
+	// Compute each tangent direction
+	for(op.i=0; op.i<xsz; ++op.i) {
+	  op.t = T(0.);
+
+	  // Automatically unrolled loop that computes
+	  // for (int j=0; j<N; j++)
+	  //   op.t += op.partials[j] * x.getTangent<j>(i);
+	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	  this->fastAccessDx(op.i) -= op.t;
+	}	
+      }
     }
 
   }
@@ -454,63 +556,134 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator *= (
 {
   int xsz = x.size(), sz = this->size();
   T xval = x.val();
+  T v = this->val();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
 
-  // Number of arguments
-  const int N = Expr<S>::num_args;
-
-  if (xsz) {
-
-    // Compute partials
-    LocalAccumOp< Expr<S> > op(x);
-
-    if (sz) {
-
-      // Compute each tangent direction
-      for(int i=0; i<xsz; ++i) {
-	op.t = T(0.);
-	op.i = i;
-	
-	// Automatically unrolled loop that computes
-	// for (int j=0; j<N; j++)
-	//   op.t += op.partials[j] * x.getTangent<j>(i);
-	Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	
-	this->fastAccessDx(i) = this->val() * op.t + this->fastAccessDx(i) * xval;
+  if (Expr<S>::is_linear) {
+    if (xsz) {
+      if (sz) {
+	if (x.hasFastAccess())
+	  for(int i=0; i<sz; ++i)
+	    this->fastAccessDx(i) = v*x.fastAccessDx(i) + this->fastAccessDx(i)*xval;
+	else
+	  for (int i=0; i<sz; ++i)
+	    this->fastAccessDx(i) = v*x.dx(i) + this->fastAccessDx(i)*xval;
       }
-
+      else {
+	this->resize(xsz);
+	if (x.hasFastAccess())
+	  for(int i=0; i<xsz; ++i)
+	    this->fastAccessDx(i) = v*x.fastAccessDx(i);
+	else
+	  for (int i=0; i<xsz; ++i)
+	    this->fastAccessDx(i) = v*x.dx(i);
+      }
     }
-
     else {
-
-      this->resize(xsz);
-
-      // Compute each tangent direction
-      for(int i=0; i<xsz; ++i) {
-	op.t = T(0.);
-	op.i = i;
-	
-	// Automatically unrolled loop that computes
-	// for (int j=0; j<N; j++)
-	//   op.t += op.partials[j] * x.getTangent<j>(i);
-	Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	
-	this->fastAccessDx(i) = this->val() * op.t;
+      if (sz) {
+	for (int i=0; i<sz; ++i)
+	  this->fastAccessDx(i) *= xval;
       }
-
     }
-
   }
-
   else {
 
-    if (sz) {
-      for (int i=0; i<sz; ++i)
-	this->fastAccessDx(i) *= xval;
+    // Number of arguments
+    const int N = Expr<S>::num_args;
+    
+    if (xsz) {
+      
+      if (sz) {
+
+	if (x.hasFastAccess()) {
+	  // Compute partials
+	  FastLocalAccumOp< Expr<S> > op(x);
+	  
+	  // Compute each tangent direction
+	  for(op.i=0; op.i<xsz; ++op.i) {
+	    op.t = T(0.);
+	    
+	    // Automatically unrolled loop that computes
+	    // for (int j=0; j<N; j++)
+	    //   op.t += op.partials[j] * x.getTangent<j>(i);
+	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	    this->fastAccessDx(op.i) = 
+	      v * op.t + this->fastAccessDx(op.i) * xval;
+	  }
+	}
+	else {
+	  // Compute partials
+	  SlowLocalAccumOp< Expr<S> > op(x);
+	  
+	  // Compute each tangent direction
+	  for(op.i=0; op.i<xsz; ++op.i) {
+	    op.t = T(0.);
+	    
+	    // Automatically unrolled loop that computes
+	    // for (int j=0; j<N; j++)
+	    //   op.t += op.partials[j] * x.getTangent<j>(i);
+	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	    this->fastAccessDx(op.i) = 
+	      v * op.t + this->fastAccessDx(op.i) * xval;
+	  }
+	}
+
+      }
+      
+      else {
+	
+	this->resize(xsz);
+	
+	if (x.hasFastAccess()) {
+	  // Compute partials
+	  FastLocalAccumOp< Expr<S> > op(x);
+	  
+	  // Compute each tangent direction
+	  for(op.i=0; op.i<xsz; ++op.i) {
+	    op.t = T(0.);
+	    
+	    // Automatically unrolled loop that computes
+	    // for (int j=0; j<N; j++)
+	    //   op.t += op.partials[j] * x.getTangent<j>(i);
+	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	    this->fastAccessDx(op.i) = v * op.t;
+	  }
+	}
+	else {
+	  // Compute partials
+	  SlowLocalAccumOp< Expr<S> > op(x);
+	  
+	  // Compute each tangent direction
+	  for(op.i=0; op.i<xsz; ++op.i) {
+	    op.t = T(0.);
+	    
+	    // Automatically unrolled loop that computes
+	    // for (int j=0; j<N; j++)
+	    //   op.t += op.partials[j] * x.getTangent<j>(i);
+	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	    this->fastAccessDx(op.i) = v * op.t;
+	  }
+	}
+	
+      }
+      
+    }
+    
+    else {
+      
+      if (sz) {
+	for (int i=0; i<sz; ++i)
+	  this->fastAccessDx(i) *= xval;
+      }
+      
     }
 
   }
@@ -530,65 +703,135 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator /= (
 {
   int xsz = x.size(), sz = this->size();
   T xval = x.val();
+  T v = this->val();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
 
-  // Number of arguments
-  const int N = Expr<S>::num_args;
-
-  if (xsz) {
-
-    // Compute partials
-    LocalAccumOp< Expr<S> > op(x);
-
-    T xval2 = xval*xval;
-
-    if (sz) {
-
-      // Compute each tangent direction
-      for(int i=0; i<xsz; ++i) {
-	op.t = T(0.);
-	op.i = i;
-	
-	// Automatically unrolled loop that computes
-	// for (int j=0; j<N; j++)
-	//   op.t += op.partials[j] * x.getTangent<j>(i);
-	Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	
-	this->fastAccessDx(i) = (this->fastAccessDx(i) * xval - this->val() * op.t) / xval2;
+  if (Expr<S>::is_linear) {
+    if (xsz) {
+      if (sz) {
+	if (x.hasFastAccess())
+	  for(int i=0; i<sz; ++i)
+	    this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.fastAccessDx(i) )/ (xval*xval);
+	else
+	  for (int i=0; i<sz; ++i)
+	    this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.dx(i) )/ (xval*xval);
       }
-
+      else {
+	this->resize(xsz);
+	if (x.hasFastAccess())
+	  for(int i=0; i<xsz; ++i)
+	    this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);
+	else
+	  for (int i=0; i<xsz; ++i)
+	    this->fastAccessDx(i) = -v*x.dx(i) / (xval*xval);
+      }
     }
-
     else {
-
-      this->resize(xsz);
-
-      // Compute each tangent direction
-      for(int i=0; i<xsz; ++i) {
-	op.t = T(0.);
-	op.i = i;
-	
-	// Automatically unrolled loop that computes
-	// for (int j=0; j<N; j++)
-	//   op.t += op.partials[j] * x.getTangent<j>(i);
-	Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	
-	this->fastAccessDx(i) = -this->val() * op.t / xval2;
+      if (sz) {
+	for (int i=0; i<sz; ++i)
+	  this->fastAccessDx(i) /= xval;
       }
-
     }
-
   }
-
   else {
+    // Number of arguments
+    const int N = Expr<S>::num_args;
+    
+    if (xsz) {
+      
+      T xval2 = xval*xval;
+      
+      if (sz) {
 
-    if (sz) {
-      for (int i=0; i<sz; ++i)
-	this->fastAccessDx(i) /= xval;
+	if (x.hasFastAccess()) {
+	  // Compute partials
+	  FastLocalAccumOp< Expr<S> > op(x);
+	  
+	  // Compute each tangent direction
+	  for(op.i=0; op.i<xsz; ++op.i) {
+	    op.t = T(0.);
+	    
+	    // Automatically unrolled loop that computes
+	    // for (int j=0; j<N; j++)
+	    //   op.t += op.partials[j] * x.getTangent<j>(i);
+	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	    this->fastAccessDx(op.i) = 
+	      (this->fastAccessDx(op.i) * xval - v * op.t) / xval2;
+	  }
+	}
+	else {
+	  // Compute partials
+	  SlowLocalAccumOp< Expr<S> > op(x);
+	  
+	  // Compute each tangent direction
+	  for(op.i=0; op.i<xsz; ++op.i) {
+	    op.t = T(0.);
+	    
+	    // Automatically unrolled loop that computes
+	    // for (int j=0; j<N; j++)
+	    //   op.t += op.partials[j] * x.getTangent<j>(i);
+	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	    this->fastAccessDx(op.i) = 
+	      (this->fastAccessDx(op.i) * xval - v * op.t) / xval2;
+	  }
+	}
+	
+      }
+      
+      else {
+	
+	this->resize(xsz);
+	
+	if (x.hasFastAccess()) {
+	  // Compute partials
+	  FastLocalAccumOp< Expr<S> > op(x);
+	  
+	  // Compute each tangent direction
+	  for(op.i=0; op.i<xsz; ++op.i) {
+	    op.t = T(0.);
+	    
+	    // Automatically unrolled loop that computes
+	    // for (int j=0; j<N; j++)
+	    //   op.t += op.partials[j] * x.getTangent<j>(i);
+	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	    this->fastAccessDx(op.i) = (-v * op.t) / xval2;
+	  }
+	}
+	else {
+	  // Compute partials
+	  SlowLocalAccumOp< Expr<S> > op(x);
+	  
+	  // Compute each tangent direction
+	  for(op.i=0; op.i<xsz; ++op.i) {
+	    op.t = T(0.);
+	    
+	    // Automatically unrolled loop that computes
+	    // for (int j=0; j<N; j++)
+	    //   op.t += op.partials[j] * x.getTangent<j>(i);
+	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+	  
+	    this->fastAccessDx(op.i) = (-v * op.t) / xval2;
+	  }
+	}
+	
+      }
+      
+    }
+    
+    else {
+      
+      if (sz) {
+	for (int i=0; i<sz; ++i)
+	  this->fastAccessDx(i) /= xval;
+      }
+      
     }
 
   }

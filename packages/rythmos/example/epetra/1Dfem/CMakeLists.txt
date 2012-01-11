@@ -1,13 +1,13 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(MultilineSet)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
 FILE(GLOB SOURCES *.cpp *.C)
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   1DfemTransient
   SOURCES ${SOURCES}
   DEPLIBS rythmos_test_models
@@ -28,7 +28,7 @@ IF (Stratimikos_ENABLE_Amesos)
     " --echo-command-line "
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_amesos_BE
     ARGS ${ARGS}
@@ -41,7 +41,7 @@ IF (Stratimikos_ENABLE_Amesos)
     " --echo-command-line "
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_amesos_IBDF
     ARGS ${ARGS}
@@ -55,7 +55,7 @@ IF (Stratimikos_ENABLE_Amesos)
     " --echo-command-line "
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_amesos_IBDF_NOX
     ARGS ${ARGS}
@@ -81,7 +81,7 @@ IF (Stratimikos_ENABLE_AztecOO)
     " --echo-command-line "
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_aztecoo_BE
     ARGS ${ARGS}
@@ -96,7 +96,7 @@ IF (Stratimikos_ENABLE_AztecOO)
     " --echo-command-line "
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_aztecoo_IBDF
     ARGS ${ARGS}
@@ -112,7 +112,7 @@ IF (Stratimikos_ENABLE_AztecOO)
     " --echo-command-line "
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_aztecoo_IRK
     ARGS ${ARGS}
@@ -128,14 +128,14 @@ IF (Stratimikos_ENABLE_AztecOO)
     " --echo-command-line "
     )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_aztecoo_IBDF_NOX
     ARGS ${ARGS}
     ${STANDARD_TEST_CONFIG}
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_1DfemTransient_AztecOO_CopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Example_1DfemTransient_AztecOO_CopyFiles
     DEST_FILES
       Extra_AztecOO_Params.xml
       Extra_Belos_Params.xml
@@ -159,7 +159,7 @@ IF (Stratimikos_ENABLE_Belos)
     " --extra-linear-solver-params-file=Extra_Belos_Params.xml"
     "  --linear-solver-params-used-file=lowsf.belos.used.xml "
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_belos_BE
     ARGS ${ARGS}
@@ -172,7 +172,7 @@ IF (Stratimikos_ENABLE_Belos)
     " --extra-linear-solver-params-file=Extra_Belos_Params.xml"
     "  --linear-solver-params-used-file=lowsf.belos.used.xml "
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_belos_IBDF
     ARGS ${ARGS}
@@ -186,7 +186,7 @@ IF (Stratimikos_ENABLE_Belos)
     " --extra-linear-solver-params-file=Extra_Belos_Params.xml"
     "  --linear-solver-params-used-file=lowsf.belos.used.xml "
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_belos_IBDF_NOX
     ARGS ${ARGS}

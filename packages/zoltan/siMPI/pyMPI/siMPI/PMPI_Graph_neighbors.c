@@ -19,6 +19,6 @@ int PMPI_Graph_neighbors ( MPI_Comm comm, int rank, int maxneighbors,
                         int *neighbors )
 {
   fprintf(stderr,"%s:%d: NOT IMPLEMENTED\n",__FILE__,__LINE__);
-  return MPI_Abort((MPI_Comm)NULL, MPI_UNDEFINED); 
+  return MPI_Abort((MPI_Comm)0, MPI_UNDEFINED); 
 }
 

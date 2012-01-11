@@ -1,0 +1,1 @@
+SET(PROJECT_NAME Trilinos)

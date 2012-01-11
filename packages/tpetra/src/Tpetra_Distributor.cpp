@@ -4,26 +4,39 @@
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
 
 #include "Tpetra_Distributor.hpp"
@@ -181,32 +194,51 @@ namespace Tpetra {
     const int myImageID = comm_->getRank();
     const int numImages = comm_->getSize();
     Teuchos::OSTab tab(out);
-    if (vl != VERB_NONE) {
-      // VERB_LOW and higher prints description()
-      if (myImageID == 0) out << this->description() << std::endl; 
-      for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-        if (myImageID == imageCtr) {
-          if (vl != VERB_LOW) {
-            out << "[Node " << myImageID << " of " << numImages << "]" << endl;
-            out << " selfMessage: " << hasSelfMessage() << endl;
-            out << " numSends: " << getNumSends() << endl;
-            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-              out << " imagesTo: " << toString(imagesTo_) << endl;
-              out << " lengthsTo: " << toString(lengthsTo_) << endl;
-              out << " maxSendLength: " << getMaxSendLength() << endl;
-            }
-            if (vl == VERB_EXTREME) {
-              out << " startsTo: " << toString(startsTo_) << endl;
-              out << " indicesTo: " << toString(indicesTo_) << endl;
-            }
-            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-              out << " numReceives: " << getNumReceives() << endl;
-              out << " totalReceiveLength: " << getTotalReceiveLength() << endl;
-              out << " lengthsFrom: " << toString(lengthsFrom_) << endl;
-              out << " imagesFrom: " << toString(imagesFrom_) << endl;
-            }
-          }
-        }
+
+    if (vl == VERB_NONE) {
+      return;
+    } else { 
+      if (myImageID == 0) {
+	// VERB_LOW and higher prints description() (on Proc 0 only).
+	out << this->description() << endl; 
+      }
+      if (vl == VERB_LOW) {
+	return;
+      } else {
+	// vl > VERB_LOW lets each image print its data.  We assume
+	// that all images can print to the given output stream, and
+	// execute barriers to make it more likely that the output
+	// will be in the right order.
+	for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+	  if (myImageID == imageCtr) {
+	    out << "[Node " << myImageID << " of " << numImages << "]" << endl;
+	    out << " selfMessage: " << hasSelfMessage() << endl;
+	    out << " numSends: " << getNumSends() << endl;
+	    if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+	      out << " imagesTo: " << toString(imagesTo_) << endl;
+	      out << " lengthsTo: " << toString(lengthsTo_) << endl;
+	      out << " maxSendLength: " << getMaxSendLength() << endl;
+	    }
+	    if (vl == VERB_EXTREME) {
+	      out << " startsTo: " << toString(startsTo_) << endl;
+	      out << " indicesTo: " << toString(indicesTo_) << endl;
+	    }
+	    if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+	      out << " numReceives: " << getNumReceives() << endl;
+	      out << " totalReceiveLength: " << getTotalReceiveLength() << endl;
+	      out << " lengthsFrom: " << toString(lengthsFrom_) << endl;
+	      out << " imagesFrom: " << toString(imagesFrom_) << endl;
+	    }
+	    // Last output is a flush; it leaves a space and also 
+	    // helps synchronize output.
+	    out << std::flush;
+	  } // if it's my image's turn to print
+	  // Execute barriers to give output time to synchronize.
+	  // One barrier generally isn't enough.
+	  comm_->barrier();
+	  comm_->barrier();
+	  comm_->barrier();
+	} // for each image
       }
     }
   }

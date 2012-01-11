@@ -183,7 +183,7 @@ public:
    *   - time spent in solve() routine
    */
   Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-    return tuple(timerSolve_, timerPoly_);
+    return Teuchos::tuple(timerSolve_, timerPoly_);
   }
   
   //! Get the iteration count for the most recent call to \c solve().

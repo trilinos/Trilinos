@@ -42,6 +42,7 @@
 #include "Teuchos_PerformanceMonitorBase.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include <iterator> // std::back_inserter
 
 namespace Teuchos {
 

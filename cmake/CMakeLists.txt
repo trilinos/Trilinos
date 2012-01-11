@@ -1,23 +1,19 @@
-INCLUDE(PackageMacros)
+INCLUDE(TribitsPackageMacros)
 
-PACKAGE(TrilinosFramework)
+TRIBITS_PACKAGE(TrilinosFramework)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TESTS)
 IF (${PACKAGE_NAME}_ENABLE_TESTS)
 
-  ADD_SUBDIRECTORY(python)
+  ADD_SUBDIRECTORY(tribits/python)
 
-  ADD_SUBDIRECTORY(package_arch)
-
-  ADD_SUBDIRECTORY(DependencyUnitTests)
+  ADD_SUBDIRECTORY(tribits/package_arch)
 
   ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
   IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-    ADD_SUBDIRECTORY(CTestScriptsUnitTests)
-    ADD_SUBDIRECTORY(ctest/UnitTests)
+    ADD_SUBDIRECTORY(tribits/ctest/UnitTests)
   ENDIF()
-
 
 ENDIF()
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageAddAdvancedTest)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddAdvancedTest)
 
 
 #
@@ -13,11 +13,11 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Boost)
 IF (${PACKAGE_NAME}_ENABLE_Boost)
   ASSERT_DEFINED(HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
   IF (HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       GetBaseObjVoidPtr_UnitTests
       SOURCES GetBaseObjVoidPtr_UnitTests.cpp
         TestClasses.cpp
-        ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+        ${TEUCHOS_STD_UNIT_TEST_MAIN}
       NUM_MPI_PROCS 1
       ARGS --teuchos-suppress-startup-banner
       STANDARD_PASS_OUTPUT
@@ -26,27 +26,27 @@ IF (${PACKAGE_NAME}_ENABLE_Boost)
 ENDIF()
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   AssertAndThrow_UnitTests
   SOURCES
     AssertAndThrow_UnitTests.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   OldTestForException_UnitTests
   SOURCES
     OldTestForException_UnitTests.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TestForException_throwTest
   SOURCES
     TestForException_throwTest.cpp
@@ -56,7 +56,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_ADVANCED_TEST(
+TRIBITS_ADD_ADVANCED_TEST(
   TestForException_throwTest_nostacktrace
   TEST_0 EXEC TestForException_throwTest
     ARGS  --no-enable-stacktrace
@@ -90,7 +90,7 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
       )
   ENDIF()
 
-  PACKAGE_ADD_ADVANCED_TEST(
+  TRIBITS_ADD_ADVANCED_TEST(
     TestForException_throwTest_stacktrace
     TEST_0 EXEC TestForException_throwTest
       ARGS  --enable-stacktrace
@@ -104,12 +104,12 @@ ENDIF()
 
 # These RCPNodeHandle tests are pulled out to run first in order to catch
 # problems before running the other memory management tests.
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RCPNodeHandle_UnitTests
   SOURCES
     RCPNodeHandle_UnitTests.cpp
     TestClasses.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   ARGS --teuchos-suppress-startup-banner
@@ -117,7 +117,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MemoryManagement_UnitTests
   SOURCES
     RCP_UnitTests.cpp
@@ -129,7 +129,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ArrayRCP_UnitTests.cpp
     ArrayConversions_UnitTests.cpp
     TestClasses.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   ARGS --teuchos-suppress-startup-banner
@@ -147,7 +147,7 @@ IF (${PACKAGE_NAME}_ENABLE_Boost AND HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
   # that the RCPNode tracing code that catches tricky errors that the old
   # system could not catch.
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
       MemoryManagement_UnitTests
       POSTFIX_AND_ARGS_0 duplicate_rcp_owning
         --test=duplicate_rcp_owning_polymorphic
@@ -157,7 +157,7 @@ IF (${PACKAGE_NAME}_ENABLE_Boost AND HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
         "throws .*Teuchos.*DuplicateOwningRCPError.*: passed"
       )
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
       MemoryManagement_UnitTests
       POSTFIX_AND_ARGS_0 duplicate_rcp_nonowning
         --test=rcp_duplicate_rcp_nonowning_polymorphic_different_addr
@@ -175,19 +175,32 @@ IF (${PACKAGE_NAME}_ENABLE_Boost AND HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
 ENDIF()
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SimpleObjTbl_UnitTests
   SOURCES
     SimpleObjTbl_UnitTests.cpp
     TestClasses.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   ARGS --teuchos-suppress-startup-banner
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MemoryManagementExt_UnitTests
+  SOURCES
+    SimpleObjectDB_UnitTests.cpp
+    TestClasses.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ArrayRCP_test  
   SOURCES ArrayRCP_test.cpp
   COMM serial mpi
@@ -195,7 +208,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ArrayView_test  
   SOURCES ArrayView_test.cpp
   COMM serial mpi
@@ -203,7 +216,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Array_test  
   SOURCES Array_test.cpp
   COMM serial mpi
@@ -211,7 +224,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Ptr_test  
   SOURCES Ptr_test.cpp TestClasses.cpp
   COMM serial mpi
@@ -219,7 +232,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RCP_test  
   SOURCES RCP_test.cpp TestClasses.cpp
   COMM serial mpi
@@ -227,7 +240,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tuple_test  
   SOURCES Tuple_test.cpp 
   COMM serial mpi
@@ -235,10 +248,10 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  GCC_CheckedSTL_UnitTests
 #  SOURCES GCC_CheckedSTL_UnitTests.cpp  
-#    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+#    ${TEUCHOS_STD_UNIT_TEST_MAIN}
 #  COMM serial mpi
 #  NUM_MPI_PROCS 1
 #  ARGS --teuchos-suppress-startup-banner
@@ -255,17 +268,17 @@ IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
   # not bother running it.  The problem is that even if we put WILL_FAIL onto
   # it, CTest will intercept signall 11 (segfault) and mark it as failed, even
   # though it is supposed to fail.  So much for WILL_FAIL ...
-  PACKAGE_ADD_EXECUTABLE(
+  TRIBITS_ADD_EXECUTABLE(
     example_raw_cpp_pointers
     SOURCES
-      ${TRILINOS_HOME_DIR}/doc/RefCountPtr/example/example_raw_cpp_pointers.cpp
+      ${Trilinos_SOURCE_DIR}/doc/RefCountPtr/example/example_raw_cpp_pointers.cpp
     )
 
   # The RCP version should run just fine
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_ref_count_ptr
     SOURCES
-      ${TRILINOS_HOME_DIR}/doc/RefCountPtr/example/example_ref_count_ptr.cpp
+      ${Trilinos_SOURCE_DIR}/doc/RefCountPtr/example/example_ref_count_ptr.cpp
     NUM_MPI_PROCS 1
     )
 ENDIF()
@@ -286,18 +299,18 @@ ENDIF()
 
 
 # Build the executable no matter what
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RCP_PerformanceTests
   NAME_POSTFIX basic
   CATEGORIES BASIC PERFORMANCE
   SOURCES
     RCP_Performance_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   RCP_PerformanceTests
   CATEGORIES PERFORMANCE
   COMM serial mpi
@@ -316,18 +329,18 @@ PACKAGE_ADD_TEST(
 #
 
 # Build the executable no matter what
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Array_PerformanceTests
   NAME_POSTFIX basic
   CATEGORIES BASIC PERFORMANCE
   SOURCES
     Array_Performance_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   Array_PerformanceTests
   CATEGORIES PERFORMANCE
   COMM serial mpi

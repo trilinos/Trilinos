@@ -16,16 +16,14 @@
 
 
 enum IO_METHODS {
-    PUSH_SYNC = 0,
-    PUSH_ASYNC,
-    PULL_SYNC,
-    PULL_ASYNC,
-    ROUNDTRIP_SYNC,
-    ROUNDTRIP_ASYNC,
-    GET_SYNC,
-    GET_ASYNC,
-    PUT_SYNC,
-    PUT_ASYNC
+    XFER_WRITE_ENCODE_SYNC = 0,
+    XFER_WRITE_ENCODE_ASYNC,
+    XFER_WRITE_RDMA_SYNC,
+    XFER_WRITE_RDMA_ASYNC,
+    XFER_READ_ENCODE_SYNC,
+    XFER_READ_ENCODE_ASYNC,
+    XFER_READ_RDMA_SYNC,
+    XFER_READ_RDMA_ASYNC
 };
 
 
@@ -49,6 +47,7 @@ struct xfer_args {
         int timeout;
         int delay;
         int num_retries;
+        bool validate_flag;
 };
 
 

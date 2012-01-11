@@ -25,13 +25,7 @@ extern "C" {
 #include "params_const.h"
 #include "order_const.h"
 #include "third_library.h"
-
-/**********  parameters structure used by PHG, ParMetis and Jostle **********/
-static PARAM_VARS Graph_Package_params[] = {
-        { "GRAPH_PACKAGE", NULL, "STRING", 0 },
-        { "ORDER_TYPE", NULL, "STRING", 0 },
-        { NULL, NULL, NULL, 0 } };
-
+#include "third_library_params.h"
 
 /**********************************************************/
 /* Interface routine for Graph methods.                   */

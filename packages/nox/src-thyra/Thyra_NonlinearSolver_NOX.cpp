@@ -6,7 +6,10 @@
 
 #include "NOX.H"
 #include "NOX_Thyra.H"
-#include "NOX_RowSumScaling_Utilities.H"
+#include "NOX_PrePostOperator_Vector.H"
+#include "NOX_PrePostOperator_RowSumScaling.H"
+#include "NOX_MeritFunction_Weighted.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 // ****************************************************************
 // ****************************************************************
@@ -94,20 +97,28 @@ solve(VectorBase<double> *x,
   TEUCHOS_FUNC_TIME_MONITOR("Thyra::NOXNonlinearSolver::solve");
 #endif
 
-  TEUCHOS_TEST_FOR_EXCEPT(model_.get()==NULL);
-  TEUCHOS_TEST_FOR_EXCEPT(param_list_.get()==NULL);
+  TEUCHOS_ASSERT(nonnull(model_));
+  TEUCHOS_ASSERT(nonnull(param_list_));
   
   NOX::Thyra::Vector initial_guess(Teuchos::rcp(x, false));  // View of x
 
   if (Teuchos::is_null(solver_)) {
-   
-    if (param_list_->sublist("Solver Options").get("Use Row Sum Scaling", false)) {
-      Teuchos::RCP< ::Thyra::ScaledModelEvaluator<double> > scaled_model;
-      NOX::Thyra::setupProblemForRowSumScaling(model_, scaled_model, *param_list_);
-      model_ = scaled_model;
+
+
+    this->validateAndParseThyraGroupOptions(param_list_->sublist("Thyra Group Options"));
+
+    if (function_scaling_ != "None") {
+
+      if (function_scaling_ == "Row Sum")
+	this->setupRowSumScalingObjects();
+
+      TEUCHOS_ASSERT(nonnull(scaling_vector_));
+    }
+    else {
+      TEUCHOS_ASSERT(is_null(scaling_vector_));
     }
 
-    nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_));
+    nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, scaling_vector_));
     status_test_ = this->buildStatusTests(*param_list_);
     solver_ = NOX::Solver::buildSolver(nox_group_, status_test_, param_list_);
   }
@@ -233,6 +244,97 @@ Teuchos::RCP<const NOX::Solver::Generic>
 Thyra::NOXNonlinearSolver::getNOXSolver() const
 {
   return solver_;
+}
+
+// ****************************************************************
+// ****************************************************************
+void Thyra::NOXNonlinearSolver::
+validateAndParseThyraGroupOptions(Teuchos::ParameterList& thyra_group_options_sublist)
+{
+  using Teuchos::ParameterList;
+  
+  ParameterList validParams;
+  {
+    Teuchos::setStringToIntegralParameter<int>(
+      "Function Scaling",
+      "None",
+      "Determines if function scaling of residual, Jacobian, etc. should be used.",
+      Teuchos::tuple<std::string>("None","Row Sum", "User Defined"),
+      &validParams
+      );
+
+    Teuchos::setStringToIntegralParameter<int>(
+      "Update Row Sum Scaling",
+      "Before Each Nonlinear Solve",
+      "Determines if function scaling of residual, Jacobian, etc. should be used.",
+      Teuchos::tuple<std::string>("Before Each Nonlinear Solve","Before Each Nonlinear Iteration"),
+      &validParams
+      );
+  
+    validParams.set<Teuchos::RCP< ::Thyra::VectorBase<double> > >("User Defined Scaling", Teuchos::null);
+  }
+
+  thyra_group_options_sublist.validateParametersAndSetDefaults(validParams);
+  
+  function_scaling_ = thyra_group_options_sublist.get<std::string>("Function Scaling");
+
+  if (function_scaling_ =="Row Sum")
+    do_row_sum_scaling_ = true;
+  else
+    do_row_sum_scaling_ = false;
+
+  std::string string_when_to_update = thyra_group_options_sublist.get<std::string>("Update Row Sum Scaling");
+  if (string_when_to_update == "Before Each Nonlinear Solve")
+    when_to_update_ = NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfSolve;
+  else if (string_when_to_update == "Before Each Nonlinear Iteration") 
+    when_to_update_ = NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfIteration;
+
+  if (function_scaling_ =="User Defined")
+    scaling_vector_ = thyra_group_options_sublist.get<Teuchos::RCP< ::Thyra::VectorBase<double> > >("User Defined Scaling");
+
+}
+
+// ****************************************************************
+// ****************************************************************
+void Thyra::NOXNonlinearSolver::setupRowSumScalingObjects()
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  scaling_vector_ = ::Thyra::createMember(model_->get_f_space());
+  
+  ::Thyra::V_S(scaling_vector_.ptr(),1.0);
+
+  RCP<NOX::Abstract::PrePostOperator> row_sum_observer = 
+    rcp(new NOX::RowSumScaling(scaling_vector_, when_to_update_));
+  
+  Teuchos::ParameterList& nox_parameters = *param_list_;
+  
+  if (nox_parameters.sublist("Solver Options").
+      isType< RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator")) {
+    
+    RCP<NOX::Abstract::PrePostOperator> user_observer = 
+      nox_parameters.sublist("Solver Options").get< RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator");
+    
+    RCP<NOX::PrePostOperatorVector> observer_vector = Teuchos::rcp(new NOX::PrePostOperatorVector);
+    observer_vector->pushBack(row_sum_observer);
+    observer_vector->pushBack(user_observer);
+    
+    nox_parameters.sublist("Solver Options").set< RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator", observer_vector);
+
+  }
+  else
+    nox_parameters.sublist("Solver Options").set< RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator", row_sum_observer);
+  
+
+  // Set the weighted merit function.  Throw error if a user defined
+  // merit funciton is present.
+  TEUCHOS_ASSERT( !(nox_parameters.sublist("Solver Options").isType<RCP<NOX::MeritFunction::Generic> >("User Defined Merit Function")));
+  
+  RCP<NOX::MeritFunction::Generic> mf = rcp(new NOX::Thyra::WeightedMeritFunction(scaling_vector_));
+
+  nox_parameters.sublist("Solver Options").set<RCP<NOX::MeritFunction::Generic> >("User Defined Merit Function",mf);
+
 }
 
 // ****************************************************************

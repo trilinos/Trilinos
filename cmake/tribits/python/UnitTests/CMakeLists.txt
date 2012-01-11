@@ -1,0 +1,43 @@
+
+
+INCLUDE(TribitsAddAdvancedTest)
+
+# The mock test project 
+SET(MOCK_PROJECT_NAME Trilinos)
+
+
+SET(MOCK_TRILINOS_DIR ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
+
+
+IF (WIN23 AND NOT CYGWIN)
+  SET(DIFF_COMMAND_STUFF "${CMAKE_COMMAND}" ARGS -E compare_files)
+ELSE()
+  SET(DIFF_COMMAND_STUFF diff ARGS)
+ENDIF()
+
+
+TRIBITS_ADD_ADVANCED_TEST( XmlHtmlCDashOutputTest
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  TEST_0 CMND ${CMAKE_COMMAND}
+    ARGS
+      -D${MOCK_PROJECT_NAME}_TRIBITS_DIR:FILEPATH=${${PROJECT_NAME}_TRIBITS_DIR}
+      -D ${MOCK_PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON
+      -D ${MOCK_PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL=ON
+      -D ${MOCK_PROJECT_NAME}_DEPS_XML_OUTPUT_FILE:STRING=TrilinosPackageDependencies.xml
+      -D ${MOCK_PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE:STRING=TrilinosPackageDependenciesTable.html
+      -D ${MOCK_PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE:STRING=CDashSubprojectDependencies.xml
+      -D ${MOCK_PROJECT_NAME}_ENABLE_C:BOOL=OFF
+      -D ${MOCK_PROJECT_NAME}_ENABLE_CXX:BOOL=OFF
+      -D ${MOCK_PROJECT_NAME}_ENABLE_Fortran:BOOL=OFF
+      ${MOCK_TRILINOS_DIR}
+    PASS_REGULAR_EXPRESSION "Shortcircuiting after dependency tracking ..."
+  TEST_1 CMND ${DIFF_COMMAND_STUFF}
+    ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependencies.gold.xml
+    TrilinosPackageDependencies.xml
+  TEST_2 CMND ${DIFF_COMMAND_STUFF}
+    ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependenciesTable.gold.html
+     TrilinosPackageDependenciesTable.html
+  TEST_3 CMND ${DIFF_COMMAND_STUFF}
+    ${CMAKE_CURRENT_SOURCE_DIR}/CDashSubprojectDependencies.gold.xml
+    CDashSubprojectDependencies.xml
+  )

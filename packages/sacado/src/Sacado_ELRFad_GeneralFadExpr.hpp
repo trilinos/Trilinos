@@ -58,6 +58,9 @@ namespace Sacado {
       //! Number of arguments
       static const int num_args = 1;
 
+      //! Is expression linear
+      static const bool is_linear = true;
+
       //! Default constructor
       Expr() : 
 	GeneralFad<T,Storage>() {}
@@ -113,9 +116,30 @@ namespace Sacado {
       template <int Arg>
       bool isActive() const { return this->size() > 0; }
 
+      //! Return whether argument is active
+      bool isActive2(int j) const { return this->size() > 0; }
+
+      //! Return whether expression is linear
+      bool isLinear() const { return true; }
+
       //! Return tangent component \c i of argument \c Arg
       template <int Arg>
-      T getTangent(int i) const { return this->fastAccessDx(i); }
+      const T& getTangent(int i) const { return this->fastAccessDx(i); }
+
+      //! Get dx array
+      const T* getDx(int j) const { return this->dx(); }
+
+      const base_expr_type& getArg(int j) const { return *this; }
+
+      int numActiveArgs() const {
+	return this->size() > 0 ? 1 : 0;
+      }
+
+      //! Return partials w.r.t. arguments
+      void computeActivePartials(const T& bar, T *partials) const { 
+	if (this->size() > 0)
+	  partials[0] = bar; 
+      }
 
     }; // class Expr<GeneralFad>
     

@@ -316,11 +316,12 @@ void Chebyshev<MatrixType>::apply(
   Scalar rhok = 1.0/s1, rhokp1;
   Scalar dtemp1, dtemp2;
   int degreeMinusOne = PolyDegree_ - 1;
+  Scalar two = 2.0;
   for (int deg = 0; deg < degreeMinusOne; ++deg) {
     A_->apply(Y, V);
-    rhokp1 = one / (2*s1 - rhok);
+    rhokp1 = one / (two *s1 - rhok);
     dtemp1 = rhokp1 * rhok;
-    dtemp2 = 2 * rhokp1 * delta;
+    dtemp2 = two * rhokp1 * delta;
     rhok = rhokp1;
     // compute W = dtemp1 * W
     W.scale(dtemp1);

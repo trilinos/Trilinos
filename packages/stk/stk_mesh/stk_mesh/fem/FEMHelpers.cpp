@@ -42,6 +42,31 @@ void verify_declare_element_side(
     "No element topology found");
 }
 
+void verify_declare_element_edge(
+    const BulkData & mesh,
+    const Entity & elem,
+    const unsigned local_edge_id
+    )
+{
+  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
+
+  const CellTopologyData * const edge_top =
+    ( elem_top && local_edge_id < elem_top->edge_count )
+    ? elem_top->edge[ local_edge_id ].topology : NULL ;
+
+  ThrowErrorMsgIf( &mesh != & BulkData::get(elem),
+    "For elem " << print_entity_key(elem) <<
+    ", Bulkdata for 'elem' and mesh are different");
+
+  ThrowErrorMsgIf( elem_top && local_edge_id >= elem_top->edge_count,
+    "For elem " << print_entity_key(elem) << ", local_edge_id " << local_edge_id << ", " <<
+    "local_edge_id exceeds " << elem_top->name << ".edge_count = " << elem_top->edge_count );
+
+  ThrowErrorMsgIf( edge_top == NULL,
+    "For elem " << print_entity_key(elem) << ", local_edge_id " << local_edge_id << ", " <<
+    "No element topology found");
+}
+
 } // unnamed namespace
 
 Entity & declare_element( BulkData & mesh ,
@@ -117,6 +142,47 @@ Entity & declare_element_side(
   return side ;
 }
 
+Entity & declare_element_edge(
+  Entity & elem ,
+  Entity & edge,
+  const unsigned local_edge_id ,
+  Part * part )
+{
+  BulkData & mesh = BulkData::get(edge);
+
+  //  verify_declare_element_edge(mesh, elem, local_edge_id);
+
+  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
+
+  ThrowErrorMsgIf( elem_top == NULL,
+      "Element[" << elem.identifier() << "] has no defined topology" );
+
+  const CellTopologyData * const edge_top = elem_top->edge[ local_edge_id ].topology;
+
+  ThrowErrorMsgIf( edge_top == NULL,
+      "Element[" << elem.identifier() << "], local_edge_id = " <<
+      local_edge_id << ", edge has no defined topology" );
+
+  const unsigned * const edge_node_map = elem_top->edge[ local_edge_id ].node ;
+
+  PartVector add_parts ;
+
+  if ( part ) { add_parts.push_back( part ); }
+
+  mesh.change_entity_parts(edge, add_parts);
+
+  mesh.declare_relation( elem , edge , local_edge_id );
+
+  PairIterRelation rel = elem.relations( FEMMetaData::NODE_RANK );
+
+  for ( unsigned i = 0 ; i < edge_top->node_count ; ++i ) {
+    Entity & node = * rel[ edge_node_map[i] ].entity();
+    mesh.declare_relation( edge , node , i );
+  }
+
+  return edge ;
+}
+
 Entity & declare_element_side(
   BulkData & mesh ,
   const stk::mesh::EntityId global_side_id ,
@@ -134,13 +200,38 @@ Entity & declare_element_side(
   const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
 
   ThrowErrorMsgIf( side_top == NULL,
-      "Element[" << elem.identifier() << "], local_side_id = " <<
-      local_side_id << ", side has no defined topology" );
+		   "Element[" << elem.identifier() << "], local_side_id = " <<
+		   local_side_id << ", side has no defined topology" );
 
   PartVector empty_parts ;
-
   Entity & side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
   return declare_element_side( elem, side, local_side_id, part);
+}
+
+Entity & declare_element_edge(
+  BulkData & mesh ,
+  const stk::mesh::EntityId global_edge_id ,
+  Entity & elem ,
+  const unsigned local_edge_id ,
+  Part * part )
+{
+  verify_declare_element_edge(mesh, elem, local_edge_id);
+
+  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
+
+  ThrowErrorMsgIf( elem_top == NULL,
+      "Element[" << elem.identifier() << "] has no defined topology");
+
+
+  const CellTopologyData * const edge_top = elem_top->edge[ local_edge_id ].topology;
+
+  ThrowErrorMsgIf( edge_top == NULL,
+      "Element[" << elem.identifier() << "], local_edge_id = " <<
+      local_edge_id << ", edge has no defined topology" );
+
+  PartVector empty_parts ;
+  Entity & edge = mesh.declare_entity( edge_top->dimension , global_edge_id, empty_parts );
+  return declare_element_edge( elem, edge, local_edge_id, part);
 }
 
 

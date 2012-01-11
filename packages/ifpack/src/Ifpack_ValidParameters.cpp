@@ -68,6 +68,14 @@ Teuchos::ParameterList Ifpack_GetValidParameters()
   List.set("fact: relative threshold", (double)1.0);
   List.set("fact: relax value", (double)0.0);
 
+#ifdef HAVE_IFPACK_SUPERLU
+  // Ifpack_SILU.cpp
+  List.set("fact: drop tolerance",1e-4);
+  List.set("fact: zero pivot threshold",1e-2);
+  List.set("fact: maximum fill factor",10.0);
+  List.set("fact: silu drop rule",9);
+#endif
+
   // Ifpack_METISPartitioner.cpp
   List.set("partitioner: local parts", (int)1);
   List.set("partitioner: overlap", (int)0);

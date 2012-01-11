@@ -91,7 +91,7 @@ namespace fei {
 	numElemDOF = 0;
 	const fei::ConnectivityBlock* cblock =
 	  matGraph_->getConnectivityBlock(blockID);
-	numElements = cblock->getConnectivityIDs().size();
+	numElements = cblock->getNativeConnectivityIDs().size();
 	numNodesPerElem = cblock->getRowPattern()->getNumIDs();
 	numEqnsPerElem = cblock->getRowPattern()->getNumIndices();
       }

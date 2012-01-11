@@ -274,6 +274,11 @@ bool is_part_io_part(mesh::Part &part);
  */
 void put_io_part_attribute( mesh::Part &part, Ioss::GroupingEntity *entity = NULL);
 
+/** Remove the existing attribute on the specified part 'part' that indicates that
+ * this part should be used for io.  \see is_part_io_part()
+ */
+void remove_io_part_attribute(mesh::Part &part);
+
 const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part);
 
 void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta);

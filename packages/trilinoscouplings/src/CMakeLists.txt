@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -32,7 +32,7 @@ IF(HAVE_TRILINOSCOUPLINGS_ISORROPIA)
  SET(HAVE_ISORROPIA ON)
 ENDIF()
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -154,7 +154,7 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   trilinoscouplings
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

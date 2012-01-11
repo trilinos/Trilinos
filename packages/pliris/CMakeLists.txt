@@ -1,33 +1,33 @@
 
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-PACKAGE(Pliris)
+TRIBITS_PACKAGE(Pliris)
 
 #
 # B) Set up package-specific options
 #
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ZCPLX
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ZCPLX
   ZCPLX
   "Enable double precision complex functionality."
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SCPLX
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SCPLX
   SCPLX
   "Enable single precision complex functionality."
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DREAL
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DREAL
   DREAL
   "Set reals to double precision."
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SREAL
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SREAL
   SREAL
   "Set reals to single precision."
   OFF )
@@ -47,17 +47,17 @@ ENDIF()
 
 ADD_SUBDIRECTORY(src)
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-#PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+#TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # Exclude files for source package.
 #
 
-PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
-PACKAGE_ARCH_EXCLUDE_FILES(
+TRIBITS_EXCLUDE_FILES(
   doc/matrix_.*.gif
   src/Make..*
   src/clean_code.h
@@ -70,4 +70,4 @@ PACKAGE_ARCH_EXCLUDE_FILES(
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

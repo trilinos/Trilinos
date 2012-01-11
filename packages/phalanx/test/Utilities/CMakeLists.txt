@@ -1,6 +1,6 @@
 
-INCLUDE(PackageLibraryMacros)
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddExecutableAndTest)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -31,14 +31,14 @@ APPEND_SET(SOURCES
   Traits_ContiguousAllocator.cpp
   )
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   phalanx_test_utilities
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   TESTONLY
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   test_utilitites_algebraic_types
   SOURCES Test_Utilities_AlgebraicTypes.cpp
   DEPLIBS phalanx_test_utilities

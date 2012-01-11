@@ -47,8 +47,8 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2011/05/05",
-  "Revision: 2.23"
+  "Date: 2011/11/17",
+  "Revision: 2.24"
 };
 
 #include <stdlib.h>
@@ -297,7 +297,7 @@ usage (void)
    ECHO("              var=val: Assign value 'val' to variable 'var'  \n\n");
    ECHO("\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n");
    ECHO("\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n");
-   ECHO("\t->->-> Send email to seacas-help@sandia.gov for aprepro support.\n\n");
+   ECHO("\t->->-> Send email to gdsjaar@sandia.gov for aprepro support.\n\n");
 
  } 
 

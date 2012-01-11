@@ -38,6 +38,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_LocalMap.h"
 #include "NOX_Epetra_ModelEvaluatorInterface.H"
+#include "NOX_Epetra_LinearSystem_Stratimikos.H"
 #include <NOX_Epetra_MultiVector.H>
 #include <NOX_Epetra_Observer.H>
 
@@ -123,6 +124,7 @@ class NOXSolver
    Teuchos::RCP<NOX::Epetra::Observer> observer;
    NOX::Utils utils;
 
+   Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
    Teuchos::RCP<NOX::Solver::Generic> solver;
    Teuchos::RCP<NOX::Epetra::Vector> currentSolution;
    Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> interface;

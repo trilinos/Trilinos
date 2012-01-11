@@ -85,6 +85,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Scotch:BOOL=ON"
   "-DScotch_INCLUDE_DIRS:PATH=/home/kddevin/code/scotch_5.1/include"
   "-DScotch_LIBRARY_DIRS:PATH=/home/kddevin/code/scotch_5.1/lib"
+  "-DTPL_ENABLE_BinUtils=OFF"
   )
 
 #

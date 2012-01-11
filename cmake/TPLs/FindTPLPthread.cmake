@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( Pthread
+TRIBITS_TPL_DECLARE_LIBRARIES( Pthread
   REQUIRED_HEADERS pthread.h
   REQUIRED_LIBS_NAMES pthread
   )

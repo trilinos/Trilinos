@@ -1,30 +1,43 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 // 
-//               Tpetra: Templated Linear Algebra Services Package 
+//          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ************************************************************************
-//@HEADER
+// @HEADER
 
 #ifndef TPETRA_MATRIXMATRIX_DEF_HPP
 #define TPETRA_MATRIXMATRIX_DEF_HPP
@@ -180,6 +193,11 @@ void Multiply(
     //now insert all of the nonzero positions into the result matrix.
     insert_matrix_locations(crsgraphbuilder, C);
 
+
+    if (call_FillComplete_on_result) {
+      C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
+      call_FillComplete_on_result = false;
+    }
   }
 
   //Now call the appropriate method to perform the actual multiplication.
@@ -407,7 +425,20 @@ void mult_A_B(
   Array<Scalar> C_row_i = dwork;
   Array<GlobalOrdinal> C_cols = iwork;
 
-  size_t C_row_i_length, i, j, k;
+  size_t C_row_i_length, j, k;
+
+  // Run through all the hash table lookups once and for all
+  Array<LocalOrdinal> Acol2Brow(Aview.colMap->getNodeNumElements());
+  if(Aview.colMap->isSameAs(*Bview.rowMap)){
+    // Maps are the same: Use local IDs as the hash
+    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex();i<=Aview.colMap->getMaxLocalIndex();i++)
+      Acol2Brow[i]=i;				
+  }
+  else {
+    // Maps are not the same:  Use the map's hash
+    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex();i<=Aview.colMap->getMaxLocalIndex();i++)
+      Acol2Brow[i]=Bview.rowMap->getLocalElement(Aview.colMap->getGlobalElement(i));
+  }
 
   //To form C = A*B we're going to execute this expression:
   //
@@ -419,7 +450,7 @@ void mult_A_B(
   bool C_filled = C.isFillComplete();
 
   //loop over the rows of A.
-  for(i=0; i<Aview.numRows; ++i) {
+  for(size_t i=0; i<Aview.numRows; ++i) {
 
     //only navigate the local portion of Aview... (It's probable that we
     //imported more of A than we need for A*B, because other cases like A^T*B 
@@ -440,8 +471,10 @@ void mult_A_B(
     //as we stride across B(k,:) we're calculating updates for row i of the
     //result matrix C.
 
+
+
     for(k=OrdinalTraits<size_t>::zero(); k<Aview.numEntriesPerRow[i]; ++k) {
-      LocalOrdinal Ak = Bview.rowMap->getLocalElement(Aview.colMap->getGlobalElement(Aindices_i[k]));
+      LocalOrdinal Ak=Acol2Brow[Aindices_i[k]];
       Scalar Aval = onlyCalculateStructure ? Teuchos::as<Scalar>(0) : Aval_i[k];
 
       ArrayView<const LocalOrdinal> Bcol_inds = Bview.indices[Ak];

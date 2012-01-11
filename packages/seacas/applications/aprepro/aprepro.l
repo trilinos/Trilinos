@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h> 
+#include "ap_getline_int.h"
 
 #define show(x)   printf("<%s>", x);
 #undef yywrap
@@ -51,6 +52,25 @@ int ifdef;
 int file_must_exist = 0; /* Global used by include/conditional include */
 #define LINENUM_INC	ap_file_list[nfile].lineno++
 
+static int get_input(char *buf, int size);
+
+#define YY_INPUT(buf,result,max_size) \
+  if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) {	\
+    result = get_input(buf, max_size); \
+  } else { 			       \
+    errno=0;								\
+    while ( (result = fread(buf, 1, max_size, yyin))==0 && ferror(yyin)) \
+      {									\
+	if( errno != EINTR)						\
+	  {								\
+	    YY_FATAL_ERROR( "input in flex scanner failed" );		\
+	    break;							\
+	  }								\
+	errno=0;							\
+	clearerr(yyin);							\
+      }									\
+  }
+ 
 extern aprepro_options ap_options;
 
 /* Global variables used by the looping mechanism */
@@ -593,5 +613,29 @@ void push_file(char *tmp_file, int is_tmp, int loop_count)
     SET_FILE_LIST(nfile, 0, is_tmp, loop_count);
     yyin = open_file(tmp_file, "r");
     yy_switch_to_buffer(yy_create_buffer( yyin, YY_BUF_SIZE));        
+}
+
+
+static int get_input(char *buf, int size)
+{
+  char *line;
+  if (feof(yyin))
+    return YY_NULL;
+
+  line = getline_int(NULL);
+
+  if (strlen(line) == 0)
+    return YY_NULL;
+
+  gl_histadd(line);
+  
+  if (strlen(line) > size - 2) {
+    yyerror("input line too long");
+    return YY_NULL;
+  }
+  strcpy(buf, line);
+  strcat(buf, "\n");
+  
+  return strlen(buf);
 }
 

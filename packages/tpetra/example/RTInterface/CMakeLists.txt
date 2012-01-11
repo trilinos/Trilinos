@@ -1,8 +1,8 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
-IF (Trilinos_ENABLE_CXX11)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+IF (${PROJECT_NAME}_ENABLE_CXX11)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RTIExample
     SOURCES RTIExample
     ARGS 
@@ -11,7 +11,7 @@ IF (Trilinos_ENABLE_CXX11)
     STANDARD_PASS_OUTPUT
   )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RTIOperatorExample
     SOURCES RTIOperatorExample
     ARGS 
@@ -20,7 +20,7 @@ IF (Trilinos_ENABLE_CXX11)
     STANDARD_PASS_OUTPUT
   )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RTIInlineCG
     SOURCES RTIInlineCG
     ARGS 
@@ -29,7 +29,7 @@ IF (Trilinos_ENABLE_CXX11)
   )
 
   IF (Tpetra_ENABLE_QD)
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       RTIInlineCG_qd
       SOURCES RTIInlineCG_qd
       ARGS 
@@ -43,7 +43,7 @@ IF (Trilinos_ENABLE_CXX11)
 #   # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
 #   include_directories(${Kokkos_INCLUDE_DIRS})
 #   CUDA_ADD_EXECUTABLE(Tpetra_RTIExampleThrust RTIExampleThrust.cu)
-#   PACKAGE_ADD_TEST(
+#   TRIBITS_ADD_TEST(
 #     Tpetra_RTIExampleThrust 
 #     ARGS
 #     COMM serial mpi

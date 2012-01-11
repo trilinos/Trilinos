@@ -1,10 +1,10 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_MVOPTester_complex_test
   SOURCES cxx_main_complex.cpp
-        ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+        ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS 
   COMM serial mpi
   )

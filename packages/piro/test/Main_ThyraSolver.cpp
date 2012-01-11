@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 
       RCP<Teuchos::ParameterList> piroParams =
          rcp(new Teuchos::ParameterList("Piro Parameters"));
-      Teuchos::updateParametersFromXmlFile(inputFile, piroParams.get());
+      Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
       // Use these two objects to construct a Piro solved application 
       RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
@@ -127,6 +127,7 @@ int main(int argc, char *argv[]) {
           sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
       }
       else if (solver=="Rythmos") {
+	piroParams->sublist("Rythmos").set("Nonlinear Solver Type", "NOX");
         stratParams = Teuchos::rcp(&(piroParams->sublist("Rythmos").sublist("Stratimikos")),false);
       }
       Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;

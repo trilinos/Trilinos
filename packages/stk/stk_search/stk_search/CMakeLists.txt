@@ -1,11 +1,14 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
+
+ADD_SUBDIRECTORY(diag)
+
 
 #
 # A) Package-specific configuration options
 #
 
-# PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -53,11 +56,11 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   stk_search
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
 
-#INSTALL(FILES ${HEADERS} DESTINATION
-#    ${CMAKE_INSTALL_PREFIX}/include/stk_search)
+INSTALL(FILES ${HEADERS} DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/include/stk_search)

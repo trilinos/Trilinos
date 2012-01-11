@@ -274,6 +274,7 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
                     &transports[request->svc->transport_id],
                     buf,
                     result_size,
+                    1,
                     NNTI_GET_DST,
                     &request->svc->svc_host,
                     &encoded_long_res_hdl);
@@ -397,6 +398,7 @@ int nssi_get_service(
         nssi_service            *result)
 {
     int rc = NSSI_OK;
+    int cleanup_rc = NSSI_OK;
     int rc2 = NSSI_OK;
     nssi_service svc;
     nssi_request req;
@@ -454,6 +456,7 @@ int nssi_get_service(
             &transports[rpc_transport],
             buf,
             short_req_len,
+            1,
             NNTI_SEND_SRC,
             &peer_hdl,
             &short_req_hdl);
@@ -473,6 +476,7 @@ int nssi_get_service(
             &transports[rpc_transport],
             buf,
             NSSI_SHORT_RESULT_SIZE,
+            1,
             NNTI_RECV_DST,
             &peer_hdl,
             &short_res_hdl);
@@ -558,18 +562,18 @@ int nssi_get_service(
 
 cleanup:
     buf=NNTI_BUFFER_C_POINTER(&short_req_hdl);
-    NNTI_unregister_memory(&short_req_hdl);
-    if (rc != NNTI_OK) {
+    cleanup_rc=NNTI_unregister_memory(&short_req_hdl);
+    if (cleanup_rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed unregistering short request: %s",
-                nnti_err_str(rc));
+                nnti_err_str(cleanup_rc));
     }
     free(buf);
 
     buf=NNTI_BUFFER_C_POINTER(&short_res_hdl);
-    NNTI_unregister_memory(&short_res_hdl);
-    if (rc != NNTI_OK) {
+    cleanup_rc=NNTI_unregister_memory(&short_res_hdl);
+    if (cleanup_rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed unregistering short result: %s",
-                nnti_err_str(rc));
+                nnti_err_str(cleanup_rc));
     }
     free(buf);
 
@@ -1448,6 +1452,7 @@ static int encode_args(
                     &transports[svc->transport_id],
                     buf,
                     args_size,
+                    1,
                     NNTI_GET_SRC,
                     &svc->svc_host,
                     &request->long_args_hdl);
@@ -1588,6 +1593,7 @@ int nssi_call_rpc(
             &transports[svc->transport_id],
             buf,
             short_req_len,
+            1,
             NNTI_SEND_SRC,
             &svc->svc_host,
             &short_req_hdl);
@@ -1604,6 +1610,7 @@ int nssi_call_rpc(
                 &transports[svc->transport_id],
                 (char *)data,
                 data_size,
+                1,
                 (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
                 &svc->svc_host,
                 &request->data_hdl);
@@ -1632,6 +1639,7 @@ int nssi_call_rpc(
             &transports[svc->transport_id],
             buf,
             NSSI_SHORT_RESULT_SIZE,
+            1,
             NNTI_RECV_DST,
             &svc->svc_host,
             &request->short_result_hdl);

@@ -1,8 +1,8 @@
-INCLUDE(SubPackageMacros)
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsLibraryMacros)
 INCLUDE(FortranSettings)
 
-SUBPACKAGE(Mapvarlib)
+TRIBITS_SUBPACKAGE(Mapvarlib)
 
 SET(SUPLIB_VERSION_MAJOR "1")
 SET(SUPLIB_VERSION_MINOR "00")
@@ -24,6 +24,6 @@ SET(SOURCES
 	flgrad.f intrp3.f invcon.f mke.f    mvopnfil.f rda2.f   seton0.f   shlsrc.f tetsrc.f vol.f    ininod.f
 	initlz.f debug.f  inielt.f sintpe.f rdinpt.f )
 
-PACKAGE_ADD_LIBRARY(mapvarlib HEADERS ${HEADERS} SOURCES ${SOURCES} DEPLIBS exodus_for suplib)
+TRIBITS_ADD_LIBRARY(mapvarlib HEADERS ${HEADERS} SOURCES ${SOURCES} DEPLIBS exodus_for suplib)
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()

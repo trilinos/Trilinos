@@ -19,6 +19,6 @@ int PMPI_Group_difference ( MPI_Group group1, MPI_Group group2,
                          MPI_Group *group_out )
 {
   fprintf(stderr,"%s:%d: NOT IMPLEMENTED\n",__FILE__,__LINE__);
-  return MPI_Abort((MPI_Comm)NULL, MPI_UNDEFINED); 
+  return MPI_Abort((MPI_Comm)0, MPI_UNDEFINED); 
 }
 

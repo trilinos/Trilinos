@@ -1,0 +1,87 @@
+/*
+@REPOSITORY_COPYRIGHT_HEADER@
+*/
+
+#ifndef @REPOSITORY_NAME_UC@_VERSION_H
+#define @REPOSITORY_NAME_UC@_VERSION_H
+
+
+/* @REPOSITORY_NAME@ version numbering convention.
+ *
+ * @REPOSITORY_NAME@ version numbers take the form X.Y.Z where:
+ *
+ *   X: The major version number that defines a window of (perfect) backward
+ *   compatibility (see below).
+ *
+ *   Y: The release version number within a backward-compatible set of
+ *   versions X.  Even numbers (0, 2, 4, ...) are used for releases and odd
+ *   numbers (1, 3, 5, ...) are used for development versions in-between
+ *   releases.
+ *
+ *   Z: The minor release version number for minor releases taken off off a
+ *   release branch X.Y.  Even numbers (0, 2, 4, ...) are used for customer
+ *   releases and odd numbers (1, 3, 5, ...) are used for the code on the
+ *   release X.Y branch in-between minor releases.
+ *
+ * All @REPOSITORY_NAME@ releases (i.e. X.Y where Y is even) are taken off of the
+ * development branch (i.e. the dev version X-1.R or X.Y-1) and are given a
+ * name containing the version number X.Y.  The initial releases in a backward
+ * compatible set are then given the release numbers:
+ *
+ *   X.0.0, X.2.0, X.4.0, ...
+ *
+ * The intermediate development versions are given the release numbers:
+ *
+ *   X.1.0, X.3.0, X.5.0, ....
+ *
+ * For development versions, the minor release version number Z is always 0.
+ *
+ * The minor releases for a given release branch X.Y are given the version
+ * numbers:
+ *
+ *   X.Y.0, X.Y.2, X.Y.4, ...
+ *
+ * The version numbers given to the code in the release branch X.Y in-between
+ * minor releases (which are not branched, only tagged) are:
+ *
+ *   X.Y.1, X.Y.3, X.Y.5, ...
+ *
+ * In this way, client code can just examine the version number in this file
+ * and know exactly what version of @REPOSITORY_NAME@ they are working with with no
+ * ambiguity no mater what.
+ */
+
+
+/* The major version number xx (allows up 99 major @REPOSITORY_NAME@ release version
+ * numbers).
+ *
+ * The major @REPOSITORY_NAME@ version number defines a window of backward
+ * compatibility.
+ */
+#define @REPOSITORY_NAME_UC@_MAJOR_VERSION @REPOSITORY_MAJOR_VERSION@
+
+/* The major, release, and minor release version numbers (i.e. xx.yy.zz).
+*
+* NOTE: When numbers are less than 10, it is padded with a 0.  For example,
+* development version 10.1 of @REPOSITORY_NAME@ is designated 100100 and the release
+* version 10.2.4 is designated 100204.  This preserves the comparability of
+* these version numbers with simple comparison operators used in #ifdef tests.
+*/
+#define @REPOSITORY_NAME_UC@_MAJOR_MINOR_VERSION @REPOSITORY_MAJOR_MINOR_VERSION@
+
+/* NOTE: These macros are given long int values to allow comparisons in
+ * preprocessor #if statements.  For example, you can do comparisons with ==,
+ * <, <=, >, and >=.
+ *
+ * NOTE: The C++ standard for the C preprocessor requires that the arguments
+ * for #if must be convertible into a long int.  Expressions that convert to 1
+ * are true and expressions that convert to 0 are false.
+ */
+
+/* \brief Version string for @REPOSITORY_NAME@.
+ *
+ * NOTE: This string is to be used for outputting, not for comparison logic.
+ */
+#define @REPOSITORY_NAME_UC@_VERSION_STRING "@REPOSITORY_VERSION_STRING@"
+
+#endif /* @REPOSITORY_NAME_UC@_VERSION_H */

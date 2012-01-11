@@ -43,7 +43,7 @@
 #define TEUCHOS_UNIT_TEST_REPOSITORY_HPP
 
 
-/*! \file Teuchos_UnitTestHarness.hpp
+/*! \file Teuchos_UnitTestRepository.hpp
     \brief Unit testing support.
 */
 
@@ -81,6 +81,9 @@ public:
   /** \brief . */
   static void addUnitTest(UnitTestBase *unitTest, const std::string groupName,
     const std::string testName);
+
+  /** \brief . */
+  static bool verboseUnitTests();
 
 private:
 

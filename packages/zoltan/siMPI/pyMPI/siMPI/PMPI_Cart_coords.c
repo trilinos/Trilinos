@@ -19,6 +19,6 @@ int PMPI_Cart_coords ( MPI_Comm comm, int rank, int maxdims, int *coords )
 {
   _MPI_COVERAGE();
   fprintf(stderr,"%s:%d: NOT IMPLEMENTED\n",__FILE__,__LINE__);
-  return MPI_Abort((MPI_Comm)NULL, MPI_UNDEFINED); 
+  return MPI_Abort((MPI_Comm)0, MPI_UNDEFINED); 
 }
 

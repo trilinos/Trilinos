@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -14,6 +14,7 @@ APPEND_SET(HEADERS
   NOX_Thyra_Group.H
   Thyra_NonlinearSolver_NOX.hpp
   NOX_PrePostOperator_RowSumScaling.H
+  NOX_MeritFunction_Weighted.hpp
   )
 
 APPEND_SET(SOURCES
@@ -22,10 +23,11 @@ APPEND_SET(SOURCES
   NOX_Thyra_Group.C
   Thyra_NonlinearSolver_NOX.cpp
   NOX_PrePostOperator_RowSumScaling.C
+  NOX_MeritFunction_Weighted.cpp
   )
 
 IF (NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     noxthyra
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}

@@ -68,7 +68,7 @@ C     Title of database/experiment
 C     Output string for number of time steps processed
       CHARACTER*8 STR8
 C     Input filename
-      CHARACTER*256 FILNAM, SCRATCH
+      CHARACTER*2048 FILNAM, SCRATCH
 C     LDAT - length of date information
 C     LREV - length of revision information to actual revision number
       INTEGER LDAT, LREV

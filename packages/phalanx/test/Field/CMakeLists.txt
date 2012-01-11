@@ -1,12 +1,12 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../Utilities)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   field
   SOURCES Field.cpp
   DEPLIBS phalanx_test_utilities
@@ -15,7 +15,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "Test passed!"
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   mdfield
   SOURCES MDField.cpp
   DEPLIBS phalanx_test_utilities
@@ -24,7 +24,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "Test passed!"
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   mdfield_runtime
   SOURCES MDField_Runtime.cpp
   DEPLIBS phalanx_test_utilities
@@ -34,7 +34,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 IF (NOT Phalanx_ENABLE_COMPILETIME_ARRAY_CHECK)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     mdfield_simulated_intrepid
     SOURCES MDField_SimulatedIntrepid.cpp
     DEPLIBS phalanx_test_utilities
@@ -49,7 +49,7 @@ ENDIF()
 #ASSERT_DEFINED(Phalanx_ENABLE_Intrepid)
 #
 #IF (Phalanx_ENABLE_Intrepid)
-#  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #    mdfield_intrepid
 #    SOURCES MDField_Intrepid.cpp
 #    DEPLIBS phalanx_test_utilities
@@ -58,7 +58,7 @@ ENDIF()
 #    PASS_REGULAR_EXPRESSION "Test passed!"
 #    )
 #
-#  PACKAGE_COPY_FILES_TO_BINARY_DIR(FunctionSpaceToolsTestDataCopy
+#  TRIBITS_COPY_FILES_TO_BINARY_DIR(FunctionSpaceToolsTestDataCopy
 #    SOURCE_FILES
 #      mass_HCURL_HEX_I1_FEM_01.dat
 #      mass_HCURL_HEX_I1_FEM_02.dat

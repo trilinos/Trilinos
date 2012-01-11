@@ -486,8 +486,9 @@ class FEMMetaData {
   void declare_field_restriction( FieldBase      & arg_field ,
                                   EntityRank       arg_entity_rank ,
                                   const Part     & arg_part ,
-                                  const unsigned * arg_stride )
-    { m_meta_data.declare_field_restriction(arg_field, arg_entity_rank, arg_part, arg_stride); }
+                                  const unsigned * arg_stride ,
+                                  const void     * arg_init_value = NULL)
+    { m_meta_data.declare_field_restriction(arg_field, arg_entity_rank, arg_part, arg_stride, arg_init_value); }
 
   private: // functions
 

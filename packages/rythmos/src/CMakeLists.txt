@@ -1,11 +1,11 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -30,7 +30,7 @@ APPEND_SET(HEADERS
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   rythmos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
@@ -79,6 +79,7 @@ IF (${PACKAGE_NAME}_ENABLE_TESTS)
   IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
 
     INCLUDE_DIRECTORIES( 
+      REQUIRED_DURING_INSTALLATION_TESTING
       ${PACKAGE_SOURCE_DIR}/../epetraext/example/model_evaluator/DiagonalTransient
       )
   
@@ -108,7 +109,7 @@ IF (${PACKAGE_NAME}_ENABLE_TESTS)
 
   ENDIF()  
 
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     rythmos_test_models
     NOINSTALLHEADERS ${HEADERS}
     SOURCES ${SOURCES}

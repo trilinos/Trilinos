@@ -4,11 +4,11 @@
 #
 
 # Included first ot define TRILINOS_TOOLSET_BASE and MKLROOT
-INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/gcc-4.5.1-base-options.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/gcc-4.5.1-base-options.cmake)
 
 # Point to OpenMPI build with GCC 4.5.1 C/C++ and Intel 12.0.4 Fortran
 SET(MPI_BASE_DIR "${TRILINOS_TOOLSET_BASE}/openmpi-ifort-12.0.4" CACHE PATH "")
-SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/openmpi-ifort-12.0.4/lib ${Trilinos_EXTRA_LINK_FLAGS}" CACHE STRING "")
+SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/openmpi-ifort-12.0.4/lib ${${PROJECT_NAME}_EXTRA_LINK_FLAGS}" CACHE STRING "")
 
 # Used only when TriKota/Dakota are enabled with CMake
 SET(TriKota_ENABLE_DakotaCMake ON CACHE BOOL "")

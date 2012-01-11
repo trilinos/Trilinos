@@ -38,12 +38,12 @@ namespace SEAMS {
       double (*fnctptr_dddd)(double,double,double,double);
       double (*fnctptr_dddddd)(double,double,double,double,double,double);
       const char *svar;
-      char *(*strfnct)();
-      char *(*strfnct_c)(char*);
-      char *(*strfnct_d)(double);
-      char *(*strfnct_ccc)(char*,char*,char*);
-      char *(*strfnct_dcc)(double,char*,char*);
-      char *(*strfnct_dcccc)(double, char*, char*, char*, char*);
+      const char *(*strfnct)();
+      const char *(*strfnct_c)(char*);
+      const char *(*strfnct_d)(double);
+      const char *(*strfnct_ccc)(char*,char*,char*);
+      const char *(*strfnct_dcc)(double,char*,char*);
+      const char *(*strfnct_dcccc)(double, char*, char*, char*, char*);
     } value;
     symrec *next;
 

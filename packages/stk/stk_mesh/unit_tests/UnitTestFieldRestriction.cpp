@@ -21,7 +21,6 @@ namespace {
 STKUNIT_UNIT_TEST( UnitTestFieldRestriction, defaultConstruct )
 {
   stk::mesh::FieldRestriction fr;
-  //STKUNIT_EXPECT_EQ( fr.entity_rank(), stk::mesh::InvalidEntityRank );
   STKUNIT_EXPECT_EQ( fr.part_ordinal(), stk::mesh::InvalidPartOrdinal );
   for (stk::mesh::Ordinal i = 0 ; i < stk::mesh::MaximumFieldDimension ; ++i) {
     STKUNIT_EXPECT_EQ( fr.stride(i), 0 );

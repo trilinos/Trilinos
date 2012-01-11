@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 INCLUDE(GenerateXDR)
 
 #  This CMakeLists.txt file is only used to generate XDR header and 

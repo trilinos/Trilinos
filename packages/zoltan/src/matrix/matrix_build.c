@@ -405,6 +405,14 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
     graph_callbacks = 1;
   }
 
+/* TEMPORARY FIX */
+if (!graph_callbacks){
+  fprintf(stderr,"Bug #5470: matrix_get_edges fails for hypergraph queries\n");
+  return ZOLTAN_FATAL; 
+}
+hypergraph_callbacks=0;
+/* TEMPORARY FIX */
+
   if (graph_callbacks && hypergraph_callbacks){
 /*     if (hgraph_model == GRAPH) */
 /*       hypergraph_callbacks = 0; */

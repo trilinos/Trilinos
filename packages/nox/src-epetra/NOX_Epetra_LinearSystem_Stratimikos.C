@@ -247,11 +247,11 @@ reset(Teuchos::ParameterList& noxStratParams)
   // a different sublist
   getLinearSolveToleranceFromNox = 
     noxStratParams.get("Use Linear Solve Tolerance From NOX", false);
-#ifdef HAVE_NOX_DEBUG
-#ifdef HAVE_NOX_EPETRAEXT
+
   linearSolveCount = 0;
-#endif
-#endif
+  linearSolveIters_last = 0;
+  linearSolveIters_total = 0;
+  linearSolveAchievedTol = 0.0;
 
   if (noxStratParams.isParameter("Output Stream"))
     outputStream = 
@@ -295,9 +295,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-#ifdef NOX_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("NOX: Total Linear Solve Time");
-#endif
+  NOX_FUNC_TIME_MONITOR("NOX: Total Linear Solve Time");
 
   double startTime = timer.WallTime();
 
@@ -341,35 +339,29 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   }
 
   // Solve the linear system for x
-  lows->solve(Thyra::NOTRANS, *b, x.ptr(), solveCriteria.ptr());
+  Thyra::SolveStatus<double> status =
+    lows->solve(Thyra::NOTRANS, *b, x.ptr(), solveCriteria.ptr());
 
-  //Release RCPs
-  x = Teuchos::null; b = Teuchos::null; 
-  resultRCP = Teuchos::null; inputRCP = Teuchos::null; 
+  // MOVE TO FUNCTION: Update statistics: solves, iters, iters_total, achieved tol
+  ++linearSolveCount;
+  if (status.extraParameters != Teuchos::null) {
+    if (status.extraParameters->isParameter("Belos/Iteration Count")) {
+      linearSolveIters_last = status.extraParameters->get<int>("Belos/Iteration Count");
+      linearSolveIters_total += linearSolveIters_last;
+    }
+    if (status.extraParameters->isParameter("Belos/Achieved Tolerance")) 
+      linearSolveAchievedTol = status.extraParameters->get<double>("Belos/Achieved Tolerance");
+    if (status.extraParameters->isParameter("AztecOO/Iteration Count")) {
 
-  // ToDo: You need to grab the SolveStatus to see what happened!
-
-  // Set the output parameters in the "Output" sublist
-/***
-  if (outputSolveDetails) {
-    Teuchos::ParameterList& outputList = p.sublist("Output");
-    int prevLinIters = 
-      outputList.get("Total Number of Linear Iterations", 0);
-    int curLinIters = 0;
-    double achievedTol = -1.0;
-    curLinIters = aztecSolverPtr->NumIters();
-    achievedTol = aztecSolverPtr->ScaledResidual();
-
-    outputList.set("Number of Linear Iterations", curLinIters);
-    outputList.set("Total Number of Linear Iterations", 
-			    (prevLinIters + curLinIters));
-    outputList.set("Achieved Tolerance", achievedTol);
+      linearSolveIters_last = status.extraParameters->get<int>("AztecOO/Iteration Count");
+      linearSolveIters_total += linearSolveIters_last;
+    }
+    if (status.extraParameters->isParameter("AztecOO/Achieved Tolerance")) 
+      linearSolveAchievedTol = status.extraParameters->get<double>("AztecOO/Achieved Tolerance");
   }
-***/
 
   // Dump solution of linear system
 #ifdef HAVE_NOX_EPETRAEXT
-  ++linearSolveCount;
   if (p.get("Write Linear System", false)) {
     std::ostringstream iterationNumber;
     iterationNumber << linearSolveCount;
@@ -401,6 +393,11 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   }
 #endif
 
+  //Release RCPs
+  x = Teuchos::null; b = Teuchos::null; 
+  resultRCP = Teuchos::null; inputRCP = Teuchos::null; 
+
+
   double endTime = timer.WallTime();
   timeApplyJacbianInverse += (endTime - startTime);
 
@@ -428,9 +425,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-#ifdef NOX_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("NOX: Total Preconditioner Generation Time");
-#endif
+  NOX_FUNC_TIME_MONITOR("NOX: Total Preconditioner Generation Time");
 
   double startTime = timer.WallTime();  
 
@@ -832,6 +827,19 @@ precError(int error_code,
   }
 }
 
+//***********************************************************************
+
+int NOX::Epetra::LinearSystemStratimikos::
+getNumLinearSolves() {return linearSolveCount;}
+
+int NOX::Epetra::LinearSystemStratimikos::
+getLinearItersLastSolve() {return linearSolveIters_last;}
+  
+int NOX::Epetra::LinearSystemStratimikos::
+getLinearItersTotal() {return linearSolveIters_total;}
+  
+double NOX::Epetra::LinearSystemStratimikos::
+getAchievedTol() {return linearSolveAchievedTol;}
 //***********************************************************************
 
 #endif //HAVE_NOX_STRATIMIKOS

@@ -1,5 +1,5 @@
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
@@ -7,13 +7,13 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
   IF(Teuchos_ENABLE_COMPLEX)
 
-    PACKAGE_ADD_EXECUTABLE(
+    TRIBITS_ADD_EXECUTABLE(
       MVOPComplexTester
       SOURCES cxx_main_complex.cpp MyMultiVec.hpp MyOperator.hpp MyBetterOperator.hpp
       COMM serial mpi
       )
 
-    PACKAGE_ADD_TEST(
+    TRIBITS_ADD_TEST(
       MVOPComplexTester
       COMM serial
       ARGS
@@ -21,8 +21,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT
       )
 
-    PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestMVOPTesterComplexFiles
-      SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestMVOPTesterComplexFiles
+      SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
       SOURCE_FILES mhd1280b.cua 
       EXEDEPS MVOPComplexTester
       )

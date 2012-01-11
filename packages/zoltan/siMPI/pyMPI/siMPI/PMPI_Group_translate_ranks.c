@@ -19,6 +19,6 @@ int PMPI_Group_translate_ranks ( MPI_Group group_a, int n, int *ranks_a,
                              MPI_Group group_b, int *ranks_b )
 {
   fprintf(stderr,"%s:%d: NOT IMPLEMENTED\n",__FILE__,__LINE__);
-  return MPI_Abort((MPI_Comm)NULL, MPI_UNDEFINED); 
+  return MPI_Abort((MPI_Comm)0, MPI_UNDEFINED); 
 }
 

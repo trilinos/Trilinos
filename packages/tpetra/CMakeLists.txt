@@ -1,6 +1,6 @@
 
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
 
 #
@@ -10,12 +10,12 @@ INCLUDE(CombinedOption)
 ASSERT_DEFINED(Kokkos_ENABLE_TBB)
 IF (Kokkos_ENABLE_TBB)
   # ENABLE_SHADOWING_WARNINGS not possible, because of TBB
-  PACKAGE( Tpetra CLEANED )
+  TRIBITS_PACKAGE( Tpetra CLEANED )
 ELSE()
   # ToDo: Enable this once Kokkos headers and Tpetra have shadowing
   # warnings cleaned.
-  #PACKAGE( Tpetra ENABLE_SHADOWING_WARNINGS CLEANED )
-  PACKAGE( Tpetra CLEANED )
+  #TRIBITS_PACKAGE( Tpetra ENABLE_SHADOWING_WARNINGS CLEANED )
+  TRIBITS_PACKAGE( Tpetra CLEANED )
 ENDIF()
 
 COMBINED_OPTION( Tpetra_ENABLE_Thrust
@@ -23,26 +23,26 @@ COMBINED_OPTION( Tpetra_ENABLE_Thrust
   DOCSTR "Enables CUDA GPU support in Tpetra.  Requires Kokkos/Thrust"
   )
 
-PACKAGE_ADD_EXPLICIT_INSTANTIATION_OPTION()
+TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
-PACKAGE_ADD_DEBUG_OPTION()
+TRIBITS_ADD_DEBUG_OPTION()
 
-PACKAGE_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 #
 # B) Set up package-specific options
 #
 
-PACKAGE_ARCH_SET_SS_FOR_DEV_MODE(SS_FOR_DEV_PS_FOR_RELEASE)
+TRIBITS_SET_SS_FOR_DEV_MODE(SS_FOR_DEV_PS_FOR_RELEASE)
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SS_TESTING
   HAVE_TPETRA_ENABLE_SS_TESTING
   "Enabling testing of Secondary Stable Code."
   ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_OpenMP
   HAVE_TPETRA_OPENMP
   "Enabling OpenMP in Tpetra"
@@ -52,14 +52,14 @@ IF(Tpetra_ENABLE_OpenMP AND NOT Kokkos_ENABLE_OpenMP)
   MESSAGE(WARNING "Disabling OpenMP in Tpetra because Kokkos_ENABLE_OpenMP is ${Kokkos_ENABLE_OpenMP}")
 ENDIF()
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_BUGTESTS
   HAVE_TPETRA_BUGTESTS
   "Enabling testing of previous Tpetra bugs."
   ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_RTI
   HAVE_TPETRA_RTI
   "Enabling Tpetra Reduction/Transformation Interface."
@@ -71,14 +71,14 @@ IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_TEUCHOS_BLASFLOAT)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT OFF)
 ENDIF()
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_FLOAT
   HAVE_TPETRA_INST_FLOAT
   "If explicit instantiation is enabled, instantiate over scalar field float."
   ${HAVE_TPETRA_INST_FLOAT_DEFAULT}
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_DOUBLE
   HAVE_TPETRA_INST_DOUBLE
   "If explicit instantiation is enabled, instantiate over scalar field double."
@@ -90,7 +90,7 @@ IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT OFF)
 ENDIF()
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_COMPLEX_FLOAT
   HAVE_TPETRA_INST_COMPLEX_FLOAT
   "If explicit instantiation is enabled, instantiate over scalar field complex<float>."
@@ -102,63 +102,70 @@ IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_DOUBLE_DEFAULT OFF)
 ENDIF()
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_COMPLEX_DOUBLE
   HAVE_TPETRA_INST_COMPLEX_DOUBLE
   "If explicit instantiation is enabled, instantiate over scalar field complex<double>."
   ${HAVE_TPETRA_INST_DOUBLE_DEFAULT}  
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_INT_LONG
+  HAVE_TPETRA_INST_INT_LONG
+  "If explicit instantiation is enabled, instantiate over global ordinal long."
+  ON
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Threaded_MKL
   HAVE_TPETRA_THREADED_MKL
   "Indicates that the linked BLAS is a threaded version of the MKL."
   OFF
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_THROW_Warnings
   HAVE_TPETRA_THROW_WARNINGS
   "Enable exception throwing for a number of warnings in Tpetra."
   OFF
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_PRINT_Warnings
   HAVE_TPETRA_PRINT_WARNINGS
   "Enable printing of a number of warnings in Tpetra."
   OFF
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_THROW_Efficiency_Warnings
   HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
   "Enable exception throwing for Tpetra efficiency warnings."
   ${Tpetra_THROW_Warnings}
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_PRINT_Efficiency_Warnings
   HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
   "Enable printing of Tpetra efficiency warnings."
   ${Tpetra_PRINT_Warnings}
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_THROW_Abuse_Warnings
   HAVE_TPETRA_THROW_ABUSE_WARNINGS
   "Enable exception throwing for potential Tpetra abuse warnings."
   ${Tpetra_THROW_Warnings}
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_PRINT_Abuse_Warnings
   HAVE_TPETRA_PRINT_ABUSE_WARNINGS
   "Enable printing of potential Tpetra abuse warnings."
   ${Tpetra_PRINT_Warnings}
   )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_TSQR
   HAVE_TPETRA_TSQR
   "Enable TSQR support in Tpetra."
@@ -177,18 +184,18 @@ IF (Tpetra_ENABLE_RTI)
   ADD_SUBDIRECTORY(rti)
 ENDIF()
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-PACKAGE_ADD_TEST_DIRECTORIES(example)
+TRIBITS_ADD_TEST_DIRECTORIES(example)
 
 
 #
 # Exclude files for source package.
 #
 
-PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
-PACKAGE_ARCH_EXCLUDE_FILES(
+TRIBITS_EXCLUDE_FILES(
   doc/CodingGuidelines
   doc/TpetraDesign
   )
@@ -197,4 +204,4 @@ PACKAGE_ARCH_EXCLUDE_FILES(
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

@@ -1,5 +1,5 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(Phalanx_ENABLE_Belos)
 ASSERT_DEFINED(Phalanx_ENABLE_Epetra)
@@ -42,14 +42,14 @@ IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND
     evaluators/Evaluator_ScatterResidual.cpp
     )
   
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_fem_nonlinear
     SOURCES Example_FEM_Nonlinear.cpp ${example_fem_nonlinear_SOURCES}
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "Run has completed successfully!"
     )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_fem_nonlinear_Jv_timings
     SOURCES Example_FEM_Nonlinear_Jv_Timings.cpp 
             ${example_fem_nonlinear_SOURCES}
@@ -69,7 +69,7 @@ IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND
     MeshBuilder.cpp
     )
   
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_element_linear_2D
     SOURCES ${example_element_linear_2D_SOURCES}
     COMM serial mpi

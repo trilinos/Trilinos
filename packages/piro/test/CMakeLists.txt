@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/../TriKota/Dakota/install/lib/)
@@ -8,11 +8,11 @@ LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/../TriKota/Dakota/install/lib/)
 # Required for Dakota
 ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   UnitTests
   SOURCES
     Piro_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
     MockModelEval_A.cpp
     MockModelEval_A.hpp
     MockModelEval_C.cpp
@@ -24,7 +24,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   EvalModel
   SOURCES 
   Main_EvalModel.cpp
@@ -36,7 +36,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 IF (Piro_ENABLE_NOX) 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     EpetraSolver
     SOURCES 
     Main_EpetraSolver.cpp
@@ -49,7 +49,7 @@ IF (Piro_ENABLE_NOX)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ThyraSolver
     SOURCES 
     Main_ThyraSolver.cpp
@@ -60,7 +60,7 @@ IF (Piro_ENABLE_NOX)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     AnalysisDriver
     SOURCES 
     Main_AnalysisDriver.cpp
@@ -72,7 +72,7 @@ IF (Piro_ENABLE_NOX)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SecondOrderIntegrator
     SOURCES 
     Main_SecondOrderIntegrator.cpp
@@ -84,7 +84,7 @@ IF (Piro_ENABLE_NOX)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
     DEST_FILES   input_Solve_NOX_1.xml
                  input_Solve_NOX_2.xml
 		 input_Solve_NOX_Adjoint.xml

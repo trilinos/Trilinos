@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( y12m
+TRIBITS_TPL_DECLARE_LIBRARIES( y12m
   REQUIRED_LIBS_NAMES "y12m")

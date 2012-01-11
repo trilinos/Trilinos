@@ -62,8 +62,9 @@ FieldBaseImpl::FieldBaseImpl(
   m_ordinal( arg_ordinal ),
   m_num_states( arg_number_of_states ),
   m_this_state( arg_this_state ),
-  m_rank( arg_rank ),
-  m_dim_map()
+  m_field_rank( arg_rank ),
+  m_dim_map(),
+  m_initial_value(NULL)
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::FieldBaseImpl", LOG_FIELD, m_ordinal);
 
@@ -77,6 +78,18 @@ FieldBaseImpl::FieldBaseImpl(
   }
 }
 
+//----------------------------------------------------------------------
+FieldBaseImpl::~FieldBaseImpl()
+{
+  if (state() == StateNone) {
+    void*& init_val = m_initial_value;
+
+    delete [] reinterpret_cast<char*>(init_val);
+    init_val = NULL;
+  }
+}
+
+//----------------------------------------------------------------------
 const FieldRestrictionVector & FieldBaseImpl::restrictions() const
 { return m_field_states[0]->m_impl.m_dim_map ; }
 
@@ -95,7 +108,8 @@ void FieldBaseImpl::insert_restriction(
   const char     * arg_method ,
   EntityRank       arg_entity_rank ,
   const Part     & arg_part ,
-  const unsigned * arg_stride )
+  const unsigned * arg_stride,
+  const void*      arg_init_value )
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
 
@@ -103,10 +117,10 @@ void FieldBaseImpl::insert_restriction(
 
   {
     unsigned i = 0 ;
-    if ( m_rank ) {
-      for ( i = 0 ; i < m_rank ; ++i ) { tmp.stride(i) = arg_stride[i] ; }
+    if ( m_field_rank ) {
+      for ( i = 0 ; i < m_field_rank ; ++i ) { tmp.stride(i) = arg_stride[i] ; }
     }
-    else { // Scalar field is 0 == m_rank
+    else { // Scalar field is 0 == m_field_rank
       i = 1 ;
       tmp.stride(0) = 1 ;
     }
@@ -115,13 +129,46 @@ void FieldBaseImpl::insert_restriction(
       tmp.stride(i) = tmp.stride(i-1) ;
     }
 
-    for ( i = 1 ; i < m_rank ; ++i ) {
+    for ( i = 1 ; i < m_field_rank ; ++i ) {
       const bool bad_stride = 0 == tmp.stride(i) ||
                               0 != tmp.stride(i) % tmp.stride(i-1);
       ThrowErrorMsgIf( bad_stride,
           arg_method << " FAILED for " << *this <<
           " WITH BAD STRIDE " <<
-          print_restriction( tmp, arg_entity_rank, arg_part, m_rank ));;
+          print_restriction( tmp, arg_entity_rank, arg_part, m_field_rank ));;
+    }
+  }
+
+  if (arg_init_value != NULL) {
+    //insert_restriction can be called multiple times for the same field, giving
+    //the field different lengths on different mesh-parts.
+    //We will only store one initial-value array, we need to store the one with
+    //maximum length for this field so that it can be used to initialize data
+    //for all field-restrictions. For the parts on which the field is shorter,
+    //a subset of the initial-value array will be used.
+    //
+    //We want to end up storing the longest arg_init_value array for this field.
+    //
+    //Thus, we call set_initial_value only if the current length is longer
+    //than what's already been stored.
+
+    //length in bytes is num-scalars X sizeof-scalar:
+
+    size_t num_scalars = 1;
+    //if rank > 0, then field is not a scalar field, so num-scalars is
+    //obtained from the stride array:
+    if (m_field_rank > 0) num_scalars = tmp.stride(m_field_rank-1);
+
+    size_t sizeof_scalar = m_data_traits.size_of;
+    size_t nbytes = sizeof_scalar * num_scalars;
+
+    size_t old_nbytes = 0;
+    if (get_initial_value() != NULL) {
+      old_nbytes = get_initial_value_num_bytes();
+    }
+
+    if (nbytes > old_nbytes) {
+      set_initial_value(arg_init_value, num_scalars, nbytes);
     }
   }
 
@@ -143,9 +190,9 @@ void FieldBaseImpl::insert_restriction(
     else {
       ThrowErrorMsgIf( restr->not_equal_stride(tmp),
           arg_method << " FAILED for " << *this << " " <<
-          print_restriction( *restr, arg_entity_rank, arg_part, m_rank ) <<
+          print_restriction( *restr, arg_entity_rank, arg_part, m_field_rank ) <<
           " WITH INCOMPATIBLE REDECLARATION " <<
-          print_restriction( tmp, arg_entity_rank, arg_part, m_rank ));
+          print_restriction( tmp, arg_entity_rank, arg_part, m_field_rank ));
     }
   }
 }
@@ -180,9 +227,9 @@ void FieldBaseImpl::verify_and_clean_restrictions(
             if ( found_subset || found_superset ) {
               ThrowErrorMsgIf( i->not_equal_stride(*j),
                   arg_method << "[" << *this << "] FAILED: " <<
-                  print_restriction( *i, rankI, partI, m_rank ) <<
+                  print_restriction( *i, rankI, partI, m_field_rank ) <<
                   ( found_subset ? " INCOMPATIBLE SUBSET " : " INCOMPATIBLE SUPERSET ") <<
-                  print_restriction( *j, rankJ, partJ, m_rank ));
+                  print_restriction( *j, rankJ, partJ, m_field_rank ));
             }
 
             if ( found_subset ) { *j = invalid_restr; }
@@ -196,6 +243,30 @@ void FieldBaseImpl::verify_and_clean_restrictions(
   // Clean out redundant entries:
   FieldRestrictionVector::iterator new_end = std::remove(rMap.begin(), rMap.end(), invalid_restr);
   rMap.erase(new_end, rMap.end());
+}
+
+const void* FieldBaseImpl::get_initial_value() const
+{
+  return m_field_states[0]->m_impl.m_initial_value;
+}
+
+void* FieldBaseImpl::get_initial_value() {
+  return m_field_states[0]->m_impl.m_initial_value;
+}
+
+unsigned FieldBaseImpl::get_initial_value_num_bytes() const {
+  return m_field_states[0]->m_impl.m_initial_value_num_bytes;
+}
+
+void FieldBaseImpl::set_initial_value(const void* new_initial_value, unsigned num_scalars, unsigned num_bytes) {
+  void*& init_val = m_field_states[0]->m_impl.m_initial_value;
+
+  delete [] reinterpret_cast<char*>(init_val);
+  init_val = new char[num_bytes];
+
+  m_field_states[0]->m_impl.m_initial_value_num_bytes = num_bytes;
+
+  m_data_traits.copy(init_val, new_initial_value, num_scalars);
 }
 
 
@@ -237,7 +308,7 @@ unsigned FieldBaseImpl::max_size( unsigned entity_rank ) const
 
   for ( ; i != ie ; ++i ) {
     if ( i->entity_rank() == entity_rank ) {
-      const unsigned len = m_rank ? i->stride( m_rank - 1 ) : 1 ;
+      const unsigned len = m_field_rank ? i->stride( m_field_rank - 1 ) : 1 ;
       if ( max < len ) { max = len ; }
     }
   }

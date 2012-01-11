@@ -142,20 +142,20 @@ sexp:     QSTRING		{ $$ = $1;				}
 				  $1->value.svar= $3;
 				  redefined_warning(aprepro, $1->name);          
 				  $1->type = token::SVAR; 		}
-        | SFNCT LPAR sexp RPAR	{ $$ = (*($1->value.strfnct_c))($3);	}
-	| SFNCT LPAR RPAR	{ $$ = (*($1->value.strfnct))();	}
-        | SFNCT LPAR exp  RPAR	{ $$ = (*($1->value.strfnct_d))($3);	}
+        | SFNCT LPAR sexp RPAR	{ $$ = (char*)(*($1->value.strfnct_c))($3);	}
+	| SFNCT LPAR RPAR	{ $$ = (char*)(*($1->value.strfnct))();	}
+        | SFNCT LPAR exp  RPAR	{ $$ = (char*)(*($1->value.strfnct_d))($3);	}
         | sexp CONCAT sexp	{ int len1 = strlen($1);
 				  int len3 = strlen($3);
 				  $$ = (char*)calloc(1, (len1+len3+1));
 				  memcpy($$, $1, len1+1);
 				  (void *)strcat($$, $3); }
         | SFNCT LPAR exp COMMA sexp COMMA sexp COMMA sexp COMMA sexp RPAR
-				{ $$ = (*($1->value.strfnct_dcccc))($3, $5, $7, $9, $11); }
+				{ $$ = (char*)(*($1->value.strfnct_dcccc))($3, $5, $7, $9, $11); }
         | SFNCT LPAR exp COMMA sexp COMMA sexp  RPAR
-				{ $$ = (*($1->value.strfnct_dcc))($3, $5, $7); }
+				{ $$ = (char*)(*($1->value.strfnct_dcc))($3, $5, $7); }
         | SFNCT LPAR sexp COMMA sexp COMMA sexp  RPAR
-				{ $$ = (*($1->value.strfnct_ccc))($3, $5, $7); }
+				{ $$ = (char*)(*($1->value.strfnct_ccc))($3, $5, $7); }
         | bool QUEST sexp COLON sexp  { $$ = ($1) ? ($3) : ($5);              }
 
 exp:	  NUM			{ $$ = $1; 				}

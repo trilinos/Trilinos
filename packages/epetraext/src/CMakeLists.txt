@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -9,7 +9,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_PETSC)
 SET(HAVE_PETSC ${${PACKAGE_NAME}_ENABLE_PETSC})
 SET(HAVE_LIBPARMETIS ${Zoltan_ENABLE_ParMETIS})
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -419,19 +419,19 @@ ENDIF()
 # PyTrilinos support
 #
 
-IF (Trilinos_ENABLE_PyTrilinos)
+IF (${PROJECT_NAME}_ENABLE_PyTrilinos)
 
   FIND_PACKAGE(PythonInclude REQUIRED)
 
   INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
 
-ENDIF (Trilinos_ENABLE_PyTrilinos)
+ENDIF()
 
 #
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   epetraext
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

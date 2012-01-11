@@ -429,7 +429,7 @@ void BulkData::internal_change_entity_parts(
     m_bucket_repository.copy_fields( *k_new , k_new->size() , *k_old , i_old );
   }
   else {
-    m_bucket_repository.zero_fields( *k_new , k_new->size() );
+    m_bucket_repository.initialize_fields( *k_new , k_new->size() );
   }
 
   // Set the new bucket

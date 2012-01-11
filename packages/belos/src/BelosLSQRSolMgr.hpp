@@ -123,6 +123,50 @@ public:
   {}
 };
 
+/// \class LSQRSolMgr
+/// \brief Implementation of the LSQR method for solving least-squares problems.
+/// \author Sarah Knepper and David Day
+///
+/// The LSQR method (Paige and Saunders 1982)
+///
+/// LSQR solves a least-squares problem.  A converged preconditioned
+/// residual norm suffices for convergence, but is not necessary.
+/// LSQR sometimes returns a larger relative residual norm than what
+/// would have been returned by a linear solver.  For details on the
+/// stopping criteria, see the documentation of \c LSQRStatusTest,
+/// which implements the three-part stopping criterion recommended by
+/// Paige and Saunders.
+///
+/// If the linear problem to solve includes a preconditioner, then the
+/// least-squares problem is solved for the preconditioned linear
+/// system.  Preconditioning changes the least-squares problem (in the
+/// sense of changing the norms), and the solution depends on the
+/// preconditioner in this sense.
+///
+/// In the context of linear least-squares problems, "preconditioning"
+/// refers to the regularization matrix.  In this solver, the
+/// regularization matrix is always a scalar multiple of the identity
+/// (standard form least squares).  
+///
+/// The "loss of accuracy" concept is not yet implemented here,
+/// becuase it is unclear what this means for linear least squares.
+/// LSQR solves an inconsistent system in a least-squares sense.
+/// "Loss of accuracy" would correspond to the difference between the
+/// preconditioned residual and the unpreconditioned residual.
+///
+/// References: 
+/// 
+/// C. C. Paige and M. A. Saunders, LSQR: An algorithm for sparse
+/// linear equations and sparse least squares, TOMS 8(1), 43-71
+/// (1982).
+///
+/// C. C. Paige and M. A. Saunders, Algorithm 583; LSQR: Sparse linear
+/// equations and least-squares problems, TOMS 8(2), 195-209 (1982).
+///
+/// See also the <a
+/// href="http://www.stanford.edu/group/SOL/software/lsqr.html">LSQR
+/// web page.</a>
+///
 template<class ScalarType, class MV, class OP>
 class LSQRSolMgr : public SolverManager<ScalarType,MV,OP> {
   
@@ -203,38 +247,55 @@ public:
    *   - time spent in solve() routine
    */
   Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-    return tuple(timerSolve_);
+    return Teuchos::tuple(timerSolve_);
   }
   
-  //! Get the iteration count for the most recent call to \c solve().
+  //! Iteration count from the last solve.
   int getNumIters() const {
     return numIters_;
   }
 
-  //! Get the for the most recent call to \c solve().
+  /// \brief Estimated matrix condition number from the last solve.
+  ///
+  /// LSQR computes a running condition number estimate of the
+  /// (preconditioned, if applicable) operator.
   MagnitudeType getMatCondNum () const {
     return matCondNum_; 
   }
 
-  //! Get the for the most recent call to \c solve().
+  /// \brief Estimated matrix Frobenius norm from the last solve.
+  ///
+  /// LSQR computes a running Frobenius norm estimate of the
+  /// (preconditioned, if applicable) operator.
   MagnitudeType getMatNorm () const {
     return matNorm_;
   }
 
-  //! Get the for the most recent call to \c solve().
+  /// \brief Estimated residual norm from the last solve.
+  ///
+  /// LSQR computes the current residual norm.  LSQR can solve
+  /// inconsistent linear systems in a least-squares sense, so the
+  /// residual norm may not necessarily be small, even if LSQR
+  /// converges.  (LSQR defines "convergence" to allow for possibly
+  /// inconsistent systems.  See the documentation of \c
+  /// LSQRStatusTest for details.)
   MagnitudeType getResNorm () const {
     return resNorm_;
   }
 
-  //! Get the for the most recent call to \c solve().
+  //! Estimate of \f$A^* r\f$ (residual vector \f$r\f$) from the last solve.
   MagnitudeType getMatResNorm () const {
     return matResNorm_;
   }
-
-
   
-  /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
-   */
+  /// \brief Whether a loss of accuracy was detected during the last solve.
+  ///
+  /// The "loss of accuracy" concept is not yet implemented here,
+  /// becuase it is unclear what this means for linear least squares.
+  /// LSQR solves a possibly inconsistent linear system in a
+  /// least-squares sense.  "Loss of accuracy" would correspond to the
+  /// difference between the preconditioned residual and the
+  /// unpreconditioned residual.
   bool isLOADetected() const { return false; }
   
   //@}
@@ -677,7 +738,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     ortho_ = factory.makeMatOrthoManager (orthoType_, M, printer_, 
 					  label_, orthoParams);
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(! ortho_.is_null(), std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(ortho_.is_null(), std::logic_error, 
 			     "The MatOrthoManager is not yet initialized, but "
 			     "should be by this point.  "
 			     "Please report this bug to the Belos developers.");

@@ -299,9 +299,12 @@ public:
       constObj_ = obj; 
       isConst_ = true;
     }
-  /** \brief. Uninitialize. */
+  /** \biref Uninitialize. */
   void uninitialize()
     { constObj_=null; isConst_=true; }
+  /** \breif Assign to null. */
+  ConstNonconstObjectContainer<ObjType>& operator=(ENull)
+    { uninitialize(); return *this; }
   /** \brief Returns true if const-only access to the object is allowed. */
   bool isConst() const
     { return isConst_; }
@@ -357,6 +360,9 @@ public:
   /** \brief Perform an implicit conversion to an RCP<const ObjType>. */
   operator RCP<const ObjType>() const
     { return getConstObj(); }
+  /** \brief Return the internal count. */
+  int count() const
+    { return constObj_.count(); }
 
 private:
   RCP<const ObjType> constObj_;

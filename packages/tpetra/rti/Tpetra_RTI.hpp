@@ -1,30 +1,43 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 // 
-//               Tpetra: Templated Linear Algebra Services Package 
+//          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more detail.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ************************************************************************
-//@HEADER
+// @HEADER
 
 #ifndef TPETRA_RTI_HPP
 #define TPETRA_RTI_HPP
@@ -44,21 +57,56 @@ namespace Tpetra {
 
   namespace RTI {
     
-    //! A static identity functor, providing a static method identity() that returns zero.
+    /// \class ZeroOp
+    /// \brief A static identity functor, providing a static method identity() that returns zero.
+    ///
+    /// This class is useful for providing zero as the initial value
+    /// of a reduction.  It may be used as the IOP template parameter
+    /// of a ReductionGlob.
     template <class T>
     class ZeroOp {
       public:
       static inline T identity() {return Teuchos::ScalarTraits<T>::zero();}
     };
 
-    //! A static identity functor, providing a static method identity() that returns one.
+    /// \class OneOp
+    /// \brief A static identity functor, providing a static method identity() that returns one.
+    /// 
+    /// This class is useful for providing one as the initial value of
+    /// a reduction.  It may be used as the IOP template parameter of
+    /// a ReductionGlob.
     template <class T>
     class OneOp {
       public:
       static inline T identity() {return Teuchos::ScalarTraits<T>::one();}
     };
 
-    //! A type glob containing the types needed for calling Tpetra::RTI::reduce() with individual functors.
+    /// \class ReductionGlob
+    /// \brief A type glob containing the types needed for calling Tpetra::RTI::reduce() with individual functors.
+    ///
+    /// \tparam GOP Type of the operator genop, that generates
+    ///   successive new inputs of the reduction.
+    /// 
+    /// \tparam ROP Type of the operator that performs the pairwise
+    ///   reduction operations.
+    ///
+    /// \tparam IOP Type of the operator that provides (via a
+    ///   zero-argument static function) the initial value of the
+    ///   reduction.
+    ///
+    /// For reducing a pair of vectors v1, v2, successive reduction
+    /// elements are generated in a way equivalent to <tt>genop(v1[i],
+    /// v2[i])</tt> for all indices i of the vector.
+    ///
+    /// For reducing a triple of vectors v1, v2, v3, successive
+    /// reduction elements are generated in a way equivalent to
+    /// <tt>genop(v1[i], v2[i], v3[i])</tt> for all indices i of the
+    /// vector.
+    ///
+    /// Regardless, each genop invocation generates a single value,
+    /// and the sequence of these values is reduced using the binary
+    /// operator redop.  The initial value of this sequence comes from
+    /// the static <tt>identity()</tt> method of IOP.
     template <class GOP, class ROP, class IOP> 
     class ReductionGlob {
       public:

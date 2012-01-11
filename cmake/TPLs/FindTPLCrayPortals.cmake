@@ -1,5 +1,5 @@
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( CrayPortals
+TRIBITS_TPL_DECLARE_LIBRARIES( CrayPortals
   REQUIRED_HEADERS portals/portals3.h
   )

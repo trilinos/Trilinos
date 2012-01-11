@@ -71,6 +71,10 @@ extern "C" {
 #  endif
 #endif
 
+#ifdef HAVE_OVIS
+#define ZOLTAN_OVIS
+#endif
+
 #ifdef HAVE_PATOH
 #define ZOLTAN_PATOH
 #endif

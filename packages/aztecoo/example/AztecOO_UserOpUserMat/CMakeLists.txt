@@ -1,8 +1,8 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Poisson2d 
   SOURCES cxx_main.cpp Poisson2dOperator.cpp
   ARGS

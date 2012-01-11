@@ -18,6 +18,6 @@
 int PMPI_File_get_byte_offset(MPI_File fh, MPI_Offset offset, MPI_Offset *disp)
 {
   fprintf(stderr,"%s:%d: NOT IMPLEMENTED\n",__FILE__,__LINE__);
-  return MPI_Abort((MPI_Comm)NULL, MPI_UNDEFINED); 
+  return MPI_Abort((MPI_Comm)0, MPI_UNDEFINED); 
 }
 

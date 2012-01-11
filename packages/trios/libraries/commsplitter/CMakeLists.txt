@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 SET(HEADERS "")
 SET(NONINSTALLHEADERS "")
@@ -19,11 +19,11 @@ APPEND_SET(SOURCES
 
 ############# libcommsplitter ##########################
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
    commsplitter
    HEADERS ${HEADERS}
    NOINSTALLHEADERS ${NOINSTALLHEADERS}
    SOURCES ${SOURCES}
-   DEPLIBS ${DEPLIBS}
+   DEPLIBS ${DEPLIBS} -lz
 )
 

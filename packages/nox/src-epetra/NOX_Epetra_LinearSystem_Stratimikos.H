@@ -305,6 +305,18 @@ public:
    */
   virtual void setPrecOperatorForSolve(const Teuchos::RCP<const Epetra_Operator>& solvePrecOp);
 
+  //! Statistics for number of times the linear solver has been called
+  int getNumLinearSolves();
+
+  //! Statistics for number of iterations taken in last linear solve 
+  int getLinearItersLastSolve();
+  
+  //! Statistics for cumulative number of iterations in all linear solve
+  int getLinearItersTotal();
+  
+  //! Statistics for the achieved tolerance of last linear solve 
+  double getAchievedTol();
+
 protected:
 
   //! Builds the linear op with solve factory from the Stratimikos sublist
@@ -415,9 +427,11 @@ protected:
   //! If true, the linear solve tolerance comes from NOX (i.e. Inexact Newton)
   bool getLinearSolveToleranceFromNox;
 
-#ifdef HAVE_NOX_EPETRAEXT
-  mutable int linearSolveCount;
-#endif
+  //! Iterative linear solver statistics
+  int linearSolveCount;
+  int linearSolveIters_last;
+  int linearSolveIters_total;
+  double linearSolveAchievedTol;
 
   //! Output stream for stratimikos
   Teuchos::RCP<Teuchos::FancyOStream> outputStream;

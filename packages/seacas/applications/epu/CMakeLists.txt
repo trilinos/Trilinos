@@ -1,8 +1,8 @@
-INCLUDE(SubPackageMacros)
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsLibraryMacros)
 
-SUBPACKAGE(Epu)
+TRIBITS_SUBPACKAGE(Epu)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -15,10 +15,10 @@ SET(SOURCES EP_ExodusFile.C EP_Internals.C EP_ParallelDisks.C EP_SystemInterface
 #this error only seems to manifest on pgi 11.1, however, the version of the compiler
 #is not given for pgi compilers unfortunately so we can't be more specific
 IF(NOT __LINUX_COMPILER_PGI)
-  PACKAGE_ADD_LIBRARY(epu_lib SOURCES ${SOURCES} DEPLIBS suplib exodus)
-  PACKAGE_ADD_EXECUTABLE(epu NOEXEPREFIX NOEXESUFFIX SOURCES epu.C DEPLIBS epu_lib)
+  TRIBITS_ADD_LIBRARY(epu_lib SOURCES ${SOURCES} DEPLIBS suplib exodus)
+  TRIBITS_ADD_EXECUTABLE(epu NOEXEPREFIX NOEXESUFFIX SOURCES epu.C DEPLIBS epu_lib COMM serial mpi)
   install_executable(epu)
 ENDIF()
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

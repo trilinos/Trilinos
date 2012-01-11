@@ -1,8 +1,8 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 IF(HAVE_TRILINOSCOUPLINGS_ML AND HAVE_TRILINOSCOUPLINGS_NOX)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ml_nox_1Delasticity_example
     SOURCES Basis.cpp
             ml_nox_1Delasticity_example.cpp

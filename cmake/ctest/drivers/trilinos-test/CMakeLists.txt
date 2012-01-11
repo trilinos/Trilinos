@@ -1,4 +1,4 @@
-INCLUDE("../../../TrilinosVersion.cmake")
+INCLUDE("../../../../Version.cmake")
 
 TRILINOS_DRIVER_SETUP()
 
@@ -12,14 +12,14 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
   #TRILINOS_DRIVER_ADD_DASHBOARD(
   #  MPI_OPT_DEV
   #  ctest_linux_nightly_mpi_development_opt_trilinos-test.cmake
-  #  CTEST_INSTALLER_TYPE dev
+  #  CTEST_INSTALLER_TYPE release
   #  TIMEOUT_MINUTES 300
   #)
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_OPT_DEV
     ctest_linux_nightly_serial_development_opt_gcc_4.5.1_trilinos-test.cmake
-    CTEST_INSTALLER_TYPE dev
+    CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 210
   )
@@ -27,7 +27,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
   TRILINOS_DRIVER_ADD_DASHBOARD(
     MPI_DEBUG_DEV
     ctest_linux_nightly_mpi_development_debug_trilinos-test.cmake
-    CTEST_INSTALLER_TYPE dev
+    CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 300
   )
@@ -35,21 +35,21 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
   #TRILINOS_DRIVER_ADD_DASHBOARD(
   #  MPI_OPT_DEV_SHARED
   #  ctest_linux_nightly_mpi_development_opt_shared_trilinos-test.cmake
-  #  CTEST_INSTALLER_TYPE dev
+  #  CTEST_INSTALLER_TYPE release
   #  TIMEOUT_MINUTES 300
   #)
 
   #TRILINOS_DRIVER_ADD_DASHBOARD(
   #  SERIAL_DEBUG_DEV
   #  ctest_linux_nightly_serial_development_debug_trilinos-test.cmake
-  #  CTEST_INSTALLER_TYPE dev
+  #  CTEST_INSTALLER_TYPE release
   #  TIMEOUT_MINUTES 300
   #)
 
   #TRILINOS_DRIVER_ADD_DASHBOARD(
   #  SERIAL_OPT_DEV2
   #  ctest_linux_nightly_serial_development_opt_pgi_10.9_trilinos-test.cmake 
-  #  CTEST_INSTALLER_TYPE dev
+  #  CTEST_INSTALLER_TYPE release
   #  RUN_SERIAL
   #  TIMEOUT_MINUTES 450
   #)
@@ -57,15 +57,15 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_OPT_DEV1
     ctest_linux_nightly_serial_development_opt_pgi_11.1_stable_trilinos-test.cmake
-    CTEST_INSTALLER_TYPE dev
+    CTEST_INSTALLER_TYPE release
     RUN_SERIAL
-    TIMEOUT_MINUTES 300
+    TIMEOUT_MINUTES 360
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_DEBUG_DEV2
     ctest_linux_nightly_serial_development_debug_gcc_4.6.0_trilinos-test.cmake
-    CTEST_INSTALLER_TYPE dev
+    CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 210
   )
@@ -75,7 +75,7 @@ if(${DAYOFWEEK} MATCHES "Saturday")
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_OPT_DEV3
     ctest_linux_nightly_serial_development_opt_pgi_11.1_trilinos-test.cmake
-    CTEST_INSTALLER_TYPE dev
+    CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 600
   )

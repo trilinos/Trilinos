@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -9,8 +9,8 @@ SET(HAVE_EPETRA ON)
 SET(HAVE_ISORROPIA_TPETRA OFF)
 SET(HAVE_ISORROPIA_ZOLTAN ON)
 SET(HAVE_EPETRAEXT ${PACKAGE_NAME}_ENABLE_EpetraExt)
-SET(ISORROPIA_HAVE_OMP ${Trilinos_ENABLE_OpenMP})
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+SET(ISORROPIA_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -174,13 +174,13 @@ ENDIF()
 #
 # C) Define the targets for package's library(s)
 #
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   isorropia
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
 
-#PACKAGE_ADD_LIBRARY(
+#TRIBITS_ADD_LIBRARY(
 #  isorropia
 #  HEADERS ${HEADERS}
 #  SOURCES ${SOURCES}

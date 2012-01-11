@@ -1,11 +1,11 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -35,6 +35,7 @@ APPEND_SET(HEADERS
   NOX_Abstract_MultiVector.H
   NOX_Abstract_Group.H
   NOX_Abstract_PrePostOperator.H
+  NOX_Abstract_ImplicitWeighting.H
   )
 
 APPEND_SET(SOURCES
@@ -215,7 +216,7 @@ APPEND_SET(SOURCES
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   nox
   HEADERS ${HEADERS}
   NOINSTALLHEADERS ${NOINSTALLHEADERS}

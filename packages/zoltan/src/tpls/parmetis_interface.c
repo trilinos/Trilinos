@@ -25,7 +25,7 @@ extern "C" {
 #include "order_const.h"
 #include "third_library.h"
 #include "parmetis_interface.h"
-
+#include "parmetis_interface_params.h"
 
 /*********** COMPATIBILITY CHECKING AT COMPILE TIME ************/
 #if (PARMETIS_MAJOR_VERSION < 3)
@@ -44,16 +44,6 @@ extern "C" {
 #if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 1) && (PARMETIS_SUBMINOR_VERSION == 0)
 #define  PARMETIS31_ALWAYS_FREES_VSIZE
 #endif
-
-/**********  parameters structure for parmetis methods **********/
-static PARAM_VARS Parmetis_params[] = {
-  { "PARMETIS_METHOD", NULL, "STRING", 0 },
-  { "PARMETIS_OUTPUT_LEVEL", NULL, "INT", 0 },
-  { "PARMETIS_SEED", NULL, "INT", 0 },
-  { "PARMETIS_ITR", NULL, "DOUBLE", 0 },
-  { "PARMETIS_COARSE_ALG", NULL, "INT", 0 },
-  { "PARMETIS_FOLD", NULL, "INT", 0 },
-  { NULL, NULL, NULL, 0 } };
 
 static int pmv3method(char *alg);
 
@@ -134,10 +124,22 @@ int Zoltan_ParMetis(
 
   if (sizeof(realtype) != sizeof(float)) {
     int tmp = zz->LB.Num_Global_Parts * MAX(zz->Obj_Weight_Dim, 1);
+    realtype sum = 0.;
+
     prt.input_part_sizes = (realtype *)
                    ZOLTAN_MALLOC(tmp * sizeof(realtype));
-    for (i = 0; i < tmp; i++) 
+    for (i = 0; i < tmp; i++) {
       prt.input_part_sizes[i] = (realtype) part_sizes[i];
+      sum += prt.input_part_sizes[i];
+    }
+    if (sum != (realtype) 1.0) {
+      /* rescale part sizes in case of roundoff in conversion; 
+       * ParMETIS requires sum of part sizes to be 1.0
+       */
+      for (i = 0; i < tmp; i++) {
+        prt.input_part_sizes[i] /= sum;
+      }
+    }
     prt.part_sizes = prt.input_part_sizes;
   }
   else

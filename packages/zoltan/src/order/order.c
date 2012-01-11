@@ -23,6 +23,7 @@ extern "C" {
 #include "ha_const.h"
 #include "order_const.h"
 #include "hsfcOrder.h"
+#include "order_params.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -35,13 +36,7 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 
-/**********  parameters structure for ordering **********/
-static PARAM_VARS Order_params[] = {
-        { "ORDER_METHOD", NULL, "STRING", 0 },
-        { "USE_ORDER_INFO", NULL, "INT", 0 },
-        { NULL, NULL, NULL, 0 } };
-
-  /* New Interface */
+/* New Interface */
 
 int Zoltan_Order (
       struct Zoltan_Struct *zz,
@@ -198,18 +193,6 @@ int Zoltan_Order (
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_FATAL);
   }
-
-  /* TODO : Ask why useful ! */
-  /*
-   *  Construct the heterogenous machine description.
-   */
-  ierr = Zoltan_Build_Machine_Desc(zz);
-  if (ierr == ZOLTAN_FATAL){
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ierr);
-  }
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Done machine description");
-
 
   /************************************
    *  Check for required query function

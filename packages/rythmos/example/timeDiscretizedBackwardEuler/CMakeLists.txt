@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(MultilineSet)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_
 
 FILE(GLOB SOURCES *.cpp)
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   timeDiscretizedBackwardEuler
   SOURCES ${SOURCES}
   DEPLIBS rythmos_test_models
@@ -31,7 +31,7 @@ IF (Stratimikos_ENABLE_Amesos)
     " --num-time-steps=10"
     " --final-time=1e-3"
     )
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     timeDiscretizedBackwardEuler
     NAME timeDiscretizedBackwardEuler_amesos
     ARGS ${ARGS}
@@ -39,7 +39,7 @@ IF (Stratimikos_ENABLE_Amesos)
     ${STANDARD_TEST_CONFIG}
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_timeDiscretizedBackwardEuler_Amesos_CopyFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Example_timeDiscretizedBackwardEuler_Amesos_CopyFiles
     DEST_FILES
       timeDiscretizedBackwardEuler1.xml
     SOURCE_PREFIX "_"

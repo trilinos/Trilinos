@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
-TPL_DECLARE_LIBRARIES( CASK
+TRIBITS_TPL_DECLARE_LIBRARIES( CASK
   REQUIRED_HEADERS cask_kernels.h
   REQUIRED_LIBS_NAMES cask_trilinos
   )

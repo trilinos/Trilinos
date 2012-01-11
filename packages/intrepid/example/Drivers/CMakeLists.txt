@@ -1,7 +1,7 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
-IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+IF(${PROJECT_NAME}_ENABLE_Epetra AND ${PROJECT_NAME}_ENABLE_EpetraExt)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_01
     SOURCES example_01.cpp
     DEPLIBS epetra epetraext
@@ -11,7 +11,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     ADD_DIR_TO_NAME
     XHOSTTYPE AIX
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_02
     SOURCES example_02.cpp
     DEPLIBS epetra epetraext
@@ -21,7 +21,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     ADD_DIR_TO_NAME
     XHOSTTYPE AIX
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_03
     SOURCES example_03.cpp
     DEPLIBS epetra epetraext 
@@ -31,7 +31,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     ADD_DIR_TO_NAME
     XHOSTTYPE AIX
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_04
    SOURCES example_04.cpp
     DEPLIBS epetra epetraext 
@@ -40,7 +40,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_05
    SOURCES example_05.cpp
     DEPLIBS epetra epetraext 
@@ -49,7 +49,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_06
    SOURCES example_06.cpp
     DEPLIBS epetra epetraext 
@@ -58,7 +58,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_07
    SOURCES example_07.cpp
     DEPLIBS epetra epetraext 
@@ -67,7 +67,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_08
    SOURCES example_08.cpp
     DEPLIBS epetra epetraext 
@@ -76,7 +76,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_09
    SOURCES example_09.cpp
     DEPLIBS epetra epetraext 
@@ -85,7 +85,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_10
     SOURCES example_10.cpp
     DEPLIBS epetra epetraext 
@@ -95,7 +95,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     ADD_DIR_TO_NAME
     XHOSTTYPE AIX
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_11
     SOURCES example_11.cpp
     DEPLIBS epetra epetraext 
@@ -105,7 +105,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     ADD_DIR_TO_NAME
     XHOSTTYPE AIX
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_12
     SOURCES example_12.cpp
     DEPLIBS epetra epetraext 
@@ -115,7 +115,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     ADD_DIR_TO_NAME
     XHOSTTYPE AIX
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_13
     SOURCES example_13.cpp
     DEPLIBS epetra epetraext 
@@ -125,7 +125,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     ADD_DIR_TO_NAME
     XHOSTTYPE AIX
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_14
     SOURCES example_14.cpp
     DEPLIBS epetra epetraext 
@@ -135,7 +135,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     ADD_DIR_TO_NAME
     XHOSTTYPE AIX
     )
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_15
     SOURCES example_15.cpp
     DEPLIBS epetra epetraext 
@@ -145,7 +145,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     ADD_DIR_TO_NAME
     XHOSTTYPE AIX
     )
-#  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #    Example_16
 #    SOURCES example_16.cpp
 #    DEPLIBS epetra epetraext 

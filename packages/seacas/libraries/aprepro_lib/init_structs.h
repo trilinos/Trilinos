@@ -43,7 +43,7 @@ struct init_c
 struct str_init
   {
     const char *fname;
-    char *(*fnct)();
+    const char *(*fnct)();
     const char *syntax;
     const char *description;
   };
@@ -51,7 +51,7 @@ struct str_init
 struct str_c_init
   {
     const char *fname;
-    char *(*fnct)(char*);
+    const char *(*fnct)(char*);
     const char *syntax;
     const char *description;
   };
@@ -59,7 +59,7 @@ struct str_c_init
 struct str_d_init
   {
     const char *fname;
-    char *(*fnct)(double);
+    const char *(*fnct)(double);
     const char *syntax;
     const char *description;
   };
@@ -67,7 +67,7 @@ struct str_d_init
 struct str_dcc_init
   {
     const char *fname;
-    char *(*fnct)(double, char*, char*);
+    const char *(*fnct)(double, char*, char*);
     const char *syntax;
     const char *description;
   };
@@ -75,7 +75,7 @@ struct str_dcc_init
 struct str_ccc_init
   {
     const char *fname;
-    char *(*fnct)(char*, char*, char*);
+    const char *(*fnct)(char*, char*, char*);
     const char *syntax;
     const char *description;
   };

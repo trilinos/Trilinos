@@ -423,6 +423,12 @@ void UnitTestRepository::addUnitTest( UnitTestBase *unitTest,
 }
 
 
+bool UnitTestRepository::verboseUnitTests()
+{
+  return (getData().showTestDetails == SHOW_TEST_DETAILS_ALL);
+}
+
+
 // private:
 
 

@@ -44,6 +44,7 @@
 #include <map>
 #include <string>
 #include <exception>
+#include <stdexcept>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -96,9 +97,9 @@ namespace {
     case Excn::NSET:
       return EX_NODE_SET;
     default:
-      SMART_ASSERT(1==0 && "Invalid Object Type in exodus_object_type")(epu_type);
-      return EX_INVALID;
+      throw std::runtime_error("Invalid Object Type in exodus_object_type: " + epu_type);
     }
+    return EX_INVALID;
   }
 
   char **get_name_array(int size, int length) {
@@ -560,7 +561,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	if (debug_level & 1)
 	  std::cerr << time_stamp(tsFormat);
 	std::cerr << "Writing global node number map...\n";
-	error=ex_put_node_num_map(ExodusFile::output(),&global_node_map[0]);
+	error=ex_put_node_num_map(ExodusFile::output(),TOPTR(global_node_map));
       }
     
       if (global.needElementMap) {
@@ -568,7 +569,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	  std::cerr << time_stamp(tsFormat);
 	std::cerr << "Writing out master global elements information...\n";
 	if (global_element_map.size() > 0) {
-	  ex_put_elem_num_map(ExodusFile::output(), &global_element_map[0]);
+	  ex_put_elem_num_map(ExodusFile::output(), TOPTR(global_element_map));
 	}
       }
 
@@ -655,9 +656,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       ex_put_all_var_param(ExodusFile::output(),
 			   global_vars.count(OUT),
 			   nodal_vars.count(OUT),
-			   element_vars.count(OUT), &elem_truth_table[0],
-			   nodeset_vars.count(OUT), &global.truthTable[NSET][0],
-			   sideset_vars.count(OUT), &global.truthTable[SSET][0]);
+			   element_vars.count(OUT), TOPTR(elem_truth_table),
+			   nodeset_vars.count(OUT), TOPTR(global.truthTable[NSET]),
+			   sideset_vars.count(OUT), TOPTR(global.truthTable[SSET]));
     }
   }
 
@@ -825,7 +826,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	if (debug_level & 1)
 	  std::cerr << time_stamp(tsFormat) << "Global Variables...\n";
 	error += ex_get_var(id, time_step+1, EX_GLOBAL, 0, 0,
-			    global_vars.count(), (void*)&global_values[0]);
+			    global_vars.count(), TOPTR(global_values));
 	// Map ...
 	for (int ig=0; ig < global_vars.count(IN); ig++) {
 	  if (global_vars.index_[ig] > 0) {
@@ -834,7 +835,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	  }
 	}
 	error += ex_put_var(ExodusFile::output(),time_step_out, EX_GLOBAL, 1, 0,
-			    global_vars.count(OUT), &output_global_values[0]);
+			    global_vars.count(OUT), TOPTR(output_global_values));
       
 	// Check global variable consistency...
 	if (debug_level & 128) {
@@ -842,7 +843,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	  for (p = 1; p < part_count; p++) {
 	    ExodusFile idp(p);
 	    error += ex_get_var(idp, time_step+1, EX_GLOBAL, 0, 0,
-				global_vars.count(IN), (void*)&proc_global_values[0]);
+				global_vars.count(IN), TOPTR(proc_global_values));
 	    for (int ig=0; ig < global_vars.count(IN); ig++) {
 	      if (proc_global_values[ig] != global_values[ig]) {
 		std::cerr << "At step " << std::setw(get_width(ts_max+1)) << time_step+1
@@ -884,7 +885,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	for (int i = 0; i < nodal_vars.count(IN); i++) {
 	  if (nodal_vars.index_[i] > 0) {
 	    error += ex_get_var(id, time_step+1, EX_NODAL, i+1, 0,
-				node_count, &values[0]);
+				node_count, TOPTR(values));
 	    
 	    int i_out = nodal_vars.index_[i]-1;
 	    SMART_ASSERT(i_out < nodal_vars.count(OUT));
@@ -900,7 +901,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	      }
 	    }
 	    
-	    T *local_nodal_values = &values[0];
+	    T *local_nodal_values = TOPTR(values);
 	    T *global_nodal_values = &master_nodal_values[i_out][0];
 	    if (interface.sum_shared_nodes()) {
 	      // sum values into master nodal value information. Note
@@ -1053,10 +1054,10 @@ namespace {
     std::vector<T>      coordinates(9*num_frames);
     std::vector<char>   tags(num_frames);
 
-    ex_get_coordinate_frames(id, &num_frames, &ids[0], &coordinates[0], &tags[0]);
+    ex_get_coordinate_frames(id, &num_frames, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
 
     // Now output to the combined file...
-    ex_put_coordinate_frames(id_out, num_frames, &ids[0], &coordinates[0], &tags[0]);
+    ex_put_coordinate_frames(id_out, num_frames, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
   }
 
   void get_put_qa(int id, int id_out)
@@ -1160,7 +1161,7 @@ namespace {
 				      ExodusFile::output(),
 				      global.dimensionality);
     // Write out coordinate information
-    error += ex_put_coord(ExodusFile::output(), (void*)&x[0], (void*)&y[0], (void*)&z[0]);
+    error += ex_put_coord(ExodusFile::output(), TOPTR(x), TOPTR(y), TOPTR(z));
     return error;
   }
 
@@ -1188,7 +1189,7 @@ namespace {
     std::vector<T> local_y(num_nodes);
     std::vector<T> local_z(num_nodes);
 
-    error += ex_get_coord(id, &local_x[0], &local_y[0], &local_z[0]);
+    error += ex_get_coord(id, TOPTR(local_x), TOPTR(local_y), TOPTR(local_z));
 
     // Check for 2D or 3D coordinates
 
@@ -1298,7 +1299,7 @@ namespace {
     for (int p = 0; p < part_count; p++) {
       ExodusFile id(p);
 
-      error += ex_get_ids(id, EX_ELEM_BLOCK, &block_id[0]);
+      error += ex_get_ids(id, EX_ELEM_BLOCK, TOPTR(block_id));
 
       // Check that the block id ordering is consistent among files...
       if (p > 0) {
@@ -1334,7 +1335,7 @@ namespace {
 				   &temp_element_attributes);
 
 	std::vector<char> name(Excn::ExodusFile::max_name_length()+1);
-	ex_get_name(id, EX_ELEM_BLOCK, block_id[b], &name[0]);
+	ex_get_name(id, EX_ELEM_BLOCK, block_id[b], TOPTR(name));
 
 	blocks[p][b].id    = block_id[b];
 	if (name[0] != '\0')
@@ -1455,7 +1456,7 @@ namespace {
 	  IntVector local_linkage(maximum_nodes);
 	
 	  int bid = blocks[p][b].id;
-	  error = ex_get_conn(id, EX_ELEM_BLOCK, bid, &local_linkage[0], 0, 0);
+	  error = ex_get_conn(id, EX_ELEM_BLOCK, bid, TOPTR(local_linkage), 0, 0);
 	  if (error < 0) {
 	    std::cerr << "ERROR: Cannot get element block connectivity for block "
 		      << bid << " on part " << p+start_part << ".\n";
@@ -1484,7 +1485,7 @@ namespace {
 	      blocks[p][b].attributeCount;
 	    std::vector<T> local_attr(max_attr);
 
-	    error += ex_get_attr(id, EX_ELEM_BLOCK, blocks[p][b].id, &local_attr[0]);
+	    error += ex_get_attr(id, EX_ELEM_BLOCK, blocks[p][b].id, TOPTR(local_attr));
   	
 	    pos = 0;
 
@@ -1548,7 +1549,7 @@ namespace {
       size_t offset = 0;
       for (int p = 0; p < part_count; p++) {
 	ExodusFile id(p);
-	error += ex_get_elem_num_map(id, &global_element_numbers[p][0]);
+	error += ex_get_elem_num_map(id, TOPTR(global_element_numbers[p]));
 	std::copy(global_element_numbers[p].begin(), global_element_numbers[p].end(),
 		  &global_element_map[offset]);
 	offset += local_mesh[p].elementCount;
@@ -1629,7 +1630,7 @@ namespace {
       for (int p = 0; p < part_count; p++) {
 	size_t element_count = local_mesh[p].elementCount;
 	element_map.resize(element_count);
-	ex_get_elem_num_map(ExodusFile(p), &element_map[0]);
+	ex_get_elem_num_map(ExodusFile(p), TOPTR(element_map));
 
 	for (size_t e = 0; e < element_count; e++) {
 	  gpos = local_element_to_global[p][e];
@@ -1724,7 +1725,7 @@ namespace {
     for (int p = 0; p < part_count; p++) {
       //global_node_numbers[p]    = new int[local_mesh[p].nodeCount];
       ExodusFile id(p);
-      error += ex_get_node_num_map(id, &global_node_numbers[p][0]);
+      error += ex_get_node_num_map(id, TOPTR(global_node_numbers[p]));
       std::copy(global_node_numbers[p].begin(), global_node_numbers[p].end(),
 		&global_node_map[offset]);
       offset += local_mesh[p].nodeCount;
@@ -1993,7 +1994,7 @@ namespace {
 
 	// Get the ids for these
 	ids.resize(ns_count);
-	ex_get_ids(id, EX_NODE_SET, &ids[0]);
+	ex_get_ids(id, EX_NODE_SET, TOPTR(ids));
 
 	for (int iset=0; iset < ns_count; iset++) {
 	  if (ids[iset] != 0) {
@@ -2024,7 +2025,7 @@ namespace {
 	std::set<int>::const_iterator IE = set_ids.end();
 
 	// Get the ids again so we can map current order back to file order...
-	ex_get_ids(id, EX_NODE_SET, &ids[0]);
+	ex_get_ids(id, EX_NODE_SET, TOPTR(ids));
 
 	int iset = 0;
 	while (I != IE) {
@@ -2037,7 +2038,7 @@ namespace {
 			   &nodesets[p][iset].dfCount);
 
 	  std::vector<char> name(Excn::ExodusFile::max_name_length()+1);
-	  ex_get_name(id, EX_NODE_SET, nodesets[p][iset].id, &name[0]);
+	  ex_get_name(id, EX_NODE_SET, nodesets[p][iset].id, TOPTR(name));
 	  if (name[0] != '\0') nodesets[p][iset].name_ = &name[0];
 
 	  if (nodesets[p][iset].dfCount != 0 &&
@@ -2103,9 +2104,9 @@ namespace {
 	    ns_nodes.resize(size);
 	    ns_df.resize(size);
 	    
-	    ex_get_set(id, EX_NODE_SET, nodesets[p][ns].id, &ns_nodes[0], 0);
+	    ex_get_set(id, EX_NODE_SET, nodesets[p][ns].id, TOPTR(ns_nodes), 0);
 	    if (nodesets[p][ns].dfCount > 0) {
-	      ex_get_set_dist_fact(id, EX_NODE_SET, nodesets[p][ns].id, &ns_df[0]);
+	      ex_get_set_dist_fact(id, EX_NODE_SET, nodesets[p][ns].id, TOPTR(ns_df));
 	    } else {
 	      std::fill(ns_df.begin(), ns_df.end(), 1.0);
 	    }
@@ -2156,7 +2157,7 @@ namespace {
 	    NodeSet &nset = nodesets[p][ns];
 	    int nnodes = nset.entity_count();
 	    nset.nodeOrderMap.resize(nnodes);
-	    ex_get_set(id, EX_NODE_SET, nset.id, &nset.nodeOrderMap[0], NULL);
+	    ex_get_set(id, EX_NODE_SET, nset.id, TOPTR(nset.nodeOrderMap), NULL);
 	    
 	    for (int i=0; i < nnodes; i++) {
 	      int local_node = nset.nodeOrderMap[i];                       // 1-based
@@ -2183,9 +2184,9 @@ namespace {
       std::cerr << "\nOutput NodeSets:\n";
 
     for (size_t ns = 0; ns < glob_sets.size(); ns++) {
-      ex_put_set(exoid, EX_NODE_SET, glob_sets[ns].id, &glob_sets[ns].nodeSetNodes[0], 0);
+      ex_put_set(exoid, EX_NODE_SET, glob_sets[ns].id, TOPTR(glob_sets[ns].nodeSetNodes), 0);
       if (glob_sets[ns].dfCount > 0) {
-	ex_put_node_set_dist_fact(exoid, glob_sets[ns].id, &glob_sets[ns].distFactors[0]);
+	ex_put_node_set_dist_fact(exoid, glob_sets[ns].id, TOPTR(glob_sets[ns].distFactors));
       }
 
       // Done with the memory; clear out the vector containing the bulk data nodes and distFactors.
@@ -2218,7 +2219,7 @@ namespace {
       
 	// Get the ids for these
 	ids.resize(ss_count);
-	ex_get_ids(id, EX_SIDE_SET, &ids[0]);
+	ex_get_ids(id, EX_SIDE_SET, TOPTR(ids));
 
 	for (int i=0; i < ss_count; i++) {
 	  if (ids[i] != 0) {
@@ -2250,7 +2251,7 @@ namespace {
 	std::set<int>::const_iterator IE = set_ids.end();
 
 	// Get the ids again so we can map current order back to file order...
-	ex_get_ids(id, EX_SIDE_SET, &ids[0]);
+	ex_get_ids(id, EX_SIDE_SET, TOPTR(ids));
 
 	int i = 0;
 	while (I != IE) {
@@ -2419,7 +2420,7 @@ namespace {
       }
       ex_put_var(id_out, step, EX_ELEM_BLOCK, variable,
 		 glob_blocks[b].id, glob_blocks[b].entity_count(),
-		 &proc[0]);
+		 TOPTR(proc));
     }
   }
 
@@ -2560,7 +2561,7 @@ namespace {
 	  // is the only variable...
 	  local[p].truthTable[object_type].resize(input_truth_table_length);
 	  ex_get_truth_table(id, vars.type(), global.count(object_type), vars.count(IN),
-			     &local[p].truthTable[object_type][0]);
+			     TOPTR(local[p].truthTable[object_type]));
 	}
 	for (size_t b=0; b < global.count(object_type); b++) {
 	  int bin = b;
@@ -2790,7 +2791,7 @@ namespace {
   void map_nodeset_vars(U &local_set, int entity_count, int glob_entity_count,
 			std::vector<T> &values, T *global_values)
   {
-    SMART_ASSERT(1==0 && "Internal Error!");
+    throw std::runtime_error("Internal Error!");
   }
 
   void map_nodeset_vars(Excn::NodeSet &local_set, int entity_count, int glob_entity_count,
@@ -2854,7 +2855,7 @@ namespace {
 
 	      if (local_mesh[p].truthTable[vars.objectType][input_truth_table_loc] > 0) {
 		error += ex_get_var(id, time_step+1, exodus_object_type(vars.objectType),
-				    i+1, local_sets[p][b].id, entity_count, &values[0]);
+				    i+1, local_sets[p][b].id, entity_count, TOPTR(values));
 		    
 		switch (vars.objectType) {
 		case EBLK:

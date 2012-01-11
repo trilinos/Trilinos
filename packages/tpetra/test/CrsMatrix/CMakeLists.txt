@@ -1,6 +1,6 @@
 
-INCLUDE(PackageAddExecutableAndTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 SET(ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/")
 
@@ -9,7 +9,7 @@ IF (SITE STREQUAL "gabriel.sandia.gov")
     "${ARGS} --not-unit-test=CrsMatrix_int_ComplexFloat_FullMatrixComplex_UnitTest")
 ENDIF()
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests
   SOURCES
     CrsMatrix_UnitTests
@@ -20,7 +20,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetratestlib
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_BlockExtraction
   SOURCES
     CrsMatrix_BlockExtraction
@@ -31,17 +31,18 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS tpetraext tpetratestlib
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraCrsMatrixCopyFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCrsMatrixCopyFiles
   SOURCE_FILES west0067.rua mhd1280b.cua
   EXEDEPS CrsMatrix_UnitTests
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(Tpetra_CRSTests_CopyFiles1
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
+ASSERT_DEFINED(Anasazi_SOURCE_DIR)
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CRSTests_CopyFiles1
+  SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk14.hb bcsstk15.hb
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_InOutTests
   SOURCES
     CrsMatrix_InOutTests
@@ -55,7 +56,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 SET(TIMING_INSTALLS "")
 
 IF (Kokkos_ENABLE_TBB AND Tpetra_ENABLE_MPI)
-  PACKAGE_ADD_EXECUTABLE(
+  TRIBITS_ADD_EXECUTABLE(
       CRSTiming_TBB
       SOURCES CRSTiming_TBB
       COMM mpi
@@ -65,7 +66,7 @@ IF (Kokkos_ENABLE_TBB AND Tpetra_ENABLE_MPI)
 ENDIF()
 
 IF (Kokkos_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
-  PACKAGE_ADD_EXECUTABLE(
+  TRIBITS_ADD_EXECUTABLE(
       CRSTiming_TPI
       SOURCES CRSTiming_TPI
       COMM mpi

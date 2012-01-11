@@ -1,6 +1,6 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TypeStackTest
   SOURCES TypeStackTest
   ${TEUCHOS_STD_UNIT_TEST_MAIN}

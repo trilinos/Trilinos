@@ -155,7 +155,7 @@ namespace Belos {
     /// missing or any provided value is invalid.
     static Teuchos::RCP<base_test>
     gmresTest (const bool haveLeftPreconditioner, 
-	       const Teuchos::RCP<const Teuchos::ParameterList>& params);
+	       const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief Change convergence tolerance and max number of iterations.
     ///
@@ -185,7 +185,6 @@ namespace Belos {
     changeConvTolAndMaxIters (const Teuchos::RCP<base_test>& test, 
 			      const magnitude_type convTol,
 			      const int maxIterCount);
-
 
     /// \brief Change max number of iterations in place.
     /// 
@@ -219,6 +218,16 @@ namespace Belos {
     ///   how to perform scaling.
     static ScaleType
     stringToScaleType (const std::string& scaleType);
+
+    /// \brief Default parameters for a status test suitable for GMRES.
+    ///
+    /// This method is nonconst because it creates and caches the list
+    /// of default parameters on demand.
+    Teuchos::RCP<const Teuchos::ParameterList> getValidGmresParameters ();
+
+  private:
+    //! Default parameters for a status test suitable for GMRES.
+    Teuchos::RCP<const Teuchos::ParameterList> defaultGmresParams_;
   };
 
 
@@ -260,16 +269,16 @@ namespace Belos {
     // the specified tolerance.  Otherwise, we only perform the
     // "implicit" test.
     RCP<res_norm_test> explicitTest;
-    if (haveLeftPreconditioner) // ! problem_->getLeftPrec().is_null()
-      {
-	explicitTest = rcp (new res_norm_test (convTol, defQuorum));
-	explicitTest->defineResForm (res_norm_test::Explicit, Belos::TwoNorm);
-	explicitTest->defineScaleForm (stringToScaleType (explicitScaleType),
-				       Belos::TwoNorm);
-	explicitTest->setShowMaxResNormOnly (showMaxResNormOnly);
-      }
-    else
+    if (haveLeftPreconditioner) { // ! problem_->getLeftPrec().is_null()
+      explicitTest = rcp (new res_norm_test (convTol, defQuorum));
+      explicitTest->defineResForm (res_norm_test::Explicit, Belos::TwoNorm);
+      explicitTest->defineScaleForm (stringToScaleType (explicitScaleType),
+				     Belos::TwoNorm);
+      explicitTest->setShowMaxResNormOnly (showMaxResNormOnly);
+    }
+    else {
       explicitTest = null;
+    }
 
     // Full convergence test:
     //
@@ -277,15 +286,17 @@ namespace Belos {
     // Followed by the explicit residual norm test if applicable,
     // Followed by the user-defined convergence test if supplied.
     RCP<base_test> convTest;
-    if (explicitTest.is_null())
+    if (explicitTest.is_null()) {
       convTest = implicitTest;
-    else
+    } 
+    else {
       // The "explicit" residual test is only performed once the
       // native ("implicit") residual is below the convergence
       // tolerance.
       convTest = rcp (new combo_test (combo_test::SEQ, 
 				      implicitTest, 
 				      explicitTest));
+    }
 
     // Stopping criterion for maximum number of iterations.
     RCP<max_iter_test> maxIterTest = rcp (new max_iter_test (maxIterCount));
@@ -301,59 +312,90 @@ namespace Belos {
   Teuchos::RCP<typename StatusTestFactory<Scalar, MV, OP>::base_test>
   StatusTestFactory<Scalar, MV, OP>::
   gmresTest (const bool haveLeftPreconditioner, 
-	     const Teuchos::RCP<const Teuchos::ParameterList>& params)
+	     const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     using Teuchos::Exceptions::InvalidParameter;
     using std::string;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
+    // "Convergence Tolerance" is a required parameter and must be
+    // nonnegative.
     const magnitude_type convTol = 
       params->get<magnitude_type> ("Convergence Tolerance");
     TEUCHOS_TEST_FOR_EXCEPTION(convTol < STM::zero(), std::invalid_argument,
 		       "Convergence tolerance " << convTol 
 		       << " is negative.");
+    // "Maximum Iterations" is a required parameter and must be nonnegative.
     const int maxIterCount = params->get<int> ("Maximum Iterations");
     TEUCHOS_TEST_FOR_EXCEPTION(maxIterCount < 0, std::invalid_argument,
 		       "Maximum number of iterations " << maxIterCount
 		       << " is negative.");
 
+    // PseudoBlockGmresSolMgr uses as defaults the preconditioned
+    // initial residual for the implicit test, and the
+    // unpreconditioned initial residual for the explicit test.
     ScaleType implicitScaleType = NormOfPrecInitRes;
-    try {
-      implicitScaleType = 
-	stringToScaleType (params->get<string> ("Implicit Residual Scaling"));
-    } catch (InvalidParameter&) {
-      // Do nothing; leave default value
+    {
+      const std::string defaultImplicitScaleType ("Norm of Preconditioned Initial Residual");
+      implicitScaleType = stringToScaleType (params->get ("Implicit Residual Scaling", defaultImplicitScaleType));
     }
     ScaleType explicitScaleType = NormOfInitRes;
-    try {
-      explicitScaleType = 
-	stringToScaleType (params->get<string> ("Explicit Residual Scaling"));
-    } catch (InvalidParameter&) {
-      // Do nothing; leave default value
+    {
+      const std::string defaultExplicitScaleType ("Norm of Initial Residual");
+      explicitScaleType = stringToScaleType (params->get ("Explicit Residual Scaling", defaultExplicitScaleType));
     }
-    int blockSize = 1;
-    try {
-      blockSize = params->get<int> ("Block Size");
-    } catch (InvalidParameter&) {
-      // Do nothing; leave default value
-    }
-    int defQuorum = -1;
-    try {
-      defQuorum = params->get<int> ("Deflation Quorum");
-    } catch (InvalidParameter&) {
-      // Do nothing; leave default value
-    }
-    bool showMaxResNormOnly = false;
-    try {
-      showMaxResNormOnly = 
-	params->get<bool> ("Show Maximum Residual Norm Only");
-    } catch (InvalidParameter&) {
-      // Do nothing; leave default value
-    }
+    const int defaultBlockSize = 1;
+    int blockSize = params->get ("Block Size", defaultBlockSize);
+
+    const int defaultDefQuorum = -1;
+    int defQuorum = params->get ("Deflation Quorum", defaultDefQuorum);
+
+    const bool defaultShowMaxResNormOnly = false;
+    bool showMaxResNormOnly = params->get ("Show Maximum Residual Norm Only", defaultShowMaxResNormOnly);
 
     return gmresTest (convTol, maxIterCount, haveLeftPreconditioner,
 		      implicitScaleType, explicitScaleType, blockSize,
 		      defQuorum, showMaxResNormOnly);
+  }
+
+  template<class Scalar, class MV, class OP>
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidGmresParameters ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+    if (defaultGmresParams_.is_null()) {
+      // These two parameters are required.  We supply defaults only
+      // as examples.
+      const magnitude_type convTol = STS::squareroot (STS::eps());
+      const int maxIterCount = 200;
+
+      // PseudoBlockGmresSolMgr uses as defaults the preconditioned
+      // initial residual for the implicit test, and the
+      // unpreconditioned initial residual for the explicit test.  We
+      // take these as the standard for all GMRES variants.
+      const std::string defaultImplicitScaleType ("Norm of Preconditioned Initial Residual");
+      const std::string defaultExplicitScaleType ("Norm of Initial Residual");
+      const int defaultBlockSize = 1;
+      const int defaultDefQuorum = -1;
+      const bool defaultShowMaxResNormOnly = false;
+
+      RCP<ParameterList> params = parameterList ();
+      params->set ("Convergence Tolerance", convTol);
+      params->set ("Maximum Iterations", maxIterCount);
+      params->set ("Implicit Residual Scaling", defaultImplicitScaleType);
+      params->set ("Explicit Residual Scaling", defaultExplicitScaleType);
+      params->set ("Block Size", defaultBlockSize);
+      params->set ("Deflation Quorum", defaultDefQuorum);
+      params->set ("Show Maximum Residual Norm Only", defaultShowMaxResNormOnly);
+
+      defaultGmresParams_ = params;
+    }
+    return defaultGmresParams_;
   }
 
 

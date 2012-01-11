@@ -113,6 +113,10 @@ int main(int argc, char **argv)
     else
       Cijk = basis->computeTripleProductTensor(basis->dimension()+1);
 
+    std::cout << "basis size = " << basis->size() 
+	      << " num nonzero Cijk entries = " << Cijk->num_entries() 
+	      << std::endl;
+
 #ifdef HAVE_MPI
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 #else

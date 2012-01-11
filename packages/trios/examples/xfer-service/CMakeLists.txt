@@ -1,6 +1,6 @@
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(TriosProcessXDR)
 
 ############# Special exception for rpcgen extra commas in enum ##########
@@ -22,9 +22,9 @@ TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/xfer_service_args.x)
 
 
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   XferServiceTest
-  SOURCES xfer_service_args.c xfer_server.cpp xfer_service_test.cpp xfer_client.cpp
+  SOURCES xfer_service_args.c xfer_buffer_util.cpp xfer_server.cpp xfer_service_test.cpp xfer_client.cpp
   DEPLIBS ${DEPLIBS}
 )
 
@@ -37,21 +37,27 @@ ENDIF()
 
 
 SET(TESTNAMES 
-   push-sync
-   push-async
-   pull-sync
-   pull-async
-   roundtrip-sync
-   roundtrip-async
-   get-sync
-   get-async)
+   write-encode-sync
+   write-encode-async
+   write-rdma-sync
+   write-rdma-async
+   read-encode-sync
+   read-encode-async
+   read-rdma-sync
+   read-rdma-async)
 
 
 foreach (testname ${TESTNAMES})
-  PACKAGE_ADD_TEST(
+  
+  SET(DEFAULT_ARGS "--io-method=${testname} ")
+  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file=${testname}-result.out ")
+  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file-mode=a ")
+  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --num-trials=5 ")
+  
+  TRIBITS_ADD_TEST(
     XferServiceTest
     NAME XferService_${testname}
-    ARGS "--io-method=${testname} ${EXTRA_TEST_ARGS}"
+    ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"
     COMM serial mpi
     NUM_MPI_PROCS 2)
   

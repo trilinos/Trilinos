@@ -1,8 +1,8 @@
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Time_test  
   SOURCES cxx_main.cpp 
   COMM serial mpi
@@ -16,11 +16,11 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 # because it's odd (thereby testing possible corner cases of the
 # parallel recursions in the current summarize() implementation) and
 # bigger than 1.
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TimeMonitor_UnitTests
   SOURCES
     TimeMonitor_UnitTests.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 3
   ARGS --teuchos-suppress-startup-banner

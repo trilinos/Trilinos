@@ -93,7 +93,7 @@
         <<Teuchos::concreteTypeName(excpt)<<"\' :\n\n"; \
         Teuchos::OSTab(oss).o() << TEUCHOS_GET_STORED_STACKTRACE() \
                                 << excpt.what() << std::endl; \
-        std::cout << std::flush; \
+        (ERR_STREAM) << std::flush; \
       (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \
     } \
@@ -105,7 +105,7 @@
         << "\np="<<::Teuchos::GlobalMPISession::getRank() \
         << ": *** Caught an integer std::exception with value = " \
         << excpt_code << std::endl; \
-        std::cout << std::flush; \
+        (ERR_STREAM) << std::flush; \
       (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \
     } \
@@ -115,7 +115,7 @@
       std::ostringstream oss; \
       oss << "\np="<<::Teuchos::GlobalMPISession::getRank() \
           <<": *** Caught an unknown exception\n"; \
-      std::cout << std::flush; \
+      (ERR_STREAM) << std::flush; \
       (ERR_STREAM) << oss.str(); \
       (SUCCESS_FLAG) = false; \
     } \

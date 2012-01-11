@@ -1,14 +1,15 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(CURRENT_PACKAGE TEUCHOS)
-CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+ASSERT_DEFINED(Trilinos_SOURCE_DIR)
+CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
 
 #
@@ -19,13 +20,10 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 # Set the base Trilinos directory in order to find Trilinos_version.h
-
-ASSERT_DEFINED(PROJECT_SOURCE_DIR)
-
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
-
+ASSERT_DEFINED(Trilinos_BINARY_DIR)
+INCLUDE_DIRECTORIES(${Trilinos_BINARY_DIR})
 APPEND_SET(HEADERS
-  ${CMAKE_CURRENT_BINARY_DIR}/../../../Trilinos_version.h
+  ${Trilinos_BINARY_DIR}/Trilinos_version.h
   )
 
 # Set headers (for IDEs and installing)
@@ -138,6 +136,7 @@ APPEND_SET(HEADERS
   Teuchos_SerializationTraitsHelpers.hpp
   Teuchos_Serializer.hpp
   Teuchos_SerializerHelpers.hpp
+  Teuchos_SimpleObjectDB.hpp
   Teuchos_SimpleObjectTable.hpp
   Teuchos_StandardCatchMacros.hpp
   Teuchos_StandardCompositionMacros.hpp
@@ -362,7 +361,7 @@ IF (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
     )
 ENDIF()
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   teuchos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

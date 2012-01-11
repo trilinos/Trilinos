@@ -1,41 +1,45 @@
-/** \HEADER
- *************************************************************************
- *
- *                            Kokkos
- *                 Copyright 2010 Sandia Corporation
- *
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions are
- *  met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *  notice, this list of conditions and the following disclaimer.
- *
- *  2. Redistributions in binary form must reproduce the above copyright
- *  notice, this list of conditions and the following disclaimer in the
- *  documentation and/or other materials provided with the distribution.
- *
- *  3. Neither the name of the Corporation nor the names of the
- *  contributors may be used to endorse or promote products derived from
- *  this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
- *  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- *  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
- *  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- *  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- *  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *************************************************************************
- */
+/*
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+*/
 
 #if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
@@ -51,14 +55,10 @@ namespace Kokkos {
 namespace Impl {
 
 template<>
-class MDArrayIndexMap< KOKKOS_MACRO_DEVICE_MEMORY,
-                       Kokkos::Impl::MDArrayIndexMapRight, 1 > {
+class MDArrayIndexMapRight< KOKKOS_MACRO_DEVICE::memory_space > {
 public:
 
-  typedef KOKKOS_MACRO_DEVICE_MEMORY  memory_space ;
-  typedef memory_space::size_type     size_type ;
-
-  enum { Contiguous = true };
+  typedef KOKKOS_MACRO_DEVICE::size_type  size_type ;
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -69,7 +69,7 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension( const iType & ordinal ) const
   {
-    KOKKOS_MACRO_CHECK( require_less( ordinal , m_rank ) );
+    KOKKOS_MACRO_CHECK( require_less( ordinal , MDArrayMaxRank ) );
     return m_dims[ordinal];
   }
 
@@ -268,7 +268,7 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  MDArrayIndexMap()
+  MDArrayIndexMapRight()
     : m_rank(0)
   {
     m_dims[0] = 0 ; m_dims[1] = 0 ;
@@ -277,60 +277,15 @@ public:
     m_dims[6] = 0 ; m_dims[7] = 0 ;
   }
 
+  template< typename ValueType >
   inline
-  MDArrayIndexMap( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-                   size_t n4 , size_t n5 , size_t n6 , size_t n7 )
-    : m_rank( mdarray_deduce_rank( n0, n1, n2, n3, n4, n5, n6, n7 ) )
+  void assign( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
+               size_t n4 , size_t n5 , size_t n6 , size_t n7 )
   {
+    typedef  KOKKOS_MACRO_DEVICE::memory_space  memory_space ;
+    m_rank = mdarray_deduce_rank( n0, n1, n2, n3, n4, n5, n6, n7 );
     m_dims[0] = n0 ; m_dims[1] = n1 ; m_dims[2] = n2 ; m_dims[3] = n3 ;
     m_dims[4] = n4 ; m_dims[5] = n5 ; m_dims[6] = n6 ; m_dims[7] = n7 ;
-  }
-
-  inline
-  MDArrayIndexMap( size_t arg_rank, const size_t * const arg_dims )
-    : m_rank(arg_rank)
-  {
-    KOKKOS_MACRO_CHECK( require_less( arg_rank , MDArrayMaxRank ) );
-    size_type i = 0 ;
-    for ( ; i < m_rank ; ++i ) {
-      m_dims[i] = arg_dims[i] ;
-      KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
-    }
-    for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
-  }
-
-  template < class IndexMap >
-  explicit
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  MDArrayIndexMap( const IndexMap & rhs )
-    : m_rank( rhs.rank() )
-  {
-    KOKKOS_MACRO_CHECK( require_less( m_rank , MDArrayMaxRank ) );
-    size_type i = 0 ;
-    for ( ; i < m_rank ; ++i ) {
-      m_dims[i] = rhs.dimension(i);
-      KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
-    }
-    for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
-  }
-
-  template < class IndexMap >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  MDArrayIndexMap & operator = ( const IndexMap & rhs )
-  {
-    if (this != & rhs ) {
-      m_rank = rhs.rank();
-      KOKKOS_MACRO_CHECK( require_less( m_rank , MDArrayMaxRank ) );
-      size_type i = 0 ;
-      for ( ; i < m_rank ; ++i ) {
-        m_dims[i] = rhs.m_dims[i] ;
-        KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
-      }
-      for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
-    }
-    return *this;
   }
 
 private:

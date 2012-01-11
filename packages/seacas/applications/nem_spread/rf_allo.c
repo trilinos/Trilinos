@@ -180,8 +180,8 @@ va_dcl
    if (dim[0].index == 0) {
 #ifdef DEBUG
     fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-            "dimension == 0, %lu; will return NULL\n",
-            yo, file, lineno, (unsigned long)dim[0].index);
+            "dimension == 0; will return NULL\n",
+            yo, file, lineno);
 #endif
       return((double *) NULL);
    }
@@ -192,9 +192,9 @@ va_dcl
    for (i=1; i<numdim; i++) {
       dim[i].index = va_arg(va, int);
       if (dim[i].index <= 0) {
-         fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d <= 0, "
-                 "%ld; will return NULL\n",
-                 yo, file, lineno, i+1, dim[i].index);
+         fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d == 0, "
+                 " will return NULL\n",
+                 yo, file, lineno, i+1);
 	 return((double *) NULL);
       }
       dim[i].total = dim[i-1].total * dim[i].index;

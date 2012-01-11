@@ -53,9 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
     
-    TPL_DECLARE_LIBRARIES( OpenNURBS
+    TRIBITS_TPL_DECLARE_LIBRARIES( OpenNURBS
       REQUIRED_HEADERS opennurbs.h 
       REQUIRED_LIBS_NAMES "openNURBS"
       )

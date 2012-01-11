@@ -28,6 +28,7 @@ extern "C" {
 #include "ha_const.h"
 #include "par_median_const.h"
 #include "par_bisect_const.h"
+#include "rcb_params.h"
 
 /* Recursive coordinate bisectioning (RCB) routine
    operates on "dots" as defined in shared_const.h
@@ -106,28 +107,6 @@ static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
 static void compute_RCB_box(struct rcb_box *, int, struct Dot_Struct *, int *,
   MPI_Op, MPI_Datatype, MPI_Comm, int, int, int, int);
 
-/*****************************************************************************/
-/*  Parameters structure for RCB method.  Used in  */
-/*  Zoltan_RCB_Set_Param and Zoltan_RCB.                   */
-static PARAM_VARS RCB_params[] = {
-                  { "RCB_OVERALLOC", NULL, "DOUBLE", 0 },
-                  { "RCB_REUSE", NULL, "INT", 0 },
-                  { "CHECK_GEOM", NULL, "INT", 0 },
-                  { "RCB_OUTPUT_LEVEL", NULL, "INT", 0 },
-                  { "KEEP_CUTS", NULL, "INT", 0 },
-                  { "RCB_LOCK_DIRECTIONS", NULL, "INT", 0 },
-                  { "RCB_SET_DIRECTIONS", NULL, "INT", 0 },
-                  { "RCB_RECTILINEAR_BLOCKS", NULL, "INT", 0 },
-                  { "OBJ_WEIGHTS_COMPARABLE", NULL, "INT", 0 },
-                  { "RCB_MULTICRITERIA_NORM", NULL, "INT", 0 },
-                  { "RCB_MAX_ASPECT_RATIO", NULL, "DOUBLE", 0 },
-                  { "AVERAGE_CUTS", NULL, "INT", 0 },
-                  { "RANDOM_PIVOTS", NULL, "INT", 0 },
-                  { "RCB_RECOMPUTE_BOX", NULL, "INT", 0 },
-                  { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
-                  { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
-                  {"FINAL_OUTPUT",      NULL,  "INT",    0},
-                  { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
 /*---------------------------------------------------------------------------*/

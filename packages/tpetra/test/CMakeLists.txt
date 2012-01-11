@@ -22,11 +22,9 @@ ADD_SUBDIRECTORIES(
   inout
   )
 
-IF (Tpetra_ENABLE_BUGTESTS)
-  ADD_SUBDIRECTORY(BugTests)
-ENDIF()
+ADD_SUBDIRECTORY(BugTests)
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   tpetratestlib
   SOURCES UnitTestMissingExplicitInstantiations.cpp
   DEPLIBS tpetra teuchos

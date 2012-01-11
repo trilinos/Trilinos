@@ -1,18 +1,18 @@
 
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-PACKAGE(Teko)
+TRIBITS_PACKAGE(Teko)
 
 #
 # B) Set up package-specific options
 #
 
-#ADD_OPTION_AND_DEFINE(Teko_ENABLE_BLOCK_SMOOTHERS
+#TRIBITS_ADD_OPTION_AND_DEFINE(Teko_ENABLE_BLOCK_SMOOTHERS
 #  Teko_ENABLE_ML_SMOOTHERS
 #  "Enable ml block smoothers."
 #  OFF )
@@ -25,7 +25,7 @@ ELSE()
 ENDIF()
 
 # enable development mode
-IF(Trilinos_ENABLE_DEVELOPMENT_MODE)
+IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
    SET(Teko_ENABLE_DEV_MODE ON)
 ELSE()
    SET(Teko_ENABLE_DEV_MODE OFF)
@@ -37,10 +37,10 @@ ENDIF()
 
 ADD_SUBDIRECTORY(src)
 
-PACKAGE_ADD_TEST_DIRECTORIES(tests)
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(examples)
+TRIBITS_ADD_TEST_DIRECTORIES(tests)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
 
-PACKAGE_ARCH_EXCLUDE_FILES(
+TRIBITS_EXCLUDE_FILES(
   tests/data/nsjac.mm
   tests/data/nsjac_1.mm
   src/mlutils
@@ -50,4 +50,4 @@ PACKAGE_ARCH_EXCLUDE_FILES(
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

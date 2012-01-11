@@ -27,6 +27,9 @@ extern "C" {
 #ifdef ZOLTAN_DRUM
 #include "ha_drum.h"
 #endif
+#ifdef ZOLTAN_OVIS
+#include "ha_ovis.h"
+#endif
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -259,6 +262,9 @@ struct Hash_Node **ht;
 int *export_all_procs, *export_all_to_part, *parts=NULL;
 ZOLTAN_ID_PTR all_global_ids=NULL, all_local_ids=NULL;
 ZOLTAN_ID_PTR gid;
+#ifdef ZOLTAN_OVIS
+struct OVIS_parameters ovisParameters;
+#endif
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -277,6 +283,16 @@ ZOLTAN_ID_PTR gid;
 
   /* stop DRUM monitors */
   Zoltan_Drum_Stop_Monitors(zz);
+#endif
+
+#ifdef ZOLTAN_OVIS
+  ovis_enabled(zz->Proc);
+  Zoltan_OVIS_Setup(zz, &ovisParameters);
+  if (zz->Proc == 0)
+    printf("OVIS PARAMETERS %s %d %f\n", 
+           ovisParameters.hello, 
+           ovisParameters.outputLevel, 
+           ovisParameters.minVersion);
 #endif
 
   /* 
@@ -328,17 +344,6 @@ ZOLTAN_ID_PTR gid;
    */
 
   Zoltan_Srand_Sync(Zoltan_Rand(NULL), NULL, zz->Communicator);
-
-  /*
-   *  Construct the heterogenous machine description.
-   */
-
-  error = Zoltan_Build_Machine_Desc(zz);
-
-  if (error == ZOLTAN_FATAL)
-    goto End;
-
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Done machine description");
 
   /* Since generating a new partition, need to free old mapping vector */
   zz->LB.OldRemap = zz->LB.Remap;

@@ -1,11 +1,11 @@
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 ######################################################################
 ## Define the package
 ######################################################################
 
-PACKAGE(Belos)
+TRIBITS_PACKAGE(Belos)
 
 ######################################################################
 ## Set up package-specific options
@@ -16,19 +16,19 @@ PACKAGE(Belos)
 # TSQR is enabled by default in Belos if enabled in Kokkos.  If
 # Teuchos_ENABLE_COMPLEX is enabled, TSQR is built with complex
 # arithmetic support.
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_BELOS_TSQR
   "Enable TSQR (Tall Skinny QR factorization) support in Belos."
   "${Kokkos_ENABLE_TSQR}" )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   BELOS_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors enabled."
-  "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
+  "${${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR}" )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Tpetra_Timers
   HAVE_BELOS_TPETRA_TIMERS
   "Add timers to Belos::MultiVecTraits for Tpetra multivectors."
@@ -55,7 +55,7 @@ ADD_OPTION_AND_DEFINE(
 # resp. ${PACKAGE_NAME}_EXPERIMENTAL_SOURCES.
 #
 # Note that some experimental files may be excluded from the release
-# tarball.  Belos uses the PACKAGE_ARCH_EXCLUDE_FILES macro later in
+# tarball.  Belos uses the TRIBITS_EXCLUDE_FILES macro later in
 # this file to list the files and directories to exclude from the
 # release tarball.  That macro must NOT include conditional
 # expressions; it must evaluate to the same list, no matter how
@@ -64,7 +64,7 @@ ADD_OPTION_AND_DEFINE(
 # tarball, rather than using variables or conditional CMake
 # expressions.
 #
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
   HAVE_BELOS_EXPERIMENTAL
   "Enable building and installation of experimental Belos features."
@@ -82,9 +82,9 @@ SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES "")
 
 ADD_SUBDIRECTORY(src)
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 IF (Belos_ENABLE_Epetra)
   ADD_SUBDIRECTORY(epetra)
@@ -102,12 +102,12 @@ ENDIF()
 #
 # Exclude leftover GNU Autotools files.
 #
-PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 #
 # Files and directories to exclude from the release tarball.
 #
-PACKAGE_ARCH_EXCLUDE_FILES(
+TRIBITS_EXCLUDE_FILES(
   src/BelosAkxFactory.hpp
   src/BelosAkx.hpp
   src/BelosCaGmres.hpp
@@ -133,4 +133,4 @@ PACKAGE_ARCH_EXCLUDE_FILES(
 ## Do standard postprocessing
 ######################################################################
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

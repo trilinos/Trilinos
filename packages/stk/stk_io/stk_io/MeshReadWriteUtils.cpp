@@ -57,6 +57,7 @@ namespace {
 	    std::string field_name = sset->name() + "_df";
 	    distribution_factors_field =
 	      &fem_meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
+	    stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
 	    stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);
 	    surface_df_defined = true;
 	  }
@@ -238,6 +239,7 @@ namespace {
 
     stk::mesh::Field<double> & distribution_factors_field =
       fem_meta.declare_field<stk::mesh::Field<double> >("distribution_factors");
+    stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
 
     /** \todo REFACTOR How to associate distribution_factors field
      * with the nodeset part if a node is a member of multiple

@@ -1,12 +1,12 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 // 
-//               Tpetra: Linear Algebra Services Package 
-//                 Copyright 2011 Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ************************************************************************
-//@HEADER
+// @HEADER
 
 #ifndef __MatrixMarket_util_hpp
 #define __MatrixMarket_util_hpp

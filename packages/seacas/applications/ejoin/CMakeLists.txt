@@ -1,8 +1,8 @@
-INCLUDE(SubPackageMacros)
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsLibraryMacros)
 
-SUBPACKAGE(Ejoin)
+TRIBITS_SUBPACKAGE(Ejoin)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -11,9 +11,9 @@ INCLUDE_DIRECTORIES(
 SET(HEADERS "")
 SET(SOURCES EJ_index_sort.C  EJ_match_xyz.C  EJ_SystemInterface.C  EJ_vector3d.C   EJ_mapping.C)
 
-PACKAGE_ADD_LIBRARY(ejoin_app_lib SOURCES ${SOURCES} DEPLIBS Ioss exodus suplib)
-PACKAGE_ADD_EXECUTABLE(ejoin NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} SOURCES EJoin.C DEPLIBS ejoin_app_lib COMM serial)
+TRIBITS_ADD_LIBRARY(ejoin_app_lib SOURCES ${SOURCES} DEPLIBS Ioss exodus suplib)
+TRIBITS_ADD_EXECUTABLE(ejoin NOEXEPREFIX NOEXESUFFIX HEADERS ${HEADERS} SOURCES EJoin.C DEPLIBS ejoin_app_lib COMM serial mpi)
 install_executable(ejoin)
 
-SUBPACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

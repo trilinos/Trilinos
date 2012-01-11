@@ -1,5 +1,5 @@
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 INCLUDE(CheckIncludeFileCXX)
 
 #
@@ -9,7 +9,7 @@ INCLUDE(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(sys/time.h HAVE_SYS_TIME_H)
 CHECK_INCLUDE_FILE_CXX(time.h HAVE_TIME_H)
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -144,7 +144,7 @@ ENDIF()
 IF(Pliris_ENABLE_ZCPLX)
   MESSAGE("     Building the Z Complex library")
   ADD_DEFINITIONS(-DZCPLX)
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     zpliris
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
@@ -153,7 +153,7 @@ IF(Pliris_ENABLE_ZCPLX)
 ELSEIF(Pliris_ENABLE_SCPLX)
   MESSAGE("     Building the S Complex library")
   ADD_DEFINITIONS(-DSCPLX)
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     cpliris
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
@@ -162,7 +162,7 @@ ELSEIF(Pliris_ENABLE_SCPLX)
 ELSEIF(Pliris_ENABLE_SREAL)
   MESSAGE("     Building the single precision library")
   ADD_DEFINITIONS(-DSREAL)
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     spliris
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
@@ -171,7 +171,7 @@ ELSEIF(Pliris_ENABLE_SREAL)
 ELSEIF(Pliris_ENABLE_DREAL)
   MESSAGE("     Building the double precision(default) library")
   ADD_DEFINITIONS(-DDREAL)
-  PACKAGE_ADD_LIBRARY(
+  TRIBITS_ADD_LIBRARY(
     dpliris
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}

@@ -4,26 +4,39 @@
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
 
 // TODO: make sure that Ordinal values in constructors aren't invalid()
@@ -58,16 +71,17 @@
 namespace Tpetra {
   
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::Map(
-                        global_size_t numGlobalElements_in, 
-                        GlobalOrdinal indexBase_in, 
-                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
-                        LocalGlobal lOrG, 
-                        const Teuchos::RCP<Node> &node_in)
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map (global_size_t numGlobalElements_in, 
+       GlobalOrdinal indexBase_in, 
+       const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
+       LocalGlobal lOrG, 
+       const Teuchos::RCP<Node> &node_in)
   : comm_(comm_in)
   , node_(node_in) 
   {
-    // distribute the elements across the nodes so that they are 
+    // The user wants us to distribute the elements across the nodes
+    // so that they are
     // - non-overlapping
     // - contiguous
     // - as evenly distributed as possible
@@ -78,14 +92,19 @@ namespace Tpetra {
     const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid();
     const GlobalOrdinal G1 = Teuchos::OrdinalTraits<GlobalOrdinal>::one();
 
-    std::string errPrefix;
-    errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,indexBase,comm,lOrG): ";
+    std::string errPrefix = Teuchos::typeName(*this) + 
+      "::constructor(numGlobal,indexBase,comm,lOrG): ";
 
     if (lOrG == GloballyDistributed) {
       const int numImages = comm_->getSize();
       const int myImageID = comm_->getRank();
 
-      // check that numGlobalElements,indexBase is equivalent across images
+      // This constructor requires that the given number of global
+      // elements (numGlobalElements) be valid, since this constructor
+      // doesn't compute it.  All processes in the given communicator
+      // must provide the same numGlobalElements and indexBase values.
+      // (We check this by broadcasting Rank 0's values and comparing
+      // with the local values.)
       global_size_t rootNGE = numGlobalElements_in;
       GlobalOrdinal rootIB  = indexBase_in;
       Teuchos::broadcast<int,global_size_t>(*comm_,0,&rootNGE);
@@ -101,8 +120,9 @@ namespace Tpetra {
         localChecks[0] = myImageID;
         localChecks[1] = 2;
       }
-      // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass, as well as the reason
-      // these will be -1 and 0 if all procs passed
+      // REDUCE_MAX will give us the rank ("image ID") of the
+      // highest-rank process that DID NOT pass, as well as the
+      // reason.  These will be -1 resp. 0 if all processes passed.
       Teuchos::reduceAll<int,int>(*comm_,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
@@ -119,7 +139,13 @@ namespace Tpetra {
               errPrefix << "logic error. Please contact the Tpetra team.");
         }
       }
-      // numGlobalElements is coherent, but is it valid? this comparison looks funny, but it avoids compiler warnings on unsigned types.
+      // All processes have the same numGlobalElements, but we still
+      // need to check that it is valid.  numGlobalElements must be
+      // positive and not the "invalid" value (GSTI).
+      //
+      // This comparison looks funny, but it avoids compiler warnings
+      // for comparing unsigned integers (numGlobalElements_in is a
+      // global_size_t, which is unsigned).
       TEUCHOS_TEST_FOR_EXCEPTION((numGlobalElements_in < GST1 && numGlobalElements_in != GST0) || numGlobalElements_in == GSTI, std::invalid_argument,
           errPrefix << "numGlobalElements (== " << rootNGE << ") must be >= 0.");
 
@@ -149,9 +175,9 @@ namespace Tpetra {
       numLocalElements_ = as<size_t>(numGlobalElements_ / as<global_size_t>(numImages));
       int remainder = as<int>(numGlobalElements_ % as<global_size_t>(numImages));
 #ifdef HAVE_TEUCHOS_DEBUG
-      // the above code assumes truncation. is that safe?
+      // The above code assumes truncation. Is that safe?
       SHARED_TEST_FOR_EXCEPTION(numLocalElements_ * numImages + remainder != numGlobalElements_,
-          std::logic_error, "Tpetra::Map::constructor(numGlobal,indexBase,platform): GlobalOrdinal does not implement division with truncation."
+          std::logic_error, "Tpetra::Map::constructor(numGlobalElements,indexBase,comm,localOrGlobal,node): GlobalOrdinal does not implement division with truncation."
           << " Please contact Tpetra team.",*comm_);
 #endif
       GlobalOrdinal start_index;
@@ -204,17 +230,21 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::Map(global_size_t numGlobalElements_in, size_t numLocalElements_in, GlobalOrdinal indexBase_in, 
-                                            const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
-                                            const Teuchos::RCP<Node> &node_in) 
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map (global_size_t numGlobalElements_in, 
+       size_t numLocalElements_in, 
+       GlobalOrdinal indexBase_in, 
+       const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
+       const Teuchos::RCP<Node> &node_in) 
   : comm_(comm_in)
   , node_(node_in) 
   {
     // Distribute the elements across the nodes so that they are 
     // - non-overlapping
     // - contiguous
-    // This differs from Map(Ord,Ord,Plat) in that the user has specified the number of elements 
-    // per node, so that they are not (necessarily) evenly distributed
+    // This differs from Map(Ord,Ord,Plat) in that the user has
+    // specified the number of elements per node, so that they are not
+    // (necessarily) evenly distributed.
 
     using Teuchos::outArg;
 
@@ -329,62 +359,80 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::Map (global_size_t numGlobalElements_in, const Teuchos::ArrayView<const GlobalOrdinal> &entryList, GlobalOrdinal indexBase_in, 
-                                             const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
-                                             const Teuchos::RCP<Node> &node_in)
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map (global_size_t numGlobalElements_in, 
+       const Teuchos::ArrayView<const GlobalOrdinal> &entryList, 
+       GlobalOrdinal indexBase_in, 
+       const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
+       const Teuchos::RCP<Node> &node_in)
   : comm_(comm_in)
   , node_(node_in) 
   {
+    // The user has specified the distribution of elements over the
+    // nodes, via entryList.  The distribution is not necessarily
+    // contiguous or equally shared over the nodes.
     using Teuchos::as;
     using Teuchos::outArg;
-    // Distribute the elements across the nodes in an arbitrary user-specified manner
-    // They are not necessarily contiguous or evenly distributed
     const size_t  L0 = Teuchos::OrdinalTraits<size_t>::zero();
     const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
     const global_size_t GST1 = Teuchos::OrdinalTraits<global_size_t>::one();
     const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid();
 
+    // The length of entryList on this node is the number of local
+    // elements (on this node), even though entryList contains global
+    // indices.  We assume that the number of local elements can be
+    // stored in a LocalOrdinal.
     LocalOrdinal numLocalElements_in = Teuchos::as<LocalOrdinal>(entryList.size());
 
-    std::string errPrefix;
-    errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,entryList,indexBase,platform): ";
+    std::string errPrefix = Teuchos::typeName(*this) + 
+      "::constructor(numGlobal,entryList,indexBase,platform): ";
 
     const int myImageID = comm_->getRank();
     { // begin scoping block
       // for communicating failures 
       int localChecks[2], globalChecks[2];
 
-      /* compute the global size 
-         we are computing the number of global elements because exactly ONE of the following is true:
+      /* Compute the global number of elements.
+	 We are doing this because exactly ONE of the following is true:
          - the user didn't specify it, and we need it
          - the user did specify it, but we need to 
            + validate it against the sum of the local sizes, and
            + ensure that it is the same on all nodes
        */
-      global_size_t global_sum;
-      Teuchos::reduceAll<int,global_size_t>(*comm_,Teuchos::REDUCE_SUM,
-        as<global_size_t>(numLocalElements_in),outArg(global_sum));
+      global_size_t global_sum; // Global number of elements
+      Teuchos::reduceAll<int,global_size_t>(*comm_, Teuchos::REDUCE_SUM,
+        as<global_size_t>(numLocalElements_in), outArg(global_sum));
       localChecks[0] = -1;
       localChecks[1] = 0;
+      // If the user supplied the number of global elements (i.e., if
+      // it's not invalid (== GSTI)), then make sure that there is at
+      // least one global element.  The first two clauses of the test
+      // are apparently redundant, but help avoid compiler warnings
+      // about comparing signed and unsigned integers.
       if (numGlobalElements_in < GST1 && numGlobalElements_in != GST0 && numGlobalElements_in != GSTI) {
-        // invalid
+        // Number of global elements is not the "invalid" value, and
+        // is nonpositive.
         localChecks[0] = myImageID;
         localChecks[1] = 1;
       }
       else if (numGlobalElements_in != GSTI && numGlobalElements_in != global_sum) {
-        // incorrect
+        // Number of global elements is not the "invalid" value, and
+        // is not equal to the global sum.
         localChecks[0] = myImageID;
         localChecks[1] = 2;
       }
-      // now check that indexBase is equivalent across images
+      //
+      // Now check that all nodes have the same indexBase value.
+      //
       GlobalOrdinal rootIB = indexBase_in;
       Teuchos::broadcast<int,GlobalOrdinal>(*comm_,0,&rootIB);   // broadcast one ordinal from node 0
       if (indexBase_in != rootIB) {
         localChecks[0] = myImageID;
         localChecks[1] = 3;
       }
-      // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass
-      // this will be -1 if all procs passed
+      // REDUCE_MAX will give us the rank ("image ID") of the
+      // highest-rank process that DID NOT pass.  This will be -1 if
+      // all processes passed.
       Teuchos::reduceAll<int,int>(*comm_,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
@@ -409,8 +457,10 @@ namespace Tpetra {
               errPrefix << "logic error. Please contact the Tpetra team.");
         }
       }
-
-      // these are all validated/computed now
+      //
+      // We've successfully validated or computed the number of global
+      // elements, and validated the index base.
+      //
       if (numGlobalElements_in == GSTI) {
         numGlobalElements_ = global_sum;
       }
@@ -421,14 +471,14 @@ namespace Tpetra {
       indexBase_ = indexBase_in;
     } // end scoping block
 
-    // assume for now that there are numLocalElements (there may be less, if some
-    // GIDs are duplicated in entryList)
+    // Assume for now that there are numLocalElements (there may be
+    // less, if some GIDs are duplicated in entryList).
     minMyGID_ = indexBase_;
     maxMyGID_ = indexBase_;
-    // create the GID to LID map; do not assume GID in entryList are distinct.
-    // in the case that a GID is duplicated, keep the previous LID
-    // this is necessary so that LIDs are in [0,numLocal)
-
+    // Create the GID to LID map.  Do not assume that the GIDs in
+    // entryList are distinct.  In the case that a GID is duplicated,
+    // use the same LID for all duplicates.  This is necessary so that
+    // the LIDs are in [0,numLocal).
     size_t numUniqueGIDs = 0;
     if (numLocalElements_ > L0) {
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
@@ -447,13 +497,14 @@ namespace Tpetra {
       maxMyGID_ = *std::max_element(lgMap_.begin(), lgMap_.end());
     }
 
-    // set min/maxAllGIDs
+    // Compute the min and max of all processes' global IDs.
     Teuchos::reduceAll<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_MIN,minMyGID_,Teuchos::outArg(minAllGID_));
     Teuchos::reduceAll<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_MAX,maxMyGID_,Teuchos::outArg(maxAllGID_));
     contiguous_  = false;
     distributed_ = checkIsDist();
     TEUCHOS_TEST_FOR_EXCEPTION(minAllGID_ < indexBase_, std::invalid_argument,
-        errPrefix << "minimum GID (== " << minAllGID_ << ") is less than indexBase (== " << indexBase_ << ")");
+      errPrefix << "Minimum global ID (== " << minAllGID_ << ") over all process"
+      "(es) is less than the given indexBase (== " << indexBase_ << ")");
     setupDirectory();
   }
 
@@ -755,16 +806,31 @@ namespace Tpetra {
     using Teuchos::outArg;
     bool global = false;
     if(comm_->getSize() > 1) {
+      // The communicator has more than one process, but that doesn't
+      // necessarily mean the Map is distributed.
       char localRep = 0;
       if (numGlobalElements_ == Teuchos::as<global_size_t>(numLocalElements_)) {
+	// The number of local elements on this process equals the
+	// number of global elements.
+	//
+	// NOTE (mfh 22 Nov 2011) Does this still work if there were
+	// duplicates in the global ID list on input (the third Map
+	// constructor), so that the number of local elements (which
+	// are not duplicated) on this process could be less than the
+	// number of global elements, even if this process owns all
+	// the elements?
         localRep = 1;
       }
       char allLocalRep;
       Teuchos::reduceAll<int>(*comm_,Teuchos::REDUCE_MIN,localRep,outArg(allLocalRep));
       if (allLocalRep != 1) {
+	// At least one process does not own all the elements.
+	// This makes the Map a distributed Map.
         global = true;
       }
     }
+    // If the communicator has only one process, then the Map is not
+    // distributed.
     return global;
   }
 

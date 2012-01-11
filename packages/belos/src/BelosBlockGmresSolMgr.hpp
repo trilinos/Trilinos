@@ -80,15 +80,6 @@
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager with flexible Gmres.
 */
 
-/*! \class Belos::BlockGmresSolMgr
- *
- *  \brief The Belos::BlockGmresSolMgr provides a powerful and fully-featured solver manager over the BlockGmres linear solver.
-
- \ingroup belos_solver_framework
-
- \author Heidi Thornquist, Chris Baker, and Teri Barth
-*/
-
 namespace Belos {
   
 //! @name BlockGmresSolMgr Exceptions
@@ -113,7 +104,23 @@ class BlockGmresSolMgrLinearProblemFailure : public BelosError {public:
 class BlockGmresSolMgrOrthoFailure : public BelosError {public:
   BlockGmresSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
+/*! \class BlockGmresSolMgr
+ * \brief Interface to Block GMRES and Flexible GMRES.
+ * \ingroup belos_solver_framework
+ * \author Heidi Thornquist, Chris Baker, and Teri Barth
+ *
+ * This class provides an interface to Block GMRES, for solving linear
+ * systems with one or more right-hand sides.  Our Block GMRES
+ * implementation also has an option (the Boolean "Flexible Gmres"
+ * parameter) to use the Flexible variant of GMRES.  Flexible GMRES
+ * allows the preconditioner (which must be a right preconditioner) to
+ * change from iteration to iteration.
+ *
+ * If you are a new Belos user and just want standard GMRES, use \c
+ * PseudoBlockGmresSolMgr.  If you want Flexible GMRES, use this class
+ * with the "Flexible Gmres" parameter set to true.
+ */
 template<class ScalarType, class MV, class OP>
 class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
     
@@ -180,7 +187,21 @@ public:
    *   - time spent in solve() routine
    */
   Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-    return tuple(timerSolve_);
+    return Teuchos::tuple(timerSolve_);
+  }
+
+  /// \brief Tolerance achieved by the last \c solve() invocation.
+  /// 
+  /// This is the maximum over all right-hand sides' achieved
+  /// convergence tolerances, and is set whether or not the solve
+  /// actually managed to achieve the desired convergence tolerance.
+  ///
+  /// \warning This result may not be meaningful if there was a loss
+  ///   of accuracy during the solve.  You should first call \c
+  ///   isLOADetected() to check for a loss of accuracy during the
+  ///   last solve.
+  MagnitudeType achievedTol() const {
+    return achievedTol_;
   }
   
   //! Get the iteration count for the most recent call to \c solve().
@@ -293,7 +314,7 @@ private:
   static const Teuchos::RCP<std::ostream> outputStream_default_;
 
   // Current solver values.
-  MagnitudeType convtol_, orthoKappa_;
+  MagnitudeType convtol_, orthoKappa_, achievedTol_;
   int maxRestarts_, maxIters_, numIters_;
   int blockSize_, numBlocks_, verbosity_, outputStyle_, outputFreq_;
   bool adaptiveBlockSize_, showMaxResNormOnly_, isFlexible_, expResTest_;
@@ -372,8 +393,10 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
+  achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxRestarts_(maxRestarts_default_),
   maxIters_(maxIters_default_),
+  numIters_(0),
   blockSize_(blockSize_default_),
   numBlocks_(numBlocks_default_),
   verbosity_(verbosity_default_),
@@ -395,15 +418,17 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr( 
-  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-  const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
+BlockGmresSolMgr<ScalarType,MV,OP>::
+BlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+		  const Teuchos::RCP<Teuchos::ParameterList> &pl) : 
   problem_(problem),
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
+  achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxRestarts_(maxRestarts_default_),
   maxIters_(maxIters_default_),
+  numIters_(0),
   blockSize_(blockSize_default_),
   numBlocks_(numBlocks_default_),
   verbosity_(verbosity_default_),
@@ -1221,6 +1246,44 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
+
+  // Save the convergence test value ("achieved tolerance") for this
+  // solve.  This requires a bit more work than for BlockCGSolMgr,
+  // since for this solver, convTest_ may either be a single residual
+  // norm test, or a combination of two residual norm tests.  In the
+  // latter case, the master convergence test convTest_ is a SEQ combo
+  // of the implicit resp. explicit tests.  If the implicit test never
+  // passes, then the explicit test won't ever be executed.  This
+  // manifests as expConvTest_->getTestValue()->size() < 1.  We deal
+  // with this case by using the values returned by
+  // impConvTest_->getTestValue().
+  {
+    // We'll fetch the vector of residual norms one way or the other.
+    const std::vector<MagnitudeType>* pTestValues = NULL;
+    if (expResTest_) {
+      pTestValues = expConvTest_->getTestValue();
+      if (pTestValues == NULL || pTestValues->size() < 1) {
+	pTestValues = impConvTest_->getTestValue();
+      }
+    } 
+    else {
+      // Only the implicit residual norm test is being used.
+      pTestValues = impConvTest_->getTestValue();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
+      "Belos::BlockGmresSolMgr::solve(): The implicit convergence test's "
+      "getTestValue() method returned NULL.  Please report this bug to the "
+      "Belos developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
+      "Belos::BlockGmresSolMgr::solve(): The implicit convergence test's "
+      "getTestValue() method returned a vector of length zero.  Please report "
+      "this bug to the Belos developers.");
+
+    // FIXME (mfh 12 Dec 2011) Does pTestValues really contain the
+    // achieved tolerances for all vectors in the current solve(), or
+    // just for the vectors from the last deflation?
+    achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
+  }
   
   if (!isConverged || loaDetected_) {
     return Unconverged; // return from BlockGmresSolMgr::solve() 

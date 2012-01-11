@@ -1,23 +1,23 @@
 
 # Required modules
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
 
 #
 # RCP_PerforamnceTests
 #
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   RCP_PerformanceTests
   COMM serial mpi  
   SOURCES
     RCP_Performance_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   )
 
 # This form of the test just makes sure that it runs without crashing
 # basically
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   RCP_PerformanceTests
   NUM_MPI_PROCS 1
   COMM serial mpi
@@ -28,7 +28,7 @@ PACKAGE_ADD_TEST(
 
 IF (${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS)
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     RCP_PerformanceTests
     NUM_MPI_PROCS 1
     COMM serial mpi
@@ -47,17 +47,17 @@ ENDIF()
 # Array_PerforamnceTests
 #
 
-PACKAGE_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
   Array_PerformanceTests
   COMM serial mpi  
   SOURCES
     Array_Performance_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   )
 
 # This form of the test just makes sure that it runs without crashing
 # basically
-PACKAGE_ADD_TEST(
+TRIBITS_ADD_TEST(
   Array_PerformanceTests
   NUM_MPI_PROCS 1
   COMM serial mpi
@@ -68,7 +68,7 @@ PACKAGE_ADD_TEST(
 
 IF (${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS)
 
-  PACKAGE_ADD_TEST(
+  TRIBITS_ADD_TEST(
     Array_PerformanceTests
     NUM_MPI_PROCS 1
     COMM serial mpi

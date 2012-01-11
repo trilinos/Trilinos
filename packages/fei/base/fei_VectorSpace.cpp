@@ -918,7 +918,6 @@ void fei::VectorSpace::getGlobalIndicesL(const fei::Pattern* pattern,
   }
   else if (pType == fei::Pattern::SIMPLE) {
     const int* fieldIDs = pattern->getFieldIDs();
-    const int* idTypes = pattern->getIDTypes();
 
     int fieldID = fieldIDs[0];
     unsigned fieldSize = getFieldSize(fieldID);
@@ -928,7 +927,6 @@ void fei::VectorSpace::getGlobalIndicesL(const fei::Pattern* pattern,
                      numIndices, indices_ptr, numIndices);
   }
   else if (pType == fei::Pattern::NO_FIELD) {
-    const int* idTypes = pattern->getIDTypes();
     getGlobalBlkIndicesL(numRecords, recordCollections, records, numIndices, indices_ptr, numIndices);
   }
 }
@@ -1385,8 +1383,8 @@ int fei::VectorSpace::getOwnedAndSharedIDs(int idType,
   if (idx < 0) return(-1);
 
   snl_fei::RecordCollection* records = recordCollections_[idx];
-  std::map<int,int>& global_to_local = records->getGlobalToLocalMap();
-  std::map<int,int>::iterator
+  IndexType<int,int>& global_to_local = records->getNativeGlobalToLocalMap();
+  IndexType<int,int>::iterator
     it = global_to_local.begin(),
     end = global_to_local.end();
   numLocalIDs = records->getNumRecords();
@@ -1413,8 +1411,8 @@ int fei::VectorSpace::getOwnedIDs(int idType,
 
   snl_fei::RecordCollection* records = recordCollections_[idx];
 
-  std::map<int,int>& global_to_local = records->getGlobalToLocalMap();
-  std::map<int,int>::iterator
+  IndexType<int,int>& global_to_local = records->getNativeGlobalToLocalMap();
+  IndexType<int,int>::iterator
     it = global_to_local.begin(),
     end = global_to_local.end();
 
@@ -1949,8 +1947,8 @@ void fei::VectorSpace::runRecords(fei::Record_Operator<int>& record_op)
 {
   for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
-    std::map<int,int>& g2l = records->getGlobalToLocalMap();
-    std::map<int,int>::iterator
+    IndexType<int,int>& g2l = records->getNativeGlobalToLocalMap();
+    IndexType<int,int>::iterator
       it = g2l.begin(),
       end= g2l.end();
 
@@ -2008,8 +2006,8 @@ int fei::VectorSpace::setLocalEqnNumbers()
   for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
 
-    const std::map<int,int>& rmap = records->getGlobalToLocalMap();
-    std::map<int,int>::const_iterator
+    const IndexType<int,int>& rmap = records->getNativeGlobalToLocalMap();
+    IndexType<int,int>::const_iterator
       it = rmap.begin(), it_end = rmap.end();
 
     int* eqnNumPtr = &eqnNumbers_[0];

@@ -1,12 +1,12 @@
 
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS )
+TRIBITS_PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS )
 
 # 2009/05/01: rabartl: I have removed 'CLEANED' from above from now because it
 # fails to compile with gcc 3.4.6 (see bug 4395).
@@ -29,7 +29,7 @@ PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS )
 # Teuchos_ENABLE_COMPLEX, because most of Anasazi's complex-arithmetic
 # tests depend heavily on Teuchos' complex arithmetic support.
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_COMPLEX
   HAVE_ANASAZI_COMPLEX
   "Enable Anasazi features for complex data types."
@@ -42,18 +42,18 @@ ADD_OPTION_AND_DEFINE(
 # default if enabled in Kokkos.  If Teuchos_ENABLE_COMPLEX is enabled,
 # TSQR is built with complex arithmetic support.
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_ANASAZI_TSQR
   "Enable TSQR (Tall Skinny QR factorization) support in Anasazi."
   "${Kokkos_ENABLE_TSQR}" )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   ANASAZI_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors enabled."
-  "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
+  "${${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR}" )
 
-ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Tpetra_Timers
   HAVE_ANASAZI_TPETRA_TIMERS
   "Add timers to Anasazi::MultiVecTraits for Tpetra multivectors."
@@ -70,7 +70,7 @@ IF (Anasazi_ENABLE_Epetra)
   ADD_SUBDIRECTORY(epetra)
 ENDIF()
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 IF (Anasazi_ENABLE_ThyraCore)
   ADD_SUBDIRECTORY(thyra)
@@ -84,9 +84,9 @@ ENDIF()
 # Exclude files for source package.
 #
 
-PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
-PACKAGE_ARCH_EXCLUDE_FILES(
+TRIBITS_EXCLUDE_FILES(
   doc/TOMS
   doc/OrthoStudy
   doc/ThyraPerf
@@ -97,4 +97,4 @@ PACKAGE_ARCH_EXCLUDE_FILES(
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

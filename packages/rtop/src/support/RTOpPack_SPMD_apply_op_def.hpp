@@ -120,9 +120,9 @@ void RTOpPack::serialize(
   typedef Teuchos::SerializationTraits<Ordinal, index_type> ITST;
   typedef Teuchos::SerializationTraits<Ordinal, char_type> CTST;
   const Ordinal
-    prim_value_type_size = PVTST::fromCountToIndirectBytes(1),
-    index_type_size = ITST::fromCountToIndirectBytes(1);
-  //char_type_size = CTST::fromCountToIndirectBytes(1);
+    prim_value_type_size = PVTST::fromCountToDirectBytes(1),
+    index_type_size = ITST::fromCountToDirectBytes(1);
+  //char_type_size = CTST::fromCountToDirectBytes(1);
   const Ordinal
     num_values_off = 0,
     num_indexes_off = num_values_off + index_type_size,
@@ -159,9 +159,9 @@ void RTOpPack::deserialize(
   typedef Teuchos::SerializationTraits<int,index_type> ITST;
   typedef Teuchos::SerializationTraits<int,char_type> CTST;
   const Ordinal
-    prim_value_type_size = PVTST::fromCountToIndirectBytes(1),
-    index_type_size = ITST::fromCountToIndirectBytes(1);
-  //char_type_size = CTST::fromCountToIndirectBytes(1);
+    prim_value_type_size = PVTST::fromCountToDirectBytes(1),
+    index_type_size = ITST::fromCountToDirectBytes(1);
+  //char_type_size = CTST::fromCountToDirectBytes(1);
   const Ordinal
     num_values_off = 0,
     num_indexes_off = num_values_off + index_type_size,

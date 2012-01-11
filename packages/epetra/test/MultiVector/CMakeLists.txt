@@ -1,6 +1,6 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MultiVector_test  
   SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp
   ARGS -v

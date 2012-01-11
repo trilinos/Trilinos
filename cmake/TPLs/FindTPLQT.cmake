@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TPLDeclareLibraries)
+INCLUDE(TribitsTplDeclareLibraries)
 
 SET(TPL_QT_QMAKE_EXECUTABLE "" CACHE STRING "A Trilinos specific variable that defines where the Qt Qmake Execuatable is")
 
@@ -125,7 +125,7 @@ IF(NOT(TPL_QT_LIBRARIES))
 	SET(TPL_QT_LIBRARIES ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTTEST_LIBRARY} ${QT_QTXML_LIBRARY})
 ENDIF()
 
-TPL_DECLARE_LIBRARIES( QT
+TRIBITS_TPL_DECLARE_LIBRARIES( QT
   REQUIRED_HEADERS QMainWindow QDialog QAbstratItemModel QTreeView QItemDelegate QPushButton QGridLayout QSpinBox QComboBox QLineEdit QLabel QScrollArea QDir QXmlStreamWriter QXmlStreamReader QStringList QDomElement
   REQUIRED_LIBS_NAMES QtCore QtGui QtXml
   )

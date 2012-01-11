@@ -1,50 +1,61 @@
 
-INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-PACKAGE(FEI)
+TRIBITS_PACKAGE(FEI)
+
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 #
 # B) Set up package-specific options
 #
 
-IF (Trilinos_ENABLE_Epetra)
-ADD_OPTION_AND_DEFINE(
+IF (${PROJECT_NAME}_ENABLE_Epetra)
+TRIBITS_ADD_OPTION_AND_DEFINE(
   FEI_EPETRA
   HAVE_FEI_EPETRA
   "FEI support for Epetra"
-  ${Trilinos_ENABLE_Epetra}
+  ${${PROJECT_NAME}_ENABLE_Epetra}
 )
 ENDIF()
 
-IF (Trilinos_ENABLE_AztecOO)
-ADD_OPTION_AND_DEFINE(
+IF (${PROJECT_NAME}_ENABLE_AztecOO)
+TRIBITS_ADD_OPTION_AND_DEFINE(
   FEI_AZTECOO
   HAVE_FEI_AZTECOO
   "FEI support for AztecOO"
-  ${Trilinos_ENABLE_AztecOO}
+  ${${PROJECT_NAME}_ENABLE_AztecOO}
 )
 ENDIF()
 
-IF (Trilinos_ENABLE_Amesos)
-  ADD_OPTION_AND_DEFINE(
+IF (${PROJECT_NAME}_ENABLE_Belos)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  FEI_BELOS
+  HAVE_FEI_BELOS
+  "FEI support for Belos"
+  ${${PROJECT_NAME}_ENABLE_Belos}
+)
+ENDIF()
+
+IF (${PROJECT_NAME}_ENABLE_Amesos)
+  TRIBITS_ADD_OPTION_AND_DEFINE(
     FEI_AMESOS
     HAVE_FEI_AMESOS
     "FEI support for Amesos"
-    ${Trilinos_ENABLE_Amesos}
+    ${${PROJECT_NAME}_ENABLE_Amesos}
   )
 ENDIF()
 
-IF (Trilinos_ENABLE_Tpetra)
-ADD_OPTION_AND_DEFINE(
+IF (${PROJECT_NAME}_ENABLE_Tpetra)
+TRIBITS_ADD_OPTION_AND_DEFINE(
   FEI_TPETRA
   HAVE_FEI_TPETRA
   "FEI support for Tpetra"
-  ${Trilinos_ENABLE_Tpetra}
+  ${${PROJECT_NAME}_ENABLE_Tpetra}
 )
 ENDIF()
 
@@ -57,20 +68,20 @@ ADD_SUBDIRECTORY(support-Trilinos)
 ADD_SUBDIRECTORY(test_utils)
 
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
-PACKAGE_ADD_TEST_DIRECTORIES(unit_tests_base)
-PACKAGE_ADD_TEST_DIRECTORIES(unit_tests)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(unit_tests_base)
+TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
 
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # Exclude files for source package.
 #
 
-PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 #
 # D) Do standard postprocessing
 #
 
-PACKAGE_POSTPROCESS()
+TRIBITS_PACKAGE_POSTPROCESS()

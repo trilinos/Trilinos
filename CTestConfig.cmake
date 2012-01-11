@@ -1,6 +1,9 @@
 INCLUDE(SetDefaultAndFromEnv)
 
+# Must match what is in CDash project 'Trilinos'
 SET(CTEST_NIGHTLY_START_TIME "04:00:00 UTC") # 10 PM MDT or 9 PM MST
+
+# Set actual CTest/CDash settings
 
 IF (NOT DEFINED CTEST_DROP_METHOD)
   SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_METHOD "http")

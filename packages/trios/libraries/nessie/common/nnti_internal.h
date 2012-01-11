@@ -35,7 +35,8 @@ typedef NNTI_result_t (*NNTI_DISCONNECT_FN) (
 typedef NNTI_result_t (*NNTI_REGISTER_MEMORY_FN) (
         const NNTI_transport_t *trans_hdl,
         char                   *buffer,
-        const uint64_t          size,
+        const uint64_t          element_size,
+        const uint64_t          num_elements,
         const NNTI_buf_ops_t    ops,
         const NNTI_peer_t      *peer,
         NNTI_buffer_t          *reg_buf);

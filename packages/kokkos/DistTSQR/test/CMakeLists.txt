@@ -1,8 +1,8 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 # Performance and accuracy test suite for TSQR::DistTsqr (which
 # combines triangular factors from different MPI processes).
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TSQR_DistTsqr_Accuracy
   SOURCES Tsqr_TestDistTsqr.cpp
   COMM mpi
@@ -13,10 +13,10 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 )
 
 
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(TribitsAddExecutableAndTest)
 
 # Accuracy test for TSQR::Tsqr (the full TSQR implementation).
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TSQR_FullTsqr_Accuracy
   SOURCES Tsqr_TestFullTsqr.cpp
   COMM mpi
