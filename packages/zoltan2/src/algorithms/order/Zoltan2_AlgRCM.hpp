@@ -70,7 +70,8 @@ int AlgRCM(
       Q.pop();
 
       // Add unmarked nbors to queue
-      // TODO: Sort nbors by degree
+      // TODO: If edge weights, sort nbors by decreasing weight,
+      // TODO: Else, sort nbors by increasing degree
       for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
         lno_t nbor = edgeIds[ptr];
         if (perm[nbor] == -1){
