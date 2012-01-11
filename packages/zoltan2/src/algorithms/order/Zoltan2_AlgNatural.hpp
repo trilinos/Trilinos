@@ -13,7 +13,7 @@
 namespace Zoltan2{
 
 template <typename Adapter>
-int AlgRandom(
+int AlgNatural(
   const RCP<IdentifierModel<Adapter> > &model, 
   const RCP<OrderingSolution<typename Adapter::gid_t,
                              typename Adapter::lno_t> > &solution,
@@ -30,7 +30,9 @@ int AlgRandom(
 
   HELLO;
 
-  // Identity permutation.
+  // Local permutation only for now.
+
+  // Set identity permutation.
   const size_t n = model->getLocalNumIdentifiers();
   lno_t *perm;
   perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
@@ -40,7 +42,7 @@ int AlgRandom(
     }
   }
   else
-    // throw exception?
+    // TODO: throw exception?
     ierr = -1;
 
   return ierr;

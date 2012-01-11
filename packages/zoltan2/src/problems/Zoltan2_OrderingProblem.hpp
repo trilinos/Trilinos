@@ -82,10 +82,9 @@ void OrderingProblem<Adapter>::solve()
   this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>(nVtx, nVtx));
 
   // Determine which algorithm to use based on defaults and parameters.
-  // For now, assuming RCM.
   // Need some exception handling here, too.
 
-  string method = this->params_->template get<string>("ORDER_METHOD", "RCM");
+  string method = this->params_->template get<string>("ORDER_METHOD", "Natural");
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // TODO: Ignore case
@@ -94,10 +93,13 @@ void OrderingProblem<Adapter>::solve()
       AlgRCM<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
                       this->comm_);
   }
-  else if (method.compare("random") == 0)
+  else if (method.compare("Natural") == 0)
   {
-      AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_,
-                      this->comm_);
+      AlgNatural<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, this->comm_);
+  }
+  else if (method.compare("Random") == 0)
+  {
+      AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, this->comm_);
   }
   else if (method.compare("Minimum_Degree") == 0)
   {
