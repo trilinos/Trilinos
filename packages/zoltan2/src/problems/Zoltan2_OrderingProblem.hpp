@@ -82,9 +82,10 @@ void OrderingProblem<Adapter>::solve()
   this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>(nVtx, nVtx));
 
   // Determine which algorithm to use based on defaults and parameters.
+  // TODO: Use RCM if graph model is defined, otherwise use Natural.
   // Need some exception handling here, too.
 
-  string method = this->params_->template get<string>("ORDER_METHOD", "Natural");
+  string method = this->params_->template get<string>("ORDER_METHOD", "RCM");
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // TODO: Ignore case
