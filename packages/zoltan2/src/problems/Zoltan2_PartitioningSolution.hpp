@@ -317,8 +317,8 @@ template <typename User_t>
 
   ArrayRCP<size_t> *noIds = new ArrayRCP<size_t> [weightDim_];
   ArrayRCP<float> *noSizes = new ArrayRCP<float> [weightDim_];
-  ArrayRCP<Array<size_t> > ids(noIds, 0, weightDim_, true);
-  ArrayRCP<Array<float> > sizes(noSizes, 0, weightDim_, true);
+  ArrayRCP<ArrayRCP<size_t> > ids(noIds, 0, weightDim_, true);
+  ArrayRCP<ArrayRCP<float> > sizes(noSizes, 0, weightDim_, true);
 
   setPartSizes(ids.view(0, weightDim_), sizes.view(0, weightDim_));
 }

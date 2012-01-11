@@ -248,8 +248,8 @@ void PartitioningProblem<Adapter>::solve()
     this->generalModel_->getIdentifierMap();
 
   solution_ = rcp(new PartitioningSolution<user_t>( this->envConst_,
-    this->comm_, idMap, weightDim, partIds_.view(0, numberOfWeights_), 
-    partSizes_.view(0, numberOfWeights_)));
+    this->comm_, idMap, weightDim, partIds_.view(0, numberOfCriteria_), 
+    partSizes_.view(0, numberOfCriteria_)));
 
   // Call the algorithm
 

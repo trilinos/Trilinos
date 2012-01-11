@@ -30,6 +30,21 @@ using Teuchos::arcp;
 
 double epsilon = 10e-6;
 
+void makeArrays(int wdim, int *lens, size_t **ids, float **sizes,
+  ArrayRCP<ArrayRCP<size_t> > &idList, ArrayRCP<ArrayRCP<float> > &sizeList)
+{
+  ArrayRCP<size_t> *idArrays = new ArrayRCP<size_t> [wdim];
+  ArrayRCP<float> *sizeArrays = new ArrayRCP<float> [wdim];
+
+  for (int w=0; w < wdim; w++){
+    idArrays[w] = arcp(ids[w], 0, lens[w], true);
+    sizeArrays[w] = arcp(sizes[w], 0, lens[w], true);
+  }
+
+  idList = arcp(idArrays, 0, wdim, true);
+  sizeList = arcp(sizeArrays, 0, wdim, true);
+}
+
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
@@ -38,6 +53,21 @@ int main(int argc, char *argv[])
   int rank = comm->getRank();
   int fail=0, gfail=0;
 
+  ////////////////
+  // Arrays to hold part Ids and part Sizes for each weight dimension.
+
+  int numIdsPerProc = 10;
+  int maxWeightDim = 3;
+  int maxNumPartSizes = nprocs;
+  int *lengths = new int [maxWeightDim];
+  size_t **idLists = new size_t * [maxWeightDim];
+  float **sizeLists = new float * [maxWeightDim];
+
+  for (int w=0; w < maxWeightDim; w++){
+    idLists[w] = new size_t [maxNumPartSizes];
+    sizeLists[w] = new float [maxNumPartSizes];
+  }
+
   /////////////
   // A default environment
   RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
@@ -45,30 +75,34 @@ int main(int argc, char *argv[])
   /////////////
   // A simple identifier map.
 
-  myid_t *myGids = new myid_t [10];
-  for (int i=0, x=rank*10; i < 10; i++){
+  myid_t *myGids = new myid_t [numIdsPerProc];
+  for (int i=0, x=rank*numIdsPerProc; i < numIdsPerProc; i++){
     myGids[i] = x++;
   }
 
-  ArrayRCP<myid_t> gidArray(myGids, 0, 10, true);
+  ArrayRCP<myid_t> gidArray(myGids, 0, numIdsPerProc, true);
 
   RCP<const Zoltan2::IdentifierMap<user_t> > idMap = 
     rcp(new Zoltan2::IdentifierMap<user_t>(env, comm, gidArray)); 
 
   /////////////
-  // Part sizes: some parts are double the size of others.
+  // TEST:
+  // One weight dimension, one part per proc.
+  // Some part sizes are 2 and some are 1.
 
-  int weightDim = 1;     // the default as far as the Solution is concerned
-  int numLocalParts = 1; // the default in the Environment's parameter list
-  int numGlobalParts = nprocs; // also the default in parameter list
-  float partSize = 1.0;
-  if (rank % 2) partSize = 2.0;
+  int numGlobalParts = nprocs;
+  int weightDim = 1;
 
-  Array<size_t> partIdArray(numLocalParts);
-  Array<float> partSizeArray(numLocalParts);
+  ArrayRCP<ArrayRCP<size_t> > ids;
+  ArrayRCP<ArrayRCP<float> > sizes;
 
-  partIdArray[0] = rank;           // my part
-  partSizeArray[0] = partSize;     // size of my part
+  memset(lengths, 0, sizeof(int) * maxWeightDim);
+
+  lengths[0] = 1;                    // We give a size for 1 part.
+  idLists[0][0] = rank;              // The part is my part.
+  sizeLists[0][0] = rank%2 + 1.0;    // The size is 1.0 or 2.0
+
+  makeArrays(1, lengths, idLists, sizeLists, ids, sizes);
 
   // Normalized part size for every part, for checking later on
 
@@ -82,14 +116,6 @@ int main(int argc, char *argv[])
   for (int i=0; i < numGlobalParts; i++)
     normalizedPartSizes[i] /= sumSizes;
 
-  // We need one partIdArray and one partSizeArray for each weight dimension.
-
-  Array<Array<size_t> > partArrayList;
-  partArrayList.push_back(partIdArray);
-
-  Array<Array<float> > partSizeList;
-  partSizeList.push_back(partSizeArray);
-
   /////////////
   // Create a solution object with part size information, and check it.
 
@@ -100,9 +126,9 @@ int main(int argc, char *argv[])
       env,                // application environment info
       comm,               // problem communicator
       idMap,              // problem identifiers (global Ids, local Ids)
-      weightDim,
-      partArrayList,      // For each weight dim, a list of part Ids
-      partSizeList));      // For each weight dim, a list of part sizes
+      weightDim,                  // weight dimension
+      ids.view(0,weightDim),      // part ids
+      sizes.view(0,weightDim)));  // part sizes
   }
   catch (std::exception &e){
     fail=1;
@@ -149,11 +175,11 @@ int main(int argc, char *argv[])
 
   // Test the Solution set method that is called by algorithms
 
-  size_t *partAssignments = new size_t [10];
-  for (int i=0; i < 10; i++){
+  size_t *partAssignments = new size_t [numIdsPerProc];
+  for (int i=0; i < numIdsPerProc; i++){
     partAssignments[i] = myGids[i] % numGlobalParts;  // round robin
   }
-  ArrayRCP<size_t> partList = arcp(partAssignments, 0, 10);
+  ArrayRCP<size_t> partList = arcp(partAssignments, 0, numIdsPerProc);
 
   float *imbalances = new float [weightDim];
   for (int i=0; i < weightDim; i++){
@@ -162,7 +188,7 @@ int main(int argc, char *argv[])
   ArrayRCP<float> metrics = arcp(imbalances, 0, weightDim);
 
   try{
-    solution->setParts(gidArray.view(0, 10), partList, metrics); 
+    solution->setParts(gidArray.view(0, numIdsPerProc), partList, metrics); 
   }
   catch (std::exception &e){
     fail=10;
@@ -176,12 +202,12 @@ int main(int argc, char *argv[])
   // Test the Solution get methods that may be called by users 
   // or migration functions.
 
-  if (solution->getNumberOfIds() != 10)
+  if (solution->getNumberOfIds() != numIdsPerProc)
     fail = 11;
 
   if (!fail){
     const myid_t *gids = solution->getGlobalIdList();
-    for (int i=0; !fail && i < 10; i++){
+    for (int i=0; !fail && i < numIdsPerProc; i++){
       if (gids[i] != myGids[i])
         fail = 12;
     }
@@ -189,7 +215,7 @@ int main(int argc, char *argv[])
 
   if (!fail){
     const size_t *parts = solution->getPartList();
-    for (int i=0; !fail && i < 10; i++){
+    for (int i=0; !fail && i < numIdsPerProc; i++){
       if (parts[i] != myGids[i] % numGlobalParts)
         fail = 13;
     }
