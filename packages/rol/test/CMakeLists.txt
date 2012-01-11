@@ -1,0 +1,10 @@
+INCLUDE(TribitsAddExecutableAndTest)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  VersionCheck
+  SOURCES ROL_VersionCheck.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
