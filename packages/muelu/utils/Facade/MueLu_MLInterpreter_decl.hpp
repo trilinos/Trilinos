@@ -20,8 +20,8 @@
 namespace MueLu {
 
   /*!
-    @class DemoFactory class.
-    @brief empty factory for demonstration
+    @class MLInterpreter class.
+    @brief Class that accepts ML-style parameters and builds a MueLu preconditioner.
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
