@@ -58,18 +58,80 @@ public:
     return *(solution_.getRawPtr());
   };
 
-  // User sets some part sizes for the first weight. 
+  /*! Set relative sizes for the partitions that Zoltan2 will create.
+   *
+   *  \param len  The size of the partIds and partSizes lists
+   *  \param partIds   A list of len partition identifiers.  Partition
+   *           identifiers range from zero to one less than the global
+   *           number of identifiers.  
+   *  \param partSizes  A list of len relative sizes corresponding to
+   *           the partIds.
+   *  \param makeCopy  If true, Zoltan2 will make a copy of the ids and sizes
+   *      that are provided in this call.  If false, Zoltan2 will just save
+   *      the pointers to to the caller's lists.  If the pointers will remain
+   *      remain valid throughout the lifetime of the PartitioningProblem,
+   *      and memory use is an issue, then set makeCopy to false.  By default,
+   *      Zoltan2 will copy the caller's list of ids and sizes.
+   *
+   * A given partid should only be provided once across the application.
+   * Duplicate partIds will generate a std::runtime_error exception when
+   * the PartitioningSolution is created.  Part
+   * ids that are omitted will be assigned the average of the sizes that
+   * have been specified.
+   *
+   * Subsequent calls to setPartSizes will replace the list of part ids
+   * and part sizes provided previously.
+   * 
+   * If the application has set multiple weights per object, then the
+   * part sizes supplied in this method are applied to the first weight.
+   *
+   * Zoltan2 assumes that uniform partition sizes are desired by the caller,
+   * unless specified otherwise in a call to setPartSizes or 
+   * setPartSizesForCritiera.
+   */
 
-  void setPartSizes(int len, size_t *partIds, float *partSizes) 
+  void setPartSizes(int len, size_t *partIds, float *partSizes, 
+    bool makeCopy=true) 
   { 
-    setPartSizesForCritiera(0, len, partIds, partSizes);
+    setPartSizesForCritiera(0, len, partIds, partSizes, makeCopy);
   }
 
-  // User sets some part sizes for other weights. 
-  // TODO - decide whether we copy or view
+  /*! Set the relative sizes (per weight) for the partitions that Zoltan2 will 
+   *    create.
+   *
+   *  \param criteria the criteria (weight dimension) for which these 
+   *      part sizes apply.  Criteria range from zero to one less than
+   *     the number of weights per object specified in the 
+   *     caller's InputAdapter.
+   *  \param len  The size of the partIds and partSizes lists
+   *  \param partIds   A list of len partition identifiers.  Partition
+   *           identifiers range from zero to one less than the global
+   *           number of identifiers.  
+   *  \param partSizes  A list of len relative sizes corresponding to
+   *           the partIds.
+   *  \param makeCopy  If true, Zoltan2 will make a copy of the ids and sizes
+   *      that are provided in this call.  If false, Zoltan2 will just save
+   *      the pointers to to the caller's lists.  If the pointers will remain
+   *      remain valid throughout the lifetime of the PartitioningProblem,
+   *      and memory use is an issue, then set makeCopy to false.  By default,
+   *      Zoltan2 will copy the caller's list of ids and sizes.
+   *
+   * A given partid should only be provided once across the application.
+   * Duplicate partIds will generate a std::runtime_error exception when
+   * the PartitioningSolution is created.  Part
+   * ids that are omitted will be assigned the average of the sizes that
+   * have been specified.
+   *
+   * Subsequent calls to setPartSizes for the same criteria will replace 
+   * the list of part ids and part sizes provided for that criteria previously.
+   *
+   * Zoltan2 assumes that uniform partition sizes are desired by the caller,
+   * unless specified otherwise in a call to setPartSizes or 
+   * setPartSizesForCritiera.
+   */
 
   void setPartSizesForCritiera(int criteria, int len, size_t *partIds, 
-    float *partSizes) ;
+    float *partSizes, bool makeCopy=true) ;
 
 private:
   void createPartitioningProblem();
@@ -84,13 +146,18 @@ private:
 
   int numberOfWeights_;
 
-  // Suppose Array<size_t> partIds = partIdsForIdx_[w].  If partIds.size() > 0
+  // Suppose Array<size_t> partIds = partIds_[w].  If partIds.size() > 0
   // then the user supplied part sizes for weight index "w", and the sizes
-  // corresponding to the Ids in partIds are partSizesForIdx[w].
-  // TODO implement set methods
+  // corresponding to the Ids in partIds are partSizes[w].
+  //
+  // If numberOfWeights_ >= 0, then there is an Id and Sizes array for
+  // for each weight.  Otherwise the user did not supply object weights,
+  // but they can still specify part sizes. 
+  // So numberOfCriteria_ is numberOfWeights_ or one, whichever is greater.
 
-  Array<Array<size_t> > partIdsForIdx_;
-  Array<Array<float> > partSizesForIdx_;
+  ArrayRCP<ArrayRCP<size_t> > partIds_;
+  ArrayRCP<ArrayRCP<float> > partSizes_;
+  int numberOfCriteria_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -101,7 +168,8 @@ template <typename Adapter>
       Problem<Adapter>(A,p,comm), 
       generalParams_(), partitioningParams_(),solution_(),
       inputType_(InvalidAdapterType), modelType_(InvalidModel), algorithm_(),
-      numberOfWeights_(), partIdsForIdx_(), partSizesForIdx_()
+      numberOfWeights_(), partIds_(), partSizes_(), 
+      numberOfCriteria_()
 #else
 template <typename Adapter>
   PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
@@ -109,7 +177,8 @@ template <typename Adapter>
       Problem<Adapter>(A,p), 
       generalParams_(), partitioningParams_(),solution_(),
       inputType_(InvalidAdapterType), modelType_(InvalidModel), algorithm_(),
-      numberOfWeights_(), partIdsForIdx_(), partSizesForIdx_()
+      numberOfWeights_(), 
+      partIds_(), partSizes_(), numberOfCriteria_()
 #endif
 {
   HELLO;
@@ -118,22 +187,42 @@ template <typename Adapter>
 
 template <typename Adapter>
   void PartitioningProblem<Adapter>::setPartSizesForCritiera(
-    int criteria, int len, size_t *partIds, float *partSizes) 
+    int criteria, int len, size_t *partIds, float *partSizes, bool makeCopy) 
 {
-  if (len && criteria < 0 && criteria >= numberOfWeights_)
-    throw std::runtime_error("invalid criteria");
+  Z2_LOCAL_INPUT_ASSERTION(*this->env_, "invalid length", len>= 0, BASIC_ASSERTION);
 
-  if (len){
-    Array<size_t> ids(len);
-    Array<float> sizes(len);
-    for (int i=0; i < len; i++){
-      ids[i] = partIds[i];
-      sizes[i] = partSizes[i];
-    }
+  Z2_LOCAL_INPUT_ASSERTION(*this->env_, "invalid criteria", 
+    criteria >= 0 && criteria < numberOfWeights_, BASIC_ASSERTION);
 
-    partIdsForIdx_[criteria] = ids;
-    partSizesForIdx_[criteria] = sizes;
+  if (len == 0){
+    partIds_[criteria] = ArrayRCP<size_t>();
+    partSizes_[criteria] = ArrayRCP<float>();
+    return;
   }
+
+  Z2_LOCAL_INPUT_ASSERTION(*this->env_, "invalid arrays", partIds && partSizes, 
+    BASIC_ASSERTION);
+
+  // The global validity of the partIds and partSizes arrays is performed
+  // by the PartitioningSolution, which computes global part distribution and
+  // part sizes.
+
+  size_t *z2_partIds = partIds;
+  float *z2_partSizes = partSizes;
+  bool own_memory = false;
+
+  if (makeCopy){
+    z2_partIds = NULL;
+    z2_partIds = new size_t [len];
+    Z2_LOCAL_MEMORY_ASSERTION(*this->env_, len, z2_partIds);
+    z2_partSizes = NULL;
+    z2_partSizes = new float [len];
+    Z2_LOCAL_MEMORY_ASSERTION(*this->env_, len, z2_partSizes);
+    bool own_memory = true;
+  }
+
+  partIds_[criteria] = arcp(z2_partIds, 0, len, own_memory);
+  partSizes_[criteria] = arcp(z2_partSizes, 0, len, own_memory);
 }
 
 template <typename Adapter>
@@ -159,8 +248,8 @@ void PartitioningProblem<Adapter>::solve()
     this->generalModel_->getIdentifierMap();
 
   solution_ = rcp(new PartitioningSolution<user_t>( this->envConst_,
-    this->comm_, idMap, weightDim, partIdsForIdx_.view(0, numberOfWeights_), 
-    partSizesForIdx_.view(0, numberOfWeights_)));
+    this->comm_, idMap, weightDim, partIds_.view(0, numberOfWeights_), 
+    partSizes_.view(0, numberOfWeights_)));
 
   // Call the algorithm
 
@@ -411,12 +500,18 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
     break;
   }
 
+  // The Caller can specify part sizes in setPartSizes().  If he/she
+  // does not, the part size arrays are empty.
+
   numberOfWeights_ = this->generalModel_->getNumWeights();
 
-  for (int i=0; i < numberOfWeights_; i++){
-    partIdsForIdx_.push_back(Array<size_t>(Teuchos::null));
-    partSizesForIdx_.push_back(Array<float>(Teuchos::null));
-  }
+  numberOfCriteria_ = (numberOfWeights_ > 1) ? numberOfWeights_ : 1;
+
+  ArrayRCP<size_t> *noIds = new ArrayRCP<size_t> [numberOfCriteria_];
+  ArrayRCP<float> *noSizes = new ArrayRCP<float> [numberOfCriteria_];
+
+  partIds_ = arcp(noIds, 0, numberOfCriteria_, true);
+  partSizes_ = arcp(noSizes, 0, numberOfCriteria_, true);
 }
 
 }

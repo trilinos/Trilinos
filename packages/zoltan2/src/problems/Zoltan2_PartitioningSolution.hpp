@@ -96,8 +96,8 @@ public:
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<User_t> > &idMap,
-    int userWeightDim, ArrayView<Array<size_t> > reqPartIds,
-    ArrayView<Array<float> > reqPartSizes );
+    int userWeightDim, ArrayView<ArrayRCP<size_t> > reqPartIds,
+    ArrayView<ArrayRCP<float> > reqPartSizes );
   
   ////////////////////////////////////////////////////////////////////
   // Information that is setup by the Problem for the algorithm.
@@ -219,8 +219,8 @@ private:
 
   void setPartDistribution();
 
-  void setPartSizes(ArrayView<Array<size_t> > reqPartIds,
-    ArrayView<Array<float> > reqPartSizes);
+  void setPartSizes(ArrayView<ArrayRCP<size_t> > reqPartIds,
+    ArrayView<ArrayRCP<float> > reqPartSizes);
 
   void computePartSizes(int wdim, ArrayView<size_t> ids, 
     ArrayView<float> sizes);
@@ -315,10 +315,10 @@ template <typename User_t>
   // We must call setPartSizes() because part sizes may have
   // been provided by the user on other processes.
 
-  Array<size_t> noIds;
-  Array<float> noSizes;
-  Array<Array<size_t> > ids(weightDim_, noIds);
-  Array<Array<float> > sizes(weightDim_, noSizes);
+  ArrayRCP<size_t> *noIds = new ArrayRCP<size_t> [weightDim_];
+  ArrayRCP<float> *noSizes = new ArrayRCP<float> [weightDim_];
+  ArrayRCP<Array<size_t> > ids(noIds, 0, weightDim_, true);
+  ArrayRCP<Array<float> > sizes(noSizes, 0, weightDim_, true);
 
   setPartSizes(ids.view(0, weightDim_), sizes.view(0, weightDim_));
 }
@@ -328,8 +328,8 @@ template <typename User_t>
     RCP<const Environment> &env, 
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<User_t> > &idMap, int userWeightDim,
-    ArrayView<Array<size_t> > reqPartIds, 
-    ArrayView<Array<float> > reqPartSizes)
+    ArrayView<ArrayRCP<size_t> > reqPartIds, 
+    ArrayView<ArrayRCP<float> > reqPartSizes)
     : env_(env), comm_(comm), idMap_(idMap),
       nGlobalParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
@@ -493,7 +493,7 @@ template <typename User_t>
 
 template <typename User_t>
   void PartitioningSolution<User_t>::setPartSizes(
-    ArrayView<Array<size_t> > ids, ArrayView<Array<float> > sizes)
+    ArrayView<ArrayRCP<size_t> > ids, ArrayView<ArrayRCP<float> > sizes)
 {
   int wdim = weightDim_;
   bool fail=false;
