@@ -2512,7 +2512,7 @@ namespace stk {
                     stk::mesh::BulkData& bulkData_1,
                     stk::mesh::BulkData& bulkData_2,
                     std::string msg,
-                    bool print)
+                    bool print, bool print_all_field_diffs)
     {
       EXCEPTWATCH;
 
@@ -2794,7 +2794,10 @@ namespace stk {
                       }
                   }
 
+                bool printed_header=false;
                 bool compare_detailed = true;
+                int print_field_width = 15;
+                int print_percent_width = 5;
                 if (compare_detailed && !local_diff)
                   {
                     stk::mesh::EntityRank rank = field_rank;
@@ -2833,17 +2836,25 @@ namespace stk {
                                     for (unsigned istride = 0; istride < loc_stride_1; istride++)
                                       {
                                         double tol = 1.e-5;
-                                        if (!Util::approx_equal_relative(fdata_1[istride], fdata_2[istride], tol))
+                                        double fd1 = fdata_1[istride];
+                                        double fd2 = fdata_2[istride];
+                                        if (!Util::approx_equal_relative(fd1, fd2, tol))
                                           {
-                                            msg += std::string("| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+
-                                              " coord_1= "+toString(fdata_1[istride])+" coord_2= "+toString(fdata_2[istride])+" |\n";
+                                            if (!printed_header)
+                                              {
+                                                msg += std::string("\n| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+" |";
+                                                printed_header = true;
+                                              }
+                                            msg += "\n| "+toString(fd1).substr(0,print_field_width)+" - "+toString(fd2).substr(0,print_field_width)+" = "
+                                              +toString(fd1-fd2).substr(0,print_field_width)+
+                                              " [ "+toString(100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)).substr(0,print_percent_width)+" % ]  |";
                                             diff = true;
                                             local_local_diff = true;
                                           }
                                       }
                                   }
 
-                                if (local_local_diff) break;
+                                if (!print_all_field_diffs && local_local_diff) break;
                               }
                           }
                       }
@@ -2874,13 +2885,13 @@ namespace stk {
     }
 
     bool PerceptMesh::
-    mesh_difference(PerceptMesh& eMesh_1, PerceptMesh& eMesh_2, std::string msg, bool print)
+    mesh_difference(PerceptMesh& eMesh_1, PerceptMesh& eMesh_2, std::string msg, bool print, bool print_all_field_diffs)
     {
       stk::mesh::fem::FEMMetaData& metaData_1 = *eMesh_1.getFEM_meta_data();
       stk::mesh::fem::FEMMetaData& metaData_2 = *eMesh_2.getFEM_meta_data();
       stk::mesh::BulkData& bulkData_1 = *eMesh_1.getBulkData();
       stk::mesh::BulkData& bulkData_2 = *eMesh_2.getBulkData();
-      return mesh_difference(metaData_1, metaData_2, bulkData_1, bulkData_2, msg, print);
+      return mesh_difference(metaData_1, metaData_2, bulkData_1, bulkData_2, msg, print, print_all_field_diffs);
     }
 
     // checks if this entity has a duplicate (ie all nodes are the same)

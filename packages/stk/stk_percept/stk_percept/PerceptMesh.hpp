@@ -828,14 +828,14 @@ namespace stk {
 
       static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
                                   std::string msg,
-                                  bool print=true);
+                                  bool print=true, bool print_all_field_diffs=false);
 
       static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,
                                   stk::mesh::fem::FEMMetaData& metaData_2,
                                   stk::mesh::BulkData& bulkData_1,
                                   stk::mesh::BulkData& bulkData_2,
                                   std::string msg,
-                                  bool print=true);
+                                  bool print=true, bool print_all_field_diffs=false);
 
 
     private:

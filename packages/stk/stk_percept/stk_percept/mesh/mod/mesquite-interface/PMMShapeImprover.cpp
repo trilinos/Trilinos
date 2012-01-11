@@ -50,14 +50,14 @@ namespace stk {
       shape_solver.use_global_patch();
       qa->add_quality_assessment( &inverse_mean_ratio );
       term_inner.add_absolute_gradient_L2_norm( gradNorm );
-      term_inner.add_relative_successive_improvement( successiveEps );
+      //!term_inner.add_relative_successive_improvement( successiveEps );
       term_inner.add_iteration_limit( 50 );
       term_inner.write_iterations("shape.gpt", err);
 
       term_outer.add_iteration_limit( pmesh ? parallelIterations : 1 );
       //term_outer.add_absolute_quality_improvement( 1.e-6 );
       term_outer.add_absolute_gradient_L2_norm( gradNorm );
-      term_outer.add_relative_successive_improvement( successiveEps );
+      //!term_outer.add_relative_successive_improvement( successiveEps );
 
       shape_solver.set_inner_termination_criterion( &term_inner );
       shape_solver.set_outer_termination_criterion( &term_outer );

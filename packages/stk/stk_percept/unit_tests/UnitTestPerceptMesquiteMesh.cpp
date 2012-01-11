@@ -64,6 +64,7 @@ namespace stk
   {
     namespace unit_tests 
     {
+      static int s_par_size_max = 1;
 
 #define EXTRA_PRINT 0
       //static int printInfoLevel = 0;
@@ -384,7 +385,7 @@ namespace stk
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
-        unsigned par_size_max = 1;
+        unsigned par_size_max = s_par_size_max;
 
         const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
@@ -397,7 +398,8 @@ namespace stk
             unsigned n = 4;
             std::cout << "P["<<p_rank<<"] " << "tmp srk doing Laplace smoothing for hex_1 case, n = " << n << std::endl;
             unsigned nn = n+1;
-            std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n*p_size)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
+            //std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n*p_size)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
+            std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n*2)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
             PerceptMesh eMesh(3);
             eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
             eMesh.commit();
@@ -481,12 +483,15 @@ namespace stk
             Mesquite::MsqDebug::enable(1);
             Mesquite::MsqDebug::enable(2);
             //Mesquite::MsqDebug::enable(3);
+            int  msq_debug             = 2; // 1,2,3 for more debug info
+            bool always_smooth         = true;
+
             if (p_size == 1)
               {
                 PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
                 PerceptMesquiteMeshDomain pmd(&eMesh, 0);
                 percept::PMMShapeImprover si;
-                si.run(pmm, pmd);
+                si.run(pmm, pmd, always_smooth, msq_debug);
               }
             else
               {
@@ -494,7 +499,7 @@ namespace stk
                 PerceptMesquiteMesh::PMMParallelMesh pmm(&pmm0);
                 PerceptMesquiteMeshDomain pmd(&eMesh, 0);
                 percept::PMMShapeImprover si;
-                si.run(pmm, pmd);
+                si.run(pmm, pmd, always_smooth, msq_debug);
               }
             std::cout << "tmp srk doing Shape smoothing for hex_1 case... done " << std::endl;
             eMesh.saveAs(output_files_loc+"hex_1_si_smooth.1.e");
@@ -507,10 +512,11 @@ namespace stk
 
       STKUNIT_UNIT_TEST(unit_perceptMesquite, hex_2)
       {
+        if (1) return;
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
-        unsigned par_size_max = 2;
+        unsigned par_size_max = s_par_size_max;
 
         const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
@@ -571,7 +577,7 @@ namespace stk
             int  msq_debug             = 2; // 1,2,3 for more debug info
             bool always_smooth         = true;
 
-            if (0 && p_size == 1)  // always use parallel mesh
+            if (p_size == 1) 
               {
                 PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
                 PerceptMesquiteMeshDomain pmd(&eMesh, 0);
