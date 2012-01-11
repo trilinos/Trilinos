@@ -87,15 +87,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Cfunc
   "Enable the Cfunc functionality."
   OFF )
 
-# macro ADD_OPTION_AND_DEFINE should not be used here:
-# because MATLAB is a TPL the CMake build system defines ${PACKAGE_NAME}_ENABLE_MATLAB
-SET(HAVE_ML_MATLAB "${${PACKAGE_NAME}_ENABLE_MATLAB}")
-
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TekoSmoothers
   HAVE_ML_TekoSmoothers
   "Enable Teko Smoothing Functionality."
   OFF )
 
+# Note: macro HAVE_ML_MATLAB is automatically defined if TPL MATLAB is enabled.
 
 #
 # C) Add the libraries, tests, and examples
