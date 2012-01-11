@@ -448,7 +448,7 @@ void BulkData::internal_change_entity_parts(
   m_bucket_repository.add_entity_to_bucket( entity, *k_new );
 
   // If changing buckets then remove the entity from the bucket,
-  if ( k_old ) { m_bucket_repository.remove_entity( k_old , i_old ); }
+  if ( k_old && k_old->capacity() > 0) { m_bucket_repository.remove_entity( k_old , i_old ); }
 
   // Update the change counter to the current cycle.
   m_entity_repo.set_entity_sync_count( entity, m_sync_count );

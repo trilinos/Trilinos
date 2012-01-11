@@ -224,16 +224,33 @@ void EntityRepository::update_entity_key(EntityKey key, Entity & entity)
 
   EntityMap::iterator old_itr = m_entities.find( old_key );
 
-  ThrowRequireMsg( m_entities.end() == m_entities.find(key), "Already in map " << key.raw_key() );
+  EntityMap::iterator itr = m_entities.find(key);
+  if (itr != m_entities.end()) {
+    Entity* key_entity = itr->second;
+    ThrowRequireMsg( key_entity->log_query() == EntityLogDeleted, "update_entity_key ERROR: non-deleted entity already present for new key (" << key.rank()<<","<<key.id()<<")");
 
-  m_entities.insert(std::make_pair(key,&entity));
+    //We found an entity with 'key', we'll change it's key to old_key and then
+    //entity (old_itr) will adopt key.
 
-  entity.m_entityImpl.update_key(key);
+    key_entity->m_entityImpl.update_key(old_key);
+    //key_entity is already marked for deletion
 
-  old_itr->second = new Entity(old_key);
+    old_itr->second->m_entityImpl.update_key(key);
 
-  old_itr->second->m_entityImpl.log_deleted();
+    //We also need to swap the entities on these map iterators so that
+    //they map to the right keys:
+    itr->second = old_itr->second;
+    old_itr->second = key_entity;
+  }
+  else {
+    m_entities.insert(std::make_pair(key,&entity));
 
+    entity.m_entityImpl.update_key(key);
+
+    old_itr->second = new Entity(old_key);
+
+    old_itr->second->m_entityImpl.log_deleted();
+  }
 }
 
 } // namespace impl

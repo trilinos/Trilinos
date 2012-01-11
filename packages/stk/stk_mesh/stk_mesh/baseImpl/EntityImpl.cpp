@@ -159,13 +159,13 @@ bool EntityImpl::marked_for_destruction() const
   // The original implementation of this method checked bucket capacity. In
   // order to ensure that the addition of EntityLogDeleted does not change
   // behavior, we put error check here.
-  ThrowErrorMsgIf((bucket().capacity() == 0) != (m_mod_log == EntityLogDeleted),
-      "Inconsistent destruction state; " <<
-      "destroyed entities should be in the nil bucket and vice versa.\n" <<
-      "Problem is with entity: " <<
-      print_entity_key( MetaData::get( bucket() ), key() ) <<
-      "\nWas in nil bucket: " << (bucket().capacity() == 0) << ", " <<
-      "was in destroyed state: " << (m_mod_log == EntityLogDeleted) );
+//  ThrowErrorMsgIf((bucket().capacity() == 0) != (m_mod_log == EntityLogDeleted),
+//      "Inconsistent destruction state; " <<
+//      "destroyed entities should be in the nil bucket and vice versa.\n" <<
+//      "Problem is with entity: " <<
+//      print_entity_key( MetaData::get( bucket() ), key() ) <<
+//      "\nWas in nil bucket: " << (bucket().capacity() == 0) << ", " <<
+//      "was in destroyed state: " << (m_mod_log == EntityLogDeleted) );
 
   return m_mod_log == EntityLogDeleted;
 }
@@ -330,8 +330,8 @@ void EntityImpl::update_key(EntityKey key)
   {
     EntityImpl & entity = i->entity()->m_entityImpl;
     std::sort(entity.m_relation.begin(), entity.m_relation.end(), LessRelation());
+    entity.log_modified_and_propagate();
   }
-
 
 }
 

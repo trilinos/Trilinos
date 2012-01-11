@@ -65,6 +65,9 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
 
   mesh.modification_end();
 
+  mesh.modification_begin();
+  mesh.modification_end();
+
   std::vector<EntityId> new_ids_minus_num_elems;
   new_ids_minus_num_elems.reserve(num_elems);
   BOOST_FOREACH(Bucket * b, elems) {
