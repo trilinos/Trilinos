@@ -597,7 +597,6 @@ namespace stk
 
             eMesh.saveAs(output_files_loc+"hex_2_si_smooth.1.e");
           }
-        exit(123);
       }
 
     }
