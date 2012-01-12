@@ -60,6 +60,16 @@ namespace fei {
     static const char* typeName()
       { return("fei::LinearProblemManager"); }
 
+    static double* getBeginPointer(fei::LinearProblemManager* /*mat*/)
+      {
+        return NULL;
+      }
+
+    static int getOffset(fei::LinearProblemManager* /*mat*/, int /*row*/, int /*col*/)
+      {
+        return -1;
+      }
+
     /** Set a specified scalar value throughout the matrix.
      */
     static int setValues(fei::LinearProblemManager* mat, double scalar)

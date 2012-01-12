@@ -148,6 +148,30 @@ class AztecDMSR_Matrix {
  
     int getNumNonZeros() {return(nnzeros_);};
 
+    double* getBeginPointer() { return val; }
+
+    int getOffset(int row, int col)
+    {
+      int localRow;
+      if (!amap_->inUpdate(row,localRow)){
+        throw std::runtime_error("row not found");
+      }
+
+      if (row == col) return localRow;
+
+      int* row_ptr = &bindx[bindx[localRow]];
+      int* end_row = &bindx[bindx[localRow+1]];
+
+      int local_col = amap_->getTransformedEqn(col);
+      int col_offset = 0;
+      for(; row_ptr != end_row; ++row_ptr) {
+        if (*row_ptr == local_col) break;
+        ++col_offset;
+      }
+
+      return bindx[localRow] + col_offset;
+    }
+
     //Aztec-specific functions:
 
     AZ_MATRIX* getAZ_MATRIX_PTR() {return(Amat_);};

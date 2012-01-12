@@ -625,6 +625,13 @@ class LinearSystemCore {
     by the FEI implementation.
    */
    virtual int writeSystem(const char* name) = 0;
+
+   virtual double* getMatrixBeginPointer()
+   { return NULL; }
+
+   virtual int getMatrixOffset(int /*row*/, int /*col*/)
+   { return -1; }
+
 };
 
 #endif

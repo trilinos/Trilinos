@@ -140,6 +140,74 @@ namespace Trilinos_Helpers {
   /** Fill the VbrMatrix with zeros. */
   int zero_Epetra_VbrMatrix(Epetra_VbrMatrix* mat);
 
+  /** Return the pointer to the first local coefficient in the matrix.
+    Only works for Epetra_CrsMatrix.
+  */
+  inline
+  double* getBeginPointer(const fei::SharedPtr<fei::Matrix>& feiA)
+  {
+    Epetra_CrsMatrix* A = get_Epetra_CrsMatrix(feiA.get());
+    return (*A)[0];
+  }
+
+  /** Get the offset of the specified matrix location from the
+    beginning of the local matrix storage.
+    global_row_index and global_col_index are Epetra global indices.
+  */
+  inline
+  int getOffsetG(const fei::SharedPtr<fei::Matrix>& feiA,
+                 int global_row_index, int global_col_index)
+  {
+    Epetra_CrsMatrix* A = get_Epetra_CrsMatrix(feiA.get());
+    const Epetra_Map& erowmap = A->RowMap();
+    const Epetra_Map& ecolmap = A->ColMap();
+    int local_row = erowmap.LID(global_row_index);
+    int local_col = ecolmap.LID(global_col_index);
+  
+    int* rowOffsets;
+    int* colIndices;
+    double* coefs;
+    A->ExtractCrsDataPointers(rowOffsets, colIndices, coefs);
+  
+    int* row_ptr = &colIndices[rowOffsets[local_row]];
+    int* end_row = &colIndices[rowOffsets[local_row+1]];
+  
+    int col_offset = 0;
+    for(; row_ptr != end_row; ++row_ptr) {
+      if (*row_ptr == local_col) break;
+      ++col_offset;
+    }
+  
+    return rowOffsets[local_row] + col_offset;
+  }
+
+  /** Get the offset of the specified matrix location from the
+    beginning of the local matrix storage.
+    local_row_index and local_col_index are Epetra local indices.
+  */
+  inline
+  int getOffsetL(const fei::SharedPtr<fei::Matrix>& feiA,
+                 int local_row_index, int local_col_index)
+  {
+    Epetra_CrsMatrix* A = get_Epetra_CrsMatrix(feiA.get());
+  
+    int* rowOffsets;
+    int* colIndices;
+    double* coefs;
+    A->ExtractCrsDataPointers(rowOffsets, colIndices, coefs);
+  
+    int* row_ptr = &colIndices[rowOffsets[local_row_index]];
+    int* end_row = &colIndices[rowOffsets[local_row_index+1]];
+  
+    int col_offset = 0;
+    for(; row_ptr != end_row; ++row_ptr) {
+      if (*row_ptr == local_col_index) break;
+      ++col_offset;
+    }
+  
+    return rowOffsets[local_row_index] + col_offset;
+  }
+
 #endif // HAVE_FEI_EPETRA
 
 }//namespace Trilinos_Helpers

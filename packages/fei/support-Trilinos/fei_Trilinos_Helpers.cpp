@@ -202,7 +202,7 @@ create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
       fei::console_out() << "proc " << localProc << " err-return " << err
                << " inserting row " << firstLocalEqn+i<<", cols ";
       for(int ii=0; ii<rowLengths[i]; ++ii) {
-	fei::console_out() << packedColumnIndices[offset+ii]<<",";
+        fei::console_out() << packedColumnIndices[offset+ii]<<",";
       }
       fei::console_out() << FEI_ENDL;
       throw std::runtime_error("... occurred in create_Epetra_CrsGraph");
@@ -214,6 +214,7 @@ create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
   //Epetra_BlockMap* domainmap = const_cast<Epetra_BlockMap*>(&(epetraGraph_->DomainMap()));
   //Epetra_BlockMap* rangemap = const_cast<Epetra_BlockMap*>(&(epetraGraph_->RangeMap()));
   egraph.FillComplete();
+  egraph.OptimizeStorage();
 
   return(egraph);
 }

@@ -59,6 +59,16 @@ namespace fei {
     static const char* typeName()
       { return("FiniteElementData"); }
 
+    static double* getBeginPointer(FiniteElementData* fed)
+      {
+        return NULL;
+      }
+
+    static int getOffset(FiniteElementData* /*fed*/, int row, int col)
+      {
+        return -1;
+      }
+
     /** Set a specified scalar value throughout the matrix.
      */
     static int setValues(FiniteElementData* fed, double scalar)

@@ -308,6 +308,16 @@ namespace fei {
 
     bool changedSinceMark();
 
+    double* getBeginPointer()
+      {
+        return fei::MatrixTraits<T>::getBeginPointer(matrix_.get());
+      }
+
+    int getOffset(int row, int col)
+      {
+        return fei::MatrixTraits<T>::getOffset(matrix_.get(),row,col);
+      }
+
   private:
     int giveToMatrix(int numRows, const int* rows,
                      int numCols, const int* cols,

@@ -60,6 +60,16 @@ namespace fei {
     static const char* typeName()
       { return("LinearSystemCore"); }
 
+    static double* getBeginPointer(LinearSystemCore* lsc)
+      {
+         return lsc->getMatrixBeginPointer();
+      }
+
+    static int getOffset(LinearSystemCore* lsc, int row, int col)
+      {
+         return lsc->getMatrixOffset(row,col);
+      }
+
     /** Set a specified scalar value throughout the matrix.
      */
     static int setValues(LinearSystemCore* lsc, double scalar)
