@@ -185,7 +185,7 @@ int Zoltan_Color_Test(
       global_GNOs[i] = i;
 
   ierr = Zoltan_DD_Create (&dd_color, zz->Communicator, 
-                           sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, 0, 0);
+                           sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, num_obj, 0);
   if (ierr != ZOLTAN_OK)
       ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
   /* Put req obs with 1 but first inialize the rest with 0 */

@@ -392,7 +392,7 @@ int Zoltan_Color(
 	  MEMORY_ERROR;
 
       ierr = Zoltan_DD_Create (&dd_color, zz->Communicator, 
-                               sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, 0, 0);
+                               sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, sz, 0);
       if (ierr != ZOLTAN_OK)
           ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
       /* Put req obs with 1 but first inialize the rest with 0 */
@@ -429,7 +429,7 @@ int Zoltan_Color(
 #endif
 
    ierr = Zoltan_DD_Create (&dd_color, zz->Communicator, 
-                            sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, 0, 0);
+                            sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, nvtx, 0);
    if (ierr != ZOLTAN_OK)
        ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
    /* Put color in part field. */
