@@ -512,7 +512,6 @@ namespace stk
 
       STKUNIT_UNIT_TEST(unit_perceptMesquite, hex_2)
       {
-        if (1) return;
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
