@@ -47,7 +47,152 @@
 #include <functional>
 
 namespace Teuchos {
+  /// \class MaxLoc
+  /// \brief Teuchos version of MPI_MAXLOC.
+  /// \author Mark Hoemmen
+  ///
+  /// \tparam Ordinal The template parameter of \c Comm.
+  ///
+  /// \tparam Packet A type with value semantics; the type on which to
+  ///   reduce.
+  ///
+  /// MPI_MAXLOC is a standard reduction operator provided by the MPI
+  /// standard.  According to the standard, MPI_MAXLOC combines the
+  /// (value, index) pairs (u,i) and (v,j) into (w,j), where \f$w =
+  /// max(u,v)\f$, and
+  /// \f[
+  ///   k = \begin{cases}
+  ///     i         & \text{if $u > v$}, \\
+  ///     \min(i,j) & \text{if $u = v$}, \\
+  ///     j         & \text{if $u < v$}. \\
+  ///   \end{cases}
+  /// \f]
+  /// This class implements the MPI_MAXLOC reduction operator for the
+  /// Teuchos communication wrappers.
+  ///
+  /// What happens to NaN ("Not a Number")?  A NaN is neither less
+  /// than, greater than, or equal to any floating-point number or any
+  /// NaN.  We can alter the above definition slightly so that a
+  /// MaxLoc reduction has a well-defined result in case the array
+  /// contains a NaN:
+  /// \f[
+  ///   w = \begin{cases}
+  ///     u     & \text{if $u > v$}, \\
+  ///     v     & \text{if $u < v$}. \\
+  ///     u     & \text{otherwise}. \\
+  ///   \end{cases}
+  /// \f]
+  /// and 
+  /// \f[
+  ///   k = \begin{cases}
+  ///     i         & \text{if $u > v$}, \\
+  ///     j         & \text{if $u < v$}. \\
+  ///     \min(i,j) & \text{otherwise}. \\
+  ///   \end{cases}
+  /// \f]
+  /// Defining MaxLoc in this way ensures that for any array
+  /// containing a NaN, the value (w) returned is the first NaN, and
+  /// the index (k) returned is the index of the first NaN.
+  template<class Ordinal, class ScalarType, class IndexType>
+  class MaxLoc : 
+    public ValueTypeReductionOp<Ordinal, std::pair<ScalarType, IndexType> > {
+  public:
+    void 
+    reduce (const Ordinal count,
+	    const std::pair<ScalarType, IndexType> inBuffer[],
+	    std::pair<ScalarType, IndexType> inoutBuffer[]) const;
+  };
 
+  template<class Ordinal>
+  class MaxLoc<Ordinal, std::pair<double, int> > : 
+    public ValueTypeReductionOp<Ordinal, std::pair<double, int> > {
+  public:
+    void 
+    reduce (const Ordinal count,
+	    const std::pair<double, int> inBuffer[],
+	    std::pair<double, int> inoutBuffer[]) const
+    {
+      for (Ordinal ind = 0; ind < count; ++ind) {
+	const std::pair<double, int>& in = inBuffer[ind];
+	std::pair<double, int>& inout = inoutBuffer[ind];
+
+	if (in.first > inout.first) {
+	  inout.first = in.first;
+	  inout.second = in.second;
+	} else if (in.first < inout.first) {
+	  // Don't need to do anything; inout has the values.
+	} else { // equal, or at least one is NaN.
+	  inout.first = in.first;
+	  inout.second = std::min (in.second, inout.second);
+	}
+      }
+    }
+  };
+
+  /// \class MinLoc
+  /// \brief Teuchos version of MPI_MINLOC.
+  /// \author Mark Hoemmen
+  ///
+  /// \tparam Ordinal The template parameter of \c Comm.
+  ///
+  /// \tparam Packet A type with value semantics; the type on which to
+  ///   reduce.
+  ///
+  /// MPI_MINLOC is a standard reduction operator provided by the MPI
+  /// standard.  According to the standard, MPI_MINLOC combines the
+  /// (value, index) pairs (u,i) and (v,j) into (w,j), where \f$w =
+  /// min(u,v)\f$, and
+  /// \f[
+  ///   k = \begin{cases}
+  ///     i         & \text{if $u < v$}, \\
+  ///     \min(i,j) & \text{if $u = v$}, \\
+  ///     j         & \text{if $u > v$}. \\
+  ///   \end{cases}
+  /// \f]
+  /// This class implements the MPI_MINLOC reduction operator for the
+  /// Teuchos communication wrappers.
+  ///
+  /// Refer to the note in the documentation of \c MaxLoc that
+  /// explains how to adjust the above definition to produce
+  /// well-defined results even if the array contains a NaN.
+  template<class Ordinal, class Packet>
+  class MinLoc : 
+    public ValueTypeReductionOp<Ordinal, std::pair<ScalarType, IndexType> > {
+  public:
+    void 
+    reduce (const Ordinal count,
+	    const std::pair<ScalarType, IndexType> inBuffer[],
+	    std::pair<ScalarType, IndexType> inoutBuffer[]) const;
+  };
+
+  template<class Ordinal>
+  class MinLoc<Ordinal, std::pair<double, int> > : 
+    public ValueTypeReductionOp<Ordinal, std::pair<double, int> > {
+  public:
+    void 
+    reduce (const Ordinal count,
+	    const std::pair<double, int> inBuffer[],
+	    std::pair<double, int> inoutBuffer[]) const
+    {
+      for (Ordinal ind = 0; ind < count; ++ind) {
+	const std::pair<double, int>& in = inBuffer[ind];
+	std::pair<double, int>& inout = inoutBuffer[ind];
+
+	if (in.first < inout.first) {
+	  inout.first = in.first;
+	  inout.second = in.second;
+	} else if (in.first > inout.first) {
+	  // Don't need to do anything; inout has the values.
+	} else { // equal, or at least one is NaN.
+	  inout.first = in.first;
+	  inout.second = std::min (in.second, inout.second);
+	}
+      }
+    }
+  };
+
+  // Typedef used internally by TimeMonitor::summarize() and its
+  // helper functions.
   typedef std::map<std::string, std::pair<double, int> > timer_map_t;
 
   TimeMonitor::TimeMonitor (Time& timer, bool reset) 
@@ -637,6 +782,5 @@ namespace Teuchos {
     summarize (comm.ptr(), out, alwaysWriteLocal, 
 	       writeGlobalStats, writeZeroTimers, setOp);
   }
-
 
 } // namespace Teuchos

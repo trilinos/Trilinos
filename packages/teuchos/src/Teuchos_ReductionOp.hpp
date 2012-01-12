@@ -52,6 +52,9 @@ namespace Teuchos {
  * objects that use value semantics.
  *
  * ToDo: Finish documentation!
+ *
+ * \note Ordinal refers to the template parameter of \c Comm, not to
+ *   the type of array indices.
  */
 template<typename Ordinal, typename T>
 class ValueTypeReductionOp : public Describable {
@@ -69,6 +72,9 @@ public:
  * objects that use reference semantics.
  *
  * ToDo: Finish documentation!
+ *
+ * \note Ordinal refers to the template parameter of \c Comm, not to
+ *   the type of array indices.
  */
 template<typename Ordinal, typename T>
 class ReferenceTypeReductionOp : public Describable {

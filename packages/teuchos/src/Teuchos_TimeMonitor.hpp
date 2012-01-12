@@ -188,31 +188,34 @@ public:
 
   /// \brief Print summary statistics for all timers on the given communicator.
   ///
-  /// The typical use case for timers is that all MPI processes on a
+  /// The typical use case for timers is that all processes in a
   /// communicator create the same set of timers, and then want to
-  /// report summary statistics.  This method's default behavior
-  /// (writeGlobalStats=true) is to report the mininum, arithmetic
+  /// report summary statistics.  This method's default behavior (\c
+  /// writeGlobalStats=true) is to report the mininum, arithmetic
   /// mean, and maximum for each timer.  Duplicate timers get merged
-  /// additively.
+  /// additively.  (\c writeGlobalStatus=false means that only the
+  /// process with rank 0 in the communicator reports its timers'
+  /// data.)
   ///
-  /// Note that different MPI processes may have different sets of
-  /// timers.  If writeGlobalStats is true, we have to reconcile the
+  /// Note that different processes may have different sets of timers.
+  /// If \c writeGlobalStats is true, we have to reconcile the
   /// different sets of timers somehow.  This method gives you two
   /// options: if setOp is Intersection, it computes the intersection
   /// (the common subset) of timers on all MPI processes in the
   /// communicator.  Otherwise, if setOp is Union, this method
-  /// computes the union of timers on all MPI processes in the
+  /// computes the union of timers on all processes in the
   /// communicator.  Intersection is the default, since it means that
   /// all reported timers exist on all participating processes.
   ///
-  /// Suppose there are \f$P\f$ MPI processes in the communicator and
+  /// Suppose there are \f$P\f$ processes in the communicator and
   /// \f$N\f$ unique timers in the global union.  This method requires
   /// \f$O(\log P)\f$ messages (\f$O(1)\f$ "reductions" and exactly 1
   /// "broadcast") and \f$O(N)\f$ per-processor storage (in the worst
   /// case) when computing either the intersection or the union of
   /// timers (the algorithm is similar in either case).  The whole
   /// algorithm takes at worst \f$O(N (\log N) (\log P))\f$ time along
-  /// the critical path (i.e., on the "slowest MPI process").
+  /// the critical path (i.e., on the "slowest process" in the
+  /// communicator).
   ///
   /// \param comm [in] Communicator whose process(es) will participate
   ///   in the gathering of timer statistics.  This is a Ptr and not
@@ -287,7 +290,7 @@ public:
   ///   know whether you intend to run an MPI-enabled build serially.)
   ///
   /// \warning If you call this method when MPI is running, you
-  ///   <i>must</i> call it on all processes in MPI_COMM_WORLD.
+  ///   <i>must</i> call it on all processes in \c MPI_COMM_WORLD.
   ///   Otherwise, the method will never finish, since it will be
   ///   waiting forever for the non-participating processes.  If you
   ///   want to use \c summarize() on a subcommunicator, please use
