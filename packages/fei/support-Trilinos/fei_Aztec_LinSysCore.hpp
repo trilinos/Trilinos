@@ -270,7 +270,7 @@ class Aztec_LinSysCore: public LinearSystemCore {
 
    int writeSystem(const char* name);
 
-   double* getMatrixBeginPtr() { return A_ptr_->getBeginPointer(); }
+   double* getMatrixBeginPointer() { return A_ptr_->getBeginPointer(); }
 
    int getMatrixOffset(int row, int col) { return A_ptr_->getOffset(row,col); }
 
