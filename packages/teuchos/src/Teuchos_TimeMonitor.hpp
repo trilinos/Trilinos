@@ -120,6 +120,18 @@
 
 namespace Teuchos {
 
+/// \typedef stat_map_type
+/// \brief Global statistics collected from timer data.
+///
+/// Key: name of the timer.
+///
+/// Value: each entry in the vector is a timing and call count for
+///   that timer, corresponding to a particular statistic (e.g.,
+///   minimum, arithmetic mean, or maximum).  What statistic that is
+///   depends on an auxillary array "statNames" which has the same
+///   ordering as the entries in this vector.  See the documentation
+///   of \c TimeMonitor::computeGlobalTimerStatistics().
+typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map_type;
 
 /// \class TimeMonitor
 /// \brief A scope-safe timer wrapper class.
@@ -185,6 +197,78 @@ public:
   /// <li>None of the timers must currently be running.
   /// </ul>
   static void zeroOutTimers();
+
+  /// \brief Compute global timer statistics.
+  ///
+  /// For each timer in the list of timers, compute global statistics
+  /// for that timer.  Currently, these global statistics include the
+  /// min, mean, and max.  This list may expand in the future.
+  ///
+  /// Note that different processes may have different sets of timers.
+  /// This method gives you two options for reconciling possibly
+  /// different sets of timers.  If setOp is Intersection, it computes
+  /// the intersection (the common subset) of timers on all MPI
+  /// processes in the communicator.  Otherwise, if setOp is Union,
+  /// this method computes the union of timers on all processes in the
+  /// communicator.  Intersection is the default, since it means that
+  /// all reported timers exist on all participating processes.
+  ///
+  /// Suppose there are \f$P\f$ processes in the communicator and
+  /// \f$N\f$ unique timers in the global union.  This method requires
+  /// \f$O(\log P)\f$ messages (\f$O(1)\f$ "reductions" and exactly 1
+  /// "broadcast") and \f$O(N)\f$ per-processor storage (in the worst
+  /// case) when computing either the intersection or the union of
+  /// timers (the algorithm is similar in either case).  The whole
+  /// algorithm takes at worst \f$O(N (\log N) (\log P))\f$ time along
+  /// the critical path (i.e., on the "slowest process" in the
+  /// communicator).
+  ///
+  /// Each statistic includes both a timing and a call count.  Along
+  /// with the "min" resp. "max" timing comes the call count of the
+  /// process who had the min resp. max.  (If more than one process
+  /// had the min resp. max timing, then the call count on the process
+  /// with the smallest rank is reported.)
+  ///
+  /// The "mean" is an arithmetic mean of all timings that accounts
+  /// for call counts.  Each timing is the sum over all calls.  Thus,
+  /// the mean equals the sum of the timing over all processes,
+  /// divided by the sum of the call counts over all processes for
+  /// that timing.  (We compute it a bit differently to help prevent
+  /// overflow.)  Along with the mean timing comes the mean call
+  /// count.  This may be fractional, and has no particular connection
+  /// to the mean timing.
+  ///
+  /// \param statData [out] On output: Global timer statistics.  See
+  ///   the \c stat_map_type typedef documentation for an explanation
+  ///   of the data structure.
+  ///
+  /// \param statNames [out] On output: Each value in the statData map
+  ///   is a vector.  That vector v has the same number of entries as
+  ///   statNames.  statNames[k] is the name of the statistic (e.g.,
+  ///   "min", "mean", or "max") stored as v[k].
+  ///
+  /// \param comm [in] Communicator whose process(es) will participate
+  ///   in the gathering of timer statistics.  This is a \c Ptr and
+  ///   not an \c RCP, because \c RCP would suggest that \c
+  ///   TimeMonitor were keeping the communicator around after return
+  ///   of this method.  \c Ptr suggests instead that \c TimeMonitor
+  ///   will only reference the communicator during this method.  If
+  ///   you have an \c RCP, you can turn it into a \c Ptr by calling
+  ///   its \c ptr() method:
+  ///   \code
+  ///   RCP<const Comm<int> > myComm = ...;
+  ///   TimeMonitor::summarize (myComm.ptr());
+  ///   \endcode
+  ///
+  /// \param setOp [in] If Intersection, compute statistics for the
+  ///   intersection of all created timers over all processes in the
+  ///   communicator.  If Union, compute statistics for the union of
+  ///   all created timers over all processes in the communicator.
+  static void
+  computeGlobalTimerStatistics (stat_map_type& statData,
+				std::vector<std::string>& statNames,
+				Ptr<const Comm<int> > comm,
+				const ECounterSetOp setOp=Intersection);
 
   /// \brief Print summary statistics for all timers on the given communicator.
   ///
