@@ -20,6 +20,7 @@
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
+#include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_HierarchyHelpers.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -254,6 +255,16 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
     if(params.isParameter("coarse: Chebyshev alpha"))
       ifpackList.set("chebyshev: alpha", params.get<double>("coarse: Chebyshev alpha"));
     smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+  } else if(type == "IFPACK") {
+    // TODO change to TrilnosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
+    ifpackType = params.get<std::string>("coarse: ifpack type");
+    if(ifpackType == "ILU") {
+      ifpackList.set("fact: level-of-fill", params.get<int>("coarse: ifpack level-of-fill"));
+      ifpackList.set("partitioner: overlap", params.get<int>("coarse: ifpack overlap"));
+      smooProto = rcp( new IfpackSmoother(ifpackType, ifpackList, params.get<int>("coarse: ifpack overlap")) );
+    }
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
   } else if(type == "Amesos-Superlu") {
     Teuchos::ParameterList coarsestSmooList;
     smooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
@@ -311,6 +322,7 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
       ifpackList.set("relaxation: damping factor", smolevelsublist.get<double>("smoother: damping factor"));
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Jacobi");
+    smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
   } else if(type == "Gauss-Seidel") {
     if(smolevelsublist.isParameter("smoother: sweeps"))
       ifpackList.set<int>("relaxation: sweeps", smolevelsublist.get<int>("smoother: sweeps"));
@@ -318,6 +330,7 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
       ifpackList.set("relaxation: damping factor", smolevelsublist.get<double>("smoother: damping factor"));
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Gauss-Seidel");
+    smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
   } else if (type == "symmetric Gauss-Seidel") {
     if(smolevelsublist.isParameter("smoother: sweeps"))
       ifpackList.set<int>("relaxation: sweeps", smolevelsublist.get<int>("smoother: sweeps"));
@@ -325,17 +338,29 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
       ifpackList.set("relaxation: damping factor", smolevelsublist.get<double>("smoother: damping factor"));
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+    smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
   } else if (type == "Chebyshev") {
     ifpackType = "CHEBYSHEV";
     if(smolevelsublist.isParameter("smoother: sweeps"))
       ifpackList.set("chebyshev: degree", smolevelsublist.get<int>("smoother: sweeps"));
+    smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
     // TODO what about the other parameters
+  } else if(type == "IFPACK") {
+        // TODO change to TrilnosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
+        ifpackType = params.sublist("smoother: list " + levelstr).get<std::string>("smoother: ifpack type");
+        if(ifpackType == "ILU") {
+            ifpackList.set("fact: level-of-fill", smolevelsublist.get<int>("smoother: ifpack level-of-fill"));
+            ifpackList.set("partitioner: overlap", smolevelsublist.get<int>("smoother: ifpack overlap"));
+            smooProto = rcp( new IfpackSmoother(ifpackType, ifpackList, smolevelsublist.get<int>("smoother: ifpack overlap")) );
+        }
+        else
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown ML smoother type " + type + " not supported by MueLu.");
   }
 
   // create smoother factory
-  smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+  //smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
   SmooFact = rcp( new SmootherFactory(smooProto) );
 
   // check if pre- and postsmoothing is set
