@@ -101,7 +101,9 @@ namespace MueLu {
             break;
           }
         }
-        TEUCHOS_TEST_FOR_EXCEPTION(blockId == -1, Exceptions::RuntimeError, "MueLu::SegregationAFilterFactory::Build(): grid does not belong to a submap in mapextractor_");
+
+        // ignore for allowing to segregate only part of maps
+        //TEUCHOS_TEST_FOR_EXCEPTION(blockId == -1, Exceptions::RuntimeError, "MueLu::SegregationAFilterFactory::Build(): grid does not belong to a submap in mapextractor_");
 
         size_t nnz = Ain->getNumEntriesInLocalRow(row);
         Teuchos::ArrayView<const LocalOrdinal> indices;
