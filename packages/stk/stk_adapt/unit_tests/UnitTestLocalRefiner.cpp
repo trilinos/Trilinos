@@ -33,6 +33,9 @@
 #include <unit_tests/TestLocalRefinerTri_N_3_IEdgeAdapter.hpp>
 #include <unit_tests/TestLocalRefinerTri_N_3_IElementAdapter.hpp>
 
+#include <unit_tests/TestLocalRefinerTri_N_3_MeshSizeRatio.hpp>
+#include <unit_tests/TestLocalRefinerTri_N_3_EdgeBasedAnisotropic.hpp>
+
 #include <stk_adapt/IElementBasedAdapterPredicate.hpp>
 #include <stk_adapt/PredicateBasedElementAdapter.hpp>
 
@@ -1747,6 +1750,138 @@ namespace stk {
               }
           }
         return false;
+      }
+
+      // bcarnes: unit test for initial adaptive refinement - element based
+      // use ratio of current to optimal mesh ratio to guide refinement
+      // no coarsening
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_MeshSizeRatio)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 1) {
+
+	  const double global_error_tol = 0.001;
+
+	  const unsigned n = 2;
+	  const unsigned nx = n , ny = n;
+
+	  bool createEdgeSets = false;
+	  percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
+
+	  bool isCommitted = false;
+	  percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+	  Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
+	  int scalarDimension = 0;
+	  stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+	  eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+
+	  // field for elem mesh size ratio (non-dimensional)
+	  ScalarFieldType * elem_ratio_field = 
+	    (ScalarFieldType *) eMesh.addField("elem_ratio", eMesh.element_rank(), scalarDimension);
+	  assert(elem_ratio_field);
+
+	  eMesh.commit();
+
+	  fixture.generate_mesh();
+
+	  //eMesh.printInfo("local tri mesh",2);
+	  save_or_diff(eMesh, output_files_loc+"local_tri_N_MeshSizeRatio_0_"+post_fix[p_size]+".e");
+
+	  // main class used to drive the test
+	  TestLocalRefinerTri_N_3_MeshSizeRatio breaker (
+            eMesh, 
+	    break_tri_to_tri_N, 
+	    elem_ratio_field,
+	    proc_rank_field);
+
+	  breaker.setRemoveOldElements(false);
+	  breaker.setAlwaysInitializeNodeRegistry(false);
+
+	  const int max_iter = 5;
+	  for (int ipass=0; ipass < max_iter; ipass++)	{
+
+	    // compute exact elem interp error and then elem mesh size ratio (elem loop)
+	    compute_elem_mesh_size_ratio(eMesh, elem_ratio_field, global_error_tol);
+	    
+	    std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+	    breaker.doBreak();
+	    std::cout << "P[" << eMesh.getRank() << "] done... ipass= " << ipass << std::endl;
+	    eMesh.saveAs(output_files_loc+"local_tri_N_MeshSizeRatio_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+	  }
+
+	  eMesh.saveAs(output_files_loc+"local_tri_N_MeshSizeRatio_1_"+post_fix[p_size]+".e");
+	}	
+      }
+
+      // bcarnes: unit test for initial adaptive refinement - edge based
+      // use ratio of current to optimal mesh ratio to guide refinement
+      // no coarsening
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_EdgeBasedAnisotropic)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 1) {
+
+	  const unsigned n = 1;
+	  const unsigned nx = n , ny = n;
+
+	  bool createEdgeSets = true;
+	  percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
+
+	  bool isCommitted = false;
+	  percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+	  Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
+	  const int scalarDimension = 0;
+	  stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+	  eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
+	  
+	  // field for nodal Hessian field
+	  const int spatial_dim = eMesh.getSpatialDim();
+	  const int tensorDimension = spatial_dim*spatial_dim; //(spatial_dim==2) ? 3 : 6;
+	  VectorFieldType * nodal_hessian_field = 
+	    (VectorFieldType *) eMesh.addField("nodal_hessian", eMesh.node_rank(), tensorDimension);
+	  assert(nodal_hessian_field);
+
+	  eMesh.commit();
+
+	  fixture.generate_mesh();
+
+	  //save_or_diff(eMesh, output_files_loc+"local_tri_N_EdgeBasedAnisotropic_0_"+post_fix[p_size]+".e");
+
+	  // main class used to drive the test
+	  TestLocalRefinerTri_N_3_EdgeBasedAnisotropic breaker (
+            eMesh, 
+	    break_tri_to_tri_N, 
+	    nodal_hessian_field,
+	    proc_rank_field);
+
+	  breaker.setRemoveOldElements(false);
+	  breaker.setAlwaysInitializeNodeRegistry(false);
+
+	  const int max_iter = 4;
+	  for (int ipass=0; ipass < max_iter; ipass++)	{
+
+	    // compute nodal Hessian from analytic function for testing
+	    const int hess_id = 3;
+	    interp_nodal_hessian(hess_id, eMesh, nodal_hessian_field);
+
+	    std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+	    breaker.doBreak();
+	    std::cout << "P[" << eMesh.getRank() << "] done... ipass= " << ipass << std::endl;
+	    eMesh.saveAs(output_files_loc+"local_tri_N_EdgeBasedAnisotropic_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+	  }
+
+	  eMesh.saveAs(output_files_loc+"local_tri_N_EdgeBasedAnisotropic_1_"+post_fix[p_size]+".e");
+	}
       }
 
       /// Create a single triangle mesh and mark the edges, call RefinerPattern_Tri3_Tri3_N::triangulate_face
