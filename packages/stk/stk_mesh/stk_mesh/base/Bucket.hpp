@@ -172,9 +172,6 @@ public:
   /** \brief  A method to assist in unit testing - accesses private data as necessary. */
   bool assert_correct() const;
 
-  //temporary accessor, will be removed as sierra migration progresses
-  std::vector<unsigned char>& get_char_field_data() { return m_bucketImpl.get_char_field_data(); }
-
 private:
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
