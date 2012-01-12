@@ -354,27 +354,67 @@ namespace Tpetra {
     //! The communicator over which to perform distributions.
     RCP<const Comm<int> > comm_;
 
+    /// \brief The number of export process IDs on input to \c createFromSends().
+    ///
+    /// This may differ from the number of sends.  We always want to
+    /// send either zero or one messages to any process.  However, the
+    /// user may have specified a process ID twice in \c
+    /// createFromSends()'s input array of process IDs (\c
+    /// exportNodeIDs).  This is allowed, but may affect whether sends
+    /// require a buffer.
     size_t numExports_;
+
     //! Whether I am supposed to send a message to myself.
     bool selfMessage_;
+
     /// \brief The number of sends to other nodes.
     ///
     /// This is always less than or equal to the number of nodes.
+    /// It does <i>not</i> count self receives.
+    ///
+    /// This value is computed by the \c createFromSends() method.
+    /// That method first includes self receives in the count, but at
+    /// the end subtracts one if selfMessage_ is true.
     size_t numSends_;
+
     // imagesTo_, startsTo_ and lengthsTo_ each have size 
     //   numSends_ + selfMessage_
     Array<int> imagesTo_;
-    /* Given an export buffer that contains all of the item being sent by this node,
-       the block of values for node i will start at position startsTo_[i]  */
+
+    /// \brief Starting index of the block of values to send to each process.
+    ///
+    /// Given an export buffer that contains all of the data being
+    /// sent by this process, the block of values to send to process i
+    /// will start at position startsTo_[i].
+    ///
+    /// This array has length numSends_ + selfMessage_ (that is, it
+    /// includes the self message, if there is one).
     Array<size_t> startsTo_;
+
+    /// \brief Length of my process' send to each process.
+    ///
+    /// lengthsTo_[i] is the length of my process' send to process i.
+    /// This array has length numSends_ + selfMessage_ (that is, it
+    /// includes the self message, if there is one).
     Array<size_t> lengthsTo_;
-    // maxSendLength_ is the maximum send to another node: 
-    //   max(lengthsTo_[i]) for i != me
+
+    /// \brief The maximum send length to another node.
+    ///
+    /// maxSendLength_ = max(lengthsTo_[i]) for i != my process ID.
     size_t maxSendLength_;
     Array<size_t> indicesTo_;
-    // numReceives_ is the number of receives by me from other procs, not
-    // counting self receives
+    
+    /// \brief The number of messages received by my process from other processes.
+    ///
+    /// This does <i>not</i> count self receives.  If selfMessage_ is
+    /// true, the actual number of receives is one more (we assume
+    /// that we only receive zero or one messages from ourself).
+    ///
+    /// This value is computed by the \c computeReceives() method.
+    /// That method first includes self receives in the count, but at
+    /// the end subtracts one if selfMessage_ is true.
     size_t numReceives_;
+
     // totalReceiveLength_ is the total number of Packet received, used to 
     // allocate the receive buffer
     size_t totalReceiveLength_;

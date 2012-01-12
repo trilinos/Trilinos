@@ -272,7 +272,7 @@ namespace Tpetra {
     {
       Teuchos::Array<size_t> to_nodes_from_me(numImages,0);
 #     ifdef HAVE_TEUCHOS_DEBUG 
-        bool counting_error = false;
+      bool counting_error = false;
 #     endif
       for (size_t i=0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
 #       ifdef HAVE_TEUCHOS_DEBUG
@@ -283,16 +283,28 @@ namespace Tpetra {
         to_nodes_from_me[imagesTo_[i]] = 1;
       }
 #     ifdef HAVE_TEUCHOS_DEBUG
-        SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
-          "Tpetra::Distributor::computeReceives: There was an error on at least "
-          "one node in counting the number of messages send by that node to the "
-          "other nodes.  Please report this bug to the Tpetra developers.", 
-          *comm_);
+      SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
+        "Tpetra::Distributor::computeReceives: There was an error on at least "
+        "one node in counting the number of messages send by that node to the "
+        "other nodes.  Please report this bug to the Tpetra developers.", 
+        *comm_);
 #     endif
       // Each process will get back only one item (hence, counts =
       // ones) from the array of global sums, namely that entry
       // corresponding to the process, and detailing how many receives
       // it has.  This total includes self sends.
+      //
+      // mfh 09 Jan 2012: The reduceAllAndScatter really isn't
+      // necessary here.  Since counts is just all ones, we could
+      // replace this with an all-reduce on to_nodes_from_me, and let
+      // my process (with rank myRank) get numReceives_ from
+      // to_nodes_from_me[myRank].  The HPCCG miniapp uses the
+      // all-reduce method.  It could be possible that
+      // reduceAllAndScatter is faster, but it also makes the code
+      // more complicated, and it can't be _asymptotically_ faster
+      // (MPI_Allreduce has twice the critical path length of
+      // MPI_Reduce, so reduceAllAndScatter can't be more than twice
+      // as fast as the all-reduce, even if the scatter is free).
       Teuchos::Array<int> counts (numImages, 1);
       Teuchos::reduceAllAndScatter<int,size_t> (*comm_, Teuchos::REDUCE_SUM, numImages, &to_nodes_from_me[0], &counts[0], &numReceives_);
     }
@@ -377,7 +389,8 @@ namespace Tpetra {
     //   * HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS 
     //   * HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS 
     //
-    // If the data is contiguous, then we can post the sends in situ.
+    // If the data is contiguous, then we can post the sends in situ
+    // (i.e., without needing to copy them into a send buffer).
     // 
     // Determine contiguity. There are a number of ways to do this:
     // * If the export IDs are sorted, then all exports to a
@@ -439,6 +452,8 @@ namespace Tpetra {
     }
 #   endif
 
+    // Determine from the caller's data whether or not the current
+    // process should send (a) message(s) to itself.
     if (starts[myImageID] != 0) {
       selfMessage_ = true;
     }
@@ -454,24 +469,24 @@ namespace Tpetra {
     if (!needSendBuff) {
       // grouped by image, no send buffer or indicesTo_ needed
       numSends_ = 0;
-      // count total number of sends, i.e., total number of images that we are sending to
-      // this includes myself
+      // Count total number of sends, i.e., total number of images to
+      // which we are sending.  This includes myself, if applicable.
       for (int i=0; i < numImages; ++i) {
         if (starts[i]) ++numSends_;
       }
 
-      // not only do we not need these, but we must clear it, as empty status of indicesTo 
-      // is a flag used later
+      // Not only do we not need these, but we must clear them, as
+      // empty status of indicesTo is a flag used later.
       indicesTo_.resize(0);
-      // size these to numSends_; note, at the moment, numSends_ includes self sends
-      // set their values to zeros
+      // Size these to numSends_; note, at the moment, numSends_
+      // includes self sends.  Set their values to zeros.
       imagesTo_.assign(numSends_,0);
       startsTo_.assign(numSends_,0);
       lengthsTo_.assign(numSends_,0);
 
-      // set startsTo to the offsent for each send (i.e., each image ID)
+      // set startsTo to the offset for each send (i.e., each image ID)
       // set imagesTo to the image ID for each send
-      // in interpretting this code, remember that we are assuming contiguity
+      // in interpreting this code, remember that we are assuming contiguity
       // that is why index skips through the ranks
       {
         size_t index = 0, nodeIndex = 0;
