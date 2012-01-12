@@ -47,52 +47,54 @@
 #include <functional>
 
 namespace Teuchos {
-  /// \class MaxLoc
-  /// \brief Teuchos version of MPI_MAXLOC.
-  /// \author Mark Hoemmen
+  /**
+   * \class MaxLoc
+   \brief Teuchos version of MPI_MAXLOC.
+   \author Mark Hoemmen
+   
+   \tparam Ordinal The template parameter of \c Comm.
+
+   \tparam Packet A type with value semantics; the type on which to
+     reduce.
+
+   MPI_MAXLOC is a standard reduction operator provided by the MPI
+   standard.  According to the standard, MPI_MAXLOC combines the
+   (value, index) pairs (u,i) and (v,j) into (w,j), where \f$w =
+   max(u,v)\f$, and
+   \f[
+     k = \begin{cases}
+       i         & \text{if $u > v$}, \\
+       \min(i,j) & \text{if $u = v$}, \\
+       j         & \text{if $u < v$}. \\
+     \end{cases}
+   \f]
+   This class implements the MPI_MAXLOC reduction operator for the
+   Teuchos communication wrappers.
   ///
-  /// \tparam Ordinal The template parameter of \c Comm.
-  ///
-  /// \tparam Packet A type with value semantics; the type on which to
-  ///   reduce.
-  ///
-  /// MPI_MAXLOC is a standard reduction operator provided by the MPI
-  /// standard.  According to the standard, MPI_MAXLOC combines the
-  /// (value, index) pairs (u,i) and (v,j) into (w,j), where \f$w =
-  /// max(u,v)\f$, and
-  /// \f[
-  ///   k = \begin{cases}
-  ///     i         & \text{if $u > v$}, \\
-  ///     \min(i,j) & \text{if $u = v$}, \\
-  ///     j         & \text{if $u < v$}. \\
-  ///   \end{cases}
-  /// \f]
-  /// This class implements the MPI_MAXLOC reduction operator for the
-  /// Teuchos communication wrappers.
-  ///
-  /// What happens to NaN ("Not a Number")?  A NaN is neither less
-  /// than, greater than, or equal to any floating-point number or any
-  /// NaN.  We can alter the above definition slightly so that a
-  /// MaxLoc reduction has a well-defined result in case the array
-  /// contains a NaN:
-  /// \f[
-  ///   w = \begin{cases}
-  ///     u     & \text{if $u > v$}, \\
-  ///     v     & \text{if $u < v$}. \\
-  ///     u     & \text{otherwise}. \\
-  ///   \end{cases}
-  /// \f]
-  /// and 
-  /// \f[
-  ///   k = \begin{cases}
-  ///     i         & \text{if $u > v$}, \\
-  ///     j         & \text{if $u < v$}. \\
-  ///     \min(i,j) & \text{otherwise}. \\
-  ///   \end{cases}
-  /// \f]
-  /// Defining MaxLoc in this way ensures that for any array
-  /// containing a NaN, the value (w) returned is the first NaN, and
-  /// the index (k) returned is the index of the first NaN.
+   What happens to NaN ("Not a Number")?  A NaN is neither less
+   than, greater than, or equal to any floating-point number or any
+   NaN.  We can alter the above definition slightly so that a
+   MaxLoc reduction has a well-defined result in case the array
+   contains a NaN:
+   \f[
+     w = \begin{cases}
+       u     & \text{if $u > v$}, \\
+       v     & \text{if $u < v$}. \\
+       u     & \text{otherwise}. \\
+     \end{cases}
+   \f]
+   and 
+   \f[
+     k = \begin{cases}
+       i         & \text{if $u > v$}, \\
+       j         & \text{if $u < v$}. \\
+       \min(i,j) & \text{otherwise}. \\
+     \end{cases}
+   \f]
+   Defining MaxLoc in this way ensures that for any array
+   containing a NaN, the value (w) returned is the first NaN, and
+   the index (k) returned is the index of the first NaN.
+  */
   template<class Ordinal, class ScalarType, class IndexType>
   class MaxLoc : 
     public ValueTypeReductionOp<Ordinal, std::pair<ScalarType, IndexType> > {
@@ -104,7 +106,7 @@ namespace Teuchos {
   };
 
   template<class Ordinal>
-  class MaxLoc<Ordinal, std::pair<double, int> > : 
+  class MaxLoc<Ordinal, double, int> :
     public ValueTypeReductionOp<Ordinal, std::pair<double, int> > {
   public:
     void 
@@ -155,7 +157,7 @@ namespace Teuchos {
   /// Refer to the note in the documentation of \c MaxLoc that
   /// explains how to adjust the above definition to produce
   /// well-defined results even if the array contains a NaN.
-  template<class Ordinal, class Packet>
+  template<class Ordinal, class ScalarType, class IndexType>
   class MinLoc : 
     public ValueTypeReductionOp<Ordinal, std::pair<ScalarType, IndexType> > {
   public:
@@ -166,7 +168,7 @@ namespace Teuchos {
   };
 
   template<class Ordinal>
-  class MinLoc<Ordinal, std::pair<double, int> > : 
+  class MinLoc<Ordinal, double, int> :
     public ValueTypeReductionOp<Ordinal, std::pair<double, int> > {
   public:
     void 
