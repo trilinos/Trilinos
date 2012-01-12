@@ -44,6 +44,7 @@
 #include "Epetra_Distributor.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Util.h"
+#include <vector>
 
 //==============================================================================
 // Epetra_Export constructor for a Epetra_BlockMap object
