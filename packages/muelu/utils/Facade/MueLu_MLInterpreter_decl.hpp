@@ -45,11 +45,13 @@ namespace MueLu {
 
     static void FillMLParameterList(Teuchos::ParameterList & params);
 
-  private:
-
     static RCP<SmootherFactory> GetCoarsestSolverFactory(const Teuchos::ParameterList & params);
 
     static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & params, int level);
+
+
+  private:
+
 
   }; // class MLInterpreter
 
