@@ -495,9 +495,9 @@ namespace Tpetra {
           }
         }
         TEUCHOS_TEST_FOR_EXCEPTION( numValidRemote != totalNumRemote - numInvalidRemote, std::logic_error,
-	  "Tpetra::Import::setupExport(): After removing invalid remote GIDs and packing the valid remote GIDs, "
-          "numValidRemote = " << numValidRemote << " != totalNumRemote - numInvalidRemote = "
-          totalNumRemote - numInvalidRemote << ".  Please report this bug to the Tpetra developers.");
+	  "Tpetra::Import::setupExport(): After removing invalid remote GIDs and packing the valid remote "
+          "GIDs, numValidRemote = " << numValidRemote << " != totalNumRemote - numInvalidRemote = "
+          << totalNumRemote - numInvalidRemote << ".  Please report this bug to the Tpetra developers.");
 
         remoteImageIDs.resize(numValidRemote);
         (*remoteGIDs_).resize(numValidRemote);

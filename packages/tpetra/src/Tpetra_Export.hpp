@@ -292,7 +292,7 @@ namespace Tpetra {
       // RCP, which defines self-assignment sensibly.  Nevertheless,
       // we include the check for self-assignment, because it's good
       // form and not expensive (just a raw pointer comparison).
-      ExportData_ = source.ExportData_;
+      ExportData_ = rhs.ExportData_;
     }
     return *this;
   }
