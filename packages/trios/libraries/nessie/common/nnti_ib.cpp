@@ -45,7 +45,7 @@
  * semantics for RDMA ops.   in this mode, when the wait returns the
  * the RDMA op is complete and status indicates what data was addressed.
  */
-#define USE_RDMA_TARGET_ACK
+//#define USE_RDMA_TARGET_ACK
 
 
 
@@ -88,7 +88,7 @@ typedef enum {
 #define IB_OP_RECEIVE        8
 
 typedef enum {
-    SEND_COMPLETE,
+    SEND_COMPLETE=1,
     RECV_COMPLETE,
     RDMA_WRITE_INIT,
     RDMA_WRITE_NEED_ACK,
@@ -121,12 +121,14 @@ typedef struct {
     struct ibv_qp    *req_qp;
     uint32_t          req_qpn;
 
-    conn_qp          my_qp[QP_PER_CONN];   /* QP pool that I draw from when registering buffers */
-    conn_qp          peer_qp[QP_PER_CONN]; /* QP pool that are paired with the my_qp pool on the peer */
-    nthread_mutex_t  qp_index_lock;
-    nthread_cond_t   qp_index_cond;
-    uint8_t          qp_index_count;
-    uint8_t          qp_index_map[QP_PER_CONN];
+    conn_qp          my_qp;
+    conn_qp          peer_qp;
+//    conn_qp          my_qp[QP_PER_CONN];   /* QP pool that I draw from when registering buffers */
+//    conn_qp          peer_qp[QP_PER_CONN]; /* QP pool that are paired with the my_qp pool on the peer */
+//    nthread_mutex_t  qp_index_lock;
+//    nthread_cond_t   qp_index_cond;
+//    uint8_t          qp_index_count;
+//    uint8_t          qp_index_map[QP_PER_CONN];
 
     ib_connection_state state;
 
@@ -157,9 +159,9 @@ typedef struct {
     struct ibv_qp           *qp;
     uint32_t                 qpn;
     uint32_t                 peer_qpn;
-
-    int32_t             my_qp_index;
-    int32_t             peer_qp_index;
+//
+//    int32_t             my_qp_index;
+//    int32_t             peer_qp_index;
 
 #if defined(USE_RDMA_TARGET_ACK)
     struct ibv_send_wr ack_sq_wr;
@@ -218,6 +220,7 @@ static nthread_mutex_t nnti_ib_lock;
 static int register_memory(
         ib_memory_handle *hdl,
         uint32_t mr_index,
+        uint64_t wr_id,
         void *buf,
         uint64_t len,
         enum ibv_access_flags access);
@@ -286,9 +289,9 @@ static NNTI_result_t poll_comp_channel(
         struct ibv_comp_channel *comp_channel,
         struct ibv_cq           *cq,
         int timeout);
-static int32_t get_qp_index(ib_connection *conn);
+//static int32_t get_qp_index(ib_connection *conn);
 //static int32_t set_qp_index_inuse(ib_connection *conn, int32_t index);
-static void release_qp_index(ib_connection *conn, int32_t index);
+//static void release_qp_index(ib_connection *conn, int32_t index);
 static void print_ib_conn(ib_connection *c);
 static void print_qpn_map(void);
 static void print_peer_map(void);
@@ -861,7 +864,7 @@ NNTI_result_t NNTI_ib_register_memory (
 
             slice=buffer+(i*q_hdl->req_size);
 
-            register_memory(ib_mem_hdl, i, slice, q_hdl->req_size, IBV_ACCESS_LOCAL_WRITE);
+            register_memory(ib_mem_hdl, i, (uint64_t)i, slice, q_hdl->req_size, IBV_ACCESS_LOCAL_WRITE);
             ib_mem_hdl->offset[i]=i*q_hdl->req_size;
 
             if (ibv_post_srq_recv(transport_global_data.req_srq, &ib_mem_hdl->rq_wr[i], &bad_wr)) {
@@ -871,8 +874,8 @@ NNTI_result_t NNTI_ib_register_memory (
             }
         }
 
-        ib_mem_hdl->my_qp_index=-1;
-        ib_mem_hdl->peer_qp_index=-1;
+//        ib_mem_hdl->my_qp_index=-1;
+//        ib_mem_hdl->peer_qp_index=-1;
 
         ib_mem_hdl->comp_channel=transport_global_data.req_comp_channel;
         ib_mem_hdl->cq          =transport_global_data.req_cq;
@@ -888,17 +891,22 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, element_size, IBV_ACCESS_LOCAL_WRITE);
+        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, IBV_ACCESS_LOCAL_WRITE);
         ib_mem_hdl->offset[0]=0;
 
-        ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
-        ib_mem_hdl->peer_qp_index=-1;
-
-        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].comp_channel;
-        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].cq;
-        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qp;
-        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qpn;
-        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].peer_qpn;
+//        ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
+//        ib_mem_hdl->peer_qp_index=-1;
+//
+//        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].comp_channel;
+//        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].cq;
+//        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qp;
+//        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qpn;
+//        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].peer_qpn;
+        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp.comp_channel;
+        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp.cq;
+        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp.qp;
+        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp.qpn;
+        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp.peer_qpn;
 
         if (ibv_post_recv(ib_mem_hdl->qp, ib_mem_hdl->rq_wr, &bad_wr)) {
             log_error(nnti_debug_level, "failed to post recv (rq_wr=%p ; bad_wr=%p): %s", ib_mem_hdl->rq_wr, bad_wr, strerror(errno));
@@ -918,11 +926,11 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, element_size, (ibv_access_flags)0);
+        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, (ibv_access_flags)0);
         ib_mem_hdl->offset[0]=0;
 
-        ib_mem_hdl->my_qp_index=-1;
-        ib_mem_hdl->peer_qp_index=-1;
+//        ib_mem_hdl->my_qp_index=-1;
+//        ib_mem_hdl->peer_qp_index=-1;
 
     } else if (ops == NNTI_GET_DST) {
         ib_mem_hdl->type=GET_DST_BUFFER;
@@ -935,11 +943,11 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
-        ib_mem_hdl->my_qp_index=-1;
-        ib_mem_hdl->peer_qp_index=-1;
+//        ib_mem_hdl->my_qp_index=-1;
+//        ib_mem_hdl->peer_qp_index=-1;
 
 #if defined(USE_RDMA_TARGET_ACK)
         register_ack(ib_mem_hdl);
@@ -956,24 +964,29 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
-        ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
-        ib_mem_hdl->peer_qp_index=-1;
-
-        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].comp_channel;
-        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].cq;
-        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qp;
-        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qpn;
-        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].peer_qpn;
+//        ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
+//        ib_mem_hdl->peer_qp_index=-1;
+//
+//        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].comp_channel;
+//        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].cq;
+//        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qp;
+//        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qpn;
+//        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].peer_qpn;
+        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp.comp_channel;
+        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp.cq;
+        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp.qp;
+        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp.qpn;
+        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp.peer_qpn;
 
 #if defined(USE_RDMA_TARGET_ACK)
         register_ack(ib_mem_hdl);
 
         if (ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
-            log_error(nnti_debug_level, "failed to post recv (qp_index=%d ; ack_rq_wr=%p ; bad_wr=%p): %s",
-                    ib_mem_hdl->my_qp_index, &ib_mem_hdl->ack_rq_wr, bad_wr, strerror(errno));
+            log_error(nnti_debug_level, "failed to post recv (ack_rq_wr=%p ; bad_wr=%p): %s",
+                    &ib_mem_hdl->ack_rq_wr, bad_wr, strerror(errno));
             return (NNTI_result_t)errno;
         }
 #endif
@@ -991,11 +1004,11 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
-        ib_mem_hdl->my_qp_index=-1;
-        ib_mem_hdl->peer_qp_index=-1;
+//        ib_mem_hdl->my_qp_index=-1;
+//        ib_mem_hdl->peer_qp_index=-1;
 
 #if defined(USE_RDMA_TARGET_ACK)
         register_ack(ib_mem_hdl);
@@ -1014,17 +1027,22 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
-        ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
-        ib_mem_hdl->peer_qp_index=-1;
-
-        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].comp_channel;
-        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].cq;
-        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qp;
-        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qpn;
-        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].peer_qpn;
+//        ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
+//        ib_mem_hdl->peer_qp_index=-1;
+//
+//        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].comp_channel;
+//        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].cq;
+//        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qp;
+//        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qpn;
+//        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].peer_qpn;
+        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp.comp_channel;
+        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp.cq;
+        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp.qp;
+        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp.qpn;
+        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp.peer_qpn;
 
 #if defined(USE_RDMA_TARGET_ACK)
         register_ack(ib_mem_hdl);
@@ -1046,17 +1064,22 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
-        ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
-        ib_mem_hdl->peer_qp_index=-1;
-
-        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].comp_channel;
-        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].cq;
-        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qp;
-        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qpn;
-        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].peer_qpn;
+//        ib_mem_hdl->my_qp_index=get_qp_index(ib_mem_hdl->conn);
+//        ib_mem_hdl->peer_qp_index=-1;
+//
+//        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].comp_channel;
+//        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].cq;
+//        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qp;
+//        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].qpn;
+//        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp[ib_mem_hdl->my_qp_index].peer_qpn;
+        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->my_qp.comp_channel;
+        ib_mem_hdl->cq          =ib_mem_hdl->conn->my_qp.cq;
+        ib_mem_hdl->qp          =ib_mem_hdl->conn->my_qp.qp;
+        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->my_qp.qpn;
+        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->my_qp.peer_qpn;
 
 #if defined(USE_RDMA_TARGET_ACK)
         register_ack(ib_mem_hdl);
@@ -1069,15 +1092,15 @@ NNTI_result_t NNTI_ib_register_memory (
 
     } else {
         ib_mem_hdl->type=UNKNOWN_BUFFER;
-        ib_mem_hdl->my_qp_index=-1;
-        ib_mem_hdl->peer_qp_index=-1;
+//        ib_mem_hdl->my_qp_index=-1;
+//        ib_mem_hdl->peer_qp_index=-1;
     }
 
     reg_buf->buffer_addr.transport_id                     = NNTI_TRANSPORT_IB;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.size     = ib_mem_hdl->mr[0]->length;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.buf      = (uint64_t)ib_mem_hdl->mr[0]->addr;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.key      = ib_mem_hdl->mr[0]->rkey;
-    reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.qp_index = ib_mem_hdl->my_qp_index;
+//    reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.qp_index = ib_mem_hdl->my_qp_index;
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_buffer(logger_get_file(), "reg_buf",
@@ -1117,7 +1140,7 @@ NNTI_result_t NNTI_ib_unregister_memory (
 #endif
     destroy_mr_sge_wr(ib_mem_hdl);
 
-    release_qp_index(ib_mem_hdl->conn, ib_mem_hdl->my_qp_index);
+//    release_qp_index(ib_mem_hdl->conn, ib_mem_hdl->my_qp_index);
 
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
     IB_SET_MATCH_ANY(&reg_buf->buffer_owner);
@@ -1153,11 +1176,14 @@ NNTI_result_t NNTI_ib_send (
     assert(peer_hdl);
     assert(msg_hdl);
 
+    log_level debug_level=nnti_debug_level; //LOG_ALL;
+
     ib_mem_hdl=(ib_memory_handle *)msg_hdl->transport_private;
 
-    if ((dest_hdl == NULL) || (dest_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.qp_index==-1)) {
-        ib_mem_hdl->my_qp_index=-1;
-        ib_mem_hdl->peer_qp_index=-1;
+//    if ((dest_hdl == NULL) || (dest_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.qp_index==-1)) {
+    if (dest_hdl == NULL) {
+//        ib_mem_hdl->my_qp_index=-1;
+//        ib_mem_hdl->peer_qp_index=-1;
 
         ib_mem_hdl->comp_channel=transport_global_data.req_comp_channel;
         ib_mem_hdl->cq          =transport_global_data.req_cq;
@@ -1166,18 +1192,23 @@ NNTI_result_t NNTI_ib_send (
         ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->peer_req_qpn;
 
     } else {
-        ib_mem_hdl->my_qp_index=-1;
-        ib_mem_hdl->peer_qp_index=dest_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.qp_index;
-
-        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].comp_channel;
-        ib_mem_hdl->cq          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].cq;
-        ib_mem_hdl->qp          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qp;
-        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qpn;
-        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].peer_qpn;
+//        ib_mem_hdl->my_qp_index=-1;
+//        ib_mem_hdl->peer_qp_index=dest_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.qp_index;
+//
+//        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].comp_channel;
+//        ib_mem_hdl->cq          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].cq;
+//        ib_mem_hdl->qp          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qp;
+//        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qpn;
+//        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].peer_qpn;
+        ib_mem_hdl->comp_channel=ib_mem_hdl->conn->peer_qp.comp_channel;
+        ib_mem_hdl->cq          =ib_mem_hdl->conn->peer_qp.cq;
+        ib_mem_hdl->qp          =ib_mem_hdl->conn->peer_qp.qp;
+        ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->peer_qp.qpn;
+        ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->peer_qp.peer_qpn;
     }
 
 
-    log_debug(nnti_debug_level, "sending to (%s, qp=%p, qpn=%lu)", peer_hdl->url, ib_mem_hdl->qp, ib_mem_hdl->qpn);
+    log_debug(debug_level, "sending to (%s, qp=%p, qpn=%lu)", peer_hdl->url, ib_mem_hdl->qp, ib_mem_hdl->qpn);
 
     trios_start_timer(call_time);
     if (ibv_post_send(ib_mem_hdl->qp, &ib_mem_hdl->sq_wr[0], &bad_wr)) {
@@ -1221,14 +1252,19 @@ NNTI_result_t NNTI_ib_put (
 
     ib_mem_hdl->op_state=RDMA_WRITE_INIT;
 
-    ib_mem_hdl->my_qp_index=-1;
-    ib_mem_hdl->peer_qp_index=dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.qp_index;
-
-    ib_mem_hdl->comp_channel=ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].comp_channel;
-    ib_mem_hdl->cq          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].cq;
-    ib_mem_hdl->qp          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qp;
-    ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qpn;
-    ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].peer_qpn;
+//    ib_mem_hdl->my_qp_index=-1;
+//    ib_mem_hdl->peer_qp_index=dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.qp_index;
+//
+//    ib_mem_hdl->comp_channel=ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].comp_channel;
+//    ib_mem_hdl->cq          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].cq;
+//    ib_mem_hdl->qp          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qp;
+//    ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qpn;
+//    ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].peer_qpn;
+    ib_mem_hdl->comp_channel=ib_mem_hdl->conn->peer_qp.comp_channel;
+    ib_mem_hdl->cq          =ib_mem_hdl->conn->peer_qp.cq;
+    ib_mem_hdl->qp          =ib_mem_hdl->conn->peer_qp.qp;
+    ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->peer_qp.qpn;
+    ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->peer_qp.peer_qpn;
 
     ib_mem_hdl->sge[0].addr   = src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf+src_offset;
     ib_mem_hdl->sge[0].length = src_length;
@@ -1285,14 +1321,19 @@ NNTI_result_t NNTI_ib_get (
 
     ib_mem_hdl->op_state=RDMA_READ_INIT;
 
-    ib_mem_hdl->my_qp_index=-1;
-    ib_mem_hdl->peer_qp_index=src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.qp_index;
-
-    ib_mem_hdl->comp_channel=ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].comp_channel;
-    ib_mem_hdl->cq          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].cq;
-    ib_mem_hdl->qp          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qp;
-    ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qpn;
-    ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].peer_qpn;
+//    ib_mem_hdl->my_qp_index=-1;
+//    ib_mem_hdl->peer_qp_index=src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.qp_index;
+//
+//    ib_mem_hdl->comp_channel=ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].comp_channel;
+//    ib_mem_hdl->cq          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].cq;
+//    ib_mem_hdl->qp          =ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qp;
+//    ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].qpn;
+//    ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->peer_qp[ib_mem_hdl->peer_qp_index].peer_qpn;
+    ib_mem_hdl->comp_channel=ib_mem_hdl->conn->peer_qp.comp_channel;
+    ib_mem_hdl->cq          =ib_mem_hdl->conn->peer_qp.cq;
+    ib_mem_hdl->qp          =ib_mem_hdl->conn->peer_qp.qp;
+    ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->peer_qp.qpn;
+    ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->peer_qp.peer_qpn;
 
     ib_mem_hdl->sge[0].addr   = dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf+dest_offset;
     ib_mem_hdl->sge[0].length = src_length;
@@ -1320,6 +1361,12 @@ NNTI_result_t NNTI_ib_get (
 }
 
 
+#define SET_CURRENT_BUFFER(b) \
+    current_buf = (NNTI_buffer_t *)b; \
+    assert(current_buf); \
+    ib_mem_hdl=(ib_memory_handle *)current_buf->transport_private; \
+    assert(ib_mem_hdl);
+
 /**
  * @brief Wait for <tt>remote_op</tt> on <tt>reg_buf</tt> to complete.
  *
@@ -1330,7 +1377,7 @@ NNTI_result_t NNTI_ib_get (
  *
  */
 NNTI_result_t NNTI_ib_wait (
-        const NNTI_buffer_t  *reg_buf,
+        const NNTI_buffer_t  *wait_buf,
         const NNTI_buf_ops_t  remote_op,
         const int             timeout,
         NNTI_status_t        *status)
@@ -1340,22 +1387,28 @@ NNTI_result_t NNTI_ib_wait (
     ib_request_queue_handle *q_hdl=NULL;
     ib_connection           *conn=NULL;
 
+    const NNTI_buffer_t *current_buf=NULL;
+
     int ibv_rc=0;
     NNTI_result_t rc;
     int elapsed_time = 0;
     int timeout_per_call;
 
+    log_level debug_level=nnti_debug_level;
+
     trios_declare_timer(call_time);
 
     struct ibv_wc wc;
 
-    assert(reg_buf);
+    log_debug(nnti_debug_level, "enter");
+
+    assert(wait_buf);
     assert(status);
 
-    q_hdl     =&transport_global_data.req_queue;
-    ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
-
+    ib_mem_hdl=(ib_memory_handle *)wait_buf->transport_private;
     assert(ib_mem_hdl);
+
+    q_hdl     =&transport_global_data.req_queue;
     assert(q_hdl);
 
 #if !defined(USE_RDMA_TARGET_ACK)
@@ -1367,89 +1420,140 @@ NNTI_result_t NNTI_ib_wait (
     }
 #endif
 
-    if (timeout < 0)
-        timeout_per_call = MIN_TIMEOUT;
-    else
-        timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+//    if (ib_mem_hdl->type == RECEIVE_BUFFER) {
+//        debug_level=LOG_ALL;
+//    }
+    if ((ib_mem_hdl->type != REQUEST_BUFFER) && (is_buf_op_complete(wait_buf, remote_op) == TRUE)) {
+        log_debug(debug_level, "buffer op already complete (wait_buf=%p)", wait_buf);
 
-    while (1)   {
-        if (trios_exit_now()) {
-            log_debug(nnti_debug_level, "caught abort signal");
-            nnti_rc=NNTI_ECANCELED;
-            break;
-        }
+        SET_CURRENT_BUFFER(wait_buf);
+//        current_buf = wait_buf;
+//        assert(current_buf);
+//        ib_mem_hdl=(ib_memory_handle *)current_buf->transport_private;
+//        assert(ib_mem_hdl);
 
-        memset(&wc, 0, sizeof(struct ibv_wc));
-        trios_start_timer(call_time);
-        ibv_rc = ibv_poll_cq(ib_mem_hdl->cq, 1, &wc);
-        trios_stop_timer("NNTI_ib_wait - ibv_poll_cq", call_time);
-        if (ibv_rc < 0) {
-            log_debug(nnti_debug_level, "ibv_poll_cq failed: %d", ibv_rc);
-            break;
-        }
-        log_debug(nnti_debug_level, "ibv_poll_cq rc==%d", ibv_rc);
+        nnti_rc = NNTI_OK;
+    } else {
+        log_debug(debug_level, "buffer op NOT complete (wait_buf=%p)", wait_buf);
 
-        if (ibv_rc > 0) {
-            log_debug(nnti_debug_level, "got wc from cq=%p", ib_mem_hdl->cq);
+        if (timeout < 0)
+            timeout_per_call = MIN_TIMEOUT;
+        else
+            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
 
-//            ibv_ack_cq_events(ib_mem_hdl->cq, 1);
-//            log_debug(nnti_debug_level, "ACKed event on cq=%p", ib_mem_hdl->cq);
-
-            log_debug(nnti_debug_level, "polling status is %s", ibv_wc_status_str(wc.status));
-
-            print_wc(&wc);
-
-            if (wc.status != IBV_WC_SUCCESS) {
-                log_error(nnti_debug_level, "Failed status %s (%d) for wr_id %d",
-                        ibv_wc_status_str(wc.status),
-                        wc.status, (int) wc.wr_id);
-                nnti_rc=NNTI_EIO;
+        while (1)   {
+            if (trios_exit_now()) {
+                log_debug(nnti_debug_level, "caught abort signal");
+                nnti_rc=NNTI_ECANCELED;
                 break;
             }
 
-            process_event(reg_buf, remote_op, &wc);
-            if (is_buf_op_complete(reg_buf, remote_op) == TRUE) {
-                nnti_rc = NNTI_OK;
+            memset(&wc, 0, sizeof(struct ibv_wc));
+            trios_start_timer(call_time);
+            ibv_rc = ibv_poll_cq(ib_mem_hdl->cq, 1, &wc);
+            trios_stop_timer("NNTI_ib_wait - ibv_poll_cq", call_time);
+            if (ibv_rc < 0) {
+                log_debug(nnti_debug_level, "ibv_poll_cq failed: %d", ibv_rc);
                 break;
             }
-        }
+            log_debug(debug_level, "ibv_poll_cq(cq=%p) rc==%d", ib_mem_hdl->cq, ibv_rc);
+
+            if (ibv_rc > 0) {
+                print_wc(&wc);
+
+//                if ((ib_mem_hdl->type != REQUEST_BUFFER) && (ib_mem_hdl->type != SEND_BUFFER)) {
+                if (ib_mem_hdl->type != REQUEST_BUFFER) {
+                    if (wc.wr_id == (uint64_t)wait_buf) {
+                        log_debug(debug_level, "the wc matches the wait buffer (cq=%p, wr_id=%p, wait_buf=%p)",
+                                (void *)ib_mem_hdl->cq, wc.wr_id, wait_buf);
+
+                        SET_CURRENT_BUFFER(wait_buf);
+//                        current_buf = wait_buf;
+//                        assert(current_buf);
+//                        ib_mem_hdl=(ib_memory_handle *)current_buf->transport_private;
+//                        assert(ib_mem_hdl);
+                    } else {
+                        log_debug(debug_level, "the wc does NOT match the wait buffer (cq=%p, wr_id=%p, wait_buf=%p)",
+                                (void *)ib_mem_hdl->cq, wc.wr_id, wait_buf);
+
+                        SET_CURRENT_BUFFER(wc.wr_id);
+//                        current_buf = (NNTI_buffer_t *)wc.wr_id;
+//                        assert(current_buf);
+//                        ib_mem_hdl=(ib_memory_handle *)current_buf->transport_private;
+//                        assert(ib_mem_hdl);
+                    }
+                } else {
+                    log_debug(debug_level, "the wait buffer is a REQUEST BUFFER, so wc.wr_id is the request buffer index.");
+
+                    SET_CURRENT_BUFFER(wait_buf);
+//                    current_buf = wait_buf;
+//                    assert(current_buf);
+//                    ib_mem_hdl=(ib_memory_handle *)current_buf->transport_private;
+//                    assert(ib_mem_hdl);
+                }
+
+                log_debug(nnti_debug_level, "got wc from cq=%p", ib_mem_hdl->cq);
+                log_debug(nnti_debug_level, "polling status is %s", ibv_wc_status_str(wc.status));
+
+                print_wc(&wc);
+
+                if (wc.status != IBV_WC_SUCCESS) {
+                    log_error(nnti_debug_level, "Failed status %s (%d) for wr_id %d",
+                            ibv_wc_status_str(wc.status),
+                            wc.status, (int) wc.wr_id);
+                    nnti_rc=NNTI_EIO;
+                    break;
+                }
+
+                process_event(current_buf, remote_op, &wc);
+
+                /* reset current_buf here in case it was adjusted above */
+                SET_CURRENT_BUFFER(wait_buf);
+
+                if (is_buf_op_complete(current_buf, remote_op) == TRUE) {
+                    nnti_rc = NNTI_OK;
+                    break;
+                }
+            }
 
 retry:
-//        nthread_lock(&nnti_ib_lock);
-        trios_start_timer(call_time);
-        rc = poll_comp_channel(ib_mem_hdl->comp_channel, ib_mem_hdl->cq, timeout_per_call);
-        trios_stop_timer("NNTI_ib_wait - poll_comp_channel", call_time);
-//        nthread_unlock(&nnti_ib_lock);
-        /* case 1: success */
-        if (rc == NNTI_OK) {
-            nnti_rc = NNTI_OK;
-            continue;
-        }
-        /* case 2: timed out */
-        else if (rc==NNTI_ETIMEDOUT) {
-            elapsed_time += timeout_per_call;
+//            nthread_lock(&nnti_ib_lock);
+            trios_start_timer(call_time);
+            rc = poll_comp_channel(ib_mem_hdl->comp_channel, ib_mem_hdl->cq, timeout_per_call);
+            trios_stop_timer("NNTI_ib_wait - poll_comp_channel", call_time);
+//            nthread_unlock(&nnti_ib_lock);
+            /* case 1: success */
+            if (rc == NNTI_OK) {
+                nnti_rc = NNTI_OK;
+                continue;
+            }
+            /* case 2: timed out */
+            else if (rc==NNTI_ETIMEDOUT) {
+                elapsed_time += timeout_per_call;
 
-            /* if the caller asked for a legitimate timeout, we need to exit */
-            if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
-                log_debug(nnti_debug_level, "poll_comp_channel timed out");
-                nnti_rc = NNTI_ETIMEDOUT;
+                /* if the caller asked for a legitimate timeout, we need to exit */
+                if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
+                    log_debug(nnti_debug_level, "poll_comp_channel timed out");
+                    nnti_rc = NNTI_ETIMEDOUT;
+                    break;
+                }
+                /* continue if the timeout has not expired */
+                log_debug(nnti_debug_level, "poll_comp_channel timedout... retrying");
+
+                nthread_yield();
+
+                goto retry;
+            }
+            /* case 3: failure */
+            else {
+                log_error(nnti_debug_level, "poll_comp_channel failed (cq==%p): %s",
+                        ib_mem_hdl->cq, strerror(errno));
+                nnti_rc = NNTI_EIO;
                 break;
             }
-            /* continue if the timeout has not expired */
-            log_debug(nnti_debug_level, "poll_comp_channel timedout... retrying");
-
-            nthread_yield();
-
-            goto retry;
-        }
-        /* case 3: failure */
-        else {
-            log_error(nnti_debug_level, "poll_comp_channel failed (cq==%p): %s",
-                    ib_mem_hdl->cq, strerror(errno));
-            nnti_rc = NNTI_EIO;
-            break;
         }
     }
+
 
     if (ib_mem_hdl->type == REQUEST_BUFFER) {
         conn = get_conn_qpn(wc.qp_num);
@@ -1461,7 +1565,7 @@ retry:
     status->op     = remote_op;
     status->result = nnti_rc;
     if (nnti_rc==NNTI_OK) {
-        status->start  = (uint64_t)reg_buf->payload;
+        status->start  = (uint64_t)current_buf->payload;
         switch (ib_mem_hdl->last_op) {
             case IB_OP_PUT_INITIATOR:
 #if defined(USE_RDMA_TARGET_ACK)
@@ -1524,13 +1628,15 @@ retry:
              (ib_mem_hdl->last_op == IB_OP_PUT_TARGET)) {
             log_debug(nnti_debug_level, "re-posting recv for RDMA target");
             if (ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
-                log_error(nnti_debug_level, "failed to re-post ACK recv (qp_index=%d ; ack_rq_wr=%p ; bad_wr=%p): %s",
-                        ib_mem_hdl->my_qp_index, &ib_mem_hdl->ack_rq_wr, bad_wr, strerror(errno));
+                log_error(nnti_debug_level, "failed to re-post ACK recv (ack_rq_wr=%p ; bad_wr=%p): %s",
+                        &ib_mem_hdl->ack_rq_wr, bad_wr, strerror(errno));
                 return (NNTI_result_t)errno;
             }
         }
 #endif
     }
+
+    log_debug(nnti_debug_level, "exit");
 
     return(nnti_rc);
 }
@@ -1620,7 +1726,7 @@ static NNTI_result_t destroy_mr_sge_wr(ib_memory_handle *hdl)
     return(NNTI_OK);
 }
 
-static int register_memory(ib_memory_handle *hdl, uint32_t mr_index, void *buf, uint64_t len, enum ibv_access_flags access)
+static int register_memory(ib_memory_handle *hdl, uint32_t mr_index, uint64_t wr_id, void *buf, uint64_t len, enum ibv_access_flags access)
 {
     NNTI_result_t rc=NNTI_OK; /* return code */
 
@@ -1654,12 +1760,12 @@ static int register_memory(ib_memory_handle *hdl, uint32_t mr_index, void *buf, 
 
     if (hdl->rq_wr) {
         memset(&hdl->rq_wr[mr_index], 0, sizeof(hdl->rq_wr[mr_index]));
-        hdl->rq_wr[mr_index].wr_id  =mr_index;
+        hdl->rq_wr[mr_index].wr_id  =wr_id;
         hdl->rq_wr[mr_index].sg_list=&hdl->sge[mr_index];
         hdl->rq_wr[mr_index].num_sge=1;
     } else {
         memset(&hdl->sq_wr[mr_index], 0, sizeof(hdl->sq_wr[mr_index]));
-        hdl->sq_wr[mr_index].wr_id  =mr_index;
+        hdl->sq_wr[mr_index].wr_id  =wr_id;
         hdl->sq_wr[mr_index].sg_list=&hdl->sge[mr_index];
         hdl->sq_wr[mr_index].num_sge=1;
         switch (hdl->type) {
@@ -2066,12 +2172,14 @@ static void transition_connection_to_ready(
     /* bring the two QPs up to RTR */
     trios_start_timer(callTime);
     transition_qp_to_ready(conn->req_qp, conn->peer_req_qpn, conn->peer_lid);
-    for(i=0;i<QP_PER_CONN;i++) {
-        transition_qp_to_ready(conn->my_qp[i].qp, conn->my_qp[i].peer_qpn, conn->peer_lid);
-    }
-    for(i=0;i<QP_PER_CONN;i++) {
-        transition_qp_to_ready(conn->peer_qp[i].qp, conn->peer_qp[i].peer_qpn, conn->peer_lid);
-    }
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        transition_qp_to_ready(conn->my_qp[i].qp, conn->my_qp[i].peer_qpn, conn->peer_lid);
+//    }
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        transition_qp_to_ready(conn->peer_qp[i].qp, conn->peer_qp[i].peer_qpn, conn->peer_lid);
+//    }
+    transition_qp_to_ready(conn->my_qp.qp, conn->my_qp.peer_qpn, conn->peer_lid);
+    transition_qp_to_ready(conn->peer_qp.qp, conn->peer_qp.peer_qpn, conn->peer_lid);
     trios_stop_timer("transition_qp_to_ready", callTime);
 
     trios_start_timer(callTime);
@@ -2156,12 +2264,14 @@ static void transition_connection_to_error(
     /* bring the two QPs up to RTR */
     trios_start_timer(callTime);
     transition_qp_to_error(conn->req_qp, conn->peer_req_qpn, conn->peer_lid);
-    for(i=0;i<QP_PER_CONN;i++) {
-        transition_qp_to_error(conn->my_qp[i].qp, conn->my_qp[i].peer_qpn, conn->peer_lid);
-    }
-    for(i=0;i<QP_PER_CONN;i++) {
-        transition_qp_to_error(conn->peer_qp[i].qp, conn->peer_qp[i].peer_qpn, conn->peer_lid);
-    }
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        transition_qp_to_error(conn->my_qp[i].qp, conn->my_qp[i].peer_qpn, conn->peer_lid);
+//    }
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        transition_qp_to_error(conn->peer_qp[i].qp, conn->peer_qp[i].peer_qpn, conn->peer_lid);
+//    }
+    transition_qp_to_error(conn->my_qp.qp, conn->my_qp.peer_qpn, conn->peer_lid);
+    transition_qp_to_error(conn->peer_qp.qp, conn->peer_qp.peer_qpn, conn->peer_lid);
     trios_stop_timer("transition_qp_to_error", callTime);
 }
 
@@ -2301,17 +2411,16 @@ static int new_client_connection(
     struct ibv_qp_init_attr att;
 
     /*
-     * Values passed through TCP to permit IB connection.  These
-     * are transformed to appear in network byte order (big endian)
-     * on the network.  The lid is pushed up to 32 bits to avoid struct
-     * alignment issues.
+     * IB parameters passed through TCP to establish the IB connection.
      */
     struct {
         uint32_t lid;
         uint32_t req_qpn;
-        uint32_t my_qpn[QP_PER_CONN];
-        uint32_t peer_qpn[QP_PER_CONN];
-    } ch_in, ch_out;
+//        uint32_t my_qpn[QP_PER_CONN];
+//        uint32_t peer_qpn[QP_PER_CONN];
+        uint32_t my_qpn;
+        uint32_t peer_qpn;
+    } param_in, param_out;
 
     trios_declare_timer(callTime);
 
@@ -2335,118 +2444,204 @@ static int new_client_connection(
     trios_stop_timer("create_qp", callTime);
 
     /* exchange data, converting info to network order and back */
-    ch_out.lid     = htonl(transport_global_data.nic_lid);
-    ch_out.req_qpn = htonl(c->req_qpn);
+    param_out.lid     = htonl(transport_global_data.nic_lid);
+    param_out.req_qpn = htonl(c->req_qpn);
 
-    for(i=0;i<QP_PER_CONN;i++) {
-        c->my_qp[i].comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
-        if (!c->my_qp[i].comp_channel) {
-            log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        c->my_qp[i].cq = ibv_create_cq(
-                transport_global_data.ctx,
-                CQ_WQ_DEPTH,
-                c,
-                c->my_qp[i].comp_channel,
-                0);
-        if (!c->my_qp[i].cq) {
-            log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        memset(&att, 0, sizeof(att));
-        att.qp_context = c;
-        att.send_cq = c->my_qp[i].cq;
-        att.recv_cq = c->my_qp[i].cq;
-        att.cap.max_recv_wr = CQ_WQ_DEPTH;
-        att.cap.max_send_wr = CQ_WQ_DEPTH;
-        att.cap.max_recv_sge = 1;
-        att.cap.max_send_sge = 1;
-        att.qp_type = IBV_QPT_RC;
-        c->my_qp[i].qp = ibv_create_qp(transport_global_data.pd, &att);
-        if (!c->my_qp[i].qp) {
-            log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
-        }
-        if (ibv_req_notify_cq(c->my_qp[i].cq, 0)) {
-            log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
-        }
-
-        c->my_qp[i].qpn     = c->my_qp[i].qp->qp_num;
-        ch_out.my_qpn[i] = htonl(c->my_qp[i].qpn);
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        c->my_qp[i].comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
+//        if (!c->my_qp[i].comp_channel) {
+//            log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        c->my_qp[i].cq = ibv_create_cq(
+//                transport_global_data.ctx,
+//                CQ_WQ_DEPTH,
+//                c,
+//                c->my_qp[i].comp_channel,
+//                0);
+//        if (!c->my_qp[i].cq) {
+//            log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        memset(&att, 0, sizeof(att));
+//        att.qp_context = c;
+//        att.send_cq = c->my_qp[i].cq;
+//        att.recv_cq = c->my_qp[i].cq;
+//        att.cap.max_recv_wr = CQ_WQ_DEPTH;
+//        att.cap.max_send_wr = CQ_WQ_DEPTH;
+//        att.cap.max_recv_sge = 1;
+//        att.cap.max_send_sge = 1;
+//        att.qp_type = IBV_QPT_RC;
+//        c->my_qp[i].qp = ibv_create_qp(transport_global_data.pd, &att);
+//        if (!c->my_qp[i].qp) {
+//            log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
+//        }
+//        if (ibv_req_notify_cq(c->my_qp[i].cq, 0)) {
+//            log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
+//        }
+//
+//        c->my_qp[i].qpn     = c->my_qp[i].qp->qp_num;
+//        param_out.my_qpn[i] = htonl(c->my_qp[i].qpn);
+//    }
+    c->my_qp.comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
+    if (!c->my_qp.comp_channel) {
+        log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
+        return NNTI_EIO;
     }
-    for(i=0;i<QP_PER_CONN;i++) {
-        c->peer_qp[i].comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
-        if (!c->peer_qp[i].comp_channel) {
-            log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        c->peer_qp[i].cq = ibv_create_cq(
-                transport_global_data.ctx,
-                CQ_WQ_DEPTH,
-                c,
-                c->peer_qp[i].comp_channel,
-                0);
-        if (!c->peer_qp[i].cq) {
-            log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        memset(&att, 0, sizeof(att));
-        att.qp_context = c;
-        att.send_cq = c->peer_qp[i].cq;
-        att.recv_cq = c->peer_qp[i].cq;
-        att.cap.max_recv_wr = CQ_WQ_DEPTH;
-        att.cap.max_send_wr = CQ_WQ_DEPTH;
-        att.cap.max_recv_sge = 1;
-        att.cap.max_send_sge = 1;
-        att.qp_type = IBV_QPT_RC;
-        c->peer_qp[i].qp = ibv_create_qp(transport_global_data.pd, &att);
-        if (!c->peer_qp[i].qp) {
-            log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
-        }
-        if (ibv_req_notify_cq(c->peer_qp[i].cq, 0)) {
-            log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
-        }
-
-        c->peer_qp[i].qpn     = c->peer_qp[i].qp->qp_num;
-        ch_out.peer_qpn[i] = htonl(c->peer_qp[i].qpn);
+    c->my_qp.cq = ibv_create_cq(
+            transport_global_data.ctx,
+            CQ_WQ_DEPTH,
+            c,
+            c->my_qp.comp_channel,
+            0);
+    if (!c->my_qp.cq) {
+        log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
+        return NNTI_EIO;
     }
+    memset(&att, 0, sizeof(att));
+    att.qp_context = c;
+    att.send_cq = c->my_qp.cq;
+    att.recv_cq = c->my_qp.cq;
+    att.cap.max_recv_wr = CQ_WQ_DEPTH;
+    att.cap.max_send_wr = CQ_WQ_DEPTH;
+    att.cap.max_recv_sge = 1;
+    att.cap.max_send_sge = 1;
+    att.qp_type = IBV_QPT_RC;
+    c->my_qp.qp = ibv_create_qp(transport_global_data.pd, &att);
+    if (!c->my_qp.qp) {
+        log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
+    }
+    if (ibv_req_notify_cq(c->my_qp.cq, 0)) {
+        log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
+    }
+    c->my_qp.qpn     = c->my_qp.qp->qp_num;
+    param_out.my_qpn = htonl(c->my_qp.qpn);
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        c->peer_qp[i].comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
+//        if (!c->peer_qp[i].comp_channel) {
+//            log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        c->peer_qp[i].cq = ibv_create_cq(
+//                transport_global_data.ctx,
+//                CQ_WQ_DEPTH,
+//                c,
+//                c->peer_qp[i].comp_channel,
+//                0);
+//        if (!c->peer_qp[i].cq) {
+//            log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        memset(&att, 0, sizeof(att));
+//        att.qp_context = c;
+//        att.send_cq = c->peer_qp[i].cq;
+//        att.recv_cq = c->peer_qp[i].cq;
+//        att.cap.max_recv_wr = CQ_WQ_DEPTH;
+//        att.cap.max_send_wr = CQ_WQ_DEPTH;
+//        att.cap.max_recv_sge = 1;
+//        att.cap.max_send_sge = 1;
+//        att.qp_type = IBV_QPT_RC;
+//        c->peer_qp[i].qp = ibv_create_qp(transport_global_data.pd, &att);
+//        if (!c->peer_qp[i].qp) {
+//            log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
+//        }
+//        if (ibv_req_notify_cq(c->peer_qp[i].cq, 0)) {
+//            log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
+//        }
+//
+//        c->peer_qp[i].qpn     = c->peer_qp[i].qp->qp_num;
+//        param_out.peer_qpn[i] = htonl(c->peer_qp[i].qpn);
+//    }
+    c->peer_qp.comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
+    if (!c->peer_qp.comp_channel) {
+        log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
+        return NNTI_EIO;
+    }
+    c->peer_qp.cq = ibv_create_cq(
+            transport_global_data.ctx,
+            CQ_WQ_DEPTH,
+            c,
+            c->peer_qp.comp_channel,
+            0);
+    if (!c->peer_qp.cq) {
+        log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
+        return NNTI_EIO;
+    }
+    memset(&att, 0, sizeof(att));
+    att.qp_context = c;
+    att.send_cq = c->peer_qp.cq;
+    att.recv_cq = c->peer_qp.cq;
+    att.cap.max_recv_wr = CQ_WQ_DEPTH;
+    att.cap.max_send_wr = CQ_WQ_DEPTH;
+    att.cap.max_recv_sge = 1;
+    att.cap.max_send_sge = 1;
+    att.qp_type = IBV_QPT_RC;
+    c->peer_qp.qp = ibv_create_qp(transport_global_data.pd, &att);
+    if (!c->peer_qp.qp) {
+        log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
+    }
+    if (ibv_req_notify_cq(c->peer_qp.cq, 0)) {
+        log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
+    }
+    c->peer_qp.qpn     = c->peer_qp.qp->qp_num;
+    param_out.peer_qpn = htonl(c->peer_qp.qpn);
 
     trios_start_timer(callTime);
-    rc = tcp_exchange(sock, 0, &ch_in, &ch_out, sizeof(ch_in));
+    rc = tcp_exchange(sock, 0, &param_in, &param_out, sizeof(param_in));
     trios_stop_timer("exch data", callTime);
     if (rc)
         goto out;
 
-    c->peer_lid     = ntohl(ch_in.lid);
-    c->peer_req_qpn = ntohl(ch_in.req_qpn);
-    for(i=0;i<QP_PER_CONN;i++) {
-        c->my_qp[i].peer_qpn = ntohl(ch_in.peer_qpn[i]);
-    }
-    for(i=0;i<QP_PER_CONN;i++) {
-        c->peer_qp[i].peer_qpn = ntohl(ch_in.my_qpn[i]);
-    }
+    c->peer_lid     = ntohl(param_in.lid);
+    c->peer_req_qpn = ntohl(param_in.req_qpn);
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        c->my_qp[i].peer_qpn = ntohl(param_in.peer_qpn[i]);
+//    }
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        c->peer_qp[i].peer_qpn = ntohl(param_in.my_qpn[i]);
+//    }
+    c->my_qp.peer_qpn = ntohl(param_in.peer_qpn);
+    c->peer_qp.peer_qpn = ntohl(param_in.my_qpn);
 
-    for(i=0;i<QP_PER_CONN;i++) {
-        flags = fcntl(c->my_qp[i].comp_channel->fd, F_GETFL);
-        if (flags < 0) {
-            log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        if (fcntl(c->my_qp[i].comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-            log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
-            return NNTI_EIO;
-        }
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        flags = fcntl(c->my_qp[i].comp_channel->fd, F_GETFL);
+//        if (flags < 0) {
+//            log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        if (fcntl(c->my_qp[i].comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+//            log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//    }
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        flags = fcntl(c->peer_qp[i].comp_channel->fd, F_GETFL);
+//        if (flags < 0) {
+//            log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        if (fcntl(c->peer_qp[i].comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+//            log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//    }
+    flags = fcntl(c->my_qp.comp_channel->fd, F_GETFL);
+    if (flags < 0) {
+        log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
+        return NNTI_EIO;
     }
-    for(i=0;i<QP_PER_CONN;i++) {
-        flags = fcntl(c->peer_qp[i].comp_channel->fd, F_GETFL);
-        if (flags < 0) {
-            log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        if (fcntl(c->peer_qp[i].comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-            log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
-            return NNTI_EIO;
-        }
+    if (fcntl(c->my_qp.comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
+        return NNTI_EIO;
+    }
+    flags = fcntl(c->peer_qp.comp_channel->fd, F_GETFL);
+    if (flags < 0) {
+        log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
+        return NNTI_EIO;
+    }
+    if (fcntl(c->peer_qp.comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
+        return NNTI_EIO;
     }
 
 out:
@@ -2462,17 +2657,16 @@ static int new_server_connection(
     struct ibv_qp_init_attr att;
 
     /*
-     * Values passed through TCP to permit IB connection.  These
-     * are transformed to appear in network byte order (big endian)
-     * on the network.  The lid is pushed up to 32 bits to avoid struct
-     * alignment issues.
+     * IB parameters passed through TCP to establish the IB connection.
      */
     struct {
         uint32_t lid;
         uint32_t req_qpn;
-        uint32_t my_qpn[QP_PER_CONN];
-        uint32_t peer_qpn[QP_PER_CONN];
-    } ch_in, ch_out;
+//        uint32_t my_qpn[QP_PER_CONN];
+//        uint32_t peer_qpn[QP_PER_CONN];
+        uint32_t my_qpn;
+        uint32_t peer_qpn;
+    } param_in, param_out;
 
     trios_declare_timer(callTime);
 
@@ -2497,118 +2691,206 @@ static int new_server_connection(
     trios_stop_timer("create_qp", callTime);
 
     /* exchange data, converting info to network order and back */
-    ch_out.lid     = htonl(transport_global_data.nic_lid);
-    ch_out.req_qpn = htonl(c->req_qpn);
+    param_out.lid     = htonl(transport_global_data.nic_lid);
+    param_out.req_qpn = htonl(c->req_qpn);
 
-    for(i=0;i<QP_PER_CONN;i++) {
-        c->my_qp[i].comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
-        if (!c->my_qp[i].comp_channel) {
-            log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        c->my_qp[i].cq = ibv_create_cq(
-                transport_global_data.ctx,
-                CQ_WQ_DEPTH,
-                c,
-                c->my_qp[i].comp_channel,
-                0);
-        if (!c->my_qp[i].cq) {
-            log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        memset(&att, 0, sizeof(att));
-        att.qp_context = c;
-        att.send_cq = c->my_qp[i].cq;
-        att.recv_cq = c->my_qp[i].cq;
-        att.cap.max_recv_wr = CQ_WQ_DEPTH;
-        att.cap.max_send_wr = CQ_WQ_DEPTH;
-        att.cap.max_recv_sge = 1;
-        att.cap.max_send_sge = 1;
-        att.qp_type = IBV_QPT_RC;
-        c->my_qp[i].qp = ibv_create_qp(transport_global_data.pd, &att);
-        if (!c->my_qp[i].qp) {
-            log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
-        }
-        if (ibv_req_notify_cq(c->my_qp[i].cq, 0)) {
-            log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
-        }
-
-        c->my_qp[i].qpn     = c->my_qp[i].qp->qp_num;
-        ch_out.my_qpn[i] = htonl(c->my_qp[i].qpn);
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        c->my_qp[i].comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
+//        if (!c->my_qp[i].comp_channel) {
+//            log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        c->my_qp[i].cq = ibv_create_cq(
+//                transport_global_data.ctx,
+//                CQ_WQ_DEPTH,
+//                c,
+//                c->my_qp[i].comp_channel,
+//                0);
+//        if (!c->my_qp[i].cq) {
+//            log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        memset(&att, 0, sizeof(att));
+//        att.qp_context = c;
+//        att.send_cq = c->my_qp[i].cq;
+//        att.recv_cq = c->my_qp[i].cq;
+//        att.cap.max_recv_wr = CQ_WQ_DEPTH;
+//        att.cap.max_send_wr = CQ_WQ_DEPTH;
+//        att.cap.max_recv_sge = 1;
+//        att.cap.max_send_sge = 1;
+//        att.qp_type = IBV_QPT_RC;
+//        c->my_qp[i].qp = ibv_create_qp(transport_global_data.pd, &att);
+//        if (!c->my_qp[i].qp) {
+//            log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
+//        }
+//        if (ibv_req_notify_cq(c->my_qp[i].cq, 0)) {
+//            log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
+//        }
+//
+//        c->my_qp[i].qpn     = c->my_qp[i].qp->qp_num;
+//        param_out.my_qpn[i] = htonl(c->my_qp[i].qpn);
+//    }
+    c->my_qp.comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
+    if (!c->my_qp.comp_channel) {
+        log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
+        return NNTI_EIO;
     }
-    for(i=0;i<QP_PER_CONN;i++) {
-        c->peer_qp[i].comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
-        if (!c->peer_qp[i].comp_channel) {
-            log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        c->peer_qp[i].cq = ibv_create_cq(
-                transport_global_data.ctx,
-                CQ_WQ_DEPTH,
-                c,
-                c->peer_qp[i].comp_channel,
-                0);
-        if (!c->peer_qp[i].cq) {
-            log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        memset(&att, 0, sizeof(att));
-        att.qp_context = c;
-        att.send_cq = c->peer_qp[i].cq;
-        att.recv_cq = c->peer_qp[i].cq;
-        att.cap.max_recv_wr = CQ_WQ_DEPTH;
-        att.cap.max_send_wr = CQ_WQ_DEPTH;
-        att.cap.max_recv_sge = 1;
-        att.cap.max_send_sge = 1;
-        att.qp_type = IBV_QPT_RC;
-        c->peer_qp[i].qp = ibv_create_qp(transport_global_data.pd, &att);
-        if (!c->peer_qp[i].qp) {
-            log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
-        }
-        if (ibv_req_notify_cq(c->peer_qp[i].cq, 0)) {
-            log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
-        }
-
-        c->peer_qp[i].qpn     = c->peer_qp[i].qp->qp_num;
-        ch_out.peer_qpn[i] = htonl(c->peer_qp[i].qpn);
+    c->my_qp.cq = ibv_create_cq(
+            transport_global_data.ctx,
+            CQ_WQ_DEPTH,
+            c,
+            c->my_qp.comp_channel,
+            0);
+    if (!c->my_qp.cq) {
+        log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
+        return NNTI_EIO;
     }
+    memset(&att, 0, sizeof(att));
+    att.qp_context = c;
+    att.send_cq = c->my_qp.cq;
+    att.recv_cq = c->my_qp.cq;
+    att.cap.max_recv_wr = CQ_WQ_DEPTH;
+    att.cap.max_send_wr = CQ_WQ_DEPTH;
+    att.cap.max_recv_sge = 1;
+    att.cap.max_send_sge = 1;
+    att.qp_type = IBV_QPT_RC;
+    c->my_qp.qp = ibv_create_qp(transport_global_data.pd, &att);
+    if (!c->my_qp.qp) {
+        log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
+    }
+    if (ibv_req_notify_cq(c->my_qp.cq, 0)) {
+        log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
+    }
+
+    c->my_qp.qpn     = c->my_qp.qp->qp_num;
+    param_out.my_qpn = htonl(c->my_qp.qpn);
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        c->peer_qp[i].comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
+//        if (!c->peer_qp[i].comp_channel) {
+//            log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        c->peer_qp[i].cq = ibv_create_cq(
+//                transport_global_data.ctx,
+//                CQ_WQ_DEPTH,
+//                c,
+//                c->peer_qp[i].comp_channel,
+//                0);
+//        if (!c->peer_qp[i].cq) {
+//            log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        memset(&att, 0, sizeof(att));
+//        att.qp_context = c;
+//        att.send_cq = c->peer_qp[i].cq;
+//        att.recv_cq = c->peer_qp[i].cq;
+//        att.cap.max_recv_wr = CQ_WQ_DEPTH;
+//        att.cap.max_send_wr = CQ_WQ_DEPTH;
+//        att.cap.max_recv_sge = 1;
+//        att.cap.max_send_sge = 1;
+//        att.qp_type = IBV_QPT_RC;
+//        c->peer_qp[i].qp = ibv_create_qp(transport_global_data.pd, &att);
+//        if (!c->peer_qp[i].qp) {
+//            log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
+//        }
+//        if (ibv_req_notify_cq(c->peer_qp[i].cq, 0)) {
+//            log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
+//        }
+//
+//        c->peer_qp[i].qpn     = c->peer_qp[i].qp->qp_num;
+//        param_out.peer_qpn[i] = htonl(c->peer_qp[i].qpn);
+//    }
+    c->peer_qp.comp_channel = ibv_create_comp_channel(transport_global_data.ctx);
+    if (!c->peer_qp.comp_channel) {
+        log_error(nnti_debug_level, "ibv_create_comp_channel failed: %s", strerror(errno));
+        return NNTI_EIO;
+    }
+    c->peer_qp.cq = ibv_create_cq(
+            transport_global_data.ctx,
+            CQ_WQ_DEPTH,
+            c,
+            c->peer_qp.comp_channel,
+            0);
+    if (!c->peer_qp.cq) {
+        log_error(nnti_debug_level, "ibv_create_cq failed: %s", strerror(errno));
+        return NNTI_EIO;
+    }
+    memset(&att, 0, sizeof(att));
+    att.qp_context = c;
+    att.send_cq = c->peer_qp.cq;
+    att.recv_cq = c->peer_qp.cq;
+    att.cap.max_recv_wr = CQ_WQ_DEPTH;
+    att.cap.max_send_wr = CQ_WQ_DEPTH;
+    att.cap.max_recv_sge = 1;
+    att.cap.max_send_sge = 1;
+    att.qp_type = IBV_QPT_RC;
+    c->peer_qp.qp = ibv_create_qp(transport_global_data.pd, &att);
+    if (!c->peer_qp.qp) {
+        log_error(nnti_debug_level, "failed to create QP: %s", strerror(errno));
+    }
+    if (ibv_req_notify_cq(c->peer_qp.cq, 0)) {
+        log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
+    }
+
+    c->peer_qp.qpn     = c->peer_qp.qp->qp_num;
+    param_out.peer_qpn = htonl(c->peer_qp.qpn);
 
     trios_start_timer(callTime);
-    rc = tcp_exchange(sock, 1, &ch_in, &ch_out, sizeof(ch_in));
+    rc = tcp_exchange(sock, 1, &param_in, &param_out, sizeof(param_in));
     trios_stop_timer("exch data", callTime);
     if (rc)
         goto out;
 
-    c->peer_lid     = ntohl(ch_in.lid);
-    c->peer_req_qpn = ntohl(ch_in.req_qpn);
-    for(i=0;i<QP_PER_CONN;i++) {
-        c->my_qp[i].peer_qpn = ntohl(ch_in.peer_qpn[i]);
-    }
-    for(i=0;i<QP_PER_CONN;i++) {
-        c->peer_qp[i].peer_qpn = ntohl(ch_in.my_qpn[i]);
-    }
+    c->peer_lid     = ntohl(param_in.lid);
+    c->peer_req_qpn = ntohl(param_in.req_qpn);
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        c->my_qp[i].peer_qpn = ntohl(param_in.peer_qpn[i]);
+//    }
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        c->peer_qp[i].peer_qpn = ntohl(param_in.my_qpn[i]);
+//    }
+    c->my_qp.peer_qpn = ntohl(param_in.peer_qpn);
+    c->peer_qp.peer_qpn = ntohl(param_in.my_qpn);
 
-    for(i=0;i<QP_PER_CONN;i++) {
-        flags = fcntl(c->my_qp[i].comp_channel->fd, F_GETFL);
-        if (flags < 0) {
-            log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        if (fcntl(c->my_qp[i].comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-            log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
-            return NNTI_EIO;
-        }
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        flags = fcntl(c->my_qp[i].comp_channel->fd, F_GETFL);
+//        if (flags < 0) {
+//            log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        if (fcntl(c->my_qp[i].comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+//            log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//    }
+//    for(i=0;i<QP_PER_CONN;i++) {
+//        flags = fcntl(c->peer_qp[i].comp_channel->fd, F_GETFL);
+//        if (flags < 0) {
+//            log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//        if (fcntl(c->peer_qp[i].comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+//            log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
+//            return NNTI_EIO;
+//        }
+//    }
+    flags = fcntl(c->my_qp.comp_channel->fd, F_GETFL);
+    if (flags < 0) {
+        log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
+        return NNTI_EIO;
     }
-    for(i=0;i<QP_PER_CONN;i++) {
-        flags = fcntl(c->peer_qp[i].comp_channel->fd, F_GETFL);
-        if (flags < 0) {
-            log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
-            return NNTI_EIO;
-        }
-        if (fcntl(c->peer_qp[i].comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-            log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
-            return NNTI_EIO;
-        }
+    if (fcntl(c->my_qp.comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
+        return NNTI_EIO;
+    }
+    flags = fcntl(c->peer_qp.comp_channel->fd, F_GETFL);
+    if (flags < 0) {
+        log_error(nnti_debug_level, "failed to get completion fd flags: %s", strerror(errno));
+        return NNTI_EIO;
+    }
+    if (fcntl(c->peer_qp.comp_channel->fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        log_error(nnti_debug_level, "failed to set completion fd to nonblocking: %s", strerror(errno));
+        return NNTI_EIO;
     }
 
 out:
@@ -2822,10 +3104,10 @@ static ib_connection *init_connection(
     conn->peer_addr = addr;
     conn->peer_port = htons(port);
 
-    nthread_mutex_init(&conn->qp_index_lock, NTHREAD_MUTEX_NORMAL);
-    nthread_cond_init(&conn->qp_index_cond);
-    conn->qp_index_count=0;
-    memset(&conn->qp_index_map, 0, QP_PER_CONN*sizeof(uint8_t));
+//    nthread_mutex_init(&conn->qp_index_lock, NTHREAD_MUTEX_NORMAL);
+//    nthread_cond_init(&conn->qp_index_cond);
+//    conn->qp_index_count=0;
+//    memset(&conn->qp_index_map, 0, QP_PER_CONN*sizeof(uint8_t));
 
     conn->disconnect_requested = FALSE;
 
@@ -2870,39 +3152,69 @@ static void close_connection(ib_connection *c)
         if (rc < 0)
             log_error(nnti_debug_level, "failed to destroy QP");
     }
-    for (i=0;i<QP_PER_CONN;i++) {
-        if (c->my_qp[i].comp_channel) {
-            rc=ibv_destroy_comp_channel(c->my_qp[i].comp_channel);
-            if (rc < 0)
-                log_error(nnti_debug_level, "failed to destroy Completion Channel");
-        }
-        if (c->my_qp[i].cq) {
-            rc=ibv_destroy_cq(c->my_qp[i].cq);
-            if (rc < 0)
-                log_error(nnti_debug_level, "failed to destroy CQ");
-        }
-        if (c->my_qp[i].qp) {
-            rc=ibv_destroy_qp(c->my_qp[i].qp);
-            if (rc < 0)
-                log_error(nnti_debug_level, "failed to destroy QP");
-        }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        if (c->my_qp[i].comp_channel) {
+//            rc=ibv_destroy_comp_channel(c->my_qp[i].comp_channel);
+//            if (rc < 0)
+//                log_error(nnti_debug_level, "failed to destroy Completion Channel");
+//        }
+//        if (c->my_qp[i].cq) {
+//            rc=ibv_destroy_cq(c->my_qp[i].cq);
+//            if (rc < 0)
+//                log_error(nnti_debug_level, "failed to destroy CQ");
+//        }
+//        if (c->my_qp[i].qp) {
+//            rc=ibv_destroy_qp(c->my_qp[i].qp);
+//            if (rc < 0)
+//                log_error(nnti_debug_level, "failed to destroy QP");
+//        }
+//    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        if (c->peer_qp[i].comp_channel) {
+//            rc=ibv_destroy_comp_channel(c->peer_qp[i].comp_channel);
+//            if (rc < 0)
+//                log_error(nnti_debug_level, "failed to destroy Completion Channel");
+//        }
+//        if (c->peer_qp[i].cq) {
+//            rc=ibv_destroy_cq(c->peer_qp[i].cq);
+//            if (rc < 0)
+//                log_error(nnti_debug_level, "failed to destroy CQ");
+//        }
+//        if (c->peer_qp[i].qp) {
+//            rc=ibv_destroy_qp(c->peer_qp[i].qp);
+//            if (rc < 0)
+//                log_error(nnti_debug_level, "failed to destroy QP");
+//        }
+//    }
+    if (c->my_qp.comp_channel) {
+        rc=ibv_destroy_comp_channel(c->my_qp.comp_channel);
+        if (rc < 0)
+            log_error(nnti_debug_level, "failed to destroy Completion Channel");
     }
-    for (i=0;i<QP_PER_CONN;i++) {
-        if (c->peer_qp[i].comp_channel) {
-            rc=ibv_destroy_comp_channel(c->peer_qp[i].comp_channel);
-            if (rc < 0)
-                log_error(nnti_debug_level, "failed to destroy Completion Channel");
-        }
-        if (c->peer_qp[i].cq) {
-            rc=ibv_destroy_cq(c->peer_qp[i].cq);
-            if (rc < 0)
-                log_error(nnti_debug_level, "failed to destroy CQ");
-        }
-        if (c->peer_qp[i].qp) {
-            rc=ibv_destroy_qp(c->peer_qp[i].qp);
-            if (rc < 0)
-                log_error(nnti_debug_level, "failed to destroy QP");
-        }
+    if (c->my_qp.cq) {
+        rc=ibv_destroy_cq(c->my_qp.cq);
+        if (rc < 0)
+            log_error(nnti_debug_level, "failed to destroy CQ");
+    }
+    if (c->my_qp.qp) {
+        rc=ibv_destroy_qp(c->my_qp.qp);
+        if (rc < 0)
+            log_error(nnti_debug_level, "failed to destroy QP");
+    }
+    if (c->peer_qp.comp_channel) {
+        rc=ibv_destroy_comp_channel(c->peer_qp.comp_channel);
+        if (rc < 0)
+            log_error(nnti_debug_level, "failed to destroy Completion Channel");
+    }
+    if (c->peer_qp.cq) {
+        rc=ibv_destroy_cq(c->peer_qp.cq);
+        if (rc < 0)
+            log_error(nnti_debug_level, "failed to destroy CQ");
+    }
+    if (c->peer_qp.qp) {
+        rc=ibv_destroy_qp(c->peer_qp.qp);
+        if (rc < 0)
+            log_error(nnti_debug_level, "failed to destroy QP");
     }
     c->state=DISCONNECTED;
 
@@ -3115,49 +3427,49 @@ cleanup:
     return(rc);
 }
 
-static int32_t get_qp_index(ib_connection *conn)
-{
-    int i=0;
-    int8_t selected_index=-1;
-
-    nthread_lock(&conn->qp_index_lock);
-retry:
-    if (conn->qp_index_count >= QP_PER_CONN) {
-        nthread_cond_wait(&conn->qp_index_cond, &conn->qp_index_lock);
-        goto retry;
-    }
-    for (i=0;i<QP_PER_CONN;i++) {
-        if (conn->qp_index_map[i]==0) {
-            conn->qp_index_map[i]=1;
-            conn->qp_index_count++;
-            selected_index=i;
-            break;
-        }
-    }
-    nthread_unlock(&conn->qp_index_lock);
-
-    log_debug(nnti_debug_level, "exit conn->qp_index_map[%d]=%d, conn->qp_index_count=%d", selected_index, conn->qp_index_map[selected_index], conn->qp_index_count);
-
-    return(selected_index);
-}
-
-static void release_qp_index(ib_connection *conn, int32_t index)
-{
-    if (index != -1) {
-        log_debug(nnti_debug_level, "enter conn->qp_index_map[%d]=%d, conn->qp_index_count=%d", index, conn->qp_index_map[index], conn->qp_index_count);
-
-        nthread_lock(&conn->qp_index_lock);
-        conn->qp_index_map[index]=0;
-        conn->qp_index_count--;
-        nthread_unlock(&conn->qp_index_lock);
-
-        nthread_cond_signal(&conn->qp_index_cond);
-
-        log_debug(nnti_debug_level, "exit conn->qp_index_map[%d]=%d, conn->qp_index_count=%d", index, conn->qp_index_map[index], conn->qp_index_count);
-    } else {
-        log_debug(nnti_debug_level, "cannot release (index==-1)");
-    }
-}
+//static int32_t get_qp_index(ib_connection *conn)
+//{
+//    int i=0;
+//    int8_t selected_index=-1;
+//
+//    nthread_lock(&conn->qp_index_lock);
+//retry:
+//    if (conn->qp_index_count >= QP_PER_CONN) {
+//        nthread_cond_wait(&conn->qp_index_cond, &conn->qp_index_lock);
+//        goto retry;
+//    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        if (conn->qp_index_map[i]==0) {
+//            conn->qp_index_map[i]=1;
+//            conn->qp_index_count++;
+//            selected_index=i;
+//            break;
+//        }
+//    }
+//    nthread_unlock(&conn->qp_index_lock);
+//
+//    log_debug(nnti_debug_level, "exit conn->qp_index_map[%d]=%d, conn->qp_index_count=%d", selected_index, conn->qp_index_map[selected_index], conn->qp_index_count);
+//
+//    return(selected_index);
+//}
+//
+//static void release_qp_index(ib_connection *conn, int32_t index)
+//{
+//    if (index != -1) {
+//        log_debug(nnti_debug_level, "enter conn->qp_index_map[%d]=%d, conn->qp_index_count=%d", index, conn->qp_index_map[index], conn->qp_index_count);
+//
+//        nthread_lock(&conn->qp_index_lock);
+//        conn->qp_index_map[index]=0;
+//        conn->qp_index_count--;
+//        nthread_unlock(&conn->qp_index_lock);
+//
+//        nthread_cond_signal(&conn->qp_index_cond);
+//
+//        log_debug(nnti_debug_level, "exit conn->qp_index_map[%d]=%d, conn->qp_index_count=%d", index, conn->qp_index_map[index], conn->qp_index_count);
+//    } else {
+//        log_debug(nnti_debug_level, "cannot release (index==-1)");
+//    }
+//}
 
 static void print_ib_conn(ib_connection *c)
 {
@@ -3177,44 +3489,56 @@ static void print_ib_conn(ib_connection *c)
     log_debug(debug_level, "c->req_qp          =%p", c->req_qp);
     log_debug(debug_level, "c->req_qpn         =%llu", (uint64_t)c->req_qpn);
 
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->my_qp[%2d].comp_channel=%p", i, c->my_qp[i].comp_channel);
-    }
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->my_qp[%2d].cq          =%p", i, c->my_qp[i].cq);
-    }
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->my_qp[%2d].qp          =%p", i, c->my_qp[i].qp);
-    }
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->my_qp[%2d].qpn         =%llu", i, (uint64_t)c->my_qp[i].qpn);
-    }
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->my_qp[%2d].peer_qpn    =%llu", i, (uint64_t)c->my_qp[i].peer_qpn);
-    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->my_qp[%2d].comp_channel=%p", i, c->my_qp[i].comp_channel);
+//    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->my_qp[%2d].cq          =%p", i, c->my_qp[i].cq);
+//    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->my_qp[%2d].qp          =%p", i, c->my_qp[i].qp);
+//    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->my_qp[%2d].qpn         =%llu", i, (uint64_t)c->my_qp[i].qpn);
+//    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->my_qp[%2d].peer_qpn    =%llu", i, (uint64_t)c->my_qp[i].peer_qpn);
+//    }
+//
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->peer_qp[%2d].comp_channel=%p", i, c->peer_qp[i].comp_channel);
+//    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->peer_qp[%2d].cq          =%p", i, c->peer_qp[i].cq);
+//    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->peer_qp[%2d].qp          =%p", i, c->peer_qp[i].qp);
+//    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->peer_qp[%2d].qpn         =%llu", i, (uint64_t)c->peer_qp[i].qpn);
+//    }
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->peer_qp[%2d].peer_qpn    =%llu", i, (uint64_t)c->peer_qp[i].peer_qpn);
+//    }
 
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->peer_qp[%2d].comp_channel=%p", i, c->peer_qp[i].comp_channel);
-    }
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->peer_qp[%2d].cq          =%p", i, c->peer_qp[i].cq);
-    }
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->peer_qp[%2d].qp          =%p", i, c->peer_qp[i].qp);
-    }
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->peer_qp[%2d].qpn         =%llu", i, (uint64_t)c->peer_qp[i].qpn);
-    }
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->peer_qp[%2d].peer_qpn    =%llu", i, (uint64_t)c->peer_qp[i].peer_qpn);
-    }
+    log_debug(debug_level, "c->my_qp.comp_channel=%p",     c->my_qp.comp_channel);
+    log_debug(debug_level, "c->my_qp.cq          =%p",     c->my_qp.cq);
+    log_debug(debug_level, "c->my_qp.qp          =%p",     c->my_qp.qp);
+    log_debug(debug_level, "c->my_qp.qpn         =%llu",   (uint64_t)c->my_qp.qpn);
+    log_debug(debug_level, "c->my_qp.peer_qpn    =%llu",   (uint64_t)c->my_qp.peer_qpn);
+    log_debug(debug_level, "c->peer_qp.comp_channel=%p",   c->peer_qp.comp_channel);
+    log_debug(debug_level, "c->peer_qp.cq          =%p",   c->peer_qp.cq);
+    log_debug(debug_level, "c->peer_qp.qp          =%p",   c->peer_qp.qp);
+    log_debug(debug_level, "c->peer_qp.qpn         =%llu", (uint64_t)c->peer_qp.qpn);
+    log_debug(debug_level, "c->peer_qp.peer_qpn    =%llu", (uint64_t)c->peer_qp.peer_qpn);
 
-    log_debug(debug_level, "c->qp_index_lock   =%p", &c->qp_index_lock);
-    log_debug(debug_level, "c->qp_index_cond   =%p", &c->qp_index_cond);
-    log_debug(debug_level, "c->qp_index_count  =%llu", (uint64_t)c->qp_index_count);
-    for (i=0;i<QP_PER_CONN;i++) {
-        log_debug(debug_level, "c->qp_index_map[%2d]=%u", i, c->qp_index_map[i]);
-    }
+//    log_debug(debug_level, "c->qp_index_lock   =%p", &c->qp_index_lock);
+//    log_debug(debug_level, "c->qp_index_cond   =%p", &c->qp_index_cond);
+//    log_debug(debug_level, "c->qp_index_count  =%llu", (uint64_t)c->qp_index_count);
+//    for (i=0;i<QP_PER_CONN;i++) {
+//        log_debug(debug_level, "c->qp_index_map[%2d]=%u", i, c->qp_index_map[i]);
+//    }
+
     log_debug(debug_level, "c->state           =%d", c->state);
 
     log_debug(debug_level, "c->disconnect_requested=%d", c->disconnect_requested);
