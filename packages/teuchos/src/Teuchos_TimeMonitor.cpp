@@ -49,52 +49,53 @@
 namespace Teuchos {
   /**
    * \class MaxLoc
-   \brief Teuchos version of MPI_MAXLOC.
-   \author Mark Hoemmen
-   
-   \tparam Ordinal The template parameter of \c Comm.
-
-   \tparam Packet A type with value semantics; the type on which to
-     reduce.
-
-   MPI_MAXLOC is a standard reduction operator provided by the MPI
-   standard.  According to the standard, MPI_MAXLOC combines the
-   (value, index) pairs (u,i) and (v,j) into (w,j), where \f$w =
-   max(u,v)\f$, and
-   \f[
-     k = \begin{cases}
-       i         & \text{if $u > v$}, \\
-       \min(i,j) & \text{if $u = v$}, \\
-       j         & \text{if $u < v$}. \\
-     \end{cases}
-   \f]
-   This class implements the MPI_MAXLOC reduction operator for the
-   Teuchos communication wrappers.
-  ///
-   What happens to NaN ("Not a Number")?  A NaN is neither less
-   than, greater than, or equal to any floating-point number or any
-   NaN.  We can alter the above definition slightly so that a
-   MaxLoc reduction has a well-defined result in case the array
-   contains a NaN:
-   \f[
-     w = \begin{cases}
-       u     & \text{if $u > v$}, \\
-       v     & \text{if $u < v$}. \\
-       u     & \text{otherwise}. \\
-     \end{cases}
-   \f]
-   and 
-   \f[
-     k = \begin{cases}
-       i         & \text{if $u > v$}, \\
-       j         & \text{if $u < v$}. \\
-       \min(i,j) & \text{otherwise}. \\
-     \end{cases}
-   \f]
-   Defining MaxLoc in this way ensures that for any array
-   containing a NaN, the value (w) returned is the first NaN, and
-   the index (k) returned is the index of the first NaN.
-  */
+   * \brief Teuchos version of MPI_MAXLOC.
+   * \author Mark Hoemmen
+   *
+   * \tparam Ordinal The template parameter of \c Comm.
+   *
+   * \tparam Packet A type with value semantics; the type on which to
+   *   reduce.
+   *
+   * \c MPI_MAXLOC is a standard reduction operator provided by the
+   * MPI standard.  According to the standard, \c MPI_MAXLOC combines
+   * the (value, index) pairs (u,i) and (v,j) into (w,j), where \f$w =
+   * max(u,v)\f$, and
+   * \f[
+   *   k = \begin{cases}
+   *     i         & \text{if $u > v$}, \\
+   *     \min(i,j) & \text{if $u = v$}, \\
+   *     j         & \text{if $u < v$}. \\
+   * \end{cases}
+   * \f]
+   * This class implements the \c MPI_MAXLOC reduction operator for
+   * the Teuchos communication wrappers.
+   *
+   * What happens to NaN ("Not a Number")?  A NaN is neither less
+   * than, greater than, or equal to any floating-point number or any
+   * NaN.  We can alter the above definition slightly so that a \c
+   * MaxLoc reduction has a well-defined result in case the array
+   * contains a NaN:
+   *
+   * \f[
+   *   w = \begin{cases}
+   *     u     & \text{if $u > v$}, \\
+   *     v     & \text{if $u < v$}. \\
+   *     u     & \text{otherwise}. \\
+   *   \end{cases}
+   * \f]
+   * and 
+   * \f[
+   *   k = \begin{cases}
+   *     i         & \text{if $u > v$}, \\
+   *     j         & \text{if $u < v$}. \\
+   *     \min(i,j) & \text{otherwise}. \\
+   *   \end{cases}
+   * \f]
+   * Defining \c MaxLoc in this way ensures that for any array
+   * containing a NaN, the value (w) returned is the first NaN, and
+   * the index (k) returned is the index of the first NaN.
+   */
   template<class Ordinal, class ScalarType, class IndexType>
   class MaxLoc : 
     public ValueTypeReductionOp<Ordinal, std::pair<ScalarType, IndexType> > {
@@ -131,32 +132,33 @@ namespace Teuchos {
     }
   };
 
-  /// \class MinLoc
-  /// \brief Teuchos version of MPI_MINLOC.
-  /// \author Mark Hoemmen
-  ///
-  /// \tparam Ordinal The template parameter of \c Comm.
-  ///
-  /// \tparam Packet A type with value semantics; the type on which to
-  ///   reduce.
-  ///
-  /// MPI_MINLOC is a standard reduction operator provided by the MPI
-  /// standard.  According to the standard, MPI_MINLOC combines the
-  /// (value, index) pairs (u,i) and (v,j) into (w,j), where \f$w =
-  /// min(u,v)\f$, and
-  /// \f[
-  ///   k = \begin{cases}
-  ///     i         & \text{if $u < v$}, \\
-  ///     \min(i,j) & \text{if $u = v$}, \\
-  ///     j         & \text{if $u > v$}. \\
-  ///   \end{cases}
-  /// \f]
-  /// This class implements the MPI_MINLOC reduction operator for the
-  /// Teuchos communication wrappers.
-  ///
-  /// Refer to the note in the documentation of \c MaxLoc that
-  /// explains how to adjust the above definition to produce
-  /// well-defined results even if the array contains a NaN.
+  /** \class MinLoc
+   * \brief Teuchos version of MPI_MINLOC.
+   * \author Mark Hoemmen
+   *
+   * \tparam Ordinal The template parameter of \c Comm.
+   *
+   * \tparam Packet A type with value semantics; the type on which to
+   *   reduce.
+   *
+   * \c MPI_MINLOC is a standard reduction operator provided by the
+   * MPI standard.  According to the standard, \c MPI_MINLOC combines
+   * the (value, index) pairs (u,i) and (v,j) into (w,j), where \f$w =
+   * min(u,v)\f$, and
+   * \f[
+   *   k = \begin{cases}
+   *     i         & \text{if $u < v$}, \\
+   *     \min(i,j) & \text{if $u = v$}, \\
+   *     j         & \text{if $u > v$}. \\
+   *   \end{cases}
+   * \f]
+   * This class implements the \c MPI_MINLOC reduction operator for
+   * the Teuchos communication wrappers.
+   *
+   * Refer to the note in the documentation of \c MaxLoc that
+   * explains how we adjust the above definition to produce
+   * well-defined results even if the array contains a NaN.
+   */
   template<class Ordinal, class ScalarType, class IndexType>
   class MinLoc : 
     public ValueTypeReductionOp<Ordinal, std::pair<ScalarType, IndexType> > {
@@ -832,6 +834,7 @@ namespace Teuchos {
 	// each value in statData use the same ordering, so we can
 	// iterate over valid indices of statNames to display the
 	// statistics in the right order.
+	const timer_map_t::size_type numGlobalTimers = globalTimerData.size();
 	for (std::vector<std::string>::size_type statInd = 0; statInd < statNames.size(); ++statInd) {
 	  // Extract lists of timings and their call counts for the
 	  // current statistic.
