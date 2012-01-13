@@ -14,6 +14,7 @@
 // Evaluators
 #include "Panzer_Dirichlet_Residual.hpp"
 #include "Panzer_GatherSolution_Epetra.hpp"
+#include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_ScatterDirichletResidual_Epetra.hpp"
 
 // ***********************************************************************
@@ -50,6 +51,21 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using std::map;
   using std::string;
   using std::pair;
+
+  // **************************
+  // Coordinates for basis functions (no integration points needed)
+  // **************************
+  {
+    const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases = pb.getBases();
+    for (std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator it=bases.begin();
+         it!=bases.end();it++) {
+
+       // add basis coordinates
+       RCP< PHX::Evaluator<panzer::Traits> > basis_op
+          = rcp(new panzer::GatherBasisCoordinates<EvalT,panzer::Traits>(*it->second));
+       fm.template registerEvaluator<EvalT>(basis_op);
+    }
+  }
 
   // Gather
   for (vector<string>::const_iterator dof_name = required_dof_names.begin();

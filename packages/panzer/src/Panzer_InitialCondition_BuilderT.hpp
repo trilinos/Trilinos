@@ -33,11 +33,9 @@ void panzer::setupInitialConditionFieldManagers(WorksetContainer & wkstContainer
 
     // use the physics block to register evaluators
     pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_model_name, ic_block_closure_models, lo_factory, user_data);
-    //pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models);
 
     // build the setup data using passed in information
     Traits::SetupData setupData;
-    // setupData.worksets_ = volume_worksets.find(blockId)->second;
     setupData.worksets_ = wkstContainer.getVolumeWorksets(blockId);
 
     fm->postRegistrationSetup(setupData);

@@ -4,6 +4,8 @@
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOFGradient.hpp"
+#include "Panzer_GatherBasisCoordinates.hpp"
+#include "Panzer_GatherIntegrationCoordinates.hpp"
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -156,6 +158,25 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   }
 
   // **************************
+  // Coordinates for integration points and basis functions
+  // **************************
+  {
+    // add basis coordinates
+    RCP< PHX::Evaluator<panzer::Traits> > basis_op
+       = rcp(new panzer::GatherBasisCoordinates<EvalT,panzer::Traits>(*this->m_basis->getBasis()));
+    fm.template registerEvaluator<EvalT>(basis_op);
+
+    // add integration coordinates
+    RCP< PHX::Evaluator<panzer::Traits> > quad_op
+       = rcp(new panzer::GatherIntegrationCoordinates<EvalT,panzer::Traits>(*this->m_int_rule));
+    fm.template registerEvaluator<EvalT>(quad_op);
+
+    // NOTE: You can look up the name of either coordinate field name by doing
+    //       GatherBasisCoordinates<EvalT,Traits>::fieldName();
+    //       GatherIntegrationCoordinates<EvalT,Traits>::fieldName();
+  }
+
+  // **************************
   // Time derivative terms
   // **************************
 
@@ -239,6 +260,15 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
 					   const LinearObjFactory<panzer::Traits> & lof,
 					   const Teuchos::ParameterList& user_data) const
 {
+  // **************************
+  // Coordinates for integration points and basis functions
+  // **************************
+  {
+    // add basis coordinates
+    Teuchos::RCP< PHX::Evaluator<panzer::Traits> > basis_op
+       = Teuchos::rcp(new panzer::GatherBasisCoordinates<EvalT,panzer::Traits>(*this->m_basis->getBasis()));
+    fm.template registerEvaluator<EvalT>(basis_op);
+  }
 
   {
     Teuchos::RCP<const PureBasis> basis = m_field_layout_lib->lookupBasis((*m_dof_names)[0]);
@@ -249,7 +279,6 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
     p.set("Dependent Names", this->m_dof_names);
 
     Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterInitialCondition<EvalT>(p);
-      // rcp(new panzer::ScatterResidual_Epetra<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }
