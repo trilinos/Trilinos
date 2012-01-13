@@ -516,13 +516,13 @@ namespace Teuchos {
 
     /// \brief Compute global timer statistics.
     ///
-    /// Currently, this function computes the "min", "mean", and "max"
+    /// Currently, this function computes the "Min", "Mean", and "Max"
     /// timing for each timer.  Along with the min / max timing comes
     /// the call count of the process who had the min / max.  (If more
     /// than one process had the min / max, then the call count on the
     /// process with the smallest rank is reported.)  
     ///
-    /// The "mean" is an arithmetic mean of all timings that accounts
+    /// The "Mean" is an arithmetic mean of all timings that accounts
     /// for call counts.  Each timing is the sum over all calls.
     /// Thus, this mean equals the sum of the timing over all
     /// processes, divided by the sum of the call counts over all
@@ -538,7 +538,7 @@ namespace Teuchos {
     /// \param statNames [out] On output: Each value in the statData
     ///   map is a vector.  That vector v has the same number of
     ///   entries as statNames.  statNames[k] is the name of the
-    ///   statistic (e.g., "min", "mean", or "max") stored as v[k].
+    ///   statistic (e.g., "Min", "Mean", or "Max") stored as v[k].
     ///
     /// \param comm [in] Communicator over which to compute statistics.
     ///
@@ -621,9 +621,9 @@ namespace Teuchos {
       // each entry of which is a different statistic) preserves the
       // order of statNames.
       statNames.resize (3);
-      statNames[0] = "min";
-      statNames[1] = "mean";
-      statNames[2] = "max";
+      statNames[0] = "Min";
+      statNames[1] = "Mean";
+      statNames[2] = "Max";
 
       stat_map_type::iterator statIter = statData.end();
       timer_map_t::const_iterator it = globalTimerData.begin();
@@ -640,7 +640,48 @@ namespace Teuchos {
       }
     }
 
+
+    /// \brief Get a default communicator appropriate for the environment.
+    ///
+    /// If Trilinos was configured with MPI support, and if MPI has
+    /// been initialized, return a wrapped MPI_COMM_WORLD.  If
+    /// Trilinos was configured with MPI support, and if MPI has not
+    /// yet been initialized, return a serial communicator (containing
+    /// one process).  If Trilinos was <i>not</i> configured with MPI
+    /// support, return a serial communicator.
+    ///
+    /// Rationale: Callers may or may not have initialized MPI before
+    /// calling this method.  Just because they built with MPI,
+    /// doesn't mean they want to use MPI.  It's not my responsibility
+    /// to initialize MPI for them, and I don't have the context I
+    /// need in order to do so anyway.  Thus, if Trilinos was built
+    /// with MPI and MPI has not yet been initialized, this method
+    /// returns a "serial" communicator.
+    RCP<const Comm<int> > 
+    getDefaultComm ()
+    {
+      // The default communicator.  If Trilinos was built with MPI
+      // enabled, this should be MPI_COMM_WORLD.  (If MPI has not yet
+      // been initialized, it's not valid to use the communicator!)
+      // Otherwise, this should be a "serial" (no MPI, one "process")
+      // communicator.
+      RCP<const Comm<int> > comm = DefaultComm<int>::getComm ();
+
+#ifdef HAVE_MPI
+      {
+	int mpiHasBeenStarted = 0;
+	MPI_Initialized (&mpiHasBeenStarted);
+	if (! mpiHasBeenStarted) {
+	  // Make pComm a new "serial communicator."
+	  comm = rcp_implicit_cast<const Comm<int> > (rcp (new SerialComm<int> ()));
+	}
+      }
+#endif // HAVE_MPI
+      return comm;
+    }
+
   } // namespace (anonymous)
+
 
   void
   TimeMonitor::computeGlobalTimerStatistics (stat_map_type& statData,
@@ -667,6 +708,7 @@ namespace Teuchos {
     computeGlobalTimerStats (statData, statNames, comm, globalTimerData);
   }
 
+
   void 
   TimeMonitor::summarize (Ptr<const Comm<int> > comm,
 			  std::ostream& out,
@@ -675,9 +717,11 @@ namespace Teuchos {
 			  const bool writeZeroTimers,
 			  const ECounterSetOp setOp)
   {
-    using std::cerr;
-    using std::endl;
-    
+    //
+    // We can't just call computeGlobalTimerStatistics(), since
+    // summarize() has different options that affect whether global
+    // statistics are computed and printed.
+    //
     const int numProcs = comm->getSize();
     const int myRank = comm->getRank();
 
@@ -689,14 +733,23 @@ namespace Teuchos {
 				   counters(), writeZeroTimers);
 
     // If we're computing global statistics, merge the local timer
-    // data and names into global timer data and names.  Otherwise,
-    // leave the map and Array empty.
+    // data and names into global timer data and names, and compute
+    // global timer statistics.  Otherwise, leave the global data
+    // empty.
     timer_map_t globalTimerData;
     Array<std::string> globalTimerNames;
+    stat_map_type statData;
+    std::vector<std::string> statNames;
     if (writeGlobalStats) {
       collectGlobalTimerData (globalTimerData, globalTimerNames, 
 			      localTimerData, localTimerNames,
 			      comm, alwaysWriteLocal, setOp);
+      // Compute statistics on the data, but only if the communicator
+      // contains more than one process.  Otherwise, statistics don't
+      // make sense and we don't print them (see below).
+      if (numProcs > 1) { 
+	computeGlobalTimerStats (statData, statNames, comm, globalTimerData);
+      }
     }
 
     // Precision of floating-point numbers in the table.
@@ -713,7 +766,10 @@ namespace Teuchos {
     // We will append to this when we add each column.
     Array<int> columnWidths;
 
-    // Table column containing all timer labels.
+    // Table column containing all timer names.  If writeGlobalStats
+    // is true, we use the global timer names, otherwise we use the
+    // local timer names.  We build the table on all processes
+    // redundantly, but only print on Rank 0.
     {
       titles.append ("Timer Name");
 
@@ -731,7 +787,9 @@ namespace Teuchos {
     // only write local stats if asked, only on MPI Proc 0, and only
     // if there is more than one MPI process in the communicator
     // (otherwise local stats == global stats, so we just print the
-    // global stats).
+    // global stats).  In this case, we've padded the local data on
+    // Proc 0 if necessary to match the global timer list, so that the
+    // columns have the same number of rows.
     if (alwaysWriteLocal && numProcs > 1 && myRank == 0) {
       titles.append ("Local time (num calls)");
 
@@ -750,113 +808,47 @@ namespace Teuchos {
     }
 
     if (writeGlobalStats) {
-      const timer_map_t::size_type numGlobalTimers = globalTimerData.size();
-
-      // Copy global timer data out of the array-of-structs into
-      // separate arrays, for display in the table and/or for
-      // computing statistics.
-      Array<double> globalTimings;
-      Array<double> globalNumCalls;
-      for (timer_map_t::const_iterator it = globalTimerData.begin();
-	   it != globalTimerData.end(); ++it) {
-	globalTimings.push_back (it->second.first);
-	globalNumCalls.push_back (static_cast<double> (it->second.second));
-      }
-
+      // If there's only 1 process in the communicator, don't display
+      // statistics; statistics don't make sense in that case.  Just
+      // display the timings and call counts.  If there's more than 1
+      // process, do display statistics.
       if (numProcs == 1) {
-	// Don't display statistics in the case of only 1 MPI process.
-	// Just display the elapsed times and the call counts.
+	// Extract timings and the call counts from globalTimerData.
+	Array<double> globalTimings;
+	Array<double> globalNumCalls;
+	for (timer_map_t::const_iterator it = globalTimerData.begin();
+	     it != globalTimerData.end(); ++it) {
+	  globalTimings.push_back (it->second.first);
+	  globalNumCalls.push_back (static_cast<double> (it->second.second));
+	}
+	// Print the table column.
 	titles.append ("Global time (num calls)");
 	TableColumn timeAndCalls (globalTimings, globalNumCalls, precision, true);
 	tableColumns.append (timeAndCalls);
-	columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
-								  timeAndCalls));
+	columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
       }
       else { // numProcs > 1
-	// Table column containing min of global timer stats, if
-	// applicable.
-	//
-	// NOTE (mfh 18 Jul 2011) The report minimum global number of
-	// calls may be for a different MPI process than the minimum
-	// global timing.  Ditto for the other statistics.  What this
-	// means is that you should not divide the reported (minimum,
-	// mean, maximum) elapsed time by the reported (minimum, mean,
-	// maximum) call count to get an "average," since those
-	// quantities are not necessarily comparable.
-	{
-	  titles.append ("Min over procs");
-	  Array<double> minGlobalTimings (numGlobalTimers);
-	  Array<double> minGlobalNumCalls (numGlobalTimers);
-
-	  // Teuchos_CommHelpers.hpp doesn't currently have a reduce(); it
-	  // only has a reduceAll().  It would be better just to reduce to
-	  // Proc 0, but that has to wait until reduce() is implemented.
-	  if (numGlobalTimers > 0) {
-	    reduceAll (*comm, REDUCE_MIN, static_cast<int> (numGlobalTimers),
-		       &globalTimings[0], &minGlobalTimings[0]);
-	    reduceAll (*comm, REDUCE_MIN, static_cast<int> (numGlobalTimers),
-		       &globalNumCalls[0], &minGlobalNumCalls[0]);
+	// Print a table column for each statistic.  statNames and
+	// each value in statData use the same ordering, so we can
+	// iterate over valid indices of statNames to display the
+	// statistics in the right order.
+	for (std::vector<std::string>::size_type statInd = 0; statInd < statNames.size(); ++statInd) {
+	  // Extract lists of timings and their call counts for the
+	  // current statistic.
+	  Array<double> statTimings (numGlobalTimers);
+	  Array<double> statCallCounts (numGlobalTimers);
+	  stat_map_type::const_iterator it = statData.begin();
+	  for (int k = 0; it != statData.end(); ++it, ++k) {
+	    statTimings[k] = (it->second[statInd]).first;
+	    statCallCounts[k] = (it->second[statInd]).second;
 	  }
-	  TableColumn timeAndCalls (minGlobalTimings, minGlobalNumCalls, 
-				    precision, true);
+	  // Print the table column.
+	  const std::string& statisticName = statNames[statInd];
+	  const std::string titleString = statisticName + " over procs";
+	  titles.append (titleString);
+	  TableColumn timeAndCalls (statTimings, statCallCounts, precision, true);
 	  tableColumns.append (timeAndCalls);
-	  columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
-								    timeAndCalls));
-	}
-	// Table column containing arithmetic mean of global timer
-	// stats, if applicable.
-	{
-	  titles.append ("Mean over procs");
-
-	  // Scale first, so that the reduction can sum.  This avoids
-	  // unnecessary overflow, in case the sum is large but the number
-	  // of processors is also large.
-	  Array<double> scaledGlobalTimings (numGlobalTimers);
-	  Array<double> scaledGlobalNumCalls (numGlobalTimers);
-	  std::transform (globalTimings.begin(), globalTimings.end(), 
-			  scaledGlobalTimings.begin(), 
-			  std::bind2nd (std::divides<double>(), 
-					static_cast<double> (numProcs)));
-	  std::transform (globalNumCalls.begin(), globalNumCalls.end(), 
-			  scaledGlobalNumCalls.begin(), 
-			  std::bind2nd (std::divides<double>(), 
-					static_cast<double> (numProcs)));
-	  Array<double> avgGlobalTimings (numGlobalTimers);
-	  Array<double> avgGlobalNumCalls (numGlobalTimers);
-	  if (numGlobalTimers > 0) {
-	    reduceAll (*comm, REDUCE_SUM, static_cast<int> (numGlobalTimers),
-		       &scaledGlobalTimings[0], &avgGlobalTimings[0]);
-	    reduceAll (*comm, REDUCE_SUM, static_cast<int> (numGlobalTimers),
-		       &scaledGlobalNumCalls[0], &avgGlobalNumCalls[0]);
-	  }
-	  TableColumn timeAndCalls (avgGlobalTimings, avgGlobalNumCalls, 
-				    precision, true);
-	  tableColumns.append (timeAndCalls);
-	  columnWidths.append (format().computeRequiredColumnWidth (titles.back(), 
-								    timeAndCalls));
-	}
-
-	// Table column containing max of global timer stats, if
-	// applicable.
-	{
-	  titles.append("Max over procs");
-	  Array<double> maxGlobalTimings (numGlobalTimers);
-	  Array<double> maxGlobalNumCalls (numGlobalTimers);
-
-	  // Teuchos_CommHelpers.hpp doesn't currently have a reduce(); it
-	  // only has a reduceAll().  It would be better just to reduce to
-	  // Proc 0, but that has to wait until reduce() is implemented.
-	  if (numGlobalTimers > 0) {
-	    reduceAll (*comm, REDUCE_MAX, static_cast<int> (numGlobalTimers),
-		       &globalTimings[0], &maxGlobalTimings[0]);
-	    reduceAll (*comm, REDUCE_MAX, static_cast<int> (numGlobalTimers),
-		       &globalNumCalls[0], &maxGlobalNumCalls[0]);
-	  }
-	  TableColumn timeAndCalls (maxGlobalTimings, maxGlobalNumCalls, 
-				    precision, true);
-	  tableColumns.append (timeAndCalls);
-	  columnWidths.append (format ().computeRequiredColumnWidth (titles.back(), 
-								     timeAndCalls));
+	  columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
 	}
       }
     }
@@ -871,7 +863,6 @@ namespace Teuchos {
     }
   }
 
-
   void 
   TimeMonitor::summarize (std::ostream &out,
 			  const bool alwaysWriteLocal,
@@ -882,27 +873,24 @@ namespace Teuchos {
     // The default communicator.  If Trilinos was built with MPI
     // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
     // be a "serial" (no MPI, one "process") communicator.
-    RCP<const Comm<int> > comm = DefaultComm<int>::getComm ();
-
-    // Callers may or may not have initialized MPI before calling
-    // summarize().  Just because they built with MPI, doesn't mean
-    // they want to use MPI.  It's not my responsibility to initialize
-    // MPI for them, and I don't have the context I need in order to
-    // do so anyway.  Thus, if Trilinos was built with MPI and MPI has
-    // not yet been initialized, make pComm a "serial" communicator.
-#ifdef HAVE_MPI
-    {
-      int mpiHasBeenStarted = 0;
-      MPI_Initialized (&mpiHasBeenStarted);
-      if (! mpiHasBeenStarted) {
-	// Make pComm a new "serial communicator."
-	comm = rcp_implicit_cast<const Comm<int> > (rcp (new SerialComm<int> ()));
-      }
-    }
-#endif // HAVE_MPI
+    RCP<const Comm<int> > comm = getDefaultComm();
 
     summarize (comm.ptr(), out, alwaysWriteLocal, 
 	       writeGlobalStats, writeZeroTimers, setOp);
   }
+
+  void 
+  TimeMonitor::computeGlobalTimerStatistics (stat_map_type& statData,
+					     std::vector<std::string>& statNames,
+					     const ECounterSetOp setOp)
+  {
+    // The default communicator.  If Trilinos was built with MPI
+    // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
+    // be a "serial" (no MPI, one "process") communicator.
+    RCP<const Comm<int> > comm = getDefaultComm();
+
+    computeGlobalTimerStatistics (statData, statNames, comm.ptr(), setOp);
+  }
+
 
 } // namespace Teuchos
