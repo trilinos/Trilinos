@@ -132,6 +132,8 @@ APPEND_SET(HEADERS
   evaluators/Panzer_DOFT.hpp
   evaluators/Panzer_DOFGradient.hpp
   evaluators/Panzer_DOFGradientT.hpp
+  evaluators/Panzer_GatherBasisCoordinates.hpp
+  evaluators/Panzer_GatherBasisCoordinatesT.hpp
   evaluators/Panzer_GatherSolution_Epetra.hpp
   evaluators/Panzer_GatherSolution_EpetraT.hpp
   evaluators/Panzer_GatherOrientation.hpp
@@ -210,6 +212,7 @@ APPEND_SET(SOURCES
   responses/Panzer_ResponseUtilities.cpp
   responses/Panzer_ResponseFunctional_Aggregator.cpp
   evaluators/Panzer_Constant.cpp
+  evaluators/Panzer_GatherBasisCoordinates.cpp
   evaluators/Panzer_Parameter.cpp
   )
 

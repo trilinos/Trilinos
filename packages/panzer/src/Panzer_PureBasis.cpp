@@ -28,6 +28,10 @@ PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const s
 						      cardinality,
 						      dimension));
 
+  coordinates = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
+		   			          cardinality,
+						  dimension));
+
   functional_D2 = rcp(new MDALayout<Cell,BASIS,Dim,Dim>(num_cells,
 							cardinality,
 							dimension,
@@ -56,6 +60,10 @@ PureBasis(const std::string & basis_type,const CellData & cell_data) :
   functional_grad = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
 						      cardinality,
 						      dimension));
+
+  coordinates = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
+		   			          cardinality,
+						  dimension));
 
   functional_D2 = rcp(new MDALayout<Cell,BASIS,Dim,Dim>(num_cells,
 							cardinality,

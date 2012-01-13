@@ -45,6 +45,8 @@ namespace panzer {
     Teuchos::RCP<PHX::DataLayout> functional_grad;
     //! <Cell,Basis,Dim,Dim>
     Teuchos::RCP<PHX::DataLayout> functional_D2;
+    //! <Cell,Basis,Dim>
+    Teuchos::RCP<PHX::DataLayout> coordinates;
 
   private:
     Teuchos::RCP<const shards::CellTopology> topology;
