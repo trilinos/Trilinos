@@ -23,6 +23,10 @@ namespace panzer {
     
     /** \brief Sacado scalar parameter library */
     Teuchos::RCP<panzer::ParamLib> pl;
+
+    /** \brief Get the output stream */
+    std::ostream & out() 
+    { return *os; }
     
   };
   
