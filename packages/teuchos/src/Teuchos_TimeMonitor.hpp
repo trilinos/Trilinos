@@ -198,11 +198,15 @@ public:
   /// </ul>
   static void zeroOutTimers();
 
-  /// \brief Compute global timer statistics.
+  /// \brief Compute global timer statistics for all timers on the given communicator.
   ///
-  /// For each timer in the list of timers, compute global statistics
-  /// for that timer.  Currently, these global statistics include the
-  /// min, mean, and max.  This list may expand in the future.
+  /// The typical use case for timers is that all processes in a
+  /// communicator create the same set of timers, and then want to
+  /// report summary statistics.  For each timer in the set, this
+  /// method computes a list of global statistics.  Currently, these
+  /// global statistics include the minimum and maximum timing (and
+  /// corresponding call count for each) and the arithmetic mean
+  /// (timing and call count).  This list may expand in the future.
   ///
   /// Note that different processes may have different sets of timers.
   /// This method gives you two options for reconciling possibly
@@ -245,7 +249,8 @@ public:
   /// \param statNames [out] On output: Each value in the statData map
   ///   is a vector.  That vector v has the same number of entries as
   ///   statNames.  statNames[k] is the name of the statistic (e.g.,
-  ///   "min", "mean", or "max") stored as v[k].
+  ///   "min", "mean", or "max") stored as v[k].  Always refer to
+  ///   statNames for the number and names of statistics.
   ///
   /// \param comm [in] Communicator whose process(es) will participate
   ///   in the gathering of timer statistics.  This is a \c Ptr and
