@@ -10,7 +10,7 @@ namespace panzer {
   std::vector<std::string>::size_type 
   getBasisIndex(std::string basis_name, panzer::Workset& workset);
 
-  std::vector<std::string>::size_type
+  std::vector<int>::size_type
   getIntegrationRuleIndex(int ir_degree, panzer::Workset& workset);
 
 }
