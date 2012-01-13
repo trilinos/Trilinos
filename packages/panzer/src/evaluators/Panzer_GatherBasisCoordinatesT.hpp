@@ -8,16 +8,26 @@
 #include "Teuchos_FancyOStream.hpp"
 
 template<typename EvalT,typename Traits>
+std::string 
+panzer::GatherBasisCoordinates<EvalT, Traits>::
+fieldName(const std::string & basisName)
+{
+   std::stringstream ss; 
+   ss << "Basis_" << basisName << " BasisCoordinates";
+   return ss.str();
+}
+
+template<typename EvalT,typename Traits>
 panzer::GatherBasisCoordinates<EvalT, Traits>::
 GatherBasisCoordinates(const panzer::PureBasis & basis)
 { 
   basisName_ = basis.name();
 
-  basisCoordinates_ = PHX::MDField<ScalarT,Cell,Point,Dim>(basisName_+" BasisCoordinates",basis.coordinates);
+  basisCoordinates_ = PHX::MDField<ScalarT,Cell,Point,Dim>(fieldName(basisName_),basis.coordinates);
 
   this->addEvaluatedField(basisCoordinates_);
 
-  this->setName("Gather BasisCoordinates - " + basisName_);
+  this->setName("Gather "+fieldName(basisName_));
 }
 
 // **********************************************************************

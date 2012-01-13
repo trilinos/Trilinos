@@ -122,8 +122,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
 
      TEST_EQUALITY(evalFields.size(),1);
      TEST_EQUALITY(depFields.size(), 0);
+     std::string ref_fieldName = GatherBasisCoordinates<EvalType,panzer::Traits>::fieldName(basis->name());
+     TEST_EQUALITY(ref_fieldName,evalFields[0]->name());
 
      fm->registerEvaluator<EvalType>(eval);
+
+
 
      const PHX::FieldTag & ft = *evalFields[0];
      fm->requireField<EvalType>(ft);
@@ -239,6 +243,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
 
      TEST_EQUALITY(evalFields.size(),1);
      TEST_EQUALITY(depFields.size(), 0);
+     std::string ref_fieldName = GatherIntegrationCoordinates<EvalType,panzer::Traits>::fieldName(quadRule->cubature_degree);
+     TEST_EQUALITY(ref_fieldName,evalFields[0]->name());
 
      fm->registerEvaluator<EvalType>(eval);
 

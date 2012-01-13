@@ -31,7 +31,7 @@ public:
   
   void evaluateFields(typename Traits::EvalData d);
 
-  static std::string integrationCoordinatesName(int degree);
+  static std::string fieldName(int degree);
 
 private:
   typedef typename EvalT::ScalarT ScalarT;

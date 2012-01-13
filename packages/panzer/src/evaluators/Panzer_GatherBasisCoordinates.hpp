@@ -31,6 +31,8 @@ public:
   
   void evaluateFields(typename Traits::EvalData d);
 
+  static std::string fieldName(const std::string & basisName);
+
 private:
   typedef typename EvalT::ScalarT ScalarT;
 

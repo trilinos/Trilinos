@@ -9,10 +9,10 @@
 template<typename EvalT,typename Traits>
 std::string 
 panzer::GatherIntegrationCoordinates<EvalT, Traits>::
-integrationCoordinatesName(int degree)
+fieldName(int degree)
 {
    std::stringstream ss; 
-   ss << "IR_" << degree << " Integration Coordinates" << std::endl;
+   ss << "IR_" << degree << " IntegrationCoordinates";
    return ss.str();
 }
 
@@ -22,11 +22,11 @@ GatherIntegrationCoordinates(const panzer::IntegrationRule & quad)
 { 
   quadDegree_ = quad.cubature_degree;
 
-  quadCoordinates_ = PHX::MDField<ScalarT,Cell,Point,Dim>(integrationCoordinatesName(quadDegree_),quad.dl_vector);
+  quadCoordinates_ = PHX::MDField<ScalarT,Cell,Point,Dim>(fieldName(quadDegree_),quad.dl_vector);
 
   this->addEvaluatedField(quadCoordinates_);
 
-  this->setName("Gather "+integrationCoordinatesName(quadDegree_));
+  this->setName("Gather "+fieldName(quadDegree_));
 }
 
 // **********************************************************************
