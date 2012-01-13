@@ -48,7 +48,9 @@ namespace MueLu {
 #else
       Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External,
 #endif
-      Default = Low
+      Default = Low,
+
+      NotSpecified = -1
     };
 
   //!

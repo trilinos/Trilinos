@@ -8,13 +8,14 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_VerbosityLevel.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 
   VerboseObject::VerboseObject()
-    : verbLevel_(High) //TODO: Default
+    : verbLevel_(NotSpecified) // = use global verbose level by default
   { 
-    // Note: using MPI_COMM_RANK is bad idea (because maybe a subcommunicator is used to run MueLu)
+    // Note: using MPI_COMM_RANK is bad idea (because a subcommunicator may be used to run MueLu)
     // Belos have the same problem in the class BelosOutputManager.
     //
     // How to fix this: the FancyOStream provides setProcRankAndSize() to change the proc rank info used by setOutputToRootOnly().
@@ -31,14 +32,19 @@ namespace MueLu {
 
   VerboseObject::~VerboseObject() { }
 
-  VerbLevel VerboseObject::GetVerbLevel() const { return verbLevel_; }
+  VerbLevel VerboseObject::GetVerbLevel() const { 
+    if (verbLevel_ != NotSpecified)
+      return verbLevel_; 
+    else
+      return globalVerbLevel_;
+  }
 
   void VerboseObject::SetVerbLevel(const VerbLevel verbLevel) { verbLevel_ = verbLevel; }
 
   int VerboseObject::GetProcRankVerbose() const { return procRank_; }
 
   bool VerboseObject::IsPrint(MsgType type, int thisProcRankOnly) const { 
-    return ((type & verbLevel_) && (thisProcRankOnly < 0 || procRank_ == thisProcRankOnly));
+    return ((type & GetVerbLevel()) && (thisProcRankOnly < 0 || procRank_ == thisProcRankOnly));
   }
 
   Teuchos::FancyOStream & VerboseObject::GetOStream(MsgType type, int thisProcRankOnly) const {
@@ -48,5 +54,16 @@ namespace MueLu {
   Teuchos::FancyOStream & VerboseObject::GetBlackHole() const { return *blackHole_; }
 
   RCP<Teuchos::FancyOStream> VerboseObject::blackHole_ = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+
+  void VerboseObject::SetDefaultVerbLevel(const VerbLevel defaultVerbLevel) { 
+    TEUCHOS_TEST_FOR_EXCEPTION(defaultVerbLevel == NotSpecified, Exceptions::RuntimeError, "MueLu::VerboseObject::GetVerbLevel(): global verbose level cannot be 'NotSpecified'.");
+    globalVerbLevel_ = defaultVerbLevel;
+  }
+
+  VerbLevel VerboseObject::GetDefaultVerbLevel() {
+    return globalVerbLevel_;
+  }
+
+  VerbLevel VerboseObject::globalVerbLevel_ = High; // Default global verbose level.
 
 } // namespace MueLu
