@@ -82,19 +82,22 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   // create factories
   RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory());
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(/*Teuchos::null,nspFact*/));
-  dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
+  //dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
   dropFact->SetFixedBlockSize(nDofsPerNode);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
+  if(verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream withouth an object...
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
+  *out << "aggregate ordering :                    NATURAL" << std::endl;
+  *out << "=============================================================================" << std::endl;
+  }
   UCAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
   UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-  *out << "aggregate ordering :                    NATURAL" << std::endl;
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
-  *out << "=============================================================================" << std::endl;
+
 
   RCP<PFactory> PFact;
   RCP<RFactory> RFact;
@@ -118,7 +121,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   }
 
   RCP<RAPFactory> AcFact = rcp( new RAPFactory(PFact, RFact) );
-  AcFact->setVerbLevel(eVerbLevel); //(toMueLuVerbLevel(eVerbLevel)); TODO: check me
+  //AcFact->setVerbLevel(eVerbLevel); //(toMueLuVerbLevel(eVerbLevel)); TODO: check me
 
   RCP<SmootherFactory> coarsestSmooFact;
   coarsestSmooFact = GetCoarsestSolverFactory(params);
@@ -127,7 +130,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
 
   // fill hierarchy
   RCP<Hierarchy> hierarchy = Teuchos::rcp(new Hierarchy(A));
-  hierarchy->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
+  hierarchy->SetDefaultVerbLevel(toMueLuVerbLevel(eVerbLevel));
   hierarchy->SetMaxCoarseSize(Teuchos::as<Xpetra::global_size_t>(maxCoarseSize));
 
   ///////////////////////////////////////////////////////////
@@ -161,7 +164,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
 
     RCP<MueLu::Level> Finest = hierarchy->GetLevel();  // get finest level
     Finest->Set("Nullspace",nspVector);                       // set user given null space
-    Finest->setDefaultVerbLevel(eVerbLevel);
+    //Finest->setDefaultVerbLevel(eVerbLevel);
   }
 
   ////////////////////////////////////
