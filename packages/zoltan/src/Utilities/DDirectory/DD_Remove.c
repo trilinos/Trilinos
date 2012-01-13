@@ -39,12 +39,14 @@ int Zoltan_DD_Remove (
  Zoltan_DD_Directory *dd,            /* directory state infomation      */
  ZOLTAN_ID_PTR gid,                  /* Incoming list of GIDs to remove */
  int count)                          /* Number of GIDs in removal list  */
-   {
+{
    int             *procs = NULL;   /* list of processors to contact   */
    DD_Remove_Msg   *ptr   = NULL;
    ZOLTAN_COMM_OBJ *plan  = NULL;   /* efficient MPI communication     */
    char            *sbuff = NULL;   /* send buffer                     */
+   char            *sbufftmp = NULL;/* pointer into send buffer        */
    char            *rbuff = NULL;   /* receive buffer                  */
+   char            *rbufftmp = NULL;/* pointer into receive buffer     */
 
    int              nrec;           /* number of receives to expect    */
    int              i;
@@ -78,7 +80,7 @@ int Zoltan_DD_Remove (
 
    /* allocate memory for DD_Remove_Msg send buffer */
    if (count) {
-      sbuff = (char*) ZOLTAN_MALLOC (dd->remove_msg_size * count);
+      sbuff = (char*)ZOLTAN_MALLOC((size_t)(dd->remove_msg_size)*(size_t)count);
       if (sbuff == NULL)  {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer");
          err = ZOLTAN_MEMERR;
@@ -90,9 +92,12 @@ int Zoltan_DD_Remove (
       ZOLTAN_PRINT_INFO (dd->my_proc, yo, "After proc & sbuff mallocs");
 
    /* for each GID, fill in contact list and then message structure */
+   sbufftmp = sbuff;
    for (i = 0; i < count; i++)  {
-      procs[i] = dd->hash(gid + i*dd->gid_length, dd->gid_length, dd->nproc, dd->hashdata, dd->hashfn);
-      ptr = (DD_Remove_Msg*) (sbuff + i * dd->remove_msg_size);
+      procs[i] = dd->hash(gid + i*dd->gid_length, dd->gid_length, dd->nproc,
+                          dd->hashdata, dd->hashfn);
+      ptr = (DD_Remove_Msg*) sbufftmp;
+      sbufftmp += dd->remove_msg_size;
       ptr->owner = dd->my_proc;
       ZOLTAN_SET_ID (dd->gid_length, ptr->gid, gid + i * dd->gid_length);
    }
@@ -109,7 +114,7 @@ int Zoltan_DD_Remove (
 
    /* allocate receive buffer for nrec DD_Remove_Msg structures */
    if (nrec) {
-      rbuff = (char*) ZOLTAN_MALLOC (nrec * dd->remove_msg_size);
+      rbuff = (char*)ZOLTAN_MALLOC((size_t)nrec*(size_t)(dd->remove_msg_size));
       if (rbuff == NULL)  {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Receive buffer malloc failed");
          err = ZOLTAN_MEMERR;
@@ -129,8 +134,10 @@ int Zoltan_DD_Remove (
 
    /* for each message rec'd,  remove local directory info */
    errcount = 0;
+   rbufftmp = rbuff;
    for (i = 0; i < nrec; i++)  {
-      ptr = (DD_Remove_Msg*) (rbuff + i * dd->remove_msg_size);
+      ptr = (DD_Remove_Msg*) rbufftmp;
+      rbufftmp += dd->remove_msg_size;
 
       err = DD_Remove_Local (dd, ptr->gid);
       if (err == ZOLTAN_WARN)
@@ -155,7 +162,7 @@ int Zoltan_DD_Remove (
    if (dd->debug_level > 4)
       ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL);
    return err;
-   }
+}
 
 
 
@@ -171,7 +178,7 @@ int Zoltan_DD_Remove (
 
 static int DD_Remove_Local (Zoltan_DD_Directory *dd,
  ZOLTAN_ID_PTR gid)                /* GID to be removed (in)  */
-   {
+{
    DD_Node **ptr;
    DD_Node  *old;
    int index;
@@ -187,7 +194,8 @@ static int DD_Remove_Local (Zoltan_DD_Directory *dd,
       ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL);
 
    /* compute offset into hash table to find head of linked list */
-   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashdata, NULL);
+   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length,
+                            dd->hashdata, NULL);
 
    /* walk linked list until end looking for matching gid (key) */
    for (ptr = dd->table + index; *ptr != NULL; ptr = &((*ptr)->next))
@@ -206,7 +214,7 @@ static int DD_Remove_Local (Zoltan_DD_Directory *dd,
    if (dd->debug_level > 5)
       ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL);
    return ZOLTAN_WARN;
-   }
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

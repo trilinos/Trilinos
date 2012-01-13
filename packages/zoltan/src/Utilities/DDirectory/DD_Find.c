@@ -26,8 +26,8 @@ extern "C" {
 
 
 int Zoltan_DD_GetLocalKeys(Zoltan_DD_Directory *dd,
-			   ZOLTAN_ID_PTR *gid,
-			   int *size)
+                           ZOLTAN_ID_PTR *gid,
+                           int *size)
 {
   int ierr = ZOLTAN_OK;
   int i, k;
@@ -35,20 +35,23 @@ int Zoltan_DD_GetLocalKeys(Zoltan_DD_Directory *dd,
   int gid_alloc_size;
 
   gid_alloc_size = dd->table_length;
-  (*gid) = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC(gid_alloc_size*dd->gid_length*sizeof(int));
+  (*gid) = (ZOLTAN_ID_PTR)ZOLTAN_MALLOC(
+                          gid_alloc_size*dd->gid_length*sizeof(ZOLTAN_ID_TYPE));
 
   k= 0;
-   for (i = 0; i < dd->table_length; i++)
-     for (ptr = dd->table[i]; ptr != NULL; ptr = ptr->next) {
-       if (k >= gid_alloc_size) {
-	 gid_alloc_size *= 2;
-	 (*gid) = (ZOLTAN_ID_PTR) ZOLTAN_REALLOC((*gid), gid_alloc_size*dd->gid_length*sizeof(int));
-       }
-       ZOLTAN_SET_ID (dd->gid_length, (*gid)+k*dd->gid_length, ptr->gid);
-       k++;
-     }
+  for (i = 0; i < dd->table_length; i++)
+    for (ptr = dd->table[i]; ptr != NULL; ptr = ptr->next) {
+      if (k >= gid_alloc_size) {
+        gid_alloc_size *= 2;
+        (*gid) = (ZOLTAN_ID_PTR)
+                  ZOLTAN_REALLOC((*gid),
+                         gid_alloc_size*dd->gid_length*sizeof(ZOLTAN_ID_TYPE));
+      }
+      ZOLTAN_SET_ID (dd->gid_length, (*gid)+k*dd->gid_length, ptr->gid);
+      k++;
+    }
 
-   (*size) = k;
+  (*size) = k;
 
   return (ierr);
 }
@@ -71,10 +74,12 @@ int Zoltan_DD_Find (
  int *partition,          /* Outgoing optional partition information     */
  int  count,              /* Count of GIDs in above list (in)            */
  int *owner)              /* Outgoing optional list of data owners       */
-   {
+{
    ZOLTAN_COMM_OBJ *plan  = NULL;     /* efficient MPI communication     */
    char            *rbuff = NULL;     /* receive buffer                  */
+   char            *rbufftmp = NULL;  /* pointer into receive buffer     */
    char            *sbuff = NULL;     /* send buffer                     */
+   char            *sbufftmp = NULL;  /* pointer into send buffer        */
    int             *procs = NULL;     /* list of processors to contact   */
    DD_Find_Msg     *ptr   = NULL;
    int              i;
@@ -120,9 +125,12 @@ int Zoltan_DD_Find (
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After mallocs");
 
    /* for each GID, fill DD_Find_Msg buffer and contact list */
+   sbufftmp = sbuff;
    for (i = 0; i < count; i++)  {
-      procs[i] = dd->hash (gid + i*dd->gid_length, dd->gid_length, dd->nproc, dd->hashdata, dd->hashfn);
-      ptr      = (DD_Find_Msg*) (sbuff + i * dd->find_msg_size);
+      procs[i] = dd->hash (gid + i*dd->gid_length, dd->gid_length, dd->nproc,
+                           dd->hashdata, dd->hashfn);
+      ptr      = (DD_Find_Msg*) sbufftmp;
+      sbufftmp += dd->find_msg_size;
 
       ptr->index = i;
       ptr->proc  = procs[i];
@@ -141,7 +149,7 @@ int Zoltan_DD_Find (
 
    /* allocate receive buffer */
    if (nrec)  {
-      rbuff = (char*) ZOLTAN_MALLOC (nrec * dd->find_msg_size);
+      rbuff = (char*) ZOLTAN_MALLOC ((size_t)nrec*(size_t)(dd->find_msg_size));
       if (rbuff == NULL)  {
          err = ZOLTAN_MEMERR;
          goto fini;
@@ -159,11 +167,13 @@ int Zoltan_DD_Find (
 
    /* get find messages directed to me, fill in return information */
    errcount = 0;
+   rbufftmp = rbuff;
    for (i = 0; i < nrec; i++)  {
-      ptr = (DD_Find_Msg*) (rbuff + i*dd->find_msg_size);
-
-      err = DD_Find_Local (dd, ptr->id, ptr->id, (char *)(ptr->id + dd->max_id_length), 
-       &ptr->partition, &ptr->proc);
+      ptr = (DD_Find_Msg*) rbufftmp;
+      rbufftmp += dd->find_msg_size;
+      err = DD_Find_Local (dd, ptr->id, ptr->id,
+                           (char *)(ptr->id + dd->max_id_length),
+                           &ptr->partition, &ptr->proc);
       if (err == ZOLTAN_WARN)
           ++errcount;
    }
@@ -179,17 +189,20 @@ int Zoltan_DD_Find (
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Reverse");
 
    /* fill in user supplied lists with returned information */
+   sbufftmp = sbuff;
    for (i = 0; i < count; i++) {
-      ptr = (DD_Find_Msg*) (sbuff + i*dd->find_msg_size);
+      ptr = (DD_Find_Msg*) sbufftmp;
+      sbufftmp += dd->find_msg_size;
 
       if (owner)
          owner[ptr->index] = ptr->proc;
-      if (partition) 
+      if (partition)
          partition[ptr->index] = ptr->partition ;
-      if (lid) 
+      if (lid)
          ZOLTAN_SET_ID(dd->lid_length,lid+ptr->index*dd->lid_length,ptr->id);
       if (data)
-         memcpy(data + ptr->index * dd->user_data_length, ptr->id + dd->max_id_length, dd->user_data_length);
+         memcpy(data + (size_t)(ptr->index) * (size_t)(dd->user_data_length),
+                ptr->id + dd->max_id_length, dd->user_data_length);
    }
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill return lists");
@@ -232,10 +245,10 @@ fini:
 static int DD_Find_Local (Zoltan_DD_Directory *dd,
  ZOLTAN_ID_PTR gid,         /* incoming GID to locate (in)            */
  ZOLTAN_ID_PTR lid,         /* gid's LID (out)                        */
- char *user,        /* gid's user data (out)                  */
+ char *user,                /* gid's user data (out)                  */
  int *partition,            /* gid's partition number (out)           */
  int *owner)                /* gid's owner (processor number) (out)   */
-   {
+{
    DD_Node *ptr;
    int      index;
    char    *yo = "DD_Find_Local";
@@ -249,13 +262,15 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
       ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL);
 
    /* compute offset into hash table to find head of linked list */
-   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashdata, NULL);
+   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length,
+                            dd->hashdata, NULL);
    /* walk link list until end looking for matching global ID */
    for (ptr = dd->table[index]; ptr != NULL; ptr = ptr->next)
-      if (ZOLTAN_EQ_ID (dd->gid_length, gid, ptr->gid) == TRUE)  { 
+      if (ZOLTAN_EQ_ID (dd->gid_length, gid, ptr->gid) == TRUE)  {
          /* matching global ID found! Return gid's information */
          if (lid) ZOLTAN_SET_ID(dd->lid_length, lid, ptr->gid + dd->gid_length);
-         if (user) memcpy(user, ptr->gid + (dd->gid_length + dd->lid_length),  dd->user_data_length);
+         if (user) memcpy(user, ptr->gid + (dd->gid_length + dd->lid_length),
+                          dd->user_data_length);
 
          if (owner)     *owner     = ptr->owner;
          if (partition) *partition = ptr->partition;
@@ -276,7 +291,7 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
       return ZOLTAN_WARN;
    }
    return ZOLTAN_WARN;
-   }
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
