@@ -8,6 +8,7 @@ ADD_SUBDIRECTORIES(
   Comm
   Containers
   Conditions
+  CWrapperSupport
   DenseMatrix
   Dependencies
   FancyOutputting
@@ -19,11 +20,11 @@ ADD_SUBDIRECTORIES(
   ScalarTraits
   TabularOutputter
   Time
+  TwoDArray
   UnitTest
   Validators
   Workspace
   XML
   XMLParser
   dyn_cast
-  TwoDArray
   )
