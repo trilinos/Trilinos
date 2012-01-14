@@ -448,7 +448,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
       algorithm_ = string("rib");
     }
     else if (inputType_ == VectorAdapterType ||
-             inputType_ == MultiVectorAdapterType ||
              inputType_ == IdentifierAdapterType){
       modelType_ = IdentifierModelType;
       algorithm_ = string("block");
