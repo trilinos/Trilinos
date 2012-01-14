@@ -81,6 +81,11 @@ public:
   }
 
   /*! The raw input information.
+      \param len on return is the length of storage at \c vec.  This will
+                be some multiple of stride.
+      \param vec  on return is a pointer to the input.  Element k is at vec[k*stride].
+      \param stride is describes the layout of the input in \c vec.
+          
    */
   void getStridedList(size_t &len, const scalar_t *&vec, int &stride)
   {
