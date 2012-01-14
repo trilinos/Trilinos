@@ -14,13 +14,9 @@
 // We create a few Solutions in this unit test.
 
 #include <Zoltan2_PartitioningSolution.hpp>
-#include <ErrorHandlingForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
-typedef long myid_t;
-typedef int lno_t;
-typedef float scalar_t;
-
-typedef Zoltan2::BasicUserTypes<scalar_t, myid_t, lno_t, myid_t> user_t;
+typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> user_t;
 
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
@@ -75,12 +71,12 @@ int main(int argc, char *argv[])
   /////////////
   // A simple identifier map.
 
-  myid_t *myGids = new myid_t [numIdsPerProc];
+  gno_t *myGids = new gno_t [numIdsPerProc];
   for (int i=0, x=rank*numIdsPerProc; i < numIdsPerProc; i++){
     myGids[i] = x++;
   }
 
-  ArrayRCP<myid_t> gidArray(myGids, 0, numIdsPerProc, true);
+  ArrayRCP<gno_t> gidArray(myGids, 0, numIdsPerProc, true);
 
   RCP<const Zoltan2::IdentifierMap<user_t> > idMap = 
     rcp(new Zoltan2::IdentifierMap<user_t>(env, comm, gidArray)); 
@@ -206,7 +202,7 @@ int main(int argc, char *argv[])
     fail = 11;
 
   if (!fail){
-    const myid_t *gids = solution->getGlobalIdList();
+    const gno_t *gids = solution->getGlobalIdList();
     for (int i=0; !fail && i < numIdsPerProc; i++){
       if (gids[i] != myGids[i])
         fail = 12;

@@ -18,7 +18,8 @@
 //   Tpetra and Xpetra migrated graphs.  They're garbage.
 
 #include <Zoltan2_XpetraTraits.hpp>
-#include <UserInputForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
+
 #include <string>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -46,46 +47,36 @@ using Teuchos::Array;
 using Teuchos::rcp;
 using Teuchos::Comm;
 
-template <typename LNO, typename GNO, typename NODE>
-  ArrayRCP<GNO> roundRobinMap(
-    const RCP<const Xpetra::Map<LNO, GNO, NODE> > &m)
+ArrayRCP<gno_t> roundRobinMap(
+    const RCP<const Xpetra::Map<lno_t, gno_t, node_t> > &m)
 {
   const RCP<const Comm<int> > &comm = m->getComm();
   int proc = comm->getRank();
   int nprocs = comm->getSize();
-  GNO base = m->getMinAllGlobalIndex();
-  GNO max = m->getMaxAllGlobalIndex();
+  gno_t base = m->getMinAllGlobalIndex();
+  gno_t max = m->getMaxAllGlobalIndex();
   size_t globalrows = m->getGlobalNumElements();
   if (globalrows != max - base + 1){
     TEST_FAIL_AND_EXIT(*comm, 0, 
       string("Map is invalid for test - fix test"), 1);
   }
-  RCP<Array<GNO> > mygids = rcp(new Array<GNO>);
-  GNO firstGNO = proc; 
-  if (firstGNO < base){
-    GNO n = base % proc;
+  RCP<Array<gno_t> > mygids = rcp(new Array<gno_t>);
+  gno_t firstgno_t = proc; 
+  if (firstgno_t < base){
+    gno_t n = base % proc;
     if (n>0)
-      firstGNO = base - n + proc;
+      firstgno_t = base - n + proc;
     else
-      firstGNO = base;
+      firstgno_t = base;
   }
-  for (GNO gid=firstGNO; gid <= max; gid+=nprocs){
+  for (gno_t gid=firstgno_t; gid <= max; gid+=nprocs){
     (*mygids).append(gid);
   }
 
-  ArrayRCP<GNO> newIdArcp = Teuchos::arcp(mygids);
+  ArrayRCP<gno_t> newIdArcp = Teuchos::arcp(mygids);
 
   return newIdArcp;
 }
-
-typedef int lno_t;
-typedef long gno_t;
-typedef float scalar_t;
-typedef Zoltan2::default_node_t node_t;
-
-typedef int epetra_lno_t;
-typedef int epetra_gno_t;
-typedef double epetra_scalar_t;
 
 int main(int argc, char *argv[])
 {
@@ -456,6 +447,7 @@ int main(int argc, char *argv[])
     newMV->describe(*out,v);
   }
 
+#ifdef HAVE_EPETRA_DATA_TYPES
   /////////////////////////////////////////////////////////////////
   //   Epetra_CrsMatrix
   //   Epetra_CrsGraph
@@ -463,8 +455,7 @@ int main(int argc, char *argv[])
   //   Epetra_MultiVector
   /////////////////////////////////////////////////////////////////
 
-  typedef UserInputForTests<
-    epetra_scalar_t, epetra_lno_t, epetra_gno_t> euinput_t;
+  typedef UserInputForTests<scalar_t, lno_t, gno_t> euinput_t;
   typedef Epetra_CrsMatrix ematrix_t;
   typedef Epetra_CrsGraph egraph_t;
   typedef Epetra_Vector evector_t;
@@ -647,6 +638,7 @@ int main(int argc, char *argv[])
   
     newMV->Print(std::cout);
   }
+#endif   // have epetra data types (int, int, double)
 
   /////////////////////////////////////////////////////////////////
   // DONE

@@ -11,7 +11,7 @@
 //
 
 #include <Zoltan2_Metric.hpp>
-#include <ErrorHandlingForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
 using Teuchos::RCP;
 using Teuchos::Comm;

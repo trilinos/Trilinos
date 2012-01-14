@@ -10,7 +10,7 @@
 // Basic testing of Zoltan2::BasicIdentifierInput 
 
 #include <Zoltan2_BasicIdentifierInput.hpp>
-#include <ErrorHandlingForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -29,19 +29,14 @@ int main(int argc, char *argv[])
   int nprocs = comm->getSize();
   int fail = 0, gfail=0;
 
-  typedef double scalar_t;
-  typedef long   gid_t;
-  typedef int    lno_t;
-  typedef long   gno_t;
-
   // Create global identifiers with weights
 
   lno_t numLocalIds = 10;
   int weightDim = 2;
 
-  gid_t *myIds = new gid_t [numLocalIds];
+  gno_t *myIds = new gno_t [numLocalIds];
   scalar_t *weights = new scalar_t [numLocalIds*weightDim];
-  gid_t base = rank * numLocalIds * numLocalIds;
+  gno_t base = rank * numLocalIds * numLocalIds;
 
   for (lno_t i=0; i < numLocalIds; i++){
     myIds[i] = base+i;
@@ -52,26 +47,30 @@ int main(int argc, char *argv[])
   // Create a Zoltan2::BasicIdentifierInput object
   // and verify that it is correct
 
-  typedef Zoltan2::BasicUserTypes<scalar_t, gid_t, lno_t, gno_t> userTypes_t;
+  typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
   scalar_t *weightPtrs[2] = {weights, weights+1};
   int strides[2] = {2,2};
 
   Zoltan2::BasicIdentifierInput<userTypes_t> ia( numLocalIds, weightDim, myIds,
     &weightPtrs[0], &strides[0]);
 
-  if (!fail && ia.getLocalNumIds() != numLocalIds){
+  if (rank == 0)
+    std::cout << "Testing " << ia.inputAdapterName() << std::endl;
+
+  if (!fail && ia.getLocalNumberOfIdentifiers() != numLocalIds){
     fail = 4;
   }
 
-  if (!fail && ia.getNumWeights() != weightDim)
+  if (!fail && ia.getNumberOfWeights() != weightDim)
     fail = 5;
 
-  const gid_t *globalIdsIn;
+  const gno_t *globalIdsIn;
   scalar_t const *weightsIn[2];
   int weightStridesIn[2];
 
   if (!fail && 
-    ia.getIdList(&globalIdsIn, weightsIn, weightStridesIn) != numLocalIds)
+    ia.getIdentifierList(&globalIdsIn, weightsIn, weightStridesIn) != 
+      numLocalIds)
     fail = 6;
 
   const scalar_t *w1 = weightsIn[0];
