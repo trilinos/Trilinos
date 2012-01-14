@@ -43,3 +43,26 @@
 #cmakedefine HAVE_ZOLTAN2_LONG_LONG
 
 #endif
+
+/* Define if Tpetra explicit instantiation was requested
+ *  at cmake configure time.  We will also use
+ *  explicit instantiation in that case.
+ *
+ * We explicitly instantiate classes where: 
+ *    scalar type is float
+ *    local id type is int
+ *    global id type is long
+ */
+#cmakedefine HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
+
+/* Define if Tpetra explicit instantiation was requested
+ *  at cmake configure time.  We will also use
+ *  explicit instantiation in that case.
+ *
+ * We explicitly instantiate classes where: 
+ *    scalar type is double
+ *    local id type is int
+ *    global id type is long
+ */
+#cmakedefine HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
+
