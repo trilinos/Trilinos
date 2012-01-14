@@ -321,7 +321,7 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
 
     // number of entries in my new rows
-    typedef Tpetra::Vector<size_t, lno_t, gno_t, node_t> vector_t;
+    typedef Tpetra::Vector<gno_t, lno_t, gno_t, node_t> vector_t;
     vector_t numOld(smap);
     vector_t numNew(tmap);
     for (int lid=0; lid < oldNumElts; lid++){
@@ -330,7 +330,7 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
     }
     numNew.doImport(numOld, importer, Tpetra::INSERT);
 
-    ArrayRCP<const size_t> nnz;
+    ArrayRCP<const gno_t> nnz;
     if (tmap->getNodeNumElements() > 0)
       nnz = numNew.getData(0);    // hangs if vector len == 0
 
