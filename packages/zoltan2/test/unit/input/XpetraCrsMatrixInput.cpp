@@ -28,7 +28,7 @@ using Teuchos::rcp_const_cast;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-typedef UserInputForTests<scalar_t, lno_t, gno_t> uinput_t;
+typedef UserInputForTests uinput_t;
 typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tmatrix_t;
 typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
 typedef Epetra_CrsMatrix ematrix_t;

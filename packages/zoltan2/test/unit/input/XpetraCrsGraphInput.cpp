@@ -30,7 +30,7 @@ using Teuchos::DefaultComm;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 
-typedef UserInputForTests<scalar_t, lno_t, gno_t> uinput_t;
+typedef UserInputForTests uinput_t;
 typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tgraph_t;
 typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
 typedef Epetra_CrsGraph egraph_t;

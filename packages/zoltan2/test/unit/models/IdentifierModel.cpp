@@ -55,7 +55,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   gno_t nGlobalIds =  M->getGlobalNumRows();
 
   ArrayView<const gno_t> idList = M->getRowMap()->getNodeElementList();
-  typename std::set<gno_t> idSet(idList.begin(), idList.end());
+  std::set<gno_t> idSet(idList.begin(), idList.end());
 
   //////////////////////////////////////////////////////////////
   // Create an IdentifierModel with this input
@@ -113,7 +113,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     fail = 6;
 
   for (lno_t i=0; !fail && i < nLocalIds; i++){
-    typename std::set<gno_t>::iterator next = idSet.find(gids[i]);
+    std::set<gno_t>::iterator next = idSet.find(gids[i]);
     if (next == idSet.end())
       fail = 7;
   }

@@ -1,6 +1,7 @@
 #include <Zoltan2_OrderingProblem.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_XpetraVectorInput.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 #include <iostream>
 #include <limits>
 #include <vector>
@@ -37,11 +38,13 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // Eventually want to use Teuchos unit tests to vary z2TestLO and
-// GO.  For now, we set them at compile time.
-typedef int z2TestLO;
-typedef long z2TestGO;
+// GO.  For now, we set them at compile time based on whether Tpetra
+// is built with explicit instantiation on.  (in Zoltan2_TestHelpers.hpp)
 
-typedef double Scalar;
+typedef lno_t z2TestLO;
+typedef gno_t z2TestGO;
+typedef scalar_t Scalar;
+
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;

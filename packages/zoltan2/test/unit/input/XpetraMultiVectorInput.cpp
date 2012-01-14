@@ -31,7 +31,7 @@ using Teuchos::rcp_const_cast;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-typedef UserInputForTests<scalar_t, lno_t, gno_t> uinput_t;
+typedef UserInputForTests uinput_t;
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tvector_t;
 typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> xvector_t;
 typedef Epetra_MultiVector evector_t;

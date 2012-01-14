@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
     Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
 
-  typedef UserInputForTests<scalar_t, lno_t, gno_t> uinput_t;
+  typedef UserInputForTests uinput_t;
   typedef Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> tmatrix_t;
   typedef Tpetra::CrsGraph<lno_t,gno_t,node_t> tgraph_t;
   typedef Tpetra::Vector<scalar_t,lno_t,gno_t,node_t> tvector_t;
@@ -455,7 +455,6 @@ int main(int argc, char *argv[])
   //   Epetra_MultiVector
   /////////////////////////////////////////////////////////////////
 
-  typedef UserInputForTests<scalar_t, lno_t, gno_t> euinput_t;
   typedef Epetra_CrsMatrix ematrix_t;
   typedef Epetra_CrsGraph egraph_t;
   typedef Epetra_Vector evector_t;
