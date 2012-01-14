@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   // typedef panzer::Traits::Residual EvalType;
   typedef Sacado::ScalarType<typename EvalType::ScalarT> ScalarType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
-  Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point,panzer::Dim> > fmCoordsPtr;
+  Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::BASIS,panzer::Dim> > fmCoordsPtr;
   Teuchos::RCP<PHX::DataLayout> dl_coords = basis->coordinates;
 
   // add in some evaluators
@@ -127,15 +127,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
 
      fm->registerEvaluator<EvalType>(eval);
 
-
-
      const PHX::FieldTag & ft = *evalFields[0];
      fm->requireField<EvalType>(ft);
      fmCoordsPtr = rcp(new
-         PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point,panzer::Dim>(ft.name(),dl_coords));
+         PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::BASIS,panzer::Dim>(ft.name(),dl_coords));
   }
 
-  PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point,panzer::Dim> & fmCoords = *fmCoordsPtr;
+  PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::BASIS,panzer::Dim> & fmCoords = *fmCoordsPtr;
 
   panzer::Traits::SetupData setupData;
   setupData.worksets_ = rcp(new std::vector<panzer::Workset>);

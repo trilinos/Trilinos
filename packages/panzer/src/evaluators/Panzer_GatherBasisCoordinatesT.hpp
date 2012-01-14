@@ -23,7 +23,7 @@ GatherBasisCoordinates(const panzer::PureBasis & basis)
 { 
   basisName_ = basis.name();
 
-  basisCoordinates_ = PHX::MDField<ScalarT,Cell,Point,Dim>(fieldName(basisName_),basis.coordinates);
+  basisCoordinates_ = PHX::MDField<ScalarT,Cell,BASIS,Dim>(fieldName(basisName_),basis.coordinates);
 
   this->addEvaluatedField(basisCoordinates_);
 

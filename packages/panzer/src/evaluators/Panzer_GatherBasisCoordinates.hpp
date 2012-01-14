@@ -38,7 +38,7 @@ private:
 
   std::string basisName_;
   std::vector<std::string>::size_type basisIndex_; 
-  PHX::MDField<ScalarT,Cell,Point,Dim> basisCoordinates_;
+  PHX::MDField<ScalarT,Cell,BASIS,Dim> basisCoordinates_;
 
   GatherBasisCoordinates();
 };
