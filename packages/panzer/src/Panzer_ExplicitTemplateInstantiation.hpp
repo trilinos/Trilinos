@@ -52,5 +52,28 @@
   PANZER_INSTANTIATE_TEMPLATE_CLASS_SGRESIDUAL_TWO_T(name) \
   PANZER_INSTANTIATE_TEMPLATE_CLASS_SGJACOBIAN_TWO_T(name)
 
+// THREE (one user defined) template arguments
+#define PANZER_INSTANTIATE_TEMPLATE_CLASS_RESIDUAL_THREE_T(name,ExtraT) \
+  template class name<panzer::Traits::Residual, panzer::Traits,ExtraT>; 
+
+#define PANZER_INSTANTIATE_TEMPLATE_CLASS_JACOBIAN_THREE_T(name,ExtraT) \
+  template class name<panzer::Traits::Jacobian, panzer::Traits,ExtraT>; 
+
+// stochastic galerkin objects
+#ifdef HAVE_STOKHOS
+   #define PANZER_INSTANTIATE_TEMPLATE_CLASS_SGRESIDUAL_THREE_T(name,ExtraT) \
+     template class name<panzer::Traits::SGResidual, panzer::Traits,ExtraT>; 
+   #define PANZER_INSTANTIATE_TEMPLATE_CLASS_SGJACOBIAN_THREE_T(name,ExtraT) \
+     template class name<panzer::Traits::SGJacobian, panzer::Traits,ExtraT>; 
+#else
+   #define PANZER_INSTANTIATE_TEMPLATE_CLASS_SGRESIDUAL_THREE_T(name,ExtraT) 
+   #define PANZER_INSTANTIATE_TEMPLATE_CLASS_SGJACOBIAN_THREE_T(name,ExtraT) 
+#endif
+
+#define PANZER_INSTANTIATE_TEMPLATE_CLASS_THREE_T(name,ExtraT) \
+  PANZER_INSTANTIATE_TEMPLATE_CLASS_RESIDUAL_THREE_T(name,ExtraT) \
+  PANZER_INSTANTIATE_TEMPLATE_CLASS_JACOBIAN_THREE_T(name,ExtraT) \
+  PANZER_INSTANTIATE_TEMPLATE_CLASS_SGRESIDUAL_THREE_T(name,ExtraT) \
+  PANZER_INSTANTIATE_TEMPLATE_CLASS_SGJACOBIAN_THREE_T(name,ExtraT)
 
 #endif
