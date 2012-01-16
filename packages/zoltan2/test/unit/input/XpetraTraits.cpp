@@ -456,10 +456,10 @@ int main(int argc, char *argv[])
 
   // Create object that can give us test Epetra input.
 
-  RCP<euinput_t> euinput;
+  RCP<uinput_t> euinput;
 
   try{
-    euinput = rcp(new euinput_t(std::string("../data/simple.mtx"), comm));
+    euinput = rcp(new uinput_t(std::string("../data/simple.mtx"), comm));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("epetra input ")+e.what(), 1);
@@ -485,9 +485,9 @@ int main(int argc, char *argv[])
     RCP<const emap_t> emap = Teuchos::rcpFromRef(M->RowMap());
     RCP<const xemap_t> xmap(new xemap_t(emap));
 
-    ArrayRCP<epetra_gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
-    epetra_gno_t localNumRows = newRowIds.size();
+    gno_t localNumRows = newRowIds.size();
   
     RCP<const ematrix_t> newM;
     try{
@@ -525,9 +525,9 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(G->RowMap());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<epetra_gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
-    epetra_gno_t localNumRows = newRowIds.size();
+    gno_t localNumRows = newRowIds.size();
   
     RCP<const egraph_t> newG;
     try{
@@ -565,9 +565,9 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(V->Map());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<epetra_gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
-    epetra_gno_t localNumRows = newRowIds.size();
+    gno_t localNumRows = newRowIds.size();
   
     RCP<const evector_t> newV;
     try{
@@ -605,9 +605,9 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(MV->Map());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<epetra_gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
-    epetra_gno_t localNumRows = newRowIds.size();
+    gno_t localNumRows = newRowIds.size();
   
     RCP<const emvector_t> newMV;
     try{
