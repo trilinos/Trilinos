@@ -29,6 +29,9 @@ SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Disabled in casl-core-enables-disables
 SET(STK_ENABLE_TESTS OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
 SET(STK_ENABLE_EXAMPLES OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
 
+# Turn off this failing Rythmos test (see Trilinos bug 5485)
+SET(Rythmos_ImplicitRK_ConvergenceTest_MPI_1_DISABLE TRUE)
+
 # Turn on configure timing
 SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
 
