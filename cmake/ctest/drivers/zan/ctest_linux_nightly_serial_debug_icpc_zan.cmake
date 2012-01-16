@@ -64,6 +64,8 @@ SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME SERIAL_DEBUG_ICPC)
 #SET(CTEST_TEST_TYPE Experimental)
+# Intel 11.1 is compatible with GCC 4.2. Make sure that is the one on the PATH.
+SET(ENV{PATH} "$ENV{HOME}/compilers/gcc/4.2/bin:$ENV{PATH}")
 SET(ENV{LD_LIBRARY_PATH} "$ENV{LD_LIBRARY_PATH}:/opt/intel/Compiler/11.1/064/lib/intel64:/opt/intel/Compiler/11.1/064/mkl/lib/em64t")
 #SET(CTEST_TEST_TIMEOUT 900)
 
