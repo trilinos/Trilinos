@@ -15,6 +15,7 @@
 
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_VectorInput.hpp>
+#include <Zoltan2_StridedInput.hpp>
 #include <Zoltan2_Util.hpp>
 
 #include <Xpetra_EpetraMultiVector.hpp>
@@ -39,7 +40,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef MultiVectorInput<User>       base_adapter_t;
+  typedef VectorInput<User>       base_adapter_t;
   typedef User user_t;
 
   typedef Xpetra::MultiVector<
@@ -166,7 +167,7 @@ public:
 
     size_t length;
 
-    weights_[dim].getStridedList(length, weights, stride);
+    weights_[dim]->getStridedList(length, weights, stride);
 
     return length;
   }

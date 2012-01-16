@@ -89,7 +89,7 @@ public:
     const scalar_t *elements, int elementStride,
     int numWeights, const scalar_t * const * weights, int *weightStrides)
   {
-    BasicVectorInput(1, numIds, ids, &elements, &elementStride,
+    createBasicVector(1, numIds, ids, &elements, &elementStride,
        numWeights, weights, weightStrides);
   }
 
@@ -120,39 +120,10 @@ public:
 
   BasicVectorInput(int numVectors, lno_t numIds, const gid_t *ids, 
     const scalar_t * const *elements, int *elementStrides,
-    int numWeights, const scalar_t * const *weights, int *weightStrides):
-      env_(rcp(new Environment)), numIds_(numIds_), globalNumIds_(), 
-      idList_(ids), numVectors_(numVectors),
-      elements_(numVectors), numWeights_(numWeights), weights_(numWeights)
+    int numWeights, const scalar_t * const *weights, int *weightStrides)
   {
-    typedef StridedInput<lno_t,scalar_t> input_t;
-
-    gno_t tmp = numIds;
-    try{
-      reduceAll<int, gno_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1, 
-         &tmp, &globalNumIds_);
-    }
-    Z2_THROW_OUTSIDE_ERROR(*env_, e);
-
-    if (numIds){
-      int stride = 1;
-      for (int v=0; v < numVectors; v++){
-        if (elementStrides)
-          stride = elementStrides[v];
-        elements_[v] = rcp<input_t>(new input_t(env_,
-          ArrayView<const scalar_t>(elements[v], stride*numIds), stride));
-      }
-
-      if (numWeights){
-        stride = 1;
-        for (int w=0; w < numWeights; w++){
-          if (weightStrides)
-            stride = weightStrides[w];
-          weights_[w] = rcp<input_t>(new input_t(env_,
-            ArrayView<const scalar_t>(weights[w], stride*numIds), stride));
-        }
-      }
-    }
+    createBasicVector(numVectors, numIds, ids, elements, elementStrides,
+      numWeights, weights, weightStrides);
   }
 
   /*! Destructor
@@ -184,32 +155,10 @@ public:
   }
 
   size_t getVector(int i, const gid_t *&ids, 
-     const scalar_t *&element, int &stride) const
-  {
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid vector number",
-      i >= 0 && i < numVectors_, BASIC_ASSERTION);
-    
-    ids = idList_;
-
-    size_t length;
-
-    elements_[i]->getStridedList(length, element, stride);
-
-    return length;
-  }
+     const scalar_t *&element, int &stride) const;
 
   size_t getVectorWeights(int dimension, 
-     const scalar_t *&weights, int &stride) const
-  {
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid weight dimension",
-      dimension >= 0 && dimension < numWeights_, BASIC_ASSERTION);
-
-    size_t length;
-
-    weights_[dimension]->getStridedList(length, weights, stride);
-
-    return length;
-  }
+     const scalar_t *&weights, int &stride) const;
 
 private:
 
@@ -229,7 +178,85 @@ private:
 
   int numWeights_;
   Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
+
+  void createBasicVector(int numVectors, lno_t numIds, 
+    const gid_t *ids, const scalar_t * const *elements, int *elementStrides,
+    int numWeights, const scalar_t * const *weights, int *weightStrides);
 };
+
+template <typename User>
+  size_t BasicVectorInput<User>::getVector(int i, const gid_t *&ids, 
+    const scalar_t *&element, int &stride) const
+{
+  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid vector number",
+    i >= 0 && i < numVectors_, BASIC_ASSERTION);
+  
+  ids = idList_;
+
+  size_t length;
+
+  elements_[i]->getStridedList(length, element, stride);
+
+  return length;
+}
+
+template <typename User>
+  size_t BasicVectorInput<User>::getVectorWeights(int dimension, 
+    const scalar_t *&weights, int &stride) const
+{
+  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid weight dimension",
+    dimension >= 0 && dimension < numWeights_, BASIC_ASSERTION);
+
+  size_t length;
+
+  weights_[dimension]->getStridedList(length, weights, stride);
+
+  return length;
+}
+
+template <typename User>
+  void BasicVectorInput<User>::createBasicVector(int numVectors, lno_t numIds, 
+    const gid_t *ids, const scalar_t * const *elements, int *elementStrides,
+    int numWeights, const scalar_t * const *weights, int *weightStrides)
+{
+  env_ = rcp(new Environment);
+  numIds_ = numIds; 
+  globalNumIds_ = 0;
+  idList_ = ids;
+  numVectors_ = numVectors;
+  elements_ = Array<RCP<StridedInput<lno_t, scalar_t> > >(numVectors);
+  numWeights_ = numWeights;
+  weights_ = Array<RCP<StridedInput<lno_t, scalar_t> > >(numWeights);
+
+  typedef StridedInput<lno_t,scalar_t> input_t;
+
+  gno_t tmp = numIds;
+  try{
+    reduceAll<int, gno_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1, 
+       &tmp, &globalNumIds_);
+  }
+  Z2_THROW_OUTSIDE_ERROR(*env_, e);
+
+  if (numIds){
+    int stride = 1;
+    for (int v=0; v < numVectors; v++){
+      if (elementStrides)
+        stride = elementStrides[v];
+      elements_[v] = rcp<input_t>(new input_t(env_,
+        ArrayView<const scalar_t>(elements[v], stride*numIds), stride));
+    }
+
+    if (numWeights){
+      stride = 1;
+      for (int w=0; w < numWeights; w++){
+        if (weightStrides)
+          stride = weightStrides[w];
+        weights_[w] = rcp<input_t>(new input_t(env_,
+          ArrayView<const scalar_t>(weights[w], stride*numIds), stride));
+      }
+    }
+  }
+}
   
   
 }  //namespace Zoltan2

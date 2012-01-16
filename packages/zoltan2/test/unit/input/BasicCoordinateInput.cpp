@@ -54,7 +54,7 @@ int checkBasicCoordinate(
 
     size_t nvals = ia->getCoordinates(x, idList, vals, stride);
 
-    if (nvals != len)
+    if (nvals != len*stride)
       fail = 104;
 
     scalar_t *coordVal = xyz + x;
@@ -63,7 +63,7 @@ int checkBasicCoordinate(
       if (idList[i] != ids[i])
         fail = 105;
 
-      if (!fail && vals[stride*i] != *coordVal);
+      if (!fail && vals[stride*i] != *coordVal)
         fail = 106;
     }
   }
@@ -199,8 +199,8 @@ int main(int argc, char *argv[])
   valuePtrs[0] = xyz_values;     valueStrides[0] = 3;
   valuePtrs[1] = xyz_values + 1; valueStrides[1] = 3;
 
-  weightPtrs[0] = weights;         weightStrides[0] = 1;
-  weightPtrs[1] = weights + 1;     weightStrides[1] = 1;
+  weightPtrs[0] = weights;                   weightStrides[0] = 1;
+  weightPtrs[1] = weights + numLocalIds;     weightStrides[1] = 1;
 
   try{
    ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
@@ -244,8 +244,8 @@ int main(int argc, char *argv[])
 
   valuePtrs[0] = x_values;     valueStrides[0] = 1;
 
-  weightPtrs[0] = weights;         weightStrides[0] = 1;
-  weightPtrs[1] = weights + 1;     weightStrides[1] = 1;
+  weightPtrs[0] = weights;                   weightStrides[0] = 1;
+  weightPtrs[1] = weights + numLocalIds;     weightStrides[1] = 1;
 
   try{
    ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(

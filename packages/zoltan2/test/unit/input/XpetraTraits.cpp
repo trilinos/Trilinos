@@ -136,8 +136,7 @@ int main(int argc, char *argv[])
 
     RCP<const xtmap_t> xmap(new xtmap_t(M->getRowMap()));
 
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
     gno_t localNumRows = newRowIds.size();
   
@@ -179,8 +178,7 @@ int main(int argc, char *argv[])
     G->describe(*out,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(G->getRowMap()));
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
     gno_t localNumRows = newRowIds.size();
   
@@ -219,8 +217,7 @@ int main(int argc, char *argv[])
     V->describe(*out,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(V->getMap()));
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
     gno_t localNumRows = newRowIds.size();
   
@@ -259,8 +256,7 @@ int main(int argc, char *argv[])
     MV->describe(*out,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(MV->getMap()));
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
     gno_t localNumRows = newRowIds.size();
   
@@ -305,8 +301,7 @@ int main(int argc, char *argv[])
   
     M->describe(*out,v);
   
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(M->getRowMap());
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(M->getRowMap());
   
     gno_t localNumRows = newRowIds.size();
   
@@ -347,8 +342,7 @@ int main(int argc, char *argv[])
     Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
     G->describe(*out,v);
   
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(G->getRowMap());
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(G->getRowMap());
   
     gno_t localNumRows = newRowIds.size();
   
@@ -386,8 +380,7 @@ int main(int argc, char *argv[])
   
     V->describe(*out,v);
   
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(V->getMap());
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(V->getMap());
   
     gno_t localNumRows = newRowIds.size();
   
@@ -425,8 +418,7 @@ int main(int argc, char *argv[])
   
     MV->describe(*out,v);
   
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(MV->getMap());
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(MV->getMap());
   
     gno_t localNumRows = newRowIds.size();
   
@@ -493,8 +485,7 @@ int main(int argc, char *argv[])
     RCP<const emap_t> emap = Teuchos::rcpFromRef(M->RowMap());
     RCP<const xemap_t> xmap(new xemap_t(emap));
 
-    ArrayRCP<epetra_gno_t> newRowIds = 
-      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+    ArrayRCP<epetra_gno_t> newRowIds = roundRobinMap(xmap);
   
     epetra_gno_t localNumRows = newRowIds.size();
   
@@ -534,8 +525,7 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(G->RowMap());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<epetra_gno_t> newRowIds = 
-      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+    ArrayRCP<epetra_gno_t> newRowIds = roundRobinMap(xmap);
   
     epetra_gno_t localNumRows = newRowIds.size();
   
@@ -575,8 +565,7 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(V->Map());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<epetra_gno_t> newRowIds = 
-      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+    ArrayRCP<epetra_gno_t> newRowIds = roundRobinMap(xmap);
   
     epetra_gno_t localNumRows = newRowIds.size();
   
@@ -616,8 +605,7 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(MV->Map());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<epetra_gno_t> newRowIds = 
-      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+    ArrayRCP<epetra_gno_t> newRowIds = roundRobinMap(xmap);
   
     epetra_gno_t localNumRows = newRowIds.size();
   

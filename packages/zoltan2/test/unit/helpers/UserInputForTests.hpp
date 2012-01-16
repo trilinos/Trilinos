@@ -64,7 +64,7 @@ private:
     typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> xVector_t;
     typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> xMVector_t;
 
-    int xdim_, ydim_, zdim_;
+    gno_t xdim_, ydim_, zdim_;
 
     std::string fname_;
     RCP<Zoltan2::default_node_t> node_;
@@ -100,21 +100,22 @@ private:
     void buildCrsMatrix()
     {
       Teuchos::CommandLineProcessor tclp;
-      MueLu::Gallery::Parameters<int> params(tclp,
+      MueLu::Gallery::Parameters<gno_t> params(tclp,
          xdim_, ydim_, zdim_, std::string("Laplace3D"));
- 
+
       RCP<const Tpetra::Map<lno_t, gno_t> > map =
         rcp(new Tpetra::Map<lno_t, gno_t>(
           params.GetNumGlobalElements(), 0, tcomm_));
 
       try{
         M_ = MueLu::Gallery::CreateCrsMatrix<scalar_t, lno_t, gno_t, 
-          Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> >(
-            params.GetMatrixType(), map, params.GetParameterList()); 
+          Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> >
+            (params.GetMatrixType(), map, params.GetParameterList()); 
       }
       catch (std::exception &e) {    // Probably not enough memory
         TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
       }
+
       RCP<const xcrsMatrix_t> xm = 
         Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
       xM_ = rcp_const_cast<xcrsMatrix_t>(xm);

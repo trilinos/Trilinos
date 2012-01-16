@@ -104,7 +104,9 @@ public:
               value is coords[i], but if stride is two, then the
               ith coordinate value is coords[2*i].
 
-       \return The number of coordinates in the coords list.
+       \return The length of the \c coords list.  This may be more than
+              getLocalNumberOfCoordinates() because the \c stride
+              may be more than one.
 
       TODO make global IDs optional - we'll return them
         in the solution if they include then in this call.

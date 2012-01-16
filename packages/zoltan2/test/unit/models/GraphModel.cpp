@@ -296,6 +296,7 @@ int main(int argc, char *argv[])
   int rank = comm->getRank();
 
   string nullString;
+#if 0
   vector<string> mtxFiles;
   
   mtxFiles.push_back("../data/simple.mtx");
@@ -306,6 +307,7 @@ int main(int argc, char *argv[])
       std::cout << mtxFiles[fileNum] << std::endl;
     testGraphModel(mtxFiles[fileNum], 0, 0, 0, comm);
   }
+#endif
 
   if (rank==0)
     std::cout << "4x4x4 mesh generated matrix:" << std::endl;

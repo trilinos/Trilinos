@@ -35,9 +35,8 @@ typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tgraph_t;
 typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
 typedef Epetra_CrsGraph egraph_t;
 
-template <typename L, typename G>
-  void printGraph(RCP<const Comm<int> > &comm, L nvtx,
-    const G *vtxIds, const L *offsets, const G *edgeIds)
+void printGraph(RCP<const Comm<int> > &comm, lno_t nvtx,
+    const gno_t *vtxIds, const lno_t *offsets, const gno_t *edgeIds)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -45,9 +44,9 @@ template <typename L, typename G>
   for (int p=0; p < nprocs; p++){
     if (p == rank){
       std::cout << rank << ":" << std::endl;
-      for (L i=0; i < nvtx; i++){
+      for (lno_t i=0; i < nvtx; i++){
         std::cout << " vertex " << vtxIds[i] << ": ";
-        for (L j=offsets[i]; j < offsets[i+1]; j++){
+        for (lno_t j=offsets[i]; j < offsets[i+1]; j++){
           std::cout << edgeIds[j] << " ";
         }
         std::cout << std::endl;
@@ -94,7 +93,7 @@ int verifyInputAdapter(
     gfail = globalFail(comm, fail);
 
     if (gfail == 0){
-      printGraph<lno_t, gno_t>(comm, nvtx, vtxIds, offsets, edgeIds);
+      printGraph(comm, nvtx, vtxIds, offsets, edgeIds);
     }
     else{
       if (!fail) fail = 10;
@@ -108,7 +107,6 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
-  int nprocs = comm->getSize();
   int fail = 0, gfail=0;
 
   // Create an object that can give us test Tpetra, Xpetra

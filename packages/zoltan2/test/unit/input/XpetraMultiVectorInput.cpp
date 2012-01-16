@@ -36,32 +36,10 @@ typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tvector_t;
 typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> xvector_t;
 typedef Epetra_MultiVector evector_t;
 
-void printMultiVector(RCP<const Comm<int> > &comm, lno_t vlen, int nvec,
-    const gno_t *vtxIds, const scalar_t **vals)
-{
-  int rank = comm->getRank();
-  int nprocs = comm->getSize();
-  comm->barrier();
-  for (int p=0; p < nprocs; p++){
-    if (p == rank){
-      std::cout << rank << ":" << std::endl;
-      for (lno_t i=0; i < vlen; i++){
-        std::cout << " " << vtxIds[i] << ": ";
-        for (int v=0; v < nvec; v++)
-          std::cout << vals[v][i] << " ":
-        std::cout << std::endl;
-      }
-      std::cout.flush();
-    }
-    comm->barrier();
-  }
-  comm->barrier();
-}
-
 template <typename User>
 int verifyInputAdapter(
   Zoltan2::XpetraMultiVectorInput<User> &ia, tvector_t &vector, int nvec,
-    int wdim, scalar_t **weights, int **strides)
+    int wdim, scalar_t **weights, int *strides)
 {
   RCP<const Comm<int> > comm = vector.getMap()->getComm();
   int fail = 0, gfail=0;
@@ -72,7 +50,9 @@ int verifyInputAdapter(
   if (!fail && ia.getNumberOfWeights() !=wdim) 
     fail = 41;
 
-  if (!fail && ia.getLocalLength() != vector.getLocalLength())
+  size_t length = vector.getLocalLength();
+
+  if (!fail && ia.getLocalLength() != length)
     fail = 4;
 
   if (!fail && ia.getGlobalLength() != vector.getGlobalLength())
@@ -82,25 +62,21 @@ int verifyInputAdapter(
 
   if (!gfail){
     const gno_t *vtxIds=NULL;
-    const scalar_t **vals=NULL;
+    const scalar_t *vals=NULL;
     int stride;
 
-    vals = new scalar_t * [nvec];
-
     for (int v=0; v < nvec; v++){
-      size_t nvals = ia.getVector( v, vtxIds, vals[v], stride);
+      size_t nvals = ia.getVector( v, vtxIds, vals, stride);
 
       if (nvals != vector.getLocalLength())
         fail = 8;
       if (!fail && stride != 1)
         fail = 10;
+
+      // TODO check the values returned
     }
 
     gfail = globalFail(comm, fail);
-
-    if (gfail == 0){
-      printMultiVector(comm, nvals, nvec, vtxIds, vals);
-    }
   }
 
   if (!gfail && wdim){
@@ -132,7 +108,6 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
-  int nprocs = comm->getSize();
   int fail = 0, gfail=0;
 
   // Create object that can give us test Tpetra, Xpetra
@@ -197,7 +172,7 @@ int main(int argc, char *argv[])
     }
   
     if (rank==0){
-      std::cout << tvInput->inputAdapterName() << ", constructed with ";
+      std::cout << tVInput->inputAdapterName() << ", constructed with ";
       std::cout  << "Tpetra::MultiVector" << std::endl;
     }
     
@@ -221,7 +196,8 @@ int main(int argc, char *argv[])
         RCP<const tvector_t> cnewV = rcp_const_cast<const tvector_t>(newV);
         RCP<Zoltan2::XpetraMultiVectorInput<tvector_t> > newInput;
         try{
-          newInput = rcp(new Zoltan2::XpetraMultiVectorInput<tvector_t>(cnewV));
+          newInput = rcp(new Zoltan2::XpetraMultiVectorInput<tvector_t>(
+            cnewV, 0, NULL, NULL));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -229,7 +205,7 @@ int main(int argc, char *argv[])
         }
   
         if (rank==0){
-          std::cout << tvInput->inputAdapterName() << ", constructed with ";
+          std::cout << tVInput->inputAdapterName() << ", constructed with ";
           std::cout << "Tpetra::MultiVector migrated to proc 0" << std::endl;
         }
         fail = verifyInputAdapter<tvector_t>(*newInput, *newV, numVectors, 0, NULL, NULL);
@@ -259,7 +235,7 @@ int main(int argc, char *argv[])
     }
   
     if (rank==0){
-      std::cout << tvInput->inputAdapterName() << ", constructed with ";
+      std::cout << xVInput->inputAdapterName() << ", constructed with ";
       std::cout << "Xpetra::MultiVector" << std::endl;
     }
     fail = verifyInputAdapter<xvector_t>(*xVInput, *tV, numVectors, 0, NULL, NULL);
@@ -282,7 +258,7 @@ int main(int argc, char *argv[])
         RCP<Zoltan2::XpetraMultiVectorInput<xvector_t> > newInput;
         try{
           newInput = 
-            rcp(new Zoltan2::XpetraMultiVectorInput<xvector_t>(cnewV));
+            rcp(new Zoltan2::XpetraMultiVectorInput<xvector_t>(cnewV, 0, NULL, NULL));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -290,7 +266,7 @@ int main(int argc, char *argv[])
         }
   
         if (rank==0){
-          std::cout << tvInput->inputAdapterName() << ", constructed with ";
+          std::cout << xVInput->inputAdapterName() << ", constructed with ";
           std::cout << "Xpetra::MultiVector migrated to proc 0" << std::endl;
         }
         fail = verifyInputAdapter<xvector_t>(*newInput, *newV, numVectors, 0, NULL, NULL);
@@ -313,7 +289,7 @@ int main(int argc, char *argv[])
   
     try {
       eVInput = 
-        rcp(new Zoltan2::XpetraMultiVectorInput<evector_t>(ceV));
+        rcp(new Zoltan2::XpetraMultiVectorInput<evector_t>(ceV, 0, NULL, NULL));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -321,7 +297,7 @@ int main(int argc, char *argv[])
     }
   
     if (rank==0){
-      std::cout << tvInput->inputAdapterName() << ", constructed with ";
+      std::cout << eVInput->inputAdapterName() << ", constructed with ";
       std::cout << "Epetra_MultiVector" << std::endl;
     }
     fail = verifyInputAdapter<evector_t>(*eVInput, *tV, numVectors, 0, NULL, NULL);
@@ -352,7 +328,7 @@ int main(int argc, char *argv[])
         }
   
         if (rank==0){
-           std::cout << tvInput->inputAdapterName() << ", constructed with ";
+           std::cout << eVInput->inputAdapterName() << ", constructed with ";
            std::cout << "Epetra_MultiVector migrated to proc 0" << std::endl;
         }
         fail = verifyInputAdapter<evector_t>(*newInput, *newV, numVectors, 0, NULL, NULL);

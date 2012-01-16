@@ -93,7 +93,7 @@ int verifyInputAdapter(
     gfail = globalFail(comm, fail);
 
     if (gfail == 0){
-      printMatrix<lno_t, gno_t>(comm, nrows, rowIds, offsets, colIds);
+      printMatrix(comm, nrows, rowIds, offsets, colIds);
     }
     else{
       if (!fail) fail = 10;
@@ -107,7 +107,6 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
-  int nprocs = comm->getSize();
   int fail = 0, gfail=0;
 
   // Create object that can give us test Tpetra, Xpetra

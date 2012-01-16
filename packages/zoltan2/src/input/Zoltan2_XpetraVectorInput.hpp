@@ -17,6 +17,7 @@
 
 #include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_StridedInput.hpp>
 #include <Zoltan2_Util.hpp>
 
 #include <Xpetra_EpetraVector.hpp>
