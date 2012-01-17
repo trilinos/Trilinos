@@ -125,3 +125,12 @@ void panzer::IntegrationRule::setup0DimIntRule()
 				       spatial_dimension,
 				       spatial_dimension));
 }
+
+void panzer::IntegrationRule::print(std::ostream & os)
+{
+   os << "Degree = " << cubature_degree 
+      << ", Dimension = " << spatial_dimension 
+      << ", Workset Size = " << workset_size
+      << ", Num Points = " << num_points 
+      << ", Side = " << side;
+}

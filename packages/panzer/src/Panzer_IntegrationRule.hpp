@@ -39,6 +39,9 @@ namespace panzer {
     int num_points;
     //! Defaults to -1 if this is volume and not sideset
     int side;
+
+    //! print information about the integration rule
+    void print(std::ostream & os);
   
   private:
 

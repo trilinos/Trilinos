@@ -48,6 +48,8 @@ namespace panzer {
 
     Teuchos::RCP<const PureBasis> getBasis() const;
 
+    void print(std::ostream & os) const;
+
   public:
     
     //! <BASIS,IP>

@@ -136,3 +136,12 @@ panzer::BasisIRLayout::getBasis() const
 {
    return basis_data;
 }
+
+void panzer::BasisIRLayout::print(std::ostream & os) const
+{
+   os << "Name = " << name() 
+      << ", Dimension = " << getDimension()
+      << ", Cells = " << getNumCells()
+      << ", Quad Degree = " << integrationRuleDegree() 
+      << ", Quad Points = " << getNumIntPoints();
+}

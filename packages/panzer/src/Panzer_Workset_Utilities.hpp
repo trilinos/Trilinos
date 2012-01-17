@@ -4,6 +4,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_Workset.hpp"
 #include <vector>
+#include <iostream>
 
 namespace panzer {
 
@@ -13,6 +14,7 @@ namespace panzer {
   std::vector<int>::size_type
   getIntegrationRuleIndex(int ir_degree, panzer::Workset& workset);
 
+  void printWorkset(std::ostream& os, const panzer::Workset & workset);
 }
 
 #endif
