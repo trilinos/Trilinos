@@ -446,7 +446,7 @@ namespace Tpetra {
 #   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
     {
       char global_needSendBuff;
-      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,needSendBuff,&global_needSendBuff);
+      Teuchos::reduceAll (*comm_, Teuchos::REDUCE_MAX, needSendBuff, Teuchos::ptr (&global_needSendBuff));
       TPETRA_EFFICIENCY_WARNING(global_needSendBuff,std::runtime_error,
           "::createFromSends(): Grouping export IDs together leads to improved performance.");
     }
