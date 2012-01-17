@@ -143,7 +143,7 @@ TEUCHOS_STATIC_SETUP()
   clp.setOption(
     "test-mpi", "test-serial", &testMpi,
     "Test MPI (if available) or force test of serial.  In a serial build,"
-    " this option is ignord and a serial comm is always used." );
+    " this option is ignored and a serial comm is always used." );
 
   clp.setOption(
     "error-tol-slack", &errorTolSlack,
