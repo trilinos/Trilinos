@@ -45,7 +45,13 @@ public:
   {
   }
 
-  /*! Access an element of the input array.
+  /*! Constructor
+   */
+  StridedInput(): env_(rcp(new Environment)), vec_(), stride_(0) { }
+
+  /*! Access an element of the input array. 
+   *
+   *   For performance, no error checking.
    */
   scalar_t operator[](lno_t idx) const { return vec_[idx*stride_]; }
 
@@ -57,28 +63,7 @@ public:
    *   an exception is thrown.
    */
 
-  template <typename T>
-    void getInputArray(ArrayRCP<const T> &array)
-  {
-    size_t n = vec_.size();
-
-    if (n < 1){
-      array = ArrayRCP<const T>();
-    }
-    else if (stride_==1 && typeid(T()) == typeid(scalar_t())){
-      array = Teuchos::arcpFromArrayView<const T>(vec_);
-    }
-    else{
-      T *tmp = new T [n];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, n, tmp);
-      for (lno_t i=0,j=0; i < n; i++,j+=stride_){
-        tmp[i] = Teuchos::as<T>(vec_[j]);
-      }
-      array = arcp(tmp, 0, n, true);
-    }
-    
-    return;
-  }
+  template <typename T> void getInputArray(ArrayRCP<const T> &array);
 
   /*! The raw input information.
       \param len on return is the length of storage at \c vec.  This will
@@ -94,6 +79,29 @@ public:
     stride = stride_;
   }
 };
+
+template<typename lno_t, typename scalar_t>
+ void StridedInput<lno_t, scalar_t>::getInputArray(ArrayRCP<const T> &array)
+{
+  size_t n = vec_.size();
+
+  if (n < 1){
+    array = ArrayRCP<const T>();
+  }
+  else if (stride_==1 && typeid(T()) == typeid(scalar_t())){
+    array = Teuchos::arcpFromArrayView<const T>(vec_);
+  }
+  else{
+    T *tmp = new T [n];
+    Z2_LOCAL_MEMORY_ASSERTION(*env_, n, tmp);
+    for (lno_t i=0,j=0; i < n; i++,j+=stride_){
+      tmp[i] = Teuchos::as<T>(vec_[j]);
+    }
+    array = arcp(tmp, 0, n, true);
+  }
+  
+  return;
+}
 
 }  // namespace Zoltan2
 
