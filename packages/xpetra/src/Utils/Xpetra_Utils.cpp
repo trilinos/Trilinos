@@ -56,9 +56,8 @@ namespace Xpetra {
     if (cm == Xpetra::INSERT)
       return Tpetra::INSERT;
   
-    if (cm == Xpetra::ABSMAX) {
+    if (cm == Xpetra::ABSMAX)
       return Tpetra::ABSMAX;
-    }
   
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Cannot convert Xpetra::CombineMode to Tpetra::CombineMode: unsupported CombineMode."); 
 
@@ -79,8 +78,16 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
 
-  Xpetra::LookupStatus toXpetra(int) {
-    return Xpetra::AllIDsPresent; // TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
+  Xpetra::LookupStatus toXpetra(int ls) {
+    // This function is used only to convert the return value of Epetra_BlockMap::RemoteIDList() and Epetra_DirectoryBase::GetDirectoryEntries().
+    // In the current implementation of Epetra (01/2012), these functions returns 0 (= success) or 1 (= a GID is not present on any processor).
+
+    if (ls == 0)
+      return Xpetra::AllIDsPresent;
+    else if (ls == 1)
+      return Xpetra::IDNotPresent;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Epetra returned the following error code: " << ls << ". Xpetra do not know how to interpret this error code."); 
   }
 
   bool toEpetra(Xpetra::ProfileType pt) {
