@@ -5,7 +5,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_io/util/UseCase_mesh.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
 
 #include <vector>
 #include <string>
@@ -119,7 +119,7 @@ class Gmesh_STKmesh_Fixture
    * state between the meta data and bulk data portions of the mesh generation
    * process for use cases.
    */
-  stk::io::util::MeshData m_mesh_data;
+  stk::io::MeshData m_mesh_data;
 
   ///> The names of all the side parts
   std::vector<std::string> m_sideset_names;

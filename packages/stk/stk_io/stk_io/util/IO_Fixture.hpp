@@ -9,7 +9,7 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include <stk_io/IossBridge.hpp>
-#include <stk_io/util/UseCase_mesh.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
 
 #include <stk_util/environment/ReportHandler.hpp>
 
@@ -114,7 +114,7 @@ class IO_Fixture
   Teuchos::RCP<Ioss::Region>                 m_ioss_output_region;
 
   std::string                                m_mesh_type;
-  stk::io::util::MeshData                    m_mesh_data;
+  stk::io::MeshData                          m_mesh_data;
 
   //disallow copy constructor and assignment operator
   IO_Fixture( const IO_Fixture & );

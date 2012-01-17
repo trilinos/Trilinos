@@ -27,7 +27,7 @@
 
 #include <stk_io/IossBridge.hpp>
 
-#include <stk_io/util/UseCase_mesh.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
@@ -490,10 +490,11 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
         out_region = create_output_mesh( out_filename.str(), fixture.bulk_data );
       }
 
-      out_region->begin_mode(Ioss::STATE_TRANSIENT);
-      int out_step = out_region->add_state(time_step / 60.0);
-      stk::io::util::process_output_request(*out_region, fixture.bulk_data, out_step);
-      out_region->end_mode(Ioss::STATE_TRANSIENT);
+      stk::io::MeshData mesh;
+      mesh.m_output_region=out_region;
+      
+      stk::io::process_output_request(mesh, fixture.bulk_data, time_step/60.0);
+      mesh.m_output_region = NULL;
     }
   }
 
