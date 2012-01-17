@@ -377,7 +377,7 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
   // If set, num_global_parts must be set on all processes to
   // the same value.
 
-  size_t veryLarge = 1 << (sizeof(size_t)*8 - 2);
+  size_t veryLarge = size_t(1) << (sizeof(size_t)*8 - 2);
   sizetValidatorP = 
     Teuchos::rcp(new EnhancedNumberValidator<size_t>(1,veryLarge));
 

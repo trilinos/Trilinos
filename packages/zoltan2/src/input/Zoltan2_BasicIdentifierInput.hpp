@@ -28,7 +28,7 @@ namespace Zoltan2 {
  */
 
 template <typename User>
-class BasicIdentifierInput: IdentifierInput<User> {
+class BasicIdentifierInput: public IdentifierInput<User> {
 
 public:
 
@@ -57,18 +57,18 @@ public:
     const scalar_t * const *wgtPtr, const int *strides): 
       numIds_(numIds), idList_(idPtr), weights_(numWeights)
   {
+    env_ = rcp(new Environment);    // for error messages
     if (numWeights){
-      RCP<const Environment> env = rcp(new Environment); 
       typedef StridedInput<lno_t,scalar_t> input_t;
       if (strides)
         for (int i=0; i < numWeights; i++)
-          weights_[i] = rcp<input_t>(new input_t(env, 
-            ArrayView<const scalar_t>(wgtPtr[i], strides[i]*numWeights), 
+          weights_[i] = rcp<input_t>(new input_t(env_, 
+            ArrayView<const scalar_t>(wgtPtr[i], strides[i]*numIds), 
             strides[i]));
       else
         for (int i=0; i < numWeights; i++)
-          weights_[i] = rcp<input_t>(new input_t(env, 
-            ArrayView<const scalar_t>(wgtPtr[i], numWeights), 1));
+          weights_[i] = rcp<input_t>(new input_t(env_, 
+            ArrayView<const scalar_t>(wgtPtr[i], numIds), 1));
     }
   }
 
@@ -87,28 +87,26 @@ public:
    
   int getNumberOfWeights() const { return weights_.size(); }
 
-  size_t getIdentifierList(const gid_t **Ids, const scalar_t **weights, 
-    int *strides) const
+  size_t getIdentifierList(const gid_t *&Ids) const
   {
-    int nweights = getNumberOfWeights();
-
-    *Ids = idList_;
-
-    size_t len;
-    int stride;
-    const scalar_t *vec;
-
-    for (int i=0; i < nweights; i++){
-      weights_[i]->getStridedList(len, vec, stride);
-      weights[i] = vec;
-      strides[i] = stride;
-    }
-
+    Ids = idList_;
     return numIds_;
+  }
+
+  size_t getIdentifierWeights(int dimension,
+     const scalar_t *&weights, int &stride) const
+  {
+    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid weight dimension",
+      dimension >= 0 && dimension < weights_.size(), BASIC_ASSERTION);
+
+    size_t length;
+    weights_[dimension]->getStridedList(length, weights, stride);
+    return length;
   }
 
 private:
 
+  RCP<const Environment> env_;
   lno_t numIds_;
   const gid_t *idList_;
   Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;

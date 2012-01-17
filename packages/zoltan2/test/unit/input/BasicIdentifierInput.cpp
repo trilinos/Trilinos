@@ -68,31 +68,30 @@ int main(int argc, char *argv[])
   scalar_t const *weightsIn[2];
   int weightStridesIn[2];
 
-  if (!fail && 
-    ia.getIdentifierList(&globalIdsIn, weightsIn, weightStridesIn) != 
-      numLocalIds)
+  if (!fail && ia.getIdentifierList(globalIdsIn) != numLocalIds)
     fail = 6;
+
+  for (int w=0; !fail && w < weightDim; w++){
+    if (ia.getIdentifierWeights(w, weightsIn[w], weightStridesIn[w]) <
+        numLocalIds * weightStridesIn[w])
+      fail = 20;
+  }
 
   const scalar_t *w1 = weightsIn[0];
   const scalar_t *w2 = weightsIn[1];
   int incr1 = weightStridesIn[0];
   int incr2 = weightStridesIn[1];
 
-  if (!fail){
-    for (lno_t i=0; i < numLocalIds; i++){
-      if (globalIdsIn[i] != base+i){
-        fail = 8;
-        break;    
-      }
-      if (w1[i*incr1] != 1.0){
-        fail = 9;
-        break;    
-      }
-      if (w2[i*incr2] != weights[i*weightDim+1]){
-        fail = 10;
-        break;    
-      }
-    }
+  for (lno_t i=0; !fail && i < numLocalIds; i++){
+
+    if (globalIdsIn[i] != base+i)
+      fail = 8;
+    
+    if (!fail && w1[i*incr1] != 1.0)
+      fail = 9;
+    
+    if (!fail && w2[i*incr2] != weights[i*weightDim+1])
+      fail = 10;
   }
 
   delete [] myIds;

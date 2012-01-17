@@ -81,22 +81,36 @@ public:
    */
   virtual int getNumberOfWeights() const = 0;
 
-  /*! \brief Provide pointers to this process' identifiers and optional weights.
+  /*! \brief Provide a pointer to this process' identifiers.
 
       \param Ids will on return point to the list of the global Ids for 
         this process.
-      \param weights on return will contain numWeights pointers, each
-         pointing to one of the lists of weights.  (The caller must
-         allocate the array of numWeighst pointers.)
-      \param strides on return will contain numWeights numbers, one for each
-         weight list, indicating the stride of that list.  
-         (The caller must allocate the array of numWeights integers.)
 
        \return The number of ids in the Ids list.
    */
 
-  virtual size_t getIdentifierList(gid_t const **Ids, scalar_t const **weights,
-    int *strides) const = 0;
+  virtual size_t getIdentifierList(gid_t const *&Ids) const = 0;
+
+  /*! \brief Provide a pointer to one of the dimensions of this process' optional weights.
+
+      \param dimension is a value ranging from zero to one less than getNumberOfWeights()
+      \param weights on return will contain a list of the weights for
+               the dimension specified.
+
+      \param stride on return will indicate the stride of the weights list.
+
+
+       If stride is \c k then the weight 
+       corresponding to the identifier Ids[n] (returned in getIdentifierList)
+       should be found at weights[k*n].
+
+       \return The number of values in the weights list.  This may be greater
+          than the number of identifiers, because the stride may be greater
+          than one.
+   */
+
+  virtual size_t getIdentifierWeights(int dimension,
+     const scalar_t *&weights, int &stride) const = 0;
 
 
  /*! \brief Apply a PartitioningSolution to an input.

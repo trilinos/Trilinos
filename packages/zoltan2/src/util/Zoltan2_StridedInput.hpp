@@ -81,7 +81,8 @@ public:
 };
 
 template<typename lno_t, typename scalar_t>
- void StridedInput<lno_t, scalar_t>::getInputArray(ArrayRCP<const T> &array)
+  template<typename T>
+     void StridedInput<lno_t, scalar_t>::getInputArray(ArrayRCP<const T> &array)
 {
   size_t n = vec_.size();
 

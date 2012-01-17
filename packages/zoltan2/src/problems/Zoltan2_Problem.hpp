@@ -74,13 +74,14 @@ private:
 
 template <typename Adapter>
   Problem<Adapter>::Problem( Adapter *input, ParameterList *params,
-    MPI_Comm comm) : inputAdapter_(input), 
-      baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
+    MPI_Comm comm) : inputAdapter_(input), baseInputAdapter_(),
       graphModel_(), identifierModel_(), generalModel_(),
       params_(RCP<ParameterList>(params,false)), comm_(), env_(), envConst_()
 {
   using Teuchos::OpaqueWrapper;
   using Teuchos::opaqueWrapper;
+
+  baseInputAdapter_ = dynamic_cast<base_adapter_t *>(input);
 
   HELLO;
 
