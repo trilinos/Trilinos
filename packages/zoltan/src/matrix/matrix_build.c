@@ -486,8 +486,10 @@ hypergraph_callbacks=0;
 
     /* Not Useful anymore */
     ZOLTAN_FREE(xLID);
-    if (use_full_dd || ((ZOLTAN_ID_PTR) *xGNO != *xGID))
+    if (use_full_dd || ((ZOLTAN_ID_PTR) *xGNO != *xGID)) {
       ZOLTAN_FREE(xGID);
+      *xGNO = NULL;
+    }
     else {
       *xGID = NULL;
       *xGNO = NULL;
