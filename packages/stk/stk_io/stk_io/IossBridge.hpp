@@ -121,7 +121,8 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
  */
 void define_output_db( Ioss::Region & io_region,
                        const mesh::BulkData& bulk_data,
-                       const Ioss::Region *input_region = NULL);
+                       const Ioss::Region *input_region = NULL,
+		       const stk::mesh::Selector *anded_selector = NULL);
 
 /** Given an Ioss::Region 'io_region' which has already had its
  * metadata defined via 'define_output_db()' call; transfer all bulk
@@ -131,7 +132,8 @@ void define_output_db( Ioss::Region & io_region,
  * have been output.
  */
 void write_output_db( Ioss::Region & io_region ,
-                      const mesh::BulkData& bulk);
+                      const mesh::BulkData& bulk,
+		      const stk::mesh::Selector *anded_selector = NULL);
 
 
 //----------------------------------------------------------------------

@@ -565,8 +565,8 @@ namespace stk {
       // NOTE: 'out_region' owns 'dbo' pointer at this time...
       out_region = new Ioss::Region(dbo, "results_output");
 
-      stk::io::define_output_db(*out_region, bulk_data, mesh_data.m_input_region);
-      stk::io::write_output_db(*out_region,  bulk_data);
+      stk::io::define_output_db(*out_region, bulk_data, mesh_data.m_input_region, mesh_data.m_anded_selector);
+      stk::io::write_output_db(*out_region,  bulk_data, mesh_data.m_anded_selector);
       mesh_data.m_output_region = out_region;
     }
 
@@ -595,9 +595,9 @@ namespace stk {
 	bulk_data.modification_begin();
 
 	process_elementblocks(*region, bulk_data);
-	process_nodeblocks(*region, bulk_data);
-	process_nodesets(*region, bulk_data);
-	process_sidesets(*region, bulk_data);
+	process_nodeblocks(*region,    bulk_data);
+	process_nodesets(*region,      bulk_data);
+	process_sidesets(*region,      bulk_data);
 
 	bulk_data.modification_end();
       } else {

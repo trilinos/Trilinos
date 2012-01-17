@@ -1077,7 +1077,8 @@ namespace stk {
 			      const stk::mesh::BulkData &bulk_data,
 			      Ioss::SideSet *sset,
 			      stk::mesh::EntityRank type,
-			      int spatial_dimension)
+			      int spatial_dimension,
+			      const stk::mesh::Selector *anded_selector)
       {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
 	ThrowRequire(type == face_rank(meta) || type == edge_rank(meta));
@@ -1088,6 +1089,7 @@ namespace stk {
 	    mesh::Part & side_block_part = *blocks[j];
 	    stk::mesh::EntityRank side_rank = side_block_part.primary_entity_rank();
             mesh::Selector selector = meta.locally_owned_part() & side_block_part;
+	    if (anded_selector) selector &= *anded_selector;
 	    
 	    size_t num_side = count_selected_entities(selector, bulk_data.buckets(side_rank));
 
@@ -1096,6 +1098,7 @@ namespace stk {
 	} else {
 	  stk::mesh::EntityRank side_rank = part.primary_entity_rank();
           mesh::Selector selector = meta.locally_owned_part() & part;
+	  if (anded_selector) selector &= *anded_selector;
 	  size_t num_side = count_selected_entities(selector, bulk_data.buckets(side_rank));
 	  define_side_block(part, sset, side_rank, num_side, spatial_dimension);
 	}
@@ -1107,7 +1110,8 @@ namespace stk {
 
       void define_node_block(stk::mesh::Part &part,
 			     const stk::mesh::BulkData &bulk,
-			     Ioss::Region &io_region)
+			     Ioss::Region &io_region,
+			     const stk::mesh::Selector *anded_selector)
       {
 	//--------------------------------
 	// Set the spatial dimension:
@@ -1132,6 +1136,7 @@ namespace stk {
 	// Create the special universal node block:
 
 	mesh::Selector selector = meta.locally_owned_part() | meta.globally_shared_part();
+	if (anded_selector) selector &= *anded_selector;
 
 	size_t num_nodes = count_selected_entities(selector, bulk.buckets(node_rank(meta)));
 
@@ -1145,7 +1150,8 @@ namespace stk {
 
       void define_element_block(stk::mesh::Part &part,
 				const stk::mesh::BulkData &bulk,
-				Ioss::Region &io_region)
+				Ioss::Region &io_region,
+				const stk::mesh::Selector *anded_selector)
       {
 
 	mesh::MetaData & meta = mesh::MetaData::get(part);
@@ -1163,6 +1169,7 @@ namespace stk {
 	}
 
         mesh::Selector selector = meta.locally_owned_part() & part;
+	if (anded_selector) selector &= *anded_selector;
 	const size_t num_elems = count_selected_entities( selector, bulk.buckets(elem_rank));
 
 	int spatial_dim = io_region.get_property("spatial_dimension").get_int();
@@ -1182,7 +1189,8 @@ namespace stk {
 
       void define_side_set(stk::mesh::Part &part,
 			   const stk::mesh::BulkData &bulk,
-			   Ioss::Region &io_region)
+			   Ioss::Region &io_region,
+			   const stk::mesh::Selector *anded_selector)
       {
         const stk::mesh::EntityRank si_rank = side_rank(mesh::MetaData::get(part));
 
@@ -1204,17 +1212,19 @@ namespace stk {
 
 	  io_region.add(ss);
 	  int spatial_dim = io_region.get_property("spatial_dimension").get_int();
-          define_side_blocks(part, bulk, ss, si_rank, spatial_dim);
+          define_side_blocks(part, bulk, ss, si_rank, spatial_dim, anded_selector);
 	}
       }
 
       void define_node_set(stk::mesh::Part &part,
 			   const stk::mesh::BulkData &bulk,
-			   Ioss::Region &io_region)
+			   Ioss::Region &io_region,
+			   const stk::mesh::Selector *anded_selector)
       {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
 
         mesh::Selector selector = ( meta.locally_owned_part() | meta.globally_shared_part() ) & part;
+	if (anded_selector) selector &= *anded_selector;
 
 	const size_t num_nodes =
 	  count_selected_entities(selector, bulk.buckets(node_rank(meta)));
@@ -1227,7 +1237,8 @@ namespace stk {
 
     void define_output_db(Ioss::Region & io_region ,
 			  const mesh::BulkData &bulk_data,
-			  const Ioss::Region *input_region)
+			  const Ioss::Region *input_region,
+			  const stk::mesh::Selector *anded_selector)
     {
       const mesh::MetaData & meta_data = mesh::MetaData::get(bulk_data);
 
@@ -1238,7 +1249,7 @@ namespace stk {
 
       io_region.begin_mode( Ioss::STATE_DEFINE_MODEL );
 
-      define_node_block(meta_data.universal_part(), bulk_data, io_region);
+      define_node_block(meta_data.universal_part(), bulk_data, io_region, anded_selector);
 
       // All parts of the meta data:
       const mesh::PartVector & all_parts = meta_data.get_parts();
@@ -1251,13 +1262,13 @@ namespace stk {
 	  if (invalid_rank(part->primary_entity_rank()))
 	    continue;
           else if (part->primary_entity_rank() == no_rank)
-	    define_node_set(*part, bulk_data, io_region);
+	    define_node_set(*part, bulk_data, io_region, anded_selector);
           else if (part->primary_entity_rank() == el_rank)
-	    define_element_block(*part, bulk_data, io_region);
+	    define_element_block(*part, bulk_data, io_region, anded_selector);
           else if (part->primary_entity_rank() == fa_rank)
-	    define_side_set(*part, bulk_data, io_region);
+	    define_side_set(*part, bulk_data, io_region, anded_selector);
           else if (part->primary_entity_rank() == ed_rank)
-	    define_side_set(*part, bulk_data, io_region);
+	    define_side_set(*part, bulk_data, io_region, anded_selector);
 	}
       }
 
@@ -1274,7 +1285,8 @@ namespace stk {
       size_t get_entities(stk::mesh::Part &part,
 			  const stk::mesh::BulkData &bulk,
 			  std::vector<mesh::Entity*> &entities,
-			  bool include_shared=true)
+			  bool include_shared,
+			  const stk::mesh::Selector *anded_selector)
       {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
 	mesh::EntityRank type = part_primary_entity_rank(part);
@@ -1286,19 +1298,22 @@ namespace stk {
 	  own_share |= meta.globally_shared_part();
 	
         mesh::Selector selector = part & own_share;
+	if (anded_selector) selector &= *anded_selector;
+	
 	get_selected_entities(selector, bulk.buckets(type), entities);
 	return entities.size();
       }
 
       void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
 				    mesh::Part * const part ,
-				    const mesh::BulkData & bulk_data )
+				    const mesh::BulkData & bulk_data,
+				    const stk::mesh::Selector *anded_selector )
       {
         //std::cout << "tmp write_side_data_to_ioss part= " << part->name() << std::endl;
 	const mesh::MetaData & meta_data = mesh::MetaData::get(*part);
 
 	std::vector<mesh::Entity *> sides ;
-	size_t num_sides = get_entities(*part, bulk_data, sides, false);
+	size_t num_sides = get_entities(*part, bulk_data, sides, false, anded_selector);
 
 	std::vector<int> side_ids(num_sides);
 	std::vector<int> elem_side_ids(num_sides*2);
@@ -1362,7 +1377,8 @@ namespace stk {
       //----------------------------------------------------------------------
       void output_node_block(Ioss::NodeBlock &nb,
 			     stk::mesh::Part &part,
-			     const stk::mesh::BulkData &bulk)
+			     const stk::mesh::BulkData &bulk,
+			     const stk::mesh::Selector *anded_selector)
       {
 	//----------------------------------
 	// Exactly one node block to obtain the nodal coordinates and ids:
@@ -1372,7 +1388,7 @@ namespace stk {
 	// Similarly for the element "ids" field related to bulk data
 	// using element ids.
 	std::vector<mesh::Entity *> nodes ;
-	size_t num_nodes = get_entities(part, bulk, nodes, true);
+	size_t num_nodes = get_entities(part, bulk, nodes, true, anded_selector);
 
 	std::vector<int> node_ids(num_nodes);
 	for(size_t i=0; i<num_nodes; ++i) {
@@ -1401,7 +1417,8 @@ namespace stk {
       }
 
       void output_element_block(Ioss::ElementBlock *block,
-				const stk::mesh::BulkData &bulk)
+				const stk::mesh::BulkData &bulk,
+				const stk::mesh::Selector *anded_selector)
       {
 	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	const std::string& name = block->name();
@@ -1409,7 +1426,7 @@ namespace stk {
 
 	assert(part != NULL);
 	std::vector<mesh::Entity *> elements;
-	size_t num_elems = get_entities(*part, bulk, elements, false);
+	size_t num_elems = get_entities(*part, bulk, elements, false, anded_selector);
 
 	const CellTopologyData * cell_topo =
               stk::io::get_cell_topology(*part) ?
@@ -1464,7 +1481,8 @@ namespace stk {
 	}
       }
 
-      void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk)
+      void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
+			   const stk::mesh::Selector *anded_selector)
       {
 	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	const std::string& name = ns->name();
@@ -1472,7 +1490,7 @@ namespace stk {
 	assert(part != NULL);
 
 	std::vector<stk::mesh::Entity *> nodes ;
-	size_t num_nodes = get_entities(*part, bulk, nodes, true);
+	size_t num_nodes = get_entities(*part, bulk, nodes, true, anded_selector);
 
 	std::vector<int> node_ids(num_nodes);
 
@@ -1497,7 +1515,8 @@ namespace stk {
       }
 
       void output_side_set(Ioss::SideSet *ss,
-			   const stk::mesh::BulkData &bulk)
+			   const stk::mesh::BulkData &bulk,
+			   const stk::mesh::Selector *anded_selector)
       {
 	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	size_t block_count = ss->block_count();
@@ -1505,7 +1524,7 @@ namespace stk {
 	  Ioss::SideBlock *block = ss->get_block(i);
 	  if (stk::io::include_entity(block)) {
 	    stk::mesh::Part * const part = meta_data.get_part(block->name());
-	    stk::io::write_side_data_to_ioss(*block, part, bulk);
+	    stk::io::write_side_data_to_ioss(*block, part, bulk, anded_selector);
 	  }
 	}
       }
@@ -1513,34 +1532,35 @@ namespace stk {
     } // namespace <blank>
 
     void write_output_db(Ioss::Region& io_region,
-			 const stk::mesh::BulkData& bulk)
+			 const stk::mesh::BulkData& bulk,
+			 const stk::mesh::Selector *anded_selector)
     {
 	    const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
 
       io_region.begin_mode( Ioss::STATE_MODEL );
 
       Ioss::NodeBlock & nb = *io_region.get_node_blocks()[0];
-      output_node_block(nb, meta.universal_part(), bulk);
+      output_node_block(nb, meta.universal_part(), bulk, anded_selector);
 
       //----------------------------------
       const Ioss::ElementBlockContainer& elem_blocks = io_region.get_element_blocks();
       for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
 	  it != elem_blocks.end(); ++it) {
-	output_element_block(*it, bulk);
+	output_element_block(*it, bulk, anded_selector);
       }
 
       //----------------------------------
       const Ioss::NodeSetContainer& node_sets = io_region.get_nodesets();
       for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
 	  it != node_sets.end(); ++it) {
-	output_node_set(*it, bulk);
+	output_node_set(*it, bulk, anded_selector);
       }
 
       //----------------------------------
       const Ioss::SideSetContainer& side_sets = io_region.get_sidesets();
       for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
 	  it != side_sets.end(); ++it) {
-	output_side_set(*it, bulk);
+	output_side_set(*it, bulk, anded_selector);
       }
 
       io_region.end_mode( Ioss::STATE_MODEL );

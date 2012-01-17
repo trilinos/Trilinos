@@ -20,6 +20,7 @@ namespace stk {
   namespace mesh {
     class Part;
     class BulkData;
+    class Selector;
     namespace fem {
       class FEMMetaData;
     }
@@ -29,12 +30,14 @@ namespace stk {
       // Used to maintain state between the meta data and bulk data
       // portions of the mesh generation process for use cases.
     public:
-      MeshData() : m_input_region(NULL), m_output_region(NULL)
+      MeshData() : m_input_region(NULL), m_output_region(NULL),
+		   m_anded_selector(NULL)
       {}
 
       ~MeshData();
       Ioss::Region *m_input_region;
       Ioss::Region *m_output_region;
+      stk::mesh::Selector *m_anded_selector;
 
     private:
       MeshData(const MeshData&); // Do not implement
