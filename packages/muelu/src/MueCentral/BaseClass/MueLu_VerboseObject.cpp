@@ -35,6 +35,7 @@ namespace MueLu {
   VerbLevel VerboseObject::GetVerbLevel() const { 
     if (verbLevel_ != NotSpecified)
       return verbLevel_; 
+    //     else if ()
     else
       return globalVerbLevel_;
   }

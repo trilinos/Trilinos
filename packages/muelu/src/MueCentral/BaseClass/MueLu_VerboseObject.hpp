@@ -25,6 +25,8 @@ namespace MueLu {
   // TODO: add a function to get the object 'local' verb level (GetVerbLevel does not do this)?
   // TODO: interface without fancyOSstream but std::stream
 
+  // TODO: add 'const' and mutable
+
   //! Verbose class for MueLu classes
   class VerboseObject
     : public Teuchos::VerboseObject<VerboseObject>
@@ -70,7 +72,6 @@ namespace MueLu {
     static VerbLevel GetDefaultVerbLevel();
 
   //@}
-
 
   private:
     VerbLevel verbLevel_; // verbose level specific to 'this'
