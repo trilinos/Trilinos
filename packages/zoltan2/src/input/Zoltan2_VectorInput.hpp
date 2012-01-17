@@ -106,7 +106,7 @@ public:
    */
 
   virtual size_t getVector(const gid_t *&ids, 
-     const scalar_t *&elements, int &stride=1) const = 0;
+     const scalar_t *&elements, int &stride) const = 0;
 
   /*! \brief Provide a pointer to the elements of the specified vector.
 
@@ -121,7 +121,7 @@ public:
    */
 
   virtual size_t getVector(int i, const gid_t *&ids, 
-     const scalar_t *&elements, int &stride=1) const = 0;
+     const scalar_t *&elements, int &stride) const = 0;
 
   /*! \brief  Provide a pointer to the weights corresponding to the elements
        returned in getVector().
