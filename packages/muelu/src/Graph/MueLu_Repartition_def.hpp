@@ -30,10 +30,9 @@ namespace MueLu {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
 
-    // *********************************************************************
-    // Step 1: Determine the global size of each partition.
-    // *********************************************************************
-
+    // ======================================================================================================
+    // Determine the global size of each partition.
+    // ======================================================================================================
     // Length of vector "decomposition" is local number of DOFs.  Its entries are partition numbers each DOF belongs to.
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition");
     RCP<const Teuchos::Comm<int> > comm = decomposition->getMap()->getComm();
@@ -118,6 +117,7 @@ namespace MueLu {
         numDofsThatStayWithMe = allLocalPartSize[i];
     }
 
+    // Note: "numPartitionsISendTo" does not include this PID
     GO numPartitionsISendTo = hashTable->size();
     // I'm a partition owner, so don't count my own.
     if (myPartitionNumber >= 0 && numPartitionsISendTo>0) numPartitionsISendTo--;
@@ -131,26 +131,8 @@ namespace MueLu {
 
     Array<int> partitionOwnersISendTo;
     for (int i=0; i<partitionsIContributeTo.size(); ++i) {
-      //if (partitionsIContributeTo[i] != myPartitionNumber)
       partitionOwnersISendTo.push_back(partitionOwners[partitionsIContributeTo[i]]);
     }
-
-    /*
-       for (int j=0; j<comm->getSize(); ++j) {
-       if (j==mypid) {
-       std::cout << "pid " << mypid << " ";
-       if (myPartitionNumber >= 0) std::cout << "owns partition " << myPartitionNumber << "." << std::endl;
-       else                        std::cout << "does not own a partition." << std::endl;
-       std::cout << "     " << "global partition list (partition #, owner)" << std::endl;
-       for (int i=0; i<partitionOwners.size(); ++i)
-       std::cout << "(" << i << ", " << partitionOwners[i] << ")" << std::endl;
-       std::cout << std::endl;
-       }
-       comm->barrier();
-       }
-     */
-
-    std::cout << mypid << " here 2" << std::endl; sleep(1); comm->barrier();
 
     Array<GO> localMapElement;
     if (myPartitionNumber >= 0)
@@ -181,7 +163,9 @@ namespace MueLu {
     sleep(1);
     comm->barrier();
 
+    // ======================================================================================================
     // Calculate how many PIDs (other than myself) contribute to my partition.
+    // ======================================================================================================
     RCP<Xpetra::Vector<GO,LO,GO,NO> > howManyPidsSendToThisPartitionVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(targetMap);
     RCP<Xpetra::Vector<GO,LO,GO,NO> > partitionsISendTo = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(sourceMap,false);
     if (partitionsISendTo->getLocalLength() > 0)
@@ -195,27 +179,15 @@ namespace MueLu {
         data[i] = 0;
     }
     data = Teuchos::null;
+
+    // Note: "howManyPidsSendToThisPartition" does not include this PID
     int howManyPidsSendToThisPartition = 0;
     howManyPidsSendToThisPartitionVec->doExport(*partitionsISendTo,*exporter,Xpetra::ADD);
     if (howManyPidsSendToThisPartitionVec->getLocalLength() > 0) {
       data = howManyPidsSendToThisPartitionVec->getDataNonConst(0);
       howManyPidsSendToThisPartition = data[0];
     }
-    sleep(1); comm->barrier();
-    if (comm->getRank() == 0) std::cout << "=========\n#pids that contribute to each partition\n==========" << std::endl;
-    comm->barrier();
-    //howManyPidsSendToThisPartitionVec->describe(*fos,Teuchos::VERB_EXTREME);
-
-    //FIXME debugging output
-    for (int i=0; i<comm->getSize(); ++i) {
-      if (mypid == i) {
-        std::cout << "partition owner " << mypid << " receiving from " << howManyPidsSendToThisPartition
-                  << " pids" << std::endl;;
-      }
-      comm->barrier();
-    }
-    sleep(1);
-    comm->barrier();
+    data = Teuchos::null;
 
     //
     // Calculate which PIDs contribute to my partition, and how much each contributes,
@@ -319,26 +291,7 @@ namespace MueLu {
       gidOffsets[i] = gidOffsets[i-1] + numDofsIReceiveFromOnePid[i-1];
     }
 
-    for (int i=0; i<comm->getSize(); ++i) {
-      if (mypid == i) {
-        std::cout << "pid " << mypid << " : offsets I send to contributors " << std::endl;
-        for (int j=0; j<howManyPidsSendToThisPartition; ++j) {
-          std::cout << "     to pid " << pidsIReceiveFrom[j] << ", offset " << gidOffsets[j] << std::endl;
-        }
-      }
-      comm->barrier();
-    }
-
-    // Send GID offsets back to their respective PIDs.
-
-    requests = ArrayRCP<MPI_Request>(numPartitionsISendTo);
-    ArrayRCP<double> gidOffsetsForPartitionsIContributeTo(numPartitionsISendTo);
-
-    /*
-       Quantities "numPartitionsISendTo" and "howManyPidsSendToThisPartition" do not include me
-     */
-
-    // First post receives on contributing PIDs
+    // Post receives on contributing PIDs.
     for (int i=0; i< numPartitionsISendTo; ++i) {
       //if (partitionsIContributeTo[i] != myPartitionNumber) {
       int msgTag = partitionsIContributeTo[i];
@@ -346,12 +299,7 @@ namespace MueLu {
       //}
     }
 
-    sleep(1); comm->barrier();
-
-    // Now do sends by partition owners
-    for (int j=0; j<comm->getSize(); ++j) {
-    if (mypid == j) {
-    std::cout << "pid " << mypid << " now posting sends" << std::endl;
+    // Do sends by partition owners.
     for (int i=0; i<howManyPidsSendToThisPartition; ++i) {
       int msgTag = myPartitionNumber;
       MPI_Send((void*)&gidOffsets[i] , 1 , MPI_DOUBLE , pidsIReceiveFrom[i], msgTag, *rawMpiComm);
@@ -363,30 +311,17 @@ namespace MueLu {
 
     sleep(1); comm->barrier();
 
+    // Do waits.
     status = ArrayRCP<MPI_Status>(numPartitionsISendTo);
     for (int i=0; i<numPartitionsISendTo; ++i)
       MPI_Wait(&requests[i],&status[i]);
 
-    //!FIXME debugging output
-    for (int i=0; i<comm->getSize(); ++i) {
-      if (mypid == i) {
-        std::cout << "pid " << mypid << " received the following GID offsets" << std::endl;
-        for (int j=0; j<numPartitionsISendTo; ++j) {
-          std::cout << "   " << gidOffsetsForPartitionsIContributeTo[j] << " (from partition " << status[j].MPI_TAG << ")";
-          std::cout << "   (partitionsIContributeTo[" << j << "] = " << partitionsIContributeTo[j];
-          std::cout << std::endl;
-        }
-      }
-      comm->barrier();
-    }
-    //!FIXME end of debugging output
+    // =================================================================================================
+    // Set up a synthetic GID scheme that is the same for both the original unpermuted system and the permuted system.
+    // This scheme is *not* the final DOF numbering, but is just for the importer we need to transfer column IDs.
+    // =================================================================================================
 
-    /*
-      Now set up a GID scheme that is the same for both the original unpermuted system and the permuted system.
-      This will allow us to create the importer we need to transfer column IDs.
-    */
-
-    // original unpermuted system
+    // Synthetic GIDS for original unpermuted system.
 
     // store offsets for easy random access
     hashTable = rcp(new Teuchos::Hashtable<GO,GO>(partitionsIContributeTo.size() + partitionsIContributeTo.size()/2));
@@ -405,43 +340,18 @@ namespace MueLu {
       gid++;
       hashTable->put(decompEntries[i],gid);
     }
+    decompEntries = Teuchos::null;
 
-    if (mypid == 0) {std::cout << "===============\nunique GIDs before permute\n===============" << std::endl;} sleep(1);comm->barrier();
-    for (int i=0; i<comm->getSize(); ++i) {
-      if (mypid == i) {
-        std::cout << "pid " << mypid << "(#dofs that stay with me = " << numDofsThatStayWithMe << ")" << std::endl;
-        for (int j=0; j<uniqueGIDsBeforePermute.size(); ++j) {
-          std::cout << "   " << uniqueGIDsBeforePermute[j] << "(" << decompEntries[j] << ")" << std::endl;
-        }
-        std::cout << std::endl;
-      }
-      comm->barrier();
-    }
-
-    sleep(1); comm->barrier();
-
-    // permuted system
+    // Synthetic GIDS for permuted system.
 
     Array<GO> uniqueGIDsAfterPermute;
     for (int i=0; i<myPartitionSize; ++i) {
         uniqueGIDsAfterPermute.push_back((GO)partitionSizeOffset+i);
     }
 
-    if (mypid == 0) {std::cout << "===============\nunique GIDs after permute\n===============" << std::endl;} sleep(1);comm->barrier();
-    for (int i=0; i<comm->getSize(); ++i) {
-      if (mypid == i) {
-        std::cout << "pid " << mypid << "(partition #" << myPartitionNumber << ")" << std::endl;
-        for (int j=0; j<uniqueGIDsAfterPermute.size(); ++j) {
-          std::cout << "   " << uniqueGIDsAfterPermute[j] << std::endl;
-        }
-        std::cout << std::endl;
-      }
-      comm->barrier();
-    }
-
-    sleep(1); comm->barrier();
-
-    // Create importer and necessary vectors to communicate column GIDs for the permutation matrix.
+    // =================================================================================================
+    // Create and apply an importer to communicate column GIDs for the permutation matrix.
+    // =================================================================================================
 
     //TODO we should really supply the global size as another sanity check
     sourceMap = MapFactory::Build(decomposition->getMap()->lib(),
@@ -483,13 +393,9 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO,LO,GO,NO> > targetVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(targetMap);
     targetVec->doImport(*sourceVec,*importer,Xpetra::INSERT);
 
-    sleep(1);comm->barrier();
-    if (mypid == 0) std::cout << "global column ids for permutation matrix" << std::endl;
-    comm->barrier();
-    targetVec->describe(*fos,Teuchos::VERB_EXTREME);
-    sleep(1);comm->barrier();
-
-    //Build permutation matrix itself.
+    // =================================================================================================
+    // Assemble permutation matrix.
+    // =================================================================================================
     RCP<Operator> permutationMatrix = OperatorFactory::Build(targetMap,1);
     Array<SC> matrixEntry(1);
     matrixEntry[0] = 1.0;
