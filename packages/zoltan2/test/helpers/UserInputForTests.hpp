@@ -66,6 +66,8 @@ private:
 
     gno_t xdim_, ydim_, zdim_;
 
+    std::string mtype_;
+
     std::string fname_;
     RCP<Zoltan2::default_node_t> node_;
 
@@ -101,7 +103,7 @@ private:
     {
       Teuchos::CommandLineProcessor tclp;
       MueLu::Gallery::Parameters<gno_t> params(tclp,
-         xdim_, ydim_, zdim_, std::string("Laplace3D"));
+         xdim_, ydim_, zdim_, mtype_);
 
       RCP<const Tpetra::Map<lno_t, gno_t> > map =
         rcp(new Tpetra::Map<lno_t, gno_t>(
@@ -143,7 +145,7 @@ public:
     // Market file.
   
     UserInputForTests(std::string s, const RCP<const Comm<int> > &c): 
-      xdim_(0), ydim_(0), zdim_(0), fname_(s),
+      xdim_(0), ydim_(0), zdim_(0), mtype_(), fname_(s),
        node_(Kokkos::DefaultNode::getDefaultNode()), 
        tcomm_(c), ecomm_(),
        M_(), xM_(), eM_(), eG_()
@@ -154,8 +156,9 @@ public:
     // Constructor for a user object created in memory using
     // a MueLue::Gallery factory.
 
-    UserInputForTests(int x, int y, int z, const RCP<const Comm<int> > &c): 
-       xdim_(x), ydim_(y), zdim_(z), fname_(),
+    UserInputForTests(int x, int y, int z, const RCP<const Comm<int> > &c,
+      std::string matrixType=std::string("Laplace3D")): 
+       xdim_(x), ydim_(y), zdim_(z), mtype_(matrixType), fname_(),
        node_(Kokkos::DefaultNode::getDefaultNode()),
        tcomm_(c), ecomm_(),
        M_(), xM_(), eM_(), eG_()
@@ -167,7 +170,7 @@ public:
     // Market file.
 
     UserInputForTests(std::string s, const RCP<const Comm<int> > &c):
-      xdim_(0), ydim_(0), zdim_(0), fname_(s), 
+      xdim_(0), ydim_(0), zdim_(0), mtype_(), fname_(s), 
        node_(Kokkos::DefaultNode::getDefaultNode()),
        tcomm_(c), M_(), xM_()
     {
@@ -176,8 +179,9 @@ public:
     // Constructor for a user object created in memory using
     // a MueLue::Gallery factory.
 
-    UserInputForTests(gno_t x, gno_t y, gno_t z, const RCP<const Comm<int> > &c):
-       xdim_(x), ydim_(y), zdim_(z), fname_(), 
+    UserInputForTests(gno_t x, gno_t y, gno_t z, const RCP<const Comm<int> > &c,
+      std::string matrixType=std::string("Laplace3D")): 
+       xdim_(x), ydim_(y), zdim_(z), mtype_(matrixType), fname_(), 
        node_(Kokkos::DefaultNode::getDefaultNode()),
        tcomm_(c), M_(), xM_()
     {

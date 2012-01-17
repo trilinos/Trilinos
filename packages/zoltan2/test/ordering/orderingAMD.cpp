@@ -15,8 +15,6 @@
 
 //#include <Zoltan2_Memory.hpp>  KDD User app wouldn't include our memory mgr.
 
-#include <useMueLuGallery.hpp>
-
 #ifdef SHOW_ZOLTAN2_LINUX_MEMORY
 extern "C"{
 static char *meminfo=NULL;
@@ -145,23 +143,17 @@ int main(int narg, char** arg)
   }
 #endif
 
-  ////// Read or construct a matrix using Tpetra or MueLu
+  RCP<UserInputForTests> uinput;
 
-  RCP<SparseMatrix> origMatrix;
-  if (inputFile != "") { // Input file specified; read a matrix
+  if (inputFile != "")  // Input file specified; read a matrix
 
-    // Need a node for the MatrixMarket reader.
-    Teuchos::ParameterList defaultParameters;
-    RCP<Node> node = rcp(new Node(defaultParameters));
+    uinput = rcp(new UserInputForTests(inputFile, comm));
 
-    origMatrix =
-      Tpetra::MatrixMarket::Reader<SparseMatrix>::readSparseFile(
-                                         inputFile, comm, node, 
-                                         true, false, true);
-  }
-  else { // Let MueLu generate a matrix
-    origMatrix = useMueLuGallery<Scalar, z2TestLO, z2TestGO>(narg, arg, comm);
-  }
+  else                  // Let MueLu generate a matrix
+
+    uinput = rcp(new UserInputForTests(xdim, ydim, zdim, comm, matrixType));
+
+  RCP<SparseMatrix> origMatrix = uinput->getTpetraCrsMatrix();
 
   if (outputFile != "") {
     // Just a sanity check.

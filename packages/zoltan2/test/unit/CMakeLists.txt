@@ -1,7 +1,5 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/helpers)
-
 #
 # Tests for src/algorithms
 #

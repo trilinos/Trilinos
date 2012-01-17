@@ -4,7 +4,7 @@ INCLUDE(AddSubdirectories)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)
 
 # For Zoltan2_TestHelpers.hpp
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/unit/helpers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/helpers)
 
 ADD_SUBDIRECTORIES(
 partitioning
