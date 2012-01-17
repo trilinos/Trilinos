@@ -38,18 +38,21 @@ typedef EpetraExt::ModelEvaluator EEME;
 // Define interface class
 TriKota::DirectApplicInterface::DirectApplicInterface(
                                 ProblemDescDB& problem_db_,
-                                const Teuchos::RCP<EpetraExt::ModelEvaluator> App_)
+                                const Teuchos::RCP<EpetraExt::ModelEvaluator> App_,
+				int p_index_, int g_index_)
   : Dakota::DirectApplicInterface(problem_db_),
     App(App_),
+    p_index(p_index_),
+    g_index(g_index_),
     orientation(EEME::DERIV_MV_BY_COL)
 {
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   if (App != Teuchos::null) {
-    model_p = Teuchos::rcp(new Epetra_Vector(*(App->get_p_init(0))));
-    //    model_g = Teuchos::rcp(new Epetra_Vector(*(App->get_g_map(0))));
-    model_g = Teuchos::rcp(new Epetra_Vector((const Epetra_BlockMap&) *(App->get_g_map(0)), true));
+    model_p = Teuchos::rcp(new Epetra_Vector(*(App->get_p_init(p_index))));
+    //    model_g = Teuchos::rcp(new Epetra_Vector(*(App->get_g_map(g_index))));
+    model_g = Teuchos::rcp(new Epetra_Vector((const Epetra_BlockMap&) *(App->get_g_map(g_index)), true));
 
     numParameters = model_p->GlobalLength();
     numResponses  = model_g->GlobalLength();
@@ -57,7 +60,7 @@ TriKota::DirectApplicInterface::DirectApplicInterface(
     *out << "TriKota:: ModeEval has " << numParameters <<
             " parameters and " << numResponses << " responses." << std::endl;
 
-    EEME::DerivativeSupport supportDgDp = App->createOutArgs().supports(EEME::OUT_ARG_DgDp, 0, 0);
+    EEME::DerivativeSupport supportDgDp = App->createOutArgs().supports(EEME::OUT_ARG_DgDp, g_index, p_index);
     supportsSensitivities = !(supportDgDp.none());
 
     // Create the MultiVector, then the Derivative object
@@ -128,10 +131,10 @@ int TriKota::DirectApplicInterface::derived_map_ac(const Dakota::String& ac_name
     for (unsigned int i=0; i<numVars; i++) (*model_p)[i]=xC[i];
 
     // Evaluate model
-    inArgs.set_p(0,model_p);
-    outArgs.set_g(0,model_g);
+    inArgs.set_p(p_index,model_p);
+    outArgs.set_g(g_index,model_g);
     EEME::Derivative model_dgdp_deriv(model_dgdp, orientation); //may be null
-    if (gradFlag) outArgs.set_DgDp(0,0,model_dgdp_deriv);
+    if (gradFlag) outArgs.set_DgDp(g_index,p_index,model_dgdp_deriv);
     App->evalModel(inArgs, outArgs);
 
     for (unsigned int j=0; j<numFns; j++) fnVals[j]= (*model_g)[j];
