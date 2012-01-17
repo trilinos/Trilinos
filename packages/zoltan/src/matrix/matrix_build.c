@@ -427,7 +427,6 @@ hypergraph_callbacks=0;
       *xGID = NULL;
     ZOLTAN_FREE(xLID);
     ZOLTAN_FREE(xGNO);
-
     ierr = Zoltan_Hypergraph_Queries(zz, &matrix->nY,
 				     &matrix->nPins, yGID, &matrix->ystart,
 				     pinID);
@@ -439,11 +438,9 @@ hypergraph_callbacks=0;
     int vertex;
     int numGID, numLID;
 
-
     matrix->opts.enforceSquare = 1;
     matrix->nY = nX; /* It is square ! */
     matrix->yGNO = *xGNO;
-    *xGNO = NULL;
     *yGID = NULL;
     matrix->ywgtdim = zz->Obj_Weight_Dim;
     *xwgt = NULL;
@@ -491,8 +488,10 @@ hypergraph_callbacks=0;
     ZOLTAN_FREE(xLID);
     if (use_full_dd || ((ZOLTAN_ID_PTR) *xGNO != *xGID))
       ZOLTAN_FREE(xGID);
-    else
+    else {
       *xGID = NULL;
+      *xGNO = NULL;
+    }
     ZOLTAN_FREE(&nbors_proc);
 
     /* Now construct CSR indexing */
