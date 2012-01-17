@@ -17,6 +17,7 @@
 
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_MatrixInput.hpp>
+#include <Zoltan2_IdentifierInput.hpp>
 
 #include <vector>
 #include <Teuchos_Hashtable.hpp>
@@ -172,8 +173,7 @@ public:
 //           non-zeros rather than rows
 ////////////////////////////////////////////////////////////////
 
-/*! Zoltan2::GraphModel<MatrixInput>
-    \brief A specialization of GraphModel for Zoltan2::MatrixInput.
+/*!  \brief A specialization of GraphModel for Zoltan2::MatrixInput.
 */
 
 template <typename User>
@@ -555,6 +555,65 @@ private:
   ArrayRCP<const lno_t> nearEdgeLnos_;
   ArrayRCP<const lno_t> nearEdgeOffsets_;
   size_t numNearLocalEdges_;
+};
+
+////////////////////////////////////////////////////////////////
+// Graph model derived from IdentifierInput.
+//
+//  We do not build a graph model from identifiers.  We include
+//  this definition so that other code will compile.
+////////////////////////////////////////////////////////////////
+
+/*!  \brief An empty specialization of GraphModel for IdentifierInput
+
+    We do not build graphs from identifier lists, but this definition
+    must exist in order for other code to compile.
+*/
+
+
+template <typename User>
+class GraphModel<IdentifierInput<User> > : public Model<IdentifierInput<User> >
+{
+public:
+
+  typedef typename IdentifierInput<User>::scalar_t  scalar_t;
+  typedef typename IdentifierInput<User>::gno_t     gno_t;
+  typedef typename IdentifierInput<User>::lno_t     lno_t;
+
+  GraphModel(const IdentifierInput<User> *ia,
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    bool consecutiveIdsRequired=false, bool removeSelfEdges=false) 
+
+  {
+    throw std::runtime_error("may not build a graph with identifiers");
+  }
+
+  // GraphModel interface
+
+  size_t getLocalNumVertices() const { return 0;}
+  global_size_t getGlobalNumVertices() const { return 0;}
+  size_t getLocalNumEdges() const { return 0;}
+  global_size_t getGlobalNumEdges() const {return 0;}
+  int getVertexWeightDim() const { return 0; }
+  int getEdgeWeightDim() const { return 0; }
+  int getCoordinateDim() const { return 0; }
+  size_t getVertexList( ArrayView<const gno_t> &Ids,
+    ArrayView<const scalar_t> &xyz, 
+    ArrayView<const scalar_t> &wgts) const { return 0; }
+  size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
+    ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) const { return 0; }
+  size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
+    ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) { return 0; }
+
+  // Model interface
+
+  size_t getLocalNumObjects() const { return 0; }
+  global_size_t getGlobalNumObjects() const { return 0; }
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {}
+  int getNumWeights() const { return 0; }
+
 };
 
 }   // namespace Zoltan2
