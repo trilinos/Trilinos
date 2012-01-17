@@ -13,8 +13,6 @@ PHX_EVALUATOR_CLASS(DOF)
   PHX::MDField<ScalarT,Cell,Point> dof_basis;
   PHX::MDField<ScalarT,Cell,Point> dof_ip;
 
-  std::size_t cell_data_size;
-
   std::string basis_name;
   std::size_t basis_index;
 

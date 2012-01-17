@@ -28,23 +28,62 @@ PHX_POST_REGISTRATION_SETUP(DOF,sd,fm)
   this->utils.setFieldData(dof_basis,fm);
   this->utils.setFieldData(dof_ip,fm);
 
-  cell_data_size = dof_basis.size() / 
-    dof_basis.fieldTag().dataLayout().dimension(0);
-
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DOF,workset)
 { 
-  // Zero out arrays (probably not needed anymore intrepid does replace)
-  std::size_t length = workset.num_cells * cell_data_size;
-  for (std::size_t i = 0; i < length; ++i)
+/*
+  if (typeid(EvalT) == typeid(panzer::Traits::Jacobian)) {
+     std::cout << dof_basis.fieldTag().name() << " BASIS =\n";
+     for (int i=0; i < dof_basis.dimension(0); ++i) {
+        std::cout << "   Cell " << workset.cell_local_ids[i] << std::endl;
+        for (int j=0; j < dof_basis.dimension(1); ++j)
+            std::cout << "      " << dof_basis(i,j) << std::endl;
+     }
+
+     for (int i=0; i < (workset.bases[basis_index])->basis.dimension(0);i++) {
+        std::cout << "   Cell " << workset.cell_local_ids[i] << std::endl;
+        for (int j=0; j < (workset.bases[basis_index])->basis.dimension(1);j++) {
+           std::cout << "      basis " << j << " = ";
+           for (int ip=0; ip<(workset.bases[basis_index])->basis.dimension(2);ip++)
+              std::cout << (workset.bases[basis_index])->basis(i,j,ip) << " ";
+           std::cout << std::endl;
+        }
+     }
+  }
+*/
+
+  // Zero out arrays (intrepid does a sum! 1/17/2012)
+  for (int i = 0; i < dof_ip.size(); ++i)
     dof_ip[i] = 0.0;
+
+/*
+  if (typeid(EvalT) == typeid(panzer::Traits::Jacobian)) {
+     std::cout << "BEFORE " << dof_ip.fieldTag().name() << " IP =\n";
+     for (int i=0; i < dof_ip.dimension(0); ++i) {
+        std::cout << "   Cell " << workset.cell_local_ids[i] << std::endl;
+        for (int j=0; j < dof_ip.dimension(1); ++j)
+            std::cout << "      " << dof_ip(i,j) << std::endl;
+     }
+  }
+*/
 
   if(workset.num_cells>0)
     Intrepid::FunctionSpaceTools::
       evaluate<ScalarT>(dof_ip,dof_basis,(workset.bases[basis_index])->basis);
+
+/*
+  if (typeid(EvalT) == typeid(panzer::Traits::Jacobian)) {
+     std::cout << "AFTER " << dof_ip.fieldTag().name() << " IP =\n";
+     for (int i=0; i < dof_ip.dimension(0); ++i) {
+        std::cout << "   Cell " << workset.cell_local_ids[i] << std::endl;
+        for (int j=0; j < dof_ip.dimension(1); ++j)
+            std::cout << "      " << dof_ip(i,j) << std::endl;
+     }
+  }
+*/
 }
 
 //**********************************************************************

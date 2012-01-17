@@ -12,8 +12,6 @@ PHX_EVALUATOR_CLASS(DOFGradient)
   PHX::MDField<ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_gradient;
 
-  std::size_t cell_data_size;
-
   std::string basis_name;
   std::size_t basis_index;
 
