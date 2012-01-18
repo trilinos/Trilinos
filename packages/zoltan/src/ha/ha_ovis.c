@@ -25,6 +25,7 @@ extern "C" {
 /*  Define parameter name and type here; must keep NULL line at end. */
 static PARAM_VARS OVIS_params[] = {
                   { "OVIS_HELLO", NULL, "STRING", 0 },
+                  { "OVIS_APP_CONFIG_FILE", NULL, "STRING", 0 },
                   { "OVIS_OUTPUT_LEVEL", NULL, "INT", 0 },
                   { "OVIS_MINVERSION", NULL, "DOUBLE", 0 },
                   { NULL, NULL, NULL, 0 } };
@@ -42,10 +43,13 @@ int Zoltan_OVIS_Setup(
   ovisParameters->outputLevel = 1;
   ovisParameters->minVersion = 0.1;
   strcpy(ovisParameters->hello, "Howdy!");
+  strcpy(ovisParameters->appConfigFile, "");
 
   /* Tell Zoltan to associate parameter names with the variables. */
   Zoltan_Bind_Param(OVIS_params, "OVIS_HELLO", 
                     ovisParameters->hello);
+  Zoltan_Bind_Param(OVIS_params, "OVIS_APP_CONFIG_FILE", 
+                    ovisParameters->appConfigFile);
   Zoltan_Bind_Param(OVIS_params, "OVIS_OUTPUT_LEVEL", 
                     (void *) &(ovisParameters->outputLevel));
   Zoltan_Bind_Param(OVIS_params, "OVIS_MINVERSION", 
