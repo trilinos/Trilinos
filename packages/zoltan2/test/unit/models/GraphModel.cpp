@@ -14,14 +14,10 @@
 //    TODO test for input with gids that are not consecutive, but
 //              ask graph model to map them to consecutive
 //    TODO test Epetra inputs
-//    TODO this test does not require MPI, but uses TestAdapters
-//               which does.  Modify TestAdapters and all unit
-//               tests to run both Serial and MPI.
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
-
-#include <UserInputForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
 #include <string>
 #include <vector>
@@ -40,9 +36,9 @@ using Teuchos::ArrayView;
 using std::string;
 using std::vector;
 
-template<typename LNO, typename VertexT, typename EdgeT>
-  void printGraph(LNO nrows, const VertexT *v, const EdgeT *e, 
-    const int *owner, const LNO *idx, const RCP<const Comm<int> > &comm)
+void printGraph(lno_t nrows, const gno_t *v, const lno_t *elid, 
+    const gno_t *egid,
+    const int *owner, const lno_t *idx, const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -57,19 +53,27 @@ template<typename LNO, typename VertexT, typename EdgeT>
     if (p == rank){
       std::cout << "Rank " << p << std::endl;
       if (owner){
-        for (LNO i=0; i < nrows; i++){
+        for (lno_t i=0; i < nrows; i++){
           std::cout << "  Vtx " << *v++ << ": ";
-          for (LNO j=idx[i]; j < idx[i+1]; j++)
-            std::cout << *e++ << " (" << *owner++ << ") ";
+          if (elid)
+            for (lno_t j=idx[i]; j < idx[i+1]; j++)
+              std::cout << *elid++ << " (" << *owner++ << ") ";
+          else
+            for (lno_t j=idx[i]; j < idx[i+1]; j++)
+              std::cout << *egid++ << " (" << *owner++ << ") ";
           std::cout << std::endl;
         }
         std::cout.flush();
       }
       else{
-        for (LNO i=0; i < nrows; i++){
+        for (lno_t i=0; i < nrows; i++){
           std::cout << "  Vtx " << i << ": ";
-          for (LNO j=idx[i]; j < idx[i+1]; j++)
-            std::cout << *e++ << " ";
+          if (elid)
+            for (lno_t j=idx[i]; j < idx[i+1]; j++)
+              std::cout << *elid++ << " ";
+          else
+            for (lno_t j=idx[i]; j < idx[i+1]; j++)
+              std::cout << *egid++ << " ";
           std::cout << std::endl;
         }
         std::cout.flush();
@@ -80,8 +84,7 @@ template<typename LNO, typename VertexT, typename EdgeT>
   comm->barrier();
 }
 
-template <typename Scalar, typename LNO, typename GNO>
-  void checkModel(RCP<const Tpetra::CrsMatrix<Scalar, LNO, GNO> > &M,
+void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     const RCP<const Comm<int> > &comm,
     bool consecutiveIdsRequested, bool noSelfEdges)
 {
@@ -95,8 +98,7 @@ template <typename Scalar, typename LNO, typename GNO>
     std::cout << ", remove self edges " << noSelfEdges << std::endl;;
   }
 
-  typedef Zoltan2::default_node_t node_t;
-  typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, node_t> tcrsMatrix_t;
+  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
   typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
   typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
 
@@ -107,7 +109,7 @@ template <typename Scalar, typename LNO, typename GNO>
 
   try{
     model = new Zoltan2::GraphModel<base_adapter_t>(baseTmi, default_env, 
-      consecutiveIdsRequested, noSelfEdges);
+      comm, consecutiveIdsRequested, noSelfEdges);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -117,10 +119,10 @@ template <typename Scalar, typename LNO, typename GNO>
 
   // Test the GraphModel interface
 
-  LNO nLocalRows = M->getNodeNumRows();
-  LNO nLocalNonZeros = M->getNodeNumEntries();
-  GNO nGlobalRows =  M->getGlobalNumRows();
-  GNO nGlobalNonZeros = M->getGlobalNumEntries();
+  lno_t nLocalRows = M->getNodeNumRows();
+  lno_t nLocalNonZeros = M->getNodeNumEntries();
+  gno_t nGlobalRows =  M->getGlobalNumRows();
+  gno_t nGlobalNonZeros = M->getGlobalNumEntries();
 
   if (model->getLocalNumVertices() != nLocalRows)
     fail = 1;
@@ -149,9 +151,9 @@ template <typename Scalar, typename LNO, typename GNO>
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
   }
 
-  ArrayView<const GNO> vertexGids;
-  ArrayView<const Scalar> coords;  // not implemented yet
-  ArrayView<const Scalar> wgts;    // not implemented yet
+  ArrayView<const gno_t> vertexGids;
+  ArrayView<const scalar_t> coords;  // not implemented yet
+  ArrayView<const scalar_t> wgts;    // not implemented yet
 
   try{
     model->getVertexList(vertexGids, coords, wgts);
@@ -166,9 +168,9 @@ template <typename Scalar, typename LNO, typename GNO>
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexList", 1)
   
-  ArrayView<const GNO> edgeGids;
+  ArrayView<const gno_t> edgeGids;
   ArrayView<const int> procIds;
-  ArrayView<const LNO> offsets;
+  ArrayView<const lno_t> offsets;
   size_t numEdges=0;
 
   try{
@@ -180,8 +182,8 @@ template <typename Scalar, typename LNO, typename GNO>
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeList", 1)
 
-  LNO numLocalEdges = 0;
-  for (LNO i=0; i < numEdges; i++){
+  lno_t numLocalEdges = 0;
+  for (lno_t i=0; i < numEdges; i++){
     if (procIds[i] == rank)
       numLocalEdges++;
   }
@@ -192,7 +194,7 @@ template <typename Scalar, typename LNO, typename GNO>
   TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeList size", 1)
 
   if (nGlobalRows < 200){
-    printGraph<LNO, GNO, GNO>(nLocalRows, vertexGids.getRawPtr(), 
+    printGraph(nLocalRows, vertexGids.getRawPtr(), NULL,
       edgeGids.getRawPtr(), procIds.getRawPtr(), offsets.getRawPtr(), comm);
   }
   else{
@@ -202,8 +204,8 @@ template <typename Scalar, typename LNO, typename GNO>
 
   // Get graph restricted to this process
 
-  ArrayView<const LNO> localEdges;
-  ArrayView<const LNO> localOffsets;
+  ArrayView<const lno_t> localEdges;
+  ArrayView<const lno_t> localOffsets;
   size_t numLocalNeighbors=0;
 
   try{
@@ -221,8 +223,8 @@ template <typename Scalar, typename LNO, typename GNO>
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList size", 1)
 
   if (nGlobalRows < 200){
-    printGraph<LNO, GNO, LNO>(nLocalRows, vertexGids.getRawPtr(), 
-      localEdges.getRawPtr(), NULL, localOffsets.getRawPtr(), comm);
+    printGraph(nLocalRows, vertexGids.getRawPtr(), 
+      localEdges.getRawPtr(), NULL, NULL, localOffsets.getRawPtr(), comm);
   }
 
   // Get graph restricted to this process
@@ -233,23 +235,21 @@ template <typename Scalar, typename LNO, typename GNO>
   if (rank==0) std::cout << "    OK" << std::endl;
 }
 
-template <typename Scalar, typename LNO, typename GNO>
-  void testGraphModel(string fname, GNO xdim, GNO ydim, GNO zdim,
+void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
-  typedef Zoltan2::default_node_t node_t;
-  typedef Tpetra::CrsMatrix<Scalar, LNO, GNO, node_t> tcrsMatrix_t;
+  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
 
   // Input generator
-  UserInputForTests<Scalar,LNO,GNO> *input;
+  UserInputForTests *input;
 
   if (fname.size() > 0)
-    input = new UserInputForTests<Scalar,LNO,GNO>(fname, comm);
+    input = new UserInputForTests(fname, comm);
   else
-    input = new UserInputForTests<Scalar,LNO,GNO>(xdim,ydim,zdim,comm);
+    input = new UserInputForTests(xdim,ydim,zdim,comm);
 
   RCP<tcrsMatrix_t> M = input->getTpetraCrsMatrix();
 
@@ -263,13 +263,13 @@ template <typename Scalar, typename LNO, typename GNO>
 
   RCP<const tcrsMatrix_t> Mconsec = rcp_const_cast<const tcrsMatrix_t>(M);
 
-  checkModel<Scalar,LNO,GNO>(Mconsec, comm, !consecutiveIds, !noSelfEdges);
-  checkModel<Scalar,LNO,GNO>(Mconsec, comm, !consecutiveIds, noSelfEdges);
-  checkModel<Scalar,LNO,GNO>(Mconsec, comm, consecutiveIds, noSelfEdges);
+  checkModel(Mconsec, comm, !consecutiveIds, !noSelfEdges);
+  checkModel(Mconsec, comm, !consecutiveIds, noSelfEdges);
+  checkModel(Mconsec, comm, consecutiveIds, noSelfEdges);
 
   // Do a round robin migration so that global IDs are not consecutive.
 
-  Array<GNO> myNewRows;
+  Array<gno_t> myNewRows;
   for (int i=rank; i < Mconsec->getGlobalNumRows(); i+=nprocs)
     myNewRows.push_back(i);
 
@@ -280,9 +280,9 @@ template <typename Scalar, typename LNO, typename GNO>
   if (rank == 0)
     std::cout << "  Matrix row IDs are not globally consecutive." << std::endl;
 
-  checkModel<Scalar,LNO,GNO>(Mnonconsec, comm, !consecutiveIds, !noSelfEdges);
-  checkModel<Scalar,LNO,GNO>(Mnonconsec, comm, !consecutiveIds, noSelfEdges);
-  checkModel<Scalar,LNO,GNO>(Mnonconsec, comm, consecutiveIds, noSelfEdges);
+  checkModel(Mnonconsec, comm, !consecutiveIds, !noSelfEdges);
+  checkModel(Mnonconsec, comm, !consecutiveIds, noSelfEdges);
+  checkModel(Mnonconsec, comm, consecutiveIds, noSelfEdges);
 
   delete input;
 }
@@ -296,6 +296,7 @@ int main(int argc, char *argv[])
   int rank = comm->getRank();
 
   string nullString;
+#if 0
   vector<string> mtxFiles;
   
   mtxFiles.push_back("../data/simple.mtx");
@@ -303,13 +304,14 @@ int main(int argc, char *argv[])
 
   for (int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
     if (rank==0)
-      std::cout << mtxFiles[fileNum] << ", float, int, int:" << std::endl;
-    testGraphModel<float, int, int>(mtxFiles[fileNum], 0, 0, 0, comm);
+      std::cout << mtxFiles[fileNum] << std::endl;
+    testGraphModel(mtxFiles[fileNum], 0, 0, 0, comm);
   }
+#endif
 
   if (rank==0)
-    std::cout << "4x4x4 mesh generated matrix, float, int, long:" << std::endl;
-  testGraphModel<float, int, long>(nullString, 4, 4, 4, comm);
+    std::cout << "4x4x4 mesh generated matrix:" << std::endl;
+  testGraphModel(nullString, 4, 4, 4, comm);
 
   if (rank==0)
     std::cout << "PASS" << std::endl;

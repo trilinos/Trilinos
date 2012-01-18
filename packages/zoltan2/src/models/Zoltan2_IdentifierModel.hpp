@@ -22,8 +22,7 @@
 
 namespace Zoltan2 {
 
-/*! Zoltan2::IdentifierModel
-    \brief This class provides simple IDs and weights to the Zoltan2 algorithm.
+/*!  \brief This class provides simple IDs and weights to the Zoltan2 algorithm.
 
     The template parameter is an Input Adapter.  Input adapters are
     templated on the basic user input type.
@@ -48,19 +47,19 @@ public:
   // The IdentifierModel interface.
   ////////////////////////////////////////////////////
 
-  /*! Returns the number identifiers on this process.
+  /*! \brief Returns the number identifiers on this process.
    */
   size_t getLocalNumIdentifiers() const { return 0; }
 
-  /*! Returns the global number identifiers.
+  /*! \brief Returns the global number identifiers.
    */
   global_size_t getGlobalNumIdentifiers() const { return 0; }
 
-  /*! Returns the dimension (0 or greater) of identifier weights.
+  /*! \brief Returns the dimension (0 or greater) of identifier weights.
    */
   int getIdentifierWeightDim() const { return 0; }
 
-  /*! Sets pointers to this process' identifier Ids and their weights.
+  /*! \brief Sets pointers to this process' identifier Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
         each identifier on this process.
       \param wgts will on return point to a list of the weight or weights
@@ -103,20 +102,30 @@ public:
   typedef typename IdentifierInput<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedInput<lno_t, scalar_t> input_t;
+
+  /*! \brief Constructor
+       \param ia  the input adapter from which to build the model
+       \param env   the application environment (including problem parameters)
+       \param comm  the problem communicator
+       \param gnosMustBeConsecutive  if true, the Model will map the user
+               global identifiers to consecutive global numbers if they are
+               not already consecutive global numbers.
+   */
   
   IdentifierModel( const IdentifierInput<User> *ia, 
-    const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
-      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
-      comm_(env->comm_), gids_(), weights_(), gnos_(), gnosConst_()
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+     bool gnosMustBeConsecutive=false):
+      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
+      gids_(), weights_(), gnos_(), gnosConst_()
   {
-    int weightDim = ia->getNumWeights();
-    size_t nLocalIds = ia->getLocalNumIds();
+    int weightDim = ia->getNumberOfWeights();
+    size_t nLocalIds = ia->getLocalNumberOfIdentifiers();
 
     const scalar_t **wgts=NULL;
-    const int *wgtStrides=NULL;
+    int *wgtStrides = NULL;
 
     if (nLocalIds && weightDim){
-      wgts = new scalar_t * [weightDim];
+      wgts = new const scalar_t * [weightDim];
       wgtStrides = new int [weightDim];
       Z2_LOCAL_MEMORY_ASSERTION(*env_, nLocalIds, wgts && wgtStrides);
     }
@@ -124,7 +133,9 @@ public:
     const gid_t *gids=NULL;
 
     try{
-      ia->getIdList(gids, wgts, wgtStrides);
+      ia->getIdentifierList(gids);
+      for (int dim=0; dim < weightDim; dim++)
+        ia->getIdentifierWeights(dim, wgts[dim], wgtStrides[dim]);
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -135,7 +146,7 @@ public:
         input_t *w = new input_t [weightDim];
         for (int i=0; i < weightDim; i++){
           ArrayView<const scalar_t> wgtArray(wgts[i], nLocalIds*wgtStrides[i]);
-          w[i] = new input_t(env_, wgtArray, wgtStrides[i]);
+          w[i] = input_t(env_, wgtArray, wgtStrides[i]);
         }
         weights_ = arcp<const input_t>(w, 0, weightDim);
       }
@@ -144,7 +155,7 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env_, gids_, gnosMustBeConsecutive));
+      idMap = rcp(new idmap_t(env_, comm_, gids_, gnosMustBeConsecutive));
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -163,7 +174,7 @@ public:
 
       try{
         ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
-        idMap->gidTranslate( gids_(0,nLocalIds),  gnos_(0,nLocalIds), 
+        idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds), 
           TRANSLATE_APP_TO_LIB);
       }
       Z2_FORWARD_EXCEPTIONS;
@@ -200,8 +211,8 @@ public:
     size_t n = getLocalNumIdentifiers();
     size_t nweights = n * weights_.size();
 
-    Ids =  ArrayView<const gno_t>(Teuchos::null);
-    wgts = ArrayView<const scalar_t>(Teuchos::null);
+    Ids =  ArrayView<const gno_t>();
+    wgts = ArrayView<const input_t>();
 
     if (n){
       if (gnosAreGids_)
@@ -263,9 +274,10 @@ public:
   typedef StridedInput<lno_t, scalar_t> input_t;
   
   IdentifierModel( const MatrixInput<User> *ia, 
-    const RCP<const Environment> &env, bool gnosMustBeConsecutive=false):
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    bool gnosMustBeConsecutive=false):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
-      comm_(env->comm_), gids_(), weights_(), gnos_(), gnosConst_()
+      comm_(comm), gids_(), weights_(), gnos_(), gnosConst_()
   {
     size_t nLocalIds;
     const gid_t *gids;
@@ -284,7 +296,7 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env_, gids_, gnosMustBeConsecutive));
+      idMap = rcp(new idmap_t(env_, comm_, gids_, gnosMustBeConsecutive));
     }
     Z2_FORWARD_EXCEPTIONS;
 

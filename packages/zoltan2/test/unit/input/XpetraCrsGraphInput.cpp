@@ -11,11 +11,9 @@
 
 #include <string>
 
-
 #include <Zoltan2_XpetraCrsGraphInput.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
-
-#include <UserInputForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -32,19 +30,13 @@ using Teuchos::DefaultComm;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 
-typedef double scalar_t;
-typedef int lno_t;
-typedef int gno_t;
-typedef Zoltan2::default_node_t node_t;
-
-typedef UserInputForTests<scalar_t, lno_t, gno_t> uinput_t;
+typedef UserInputForTests uinput_t;
 typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tgraph_t;
 typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
 typedef Epetra_CrsGraph egraph_t;
 
-template <typename L, typename G>
-  void printGraph(RCP<const Comm<int> > &comm, L nvtx,
-    const G *vtxIds, const L *offsets, const G *edgeIds)
+void printGraph(RCP<const Comm<int> > &comm, lno_t nvtx,
+    const gno_t *vtxIds, const lno_t *offsets, const gno_t *edgeIds)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -52,9 +44,9 @@ template <typename L, typename G>
   for (int p=0; p < nprocs; p++){
     if (p == rank){
       std::cout << rank << ":" << std::endl;
-      for (L i=0; i < nvtx; i++){
+      for (lno_t i=0; i < nvtx; i++){
         std::cout << " vertex " << vtxIds[i] << ": ";
-        for (L j=offsets[i]; j < offsets[i+1]; j++){
+        for (lno_t j=offsets[i]; j < offsets[i+1]; j++){
           std::cout << edgeIds[j] << " ";
         }
         std::cout << std::endl;
@@ -70,10 +62,6 @@ template <typename User>
 int verifyInputAdapter(
   Zoltan2::XpetraCrsGraphInput<User> &ia, tgraph_t &graph)
 {
-  typedef typename Zoltan2::InputTraits<User>::scalar_t S;
-  typedef typename Zoltan2::InputTraits<User>::lno_t L;
-  typedef typename Zoltan2::InputTraits<User>::gno_t G;
-
   RCP<const Comm<int> > comm = graph.getComm();
   int fail = 0, gfail=0;
 
@@ -91,8 +79,8 @@ int verifyInputAdapter(
 
   gfail = globalFail(comm, fail);
 
-  const G *vtxIds=NULL, *edgeIds=NULL;
-  const L *offsets=NULL;
+  const gno_t *vtxIds=NULL, *edgeIds=NULL;
+  const lno_t *offsets=NULL;
   size_t nvtx=0;
 
   if (!gfail){
@@ -105,7 +93,7 @@ int verifyInputAdapter(
     gfail = globalFail(comm, fail);
 
     if (gfail == 0){
-      printGraph<L, G>(comm, nvtx, vtxIds, offsets, edgeIds);
+      printGraph(comm, nvtx, vtxIds, offsets, edgeIds);
     }
     else{
       if (!fail) fail = 10;
@@ -119,7 +107,6 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
-  int nprocs = comm->getSize();
   int fail = 0, gfail=0;
 
   // Create an object that can give us test Tpetra, Xpetra
@@ -152,7 +139,7 @@ int main(int argc, char *argv[])
   RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
 
   ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
-  RCP<const idmap_t> idMap = rcp(new idmap_t(env, gidArray));
+  RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
   int weightDim = 1;
 
@@ -164,7 +151,7 @@ int main(int argc, char *argv[])
   memset(p, 0, sizeof(size_t) * nvtx);
   ArrayRCP<size_t> solnParts(p, 0, nvtx, true);
 
-  soln_t solution(env, idMap, weightDim);
+  soln_t solution(env, comm, idMap, weightDim);
 
   solution.setParts(rowGids, solnParts, metric);
 
@@ -289,6 +276,7 @@ int main(int argc, char *argv[])
     }
   }
 
+#ifdef HAVE_EPETRA_DATA_TYPES
   /////////////////////////////////////////////////////////////
   // User object is Epetra_CrsGraph
   if (!gfail){
@@ -349,6 +337,7 @@ int main(int argc, char *argv[])
       printFailureCode(comm, fail);
     }
   }
+#endif
 
   /////////////////////////////////////////////////////////////
   // DONE

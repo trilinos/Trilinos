@@ -13,7 +13,7 @@
 //   Test local IDs are implied, not supplied by app.
 
 #include <Zoltan2_IdentifierMap.hpp>
-#include <AdaptersForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
 #if 0
 #include <string>
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
   int rank = comm->getRank();
   RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
 
-  long numLocalObjects = 10;
+  lno_t numLocalObjects = 10;
   long numRemoteObjects = 3;   // numRemoteObjects < numLocalObjects
   bool verbose = true;
   bool consecutiveGids=true;
@@ -249,36 +249,33 @@ int main(int argc, char *argv[])
   // 3. GIDs are consecutive ordinals
   // 4. GIDs are not Teuchos Ordinals
 
-  ArrayRCP<long> gids(new long [numLocalObjects], 0, numLocalObjects, true);
-  ArrayRCP<long> remoteGids(new long [numRemoteObjects], 0, 
+  ArrayRCP<gno_t> gids(new gno_t [numLocalObjects], 0, numLocalObjects, true);
+  ArrayRCP<gno_t> remoteGids(new gno_t [numRemoteObjects], 0, 
     numRemoteObjects, true);
-  ArrayRCP<std::pair<int,int> > remoteGidPairs(
-    new std::pair<int,int> [numRemoteObjects], 0, numRemoteObjects, true);
 
   using Zoltan2::IdentifierMap;
 
-  typedef Zoltan2::BasicUserTypes<float, long, int, long> UserTypes;
-  UserTypes UserLongGids;
+  typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> UserTypes;
 
   //////////////////////////////////////////////////////////
   //  Ids are non-consecutive ordinals.
 
-  long base1 = 10000 * rank;
-  long base2 = base1 + 5000;
+  gno_t base1 = 10000 * rank;
+  gno_t base2 = base1 + 5000;
   int fail = 0;
-  long base = base1;
+  gno_t base = base1;
 
-  for (int i=0; i < numLocalObjects; i++){
+  for (lno_t i=0; i < numLocalObjects; i++){
     gids[i] = base + i;   
     if (i == numLocalObjects/2) base = base2;
   }
 
-  typedef IdentifierMap<UserTypes> mapLongGids_t;
+  typedef IdentifierMap<UserTypes> idmap_t;
 
-  mapLongGids_t *idMap = NULL;
+  idmap_t *idMap = NULL;
 
   try{
-    idMap = new mapLongGids_t(env, gids, false);
+    idMap = new idmap_t(env, comm, gids, false);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -307,7 +304,7 @@ int main(int argc, char *argv[])
   //  IdentifierMap is asked to map them to consecutive.
 
   try{
-    idMap = new mapLongGids_t(env, gids, true); 
+    idMap = new idmap_t(env, comm, gids, true); 
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -329,12 +326,12 @@ int main(int argc, char *argv[])
   //  Ids are consecutive ordinals.  
 
   base = rank * numLocalObjects;
-  for (int i=0; i < numLocalObjects; i++){
+  for (lno_t i=0; i < numLocalObjects; i++){
     gids[i] = base + i;   
   }
 
   try{
-    idMap = new mapLongGids_t(env, gids, false); 
+    idMap = new idmap_t(env, comm, gids, false); 
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -358,8 +355,11 @@ int main(int argc, char *argv[])
 
   delete idMap;
 
-
 #if 0
+
+  ArrayRCP<std::pair<int,int> > remoteGidPairs(
+    new std::pair<int,int> [numRemoteObjects], 0, numRemoteObjects, true);
+
   // TODO - there is a bug in the IdentifierMap constructor
   //   when GIDs are std::pair<int,int>
   //////////////////////////////////////////////////////////
@@ -379,7 +379,7 @@ int main(int argc, char *argv[])
   mapPairGids_t *idMap2 = NULL;
 
   try{
-    idMap2 = new mapPairGids_t(env, nonOrdinalGids, false); 
+    idMap2 = new mapPairGids_t(env, comm, nonOrdinalGids, false); 
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;

@@ -63,8 +63,8 @@ public:
 
   /*! Constructor - Must be called by all processes 
    *
-   * \param comm the problem communicator
    * \param env  the problem and library environment
+   * \param comm the problem communicator
    * \param gids  the application global IDs
    * \param gidsMustBeConsecutive  set to true if the algorithm
    *           or third party library requires consective ids
@@ -77,6 +77,7 @@ public:
   typedef typename InputTraits<User>::gid_t gid_t;
 
   explicit IdentifierMap( const RCP<const Environment > &env, 
+                          const RCP<const Comm<int> > &comm,
                           const ArrayRCP<const gid_t> &gids, 
                           bool gidsMustBeConsecutive=false);
 
@@ -176,13 +177,13 @@ public:
 
 private:
 
-  // Input communicator
-
-  const RCP<const Comm<int> > comm_;
-
   // Problem parameters, library configuration.
 
   const RCP<const Environment> env_;
+
+  // Problem communicator
+
+  const RCP<const Comm<int> > comm_;
 
   // Application global IDs
 
@@ -229,8 +230,9 @@ private:
 
 template<typename User>
   IdentifierMap<User>::IdentifierMap( const RCP<const Environment> &env,
+    const RCP<const Comm<int> > &comm,
     const ArrayRCP<const gid_t> &gids, bool idsMustBeConsecutive) 
-         : comm_(env->comm_),  env_(env), myGids_(gids), gnoDist_(), gidHash_(),
+         : env_(env), comm_(comm), myGids_(gids), gnoDist_(), gidHash_(),
            globalNumberOfIds_(0), localNumberOfIds_(0),
            myRank_(0), numProcs_(1),
            userGidsAreTeuchosOrdinal_(false), userGidsAreConsecutive_(false), 
@@ -564,8 +566,7 @@ template< typename User>
         double keyVal = IdentifierTraits<gid_t>::key(gidInBuf[total]);
         gidToIndex.put(keyVal, total);
       }
-      catch (const std::exception &e) 
-        Z2_THROW_OUTSIDE_ERROR(*env_, e);
+      Z2_THROW_OUTSIDE_ERROR(*env_, e);
     }
   }
 
@@ -693,9 +694,7 @@ template< typename User>
         try{
           index = gidToIndex.get(k);
         }
-        catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(*env_, e);
-        }
+        Z2_THROW_OUTSIDE_ERROR(*env_, e);
 
         Z2_LOCAL_BUG_ASSERTION(*env_, "gidToIndex table", 
           (index >= 0)&&(index<=indexTotal), BASIC_ASSERTION);
@@ -832,9 +831,7 @@ template< typename User>
         // CRASH here when gid_ts are std::pair<int,int> TODO
         p->put(IdentifierTraits<gid_t>::key(gidPtr[i]), i);
       }
-      catch (const std::exception &e) {
-        Z2_THROW_OUTSIDE_ERROR(*env_, e);
-      }
+      Z2_THROW_OUTSIDE_ERROR(*env_, e);
     }
     gidHash_ = RCP<id2index_hash_t>(p);
   }
@@ -885,9 +882,7 @@ template< typename User>
     try{
       gnoDist_.resize(numProcs_ + 1, 0);
     }
-    catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(*env_, e);
-    }
+    Z2_THROW_OUTSIDE_ERROR(*env_, e);
 
     gno_t myNum = static_cast<gno_t>(localNumberOfIds_);
 
@@ -895,9 +890,7 @@ template< typename User>
       gno_t *p = gnoDist_.getRawPtr();
       Teuchos::gatherAll<int, gno_t>(*comm_, 1, &myNum, numProcs_, p+1);
     }
-    catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(*env_, e);
-    }
+    Z2_THROW_OUTSIDE_ERROR(*env_, e);
 
     for (int i=2; i <= numProcs_; i++){
       gnoDist_[i] += gnoDist_[i-1];

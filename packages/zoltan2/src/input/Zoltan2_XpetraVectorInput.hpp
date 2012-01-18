@@ -17,6 +17,7 @@
 
 #include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_StridedInput.hpp>
 #include <Zoltan2_Util.hpp>
 
 #include <Xpetra_EpetraVector.hpp>
@@ -57,18 +58,42 @@ public:
   ~XpetraVectorInput() { }
 
   /*! Constructor   
+   *
+   *  \param invector  the user's Xpetra, Tpetra or Epetra Vector object
+   *  \param numWeights the number of weights per element, which may be zero
+   *                or greater
+   *  \param weights  numWeights pointers to arrays of weights
+   *  \param weightStrides  a list of numWeights strides for the weights
+   *        arrays. The n'th weight for multivector element k is to be found
+   *               at weights[n][k*weightStrides[n]].  If weightStrides
+   *              is NULL, it is assumed all strides are one.
+   *
+   *  The values pointed to the arguments must remain valid for the
+   *  lifetime of this InputAdapter.
    */
-  // Constructor 
-  XpetraVectorInput(const RCP<const User> &invector):
-    invector_(invector), 
-    vector_(),
-    map_(),
-    env_(),
-    base_()
+  XpetraVectorInput( const RCP<const User> &invector, int numWeights, 
+    const scalar_t * * const weights, int *weightStrides):
+      invector_(invector), vector_(), map_(),
+      env_(rcp(new Environment)), base_(),
+      numWeights_(numWeights), weights_(numWeights)
   {
+    typedef StridedInput<lno_t, scalar_t> input_t;
+
     vector_ = XpetraTraits<User>::convertToXpetra(invector);
     map_ = vector_->getMap();
     base_ = map_->getIndexBase();
+
+    size_t length = vector_->getLocalLength();
+
+    if (length > 0 && numWeights > 0){
+      int stride = 1;
+      for (int w=0; w < numWeights; w++){
+        if (weightStrides)
+          stride = weightStrides[w];
+        weights_[w] = rcp<input_t>(new input_t(env_,
+          ArrayView<const scalar_t>(weights[w], stride*length), stride));
+      }
+    }
   };
 
   /*! Access to xpetra vector
@@ -83,20 +108,24 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  std::string inputAdapterName()const {
-    return std::string("XpetraVector");}
+  std::string inputAdapterName()const { return std::string("XpetraVector");}
 
   ////////////////////////////////////////////////////
   // The VectorInput interface.
   ////////////////////////////////////////////////////
 
+  int getNumberOfVectors() const { return 1; }
+
+  int getNumberOfWeights() const {return numWeights_;}
+
   size_t getLocalLength() const {return vector_->getLocalLength();}
   
   size_t getGlobalLength() const {return vector_->getGlobalLength();}
 
-  size_t getVectorView(const gid_t *&Ids, const scalar_t *&elements, 
-    const scalar_t *&wgts) const
+  size_t getVector(const gid_t *&Ids, const scalar_t *&elements, 
+    int &stride) const
   {
+    stride = 1;
     elements = NULL;
     const x_vector_t *vec =  vector_.get();
 
@@ -115,7 +144,10 @@ public:
       if (evector->getLocalLength() > 0){
         // getData hangs if vector length is 0
         ArrayRCP<const double> data = evector->getData(0);
-        elements = data.get();
+
+        // Cast so this will compile when scalar_t is not double,
+        // a case when this code should never execute.
+        elements = reinterpret_cast<const scalar_t *>(data.get());
       }
     }
     else{
@@ -124,15 +156,31 @@ public:
 
     ArrayView<const gid_t> gids = map_->getNodeElementList();
     Ids = gids.getRawPtr();
-    wgts = NULL; // Not implemented
 
     return getLocalLength();
   }
 
-  /*! Apply a partitioning solution to the vector.
-   *   Every gid that was belongs to this process must
-   *   be on the list, or the Import will fail.
-   */
+  size_t getVector(int vectorNumber, const gid_t *&Ids, 
+    const scalar_t *&elements, int &stride) const
+  {
+    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid vector",
+      vectorNumber==0, BASIC_ASSERTION);
+
+    return getVector(Ids, elements, stride);
+  }
+
+  size_t getVectorWeights(int dim, const scalar_t *&weights, int &stride) const
+  {
+   Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid dimension",
+      dim >= 0 && dim < numWeights_, BASIC_ASSERTION);
+
+    size_t length;
+
+    weights_[dim]->getStridedList(length, weights, stride);
+
+    return length;
+  }
+
   template <typename User2>
     size_t applyPartitioningSolution(const User &in, User *&out,
          const PartitioningSolution<User2> &solution)
@@ -177,6 +225,8 @@ private:
   RCP<Environment> env_;
   lno_t base_;
 
+  int numWeights_;
+  Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
 };
   
 }  //namespace Zoltan2

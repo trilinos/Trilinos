@@ -45,7 +45,6 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
   std::ostringstream docString;
   ParameterEntry entry;
   int intDefault;
-  size_t sizetDefault;
   double doubleDefault;
   string strDefault;
   Array<int> intArrayDefault;
@@ -373,29 +372,39 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
 
     /*-----------------------------------------*/
 
+  // num_global_parts, if set must be one or greater.  It is
+  // processed in PartitioningSolution::setPartDistribution().
+  // If set, num_global_parts must be set on all processes to
+  // the same value.
+
+  size_t veryLarge = size_t(1) << (sizeof(size_t)*8 - 2);
+  sizetValidatorP = 
+    Teuchos::rcp(new EnhancedNumberValidator<size_t>(1,veryLarge));
+
   parameterName = string("num_global_parts");  
-  sizetDefault = comm.getSize();
   docString.str("");
-  entry = ParameterEntry(sizetDefault, isDefault, isNotList, docString.str()) ;
+  entry = ParameterEntry(0, !isDefault, isNotList, docString.str(), 
+    sizetValidatorP) ;
 
   partitioning.setEntry(parameterName, entry);
 
     /*-----------------------------------------*/
 
-  parameterName = string("num_local_parts");  
-  sizetDefault = 1;
+  // num_local_parts, if set must be zero or greater.  It is
+  // processed in PartitioningSolution::setPartDistribution().
+  // If set on any process, it must be set on all processes.
+  // If num_global_parts is also set, num_global_parts must be 
+  // the sum of the value of num_local_parts on each process.
 
+  sizetValidatorP = 
+    Teuchos::rcp(new EnhancedNumberValidator<size_t>(0,veryLarge));
+
+  parameterName = string("num_local_parts");  
   docString.str("");
-  entry = ParameterEntry( sizetDefault, isDefault, isNotList, docString.str());
+  entry = ParameterEntry(0, !isDefault, isNotList, docString.str(), 
+    sizetValidatorP);
 
   partitioning.setEntry(parameterName, entry);
-
-    /*-----------------------------------------
-
-     TODO: part_sizes array.  Strings like "1 .001, 2 .001, "
-       that is a list where list elements
-       have a part number followed by a part size.
-    -----------------------------------------*/
 
     /*-----------------------------------------*/
 

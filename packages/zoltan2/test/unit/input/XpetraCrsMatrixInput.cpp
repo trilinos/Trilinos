@@ -11,10 +11,9 @@
 
 #include <string>
 
-
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_InputTraits.hpp>
-#include <UserInputForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -29,19 +28,13 @@ using Teuchos::rcp_const_cast;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-typedef double scalar_t;
-typedef int lno_t;
-typedef int gno_t;
-typedef Zoltan2::default_node_t node_t;
-
-typedef UserInputForTests<scalar_t, lno_t, gno_t> uinput_t;
+typedef UserInputForTests uinput_t;
 typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tmatrix_t;
 typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
 typedef Epetra_CrsMatrix ematrix_t;
 
-template <typename L, typename G>
-  void printMatrix(RCP<const Comm<int> > &comm, L nrows,
-    const G *rowIds, const L *offsets, const G *colIds)
+void printMatrix(RCP<const Comm<int> > &comm, lno_t nrows,
+    const gno_t *rowIds, const lno_t *offsets, const gno_t *colIds)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -49,9 +42,9 @@ template <typename L, typename G>
   for (int p=0; p < nprocs; p++){
     if (p == rank){
       std::cout << rank << ":" << std::endl;
-      for (L i=0; i < nrows; i++){
+      for (lno_t i=0; i < nrows; i++){
         std::cout << " row " << rowIds[i] << ": ";
-        for (L j=offsets[i]; j < offsets[i+1]; j++){
+        for (lno_t j=offsets[i]; j < offsets[i+1]; j++){
           std::cout << colIds[j] << " ";
         }
         std::cout << std::endl;
@@ -67,10 +60,6 @@ template <typename User>
 int verifyInputAdapter(
   Zoltan2::XpetraCrsMatrixInput<User> &ia, tmatrix_t &M)
 {
-  typedef typename Zoltan2::InputTraits<User>::scalar_t S;
-  typedef typename Zoltan2::InputTraits<User>::lno_t L;
-  typedef typename Zoltan2::InputTraits<User>::gno_t G;
-
   RCP<const Comm<int> > comm = M.getComm();
   int fail = 0, gfail=0;
 
@@ -90,8 +79,8 @@ int verifyInputAdapter(
 
   gfail = globalFail(comm, fail);
 
-  const G *rowIds=NULL, *colIds=NULL;
-  const L *offsets=NULL;
+  const gno_t *rowIds=NULL, *colIds=NULL;
+  const lno_t *offsets=NULL;
   size_t nrows=0;
 
   if (!gfail){
@@ -104,7 +93,7 @@ int verifyInputAdapter(
     gfail = globalFail(comm, fail);
 
     if (gfail == 0){
-      printMatrix<L, G>(comm, nrows, rowIds, offsets, colIds);
+      printMatrix(comm, nrows, rowIds, offsets, colIds);
     }
     else{
       if (!fail) fail = 10;
@@ -118,7 +107,6 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
-  int nprocs = comm->getSize();
   int fail = 0, gfail=0;
 
   // Create object that can give us test Tpetra, Xpetra
@@ -151,7 +139,7 @@ int main(int argc, char *argv[])
   RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
 
   ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
-  RCP<const idmap_t> idMap = rcp(new idmap_t(env, gidArray));
+  RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
   int weightDim = 1;
 
@@ -163,7 +151,7 @@ int main(int argc, char *argv[])
   memset(p, 0, sizeof(size_t) * nrows);
   ArrayRCP<size_t> solnParts(p, 0, nrows, true);
 
-  soln_t solution(env, idMap, weightDim);
+  soln_t solution(env, comm, idMap, weightDim);
 
   solution.setParts(rowGids, solnParts, metric);
 
@@ -288,6 +276,7 @@ int main(int argc, char *argv[])
     }
   }
 
+#ifdef HAVE_EPETRA_DATA_TYPES
   /////////////////////////////////////////////////////////////
   // User object is Epetra_CrsMatrix
   if (!gfail){ 
@@ -348,6 +337,7 @@ int main(int argc, char *argv[])
       printFailureCode(comm, fail);
     }
   }
+#endif
 
   /////////////////////////////////////////////////////////////
   // DONE

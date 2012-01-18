@@ -23,11 +23,12 @@ namespace Zoltan2 {
 /*! \brief This class represents a collection of global Identifiers
  *           and their associated weights, if any.
  *
- *  A pointer to the global identifiers is supplied in the constructor.
+ *  The user supplies the identifiers and weights by way of pointers
+ *    to arrays.  
  */
 
 template <typename User>
-class BasicIdentifierInput: IdentifierInput<User> {
+class BasicIdentifierInput: public IdentifierInput<User> {
 
 public:
 
@@ -46,27 +47,28 @@ public:
       \param ids should point to a list of numIds identifiers.
       \param weights should point to a list of numWeights pointers.  Each
           pointer should point to a list of weights for the identifiers.
+          \c weights can be NULL if \c numWeights is zero.
       \param strides should point to a list of numWeights integers. 
           strides[i] is the stride for list weights[i].  If strides is
           NULL, it will be assumed that each stride is one.
    */
 
   BasicIdentifierInput( lno_t numIds, int numWeights, const gid_t *idPtr, 
-    scalar_t * const *wgtPtr, const int *strides): 
+    const scalar_t * const *wgtPtr, const int *strides): 
       numIds_(numIds), idList_(idPtr), weights_(numWeights)
   {
+    env_ = rcp(new Environment);    // for error messages
     if (numWeights){
-      RCP<const Environment> env = rcp(new Environment); 
       typedef StridedInput<lno_t,scalar_t> input_t;
       if (strides)
         for (int i=0; i < numWeights; i++)
-          weights_[i] = rcp<input_t>(new input_t(env, 
-            ArrayView<const scalar_t>(wgtPtr[i], strides[i]*numWeights), 
+          weights_[i] = rcp<input_t>(new input_t(env_, 
+            ArrayView<const scalar_t>(wgtPtr[i], strides[i]*numIds), 
             strides[i]));
       else
         for (int i=0; i < numWeights; i++)
-          weights_[i] = rcp<input_t>(new input_t(env, 
-            ArrayView<const scalar_t>(wgtPtr[i], numWeights), 1));
+          weights_[i] = rcp<input_t>(new input_t(env_, 
+            ArrayView<const scalar_t>(wgtPtr[i], numIds), 1));
     }
   }
 
@@ -81,32 +83,30 @@ public:
   // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIds() const { return numIds_;}
+  size_t getLocalNumberOfIdentifiers() const { return numIds_;}
    
-  int getNumWeights() const { return weights_.size(); }
+  int getNumberOfWeights() const { return weights_.size(); }
 
-  size_t getIdList(gid_t const **Ids, scalar_t const **weights, 
-    int *strides) const
+  size_t getIdentifierList(const gid_t *&Ids) const
   {
-    int nweights = getNumWeights();
-
-    *Ids = idList_;
-
-    size_t len;
-    int stride;
-    const scalar_t *vec;
-
-    for (int i=0; i < nweights; i++){
-      weights_[i]->getStridedList(len, vec, stride);
-      weights[i] = vec;
-      strides[i] = stride;
-    }
-
+    Ids = idList_;
     return numIds_;
+  }
+
+  size_t getIdentifierWeights(int dimension,
+     const scalar_t *&weights, int &stride) const
+  {
+    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid weight dimension",
+      dimension >= 0 && dimension < weights_.size(), BASIC_ASSERTION);
+
+    size_t length;
+    weights_[dimension]->getStridedList(length, weights, stride);
+    return length;
   }
 
 private:
 
+  RCP<const Environment> env_;
   lno_t numIds_;
   const gid_t *idList_;
   Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;

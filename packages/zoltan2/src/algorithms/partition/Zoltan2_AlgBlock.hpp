@@ -43,6 +43,13 @@ void AlgPTBlock(
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
 
+  ////////////////////////////////////////////////////////
+  // Library parameters of interest:
+  //
+  //    are we printing out debug messages
+  //    are we timing
+  //    are we computing memory used
+
   bool debug = env->doStatus();
   bool timing = env->doTiming();
   bool memstats = env->doMemoryProfiling();
@@ -55,14 +62,6 @@ void AlgPTBlock(
 
   int rank = env->myRank_;
   int nprocs = env->numProcs_;
-
-  ////////////////////////////////////////////////////////
-  // Library parameters of interest:
-  //
-  //    are we printing out debug messages
-  //    are we timing
-  //    are we computing memory used
-
 
   // Parameters that may drive algorithm choices
   //    speed_versus_quality

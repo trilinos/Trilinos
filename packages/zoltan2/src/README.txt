@@ -22,4 +22,3 @@ models: identifier, coordinate, graph and hypergraph models used by algorithms
 problems: problem and solution objects
 
 util: helper methods and objects
-

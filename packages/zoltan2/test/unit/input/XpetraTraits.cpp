@@ -18,7 +18,8 @@
 //   Tpetra and Xpetra migrated graphs.  They're garbage.
 
 #include <Zoltan2_XpetraTraits.hpp>
-#include <UserInputForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
+
 #include <string>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -46,46 +47,36 @@ using Teuchos::Array;
 using Teuchos::rcp;
 using Teuchos::Comm;
 
-template <typename LNO, typename GNO, typename NODE>
-  ArrayRCP<GNO> roundRobinMap(
-    const RCP<const Xpetra::Map<LNO, GNO, NODE> > &m)
+ArrayRCP<gno_t> roundRobinMap(
+    const RCP<const Xpetra::Map<lno_t, gno_t, node_t> > &m)
 {
   const RCP<const Comm<int> > &comm = m->getComm();
   int proc = comm->getRank();
   int nprocs = comm->getSize();
-  GNO base = m->getMinAllGlobalIndex();
-  GNO max = m->getMaxAllGlobalIndex();
+  gno_t base = m->getMinAllGlobalIndex();
+  gno_t max = m->getMaxAllGlobalIndex();
   size_t globalrows = m->getGlobalNumElements();
   if (globalrows != max - base + 1){
     TEST_FAIL_AND_EXIT(*comm, 0, 
       string("Map is invalid for test - fix test"), 1);
   }
-  RCP<Array<GNO> > mygids = rcp(new Array<GNO>);
-  GNO firstGNO = proc; 
-  if (firstGNO < base){
-    GNO n = base % proc;
+  RCP<Array<gno_t> > mygids = rcp(new Array<gno_t>);
+  gno_t firstgno_t = proc; 
+  if (firstgno_t < base){
+    gno_t n = base % proc;
     if (n>0)
-      firstGNO = base - n + proc;
+      firstgno_t = base - n + proc;
     else
-      firstGNO = base;
+      firstgno_t = base;
   }
-  for (GNO gid=firstGNO; gid <= max; gid+=nprocs){
+  for (gno_t gid=firstgno_t; gid <= max; gid+=nprocs){
     (*mygids).append(gid);
   }
 
-  ArrayRCP<GNO> newIdArcp = Teuchos::arcp(mygids);
+  ArrayRCP<gno_t> newIdArcp = Teuchos::arcp(mygids);
 
   return newIdArcp;
 }
-
-typedef int lno_t;
-typedef long gno_t;
-typedef float scalar_t;
-typedef Zoltan2::default_node_t node_t;
-
-typedef int epetra_lno_t;
-typedef int epetra_gno_t;
-typedef double epetra_scalar_t;
 
 int main(int argc, char *argv[])
 {
@@ -97,7 +88,7 @@ int main(int argc, char *argv[])
     Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
 
-  typedef UserInputForTests<scalar_t, lno_t, gno_t> uinput_t;
+  typedef UserInputForTests uinput_t;
   typedef Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> tmatrix_t;
   typedef Tpetra::CrsGraph<lno_t,gno_t,node_t> tgraph_t;
   typedef Tpetra::Vector<scalar_t,lno_t,gno_t,node_t> tvector_t;
@@ -145,8 +136,7 @@ int main(int argc, char *argv[])
 
     RCP<const xtmap_t> xmap(new xtmap_t(M->getRowMap()));
 
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
     gno_t localNumRows = newRowIds.size();
   
@@ -188,8 +178,7 @@ int main(int argc, char *argv[])
     G->describe(*out,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(G->getRowMap()));
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
     gno_t localNumRows = newRowIds.size();
   
@@ -228,8 +217,7 @@ int main(int argc, char *argv[])
     V->describe(*out,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(V->getMap()));
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
     gno_t localNumRows = newRowIds.size();
   
@@ -268,8 +256,7 @@ int main(int argc, char *argv[])
     MV->describe(*out,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(MV->getMap()));
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
     gno_t localNumRows = newRowIds.size();
   
@@ -314,8 +301,7 @@ int main(int argc, char *argv[])
   
     M->describe(*out,v);
   
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(M->getRowMap());
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(M->getRowMap());
   
     gno_t localNumRows = newRowIds.size();
   
@@ -356,8 +342,7 @@ int main(int argc, char *argv[])
     Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
     G->describe(*out,v);
   
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(G->getRowMap());
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(G->getRowMap());
   
     gno_t localNumRows = newRowIds.size();
   
@@ -395,8 +380,7 @@ int main(int argc, char *argv[])
   
     V->describe(*out,v);
   
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(V->getMap());
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(V->getMap());
   
     gno_t localNumRows = newRowIds.size();
   
@@ -434,8 +418,7 @@ int main(int argc, char *argv[])
   
     MV->describe(*out,v);
   
-    ArrayRCP<gno_t> newRowIds = 
-      roundRobinMap<lno_t,gno_t,node_t>(MV->getMap());
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(MV->getMap());
   
     gno_t localNumRows = newRowIds.size();
   
@@ -456,6 +439,7 @@ int main(int argc, char *argv[])
     newMV->describe(*out,v);
   }
 
+#ifdef HAVE_EPETRA_DATA_TYPES
   /////////////////////////////////////////////////////////////////
   //   Epetra_CrsMatrix
   //   Epetra_CrsGraph
@@ -463,8 +447,6 @@ int main(int argc, char *argv[])
   //   Epetra_MultiVector
   /////////////////////////////////////////////////////////////////
 
-  typedef UserInputForTests<
-    epetra_scalar_t, epetra_lno_t, epetra_gno_t> euinput_t;
   typedef Epetra_CrsMatrix ematrix_t;
   typedef Epetra_CrsGraph egraph_t;
   typedef Epetra_Vector evector_t;
@@ -474,10 +456,10 @@ int main(int argc, char *argv[])
 
   // Create object that can give us test Epetra input.
 
-  RCP<euinput_t> euinput;
+  RCP<uinput_t> euinput;
 
   try{
-    euinput = rcp(new euinput_t(std::string("../data/simple.mtx"), comm));
+    euinput = rcp(new uinput_t(std::string("../data/simple.mtx"), comm));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("epetra input ")+e.what(), 1);
@@ -503,10 +485,9 @@ int main(int argc, char *argv[])
     RCP<const emap_t> emap = Teuchos::rcpFromRef(M->RowMap());
     RCP<const xemap_t> xmap(new xemap_t(emap));
 
-    ArrayRCP<epetra_gno_t> newRowIds = 
-      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
-    epetra_gno_t localNumRows = newRowIds.size();
+    gno_t localNumRows = newRowIds.size();
   
     RCP<const ematrix_t> newM;
     try{
@@ -544,10 +525,9 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(G->RowMap());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<epetra_gno_t> newRowIds = 
-      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
-    epetra_gno_t localNumRows = newRowIds.size();
+    gno_t localNumRows = newRowIds.size();
   
     RCP<const egraph_t> newG;
     try{
@@ -585,10 +565,9 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(V->Map());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<epetra_gno_t> newRowIds = 
-      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
-    epetra_gno_t localNumRows = newRowIds.size();
+    gno_t localNumRows = newRowIds.size();
   
     RCP<const evector_t> newV;
     try{
@@ -626,10 +605,9 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(MV->Map());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<epetra_gno_t> newRowIds = 
-      roundRobinMap<epetra_lno_t,epetra_gno_t,node_t>(xmap);
+    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
   
-    epetra_gno_t localNumRows = newRowIds.size();
+    gno_t localNumRows = newRowIds.size();
   
     RCP<const emvector_t> newMV;
     try{
@@ -647,6 +625,7 @@ int main(int argc, char *argv[])
   
     newMV->Print(std::cout);
   }
+#endif   // have epetra data types (int, int, double)
 
   /////////////////////////////////////////////////////////////////
   // DONE

@@ -6,15 +6,14 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Zoltan2_IdentifierInput.hpp
+/*! \file Zoltan2_CoordinateInput.hpp
 
-    \brief The abstract interface for an input adapter that simply
-             represents a list of identifiers with optional weights.
+    \brief The abstract interface for an input adapter representing geometric
+               coordinates with optional weights.
 */
 
-
-#ifndef _ZOLTAN2_IDENTIFIERINPUT_HPP_
-#define _ZOLTAN2_IDENTIFIERINPUT_HPP_
+#ifndef _ZOLTAN2_COORDINATEINPUT_HPP_
+#define _ZOLTAN2_COORDINATEINPUT_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
 #include <Zoltan2_InputTraits.hpp>
@@ -24,8 +23,8 @@
 
 namespace Zoltan2 {
 
-/*!  \brief IdentifierInput defines the interface for input adapters 
-           that represent a list of identifiers and weights.
+/*!  \brief CoordinateInput defines the interface for input of geometric 
+                coordinates with optional weights.
 
     Input adapters provide access for Zoltan2 to the user's data.  The
     methods in the interface must be defined by users.  Many built-in
@@ -33,7 +32,7 @@ namespace Zoltan2 {
     Tpetra and Epetra objects and C-language pointers to arrays.
 
     Data types:
-    \li \c scalar_t is the data type for weights .
+    \li \c scalar_t is the data type for weights and coordinates.
     \li \c lno_t is the integral data type used by Zoltan2 for local indices and local counts.
     \li \c gno_t is the integral data type used by Zoltan2 to represent global indices and global counts.
     \li \c gid_t is the data type used by the application for global Ids.  If the application's global Id data type is a Teuchos Ordinal, then \c gid_t and \c gno_t are the same.  Otherwise, the application global Ids will be mapped to Teuchos Ordinals for use by Zoltan2 internally.  (Teuchos Ordinals are those data types for which traits are defined in Trilinos/packages/teuchos/src/Teuchos_OrdinalTraits.hpp.)
@@ -42,13 +41,14 @@ namespace Zoltan2 {
     The template parameter (\c User) is a C++ class type which provides the
     actual data types with which the Zoltan2 library will be compiled, through
     a Traits mechanism.  \c User may be the
-    actual class used by application to represent a vector, or it may be
+    actual class used by application to represent coordinates, or it may be
     the empty helper class \c BasicUserTypes with which a Zoltan2 user
     can easily supply the data types for the library.
 */
 
 template <typename User>
-  class IdentifierInput : public InputAdapter {
+  class CoordinateInput : public InputAdapter {
+private:
 
 public:
 
@@ -59,63 +59,82 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
 
-  /*! Pure virtual destructor
+  /*! \brief Pure virtual destructor
    */
-  virtual ~IdentifierInput() {};
+  virtual ~CoordinateInput() {};
 
   ////////////////////////////////////////////////////
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  enum InputAdapterType inputAdapterType() const {return IdentifierAdapterType;}
+  enum InputAdapterType inputAdapterType() const {return CoordinateAdapterType;}
 
   ////////////////////////////////////////////////////
   // My interface.
   ////////////////////////////////////////////////////
 
-  /*! \brief Return the number of identifiers on this process.
+  /*! \brief Return dimension of the coordinates.
+   *   \return the number of coordinates (typically one, two or three).
    */
-  virtual size_t getLocalNumberOfIdentifiers() const = 0;
+  virtual int getCoordinateDimension() const = 0;
 
-  /*! \brief Return the number of weights associated with each identifier.
+
+  /*! \brief Return the number of weights per coordinate.
+   *   \return the count of weights, zero or more per coordinate.
    */
   virtual int getNumberOfWeights() const = 0;
 
-  /*! \brief Provide a pointer to this process' identifiers.
+  /*! Return the number of coordinates on this process.
+   *   \return  the count of coordinates on the local process.
+   */
+  virtual size_t getLocalNumberOfCoordinates() const = 0;
 
-      \param Ids will on return point to the list of the global Ids for 
-        this process.
+  /*! Return the number of coordinates in the entire problem.
+   *   \return  the global count of coordinates.
+   */
+  virtual size_t getGlobalNumberOfCoordinates() const = 0;
 
-       \return The number of ids in the Ids list.
+  /*! Provide a pointer to one dimension of this process' coordinates.
+      \param dim  is a value from 0 to one less than 
+         getLocalNumberOfCoordinates() specifying which dimension is
+         being provided in the coords list.
+      \param coords  points to a list of coordinate values for the dimension.
+      \param stride  describes the layout of the coordinate values in
+              the coords list.  If stride is one, then the ith coordinate
+              value is coords[i], but if stride is two, then the
+              ith coordinate value is coords[2*i].
+
+       \return The length of the \c coords list.  This may be more than
+              getLocalNumberOfCoordinates() because the \c stride
+              may be more than one.
+
+      TODO make global IDs optional - we'll return them
+        in the solution if they include then in this call.
+
+      Zoltan2 does not copy your data.  The data pointed to coords
+      must remain valid for the lifetime of this InputAdapter.
    */
 
-  virtual size_t getIdentifierList(gid_t const *&Ids) const = 0;
+  virtual size_t getCoordinates(int dim, const gid_t *&gids, 
+    const scalar_t *&coords, int &stride) const = 0;
 
-  /*! \brief Provide a pointer to one of the dimensions of this process' optional weights.
+  /*! \brief  Provide a pointer to the weights, if any, corresponding 
+       to the coordinates returned in getCoordinates(). 
 
-      \param dimension is a value ranging from zero to one less than getNumberOfWeights()
-      \param weights on return will contain a list of the weights for
-               the dimension specified.
-
-      \param stride on return will indicate the stride of the weights list.
-
-
-       If stride is \c k then the weight 
-       corresponding to the identifier Ids[n] (returned in getIdentifierList)
-       should be found at weights[k*n].
-
-       \return The number of values in the weights list.  This may be greater
-          than the number of identifiers, because the stride may be greater
-          than one.
+      \param dimension ranges from zero to one less than getNumberOfWeights()
+      \param weights is the list of weights of the given dimension for
+           the coordinates listed in getCoordinates().
+       \param stride The k'th weight is located at weights[stride*k]
+       \return The number of weights listed, which should be the same
+                  as the number of elements listed in getCoordinates().
    */
 
-  virtual size_t getIdentifierWeights(int dimension,
+  virtual size_t getCoordinateWeights(int dimension,
      const scalar_t *&weights, int &stride) const = 0;
 
-
- /*! \brief Apply a PartitioningSolution to an input.
+  /*! \brief Apply a PartitioningSolution to an input.
    *
-   *  This is not a required part of the IdentifierInput interface. However
+   *  This is not a required part of the CoordinateInput interface. However
    *  if the Caller calls a Problem method to redistribute data, it needs
    *  this method to perform the redistribution.
    *
@@ -133,7 +152,7 @@ public:
 
   template <typename User2>
     size_t applyPartitioningSolution(User &in, User *&out,
-      const PartitioningSolution<User2> &solution)
+         const PartitioningSolution<User2> &solution)
   {
     return 0;
   } 

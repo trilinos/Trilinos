@@ -7,6 +7,8 @@ SRCDIR=~/shared/projects/Trilinos
 /bin/rm -rf *.* CMakeFiles Testing packages preCopyrightTrilinos Makefile
 
 cmake \
+-D Trilinos_ENABLE_Tpetra:BOOL=ON \
+-D Tpetra_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=ON \
 -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L/usr/local/lib -lmpichcxx -lmpichf90 -lmpich -lmpl -lopa -lpthread" \
 -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
@@ -24,7 +26,6 @@ cmake \
 -D MPI_EXEC_MAX_NUMPROCS:STRING=11 \
 -D Trilinos_ENABLE_Teuchos:BOOL=ON \
 -D TPL_ENABLE_BinUtils:BOOL=OFF \
--D Trilinos_ENABLE_Tpetra:BOOL=ON \
 -D Trilinos_ENABLE_Epetra:BOOL=ON \
 -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
 -D Trilinos_ENABLE_MueLu:BOOL=ON \
@@ -38,11 +39,6 @@ cmake \
 -D Trilinos_ENABLE_TESTS:BOOL=OFF \
 -D Zoltan2_ENABLE_TESTS:BOOL=ON \
 -D Zoltan2_ENABLE_EXAMPLES:BOOL=OFF \
--D Zoltan2_ENABLE_Scotch:BOOL=ON \
 -D Zoltan2_ENABLE_LINUX_MEMORY_REPORT:BOOL=ON \
 -D Zoltan2_ENABLE_SCOTCH_MEMORY_REPORT:BOOL=ON \
--D Zoltan_ENABLE_Scotch:BOOL=ON \
--D Scotch_INCLUDE_DIRS:FILEPATH="/home/lriesen/local/system/scotch_5.1.12-64/include" \
--D Scotch_LIBRARY_DIRS:FILEPATH="/home/lriesen/local/system/scotch_5.1.12-64/lib" \
--D Scotch_LIBRARY_NAMES:STRING="ptscotch;ptscotcherr;ptscotcherrexit" \
 $SRCDIR 

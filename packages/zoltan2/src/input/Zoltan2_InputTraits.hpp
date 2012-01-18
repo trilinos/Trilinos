@@ -25,12 +25,47 @@
 
 namespace Zoltan2{
 
-// Users who do not have templated input may find it convenient to create a:
-// 
-//   BasicUserTypes<float, std::pair<int,int>, int, long> UserTypes
-//
-// and use it to instantiate the InputAdapter.
-//
+/*! \brief A class that can be the User template argument for an InputAdapter.
+ *
+ *  BasicUserTypes is a convenience class that provides a simple way
+ *  to supply the template argument when constructing an InputAdapter.
+ *
+ *  Typically, a C++ user will have a templated or non-templated class that
+ *  represents his or her input data.  He or she will create an InputTraits
+ *  specialization for this class, and then supply the class as the template
+ *  argument of the InputAdapter class.  (Commonly used Trilinos classes
+ *  that represent vectors, graphs and matrices already have InputTraits
+ *  specializations.)
+ *
+ *  This makes sense if you are a C++ programmer who uses templates, but
+ *  is a great deal of trouble if you are not.  In this case you can
+ *  construct your InputAdapter as follows.
+ *
+ *  Suppose you want to construct at Zoltan2::BasicVectorInput object and
+ *  you use \c float for vector values in your application, \c long for 
+ *  global identifiers, and \c int for local indices. 
+ *
+ *  You need to determine an integral data type that Zoltan2 can use internally
+ *  for global identifiers. Often this is the same data type that you use for
+ *  this purpose, but if you have non-integral global identifiers (such as
+ *  std::pair<int, int>) then Zoltan2 needs you to supply an integral data
+ *  type that is large enough to enumerate your global number of objects.
+ *  In this example let's say that you want Zoltan2 to use \c unsigned \c long
+ *  for its global Identifiers.  Then you would do the following:
+ *
+\code
+   typedef BasicUserTypes<float, long, int, unsigned long> myTypes;
+   Zoltan2::BasicVectorInput<myTypes> myInput({constructor arguments})
+\endcode
+ *
+ * In particular, the BasicUserTypes template parameters are:
+
+    \li \c scalar is the data type for element values, weights and coordinates.
+    \li \c gid is the data type used by the application for global Ids.  If the application's global Id data type is a Teuchos Ordinal, then \c gid and \c gno can the same.  Otherwise, the application global Ids will be mapped to Teuchos Ordinals for use by Zoltan2 internally.  (Teuchos Ordinals are those data types for which traits are defined in Trilinos/packages/teuchos/src/Teuchos_OrdinalTraits.hpp.)
+    \li \c lno is the integral data type used by the application and by Zoltan2 for local indices and local counts.
+    \li \c gno is the integral data type used by Zoltan2 to represent global indices and global counts.
+ */  
+
 template <typename scalar, typename gid, typename lno, typename gno>
 class BasicUserTypes{
 };

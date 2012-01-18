@@ -22,25 +22,28 @@ namespace Zoltan2 {
  */
 enum InputAdapterType {
   InvalidAdapterType = 0,    /*!< unused value */
-  MatrixAdapterType,    /*!< matrix input */
-  MeshAdapterType,    /*!< mesh input */
-  GraphAdapterType,    /*!< graph input */
-  CoordinateAdapterType,    /*!< coordinate input */
+  IdentifierAdapterType,    /*!< plain identifier input, just a list of Ids*/
   VectorAdapterType,    /*!< vector input*/
-  MultiVectorAdapterType,    /*!< multivector input*/
-  IdentifierAdapterType,    /*!< plain identifier input*/
-  XpetraCrsMatrixAdapterType  /*!< identify Xpetra adapters for better performance */
+  CoordinateAdapterType,    /*!< coordinate input */
+  GraphAdapterType,    /*!< graph input */
+  MeshAdapterType,    /*!< mesh input */
+  MatrixAdapterType    /*!< matrix input */
 };
 
 
 /*! \brief InputAdapter defines methods required by all InputAdapters
+
+    Input adapters provide access for Zoltan2 to the user's data.  The
+    methods in the interface must be defined by users.  Many built-in
+    adapters are already defined for common data structures, such as
+    Tpetra and Epetra objects and C-language pointers to arrays.
  */
 
 class InputAdapter {
 private:
 public:
 
-  /*! \brief Return type of adapter.
+  /*! \brief Returns the type of adapter.
    */
   virtual enum InputAdapterType inputAdapterType()const = 0;
 
@@ -48,7 +51,7 @@ public:
    */
   virtual ~InputAdapter() {};
 
-  /*! \brief Return a name that identifies the concrete adapter.
+  /*! \brief Returns a descriptive name that identifies the concrete adapter.
    */
   virtual std::string inputAdapterName() const = 0;
 

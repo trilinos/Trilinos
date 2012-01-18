@@ -1,7 +1,5 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/helpers)
-
 #
 # Tests for src/algorithms
 #
@@ -24,6 +22,33 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BasicCoordinateInput
+  SOURCES input/BasicCoordinateInput.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BasicIdentifierInput
+  SOURCES input/BasicIdentifierInput.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BasicVectorInput
+  SOURCES input/BasicVectorInput.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraTraits
   SOURCES input/XpetraTraits.cpp 
   NUM_MPI_PROCS 4
@@ -33,8 +58,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
  
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  XpetraMatrixInput
-  SOURCES input/XpetraMatrixInput.cpp 
+  XpetraCrsMatrixInput
+  SOURCES input/XpetraCrsMatrixInput.cpp 
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -42,8 +67,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
  
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  XpetraGraphInput
-  SOURCES input/XpetraGraphInput.cpp 
+  XpetraCrsGraphInput
+  SOURCES input/XpetraCrsGraphInput.cpp 
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -67,16 +92,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
-
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BasicIdentifierInput
-  SOURCES input/BasicIdentifierInput.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
 
 #
 # Tests for src/models
@@ -103,6 +118,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #
 # Tests for src/problems
 #
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PartitioningSolution
+  SOURCES problems/PartitioningSolution.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 #
 # Tests for src/util

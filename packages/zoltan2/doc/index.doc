@@ -4,6 +4,13 @@
 
 \section zoltan2_intro Introduction to Zoltan2
 
+Zoltan2 is a refactoring of the Zoltan library in C++ for the purpose
+of supporting template programming for users and 
+library that provides dynamic parallel data partitioning.
+When it is released in the Fall of 2012 it will also include graph coloring
+and matrix ordering algorithms.
+
+
 This document is a work in progress.
 
 \section zoltan2_startup Overview of Zoltan2

@@ -44,17 +44,19 @@ public:
   virtual ~OrderingProblem() {};
 
   //! Constructor with InputAdapter Interface
-  OrderingProblem(Adapter *A, Teuchos::ParameterList *p) 
-                      : Problem<Adapter>(A, p) 
+#ifdef HAVE_ZOLTAN2_MPI
+  OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm comm=MPI_COMM_WORLD) 
+                      : Problem<Adapter>(A, p, comm) 
+#else
+  OrderingProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
+#endif
   {
     HELLO;
     createOrderingProblem();
   };
 
   // Other methods
-  //   LRIESEN - Do we restate virtual in the concrete class?  I
-  //    don't think I've seen this style before.
-  virtual void solve();
+  void solve();
   // virtual void redistribute();
 
   OrderingSolution<gid_t, lno_t> *getSolution() {
@@ -80,7 +82,7 @@ void OrderingProblem<Adapter>::solve()
   this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>(nVtx, nVtx));
 
   // Determine which algorithm to use based on defaults and parameters.
-  // For now, assuming RCM.
+  // TODO: Use RCM if graph model is defined, otherwise use Natural.
   // Need some exception handling here, too.
 
   string method = this->params_->template get<string>("ORDER_METHOD", "RCM");
@@ -92,10 +94,13 @@ void OrderingProblem<Adapter>::solve()
       AlgRCM<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
                       this->comm_);
   }
-  else if (method.compare("random") == 0)
+  else if (method.compare("Natural") == 0)
   {
-      AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_,
-                      this->comm_);
+      AlgNatural<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, this->comm_);
+  }
+  else if (method.compare("Random") == 0)
+  {
+      AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, this->comm_);
   }
   else if (method.compare("Minimum_Degree") == 0)
   {
@@ -133,6 +138,11 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   ovis_enabled(this->comm_->getRank());
 #endif
 
+  // Finalize parameters.  If the Problem wants to set or
+  // change any parameters, do it before this call.
+
+  this->env_->commitParameters();
+
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
   //   MODEL = graph, hypergraph, geometric, ids
@@ -142,29 +152,27 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  // TODO: This doesn't work.  baseInputAdapter_.getRawPtr() is NULL.
-  //
-  // RCP<const base_adapter_t> baseInputAdapter_ =
-  //   rcp_implicit_cast<const base_adapter_t>(this->inputAdapter_);
-  //
-  // So to pass the InputAdapter to the Model we use a raw pointer.
-  // Since the Problem creates the Model and will destroy it when
-  // done, the Model doesn't really need an RCP to the InputAdapter.
-  // But it would be nice if that worked.
-
-  const base_adapter_t *baseAdapter = this->inputAdapter_.getRawPtr();
-
   // Select Model based on parameters and InputAdapter type
   switch (modelType) {
 
   case GraphModelType:
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      baseAdapter, this->env_, false, true));
+      this->baseInputAdapter_, this->envConst_, this->comm_, false, true));
+
+    this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+      this->graphModel_);
+
     break;
+
+
 
   case IdentifierModelType:
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-      baseAdapter, this->env_, false));
+      this->baseInputAdapter_, this->envConst_, this->comm_, false));
+
+    this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+      this->identifierModel_);
+
     break;
 
   case HypergraphModelType:

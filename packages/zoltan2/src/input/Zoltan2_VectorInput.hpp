@@ -8,8 +8,8 @@
 
 /*! \file Zoltan2_VectorInput.hpp
 
-    \brief The abstract interface for an input adapter representing a 
-    distributed vector. 
+    \brief The interface for an input adapter for a 
+    distributed vector with optional weights. 
 */
 
 
@@ -22,20 +22,33 @@
 
 namespace Zoltan2 {
 
-/*! Zoltan2::VectorInput
-    \brief VectorInput defines the interface for input adapters for vectors.
+  /*!  \brief VectorInput defines the interface for vector input adapters.
 
-    gid_t: the type for the application's global Ids
-    lno_t: the integral type that Zoltan2 will use for local counters.
-    gno_t: the integral type that Zoltan2 will use for the global 
-      counts and identifiers.  It needs to be large enough for the
-      problem's number of objects.
+    Input adapters provide access for Zoltan2 to the user's data.  The
+    methods in the interface must be defined by users.  Many built-in
+    adapters are already defined for common data structures, such as
+    Tpetra and Epetra objects and C-language pointers to arrays.
 
-    The template parameter is the the User's vector data structure.
-    The user must have previously defined traits for their vector 
-    data structure, supplying Zoltan2 mainly with their data types.
+    Data types:
+    \li \c scalar_t is the data type for weights and vector element values.
+    \li \c lno_t is the integral data type used by Zoltan2 for local indices and local counts.
+    \li \c gno_t is the integral data type used by Zoltan2 to represent global indices and global counts.
+    \li \c gid_t is the data type used by the application for global Ids.  If the application's global Id data type is a Teuchos Ordinal, then \c gid_t and \c gno_t are the same.  Otherwise, the application global Ids will be mapped to Teuchos Ordinals for use by Zoltan2 internally.  (Teuchos Ordinals are those data types for which traits are defined in Trilinos/packages/teuchos/src/Teuchos_OrdinalTraits.hpp.)
+    \li \c node_t is a sub class of Kokkos::StandardNodeMemoryModel, which is used to optimize performance on many-core and multi-core architectures.  If you don't use Kokkos, you can ignore this data type.
+
+    The template parameter (\c User) is a C++ class type which provides the
+    actual data types with which the Zoltan2 library will be compiled, through
+    a Traits mechanism.  \c User may be the
+    actual class used by application to represent a vector, or it may be
+    the empty helper class \c BasicUserTypes with which a Zoltan2 user
+    can easily supply the data types for the library.
+
+    VectorInput may be a single vector or a set of corresponding vectors
+    which have with the
+    same global identifiers and the same distribution across processes.
+    (For example, there is a Trilinos Xpetra::Multivector input adapter
+    which is a sub class of VectorInput.)
  
- TODO: weights and coordinates
 */
 
 template <typename User>
@@ -51,44 +64,97 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
 
-  enum InputAdapterType inputAdapterType() const {return VectorAdapterType;}
-
   /*! Pure virtual destructor
    */
   virtual ~VectorInput() {};
 
-  /*! Return the length of the portion of the vector on this process.
+  ////////////////////////////////////////////////////
+  // The InputAdapter interface.
+  ////////////////////////////////////////////////////
+
+  enum InputAdapterType inputAdapterType() const {return VectorAdapterType;}
+
+  ////////////////////////////////////////////////////
+  // My interface.
+  ////////////////////////////////////////////////////
+
+  /*! \brief Return the number of vectors (typically one).
+   */
+  virtual int getNumberOfVectors() const = 0;
+
+  /*! \brief Return the number of weights per vector element.
+   */
+  virtual int getNumberOfWeights() const = 0;
+
+  /*! \brief Return the length of the portion of the vector on this process.
    */
   virtual size_t getLocalLength() const = 0;
 
-  /*! Return the global length of the vector on this process.
+  /*! \brief Return the global length of the vector on this process.
    */
   virtual size_t getGlobalLength() const = 0;
 
-  /** TODO getStride - what exactly does this mean
-   */
+  /*! \brief Provide a pointer to the vertex elements.  If the VectorInput
+       represents more than one vector, vector zero is implied.
 
-  /*! Sets pointers to this process' vertex elements.
-      \param Ids will on return point to the list of the global Ids for 
-        each element on this process.
-      \param element will on return point to the vector elements
+      \param ids will on return point to the list of global Ids for 
+        each element on this process.  TODO: make Ids optional.
+      \param elements will on return point to the vector values
         corresponding to the global Ids.
-      \param wgts will on return point to a list of the weight or weights 
-         associated with each element in the Ids list.  Weights are listed by 
-         element by weight component.   NOT IMPLEMENTED YET
-       \return The number of ids in the Ids list.
+      \param stride the k'th element is located at elements[stride*k]
+      \return The number of ids in the Ids list.
    */
 
-  virtual size_t getVectorView(const gid_t *&Ids, 
-     const scalar_t *&element, const scalar_t *&wgts) const = 0;
+  virtual size_t getVector(const gid_t *&ids, 
+     const scalar_t *&elements, int &stride) const = 0;
 
-  /*! Given a new mapping of vertex elements to processes,
-   *    create a new vertex with this mapping, and migrate
-   *    the first vertex to it.  This is optional,
-   *    This method only needs to be defined if you want to
-   *    use it redistribute your vector. 
-   *  TODO   documentation
+  /*! \brief Provide a pointer to the elements of the specified vector.
+
+      \param i ranges from zero to one less than getNumberOfVector(), and
+         represents the vector for which data is being requested.
+      \param ids will on return point to the list of global Ids for 
+        each element on this process.  TODO: make Ids optional.
+      \param elements will on return point to the vector values
+        corresponding to the global Ids.
+      \param stride the k'th element is located at elements[stride*k]
+      \return The number of ids in the Ids list.
    */
+
+  virtual size_t getVector(int i, const gid_t *&ids, 
+     const scalar_t *&elements, int &stride) const = 0;
+
+  /*! \brief  Provide a pointer to the weights corresponding to the elements
+       returned in getVector().
+        
+      \param dimension ranges from zero to one less than getNumberOfWeights()
+      \param weights is the list of weights of the given dimension for
+           the elements listed in getVector.
+       \param stride The k'th weight is located at weights[stride*k]
+       \return The number of weights listed, which should be the same
+                  as the number of elements listed in getVector().
+   */
+
+  virtual size_t getVectorWeights(int dimension,
+     const scalar_t *&weights, int &stride) const = 0;
+
+  /*! \brief Apply a PartitioningSolution to an input.
+   *
+   *  This is not a required part of the VectorInput interface. However
+   *  if the Caller calls a Problem method to redistribute data, it needs
+   *  this method to perform the redistribution.
+   *
+   *  \param in  An input object with a structure and assignment of
+   *           of global Ids to processes that matches that of the input
+   *           data that instantiated this InputAdapter.
+   *  \param out On return this should point to a newly created object
+   *            with the specified partitioning.
+   *  \param solution  The Solution object created by a Problem should
+   *      be supplied as the third argument.  It must have been templated
+   *      on user data that has the same global ID distribution as this
+   *      user data.
+   *  \return   Returns the number of local Ids in the new partitioning.
+   */
+
   template <typename User2>
     size_t applyPartitioningSolution(User &in, User *&out,
          const PartitioningSolution<User2> &solution)

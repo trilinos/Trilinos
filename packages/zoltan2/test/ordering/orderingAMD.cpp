@@ -1,6 +1,7 @@
 #include <Zoltan2_OrderingProblem.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_XpetraVectorInput.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 #include <iostream>
 #include <limits>
 #include <vector>
@@ -13,8 +14,6 @@
 #include <MatrixMarket_Tpetra.hpp>
 
 //#include <Zoltan2_Memory.hpp>  KDD User app wouldn't include our memory mgr.
-
-#include <useMueLuGallery.hpp>
 
 #ifdef SHOW_ZOLTAN2_LINUX_MEMORY
 extern "C"{
@@ -37,11 +36,13 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // Eventually want to use Teuchos unit tests to vary z2TestLO and
-// GO.  For now, we set them at compile time.
-typedef int z2TestLO;
-typedef long z2TestGO;
+// GO.  For now, we set them at compile time based on whether Tpetra
+// is built with explicit instantiation on.  (in Zoltan2_TestHelpers.hpp)
 
-typedef double Scalar;
+typedef lno_t z2TestLO;
+typedef gno_t z2TestGO;
+typedef scalar_t Scalar;
+
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
@@ -142,23 +143,17 @@ int main(int narg, char** arg)
   }
 #endif
 
-  ////// Read or construct a matrix using Tpetra or MueLu
+  RCP<UserInputForTests> uinput;
 
-  RCP<SparseMatrix> origMatrix;
-  if (inputFile != "") { // Input file specified; read a matrix
+  if (inputFile != "")  // Input file specified; read a matrix
 
-    // Need a node for the MatrixMarket reader.
-    Teuchos::ParameterList defaultParameters;
-    RCP<Node> node = rcp(new Node(defaultParameters));
+    uinput = rcp(new UserInputForTests(inputFile, comm));
 
-    origMatrix =
-      Tpetra::MatrixMarket::Reader<SparseMatrix>::readSparseFile(
-                                         inputFile, comm, node, 
-                                         true, false, true);
-  }
-  else { // Let MueLu generate a matrix
-    origMatrix = useMueLuGallery<Scalar, z2TestLO, z2TestGO>(narg, arg, comm);
-  }
+  else                  // Let MueLu generate a matrix
+
+    uinput = rcp(new UserInputForTests(xdim, ydim, zdim, comm, matrixType));
+
+  RCP<SparseMatrix> origMatrix = uinput->getTpetraCrsMatrix();
 
   if (outputFile != "") {
     // Just a sanity check.

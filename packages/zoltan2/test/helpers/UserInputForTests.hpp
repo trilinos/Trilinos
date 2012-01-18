@@ -17,7 +17,6 @@
 //
 
 #include <Zoltan2_XpetraTraits.hpp>
-#include <ErrorHandlingForTests.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -52,195 +51,39 @@ using Teuchos::Comm;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 
-template <typename Scalar, typename LNO, typename GNO>
-class UserInputForTests{
-
-private:
-    typedef typename Tpetra::CrsMatrix<Scalar, LNO, GNO> tcrsMatrix_t;
-    typedef typename Tpetra::CrsGraph<LNO, GNO> tcrsGraph_t;
-    typedef typename Tpetra::Vector<Scalar, LNO, GNO> tVector_t;
-    typedef typename Tpetra::MultiVector<Scalar, LNO, GNO> tMVector_t;
-
-    typedef typename Xpetra::CrsMatrix<Scalar, LNO, GNO> xcrsMatrix_t;
-    typedef typename Xpetra::CrsGraph<LNO, GNO> xcrsGraph_t;
-    typedef typename Xpetra::Vector<Scalar, LNO, GNO> xVector_t;
-    typedef typename Xpetra::MultiVector<Scalar, LNO, GNO> xMVector_t;
-
-    GNO xdim_, ydim_, zdim_;
-
-    std::string fname_;
-    RCP<const Comm<int> > tcomm_; 
-    RCP<Zoltan2::default_node_t> node_;
-
-    RCP<tcrsMatrix_t> M_; 
-    RCP<xcrsMatrix_t> xM_; 
-
-    void readMatrixMarketFile()
-    {
-      try{
-        M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
-                 fname_, tcomm_, node_);
-      }
-      catch (std::exception &e) {
-        TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
-      }
-      RCP<const xcrsMatrix_t> xm = 
-        Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-      xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
-    }
-
-    void buildCrsMatrix()
-    {
-      Teuchos::CommandLineProcessor tclp;
-      MueLu::Gallery::Parameters<GNO> params(tclp,
-         xdim_, ydim_, zdim_, std::string("Laplace3D"));
- 
-      RCP<const Tpetra::Map<LNO, GNO> > map =
-        rcp(new Tpetra::Map<LNO, GNO>(
-          params.GetNumGlobalElements(), 0, tcomm_));
-
-      try{
-        M_ = MueLu::Gallery::CreateCrsMatrix<Scalar, LNO, GNO, 
-          Tpetra::Map<LNO, GNO>, Tpetra::CrsMatrix<Scalar, LNO, GNO> >(
-            params.GetMatrixType(), map, params.GetParameterList()); 
-      }
-      catch (std::exception &e) {    // Probably not enough memory
-        TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
-      }
-      RCP<const xcrsMatrix_t> xm = 
-        Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-      xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
-    }
-
-    void createMatrix()
-    {
-      if (M_.is_null()){
-        if (xdim_ > 0){
-          buildCrsMatrix();
-        }
-        else if (fname_.size() > 0){
-          readMatrixMarketFile();
-        }
-        else{
-          throw std::logic_error("programming error");
-        }
-      }
-    }
-
-public:
-    // Constructor for a user object created from a Matrix
-    // Market file.
-  
-    UserInputForTests(std::string s, const RCP<const Comm<int> > &c): 
-      xdim_(0), ydim_(0), zdim_(0), fname_(s), tcomm_(c),
-       node_(Kokkos::DefaultNode::getDefaultNode()), M_(), xM_()
-    {
-    }
-
-    // Constructor for a user object created in memory using
-    // a MueLue::Gallery factory.
-
-    UserInputForTests(GNO x, GNO y, GNO z, const RCP<const Comm<int> > &c): 
-       xdim_(x), ydim_(y), zdim_(z), fname_(), tcomm_(c),
-       node_(Kokkos::DefaultNode::getDefaultNode()), M_(), xM_()
-    {
-    }
-
-    RCP<tcrsMatrix_t> getTpetraCrsMatrix() 
-    { 
-      if (M_.is_null())
-       createMatrix();
-      return M_;
-    }
-
-    RCP<tcrsGraph_t> getTpetraCrsGraph() 
-    { 
-      if (M_.is_null())
-       createMatrix();
-      return rcp_const_cast<tcrsGraph_t>(M_->getCrsGraph());
-    }
-
-    RCP<tVector_t> getTpetraVector() 
-    { 
-      if (M_.is_null())
-       createMatrix();
-      RCP<tVector_t> V = rcp(new tVector_t(M_->getRowMap(),  1));
-      V->randomize();
-      
-      return V;
-    }
-
-    RCP<tMVector_t> getTpetraMultiVector(int nvec) 
-    { 
-      if (M_.is_null())
-       createMatrix();
-      RCP<tMVector_t> mV = rcp(new tMVector_t(M_->getRowMap(), nvec));
-      mV->randomize();
-      
-      return mV;
-    }
-
-    RCP<xcrsMatrix_t> getXpetraCrsMatrix() 
-    { 
-      if (xM_.is_null())
-       createMatrix();
-      return xM_;
-    }
-
-    RCP<xcrsGraph_t> getXpetraCrsGraph() 
-    { 
-      if (xM_.is_null())
-       createMatrix();
-      return rcp_const_cast<xcrsGraph_t>(xM_->getCrsGraph());
-    }
-
-    RCP<xVector_t> getXpetraVector() 
-    { 
-      RCP<tVector_t> tV = getTpetraVector();
-      RCP<const xVector_t> xV =
-        Zoltan2::XpetraTraits<tVector_t>::convertToXpetra(tV);
-      return rcp_const_cast<xVector_t>(xV);
-    }
-
-    RCP<xMVector_t> getXpetraMultiVector(int nvec) 
-    { 
-      RCP<const tMVector_t> tMV = getTpetraMultiVector(nvec);
-      RCP<const xMVector_t> xMV =
-        Zoltan2::XpetraTraits<tMVector_t>::convertToXpetra(tMV);
-      return rcp_const_cast<xMVector_t>(xMV);
-    }
-};
-
-//
-// Specialization for Epetra
-//
-
-template <>
-class UserInputForTests<double,int,int>
+class UserInputForTests
 {
 private:
-    typedef Tpetra::CrsMatrix<double, int, int> tcrsMatrix_t;
-    typedef Tpetra::CrsGraph<int, int> tcrsGraph_t;
-    typedef Tpetra::Vector<double, int, int> tVector_t;
-    typedef Tpetra::MultiVector<double, int, int> tMVector_t;
+    typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
+    typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tcrsGraph_t;
+    typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> tVector_t;
+    typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 
-    typedef Xpetra::CrsMatrix<double, int, int> xcrsMatrix_t;
-    typedef Xpetra::CrsGraph<int, int> xcrsGraph_t;
-    typedef Xpetra::Vector<double, int, int> xVector_t;
-    typedef Xpetra::MultiVector<double, int, int> xMVector_t;
+    typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xcrsMatrix_t;
+    typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xcrsGraph_t;
+    typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> xVector_t;
+    typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> xMVector_t;
 
-    int xdim_, ydim_, zdim_;
+    gno_t xdim_, ydim_, zdim_;
+
+    std::string mtype_;
 
     std::string fname_;
     RCP<Zoltan2::default_node_t> node_;
 
     const RCP<const Comm<int> > tcomm_;
+
+#ifdef HAVE_EPETRA_DATA_TYPES
     RCP<const Epetra_Comm> ecomm_;
+#endif
 
     RCP<tcrsMatrix_t> M_; 
     RCP<xcrsMatrix_t> xM_; 
+
+#ifdef HAVE_EPETRA_DATA_TYPES
     RCP<Epetra_CrsMatrix> eM_; 
     RCP<Epetra_CrsGraph> eG_; 
+#endif
 
     void readMatrixMarketFile()
     {
@@ -259,21 +102,22 @@ private:
     void buildCrsMatrix()
     {
       Teuchos::CommandLineProcessor tclp;
-      MueLu::Gallery::Parameters<int> params(tclp,
-         xdim_, ydim_, zdim_, std::string("Laplace3D"));
- 
-      RCP<const Tpetra::Map<int, int> > map =
-        rcp(new Tpetra::Map<int, int>(
+      MueLu::Gallery::Parameters<gno_t> params(tclp,
+         xdim_, ydim_, zdim_, mtype_);
+
+      RCP<const Tpetra::Map<lno_t, gno_t> > map =
+        rcp(new Tpetra::Map<lno_t, gno_t>(
           params.GetNumGlobalElements(), 0, tcomm_));
 
       try{
-        M_ = MueLu::Gallery::CreateCrsMatrix<double, int, int, 
-          Tpetra::Map<int, int>, Tpetra::CrsMatrix<double, int, int> >(
-            params.GetMatrixType(), map, params.GetParameterList()); 
+        M_ = MueLu::Gallery::CreateCrsMatrix<scalar_t, lno_t, gno_t, 
+          Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> >
+            (params.GetMatrixType(), map, params.GetParameterList()); 
       }
       catch (std::exception &e) {    // Probably not enough memory
         TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
       }
+
       RCP<const xcrsMatrix_t> xm = 
         Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
       xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
@@ -295,11 +139,13 @@ private:
     }
 
 public:
+
+#ifdef HAVE_EPETRA_DATA_TYPES
     // Constructor for a user object created from a Matrix
     // Market file.
   
     UserInputForTests(std::string s, const RCP<const Comm<int> > &c): 
-      xdim_(0), ydim_(0), zdim_(0), fname_(s),
+      xdim_(0), ydim_(0), zdim_(0), mtype_(), fname_(s),
        node_(Kokkos::DefaultNode::getDefaultNode()), 
        tcomm_(c), ecomm_(),
        M_(), xM_(), eM_(), eG_()
@@ -310,14 +156,37 @@ public:
     // Constructor for a user object created in memory using
     // a MueLue::Gallery factory.
 
-    UserInputForTests(int x, int y, int z, const RCP<const Comm<int> > &c): 
-       xdim_(x), ydim_(y), zdim_(z), fname_(),
+    UserInputForTests(int x, int y, int z, const RCP<const Comm<int> > &c,
+      std::string matrixType=std::string("Laplace3D")): 
+       xdim_(x), ydim_(y), zdim_(z), mtype_(matrixType), fname_(),
        node_(Kokkos::DefaultNode::getDefaultNode()),
        tcomm_(c), ecomm_(),
        M_(), xM_(), eM_(), eG_()
     {
       ecomm_ = Xpetra::toEpetra(c);
     }
+#else
+    // Constructor for a user object created from a Matrix
+    // Market file.
+
+    UserInputForTests(std::string s, const RCP<const Comm<int> > &c):
+      xdim_(0), ydim_(0), zdim_(0), mtype_(), fname_(s), 
+       node_(Kokkos::DefaultNode::getDefaultNode()),
+       tcomm_(c), M_(), xM_()
+    {
+    }
+
+    // Constructor for a user object created in memory using
+    // a MueLue::Gallery factory.
+
+    UserInputForTests(gno_t x, gno_t y, gno_t z, const RCP<const Comm<int> > &c,
+      std::string matrixType=std::string("Laplace3D")): 
+       xdim_(x), ydim_(y), zdim_(z), mtype_(matrixType), fname_(), 
+       node_(Kokkos::DefaultNode::getDefaultNode()),
+       tcomm_(c), M_(), xM_()
+    {
+    }
+#endif
     
 
     RCP<tcrsMatrix_t> getTpetraCrsMatrix() 
@@ -384,6 +253,7 @@ public:
       return rcp_const_cast<xMVector_t>(xMV);
     }
 
+#ifdef HAVE_EPETRA_DATA_TYPES
     RCP<Epetra_CrsGraph> getEpetraCrsGraph()
     {
       if (eG_.is_null()){
@@ -391,8 +261,8 @@ public:
           createMatrix();
 
         RCP<const tcrsGraph_t> tgraph = M_->getCrsGraph();
-        RCP<const Tpetra::Map<int, int> > trowMap = tgraph->getRowMap();
-        RCP<const Tpetra::Map<int, int> > tcolMap = tgraph->getColMap();
+        RCP<const Tpetra::Map<lno_t, gno_t> > trowMap = tgraph->getRowMap();
+        RCP<const Tpetra::Map<lno_t, gno_t> > tcolMap = tgraph->getColMap();
 
         int nElts = static_cast<int>(trowMap->getGlobalNumElements());
         int nMyElts = static_cast<int>(trowMap->getNodeNumElements());
@@ -440,7 +310,7 @@ public:
 
         for (int i=0; i < nrows; i++){
           ArrayView<const int> colLid;
-          ArrayView<const double> nz;
+          ArrayView<const scalar_t> nz;
           M_->getLocalRowView(i+base, colLid, nz);
           size_t rowSize = colLid.size();
           int rowGid = rowMap.GID(i+base);
@@ -472,4 +342,5 @@ public:
       mV->Random();
       return mV;
     }
+#endif
 };

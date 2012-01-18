@@ -42,6 +42,30 @@ if (gval){ \
 } \
 }
 
+#define TEST_FAIL_AND_RETURN(comm, ok, s){ \
+int gval, lval=( (ok) ? 0 : 1);       \
+reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
+if (gval){ \
+  if ((comm).getRank() == 0){\
+    std::cerr << "Error: " << s << std::endl;\
+    std::cout << "FAIL" << std::endl;\
+  } \
+  return; \
+} \
+}
+
+#define TEST_FAIL_AND_RETURN_VALUE(comm, ok, s, rc){ \
+int gval, lval=( (ok) ? 0 : 1);       \
+reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
+if (gval){ \
+  if ((comm).getRank() == 0){\
+    std::cerr << "Error: " << s << std::endl;\
+    std::cout << "FAIL" << std::endl;\
+  } \
+  return (rc); \
+} \
+}
+
 #else
 
 #define TEST_FAIL_AND_THROW(comm, ok, s) \
@@ -56,6 +80,19 @@ if (!ok){ \
   exit(code);\
 } 
 
+#define TEST_FAIL_AND_RETURN(comm, ok, s) \
+if (!ok){ \
+  std::cerr << "Error: " << s << std::endl;\
+  std::cout << "FAIL" << std::endl;\
+  return;\
+} 
+
+#define TEST_FAIL_AND_RETURN_VALUE(comm, ok, s, rc) \
+if (!ok){ \
+  std::cerr << "Error: " << s << std::endl;\
+  std::cout << "FAIL" << std::endl;\
+  return (rc);\
+} 
 #endif
 
 int globalFail(const RCP<const Comm<int> > &comm, int fail)

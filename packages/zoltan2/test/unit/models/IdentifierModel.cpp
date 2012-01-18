@@ -14,7 +14,7 @@
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_BasicIdentifierInput.hpp>
-#include <UserInputForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
 #include <set>
 
@@ -25,15 +25,13 @@
 
 #include <Tpetra_CrsMatrix.hpp>
 
-
 using namespace std;
 using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-template <typename Scalar, typename LNO, typename GNO, typename Node>
-  void testIdentifierModel(std::string fname, GNO xdim, GNO ydim, GNO zdim,
-    const RCP<const Comm<int> > &comm, bool consecutiveIds)
+void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
+  const RCP<const Comm<int> > &comm, bool consecutiveIds)
 {
   int rank = comm->getRank();
   int fail = 0, gfail = 0;
@@ -44,20 +42,20 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   //////////////////////////////////////////////////////////////
   // Use an Tpetra::CrsMatrix for the user data.
   //////////////////////////////////////////////////////////////
-  typedef Tpetra::CrsMatrix<Scalar, LNO, GNO> tcrsMatrix_t;
+  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> tcrsMatrix_t;
   
-  UserInputForTests<Scalar,LNO,GNO> *input;
+  UserInputForTests *input;
   if (fname.size() > 0)
-    input = new UserInputForTests<Scalar,LNO,GNO>(fname, comm);
+    input = new UserInputForTests(fname, comm);
   else
-    input = new UserInputForTests<Scalar,LNO,GNO>(xdim,ydim,zdim,comm);
+    input = new UserInputForTests(xdim,ydim,zdim,comm);
 
   RCP<tcrsMatrix_t > M = input->getTpetraCrsMatrix();
-  LNO nLocalIds = M->getNodeNumRows();
-  GNO nGlobalIds =  M->getGlobalNumRows();
+  lno_t nLocalIds = M->getNodeNumRows();
+  gno_t nGlobalIds =  M->getGlobalNumRows();
 
-  ArrayView<const GNO> idList = M->getRowMap()->getNodeElementList();
-  typename std::set<GNO> idSet(idList.begin(), idList.end());
+  ArrayView<const gno_t> idList = M->getRowMap()->getNodeElementList();
+  std::set<gno_t> idSet(idList.begin(), idList.end());
 
   //////////////////////////////////////////////////////////////
   // Create an IdentifierModel with this input
@@ -65,7 +63,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
   typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
   typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
-  typedef Zoltan2::StridedInput<LNO, Scalar> input_t;
+  typedef Zoltan2::StridedInput<lno_t, scalar_t> input_t;
 
   RCP<const adapter_t> ia = Teuchos::rcp(new adapter_t(M));
   
@@ -74,7 +72,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
 
   try{
     model = new Zoltan2::IdentifierModel<base_adapter_t>(
-      base_ia, default_env, consecutiveIds);
+      base_ia, default_env, comm, consecutiveIds);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -103,7 +101,7 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   if (gfail)
     printFailureCode(comm, fail);
   
-  ArrayView<const GNO> gids;
+  ArrayView<const gno_t> gids;
   ArrayView<const input_t> wgts;
   
   model->getIdentifierList(gids, wgts);
@@ -114,14 +112,14 @@ template <typename Scalar, typename LNO, typename GNO, typename Node>
   if (!fail && wgts.size() != 0)
     fail = 6;
 
-  for (LNO i=0; !fail && i < nLocalIds; i++){
-    typename std::set<GNO>::iterator next = idSet.find(gids[i]);
+  for (lno_t i=0; !fail && i < nLocalIds; i++){
+    std::set<gno_t>::iterator next = idSet.find(gids[i]);
     if (next == idSet.end())
       fail = 7;
   }
 
   if (!fail && consecutiveIds){
-    bool inARow = Zoltan2::IdentifierTraits<GNO>::areConsecutive(
+    bool inARow = Zoltan2::IdentifierTraits<gno_t>::areConsecutive(
       gids.getRawPtr(), nLocalIds);
 
     if (!inARow)
@@ -159,30 +157,26 @@ int main(int argc, char *argv[])
       std::cout << mtxFiles[fileNum];
       std::cout << ", consecutive IDs not requested" << std::endl;
     }
-    testIdentifierModel<double, int, int, Zoltan2::default_node_t>(
-      mtxFiles[fileNum], 0,0,0,comm, !wishConsecutiveIds);
+    testIdentifierModel(mtxFiles[fileNum], 0,0,0,comm, !wishConsecutiveIds);
 
     if (rank == 0){
       std::cout << mtxFiles[fileNum];
       std::cout << ", consecutive IDs are requested" << std::endl;
     }
-    testIdentifierModel<float, int, long, Zoltan2::default_node_t>(
-      mtxFiles[fileNum], 0,0,0,comm,  wishConsecutiveIds);
+    testIdentifierModel(mtxFiles[fileNum], 0,0,0,comm,  wishConsecutiveIds);
   }
 
   if (rank == 0){
     std::cout << "5x5x5 mesh";
     std::cout << ", consecutive IDs not requested" << std::endl;
   }
-  testIdentifierModel<double, int, int, Zoltan2::default_node_t>(
-    nullString, 5, 5, 5, comm, !wishConsecutiveIds);
+  testIdentifierModel(nullString, 5, 5, 5, comm, !wishConsecutiveIds);
 
   if (rank == 0){
     std::cout << "5x5x5 mesh";
     std::cout << ", consecutive IDs are requested" << std::endl;
   }
-  testIdentifierModel<double, int, int, Zoltan2::default_node_t>(
-    nullString, 5, 5, 5, comm, wishConsecutiveIds);
+  testIdentifierModel(nullString, 5, 5, 5, comm, wishConsecutiveIds);
 
   if (rank==0) std::cout << "PASS" << std::endl;
 

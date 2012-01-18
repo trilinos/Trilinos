@@ -62,6 +62,7 @@ using Teuchos::CommRequest;
 using Teuchos::ParameterList;
 using Teuchos::ParameterEntry;
 using Teuchos::reduceAll;
+using Teuchos::gatherAll;
 }
 
 //////////////////////////////////////////////////////

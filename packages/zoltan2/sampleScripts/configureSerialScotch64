@@ -37,8 +37,6 @@ cmake \
 -D Trilinos_ENABLE_TESTS:BOOL=OFF \
 -D Zoltan2_ENABLE_TESTS:BOOL=ON \
 -D Zoltan2_ENABLE_EXAMPLES:BOOL=OFF \
--D Zoltan2_HAVE_MALLINFO:BOOL=ON \
--D Zoltan2_HAVE_TPL64:BOOL=ON \
 -D Zoltan2_ENABLE_Scotch:BOOL=ON \
 -D Zoltan_ENABLE_Scotch:BOOL=ON \
 -D Scotch_INCLUDE_DIRS:FILEPATH="/home/lriesen/local/system/scotch_5.1.12-64/src/libscotch" \

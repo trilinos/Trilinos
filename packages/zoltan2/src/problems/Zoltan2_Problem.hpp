@@ -23,36 +23,37 @@ template<typename Adapter>
 class Problem {
 public:
   
-  // Constructors (there will be several to support novice interface)
-  // Each will make sure the InputAdapter, parameters, etc. are set 
-  // correctly before calling a common problem construction function.
-  //KDDKDD How does simple interface work with Adapter template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &);
-  //KDDKDD How does simple interface work with Adapter template? Problem(Tpetra::CrsMatrix<Scalar,LNO,GNO,Node> &, Teuchos::ParameterList &);
-  Problem(Adapter *,
-          Teuchos::ParameterList *params,
-          const RCP<const Teuchos::Comm<int> > &comm = 
-                       Teuchos::DefaultComm<int>::getComm());
+#ifdef HAVE_ZOLTAN2_MPI
+  /*! Constructor for MPI builds
+   */
+  Problem(Adapter *, ParameterList *params, MPI_Comm comm=MPI_COMM_WORLD);
+#else
+  /*! Constructor for serial builds
+   */
+  Problem(Adapter *, ParameterList *params);
+#endif
 
-  // Destructor
+  /*! Destructor
+   */
   virtual ~Problem() {};
 
-  // Other methods
+  /*! Method that creates a solution.
+   */
   virtual void solve() = 0;
 
 protected:
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  RCP<const Adapter> inputAdapter_;
-  RCP<const base_adapter_t> baseInputAdapter_;
+  Adapter* inputAdapter_;
+  base_adapter_t *baseInputAdapter_;
 
   RCP<GraphModel<base_adapter_t> > graphModel_;  
   RCP<IdentifierModel<base_adapter_t> > identifierModel_;  
 
   RCP<const Model<base_adapter_t> > generalModel_;  
 
-  // KDDKDD May want other models, too, for eval, printing, etc.
-  RCP<Teuchos::ParameterList> params_;
-  RCP<const Teuchos::Comm<int> > comm_;
+  RCP<ParameterList> params_;
+  RCP<const Comm<int> > comm_;
 
   // The Problem has a non const Environment object.  This is because
   //   the Problem creates the Environment and may update it before
@@ -69,47 +70,48 @@ private:
 
 };
 
+#ifdef HAVE_ZOLTAN2_MPI
 
-#if 0 // KDDKDD How does simple interface work with Adapter template??
-////////////////////////////////////////////////////////////////////////
-//! Problem class constructor:  Tpetra matrix input must be converted
-//! to XpetraMatrixAdapter.
 template <typename Adapter>
-Problem<Adapter>::Problem(
-  Tpetra::CrsMatrix<CONSISTENT_TRILINOS_TEMPLATE_PARAMS> &A,
-  Teuchos::ParameterList &p
-) 
+  Problem<Adapter>::Problem( Adapter *input, ParameterList *params,
+    MPI_Comm comm) : inputAdapter_(input), baseInputAdapter_(),
+      graphModel_(), identifierModel_(), generalModel_(),
+      params_(RCP<ParameterList>(params,false)), comm_(), env_(), envConst_()
+{
+  using Teuchos::OpaqueWrapper;
+  using Teuchos::opaqueWrapper;
+
+  baseInputAdapter_ = dynamic_cast<base_adapter_t *>(input);
+
+  HELLO;
+
+  env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
+  envConst_ = rcp_const_cast<const Environment>(env_);
+
+  // The problem communicator may differ from the default application 
+  //  communicator in the Environment.
+
+  RCP<OpaqueWrapper<MPI_Comm> > wrapper = opaqueWrapper(comm);
+  comm_ = rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+}
+
+#else
+
+template <typename Adapter>
+  Problem<Adapter>::Problem( Adapter *input, ParameterList *params):
+    inputAdapter_(input), 
+    baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
+    graphModel_(), identifierModel_(), generalModel_(),
+    params_(RCP<ParameterList>(params,false)), comm_(), env_(), envConst_()
 {
   HELLO;
-  inputAdapter_ = rcp(new XpetraCrsMatrixInput<Z2PARAM_TEMPLATE>
-                                (rcpFromRef(A)));
-  params_ = rcpFromRef(p);
-  cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() << " " << inputAdapter_->inputAdapterName() << endl;
+  env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
+  envConst_ = rcp_const_cast<const Environment>(env_);
+  comm_ = DefaultComm<int>::getComm();
 }
+
 #endif
 
-template <typename Adapter>
-Problem<Adapter>::Problem(
-  Adapter *input,
-  Teuchos::ParameterList *params,
-  const RCP<const Teuchos::Comm<int> > &comm
-) :
-  inputAdapter_(RCP<Adapter>(input,false)),
-  params_(RCP<Teuchos::ParameterList>(params,false)),
-  comm_(comm),
-  env_(Teuchos::RCP<Environment>(new Environment(*params, comm_)))
-{
-  HELLO;
-
-  envConst_ = rcp_const_cast<const Environment>(env_);
-  
-//  cout << "KDDKDD input adapter type " << inputAdapter_->inputAdapterType() 
-//       << " " << inputAdapter_->inputAdapterName() 
-//       << " sizeof(scalar_t)= " 
-//       << sizeof(typename Adapter::scalar_t) 
-//       << endl;
-}
-
-}
+} // namespace Zoltan2
 
 #endif
