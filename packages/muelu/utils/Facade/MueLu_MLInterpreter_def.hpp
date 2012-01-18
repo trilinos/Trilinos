@@ -262,7 +262,7 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
     // TODO change to TrilnosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
     ifpackType = params.get<std::string>("coarse: ifpack type");
     if(ifpackType == "ILU") {
-      ifpackList.set("fact: level-of-fill", params.get<int>("coarse: ifpack level-of-fill"));
+      ifpackList.set<int>("fact: level-of-fill", (int)params.get<double>("coarse: ifpack level-of-fill"));
       ifpackList.set("partitioner: overlap", params.get<int>("coarse: ifpack overlap"));
       smooProto = rcp( new IfpackSmoother(ifpackType, ifpackList, params.get<int>("coarse: ifpack overlap")) );
     }
@@ -352,7 +352,7 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
         // TODO change to TrilnosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
         ifpackType = params.sublist("smoother: list " + levelstr).get<std::string>("smoother: ifpack type");
         if(ifpackType == "ILU") {
-            ifpackList.set("fact: level-of-fill", smolevelsublist.get<int>("smoother: ifpack level-of-fill"));
+            ifpackList.set<int>("fact: level-of-fill", (int)smolevelsublist.get<double>("smoother: ifpack level-of-fill"));
             ifpackList.set("partitioner: overlap", smolevelsublist.get<int>("smoother: ifpack overlap"));
             smooProto = rcp( new IfpackSmoother(ifpackType, ifpackList, smolevelsublist.get<int>("smoother: ifpack overlap")) );
         }
