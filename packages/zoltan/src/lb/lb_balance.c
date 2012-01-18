@@ -289,8 +289,9 @@ struct OVIS_parameters ovisParameters;
   ovis_enabled(zz->Proc);
   Zoltan_OVIS_Setup(zz, &ovisParameters);
   if (zz->Proc == 0)
-    printf("OVIS PARAMETERS %s %d %f\n", 
+    printf("OVIS PARAMETERS %s %s %d %f\n", 
            ovisParameters.hello, 
+           ovisParameters.appConfigFile, 
            ovisParameters.outputLevel, 
            ovisParameters.minVersion);
 #endif
