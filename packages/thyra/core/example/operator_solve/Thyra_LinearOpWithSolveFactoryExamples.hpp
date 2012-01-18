@@ -242,7 +242,7 @@ void solveSmallNumericalChangeSolve(
   opSmallChanger.changeOp(A);
   Thyra::initializeAndReuseOp<Scalar>(lowsFactory, rcpA, invertibleA.ptr());
   // Note that above a maximum amount of reuse will be achieved, such as
-  // keeping the same precondtioner.
+  // keeping the same preconditioner.
   Thyra::assign(x2, as<Scalar>(0.0));
   Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b2, x2);
 } // end solveSmallNumericalChangeSolve

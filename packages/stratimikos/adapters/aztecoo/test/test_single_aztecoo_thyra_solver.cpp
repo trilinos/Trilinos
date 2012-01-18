@@ -186,7 +186,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     result = linearOpWithSolveTester.check(*nsA,out.get());
     if(!result) success = false;
 
-    if(out.get()) *out << "\nF) Uninitialize nsA, create precondtioner for diagonal scaled by 0.99 and then reinitialize nsA reusing the old preconditioner ...\n";
+    if(out.get()) *out << "\nF) Uninitialize nsA, create preconditioner for diagonal scaled by 0.99 and then reinitialize nsA reusing the old preconditioner ...\n";
 
     // Scale the diagonal of the matrix and then create the preconditioner for it
     Thyra::uninitializeOp<double>(*lowsFactory, nsA.ptr());

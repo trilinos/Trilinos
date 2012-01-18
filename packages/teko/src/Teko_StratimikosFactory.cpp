@@ -152,7 +152,7 @@ void StratimikosFactory::initializePrec(
     fwdOp,outArg(epetraFwdOp),outArg(epetraFwdOpTransp),outArg(epetraFwdOpApplyAs),
     outArg(epetraFwdOpAdjointSupport),outArg(epetraFwdOpScalar)
                                              );
-  // Get the concrete precondtioner object
+  // Get the concrete preconditioner object
   StratimikosFactoryPreconditioner & defaultPrec 
         = Teuchos::dyn_cast<StratimikosFactoryPreconditioner>(*prec);
 
@@ -345,7 +345,7 @@ StratimikosFactory::getValidParameters() const
             "Meaning put the first 3 unknowns per node together and sperate the v and w\n"
             "components.");
     pl->set("Reorder Type","",
-            "This specifies how the blocks are reordered for use in the precondtioner.\n"
+            "This specifies how the blocks are reordered for use in the preconditioner.\n"
             "For example, assume the linear system is generated from 3D Navier-Stokes\n"
             "with an energy equation, yielding the unknowns [u v w p T]. If the\n"
             "\"Strided Blocking\" string is \"3 1 1\", then setting this parameter to\n"

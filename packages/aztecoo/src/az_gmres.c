@@ -128,7 +128,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
   Amat:            Structure used to represent the matrix (see file az_aztec.h
                    and Aztec User's Guide).
 
-  precond:         Structure used to represent the preconditionner
+  precond:         Structure used to represent the preconditioner
                    (see file az_aztec.h and Aztec User's Guide).
 
 *******************************************************************************/
@@ -704,7 +704,7 @@ void AZ_get_x_incr(int options[], int data_org[], int
   Amat:            Structure used to represent the matrix (see az_aztec.h
                    and Aztec User's Guide).
 
-  precond:         Structure used to represent the preconditionner
+  precond:         Structure used to represent the preconditioner
                    (see az_aztec.h ad Aztec User's Guide).
 
 

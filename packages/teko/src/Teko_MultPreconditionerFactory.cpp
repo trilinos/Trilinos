@@ -150,7 +150,7 @@ void MultPreconditionerFactory::initializeFromParameterList(const Teuchos::Param
    RCP<Teko::PreconditionerFactory> precB
          = Teko::BlockPreconditionerFactory::buildPreconditionerFactory(bType,bSettings->sublist("Preconditioner Settings"),invLib);
 
-   // set precondtioners
+   // set preconditioners
    FirstFactory_ = Teuchos::rcp_dynamic_cast<const Teko::BlockPreconditionerFactory>(precA);
    SecondFactory_ = Teuchos::rcp_dynamic_cast<const Teko::BlockPreconditionerFactory>(precB);
 }

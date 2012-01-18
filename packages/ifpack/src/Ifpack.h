@@ -191,7 +191,7 @@ public:
   /** \brief List of preconditioner types as string values. */
   static const char* precTypeNames[numPrecTypes];
 
-  /** \brief List of bools that determines if the precondtioner type supports
+  /** \brief List of bools that determines if the preconditioner type supports
    * unsymmetric matrices. */
   static const bool supportsUnsymmetric[numPrecTypes];
 

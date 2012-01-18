@@ -979,7 +979,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   timeCreatePreconditioner += (endTime - startTime);
 
   if (utils.isPrintType(Utils::LinearSolverDetails))
-    utils.out() << "\n       Time required to create precondtioner : " 
+    utils.out() << "\n       Time required to create preconditioner : " 
          << (endTime - startTime) << " (sec.)" << endl;;
 
   return true;

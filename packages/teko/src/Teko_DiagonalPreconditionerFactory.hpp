@@ -80,7 +80,7 @@ public:
   *
   * To invoke this preconditioner using the XML file a diagonal inverse
   * needs to be specified. For example the following XML code creates
-  * a AbsRowSum precondtioner
+  * a AbsRowSum preconditioner
   *
     \verbatim
     <ParameterList name="AbsRowSum">

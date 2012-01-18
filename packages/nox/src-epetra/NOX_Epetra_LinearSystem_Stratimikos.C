@@ -536,12 +536,12 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
 
   if (precObj != Teuchos::null)  {
     if (utils.isPrintType(Utils::LinearSolverDetails))
-      utils.out() << "\n       Time required to create precondtioner : " 
+      utils.out() << "\n       Time required to create preconditioner : " 
            << (endTime - startTime) << " (sec.)" << endl;
   }
   else {
     if (utils.isPrintType(Utils::LinearSolverDetails))
-      utils.out() << "\n       No precondtioner requested. " << endl;
+      utils.out() << "\n       No preconditioner requested. " << endl;
   }
 
   return true;

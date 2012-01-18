@@ -180,7 +180,7 @@ void IfpackPreconditionerFactory::initializePrec(
     ,"Error, incorrect apply mode for an Epetra_RowMatrix"
     );
   //
-  // Get the concrete precondtioner object
+  // Get the concrete preconditioner object
   //
   DefaultPreconditioner<double>
     *defaultPrec = &Teuchos::dyn_cast<DefaultPreconditioner<double> >(*prec);
@@ -240,7 +240,7 @@ void IfpackPreconditionerFactory::initializePrec(
       // Above, I have not idea how any error messages for a mistake will be
       // reported back to the user!
     }
-    // Initailize the structure for the preconditioner
+    // Initialize the structure for the preconditioner
     TEUCHOS_TEST_FOR_EXCEPT(0!=ifpack_precOp->Initialize());
   }
   //
