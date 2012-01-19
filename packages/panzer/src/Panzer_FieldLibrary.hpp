@@ -8,12 +8,17 @@
 #include "Panzer_Basis.hpp"
 #include "Panzer_PureBasis.hpp"
 
+#include <list>
+
 namespace panzer {
 
 class FieldLibraryBase {
 public:
    //! Get the basis associated with a particular field.
    virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const = 0;
+
+   //! Get vector of unique bases contained in this field library
+   void uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const;
 };
 
 /** There is one of these objects per equation set.
@@ -24,6 +29,9 @@ public:
      */
    void addFieldAndLayout(const std::string & fieldName,
                          const Teuchos::RCP<panzer::BasisIRLayout> & basis);   
+
+   //! Get vector of unique bases contained in this field library
+   void uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const;
 
    //! Get the basis associated with a particular field.
    virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const;
@@ -40,6 +48,7 @@ private:
 
    //! Basic mapped storage.
    std::map<std::string,Teuchos::RCP<panzer::BasisIRLayout> > fieldToLayout_;
+   std::map<std::string,Teuchos::RCP<const panzer::PureBasis> > basisNameToPointer_; // to satisfy uniuqeBases interface
 
 };
 
@@ -55,6 +64,9 @@ public:
 
    //! Get the basis associated with a particular field.
    virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const;
+
+   //! Get vector of unique bases contained in this field library
+   void uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const;
 
    /** Add a field associated witha basis to the library.
      */
@@ -76,6 +88,7 @@ private:
 
    //! Basic mapped storage.
    std::map<std::string,Teuchos::RCP<panzer::PureBasis> > fieldToBasis_;
+   std::map<std::string,Teuchos::RCP<const panzer::PureBasis> > basisNameToPointer_; // to satisfy uniuqeBases interface
 };
 
 inline std::ostream & operator<<(std::ostream & os,const FieldLayoutLibrary & fl)

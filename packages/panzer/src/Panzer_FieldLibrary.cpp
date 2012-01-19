@@ -9,10 +9,21 @@ Teuchos::RCP<const panzer::PureBasis> FieldLayoutLibrary::lookupBasis(const std:
    return layout->getBasis();
 }
 
+void FieldLayoutLibrary::uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const
+{
+   bases.clear();
+   
+   // simply loop over map of basis name to pointers and add them to the list
+   std::map<std::string,Teuchos::RCP<const panzer::PureBasis> >::const_iterator itr;
+   for(itr=basisNameToPointer_.begin();itr!=basisNameToPointer_.end();++itr) 
+      bases.push_back(itr->second);
+}
+
 void FieldLayoutLibrary::addFieldAndLayout(const std::string & fieldName,
                                       const Teuchos::RCP<panzer::BasisIRLayout> & layout)
 {
    fieldToLayout_[fieldName] = layout; 
+   basisNameToPointer_[layout->getBasis()->name()] = layout->getBasis();
 }
 
 Teuchos::RCP<panzer::BasisIRLayout> FieldLayoutLibrary::lookupLayout(const std::string & fieldName) const
@@ -50,10 +61,21 @@ Teuchos::RCP<const panzer::PureBasis> FieldLibrary::lookupBasis(const std::strin
    return Teuchos::null;
 }
 
+void FieldLibrary::uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const
+{
+   bases.clear();
+   
+   // simply loop over map of basis name to pointers and add them to the list
+   std::map<std::string,Teuchos::RCP<const panzer::PureBasis> >::const_iterator itr;
+   for(itr=basisNameToPointer_.begin();itr!=basisNameToPointer_.end();++itr) 
+      bases.push_back(itr->second);
+}
+
 void FieldLibrary::addFieldAndBasis(const std::string & fieldName,
                                     const Teuchos::RCP<panzer::PureBasis> & basis)
 {
    fieldToBasis_[fieldName] = basis;
+   basisNameToPointer_[basis->name()] = basis;
 }
 
 Teuchos::RCP<const FieldLayoutLibrary> FieldLibrary::buildFieldLayoutLibrary(panzer::IntegrationRule & ir) const
