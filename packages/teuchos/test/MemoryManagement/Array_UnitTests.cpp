@@ -318,10 +318,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, toVector_empty, T )
 }
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, view_empty, T )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, view_empty_func, T )
 {
   Array<T> a;
   const ArrayView<T> av = a.view(0, 0);
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, view_empty_operator, T )
+{
+  Array<T> a;
+  const ArrayView<T> av = a(0, 0);
   TEST_ASSERT(is_null(av));
 }
 
@@ -496,8 +504,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constArray_to_ArrayRCP_dangling, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, toVector, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, toVector_empty, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, view_empty, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, view_const_empty, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, view_empty_func, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, view_empty_operator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, implicit_to_ArrayView_empty, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_implicit, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_implicit_const, T ) \
