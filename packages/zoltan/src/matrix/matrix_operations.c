@@ -25,8 +25,6 @@ extern "C" {
 #include "phg.h"
 #include "matrix.h"
 
-void intSort2asc3(int *, int);
-
 /************************************/
 /* Auxiliary functions declarations */
 /************************************/
