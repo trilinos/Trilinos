@@ -81,20 +81,6 @@ APPEND_SET(SOURCES
   )
 
 #
-# src/ccolamd
-#
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ccolamd)
-
-APPEND_SET(NOINSTALLHEADERS
-  ccolamd/zoltan_ccolamd.h
-  )
-
-APPEND_SET(SOURCES
-  ccolamd/ccolamd.c
-  )
-
-#
 # src/coloring
 #
 
@@ -357,7 +343,6 @@ APPEND_SET(NOINSTALLHEADERS
   tpls/third_library.h
   tpls/third_library_tools.h
   tpls/graph_util.h
-  tpls/ccolamd_interface.h
   )
 
 APPEND_SET(SOURCES
@@ -367,7 +352,6 @@ APPEND_SET(SOURCES
   tpls/scatter_graph.c
   tpls/third_library.c
   tpls/verify_graph.c
-  tpls/ccolamd_interface.c
   )
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS OR ${PACKAGE_NAME}_ENABLE_METIS)

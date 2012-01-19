@@ -30,14 +30,16 @@ extern "C" {
 /* #define SIMPLE_HUND */
 
 #ifndef SIMPLE_HUND
+/* Removed CCOLAMD from BSD version. 
 int Zoltan_CColAMD(
-  ZZ *zz,               /* Zoltan structure */
+  ZZ *zz,               
   struct Zoltan_DD_Struct *dd_constraint,
   int nPart,
   int *num_obj,
   ZOLTAN_ID_PTR *gid,
   int **rank
   );
+*/
 #else /* SIMPLE_HUND */
 static int
 HUND_Order_simple(ZZ* zz, int num_local_gid, ZOLTAN_ID_TYPE * part, int numParts, int* sizeParts, ZOLTAN_ID_TYPE* dperm); /* result is stored into a DD */
@@ -149,8 +151,10 @@ int Zoltan_HUND(
   ierr = HUND_Order_simple(zz,  num_local_gid, part, data->numParts, data->sizeParts, dperm);
   CHECK_IERR;
 #else /* SIMPLE_HUND */
+  /* Removed CCOLAMD from BSD version.
   ierr = Zoltan_CColAMD(zz, data->ddHedge, data->numParts, &num_local_gid, &local_gid, &dperm);
   CHECK_IERR;
+  */
 #endif /* SIMPLE_HUND */
 
   Zoltan_DD_Update (data->ddHedge, local_gid, (ZOLTAN_ID_PTR)dperm, NULL,  part, num_local_gid);
