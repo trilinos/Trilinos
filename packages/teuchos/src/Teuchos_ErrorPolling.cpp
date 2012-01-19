@@ -39,6 +39,10 @@
 // ***********************************************************************
 // @HEADER
 
+// Make deprecated warnings go away for compling this source file.   All of this
+// code is deprecated so there is little point in flagging it as such!
+#define TEUCHOS_DEPRECATED
+
 #include "Teuchos_ErrorPolling.hpp"
 #include "Teuchos_MPIComm.hpp"
 
