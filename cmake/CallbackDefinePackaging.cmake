@@ -4,6 +4,8 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
 
   #MESSAGE("TRIBITS_REPOSITORY_DEFINE_PACKAGING() called for Trilinos!")
 
+  GET_FILENAME_COMPONENT(Trilinos_SOURCE_PATH ${Trilinos_SOURCE_DIR} PATH)
+
   # Automatically update the version file for sierra
   TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE("Trilinos" "."
     ${Trilinos_SOURCE_DIR}/SIERRA/bjam/config_headers/${PROJECT_NAME}_version.h)
@@ -14,39 +16,39 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
     ".gitignore"
     classicMakefile
     ".*.pyc"
-    ${Trilinos_SOURCE_DIR}/cmake/tribits/common_tools/git
-    ${Trilinos_SOURCE_DIR}/cmake/CMakeKitwareBacklog.txt
-    ${Trilinos_SOURCE_DIR}/cmake/TODO
-    ${Trilinos_SOURCE_DIR}/packages/ITAPS
-    ${Trilinos_SOURCE_DIR}/packages/external
-    ${Trilinos_SOURCE_DIR}/packages/jpetra
-    ${Trilinos_SOURCE_DIR}/packages/cmmlib
-    ${Trilinos_SOURCE_DIR}/packages/configure.ac
-    ${Trilinos_SOURCE_DIR}/packages/configure
-    ${Trilinos_SOURCE_DIR}/packages/Makefile.am
-    ${Trilinos_SOURCE_DIR}/packages/Makefile.in
-    ${Trilinos_SOURCE_DIR}/doc/[^b]
-    ${Trilinos_SOURCE_DIR}/README_old
-    ${Trilinos_SOURCE_DIR}/sampleScripts/old_autotools
-    ${Trilinos_SOURCE_DIR}/sampleScripts/git-profiles
-    ${Trilinos_SOURCE_DIR}/SIERRA
-    ${Trilinos_SOURCE_DIR}/commonTools/test/coverage
-    ${Trilinos_SOURCE_DIR}/commonTools/test/harness
-    ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/README
-    ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/dependencies
-    ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/packages
-    ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/r.*
-    ${Trilinos_SOURCE_DIR}/commonTools/scripts
-    ${Trilinos_SOURCE_DIR}/commonTools/release
-    ${Trilinos_SOURCE_DIR}/packages/common/DoxyfilePackageTemplate
-    ${Trilinos_SOURCE_DIR}/stamp-h.in
-    ${Trilinos_SOURCE_DIR}/configure.ac
-    ${Trilinos_SOURCE_DIR}/aclocal.m4
-    ${Trilinos_SOURCE_DIR}/configure
-    ${Trilinos_SOURCE_DIR}/Makefile.am
-    ${Trilinos_SOURCE_DIR}/Makefile.in
-    ${Trilinos_SOURCE_DIR}/bootstrap
-    ${Trilinos_SOURCE_DIR}/config
+    ${Trilinos_SOURCE_PATH}/cmake/tribits/common_tools/git
+    ${Trilinos_SOURCE_PATH}/cmake/CMakeKitwareBacklog.txt
+    ${Trilinos_SOURCE_PATH}/cmake/TODO
+    ${Trilinos_SOURCE_PATH}/packages/ITAPS
+    ${Trilinos_SOURCE_PATH}/packages/external
+    ${Trilinos_SOURCE_PATH}/packages/jpetra
+    ${Trilinos_SOURCE_PATH}/packages/cmmlib
+    ${Trilinos_SOURCE_PATH}/packages/configure.ac
+    ${Trilinos_SOURCE_PATH}/packages/configure
+    ${Trilinos_SOURCE_PATH}/packages/Makefile.am
+    ${Trilinos_SOURCE_PATH}/packages/Makefile.in
+    ${Trilinos_SOURCE_PATH}/doc/[^b]
+    ${Trilinos_SOURCE_PATH}/README_old
+    ${Trilinos_SOURCE_PATH}/sampleScripts/old_autotools
+    ${Trilinos_SOURCE_PATH}/sampleScripts/git-profiles
+    ${Trilinos_SOURCE_PATH}/SIERRA
+    ${Trilinos_SOURCE_PATH}/commonTools/test/coverage
+    ${Trilinos_SOURCE_PATH}/commonTools/test/harness
+    ${Trilinos_SOURCE_PATH}/commonTools/test/utilities/README
+    ${Trilinos_SOURCE_PATH}/commonTools/test/utilities/dependencies
+    ${Trilinos_SOURCE_PATH}/commonTools/test/utilities/packages
+    ${Trilinos_SOURCE_PATH}/commonTools/test/utilities/r.*
+    ${Trilinos_SOURCE_PATH}/commonTools/scripts
+    ${Trilinos_SOURCE_PATH}/commonTools/release
+    ${Trilinos_SOURCE_PATH}/packages/common/DoxyfilePackageTemplate
+    ${Trilinos_SOURCE_PATH}/stamp-h.in
+    ${Trilinos_SOURCE_PATH}/configure.ac
+    ${Trilinos_SOURCE_PATH}/aclocal.m4
+    ${Trilinos_SOURCE_PATH}/configure
+    ${Trilinos_SOURCE_PATH}/Makefile.am
+    ${Trilinos_SOURCE_PATH}/Makefile.in
+    ${Trilinos_SOURCE_PATH}/bootstrap
+    ${Trilinos_SOURCE_PATH}/config
   )
   
   #removing any packages not enabled from the tarball
@@ -73,9 +75,9 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
       #correctly it should be guaranteed to be there.
       STRING(REGEX MATCH "[.][.]/" IS_RELATIVE_PATH ${PACKAGE_DIR})
       IF("${IS_RELATIVE_PATH}" STREQUAL "")
-        SET(CPACK_SOURCE_IGNORE_FILES ${Trilinos_SOURCE_DIR}/packages/${PACKAGE_DIR} ${CPACK_SOURCE_IGNORE_FILES})
+        SET(CPACK_SOURCE_IGNORE_FILES ${Trilinos_SOURCE_PATH}/${PACKAGE_DIR} ${CPACK_SOURCE_IGNORE_FILES})
       ELSE()
-        FIND_PATH(ABSOLUTE_PATH CMakeLists.txt PATHS ${Trilinos_SOURCE_DIR}/packages/${PACKAGE_DIR} NO_DEFAULT_PATH)
+        FIND_PATH(ABSOLUTE_PATH CMakeLists.txt PATHS ${Trilinos_SOURCE_PATH}/${PACKAGE_DIR} NO_DEFAULT_PATH)
         IF("${ABSOLUTE_PATH}" STREQUAL "ABSOLUTE_PATH-NOTFOUND")
           MESSAGE(AUTHOR_WARNING "Relative path found for disabled package ${TRIBITS_PACKAGE} but package was missing a CMakeLists.txt file. This disabled package will likely not be excluded from a source release")
         ENDIF()
