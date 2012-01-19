@@ -96,14 +96,15 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 
     // number of non zeros in my new rows
     typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> vector_t;
-    vector_t numOld(smap);
-    vector_t numNew(tmap);
+    vector_t numOld(smap);  // TODO These vectors should have scalar = size_t, 
+    vector_t numNew(tmap);  // but explicit instantiation does not yet support that.
     for (int lid=0; lid < oldNumElts; lid++){
       numOld.replaceGlobalValue(smap->getGlobalElement(lid), 
         scalar_t(from->getNumEntriesInLocalRow(lid)));
     }
     numNew.doImport(numOld, importer, Tpetra::INSERT);
 
+    // TODO Could skip this copy if could declare vector with scalar = size_t.
     ArrayRCP<size_t> nnz(newNumElts);
     if (newNumElts > 0){
       ArrayRCP<scalar_t> ptr = numNew.getDataNonConst(0);
