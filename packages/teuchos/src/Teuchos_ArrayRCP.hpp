@@ -408,6 +408,9 @@ template<class T> inline
 ArrayRCP<T>
 ArrayRCP<T>::persistingView( size_type lowerOffset_in, size_type size_in ) const
 {
+  if (size_in == 0) {
+    return null;
+  }
   debug_assert_valid_ptr();
   debug_assert_in_range(lowerOffset_in, size_in);
   ArrayRCP<T> ptr = *this;
@@ -454,6 +457,9 @@ ArrayRCP<T>::size() const
 template<class T> inline
 ArrayView<T> ArrayRCP<T>::view( size_type lowerOffset_in, size_type size_in ) const
 {
+  if (size_in == 0) {
+    return null;
+  }
   debug_assert_valid_ptr();
   debug_assert_in_range(lowerOffset_in,size_in);
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK

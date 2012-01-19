@@ -458,6 +458,9 @@ public:
    * <li><tt>return->lowerOffset() == 0</tt>
    * <li><tt>return->upperOffset() == size-1</tt>
    * </ul>
+   *
+   * NOTE: A <tt>size==0</tt> view of even a null ArrayRCP is allowed and
+   * returns a <tt>null</tt> view.
    */
   inline ArrayRCP<T> persistingView( size_type lowerOffset, size_type size ) const;
 
@@ -495,6 +498,9 @@ public:
    * <li><tt>return->lowerOffset() == 0</tt>
    * <li><tt>return->upperOffset() == size-1</tt>
    * </ul>
+   *
+   * NOTE: A <tt>size==0</tt> view of even a null ArrayRCP is allowed and
+   * returns a <tt>null</tt> view.
    */
   inline ArrayView<T> view( size_type lowerOffset, size_type size ) const;
 
