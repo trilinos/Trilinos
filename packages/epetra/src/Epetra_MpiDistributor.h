@@ -191,16 +191,16 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 
   //! @name Attribute Accessor Methods
   //@{ 
-  //! The number of nodes from which we will receive data, not include this node ("myself").
+  //! The number of procs from which we will receive data
   int NumReceives() const {return nrecvs_;}
 
-  //! The number of nodes to which we will send data, not include this node ("myself").
+  //! The number of procs to which we will send data
   int NumSends() const {return nsends_;}
 
-  //! Maximum number of values that this node is sending to another single node.
+  //! Maximum number of values that this proc is sending to another single proc.
   int MaxSendLength() const {return max_send_length_;}
 
-  //! Total number of values that this nodes is receiving from other nodes.
+  //! Total number of values that this proc is receiving from other procs.
   int TotalReceiveLength() const { return total_recv_length_;}
 
   //! A list of procs sending values to this proc.
@@ -214,7 +214,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   const int * LengthsFrom() const {return lengths_from_;}
 
   //! Number of values we're sending to each proc. 
-  /*! We will send <tt>gLengthsTo[i]</tt> values to procs <tt>ProcsTo[i]</tt>. */
+  /*! We will send <tt>LengthsTo[i]</tt> values to procs <tt>ProcsTo[i]</tt>. */
   const int * LengthsTo() const {return lengths_to_;}
 
   //@}
