@@ -1,0 +1,910 @@
+
+
+Reading the command file, zdrive.inp.rcb-reuse-ts
+Input values:
+  Zoltan version 3.601
+  zdrive version 1.0
+  Total number of Processors = 8
+
+  Performing load balance using rcb.
+	Parameters:
+		tflops_special 1
+		rcb_output_level 2
+		rcb_reuse 1
+		keep_cuts 1
+
+  Initially distribute input objects in linear fashion (first n/p to process 0, etc).
+##########################################################
+ZOLTAN Load balancing method = 3 (RCB)
+Starting iteration 1
+
+BEFORE load balancing
+DRIVER EVAL:  load:  max 590.000000  min 590.000000  sum 4720.000000
+DRIVER EVAL:  objs:  max 590  min 590  sum 4720
+DRIVER EVAL:  cuts:  max 288  min 201  sum 1930
+
+Zoltan_LB_Eval_Balance  Part count: 8 requested, 8 actual , 8 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       590      590 4.72e+03     1.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       590      590 4.72e+03        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :        88      122      108      865
+Zoltan_LB_Eval_Graph  Number of cut edges       :       201      288      241 1.93e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         3        7        5       40
+
+
+
+Zoltan_LB_Eval_HG  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       590      590 4.72e+03   1.000
+Zoltan_LB_Eval_HG  Object weight     :       590      590 4.72e+03   1.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):  865.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): 1058.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):        151.000
+
+
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = IMPORT AND EXPORT
+ZOLTAN Parameter TFLOPS_SPECIAL = TRUE
+ZOLTAN Parameter NUM_GLOBAL_PARTS = -1
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 1
+ZOLTAN Parameter SEED = 1220988223 (1220988223)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter RCB_OVERALLOC = 1.200000
+ZOLTAN Parameter RCB_REUSE = 1
+ZOLTAN Parameter CHECK_GEOM = 1
+ZOLTAN Parameter RCB_OUTPUT_LEVEL = 2
+ZOLTAN Parameter KEEP_CUTS = 1
+ZOLTAN Parameter RCB_LOCK_DIRECTIONS = 0
+ZOLTAN Parameter RCB_SET_DIRECTIONS = 0
+ZOLTAN Parameter RCB_RECTILINEAR_BLOCKS = 0
+ZOLTAN Parameter OBJ_WEIGHTS_COMPARABLE = 0
+ZOLTAN Parameter RCB_MULTICRITERIA_NORM = 1
+ZOLTAN Parameter RCB_MAX_ASPECT_RATIO = 10.000000
+ZOLTAN Parameter AVERAGE_CUTS = 0
+ZOLTAN Parameter RANDOM_PIVOTS = 0
+ZOLTAN Parameter RCB_RECOMPUTE_BOX = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 0.000000
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter KEEP_CUTS = 1
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 10.000000
+Partitioning total time: 0.00933814 (secs)
+Partitioning Statistics:
+ Total weight of dots = 4720
+ Weight on each proc: ave = 590, max = 590, min = 590
+    Proc 0 has weight = 590
+ Maximum weight of single dot = 1
+    Proc 0 max weight = 1
+ Send count: ave = 1226.5, min = 460, max = 1718
+    Proc 0 send count = 762
+ Recv count: ave = 1226.5, min = 460, max = 1718
+    Proc 0 recv count = 762
+ Presend count: ave = 0, min = 0, max = 0
+    Proc 0 presend count = 0
+ Prerecv count: ave = 0, min = 0, max = 0
+    Proc 0 prerecv count = 0
+ Max dots: ave = 590, min = 590, max = 590
+    Proc 0 max dots = 590
+ Max memory: ave = 709, min = 709, max = 709
+    Proc 0 max memory = 709
+ # of Reuse: ave = 0, min = 0, max = 0
+    Proc 0 # of Reuse = 0
+ # of OverAlloc: ave = 0, min = 0, max = 0
+    Proc 0 # of OverAlloc = 0
+ Median find iteration counts:
+   Serial iterations per process: avg 0.000000 min 0 max 0
+   Parallel iterations:
+     Per process: avg 41.750000 min 40 max 45
+     Total for all parallel cuts: 98
+     Detail of first cuts:
+       Level 1 cut count: avg 12.000000 variance 0.000000 actual: 12 
+       Level 2 cut count: avg 16.500000 variance 0.166667 actual: 18 15 
+       Level 3 cut count: avg 13.250000 variance 0.333333 actual: 15 10 15 13 
+ Start-up time %: ave = 5.8075, min = 5.56846, max = 6.18888
+    Proc 0 start-up time = 0.000577927
+ Pre-median time %: ave = 3.92805, min = 3.41869, max = 4.45273
+    Proc 0 pre-median time = 0.000397682
+ Median time %: ave = 19.7864, min = 18.8373, max = 21.1734
+    Proc 0 median time = 0.00197721
+ Comm time %: ave = 68.7492, min = 67.1024, max = 70.036
+    Proc 0 comm time = 0.00626612
+ RCB sub-domain boxes:
+    Dimension 1
+      Proc = 0: Box = -33.267 0.101785
+    Dimension 2
+      Proc = 0: Box = -26.3577 -0.0232946
+    Dimension 3
+      Proc = 0: Box = 0 0
+ STATS Runs 1  bal  CURRENT 1.000000  MAX 1.000000  MIN 1.000000  AVG 1.000000
+ STATS Runs 1  moveVol CURRENT 789584.000000  MAX 789584.000000  MIN 789584.000000  AVG 789584.000000
+
+DRIVER:  Zoltan_LB_Partition time = 0.021631
+DRIVER:  new_decomp 1 Min/Max Import: 208 564
+DRIVER:  new_decomp 1 Min/Max Export: 208 564
+DRIVER:  Total migration time = 0.00369406
+
+AFTER load balancing
+DRIVER EVAL:  load:  max 590.000000  min 590.000000  sum 4720.000000
+DRIVER EVAL:  objs:  max 590  min 590  sum 4720
+DRIVER EVAL:  cuts:  max 279  min 113  sum 1594
+
+Zoltan_LB_Eval_Balance  Part count: 8 requested, 8 actual , 8 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       590      590 4.72e+03     1.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       590      590 4.72e+03        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :        53      131       96      768
+Zoltan_LB_Eval_Graph  Number of cut edges       :       113      279      199 1.59e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         2        5        4       32
+
+
+
+Zoltan_LB_Eval_HG  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       590      590 4.72e+03   1.000
+Zoltan_LB_Eval_HG  Object weight     :       590      590 4.72e+03   1.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):  768.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )):  826.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):        140.000
+
+
+Starting iteration 2
+
+BEFORE load balancing
+DRIVER EVAL:  load:  max 590.000000  min 590.000000  sum 4720.000000
+DRIVER EVAL:  objs:  max 590  min 590  sum 4720
+DRIVER EVAL:  cuts:  max 279  min 113  sum 1594
+
+Zoltan_LB_Eval_Balance  Part count: 8 requested, 8 actual , 8 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       590      590 4.72e+03     1.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       590      590 4.72e+03        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :        53      131       96      768
+Zoltan_LB_Eval_Graph  Number of cut edges       :       113      279      199 1.59e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         2        5        4       32
+
+
+
+Zoltan_LB_Eval_HG  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       590      590 4.72e+03   1.000
+Zoltan_LB_Eval_HG  Object weight     :       590      590 4.72e+03   1.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):  768.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )):  826.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):        140.000
+
+
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = IMPORT AND EXPORT
+ZOLTAN Parameter TFLOPS_SPECIAL = TRUE
+ZOLTAN Parameter NUM_GLOBAL_PARTS = -1
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 1
+ZOLTAN Parameter SEED = 920584619 (920584619)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter RCB_OVERALLOC = 1.200000
+ZOLTAN Parameter RCB_REUSE = 1
+ZOLTAN Parameter CHECK_GEOM = 1
+ZOLTAN Parameter RCB_OUTPUT_LEVEL = 2
+ZOLTAN Parameter KEEP_CUTS = 1
+ZOLTAN Parameter RCB_LOCK_DIRECTIONS = 0
+ZOLTAN Parameter RCB_SET_DIRECTIONS = 0
+ZOLTAN Parameter RCB_RECTILINEAR_BLOCKS = 0
+ZOLTAN Parameter OBJ_WEIGHTS_COMPARABLE = 0
+ZOLTAN Parameter RCB_MULTICRITERIA_NORM = 1
+ZOLTAN Parameter RCB_MAX_ASPECT_RATIO = 10.000000
+ZOLTAN Parameter AVERAGE_CUTS = 0
+ZOLTAN Parameter RANDOM_PIVOTS = 0
+ZOLTAN Parameter RCB_RECOMPUTE_BOX = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 0.000000
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter KEEP_CUTS = 1
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 10.000000
+Partitioning total time: 0.0129671 (secs)
+Partitioning Statistics:
+ Total weight of dots = 4720
+ Weight on each proc: ave = 590, max = 590, min = 590
+    Proc 0 has weight = 590
+ Maximum weight of single dot = 1
+    Proc 0 max weight = 1
+ Send count: ave = 480.625, min = 32, max = 691
+    Proc 0 send count = 39
+ Recv count: ave = 480.625, min = 36, max = 673
+    Proc 0 recv count = 78
+ Presend count: ave = 442.625, min = 19, max = 590
+    Proc 0 presend count = 69
+ Prerecv count: ave = 442.625, min = 15, max = 624
+    Proc 0 prerecv count = 30
+ Max dots: ave = 607.25, min = 590, max = 691
+    Proc 0 max dots = 590
+ Max memory: ave = 709, min = 709, max = 709
+    Proc 0 max memory = 709
+ # of Reuse: ave = 3, min = 3, max = 3
+    Proc 0 # of Reuse = 3
+ # of OverAlloc: ave = 0, min = 0, max = 0
+    Proc 0 # of OverAlloc = 0
+ Median find iteration counts:
+   Serial iterations per process: avg 0.000000 min 0 max 0
+   Parallel iterations:
+     Per process: avg 15.250000 min 12 max 19
+     Total for all parallel cuts: 35
+     Detail of first cuts:
+       Level 1 cut count: avg 4.000000 variance 0.000000 actual: 4 
+       Level 2 cut count: avg 7.000000 variance 0.444444 actual: 5 9 
+       Level 3 cut count: avg 4.250000 variance 0.500000 actual: 3 5 6 3 
+ Start-up time %: ave = 33.1716, min = 32.6451, max = 33.6784
+    Proc 0 start-up time = 0.00435209
+ Pre-median time %: ave = 2.63316, min = 2.24314, max = 3.00066
+    Proc 0 pre-median time = 0.000292301
+ Median time %: ave = 9.22745, min = 7.13393, max = 10.6935
+    Proc 0 median time = 0.00101876
+ Comm time %: ave = 53.7671, min = 52.4013, max = 55.6649
+    Proc 0 comm time = 0.00720716
+ RCB sub-domain boxes:
+    Dimension 1
+      Proc = 0: Box = -33.263 0.108433
+    Dimension 2
+      Proc = 0: Box = -26.3537 -0.0228102
+    Dimension 3
+      Proc = 0: Box = 0 0
+ STATS Runs 2  bal  CURRENT 1.000000  MAX 1.000000  MIN 1.000000  AVG 1.000000
+ STATS Runs 2  moveVol CURRENT 117064.000000  MAX 789584.000000  MIN 117064.000000  AVG 453324.000000
+
+DRIVER:  Zoltan_LB_Partition time = 0.027081
+DRIVER:  new_decomp 1 Min/Max Import: 8 87
+DRIVER:  new_decomp 1 Min/Max Export: 8 87
+DRIVER:  Total migration time = 0.00341797
+
+AFTER load balancing
+DRIVER EVAL:  load:  max 590.000000  min 590.000000  sum 4720.000000
+DRIVER EVAL:  objs:  max 590  min 590  sum 4720
+DRIVER EVAL:  cuts:  max 687  min 169  sum 3454
+
+Zoltan_LB_Eval_Balance  Part count: 8 requested, 8 actual , 8 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       590      590 4.72e+03     1.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       590      590 4.72e+03        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :        76      284      184 1.47e+03
+Zoltan_LB_Eval_Graph  Number of cut edges       :       169      687      432 3.45e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         2        5        4       32
+
+
+
+Zoltan_LB_Eval_HG  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       590      590 4.72e+03   1.000
+Zoltan_LB_Eval_HG  Object weight     :       590      590 4.72e+03   1.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )): 1468.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): 1547.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):        304.000
+
+
+Starting iteration 3
+
+BEFORE load balancing
+DRIVER EVAL:  load:  max 590.000000  min 590.000000  sum 4720.000000
+DRIVER EVAL:  objs:  max 590  min 590  sum 4720
+DRIVER EVAL:  cuts:  max 687  min 169  sum 3454
+
+Zoltan_LB_Eval_Balance  Part count: 8 requested, 8 actual , 8 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       590      590 4.72e+03     1.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       590      590 4.72e+03        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :        76      284      184 1.47e+03
+Zoltan_LB_Eval_Graph  Number of cut edges       :       169      687      432 3.45e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         2        5        4       32
+
+
+
+Zoltan_LB_Eval_HG  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       590      590 4.72e+03   1.000
+Zoltan_LB_Eval_HG  Object weight     :       590      590 4.72e+03   1.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )): 1468.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): 1547.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):        304.000
+
+
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = IMPORT AND EXPORT
+ZOLTAN Parameter TFLOPS_SPECIAL = TRUE
+ZOLTAN Parameter NUM_GLOBAL_PARTS = -1
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 1
+ZOLTAN Parameter SEED = 1463556122 (1463556122)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter RCB_OVERALLOC = 1.200000
+ZOLTAN Parameter RCB_REUSE = 1
+ZOLTAN Parameter CHECK_GEOM = 1
+ZOLTAN Parameter RCB_OUTPUT_LEVEL = 2
+ZOLTAN Parameter KEEP_CUTS = 1
+ZOLTAN Parameter RCB_LOCK_DIRECTIONS = 0
+ZOLTAN Parameter RCB_SET_DIRECTIONS = 0
+ZOLTAN Parameter RCB_RECTILINEAR_BLOCKS = 0
+ZOLTAN Parameter OBJ_WEIGHTS_COMPARABLE = 0
+ZOLTAN Parameter RCB_MULTICRITERIA_NORM = 1
+ZOLTAN Parameter RCB_MAX_ASPECT_RATIO = 10.000000
+ZOLTAN Parameter AVERAGE_CUTS = 0
+ZOLTAN Parameter RANDOM_PIVOTS = 0
+ZOLTAN Parameter RCB_RECOMPUTE_BOX = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 0.000000
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter KEEP_CUTS = 1
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 10.000000
+Partitioning total time: 0.012059 (secs)
+Partitioning Statistics:
+ Total weight of dots = 4720
+ Weight on each proc: ave = 590, max = 590, min = 590
+    Proc 0 has weight = 590
+ Maximum weight of single dot = 1
+    Proc 0 max weight = 1
+ Send count: ave = 479.625, min = 23, max = 691
+    Proc 0 send count = 31
+ Recv count: ave = 479.625, min = 24, max = 701
+    Proc 0 recv count = 65
+ Presend count: ave = 444.125, min = 24, max = 590
+    Proc 0 presend count = 82
+ Prerecv count: ave = 444.125, min = 23, max = 635
+    Proc 0 prerecv count = 48
+ Max dots: ave = 605.125, min = 590, max = 691
+    Proc 0 max dots = 590
+ Max memory: ave = 709, min = 709, max = 709
+    Proc 0 max memory = 709
+ # of Reuse: ave = 3, min = 3, max = 3
+    Proc 0 # of Reuse = 3
+ # of OverAlloc: ave = 0, min = 0, max = 0
+    Proc 0 # of OverAlloc = 0
+ Median find iteration counts:
+   Serial iterations per process: avg 0.000000 min 0 max 0
+   Parallel iterations:
+     Per process: avg 14.750000 min 13 max 19
+     Total for all parallel cuts: 34
+     Detail of first cuts:
+       Level 1 cut count: avg 4.000000 variance 0.000000 actual: 4 
+       Level 2 cut count: avg 6.500000 variance 0.142857 actual: 6 7 
+       Level 3 cut count: avg 4.250000 variance 0.625000 actual: 3 3 8 3 
+Proc 5: Calls to malloc = 5851,  Calls to free = 5851
+Proc 4: Calls to malloc = 5737,  Calls to free = 5737
+Proc 3: Calls to malloc = 6024,  Calls to free = 6024
+Proc 1: Calls to malloc = 5749,  Calls to free = 5749
+Proc 7: Calls to malloc = 5926,  Calls to free = 5926
+Proc 2: Calls to malloc = 5900,  Calls to free = 5900
+Proc 6: Calls to malloc = 6129,  Calls to free = 6129
+Proc 0: Calls to malloc = 5799,  Calls to free = 5799
+    Proc 5 has weight = 590
+    Proc 5 max weight = 1
+    Proc 5 send count = 1446
+    Proc 5 recv count = 1446
+    Proc 5 presend count = 0
+    Proc 5 prerecv count = 0
+    Proc 5 max dots = 590
+    Proc 5 max memory = 709
+    Proc 5 # of Reuse = 0
+    Proc 5 # of OverAlloc = 0
+    Proc 5 start-up time = 0.000543833
+    Proc 5 pre-median time = 0.00039506
+    Proc 5 median time = 0.00184011
+    Proc 5 comm time = 0.00640416
+      Proc = 5: Box = -33.267 0.817312
+      Proc = 5: Box = 0.0633046 58.8901
+      Proc = 5: Box = 0 0
+    Proc 5 has weight = 590
+    Proc 5 max weight = 1
+    Proc 5 send count = 598
+    Proc 5 recv count = 596
+    Proc 5 presend count = 590
+    Proc 5 prerecv count = 592
+    Proc 5 max dots = 592
+    Proc 5 max memory = 709
+    Proc 5 # of Reuse = 3
+    Proc 5 # of OverAlloc = 0
+    Proc 5 start-up time = 0.00426698
+    Proc 5 pre-median time = 0.000389099
+    Proc 5 median time = 0.0013001
+    Proc 5 comm time = 0.00680685
+      Proc = 5: Box = -33.263 0.811514
+      Proc = 5: Box = 0.061845 58.8941
+      Proc = 5: Box = 0 0
+    Proc 5 has weight = 590
+    Proc 5 max weight = 1
+    Proc 5 send count = 597
+    Proc 5 recv count = 600
+    Proc 5 presend count = 590
+    Proc 5 prerecv count = 587
+    Proc 5 max dots = 590
+    Proc 5 max memory = 709
+    Proc 5 # of Reuse = 3
+    Proc 5 # of OverAlloc = 0
+    Proc 5 start-up time = 0.00380707
+    Proc 5 pre-median time = 0.000458956
+    Proc 5 median time = 0.000858068
+    Proc 5 comm time = 0.00678802
+      Proc = 5: Box = -33.259 0.805952
+      Proc = 5: Box = 0.0598733 58.8981
+      Proc = 5: Box = 0 0
+    Proc 4 has weight = 590
+    Proc 4 max weight = 1
+    Proc 4 send count = 1235
+    Proc 4 recv count = 1235
+    Proc 4 presend count = 0
+    Proc 4 prerecv count = 0
+    Proc 4 max dots = 590
+    Proc 4 max memory = 709
+    Proc 4 # of Reuse = 0
+    Proc 4 # of OverAlloc = 0
+    Proc 4 start-up time = 0.000567913
+    Proc 4 pre-median time = 0.000415802
+    Proc 4 median time = 0.0018723
+    Proc 4 comm time = 0.00635886
+      Proc = 4: Box = -33.267 0.817312
+      Proc = 4: Box = -0.0232946 0.0633046
+      Proc = 4: Box = 0 0
+    Proc 4 has weight = 590
+    Proc 4 max weight = 1
+    Proc 4 send count = 691
+    Proc 4 recv count = 590
+    Proc 4 presend count = 523
+    Proc 4 prerecv count = 624
+    Proc 4 max dots = 691
+    Proc 4 max memory = 709
+    Proc 4 # of Reuse = 3
+    Proc 4 # of OverAlloc = 0
+    Proc 4 start-up time = 0.00432897
+    Proc 4 pre-median time = 0.00035429
+    Proc 4 median time = 0.0013299
+    Proc 4 comm time = 0.00679493
+      Proc = 4: Box = -33.263 0.811514
+      Proc = 4: Box = -0.0228102 0.061845
+      Proc = 4: Box = 0 0
+    Proc 4 has weight = 590
+    Proc 4 max weight = 1
+    Proc 4 send count = 691
+    Proc 4 recv count = 590
+    Proc 4 presend count = 534
+    Proc 4 prerecv count = 635
+    Proc 4 max dots = 691
+    Proc 4 max memory = 709
+    Proc 4 # of Reuse = 3
+    Proc 4 # of OverAlloc = 0
+    Proc 4 start-up time = 0.00382018
+    Proc 4 pre-median time = 0.000438929
+    Proc 4 median time = 0.000867128
+    Proc 4 comm time = 0.00679398
+      Proc = 4: Box = -33.259 0.805952
+      Proc = 4: Box = -0.0222074 0.0598733
+      Proc = 4: Box = 0 0
+    Proc 3 has weight = 590
+    Proc 3 max weight = 1
+    Proc 3 send count = 1189
+    Proc 3 recv count = 1189
+    Proc 3 presend count = 0
+    Proc 3 prerecv count = 0
+    Proc 3 max dots = 590
+    Proc 3 max memory = 709
+    Proc 3 # of Reuse = 0
+    Proc 3 # of OverAlloc = 0
+    Proc 3 start-up time = 0.000522852
+    Proc 3 pre-median time = 0.000319242
+    Proc 3 median time = 0.00175905
+    Proc 3 comm time = 0.00654006
+      Proc = 3: Box = 0.934063 48.348
+      Proc = 3: Box = -26.3577 -0.0232946
+      Proc = 3: Box = 0 0
+    Proc 3 has weight = 590
+    Proc 3 max weight = 1
+    Proc 3 send count = 596
+    Proc 3 recv count = 602
+    Proc 3 presend count = 590
+    Proc 3 prerecv count = 584
+    Proc 3 max dots = 590
+    Proc 3 max memory = 709
+    Proc 3 # of Reuse = 3
+    Proc 3 # of OverAlloc = 0
+    Proc 3 start-up time = 0.00436711
+    Proc 3 pre-median time = 0.000292063
+    Proc 3 median time = 0.00114584
+    Proc 3 comm time = 0.00703526
+      Proc = 3: Box = 0.932209 48.354
+      Proc = 3: Box = -26.3537 -0.0228102
+      Proc = 3: Box = 0 0
+    Proc 3 has weight = 590
+    Proc 3 max weight = 1
+    Proc 3 send count = 595
+    Proc 3 recv count = 600
+    Proc 3 presend count = 590
+    Proc 3 prerecv count = 585
+    Proc 3 max dots = 590
+    Proc 3 max memory = 709
+    Proc 3 # of Reuse = 3
+    Proc 3 # of OverAlloc = 0
+    Proc 3 start-up time = 0.00385618
+    Proc 3 pre-median time = 0.000368834
+    Proc 3 median time = 0.00096035
+    Proc 3 comm time = 0.00677896
+      Proc = 3: Box = 0.931201 48.36
+      Proc = 3: Box = -26.3497 -0.0222074
+      Proc = 3: Box = 0 0
+    Proc 1 has weight = 590
+    Proc 1 max weight = 1
+    Proc 1 send count = 460
+    Proc 1 recv count = 460
+    Proc 1 presend count = 0
+    Proc 1 prerecv count = 0
+    Proc 1 max dots = 590
+    Proc 1 max memory = 709
+    Proc 1 # of Reuse = 0
+    Proc 1 # of OverAlloc = 0
+    Proc 1 start-up time = 0.000544071
+    Proc 1 pre-median time = 0.000343323
+    Proc 1 median time = 0.00195289
+    Proc 1 comm time = 0.00633693
+      Proc = 1: Box = 0.101785 0.400529
+      Proc = 1: Box = -26.3577 -0.0232946
+      Proc = 1: Box = 0 0
+    Proc 1 has weight = 590
+    Proc 1 max weight = 1
+    Proc 1 send count = 32
+    Proc 1 recv count = 36
+    Proc 1 presend count = 19
+    Proc 1 prerecv count = 15
+    Proc 1 max dots = 590
+    Proc 1 max memory = 709
+    Proc 1 # of Reuse = 3
+    Proc 1 # of OverAlloc = 0
+    Proc 1 start-up time = 0.00433493
+    Proc 1 pre-median time = 0.000369787
+    Proc 1 median time = 0.000925064
+    Proc 1 comm time = 0.00721812
+      Proc = 1: Box = 0.108433 0.454603
+      Proc = 1: Box = -26.3537 -0.0228102
+      Proc = 1: Box = 0 0
+    Proc 1 has weight = 590
+    Proc 1 max weight = 1
+    Proc 1 send count = 23
+    Proc 1 recv count = 24
+    Proc 1 presend count = 24
+    Proc 1 prerecv count = 23
+    Proc 1 max dots = 590
+    Proc 1 max memory = 709
+    Proc 1 # of Reuse = 3
+    Proc 1 # of OverAlloc = 0
+    Proc 1 start-up time = 0.0038228
+    Proc 1 pre-median time = 0.000344992
+    Proc 1 median time = 0.00111604
+    Proc 1 comm time = 0.00665998
+      Proc = 1: Box = 0.112666 0.495247
+      Proc = 1: Box = -26.3497 -0.0222074
+      Proc = 1: Box = 0 0
+    Proc 7 has weight = 590
+    Proc 7 max weight = 1
+    Proc 7 send count = 1718
+    Proc 7 recv count = 1718
+    Proc 7 presend count = 0
+    Proc 7 prerecv count = 0
+    Proc 7 max dots = 590
+    Proc 7 max memory = 709
+    Proc 7 # of Reuse = 0
+    Proc 7 # of OverAlloc = 0
+    Proc 7 start-up time = 0.000519991
+    Proc 7 pre-median time = 0.000406027
+    Proc 7 median time = 0.00179601
+    Proc 7 comm time = 0.00643563
+      Proc = 7: Box = 0.817312 48.348
+      Proc = 7: Box = 0.0113537 58.8901
+      Proc = 7: Box = 0 0
+    Proc 7 has weight = 590
+    Proc 7 max weight = 1
+    Proc 7 send count = 625
+    Proc 7 recv count = 673
+    Proc 7 presend count = 590
+    Proc 7 prerecv count = 542
+    Proc 7 max dots = 590
+    Proc 7 max memory = 709
+    Proc 7 # of Reuse = 3
+    Proc 7 # of OverAlloc = 0
+    Proc 7 start-up time = 0.0042479
+    Proc 7 pre-median time = 0.000375986
+    Proc 7 median time = 0.00133777
+    Proc 7 comm time = 0.00683808
+      Proc = 7: Box = 0.811514 48.354
+      Proc = 7: Box = 0.0120179 58.8941
+      Proc = 7: Box = 0 0
+    Proc 7 has weight = 590
+    Proc 7 max weight = 1
+    Proc 7 send count = 637
+    Proc 7 recv count = 659
+    Proc 7 presend count = 590
+    Proc 7 prerecv count = 568
+    Proc 7 max dots = 590
+    Proc 7 max memory = 709
+    Proc 7 # of Reuse = 3
+    Proc 7 # of OverAlloc = 0
+    Proc 7 start-up time = 0.00379896
+    Proc 7 pre-median time = 0.000446796
+    Proc 7 median time = 0.000997782
+    Proc 7 comm time = 0.00669193
+      Proc = 7: Box = 0.805952 48.36
+      Proc = 7: Box = 0.0136966 58.8981
+      Proc = 7: Box = 0 0
+    Proc 2 has weight = 590
+    Proc 2 max weight = 1
+    Proc 2 send count = 1324
+    Proc 2 recv count = 1324
+    Proc 2 presend count = 0
+    Proc 2 prerecv count = 0
+    Proc 2 max dots = 590
+    Proc 2 max memory = 709
+    Proc 2 # of Reuse = 0
+    Proc 2 # of OverAlloc = 0
+    Proc 2 start-up time = 0.000530958
+    Proc 2 pre-median time = 0.00033617
+    Proc 2 median time = 0.00177097
+    Proc 2 comm time = 0.00651026
+      Proc = 2: Box = 0.400529 0.934063
+      Proc = 2: Box = -26.3577 -0.0232946
+      Proc = 2: Box = 0 0
+    Proc 2 has weight = 590
+    Proc 2 max weight = 1
+    Proc 2 send count = 632
+    Proc 2 recv count = 597
+    Proc 2 presend count = 583
+    Proc 2 prerecv count = 618
+    Proc 2 max dots = 625
+    Proc 2 max memory = 709
+    Proc 2 # of Reuse = 3
+    Proc 2 # of OverAlloc = 0
+    Proc 2 start-up time = 0.00428009
+    Proc 2 pre-median time = 0.000290871
+    Proc 2 median time = 0.0011282
+    Proc 2 comm time = 0.00707984
+      Proc = 2: Box = 0.454603 0.932209
+      Proc = 2: Box = -26.3537 -0.0228102
+      Proc = 2: Box = 0 0
+    Proc 2 has weight = 590
+    Proc 2 max weight = 1
+    Proc 2 send count = 618
+    Proc 2 recv count = 598
+    Proc 2 presend count = 582
+    Proc 2 prerecv count = 602
+    Proc 2 max dots = 610
+    Proc 2 max memory = 709
+    Proc 2 # of Reuse = 3
+    Proc 2 # of OverAlloc = 0
+    Proc 2 start-up time = 0.00376105
+    Proc 2 pre-median time = 0.000353098
+    Proc 2 median time = 0.00103188
+    Proc 2 comm time = 0.00673914
+      Proc = 2: Box = 0.495247 0.931201
+      Proc = 2: Box = -26.3497 -0.0222074
+      Proc = 2: Box = 0 0
+    Proc 6 has weight = 590
+    Proc 6 max weight = 1
+    Proc 6 send count = 1678
+    Proc 6 recv count = 1678
+    Proc 6 presend count = 0
+    Proc 6 prerecv count = 0
+    Proc 6 max dots = 590
+    Proc 6 max memory = 709
+    Proc 6 # of Reuse = 0
+    Proc 6 # of OverAlloc = 0
+    Proc 6 start-up time = 0.000530958
+    Proc 6 pre-median time = 0.00032115
+    Proc 6 median time = 0.00181293
+    Proc 6 comm time = 0.00650716
+      Proc = 6: Box = 0.817312 48.348
+      Proc = 6: Box = -0.0232946 0.0113537
+      Proc = 6: Box = 0 0
+    Proc 6 has weight = 590
+    Proc 6 max weight = 1
+    Proc 6 send count = 632
+    Proc 6 recv count = 673
+    Proc 6 presend count = 577
+    Proc 6 prerecv count = 536
+    Proc 6 max dots = 590
+    Proc 6 max memory = 709
+    Proc 6 # of Reuse = 3
+    Proc 6 # of OverAlloc = 0
+    Proc 6 start-up time = 0.00423312
+    Proc 6 pre-median time = 0.000367165
+    Proc 6 median time = 0.00138664
+    Proc 6 comm time = 0.00679612
+      Proc = 6: Box = 0.811514 48.354
+      Proc = 6: Box = -0.0228102 0.0120179
+      Proc = 6: Box = 0 0
+    Proc 6 has weight = 590
+    Proc 6 max weight = 1
+    Proc 6 send count = 645
+    Proc 6 recv count = 701
+    Proc 6 presend count = 561
+    Proc 6 prerecv count = 505
+    Proc 6 max dots = 590
+    Proc 6 max memory = 709
+    Proc 6 # of Reuse = 3
+    Proc 6 # of OverAlloc = 0
+    Proc 6 start-up time = 0.00372195
+    Proc 6 pre-median time = 0.000416994
+    Proc 6 median time = 0.00102806
+    Proc 6 comm time = 0.00669289
+      Proc = 6: Box = 0.805952 48.36
+      Proc = 6: Box = -0.0222074 0.0136966
+      Proc = 6: Box = 0 0
+ Start-up time %: ave = 31.5328, min = 30.8646, max = 31.9777
+    Proc 0 start-up time = 0.0038321
+ Pre-median time %: ave = 3.20143, min = 2.15504, max = 3.80593
+    Proc 0 pre-median time = 0.000259876
+ Median time %: ave = 8.32707, min = 7.1156, max = 9.73527
+    Proc 0 median time = 0.00117397
+ Comm time %: ave = 55.8255, min = 55.2285, max = 56.3396
+    Proc 0 comm time = 0.00671101
+ RCB sub-domain boxes:
+    Dimension 1
+      Proc = 0: Box = -33.259 0.112666
+    Dimension 2
+      Proc = 0: Box = -26.3497 -0.0222074
+    Dimension 3
+      Proc = 0: Box = 0 0
+ STATS Runs 3  bal  CURRENT 1.000000  MAX 1.000000  MIN 1.000000  AVG 1.000000
+ STATS Runs 3  moveVol CURRENT 130160.000000  MAX 789584.000000  MIN 117064.000000  AVG 345602.666667
+
+DRIVER:  Zoltan_LB_Partition time = 0.0256009
+DRIVER:  new_decomp 1 Min/Max Import: 16 97
+DRIVER:  new_decomp 1 Min/Max Export: 16 97
+DRIVER:  Total migration time = 0.00338006
+
+AFTER load balancing
+DRIVER EVAL:  load:  max 590.000000  min 590.000000  sum 4720.000000
+DRIVER EVAL:  objs:  max 590  min 590  sum 4720
+DRIVER EVAL:  cuts:  max 1023  min 230  sum 4788
+
+Zoltan_LB_Eval_Balance  Part count: 8 requested, 8 actual , 8 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       590      590 4.72e+03     1.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       590      590 4.72e+03        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :       101      408      245 1.96e+03
+Zoltan_LB_Eval_Graph  Number of cut edges       :       230 1.02e+03      598 4.79e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         3        6      4.5       36
+
+
+
+Zoltan_LB_Eval_HG  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       590      590 4.72e+03   1.000
+Zoltan_LB_Eval_HG  Object weight     :       590      590 4.72e+03   1.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )): 1960.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): 2106.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):        450.000
+
+
+FILE zdrive.inp.rcb-reuse-ts:  Total:    7.431293e-02 seconds in Partitioning
+FILE zdrive.inp.rcb-reuse-ts:  Average:  2.477098e-02 seconds per Iteration

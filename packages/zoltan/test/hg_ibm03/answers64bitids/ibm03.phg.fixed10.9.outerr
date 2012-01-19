@@ -1,0 +1,762 @@
+
+
+Reading the command file, zdrive.inp.phg.fixed10
+Input values:
+  Zoltan version 3.601
+  zdrive version 1.0
+  Total number of Processors = 9
+
+  Performing load balance using hypergraph.
+	Parameters:
+		obj_weight_dim 1
+		hypergraph_package phg
+		num_global_parts 11
+		phg_output_level 1
+		phg_coarsepartition_method linear
+		remap 0
+		lb_approach partition
+
+  Initially distribute input objects in linear fashion (first n/p to process 0, etc).
+
+  Distribute pins so each process gets full rows.
+##########################################################
+ZOLTAN Load balancing method = 11 (HYPERGRAPH)
+Starting iteration 1
+
+BEFORE load balancing
+DRIVER EVAL:  load:  max 2378912.000000  min 638752.000000  sum 9842880.000000
+DRIVER EVAL:  objs:  max 2571  min 2570  sum 23136
+DRIVER EVAL:  cuts:  max 0  min 0  sum 0
+
+Zoltan_LB_Eval_Balance  Part count: 11 requested, 9 actual , 9 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 9 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :  2.57e+03 2.57e+03 2.31e+04     1.222
+Zoltan_LB_Eval_Balance  Object weight      :  6.39e+05 2.38e+06 9.84e+06     2.659
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 11 requested, 9 actual, 9 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 9 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :  2.57e+03 2.57e+03 2.31e+04     1.22
+Zoltan_LB_Eval_Graph  Object weight      :  6.39e+05 2.38e+06 9.84e+06     2.659
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 9 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :         0        0        0        0
+Zoltan_LB_Eval_Graph  Number of cut edges       :         0        0        0        0
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         0        0        0        0
+
+
+
+Zoltan_LB_Eval_HG  Part count: 11 requested, 9 actual, 9 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 9 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :  2.57e+03 2.57e+03 2.31e+04   1.222
+Zoltan_LB_Eval_HG  Object weight     :  6.39e+05 2.38e+06 9.84e+06   2.659
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )): 25353.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): 46539.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):       5411.000
+
+
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 1
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = IMPORT AND EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = 11
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 0
+ZOLTAN Parameter SEED = 1220988223 (1220988223)
+ZOLTAN Parameter LB_APPROACH = PARTITION
+ZOLTAN Parameter HYPERGRAPH_PACKAGE = PHG
+ZOLTAN Parameter PHG_MULTILEVEL = 1
+ZOLTAN Parameter PHG_CUT_OBJECTIVE = connectivity
+ZOLTAN Parameter PHG_OUTPUT_LEVEL = 1
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter CHECK_GRAPH = 0
+ZOLTAN Parameter CHECK_HYPERGRAPH = 0
+ZOLTAN Parameter PHG_NPROC_VERTEX = -1
+ZOLTAN Parameter PHG_NPROC_EDGE = -1
+ZOLTAN Parameter PHG_COARSENING_LIMIT = 100
+ZOLTAN Parameter PHG_COARSENING_NCANDIDATE = 100
+ZOLTAN Parameter PHG_COARSENING_METHOD = agg
+ZOLTAN Parameter PHG_COARSENING_METHOD_FAST = l-ipm
+ZOLTAN Parameter PHG_VERTEX_VISIT_ORDER = 0
+ZOLTAN Parameter PHG_EDGE_SCALING = 0
+ZOLTAN Parameter PHG_VERTEX_SCALING = 0
+ZOLTAN Parameter PHG_COARSEPARTITION_METHOD = LINEAR
+ZOLTAN Parameter PHG_REFINEMENT_METHOD = fm2
+ZOLTAN Parameter PHG_DIRECT_KWAY = 0
+ZOLTAN Parameter PHG_REFINEMENT_LOOP_LIMIT = 10
+ZOLTAN Parameter PHG_REFINEMENT_MAX_NEG_MOVE = 250
+ZOLTAN Parameter PHG_REFINEMENT_QUALITY = 1.000000
+ZOLTAN Parameter PHG_USE_TIMERS = 0
+ZOLTAN Parameter USE_TIMERS = 0
+ZOLTAN Parameter PHG_EDGE_SIZE_THRESHOLD = 0.250000
+ZOLTAN Parameter PHG_MATCH_EDGE_SIZE_THRESHOLD = 500
+ZOLTAN Parameter PHG_BAL_TOL_ADJUSTMENT = 0.700000
+ZOLTAN Parameter PHG_EDGE_WEIGHT_OPERATION = max
+ZOLTAN Parameter PARKWAY_SERPART = patoh
+ZOLTAN Parameter ADD_OBJ_WEIGHT = none
+ZOLTAN Parameter PHG_RANDOMIZE_INPUT = 0
+ZOLTAN Parameter PHG_PROCESSOR_REDUCTION_LIMIT = 0.000000
+ZOLTAN Parameter PHG_REPART_MULTIPLIER = 100.000000
+ZOLTAN Parameter HYBRID_REDUCTION_FACTOR = 0.100000
+ZOLTAN Parameter HYBRID_REDUCTION_LEVELS = 2147483647
+ZOLTAN Parameter PATOH_ALLOC_POOL0 = 0
+ZOLTAN Parameter PATOH_ALLOC_POOL1 = 0
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->START   0 |V|=  7712 |E|=  9134 #pins= 10412 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->START   0 |V|=  7712 |E|=  9134 #pins= 10268 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->START   0 |V|=  7712 |E|=  9134 #pins= 10283 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->START   0 |V|=  7712 |E|=  9133 #pins= 10203 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->START   0 |V|=  7712 |E|=  9133 #pins= 10453 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->START   0 |V|=  7712 |E|=  9134 #pins= 10602 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->START   0 |V|=  7712 |E|=  9134 #pins= 10565 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->START   0 |V|=  7712 |E|=  9133 #pins= 10265 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->START   0 |V|=  7712 |E|=  9134 #pins= 10522 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->START   1 |V|=  3300 |E|=  7078 #pins=  7605 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->START   1 |V|=  3376 |E|=  7105 #pins=  7637 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->START   1 |V|=  3300 |E|=  7105 #pins=  7552 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->START   1 |V|=  3376 |E|=  7063 #pins=  8065 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->START   1 |V|=  3202 |E|=  7078 #pins=  7405 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->START   1 |V|=  3202 |E|=  7105 #pins=  7493 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->START   1 |V|=  3376 |E|=  7078 #pins=  7826 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->START   1 |V|=  3202 |E|=  7063 #pins=  7515 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->START   1 |V|=  3300 |E|=  7063 #pins=  7653 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->START   2 |V|=  1318 |E|=  5731 #pins=  5703 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->START   2 |V|=  1318 |E|=  5785 #pins=  5566 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->START   2 |V|=  1412 |E|=  5785 #pins=  6274 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->START   2 |V|=  1318 |E|=  5851 #pins=  5562 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->START   2 |V|=  1412 |E|=  5731 #pins=  5929 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->START   2 |V|=  1396 |E|=  5731 #pins=  5731 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->START   2 |V|=  1396 |E|=  5785 #pins=  5879 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->START   2 |V|=  1412 |E|=  5851 #pins=  6141 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->START   2 |V|=  1396 |E|=  5851 #pins=  6008 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->START   3 |V|=   558 |E|=  4369 #pins=  4375 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->START   3 |V|=   558 |E|=  4593 #pins=  4567 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->START   3 |V|=   562 |E|=  4593 #pins=  4606 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->START   3 |V|=   515 |E|=  4530 #pins=  4253 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->START   3 |V|=   515 |E|=  4593 #pins=  4313 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->START   3 |V|=   562 |E|=  4530 #pins=  4403 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->START   3 |V|=   515 |E|=  4369 #pins=  4065 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->START   3 |V|=   562 |E|=  4369 #pins=  4413 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->START   3 |V|=   558 |E|=  4530 #pins=  4557 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->START   4 |V|=   171 |E|=  3137 #pins=  2728 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->START   4 |V|=   171 |E|=  3159 #pins=  2659 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->START   4 |V|=   171 |E|=  3201 #pins=  2699 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->START   4 |V|=   202 |E|=  3137 #pins=  3125 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->START   4 |V|=   202 |E|=  3159 #pins=  3209 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->START   4 |V|=   208 |E|=  3201 #pins=  3361 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->START   4 |V|=   208 |E|=  3159 #pins=  3381 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->START   4 |V|=   202 |E|=  3201 #pins=  3344 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->START   4 |V|=   208 |E|=  3137 #pins=  3262 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->START   5 |V|=    52 |E|=  1846 #pins=  1623 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->START   5 |V|=    52 |E|=  1889 #pins=  1705 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->START   5 |V|=    62 |E|=  1807 #pins=  1761 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->START   5 |V|=    62 |E|=  1889 #pins=  1909 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->START   5 |V|=    52 |E|=  1807 #pins=  1729 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->START   5 |V|=    62 |E|=  1846 #pins=  1888 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->START   5 |V|=    57 |E|=  1846 #pins=  2042 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->START   5 |V|=    57 |E|=  1889 #pins=  2147 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->START   5 |V|=    57 |E|=  1807 #pins=  1951 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->START   6 |V|=    17 |E|=   850 #pins=   999 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->START   6 |V|=    14 |E|=   850 #pins=   842 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->START   6 |V|=    17 |E|=   867 #pins=  1101 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->START   6 |V|=    19 |E|=   850 #pins=   940 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->START   6 |V|=    17 |E|=   833 #pins=  1045 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->START   6 |V|=    14 |E|=   833 #pins=   791 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->START   6 |V|=    19 |E|=   867 #pins=   976 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->START   6 |V|=    19 |E|=   833 #pins=   834 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->START   6 |V|=    14 |E|=   867 #pins=   857 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->Local Ratio Cut= 4052.34   Global Ratio Cut= 3261.30
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->Local Ratio Cut= 3634.78   Global Ratio Cut= 3261.30
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->Local Ratio Cut= 3593.24   Global Ratio Cut= 3261.30
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->Local Ratio Cut= 4058.80   Global Ratio Cut= 3261.30
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->Local Ratio Cut= 3261.30   Global Ratio Cut= 3261.30
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->Local Ratio Cut= 4142.80   Global Ratio Cut= 3261.30
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->Local Ratio Cut= 3261.30   Global Ratio Cut= 3261.30
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->Local Ratio Cut= 3930.75   Global Ratio Cut= 3261.30
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->Local Ratio Cut= 3593.24   Global Ratio Cut= 3261.30
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->FINAL   6 |V|=    19 |E|=   850 #pins=   940 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=3045.00
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->FINAL   6 |V|=    17 |E|=   850 #pins=   999 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=3045.00
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->FINAL   6 |V|=    14 |E|=   850 #pins=   842 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=3045.00
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->FINAL   6 |V|=    17 |E|=   867 #pins=  1101 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=3045.00
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->FINAL   6 |V|=    19 |E|=   867 #pins=   976 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=3045.00
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->FINAL   6 |V|=    19 |E|=   833 #pins=   834 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=3045.00
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->FINAL   6 |V|=    17 |E|=   833 #pins=  1045 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=3045.00
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->FINAL   6 |V|=    14 |E|=   833 #pins=   791 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=3045.00
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->FINAL   6 |V|=    14 |E|=   867 #pins=   857 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=3045.00
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->FINAL   5 |V|=    62 |E|=  1889 #pins=  1909 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=2760.00
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->FINAL   5 |V|=    52 |E|=  1889 #pins=  1705 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=2760.00
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->FINAL   5 |V|=    57 |E|=  1889 #pins=  2147 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=2760.00
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->FINAL   5 |V|=    52 |E|=  1807 #pins=  1729 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=2760.00
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->FINAL   5 |V|=    62 |E|=  1807 #pins=  1761 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=2760.00
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->FINAL   5 |V|=    57 |E|=  1807 #pins=  1951 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=2760.00
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->FINAL   5 |V|=    57 |E|=  1846 #pins=  2042 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=2760.00
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->FINAL   5 |V|=    52 |E|=  1846 #pins=  1623 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=2760.00
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->FINAL   5 |V|=    62 |E|=  1846 #pins=  1888 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=2760.00
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->FINAL   4 |V|=   208 |E|=  3159 #pins=  3381 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=2393.00
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->FINAL   4 |V|=   171 |E|=  3159 #pins=  2659 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=2393.00
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->FINAL   4 |V|=   202 |E|=  3159 #pins=  3209 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=2393.00
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->FINAL   4 |V|=   171 |E|=  3201 #pins=  2699 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=2393.00
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->FINAL   4 |V|=   208 |E|=  3201 #pins=  3361 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=2393.00
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->FINAL   4 |V|=   202 |E|=  3201 #pins=  3344 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=2393.00
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->FINAL   4 |V|=   171 |E|=  3137 #pins=  2728 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=2393.00
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->FINAL   4 |V|=   202 |E|=  3137 #pins=  3125 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=2393.00
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->FINAL   4 |V|=   208 |E|=  3137 #pins=  3262 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=2393.00
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->FINAL   3 |V|=   558 |E|=  4593 #pins=  4567 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1974.00
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->FINAL   3 |V|=   515 |E|=  4593 #pins=  4313 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1974.00
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->FINAL   3 |V|=   562 |E|=  4593 #pins=  4606 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1974.00
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->FINAL   3 |V|=   515 |E|=  4369 #pins=  4065 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1974.00
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->FINAL   3 |V|=   558 |E|=  4369 #pins=  4375 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1974.00
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->FINAL   3 |V|=   515 |E|=  4530 #pins=  4253 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1974.00
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->FINAL   3 |V|=   562 |E|=  4530 #pins=  4403 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1974.00
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->FINAL   3 |V|=   558 |E|=  4530 #pins=  4557 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1974.00
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->FINAL   3 |V|=   562 |E|=  4369 #pins=  4413 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1974.00
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->FINAL   2 |V|=  1396 |E|=  5731 #pins=  5731 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1709.00
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->FINAL   2 |V|=  1412 |E|=  5731 #pins=  5929 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1709.00
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->FINAL   2 |V|=  1318 |E|=  5731 #pins=  5703 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1709.00
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->FINAL   2 |V|=  1318 |E|=  5785 #pins=  5566 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1709.00
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->FINAL   2 |V|=  1318 |E|=  5851 #pins=  5562 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1709.00
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->FINAL   2 |V|=  1412 |E|=  5785 #pins=  6274 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1709.00
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->FINAL   2 |V|=  1396 |E|=  5785 #pins=  5879 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1709.00
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->FINAL   2 |V|=  1396 |E|=  5851 #pins=  6008 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1709.00
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->FINAL   2 |V|=  1412 |E|=  5851 #pins=  6141 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=1709.00
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->FINAL   1 |V|=  3300 |E|=  7078 #pins=  7605 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1453.00
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->FINAL   1 |V|=  3202 |E|=  7078 #pins=  7405 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1453.00
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->FINAL   1 |V|=  3376 |E|=  7078 #pins=  7826 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1453.00
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->FINAL   1 |V|=  3300 |E|=  7063 #pins=  7653 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1453.00
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->FINAL   1 |V|=  3202 |E|=  7105 #pins=  7493 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1453.00
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->FINAL   1 |V|=  3376 |E|=  7105 #pins=  7637 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1453.00
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->FINAL   1 |V|=  3376 |E|=  7063 #pins=  8065 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1453.00
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->FINAL   1 |V|=  3202 |E|=  7063 #pins=  7515 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1453.00
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->FINAL   1 |V|=  3300 |E|=  7105 #pins=  7552 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1453.00
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9133 #pins= 10203 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1200.00
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9133 #pins= 10453 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1200.00
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9133 #pins= 10265 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1200.00
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10565 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1200.00
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10602 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1200.00
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10283 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1200.00
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10412 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1200.00
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10522 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1200.00
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10268 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1200.00
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->Rdivide(0, 10): 1200.0
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->Rdivide(0, 10): 1200.0
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->Rdivide(0, 10): 1200.0
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->Rdivide(0, 10): 1200.0
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->Rdivide(0, 10): 1200.0
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->Rdivide(0, 10): 1200.0
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->Rdivide(0, 10): 1200.0
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->Rdivide(0, 10): 1200.0
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->Rdivide(0, 10): 1200.0
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->Left: H(5888, 7039, 7799) ----> H(0, 0, 0) Weights=(5674976.00, 4167904.00)
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->Left: H(5904, 7039, 7973) ----> H(0, 0, 0) Weights=(5674976.00, 4167904.00)
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->Left: H(5940, 7005, 7881) ----> H(17732, 3020, 9448) Weights=(5674976.00, 4167904.00)
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->Left: H(5904, 7088, 8089) ----> H(17732, 3018, 10166) Weights=(5674976.00, 4167904.00)
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->Left: H(5888, 7005, 7639) ----> H(17732, 3018, 10184) Weights=(5674976.00, 4167904.00)
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->Left: H(5904, 7005, 7679) ----> H(17732, 3020, 10170) Weights=(5674976.00, 4167904.00)
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->Left: H(5888, 7088, 7832) ----> H(17732, 3020, 9955) Weights=(5674976.00, 4167904.00)
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->Left: H(5940, 7088, 8188) ----> H(17732, 3019, 10285) Weights=(5674976.00, 4167904.00)
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->Left: H(5940, 7039, 8050) ----> H(17732, 3017, 10922) Weights=(5674976.00, 4167904.00)
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->Right: H(1772, 2081, 2283) ----> H(0, 0, 0) Weights=(5674976.00, 4167904.00)
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->Right: H(1772, 2147, 2437) ----> H(0, 0, 0) Weights=(5674976.00, 4167904.00)
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->Left: H(17732, 3019, 10285) OldI: 1.10 NewI: 1.04
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->Left: H(17732, 3020, 9448) OldI: 1.10 NewI: 1.04
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->Right: H(1824, 2147, 2489) ----> H(0, 0, 0) Weights=(5674976.00, 4167904.00)
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->Right: H(1772, 2119, 2389) ----> H(0, 0, 0) Weights=(5674976.00, 4167904.00)
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->Right: H(1808, 2081, 2211) ----> H(0, 0, 0) Weights=(5674976.00, 4167904.00)
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->Left: H(17732, 3017, 10922) OldI: 1.10 NewI: 1.04
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->Right: H(1824, 2081, 2327) ----> H(0, 0, 0) Weights=(5674976.00, 4167904.00)
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->Left: H(17732, 3018, 10184) OldI: 1.10 NewI: 1.04
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->Right: H(1808, 2147, 2410) ----> H(0, 0, 0) Weights=(5674976.00, 4167904.00)
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->Left: H(17732, 3020, 9955) OldI: 1.10 NewI: 1.04
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->Left: H(17732, 3020, 10170) OldI: 1.10 NewI: 1.04
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->Right: H(1808, 2119, 2427) ----> H(5404, 3175, 10471) Weights=(5674976.00, 4167904.00)
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->Right: H(5404, 3175, 10471) OldI: 1.10 NewI: 1.18
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->Right: H(1824, 2119, 2348) ----> H(5404, 3172, 10850) Weights=(5674976.00, 4167904.00)
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->Right: H(5404, 3172, 10850) OldI: 1.10 NewI: 1.18
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->Left: H(17732, 3018, 10166) OldI: 1.10 NewI: 1.04
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->START   0 |V|=  5404 |E|=  3175 #pins= 10471 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->START   0 |V|=  5404 |E|=  3172 #pins= 10850 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->START   0 |V|= 17732 |E|=  3018 #pins= 10184 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->START   0 |V|= 17732 |E|=  3020 #pins=  9448 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->START   0 |V|= 17732 |E|=  3018 #pins= 10166 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->START   0 |V|= 17732 |E|=  3020 #pins=  9955 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->START   0 |V|= 17732 |E|=  3020 #pins= 10170 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->START   0 |V|= 17732 |E|=  3019 #pins= 10285 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->START   0 |V|= 17732 |E|=  3017 #pins= 10922 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->START   1 |V|=  2295 |E|=  2353 #pins=  7577 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->START   1 |V|=  2295 |E|=  2296 #pins=  7537 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->START   2 |V|=   954 |E|=  1950 #pins=  5954 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->START   2 |V|=   954 |E|=  1919 #pins=  5796 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->START   3 |V|=   370 |E|=  1562 #pins=  4515 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->START   3 |V|=   370 |E|=  1517 #pins=  4359 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->START   4 |V|=   130 |E|=  1057 #pins=  3057 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->START   4 |V|=   130 |E|=   981 #pins=  2747 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->START   5 |V|=    53 |E|=   466 #pins=  1389 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->START   5 |V|=    53 |E|=   483 #pins=  1459 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->Local Ratio Cut= 509.70   Global Ratio Cut= 353.78
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->Local Ratio Cut= 353.78   Global Ratio Cut= 353.78
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->FINAL   5 |V|=    53 |E|=   466 #pins=  1389 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=328.00
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->FINAL   5 |V|=    53 |E|=   483 #pins=  1459 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=328.00
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->FINAL   4 |V|=   130 |E|=  1057 #pins=  3057 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=249.00
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->FINAL   4 |V|=   130 |E|=   981 #pins=  2747 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=249.00
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->FINAL   3 |V|=   370 |E|=  1562 #pins=  4515 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=233.00
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->FINAL   3 |V|=   370 |E|=  1517 #pins=  4359 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=233.00
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->FINAL   2 |V|=   954 |E|=  1950 #pins=  5954 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=196.00
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->FINAL   2 |V|=   954 |E|=  1919 #pins=  5796 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=196.00
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->FINAL   1 |V|=  2295 |E|=  2353 #pins=  7577 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=188.00
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->FINAL   1 |V|=  2295 |E|=  2296 #pins=  7537 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=188.00
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->FINAL   0 |V|=  5404 |E|=  3175 #pins= 10471 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=184.00
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->FINAL   0 |V|=  5404 |E|=  3172 #pins= 10850 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=184.00
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->Rdivide(6, 10): 184.0
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->Rdivide(6, 10): 184.0
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->Left: H(5325, 3121, 10235) ----> H(5325, 6251, 20912) Weights=(2665248.00, 1502656.00)
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->Left: H(5325, 3130, 10677) ----> H(0, 0, 0) Weights=(2665248.00, 1502656.00)
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->Right: H(79, 73, 150) ----> H(0, 0, 0) Weights=(2665248.00, 1502656.00)
+| 7/ 9|: ( 0, 0)/[ 1, 2] ->Left: H(5325, 6251, 20912) OldI: 1.18 NewI: 1.11
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   0 |V|=  5325 |E|=  6251 #pins= 20912 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->Right: H(79, 50, 102) ----> H(79, 123, 252) Weights=(2665248.00, 1502656.00)
+| 8/ 9|: ( 0, 1)/[ 1, 2] ->Right: H(79, 123, 252) OldI: 1.18 NewI: 1.31
+| 8/ 9|: ( 0, 0)/[ 1, 1] ->START   0 |V|=    79 |E|=   123 #pins=   252 100/agg/LINEAR/fm2 p=2...
+| 8/ 9|: ( 0, 0)/[ 1, 1] ->Local Ratio Cut= 84.60   Global Ratio Cut= 84.60
+| 8/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   0 |V|=    79 |E|=   123 #pins=   252 100/agg/LINEAR/fm2 p=2 bal=1.41 cutl=50.00
+| 8/ 9|: ( 0, 0)/[ 1, 1] ->Rdivide(9, 10): 50.0
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   1 |V|=  2255 |E|=  4584 #pins= 14849 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   2 |V|=   928 |E|=  3801 #pins= 11452 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   3 |V|=   358 |E|=  3059 #pins=  8749 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   4 |V|=   119 |E|=  1955 #pins=  5584 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   5 |V|=    39 |E|=   870 #pins=  2639 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->Local Ratio Cut= 1091.01   Global Ratio Cut= 1091.01
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   5 |V|=    39 |E|=   870 #pins=  2639 100/agg/LINEAR/fm2 p=2 bal=1.06 cutl=1028.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   4 |V|=   119 |E|=  1955 #pins=  5584 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=860.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   3 |V|=   358 |E|=  3059 #pins=  8749 100/agg/LINEAR/fm2 p=2 bal=1.08 cutl=760.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   2 |V|=   928 |E|=  3801 #pins= 11452 100/agg/LINEAR/fm2 p=2 bal=1.07 cutl=510.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   1 |V|=  2255 |E|=  4584 #pins= 14849 100/agg/LINEAR/fm2 p=2 bal=1.08 cutl=380.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   0 |V|=  5325 |E|=  6251 #pins= 20912 100/agg/LINEAR/fm2 p=2 bal=1.08 cutl=300.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->Rdivide(6, 8): 300.0
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->Left: H(4117, 4761, 15869) OldI: 1.11 NewI: 1.03
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   0 |V|=  4117 |E|=  4761 #pins= 15869 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   1 |V|=  1742 |E|=  3614 #pins= 11452 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   2 |V|=   713 |E|=  3032 #pins=  8904 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   3 |V|=   271 |E|=  2402 #pins=  6695 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->START   4 |V|=    89 |E|=  1490 #pins=  4173 100/agg/LINEAR/fm2 p=2...
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->Local Ratio Cut= 477.79   Global Ratio Cut= 477.79
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   4 |V|=    89 |E|=  1490 #pins=  4173 100/agg/LINEAR/fm2 p=2 bal=1.11 cutl=64.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   3 |V|=   271 |E|=  2402 #pins=  6695 100/agg/LINEAR/fm2 p=2 bal=1.11 cutl=64.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   2 |V|=   713 |E|=  3032 #pins=  8904 100/agg/LINEAR/fm2 p=2 bal=1.11 cutl=64.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   1 |V|=  1742 |E|=  3614 #pins= 11452 100/agg/LINEAR/fm2 p=2 bal=1.11 cutl=64.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->FINAL   0 |V|=  4117 |E|=  4761 #pins= 15869 100/agg/LINEAR/fm2 p=2 bal=1.11 cutl=64.00
+| 7/ 9|: ( 0, 0)/[ 1, 1] ->Rdivide(6, 7): 64.0
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->START   1 |V|=  7662 |E|=  2264 #pins=  7193 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->START   1 |V|=  7662 |E|=  2329 #pins=  7548 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->START   1 |V|=  7662 |E|=  2299 #pins=  7318 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->START   1 |V|=  7662 |E|=  2414 #pins=  7821 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->START   1 |V|=  7662 |E|=  2294 #pins=  7143 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->START   1 |V|=  7662 |E|=  2358 #pins=  7573 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->START   1 |V|=  7662 |E|=  2373 #pins=  7472 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->START   2 |V|=  3254 |E|=  1854 #pins=  5622 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->START   2 |V|=  3254 |E|=  1808 #pins=  5387 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->START   2 |V|=  3254 |E|=  1900 #pins=  5818 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->START   2 |V|=  3254 |E|=  1872 #pins=  5495 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->START   2 |V|=  3254 |E|=  1865 #pins=  5710 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->START   2 |V|=  3254 |E|=  1908 #pins=  5622 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->START   2 |V|=  3254 |E|=  1907 #pins=  5600 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->START   3 |V|=  1354 |E|=  1398 #pins=  4005 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->START   3 |V|=  1354 |E|=  1391 #pins=  4013 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->START   3 |V|=  1354 |E|=  1416 #pins=  4033 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->START   3 |V|=  1354 |E|=  1459 #pins=  4305 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->START   3 |V|=  1354 |E|=  1450 #pins=  4234 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->START   3 |V|=  1354 |E|=  1528 #pins=  4464 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->START   3 |V|=  1354 |E|=  1453 #pins=  4235 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->START   4 |V|=   540 |E|=   972 #pins=  2825 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->START   4 |V|=   540 |E|=  1062 #pins=  3062 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->START   4 |V|=   540 |E|=  1039 #pins=  2940 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->START   4 |V|=   540 |E|=  1060 #pins=  3082 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->START   4 |V|=   540 |E|=  1044 #pins=  3002 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->START   4 |V|=   540 |E|=   989 #pins=  2855 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->START   4 |V|=   540 |E|=  1054 #pins=  3085 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->START   5 |V|=   189 |E|=   659 #pins=  1984 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->START   5 |V|=   189 |E|=   614 #pins=  1773 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->START   5 |V|=   189 |E|=   614 #pins=  1772 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->START   5 |V|=   189 |E|=   613 #pins=  1849 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->START   5 |V|=   189 |E|=   633 #pins=  1870 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->START   5 |V|=   189 |E|=   637 #pins=  1810 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->START   5 |V|=   189 |E|=   611 #pins=  1796 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->START   6 |V|=    55 |E|=   287 #pins=   931 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->START   6 |V|=    55 |E|=   288 #pins=   914 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->START   6 |V|=    55 |E|=   281 #pins=   882 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->START   6 |V|=    55 |E|=   254 #pins=   781 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->START   6 |V|=    55 |E|=   251 #pins=   803 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->START   6 |V|=    55 |E|=   263 #pins=   817 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->START   6 |V|=    55 |E|=   278 #pins=   837 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->Local Ratio Cut= 2695.72   Global Ratio Cut= 1857.91
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->Local Ratio Cut= 2082.04   Global Ratio Cut= 1857.91
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->Local Ratio Cut= 2038.85   Global Ratio Cut= 1857.91
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->Local Ratio Cut= 1857.91   Global Ratio Cut= 1857.91
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->Local Ratio Cut= 2082.04   Global Ratio Cut= 1857.91
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->Local Ratio Cut= 1881.10   Global Ratio Cut= 1857.91
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->Local Ratio Cut= 2082.04   Global Ratio Cut= 1857.91
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->FINAL   6 |V|=    55 |E|=   287 #pins=   931 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1715.00
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->FINAL   6 |V|=    55 |E|=   288 #pins=   914 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1715.00
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->FINAL   6 |V|=    55 |E|=   254 #pins=   781 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1715.00
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->FINAL   6 |V|=    55 |E|=   251 #pins=   803 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1715.00
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->FINAL   6 |V|=    55 |E|=   263 #pins=   817 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1715.00
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->FINAL   6 |V|=    55 |E|=   278 #pins=   837 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1715.00
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->FINAL   6 |V|=    55 |E|=   281 #pins=   882 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1715.00
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->FINAL   5 |V|=   189 |E|=   659 #pins=  1984 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=1615.00
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->FINAL   5 |V|=   189 |E|=   614 #pins=  1773 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=1615.00
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->FINAL   5 |V|=   189 |E|=   633 #pins=  1870 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=1615.00
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->FINAL   5 |V|=   189 |E|=   611 #pins=  1796 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=1615.00
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->FINAL   5 |V|=   189 |E|=   613 #pins=  1849 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=1615.00
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->FINAL   5 |V|=   189 |E|=   614 #pins=  1772 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=1615.00
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->FINAL   5 |V|=   189 |E|=   637 #pins=  1810 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=1615.00
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->FINAL   4 |V|=   540 |E|=   972 #pins=  2825 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1425.00
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->FINAL   4 |V|=   540 |E|=  1062 #pins=  3062 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1425.00
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->FINAL   4 |V|=   540 |E|=  1060 #pins=  3082 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1425.00
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->FINAL   4 |V|=   540 |E|=  1039 #pins=  2940 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1425.00
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->FINAL   4 |V|=   540 |E|=  1044 #pins=  3002 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1425.00
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->FINAL   4 |V|=   540 |E|=   989 #pins=  2855 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1425.00
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->FINAL   4 |V|=   540 |E|=  1054 #pins=  3085 100/agg/LINEAR/fm2 p=2 bal=1.02 cutl=1425.00
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->FINAL   3 |V|=  1354 |E|=  1398 #pins=  4005 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1262.00
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->FINAL   3 |V|=  1354 |E|=  1459 #pins=  4305 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1262.00
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->FINAL   3 |V|=  1354 |E|=  1391 #pins=  4013 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1262.00
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->FINAL   3 |V|=  1354 |E|=  1453 #pins=  4235 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1262.00
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->FINAL   3 |V|=  1354 |E|=  1450 #pins=  4234 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1262.00
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->FINAL   3 |V|=  1354 |E|=  1416 #pins=  4033 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1262.00
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->FINAL   3 |V|=  1354 |E|=  1528 #pins=  4464 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1262.00
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->FINAL   2 |V|=  3254 |E|=  1854 #pins=  5622 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1101.00
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->FINAL   2 |V|=  3254 |E|=  1907 #pins=  5600 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1101.00
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->FINAL   2 |V|=  3254 |E|=  1865 #pins=  5710 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1101.00
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->FINAL   2 |V|=  3254 |E|=  1808 #pins=  5387 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1101.00
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->FINAL   2 |V|=  3254 |E|=  1872 #pins=  5495 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1101.00
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->FINAL   2 |V|=  3254 |E|=  1908 #pins=  5622 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1101.00
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->FINAL   2 |V|=  3254 |E|=  1900 #pins=  5818 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=1101.00
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->FINAL   1 |V|=  7662 |E|=  2264 #pins=  7193 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=982.00
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->FINAL   1 |V|=  7662 |E|=  2294 #pins=  7143 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=982.00
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->FINAL   1 |V|=  7662 |E|=  2373 #pins=  7472 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=982.00
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->FINAL   1 |V|=  7662 |E|=  2329 #pins=  7548 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=982.00
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->FINAL   1 |V|=  7662 |E|=  2358 #pins=  7573 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=982.00
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->FINAL   1 |V|=  7662 |E|=  2414 #pins=  7821 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=982.00
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->FINAL   1 |V|=  7662 |E|=  2299 #pins=  7318 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=982.00
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->FINAL   0 |V|= 17732 |E|=  3019 #pins= 10285 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=871.00
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->FINAL   0 |V|= 17732 |E|=  3020 #pins=  9448 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=871.00
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->FINAL   0 |V|= 17732 |E|=  3018 #pins= 10166 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=871.00
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->FINAL   0 |V|= 17732 |E|=  3020 #pins= 10170 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=871.00
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->FINAL   0 |V|= 17732 |E|=  3020 #pins=  9955 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=871.00
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->FINAL   0 |V|= 17732 |E|=  3017 #pins= 10922 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=871.00
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->FINAL   0 |V|= 17732 |E|=  3018 #pins= 10184 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=871.00
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->Rdivide(0, 5): 871.0
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->Rdivide(0, 5): 871.0
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->Rdivide(0, 5): 871.0
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->Rdivide(0, 5): 871.0
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->Rdivide(0, 5): 871.0
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->Rdivide(0, 5): 871.0
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->Rdivide(0, 5): 871.0
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->Left: H(10168, 1409, 4823) ----> H(0, 0, 0) Weights=(2757056.00, 2917920.00)
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->Left: H(10168, 1837, 6160) ----> H(0, 0, 0) Weights=(2757056.00, 2917920.00)
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->Left: H(10168, 2302, 8196) ----> H(0, 0, 0) Weights=(2757056.00, 2917920.00)
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->Left: H(10168, 754, 2323) ----> H(5084, 5914, 9949) Weights=(2757056.00, 2917920.00)
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->Left: H(10168, 1015, 3436) ----> H(5084, 5910, 10309) Weights=(2757056.00, 2917920.00)
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->Left: H(10168, 2026, 7065) ----> H(5084, 5910, 10333) Weights=(2757056.00, 2917920.00)
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->Left: H(10168, 2481, 8578) ----> H(5084, 5914, 9990) Weights=(2757056.00, 2917920.00)
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->Right: H(7564, 537, 1506) ----> H(0, 0, 0) Weights=(2757056.00, 2917920.00)
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->Right: H(7564, 2010, 6627) ----> H(0, 0, 0) Weights=(2757056.00, 2917920.00)
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->Right: H(7564, 977, 3067) ----> H(0, 0, 0) Weights=(2757056.00, 2917920.00)
+| 2/ 9|: ( 0, 2)/[ 1, 7] ->Left: H(5084, 5910, 10309) OldI: 1.04 NewI: 1.07
+| 1/ 9|: ( 0, 1)/[ 1, 7] ->Left: H(5084, 5914, 9990) OldI: 1.04 NewI: 1.07
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->Right: H(7564, 2238, 6977) ----> H(0, 0, 0) Weights=(2757056.00, 2917920.00)
+| 3/ 9|: ( 0, 3)/[ 1, 7] ->Left: H(5084, 5910, 10333) OldI: 1.04 NewI: 1.07
+| 0/ 9|: ( 0, 0)/[ 1, 7] ->Left: H(5084, 5914, 9949) OldI: 1.04 NewI: 1.07
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   0 |V|=  5084 |E|=  5910 #pins= 10309 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   0 |V|=  5084 |E|=  5910 #pins= 10333 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   0 |V|=  5084 |E|=  5914 #pins=  9949 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   0 |V|=  5084 |E|=  5914 #pins=  9990 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->Right: H(7564, 1599, 4966) ----> H(7564, 3097, 10156) Weights=(2757056.00, 2917920.00)
+| 5/ 9|: ( 0, 5)/[ 1, 7] ->Right: H(7564, 3097, 10156) OldI: 1.04 NewI: 1.01
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->Right: H(7564, 735, 2624) ----> H(7564, 3095, 9694) Weights=(2757056.00, 2917920.00)
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->Right: H(7564, 1193, 3892) ----> H(7564, 3097, 9809) Weights=(2757056.00, 2917920.00)
+| 4/ 9|: ( 0, 4)/[ 1, 7] ->Right: H(7564, 3097, 9809) OldI: 1.04 NewI: 1.01
+| 6/ 9|: ( 0, 6)/[ 1, 7] ->Right: H(7564, 3095, 9694) OldI: 1.04 NewI: 1.01
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   0 |V|=  7564 |E|=  3097 #pins= 10156 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   0 |V|=  7564 |E|=  3095 #pins=  9694 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   0 |V|=  7564 |E|=  3097 #pins=  9809 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   1 |V|=  2158 |E|=  4686 #pins=  7249 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   1 |V|=  2158 |E|=  4686 #pins=  7495 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   1 |V|=  2158 |E|=  4688 #pins=  7638 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   1 |V|=  2158 |E|=  4688 #pins=  7497 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   1 |V|=  3234 |E|=  2268 #pins=  6932 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   1 |V|=  3234 |E|=  2203 #pins=  6951 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   1 |V|=  3234 |E|=  2213 #pins=  6710 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   2 |V|=   885 |E|=  3755 #pins=  5626 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   2 |V|=   892 |E|=  3829 #pins=  5620 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   2 |V|=   892 |E|=  3755 #pins=  5528 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   2 |V|=   885 |E|=  3829 #pins=  5733 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   2 |V|=  1310 |E|=  1657 #pins=  4840 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   2 |V|=  1310 |E|=  1806 #pins=  5215 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   2 |V|=  1310 |E|=  1694 #pins=  5003 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   3 |V|=   510 |E|=  1186 #pins=  3374 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   3 |V|=   510 |E|=  1318 #pins=  3738 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   3 |V|=   510 |E|=  1205 #pins=  3430 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   3 |V|=   343 |E|=  2750 #pins=  3904 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   3 |V|=   339 |E|=  2750 #pins=  4006 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   3 |V|=   343 |E|=  2883 #pins=  4081 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   3 |V|=   339 |E|=  2883 #pins=  4170 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   4 |V|=   177 |E|=   725 #pins=  2045 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   4 |V|=   177 |E|=   753 #pins=  2161 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   4 |V|=   177 |E|=   786 #pins=  2262 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   4 |V|=   113 |E|=  1840 #pins=  2634 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   4 |V|=   110 |E|=  1840 #pins=  2598 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   4 |V|=   110 |E|=  1772 #pins=  2560 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   4 |V|=   113 |E|=  1772 #pins=  2550 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   5 |V|=    53 |E|=   306 #pins=   906 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   5 |V|=    53 |E|=   278 #pins=   867 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   5 |V|=    53 |E|=   383 #pins=  1147 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->Local Ratio Cut= 725.85   Global Ratio Cut= 725.85
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->Local Ratio Cut= 768.58   Global Ratio Cut= 725.85
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->Local Ratio Cut= 760.11   Global Ratio Cut= 725.85
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   5 |V|=    53 |E|=   306 #pins=   906 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=718.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   5 |V|=    53 |E|=   383 #pins=  1147 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=718.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   5 |V|=    53 |E|=   278 #pins=   867 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=718.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   5 |V|=    35 |E|=   966 #pins=  1392 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   5 |V|=    35 |E|=   990 #pins=  1460 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   5 |V|=    37 |E|=   990 #pins=  1469 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   5 |V|=    37 |E|=   966 #pins=  1512 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   4 |V|=   177 |E|=   786 #pins=  2262 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=718.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   4 |V|=   177 |E|=   753 #pins=  2161 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=718.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   4 |V|=   177 |E|=   725 #pins=  2045 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=718.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   3 |V|=   510 |E|=  1318 #pins=  3738 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=658.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   3 |V|=   510 |E|=  1186 #pins=  3374 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=658.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   3 |V|=   510 |E|=  1205 #pins=  3430 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=658.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->Local Ratio Cut= 1016.37   Global Ratio Cut= 1016.37
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->Local Ratio Cut= 1142.58   Global Ratio Cut= 1016.37
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->Local Ratio Cut= 1604.72   Global Ratio Cut= 1016.37
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->Local Ratio Cut= 1341.00   Global Ratio Cut= 1016.37
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   2 |V|=  1310 |E|=  1657 #pins=  4840 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=530.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   2 |V|=  1310 |E|=  1694 #pins=  5003 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=530.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   2 |V|=  1310 |E|=  1806 #pins=  5215 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=530.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   5 |V|=    35 |E|=   966 #pins=  1392 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=970.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   5 |V|=    37 |E|=   966 #pins=  1512 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=970.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   5 |V|=    35 |E|=   990 #pins=  1460 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=970.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   5 |V|=    37 |E|=   990 #pins=  1469 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=970.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   4 |V|=   110 |E|=  1772 #pins=  2560 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=903.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   4 |V|=   110 |E|=  1840 #pins=  2598 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=903.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   4 |V|=   113 |E|=  1772 #pins=  2550 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=903.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   4 |V|=   113 |E|=  1840 #pins=  2634 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=903.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   3 |V|=   343 |E|=  2750 #pins=  3904 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=761.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   3 |V|=   343 |E|=  2883 #pins=  4081 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=761.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   3 |V|=   339 |E|=  2883 #pins=  4170 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=761.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   3 |V|=   339 |E|=  2750 #pins=  4006 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=761.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   1 |V|=  3234 |E|=  2213 #pins=  6710 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=421.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   1 |V|=  3234 |E|=  2203 #pins=  6951 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=421.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   1 |V|=  3234 |E|=  2268 #pins=  6932 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=421.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   2 |V|=   892 |E|=  3755 #pins=  5528 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=598.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   2 |V|=   885 |E|=  3829 #pins=  5733 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=598.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   2 |V|=   885 |E|=  3755 #pins=  5626 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=598.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   2 |V|=   892 |E|=  3829 #pins=  5620 100/agg/LINEAR/fm2 p=2 bal=1.05 cutl=598.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   0 |V|=  7564 |E|=  3097 #pins=  9809 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=377.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   0 |V|=  7564 |E|=  3097 #pins= 10156 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=377.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   0 |V|=  7564 |E|=  3095 #pins=  9694 100/agg/LINEAR/fm2 p=2 bal=1.01 cutl=377.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   1 |V|=  2158 |E|=  4686 #pins=  7495 100/agg/LINEAR/fm2 p=2 bal=1.04 cutl=532.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   1 |V|=  2158 |E|=  4686 #pins=  7249 100/agg/LINEAR/fm2 p=2 bal=1.04 cutl=532.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   1 |V|=  2158 |E|=  4688 #pins=  7497 100/agg/LINEAR/fm2 p=2 bal=1.04 cutl=532.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   1 |V|=  2158 |E|=  4688 #pins=  7638 100/agg/LINEAR/fm2 p=2 bal=1.04 cutl=532.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->Rdivide(3, 5): 377.0
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->Rdivide(3, 5): 377.0
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->Rdivide(3, 5): 377.0
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->Left: H(5710, 2337, 7508) OldI: 1.01 NewI: 1.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->Left: H(5710, 2361, 7287) OldI: 1.01 NewI: 1.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->Left: H(5710, 2402, 7280) OldI: 1.01 NewI: 1.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   0 |V|=  5710 |E|=  2361 #pins=  7287 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   0 |V|=  5710 |E|=  2337 #pins=  7508 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   0 |V|=  5710 |E|=  2402 #pins=  7280 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   0 |V|=  5084 |E|=  5914 #pins=  9949 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=476.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   0 |V|=  5084 |E|=  5910 #pins= 10309 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=476.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   0 |V|=  5084 |E|=  5910 #pins= 10333 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=476.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   0 |V|=  5084 |E|=  5914 #pins=  9990 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=476.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->Rdivide(0, 2): 476.0
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->Rdivide(0, 2): 476.0
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->Rdivide(0, 2): 476.0
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->Rdivide(0, 2): 476.0
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->Left: H(3969, 4784, 8028) OldI: 1.07 NewI: 1.03
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->Left: H(3962, 4579, 8195) OldI: 1.07 NewI: 1.03
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->Left: H(3962, 4784, 8130) OldI: 1.07 NewI: 1.03
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->Left: H(3969, 4579, 7982) OldI: 1.07 NewI: 1.03
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   0 |V|=  3962 |E|=  4784 #pins=  8130 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   0 |V|=  3969 |E|=  4579 #pins=  7982 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   0 |V|=  3969 |E|=  4784 #pins=  8028 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   0 |V|=  3962 |E|=  4579 #pins=  8195 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   1 |V|=  2403 |E|=  1610 #pins=  4851 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   1 |V|=  2403 |E|=  1710 #pins=  5084 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   1 |V|=  2403 |E|=  1720 #pins=  5124 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   2 |V|=   965 |E|=  1298 #pins=  3728 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   2 |V|=   965 |E|=  1255 #pins=  3500 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   2 |V|=   965 |E|=  1265 #pins=  3630 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   3 |V|=   368 |E|=   888 #pins=  2484 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   3 |V|=   368 |E|=   926 #pins=  2561 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   3 |V|=   368 |E|=   909 #pins=  2462 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   1 |V|=  1668 |E|=  3743 #pins=  5958 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   1 |V|=  1668 |E|=  3747 #pins=  5784 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   1 |V|=  1697 |E|=  3747 #pins=  6143 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   1 |V|=  1697 |E|=  3743 #pins=  6130 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   4 |V|=   122 |E|=   461 #pins=  1229 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   4 |V|=   122 |E|=   530 #pins=  1524 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   4 |V|=   122 |E|=   618 #pins=  1712 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->START   5 |V|=    37 |E|=   250 #pins=   758 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->START   5 |V|=    37 |E|=   230 #pins=   647 100/agg/LINEAR/fm2 p=2...
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->START   5 |V|=    37 |E|=   286 #pins=   827 100/agg/LINEAR/fm2 p=2...
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->Local Ratio Cut= 1321.76   Global Ratio Cut= 621.14
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->Local Ratio Cut= 621.14   Global Ratio Cut= 621.14
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->Local Ratio Cut= 760.78   Global Ratio Cut= 621.14
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   5 |V|=    37 |E|=   250 #pins=   758 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=621.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   5 |V|=    37 |E|=   286 #pins=   827 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=621.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   5 |V|=    37 |E|=   230 #pins=   647 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=621.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   4 |V|=   122 |E|=   618 #pins=  1712 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=581.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   4 |V|=   122 |E|=   461 #pins=  1229 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=581.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   4 |V|=   122 |E|=   530 #pins=  1524 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=581.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   3 |V|=   368 |E|=   926 #pins=  2561 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=505.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   3 |V|=   368 |E|=   888 #pins=  2484 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=505.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   3 |V|=   368 |E|=   909 #pins=  2462 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=505.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   2 |V|=   965 |E|=  1255 #pins=  3500 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=428.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   2 |V|=   965 |E|=  1265 #pins=  3630 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=428.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   2 |V|=   965 |E|=  1298 #pins=  3728 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=428.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   1 |V|=  2403 |E|=  1610 #pins=  4851 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=319.00
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   1 |V|=  2403 |E|=  1710 #pins=  5084 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=319.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   1 |V|=  2403 |E|=  1720 #pins=  5124 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=319.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   2 |V|=   697 |E|=  3040 #pins=  4469 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   2 |V|=   697 |E|=  3065 #pins=  4620 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   2 |V|=   688 |E|=  3065 #pins=  4551 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   2 |V|=   688 |E|=  3040 #pins=  4551 100/agg/LINEAR/fm2 p=2...
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->FINAL   0 |V|=  5710 |E|=  2402 #pins=  7280 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=261.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->FINAL   0 |V|=  5710 |E|=  2337 #pins=  7508 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=261.00
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->FINAL   0 |V|=  5710 |E|=  2361 #pins=  7287 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=261.00
+| 5/ 9|: ( 0, 1)/[ 1, 3] ->Rdivide(3, 4): 261.0
+| 4/ 9|: ( 0, 0)/[ 1, 3] ->Rdivide(3, 4): 261.0
+| 6/ 9|: ( 0, 2)/[ 1, 3] ->Rdivide(3, 4): 261.0
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   3 |V|=   269 |E|=  2300 #pins=  3412 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   3 |V|=   269 |E|=  2336 #pins=  3470 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   3 |V|=   245 |E|=  2300 #pins=  3204 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   3 |V|=   245 |E|=  2336 #pins=  3141 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   4 |V|=    87 |E|=  1479 #pins=  2504 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   4 |V|=    75 |E|=  1493 #pins=  1728 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   4 |V|=    87 |E|=  1493 #pins=  2563 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   4 |V|=    75 |E|=  1479 #pins=  1716 100/agg/LINEAR/fm2 p=2...
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->START   5 |V|=    28 |E|=   756 #pins=  1278 100/agg/LINEAR/fm2 p=2...
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->START   5 |V|=    28 |E|=   754 #pins=  1242 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->START   5 |V|=    23 |E|=   756 #pins=  1032 100/agg/LINEAR/fm2 p=2...
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->START   5 |V|=    23 |E|=   754 #pins=  1030 100/agg/LINEAR/fm2 p=2...
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->Local Ratio Cut= 1072.35   Global Ratio Cut= 1041.18
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->Local Ratio Cut= 1041.18   Global Ratio Cut= 1041.18
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->Local Ratio Cut= 1158.20   Global Ratio Cut= 1041.18
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->Local Ratio Cut= 1158.20   Global Ratio Cut= 1041.18
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   5 |V|=    23 |E|=   756 #pins=  1032 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=1041.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   5 |V|=    28 |E|=   756 #pins=  1278 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=1041.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   5 |V|=    28 |E|=   754 #pins=  1242 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=1041.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   5 |V|=    23 |E|=   754 #pins=  1030 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=1041.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   4 |V|=    87 |E|=  1479 #pins=  2504 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=852.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   4 |V|=    87 |E|=  1493 #pins=  2563 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=852.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   4 |V|=    75 |E|=  1493 #pins=  1728 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=852.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   4 |V|=    75 |E|=  1479 #pins=  1716 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=852.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   3 |V|=   245 |E|=  2336 #pins=  3141 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=782.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   3 |V|=   269 |E|=  2336 #pins=  3470 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=782.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   3 |V|=   269 |E|=  2300 #pins=  3412 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=782.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   3 |V|=   245 |E|=  2300 #pins=  3204 100/agg/LINEAR/fm2 p=2 bal=1.03 cutl=782.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   2 |V|=   697 |E|=  3040 #pins=  4469 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=641.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   2 |V|=   688 |E|=  3040 #pins=  4551 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=641.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   2 |V|=   697 |E|=  3065 #pins=  4620 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=641.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   2 |V|=   688 |E|=  3065 #pins=  4551 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=641.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   1 |V|=  1668 |E|=  3747 #pins=  5784 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=532.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   1 |V|=  1697 |E|=  3747 #pins=  6143 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=532.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   1 |V|=  1668 |E|=  3743 #pins=  5958 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=532.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   1 |V|=  1697 |E|=  3743 #pins=  6130 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=532.00
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->FINAL   0 |V|=  3969 |E|=  4579 #pins=  7982 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=449.00
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->FINAL   0 |V|=  3962 |E|=  4579 #pins=  8195 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=449.00
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->FINAL   0 |V|=  3969 |E|=  4784 #pins=  8028 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=449.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->FINAL   0 |V|=  3962 |E|=  4784 #pins=  8130 100/agg/LINEAR/fm2 p=2 bal=1.00 cutl=449.00
+| 1/ 9|: ( 1, 0)/[ 2, 2] ->Rdivide(0, 1): 449.0
+| 2/ 9|: ( 0, 1)/[ 2, 2] ->Rdivide(0, 1): 449.0
+| 3/ 9|: ( 1, 1)/[ 2, 2] ->Rdivide(0, 1): 449.0
+| 0/ 9|: ( 0, 0)/[ 2, 2] ->Rdivide(0, 1): 449.0
+| 7/ 9|: ( 1, 2)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10522 agg/LINEAR/fm2 p=11 bal=1.18 cutl=4232.00
+| 4/ 9|: ( 1, 1)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10412 agg/LINEAR/fm2 p=11 bal=1.18 cutl=4232.00
+| 8/ 9|: ( 2, 2)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10268 agg/LINEAR/fm2 p=11 bal=1.18 cutl=4232.00
+| 3/ 9|: ( 0, 1)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10602 agg/LINEAR/fm2 p=11 bal=1.18 cutl=4232.00
+| 0/ 9|: ( 0, 0)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9133 #pins= 10453 agg/LINEAR/fm2 p=11 bal=1.18 cutl=4232.00
+| 5/ 9|: ( 2, 1)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10283 agg/LINEAR/fm2 p=11 bal=1.18 cutl=4232.00
+| 6/ 9|: ( 0, 2)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9134 #pins= 10565 agg/LINEAR/fm2 p=11 bal=1.18 cutl=4232.00
+| 1/ 9|: ( 1, 0)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9133 #pins= 10203 agg/LINEAR/fm2 p=11 bal=1.18 cutl=4232.00
+| 2/ 9|: ( 2, 0)/[ 3, 3] ->FINAL   0 |V|=  7712 |E|=  9133 #pins= 10265 agg/LINEAR/fm2 p=11 bal=1.18 cutl=4232.00
+Proc 2: Calls to malloc = 25027,  Calls to free = 25027
+Proc 1: Calls to malloc = 27514,  Calls to free = 27514
+Proc 0: Calls to malloc = 29311,  Calls to free = 29311
+Proc 8: Calls to malloc = 14878,  Calls to free = 14878
+Proc 6: Calls to malloc = 24285,  Calls to free = 24285
+Proc 4: Calls to malloc = 26000,  Calls to free = 26000
+Proc 5: Calls to malloc = 24479,  Calls to free = 24479
+Proc 3: Calls to malloc = 23797,  Calls to free = 23797
+Proc 7: Calls to malloc = 19723,  Calls to free = 19723
+
+DRIVER:  Zoltan_LB_Partition time = 0.955706
+DRIVER:  new_decomp 1 Min/Max Import: 79 5166
+DRIVER:  new_decomp 1 Min/Max Export: 1934 2571
+DRIVER:  Total migration time = 0.0325
+0:  All fixed objects are correct.
+
+AFTER load balancing
+DRIVER EVAL:  load:  max 1812960.000000  min 852288.000000  sum 9842880.000000
+DRIVER EVAL:  objs:  max 5802  min 79  sum 23136
+DRIVER EVAL:  cuts:  max 0  min 0  sum 0
+
+Zoltan_LB_Eval_Balance  Part count: 11 requested, 11 actual , 11 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 11 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :         1  5.8e+03 2.31e+04     2.759
+Zoltan_LB_Eval_Balance  Object weight      :  4.44e+05 1.06e+06 9.84e+06     1.183
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 11 requested, 11 actual, 11 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 11 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :         1  5.8e+03 2.31e+04     2.76
+Zoltan_LB_Eval_Graph  Object weight      :  4.44e+05 1.06e+06 9.84e+06     1.183
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 11 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :         0        0        0        0
+Zoltan_LB_Eval_Graph  Number of cut edges       :         0        0        0        0
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         0        0        0        0
+
+
+
+Zoltan_LB_Eval_HG  Part count: 11 requested, 11 actual, 11 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 11 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :         1  5.8e+03 2.31e+04   2.759
+Zoltan_LB_Eval_HG  Object weight     :  4.44e+05 1.06e+06 9.84e+06   1.183
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )): 3665.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): 4232.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):        520.000
+
+
+FILE zdrive.inp.phg.fixed10:  Total:    9.557059e-01 seconds in Partitioning
+FILE zdrive.inp.phg.fixed10:  Average:  9.557059e-01 seconds per Iteration

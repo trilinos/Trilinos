@@ -1,0 +1,487 @@
+
+
+Reading the command file, zdrive.inp.hier-rcb4-parmetis
+Input values:
+  Zoltan version 3.601
+  zdrive version 1.0
+  Total number of Processors = 8
+
+  Performing load balance using hier.
+	Parameters:
+
+  Initially distribute input objects in linear fashion (first n/p to process 0, etc).
+##########################################################
+ZOLTAN Load balancing method = 12 (HIER)
+ZOLTAN Load balancing method = 12 (HIER)
+Starting iteration 1
+
+BEFORE load balancing
+DRIVER EVAL:  load:  max 590.000000  min 590.000000  sum 4720.000000
+DRIVER EVAL:  objs:  max 590  min 590  sum 4720
+DRIVER EVAL:  cuts:  max 288  min 201  sum 1930
+
+Zoltan_LB_Eval_Balance  Part count: 8 requested, 8 actual , 8 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       590      590 4.72e+03     1.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       590      590 4.72e+03        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :        88      122      108      865
+Zoltan_LB_Eval_Graph  Number of cut edges       :       201      288      241 1.93e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         3        7        5       40
+
+
+
+Zoltan_LB_Eval_HG  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       590      590 4.72e+03   1.000
+Zoltan_LB_Eval_HG  Object weight     :       590      590 4.72e+03   1.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):  865.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): 1058.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):        151.000
+
+
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = IMPORT AND EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = -1
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 1
+ZOLTAN Parameter SEED = 1220988223 (1220988223)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter HIER_DEBUG_LEVEL = 1
+ZOLTAN Parameter HIER_GENERATE_FILES = 0
+ZOLTAN Parameter HIER_CHECKS = 1
+ZOLTAN Parameter HIER_ASSIST = 0
+ZOLTAN Parameter PLATFORM_NAME = 
+ZOLTAN Parameter TOPOLOGY = 
+KDDKDD Zoltan_ZG_Build  Wed Jan 18 20:03:50 MST 2012
+ZOLTAN Parameter GRAPH_SYMMETRIZE = NONE
+ZOLTAN Parameter GRAPH_SYM_WEIGHT = ADD
+ZOLTAN Parameter GRAPH_BIPARTITE_TYPE = OBJ
+ZOLTAN Parameter GRAPH_BUILD_TYPE = NORMAL
+ZOLTAN Parameter GRAPH_FAST_BUILD_BASE = 0
+KDDKDD Zoltan_Matrix2d_Init  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_PHGComm_Init  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Build  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Mark_Diag  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Distribute_LinearY  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix2d_Distribute  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Remove_Duplicates  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Distribute_Partition_Register  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     CommPlan Hash  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     CommPlan Create  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Remove_DupArcs  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Create Maps  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Sort  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Create outmat  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Permute  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         First DD_Find  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Second DD_Find  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Permute done  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Comlete  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Complete done  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_ZG_Build done  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_ZG_Export  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix2d_adjproc done  Wed Jan 18 20:03:50 MST 2012
+ZOLTAN Load balancing method = 10 (PARMETIS)
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = 2
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 0
+ZOLTAN Parameter SEED = 817280597 (817280597)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter PARMETIS_METHOD = PARTKWAY
+ZOLTAN Parameter PARMETIS_OUTPUT_LEVEL = 0
+ZOLTAN Parameter PARMETIS_SEED = 15
+ZOLTAN Parameter PARMETIS_ITR = 100.000000
+ZOLTAN Parameter PARMETIS_COARSE_ALG = 2
+ZOLTAN Parameter PARMETIS_FOLD = 0
+Third party library index type is 4-byte integer
+Third party library weight type is 4-byte integer
+Zoltan was compiled with support for: ParMetis Scotch PT-Scotch 
+ZOLTAN Parameter CHECK_GRAPH = 1
+ZOLTAN Parameter SCATTER_GRAPH = 1
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter USE_TIMERS = 0
+ZOLTAN Parameter ADD_OBJ_WEIGHT = NONE
+KDDKDD Zoltan_ZG_Build  ZOLTAN Load balancing method = 3 (RCB)
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = 4
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 0
+ZOLTAN Parameter SEED = 2099584695 (2099584695)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter RCB_OVERALLOC = 1.200000
+ZOLTAN Parameter RCB_REUSE = 0
+ZOLTAN Parameter CHECK_GEOM = 1
+ZOLTAN Parameter RCB_OUTPUT_LEVEL = 0
+ZOLTAN Parameter KEEP_CUTS = 0
+ZOLTAN Parameter RCB_LOCK_DIRECTIONS = 0
+ZOLTAN Parameter RCB_SET_DIRECTIONS = 0
+ZOLTAN Parameter RCB_RECTILINEAR_BLOCKS = 0
+ZOLTAN Parameter OBJ_WEIGHTS_COMPARABLE = 0
+ZOLTAN Parameter RCB_MULTICRITERIA_NORM = 1
+ZOLTAN Parameter RCB_MAX_ASPECT_RATIO = 10.000000
+ZOLTAN Parameter AVERAGE_CUTS = 0
+ZOLTAN Parameter RANDOM_PIVOTS = 0
+ZOLTAN Parameter RCB_RECOMPUTE_BOX = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 0.000000
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter KEEP_CUTS = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 10.000000
+ZOLTAN Load balancing method = 10 (PARMETIS)
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = 2
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 0
+ZOLTAN Parameter SEED = 817280597 (817280597)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter PARMETIS_METHOD = PARTKWAY
+ZOLTAN Parameter PARMETIS_OUTPUT_LEVEL = 0
+ZOLTAN Parameter PARMETIS_SEED = 15
+ZOLTAN Parameter PARMETIS_ITR = 100.000000
+ZOLTAN Parameter PARMETIS_COARSE_ALG = 2
+ZOLTAN Parameter PARMETIS_FOLD = 0
+Third party library index type is 4-byte integer
+Third party library weight type is 4-byte integer
+Zoltan was compiled with support for: ParMetis Scotch PT-Scotch 
+ZOLTAN Parameter CHECK_GRAPH = 1
+ZOLTAN Parameter SCATTER_GRAPH = 1
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter USE_TIMERS = 0
+ZOLTAN Parameter ADD_OBJ_WEIGHT = NONE
+KDDKDD Zoltan_ZG_Build  ZOLTAN Load balancing method = 10 (PARMETIS)
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = 2
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 0
+ZOLTAN Parameter SEED = 817280597 (817280597)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter PARMETIS_METHOD = PARTKWAY
+ZOLTAN Parameter PARMETIS_OUTPUT_LEVEL = 0
+ZOLTAN Parameter PARMETIS_SEED = 15
+ZOLTAN Parameter PARMETIS_ITR = 100.000000
+ZOLTAN Parameter PARMETIS_COARSE_ALG = 2
+ZOLTAN Parameter PARMETIS_FOLD = 0
+Third party library index type is 4-byte integer
+Third party library weight type is 4-byte integer
+Zoltan was compiled with support for: ParMetis Scotch PT-Scotch 
+ZOLTAN Parameter CHECK_GRAPH = 1
+ZOLTAN Parameter SCATTER_GRAPH = 1
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter USE_TIMERS = 0
+ZOLTAN Parameter ADD_OBJ_WEIGHT = NONE
+KDDKDD Zoltan_ZG_Build  ZOLTAN Load balancing method = 10 (PARMETIS)
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = 2
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 0
+ZOLTAN Parameter SEED = 817280597 (817280597)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter PARMETIS_METHOD = PARTKWAY
+ZOLTAN Parameter PARMETIS_OUTPUT_LEVEL = 0
+ZOLTAN Parameter PARMETIS_SEED = 15
+ZOLTAN Parameter PARMETIS_ITR = 100.000000
+ZOLTAN Parameter PARMETIS_COARSE_ALG = 2
+ZOLTAN Parameter PARMETIS_FOLD = 0
+Third party library index type is 4-byte integer
+Third party library weight type is 4-byte integer
+Zoltan was compiled with support for: ParMetis Scotch PT-Scotch 
+ZOLTAN Parameter CHECK_GRAPH = 1
+ZOLTAN Parameter SCATTER_GRAPH = 1
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter USE_TIMERS = 0
+ZOLTAN Parameter ADD_OBJ_WEIGHT = NONE
+KDDKDD Zoltan_ZG_Build  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+ZOLTAN Parameter GRAPH_SYMMETRIZE = NONE
+ZOLTAN Parameter GRAPH_SYM_WEIGHT = ADD
+ZOLTAN Parameter GRAPH_BIPARTITE_TYPE = OBJ
+ZOLTAN Parameter GRAPH_BUILD_TYPE = NORMAL
+ZOLTAN Parameter GRAPH_FAST_BUILD_BASE = 0
+KDDKDD Zoltan_Matrix2d_Init  ZOLTAN Parameter GRAPH_SYMMETRIZE = NONE
+ZOLTAN Parameter GRAPH_SYM_WEIGHT = ADD
+ZOLTAN Parameter GRAPH_BIPARTITE_TYPE = OBJ
+ZOLTAN Parameter GRAPH_BUILD_TYPE = NORMAL
+ZOLTAN Parameter GRAPH_FAST_BUILD_BASE = 0
+KDDKDD Zoltan_Matrix2d_Init  ZOLTAN Parameter GRAPH_SYMMETRIZE = NONE
+ZOLTAN Parameter GRAPH_SYM_WEIGHT = ADD
+ZOLTAN Parameter GRAPH_BIPARTITE_TYPE = OBJ
+ZOLTAN Parameter GRAPH_BUILD_TYPE = NORMAL
+ZOLTAN Parameter GRAPH_FAST_BUILD_BASE = 0
+KDDKDD Zoltan_Matrix2d_Init  Wed Jan 18 20:03:50 MST 2012
+ZOLTAN Parameter GRAPH_SYMMETRIZE = NONE
+ZOLTAN Parameter GRAPH_SYM_WEIGHT = ADD
+ZOLTAN Parameter GRAPH_BIPARTITE_TYPE = OBJ
+ZOLTAN Parameter GRAPH_BUILD_TYPE = NORMAL
+ZOLTAN Parameter GRAPH_FAST_BUILD_BASE = 0
+KDDKDD Zoltan_Matrix2d_Init  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_PHGComm_Init  KDDKDD Zoltan_PHGComm_Init  KDDKDD Zoltan_PHGComm_Init  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_PHGComm_Init  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Build  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Build  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Build  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Build  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Mark_Diag  KDDKDD Zoltan_Mark_Diag  KDDKDD Zoltan_Mark_Diag  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Distribute_LinearY  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Distribute_LinearY  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Distribute_LinearY  KDDKDD Zoltan_Mark_Diag  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix2d_Distribute  KDDKDD Zoltan_Matrix2d_Distribute  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Distribute_LinearY  KDDKDD Zoltan_Matrix2d_Distribute  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Remove_Duplicates  KDDKDD     Zoltan_Matrix_Remove_Duplicates  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Remove_Duplicates  KDDKDD Zoltan_Matrix2d_Distribute  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Distribute_Partition_Register  KDDKDD     Zoltan_Distribute_Partition_Register  KDDKDD     Zoltan_Distribute_Partition_Register  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Remove_Duplicates  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD     CommPlan Hash  KDDKDD     CommPlan Hash  KDDKDD     CommPlan Hash  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Distribute_Partition_Register  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD     CommPlan Create  KDDKDD     CommPlan Create  KDDKDD     CommPlan Create  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     CommPlan Hash  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Remove_DupArcs  KDDKDD     Zoltan_Matrix_Remove_DupArcs  KDDKDD     CommPlan Create  KDDKDD     Zoltan_Matrix_Remove_DupArcs  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Create Maps  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Create Maps  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Create Maps  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Remove_DupArcs  KDDKDD         Sort  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Sort  KDDKDD         Sort  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Create Maps  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Create outmat  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Create outmat  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Create outmat  Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Permute  KDDKDD         Sort  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD     Zoltan_Matrix_Permute  KDDKDD     Zoltan_Matrix_Permute  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         First DD_Find  Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Create outmat  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD         First DD_Find  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD         First DD_Find  KDDKDD     Zoltan_Matrix_Permute  KDDKDD         Second DD_Find  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD         First DD_Find  KDDKDD         Second DD_Find  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD         Second DD_Find  KDDKDD         Second DD_Find  KDDKDD     Zoltan_Matrix_Permute done  KDDKDD     Zoltan_Matrix_Permute done  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Comlete  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Comlete  KDDKDD     Zoltan_Matrix_Permute done  KDDKDD     Zoltan_Matrix_Permute done  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Complete done  KDDKDD Zoltan_Matrix_Complete done  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Comlete  KDDKDD Zoltan_Matrix_Comlete  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_ZG_Build done  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_ZG_Build done  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix_Complete done  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_ZG_Export  KDDKDD Zoltan_Matrix_Complete done  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_ZG_Export  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_ZG_Build done  KDDKDD Zoltan_ZG_Build done  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix2d_adjproc done  KDDKDD Zoltan_Matrix2d_adjproc done  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_ZG_Export  KDDKDD Zoltan_ZG_Export  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix2d_adjproc done  Wed Jan 18 20:03:50 MST 2012
+KDDKDD Zoltan_Matrix2d_adjproc done  Wed Jan 18 20:03:50 MST 2012
+Wed Jan 18 20:03:50 MST 2012
+Proc 2: Calls to malloc = 9335,  Calls to free = 9335
+Proc 3: Calls to malloc = 9569,  Calls to free = 9569
+Proc 4: Calls to malloc = 9300,  Calls to free = 9300
+Proc 6: Calls to malloc = 9545,  Calls to free = 9545
+Proc 5: Calls to malloc = 9353,  Calls to free = 9353
+Proc 7: Calls to malloc = 9596,  Calls to free = 9596
+Proc 1: Calls to malloc = 9271,  Calls to free = 9271
+Proc 0: Calls to malloc = 9302,  Calls to free = 9302
+
+DRIVER:  Zoltan_LB_Partition time = 0.184285
+DRIVER:  new_decomp 1 Min/Max Import: 589 591
+DRIVER:  new_decomp 1 Min/Max Export: 590 590
+DRIVER:  Total migration time = 0.00679493
+
+AFTER load balancing
+DRIVER EVAL:  load:  max 591.000000  min 589.000000  sum 4720.000000
+DRIVER EVAL:  objs:  max 591  min 589  sum 4720
+DRIVER EVAL:  cuts:  max 214  min 83  sum 1148
+
+Zoltan_LB_Eval_Balance  Part count: 8 requested, 8 actual , 8 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       589      591 4.72e+03     1.002
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       589      591 4.72e+03        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :        42      107     71.6      573
+Zoltan_LB_Eval_Graph  Number of cut edges       :        83      214      144 1.15e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         2        4     3.75       30
+
+
+
+Zoltan_LB_Eval_HG  Part count: 8 requested, 8 actual, 8 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 8 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       589      591 4.72e+03   1.002
+Zoltan_LB_Eval_HG  Object weight     :       589      591 4.72e+03   1.002
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):  573.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )):  591.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):        110.000
+
+
+FILE zdrive.inp.hier-rcb4-parmetis:  Total:    1.842849e-01 seconds in Partitioning
+FILE zdrive.inp.hier-rcb4-parmetis:  Average:  1.842849e-01 seconds per Iteration
