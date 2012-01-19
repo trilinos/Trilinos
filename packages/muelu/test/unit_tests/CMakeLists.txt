@@ -74,7 +74,9 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
-  APPEND_SET(SOURCES Zoltan.cpp)
+  APPEND_SET(SOURCES Zoltan.cpp
+             Repartition.cpp
+  )
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE(
