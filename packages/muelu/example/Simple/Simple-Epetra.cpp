@@ -128,8 +128,9 @@ int main(int argc, char *argv[]) {
 
   int nIts = 9;
 
-  RCP<MueLu::Vector<LO, GO, NO> > mueluX = rcp(new MueLu::Vector<LOG, GO, NO>(X));
-  RCP<MueLu::Vector<LO, GO, NO> > mueluB = rcp(new MueLu::Vector<LOG, GO, NO>(B));
+  // Wrap Epetra Vectors into Xpetra Vectors
+  RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(X));
+  RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(B));
 
   H->Iterate(*mueluB, nIts, *mueluX);
 
