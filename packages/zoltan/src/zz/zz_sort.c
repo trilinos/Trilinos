@@ -102,6 +102,25 @@ int  equal, smaller;
      }
 }
 /****************************************************************************/
+/****************************************************************************/
+/* Sort in increasing order by first calling the decreasing sort,
+   then reverse the order in linear time. */
+void Zoltan_quicksort_pointer_inc_double (
+  int *sorted, double* val, int start, int end
+)
+{
+  int i, j;
+  double temp;
+
+  /* sort in decreasing order */
+  Zoltan_quicksort_pointer_dec_double(sorted, val, start, end);
+  /* reverse order */
+  for (i=start, j=end; i<j; i++, j--){
+    temp = sorted[i];
+    sorted[i] = sorted[j];
+    sorted[j] = temp;
+  }
+}
 
 /****************************************************************************/
 /* Sort in increasing order by first calling the decreasing sort,
