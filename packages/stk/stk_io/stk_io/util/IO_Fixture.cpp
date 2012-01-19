@@ -60,7 +60,8 @@ void IO_Fixture::create_output_mesh(
    * deals with the non-transient portion of the model; no transient
    * fields are defined at this point.
    */
-  stk::io::define_output_db( *m_ioss_output_region, bulk_data(), m_ioss_input_region.get() );
+  stk::io::define_output_db( *m_ioss_output_region, bulk_data(), m_ioss_input_region.get(),
+			     m_mesh_data.m_anded_selector);
 
   /* Given an Ioss::Region 'm_ioss_output_region' which has already had its
    * metadata defined via 'define_output_db()' call; transfer all bulk
@@ -69,7 +70,8 @@ void IO_Fixture::create_output_mesh(
    * return, all non-transient portions of the output database will
    * have been output.
    */
-  stk::io::write_output_db( *m_ioss_output_region, bulk_data());
+  stk::io::write_output_db( *m_ioss_output_region, bulk_data(),
+			    m_mesh_data.m_anded_selector);
 
   if (add_transient) {
     m_ioss_output_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
