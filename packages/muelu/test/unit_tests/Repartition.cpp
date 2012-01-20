@@ -37,10 +37,9 @@ namespace MueLuTests {
 
     int mypid = comm->getRank();
 
-    //FIXME switch to 4 processors to be consistent with other tests
-    if (comm->getSize() != 5) {
+    if (comm->getSize() != 4) {
       std::cout << std::endl;
-      std::cout << "This test must be run on 5 processors!" << std::endl << std::endl;
+      std::cout << "This test must be run on 4 processors!" << std::endl << std::endl;
       return;
     }
 
@@ -51,19 +50,20 @@ namespace MueLuTests {
     int ny=5;
     GO numGlobalElements = nx*ny; //15
 
-    // Describes the initial layout of unknowns across processors. Note that PID 3 initially has 0 unknowns.
+    // Describes the initial layout of unknowns across processors. Note that PID 2 initially has 0 unknowns.
     size_t numMyElements;
     switch(mypid) {
        case 0:
-       case 1:
-       case 2:
-         numMyElements = 4;
+         numMyElements = 6;
          break;
-       case 3:
+       case 1:
+         numMyElements = 5;
+         break;
+       case 2:
          numMyElements = 0;
          break;
-       case 4:
-         numMyElements = 3;
+       case 3:
+         numMyElements = 4;
          break;
     } //switch
     GO indexBase = 0;
@@ -79,38 +79,39 @@ namespace MueLuTests {
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
     if (decomposition->getLocalLength() > 0)
       partitionThisDofBelongsTo = decomposition->getDataNonConst(0);
-    comm->barrier();
+
+    // Indicate the number of partitions that there should be.
+    level.Set<GO>("number of partitions",3);
 
     /* Assign the partition that each unknown belongs to.  In this case,
 
-       partition 0 has 2 unknowns 
-       partition 1 has 3 unknowns 
-       partition 2 has 4 unknowns 
-       partition 3 has 6 unknowns .
+       partition 0 has 6 unknowns 
+       partition 1 has 4 unknowns 
+       partition 2 has 5 unknowns 
+       there is no partition 3
     */
+
     switch (mypid)  {
       case 0:
         partitionThisDofBelongsTo[0] = 0;
         partitionThisDofBelongsTo[1] = 1;
         partitionThisDofBelongsTo[2] = 2;
-        partitionThisDofBelongsTo[3] = 3;
+        partitionThisDofBelongsTo[3] = 0;
+        partitionThisDofBelongsTo[4] = 2;
+        partitionThisDofBelongsTo[5] = 2;
         break;
       case 1:
         partitionThisDofBelongsTo[0] = 0;
         partitionThisDofBelongsTo[1] = 1;
-        partitionThisDofBelongsTo[2] = 2;
-        partitionThisDofBelongsTo[3] = 3;
+        partitionThisDofBelongsTo[2] = 0;
+        partitionThisDofBelongsTo[3] = 2;
+        partitionThisDofBelongsTo[4] = 1;
         break;
-      case 2:
-        partitionThisDofBelongsTo[0] = 1;
-        partitionThisDofBelongsTo[1] = 2;
-        partitionThisDofBelongsTo[2] = 3;
-        partitionThisDofBelongsTo[3] = 3;
-        break;
-      case 4:
+      case 3:
         partitionThisDofBelongsTo[0] = 2;
-        partitionThisDofBelongsTo[1] = 3;
-        partitionThisDofBelongsTo[2] = 3;
+        partitionThisDofBelongsTo[1] = 0;
+        partitionThisDofBelongsTo[2] = 0;
+        partitionThisDofBelongsTo[3] = 1;
         break;
       default:
         break;
@@ -126,19 +127,7 @@ namespace MueLuTests {
 
     partitionThisDofBelongsTo = Teuchos::null;
 
-    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    fos->setOutputToRootOnly(-1);
-/*
-    if (mypid == 0) std::cout << "\n==========\ninitial decomposition\n=========" << std::endl;
-    sleep(1);
-    decomposition->describe(*fos,Teuchos::VERB_EXTREME);
-
-    sleep(1);
-    comm->barrier();
-*/
-
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
-    level.Set<GO>("number of partitions",4);
 
     RCP<Repartition> repart = rcp(new Repartition());
     level.Request("permMat",repart.get());  // request permutation matrix
@@ -149,22 +138,26 @@ namespace MueLuTests {
     level.Get("permMat",permMat,repart.get());
     RCP<Vector> result = VectorFactory::Build(permMat->getRangeMap(),false);
     permMat->apply(*decompositionAsScalar,*result,Teuchos::NO_TRANS,1,0);
-    bool testPassed=true;
-    // the resulting vector should entries equal to the PID
+    int thisPidPassed=1;
+    // local entries in the resulting vector should be equal to the PID
     Teuchos::ArrayRCP<SC> resultData;
     if (result->getLocalLength() > 0)
       resultData = result->getDataNonConst(0);
     for (int i=0; i<resultData.size(); ++i) {
       if (resultData[i] != mypid) {
-        testPassed = false;
+        thisPidPassed = 0;
         break;
       }
     }
     resultData = Teuchos::null;
-    result->describe(*fos,Teuchos::VERB_EXTREME);
 
-    // FIXME  do an all reduce on testPassed!!!
-    TEST_EQUALITY(testPassed,true);
+    //RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    //fos->setOutputToRootOnly(-1);
+    //result->describe(*fos,Teuchos::VERB_EXTREME);
+
+    int testPassed;
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,thisPidPassed,Teuchos::outArg(testPassed));
+    TEST_EQUALITY(testPassed==1,true);
 
     //  Ptent->apply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
 
