@@ -12,8 +12,8 @@
 
 namespace Zoltan2 {
 
-	std::string Zoltan2_Version() { 
-		return("Zoltan2 Version 0.5 - 9/31/2011"); 
-	}
+  std::string Zoltan2_Version() { 
+    return("Zoltan2 Version 0.5d 9/31/2011"); 
+  }
 
 } // namespace Zoltan2 
