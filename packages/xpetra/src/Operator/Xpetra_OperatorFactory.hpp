@@ -11,6 +11,7 @@ namespace Xpetra {
   
   template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
   class OperatorFactory {
+#undef XPETRA_OPERATORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
   private:
