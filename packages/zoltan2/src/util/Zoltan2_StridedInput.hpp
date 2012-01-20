@@ -10,8 +10,7 @@
 
 namespace Zoltan2{
 
-/*! Zoltan2::StridedInput
- *  \brief The StridedInput class manages lists of weights or coordinates.
+/*!  *  \brief The StridedInput class manages lists of weights or coordinates.
  *
  * A likely representation for multi-dimensional weights or coordinates is
  *  an array ordered by identifier by dimension. The purposes of this class:
@@ -36,7 +35,7 @@ private:
 
 public:
 
-  /*! Constructor
+  /*! \brief Constructor
    *    x[0] is the first element of the array.  The subsequent
    *  elements are at x[i*stride].
    */
@@ -45,17 +44,17 @@ public:
   {
   }
 
-  /*! Constructor
+  /*! \brief Constructor
    */
   StridedInput(): env_(rcp(new Environment)), vec_(), stride_(0) { }
 
-  /*! Access an element of the input array. 
+  /*! \brief Access an element of the input array. 
    *
    *   For performance, no error checking.
    */
   scalar_t operator[](lno_t idx) const { return vec_[idx*stride_]; }
 
-  /*! Create a contiguous array of the required type, perhaps for a TPL.
+  /*! \brief Create a contiguous array of the required type, perhaps for a TPL.
    *
    *  TODO: if are there particular conversions we would like to do
    *   for TPLs, we can add methods to do that.  Here we just
@@ -65,7 +64,7 @@ public:
 
   template <typename T> void getInputArray(ArrayRCP<const T> &array);
 
-  /*! The raw input information.
+  /*! \brief The raw input information.
       \param len on return is the length of storage at \c vec.  This will
                 be some multiple of stride.
       \param vec  on return is a pointer to the input.  Element k is at vec[k*stride].
@@ -78,6 +77,30 @@ public:
     vec = vec_.getRawPtr();
     stride = stride_;
   }
+
+#if 0
+  /*! \brief Return the Environment object for the list.
+      \return The Environment with which the list was contructed.
+   */
+  RCP<const Environment> getEnv() { return env_;}
+
+  /*! \brief Assignment operator
+   */
+  StridedInput & operator= (const StridedInput &sInput)
+  {
+    if (this != &sInput){
+      env_ = sInput.getEnv();
+      size_t length;
+      const scalar_t *vec;
+      sInput.getStridedList(length, vec, stride_);
+      vec_ = ArrayView(vec, length);
+    }
+
+    return *this;
+  }
+#endif
+
+
 };
 
 template<typename lno_t, typename scalar_t>
