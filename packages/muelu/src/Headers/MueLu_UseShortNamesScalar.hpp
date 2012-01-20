@@ -118,3 +118,7 @@ typedef MueLu::MLInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
 #endif
+
+#ifdef MUELU_REPARTITION_SHORT
+typedef MueLu::Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Repartition;
+#endif
