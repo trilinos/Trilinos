@@ -52,11 +52,40 @@ namespace Xpetra {
     //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
     size_t getNumPermuteIDs() const { return export_->getNumPermuteIDs(); }
 
+    //! List of entries in the source Map that are permuted. (non-persisting view).
+    ArrayView< const LocalOrdinal > getPermuteFromLIDs() const { return export_->getPermuteFromLIDs(); }
+
+    //! List of entries in the target Map that are permuted. (non-persisting view).
+    ArrayView< const LocalOrdinal > getPermuteToLIDs() const { return export_->getPermuteToLIDs(); }
+
+    //! Returns the number of entries that are not on the calling image.
+    size_t getNumRemoteIDs() const { return export_->getNumRemoteIDs(); }
+
+    //! List of entries in the target Map that are coming from other images. (non-persisting view).
+    ArrayView< const LocalOrdinal > getRemoteLIDs() const { return export_->getRemoteLIDs(); }
+
+    //! Returns the number of entries that must be sent by the calling image to other images.
+    size_t getNumExportIDs() const { return export_->getNumExportIDs(); }
+
+    //! List of entries in the source Map that will be sent to other images. (non-persisting view).
+    ArrayView< const LocalOrdinal > getExportLIDs() const { return export_->getExportLIDs(); }
+
+    //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view).
+    ArrayView< const int > getExportImageIDs() const { return export_->getExportImageIDs(); }
+
     //! Returns the Source Map used to construct this exporter.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { return toXpetra(export_->getSourceMap()); }
 
     //! Returns the Target Map used to construct this exporter.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { return toXpetra(export_->getTargetMap()); }
+
+    //@}
+
+    //! @name I/O Methods
+    //@{
+
+    //! Print method.
+    void print(std::ostream &os) const { export_->print(os); }
 
     //@}
 

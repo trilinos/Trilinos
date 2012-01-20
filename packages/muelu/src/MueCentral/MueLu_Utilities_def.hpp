@@ -12,6 +12,8 @@
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
 #define maxAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
+#define scan(rcpComm, in, out)                                        \
+  Teuchos::scan(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
 
 #ifdef HAVE_MUELU_ML
 #include "ml_operator.h"

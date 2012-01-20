@@ -37,6 +37,7 @@ namespace MueLu {
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   SetNumberOfPartitions(GO const numPartitions)
   {
+    numPartitions_ = numPartitions;
     std::stringstream ss;
     ss << numPartitions;
     zoltanObj_->Set_Param("num_global_partitions",ss.str());
@@ -108,6 +109,7 @@ namespace MueLu {
       decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,true);
     }
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
+    level.Set<GO>("number of partitions",numPartitions_);
 
     zoltanObj_->LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_to_part);
     zoltanObj_->LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_to_part);

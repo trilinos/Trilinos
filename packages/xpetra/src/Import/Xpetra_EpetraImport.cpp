@@ -1,4 +1,5 @@
 #include "Xpetra_EpetraImport.hpp"
+#include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
 
@@ -23,6 +24,29 @@ namespace Xpetra {
     return rcp ( new Xpetra::EpetraImport(imp) );
   }
   //
+
+  ArrayView< const int > EpetraImport::getExportImageIDs() const { return ArrayView<const int> (import_->ExportPIDs(),import_->NumExportIDs()); }
+
+  ArrayView< const int > EpetraImport::getPermuteFromLIDs() const {
+         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getExportImageIDs not implemented"); }
+
+  ArrayView< const int > EpetraImport::getPermuteToLIDs() const {
+         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getPermuteToLIDs not implemented"); }
+
+  size_t EpetraImport::getNumRemoteIDs() const {
+         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getNumRemoteIDs not implemented"); }
+
+  ArrayView< const int > EpetraImport::getRemoteLIDs() const {
+         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getRemoteLIDs not implemented"); }
+
+  size_t EpetraImport::getNumExportIDs() const {
+         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getNumExportIDs not implemented"); }
+
+  ArrayView< const int > EpetraImport::getExportLIDs() const {
+         TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImport::getExportLIDs not implemented"); }
+
+  void EpetraImport::print(std::ostream &os) const {import_->Print(os);}
+
 
 } // Xpetra namespace
 
