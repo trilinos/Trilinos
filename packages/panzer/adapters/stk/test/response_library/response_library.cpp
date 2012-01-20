@@ -42,9 +42,9 @@ namespace panzer {
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  TEUCHOS_UNIT_TEST(response_library_stk, test)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(response_library_stk, test, EvalT)
   {
-    typedef Traits::Residual EvalT;
+    //typedef Traits::Residual EvalT;
 
     using Teuchos::RCP;
 
@@ -269,5 +269,13 @@ namespace panzer {
       bcs.push_back(bc);
     }
   }
+
+  typedef Traits::Residual ResidualType;
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(response_library_stk,test,ResidualType)
+
+  #ifdef HAVE_STOKHOS
+  typedef Traits::SGResidual SGResidualType;
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(response_library_stk,test,SGResidualType)
+  #endif
 
 }

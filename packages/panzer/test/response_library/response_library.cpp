@@ -234,5 +234,56 @@ TEUCHOS_UNIT_TEST(response_library, dyn_dispatch)
   TEST_EQUALITY(eBlocks[1],"block_1");
 }
 
+#ifdef HAVE_STOKHOS
+TEUCHOS_UNIT_TEST(response_library, sg_dyn_dispatch)
+{
+  typedef Traits::Residual EvalT;
+
+  // build global (or serial communicator)
+  #ifdef HAVE_MPI
+     Teuchos::RCP<Teuchos::Comm<int> > comm 
+           = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+  #else
+     Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::rcp(new Teuchos::SerialComm<int>);
+  #endif
+ 
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+
+  // panzer::pauseToAttach();
+
+  int worksetSize = 10;
+  Teuchos::ParameterList mainParam;
+  mainParam.set<int>("Workset Size", worksetSize);
+
+  // build basic field manager
+  PHX::FieldManager<Traits> fm;
+  {
+     RCP<PHX::Evaluator<Traits> > testEval 
+        = rcp(new TestEvaluator<EvalT,Traits>(mainParam));
+     fm.registerEvaluator<EvalT>(testEval);
+  }
+
+  ResponseId dResp  = buildResponse("Dog","Functional");
+  ResponseId hResp  = buildResponse("Horse","Functional");
+  RCP<ResponseLibrary<Traits> > rLibrary 
+        = Teuchos::rcp(new ResponseLibrary<Traits>(Teuchos::rcp(new panzer::WorksetContainer),Teuchos::null,Teuchos::null));
+  rLibrary->defineDefaultAggregators();
+
+  rLibrary->reserveVolumeResponse(dResp,"block_0","Residual");
+  rLibrary->reserveVolumeResponse(hResp,"block_1","SGResidual");
+
+  // test uninitialized access
+  TEST_THROW(rLibrary->getVolumeResponse(dResp,"block_0"),std::logic_error);
+
+  std::vector<std::string> eBlocks;
+  rLibrary->getRequiredElementBlocks(eBlocks);
+  std::sort(eBlocks.begin(),eBlocks.end());
+  TEST_EQUALITY(eBlocks.size(),2);
+  TEST_EQUALITY(eBlocks[0],"block_0");
+  TEST_EQUALITY(eBlocks[1],"block_1");
+}
+#endif
 
 }
