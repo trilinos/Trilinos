@@ -46,7 +46,9 @@ namespace MueLu {
     ArrayRCP<const GO> decompEntries;
     if (decomposition->getLocalLength() > 0)
       decompEntries = decomposition->getData(0);
+    bool flag=false;
     for (int i=0; i<decompEntries.size(); ++i) {
+      if (decompEntries[i] >= numPartitions) flag = true;
       if (hashTable->containsKey(decompEntries[i])) {
         GO count = hashTable->get(decompEntries[i]);
         ++count;
@@ -55,6 +57,10 @@ namespace MueLu {
         hashTable->put(decompEntries[i],1);
       }
     }
+    int problemPid;
+    maxAll(comm, (flag ? mypid : -1), problemPid);
+    std::ostringstream buf; buf << problemPid;
+    TEUCHOS_TEST_FOR_EXCEPTION(problemPid>-1, Exceptions::RuntimeError, "pid " + buf.str() + " encountered a partition number is that out-of-range");
     decompEntries = Teuchos::null;
 
     Teuchos::Array<GO> allPartitionsIContributeTo;
@@ -62,14 +68,14 @@ namespace MueLu {
     hashTable->arrayify(allPartitionsIContributeTo,allLocalPartSize);
 
     GO indexBase = decomposition->getMap()->getIndexBase();
-
+   
     // Source map is overlapping.  GIDs owned by this pid are the partition numbers found above.
     RCP<Map> sourceMap = MapFactory::Build(decomposition->getMap()->lib(),
                                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                            allPartitionsIContributeTo(),
                                            decomposition->getMap()->getIndexBase(),
                                            comm);
-
+   
     // Store # of local DOFs in each partition in a vector based on above map.
     RCP<Xpetra::Vector<GO,LO,GO,NO> > localPartSizeVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(sourceMap,false);
     ArrayRCP<GO> data;
@@ -78,7 +84,7 @@ namespace MueLu {
     for (int i=0; i<hashTable->size(); ++i)
       data[i] = allLocalPartSize[i];
     data = Teuchos::null;
-
+   
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     fos->setOutputToRootOnly(-1);
 
@@ -86,7 +92,7 @@ namespace MueLu {
     GO myPartitionNumber;
     Array<int> partitionOwners;
     DeterminePartitionPlacement(currentLevel,myPartitionNumber,partitionOwners);
-
+   
     GO numDofsThatStayWithMe=0;
     Teuchos::Array<GO> partitionsIContributeTo;
     Teuchos::Array<GO> localPartSize;
@@ -99,27 +105,27 @@ namespace MueLu {
       else 
         numDofsThatStayWithMe = allLocalPartSize[i];
     }
-
+   
     // Note: "numPartitionsISendTo" does not include this PID
     GO numPartitionsISendTo = hashTable->size();
     // I'm a partition owner, so don't count my own.
     if (myPartitionNumber >= 0 && numPartitionsISendTo>0) numPartitionsISendTo--;
     assert(numPartitionsISendTo == partitionsIContributeTo.size());
-
+   
     Array<int> partitionOwnersISendTo;
     for (int i=0; i<partitionsIContributeTo.size(); ++i) {
       partitionOwnersISendTo.push_back(partitionOwners[partitionsIContributeTo[i]]);
     }
-
+   
     Array<GO> localMapElement;
     if (myPartitionNumber >= 0)
-            localMapElement.push_back(myPartitionNumber);
+      localMapElement.push_back(myPartitionNumber);
     RCP<Map> targetMap = MapFactory::Build(decomposition->getMap()->lib(),
-                    numPartitions,
-                    localMapElement(),
-                    decomposition->getMap()->getIndexBase(),
-                    comm);
-
+                                           numPartitions,
+                                           localMapElement(),
+                                           decomposition->getMap()->getIndexBase(),
+                                           comm);
+   
     RCP<const Export> exporter = ExportFactory::Build( sourceMap,targetMap);
 
     // If this pid owns a partition, globalPartSizeVec has one local entry that is the global size of said partition.
@@ -176,7 +182,7 @@ namespace MueLu {
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
 
     // First post non-blocking receives.
-    ArrayRCP<MPI_Request> requests(howManyPidsSendToThisPartition);
+    Array<MPI_Request> requests(howManyPidsSendToThisPartition);
     for (int i=0; i<howManyPidsSendToThisPartition; ++i) {
       MPI_Irecv((void*)&(numDofsIReceiveFromOnePid[i]),1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,*rawMpiComm,&requests[i]);
     }
@@ -217,7 +223,7 @@ namespace MueLu {
       gidOffsets[i] = gidOffsets[i-1] + numDofsIReceiveFromOnePid[i-1];
     }
 
-    requests = ArrayRCP<MPI_Request>(numPartitionsISendTo);
+    requests.resize(numPartitionsISendTo);
     ArrayRCP<double> gidOffsetsForPartitionsIContributeTo(numPartitionsISendTo);
 
     // Post receives on contributing PIDs.
