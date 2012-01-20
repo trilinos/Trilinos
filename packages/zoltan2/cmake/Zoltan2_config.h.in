@@ -1,5 +1,3 @@
-#include <Teuchos_config.h>
-
 /* define if we have MPI */
 #cmakedefine HAVE_ZOLTAN2_MPI
 
@@ -33,16 +31,12 @@
  */
 #cmakedefine SHOW_ZOLTAN2_SCOTCH_MEMORY
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
 /* Define if this platform has data type "long long"
+ *  and Teuchos was compiled to support "long long".
  *  Because of our heavy dependence on Teuchos, we
- *  can't use LONG_LONG unless Teuchos is using
- *  long long.
+ *  can't use LONG_LONG unless Teuchos is using it.
  */
 #cmakedefine HAVE_ZOLTAN2_LONG_LONG
-
-#endif
 
 /* Tpetra explicit instantiation:
  *    scalar type is float
