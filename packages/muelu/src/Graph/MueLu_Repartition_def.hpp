@@ -103,7 +103,7 @@ namespace MueLu {
     // Target map is nonoverlapping.  Pid k has GID N if and only if k owns partition N.
     GO myPartitionNumber;
     Array<int> partitionOwners;
-    CalculatePartitionOwners(currentLevel,myPartitionNumber,partitionOwners);
+    DeterminePartitionPlacement(currentLevel,myPartitionNumber,partitionOwners);
 
     GO numDofsThatStayWithMe=0;
     Teuchos::Array<GO> partitionsIContributeTo;
@@ -289,23 +289,15 @@ namespace MueLu {
     for (int i=0; i<pidsIReceiveFrom.size(); ++i)
       pidsIReceiveFrom[i] = status[i].MPI_SOURCE;
 
-    //FIXME debugging output
-    for (int i=0; i<comm->getSize(); ++i) {
-      if (mypid == i) {
-        std::cout << "partition owner " << mypid << " receiving sizes ";
-        assert(numDofsIReceiveFromOnePid.size() == howManyPidsSendToThisPartition);
-        for (int j=0; j<numDofsIReceiveFromOnePid.size(); ++j)
-          std::cout << "   " << numDofsIReceiveFromOnePid[j] << " (from pid " << status[j].MPI_SOURCE << ")";
-          std::cout << std::endl;
-      }
-      comm->barrier();
-    }
-    //FIXME end of debugging output
-
-    sleep(1); comm->barrier();
-
-    // Calculate partial offsets for GIDs (ala MPI_Scan) based on global partition sizes.
-    // We need to be careful of overflow here, so use MPI_DOUBLE type.
+    // =================================================================================================
+    // Calculate partial offsets for permutation row map, via MPI_Scan based on global partition sizes.
+    // Communicate those offsets back to respective PIDS of unpermuted matrix using ireceive/send/wait cycle.
+    // =================================================================================================
+    // Partition numbers are used as tags to ensure messages go to correct PIDs.
+    // Use MPI_DOUBLE type to avoid any overflow problems.
+    // partitionSizeOffset is the first GID in this partition.
+    // gidOffsets is an array of GID offsets.  gidOffsets[i] is the first GID for the dofs received from PID partitionOwnersISendTo[i].
+    // Note: Quantities "numPartitionsISendTo" and "howManyPidsSendToThisPartition" do not include me
     double partitionSizeOffset;
     double ttt = myPartitionSize;
     MPI_Scan(&ttt, &partitionSizeOffset, 1, MPI_DOUBLE, MPI_SUM, *rawMpiComm);
@@ -522,7 +514,7 @@ namespace MueLu {
   ////////////////////////////////////////////////////////////////////////////////////////////////////
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::CalculatePartitionOwners(Level & currentLevel, GO &myPartitionNumber,
+  void Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::DeterminePartitionPlacement(Level & currentLevel, GO &myPartitionNumber,
   Array<int> &partitionOwners) const
   {
     //FIXME This currently makes pid i the owner of partition i.  We must have better logic to minimize data movement.
