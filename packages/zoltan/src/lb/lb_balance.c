@@ -133,6 +133,10 @@ int ierr = ZOLTAN_OK;    /* Error code */
 int *import_to_part = NULL;    /* Array used as dummy arg in partitioning. */
 int *export_to_part = NULL;    /* Array used as dummy arg in partitioning. */
 
+#ifdef ZOLTAN_OVIS
+struct OVIS_parameters ovisParameters;
+#endif
+
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Determine whether part parameters were set.  Report error if
@@ -147,6 +151,16 @@ int *export_to_part = NULL;    /* Array used as dummy arg in partitioning. */
     ierr = ZOLTAN_FATAL;
     goto End;
   }
+
+
+#ifdef ZOLTAN_OVIS
+  Zoltan_OVIS_Setup(zz, &ovisParameters);
+  if (ovisParameters.outputLevel > 5){
+    int error = ZOLTAN_OK;    /* Error code */
+    int acg_num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &error);
+    printf ("Entering Proc %d num_objs %d\n", zz->Proc, acg_num_obj);
+  }
+#endif 
   
   ierr = Zoltan_LB(zz, 0, changes, num_gid_entries, num_lid_entries,
            num_import_objs, import_global_ids, import_local_ids,
@@ -156,6 +170,13 @@ int *export_to_part = NULL;    /* Array used as dummy arg in partitioning. */
 
 
 End:
+
+#ifdef ZOLTAN_OVIS
+  if (ovisParameters.outputLevel > 5){
+    printf ("Exiting Proc %d num_import_objs %d num_export_objs %d\n", zz->Proc, *num_import_objs, *num_export_objs);
+  }
+#endif 
+
   /* Not returning import/export part information; free it if allocated. */
   if (import_to_part != NULL) 
     Zoltan_Special_Free(zz, (void **)(void*) &import_to_part, 
@@ -382,7 +403,7 @@ struct OVIS_parameters ovisParameters;
 
     wgt_idx[0] = 0;
     part_ids[0] = 0;
-    part_sizes[0] = ovis_getPartsize(); 
+    ovis_getPartsize(&(part_sizes[0])); 
     printf("Rank %d ps %f\n",zz->Proc, part_sizes[0]);
     /* clear out old part size info first */
     Zoltan_LB_Set_Part_Sizes(zz, 0, -1, NULL, NULL, NULL);
@@ -405,7 +426,9 @@ struct OVIS_parameters ovisParameters;
   Zoltan_LB_Get_Part_Sizes(zz, zz->LB.Num_Global_Parts, part_dim,
     part_sizes);
 
+
 #ifdef ZOLTAN_OVIS
+  /*  if (ovisParameters.outputlevel > 3) */
   {
     int myRank = zz->Proc;
     if (myRank == 0){
@@ -413,8 +436,7 @@ struct OVIS_parameters ovisParameters;
 
       for (i = 0; i < zz->LB.Num_Global_Parts; i++){
         for (j = 0; j < part_dim; j++){
-          printf("Rank %d AG: part_sizes[%d] = %f (Num_Global_Parts = %d, part_dim = %d)\n",zz \
-->Proc,
+          printf("Rank %d AG: part_sizes[%d] = %f (Num_Global_Parts = %d, part_dim = %d)\n",zz->Proc,
                  (i*part_dim+j), part_sizes[i*part_dim+j],zz->LB.Num_Global_Parts, part_dim);
         }
       }
