@@ -21,7 +21,7 @@ extern "C" {
 struct OVIS_parameters {
   int outputLevel;
   char hello[MAX_PARAM_STRING_LEN];
-  char appConfigFile[MAX_PARAM_STRING_LEN];
+  char dll[MAX_PARAM_STRING_LEN];
   double minVersion;
 };
 

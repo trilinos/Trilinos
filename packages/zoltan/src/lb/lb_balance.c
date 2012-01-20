@@ -286,14 +286,16 @@ struct OVIS_parameters ovisParameters;
 #endif
 
 #ifdef ZOLTAN_OVIS
-  ovis_enabled(zz->Proc);
   Zoltan_OVIS_Setup(zz, &ovisParameters);
   if (zz->Proc == 0)
     printf("OVIS PARAMETERS %s %s %d %f\n", 
            ovisParameters.hello, 
-           ovisParameters.appConfigFile, 
+           ovisParameters.dll, 
            ovisParameters.outputLevel, 
            ovisParameters.minVersion);
+  ovis_enabled(zz->Proc, ovisParameters.dll);
+
+
 #endif
 
   /* 
@@ -372,6 +374,22 @@ struct OVIS_parameters ovisParameters;
   Zoltan_Drum_Set_Part_Sizes(zz);
 #endif
 
+#ifdef ZOLTAN_OVIS
+  /* set part sizes computed by OVIS, if requested. Processes set only their own value */
+  {
+    float part_sizes[1];
+    int part_ids[1], wgt_idx[1];
+
+    wgt_idx[0] = 0;
+    part_ids[0] = 0;
+    part_sizes[0] = ovis_getPartsize(); 
+    printf("Rank %d ps %f\n",zz->Proc, part_sizes[0]);
+    /* clear out old part size info first */
+    Zoltan_LB_Set_Part_Sizes(zz, 0, -1, NULL, NULL, NULL);
+    Zoltan_LB_Set_Part_Sizes(zz, 0, 1, part_ids, wgt_idx, part_sizes);
+  }
+#endif
+
   wgt_dim = zz->Obj_Weight_Dim;
   part_dim = ((wgt_dim > 0) ? wgt_dim : 1);
 
@@ -386,6 +404,24 @@ struct OVIS_parameters ovisParameters;
   /* Get part sizes. */
   Zoltan_LB_Get_Part_Sizes(zz, zz->LB.Num_Global_Parts, part_dim,
     part_sizes);
+
+#ifdef ZOLTAN_OVIS
+  {
+    int myRank = zz->Proc;
+    if (myRank == 0){
+      int i, j;
+
+      for (i = 0; i < zz->LB.Num_Global_Parts; i++){
+        for (j = 0; j < part_dim; j++){
+          printf("Rank %d AG: part_sizes[%d] = %f (Num_Global_Parts = %d, part_dim = %d)\n",zz \
+->Proc,
+                 (i*part_dim+j), part_sizes[i*part_dim+j],zz->LB.Num_Global_Parts, part_dim);
+        }
+      }
+    }
+  }
+#endif
+
 
   /*
    * Call the actual load-balancing function.
