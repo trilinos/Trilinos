@@ -98,6 +98,9 @@ namespace panzer {
     bool required_basic_g(const OutArgs & outArgs) const;
 
     #ifdef HAVE_STOKHOS
+       //! Are their required SG responses in the out args? sg
+       bool required_basic_sg_g(const OutArgs & outArgs) const;
+
        /** for evaluation and handling of Stochastic Galerkin quantities, x_sg, f_sg, W_sg, etc
          *
          * \note A precondition for this is that <code>sg_lof_</code> has been initialized

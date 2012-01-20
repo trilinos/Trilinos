@@ -248,6 +248,9 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
   if(!Teuchos::is_null(sg_lof_)) {
      outArgs.setSupports(OUT_ARG_f_sg,true);
      outArgs.setSupports(OUT_ARG_W_sg,true);
+
+     for(std::size_t i=0;i<g_map_.size();i++)
+        outArgs.setSupports(OUT_ARG_g_sg,i,true);
   }
 #endif
 
@@ -443,6 +446,7 @@ evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const Out
    std::vector<Teuchos::RCP<const Response<panzer::Traits> > > responses;
    responseLibrary_->getLabeledVolumeResponses(responses);
    for(std::size_t i=0;i<responses.size();i++) {
+      // std::cout << "Response = " << responses[i]->getResponse() << std::endl;
       Teuchos::RCP<Epetra_Vector> vec = outArgs.get_g(i);
       if(vec!=Teuchos::null)
          (*vec)[0] = responses[i]->getValue();
@@ -601,15 +605,43 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
 
 bool panzer::ModelEvaluator_Epetra::required_sg_g(const OutArgs & outArgs) const
 {
-   return false;
+   // determine if any of the outArgs are not null!
+   bool activeGArgs = false;
+   for(int i=0;i<outArgs.Ng();i++) 
+      activeGArgs |= (outArgs.get_g_sg(i)!=Teuchos::null); 
+
+   return activeGArgs;
 }
 
 void 
 panzer::ModelEvaluator_Epetra::
 evalModel_sg_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const
 {
-   // evaluate this
-   TEUCHOS_ASSERT(false); // fail until implemented
+   // build a teuchos comm from an mpi comm
+   Teuchos::RCP<Teuchos::Comm<int> > tComm 
+      = Teuchos::rcp(new Teuchos::MpiComm<int>(
+        Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(map_x_->Comm()).Comm())));
+
+   // evaluator responses
+   responseLibrary_->evaluateVolumeFieldManagers<panzer::Traits::SGResidual>(ae_inargs,*tComm);
+
+   std::vector<Teuchos::RCP<const Response<panzer::Traits> > > responses;
+   responseLibrary_->getLabeledVolumeResponses(responses);
+   for(std::size_t i=0;i<responses.size();i++) {
+
+      // get destination vector
+      Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_vec = outArgs.get_g_sg(i);
+      if(sg_vec!=Teuchos::null) {
+         // get stochastic value distribute them in vectors
+         panzer::Traits::SGType value = responses[i]->getSGValue();
+         for(int j=0;j<value.size();j++) {
+            Epetra_Vector & vec = (*sg_vec)[j];
+
+            // pull value out of stochastic type
+            vec[0] = value.fastAccessCoeff(j);
+         }
+      }
+   }
 }
 
 #endif

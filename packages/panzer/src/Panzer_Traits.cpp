@@ -35,7 +35,7 @@ const std::string PHX::TypeString<panzer::Traits::Derivative>::value = "Derivati
 
 #ifdef HAVE_STOKHOS
 
-   const std::string PHX::TypeString<panzer::Traits::SGResidual>::value = "SGJacobian";
+   const std::string PHX::TypeString<panzer::Traits::SGResidual>::value = "SGResidual";
 
    const std::string PHX::TypeString<panzer::Traits::SGJacobian>::value = "SGJacobian";
 

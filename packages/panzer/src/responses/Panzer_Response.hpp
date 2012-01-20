@@ -1,6 +1,7 @@
 #ifndef __Panzer_Response_hpp__
 #define __Panzer_Response_hpp__
 
+#include "Panzer_config.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 
 namespace panzer {
@@ -50,11 +51,17 @@ public:
    Response(const ResponseId & rid) 
       : rid_(rid), value_(0.0), derivative_(Teuchos::null)
       , hasValue_(false), hasDerivative_(false)
+#ifdef HAVE_STOKHOS
+      , hasSGValue_(false)
+#endif
    {}
 
    Response(const Response & r) 
       : rid_(r.rid_), value_(r.value_), derivative_(r.derivative_)
       , hasValue_(r.hasValue), hasDerivative_(r.hasDerviative_)
+#ifdef HAVE_STOKHOS
+      , hasSGValue_(false)
+#endif
    {}
    
    //! What are the details of this response.
@@ -63,11 +70,13 @@ public:
 
    //! Get the value for this response
    typename TraitsT::RealType getValue() const
-   { return value_; }
+   { TEUCHOS_ASSERT(hasValue()); return value_; }
  
    //! set value for 
    void setValue(typename TraitsT::RealType v)
    { value_ = v; hasValue_ = true; }
+
+   bool hasValue() const { return hasValue_; }
 
    /** The derivative is assumed to be stored in the residual vector.
      *
@@ -83,8 +92,19 @@ public:
    void setDerivative(const Teuchos::RCP<LinearObjContainer> & loc)
    { derivative_ = loc; hasDerivative_ = true;}
 
-   bool hasValue() const { return hasValue_; }
    bool hasDerivative() const { return hasDerivative_; }
+
+#ifdef HAVE_STOKHOS
+   //! Get the SG value for this reponses
+   typename TraitsT::SGType getSGValue() const
+   { TEUCHOS_ASSERT(hasSGValue()); return sgValue_; }
+ 
+   //! set SG value for 
+   void setSGValue(typename TraitsT::SGType v)
+   { sgValue_ = v; hasSGValue_ = true; }
+
+   bool hasSGValue() const { return hasSGValue_; }
+#endif
 
 private:
    Response(); // hide me
@@ -93,6 +113,11 @@ private:
    typename TraitsT::RealType value_;
    Teuchos::RCP<LinearObjContainer> derivative_;
    bool hasValue_, hasDerivative_;
+
+   #ifdef HAVE_STOKHOS
+      typename TraitsT::SGType sgValue_;
+      bool hasSGValue_;
+   #endif
 };
 
 }

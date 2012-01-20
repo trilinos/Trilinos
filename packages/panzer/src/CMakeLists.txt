@@ -233,6 +233,7 @@ IF(${PACKAGE_NAME}_ENABLE_Stokhos)
     evaluators/Panzer_ScatterDirichletResidual_EpetraSGT.hpp
     evaluators/Panzer_ScatterInitialCondition_EpetraSG.hpp
     evaluators/Panzer_ScatterInitialCondition_EpetraSGT.hpp
+    responses/Panzer_ResponseFunctional_AggregatorSGT.hpp
     )
   APPEND_SET(SOURCES
     dofmngr/Panzer_SGEpetraLinearObjFactory.cpp
