@@ -1,0 +1,12 @@
+#ifndef XPETRA_EPETRAVECTOR_FWD_HPP
+#define XPETRA_EPETRAVECTOR_FWD_HPP
+
+namespace Xpetra {
+  class EpetraVector;
+}
+
+#ifndef XPETRA_EPETRAVECTOR_SHORT
+#define XPETRA_EPETRAVECTOR_SHORT
+#endif
+
+#endif // XPETRA_EPETRAVECTOR_FWD_HPP

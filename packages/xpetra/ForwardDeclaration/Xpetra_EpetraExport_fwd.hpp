@@ -1,0 +1,12 @@
+#ifndef XPETRA_EPETRAEXPORT_FWD_HPP
+#define XPETRA_EPETRAEXPORT_FWD_HPP
+
+namespace Xpetra {
+  class EpetraExport;
+}
+
+#ifndef XPETRA_EPETRAEXPORT_SHORT
+#define XPETRA_EPETRAEXPORT_SHORT
+#endif
+
+#endif // XPETRA_EPETRAEXPORT_FWD_HPP

@@ -93,6 +93,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vector)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsMatrix)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Operator)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/BlockedCrsOperator)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/../ForwardDeclaration)
 
 #Note: Do not use */*.hpp. Append FakeKokkos/*.hpp only if Kokkos is disabled.
 APPEND_GLOB(HEADERS BlockedCrsOperator/*.hpp)
@@ -109,6 +110,8 @@ APPEND_GLOB(HEADERS Platform/*.hpp)
 APPEND_GLOB(HEADERS RowGraph/*.hpp)
 APPEND_GLOB(HEADERS Utils/*.hpp)
 APPEND_GLOB(HEADERS Vector/*.hpp)
+
+APPEND_GLOB(HEADERS ../ForwardDeclaration/*.hpp)
 
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
