@@ -3,6 +3,7 @@
 
 #include "MueLu_Repartition_decl.hpp"
 
+#include "MueLu_Utilities.hpp" // maxAll
 
 #include "MueLu_Level.hpp"
 #include "Teuchos_Hashtable.hpp"

@@ -2,6 +2,11 @@
 #define MUELU_REPARTITION_DECL_HPP
 
 #include <Xpetra_Operator.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_ExportFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_OperatorFactory.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
