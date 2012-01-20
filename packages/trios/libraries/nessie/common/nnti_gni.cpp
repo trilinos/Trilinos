@@ -47,7 +47,7 @@
  * semantics for RDMA ops.   in this mode, when the wait returns the
  * the RDMA op is complete and status indicates what data was addressed.
  */
-#define USE_RDMA_TARGET_ACK
+//#define USE_RDMA_TARGET_ACK
 
 
 
@@ -129,7 +129,8 @@ typedef enum {
 #define GNI_OP_RECEIVE        8
 
 typedef enum {
-    SEND_COMPLETE,
+    BUFFER_INIT=0,
+    SEND_COMPLETE=1,
     RECV_COMPLETE,
     RDMA_WRITE_INIT,
     RDMA_WRITE_NEED_ACK,
@@ -296,8 +297,6 @@ typedef struct {
     gni_nic_handle_t     nic_hdl;
     NNTI_instance_id     instance;
 
-    gni_cq_handle_t      req_cq_hdl;
-
     uint64_t     apid;
     alpsAppGni_t alps_info;
 
@@ -382,9 +381,16 @@ static gni_connection *get_conn_peer(const NNTI_peer_t *peer);
 static gni_connection *get_conn_instance(const NNTI_instance_id instance);
 static gni_connection *del_conn_peer(const NNTI_peer_t *peer);
 static gni_connection *del_conn_instance(const NNTI_instance_id instance);
+static void print_peer_map(void);
+static void print_instance_map(void);
 static void close_all_conn(void);
 //static void print_put_buf(void *buf, uint32_t size);
 static void print_raw_buf(void *buf, uint32_t size);
+
+static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf);
+static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash);
+static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf);
+static void print_bufhash_map(void);
 
 static uint16_t get_dlvr_mode_from_env();
 static void set_dlvr_mode(
@@ -474,6 +480,19 @@ struct addrport_key {
     }
 };
 
+
+/* Thomas Wang's 64 bit to 32 bit Hash Function (http://www.concentric.net/~ttwang/tech/inthash.htm) */
+static uint32_t hash6432shift(uint64_t key)
+{
+  key = (~key) + (key << 18); // key = (key << 18) - key - 1;
+  key = key ^ (key >> 31);
+  key = key * 21;             // key = (key + (key << 2)) + (key << 4);
+  key = key ^ (key >> 11);
+  key = key + (key << 6);
+  key = key ^ (key >> 22);
+  return (uint32_t)key;
+}
+
 /*
  * We need a couple of maps to keep track of connections.  Servers need to find
  * connections by QP number when requests arrive.  Clients need to find connections
@@ -489,19 +508,10 @@ typedef std::map<NNTI_instance_id, gni_connection *>::iterator conn_by_inst_iter
 typedef std::pair<NNTI_instance_id, gni_connection *> conn_by_inst_t;
 static nthread_mutex_t nnti_conn_instance_lock;
 
-#if 0
-typedef struct {
-    NNTI_instance_id  instance;   /* this is the key */
-    gni_connection   *conn;
-    UT_hash_handle    hh;         /* makes this structure hashable */
-} conn_instance;
-
-typedef struct {
-    addrport_key    addrport;
-    gni_connection *conn;
-    UT_hash_handle  hh;         /* makes this structure hashable */
-} conn_addrport;
-#endif
+static std::map<uint32_t, NNTI_buffer_t *> buffers_by_bufhash;
+typedef std::map<uint32_t, NNTI_buffer_t *>::iterator buf_by_bufhash_iter_t;
+typedef std::pair<uint32_t, NNTI_buffer_t *> buf_by_bufhash_t;
+static nthread_mutex_t nnti_buf_bufhash_lock;
 
 
 
@@ -563,6 +573,7 @@ NNTI_result_t NNTI_gni_init (
         // initialize the mutexes for the connection maps
         nthread_mutex_init(&nnti_conn_peer_lock, NTHREAD_MUTEX_NORMAL);
         nthread_mutex_init(&nnti_conn_instance_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_mutex_init(&nnti_buf_bufhash_lock, NTHREAD_MUTEX_NORMAL);
 
         log_debug(nnti_debug_level, "my_url=%s", my_url);
 
@@ -1170,6 +1181,8 @@ NNTI_result_t NNTI_gni_register_memory (
         gni_mem_hdl->type=UNKNOWN_BUFFER;
     }
 
+
+
     if (rc==NNTI_OK) {
         reg_buf->buffer_addr.transport_id                            = NNTI_TRANSPORT_GEMINI;
         reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1 = gni_mem_hdl->mem_hdl.qword1;
@@ -1189,6 +1202,8 @@ NNTI_result_t NNTI_gni_register_memory (
             reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword2 = gni_mem_hdl->wc_mem_hdl.qword2;
         }
     }
+
+    insert_buf_bufhash(reg_buf);
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_buffer(logger_get_file(), "reg_buf",
@@ -1233,6 +1248,8 @@ NNTI_result_t NNTI_gni_unregister_memory (
         unregister_memory(gni_mem_hdl);
     }
 
+    del_buf_bufhash(reg_buf);
+
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
     GNI_SET_MATCH_ANY(&reg_buf->buffer_owner);
     reg_buf->ops               = (NNTI_buf_ops_t)0;
@@ -1272,7 +1289,7 @@ NNTI_result_t NNTI_gni_send (
     gni_mem_hdl=(gni_memory_handle *)msg_hdl->transport_private;
     assert(gni_mem_hdl);
 
-    if ((dest_hdl == NULL) || (dest_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.type == NNTI_GNI_REQUEST_BUFFER)) {
+    if ((dest_hdl == NULL) || (dest_hdl->ops == NNTI_RECV_QUEUE)) {
         gni_connection *conn=gni_mem_hdl->conn;
         assert(conn);
 
@@ -1371,6 +1388,11 @@ NNTI_result_t NNTI_gni_put (
     gni_mem_hdl->wc_dest_mem_hdl.qword1=dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword1;
     gni_mem_hdl->wc_dest_mem_hdl.qword2=dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword2;
 
+    GNI_EpSetEventData(
+            gni_mem_hdl->ep_hdl,
+            hash6432shift((uint64_t)src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf),
+            hash6432shift(dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
+
 #if defined(USE_BTE) || defined(USE_MIXED)
     log_debug(nnti_event_debug_level, "calling PostRdma(rdma put ; ep_hdl(%llu) cq_hdl(%llu) local_mem_hdl(%llu, %llu) remote_mem_hdl(%llu, %llu))",
             gni_mem_hdl->ep_hdl, gni_mem_hdl->ep_cq_hdl,
@@ -1460,6 +1482,9 @@ NNTI_result_t NNTI_gni_get (
 
     set_dlvr_mode(&gni_mem_hdl->post_desc);
     set_rdma_mode(&gni_mem_hdl->post_desc);
+
+    GNI_EpSetEventData(gni_mem_hdl->ep_hdl, hash6432shift((uint64_t)dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf), 55555);
+    GNI_EpSetEventData(gni_mem_hdl->wc_ep_hdl, hash6432shift((uint64_t)dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf), 66666);
 
     gni_mem_hdl->post_desc.local_addr            =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf+dest_offset;
     gni_mem_hdl->post_desc.local_mem_hndl.qword1 =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
@@ -1622,6 +1647,7 @@ NNTI_result_t NNTI_gni_wait (
             trios_start_timer(call_time);
 //            nthread_lock(&nnti_gni_lock);
             rc=GNI_CqWaitEvent (cq_hdl, timeout_per_call, &ev_data);
+            print_cq_event(&ev_data);
 //            nthread_unlock(&nnti_gni_lock);
             trios_stop_timer("NNTI_gni_wait - CqWaitEvent", call_time);
             log_debug(nnti_event_debug_level, "CqWaitEvent(wait) complete");
@@ -2372,6 +2398,8 @@ static int process_event(
     int rc=NNTI_OK;
     gni_memory_handle *gni_mem_hdl=NULL;
 
+    NNTI_buffer_t      *event_buf=NULL;
+
     log_level debug_level=nnti_debug_level;
 
     gni_mem_hdl=(gni_memory_handle *)reg_buf->transport_private;
@@ -2382,6 +2410,24 @@ static int process_event(
 
     if (!GNI_CQ_STATUS_OK(*ev_data)) {
         return NNTI_EIO;
+    }
+
+    log_debug(nnti_debug_level, "ev_data.inst_id==%llu, reg_buf.hash==%llu, reg_buf.buf.hash==%llu",
+            (uint64_t)gni_cq_get_inst_id(*ev_data),
+            (uint64_t)hash6432shift((uint64_t)reg_buf),
+            (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
+    if ((gni_mem_hdl->type != REQUEST_BUFFER) &&
+        (gni_cq_get_inst_id(*ev_data) != hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf))) {
+        log_error(nnti_debug_level, "ev_data.inst_id != reg_buf.buf.hash (%llu != %llu)",
+                (uint64_t)gni_cq_get_inst_id(*ev_data),
+                (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
+    }
+
+    if (gni_mem_hdl->type != REQUEST_BUFFER) {
+        event_buf = get_buf_bufhash((uint32_t)gni_cq_get_inst_id(*ev_data));
+        if (reg_buf != event_buf) {
+            log_error(nnti_debug_level, "reg_buf != event_buf (%llu != %llu)", reg_buf, event_buf);
+        }
     }
 
     debug_level=nnti_debug_level;
@@ -2530,10 +2576,6 @@ static int process_event(
                 q->total_req_processed++;
 
             } else {
-
-                log_debug(nnti_debug_level, "ev_data.data   ==%llu", (uint64_t)gni_cq_get_data(*ev_data));
-                log_debug(nnti_debug_level, "ev_data.inst_id==%llu", (uint64_t)gni_cq_get_inst_id(*ev_data));
-
                 index = (uint64_t)gni_cq_get_inst_id(*ev_data);
                 log_debug(nnti_debug_level, "wc_index(%llu)", index);
                 nnti_gni_work_completion *tmp_wc=&q->wc_buffer[index];
@@ -2541,7 +2583,7 @@ static int process_event(
                 GNI_CQ_SET_INST_ID(*ev_data, tmp_wc->inst_id);
 
                 if ((q->req_processed < q->req_count) &&
-                        (q->wc_buffer[q->req_processed].ack_received==0)) {
+                    (q->wc_buffer[q->req_processed].ack_received==0)) {
 
                     log_debug(nnti_event_debug_level, "request received out of order (received index(%llu) ; received ack(%llu) ; waiting(%llu)) ; waiting ack(%llu)",
                             index, q->wc_buffer[index].ack_received, q->req_processed, q->wc_buffer[q->req_processed].ack_received);
@@ -3239,20 +3281,6 @@ static NNTI_result_t insert_conn_instance(const NNTI_instance_id instance, gni_c
 
     return(rc);
 }
-static void print_peer_map()
-{
-    if (!logging_debug(nnti_debug_level)) {
-        return;
-    }
-
-    conn_by_peer_iter_t i;
-    for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
-        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p",
-                (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second);
-    }
-}
-
-
 static gni_connection *get_conn_peer(const NNTI_peer_t *peer)
 {
     gni_connection *conn = NULL;
@@ -3280,17 +3308,6 @@ static gni_connection *get_conn_peer(const NNTI_peer_t *peer)
     print_peer_map();
 
     return(NULL);
-}
-static void print_instance_map()
-{
-    if (!logging_debug(nnti_debug_level)) {
-        return;
-    }
-
-    conn_by_inst_iter_t i;
-    for (i=connections_by_instance.begin(); i != connections_by_instance.end(); i++) {
-        log_debug(nnti_debug_level, "instance_map key=%llu conn=%p", i->first, i->second);
-    }
 }
 static gni_connection *get_conn_instance(const NNTI_instance_id instance)
 {
@@ -3357,6 +3374,94 @@ static gni_connection *del_conn_instance(const NNTI_instance_id instance)
 
     return(conn);
 }
+static void print_peer_map()
+{
+    if (!logging_debug(nnti_debug_level)) {
+        return;
+    }
+
+    conn_by_peer_iter_t i;
+    for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
+        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p",
+                (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second);
+    }
+}
+static void print_instance_map()
+{
+    if (!logging_debug(nnti_debug_level)) {
+        return;
+    }
+
+    conn_by_inst_iter_t i;
+    for (i=connections_by_instance.begin(); i != connections_by_instance.end(); i++) {
+        log_debug(nnti_debug_level, "instance_map key=%llu conn=%p", i->first, i->second);
+    }
+}
+
+
+static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
+{
+    NNTI_result_t  rc=NNTI_OK;
+    uint32_t h=hash6432shift((uint64_t)buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf);
+
+    nthread_lock(&nnti_buf_bufhash_lock);
+    assert(buffers_by_bufhash.find(h) == buffers_by_bufhash.end());
+    buffers_by_bufhash[h] = buf;
+    nthread_unlock(&nnti_buf_bufhash_lock);
+
+    log_debug(nnti_debug_level, "bufhash buffer added (buf=%p)", buf);
+
+    return(rc);
+}
+static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash)
+{
+    NNTI_buffer_t *buf=NULL;
+
+    log_debug(nnti_debug_level, "looking for bufhash=%llu", (uint64_t)bufhash);
+    nthread_lock(&nnti_buf_bufhash_lock);
+    buf = buffers_by_bufhash[bufhash];
+    nthread_unlock(&nnti_buf_bufhash_lock);
+
+    if (buf != NULL) {
+        log_debug(nnti_debug_level, "buffer found");
+        return buf;
+    }
+
+    log_debug(nnti_debug_level, "buffer NOT found");
+    print_bufhash_map();
+
+    return(NULL);
+}
+static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
+{
+    uint32_t h=hash6432shift((uint64_t)buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf);
+    log_level debug_level = nnti_debug_level;
+
+    nthread_lock(&nnti_buf_bufhash_lock);
+    buf = buffers_by_bufhash[h];
+    nthread_unlock(&nnti_buf_bufhash_lock);
+
+    if (buf != NULL) {
+        log_debug(debug_level, "buffer found");
+        buffers_by_bufhash.erase(h);
+    } else {
+        log_debug(debug_level, "buffer NOT found");
+    }
+
+    return(buf);
+}
+static void print_bufhash_map()
+{
+    if (!logging_debug(nnti_debug_level)) {
+        return;
+    }
+
+    buf_by_bufhash_iter_t i;
+    for (i=buffers_by_bufhash.begin(); i != buffers_by_bufhash.end(); i++) {
+        log_debug(nnti_debug_level, "bufhash_map key=%llu buf=%p", i->first, i->second);
+    }
+}
+
 static void close_all_conn(void)
 {
     log_level debug_level = nnti_debug_level;
@@ -3712,8 +3817,8 @@ static void print_cq_event(
         const gni_cq_entry_t *event)
 {
     if (gni_cq_get_status(*event) != 0) {
-        log_error(nnti_debug_level, "event=%p, event.data=%d, event.source=%d, event.status=%lu, "
-                "event.info=%u, event.overrun=%u, event.inst_id=%u, event.tid=%u, event.msg_id=%u, event.type=%u",
+        log_error(nnti_debug_level, "event=%p, event.data=%llu, event.source=%llu, event.status=%llu, "
+                "event.info=%llu, event.overrun=%llu, event.inst_id=%llu, event.tid=%llu, event.msg_id=%llu, event.type=%llu",
                 event,
                 (uint64_t)gni_cq_get_data(*event),
                 (uint64_t)gni_cq_get_source(*event),
@@ -3725,8 +3830,8 @@ static void print_cq_event(
                 (uint64_t)gni_cq_get_msg_id(*event),
                 (uint64_t)gni_cq_get_type(*event));
     } else {
-        log_debug(nnti_debug_level, "event=%p, event.data=%d, event.source=%d, event.status=%lu, "
-                "event.info=%u, event.overrun=%u, event.inst_id=%u, event.tid=%u, event.msg_id=%u, event.type=%u",
+        log_debug(nnti_debug_level, "event=%p, event.data=%llu, event.source=%llu, event.status=%llu, "
+                "event.info=%llu, event.overrun=%llu, event.inst_id=%llu, event.tid=%llu, event.msg_id=%llu, event.type=%llu",
                 event,
                 (uint64_t)gni_cq_get_data(*event),
                 (uint64_t)gni_cq_get_source(*event),
@@ -4139,6 +4244,8 @@ static int send_req(
 
     print_raw_buf((void *)gni_mem_hdl->post_desc.local_addr, gni_mem_hdl->post_desc.length);
 
+    GNI_EpSetEventData(local_req_queue_attrs->req_ep_hdl, hash6432shift((uint64_t)reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf), offset);
+
 #if defined(USE_FMA) || defined(USE_MIXED)
     log_debug(nnti_debug_level, "calling PostFma(send req ep_hdl(%llu), cq_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
             local_req_queue_attrs->req_ep_hdl, local_req_queue_attrs->req_cq_hdl, gni_mem_hdl->post_desc.local_addr, gni_mem_hdl->post_desc.remote_addr);
@@ -4202,7 +4309,7 @@ static int send_req_wc(
 
     print_raw_buf((void *)gni_mem_hdl->wc_post_desc.local_addr, gni_mem_hdl->wc_post_desc.length);
 
-    GNI_EpSetEventData(gni_mem_hdl->wc_ep_hdl, offset/sizeof(nnti_gni_work_completion), offset/sizeof(nnti_gni_work_completion));
+    GNI_EpSetEventData(gni_mem_hdl->wc_ep_hdl, hash6432shift((uint64_t)reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf), offset/sizeof(nnti_gni_work_completion));
 
 #if defined(USE_FMA) || defined(USE_MIXED)
     log_debug(nnti_debug_level, "calling PostFma(send_req_wc wc_ep_hdl(%llu) wc_cq_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
