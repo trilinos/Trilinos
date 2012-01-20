@@ -61,7 +61,7 @@ class BlockUtility {
 	\param In
 	RowIndices - Defines the indices for local block rows
   */
-  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const int*  RowIndices, int num_indices, const Epetra_Comm & GlobalComm );
+  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const int*  RowIndices, int num_indices, const Epetra_Comm & GlobalComm, int Offset = 0 );
 
   /*! Creates a BlockMap object
     
@@ -70,7 +70,7 @@ class BlockUtility {
 	\param In
 	RowIndices - Defines the indices for local block rows
   */
-  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm, int Offset = 0 );
 
   /*! Creates a BlockMap object
     
@@ -79,7 +79,7 @@ class BlockUtility {
 	\param In
 	RowIndices - Defines the indices for local block rows
   */
-  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const Epetra_BlockMap& BlockMap, const Epetra_Comm & GlobalComm );
+  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const Epetra_BlockMap& BlockMap, const Epetra_Comm & GlobalComm, int Offset = 0 );
 
   //! BlockCrsMatrix constuctor
   /*! Creates a BlockGraph object
