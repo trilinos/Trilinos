@@ -51,10 +51,8 @@ namespace MueLu {
         GO count = hashTable->get(decompEntries[i]);
         ++count;
         hashTable->put(decompEntries[i],count);
-        //std::cout << "pid " << mypid << " found " << decompEntries[i] << ", count now " << count << std::endl;
       } else {
         hashTable->put(decompEntries[i],1);
-        //std::cout << "pid " << mypid << " did not find " << decompEntries[i] << ", count now 1" << std::endl;
       }
     }
     decompEntries = Teuchos::null;
@@ -62,21 +60,6 @@ namespace MueLu {
     Teuchos::Array<GO> allPartitionsIContributeTo;
     Teuchos::Array<GO> allLocalPartSize;
     hashTable->arrayify(allPartitionsIContributeTo,allLocalPartSize);
-
-/*
-//FIXME debugging output
-    sleep(1); comm->barrier();
-    if (mypid == 0) std::cout << "hash table entries\n====================" << std::endl;
-    for (int i=0; i<comm->getSize(); ++i) {
-      if (mypid == i) {
-        for (int j=0; j<allPartitionsIContributeTo.size(); ++j)
-          std::cout << "pid " << mypid << " has " << allLocalPartSize[j] << " entries for partition "
-                    << allPartitionsIContributeTo[j] << std::endl;;
-      }
-      comm->barrier();
-    }
-    sleep(1); comm->barrier();
-*/
 
     GO indexBase = decomposition->getMap()->getIndexBase();
 
@@ -121,13 +104,7 @@ namespace MueLu {
     GO numPartitionsISendTo = hashTable->size();
     // I'm a partition owner, so don't count my own.
     if (myPartitionNumber >= 0 && numPartitionsISendTo>0) numPartitionsISendTo--;
-    //sanity check
-    std::cout << "pid " << mypid << " : numPartitionsISendTo = " << numPartitionsISendTo 
-                                 << ", partitionsIContributeTo.size() = " << partitionsIContributeTo.size()
-                                 << std::endl;
     assert(numPartitionsISendTo == partitionsIContributeTo.size());
-
-    std::cout << mypid << " here 1" << std::endl; sleep(1); comm->barrier();
 
     Array<int> partitionOwnersISendTo;
     for (int i=0; i<partitionsIContributeTo.size(); ++i) {
@@ -143,8 +120,6 @@ namespace MueLu {
                     decomposition->getMap()->getIndexBase(),
                     comm);
 
-    std::cout << mypid << " here 3" << std::endl; sleep(1); comm->barrier();
-
     RCP<const Export> exporter = ExportFactory::Build( sourceMap,targetMap);
 
     // If this pid owns a partition, globalPartSizeVec has one local entry that is the global size of said partition.
@@ -153,15 +128,10 @@ namespace MueLu {
     globalPartSizeVec->doExport(*localPartSizeVec,*exporter,Xpetra::ADD);
     int myPartitionSize = 0;
     if (globalPartSizeVec->getLocalLength() > 0) {
-            data = globalPartSizeVec->getDataNonConst(0);
-            myPartitionSize = data[0];
+      data = globalPartSizeVec->getDataNonConst(0);
+      myPartitionSize = data[0];
     }
-    sleep(1); comm->barrier();
-    if (comm->getRank() == 0) std::cout << "=========\npartition size\n==========" << std::endl;
-    comm->barrier();
-    globalPartSizeVec->describe(*fos,Teuchos::VERB_EXTREME);
-    sleep(1);
-    comm->barrier();
+    data = Teuchos::null;
 
     // ======================================================================================================
     // Calculate how many PIDs (other than myself) contribute to my partition.
@@ -172,7 +142,6 @@ namespace MueLu {
       data = partitionsISendTo->getDataNonConst(0);
     for (int i=0; i<data.size(); ++i) {
       // don't count myself as someone I send to... (sourceMap is based on allPartitionsIContributeTo)
-      // TODO last thing I changed!!
       if (sourceMap->getGlobalElement(i) != myPartitionNumber)
         data[i] = 1;
       else 
@@ -189,75 +158,39 @@ namespace MueLu {
     }
     data = Teuchos::null;
 
-    //
+    // ======================================================================================================
     // Calculate which PIDs contribute to my partition, and how much each contributes,
     // with ireceive/send/wait cycle.
     // FIXME Jan.12.2012 Teuchos::Comm methods ireceive and wait don't work (bugs 5483 and 5484), so for
     // now use the raw MPI methods.
+    // ======================================================================================================
 
-    // First post non-blocking receives.
     ArrayRCP<GO> pidsIReceiveFrom(howManyPidsSendToThisPartition);
     ArrayRCP<GO> numDofsIReceiveFromOnePid(howManyPidsSendToThisPartition);
     for (int j=0; j<numDofsIReceiveFromOnePid.size(); ++j)
       numDofsIReceiveFromOnePid[j] = -99;
-    //ArrayRCP<char> recvBuffer = Teuchos::arcp_reinterpret_cast<char>(numDofsIReceiveFromOnePid);
 
     RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
     if (tmpic == Teuchos::null)
       throw(Exceptions::RuntimeError("Cannot cast base Teuchos::Comm to Teuchos::MpiComm object."));
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
+
+    // First post non-blocking receives.
     ArrayRCP<MPI_Request> requests(howManyPidsSendToThisPartition);
-    //std::cout << "pid " << mypid << " posting irecv" << std::endl; comm->barrier();
-    //for (int j=0; j<comm->getSize(); ++j) {
-    //  if (j==mypid) {
-    //  std::cout << "pid " << mypid << " posting " << howManyPidsSendToThisPartition << " receives" << std::endl;
     for (int i=0; i<howManyPidsSendToThisPartition; ++i) {
       MPI_Irecv((void*)&(numDofsIReceiveFromOnePid[i]),1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,*rawMpiComm,&requests[i]);
-      /*
-      //this does NOT work
-      ArrayView<int> ttt(numDofsIReceiveFromOnePid.view(i,1));
-      ArrayView<char> recvBuffer = Teuchos::av_reinterpret_cast<char>(ttt);
-      comm->ireceive(recvBuffer,-1);
-      */
-      /*
-      //this does NOT work either
-      ArrayView<int> ttt(&numDofsIReceiveFromOnePid[i],1);
-      ArrayView<char> recvBuffer = Teuchos::av_reinterpret_cast<char>(ttt);
-      comm->ireceive(recvBuffer,-1);
-      */
-      //comm->ireceive(recvBuffer.view(i,sizeof(int)/sizeof(char)),-1);
-      // comm->ireceive(recvBuffer(),-1);
     }
-    //} //if (j==mypid)
-    //comm->barrier();
-    //} //for (int j=0; j<comm->getSize(); ++j)
-    //sleep(1);  comm->barrier();
 
     // Next post sends.
-
-    //for (int j=0; j<comm->getSize(); ++j) {
-    //  if (j==mypid)
-    //  {
-    //    std::cout << "pid " << mypid << " posting sends" << std::endl; comm->barrier();
-        for (int i=0; i< partitionsIContributeTo.size(); ++i) {
-          //std::cout << "     " << " sending size " << localPartSize[i] << " to " <<  partitionOwnersISendTo[i] << std::endl;
-          //if (partitionsIContributeTo[i] != myPartitionNumber) {
-          comm->send(sizeof(GO), (char*)&localPartSize[i], partitionOwnersISendTo[i]);
-          //}
-        }
-    //  }
-    //  comm->barrier();
-    //}
-    //sleep(1);  comm->barrier();
+    for (int i=0; i< partitionsIContributeTo.size(); ++i) {
+      comm->send(sizeof(GO), (char*)&localPartSize[i], partitionOwnersISendTo[i]);
+    }
 
     // Finally do waits.
-
     ArrayRCP<MPI_Status> status(howManyPidsSendToThisPartition);
-    //std::cout << "pid " << mypid << " posting waits" << std::endl; comm->barrier();
     for (int i=0; i<howManyPidsSendToThisPartition; ++i)
       MPI_Wait(&requests[i],&status[i]);
 
-    //std::cout << "pid " << mypid << " done waiting" << std::endl; comm->barrier();
     for (int i=0; i<pidsIReceiveFrom.size(); ++i)
       pidsIReceiveFrom[i] = status[i].MPI_SOURCE;
 
@@ -275,13 +208,6 @@ namespace MueLu {
     MPI_Scan(&ttt, &partitionSizeOffset, 1, MPI_DOUBLE, MPI_SUM, *rawMpiComm);
     partitionSizeOffset -= myPartitionSize;
 
-    for (int i=0; i<comm->getSize(); ++i) {
-      if (mypid == i) {
-        std::cout << "pid " << mypid << " : partition GID offset = " << partitionSizeOffset << std::endl;
-      }
-      comm->barrier();
-    }
-
     ArrayRCP<double> gidOffsets;
     if (howManyPidsSendToThisPartition > 0) {
       gidOffsets = ArrayRCP<double>(howManyPidsSendToThisPartition);
@@ -291,25 +217,20 @@ namespace MueLu {
       gidOffsets[i] = gidOffsets[i-1] + numDofsIReceiveFromOnePid[i-1];
     }
 
+    requests = ArrayRCP<MPI_Request>(numPartitionsISendTo);
+    ArrayRCP<double> gidOffsetsForPartitionsIContributeTo(numPartitionsISendTo);
+
     // Post receives on contributing PIDs.
     for (int i=0; i< numPartitionsISendTo; ++i) {
-      //if (partitionsIContributeTo[i] != myPartitionNumber) {
       int msgTag = partitionsIContributeTo[i];
       MPI_Irecv((void*)&(gidOffsetsForPartitionsIContributeTo[i]),1,MPI_DOUBLE,partitionOwnersISendTo[i],msgTag,*rawMpiComm,&requests[i]);
-      //}
     }
 
     // Do sends by partition owners.
     for (int i=0; i<howManyPidsSendToThisPartition; ++i) {
       int msgTag = myPartitionNumber;
       MPI_Send((void*)&gidOffsets[i] , 1 , MPI_DOUBLE , pidsIReceiveFrom[i], msgTag, *rawMpiComm);
-      std::cout << "    sending offset " << gidOffsets[i] << " to " << pidsIReceiveFrom[i] << std::endl;
     }
-    } //if (mypid == j)
-    comm->barrier();
-    } //for (int j=0; j<comm->getSize())
-
-    sleep(1); comm->barrier();
 
     // Do waits.
     status = ArrayRCP<MPI_Status>(numPartitionsISendTo);
@@ -408,6 +329,8 @@ namespace MueLu {
     vectorData = Teuchos::null;
 
     permutationMatrix->fillComplete(A->getDomainMap(),targetMap);
+
+    currentLevel.Set<RCP<Operator> >("permMat",permutationMatrix, this);
 
     sleep(1);comm->barrier();
     if (mypid == 0) std::cout << "~~~~~~ permutation matrix ~~~~~~" << std::endl;
