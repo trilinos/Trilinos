@@ -102,7 +102,14 @@ if("${CTEST_SITE}" STREQUAL "")
   endif()
 endif()
 
-set(CTEST_BUILD_NAME "$ENV{CTEST_BUILD_NAME}")
+#
+# Set CTEST_BUILD_NAME from TDD_BUILD_NAME in env or set default.
+#
+# NOTE: CTEST_BUILD_NAME is a built-in CTest varaible and therefore it
+# should not be set from the environment since it will give crosstalk
+# with TribitsCTestDriverCore.cmake.
+#
+set(CTEST_BUILD_NAME "$ENV{TDD_BUILD_NAME}")
 if("${CTEST_BUILD_NAME}" STREQUAL "")
   if(WIN32)
     set(HOST_TYPE $ENV{OS})

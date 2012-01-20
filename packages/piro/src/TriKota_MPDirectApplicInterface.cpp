@@ -153,7 +153,7 @@ derived_synch(Dakota::PRPQueue& prp_queue)
     unsigned int num_blocks = queue_size / block_size;
     unsigned int remainder = queue_size % block_size;
 
-    *out << "Performing multi-point evaluation of " << queue_size
+    *out << "TriKota:: Performing multi-point evaluation of " << queue_size
 	 << " responses using a block size of " << block_size
 	 << std::endl;
     
@@ -178,9 +178,9 @@ derived_synch(Dakota::PRPQueue& prp_queue)
 
 	const Dakota::ActiveSet& set  = iter->active_set();
 	short asv = set.request_vector()[0];
-	valFlag = valFlag & (asv & 1);
-	gradFlag = gradFlag & (asv & 2);
-	hessFlag = hessFlag & (asv & 4);
+	valFlag  = valFlag  && (asv & 1);
+	gradFlag = gradFlag && (asv & 2);
+	hessFlag = hessFlag && (asv & 4);
 
 	Dakota::Response resp = iter->prp_response();
 	Dakota::RealVector fnVals = resp.function_values_view();
@@ -222,6 +222,11 @@ derived_synch(Dakota::PRPQueue& prp_queue)
       if (gradFlag) 
 	outArgs.set_DgDp_mp(g_index, p_index,
 			    EEME::MPDerivative(model_dgdp, orientation));
+      *out << "TriKota:: evaluating block " << block;
+      if (gradFlag)
+	*out << " with gradients." << std::endl;
+      else
+	*out << " without gradients." << std::endl;
       model->evalModel(inArgs, outArgs);
 
       // Copy responses from block g
@@ -260,7 +265,8 @@ derived_synch(Dakota::PRPQueue& prp_queue)
       }
       ++block;
     }
-    TEUCHOS_TEST_FOR_EXCEPT(block != num_blocks+1)
+    TEUCHOS_TEST_FOR_EXCEPT((remainder == 0 && block != num_blocks) || 
+			    (remainder  > 0 && block != num_blocks+1))
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(
