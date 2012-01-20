@@ -134,11 +134,12 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO,LO,GO,NO> > globalPartSizeVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(targetMap);
     globalPartSizeVec->doExport(*localPartSizeVec,*exporter,Xpetra::ADD);
     int myPartitionSize = 0;
+    ArrayRCP<const GO> constData;
     if (globalPartSizeVec->getLocalLength() > 0) {
-      data = globalPartSizeVec->getDataNonConst(0);
-      myPartitionSize = data[0];
+      constData = globalPartSizeVec->getData(0);
+      myPartitionSize = constData[0];
     }
-    data = Teuchos::null;
+    constData = Teuchos::null;
 
     // ======================================================================================================
     // Calculate how many PIDs (other than myself) contribute to my partition.
@@ -160,10 +161,10 @@ namespace MueLu {
     int howManyPidsSendToThisPartition = 0;
     howManyPidsSendToThisPartitionVec->doExport(*partitionsISendTo,*exporter,Xpetra::ADD);
     if (howManyPidsSendToThisPartitionVec->getLocalLength() > 0) {
-      data = howManyPidsSendToThisPartitionVec->getDataNonConst(0);
-      howManyPidsSendToThisPartition = data[0];
+      constData = howManyPidsSendToThisPartitionVec->getDataNonConst(0);
+      howManyPidsSendToThisPartition = constData[0];
     }
-    data = Teuchos::null;
+    constData = Teuchos::null;
 
     // ======================================================================================================
     // Calculate which PIDs contribute to my partition, and how much each contributes,
@@ -172,8 +173,8 @@ namespace MueLu {
     // now use the raw MPI methods.
     // ======================================================================================================
 
-    ArrayRCP<GO> pidsIReceiveFrom(howManyPidsSendToThisPartition);
-    ArrayRCP<GO> numDofsIReceiveFromOnePid(howManyPidsSendToThisPartition);
+    Array<GO> pidsIReceiveFrom(howManyPidsSendToThisPartition);
+    Array<GO> numDofsIReceiveFromOnePid(howManyPidsSendToThisPartition);
     for (int j=0; j<numDofsIReceiveFromOnePid.size(); ++j)
       numDofsIReceiveFromOnePid[j] = -99;
 
@@ -194,7 +195,7 @@ namespace MueLu {
     }
 
     // Finally do waits.
-    ArrayRCP<MPI_Status> status(howManyPidsSendToThisPartition);
+    Array<MPI_Status> status(howManyPidsSendToThisPartition);
     for (int i=0; i<howManyPidsSendToThisPartition; ++i)
       MPI_Wait(&requests[i],&status[i]);
 
@@ -215,9 +216,9 @@ namespace MueLu {
     MPI_Scan(&ttt, &partitionSizeOffset, 1, MPI_DOUBLE, MPI_SUM, *rawMpiComm);
     partitionSizeOffset -= myPartitionSize;
 
-    ArrayRCP<double> gidOffsets;
+    Array<double> gidOffsets;
     if (howManyPidsSendToThisPartition > 0) {
-      gidOffsets = ArrayRCP<double>(howManyPidsSendToThisPartition);
+      gidOffsets.resize(howManyPidsSendToThisPartition);
       gidOffsets[0] = partitionSizeOffset;
     }
     for (int i=1; i<howManyPidsSendToThisPartition; ++i) {
@@ -225,7 +226,7 @@ namespace MueLu {
     }
 
     requests.resize(numPartitionsISendTo);
-    ArrayRCP<double> gidOffsetsForPartitionsIContributeTo(numPartitionsISendTo);
+    Array<double> gidOffsetsForPartitionsIContributeTo(numPartitionsISendTo);
 
     // Post receives on contributing PIDs.
     for (int i=0; i< numPartitionsISendTo; ++i) {
@@ -240,7 +241,7 @@ namespace MueLu {
     }
 
     // Do waits.
-    status = ArrayRCP<MPI_Status>(numPartitionsISendTo);
+    status.resize(numPartitionsISendTo);
     for (int i=0; i<numPartitionsISendTo; ++i)
       MPI_Wait(&requests[i],&status[i]);
 
@@ -339,11 +340,13 @@ namespace MueLu {
 
     currentLevel.Set<RCP<Operator> >("permMat",permutationMatrix, this);
 
+    /*
     sleep(1);comm->barrier();
     if (mypid == 0) std::cout << "~~~~~~ permutation matrix ~~~~~~" << std::endl;
     comm->barrier();
     permutationMatrix->describe(*fos,Teuchos::VERB_EXTREME);
     sleep(1);comm->barrier();
+    */
 
   } //Build
 
