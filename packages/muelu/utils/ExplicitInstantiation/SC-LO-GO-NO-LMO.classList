@@ -21,4 +21,6 @@ ThresholdAFilterFactory
 TransPFactory
 TrilinosSmoother
 #Utilities
+#AggregationExportFactory
+Repartition
 

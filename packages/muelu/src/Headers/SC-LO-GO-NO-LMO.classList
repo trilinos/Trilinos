@@ -25,4 +25,6 @@ FactoryManager
 ThresholdAFilterFactory
 SegregationAFilterFactory
 SegregationATransferFactory
+Repartition
 MLInterpreter
+#AggregationExportFactory
