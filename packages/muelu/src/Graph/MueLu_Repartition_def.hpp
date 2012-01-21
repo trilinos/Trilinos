@@ -1,13 +1,23 @@
 #ifndef MUELU_REPARTITION_DEF_HPP
 #define MUELU_REPARTITION_DEF_HPP
 
-#include "MueLu_Repartition_decl.hpp"
+#include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_Hashtable.hpp>
 
-#include "MueLu_Utilities.hpp" // maxAll
+#include "MueLu_Repartition_decl.hpp" // TMP JG NOTE: before other includes, otherwise I cannot test the fwd declaration in _def
+
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_Import.hpp>
+#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_Export.hpp>
+#include <Xpetra_ExportFactory.hpp>
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_OperatorFactory.hpp>
+
+#include "MueLu_Utilities.hpp" // TMP JG NOTE: only for maxAll, so no _fwd in _decl
 
 #include "MueLu_Level.hpp"
-#include "Teuchos_Hashtable.hpp"
-#include <Teuchos_DefaultMpiComm.hpp>
 // #include "MueLu_Monitor.hpp"
 
 namespace MueLu {

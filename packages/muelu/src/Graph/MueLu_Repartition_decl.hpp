@@ -1,17 +1,21 @@
 #ifndef MUELU_REPARTITION_DECL_HPP
 #define MUELU_REPARTITION_DECL_HPP
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_ExportFactory.hpp>
-#include <Xpetra_ImportFactory.hpp>
-#include <Xpetra_OperatorFactory.hpp>
+// Some classes are only used in the definition (_def.hpp) of this class 
+// but forward declarations are needed here to enable the UseShortNames mechanism.
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Import_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
+#include <Xpetra_Export_fwd.hpp>
+#include <Xpetra_ExportFactory_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_OperatorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Repartition_fwd.hpp"
-
+ 
 namespace MueLu {
 
   /*!
@@ -53,7 +57,6 @@ namespace MueLu {
     void Build(Level & currentLevel) const;
 
     //@}
-
 
     //! @name Helper methods.
     //@{
