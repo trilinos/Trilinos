@@ -70,7 +70,7 @@ public:
 
    //! Get the value for this response
    typename TraitsT::RealType getValue() const
-   { TEUCHOS_ASSERT(hasValue()); return value_; }
+   { return value_; }
  
    //! set value for 
    void setValue(typename TraitsT::RealType v)
@@ -97,7 +97,7 @@ public:
 #ifdef HAVE_STOKHOS
    //! Get the SG value for this reponses
    typename TraitsT::SGType getSGValue() const
-   { TEUCHOS_ASSERT(hasSGValue()); return sgValue_; }
+   { return sgValue_; }
  
    //! set SG value for 
    void setSGValue(typename TraitsT::SGType v)

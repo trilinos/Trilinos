@@ -446,7 +446,6 @@ evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const Out
    std::vector<Teuchos::RCP<const Response<panzer::Traits> > > responses;
    responseLibrary_->getLabeledVolumeResponses(responses);
    for(std::size_t i=0;i<responses.size();i++) {
-      // std::cout << "Response = " << responses[i]->getResponse() << std::endl;
       Teuchos::RCP<Epetra_Vector> vec = outArgs.get_g(i);
       if(vec!=Teuchos::null)
          (*vec)[0] = responses[i]->getValue();

@@ -44,8 +44,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(response_library_stk, test, EvalT)
   {
-    //typedef Traits::Residual EvalT;
-
     using Teuchos::RCP;
 
   #ifdef HAVE_MPI
@@ -199,8 +197,22 @@ namespace panzer {
              = rLibrary->getVolumeResponse(dResp,"eblock-0_0");
        Teuchos::RCP<const panzer::Response<panzer::Traits> > hResp_o 
              = rLibrary->getVolumeResponse(hResp,"eblock-1_0");
+
+       #ifdef HAVE_STOKHOS
+       if(dResp_o->hasSGValue()) {
+          typename panzer::Traits::SGType dVal = dResp_o->getSGValue();
+          typename panzer::Traits::SGType hVal = hResp_o->getSGValue();
+          TEST_EQUALITY(dVal.fastAccessCoeff(0),tcomm->getSize()*sum_dog);
+          TEST_EQUALITY(hVal.fastAccessCoeff(0),tcomm->getSize()*sum_horse);
+       }
+       else {
+          TEST_EQUALITY(dResp_o->getValue(),tcomm->getSize()*sum_dog);
+          TEST_EQUALITY(hResp_o->getValue(),tcomm->getSize()*sum_horse);
+       }
+       #else
        TEST_EQUALITY(dResp_o->getValue(),tcomm->getSize()*sum_dog);
        TEST_EQUALITY(hResp_o->getValue(),tcomm->getSize()*sum_horse);
+       #endif
     }
   }
 
