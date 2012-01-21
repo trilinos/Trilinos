@@ -138,14 +138,14 @@ namespace MueLuTests {
     level.Get("permMat",permMat,repart.get());
     RCP<Vector> result = VectorFactory::Build(permMat->getRangeMap(),false);
     permMat->apply(*decompositionAsScalar,*result,Teuchos::NO_TRANS,1,0);
-    int thisPidPassed=1;
+    int thisPidFailed=-1;
     // local entries in the resulting vector should be equal to the PID
     Teuchos::ArrayRCP<SC> resultData;
     if (result->getLocalLength() > 0)
       resultData = result->getDataNonConst(0);
     for (int i=0; i<resultData.size(); ++i) {
       if (resultData[i] != mypid) {
-        thisPidPassed = 0;
+        thisPidFailed = mypid; // error condition
         break;
       }
     }
@@ -155,9 +155,12 @@ namespace MueLuTests {
     //fos->setOutputToRootOnly(-1);
     //result->describe(*fos,Teuchos::VERB_EXTREME);
 
-    int testPassed;
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,thisPidPassed,Teuchos::outArg(testPassed));
-    TEST_EQUALITY(testPassed==1,true);
+    // Test passes if all pid's return -1. If a pid hits an error, it sets
+    // thisPidFailed equal to comm->getRank().  In this way, you can tell with --details=ALL
+    // which pid failed.
+    int whichPidFailed;
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,thisPidFailed,Teuchos::outArg(whichPidFailed));
+    TEST_EQUALITY(whichPidFailed,-1);
 
     //  Ptent->apply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
 
