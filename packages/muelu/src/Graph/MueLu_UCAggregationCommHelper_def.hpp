@@ -241,7 +241,7 @@ namespace MueLu {
       int irealloc,orealloc;
       if (realloc) irealloc=1;
       else         irealloc=0;
-      MPI_Allreduce(&irealloc,&orealloc,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);  //FIXME MPI group should come from comm, may not be WORLD
+      maxAll(comm,irealloc,orealloc);
       if (orealloc == 1) realloc=true;
       else               realloc=false;
 #endif
