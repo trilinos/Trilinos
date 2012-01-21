@@ -1553,7 +1553,18 @@ int Epetra_CrsGraph::ReplaceRowMap(const Epetra_BlockMap& newmap)
 //==============================================================================
 int Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap& newmap)
 {
-  if (!HaveColMap() && !IndicesAreLocal() && !IndicesAreGlobal()) CrsGraphData_->ColMap_ = newmap;
+  if (!HaveColMap() && !IndicesAreLocal() && !IndicesAreGlobal()) {
+    CrsGraphData_->ColMap_            = newmap;
+    CrsGraphData_->NumGlobalBlockCols_= newmap.NumGlobalElements();
+    CrsGraphData_->NumMyBlockCols_    = newmap.NumMyElements();
+    CrsGraphData_->MaxColDim_         = newmap.MaxElementSize();
+    CrsGraphData_->GlobalMaxColDim_   = newmap.MaxElementSize();
+    CrsGraphData_->NumGlobalCols_     = newmap.NumGlobalPoints();
+    CrsGraphData_->NumMyCols_         = newmap.NumMyPoints();
+    CrsGraphData_->HaveColMap_        = true;
+    return(0);
+  }
+
   if(ColMap().PointSameAs(newmap)) {
     CrsGraphData_->ColMap_ = newmap;
     CrsGraphData_->MakeImportExport();
