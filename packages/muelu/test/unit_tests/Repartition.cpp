@@ -6,8 +6,10 @@
 
 #include "MueLu_Repartition.hpp"
 
+#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include "MueLu_GalleryUtils.hpp"
 
+#include "Xpetra_VectorFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_ExportFactory.hpp"
 
