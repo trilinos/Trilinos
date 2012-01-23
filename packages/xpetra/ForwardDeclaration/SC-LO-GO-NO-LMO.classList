@@ -6,3 +6,4 @@ OperatorFactory
 TpetraCrsMatrix
 #TpetraVbrMatrix
 #VbrMatrix
+BlockedCrsOperator
