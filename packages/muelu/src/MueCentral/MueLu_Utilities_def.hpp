@@ -5,6 +5,12 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#ifdef HAVE_MUELU_EPETRA
+# ifdef HAVE_MPI
+#  include "Epetra_MpiComm.h"
+# endif
+#endif
+
 #ifdef HAVE_MUELU_EPETRAEXT
 #include <EpetraExt_MatrixMatrix.h>
 #include <EpetraExt_RowMatrixOut.h>

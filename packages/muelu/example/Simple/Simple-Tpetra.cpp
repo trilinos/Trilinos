@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
   int nIts = 9;
 
   // Wrap Tpetra Vectors into Xpetra Vectors
-  RCP<Xpetra::Vector<LO, GO, NOdd> > mueluX = rcp(new Xpetra::TpetraVector<LO, GO, NO>(X));
+  RCP<Xpetra::Vector<LO, GO, NO> > mueluX = rcp(new Xpetra::TpetraVector<LO, GO, NO>(X));
   RCP<Xpetra::Vector<LO, GO, NO> > mueluB = rcp(new Xpetra::TpetraVector<LO, GO, NO>(B));
 
   H->Iterate(*mueluB, nIts, *mueluX);
