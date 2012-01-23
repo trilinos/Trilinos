@@ -1,6 +1,8 @@
 #ifndef MUELU_TENTATIVEPFACTORY_DECL_HPP
 #define MUELU_TENTATIVEPFACTORY_DECL_HPP
 
+#include <Teuchos_ScalarTraits.hpp> 
+
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
