@@ -69,7 +69,7 @@ PHX_EVALUATE_FIELDS(DummyFieldEvaluator,workset)
 }
 //**********************************************************************
 PHX_EVALUATOR_CLASS(RefCoordEvaluator)
-  PHX::MDField<ScalarT,panzer::IP,panzer::Dim> fieldValue;
+  PHX::MDField<ScalarT,panzer::Point,panzer::Dim> fieldValue;
   Teuchos::RCP<panzer::IntegrationValues<double,FieldArray> > quadValues;
 public:
   Teuchos::RCP<PHX::DataLayout> coordsLayout;
@@ -81,9 +81,9 @@ PHX_EVALUATOR_CTOR(RefCoordEvaluator,p)
   quadValues = p.get< Teuchos::RCP<panzer::IntegrationValues<double,FieldArray> > >("Quad Values");
 
   // grab information from quadrature rule
-  coordsLayout = Teuchos::rcp(new PHX::MDALayout<panzer::IP,panzer::Dim>(quadValues->int_rule->num_points,
+  coordsLayout = Teuchos::rcp(new PHX::MDALayout<panzer::Point,panzer::Dim>(quadValues->int_rule->num_points,
                                                                          quadValues->int_rule->spatial_dimension));
-  fieldValue = PHX::MDField<ScalarT,panzer::IP,panzer::Dim>(name, coordsLayout);
+  fieldValue = PHX::MDField<ScalarT,panzer::Point,panzer::Dim>(name, coordsLayout);
 
   this->addEvaluatedField(fieldValue);
   
@@ -177,6 +177,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
      fm->registerEvaluator<EvalType>(eval);
   }
 
+  PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point> refField
+     = PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point>("TestField",quadRule->dl_scalar);
   {
      // fill the basis with some dummy values
      Teuchos::ParameterList p;
@@ -205,26 +207,42 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 
   // add evaluator under test
   ///////////////////////////////////////////////////
+
+  // test 0
+  PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point> dofPointField0 
+     = PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point>("TestFieldpostfix",quadRule->dl_scalar);
   {
      RCP<panzer::DOF_PointField<EvalType,panzer::Traits> > eval 
-        = rcp(new panzer::DOF_PointField<EvalType,panzer::Traits>("TestField",*pureBasis,"RefCoord",coordsLayout,"postfix"));
+        = rcp(new panzer::DOF_PointField<EvalType,panzer::Traits>("postfix","TestField",*pureBasis,"RefCoord",coordsLayout,quadRule->dl_scalar));
 
+     Teuchos::RCP<PHX::FieldTag> ft = eval->evaluatedFields()[0];
      fm->registerEvaluator<EvalType>(eval);
-     fm->requireField<EvalType>(*eval->evaluatedFields()[0]);
+     fm->requireField<EvalType>(*ft);
+
+     out << "Requiring \"" << *ft << std::endl;
+     TEST_EQUALITY(ft->name(),"TestFieldpostfix");
   }
 
+  // test 1
+  PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point> dofPointField1 
+     = PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point>("TestFieldRefCoord",quadRule->dl_scalar);
   {
      RCP<panzer::DOF_PointField<EvalType,panzer::Traits> > eval 
-        = rcp(new panzer::DOF_PointField<EvalType,panzer::Traits>("TestField",*pureBasis,"RefCoord",coordsLayout,true));
+        = rcp(new panzer::DOF_PointField<EvalType,panzer::Traits>("TestField",*pureBasis,"RefCoord",coordsLayout,quadRule->dl_scalar,true));
 
+     Teuchos::RCP<PHX::FieldTag> ft = eval->evaluatedFields()[0];
      fm->registerEvaluator<EvalType>(eval);
-     fm->requireField<EvalType>(*eval->evaluatedFields()[0]);
+     fm->requireField<EvalType>(*ft);
+
+     out << "Requiring \"" << *ft << std::endl;
+     TEST_EQUALITY(ft->name(),"TestFieldRefCoord");
   }
 
   panzer::Traits::SetupData setupData;
   setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
   setupData.worksets_->push_back(*workset);
   fm->postRegistrationSetup(setupData);
+  fm->writeGraphvizFile();
 
   panzer::Traits::PED preEvalData;
 
@@ -232,9 +250,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
-  // fm->getFieldData<typename EvalType::ScalarT,EvalType>(integral);
+  fm->getFieldData<typename EvalType::ScalarT,EvalType>(refField);
+  fm->getFieldData<typename EvalType::ScalarT,EvalType>(dofPointField0);
+  fm->getFieldData<typename EvalType::ScalarT,EvalType>(dofPointField1);
+
+  // check names to make sure they are still correct
+  TEST_EQUALITY(refField.fieldTag().name(),"TestField");
+  TEST_EQUALITY(dofPointField0.fieldTag().name(),"TestFieldpostfix");
+  TEST_EQUALITY(dofPointField1.fieldTag().name(),"TestFieldRefCoord");
+
+  // check sizes
+  TEST_EQUALITY(refField.size(),dofPointField0.size());
+  TEST_EQUALITY(refField.size(),dofPointField1.size());
 
   // check the results
+  for(int i=0;i<refField.size();i++) {
+     TEST_EQUALITY(refField[i],dofPointField0[i]);
+     TEST_EQUALITY(refField[i],dofPointField1[i]);
+  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,gradient,EvalType)

@@ -13,6 +13,7 @@ void DOF_PointField<EvalT,TraitsT>::initialize(const std::string & fieldName,
                                                 const PureBasis & fieldBasis,
                                                 const std::string & coordinateName,
                                                 const Teuchos::RCP<PHX::DataLayout> & coordLayout,
+                                                const Teuchos::RCP<PHX::DataLayout> & quadLayout,
                                                 const std::string & postfixFieldName)
 {
   intrepidBasis = fieldBasis.getIntrepidBasis();
@@ -23,7 +24,6 @@ void DOF_PointField<EvalT,TraitsT>::initialize(const std::string & fieldName,
   int dimCount = coordLayout->dimension(1);
 
   Teuchos::RCP<PHX::DataLayout> basisLayout = fieldBasis.functional;
-  Teuchos::RCP<PHX::DataLayout> quadLayout = Teuchos::rcp(new PHX::MDALayout<Cell,Point>(cellCount,pointCount));
 
   coordinates = PHX::MDField<ScalarT,Point,Dim>(coordinateName,coordLayout);
   dof_coeff = PHX::MDField<ScalarT,Cell,Point>(fieldName,basisLayout);

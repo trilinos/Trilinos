@@ -28,20 +28,21 @@ public:
     * the reference element. The name of the evaluated field is flexible,
     * the name being <code>fieldName+postfixFieldName</code>.
     *
+    * \param[in] postfixFieldName Postfix string to modify field name
     * \param[in] fieldName Name of DOF field (dimensioned number cells
     *                      by number of basis functions)
     * \param[in] fieldBasis Datalayout describing DOF field
     * \param[in] coordinateName Name of reference coordinates (sized
     *                           number of points by dimension)
     * \param[in] coordLayout Layout for coordinates
-    * \param[in] postfixFieldName Postfix string to modify field name
     */
-  DOF_PointField(const std::string & fieldName,
-                  const PureBasis & fieldBasis,
-                  const std::string & coordinateName,
-                  const Teuchos::RCP<PHX::DataLayout> & coordLayout,
-                  const std::string & postfixFieldName)
-  { initialize(fieldName,fieldBasis,coordinateName,coordLayout,postfixFieldName); }
+  DOF_PointField(const std::string & postfixFieldName,
+                 const std::string & fieldName,
+                 const PureBasis & fieldBasis,
+                 const std::string & coordinateName,
+                 const Teuchos::RCP<PHX::DataLayout> & coordLayout,
+                 const Teuchos::RCP<PHX::DataLayout> & quadLayout)
+  { initialize(fieldName,fieldBasis,coordinateName,coordLayout,quadLayout,postfixFieldName); }
 
   /** \basic Constructor that appends (or not) the coordinate name to the
     * field.
@@ -59,11 +60,13 @@ public:
     * \param[in] useCoordPostfix Postfix field name with coordinate name.
     */
   DOF_PointField(const std::string & fieldName,
-                  const PureBasis & fieldBasis,
-                  const std::string & coordinateName,
-                  const Teuchos::RCP<PHX::DataLayout> & coordLayout,
-                  bool useCoordPostfix)
-  { initialize(fieldName,fieldBasis,coordinateName,coordLayout,useCoordPostfix ? coordinateName : ""); }
+                 const PureBasis & fieldBasis,
+                 const std::string & coordinateName,
+                 const Teuchos::RCP<PHX::DataLayout> & coordLayout,
+                 const Teuchos::RCP<PHX::DataLayout> & quadLayout,
+                 bool useCoordPostfix)
+  { std::string postfixFieldName = (useCoordPostfix ? coordinateName : ""); 
+    initialize(fieldName,fieldBasis,coordinateName,coordLayout,quadLayout,postfixFieldName); }
   
   void postRegistrationSetup(typename TraitsT::SetupData d,
 			     PHX::FieldManager<TraitsT>& vm);
@@ -78,6 +81,7 @@ private:
                   const PureBasis & fieldBasis,
                   const std::string & coordinateName,
                   const Teuchos::RCP<PHX::DataLayout> & coordLayout,
+                  const Teuchos::RCP<PHX::DataLayout> & quadLayout,
                   const std::string & postfixFieldName);
 
   PHX::MDField<ScalarT,Point,Dim> coordinates; // reference coordinates
