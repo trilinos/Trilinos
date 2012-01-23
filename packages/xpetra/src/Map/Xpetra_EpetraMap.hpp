@@ -13,9 +13,7 @@
 #include "Xpetra_Utils.hpp"
 #include "Xpetra_EpetraUtils.hpp"
 
-namespace Tpetra { //TODO to be removed
-  typedef size_t global_size_t;
-}
+#include "Xpetra_ConfigDefs.hpp"
 
 namespace Xpetra {
 
