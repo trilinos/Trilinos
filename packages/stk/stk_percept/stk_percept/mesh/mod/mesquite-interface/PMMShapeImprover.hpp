@@ -53,32 +53,22 @@ namespace stk {
 
     class PMMShapeImprover
     {
+      int innerIter;
     public:
 
-      PMMShapeImprover() {}
+      PMMShapeImprover(int inner_iterations=100) : innerIter(inner_iterations) {}
 
       class PMMShapeImprovementWrapper : public Wrapper {
      
       public:  
         
         //Constructor sets the instructions in the queue.
-        PMMShapeImprovementWrapper(MsqError& err,
+        PMMShapeImprovementWrapper(int inner_iterations = 100,
                                    double cpu_time = 0.0, 
-                                   double grad_norm =1.e-6,
+                                   double grad_norm =1.e-8,
                                    int parallel_iterations = 10)
-          : maxTime(cpu_time), 
-            gradNorm(grad_norm),
-            untBeta(DEF_UNT_BETA),
-            successiveEps(DEF_SUC_EPS),
-            parallelIterations(parallel_iterations),
-            m_do_untangle_only(false)
-        {}
-
-        //Constructor sets the instructions in the queue.
-        PMMShapeImprovementWrapper(double cpu_time = 0.0, 
-                                   double grad_norm =1.e-6,
-                                   int parallel_iterations = 10)
-          : maxTime(cpu_time), 
+          : innerIter(inner_iterations),
+            maxTime(cpu_time), 
             gradNorm(grad_norm),
             untBeta(DEF_UNT_BETA),
             successiveEps(DEF_SUC_EPS),
@@ -98,6 +88,7 @@ namespace stk {
       
       private:
 
+        int innerIter;
         double maxTime, gradNorm;
         // constants
         const double untBeta;

@@ -50,10 +50,14 @@ namespace stk {
     class PMMLaplaceSmoother1 : public Mesquite::LaplaceWrapper
     {
       Mesquite::LaplacianSmoother m_smoother;
-      int m_numIterMax;
     public:
   
-      PMMLaplaceSmoother1(int numIterMax=1) : Mesquite::LaplaceWrapper(), m_numIterMax(numIterMax) {}
+      PMMLaplaceSmoother1(double max_cpu_time=0.0, double max_vertex_movement=1.e-4, int numIterMax=100, bool doCulling=false) : Mesquite::LaplaceWrapper() {
+        this->set_cpu_time_limit(max_cpu_time);
+        this->set_vertex_movement_limit_factor(max_vertex_movement);
+        this->set_iteration_limit(numIterMax);
+        this->enable_culling(doCulling);
+      }
 
       virtual ~PMMLaplaceSmoother1() {}
       Mesquite::LaplacianSmoother& get_smoother() { return m_smoother; }
@@ -81,13 +85,13 @@ namespace stk {
 
         if (num_invalid || always_smooth)
           {
-
-            this->set_iteration_limit(m_numIterMax);
             Mesquite::ParallelMesh *pmesh = dynamic_cast<Mesquite::ParallelMesh *>(&mesh);
+            std::cout << "tmp srk PMMLaplaceSmoother1 running laplace smoother..." << std::endl;
             if (pmesh)
               this->run_instructions(pmesh, &domain, mErr);
             else
               this->run_instructions(&mesh, &domain, mErr);
+            std::cout << "tmp srk PMMLaplaceSmoother1 running laplace smoother...done" << std::endl;
             if (check_quality)
               {
                 num_invalid = PMMShapeImprover::count_invalid_elements(mesh, domain);

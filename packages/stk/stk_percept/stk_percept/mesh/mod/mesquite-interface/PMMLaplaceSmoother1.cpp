@@ -17,7 +17,7 @@ namespace stk {
                                            QualityAssessor* qa,
                                            MsqError& err )
     {
-      //std::cout << "tmp srk start PMMLaplaceSmoother1::run_wrapper..." << std::endl;
+      std::cout << "tmp srk start PMMLaplaceSmoother1::run_wrapper... get_iteration_limit() = " << get_iteration_limit() << std::endl;
       if (get_cpu_time_limit() <= 0.0 && get_vertex_movement_limit_factor() <= 0.0 && get_iteration_limit() <= 0) {
         MSQ_SETERR(err)("No termination criterion set.  "
                         "PMMLaplaceSmoother1 will run forever.", 
@@ -29,7 +29,7 @@ namespace stk {
       qa->add_quality_assessment( &qa_metric );
   
       LaplacianSmoother& smoother = m_smoother;
-      TerminationCriterion outer, inner;
+      TerminationCriterion outer("<type:laplace_outer>"), inner("<type:laplace_inner>");
       if (get_cpu_time_limit() > 0.0)
         outer.add_cpu_time( get_cpu_time_limit() );
       if (get_iteration_limit() > 0)
@@ -48,7 +48,7 @@ namespace stk {
       q.set_master_quality_improver( &smoother, err ); MSQ_ERRRTN(err);
       q.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
       q.run_common( mesh, pmesh, geom, settings, err ); MSQ_ERRRTN(err);
-      //std::cout << "tmp srk start PMMLaplaceSmoother1::run_wrapper...done" << std::endl;
+      std::cout << "tmp srk start PMMLaplaceSmoother1::run_wrapper...done" << std::endl;
     }
   }
 }

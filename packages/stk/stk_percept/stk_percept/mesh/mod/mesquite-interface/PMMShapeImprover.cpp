@@ -3,6 +3,12 @@
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
+#include "mpi.h"
+
+namespace MESQUITE_NS {
+
+extern int get_parallel_rank();
+}
 
 namespace stk {
   namespace percept {
@@ -17,24 +23,43 @@ namespace stk {
     {
       // Define an untangler
       UntangleBetaQualityMetric untangle_metric( untBeta );
+
+      bool check_untangle = true;
+      if (check_untangle)
+      {
+        MPI_Barrier( MPI_COMM_WORLD );
+        std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric before... " << std::endl;
+        InstructionQueue q1;
+        QualityAssessor qa_untangle(&untangle_metric);
+        q1.add_quality_assessor(&qa_untangle, err); MSQ_ERRRTN(err);
+        q1.run_common( mesh, pmesh, domain, settings, err ); 
+        std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric... before... done " << std::endl;
+        MPI_Barrier( MPI_COMM_WORLD );
+        //return;
+      }
+
+
       LPtoPTemplate untangle_func( 2, &untangle_metric );
       ConjugateGradient untangle_solver( &untangle_func );
+      //untangle_solver.set_debugging_level(3);
+
       //SteepestDescent untangle_solver( &untangle_func );
-      //TerminationCriterion untangle_inner("<type:inner>"), untangle_outer("<type:outer>");
-      TerminationCriterion untangle_inner, untangle_outer;
+      TerminationCriterion untangle_inner("<type:untangle_inner>"), untangle_outer("<type:untangle_outer>");
+      //TerminationCriterion untangle_inner, untangle_outer;
       untangle_solver.use_global_patch();
-      untangle_inner.add_absolute_quality_improvement( 0.0 );
+
       //untangle_inner.add_absolute_gradient_L2_norm( gradNorm );
       //untangle_inner.add_absolute_successive_improvement( successiveEps );
       //untangle_inner.add_relative_successive_improvement( 1.e-6 );
-      untangle_inner.add_iteration_limit( 20 );
+
+      //untangle_inner.add_untangled_mesh();
+      untangle_inner.add_absolute_quality_improvement( 0.0 );
+      untangle_inner.add_iteration_limit( 100 );
       untangle_inner.write_iterations("untangle.gpt", err);
-      untangle_inner.add_untangled_mesh();
 
       untangle_outer.add_absolute_quality_improvement( 0.0 );
       untangle_outer.add_iteration_limit( pmesh ? parallelIterations : 1 );
 
-      std::cout << "tmp srk pmesh= " << pmesh << std::endl;
       untangle_solver.set_inner_termination_criterion( &untangle_inner );
       untangle_solver.set_outer_termination_criterion( &untangle_outer );
       //exit(123);
@@ -43,20 +68,25 @@ namespace stk {
       IdealWeightInverseMeanRatio inverse_mean_ratio;
       inverse_mean_ratio.set_averaging_method( QualityMetric::LINEAR );
       LPtoPTemplate obj_func( 2, &inverse_mean_ratio );
-      //FeasibleNewton shape_solver( &obj_func );
+
       ConjugateGradient shape_solver( &obj_func );
-      //TerminationCriterion term_inner("<type:inner>"), term_outer("<type:outer>");
-      TerminationCriterion term_inner, term_outer;
-      shape_solver.use_global_patch();
-      qa->add_quality_assessment( &inverse_mean_ratio );
-      term_inner.add_absolute_gradient_L2_norm( gradNorm );
-      //!term_inner.add_relative_successive_improvement( successiveEps );
-      term_inner.add_iteration_limit( 50 );
+      TerminationCriterion term_inner("<type:shape_inner>"), term_outer("<type:shape_outer>");
       term_inner.write_iterations("shape.gpt", err);
 
-      term_outer.add_iteration_limit( pmesh ? parallelIterations : 1 );
-      //term_outer.add_absolute_quality_improvement( 1.e-6 );
+      shape_solver.use_global_patch();
+      qa->add_quality_assessment( &inverse_mean_ratio );
+
+      //!term_inner.add_relative_successive_improvement( successiveEps );
+
+      term_inner.add_absolute_gradient_L2_norm( gradNorm );
+      term_inner.add_absolute_vertex_movement(0.0);
+      term_inner.add_iteration_limit( innerIter );
+
       term_outer.add_absolute_gradient_L2_norm( gradNorm );
+      term_outer.add_absolute_vertex_movement(0.0);
+      term_outer.add_iteration_limit( pmesh ? parallelIterations : 1 );
+
+      //term_outer.add_absolute_quality_improvement( 1.e-6 );
       //!term_outer.add_relative_successive_improvement( successiveEps );
 
       shape_solver.set_inner_termination_criterion( &term_inner );
@@ -80,8 +110,15 @@ namespace stk {
       else
         {
           InstructionQueue q1;
+#if 0
           q1.set_master_quality_improver( &untangle_solver, err ); MSQ_ERRRTN(err);
           q1.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
+#else
+          QualityAssessor qa_untangle(&untangle_metric);
+          q1.add_quality_assessor(&qa_untangle, err); MSQ_ERRRTN(err);
+          q1.set_master_quality_improver( &untangle_solver, err ); MSQ_ERRRTN(err);
+          q1.add_quality_assessor(&qa_untangle, err); MSQ_ERRRTN(err);
+#endif
           q1.run_common( mesh, pmesh, domain, settings, err ); 
         }
       std::cout << "\ntmp srk PMMShapeImprovementWrapper: running untangler... done\n " << std::endl;
@@ -95,6 +132,19 @@ namespace stk {
                     << (num_invalid ? " ERROR still have invalid elements after Mesquite untangle" : 
                         " SUCCESS: untangled invalid elements ")
                     << std::endl;
+
+          if (check_untangle)
+          {
+            MPI_Barrier( MPI_COMM_WORLD );
+            std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric " << std::endl;
+            InstructionQueue q1;
+            QualityAssessor qa_untangle(&untangle_metric);
+            q1.add_quality_assessor(&qa_untangle, err); MSQ_ERRRTN(err);
+            q1.run_common( mesh, pmesh, domain, settings, err ); 
+            std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric... done " << std::endl;
+            MPI_Barrier( MPI_COMM_WORLD );
+          }
+
           if (num_invalid) return;
         }
       if (m_do_untangle_only) return;
@@ -206,7 +256,7 @@ namespace stk {
                 }
 
               bool do_untangle_only = false;
-              PMMShapeImprovementWrapper siw(mErr);
+              PMMShapeImprover::PMMShapeImprovementWrapper siw(innerIter);
               siw.m_do_untangle_only = do_untangle_only;
               if (pmesh)
                 siw.run_instructions(pmesh, &domain, mErr);

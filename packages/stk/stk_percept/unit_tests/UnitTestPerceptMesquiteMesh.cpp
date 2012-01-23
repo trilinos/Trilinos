@@ -64,9 +64,13 @@ namespace stk
   {
     namespace unit_tests 
     {
-      static int s_par_size_max = 1;
+
+#define DO_TESTS 0
+#if DO_TESTS
 
 #define EXTRA_PRINT 0
+      static int s_par_size_max = 1;
+
       //static int printInfoLevel = 0;
 
       //the following defines where to put the input and output files created by this set of functions
@@ -82,6 +86,7 @@ namespace stk
       //=============================================================================
       //=============================================================================
 
+      // run Laplace smoother on an interior-node perturbed domain
       STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_1)
       {
         EXCEPTWATCH;
@@ -167,6 +172,7 @@ namespace stk
       //=============================================================================
       //=============================================================================
 
+      // run LaplaceSmoother1, and ShapeImprover on an interior-node perturbed domain
       STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_2)
       {
         EXCEPTWATCH;
@@ -289,6 +295,7 @@ namespace stk
       //=============================================================================
       //=============================================================================
 
+      // run ShapeImprover on a domain with one side perturbed
       STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_3)
       {
         EXCEPTWATCH;
@@ -336,7 +343,6 @@ namespace stk
                         stk::mesh::Entity& entity = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.getCoordinatesField() , entity );
-                        //data[0] += .02*(ii+1);
                         double ix = data[0]/double(n);
                         data[1] += (ix)*(1.0-ix)*0.8*double(n);
                         std::cout << "tmp srk surface 1 node = " << data[0] << " " << data[1] << std::endl;
@@ -368,10 +374,6 @@ namespace stk
               }
             eMesh.saveAs(output_files_loc+"quad_3_si_smooth.1.e");
 
-            //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[0], 1.0);
-            //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(data[1], 1.0);
-
-
           }
       }
 
@@ -379,6 +381,8 @@ namespace stk
       //=============================================================================
       //=============================================================================
       //=============================================================================
+
+      // a cube with an internally distorted mesh
 
       STKUNIT_UNIT_TEST(unit_perceptMesquite, hex_1)
       {
@@ -399,7 +403,8 @@ namespace stk
             std::cout << "P["<<p_rank<<"] " << "tmp srk doing Laplace smoothing for hex_1 case, n = " << n << std::endl;
             unsigned nn = n+1;
             //std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n*p_size)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
-            std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n*2)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
+            //std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n*2)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
+            std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
             PerceptMesh eMesh(3);
             eMesh.newMesh(percept::GMeshSpec(gmesh_spec));
             eMesh.commit();
@@ -413,7 +418,8 @@ namespace stk
             stk::mesh::Selector boundarySelector_6(*eMesh.getNonConstPart("surface_6") );
             stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
 
-            double delta_max = 0.01/(double(n));
+            //double delta_max = 0.01/(double(n));
+            double delta_max = 0.001/(double(n));
             for (unsigned ii=1; ii <= (nn*nn*nn); ii++)
               {
                 stk::mesh::Entity* node = eMesh.getBulkData()->get_entity(0, ii);
@@ -431,33 +437,35 @@ namespace stk
             //std::cout << "P["<<p_rank<<"] " << "tmp srk doing Laplace smoothing for hex_1 case, n = " << n << std::endl;
 
             eMesh.saveAs(input_files_loc+"hex_1_smooth.0_perturbed.e");
+            //             Mesquite::MsqDebug::enable(1);
+            //             Mesquite::MsqDebug::enable(2);
 
-            bool do_jacobi = true;
-            int numIterMax = 20;
+            bool do_jacobi = false;
+            double max_vertex_movement=1.e-8;
             if (p_size == 1)
               {
                 PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
                 PerceptMesquiteMeshDomain pmd(&eMesh, 0);
-                percept::PMMLaplaceSmoother1 ls(numIterMax);
+                percept::PMMLaplaceSmoother1 ls(0.0, max_vertex_movement, 1000, false);
                 if (do_jacobi) 
                   ls.get_smoother().do_jacobi_optimization();
-                ls.run(pmm, pmd);
+                ls.run(pmm, pmd, true, 2);
               }
             else
               {
                 PerceptMesquiteMesh pmm0(&eMesh, 0, &boundarySelector);
                 PerceptMesquiteMesh::PMMParallelMesh pmm(&pmm0);
                 PerceptMesquiteMeshDomain pmd(&eMesh, 0);
-                percept::PMMLaplaceSmoother1 ls(numIterMax);
+                percept::PMMLaplaceSmoother1 ls(0.0, max_vertex_movement, 1000, false);
                 if (do_jacobi) 
                   ls.get_smoother().do_jacobi_optimization();
-                ls.run(pmm, pmd);
-
+                ls.run(pmm, pmd, true, 2);
               }
             std::cout << "tmp srk doing Laplace smoothing for hex_1 case ... done " << std::endl;
 
             eMesh.saveAs(output_files_loc+"hex_1_smooth.1.e");
           }
+
 
         MPI_Barrier( MPI_COMM_WORLD );
         std::cout << "\n\n P["<<p_rank<<"] " << "tmp srk BARRIER doing Shape smoothing for hex_1 case... " <<  std::endl;
@@ -510,6 +518,8 @@ namespace stk
       //=============================================================================
       //=============================================================================
 
+      // A cube with an indented bump on the bottom
+
       STKUNIT_UNIT_TEST(unit_perceptMesquite, hex_2)
       {
         EXCEPTWATCH;
@@ -555,11 +565,10 @@ namespace stk
                         stk::mesh::Entity& entity = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.getCoordinatesField() , entity );
-                        //data[0] += .02*(ii+1);
                         double ix = data[0];
                         double iy = data[1];
-                        //data[2] += (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*4.;
-                        data[2] += (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*.5;
+                        data[2] += (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*4.;
+                        //data[2] += (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*.5;
                         std::cout << "tmp srk surface 1 hex_2 node = " << data[0] << " " << data[1] << " " << data[2] << std::endl;
                       }
                   }
@@ -575,12 +584,13 @@ namespace stk
 
             int  msq_debug             = 2; // 1,2,3 for more debug info
             bool always_smooth         = true;
+            int innerIter = 100;
 
             if (p_size == 1) 
               {
                 PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
                 PerceptMesquiteMeshDomain pmd(&eMesh, 0);
-                percept::PMMShapeImprover si;
+                percept::PMMShapeImprover si(innerIter);
                 si.run(pmm, pmd, always_smooth, msq_debug);
               }
             else
@@ -588,7 +598,7 @@ namespace stk
                 PerceptMesquiteMesh pmm0(&eMesh, 0, &boundarySelector);
                 PerceptMesquiteMesh::PMMParallelMesh pmm(&pmm0);
                 PerceptMesquiteMeshDomain pmd(&eMesh, 0);
-                percept::PMMShapeImprover si;
+                percept::PMMShapeImprover si(innerIter);
                 si.run(pmm, pmd, always_smooth, msq_debug);
               }
             MPI_Barrier( MPI_COMM_WORLD );
@@ -596,11 +606,17 @@ namespace stk
             MPI_Barrier( MPI_COMM_WORLD );
 
             eMesh.saveAs(output_files_loc+"hex_2_si_smooth.1.e");
+            exit(123);
+
+
           }
       }
+#endif
 
     }
+
   }
+
 }
 #endif
 

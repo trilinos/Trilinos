@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <map>
+#include <stdio.h>
 
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/Util.hpp>
@@ -2794,12 +2795,15 @@ namespace stk {
                       }
                   }
 
-                bool printed_header=false;
                 bool compare_detailed = true;
-                int print_field_width = 15;
-                int print_percent_width = 5;
+                //int print_field_width = 15;
+                //int print_percent_width = 5;
                 if (compare_detailed && !local_diff)
                   {
+                    bool printed_header=false;
+                    double max_diff = 0.0;
+                    double min_diff = 1.e+30;
+                    
                     stk::mesh::EntityRank rank = field_rank;
                     stk::mesh::Selector on_locally_owned_part_1 =  ( metaData_1.locally_owned_part() );
                     stk::mesh::Selector on_locally_owned_part_2 =  ( metaData_2.locally_owned_part() );
@@ -2833,24 +2837,50 @@ namespace stk {
 
                                 if (fdata_1)
                                   {
+                                    bool is_same=true;
+                                    double tol = 1.e-5;
                                     for (unsigned istride = 0; istride < loc_stride_1; istride++)
                                       {
-                                        double tol = 1.e-5;
                                         double fd1 = fdata_1[istride];
                                         double fd2 = fdata_2[istride];
                                         if (!Util::approx_equal_relative(fd1, fd2, tol))
                                           {
-                                            if (!printed_header)
-                                              {
-                                                msg += std::string("\n| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+" |";
-                                                printed_header = true;
-                                              }
-                                            msg += "\n| "+toString(fd1).substr(0,print_field_width)+" - "+toString(fd2).substr(0,print_field_width)+" = "
-                                              +toString(fd1-fd2).substr(0,print_field_width)+
-                                              " [ "+toString(100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)).substr(0,print_percent_width)+" % ]  |";
+                                            is_same=false;
+                                            break;
+                                          }
+                                      }
+
+                                    if (!is_same)
+                                      {
+                                        if (!printed_header)
+                                          {
+                                            msg += std::string("\n| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+" |";
+                                            printed_header = true;
+                                          }
+                                        msg += "\n|{";
+                                        for (unsigned istride = 0; istride < loc_stride_1; istride++)
+                                          {
+                                            double fd1 = fdata_1[istride];
+                                            double fd2 = fdata_2[istride];
+                                            //                                             msg += "\n| "+toString(fd1).substr(0,print_field_width)+" - "+toString(fd2).substr(0,print_field_width)+" = "
+                                            //                                               +toString(fd1-fd2).substr(0,print_field_width)+
+                                            //                                               " [ "+toString(100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)).substr(0,print_percent_width)+" % ]  |";
+                                            //std::ostringstream ostr;
+                                            //                                             ostr << "\n| " << std::setw(print_field_width) << fd1 << " - " << fd2 << " = "
+                                            //                                                  << (fd1-fd2) 
+                                            //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
+                                            //msg += ostr.str();
+                                            char buf[1024];
+                                            sprintf(buf, ", | %12.3g - %12.3g = %12.3g [ %10.3g %% ] |", fd1, fd2, (fd1-fd2), (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)));
+                                            //                                                  << (fd1-fd2) 
+                                            //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
+                                            msg += buf;
                                             diff = true;
                                             local_local_diff = true;
+                                            max_diff = std::max(max_diff, std::abs(fd1-fd2));
+                                            min_diff = std::min(min_diff, std::abs(fd1-fd2));
                                           }
+                                        msg += "}|";
                                       }
                                   }
 
@@ -2858,6 +2888,7 @@ namespace stk {
                               }
                           }
                       }
+                    msg += "\n| for field: "+field_1->name()+", max diff = "+toString(max_diff)+ " | ";
                   }
               }
           }

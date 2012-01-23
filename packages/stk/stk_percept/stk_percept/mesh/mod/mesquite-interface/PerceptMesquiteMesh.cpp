@@ -820,8 +820,8 @@ namespace stk {
                                       << std::endl;
       if (tag_name == "msq_jacobi_temp_coords" && type == DOUBLE && length == 3)
         {
-          if (DEBUG_PRINT) std::cout << "tmp srk tag_create msq_jacobi_temp_coords, length = " << length << std::endl;
           handle = reinterpret_cast<Mesquite::TagHandle>(&m_nodeCoords);
+          if (DEBUG_PRINT) std::cout << "tmp srk tag_create msq_jacobi_temp_coords, length = " << length << " handle= " << handle << std::endl;
           m_nodeCoords.clear();
           m_nodeCoords_tag_is_created = true;
         }
@@ -879,7 +879,7 @@ namespace stk {
           m_nodeCoords.clear();
           m_nodeCoords_tag_is_created = false;
         }
-      if (ph_handle == handle)
+      else if (ph_handle == handle)
         {
           if (DEBUG_PRINT) std::cout << "tmp srk tag_delete ph_handle handle" << std::endl;
           m_parallelHelperLocalIdMap.clear();
@@ -897,6 +897,7 @@ namespace stk {
         }
       else
         {
+          if ( DEBUG_PRINT) std::cout << "tmp srk tag_delete  handle= " << handle << std::endl;
           PRINT_ERROR("Unknown tag sent to PerceptMesquiteMesh::tag_delete\n");
           MSQ_SETERR(err)("Unknown tag sent to PerceptMesquiteMesh::tag_delete\n",Mesquite::MsqError::NOT_IMPLEMENTED);
         }
