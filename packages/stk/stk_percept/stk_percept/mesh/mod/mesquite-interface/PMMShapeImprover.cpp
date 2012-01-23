@@ -22,7 +22,8 @@ namespace stk {
                                                                     MsqError& err )
     {
       // Define an untangler
-      UntangleBetaQualityMetric untangle_metric( untBeta );
+      //UntangleBetaQualityMetric untangle_metric( untBeta );
+      UntangleBetaQualityMetric untangle_metric( 1.e-6 );
 
       bool check_untangle = true;
       if (check_untangle)
@@ -54,7 +55,7 @@ namespace stk {
 
       //untangle_inner.add_untangled_mesh();
       untangle_inner.add_absolute_quality_improvement( 0.0 );
-      untangle_inner.add_iteration_limit( 100 );
+      untangle_inner.add_iteration_limit( 20 );
       untangle_inner.write_iterations("untangle.gpt", err);
 
       untangle_outer.add_absolute_quality_improvement( 0.0 );
@@ -241,7 +242,7 @@ namespace stk {
             }
           else
             {
-              int  msq_debug             = 2; // 1,2,3 for more debug info
+              int  msq_debug             = debug; // 1,2,3 for more debug info
               bool always_smooth_local   = false;
               bool do_laplace            = false;
               bool do_jacobi             = true;

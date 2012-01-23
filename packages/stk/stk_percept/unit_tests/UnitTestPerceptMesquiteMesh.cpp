@@ -69,7 +69,7 @@ namespace stk
 #if DO_TESTS
 
 #define EXTRA_PRINT 0
-      static int s_par_size_max = 1;
+      static int s_par_size_max = 2;
 
       //static int printInfoLevel = 0;
 
@@ -263,8 +263,8 @@ namespace stk
             stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
             //bool do_jacobi = true;
-            Mesquite::MsqDebug::enable(1);
-            Mesquite::MsqDebug::enable(2);
+            //Mesquite::MsqDebug::enable(1);
+            //Mesquite::MsqDebug::enable(2);
             //Mesquite::MsqDebug::enable(3);
             if (p_size == 1)
               {
@@ -353,8 +353,8 @@ namespace stk
             eMesh.saveAs(input_files_loc+"quad_3_smooth.0_perturbed.e");
 
             //bool do_jacobi = true;
-            Mesquite::MsqDebug::enable(1);
-            Mesquite::MsqDebug::enable(2);
+            //Mesquite::MsqDebug::enable(1);
+            //Mesquite::MsqDebug::enable(2);
             //Mesquite::MsqDebug::enable(3);
             if (p_size == 1)
               {
@@ -442,6 +442,7 @@ namespace stk
 
             bool do_jacobi = false;
             double max_vertex_movement=1.e-8;
+            int msq_debug = 0;
             if (p_size == 1)
               {
                 PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
@@ -449,7 +450,7 @@ namespace stk
                 percept::PMMLaplaceSmoother1 ls(0.0, max_vertex_movement, 1000, false);
                 if (do_jacobi) 
                   ls.get_smoother().do_jacobi_optimization();
-                ls.run(pmm, pmd, true, 2);
+                ls.run(pmm, pmd, true, msq_debug);
               }
             else
               {
@@ -459,7 +460,7 @@ namespace stk
                 percept::PMMLaplaceSmoother1 ls(0.0, max_vertex_movement, 1000, false);
                 if (do_jacobi) 
                   ls.get_smoother().do_jacobi_optimization();
-                ls.run(pmm, pmd, true, 2);
+                ls.run(pmm, pmd, true, msq_debug);
               }
             std::cout << "tmp srk doing Laplace smoothing for hex_1 case ... done " << std::endl;
 
@@ -488,10 +489,10 @@ namespace stk
             stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
 
             //bool do_jacobi = true;
-            Mesquite::MsqDebug::enable(1);
-            Mesquite::MsqDebug::enable(2);
+            //Mesquite::MsqDebug::enable(1);
+            //Mesquite::MsqDebug::enable(2);
             //Mesquite::MsqDebug::enable(3);
-            int  msq_debug             = 2; // 1,2,3 for more debug info
+            int  msq_debug             = 0; // 1,2,3 for more debug info
             bool always_smooth         = true;
 
             if (p_size == 1)
@@ -578,11 +579,11 @@ namespace stk
             std::cout << "tmp srk doing Shape smoothing for hex_2 case..." << std::endl;
 
             //bool do_jacobi = true;
-            Mesquite::MsqDebug::enable(1);
-            Mesquite::MsqDebug::enable(2);
+            //Mesquite::MsqDebug::enable(1);
+            //Mesquite::MsqDebug::enable(2);
             //Mesquite::MsqDebug::enable(3);
 
-            int  msq_debug             = 2; // 1,2,3 for more debug info
+            int  msq_debug             = 0; // 1,2,3 for more debug info
             bool always_smooth         = true;
             int innerIter = 100;
 
@@ -606,8 +607,6 @@ namespace stk
             MPI_Barrier( MPI_COMM_WORLD );
 
             eMesh.saveAs(output_files_loc+"hex_2_si_smooth.1.e");
-            exit(123);
-
 
           }
       }
