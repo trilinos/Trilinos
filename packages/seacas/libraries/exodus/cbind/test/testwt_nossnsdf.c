@@ -82,14 +82,12 @@ int main (int argc, char **argv)
 
    float *glob_var_vals, *nodal_var_vals, *elem_var_vals;
    float time_value;
-   float x[100], y[100], z[100], *dummy;
+   float x[100], y[100], z[100];
    float attrib[100], dist_fact[100];
    char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
    char *prop_names[2];
 
    ex_opts (EX_VERBOSE | EX_ABORT);
-
-   dummy = 0; /* assign this so the Cray compiler doesn't complain */
 
 /* Specify compute and i/o word size */
 
@@ -389,8 +387,8 @@ int main (int argc, char **argv)
    error = ex_put_node_set_param (exoid, 20, 5, 5);
    printf ("after ex_put_node_set_param, error = %d\n", error);
 
-   node_list[0] = 100; node_list[1] = 101; node_list[2] = 102; 
-   node_list[3] = 103; node_list[4] = 104; 
+   node_list[0] = 10; node_list[1] = 11; node_list[2] = 12; 
+   node_list[3] = 13; node_list[4] = 14; 
 
    dist_fact[0] = 1.0; dist_fact[1] = 2.0; dist_fact[2] = 3.0;
    dist_fact[3] = 4.0; dist_fact[4] = 5.0;
@@ -403,7 +401,7 @@ int main (int argc, char **argv)
    error = ex_put_node_set_param (exoid, 21, 3, 3);
    printf ("after ex_put_node_set_param, error = %d\n", error);
 
-   node_list[0] = 200; node_list[1] = 201; node_list[2] = 202; 
+   node_list[0] = 20; node_list[1] = 21; node_list[2] = 22; 
 
    dist_fact[0] = 1.1; dist_fact[1] = 2.1; dist_fact[2] = 3.1;
 
@@ -439,9 +437,9 @@ int main (int argc, char **argv)
 
    node_ind[0] = 0; node_ind[1] = 5;
 
-   node_list[0] = 100; node_list[1] = 101; node_list[2] = 102; 
-   node_list[3] = 103; node_list[4] = 104; 
-   node_list[5] = 200; node_list[6] = 201; node_list[7] = 202;
+   node_list[0] = 10; node_list[1] = 11; node_list[2] = 12; 
+   node_list[3] = 13; node_list[4] = 14; 
+   node_list[5] = 20; node_list[6] = 21; node_list[7] = 22;
 
    num_df_per_set[0] = 5; num_df_per_set[1] = 3;
 

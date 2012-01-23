@@ -47,7 +47,7 @@
 
 int main (int argc, char **argv)
 {
-  int exoid, num_dim, num_nodes, num_elem, num_elem_blk;
+  int exoid, num_dim, num_nodes, num_elem_blk;
   int *num_elem_in_block, *num_face_in_block, *num_nodes_per_elem, *num_edges_per_elem, *num_faces_per_elem, *num_attr;
   int error, nnodes;
   int i, j, k;
@@ -108,7 +108,6 @@ int main (int argc, char **argv)
 
     num_dim = par.num_dim;
     num_nodes = par.num_nodes;
-    num_elem = par.num_elem;
     num_elem_blk = par.num_elem_blk;
   }
     

@@ -38,7 +38,6 @@
 #include <assert.h>
 
 #include "exodusII.h"
-#include "ne_nemesisI.h"
 
 #include "rf_salsa.h"
 #include "rf_comm.h"
@@ -1427,7 +1426,7 @@ static int read_elem_vars_n(int exoid, int index, int blk_cnt, int *eb_ids,
 	  for (i1 = 0; i1 < num_ev_in_mesg; i1++)
 	    glob_elem[i1] = istart_elem+eb_offset+i1;
 
-	  check_exodus_error(ne_get_n_elem_var(exoid,
+	  check_exodus_error(ex_get_n_elem_var(exoid,
 					       index,
 					       (ivar+1),
 					       eb_ids[iblk],
@@ -1435,7 +1434,7 @@ static int read_elem_vars_n(int exoid, int index, int blk_cnt, int *eb_ids,
 					       istart_elem+1,
 					       num_ev_in_mesg,
 					       ptr),
-			     "ne_get_n_nodal_var");
+			     "ex_get_n_nodal_var");
 
 	}
 
@@ -1716,9 +1715,9 @@ static int read_nodal_vars_1 (int exoid, int index, int blk_cnt, int io_ws)
      * Read in the specified nodal variable values and their associated
      * global FEM node numbers.
      */
-    check_exodus_error(ne_get_n_nodal_var(exoid, index, (var_num+1),
+    check_exodus_error(ex_get_n_nodal_var(exoid, index, (var_num+1),
 					  1, Num_Node, ptr),
-		       "ne_get_n_nodal_var");
+		       "ex_get_n_nodal_var");
     
     /*
      * Find out which FEM nodes belong on this processor and copy
@@ -1827,13 +1826,13 @@ static int read_nodal_vars (int exoid, int index, int blk_cnt, int io_ws)
 	  glob_node[i2] = istart_node+1+i2;
 	}
 
-	check_exodus_error(ne_get_n_nodal_var(exoid,
+	check_exodus_error(ex_get_n_nodal_var(exoid,
 					      index,
 					      (var_num+1),
 					      istart_node+1,
 					      num_nv_in_mesg,
 					      ptr),
-			   "ne_get_n_nodal_var");
+			   "ex_get_n_nodal_var");
 
       }
 

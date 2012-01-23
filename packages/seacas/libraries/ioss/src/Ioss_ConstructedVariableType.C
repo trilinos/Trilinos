@@ -31,10 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_ConstructedVariableType.h>
-#include <assert.h>
-#include <cstdio>
-#include <Ioss_VariableType.h>
 #include <Ioss_Utils.h>
+#include <Ioss_VariableType.h>
+#include <assert.h>
 #include <string>
 
 Ioss::ConstructedVariableType::ConstructedVariableType(const std::string& my_name,

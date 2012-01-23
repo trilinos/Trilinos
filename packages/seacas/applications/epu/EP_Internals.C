@@ -32,13 +32,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-#include <EP_Internals.h>
+#include <EP_ExodusEntity.h>            // for Block, Mesh, NodeSet, etc
+#include <EP_Internals.h>               // for Internals, Redefine
 
-#include <EP_ExodusEntity.h>
+#include <smart_assert.h>               // for SMART_ASSERT
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for exit, EXIT_FAILURE
+#include <algorithm>                    // for sort
+#include <cstring>                      // for strncpy, strlen, memset
+#include <iostream>                     // for operator<<, etc
+#include <string>                       // for string, basic_string
+#include <vector>                       // for vector
 
-#include <algorithm>
-#include <cstring>
-#include <smart_assert.h>
 
 extern "C" {
 #define NO_NETCDF_2

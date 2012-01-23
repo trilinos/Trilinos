@@ -45,7 +45,7 @@ LOCALEXO = ../../libexoIIv2for.a ../../libexodus.a
 
 LIBS = $(LOCALEXO) -L$(USRLIBDIR) $(NETCDF)
 
-PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm testcp testcpnl testcpln testwt_nsid testrd_nsid
+PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm testcp testcpnl testcpln testwt_nsid testrd_nsid test_nem
 
 all:: check
 
@@ -62,6 +62,7 @@ NormalFortranTarget(testcpnl,  testcpnl.o,  $(LOCALEXO), /**/, $(LIBS))
 NormalFortranTarget(testcpln,  testcpln.o,  $(LOCALEXO), /**/, $(LIBS))
 NormalFortranTarget(testwt_nsid, testwt_nsid.o,  $(LOCALEXO), /**/, $(LIBS))
 NormalFortranTarget(testrd_nsid, testrd_nsid.o,  $(LOCALEXO), /**/, $(LIBS))
+NormalFortranTarget(test_nem,  test_nem.o,  $(LOCALEXO), /**/, $(LIBS))
 
 testall: testall.in1 $(CONFIGDIR)/$(MACROFILE)
 	rm -f testall

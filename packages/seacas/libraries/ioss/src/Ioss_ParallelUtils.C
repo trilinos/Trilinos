@@ -32,23 +32,18 @@
 
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_Utils.h>
-
-#include <sstream>
-#include <cstring>
-#include <cstdlib>
-#include <assert.h>
-
+#include <stddef.h>
 #include <algorithm>
-
+#include <cstdlib>
 #include <string>
+#include <vector>
+
+#include "Ioss_CodeTypes.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
-#include <Ioss_SerializeIO.h>
 
-#include <iostream>
-#include <fstream>
 
 Ioss::ParallelUtils::ParallelUtils(MPI_Comm the_communicator)
   : communicator_(the_communicator)

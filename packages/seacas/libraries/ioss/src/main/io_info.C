@@ -31,21 +31,38 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_CodeTypes.h>
-
-#include <assert.h>
-#include <stdlib.h>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
-#include <math.h>
-#include <string>
-#include <cstring>
-
-#include <init/Ionit_Initializer.h>
-#include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
 #include <Ioss_SurfaceSplit.h>
+#include <Ioss_Utils.h>
+#include <init/Ionit_Initializer.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "Ioss_CommSet.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_EdgeBlock.h"
+#include "Ioss_EdgeSet.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementSet.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_FaceBlock.h"
+#include "Ioss_FaceSet.h"
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_VariableType.h"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -540,7 +557,8 @@ namespace {
 	    OUTPUT << *b++ << "  ";
 	  }
 	  OUTPUT << "\n";
-	  info_fields(*i, Ioss::Field::TRANSIENT, "\tTransient:  ");
+	  info_fields(*j, Ioss::Field::ATTRIBUTE, "\t\tAttributes: ");
+	  info_fields(*j, Ioss::Field::TRANSIENT, "\t\tTransient:  ");
 	}
 	total_sides += num_side;
 	++j;

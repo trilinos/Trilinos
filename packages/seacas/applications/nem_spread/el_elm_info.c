@@ -725,6 +725,12 @@ int get_type(char string[], int nodes)
       }
       break;
       
+  case 'c':
+    if (strncmp(string, "circle", 6) == 0) {
+      answer = SPHERE;
+    }
+    break;
+    
   case 'b':
   case 't':
   case 'r':

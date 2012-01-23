@@ -31,33 +31,55 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_CodeTypes.h>
-#include <exodusII/Ioex_DatabaseIO.h>
-#include <exodusII/Ioex_Internals.h>
-#include <tokenize.h>
-
-#include <string>
-#include <cstring>
-#include <cctype>
-#include <cstdlib>
-#include <algorithm>
-#include <vector>
-#include <map>
-#include <set>
-#include <iterator>
-#include <time.h>
-#include <float.h>
-
-#include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
+#include <Ioss_ElementTopology.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SerializeIO.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_FileInfo.h>
 #include <Ioss_SurfaceSplit.h>
-
-#include <exodusII.h>
-#include <ne_nemesisI.h>
+#include <Ioss_Utils.h>
 #include <assert.h>
+#include <exodusII.h>
+#include <exodusII/Ioex_DatabaseIO.h>
+#include <exodusII/Ioex_Internals.h>
+#include <float.h>
+#include <stddef.h>
+#include <sys/select.h>
+#include <time.h>
+#include <tokenize.h>
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <cstring>
+#include <functional>
+#include <iostream>
+#include <map>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "Ioss_CommSet.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_EdgeBlock.h"
+#include "Ioss_EdgeSet.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementSet.h"
+#include "Ioss_EntityBlock.h"
+#include "Ioss_EntitySet.h"
+#include "Ioss_EntityType.h"
+#include "Ioss_FaceBlock.h"
+#include "Ioss_FaceSet.h"
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_Map.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_State.h"
+#include "Ioss_VariableType.h"
 
 namespace Ioex {
   // ========================================================================
@@ -766,7 +788,7 @@ namespace Ioex {
     int num_border_elems   = 0;
     
     if (isParallel) {
-      int error = ne_get_init_info(get_file_pointer(),
+      int error = ex_get_init_info(get_file_pointer(),
 				   &num_proc, &num_proc_in_file, &file_type[0]);
       if (error < 0) {
 	// Not a nemesis file
@@ -794,7 +816,7 @@ namespace Ioex {
 	IOSS_ERROR(errmsg);
       }
 
-      error = ne_get_loadbal_param(get_file_pointer(),
+      error = ex_get_loadbal_param(get_file_pointer(),
 				   &num_internal_nodes,
 				   &num_border_nodes,
 				   &num_external_nodes,
@@ -815,7 +837,7 @@ namespace Ioex {
       // For Sierra, we want a single node commun. map and a single
       // element commun. map specifying all communications so we combine
       // all sets into a single set.
-      error = ne_get_init_global(get_file_pointer(), &global_nodes, &global_elements,
+      error = ex_get_init_global(get_file_pointer(), &global_nodes, &global_elements,
 				 &global_eblocks, &global_nsets, &global_ssets);
       if (error < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -911,7 +933,7 @@ namespace Ioex {
 	  }
 
 	  if (!map_read) {
-	    int error = ex_get_node_num_map(get_file_pointer(), &nodeMap[1]);
+	    int error = ex_get_id_map(get_file_pointer(), EX_NODE_MAP, &nodeMap[1]);
 	    if (error < 0) {
 	      // Clear out the vector...
 	      Ioss::MapContainer().swap(nodeMap);
@@ -2342,7 +2364,7 @@ namespace Ioex {
 	    elemCmapElemCnts.resize(commsetElemCount);
 	  }
 
-	  int error = ne_get_cmap_params(get_file_pointer(),
+	  int error = ex_get_cmap_params(get_file_pointer(),
 					 TOPTR(nodeCmapIds), TOPTR(nodeCmapNodeCnts),
 					 TOPTR(elemCmapIds), TOPTR(elemCmapElemCnts),
 					 myProcessor);
@@ -2602,9 +2624,9 @@ namespace Ioex {
 
 	      // FIX: Hardwired map ids....
 	      int eb_offset = eb->get_offset();
-	      ex_get_partial_elem_map(get_file_pointer(), 1, eb_offset+1, my_element_count,
+	      ex_get_partial_num_map(get_file_pointer(), EX_ELEM_MAP, 1, eb_offset+1, my_element_count,
 				      TOPTR(element));
-	      ex_get_partial_elem_map(get_file_pointer(), 2, eb_offset+1, my_element_count,
+	      ex_get_partial_num_map(get_file_pointer(), EX_ELEM_MAP, 2, eb_offset+1, my_element_count,
 				      TOPTR(side));
 
 	      int index = 0;
@@ -2970,7 +2992,7 @@ namespace Ioex {
 	      int cm_offset = 0;
 	      int i;
 	      for (i=0; i < commsetNodeCount; i++) {
-		int ierr = ne_get_node_cmap(get_file_pointer(), nodeCmapIds[i],
+		int ierr = ex_get_node_cmap(get_file_pointer(), nodeCmapIds[i],
 					    &entities[cm_offset], &procs[cm_offset],
 					    myProcessor);
 		if (ierr < 0)
@@ -2994,7 +3016,7 @@ namespace Ioex {
 	      int cm_offset = 0;
 	      int i;
 	      for (i=0; i < commsetElemCount; i++) {
-		int ierr = ne_get_elem_cmap(get_file_pointer(), elemCmapIds[i],
+		int ierr = ex_get_elem_cmap(get_file_pointer(), elemCmapIds[i],
 					    &entities[cm_offset], &sides[cm_offset],
 					    &procs[cm_offset], myProcessor);
 		if (ierr < 0)
@@ -3973,12 +3995,12 @@ namespace Ioex {
 	      }
 
 	      int eb_offset = eb->get_offset();
-	      ierr = ex_put_partial_elem_map(get_file_pointer(), 1, eb_offset+1, my_element_count,
-					     TOPTR(element));
+	      ierr = ex_put_partial_num_map(get_file_pointer(), EX_ELEM_MAP, 1, eb_offset+1, my_element_count,
+					    TOPTR(element));
 	      if (ierr < 0)
 		exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      ierr = ex_put_partial_elem_map(get_file_pointer(), 2, eb_offset+1, my_element_count,
-					     TOPTR(side));
+	      ierr = ex_put_partial_num_map(get_file_pointer(), EX_ELEM_MAP, 2, eb_offset+1, my_element_count,
+					    TOPTR(side));
 	      if (ierr < 0)
 		exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -4254,7 +4276,7 @@ namespace Ioex {
 	assert(get_region()->get_property("node_block_count").get_int() == 1);
 
 	// Write to the database...
-	int ierr = ex_put_node_num_map(get_file_pointer(), ids);
+	int ierr = ex_put_id_map(get_file_pointer(), EX_NODE_MAP, ids);
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
@@ -4804,8 +4826,8 @@ namespace Ioex {
       step = get_database_step(step);
       size_t count = globalValues.size();
       if (count > 0) {
-	int ierr = ex_put_glob_vars(get_file_pointer(), step, count,
-				    (double*)TOPTR(globalValues));
+	int ierr = ex_put_var(get_file_pointer(), step, EX_GLOBAL, 1, 0,
+			      count, (double*)TOPTR(globalValues));
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
@@ -4816,8 +4838,8 @@ namespace Ioex {
       int step = get_current_state();
       size_t count = globalValues.size();
       if (count > 0) {
-	int ierr = ex_get_glob_vars(get_file_pointer(), step, count,
-				    TOPTR(globalValues));
+	int ierr = ex_get_var(get_file_pointer(), step, EX_GLOBAL, 1, 0,
+			      count, TOPTR(globalValues));
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
@@ -4965,7 +4987,7 @@ namespace Ioex {
 	  }
 
 	  if (commsetNodeCount > 0) {
-	    int ierr = ne_put_node_cmap(get_file_pointer(), get_id(cs, (ex_entity_type)0, &ids_),
+	    int ierr = ex_put_node_cmap(get_file_pointer(), get_id(cs, (ex_entity_type)0, &ids_),
 					TOPTR(entities), TOPTR(procs), myProcessor);
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -5021,8 +5043,8 @@ namespace Ioex {
 	    }
 #endif
 
-	    int ierr = ne_put_node_map(get_file_pointer(), TOPTR(internal), TOPTR(entities), NULL,
-				       myProcessor);
+	    int ierr = ex_put_processor_node_maps(get_file_pointer(), TOPTR(internal), TOPTR(entities), NULL,
+						  myProcessor);
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
@@ -5042,7 +5064,7 @@ namespace Ioex {
 #if 0
 	  int offset = 0;
 	  for (int ics=0; ics < commsetElemCount; ics++) {
-	    int ierr = ne_put_elem_cmap(get_file_pointer(), elemCmapIds[ics],
+	    int ierr = ex_put_elem_cmap(get_file_pointer(), elemCmapIds[ics],
 					&entities[offset], &sides[offset],
 					&procs[offset], myProcessor);
 	    if (ierr < 0)
@@ -5050,7 +5072,7 @@ namespace Ioex {
 	    offset += elemCmapElemCnts[ics];
 	  }
 #else
-	  int ierr = ne_put_elem_cmap(get_file_pointer(), get_id(cs, (ex_entity_type)0, &ids_),
+	  int ierr = ex_put_elem_cmap(get_file_pointer(), get_id(cs, (ex_entity_type)0, &ids_),
 				      TOPTR(entities), TOPTR(sides), TOPTR(procs), myProcessor);
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -5097,8 +5119,8 @@ namespace Ioex {
 	  }
 #endif
 
-	  ierr = ne_put_elem_map(get_file_pointer(), TOPTR(internal),
-				 TOPTR(entities), myProcessor);
+	  ierr = ex_put_processor_elem_maps(get_file_pointer(), TOPTR(internal),
+					    TOPTR(entities), myProcessor);
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -5144,7 +5166,7 @@ namespace Ioex {
 	      real_ids[i] = static_cast<double>(ids[i]);
 	    }
 	    //	  int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id, TOPTR(real_ids));
-	    int ierr = ne_put_n_side_set_df(get_file_pointer(), id, offset+1, entity_count, TOPTR(real_ids));
+	    int ierr = ex_put_n_side_set_df(get_file_pointer(), id, offset+1, entity_count, TOPTR(real_ids));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
@@ -5165,7 +5187,7 @@ namespace Ioex {
 	    int ierr;
 	    int df_offset = fb->get_property("set_df_offset").get_int();
 	    int df_count  = fb->get_property("distribution_factor_count").get_int();
-	    ierr = ne_put_n_side_set_df(get_file_pointer(), id, df_offset+1, df_count, static_cast<double*>(data));
+	    ierr = ex_put_n_side_set_df(get_file_pointer(), id, df_offset+1, df_count, static_cast<double*>(data));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -5199,7 +5221,7 @@ namespace Ioex {
 	    }
 
 	    int ierr;
-	    ierr = ne_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
+	    ierr = ex_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -5231,7 +5253,7 @@ namespace Ioex {
 	    }
 
 	    int ierr;
-	    ierr = ne_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
+	    ierr = ex_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -6699,7 +6721,13 @@ namespace {
       return NULL;
 
     if (which_names.size() % N != 0) {
-      return NULL;
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Invalid logic in Ioex::DatabaseIO::match_composite_field()\n"
+	     << "       which_names.size() == " << which_names.size() << " which is not a multiple of " << N << "\n"
+	     << "       The field name is " << names[which_names[which_names.size()-1]] << "\n"
+	     << "       Please report to gdsjaar@sandia.gov.";
+      IOSS_ERROR(errmsg);
+      /* Does not return */
     }
 
     size_t inner_token = tokens.size() - 2;

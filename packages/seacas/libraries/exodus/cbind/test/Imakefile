@@ -42,15 +42,19 @@ LIBS = $(LOCALEXO) -L$(USRLIBDIR) $(NETCDF) $(EXTRANETCDFLIB)
 PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
 	testwt_ss testwt_nossnsdf testrd_ss testrdwt testcp testcpd testcp_nl  \
 	testcp_ln testwt_clb testwt_nc testrd_nc testwt-zeroe testwt-zeron \
-	testrdv testwt-one-attrib create_mesh rd_wt_mesh \
+	testwt-one-attrib create_mesh rd_wt_mesh \
 	testrd-partial testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
-	testrd-nfaced testwt-long-name testrd-long-name
-
+	testrd-nfaced testwt-long-name testrd-long-name \
+	oned twod MakeTestData test_nemesis
 #if 0
 	CreateEdgeFace ReadEdgeFace
 #endif
 
 all:: check
+
+NormalProgramTarget(oned,      oned.o,      $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(twod,      twod.o,      $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(MakeTestData,MakeTestData.o, $(LOCALEXO), /**/, $(LIBS))
 
 NormalProgramTarget(testwt,    testwt.o,    $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt_clb,testwt_clb.o,$(LOCALEXO), /**/, $(LIBS))
@@ -58,7 +62,6 @@ NormalProgramTarget(testwtd,   testwtd.o,   $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testrd,    testrd.o,    $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testrd1,   testrd1.o,   $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testrdd,   testrdd.o,   $(LOCALEXO), /**/, $(LIBS))
-NormalProgramTarget(testrdv,   testrdv.o,   $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt1,   testwt1.o,   $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt2,   testwt2.o,   $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwtm,   testwtm.o,   $(LOCALEXO), /**/, $(LIBS))
@@ -91,6 +94,8 @@ NormalProgramTarget(rd_wt_mesh,  rd_wt_mesh.o, $(LOCALEXO), /**/, $(LIBS))
 
 NormalProgramTarget(CreateEdgeFace, CreateEdgeFace.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(ReadEdgeFace,   ReadEdgeFace.o,   $(LOCALEXO), /**/, $(LIBS))
+
+NormalProgramTarget(test_nemesis,   test_nemesis.o,   $(LOCALEXO), /**/, $(LIBS))
 
 testall: testall.in1 $(CONFIGDIR)/$(MACROFILE)
 	rm -f testall

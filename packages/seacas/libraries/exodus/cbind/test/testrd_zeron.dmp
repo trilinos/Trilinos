@@ -4,90 +4,21 @@ after ex_open
 after ex_get_init, error =   0
 database parameters:
 title =  'This is a test'
-num_dim =   3
+num_dim =   1
 num_nodes =   0
 num_elem =   0
-num_elem_blk =   7
+num_elem_blk =   0
 num_node_sets =   0
 num_side_sets =   0
 
 after ex_get_coord, error =   0
 x coords = 
-y coords = 
-z coords = 
 
 after ex_get_coord_names, error =   0
 x coord name = 'xcoor'
-y coord name = 'ycoor'
-z coord name = 'zcoor'
 num nodal attributes = 0
 
 after ex_get_map, error =   0
-
-after ex_get_elem_blk_ids, error =   0
-
-after ex_get_names, error =   0
-
-after ex_get_elem_block, error = 0
-element block id = 10
-element type = 'NULL'
-num_elem_in_block =  0
-num_nodes_per_elem =  0
-num_attr =  0
-name = ''
-
-after ex_get_elem_block, error = 0
-element block id = 11
-element type = 'NULL'
-num_elem_in_block =  0
-num_nodes_per_elem =  0
-num_attr =  0
-name = ''
-
-after ex_get_elem_block, error = 0
-element block id = 12
-element type = 'NULL'
-num_elem_in_block =  0
-num_nodes_per_elem =  0
-num_attr =  0
-name = ''
-
-after ex_get_elem_block, error = 0
-element block id = 13
-element type = 'NULL'
-num_elem_in_block =  0
-num_nodes_per_elem =  0
-num_attr =  0
-name = ''
-
-after ex_get_elem_block, error = 0
-element block id = 14
-element type = 'NULL'
-num_elem_in_block =  0
-num_nodes_per_elem =  0
-num_attr =  0
-name = ''
-
-after ex_get_elem_block, error = 0
-element block id = 15
-element type = 'NULL'
-num_elem_in_block =  0
-num_nodes_per_elem =  0
-num_attr =  0
-name = ''
-
-after ex_get_elem_block, error = 0
-element block id = 16
-element type = 'NULL'
-num_elem_in_block =  0
-num_nodes_per_elem =  0
-num_attr =  0
-name = ''
-
-after ex_inquire, error = 0
-
-There are  1 properties for each element block
-after ex_get_prop_names, error = 0
 
 after ex_get_qa, error =   0
 QA records = 
@@ -149,7 +80,5 @@ global variable  1 values through time:
 0.160
 0.180
 0.200
-
- after ex_get_elem_blk_ids, error =   0
 
 after ex_close, error =   0

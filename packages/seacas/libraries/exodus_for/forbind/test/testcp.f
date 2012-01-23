@@ -43,7 +43,7 @@ c conversion routines
 
       exoid1 = excre ("testcp.exo",
      1               EXCLOB, cpu_ws, io_ws, ierr)
-      write (iout,'("after excre, id = ", i3, ", error = ",i3)') 
+      write (iout,'("after excre, id = ", i6, ", error = ",i4)') 
      1               exoid1, ierr
       write (iout,'(" I/O word size: ",i4)') io_ws
 

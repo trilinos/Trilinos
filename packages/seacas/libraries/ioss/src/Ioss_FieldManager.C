@@ -30,11 +30,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_FieldManager.h>
 #include <Ioss_Field.h>
-
+#include <Ioss_FieldManager.h>
 #include <assert.h>
+#include <stddef.h>
+#include <map>
 #include <string>
+#include <utility>
 
 Ioss::FieldManager::FieldManager() {}
 
