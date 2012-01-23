@@ -3,6 +3,8 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_TestHelpersSmoothers.hpp"
 
+#include <Xpetra_MultiVectorFactory.hpp>
+
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_Exceptions.hpp"

@@ -8,6 +8,9 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
+
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Version.hpp"
