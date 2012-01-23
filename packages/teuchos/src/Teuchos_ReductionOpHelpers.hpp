@@ -112,12 +112,13 @@ class CharToValueTypeReductionOp<Ordinal,T,typename DefaultSerializer<Ordinal,T>
     public CharToValueTypeReductionOpImp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
 {
 public:
-  typedef typename DefaultSerializer<Ordinal,T>::DefaultSerializerType Serializer;
+  typedef DefaultSerializer<Ordinal,T> DS;  // work around for parsing bug in gcc 4.1-4.2
+  typedef typename DS::DefaultSerializerType Serializer;
   typedef CharToValueTypeReductionOpImp<Ordinal,T,Serializer> Base;
   /** \brief . */
   CharToValueTypeReductionOp(
     const RCP<const ValueTypeReductionOp<Ordinal,T> >  &reductOp,
-    const RCP<const Serializer>& serializer = DefaultSerializer<Ordinal,T>::getDefaultSerializerRCP()
+    const RCP<const Serializer>& serializer = DS::getDefaultSerializerRCP()
     ) : Base(reductOp, serializer) {}
 };
 

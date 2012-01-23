@@ -485,12 +485,13 @@ template <typename Ordinal, typename T>
 class ValueTypeSerializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> : 
     public ValueTypeSerializationBufferImp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> {
 public:
-  typedef typename DefaultSerializer<Ordinal,T>::DefaultSerializerType Serializer;
+  typedef DefaultSerializer<Ordinal,T> DS;  // work around for parsing bug in gcc 4.1-4.2
+  typedef typename DS::DefaultSerializerType Serializer;
   typedef ValueTypeSerializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ValueTypeSerializationBuffer(
     const Ordinal count, T buffer[], 
-    const RCP<const Serializer>& serializer = DefaultSerializer<Ordinal,T>::getDefaultSerializerRCP()
+    const RCP<const Serializer>& serializer = DS::getDefaultSerializerRCP()
     ) : Base(count,buffer,serializer) {}
 };
 
@@ -504,12 +505,13 @@ template <typename Ordinal, typename T>
 class ConstValueTypeSerializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> : 
     public ConstValueTypeSerializationBufferImp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> {
 public:
-  typedef typename DefaultSerializer<Ordinal,T>::DefaultSerializerType Serializer;
+  typedef DefaultSerializer<Ordinal,T> DS;  // work around for parsing bug in gcc 4.1-4.2
+  typedef typename DS::DefaultSerializerType Serializer;
   typedef ConstValueTypeSerializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstValueTypeSerializationBuffer(
     const Ordinal count, const T buffer[], 
-    const RCP<const Serializer>& serializer = DefaultSerializer<Ordinal,T>::getDefaultSerializerRCP()
+    const RCP<const Serializer>& serializer = DS::getDefaultSerializerRCP()
     ) : Base(count,buffer,serializer) {}
 };
 
@@ -524,12 +526,13 @@ template <typename Ordinal, typename T>
 class ValueTypeDeserializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> : 
     public ValueTypeDeserializationBufferImp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> {
 public:
-  typedef typename DefaultSerializer<Ordinal,T>::DefaultSerializerType Serializer;
+  typedef DefaultSerializer<Ordinal,T> DS;  // work around for parsing bug in gcc 4.1-4.2
+  typedef typename DS::DefaultSerializerType Serializer;
   typedef ValueTypeDeserializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ValueTypeDeserializationBuffer(
     const Ordinal bytes, char charBuffer[], 
-    const RCP<const Serializer>& serializer = DefaultSerializer<Ordinal,T>::getDefaultSerializerRCP()
+    const RCP<const Serializer>& serializer = DS::getDefaultSerializerRCP()
     ) : Base(bytes,charBuffer,serializer) {}
 };
 
@@ -544,12 +547,13 @@ template <typename Ordinal, typename T>
 class ConstValueTypeDeserializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> : 
     public ConstValueTypeDeserializationBufferImp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> {
 public:
-  typedef typename DefaultSerializer<Ordinal,T>::DefaultSerializerType Serializer;
+  typedef DefaultSerializer<Ordinal,T> DS;  // work around for parsing bug in gcc 4.1-4.2
+  typedef typename DS::DefaultSerializerType Serializer;
   typedef ConstValueTypeDeserializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstValueTypeDeserializationBuffer(
     const Ordinal bytes, const char charBuffer[], 
-    const RCP<const Serializer>& serializer = DefaultSerializer<Ordinal,T>::getDefaultSerializerRCP()
+    const RCP<const Serializer>& serializer = DS::getDefaultSerializerRCP()
     ) : Base(bytes,charBuffer,serializer) {}
 };
 
