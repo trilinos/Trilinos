@@ -7,6 +7,8 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include "Ifpack2_Factory.hpp"
+
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"

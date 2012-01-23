@@ -8,6 +8,8 @@
 
 #include "MueLu_UCAggregationCommHelper_decl.hpp"
 
+#include "MueLu_Utilities.hpp" // maxAll
+
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     

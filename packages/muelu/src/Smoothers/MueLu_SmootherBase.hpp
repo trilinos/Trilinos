@@ -1,7 +1,7 @@
 #ifndef MUELU_SMOOTHERBASE_HPP
 #define MUELU_SMOOTHERBASE_HPP
 
-#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"

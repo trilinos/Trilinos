@@ -4,6 +4,8 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Time.hpp>
 
+#include <Xpetra_Operator_fwd.hpp>
+
 #include "MueLu_TransPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
 

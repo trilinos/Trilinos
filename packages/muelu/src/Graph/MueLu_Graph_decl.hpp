@@ -1,12 +1,12 @@
 #ifndef MUELU_GRAPH_DECL_HPP
 #define MUELU_GRAPH_DECL_HPP
 
+#include <Xpetra_ConfigDefs.hpp>   // global_size_t
+#include <Xpetra_CrsGraph.hpp>     // inline functions requires class declaration
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
-
-#include <Xpetra_ConfigDefs.hpp>
-
-#include <Xpetra_CrsGraph.hpp>
-#include <Xpetra_MapFactory.hpp>
 
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Graph_fwd.hpp"

@@ -1,12 +1,14 @@
 #ifndef MUELU_TENTATIVEPFACTORY_DECL_HPP
 #define MUELU_TENTATIVEPFACTORY_DECL_HPP
 
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_MultiVector.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_ImportFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
+#include <Xpetra_CrsOperator_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"

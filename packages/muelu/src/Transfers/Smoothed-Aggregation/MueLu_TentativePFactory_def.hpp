@@ -3,6 +3,14 @@
 
 #include <Teuchos_LAPACK.hpp>
 
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_CrsOperator.hpp>
+
 #include "MueLu_TentativePFactory_decl.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"

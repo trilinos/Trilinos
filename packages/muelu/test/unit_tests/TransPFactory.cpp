@@ -1,4 +1,8 @@
 #include "Teuchos_UnitTestHarness.hpp"
+
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 

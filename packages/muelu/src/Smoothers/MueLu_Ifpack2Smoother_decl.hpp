@@ -2,14 +2,17 @@
 #define MUELU_IFPACK2SMOOTHER_DECL_HPP
 
 #include <Teuchos_ParameterList.hpp>
-
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Ifpack2Smoother_fwd.hpp"
 
 #ifdef HAVE_MUELU_IFPACK2
-#include "Ifpack2_Factory.hpp"
+
+// Ifpack2 forward declaration
+namespace Ifpack2 {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class Preconditioner;
+}
 
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Level_fwd.hpp"
@@ -17,7 +20,6 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
-
 
   /*!
     @class IfpackSmoother2

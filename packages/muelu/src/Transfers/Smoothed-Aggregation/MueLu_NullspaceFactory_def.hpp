@@ -1,6 +1,10 @@
 #ifndef MUELU_NULLSPACEFACTORY_DEF_HPP
 #define MUELU_NULLSPACEFACTORY_DEF_HPP
 
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+
 #include "MueLu_NullspaceFactory_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"

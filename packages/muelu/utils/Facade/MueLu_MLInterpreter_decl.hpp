@@ -8,14 +8,17 @@
 #ifndef MUELU_MLINTERPRETER_DECL_HPP_
 #define MUELU_MLINTERPRETER_DECL_HPP_
 
+#include <Teuchos_ParameterList.hpp>
+
+#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_MLInterpreter_fwd.hpp"
 
 #include "MueLu_Hierarchy_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
-#include <Xpetra_Operator.hpp>
-#include <Teuchos_ParameterList.hpp>
 
 namespace MueLu {
 

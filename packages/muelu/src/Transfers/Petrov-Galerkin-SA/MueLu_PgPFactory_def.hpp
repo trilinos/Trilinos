@@ -1,5 +1,12 @@
-#ifndef MUELU_PGPFACTORY_DEF_HPP_
-#define MUELU_PGPFACTORY_DEF_HPP_
+#ifndef MUELU_PGPFACTORY_DEF_HPP
+#define MUELU_PGPFACTORY_DEF_HPP
+
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_Import.hpp>
+#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_Export.hpp>
+#include <Xpetra_ExportFactory.hpp>
 
 #include "MueLu_PgPFactory_decl.hpp"
 #include "MueLu_TentativePFactory.hpp"
@@ -7,10 +14,6 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-
-#include "Xpetra_VectorFactory.hpp"
-#include "Xpetra_ImportFactory.hpp"
-#include "Xpetra_ExportFactory.hpp"
 
 namespace MueLu {
 
@@ -101,7 +104,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
 
   /////////////////// calculate local damping factors omega
 
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RowBasedOmega = Teuchos::null;
+  Teuchos::RCP<Vector > RowBasedOmega = Teuchos::null;
 
   if(restrictionMode_ == false || bReUseRowBasedOmegas_ == false) {
     // if in prolongation mode: calculate row based omegas
@@ -110,7 +113,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
   } // if(bReUseRowBasedOmegas == false)
   else  {
     // reuse row based omegas, calculated by this factory in the run before (with restrictionMode_ == false)
-    RowBasedOmega = coarseLevel.Get<Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >("RowBasedOmega", this /*MueLu::NoFactory::get()*/);
+    RowBasedOmega = coarseLevel.Get<Teuchos::RCP<Vector > >("RowBasedOmega", this /*MueLu::NoFactory::get()*/);
 
     // RowBasedOmega is now based on row map of A (not transposed)
     // for restriction we use A^T instead of A
@@ -119,18 +122,18 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
     // exporter: overlapping row map to nonoverlapping domain map (target map is unique)
     // since A is already transposed we use the RangeMap of A
     Teuchos::RCP<const Export> exporter =
-        Xpetra::ExportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(RowBasedOmega->getMap(), A->getRangeMap());
+        ExportFactory::Build(RowBasedOmega->getMap(), A->getRangeMap());
 
-    Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > noRowBasedOmega =
-        Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRangeMap());
+    Teuchos::RCP<Vector > noRowBasedOmega =
+        VectorFactory::Build(A->getRangeMap());
 
     noRowBasedOmega->doExport(*RowBasedOmega,*exporter,Xpetra::INSERT);
 
     // importer: nonoverlapping map to overlapping map
 
     // importer: source -> target maps
-    Teuchos::RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer =
-        Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRangeMap(),A->getRowMap());
+    Teuchos::RCP<const Import > importer =
+        ImportFactory::Build(A->getRangeMap(),A->getRowMap());
 
     // doImport target->doImport(*source, importer, action)
     RowBasedOmega->doImport(*noRowBasedOmega,*importer,Xpetra::INSERT);
@@ -168,9 +171,9 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P0, const RCP<Operator>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const {
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Numerator = Teuchos::null;
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Denominator = Teuchos::null;
+void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P0, const RCP<Operator>& DinvAP0, RCP<Vector > & RowBasedOmega) const {
+  Teuchos::RCP<Vector > Numerator = Teuchos::null;
+  Teuchos::RCP<Vector > Denominator = Teuchos::null;
 
   switch (min_norm_)
   {
@@ -193,8 +196,8 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
     // compute A * D^{-1} * A * P0
     RCP<Operator> ADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
 
-    Numerator =   Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(ADinvAP0->getColMap(),true);
-    Denominator = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(ADinvAP0->getColMap(),true);
+    Numerator =   VectorFactory::Build(ADinvAP0->getColMap(),true);
+    Denominator = VectorFactory::Build(ADinvAP0->getColMap(),true);
     MultiplyAll(AP0, ADinvAP0, Numerator);
     MultiplySelfAll(ADinvAP0, Denominator);
   }
@@ -207,8 +210,8 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
     //   omega =   -----------------------------
     //             diag( P0' A' D^{-1}' D^{-1} A P0)
     //
-    Numerator =   Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvAP0->getColMap(),true);
-    Denominator = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvAP0->getColMap(),true);
+    Numerator =   VectorFactory::Build(DinvAP0->getColMap(),true);
+    Denominator = VectorFactory::Build(DinvAP0->getColMap(),true);
     MultiplyAll(P0, DinvAP0, Numerator);
     MultiplySelfAll(DinvAP0, Denominator);
   }
@@ -230,8 +233,8 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
     RCP<Operator> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
     Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
-    Numerator =   Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvADinvAP0->getColMap(),true);
-    Denominator = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvADinvAP0->getColMap(),true);
+    Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(),true);
+    Denominator = VectorFactory::Build(DinvADinvAP0->getColMap(),true);
 
     MultiplyAll(DinvAP0, DinvADinvAP0, Numerator);
     MultiplySelfAll(DinvADinvAP0, Denominator);
@@ -243,8 +246,8 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
 
 
   //////////// build Column based omegas /////////////
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ColBasedOmega =
-      Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Numerator->getMap()/*DinvAP0->getColMap()*/,true);
+  Teuchos::RCP<Vector > ColBasedOmega =
+      VectorFactory::Build(Numerator->getMap()/*DinvAP0->getColMap()*/,true);
 
   ColBasedOmega->putScalar(-666*Teuchos::ScalarTraits<Scalar>::one());
 
@@ -290,7 +293,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
   //////////// build Row based omegas /////////////
   // transform column based omegas to row based omegas
   RowBasedOmega =
-      Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(DinvAP0->getRowMap(),true);
+      VectorFactory::Build(DinvAP0->getRowMap(),true);
 
   RowBasedOmega->putScalar(-666*Teuchos::ScalarTraits<Scalar>::one());
 
@@ -320,7 +323,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplySelfAll(const RCP<Operator>& Op, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const {
+void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplySelfAll(const RCP<Operator>& Op, Teuchos::RCP<Vector >& InnerProdVec) const {
 
   // note: InnerProdVec is based on column map of Op
   TEUCHOS_TEST_FOR_EXCEPTION(!InnerProdVec->getMap()->isSameAs(*Op->getColMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplySelfAll: map of InnerProdVec must be same as column map of operator. error");
@@ -339,18 +342,18 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multipl
 
   // exporter: overlapping map to nonoverlapping map (target map is unique)
   Teuchos::RCP<const Export> exporter =
-      Xpetra::ExportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getColMap(), Op->getDomainMap());
+      ExportFactory::Build(Op->getColMap(), Op->getDomainMap());
 
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nonoverlap =
-      Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getDomainMap());
+  Teuchos::RCP<Vector > nonoverlap =
+      VectorFactory::Build(Op->getDomainMap());
 
   nonoverlap->doExport(*InnerProdVec,*exporter,Xpetra::ADD);
 
   // importer: nonoverlapping map to overlapping map
 
   // importer: source -> target maps
-  Teuchos::RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer =
-      Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getDomainMap(),Op->getColMap());
+  Teuchos::RCP<const Import > importer =
+      ImportFactory::Build(Op->getDomainMap(),Op->getColMap());
 
   // doImport target->doImport(*source, importer, action)
   InnerProdVec->doImport(*nonoverlap,*importer,Xpetra::INSERT);
@@ -358,7 +361,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multipl
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const {
+void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, Teuchos::RCP<Vector >& InnerProdVec) const {
 
   TEUCHOS_TEST_FOR_EXCEPTION(!left->getDomainMap()->isSameAs(*right->getDomainMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: domain maps of left and right do not match. Error.");
   TEUCHOS_TEST_FOR_EXCEPTION(!left->getRowMap()->isSameAs(*right->getRowMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: row maps of left and right do not match. Error.");
@@ -394,18 +397,18 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multipl
 
     // exporter: overlapping map to nonoverlapping map (target map is unique)
     Teuchos::RCP<const Export> exporter =
-        Xpetra::ExportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(left->getColMap(), left->getDomainMap()); // TODO: change left to right?
+        ExportFactory::Build(left->getColMap(), left->getDomainMap()); // TODO: change left to right?
 
-    Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nonoverlap =
-        Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(left->getDomainMap()); // TODO: change left to right?
+    Teuchos::RCP<Vector > nonoverlap =
+        VectorFactory::Build(left->getDomainMap()); // TODO: change left to right?
 
     nonoverlap->doExport(*InnerProdVec,*exporter,Xpetra::ADD);
 
     // importer: nonoverlapping map to overlapping map
 
     // importer: source -> target maps
-    Teuchos::RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer =
-        Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(left->getDomainMap(),left->getColMap()); // TODO: change left to right?
+    Teuchos::RCP<const Import > importer =
+        ImportFactory::Build(left->getDomainMap(),left->getColMap()); // TODO: change left to right?
 
     // doImport target->doImport(*source, importer, action)
     InnerProdVec->doImport(*nonoverlap,*importer,Xpetra::INSERT);
@@ -440,18 +443,18 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multipl
 
     // exporter: overlapping map to nonoverlapping map (target map is unique)
     Teuchos::RCP<const Export> exporter =
-        Xpetra::ExportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(right->getColMap(), right->getDomainMap()); // TODO: change left to right?
+        ExportFactory::Build(right->getColMap(), right->getDomainMap()); // TODO: change left to right?
 
-    Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nonoverlap =
-        Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(right->getDomainMap()); // TODO: change left to right?
+    Teuchos::RCP<Vector> nonoverlap =
+        VectorFactory::Build(right->getDomainMap()); // TODO: change left to right?
 
     nonoverlap->doExport(*InnerProdVec,*exporter,Xpetra::ADD);
 
     // importer: nonoverlapping map to overlapping map
 
     // importer: source -> target maps
-    Teuchos::RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer =
-        Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(right->getDomainMap(),right->getColMap()); // TODO: change left to right?
+    Teuchos::RCP<const Import > importer =
+        ImportFactory::Build(right->getDomainMap(),right->getColMap()); // TODO: change left to right?
 
     // doImport target->doImport(*source, importer, action)
     InnerProdVec->doImport(*nonoverlap,*importer,Xpetra::INSERT);
@@ -578,4 +581,4 @@ for(size_t i=0; i<Teuchos::as<size_t>(Numerator->size()); i++)
 
 } //namespace MueLu
 
-#endif /* MUELU_PGPFACTORY_DEF_HPP_ */
+#endif /* MUELU_PGPFACTORY_DEF_HPP */

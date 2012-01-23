@@ -1,12 +1,11 @@
 #ifndef MUELU_MLINTERPRETER_DEF_HPP_
 #define MUELU_MLINTERPRETER_DEF_HPP_
 
-
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_MLInterpreter_decl.hpp"
-
-
-// #include <Xpetra_Operator.hpp>
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy.hpp"

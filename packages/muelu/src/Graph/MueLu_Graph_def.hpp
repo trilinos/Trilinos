@@ -1,6 +1,8 @@
 #ifndef MUELU_GRAPH_DEF_HPP
 #define MUELU_GRAPH_DEF_HPP
 
+#include <Xpetra_MapFactory.hpp>
+
 #include "MueLu_Graph_decl.hpp"
 #include "MueLu_Exceptions.hpp"
 

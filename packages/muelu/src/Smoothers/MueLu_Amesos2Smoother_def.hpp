@@ -1,6 +1,7 @@
 #ifndef MUELU_AMESOS2SMOOTHER_DEF_HPP
 #define MUELU_AMESOS2SMOOTHER_DEF_HPP
 
+#include "MueLu_ConfigDefs.hpp"
 #ifdef HAVE_MUELU_AMESOS2
 #include <Xpetra_Operator.hpp>
 

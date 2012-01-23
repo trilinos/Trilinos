@@ -1,7 +1,9 @@
 #ifndef MUELU_AGGREGATES_DECL_HPP
 #define MUELU_AGGREGATES_DECL_HPP
 
-#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -54,9 +56,9 @@ namespace MueLu {
     bool IsRoot(LO i) const               { return isRoot_[i];          } // Local
     void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } // Local
     
-    const RCP<const Xpetra::Map<LO,GO> > GetMap() const { return vertex2AggId_->getMap(); }
+    const RCP<const Map> GetMap() const { return vertex2AggId_->getMap(); }
 
-    const RCP<const Xpetra::Map<LO,GO> > GetDofMap() const { return importDofMap_; }
+    const RCP<const Map> GetDofMap() const { return importDofMap_; }
 
     Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const; //ComputeAggSizesNodes
 

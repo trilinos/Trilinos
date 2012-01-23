@@ -1,20 +1,17 @@
 #ifndef MUELU_AMESOSSMOOTHER_HPP
 #define MUELU_AMESOSSMOOTHER_HPP
 
-#include <Teuchos_ParameterList.hpp>
-
-#include <Xpetra_Operator.hpp>
-
 #include "MueLu_ConfigDefs.hpp"
-
 #ifdef HAVE_MUELU_AMESOS
 
-#include "MueLu_SmootherPrototype.hpp"
-
-#include <MueLu_Exceptions.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 
 class Epetra_LinearProblem;
 class Amesos_BaseSolver;
+
+#include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_Exceptions.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"

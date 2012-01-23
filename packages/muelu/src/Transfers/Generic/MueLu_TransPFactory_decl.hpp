@@ -1,7 +1,7 @@
 #ifndef MUELU_TRANSPFACTORY_DECL_HPP
 #define MUELU_TRANSPFACTORY_DECL_HPP
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_RFactory.hpp"

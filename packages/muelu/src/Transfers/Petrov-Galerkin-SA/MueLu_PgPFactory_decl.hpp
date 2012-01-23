@@ -1,7 +1,13 @@
 #ifndef MUELU_PGPFACTORY_DECL_HPP_
 #define MUELU_PGPFACTORY_DECL_HPP_
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Import_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
+#include <Xpetra_Export_fwd.hpp>
+#include <Xpetra_ExportFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"
@@ -11,13 +17,13 @@
 
 namespace MueLu {
 
-/* Options defining how to pick-up the next root node in the local aggregation procedure */
-enum MinimizationNorm {
-  ANORM = 0, /* A norm   */
-  L2NORM = 1, /* L2 norm */
-  DINVANORM  = 2 /* Dinv A norm */
-};
-
+  /* Options defining how to pick-up the next root node in the local aggregation procedure */
+  enum MinimizationNorm {
+    ANORM = 0, /* A norm   */
+    L2NORM = 1, /* L2 norm */
+    DINVANORM  = 2 /* Dinv A norm */
+  };
+  
   /*!
     @class PgPFactory class.
     @brief Factory for building Petrov-Galerkin Smoothed Aggregation prolongators.
@@ -29,7 +35,6 @@ enum MinimizationNorm {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-
 
     //! @name Constructors/Destructors.
     //@{

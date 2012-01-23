@@ -1,10 +1,12 @@
 #ifndef MUELU_LEFTOVERAGGREGATIONALGORITHM_DEF_HPP
 #define MUELU_LEFTOVERAGGREGATIONALGORITHM_DEF_HPP
 
+#include <Xpetra_Map.hpp>
+
 #include "MueLu_LeftoverAggregationAlgorithm_decl.hpp"
 
 #include "MueLu_Aggregates_decl.hpp" // MUELU_UNASSIGNED macro
-#include "MueCentral/MueLu_Utilities_decl.hpp" // sumAll macro
+#include "MueLu_Utilities_decl.hpp"  // sumAll macro
 #include "MueLu_Graph.hpp"
 #include "MueLu_UCAggregationCommHelper.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -30,7 +32,7 @@ namespace MueLu {
     int minNodesPerAggregate = GetMinNodesPerAggregate();
 
     const RCP<const Map> nonUniqueMap = aggregates.GetMap();
-    const RCP<const Map> uniqueMap = graph.GetDomainMap(); // Q: DomainMap or RowMap??
+    const RCP<const Map> uniqueMap    = graph.GetDomainMap(); // Q: DomainMap or RowMap??
 
     MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
 

@@ -1,19 +1,17 @@
 #ifndef MUELU_IFPACKSMOOTHER_HPP
 #define MUELU_IFPACKSMOOTHER_HPP
 
-#include <Teuchos_ParameterList.hpp>
-
-#include <Xpetra_Operator.hpp>
-
 #include "MueLu_ConfigDefs.hpp"
-
 #ifdef HAVE_MUELU_IFPACK
 
-#include "MueLu_SmootherPrototype.hpp"
-
-#include "MueLu_Exceptions.hpp"
+#include <Teuchos_ParameterList.hpp>
+#include <Xpetra_Operator.hpp>
 
 class Ifpack_Preconditioner;
+
+#include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_Exceptions.hpp"
+
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"

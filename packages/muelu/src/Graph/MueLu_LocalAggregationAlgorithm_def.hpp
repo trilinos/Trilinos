@@ -4,6 +4,8 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
+#include <Xpetra_Vector.hpp>
+
 #include "MueLu_LocalAggregationAlgorithm_decl.hpp"
 
 #include "MueLu_Graph.hpp"

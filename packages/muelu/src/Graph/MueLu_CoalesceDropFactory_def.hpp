@@ -1,6 +1,14 @@
 #ifndef MUELU_COALESCEDROPFACTORY_DEF_HPP
 #define MUELU_COALESCEDROPFACTORY_DEF_HPP
 
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_CrsGraph.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
+
 #include "MueLu_CoalesceDropFactory_decl.hpp"
 
 #include "MueLu_Level.hpp"
@@ -8,9 +16,6 @@
 #include "MueLu_PreDropFunctionBaseClass.hpp"
 #include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Monitor.hpp"
-
-#include "Xpetra_VectorFactory.hpp"
-#include "Xpetra_ImportFactory.hpp"
 
 namespace MueLu {
 
@@ -66,8 +71,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
       // variable block size
       blockdim = -1; // no constant block size
       // read in and transform variable block size information
-      RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > blkSizeInfo =
-      currentLevel.Get<RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > >("VariableBlockSizeInfo", MueLu::NoFactory::get());
+      RCP<GOVector> blkSizeInfo = currentLevel.Get<RCP<GOVector> >("VariableBlockSizeInfo", MueLu::NoFactory::get());
       TEUCHOS_TEST_FOR_EXCEPTION(blkSizeInfo->getMap()->isSameAs(*(A->getRowMap()))==false, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Build: map of blkSizeInfo does not match the row map of A. Error.");
       RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRowMap(),A->getColMap());
       blkSizeInfo_ = Xpetra::VectorFactory<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getColMap());
@@ -218,7 +222,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   RCP<Map> amal_map = SetupAmalgamationData(A, blkSizeInfo_, blockSize);
 
   // create new CrsGraph for amalgamated matrix (TODO: no shortcut for CrsGraphFactory?)
-  RCP<CrsGraph> crsGraph = Xpetra::CrsGraphFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(amal_map, 10, Xpetra::DynamicProfile);
+  RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(amal_map, 10, Xpetra::DynamicProfile);
 
   for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements());i++) {
     // get global DOF id

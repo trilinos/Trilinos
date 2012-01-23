@@ -4,8 +4,10 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Ptr.hpp>
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_ConfigDefs.hpp>  // global_size_t
+#include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"

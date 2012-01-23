@@ -1,8 +1,8 @@
 #ifndef MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
 #define MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
 
-#include <Xpetra_Import.hpp>
-#include <Xpetra_Vector.hpp>
+#include <Xpetra_Import_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"

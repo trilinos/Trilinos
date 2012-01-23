@@ -1,10 +1,11 @@
 #ifndef MUELU_THRESHOLDAFILTERFACTORY_DEF_HPP
 #define MUELU_THRESHOLDAFILTERFACTORY_DEF_HPP
 
-#include "MueLu_ThresholdAFilterFactory_decl.hpp"
-
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_CrsOperator.hpp>
+
+#include "MueLu_ThresholdAFilterFactory_decl.hpp"
+
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 

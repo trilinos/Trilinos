@@ -2,6 +2,7 @@
 #define MUELU_GAUSSSEIDELSMOOTHER_DEF_HPP
 
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_GaussSeidelSmoother_decl.hpp"
 #include "MueLu_Level.hpp"

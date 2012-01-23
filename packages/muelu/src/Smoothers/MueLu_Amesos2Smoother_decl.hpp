@@ -2,17 +2,22 @@
 #define MUELU_AMESOS2SMOOTHER_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Amesos2Smoother_fwd.hpp"
-
 #ifdef HAVE_MUELU_AMESOS2
+
 #include <Teuchos_ParameterList.hpp>
 
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_MultiVector.hpp>
+// Tpetra forward declarations
+namespace Tpetra {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> class CrsMatrix;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class MultiVector;
+}
+
+#include "MueLu_Amesos2Smoother_fwd.hpp"
 
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
+
 namespace Amesos2 { template<class OP, class MV> class Solver; }
 
 namespace MueLu {
@@ -96,7 +101,7 @@ namespace MueLu {
     Teuchos::ParameterList paramList_;
 
     //! pointer to Amesos2 solver object
-    RCP<Amesos2::Solver<Tpetra_CrsMatrix,Tpetra_MultiVector> > prec_;
+    RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > prec_;
 
     //! A Factory
     RCP<FactoryBase> AFact_;

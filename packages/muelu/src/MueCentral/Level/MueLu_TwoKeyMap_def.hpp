@@ -5,8 +5,7 @@
 
 #include <Xpetra_Operator.hpp>
 
-#include <MueLu_TwoKeyMap_decl.hpp>
-
+#include "MueLu_TwoKeyMap_decl.hpp"
 #include "MueLu_Exceptions.hpp"
 
 namespace MueLu {

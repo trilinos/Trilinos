@@ -1,7 +1,8 @@
 #ifndef MUELU_LEFTOVERAGGREGATIONALGORITHM_DECL_HPP
 #define MUELU_LEFTOVERAGGREGATIONALGORITHM_DECL_HPP
 
-#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
