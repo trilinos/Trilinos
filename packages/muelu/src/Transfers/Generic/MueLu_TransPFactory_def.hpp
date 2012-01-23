@@ -8,6 +8,7 @@
 
 #include "MueLu_TransPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_Memory.hpp"
 
 namespace MueLu {
 

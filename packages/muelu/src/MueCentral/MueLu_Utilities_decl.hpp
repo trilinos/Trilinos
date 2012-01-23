@@ -3,54 +3,40 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <Teuchos_ScalarTraits.hpp>
-//#include <Teuchos_OrdinalTraits.hpp>
-//#include <Teuchos_TypeTraits.hpp>
-//#include <Teuchos_Comm.hpp>
-//#include <Teuchos_DefaultComm.hpp>
-//#include <Teuchos_Utils.hpp>
+#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_OperatorFactory_fwd.hpp>
+#include <Xpetra_CrsOperator_fwd.hpp>
+#include <Xpetra_BlockedCrsOperator_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
 
-//#include <Xpetra_Map.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsOperator.hpp>
-#include <Xpetra_OperatorFactory.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 #ifdef HAVE_MUELU_EPETRA
+namespace Xpetra {
+  class EpetraCrsMatrix; // TODO: replace by include of _fwd.hpp
+  //  class 
+}
+
+// needed because of inlined function
+//TODO: remove inline function?
 #include <Xpetra_EpetraCrsMatrix.hpp>
-#include <Xpetra_EpetraVector.hpp>
-#include <Xpetra_EpetraMultiVector.hpp>
-#include "Epetra_RowMatrixTransposer.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
+#include <Xpetra_CrsOperator.hpp>
+
 #endif
 
-#include "MueLu_MatrixFactory.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_Memory.hpp"
 
 #ifdef HAVE_MUELU_EPETRAEXT
-#include "Epetra_CrsMatrix.h"
-#include "EpetraExt_MatrixMatrix.h"
-#include "EpetraExt_RowMatrixOut.h"
+class Epetra_CrsMatrix;
+class Epetra_MultiVector;
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
-#include <Xpetra_TpetraCrsMatrix.hpp>
-#include <Xpetra_TpetraVector.hpp>
-#include <Xpetra_TpetraMultiVector.hpp>
-#include "TpetraExt_MatrixMatrix.hpp"
-#include "MatrixMarket_Tpetra.hpp"
-#include "Tpetra_RowMatrixTransposer_decl.hpp"
-#include "Tpetra_RowMatrixTransposer_def.hpp"
-#endif
+namespace Tpetra {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class MultiVector;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> class CrsMatrix;
+}
 
-#ifdef HAVE_MUELU_ML
-#include "ml_operator.h"
-#include "ml_epetra_utils.h"
 #endif
 
 // MPI helper
@@ -62,11 +48,6 @@
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
 
 namespace MueLu {
-
-#ifdef HAVE_MUELU_EPETRA
-  using Xpetra::EpetraCrsMatrix;   // TODO: mv in Xpetra_UseShortNamesScalar
-  using Xpetra::EpetraMultiVector;
-#endif
 
 #ifdef HAVE_MUELU_EPETRA
 //defined after Utils class
@@ -89,6 +70,10 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
   class Utils {
 #undef MUELU_UTILITIES_SHORT
 #include "MueLu_UseShortNames.hpp"
+#ifdef HAVE_MUELU_EPETRA
+  typedef Xpetra::EpetraCrsMatrix   EpetraCrsMatrix;    // TODO: mv in Xpetra_UseShortNamesScalar
+    //typedef Xpetra::EpetraMultiVector EpetraMultiVector;
+#endif
 
   public:
 #ifdef HAVE_MUELU_EPETRA
@@ -105,7 +90,6 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
     //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Xpetra::Operator.
    static RCP<const Epetra_CrsMatrix> Op2EpetraCrs(RCP<Operator> Op); //Op2EpetraCrs
-
 
     //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Xpetra::Operator.
    static RCP<Epetra_CrsMatrix> Op2NonConstEpetraCrs(RCP<Operator> Op); //Op2NonConstEpetraCrs
@@ -305,9 +289,9 @@ typedef Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::S
 template<>
 inline RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> &epAB) {
   RCP<Xpetra::EpetraCrsMatrix> tmpC1 = rcp(new Xpetra::EpetraCrsMatrix(epAB));
-   RCP<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> >(tmpC1);
-   RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsOperator<double,int,int,KDNT,KDKSO>(tmpC2));
-   return tmpC3;
+  RCP<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> >(tmpC1);
+  RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsOperator<double,int,int,KDNT,KDKSO>(tmpC2));
+  return tmpC3;
 }
 #endif
 

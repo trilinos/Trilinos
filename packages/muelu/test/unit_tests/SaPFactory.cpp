@@ -4,6 +4,8 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
+#include <Xpetra_MultiVectorFactory.hpp>
+
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_UCAggregationFactory.hpp"

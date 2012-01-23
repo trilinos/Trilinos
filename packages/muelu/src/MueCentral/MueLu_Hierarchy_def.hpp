@@ -1,10 +1,11 @@
 #ifndef MUELU_HIERARCHY_DEF_HPP
 #define MUELU_HIERARCHY_DEF_HPP
 
+#include <Xpetra_MultiVectorFactory.hpp>
+
 #include "MueLu_Hierarchy_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_HierarchyHelpers.hpp"
-#include "MueLu_Monitor.hpp"
 #include "MueLu_SmootherFactoryBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SmootherBase.hpp"
@@ -12,6 +13,7 @@
 #include "MueLu_PFactory.hpp"
 #include "MueLu_RFactory.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 

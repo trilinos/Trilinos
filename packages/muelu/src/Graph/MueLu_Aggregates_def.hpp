@@ -1,6 +1,9 @@
 #ifndef MUELU_AGGREGATES_DEF_HPP
 #define MUELU_AGGREGATES_DEF_HPP
 
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+
 #include "MueLu_Aggregates_decl.hpp"
 #include "MueLu_Graph.hpp"
 #include "MueLu_Utilities_decl.hpp" // sumAll

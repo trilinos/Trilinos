@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+#include <Xpetra_MultiVectorFactory.hpp>
+
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 

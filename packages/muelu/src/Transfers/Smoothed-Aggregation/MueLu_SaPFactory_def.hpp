@@ -10,6 +10,7 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Memory.hpp"
 
 namespace MueLu {
 

@@ -3,22 +3,33 @@
 
 #include <Teuchos_DefaultComm.hpp>
 
+#include "MueLu_ConfigDefs.hpp"
+
+#ifdef HAVE_MUELU_EPETRAEXT
+#include <EpetraExt_MatrixMatrix.h>
+#include <EpetraExt_RowMatrixOut.h>
+#include <Epetra_RowMatrixTransposer.h>
+#endif // HAVE_MUELU_EPETRAEXT
+
+#ifdef HAVE_MUELU_TPETRA
+#include <TpetraExt_MatrixMatrix.hpp>
+#include <MatrixMarket_Tpetra.hpp>
+#endif // HAVE_MUELU_TPETRA
+
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_OperatorFactory.hpp>
+
 #include <MueLu_Utilities_decl.hpp>
 
-// MPI helper
-#define sumAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-#define minAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
-#define maxAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
+#ifdef HAVE_MUELU_ML
+#include <ml_operator.h>
+#include <ml_epetra_utils.h>
+#endif
+
 #define scan(rcpComm, in, out)                                        \
   Teuchos::scan(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-
-#ifdef HAVE_MUELU_ML
-#include "ml_operator.h"
-#include "ml_epetra_utils.h"
-#endif
 
 namespace MueLu {
 

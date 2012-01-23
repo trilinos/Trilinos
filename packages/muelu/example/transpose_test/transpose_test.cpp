@@ -20,6 +20,7 @@
 
 #ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_CrsMatrixIn.h"
+#include <EpetraExt_MatrixMatrix.h>
 #endif
 
 #include "Epetra_RowMatrixTransposer.h"

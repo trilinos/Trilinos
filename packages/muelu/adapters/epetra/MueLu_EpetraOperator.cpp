@@ -1,4 +1,6 @@
-#include "Xpetra_Operator.hpp"
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_EpetraMultiVector.hpp>
+
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"
@@ -24,8 +26,8 @@ int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector
       // use work vectors
 
       // reserve memory for deep copy vectors
-      RCP<Xpetra::EpetraMultiVector> epX = Teuchos::rcp(new EpetraMultiVector(tX.getMap(), tX.getNumVectors())); // oops, we don't have a copy constructor?
-      RCP<Xpetra::EpetraMultiVector> epY = Teuchos::rcp(new EpetraMultiVector(tY.getMap(), tY.getNumVectors()));
+      RCP<Xpetra::EpetraMultiVector> epX = Teuchos::rcp(new Xpetra::EpetraMultiVector(tX.getMap(), tX.getNumVectors())); // oops, we don't have a copy constructor?
+      RCP<Xpetra::EpetraMultiVector> epY = Teuchos::rcp(new Xpetra::EpetraMultiVector(tY.getMap(), tY.getNumVectors()));
 
       // deep copy of RHS vector
       epX->update(1.0,tX,0.0);

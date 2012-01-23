@@ -11,6 +11,8 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
+#include <Xpetra_MultiVectorFactory.hpp>
+
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"

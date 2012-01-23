@@ -2,6 +2,7 @@
 #define MUELU_LEFTOVERAGGREGATIONALGORITHM_DEF_HPP
 
 #include <Xpetra_Map.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_LeftoverAggregationAlgorithm_decl.hpp"
 

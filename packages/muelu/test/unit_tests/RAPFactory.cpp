@@ -5,6 +5,8 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
+#include <Xpetra_MultiVectorFactory.hpp>
+
 #include "MueLu_Utilities.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_SaPFactory.hpp"

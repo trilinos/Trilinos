@@ -16,6 +16,7 @@
 #include <Teuchos_DefaultComm.hpp>
 
 #include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>

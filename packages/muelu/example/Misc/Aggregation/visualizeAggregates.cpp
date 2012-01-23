@@ -26,6 +26,7 @@
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 
 // Gallery
