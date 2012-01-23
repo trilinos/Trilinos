@@ -6,3 +6,4 @@ MESSAGE("Processing enabled package: ^(;,;)^ (Libs, Tests, Examples)")
 
 # Add directory xpetra/cmake/ to the cmake module search path
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PACKAGE_SOURCE_DIR}/xpetra/cmake)
+ 
