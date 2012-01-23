@@ -1,0 +1,263 @@
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+
+using Teuchos::RCP;
+using Teuchos::rcp;
+
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_OpaqueWrapper.hpp"
+
+#include "Panzer_config.hpp"
+#include "Panzer_IntegrationRule.hpp"
+#include "Panzer_IntegrationValues.hpp"
+#include "Panzer_CellData.hpp"
+#include "Panzer_Workset.hpp"
+#include "Panzer_Traits.hpp"
+#include "Panzer_PureBasis.hpp"
+#include "Panzer_Basis.hpp"
+#include "Panzer_BasisValues.hpp"
+
+#include "Panzer_DOF.hpp"
+#include "Panzer_DOF_PointField.hpp"
+
+#include "Phalanx_FieldManager.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+
+#include "Epetra_MpiComm.h"
+#include "Epetra_Comm.h"
+
+#include "UnitValueEvaluator.hpp"
+
+// for making explicit instantiated tests easier 
+#define UNIT_TEST_GROUP(TYPE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,value,TYPE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,gradient,TYPE)
+
+namespace panzer {
+
+typedef Intrepid::FieldContainer<double> FieldArray;
+
+//**********************************************************************
+PHX_EVALUATOR_CLASS(DummyFieldEvaluator)
+  PHX::MDField<ScalarT,Cell,panzer::BASIS> fieldValue;
+PHX_EVALUATOR_CLASS_END
+PHX_EVALUATOR_CTOR(DummyFieldEvaluator,p)
+{
+  // Read from parameters
+  const std::string name = p.get<std::string>("Name");
+  Teuchos::RCP<panzer::PureBasis> basis 
+     = p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+
+  // grab information from quadrature rule
+  fieldValue = PHX::MDField<ScalarT,Cell,BASIS>(name, basis->functional);
+
+  this->addEvaluatedField(fieldValue);
+  
+  std::string n = "DummyFieldEvaluator: " + name;
+  this->setName(n);
+}
+PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator,sd,fm)
+{ this->utils.setFieldData(fieldValue,fm); }
+PHX_EVALUATE_FIELDS(DummyFieldEvaluator,workset)
+{ 
+   for(int i=0;i<fieldValue.size();i++)
+      fieldValue[i] = 1.0+i;
+}
+//**********************************************************************
+PHX_EVALUATOR_CLASS(RefCoordEvaluator)
+  PHX::MDField<ScalarT,panzer::IP,panzer::Dim> fieldValue;
+  Teuchos::RCP<panzer::IntegrationValues<double,FieldArray> > quadValues;
+public:
+  Teuchos::RCP<PHX::DataLayout> coordsLayout;
+PHX_EVALUATOR_CLASS_END
+PHX_EVALUATOR_CTOR(RefCoordEvaluator,p)
+{
+  // Read from parameters
+  const std::string name = p.get<std::string>("Name");
+  quadValues = p.get< Teuchos::RCP<panzer::IntegrationValues<double,FieldArray> > >("Quad Values");
+
+  // grab information from quadrature rule
+  coordsLayout = Teuchos::rcp(new PHX::MDALayout<panzer::IP,panzer::Dim>(quadValues->int_rule->num_points,
+                                                                         quadValues->int_rule->spatial_dimension));
+  fieldValue = PHX::MDField<ScalarT,panzer::IP,panzer::Dim>(name, coordsLayout);
+
+  this->addEvaluatedField(fieldValue);
+  
+  std::string n = "RefCoordEvaluator: " + name;
+  this->setName(n);
+}
+PHX_POST_REGISTRATION_SETUP(RefCoordEvaluator,sd,fm)
+{ this->utils.setFieldData(fieldValue,fm); }
+PHX_EVALUATE_FIELDS(RefCoordEvaluator,workset)
+{ 
+   for(int i=0;i<fieldValue.size();i++)
+      fieldValue[i] = quadValues->cub_points[i];
+}
+//**********************************************************************
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
+{
+  // build global (or serial communicator)
+  #ifdef HAVE_MPI
+     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+  #else
+     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+  #endif
+ 
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+
+  // panzer::pauseToAttach();
+
+  // build a dummy workset
+  //////////////////////////////////////////////////////////
+  int numCells = 2, numVerts = 4, dim = 2;
+  Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
+  FieldArray & coords = workset->cell_vertex_coordinates;
+  coords.resize(numCells,numVerts,dim);
+  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
+  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
+  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
+  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+
+  coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
+  coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
+  coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
+  coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+
+  Teuchos::RCP<shards::CellTopology> topo
+    = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+  // build quadrature values
+  int quadOrder = 5;
+  panzer::CellData cellData(2,2,1,topo);
+  Teuchos::RCP<panzer::IntegrationRule> quadRule = Teuchos::rcp(new panzer::IntegrationRule(quadOrder,cellData));
+  Teuchos::RCP<panzer::IntegrationValues<double,FieldArray> > quadValues = Teuchos::rcp(new panzer::IntegrationValues<double,FieldArray>);
+  quadValues->setupArrays(quadRule);
+  quadValues->evaluateValues(coords);
+
+  // build basis values
+  std::string basisName = "Q2";
+  Teuchos::RCP<panzer::PureBasis> pureBasis = Teuchos::rcp(new panzer::PureBasis(basisName,numCells,topo));
+  Teuchos::RCP<panzer::BasisIRLayout> basisLayout = Teuchos::rcp(new panzer::BasisIRLayout(pureBasis,*quadRule));
+  Teuchos::RCP<panzer::BasisValues<double,Intrepid::FieldContainer<double> > > basisValues 
+     = Teuchos::rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >());
+  basisValues->setupArrays(basisLayout);
+  basisValues->evaluateValues(quadValues->cub_points,quadValues->jac_inv,quadValues->weighted_measure,coords);
+
+  // construct workset
+  workset->cell_local_ids.push_back(0); workset->cell_local_ids.push_back(1);
+  workset->num_cells = numCells;
+  workset->block_id = "eblock-0_0";
+  workset->ir_degrees = Teuchos::rcp(new std::vector<int>);
+  workset->ir_degrees->push_back(quadRule->cubature_degree);
+  workset->int_rules.push_back(quadValues);
+  workset->basis_names = Teuchos::rcp(new std::vector<std::string>);
+  workset->basis_names->push_back(basisName);
+  workset->bases.push_back(basisValues);
+
+  Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+
+  // add in some evaluators
+  ///////////////////////////////////////////////////
+  {
+     // fill the basis with some dummy values
+     Teuchos::ParameterList p;
+     p.set("Name","TestField");
+     p.set("Basis",pureBasis);
+     RCP<panzer::DummyFieldEvaluator<EvalType,panzer::Traits> > eval 
+        = rcp(new panzer::DummyFieldEvaluator<EvalType,panzer::Traits>(p));
+
+     fm->registerEvaluator<EvalType>(eval);
+  }
+
+  {
+     // fill the basis with some dummy values
+     Teuchos::ParameterList p;
+     p.set("Name","TestField");
+     p.set("Basis",basisLayout);
+     p.set("IR",quadRule);
+     RCP<panzer::DOF<EvalType,panzer::Traits> > eval 
+        = rcp(new panzer::DOF<EvalType,panzer::Traits>(p));
+
+     fm->registerEvaluator<EvalType>(eval);
+     fm->requireField<EvalType>(*eval->evaluatedFields()[0]);
+  }
+
+  Teuchos::RCP<PHX::DataLayout> coordsLayout;
+  {
+     // build reference coordinate evaluator
+     Teuchos::ParameterList p;
+     p.set("Name","RefCoord");
+     p.set("Quad Values",quadValues);
+     RCP<panzer::RefCoordEvaluator<EvalType,panzer::Traits> > eval 
+        = rcp(new panzer::RefCoordEvaluator<EvalType,panzer::Traits>(p));
+
+     coordsLayout = eval->coordsLayout;
+     fm->registerEvaluator<EvalType>(eval);
+  }
+
+  // add evaluator under test
+  ///////////////////////////////////////////////////
+  {
+     RCP<panzer::DOF_PointField<EvalType,panzer::Traits> > eval 
+        = rcp(new panzer::DOF_PointField<EvalType,panzer::Traits>("TestField",*pureBasis,"RefCoord",coordsLayout,"postfix"));
+
+     fm->registerEvaluator<EvalType>(eval);
+     fm->requireField<EvalType>(*eval->evaluatedFields()[0]);
+  }
+
+  {
+     RCP<panzer::DOF_PointField<EvalType,panzer::Traits> > eval 
+        = rcp(new panzer::DOF_PointField<EvalType,panzer::Traits>("TestField",*pureBasis,"RefCoord",coordsLayout,true));
+
+     fm->registerEvaluator<EvalType>(eval);
+     fm->requireField<EvalType>(*eval->evaluatedFields()[0]);
+  }
+
+  panzer::Traits::SetupData setupData;
+  setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
+  setupData.worksets_->push_back(*workset);
+  fm->postRegistrationSetup(setupData);
+
+  panzer::Traits::PED preEvalData;
+
+  fm->preEvaluate<EvalType>(preEvalData);
+  fm->evaluateFields<EvalType>(*workset);
+  fm->postEvaluate<EvalType>(0);
+
+  // fm->getFieldData<typename EvalType::ScalarT,EvalType>(integral);
+
+  // check the results
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,gradient,EvalType)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Explicit instantiation
+////////////////////////////////////////////////////////////////////////////////////
+
+typedef Traits::Residual ResidualType;
+typedef Traits::Jacobian JacobianType;
+
+UNIT_TEST_GROUP(ResidualType)
+UNIT_TEST_GROUP(JacobianType)
+
+#ifdef HAVE_STOKHOS
+   typedef Traits::SGResidual SGResidualType;
+   typedef Traits::SGJacobian SGJacobianType;
+
+   // these are failing with Stokhos enabled! 8/18/2011
+   UNIT_TEST_GROUP(SGResidualType)
+   UNIT_TEST_GROUP(SGJacobianType)
+#endif
+
+}

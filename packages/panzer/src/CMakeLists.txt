@@ -130,6 +130,8 @@ APPEND_SET(HEADERS
   evaluators/Panzer_Dirichlet_ResidualT.hpp
   evaluators/Panzer_DOF.hpp
   evaluators/Panzer_DOFT.hpp
+  evaluators/Panzer_DOF_PointField.hpp
+  evaluators/Panzer_DOF_PointFieldT.hpp
   evaluators/Panzer_DOFGradient.hpp
   evaluators/Panzer_DOFGradientT.hpp
   evaluators/Panzer_GatherBasisCoordinates.hpp
@@ -214,6 +216,7 @@ APPEND_SET(SOURCES
   responses/Panzer_ResponseUtilities.cpp
   responses/Panzer_ResponseFunctional_Aggregator.cpp
   evaluators/Panzer_Constant.cpp
+  evaluators/Panzer_DOF_PointField.cpp
   evaluators/Panzer_GatherBasisCoordinates.cpp
   evaluators/Panzer_GatherIntegrationCoordinates.cpp
   evaluators/Panzer_Parameter.cpp
