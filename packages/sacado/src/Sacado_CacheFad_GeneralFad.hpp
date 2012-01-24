@@ -145,6 +145,17 @@ namespace Sacado {
       //! Cache values
       void cache() const {}
 
+      //! Returns whether two Fad objects have the same values
+      template <typename S>
+      bool isEqualTo(const Expr<S>& x) const {
+	typedef IsEqual<value_type> IE;
+	if (x.size() != this->size()) return false;
+	bool eq = IE::eval(x.val(), this->val());
+	for (int i=0; i<this->size(); i++)
+	  eq = eq && IE::eval(x.dx(i), this->dx(i));
+	return eq;
+      }
+
       //@}
 
       /*!

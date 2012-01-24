@@ -698,10 +698,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 	int ReplaceRowMap(const Epetra_BlockMap& newmap);
 
 	/** Replaces the current ColMap with the user-specified map object, but only
-	    if currentmap->PointSameAs(newmap) is true. This is a collective function.
+            if no entries have been inserted into the graph yet (both IndicesAreLocal() 
+	    and IndicesAreGlobal() are false) or currentmap->PointSameAs(newmap) is true. 
+	    This is a collective function.
 	    Returns 0 if map is replaced, -1 if not.
-
-	    \pre ColMap().PointSameAs(newmap)==true
+	
+	    \pre (IndicesAreLocal()==false && IndicesAreGlobal()==false) || ColMap().PointSameAs(newmap)==true
 	*/
 	int ReplaceColMap(const Epetra_BlockMap& newmap);
 

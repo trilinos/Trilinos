@@ -670,17 +670,15 @@ private:
        const int blockSize = 2;
        const int numBlocks = 100;
        const int numRecycledBlocks = 25;
-       const int verbosity = Belos::Errors + Belos::Warnings + 
-	 Belos::TimingDetails + Belos::StatusTestDetails;
-       const int outputStyle = Belos::General;
+       const int verbosity = Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails;
+       const Belos::OutputType outputStyle = Belos::General;
        const int outputFreq = 1;
        RCP<std::ostream> outputStream = rcpFromRef (std::cout);
        const std::string impResScale ("Norm of Preconditioned Initial Residual");
        const std::string expResScale ("Norm of Initial Residual");
        const std::string timerLabel ("Belos");
        const std::string orthoType ("DGKS");
-       RCP<const ParameterList> orthoParams = 
-	 orthoFactory_.getDefaultParameters (orthoType);
+       RCP<const ParameterList> orthoParams = orthoFactory_.getDefaultParameters (orthoType);
        //const MagnitudeType orthoKappa = SCT::magnitude (SCT::eps());
        //
        // mfh 31 Dec 2011: Negative values of orthoKappa are ignored.

@@ -242,7 +242,8 @@ public:
   /** \brief . */
   virtual RCP< Comm<Ordinal> > split(const int color, const int key) const;
   /** \brief . */
-  virtual RCP< Comm<Ordinal> > createSubcommunicator(const std::vector<int>& ranks) const;
+  virtual RCP< Comm<Ordinal> > createSubcommunicator(
+    const ArrayView<const int>& ranks) const;
   //@}
 
   //! @name Overridden from Describable 
@@ -327,6 +328,7 @@ MpiComm<Ordinal>::MpiComm(
   setupMembersFromComm();
 }
 
+
 template<typename Ordinal>
 MpiComm<Ordinal>::MpiComm(const MpiComm<Ordinal>& other)
 {
@@ -338,6 +340,7 @@ MpiComm<Ordinal>::MpiComm(const MpiComm<Ordinal>& other)
   setupMembersFromComm();
 }
 
+
 template<typename Ordinal>
 void MpiComm<Ordinal>::setupMembersFromComm()
 {
@@ -347,6 +350,7 @@ void MpiComm<Ordinal>::setupMembersFromComm()
     tagCounter_ = minTag_;
   tag_ = tagCounter_++;
 }
+
 
 // Overridden from Comm
 
@@ -417,8 +421,11 @@ void MpiComm<Ordinal>::reduceAll(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::reduceAll(...)"
     );
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
+  MPI_Datatype char_block;
+  MPI_Type_contiguous(bytes, MPI_CHAR, &char_block);
+  MPI_Type_commit(&char_block);
   MPI_Allreduce(
-    const_cast<char*>(sendBuffer),globalReducts,bytes,MPI_CHAR,op.mpi_op()
+    const_cast<char*>(sendBuffer),globalReducts,1,char_block,op.mpi_op()
     ,*rawMpiComm_
     );
 }
@@ -697,12 +704,14 @@ void MpiComm<Ordinal>::wait(
   *request = null;
 }
 
+
 template<typename Ordinal>
 RCP< Comm<Ordinal> >
 MpiComm<Ordinal>::duplicate() const
 {
   return rcp(new MpiComm<Ordinal>(*this));
 }
+
 
 template<typename Ordinal>
 RCP< Comm<Ordinal> >
@@ -726,9 +735,10 @@ MpiComm<Ordinal>::split(const int color, const int key) const
   }
 }
 
+
 template<typename Ordinal>
 RCP< Comm<Ordinal> >
-MpiComm<Ordinal>::createSubcommunicator(const std::vector<int> &ranks) const
+MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
 {
   int mpiReturn;
 
@@ -754,6 +764,7 @@ MpiComm<Ordinal>::createSubcommunicator(const std::vector<int> &ranks) const
     return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
   }
 }
+
 
 // Overridden from Describable
 

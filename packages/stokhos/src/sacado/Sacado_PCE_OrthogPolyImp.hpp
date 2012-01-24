@@ -117,6 +117,27 @@ evaluate(
 }
 
 template <typename T, typename Storage> 
+bool 
+OrthogPoly<T,Storage>::
+isEqualTo(const OrthogPoly& x) const {
+  typedef IsEqual<value_type> IE;
+  if (x.size() != this->size()) return false;
+  // Allow expansions to be different if their size is 1 and one
+  // of them is a constant expansion
+  if (expansion_ != x.expansion_) {
+    if (x.size() != 1)
+      return false;
+    if ((expansion_ != const_expansion_) && 
+	(x.expansion_ != const_expansion_))
+      return false;
+  }
+  bool eq = true;
+  for (int i=0; i<this->size(); i++)
+    eq = eq && IE::eval(x.coeff(i), this->coeff(i));
+  return eq;
+}
+
+template <typename T, typename Storage> 
 OrthogPoly<T,Storage>& 
 OrthogPoly<T,Storage>::
 operator=(const typename OrthogPoly<T,Storage>::value_type& v) 
@@ -866,6 +887,60 @@ operator>(const OrthogPoly<T,Storage>& a,
 	  const typename OrthogPoly<T,Storage>::value_type& b)
 {
   return a.coeff(0) > b;
+}
+
+template <typename T, typename Storage>
+bool toBool(const OrthogPoly<T,Storage>& x) {
+  bool is_zero = true;
+  for (int i=0; i<x.size(); i++)
+    is_zero = is_zero && (x.coeff(i) == 0.0);
+  return !is_zero;
+}
+
+template <typename T, typename Storage>
+inline bool
+operator && (const OrthogPoly<T,Storage>& x1, const OrthogPoly<T,Storage>& x2)
+{
+  return toBool(x1) && toBool(x2);
+}
+
+template <typename T, typename Storage>
+inline bool
+operator && (const typename OrthogPoly<T,Storage>::value_type& a, 
+	     const OrthogPoly<T,Storage>& x2)
+{
+  return a && toBool(x2);
+}
+
+template <typename T, typename Storage>
+inline bool
+operator && (const OrthogPoly<T,Storage>& x1, 
+	     const typename OrthogPoly<T,Storage>::value_type& b)
+{
+  return toBool(x1) && b;
+}
+
+template <typename T, typename Storage>
+inline bool
+operator || (const OrthogPoly<T,Storage>& x1, const OrthogPoly<T,Storage>& x2)
+{
+  return toBool(x1) || toBool(x2);
+}
+
+template <typename T, typename Storage>
+inline bool
+operator || (const typename OrthogPoly<T,Storage>::value_type& a, 
+	     const OrthogPoly<T,Storage>& x2)
+{
+  return a || toBool(x2);
+}
+
+template <typename T, typename Storage>
+inline bool
+operator || (const OrthogPoly<T,Storage>& x1, 
+	     const typename OrthogPoly<T,Storage>::value_type& b)
+{
+  return toBool(x1) || b;
 }
 
 template <typename T, typename Storage>

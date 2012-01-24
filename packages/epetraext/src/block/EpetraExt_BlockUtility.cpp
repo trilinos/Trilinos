@@ -52,10 +52,12 @@ Epetra_Map * BlockUtility::GenerateBlockMap(
 	const Epetra_BlockMap & BaseMap,
         const int * RowIndices,
 	int NumBlockRows,
-        const Epetra_Comm & GlobalComm ) 
+        const Epetra_Comm & GlobalComm,
+	int Offset) 
 {
   int BaseIndex = BaseMap.IndexBase();
-  int Offset = BlockUtility::CalculateOffset(BaseMap);
+  if (Offset == 0)
+    Offset = BlockUtility::CalculateOffset(BaseMap);
 
   //Get Base Global IDs
   int Size = BaseMap.NumMyElements();
@@ -84,22 +86,25 @@ Epetra_Map * BlockUtility::GenerateBlockMap(
 Epetra_Map * BlockUtility::GenerateBlockMap(
 	const Epetra_BlockMap & BaseMap,
         const std::vector<int>& RowIndices,
-	const Epetra_Comm & GlobalComm ) 
+	const Epetra_Comm & GlobalComm,
+	int Offset ) 
 {
   return GenerateBlockMap(BaseMap, &RowIndices[0], RowIndices.size(), 
-			  GlobalComm);
+			  GlobalComm, Offset);
 }
 
 //==============================================================================
 Epetra_Map * BlockUtility::GenerateBlockMap(
 	const Epetra_BlockMap & BaseMap,
         const Epetra_BlockMap& BlockMap,
-	const Epetra_Comm & GlobalComm ) 
+	const Epetra_Comm & GlobalComm,
+	int Offset) 
 {
   return GenerateBlockMap(BaseMap, 
 			  BlockMap.MyGlobalElements(), 
 			  BlockMap.NumMyElements(), 
-			  GlobalComm);
+			  GlobalComm,
+			  Offset);
 }
 
 //==============================================================================

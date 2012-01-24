@@ -139,6 +139,20 @@ namespace Sacado {
 	StringName<ValueT>::eval() + " >"; }
   };
 
+  //! Specialization of %IsEqual to DVFad types
+  template <typename ValueT>
+  struct IsEqual< Fad::DVFad<ValueT> > {
+    static bool eval(const Fad::DVFad<ValueT>& x, const Fad::DVFad<ValueT>& y) {
+      return x.isEqualTo(y);
+    }
+  };
+
+  //! Specialization of %IsStaticallySized to DVFad types
+  template <typename ValueT>
+  struct IsStaticallySized< Fad::DVFad<ValueT> > {
+    static const bool value = false;
+  };
+
 } // namespace Sacado
 
 // Define Teuchos traits classes
@@ -173,7 +187,7 @@ namespace Teuchos {
     promote;
   };
 
-  //! Specializtion of Teuchos::ScalarTraits
+  //! Specializtion of %Teuchos::ScalarTraits
   template <typename ValueT>
   struct ScalarTraits< Sacado::Fad::DVFad<ValueT> > :
     public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::DVFad<ValueT> >

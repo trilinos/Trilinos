@@ -186,8 +186,9 @@ public:
   //@{
 
   /** \brief Return the number of bytes for <tt>count</tt> objects. */
-  static Ordinal fromCountToIndirectBytes(const Ordinal count) { 
-    (void)count; 
+  static Ordinal fromCountToIndirectBytes(const Ordinal count, 
+					  const T buffer[]) { 
+    (void)count; (void)buffer; 
     UndefinedSerializationTraits<T>::notDefined(); 
     return 0; 
   }
@@ -217,8 +218,9 @@ public:
   }
 
   /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
-  static Ordinal fromIndirectBytesToCount(const Ordinal bytes) { 
-    (void)bytes; 
+  static Ordinal fromIndirectBytesToCount(const Ordinal bytes, 
+					  const char charBuffer[]) { 
+    (void)bytes; (void)charBuffer; 
     UndefinedSerializationTraits<T>::notDefined(); 
     return 0; 
   }
@@ -250,6 +252,22 @@ public:
   //@}
 
 };
+
+/** \class ValueTypeSerializer
+ * \brief Serialization class for types T that use value semantics.
+ *
+ * This works similarly to SerializationTraits, except that it provides
+ * a class that can be specialized for types T to implement serialization
+ * through an object instead of a traits class.  Some types need other data
+ * to help them serialize, and that data can be encapsulated into a non-static
+ * specialization of this class.
+ *
+ * The default implementation is just given by the SerializationTraits for the
+ * type T, and thus this class will be defined for any type that defines its
+ * SerializationTraits.
+ */
+template <typename Ordinal, typename T>
+class ValueTypeSerializer : public Teuchos::SerializationTraits<Ordinal,T> {};
 
 /// \class DirectSerializationTraits
 /// \brief Serialization traits for objects that support direct serialization.
@@ -301,26 +319,27 @@ public:
   static const T* convertFromCharPtr( const char* ptr )
     { return reinterpret_cast<const T*>(ptr); }
   // Indirect serialization
-  static Ordinal fromCountToIndirectBytes(const Ordinal count)
+  static Ordinal fromCountToIndirectBytes(const Ordinal count, const T buffer[])
     { return fromCountToDirectBytes(count); }
   static void serialize(
     const Ordinal count, const T buffer[], const Ordinal bytes, char charBuffer[]
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT(bytes!=fromCountToIndirectBytes(count));
+      TEUCHOS_TEST_FOR_EXCEPT(bytes!=fromCountToDirectBytes(count));
 #endif
       const char *_buffer = convertToCharPtr(buffer);
       std::copy(_buffer,_buffer+bytes,charBuffer);
     }
-  static Ordinal fromIndirectBytesToCount(const Ordinal bytes) 
+  static Ordinal fromIndirectBytesToCount(const Ordinal bytes, 
+					  const char charBuffer[]) 
     { return fromDirectBytesToCount(bytes); }
   static void deserialize(
     const Ordinal bytes, const char charBuffer[], const Ordinal count, T buffer[]
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT(count!=fromIndirectBytesToCount(bytes));
+      TEUCHOS_TEST_FOR_EXCEPT(count!=fromDirectBytesToCount(bytes));
 #endif
       char *_buffer = convertToCharPtr(buffer);
       std::copy(charBuffer,charBuffer+bytes,_buffer);

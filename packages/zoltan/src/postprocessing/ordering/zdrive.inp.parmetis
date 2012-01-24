@@ -1,7 +1,0 @@
-Decomposition Method 	= none
-Zoltan Parameters	= order_method=parmetis
-Zoltan Parameters	= debug_level=6
-File Type		= matrixmarket
-File Name		= current
-Parallel Disk Info	= number=0
-zdrive action = 2

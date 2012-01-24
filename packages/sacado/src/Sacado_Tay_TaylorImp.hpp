@@ -128,6 +128,13 @@ Taylor(const T& x) :
 
 template <typename T> 
 Taylor<T>::
+Taylor(const typename dummy<value_type,scalar_type>::type& x) :
+  th(new TaylorData(value_type(x)))
+{
+}
+
+template <typename T> 
+Taylor<T>::
 Taylor(unsigned int d, const T& x) :
   th(new TaylorData(d, x))
 {
@@ -201,6 +208,14 @@ operator=(const T& v)
   Sacado::ds_array<T>::zero(th->coeff_+1, th->deg_);
 
   return *this;
+}
+
+template <typename T> 
+Taylor<T>& 
+Taylor<T>::
+operator=(const typename dummy<value_type,scalar_type>::type& v) 
+{
+  return operator=(value_type(v));
 }
 
 template <typename T> 
@@ -1338,6 +1353,56 @@ operator>(const Taylor<T>& a,
 	  const T& b)
 {
   return a.coeff(0) > b;
+}
+
+template <typename T>
+bool toBool(const Taylor<T>& x) {
+  bool is_zero = true;
+  for (unsigned int i=0; i<=x.degree(); i++)
+    is_zero = is_zero && (x.coeff(i) == 0.0);
+  return !is_zero;
+}
+
+template <typename T>
+inline bool
+operator && (const Taylor<T>& x1, const Taylor<T>& x2)
+{
+  return toBool(x1) && toBool(x2);
+}
+
+template <typename T>
+inline bool
+operator && (const typename Taylor<T>::value_type& a, const Taylor<T>& x2)
+{
+  return a && toBool(x2);
+}
+
+template <typename T>
+inline bool
+operator && (const Taylor<T>& x1, const typename Taylor<T>::value_type& b)
+{
+  return toBool(x1) && b;
+}
+
+template <typename T>
+inline bool
+operator || (const Taylor<T>& x1, const Taylor<T>& x2)
+{
+  return toBool(x1) || toBool(x2);
+}
+
+template <typename T>
+inline bool
+operator || (const typename Taylor<T>::value_type& a, const Taylor<T>& x2)
+{
+  return a || toBool(x2);
+}
+
+template <typename T>
+inline bool
+operator || (const Taylor<T>& x1, const typename Taylor<T>::value_type& b)
+{
+  return toBool(x1) || b;
 }
 
 template <typename T>
