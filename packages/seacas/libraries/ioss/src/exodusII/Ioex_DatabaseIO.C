@@ -35,6 +35,7 @@
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SerializeIO.h>
 #include <Ioss_SurfaceSplit.h>
+#include <Ioss_FileInfo.h>
 #include <Ioss_Utils.h>
 #include <assert.h>
 #include <exodusII.h>

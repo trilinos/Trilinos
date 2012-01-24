@@ -130,7 +130,7 @@ int ex_put_prop_names (int   exoid,
   int i, propid, dimid, dims[1];
   size_t name_length, prop_name_len;
   char name[MAX_VAR_NAME_LENGTH+1];
-  int64_t vals[1];
+  long long vals[1];
   int max_name_len = 0;
   int int_type = NC_INT;
 

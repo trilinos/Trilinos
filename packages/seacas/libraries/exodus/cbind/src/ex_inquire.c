@@ -515,7 +515,7 @@ static int ex_inquire_internal (int      exoid,
       status = nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
       if (status == NC_NOERR && att_type == NC_INT) {
 	/* The attribute exists, return it... */
-	nc_get_att_longlong(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, ret_int);
+	nc_get_att_longlong(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, (long long*)ret_int);
       }
     }
     break;
@@ -737,10 +737,10 @@ static int ex_inquire_internal (int      exoid,
       /* walk id list, get each side set node length and sum for total */
 
       for (i=0; i<num_sets; i++) {
+	ex_entity_id id;
 	if (stat_vals[i] == 0) /* is this object null? */
 	  continue;
 
-	ex_entity_id id;
 	if (ex_int64_status(exoid) & EX_IDS_INT64_API)
 	  id = ((int64_t*)ids)[i];
 	else

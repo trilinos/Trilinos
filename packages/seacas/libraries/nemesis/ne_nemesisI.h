@@ -45,6 +45,18 @@
 extern "C" {
 #endif
 
+#ifndef EXODUS_II_HDR
+  /** Specifies that this argument is the id of an entity: element block, nodeset, sideset, ... */
+  typedef int64_t ex_entity_id;
+  
+  /** The mechanism for passing double/float and int/int64_t both use a
+     void*; to avoid some confusion as to whether a function takes an
+     integer or a float/double, the following typedef is used for the
+     integer argument
+  */
+  typedef void void_int;
+#endif
+  
 /*=============================================================================
  *     Initial Information Routines
  *===========================================================================*/

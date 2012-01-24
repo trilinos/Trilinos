@@ -86,8 +86,6 @@ int ex_get_prop (int   exoid,
    int num_props, i, propid;
    int found = FALSE;
    size_t start[1]; 
-   int64_t l_val;
-   int     i_val;
    char name[MAX_VAR_NAME_LENGTH+1];
    char tmpstr[MAX_STR_LENGTH+1];
 
@@ -202,12 +200,14 @@ int ex_get_prop (int   exoid,
    start[0] = start[0] - 1;
 
    if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
+     long long l_val;
      status = nc_get_var1_longlong (exoid, propid, start, &l_val);
      if (status == NC_NOERR) {
        int64_t *val = (int64_t*)value;
        *val = l_val;
      }
    } else {
+     int     i_val;
      status = nc_get_var1_int (exoid, propid, start, &i_val);
      if (status == NC_NOERR) {
        int *val = (int*)value;

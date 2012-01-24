@@ -497,7 +497,7 @@ file ID %d",
 	count[0] =  num_icm;
 	if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
 	  status = nc_put_vara_longlong(exoid, n_varid[1], start, count,
-					&((int64_t*)node_cmap_ids)[proc_ptr]);
+					&((long long*)node_cmap_ids)[proc_ptr]);
 	} else {
 	  status = nc_put_vara_int(exoid, n_varid[1], start, count,
 				   &((int*)node_cmap_ids)[proc_ptr]);
@@ -600,7 +600,7 @@ file ID %d",
 	count[0] = num_icm;
 	if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
 	  status = nc_put_vara_longlong(exoid, e_varid[1], start, count,
-					&((int64_t*)elem_cmap_ids)[proc_ptr]);
+					&((long long*)elem_cmap_ids)[proc_ptr]);
 	} else {
 	  status = nc_put_vara_int(exoid, e_varid[1], start, count,
 				   &((int*)elem_cmap_ids)[proc_ptr]);
