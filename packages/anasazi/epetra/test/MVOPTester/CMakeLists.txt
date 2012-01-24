@@ -10,3 +10,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS "-v"
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Epetra_SpecializedMVOPTester
+  SOURCES cxx_specialized_main.cpp
+  COMM serial mpi
+  ARGS "-v"
+  STANDARD_PASS_OUTPUT
+  )
