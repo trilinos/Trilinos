@@ -1,6 +1,7 @@
 #include "Panzer_String_Utilities.hpp"
 
 #include <boost/algorithm/string.hpp>
+#include <sstream>
 
 namespace panzer {
   
@@ -29,5 +30,18 @@ namespace panzer {
       pos = str.find_first_of(delimiters, lastPos);
     }
     
+  }
+
+  void TokensToDoubles(std::vector<double> & values,const std::vector<std::string> & tokens)
+  {
+     // turn tokens into doubles (its a miracle!)
+     for(std::size_t i=0;i<tokens.size();i++) {
+        double value = 0.0;
+        std::stringstream ss;
+        ss << tokens[i];
+        ss >> value; 
+      
+        values.push_back(value);
+     }
   }
 }
