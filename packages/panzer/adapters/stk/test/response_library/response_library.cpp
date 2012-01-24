@@ -181,38 +181,43 @@ namespace panzer {
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     eloc->x->PutScalar(0.0);
 
-    out << "evaluating VFM" << std::endl;
-    panzer::AssemblyEngineInArgs ae_inargs(loc,loc);
-    rLibrary->evaluateVolumeFieldManagers<EvalT>(ae_inargs,*tcomm);
-
-    double sum_dog = 0.0;
-    double sum_horse = 0.0;
-    for(std::size_t i=0;i<conn_manager->getElementBlock("eblock-0_0").size();i++)
-       sum_dog += double(i)+1.0; 
-    for(std::size_t i=0;i<conn_manager->getElementBlock("eblock-1_0").size();i++)
-       sum_horse += -double(i)-5.5; 
-  
-    {
-       Teuchos::RCP<const panzer::Response<panzer::Traits> > dResp_o 
-             = rLibrary->getVolumeResponse(dResp,"eblock-0_0");
-       Teuchos::RCP<const panzer::Response<panzer::Traits> > hResp_o 
-             = rLibrary->getVolumeResponse(hResp,"eblock-1_0");
-
-       #ifdef HAVE_STOKHOS
-       if(dResp_o->hasSGValue()) {
-          typename panzer::Traits::SGType dVal = dResp_o->getSGValue();
-          typename panzer::Traits::SGType hVal = hResp_o->getSGValue();
-          TEST_EQUALITY(dVal.fastAccessCoeff(0),tcomm->getSize()*sum_dog);
-          TEST_EQUALITY(hVal.fastAccessCoeff(0),tcomm->getSize()*sum_horse);
-       }
-       else {
+    for(int cntr=0;cntr<2;cntr++) {
+       out << "evaluating VFM" << std::endl;
+       panzer::AssemblyEngineInArgs ae_inargs(loc,loc);
+       rLibrary->evaluateVolumeFieldManagers<EvalT>(ae_inargs,*tcomm);
+   
+       double sum_dog = 0.0;
+       double sum_horse = 0.0;
+       for(std::size_t i=0;i<conn_manager->getElementBlock("eblock-0_0").size();i++)
+          sum_dog += double(i)+1.0; 
+       for(std::size_t i=0;i<conn_manager->getElementBlock("eblock-1_0").size();i++)
+          sum_horse += -double(i)-5.5; 
+     
+       {
+          Teuchos::RCP<const panzer::Response<panzer::Traits> > dResp_o 
+                = rLibrary->getVolumeResponse(dResp,"eblock-0_0");
+          Teuchos::RCP<const panzer::Response<panzer::Traits> > hResp_o 
+                = rLibrary->getVolumeResponse(hResp,"eblock-1_0");
+   
+          #ifdef HAVE_STOKHOS
+          if(dResp_o->hasSGValue()) {
+             typename panzer::Traits::SGType dVal = dResp_o->getSGValue();
+             typename panzer::Traits::SGType hVal = hResp_o->getSGValue();
+             TEST_EQUALITY(dVal.fastAccessCoeff(0),tcomm->getSize()*sum_dog);
+             TEST_EQUALITY(hVal.fastAccessCoeff(0),tcomm->getSize()*sum_horse);
+          }
+          else {
+             TEST_EQUALITY(dResp_o->getValue(),tcomm->getSize()*sum_dog);
+             TEST_EQUALITY(hResp_o->getValue(),tcomm->getSize()*sum_horse);
+          }
+          #else
           TEST_EQUALITY(dResp_o->getValue(),tcomm->getSize()*sum_dog);
           TEST_EQUALITY(hResp_o->getValue(),tcomm->getSize()*sum_horse);
+          #endif
        }
-       #else
-       TEST_EQUALITY(dResp_o->getValue(),tcomm->getSize()*sum_dog);
-       TEST_EQUALITY(hResp_o->getValue(),tcomm->getSize()*sum_horse);
-       #endif
+
+       // clear out old response data so it doesn't sum on the next pass
+       rLibrary->reinitializeResponseData();
     }
   }
 

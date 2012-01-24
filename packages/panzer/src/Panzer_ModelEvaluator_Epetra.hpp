@@ -66,6 +66,10 @@ namespace panzer {
     /** \brief Set initial time value */
     void set_t_init(double t);
 
+    //! Get the response library used by this evaluator
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary() const
+    { return responseLibrary_; }
+
   private:
 
     // /////////////////////////////////////

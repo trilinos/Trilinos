@@ -382,6 +382,21 @@ getVolumeResponseLabels(std::vector<std::string> & labels) const
       labels.push_back(itr->first);
 }
 
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+reinitializeResponseData() 
+{
+   // loop over all active containers
+   for(typename std::map<std::string,Teuchos::RCP<RespContVector> >::iterator itr=rsvdVolResp_.begin();
+       itr!=rsvdVolResp_.end();++itr) {
+      RespContVector & respContVec = *itr->second;
+      for(std::size_t i=0;i<respContVec.size();i++) {
+         if(respContVec[i]!=Teuchos::null)
+            respContVec[i]->clear();
+      }
+   }
+}
+
 }
 
 #endif

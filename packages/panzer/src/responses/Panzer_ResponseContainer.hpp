@@ -59,8 +59,8 @@ public:
    //! Clear response containers data
    void clear()
    {
-      typename std::map<std::string,Teuchos::RCP<ResponseData<TraitsT> > >::const_iterator itr;
-      for(itr=responseDataObjs_->begin();itr!=responseDataObjs_->end();++itr)
+      typename std::map<std::string,Teuchos::RCP<ResponseData<TraitsT> > >::iterator itr;
+      for(itr=responseDataObjs_.begin();itr!=responseDataObjs_.end();++itr)
          itr->second->reinitializeData();
    }
 

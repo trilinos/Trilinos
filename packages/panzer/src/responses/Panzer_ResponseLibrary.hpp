@@ -180,6 +180,9 @@ public:
    //! get volume response labels
    void getVolumeResponseLabels(std::vector<std::string> & labels) const;
 
+   //! Reinitialize the reponse data
+   void reinitializeResponseData();
+
 protected:
    //! Access a container field for a specified element block
    template <typename EvalT>
