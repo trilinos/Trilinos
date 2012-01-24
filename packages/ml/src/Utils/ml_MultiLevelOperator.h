@@ -106,7 +106,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
 
     \warning - This method has no effect and returns -1 as error code.
   */
-  int SetUseTranspose(bool UseTranspose){ ML_avoid_unused_param((void *) UseTranspose); 
+  int SetUseTranspose(bool UseTrans){ ML_avoid_unused_param((void *) UseTrans); 
     return(-1);}
   //@}
   
@@ -180,7 +180,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
   //! Pointer to the ML_Structure.
   ML * solver_;
   //! Label for this object.
-  char * Label_;
+  const char * Label_;
 
  private:
   //! Copy constructor (NOT DEFINED)
