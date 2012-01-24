@@ -61,16 +61,12 @@ typedef Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node> ImportFactory;
 typedef Xpetra::ExportFactory<LocalOrdinal, GlobalOrdinal, Node> ExportFactory;
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
-
 #ifdef XPETRA_TPETRAMAP_SHORT
 typedef Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
 #endif
 
 #ifdef XPETRA_TPETRACRSGRAPH_SHORT
 typedef Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsGraph;
-#endif
-
 #endif
 
 // Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by Scalar, LocalOrdinal, GlobalOrdinal, Node).

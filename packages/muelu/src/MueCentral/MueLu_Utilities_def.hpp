@@ -20,8 +20,12 @@
 #ifdef HAVE_MUELU_TPETRA
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <MatrixMarket_Tpetra.hpp>
+#include <Xpetra_TpetraMultiVector.hpp>
+#include <Xpetra_TpetraCrsMatrix.hpp>
 #endif // HAVE_MUELU_TPETRA
 
+#include <Xpetra_Map.hpp>
+#include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_BlockedCrsOperator.hpp>

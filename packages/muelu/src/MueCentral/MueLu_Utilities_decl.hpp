@@ -3,10 +3,13 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_OperatorFactory_fwd.hpp>
 #include <Xpetra_CrsOperator_fwd.hpp>
+#include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_BlockedCrsOperator_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
@@ -32,6 +35,9 @@ class Epetra_MultiVector;
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
+#include <Xpetra_TpetraMultiVector_fwd.hpp>
+#include <Xpetra_TpetraCrsMatrix_fwd.hpp>
+
 namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class MultiVector;
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> class CrsMatrix;
@@ -332,12 +338,12 @@ public:
   class Utils2<double,int,int>//, Kokkos::DefaultNode::DefaultNodeType,
                //Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps >
   {
-   typedef Xpetra::Operator<double,int,int> Operator;
    typedef double SC;
    typedef int LO;
    typedef int GO;
    typedef Kokkos::DefaultNode::DefaultNodeType NO;
    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LMO;
+   typedef Xpetra::Operator<double,int,int,NO,LMO> Operator;
 
 public:
 

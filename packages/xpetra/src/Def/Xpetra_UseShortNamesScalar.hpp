@@ -44,8 +44,6 @@ typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Mu
 typedef Xpetra::OperatorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorFactory;
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA
-
 #ifdef XPETRA_TPETRACRSMATRIX_SHORT
 typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
@@ -53,8 +51,6 @@ typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, Local
 #ifdef XPETRA_TPETRAMULTIVECTOR_SHORT
 typedef Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
 #endif
-
-#endif //
 
 // TODO: add namespace {} for shortcut types
 
