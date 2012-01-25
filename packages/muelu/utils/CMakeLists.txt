@@ -14,7 +14,7 @@ APPEND_GLOB(SOURCES *.cpp)
 #
 
 TRIBITS_ADD_LIBRARY(
-  muelu-utils
+  muelu-utils # should it be renamed muelu-common ? (it's not an extra utility lib, it's mandatory for the main lib)
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

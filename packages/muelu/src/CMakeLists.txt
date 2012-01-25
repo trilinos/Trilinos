@@ -25,9 +25,9 @@ INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
 INCLUDE_DIRECTORIES(${DIR}/Graph)
-INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
 INCLUDE_DIRECTORIES(${DIR}/Facade)
-
+INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
+INCLUDE_DIRECTORIES(${DIR}/../utils) # how to add this one automatically?
 
 SET(HEADERS "")
 APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
@@ -36,7 +36,6 @@ APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
 
 SET(SOURCES "")
-APPEND_GLOB(SOURCES *.cpp)
 APPEND_GLOB(SOURCES */*.cpp)
 APPEND_GLOB(SOURCES */*/*.cpp)
 
