@@ -25,7 +25,7 @@ INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
 INCLUDE_DIRECTORIES(${DIR}/Graph)
-INCLUDE_DIRECTORIES(${DIR}/../utils/ForwardDeclaration)
+INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
 INCLUDE_DIRECTORIES(${DIR}/../utils/Facade)
 
 
@@ -34,7 +34,6 @@ APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
 APPEND_GLOB(HEADERS ${DIR}/Headers/${PACKAGE_NAME}_ConfigDefs.hpp)
 APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
-APPEND_GLOB(HEADERS ${DIR}/../utils/ForwardDeclaration/*.hpp)
 APPEND_GLOB(HEADERS ${DIR}/../utils/Facade/*.hpp)
 
 SET(SOURCES "")
@@ -65,8 +64,8 @@ APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  CONFIGURE_FILE(${DIR}/../utils/ExplicitInstantiation/${PACKAGE_NAME}_ExplicitInstantiation.hpp.in ${BDIR}/MueLu_ExplicitInstantiation.hpp)
-  APPEND_GLOB(SOURCES ${DIR}/../utils/ExplicitInstantiation/*.cpp)
+  CONFIGURE_FILE(${DIR}/Utils/ExplicitInstantiation/${PACKAGE_NAME}_ExplicitInstantiation.hpp.in ${BDIR}/MueLu_ExplicitInstantiation.hpp)
+  APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
 ENDIF()
 
 #
