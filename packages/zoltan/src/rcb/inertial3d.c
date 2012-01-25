@@ -26,18 +26,8 @@ extern "C" {
 #include <stdio.h>
 #include <math.h>
 #include "rib.h"
+#include "inertial.h"
 #include "zz_const.h"
-
-/* macros for routines */ 
-#define max(a, b) ((a) < (b) ? (b) : (a)) 
-#define min(a, b) ((a) > (b) ? (b) : (a)) 
-#define sign(x)   ((x) >= 0 ? 1.0 : -1.0)
-
-/* function prototypes */
-
-static void evals3(double[3][3], double *, double *, double *);
-static double determinant(double[3][3]);
-static void eigenvec3(double[3][3], double, double *, double *);
 
 int Zoltan_RIB_inertial3d(
      int Tflops_Special,        /* Use Tflops_Special communication;
@@ -186,7 +176,7 @@ int Zoltan_RIB_inertial3d(
 }
 
 /* Find eigenvalues of 3x3 symmetric system by solving cubic. */
-static void evals3(
+void evals3(
      double H[3][3],            /* 3x3 sym matrix for lowest eigenvalue */
      double *eval1,             /* smallest eigenvalue */
      double *eval2,             /* middle eigenvalue */
@@ -280,7 +270,7 @@ static void evals3(
 }
 
 
-static double determinant(
+double determinant(
      double A[3][3]             /* matrix A */
 )
 {
@@ -295,7 +285,7 @@ static double determinant(
 
 
 /* Find the eigenvector of symmetric 3x3 matrix w/ given eigenvalue. */
-static void eigenvec3(
+void eigenvec3(
      double A[3][3],            /* matrix to find eigenvector of */
      double eval,               /* eigenvalue */
      double evec[3],            /* eigenvector returned */
