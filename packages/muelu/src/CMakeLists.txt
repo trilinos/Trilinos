@@ -76,6 +76,7 @@ TRIBITS_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEPLIBS muelu-utils
   )
 
 # for debugging
