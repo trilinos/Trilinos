@@ -3,13 +3,13 @@
 
 //Note: using MACRO HAVE_XPETRA_ instead of HAVE_MUELU_ because this file will eventually be moved to Xpetra
 
+#include "Xpetra_ConfigDefs.hpp"
+
 #ifdef HAVE_XPETRA_EPETRA
 #include <BelosOperator.hpp>
 #endif
 
 #include <BelosOperatorT.hpp>
-
-#include "Xpetra_ConfigDefs.hpp"
 
 namespace Belos { 
   using Teuchos::RCP;
