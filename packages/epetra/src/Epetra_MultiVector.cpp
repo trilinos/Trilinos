@@ -453,7 +453,7 @@ int Epetra_MultiVector::Random() {
    const int myLength = MyLength_;
 	for(int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
 #pragma omp parallel for default(none)
 #endif
 		for(int j = 0; j < myLength; j++)
@@ -1013,7 +1013,7 @@ int Epetra_MultiVector::Dot(const Epetra_MultiVector& A, double *Result) const {
     
   double **A_Pointers = A.Pointers();
 
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
   for (int i=0; i < NumVectors_; i++) 
     {
       const double * const from = Pointers_[i];
@@ -1395,7 +1395,7 @@ int  Epetra_MultiVector::Norm1 (double* Result) const {
 
   const int myLength = MyLength_;
   UpdateDoubleTemp();
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
   for (int i=0; i < NumVectors_; i++) 
     {
       const double * const from = Pointers_[i];
@@ -1440,7 +1440,7 @@ int  Epetra_MultiVector::Norm2 (double* Result) const {
     {
       const double * const from = Pointers_[i];
       double sum = 0.0;
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
 #pragma omp parallel for reduction (+:sum) default(none)
 #endif
       for (int j=0; j < myLength; j++) sum += from[j] * from[j];
@@ -1526,7 +1526,7 @@ int  Epetra_MultiVector::NormWeighted (const Epetra_MultiVector& Weights, double
       if (!OneW) W = W_Pointers[i]; // If Weights has the same number of vectors as this, use each weight vector
       double sum = 0.0;
       const double * const from = Pointers_[i];
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
 #pragma omp parallel for reduction (+:sum) default(none) shared(W)
 #endif
       for (int j=0; j < myLength; j++) {
@@ -1795,7 +1795,7 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
     {
       double sum = 0.0;
       const double * const from = Pointers_[i];
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
 #pragma omp parallel for reduction (+:sum) default(none)
 #endif
       for (int j=0; j < myLength; j++) sum += from[j];
