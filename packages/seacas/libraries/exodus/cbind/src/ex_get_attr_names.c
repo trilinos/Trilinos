@@ -77,13 +77,13 @@ int ex_get_attr_names( int   exoid,
     if (exerrval != 0) {
       if (exerrval == EX_NULLENTITY) {
 	sprintf(errmsg,
-		"Warning: no attributes found for NULL %s %d in file id %d",
+		"Warning: no attributes found for NULL %s %"PRId64" in file id %d",
 		ex_name_of_object(obj_type), obj_id, exoid);
 	ex_err("ex_get_attr_names",errmsg,EX_MSG);
 	return (EX_WARN);              /* no attributes for this object */
       } else {
 	sprintf(errmsg,
-		"Warning: failed to locate %s id %d in id array in file id %d",
+		"Warning: failed to locate %s id %"PRId64" in id array in file id %d",
 		ex_name_of_object(obj_type), obj_id, exoid);
 	ex_err("ex_get_attr_names",errmsg,exerrval);
 	return (EX_WARN);
@@ -141,7 +141,7 @@ int ex_get_attr_names( int   exoid,
   if ((status = nc_inq_dimid(exoid, dnumobjatt, &numattrdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Warning: no attributes found for %s %d in file id %d",
+	    "Warning: no attributes found for %s %"PRId64" in file id %d",
 	    ex_name_of_object(obj_type),obj_id,exoid);
     ex_err("ex_get_attr_names",errmsg,EX_MSG);
     return (EX_WARN);              /* no attributes for this object */
@@ -150,7 +150,7 @@ int ex_get_attr_names( int   exoid,
   if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get number of attributes for %s %d in file id %d",
+	    "Error: failed to get number of attributes for %s %"PRId64" in file id %d",
 	    ex_name_of_object(obj_type),obj_id,exoid);
     ex_err("ex_get_attr_names",errmsg,exerrval);
     return (EX_FATAL);

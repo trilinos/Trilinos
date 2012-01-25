@@ -57,7 +57,7 @@ static int define_variable_name_variable(int exoid, const char *VARIABLE, int di
 static int *get_status_array(int exoid, int count, const char *VARIABLE, const char *label);
 static int put_truth_table(int exoid, int varid, int *table, const char *label);
 static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, int num_var,
-                              int *var_tab, int *status, int *ids, const char *label);
+                              int *var_tab, int *status, void_int *ids, const char *label);
 
 #define EX_GET_IDS_STATUS(TNAME,NUMVAR,DNAME,DID,DVAL,VIDS,EIDS,VSTAT,VSTATVAL) \
   if (NUMVAR > 0) {							\
@@ -488,7 +488,7 @@ static int put_truth_table(int exoid, int varid, int *table, const char *label)
 }
 
 static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, int num_var,
-			      int *var_tab, int *status_tab, int *ids, const char *label)
+			      int *var_tab, int *status_tab, void_int *ids, const char *label)
 {
   char errmsg[MAX_ERR_LENGTH];
   int k = 0;
@@ -509,6 +509,12 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
   }
   
   for (i=0; i<num_ent; i++) {
+    int64_t id;
+    if (ex_int64_status(exoid) & EX_IDS_INT64_API)
+      id = ((int64_t*)ids)[i];
+    else
+      id = ((int*)ids)[i];
+      
     for (j=1; j<=num_var; j++) {
       
       /* check if variables are to be put out for this block */
@@ -522,8 +528,8 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
           if (status != NC_NOERR) {
             exerrval = status;
             sprintf(errmsg,
-                    "Error: failed to locate number of entities in %s %d in file id %d",
-                    label, ids[i], exoid);
+                    "Error: failed to locate number of entities in %s %"PRId64" in file id %d",
+                    label, id, exoid);
             ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
             return status;
           }
@@ -539,8 +545,8 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
             if (status != NC_ENAMEINUSE) {
               exerrval = status;
               sprintf(errmsg,
-                      "Error: failed to define %s variable for %s %d in file id %d",
-                      label, label, ids[i], exoid);
+                      "Error: failed to define %s variable for %s %"PRId64" in file id %d",
+                      label, label, id, exoid);
               ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
               return status;
             }

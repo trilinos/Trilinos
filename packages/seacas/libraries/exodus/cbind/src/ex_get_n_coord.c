@@ -86,7 +86,8 @@ int ex_get_n_coord (int exoid,
   int coordidx, coordidy, coordidz;
 
   int numnoddim, ndimdim;
-  size_t num_nod, num_dim, start[2], count[2], i;
+  size_t num_nod;
+  size_t num_dim, start[2], count[2], i;
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0;
@@ -110,13 +111,13 @@ int ex_get_n_coord (int exoid,
       return (EX_FATAL);
     }
 
-  if (start_node_num + num_nodes -1 > (int)num_nod) {
+  if (start_node_num + num_nodes -1 > num_nod) {
     exerrval = EX_BADPARAM;
-      sprintf(errmsg,
-              "Error: start index (%d) + node count (%d) is larger than total number of nodes (%d) in file id %d",
-              start_node_num, num_nodes, (int)num_nod, exoid);
-      ex_err("ex_get_n_coord",errmsg,exerrval);
-      return (EX_FATAL);
+    sprintf(errmsg,
+	    "Error: start index (%"PRId64") + node count (%"PRId64") is larger than total number of nodes (%"ST_ZU") in file id %d",
+	    start_node_num, num_nodes, num_nod, exoid);
+    ex_err("ex_get_n_coord",errmsg,exerrval);
+    return (EX_FATAL);
   }
 
   if (ex_get_dimension(exoid, DIM_NUM_DIM, "dimensions",

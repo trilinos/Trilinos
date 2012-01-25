@@ -42,6 +42,7 @@
 #define EXODUS_II_INT_HDR
 
 #include "netcdf.h"
+#include <inttypes.h>
 
 #ifndef __APPLE__
 #if defined __STDC__ || defined __cplusplus
@@ -61,6 +62,46 @@
 
 
 #include <stdio.h>
+
+/* A format string for outputting size_t ... */
+#if 0
+#if (defined(__STDC__) && defined(__STDC_VERSION__))
+# if (__STDC__ && __STDC_VERSION__ >= 199901L)
+# define PRIoSIZE "zo"
+# define PRIuSIZE "zu"
+# define PRIxSIZE "zx"
+# define PRIXSIZE "zX"
+# endif
+#else
+/* ULLONG_MAX is defined in my wrapper if 64-bit integer extensions
+are detected, even if it's not a C99 compiler. */
+# if defined(ULLONG_MAX) && (SIZE_MAX == ULLONG_MAX)
+# define PRIoSIZE "llo"
+# define PRIuSIZE "llu"
+# define PRIxSIZE "llx"
+# define PRIXSIZE "llX"
+# elif (SIZE_MAX == ULONG_MAX)
+# define PRIoSIZE "lo"
+# define PRIuSIZE "lu"
+# define PRIxSIZE "lx"
+# define PRIXSIZE "lX"
+# elif (SIZE_MAX == UINT_MAX)
+# define PRIoSIZE "o"
+# define PRIuSIZE "u"
+# define PRIxSIZE "x"
+# define PRIXSIZE "X"
+# elif (SIZE_MAX == USHRT_MAX)
+# define PRIoSIZE "ho"
+# define PRIuSIZE "hu"
+# define PRIxSIZE "hx"
+# define PRIXSIZE "hX"
+# else
+# error "Platform not supported"
+# endif
+#endif
+#endif
+
+#define ST_ZU "lu"
 
 #define MAX_VAR_NAME_LENGTH     32   /**< Internal use only */
 

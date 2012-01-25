@@ -152,7 +152,7 @@ int ex_put_block_param( int         exoid,
   if (exerrval != EX_LOOKUPFAIL) {   /* found the element block id */
     exerrval = EX_FATAL;
     sprintf(errmsg,
-            "Error: %s id %d already exists in file id %d",
+            "Error: %s id %"PRId64" already exists in file id %d",
 	    ex_name_of_object(block.type), block.id,exoid);
     ex_err("ex_put_block",errmsg,exerrval);
     return (EX_FATAL);
@@ -210,7 +210,7 @@ int ex_put_block_param( int         exoid,
   if ((status = nc_put_var1_int(exoid, varid, start, &blk_stat)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to store %s id %d status to file id %d",
+	    "Error: failed to store %s id %"PRId64" status to file id %d",
 	    ex_name_of_object(block.type), block.id, exoid);
     ex_err("ex_put_block",errmsg,exerrval);
     return (EX_FATAL);
@@ -282,13 +282,13 @@ int ex_put_block_param( int         exoid,
     if (status == NC_ENAMEINUSE) {        /* duplicate entry */
       exerrval = status;
       sprintf(errmsg,
-	      "Error: %s %d already defined in file id %d",
+	      "Error: %s %"PRId64" already defined in file id %d",
 	      ex_name_of_object(block.type), block.id,exoid);
       ex_err("ex_put_block",errmsg,exerrval);
     } else {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to define number of entities/block for %s %d file id %d",
+	      "Error: failed to define number of entities/block for %s %"PRId64" file id %d",
 	      ex_name_of_object(block.type), block.id,exoid);
       ex_err("ex_put_block",errmsg,exerrval);
     }
@@ -300,7 +300,7 @@ int ex_put_block_param( int         exoid,
     if ((status = nc_def_dim(exoid,dnnpe,block.num_nodes_per_entry, &nnodperentdim)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to define number of nodes/entity for %s %d in file id %d",
+	      "Error: failed to define number of nodes/entity for %s %"PRId64" in file id %d",
 	      ex_name_of_object(block.type), block.id,exoid);
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -311,7 +311,7 @@ int ex_put_block_param( int         exoid,
     if ((status = nc_def_dim (exoid,dnepe,block.num_edges_per_entry, &nedgperentdim)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to define number of edges/entity for %s %d in file id %d",
+	      "Error: failed to define number of edges/entity for %s %"PRId64" in file id %d",
 	      ex_name_of_object(block.type), block.id,exoid);
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -322,7 +322,7 @@ int ex_put_block_param( int         exoid,
     if ((status = nc_def_dim(exoid,dnfpe,block.num_faces_per_entry, &nfacperentdim)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to define number of faces/entity for %s %d in file id %d",
+	      "Error: failed to define number of faces/entity for %s %"PRId64" in file id %d",
 	      ex_name_of_object(block.type), block.id,exoid);
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -335,7 +335,7 @@ int ex_put_block_param( int         exoid,
     if ((status = nc_def_dim(exoid, dnape, block.num_attribute, &numattrdim)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to define number of attributes in %s %d in file id %d",
+	      "Error: failed to define number of attributes in %s %"PRId64" in file id %d",
 	      ex_name_of_object(block.type), block.id,exoid);
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -347,7 +347,7 @@ int ex_put_block_param( int         exoid,
     if ((status = nc_def_var(exoid, vblkatt, nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error:  failed to define attributes for %s %d in file id %d",
+	      "Error:  failed to define attributes for %s %"PRId64" in file id %d",
 	      ex_name_of_object(block.type), block.id,exoid);
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -426,7 +426,7 @@ int ex_put_block_param( int         exoid,
     if ((status = nc_def_var(exoid, vconn, conn_int_type, 1, dims, &connid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to create connectivity array for %s %d in file id %d",
+	      "Error: failed to create connectivity array for %s %"PRId64" in file id %d",
 	      ex_name_of_object(block.type), block.id,exoid);
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -438,7 +438,7 @@ int ex_put_block_param( int         exoid,
     if ((status = nc_def_var(exoid, vnpecnt, conn_int_type, 1, dims, &npeid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to create face- or node- per-entity count array for %s %d in file id %d",
+	      "Error: failed to create face- or node- per-entity count array for %s %"PRId64" in file id %d",
 	      ex_name_of_object(block.type), block.id, exoid);
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -448,7 +448,7 @@ int ex_put_block_param( int         exoid,
 				  entity_type1)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to store entity type attribute text for %s %d in file id %d",
+	      "Error: failed to store entity type attribute text for %s %"PRId64" in file id %d",
 	      ex_name_of_object(block.type), block.id, exoid);
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -457,7 +457,7 @@ int ex_put_block_param( int         exoid,
 				  entity_type2)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to store entity type attribute text for %s %d in file id %d",
+	      "Error: failed to store entity type attribute text for %s %"PRId64" in file id %d",
 	      ex_name_of_object(block.type), block.id, exoid);
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -470,7 +470,7 @@ int ex_put_block_param( int         exoid,
     if ((status = nc_def_var(exoid, vnodcon, conn_int_type, 2, dims, &connid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to create connectivity array for %s %d in file id %d",
+	      "Error: failed to create connectivity array for %s %"PRId64" in file id %d",
 	      ex_name_of_object(block.type), block.id,exoid);
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -495,7 +495,7 @@ int ex_put_block_param( int         exoid,
       if ((status = nc_def_var(exoid, vedgcon, conn_int_type, 2, dims, &varid)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to create edge connectivity array for %s %d in file id %d",
+		"Error: failed to create edge connectivity array for %s %"PRId64" in file id %d",
 		ex_name_of_object(block.type), block.id,exoid);
 	ex_err("ex_put_block",errmsg,exerrval);
 	goto error_ret;         /* exit define mode and return */
@@ -509,7 +509,7 @@ int ex_put_block_param( int         exoid,
       if ((status = nc_def_var(exoid, vfaccon, conn_int_type, 2, dims, &varid)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to create face connectivity array for %s %d in file id %d",
+		"Error: failed to create face connectivity array for %s %"PRId64" in file id %d",
 		ex_name_of_object(block.type), block.id,exoid);
 	ex_err("ex_put_block",errmsg,exerrval);
 	goto error_ret;         /* exit define mode and return */

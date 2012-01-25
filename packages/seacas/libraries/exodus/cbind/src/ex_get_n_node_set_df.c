@@ -90,14 +90,14 @@ int ex_get_n_node_set_df  (int   exoid,
   if ((node_set_id_ndx = ex_id_lkup(exoid,EX_NODE_SET,node_set_id)) < 0) {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-              "Warning: node set %d is NULL in file id %d",
+              "Warning: node set %"PRId64" is NULL in file id %d",
               node_set_id,exoid);
       ex_err("ex_get_n_node_set_df",errmsg,EX_MSG);
       return (EX_WARN);
     } else {
 
       sprintf(errmsg,
-              "Error: failed to locate node set id %d in %s in file id %d",
+              "Error: failed to locate node set %"PRId64" in %s in file id %d",
               node_set_id,VAR_NS_IDS,exoid);
       ex_err("ex_get_n_node_set_df",errmsg,exerrval);
       return (EX_FATAL);
@@ -108,7 +108,7 @@ int ex_get_n_node_set_df  (int   exoid,
   if ((status = nc_inq_dimid (exoid, DIM_NUM_NOD_NS(node_set_id_ndx), &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-         "Error: failed to locate number of nodes in node set %d in file id %d",
+         "Error: failed to locate number of nodes in node set %"PRId64" in file id %d",
             node_set_id,exoid);
     ex_err("ex_get_n_node_set_df",errmsg,exerrval);
     return (EX_FATAL);
@@ -117,7 +117,7 @@ int ex_get_n_node_set_df  (int   exoid,
   if ((status = nc_inq_dimlen(exoid, dimid, &num_nodes_in_set)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get number of nodes in node set %d in file id %d",
+            "Error: failed to get number of nodes in node set %"PRId64" in file id %d",
             node_set_id, exoid);
     ex_err("ex_get_n_node_set_df",errmsg,exerrval);
     return (EX_FATAL);
@@ -149,7 +149,7 @@ int ex_get_n_node_set_df  (int   exoid,
   if ((status = nc_inq_varid (exoid, VAR_FACT_NS(node_set_id_ndx), &dist_id)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Warning: dist factors not stored for node set %d in file id %d",
+            "Warning: dist factors not stored for node set %"PRId64" in file id %d",
             node_set_id,exoid);
     ex_err("ex_get_n_node_set_df",errmsg,exerrval);
     return (EX_WARN);          /* complain - but not too loud */

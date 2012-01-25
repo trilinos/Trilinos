@@ -78,13 +78,13 @@ int ex_put_attr (int   exoid,
     if (exerrval != 0) {
       if (exerrval == EX_NULLENTITY) {
         sprintf(errmsg,
-		"Warning: no attributes allowed for NULL %s %d in file id %d",
+		"Warning: no attributes allowed for NULL %s %"PRId64" in file id %d",
                 ex_name_of_object(blk_type),blk_id,exoid);
         ex_err("ex_put_attr",errmsg,EX_MSG);
         return (EX_WARN);              /* no attributes for this block */
       } else {
         sprintf(errmsg,
-		"Error: no %s id %d in in file id %d",
+		"Error: no %s id %"PRId64" in in file id %d",
                 ex_name_of_object(blk_type), blk_id, exoid);
         ex_err("ex_put_attr",errmsg,exerrval);
         return (EX_FATAL);
@@ -132,7 +132,7 @@ int ex_put_attr (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate attribute variable for %s %d in file id %d",
+	    "Error: failed to locate attribute variable for %s %"PRId64" in file id %d",
             ex_name_of_object(blk_type),blk_id,exoid);
     ex_err("ex_put_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -148,7 +148,7 @@ int ex_put_attr (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to put attributes for %s %d in file id %d",
+            "Error: failed to put attributes for %s %"PRId64" in file id %d",
             ex_name_of_object(blk_type),blk_id,exoid);
     ex_err("ex_put_attr",errmsg,exerrval);
     return (EX_FATAL);

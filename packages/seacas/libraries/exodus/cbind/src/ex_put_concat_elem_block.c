@@ -237,11 +237,11 @@ int ex_put_concat_elem_block (int    exoid,
       exerrval = status;
       if (status == NC_ENAMEINUSE) {     /* duplicate entry */
 	sprintf(errmsg,
-		"Error: element block %d already defined in file id %d",
+		"Error: element block %"PRId64" already defined in file id %d",
 		eb_id,exoid);
       } else {
 	sprintf(errmsg,
-		"Error: failed to define number of elements/block for block %d file id %d",
+		"Error: failed to define number of elements/block for block %"PRId64" file id %d",
 		eb_id,exoid);
       }
       ex_err("ex_put_concat_elem_block",errmsg,exerrval);
@@ -253,7 +253,7 @@ int ex_put_concat_elem_block (int    exoid,
 			     num_npe, &nelnoddim)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to define number of nodes/element for block %d in file id %d",
+	      "Error: failed to define number of nodes/element for block %"PRId64" in file id %d",
 	      eb_id,exoid);
       ex_err("ex_put_concat_elem_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -267,7 +267,7 @@ int ex_put_concat_elem_block (int    exoid,
 			      conn_int_type, 2, dims, &connid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to create connectivity array for block %d in file id %d",
+	      "Error: failed to create connectivity array for block %"PRId64" in file id %d",
 	      eb_id,exoid);
       ex_err("ex_put_concat_elem_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -291,7 +291,7 @@ int ex_put_concat_elem_block (int    exoid,
 				num_attr, &numattrdim)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to define number of attributes in block %d in file id %d",
+		"Error: failed to define number of attributes in block %"PRId64" in file id %d",
 		eb_id,exoid);
 	ex_err("ex_put_concat_elem_block",errmsg,exerrval);
 	goto error_ret;         /* exit define mode and return */
@@ -318,7 +318,7 @@ int ex_put_concat_elem_block (int    exoid,
 			       nc_flt_code(exoid), 2, dims, &temp)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error:  failed to define attributes for element block %d in file id %d",
+		"Error:  failed to define attributes for element block %"PRId64" in file id %d",
 		eb_id,exoid);
 	ex_err("ex_put_concat_elem_block",errmsg,exerrval);
 	goto error_ret;         /* exit define mode and return */

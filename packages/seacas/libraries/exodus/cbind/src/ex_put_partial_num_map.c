@@ -154,7 +154,7 @@ int ex_put_partial_num_map (int exoid,
     if (cur_num_maps >= num_maps) {
       exerrval = EX_FATAL;
       sprintf(errmsg,
-	      "Error: exceeded number of %ss (%d) specified in file id %d",
+	      "Error: exceeded number of %ss (%"ST_ZU") specified in file id %d",
 	      ex_name_of_object(map_type),num_maps,exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);
@@ -234,7 +234,7 @@ int ex_put_partial_num_map (int exoid,
       if ((status = nc_put_var1_longlong(exoid, varid, start, (long long*)&map_id)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to store %s id %d in file id %d",
+		"Error: failed to store %s id %"PRId64" in file id %d",
 		ex_name_of_object(map_type),map_id,exoid);
 	ex_err("ex_put_num_map",errmsg,exerrval);
 	return (EX_FATAL);
@@ -268,7 +268,7 @@ int ex_put_partial_num_map (int exoid,
   if ((status = nc_inq_varid(exoid,vmap, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate %s %d in file id %d",
+	    "Error: failed to locate %s %"PRId64" in file id %d",
 	    ex_name_of_object(map_type),map_id,exoid);
     ex_err("ex_put_partial_num_map",errmsg,exerrval);
     return (EX_FATAL);

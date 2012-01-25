@@ -238,23 +238,23 @@ extern "C" {
    */
   typedef struct ex_init_params {
     char title[MAX_LINE_LENGTH + 1];
-    size_t num_dim;
-    size_t num_nodes;
-    size_t num_edge;
-    size_t num_edge_blk;
-    size_t num_face;
-    size_t num_face_blk;
-    size_t num_elem;
-    size_t num_elem_blk;
-    size_t num_node_sets;
-    size_t num_edge_sets;
-    size_t num_face_sets;
-    size_t num_side_sets;
-    size_t num_elem_sets;
-    size_t num_node_maps;
-    size_t num_edge_maps;
-    size_t num_face_maps;
-    size_t num_elem_maps;
+    int64_t num_dim;
+    int64_t num_nodes;
+    int64_t num_edge;
+    int64_t num_edge_blk;
+    int64_t num_face;
+    int64_t num_face_blk;
+    int64_t num_elem;
+    int64_t num_elem_blk;
+    int64_t num_node_sets;
+    int64_t num_edge_sets;
+    int64_t num_face_sets;
+    int64_t num_side_sets;
+    int64_t num_elem_sets;
+    int64_t num_node_maps;
+    int64_t num_edge_maps;
+    int64_t num_face_maps;
+    int64_t num_elem_maps;
   } ex_init_params;
 
   typedef struct ex_block {

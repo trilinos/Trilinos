@@ -111,7 +111,7 @@ int ex_get_side_set_node_count(int exoid,
       if (exerrval == EX_NULLENTITY)
 	{
 	  sprintf(errmsg,
-		  "Warning: side set %d is NULL in file id %d",
+		  "Warning: side set %"PRId64" is NULL in file id %d",
 		  side_set_id,exoid);
 	  ex_err("ex_get_side_set_node_count",errmsg,EX_MSG);
 	  return (EX_WARN);
@@ -120,7 +120,7 @@ int ex_get_side_set_node_count(int exoid,
 	{
 
 	  sprintf(errmsg,
-		  "Error: failed to locate side set id %d in VAR_SS_IDS array in file id %d",
+		  "Error: failed to locate side set %"PRId64" in VAR_SS_IDS array in file id %d",
 		  side_set_id,exoid);
 	  ex_err("ex_get_side_set_node_count",errmsg,exerrval);
 	  return (EX_FATAL);
@@ -151,7 +151,7 @@ int ex_get_side_set_node_count(int exoid,
   if ((ex_get_side_set_param(exoid,side_set_id,&tot_num_ss_elem,&num_df)) == -1)
     {
       sprintf(errmsg,
-	      "Error: failed to get number of elements in side set %d in file id %d",
+	      "Error: failed to get number of elements in side set %"PRId64" in file id %d",
 	      side_set_id, exoid);
       ex_err("ex_get_side_set_node_count",errmsg,exerrval);
       return(EX_FATAL);
@@ -188,7 +188,7 @@ int ex_get_side_set_node_count(int exoid,
       free(side_set_elem_list);
       free(side_set_side_list);
       sprintf(errmsg,
-	      "Error: failed to get side set %d in file id %d",
+	      "Error: failed to get side set %"PRId64" in file id %d",
 	      side_set_id, exoid);
       ex_err("ex_get_side_set_node_count",errmsg,exerrval);
       return (EX_FATAL);
@@ -289,7 +289,7 @@ int ex_get_side_set_node_count(int exoid,
       free(side_set_side_list);
       free(side_set_elem_list);
       sprintf(errmsg,
-	      "Error: failed to get element block %d parameters in file id %d",
+	      "Error: failed to get element block %"PRId64" parameters in file id %d",
               block.id, exoid);
       ex_err("ex_get_side_set_node_count",errmsg,EX_MSG);
       return(EX_FATAL);
@@ -599,7 +599,7 @@ int ex_get_side_set_node_count(int exoid,
     } else {
       exerrval = EX_BADPARAM;
       sprintf(errmsg,
-	      "Error: Invalid element number %d found in side set %d in file %d",
+	      "Error: Invalid element number %"PRId64" found in side set %"PRId64" in file %d",
               elem, side_set_id, exoid);
       free(elem_blk_parms);
       free(elem_blk_ids);

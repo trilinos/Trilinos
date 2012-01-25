@@ -86,13 +86,13 @@ int ex_put_elem_var_slab (int   exoid,
   if ((elem_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) < 0) {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-	      "Warning: no variables allowed for NULL block %d in file id %d",
+	      "Warning: no variables allowed for NULL block %"PRId64" in file id %d",
 	      elem_blk_id, exoid);
       ex_err("ex_put_elem_var_slab", errmsg, EX_MSG);
       return (EX_WARN);
     } else {
       sprintf(errmsg,
-	      "Error: failed to locate element block id %d in %s array in file id %d",
+	      "Error: failed to locate element block id %"PRId64" in %s array in file id %d",
 	      elem_blk_id, VAR_ID_EL_BLK, exoid);
       ex_err("ex_put_elem_var_slab", errmsg, exerrval);
       return (EX_FATAL);
@@ -167,7 +167,7 @@ int ex_put_elem_var_slab (int   exoid,
 	  free(elem_var_tab);
 	  exerrval = EX_BADPARAM;
 	  sprintf(errmsg,
-		  "Error: Invalid element variable %d, block %d in file id %d",
+		  "Error: Invalid element variable %d, block %"PRId64" in file id %d",
 		  elem_var_index, elem_blk_id, exoid);
 	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
 	  return (EX_FATAL);
@@ -187,13 +187,13 @@ int ex_put_elem_var_slab (int   exoid,
 	if (status == NC_EBADDIM) {
 	  exerrval = status;
 	  sprintf(errmsg,
-		  "Error: number of elements in element block %d not defined in file id %d",
+		  "Error: number of elements in element block %"PRId64" not defined in file id %d",
 		  elem_blk_id, exoid);
 	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
 	} else {
 	  exerrval = status;
 	  sprintf(errmsg,
-		  "Error: failed to locate number of elements in element block %d in file id %d",
+		  "Error: failed to locate number of elements in element block %"PRId64" in file id %d",
 		  elem_blk_id, exoid);
 	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
 	}

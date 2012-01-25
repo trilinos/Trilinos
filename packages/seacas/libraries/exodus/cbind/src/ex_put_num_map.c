@@ -136,7 +136,7 @@ int ex_put_num_map ( int exoid,
   if (exerrval != EX_LOOKUPFAIL)   /* found the map id */
     {
       sprintf(errmsg,
-	      "Error: %s %d already defined in file id %d",
+	      "Error: %s %"PRId64" already defined in file id %d",
 	      ex_name_of_object(map_type),map_id,exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return(EX_FATAL);
@@ -194,7 +194,7 @@ int ex_put_num_map ( int exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to store %s id %d in file id %d",
+	      "Error: failed to store %s id %"PRId64" in file id %d",
 	      ex_name_of_object(map_type),map_id,exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);

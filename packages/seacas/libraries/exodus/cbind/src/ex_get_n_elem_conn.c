@@ -79,13 +79,13 @@ int ex_get_n_elem_conn (int   exoid,
   if ((elem_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) < 0) {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-             "Warning: no connectivity array for NULL block %d in file id %d",
+             "Warning: no connectivity array for NULL block %"PRId64" in file id %d",
               elem_blk_id,exoid);
       ex_err("ex_get_n_elem_conn",errmsg,EX_MSG);
       return (EX_WARN); /* no connectivity array for this element block */
     } else {
       sprintf(errmsg,
-       "Error: failed to locate element block id %d in %s array in file id %d",
+       "Error: failed to locate element block id %"PRId64" in %s array in file id %d",
               elem_blk_id,VAR_ID_EL_BLK,exoid);
       ex_err("ex_get_n_elem_conn",errmsg,exerrval);
       return (EX_FATAL);
@@ -96,7 +96,7 @@ int ex_get_n_elem_conn (int   exoid,
   if ((status = nc_inq_dimid (exoid, DIM_NUM_EL_IN_BLK(elem_blk_id_ndx), &numelbdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-     "Error: failed to locate number of elements in block %d in file id %d",
+     "Error: failed to locate number of elements in block %"PRId64" in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_conn",errmsg, exerrval);
     return(EX_FATAL);
@@ -105,7 +105,7 @@ int ex_get_n_elem_conn (int   exoid,
   if ((status = nc_inq_dimlen(exoid, numelbdim, &num_elem_this_blk)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-           "Error: failed to get number of elements in block %d in file id %d",
+           "Error: failed to get number of elements in block %"PRId64" in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_conn",errmsg,exerrval);
     return(EX_FATAL);
@@ -115,7 +115,7 @@ int ex_get_n_elem_conn (int   exoid,
   if ((status = nc_inq_dimid(exoid, DIM_NUM_NOD_PER_EL(elem_blk_id_ndx), &nelnoddim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-     "Error: failed to locate number of nodes/elem for block %d in file id %d",
+     "Error: failed to locate number of nodes/elem for block %"PRId64" in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_conn",errmsg,exerrval);
     return(EX_FATAL);
@@ -124,7 +124,7 @@ int ex_get_n_elem_conn (int   exoid,
   if ((status = nc_inq_dimlen(exoid, nelnoddim, &num_nod_per_elem)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-       "Error: failed to get number of nodes/elem for block %d in file id %d",
+       "Error: failed to get number of nodes/elem for block %"PRId64" in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_conn",errmsg, exerrval);
     return(EX_FATAL);
@@ -134,7 +134,7 @@ int ex_get_n_elem_conn (int   exoid,
   if ((status = nc_inq_varid(exoid, VAR_CONN(elem_blk_id_ndx), &connid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-       "Error: failed to locate connectivity array for block %d in file id %d",
+       "Error: failed to locate connectivity array for block %"PRId64" in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_conn",errmsg, exerrval);
     return(EX_FATAL);
@@ -144,7 +144,7 @@ int ex_get_n_elem_conn (int   exoid,
   if (num_elem_this_blk < (start_elem_num + num_elems - 1)) {
     exerrval = status;
     sprintf(errmsg,
-      "Error: requested connectivity from too many elements in this block, %d",
+      "Error: requested connectivity from too many elements in block %"PRId64"",
             elem_blk_id);
     ex_err("ex_get_n_elem_conn",errmsg, exerrval);
     return(EX_FATAL);
@@ -166,7 +166,7 @@ int ex_get_n_elem_conn (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-          "Error: failed to get connectivity array for block %d in file id %d",
+          "Error: failed to get connectivity array for block %"PRId64" in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_conn",errmsg, exerrval);
     return(EX_FATAL);

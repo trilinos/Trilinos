@@ -78,7 +78,8 @@ int ex_put_n_coord (int   exoid,
   int coordidx, coordidy, coordidz;
 
   int numnoddim, ndimdim;
-  size_t i, num_nod, num_dim, start[2], count[2];
+  int64_t num_nod;
+  size_t i, num_dim, start[2], count[2];
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
@@ -91,13 +92,17 @@ int ex_put_n_coord (int   exoid,
     return (EX_NOERR);
   }
 
-  if ((status = nc_inq_dimlen(exoid, numnoddim, &num_nod)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-	    "Error: inquire failed to return number of nodes in file id %d",
-	    exoid);
-    ex_err("ex_put_n_coord",errmsg,exerrval);
-    return (EX_FATAL);
+  {
+    size_t tmp;
+    if ((status = nc_inq_dimlen(exoid, numnoddim, &tmp)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: inquire failed to return number of nodes in file id %d",
+	      exoid);
+      ex_err("ex_put_n_coord",errmsg,exerrval);
+      return (EX_FATAL);
+    }
+    num_nod = tmp;
   }
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
@@ -121,8 +126,8 @@ int ex_put_n_coord (int   exoid,
   if (start_node_num + num_nodes -1 > (int)num_nod) {
     exerrval = EX_BADPARAM;
       sprintf(errmsg,
-              "Error: start index (%d) + node count (%d) is larger than total number of nodes (%d) in file id %d",
-              start_node_num, num_nodes, (int)num_nod, exoid);
+              "Error: start index (%"PRId64") + node count (%"PRId64") is larger than total number of nodes (%"PRId64") in file id %d",
+              start_node_num, num_nodes, num_nod, exoid);
       ex_err("ex_put_n_coord",errmsg,exerrval);
       return (EX_FATAL);
   }

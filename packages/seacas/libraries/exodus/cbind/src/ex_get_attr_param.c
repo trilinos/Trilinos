@@ -81,7 +81,7 @@ int ex_get_attr_param (int   exoid,
 	return (EX_NOERR);
       } else {
 	sprintf(errmsg,
-		"Warning: failed to locate %s id %d in id array in file id %d",
+		"Warning: failed to locate %s id %"PRId64" in id array in file id %d",
 		ex_name_of_object(obj_type),obj_id,exoid);
 	ex_err("ex_get_attr_param",errmsg,exerrval);
 	return (EX_WARN);
@@ -134,7 +134,7 @@ int ex_get_attr_param (int   exoid,
     if ((status = nc_inq_dimlen(exoid, dimid, &lnum_attr_per_entry)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get number of attributes in %s %d in file id %d",
+	      "Error: failed to get number of attributes in %s %"PRId64" in file id %d",
 	      ex_name_of_object(obj_type),obj_id, exoid);
       ex_err("ex_get_attr_param",errmsg, exerrval);
       return(EX_FATAL);

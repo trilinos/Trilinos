@@ -85,13 +85,13 @@ int ex_get_set_dist_fact (int   exoid,
   if (exerrval != 0)  {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-              "Warning: %s set %d is NULL in file id %d",
+              "Warning: %s set %"PRId64" is NULL in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set_dist_fact",errmsg,EX_MSG);
       return (EX_WARN);
     } else {
       sprintf(errmsg,
-	      "Error: failed to locate %s set id %d in VAR_*S_IDS array in file id %d",
+	      "Error: failed to locate %s set %"PRId64" in VAR_*S_IDS array in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set_dist_fact",errmsg,exerrval);
       return (EX_FATAL);
@@ -121,7 +121,7 @@ int ex_get_set_dist_fact (int   exoid,
     /* not an error for node sets because this is how we check that df's exist */
     if (set_type == EX_NODE_SET) {
       sprintf(errmsg,
-	      "Warning: dist factors not stored for %s set %d in file id %d",
+	      "Warning: dist factors not stored for %s set %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id, exoid);
       ex_err("ex_get_set_dist_fact",errmsg,exerrval);
       return (EX_WARN);         /* complain - but not too loud */
@@ -129,7 +129,7 @@ int ex_get_set_dist_fact (int   exoid,
     /* is an error for other sets */
     else  {
       sprintf(errmsg,
-	      "Error: failed to locate dist factors list for %s set %d in file id %d",
+	      "Error: failed to locate dist factors list for %s set %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set_dist_fact",errmsg,exerrval);
       return (EX_FATAL);
@@ -146,7 +146,7 @@ int ex_get_set_dist_fact (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get dist factors list for %s set %d in file id %d",
+	    "Error: failed to get dist factors list for %s set %"PRId64" in file id %d",
 	    ex_name_of_object(set_type), set_id,exoid);
     ex_err("ex_get_set_dist_fact",errmsg,exerrval);
     return (EX_FATAL);

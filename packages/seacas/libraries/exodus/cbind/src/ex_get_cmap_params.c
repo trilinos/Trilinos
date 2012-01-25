@@ -166,7 +166,7 @@ int ex_get_cmap_params(int  exoid,
 
           /* Get the node counts in each of the nodal communication maps */
           for(cnt=0; cnt < num_n_comm_maps; cnt++) {
-	    size_t cmap_id;
+	    int64_t cmap_id;
 	    if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
 	      cmap_id = ((int64_t*)node_cmap_ids)[cnt];
 	    } else {
@@ -176,7 +176,7 @@ int ex_get_cmap_params(int  exoid,
             if ((map_idx=ne_id_lkup(exoid, VAR_N_COMM_IDS, cmap_info_idx, cmap_id)) < 0) {
               exerrval = EX_MSG;
               sprintf(errmsg,
-		      "Error: failed to find nodal comm map with ID %d in file ID %d",
+		      "Error: failed to find nodal comm map with ID %"PRId64" in file ID %d",
                       cmap_id, exoid);
               ex_err(func_name, errmsg, exerrval);
               return (EX_FATAL);
@@ -333,7 +333,7 @@ int ex_get_cmap_params(int  exoid,
            * communication maps
            */
           for(cnt=0; cnt < num_e_comm_maps; cnt++) {
-	    size_t cmap_id;
+	    int64_t cmap_id;
 	    if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
 	      cmap_id = ((int64_t*)elem_cmap_ids)[cnt];
 	    } else {
@@ -344,7 +344,7 @@ int ex_get_cmap_params(int  exoid,
 				    cmap_id)) < 0) {
               exerrval = EX_MSG;
               sprintf(errmsg,
-		      "Error: failed to find elemental comm map with ID %d in file ID %d",
+		      "Error: failed to find elemental comm map with ID %"PRId64" in file ID %d",
                       cmap_id, exoid);
               ex_err(func_name, errmsg, exerrval);
               return (EX_FATAL);

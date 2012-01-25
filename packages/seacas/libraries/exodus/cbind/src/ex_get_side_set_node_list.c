@@ -109,7 +109,7 @@ int ex_get_side_set_node_list(int exoid,
   int err_stat = EX_NOERR;
   int status;
 
-  struct elem_blk_parm  *elem_blk_parms;
+  struct elem_blk_parm  *elem_blk_parms = NULL;
 
   /* side to node translation tables - 
      These tables are used to look up the side number based on the
@@ -209,7 +209,7 @@ int ex_get_side_set_node_list(int exoid,
   if (exerrval != 0)  {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-              "Warning: side set %d is NULL in file id %d",
+              "Warning: side set %"PRId64" is NULL in file id %d",
 	      side_set_id,exoid);
       ex_err("ex_get_side_set_node_list",errmsg,EX_MSG);
       return (EX_WARN);
@@ -217,7 +217,7 @@ int ex_get_side_set_node_list(int exoid,
     else {
 
       sprintf(errmsg,
-	      "Error: failed to locate side set id %d in VAR_SS_IDS array in file id %d",
+	      "Error: failed to locate side set %"PRId64" in VAR_SS_IDS array in file id %d",
 	      side_set_id,exoid);
       ex_err("ex_get_side_set_node_list",errmsg,exerrval);
       return (EX_FATAL);
@@ -272,7 +272,7 @@ int ex_get_side_set_node_list(int exoid,
 
   if (status != EX_NOERR) {
     sprintf(errmsg,
-	    "Error: failed to get number of elements in side set %d in file id %d",
+	    "Error: failed to get number of elements in side set %"PRId64" in file id %d",
             side_set_id, exoid);
     ex_err("ex_get_side_set_node_list",errmsg,exerrval);
     return(EX_FATAL);
@@ -304,7 +304,7 @@ int ex_get_side_set_node_list(int exoid,
     safe_free(side_set_elem_list);
     safe_free(side_set_side_list);
     sprintf(errmsg,
-	    "Error: failed to get side set %d in file id %d",
+	    "Error: failed to get side set %"PRId64" in file id %d",
 	    side_set_id, exoid);
     ex_err("ex_get_side_set_node_list",errmsg,exerrval);
     return (EX_FATAL);
@@ -383,7 +383,7 @@ int ex_get_side_set_node_list(int exoid,
     /* read in an element block parameter */
     if ((ex_get_block_param (exoid, &block)) == -1) {
       sprintf(errmsg,
-	      "Error: failed to get element block %d parameters in file id %d",
+	      "Error: failed to get element block %"PRId64" parameters in file id %d",
               block.id, exoid);
       ex_err("ex_get_side_set_node_list",errmsg,EX_MSG);
       err_stat = EX_FATAL;
@@ -583,7 +583,7 @@ int ex_get_side_set_node_list(int exoid,
     if (j >= num_elem_blks) {
       exerrval = EX_BADPARAM;
       sprintf(errmsg,
-	      "Error: Invalid element number %d found in side set %d in file %d",
+	      "Error: Invalid element number %"PRId64" found in side set %"PRId64" in file %d",
               elem, side_set_id, exoid);
       ex_err("ex_get_side_set_node_list",errmsg,EX_MSG);
       err_stat = EX_FATAL;
@@ -742,7 +742,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid triangle edge number %d in file id %d",
+		      "Error: Invalid triangle edge number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -798,7 +798,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid quad edge number %d in file id %d",
+		      "Error: Invalid quad edge number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -821,7 +821,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid shell face number %d in file id %d",
+		      "Error: Invalid shell face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -864,7 +864,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid tetra face number %d in file id %d",
+		      "Error: Invalid tetra face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -895,7 +895,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid wedge face number %d in file id %d",
+		      "Error: Invalid wedge face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -938,7 +938,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid pyramid face number %d in file id %d",
+		      "Error: Invalid pyramid face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -981,7 +981,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid hex face number %d in file id %d",
+		      "Error: Invalid hex face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
