@@ -61,15 +61,15 @@ namespace MueLu {
     //! @name Helper methods.
     //@{
 
-    /*! Determine which process should own each partition.
+    /*!
+      @brief Determine which process should own each partition.
 
-      For right now, we assign the partitions 0..N to pids 0..N, respectively.
+      Partitions are assigned to processes in order to minimize data movement.  The basic idea is that a good choice for partition
+      owner is to choose the pid that already has the greatest number of nonzeros for a particular partition.
 
-      TODO: This should be changed in order to minimize data movement.  A good choice for partition owner is to
-      choose the pid that already has the greatest number of nonzeros for a particular partition.
-
-      @param myPartitionNumber On output, either the partition number this PID owns, otherwise -1.
-      @param partitionOwner    On output, an Array (fancy std::vector) such that PID partitionOwner[i] is the owner of partition i.
+      @param[in]  currentLevel      The current multigrid level's Level object.
+      @param[out] myPartitionNumber The partition number this PID owns, otherwise -1.
+      @param[out] partitionOwner    An Array (fancy std::vector) such that the PID of the process that owns partition i is given by partitionOwner[i].
     */
     void DeterminePartitionPlacement(Level & currentLevel, GlobalOrdinal &myPartitionNumber, Array<int> &partitionOwner) const;
 
