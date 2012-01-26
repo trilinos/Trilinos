@@ -180,7 +180,7 @@ int ex_put_block_param( int         exoid,
   start[0] = cur_num_blk;
 
   /* write out block id to previously defined id array variable*/
-  status = nc_put_var1_longlong(exoid, varid, start, (long long*)&block.id);
+  status = nc_put_var1_longlong(exoid, varid, start, &block.id);
 
   if (status != NC_NOERR) {
     exerrval = status;

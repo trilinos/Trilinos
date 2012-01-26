@@ -231,7 +231,7 @@ int ex_put_partial_num_map (int exoid,
   if (!map_exists) {
     start[0] = cur_num_maps;
     {
-      if ((status = nc_put_var1_longlong(exoid, varid, start, (long long*)&map_id)) != NC_NOERR) {
+      if ((status = nc_put_var1_longlong(exoid, varid, start, &map_id)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
 		"Error: failed to store %s id %d in file id %d",

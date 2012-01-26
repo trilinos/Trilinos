@@ -117,7 +117,7 @@ int ex_put_prop (int   exoid,
   char name[MAX_VAR_NAME_LENGTH+1];
   char tmpstr[MAX_STR_LENGTH+1];
   char dim_name[MAX_VAR_NAME_LENGTH+1];
-  long long vals[1];
+  int64_t vals[1];
 
   char errmsg[MAX_ERR_LENGTH];
 

@@ -83,6 +83,16 @@ int ex_put_concat_all_blocks (int    exoid,
 
   int ids_int64 = ex_int64_status(exoid) & EX_IDS_INT64_API;
     
+  if (ids_int64) {
+    edge_id_int64 = param->edge_blk_id;
+    face_id_int64 = param->face_blk_id;
+    elem_id_int64 = param->elem_blk_id;
+  } else {
+    edge_id_int = param->edge_blk_id;
+    face_id_int = param->face_blk_id;
+    elem_id_int = param->elem_blk_id;
+  }
+
   static const char* dim_num_maps[] = {
     DIM_NUM_NM,
     DIM_NUM_EDM,
@@ -106,16 +116,6 @@ int ex_put_concat_all_blocks (int    exoid,
      before entering define mode */
   size_t num_maps[sizeof(dim_num_maps)/sizeof(dim_num_maps[0])];
   size_t num_map_dims = sizeof(dim_num_maps)/sizeof(dim_num_maps[0]);
-
-  if (ids_int64) {
-    edge_id_int64 = param->edge_blk_id;
-    face_id_int64 = param->face_blk_id;
-    elem_id_int64 = param->elem_blk_id;
-  } else {
-    edge_id_int = param->edge_blk_id;
-    face_id_int = param->face_blk_id;
-    elem_id_int = param->elem_blk_id;
-  }
 
   exerrval  = 0; /* clear error code */
 

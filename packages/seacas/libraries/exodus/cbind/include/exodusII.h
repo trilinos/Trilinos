@@ -46,7 +46,6 @@
 #include "netcdf.h"
 #include <stddef.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 /* EXODUS II version number */
 #define EX_API_VERS 5.15f

@@ -67,6 +67,9 @@
 /* Global variables */
 char *ne_ret_string;
 
+static int ex_get_proc_count(int exoid);
+static int ex_fill_map_status(int exoid, char *stat_var, int *stat_array);
+
 int ex_leavedef(int exoid,
                 const char *call_rout
                 )
@@ -404,8 +407,64 @@ int ex_get_idx(int exoid, const char *ne_var_name, int64_t *my_index, int pos)
   return 1;
 }
 
+int ex_get_proc_count(int exoid)
+{
+  int status;
+  int dimid;
+  size_t ltemp;
+  int proc_count = -1;
+
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS, &dimid)) != NC_NOERR) {
+    return (-1);
+  }
+
+  /* Get the value of the number of processors */
+  if ((status = nc_inq_dimlen(exoid, dimid, &ltemp)) != NC_NOERR) {
+    return (-1);
+  }
+  proc_count = ltemp;
+  return proc_count;
+}
+
 struct ex_stat_struct {
   int exoid;
   int *stats;
   size_t num;
 } ex_stat_struct;
+
+static struct ex_stat_struct *nem_int_e_maps = 0;
+static struct ex_stat_struct *nem_bor_e_maps = 0;
+static struct ex_stat_struct *nem_int_n_maps = 0;
+static struct ex_stat_struct *nem_bor_n_maps = 0;
+static struct ex_stat_struct *nem_ext_n_maps = 0;
+
+int ex_fill_map_status(int exoid,
+			char *stat_var,
+			int *stat_array)
+{
+  int status;
+  int varid;
+  char   errmsg[MAX_ERR_LENGTH];
+  const char *func_name = "ex_fill_map_status(internal function)";
+  
+  /* Now query the map status and fill the array. */
+  if ((status = nc_inq_varid(exoid, stat_var, &varid)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+	    "Error: failed to find variable ID for \"%s\" from file ID %d",
+	    VAR_INT_N_STAT, exoid);
+    ex_err(func_name, errmsg, exerrval);
+    return (EX_FATAL);
+  }
+
+  if ((status = nc_get_var_int(exoid, varid, stat_array)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+	    "Error: failed to get status for \"%s\" from file %d",
+	    VAR_INT_N_STAT, exoid);
+    ex_err(func_name, errmsg, exerrval);
+    return (EX_FATAL);
+  }
+  return (EX_NOERR);
+}
+

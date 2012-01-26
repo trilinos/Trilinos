@@ -314,7 +314,7 @@ int ex_put_sets (int   exoid,
       
       /* write out set id */
       start[0] = sets_to_define[i]-1;
-      status = nc_put_var1_longlong(exoid, varid, start, (long long*)&sets[i].id);
+      status = nc_put_var1_longlong(exoid, varid, start, &sets[i].id);
     
       if (status != NC_NOERR) {
 	exerrval = status;
