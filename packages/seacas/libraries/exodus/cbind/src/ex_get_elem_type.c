@@ -75,7 +75,7 @@ int ex_get_elem_type (int exoid,
   /* inquire id's of previously defined dimensions */
   if ((el_blk_id_ndx=ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) == -1) {
     sprintf(errmsg,
-            "Error: failed to find element block ID %"PRId64" in file %d",
+            "Error: failed to find element block ID %d in file %d",
             elem_blk_id, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);

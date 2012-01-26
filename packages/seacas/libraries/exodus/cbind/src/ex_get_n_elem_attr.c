@@ -79,13 +79,13 @@ int ex_get_n_elem_attr (int   exoid,
   if ((elem_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) < 0) {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-              "Warning: no attributes found for NULL block %"PRId64" in file id %d",
+              "Warning: no attributes found for NULL block %d in file id %d",
               elem_blk_id,exoid);
       ex_err("ex_get_n_elem_attr",errmsg,EX_MSG);
       return (EX_WARN);              /* no attributes for this element block */
     } else {
       sprintf(errmsg,
-      "Warning: failed to locate element block %"PRId64" in %s array in file id %d",
+      "Warning: failed to locate element block id %d in %s array in file id %d",
               elem_blk_id,VAR_ID_EL_BLK, exoid);
       ex_err("ex_get_n_elem_attr",errmsg,exerrval);
       return (EX_WARN);
@@ -98,7 +98,7 @@ int ex_get_n_elem_attr (int   exoid,
   if ((status = nc_inq_dimid(exoid, DIM_NUM_EL_IN_BLK(elem_blk_id_ndx), &numelbdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-        "Error: failed to locate number of elements for block %"PRId64" in file id %d",
+        "Error: failed to locate number of elements for block %d in file id %d",
             elem_blk_id, exoid);
     ex_err("ex_get_n_elem_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -107,7 +107,7 @@ int ex_get_n_elem_attr (int   exoid,
   if ((status = nc_inq_dimlen(exoid, numelbdim, &num_elem_this_blk)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-           "Error: failed to get number of elements for block %"PRId64" in file id %d",
+           "Error: failed to get number of elements for block %d in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -116,7 +116,7 @@ int ex_get_n_elem_attr (int   exoid,
   if ((status = nc_inq_dimid(exoid, DIM_NUM_ATT_IN_BLK(elem_blk_id_ndx), &numattrdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Warning: no attributes found for block %"PRId64" in file id %d",
+            "Warning: no attributes found for block %d in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_attr",errmsg,EX_MSG);
     return (EX_WARN);              /* no attributes for this element block */
@@ -125,7 +125,7 @@ int ex_get_n_elem_attr (int   exoid,
   if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-         "Error: failed to get number of attributes for block %"PRId64" in file id %d",
+         "Error: failed to get number of attributes for block %d in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -134,7 +134,7 @@ int ex_get_n_elem_attr (int   exoid,
   if ((status = nc_inq_varid(exoid, VAR_ATTRIB(elem_blk_id_ndx), &attrid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to locate attributes for block %"PRId64" in file id %d",
+            "Error: failed to locate attributes for block %d in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -144,7 +144,7 @@ int ex_get_n_elem_attr (int   exoid,
   if (num_elem_this_blk < (start_elem_num + num_elems - 1)) {
     exerrval = status;
     sprintf(errmsg,
-      "Error: requested attributes from too many elements in this block, %"PRId64"",
+      "Error: requested attributes from too many elements in this block, %d",
             elem_blk_id);
     ex_err("ex_get_n_elem_attr",errmsg, exerrval);
     return(EX_FATAL);
@@ -167,7 +167,7 @@ int ex_get_n_elem_attr (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get attributes for block %"PRId64" in file id %d",
+            "Error: failed to get attributes for block %d in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_n_elem_attr",errmsg,exerrval);
     return (EX_FATAL);

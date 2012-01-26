@@ -93,14 +93,14 @@ ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_entity_id o
   if (exerrval != 0) {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-	      "Warning: no variables allowed for NULL block %"PRId64" in file id %d",
+	      "Warning: no variables allowed for NULL block %d in file id %d",
 	      obj_id,exoid);
       ex_err("ex_put_var",errmsg,EX_MSG);
       return (EX_WARN);
     }
     else {
       sprintf(errmsg,
-	      "Error: failed to locate %s id %"PRId64" in %s array in file id %d",
+	      "Error: failed to locate %s id %d in %s array in file id %d",
 	      ex_name_of_object(var_type), obj_id, VOBJID, exoid);
       ex_err("ex_put_var",errmsg,exerrval);
       return (EX_FATAL);
@@ -140,7 +140,7 @@ ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_entity_id o
 	  free(obj_var_truth_tab);
 	  exerrval = EX_BADPARAM;
 	  sprintf(errmsg,
-		  "Error: Invalid %s variable %d, %s %"PRId64" in file id %d",
+		  "Error: Invalid %s variable %d, %s %d in file id %d",
 		  ex_name_of_object(var_type), var_index, ex_name_of_object(var_type), obj_id, exoid);
 	  ex_err("ex_put_var",errmsg,exerrval);
 	  return (EX_FATAL);
@@ -329,7 +329,7 @@ int ex_put_var (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to store %s %"PRId64" variable %d in file id %d",
+	    "Error: failed to store %s %d variable %d in file id %d",
 	    ex_name_of_object(var_type), obj_id, var_index,exoid);
     ex_err("ex_put_var",errmsg,exerrval);
     return (EX_FATAL);

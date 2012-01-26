@@ -86,13 +86,13 @@ int ex_get_n_side_set_df (int   exoid,
   if ((side_set_id_ndx = ex_id_lkup(exoid,EX_SIDE_SET,side_set_id)) < 0) {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-	      "Warning: side set %"PRId64" is NULL in file id %d",
+	      "Warning: side set %d is NULL in file id %d",
               side_set_id, exoid);
       ex_err("ex_get_n_side_set_df",errmsg,EX_MSG);
       return (EX_WARN);
     } else {
       sprintf(errmsg,
-	      "Error: failed to locate side set %"PRId64" in %s array in file id %d",
+	      "Error: failed to locate side set id %d in %s array in file id %d",
               side_set_id, VAR_SS_IDS, exoid);
       ex_err("ex_get_n_side_set_df",errmsg,exerrval);
       return (EX_FATAL);
@@ -103,7 +103,7 @@ int ex_get_n_side_set_df (int   exoid,
   if ((status = nc_inq_dimid (exoid, DIM_NUM_DF_SS(side_set_id_ndx), &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Warning: dist factors not stored for side set %"PRId64" in file id %d",
+	    "Warning: dist factors not stored for side set %d in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_n_side_set_df",errmsg,exerrval);
     return (EX_WARN);		/* complain - but not too loud */
@@ -112,7 +112,7 @@ int ex_get_n_side_set_df (int   exoid,
   if ((status = nc_inq_dimlen (exoid, dimid, &num_df_in_set)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get number of dist factors in side set %"PRId64" in file id %d",
+	    "Error: failed to get number of dist factors in side set %d in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_n_side_set_df",errmsg,exerrval);
     return (EX_FATAL);
@@ -144,7 +144,7 @@ int ex_get_n_side_set_df (int   exoid,
   if ((status = nc_inq_varid (exoid, VAR_FACT_SS(side_set_id_ndx), &dist_id)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate dist factors list for side set %"PRId64" in file id %d",
+	    "Error: failed to locate dist factors list for side set %d in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_n_side_set_df",errmsg,exerrval);
     return (EX_FATAL);
@@ -164,7 +164,7 @@ int ex_get_n_side_set_df (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get dist factors list for side set %"PRId64" in file id %d",
+	    "Error: failed to get dist factors list for side set %d in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_n_side_set_df",errmsg,exerrval);
     return (EX_FATAL);

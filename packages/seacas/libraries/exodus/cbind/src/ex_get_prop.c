@@ -184,14 +184,14 @@ int ex_get_prop (int   exoid,
    if (exerrval != 0)  {
      if (exerrval == EX_NULLENTITY) {
        sprintf(errmsg,
-              "Warning: %s id %"PRId64" is NULL in file id %d",
+              "Warning: %s id %d is NULL in file id %d",
                ex_name_of_object(obj_type), obj_id, exoid);
        ex_err("ex_get_prop",errmsg,EX_MSG);
        return (EX_WARN);
      } else {
        exerrval = status;
        sprintf(errmsg,
-             "Error: failed to locate id %"PRId64" in %s property array in file id %d",
+             "Error: failed to locate id %d in %s property array in file id %d",
                obj_id, ex_name_of_object(obj_type), exoid);
        ex_err("ex_get_prop",errmsg,exerrval);
        return (EX_FATAL);

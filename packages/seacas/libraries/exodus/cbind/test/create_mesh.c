@@ -38,7 +38,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <inttypes.h>
 
 #include "exodusII.h"
 
@@ -67,7 +66,7 @@ StringToCount(char * size_str)
     char range;
     int rc;
 
-    rc = sscanf(size_str, "%"PRId64"%c", &size, &range);
+    rc = sscanf(size_str, "%d%c", &size, &range);
     if (rc == 2) {
         switch ((int)range) {
         case 'k': case 'K': size *=       1000; break;
@@ -239,7 +238,7 @@ main( int argc, char *argv[] ) {
   connect = malloc(size);
   assert(connect != NULL);
   
-  fprintf(stderr, "Creating a 3D mesh of %"PRId64" hex elements and %"PRId64" nodes.\n", num_elements, num_nodes);
+  fprintf(stderr, "Creating a 3D mesh of %ld hex elements and %ld nodes.\n", num_elements, num_nodes);
 
   make_mesh(x, y, z, connect, map_origin, num_elements_1d);
   fprintf(stderr, "\t...Mesh topology created.\n");
@@ -549,9 +548,9 @@ void write_exo_mesh(
     if ( debug ) {
       fprintf(stderr, "\n\n\n");
 
-      fprintf(stderr, "\n domain: %"PRId64"\n", i);
-      fprintf(stderr, "\n loc_num_elements: %"PRId64"\n", loc_num_elements);
-      fprintf(stderr, "\n loc_num_nodes: %"PRId64"\n", loc_num_nodes);
+      fprintf(stderr, "\n domain: %d\n", i);
+      fprintf(stderr, "\n loc_num_elements: %d\n", loc_num_elements);
+      fprintf(stderr, "\n loc_num_nodes: %d\n", loc_num_nodes);
     }
 
     num_dim = 3;
@@ -694,7 +693,7 @@ void write_exo_mesh(
       var_name = malloc (num_nodal_fields * sizeof(char *));
       for (j=0; j<num_nodal_fields; j++) {
         var_name[j] = malloc ((MAX_STRING_LEN+1) * sizeof (char));
-        sprintf (var_name[j], "node_field_%"PRId64, j+1);
+        sprintf (var_name[j], "node_field_%d", j+1);
       }
       err = ex_put_variable_names (exoid, EX_NODAL, num_nodal_fields, var_name);
       for (j=0; j<num_nodal_fields; j++) {
@@ -708,7 +707,7 @@ void write_exo_mesh(
       var_name = malloc (num_global_fields * sizeof(char *));
       for (j=0; j<num_global_fields; j++) {
         var_name[j] = malloc ((MAX_STRING_LEN+1) * sizeof (char));
-        sprintf (var_name[j], "global_field_%"PRId64, j+1);
+        sprintf (var_name[j], "global_field_%d", j+1);
         globals[j] = j;
       }
       err = ex_put_variable_names (exoid, EX_GLOBAL, num_global_fields, var_name);
@@ -723,7 +722,7 @@ void write_exo_mesh(
       var_name = malloc (num_element_fields * sizeof(char *));
       for (j=0; j<num_element_fields; j++) {
         var_name[j] = malloc ((MAX_STRING_LEN+1) * sizeof (char));
-        sprintf (var_name[j], "element_field_%"PRId64, j+1);
+        sprintf (var_name[j], "element_field_%d", j+1);
       }
       err = ex_put_variable_names (exoid, EX_ELEM_BLOCK, num_element_fields, var_name);
       for (j=0; j<num_element_fields; j++) {
@@ -733,11 +732,11 @@ void write_exo_mesh(
     }
 
     if (num_nodal_fields+num_global_fields+num_element_fields > 0) {
-      fprintf(stderr, "Domain %"PRId64"/%"PRId64", Writing Timestep: ", i+1, num_domains);
+      fprintf(stderr, "Domain %d/%d, Writing Timestep: ", i+1, num_domains);
       for (t=0; t<num_timesteps; t++) {
         realtyp time = t;
         ex_put_time(exoid, t+1, &time);
-        fprintf(stderr, "%"PRId64", ", t+1);
+        fprintf(stderr, "%d, ", t+1);
         if (num_global_fields > 0) {
           err = ex_put_var(exoid, t+1, EX_GLOBAL, 1, 0, num_global_fields, globals);
           if (err) {
@@ -907,7 +906,7 @@ void create_local_connect(INT *node_map,
     if (index != -1) {  /* found */
       loc_connect[i] = index+map_origin;
     } else {
-      fprintf (stderr, "error creating local connectivity; i = %"PRId64"\n", i);
+      fprintf (stderr, "error creating local connectivity; i = %d\n", i);
       exit (-1);
     }
   }

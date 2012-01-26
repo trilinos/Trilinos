@@ -152,7 +152,7 @@ int ex_get_side_set_node_list_len(int exoid,
 
   if (status != NC_NOERR) {
     sprintf(errmsg,
-         "Error: failed to get number of elements in side set %"PRId64" in file id %d",
+         "Error: failed to get number of elements in side set %d in file id %d",
             side_set_id, exoid);
     ex_err("ex_get_side_set_node_list_len",errmsg,exerrval);
     return(EX_FATAL);
@@ -201,7 +201,7 @@ int ex_get_side_set_node_list_len(int exoid,
       safe_free(side_set_elem_list);
       safe_free(side_set_side_list);
       sprintf(errmsg,
-	      "Error: failed to get side set %"PRId64" in file id %d",
+	      "Error: failed to get side set %d in file id %d",
 	      side_set_id, exoid);
       ex_err("ex_get_side_set_node_list_len",errmsg,exerrval);
       return (EX_FATAL);
@@ -307,7 +307,7 @@ int ex_get_side_set_node_list_len(int exoid,
       safe_free(side_set_side_list);
       safe_free(side_set_elem_list);
       sprintf(errmsg,
-             "Error: failed to get element block %"PRId64" parameters in file id %d",
+             "Error: failed to get element block %d parameters in file id %d",
               block.id, exoid);
       ex_err("ex_get_side_set_node_list_len",errmsg,EX_MSG);
       return(EX_FATAL);
@@ -482,7 +482,7 @@ int ex_get_side_set_node_list_len(int exoid,
     {
       exerrval = EX_BADPARAM;
       sprintf(errmsg,
-             "Error: Invalid element number %"ST_ZU" found in side set %"PRId64" in file %d",
+             "Error: Invalid element number %d found in side set %d in file %d",
               elem, side_set_id, exoid);
       safe_free(elem_blk_parms);
       safe_free(elem_blk_ids);
@@ -536,7 +536,7 @@ int ex_get_side_set_node_list_len(int exoid,
     {
       exerrval = EX_BADPARAM;
       sprintf(errmsg,
-             "Error: %s in elem block %"PRId64" is an unsupported element type",
+             "Error: %s in elem block %d is an unsupported element type",
               elem_blk_parms[i].elem_type, elem_blk_parms[i].elem_blk_id);
       safe_free(elem_blk_parms);
       safe_free(elem_blk_ids);

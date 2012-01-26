@@ -86,13 +86,13 @@ int ex_put_attr_param (int   exoid,
     if (exerrval != 0) {
       if (exerrval == EX_NULLENTITY) {
 	sprintf(errmsg,
-		"Warning: no attributes found for NULL %s %"PRId64" in file id %d",
+		"Warning: no attributes found for NULL %s %d in file id %d",
 		ex_name_of_object(obj_type),obj_id,exoid);
 	ex_err("ex_put_attr_param",errmsg,EX_MSG);
 	return (EX_WARN);              /* no attributes for this object */
       } else {
 	sprintf(errmsg,
-		"Warning: failed to locate %s id %"PRId64" in id array in file id %d",
+		"Warning: failed to locate %s id %d in id array in file id %d",
 		ex_name_of_object(obj_type),obj_id, exoid);
 	ex_err("ex_put_attr_param",errmsg,exerrval);
 	return (EX_WARN);
@@ -168,7 +168,7 @@ int ex_put_attr_param (int   exoid,
   if ((status = nc_inq_dimid(exoid, dnumobjent, &numobjentdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate number of entries for %s %"PRId64" in file id %d",
+	    "Error: failed to locate number of entries for %s %d in file id %d",
 	    ex_name_of_object(obj_type), obj_id, exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
     return (EX_FATAL);
@@ -185,7 +185,7 @@ int ex_put_attr_param (int   exoid,
   if ((status = nc_def_dim(exoid, dnumobjatt, num_attrs, &numattrdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to define number of attributes in %s %"PRId64" in file id %d",
+	    "Error: failed to define number of attributes in %s %d in file id %d",
 	    ex_name_of_object(obj_type), obj_id,exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
     goto error_ret;         /* exit define mode and return */
@@ -197,7 +197,7 @@ int ex_put_attr_param (int   exoid,
   if ((status = nc_def_var(exoid, vobjatt, nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error:  failed to define attributes for %s %"PRId64" in file id %d",
+	    "Error:  failed to define attributes for %s %d in file id %d",
 	    ex_name_of_object(obj_type), obj_id,exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
     goto error_ret;         /* exit define mode and return */

@@ -82,13 +82,13 @@ int ex_get_one_attr( int   exoid,
     if (exerrval != 0) {
       if (exerrval == EX_NULLENTITY) {
 	sprintf(errmsg,
-		"Warning: no attributes found for NULL %s %"PRId64" in file id %d",
+		"Warning: no attributes found for NULL %s %d in file id %d",
 		ex_name_of_object(obj_type),obj_id,exoid);
 	ex_err("ex_get_one_attr",errmsg,EX_MSG);
 	return (EX_WARN);              /* no attributes for this object */
       } else {
 	sprintf(errmsg,
-		"Warning: failed to locate %s id %"PRId64" in id array in file id %d",
+		"Warning: failed to locate %s id %d in id array in file id %d",
 		ex_name_of_object(obj_type),obj_id, exoid);
 	ex_err("ex_get_one_attr",errmsg,exerrval);
 	return (EX_WARN);
@@ -161,7 +161,7 @@ int ex_get_one_attr( int   exoid,
   if (attrib_index < 1 || attrib_index > (int)num_attr) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-            "Error: Invalid attribute index specified: %d.  Valid range is 1 to %d for %s %"PRId64" in file id %d",
+            "Error: Invalid attribute index specified: %d.  Valid range is 1 to %d for %s %d in file id %d",
             attrib_index, (int)num_attr, ex_name_of_object(obj_type), obj_id, exoid);
     ex_err("ex_get_one_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -170,7 +170,7 @@ int ex_get_one_attr( int   exoid,
   if ((status = nc_inq_varid(exoid, vattrbname, &attrid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate attributes for %s %"PRId64" in file id %d",
+	    "Error: failed to locate attributes for %s %d in file id %d",
 	    ex_name_of_object(obj_type),obj_id,exoid);
     ex_err("ex_get_one_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -196,7 +196,7 @@ int ex_get_one_attr( int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get attribute %d for %s %"PRId64" in file id %d",
+            "Error: failed to get attribute %d for %s %d in file id %d",
             attrib_index, ex_name_of_object(obj_type), obj_id,exoid);
     ex_err("ex_get_one_attr",errmsg,exerrval);
     return (EX_FATAL);

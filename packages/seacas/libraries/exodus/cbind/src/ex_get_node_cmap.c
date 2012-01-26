@@ -96,7 +96,7 @@ int ex_get_node_cmap(int  exoid,
   if ((map_idx=ne_id_lkup(exoid, VAR_N_COMM_IDS, varidx, map_id)) < 0) {
     exerrval = EX_MSG;
     sprintf(errmsg,
-            "Error: failed to find nodal comm map with ID %"PRId64" in file ID %d",
+            "Error: failed to find nodal comm map with ID %d in file ID %d",
             map_id, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);

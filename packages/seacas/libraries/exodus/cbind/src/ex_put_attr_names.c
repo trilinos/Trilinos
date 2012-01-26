@@ -81,13 +81,13 @@ int ex_put_attr_names(int   exoid,
   if (exerrval != 0) {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-	      "Warning: no attributes allowed for NULL %s %"PRId64" in file id %d",
+	      "Warning: no attributes allowed for NULL %s %d in file id %d",
 	      ex_name_of_object(blk_type),blk_id,exoid);
       ex_err("ex_put_attr_names",errmsg,EX_MSG);
       return (EX_WARN);              /* no attributes for this block */
     } else {
       sprintf(errmsg,
-	      "Error: no %s id %"PRId64" in %s array in file id %d",
+	      "Error: no %s id %d in %s array in file id %d",
 	      ex_name_of_object(blk_type), blk_id, VAR_ID_EL_BLK, exoid);
       ex_err("ex_put_attr_names",errmsg,exerrval);
       return (EX_FATAL);
@@ -135,7 +135,7 @@ int ex_put_attr_names(int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: number of attributes not defined for %s %"PRId64" in file id %d",
+	    "Error: number of attributes not defined for %s %d in file id %d",
 	    ex_name_of_object(blk_type),blk_id,exoid);
     ex_err("ex_put_attr_names",errmsg,EX_MSG);
     return (EX_FATAL);              /* number of attributes not defined */
@@ -144,7 +144,7 @@ int ex_put_attr_names(int   exoid,
   if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get number of attributes for %s %"PRId64" in file id %d",
+	    "Error: failed to get number of attributes for %s %d in file id %d",
 	    ex_name_of_object(blk_type),blk_id,exoid);
     ex_err("ex_put_attr_names",errmsg,exerrval);
     return (EX_FATAL);
@@ -190,7 +190,7 @@ int ex_put_attr_names(int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate %s attribute names for %s %"PRId64" in file id %d",
+	    "Error: failed to locate %s attribute names for %s %d in file id %d",
 	    ex_name_of_object(blk_type),ex_name_of_object(blk_type),blk_id, exoid);
     ex_err("ex_put_attr_names",errmsg,exerrval);
     return (EX_FATAL);

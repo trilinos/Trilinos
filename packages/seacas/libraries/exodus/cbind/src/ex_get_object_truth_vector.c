@@ -140,7 +140,7 @@ int ex_get_object_truth_vector (int  exoid,
   if (exerrval != 0) {
     if (exerrval != EX_NULLENTITY) {
       sprintf(errmsg,
-	      "Error: failed to locate %s id %"PRId64" in id variable in file id %d",
+	      "Error: failed to locate %s id %d in id variable in file id %d",
 	      ex_name_of_object(obj_type), entity_id, exoid);
       ex_err(routine,errmsg,exerrval);
       return (EX_FATAL);

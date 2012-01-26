@@ -90,13 +90,13 @@ int ex_put_n_node_set (int   exoid,
   {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-              "Warning: no data allowed for NULL node set %"PRId64" in file id %d",
+              "Warning: no data allowed for NULL node set %d in file id %d",
               node_set_id, exoid);
       ex_err("ex_put_n_node_set",errmsg,EX_MSG);
       return (EX_WARN);
     } else {
       sprintf(errmsg,
-     "Error: failed to locate node set id %"PRId64" in VAR_NS_IDS array in file id %d",
+     "Error: failed to locate node set id %d in VAR_NS_IDS array in file id %d",
               node_set_id, exoid);
       ex_err("ex_put_n_node_set",errmsg,exerrval);
       return (EX_FATAL);
@@ -108,7 +108,7 @@ int ex_put_n_node_set (int   exoid,
   if ((status = nc_inq_dimid (exoid, DIM_NUM_NOD_NS(node_set_id_ndx), &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to locate number of nodes in set %"PRId64" in file id %d",
+            "Error: failed to locate number of nodes in set %d in file id %d",
             node_set_id, exoid);
     ex_err("ex_put_n_node_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -117,7 +117,7 @@ int ex_put_n_node_set (int   exoid,
   if ((status = nc_inq_dimlen(exoid, dimid, &num_nodes_in_set)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get number of nodes in set %"PRId64" in file id %d",
+            "Error: failed to get number of nodes in set %d in file id %d",
             node_set_id, exoid);
     ex_err("ex_put_n_node_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -145,7 +145,7 @@ int ex_put_n_node_set (int   exoid,
   /* variable doesn't exist */
     exerrval = status;
     sprintf(errmsg,
-           "Error: failed to locate node set %"PRId64" node list in file id %d",
+           "Error: failed to locate node set %d node list in file id %d",
             node_set_id, exoid);
     ex_err("ex_put_n_node_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -164,7 +164,7 @@ int ex_put_n_node_set (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-           "Error: failed to store node set %"PRId64" node list in file id %d",
+           "Error: failed to store node set %d node list in file id %d",
             node_set_id, exoid);
     ex_err("ex_put_n_node_set",errmsg,exerrval);
     return (EX_FATAL);

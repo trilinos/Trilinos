@@ -77,7 +77,7 @@ int ex_get_concat_side_set_node_count(int exoid,
 {
   size_t m;
   int ii, i, j, iss, ioff; 
-  ex_entity_id side_set_id;
+  size_t side_set_id;
   int  num_side_sets, num_elem_blks, num_df, ndim;
   int64_t tot_num_elem = 0, tot_num_ss_elem = 0, side, elem;
   void_int *elem_blk_ids       = NULL;
@@ -193,7 +193,7 @@ int ex_get_concat_side_set_node_count(int exoid,
     /* read in an element block parameter */
     if ((ex_get_block_param (exoid, &block)) == -1) {
       sprintf(errmsg,
-             "Error: failed to get element block  %"PRId64" parameters in file id %d",
+             "Error: failed to get element block %d parameters in file id %d",
               block.id, exoid);
       ex_err("ex_get_concat_side_set_node_count",errmsg,EX_MSG);
       return(EX_FATAL);
@@ -510,7 +510,7 @@ int ex_get_concat_side_set_node_count(int exoid,
 
     if (status != EX_NOERR) {
       sprintf(errmsg,
-	      "Error: failed to get number of elements in side set  %"PRId64" in file id %d",
+	      "Error: failed to get number of elements in side set %d in file id %d",
 	      side_set_id, exoid);
       ex_err("ex_get_concat_side_set_node_count",errmsg,exerrval);
       goto error_ret;
@@ -542,7 +542,7 @@ int ex_get_concat_side_set_node_count(int exoid,
     if (ex_get_set(exoid, EX_SIDE_SET, side_set_id, 
 		   side_set_elem_list, side_set_side_list) == -1) {
       sprintf(errmsg,
-	      "Error: failed to get side set  %"PRId64" in file id %d",
+	      "Error: failed to get side set %d in file id %d",
 	      side_set_id, exoid);
       ex_err("ex_get_concat_side_set_node_count",errmsg,exerrval);
       goto error_ret;
@@ -607,7 +607,7 @@ int ex_get_concat_side_set_node_count(int exoid,
       } else {
 	exerrval = EX_BADPARAM;
 	sprintf(errmsg,
-		"Error: Invalid element number  %"PRId64" found in side set  %"PRId64" in file %d",
+		"Error: Invalid element number %d found in side set %d in file %d",
 		elem, side_set_id, exoid);
 	ex_err("ex_get_concat_side_set_node_count",errmsg,EX_MSG);
 	goto error_ret;

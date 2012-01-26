@@ -55,7 +55,7 @@
 
 /* Used to reduce repeated code below */
 static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimension_name,
-				int dimension, int64_t *value)
+				int dimension, size_t *value)
 {
   char errmsg[MAX_ERR_LENGTH];
   int status;
@@ -64,15 +64,13 @@ static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimensi
     /* optional and default to zero. */
     *value = 0;
   } else {
-    size_t tmp;
-    if ((status = nc_inq_dimlen(exoid, dimension, &tmp)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimension, value)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg, "Error: failed to get number of %s in file id %d",
 	      name, exoid);
       ex_err("ex_get_init",errmsg,exerrval);
       return (EX_FATAL);
     }
-    *value = tmp;
   }
   return EX_NOERR;
 }
@@ -123,12 +121,8 @@ int ex_get_init_ext (int   exoid,
     return (EX_FATAL);
   }
 
-  {
-    size_t tmp;
-    status = ex_get_dimension(exoid, DIM_NUM_DIM, "dimensions", &tmp, &dimid, "ex_get_init_ext");
-    if (status != NC_NOERR) return status;
-    info->num_dim = tmp;
-  }
+  status = ex_get_dimension(exoid, DIM_NUM_DIM, "dimensions", &info->num_dim, &dimid, "ex_get_init_ext");
+  if (status != NC_NOERR) return status;
 
   /* Handle case with zero-nodes */
   if (ex_get_dim_value(exoid,   "nodes",DIM_NUM_NODES,dimid,&info->num_nodes) != EX_NOERR) return EX_FATAL;

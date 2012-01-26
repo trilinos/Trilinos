@@ -358,7 +358,7 @@ int ex_put_prop (int   exoid,
       {
 	exerrval = EX_BADPARAM;
 	sprintf(errmsg,
-		"Warning: attempt to assign duplicate %s ID %"PRId64" in file id %d",
+		"Warning: attempt to assign duplicate %s ID %d in file id %d",
 		ex_name_of_object(obj_type), value, exoid);
 	ex_err("ex_put_prop",errmsg,exerrval);
 	return (EX_WARN);
@@ -369,13 +369,13 @@ int ex_put_prop (int   exoid,
   if (exerrval != 0) {
     if (exerrval == EX_NULLENTITY) {
       sprintf(errmsg,
-	      "Warning: no properties allowed for NULL %s id %"PRId64" in file id %d",
+	      "Warning: no properties allowed for NULL %s id %d in file id %d",
 	      ex_name_of_object(obj_type), obj_id,exoid);
       ex_err("ex_put_prop",errmsg,EX_MSG);
       return (EX_WARN);
     } else {
       sprintf(errmsg,
-	      "Error: failed to find value %"PRId64" in %s property array in file id %d",
+	      "Error: failed to find value %d in %s property array in file id %d",
 	      obj_id, ex_name_of_object(obj_type), exoid);
       ex_err("ex_put_prop",errmsg,exerrval);
       return (EX_FATAL);

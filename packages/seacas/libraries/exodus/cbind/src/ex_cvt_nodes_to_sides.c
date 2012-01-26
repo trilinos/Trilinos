@@ -403,7 +403,7 @@ int ex_cvt_nodes_to_sides(int exoid,
       /* read in an element block parameter */
       if ((ex_get_block_param (exoid, &block)) == -1) {
 	sprintf(errmsg,
-		"Error: failed to get element block %"PRId64" parameters in file id %d",
+		"Error: failed to get element block %ld parameters in file id %d",
 		block.id, exoid);
 	ex_err("ex_cvt_nodes_to_sides",errmsg,EX_MSG);
 	err_stat = EX_FATAL;
@@ -777,7 +777,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 			       connect) == -1)
 	    {
 	      sprintf(errmsg,
-		      "Error: failed to get connectivity array for elem blk %"PRId64" for file id %d",
+		      "Error: failed to get connectivity array for elem blk %ld for file id %d",
 		      elem_blk_parms[p_ndx].elem_blk_id,
 		      exoid);
 	      ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
@@ -851,7 +851,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 		  {
 		    exerrval = EX_BADPARAM;
 		    sprintf(errmsg,
-			    "Error: failed to find TRIANGULAR SHELL element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
+			    "Error: failed to find TRIANGULAR SHELL element %ld, node %ld in connectivity array %d for file id %d",
 			    elem_num+1,
 			    ss_node1,
 			    elem_blk_parms[p_ndx].elem_blk_id,
@@ -907,7 +907,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 		  {
 		    exerrval = EX_BADPARAM;
 		    sprintf(errmsg,
-			    "Error: failed to find SHELL element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
+			    "Error: failed to find SHELL element %ld, node %ld in connectivity array %d for file id %d",
 			    elem_num+1,
 			    ss_node1,
 			    elem_blk_parms[p_ndx].elem_blk_id,
@@ -936,7 +936,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 		  {
 		    exerrval = EX_BADPARAM;
 		    sprintf(errmsg,
-			    "Error: failed to find HEX element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
+			    "Error: failed to find HEX element %ld, node %ld in connectivity array %d for file id %d",
 			    elem_num+1,
 			    ss_node1,
 			    elem_blk_parms[p_ndx].elem_blk_id,
@@ -964,7 +964,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 		  {
 		    exerrval = EX_BADPARAM;
 		    sprintf(errmsg,
-			    "Error: failed to find TETRA element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
+			    "Error: failed to find TETRA element %ld, node %ld in connectivity array %d for file id %d",
 			    elem_num+1,
 			    ss_node1,
 			    elem_blk_parms[p_ndx].elem_blk_id,
@@ -1015,7 +1015,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 	{
 	  exerrval = EX_BADPARAM;
 	  sprintf(errmsg,
-		  "Error: failed to find element %"PRId64", node %"PRId64" in element block %"PRId64" for file id %d",
+		  "Error: failed to find element %ld, node %ld in element block %ld for file id %d",
 		  elem_num+1, ss_node0,
 		  elem_blk_parms[p_ndx].elem_blk_id,
 		  exoid);
