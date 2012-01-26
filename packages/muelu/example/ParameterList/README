@@ -1,0 +1,13 @@
+The 'ParameterList' example collection presents some parameter list driven examples.
+
+A parameter list is a key/value database that can be used to configure the multigrid preconditioner built by MueLu.
+See documentation of Teuchos::ParameterList for more information.
+
+Example:
+ MLParameterList  - Run MueLu using a parameter list formatted for ML
+
+Usage:
+ ./MueLu_MLParameterList.exe
+
+Option:
+ use --help to list available options.
