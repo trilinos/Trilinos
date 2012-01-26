@@ -176,6 +176,7 @@ C     ... Echo spline data
       DO 100 INP = 1, NUMNP
          DX = XN(INP)
          DY = YN(INP)
+         rad = 0.0
          IF (SWEEP .EQ. SPHERI) THEN
             RAD = SQRT (DX**2 + DY**2)
          ELSE IF (SWEEP .EQ. XSWEEP) THEN
@@ -216,7 +217,7 @@ C         FIXR  = SIGN(0.5, RAD) + SIGN(0.5, -RAD)
          B  = (RNEWA-RSA(KLOA)) / H
          
          ZT = A * ZSA(KLOA) + B * ZSA(KLOA+1) +
-     *        ((A**3-A) * ZS2A(KLOA)+(B**3-B) * ZS2A(KLOA+1)) * (H**2)/6.
+     *     ((A**3-A) * ZS2A(KLOA)+(B**3-B) * ZS2A(KLOA+1)) * (H**2)/6.
          
          IF (RDTHET) THEN
             RSAV  = RNEWA
@@ -225,6 +226,9 @@ C         FIXR  = SIGN(0.5, RAD) + SIGN(0.5, -RAD)
             RNEWA = ZSAV * SIN(RSAV)
         END IF
          
+        xt = 0.0
+        yt = 0.0
+        
          IF (SWEEP .EQ. SPHERI) THEN
 C ... Spherical Sweep of Spline Surface
             XT = RNEWA * DX / (RAD + FIXR)

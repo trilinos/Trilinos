@@ -709,7 +709,7 @@ int ex_id_lkup( int exoid,
       return (EX_FATAL);
     }
 
-    status = nc_get_var_longlong (exoid, varid, id_vals);
+    status = nc_get_var_longlong (exoid, varid, (long long*)id_vals);
     
     if (status != NC_NOERR) {
       exerrval = status;

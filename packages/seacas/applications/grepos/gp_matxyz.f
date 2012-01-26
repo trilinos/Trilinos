@@ -98,6 +98,7 @@ C     --Find all matching nodes by comparing coordinates of nodes in overlap are
       
       DELMAX = MAX(DELTAX, DELTAY, DELTAZ)
 
+      imat = 0
       call excpus(time0)
       if (DELMAX .EQ. DELTAX) THEN
         imat = 1
@@ -202,7 +203,6 @@ C     if set 2 X|Y|Z greater than set 1 X|Y|Z+toler, go to next X1|Y1|Z1 coord.
       IF (DISMIN .LT. 1.0E37) THEN
          WRITE (*, 10030) DISMIN
       END IF
-  180 CONTINUE
 
       WRITE (STRING, 10000) NMATCH
       CALL SQZSTR (STRING, LSTR)

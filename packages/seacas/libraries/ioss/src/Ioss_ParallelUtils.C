@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <string>
+#include <cstring>
 #include <vector>
 
 #include <Ioss_CodeTypes.h>

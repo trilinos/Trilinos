@@ -105,10 +105,10 @@ C     exopen/excre already having a type...
         integer EX_BULK_INT64_API
         integer EX_IDS_INT64_API
         integer EX_INQ_INT64_API
-	parameter (EX_MAPS_INT64_API=   8192) ! All maps (id, order, ...) store int64_t values
-	parameter (EX_IDS_INT64_API =  16384) ! All entity ids
-	parameter (EX_BULK_INT64_API=  32768) ! All integer bulk data
-	parameter (EX_INQ_INT64_API =  65536) ! All integer inquire arguments
+        parameter (EX_MAPS_INT64_API=   8192) ! All maps (id, order, ...) store int64_t values
+        parameter (EX_IDS_INT64_API =  16384) ! All entity ids
+        parameter (EX_BULK_INT64_API=  32768) ! All integer bulk data
+        parameter (EX_INQ_INT64_API =  65536) ! All integer inquire arguments
 
 C ... All wrapper routines are passing INTEGER*8, but at this 
 C     time, only the maps are supported...
@@ -1515,10 +1515,10 @@ C     exopen/excre already having a type...
         integer EX_BULK_INT64_API
         integer EX_IDS_INT64_API
         integer EX_INQ_INT64_API
-	parameter (EX_MAPS_INT64_API=   8192) ! All maps (id, order, ...) store int64_t values
-	parameter (EX_IDS_INT64_API =  16384) ! All entity ids
-	parameter (EX_BULK_INT64_API=  32768) ! All integer bulk data
-	parameter (EX_INQ_INT64_API =  65536) ! All integer inquire arguments
+        parameter (EX_MAPS_INT64_API=   8192) ! All maps (id, order, ...) store int64_t values
+        parameter (EX_IDS_INT64_API =  16384) ! All entity ids
+        parameter (EX_BULK_INT64_API=  32768) ! All integer bulk data
+        parameter (EX_INQ_INT64_API =  65536) ! All integer inquire arguments
 
         IMODE4 = IMODE
 

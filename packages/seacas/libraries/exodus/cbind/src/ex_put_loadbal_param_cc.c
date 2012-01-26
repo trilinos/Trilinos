@@ -64,9 +64,10 @@
 
 #include <stdio.h>
 
+#include <netcdf.h>
+
 #include <exodusII.h>
 #include <exodusII_int.h>
-#include <netcdf.h>
 #ifndef NC_INT64
 #define NC_INT64 NC_INT
 #endif
@@ -787,7 +788,7 @@ int ex_put_loadbal_param_cc(int   exoid,
       /* increment to the next starting position */
       num_int_elem += nie;
 #if defined(NC_NETCDF4)
-      status = nc_put_var1_longlong(exoid, varid_idx[0], start, &num_int_elem);
+      status = nc_put_var1_longlong(exoid, varid_idx[0], start, (long long*)&num_int_elem);
 #else
       status = nc_put_var1_int(exoid, varid_idx[0], start, &num_int_elem);
 #endif
@@ -805,7 +806,7 @@ int ex_put_loadbal_param_cc(int   exoid,
       /* increment to the next starting position */
       num_bor_elem += nbe;
 #if defined(NC_NETCDF4)
-      status = nc_put_var1_longlong(exoid, varid_idx[1], start, &num_bor_elem);
+      status = nc_put_var1_longlong(exoid, varid_idx[1], start, (long long*)&num_bor_elem);
 #else
       status = nc_put_var1_int(exoid, varid_idx[1], start, &num_bor_elem);
 #endif
@@ -823,7 +824,7 @@ int ex_put_loadbal_param_cc(int   exoid,
       /* increment to the next starting position */
       num_int_node += nin;
 #if defined(NC_NETCDF4)
-      status = nc_put_var1_longlong(exoid, varid_idx[2], start, &num_int_node);
+      status = nc_put_var1_longlong(exoid, varid_idx[2], start, (long long*)&num_int_node);
 #else
       status = nc_put_var1_int(exoid, varid_idx[2], start, &num_int_node);
 #endif
@@ -841,7 +842,7 @@ int ex_put_loadbal_param_cc(int   exoid,
       /* increment to the next starting position */
       num_bor_node += nbn;
 #if defined(NC_NETCDF4)
-      status = nc_put_var1_longlong(exoid, varid_idx[3], start, &num_bor_node);
+      status = nc_put_var1_longlong(exoid, varid_idx[3], start, (long long*)&num_bor_node);
 #else
       status = nc_put_var1_int(exoid, varid_idx[3], start, &num_bor_node);
 #endif
@@ -859,7 +860,7 @@ int ex_put_loadbal_param_cc(int   exoid,
       /* increment to the next starting position */
       num_ext_node += nen;
 #if defined(NC_NETCDF4)
-      status = nc_put_var1_longlong(exoid, varid_idx[4], start, &num_ext_node);
+      status = nc_put_var1_longlong(exoid, varid_idx[4], start, (long long*)&num_ext_node);
 #else
       status = nc_put_var1_int(exoid, varid_idx[4], start, &num_ext_node);
 #endif
@@ -877,7 +878,7 @@ int ex_put_loadbal_param_cc(int   exoid,
       /* increment to the next starting position */
       num_n_cmaps += nnc;
 #if defined(NC_NETCDF4)
-      status = nc_put_var1_longlong(exoid, varid_idx[5], start, &num_n_cmaps);
+      status = nc_put_var1_longlong(exoid, varid_idx[5], start, (long long*)&num_n_cmaps);
 #else
       status = nc_put_var1_int(exoid, varid_idx[5], start, &num_n_cmaps);
 #endif
@@ -895,7 +896,7 @@ int ex_put_loadbal_param_cc(int   exoid,
       /* increment to the next starting position */
       num_e_cmaps += nec;
 #if defined(NC_NETCDF4)
-      status = nc_put_var1_longlong(exoid, varid_idx[6], start, &num_e_cmaps);
+      status = nc_put_var1_longlong(exoid, varid_idx[6], start, (long long*)&num_e_cmaps);
 #else
       status = nc_put_var1_int(exoid, varid_idx[6], start, &num_e_cmaps);
 #endif

@@ -128,7 +128,6 @@ C ... Bars to shells
                         LINK3(3,JEL) = JNP2 + NR - 1
                         LINK3(4,JEL) = JNP2 
                      END IF
- 15               CONTINUE
                ELSE
                   DO 20 J = 1, NUMLNK
                      INP = LINK(J,IEL)
