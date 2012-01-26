@@ -38,7 +38,15 @@ APPEND_GLOB(HEADERS */*/*.hpp)
 
 SET(SOURCES "")
 APPEND_GLOB(SOURCES */*.cpp)
-APPEND_GLOB(SOURCES */*/*.cpp)
+
+#APPEND_GLOB(SOURCES */*/*.cpp) -> ExplicitInstantiation files must be included only is explicit instantiation is enabled
+APPEND_GLOB(SOURCES MueCentral/BaseClass/*.cpp)
+APPEND_GLOB(SOURCES MueCentral/Level/*.cpp)
+APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
+APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
+APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
+APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
+APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
 
 #
 # Explicit instantiation
