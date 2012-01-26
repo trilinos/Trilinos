@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <Teuchos_XMLParameterListHelpers.hpp> // getParametersFromXmlFile()
+
 #include <MueLu.hpp>
 #include <MueLu_MLInterpreter.hpp>
 
@@ -25,9 +27,12 @@ int main(int argc, char *argv[]) {
   //
 
   Teuchos::CommandLineProcessor clp(false); // Note: 
-  
+
   MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);       // manage parameters of xpetra
+
+  std::string xmlFileName;
+  clp.setOption("xml", &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
 
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -49,18 +54,25 @@ int main(int argc, char *argv[]) {
   //
 
   // ML parameter list
-  Teuchos::ParameterList params;
+  RCP<Teuchos::ParameterList> params;
+  if (xmlFileName != "") {
+    std::cout << "Reading " << xmlFileName << " ..." << std::endl;
+    params = Teuchos::getParametersFromXmlFile(xmlFileName);
+  } else {
+    std::cout << "Hard-coded parameter list";
+    params = rcp(new Teuchos::ParameterList());
 
-  params.set("max levels", 2);
-  
-  Teuchos::ParameterList & l0 = params.sublist("smoother: list (level 0)");
-  l0.set("smoother: damping factor", 0.9);
-  l0.set("smoother: sweeps", 1);
-  l0.set("smoother: pre or post", "both");
-  l0.set("smoother: type", "symmetric Gauss-Seidel");
+    params->set("max levels", 2);
+    
+    Teuchos::ParameterList & l0 = params->sublist("smoother: list (level 0)");
+    l0.set("smoother: damping factor", 0.9);
+    l0.set("smoother: sweeps", 1);
+    l0.set("smoother: pre or post", "both");
+    l0.set("smoother: type", "symmetric Gauss-Seidel");
+  }
 
   // Multigrid Hierarchy
-  RCP<Hierarchy> H = MLInterpreter::Setup(params, A);
+  RCP<Hierarchy> H = MLInterpreter::Setup(*params, A);
 
   H->setVerbLevel(Teuchos::VERB_HIGH);
 
