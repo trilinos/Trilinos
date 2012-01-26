@@ -75,7 +75,7 @@ namespace MueLu {
     double NormInf() const;
     //@}
   
-    //! @name Atribute access functions
+    //! @name Attribute access functions
     //@{ 
 
     //! Returns a character string describing the operator
@@ -95,6 +95,10 @@ namespace MueLu {
 
     //! Returns the Epetra_Map object associated with the range of this operator.
     const Epetra_Map & OperatorRangeMap() const;
+
+    //! Direct access to the underlying MueLu::Hierarchy.
+    RCP<MueLu::Hierarchy<double, int, int, Node, LocalMatOps> > GetHierarchy() const;    
+
     //@}
 
   private:
