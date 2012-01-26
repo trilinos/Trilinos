@@ -50,10 +50,10 @@ C ... Type of modification requested: SNAP or MOVE
      *  IDSSMA(MXSNAP), IDSSSL(MXSNAP), SNPTOL(MXSNAP), DELMAX(MXSNAP),
      *  ISMTYP(MXSNAP), GAP(MXSNAP)
       
-	INTEGER USNORM
+        INTEGER USNORM
 C      --NUMSNP - number of 'snap sets' specified
 C      --USNORM - type of normal to use
-C	 --PNORM = Calculate normal from slave face, VECTOR unused
+C        --PNORM = Calculate normal from slave face, VECTOR unused
 C        --PRAD  = Radial, center is defined in VECTOR
 C        --PVECT = Specified vector in VECTOR
 C        --PEDGE = Calculate normal from edge to slave node, VECTOR unused
