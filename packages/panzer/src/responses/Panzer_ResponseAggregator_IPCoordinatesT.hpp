@@ -74,7 +74,29 @@ globalReduction(const Teuchos::Comm<int> & comm,ResponseData<TraitsT>  & rd) con
 template <typename TraitsT>
 void ResponseAggregator_IPCoordinates<panzer::Traits::Residual,TraitsT>::
 aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const
-{ }
+{
+  Teuchos::RCP<std::vector<typename IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > block_agg_coords =
+    Teuchos::rcp(new std::vector<typename IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>);
+
+  for (typename std::list<Teuchos::RCP<const Response<TraitsT> > >::const_iterator block = sources.begin();  block != sources.end(); ++block) {
+    
+    TEUCHOS_ASSERT((*block)->hasParameterList());
+    
+    Teuchos::RCP<Teuchos::ParameterList> pl = (*block)->getParameterList();
+
+    Teuchos::RCP<std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > coords = pl->get<Teuchos::RCP<std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > >("IP Coordinates");
+
+    for (typename std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>::const_iterator point = coords->begin(); point != coords->end(); ++point) {
+      block_agg_coords->push_back(*point);
+    }
+    
+  }
+
+  Teuchos::RCP<Teuchos::ParameterList> block_agg_pl = Teuchos::parameterList();
+  block_agg_pl->set("IP Coordinates",block_agg_coords);
+  dest.setParameterList(block_agg_pl);
+
+}
 
 }
 

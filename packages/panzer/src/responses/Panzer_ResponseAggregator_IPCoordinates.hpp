@@ -39,7 +39,9 @@ public:
   
   virtual void fillResponse(const std::string & field,Response<TraitsT> & response) const
   { 
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"fillResponse not implemented yet. Fix the response object to support parameter lists first.");
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->set("IP Coordinates",coords);
+    response.setParameterList(pl);
   }
   
    //! @}

@@ -72,6 +72,10 @@ namespace panzer {
        pl->set("Y Blocks",1);
        pl->set("X Elements",2);
        pl->set("Y Elements",2);
+       pl->set("X0",0.0);
+       pl->set("Y0",0.0);
+       pl->set("Xf",8.0);
+       pl->set("Yf",4.0);
        mesh_factory.setParameterList(pl);
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
@@ -179,9 +183,13 @@ namespace panzer {
     //rLibrary->defineDefaultAggregators();
   
     out << "reserving responses" << std::endl;
-    ResponseId ipcResp  = buildResponse("Source Term Coordinates","IP Coordinates");
-    rLibrary->reserveVolumeResponse<EvalT>(ipcResp,"eblock-0_0");
-    rLibrary->reserveVolumeResponse<EvalT>(ipcResp,"eblock-1_0");
+    std::list<std::string> aggregated_block_names;
+    std::list<std::string> aggregated_block_eval_types;
+    aggregated_block_names.push_back("eblock-0_0");
+    aggregated_block_names.push_back("eblock-1_0");
+    aggregated_block_eval_types.push_back("Residual");
+    ResponseId aggIpcResp  = buildResponse("Source Term Coordinates","IP Coordinates");
+    rLibrary->reserveLabeledVolumeResponse("Aggregated Source Term Coordinates",aggIpcResp,aggregated_block_names,aggregated_block_eval_types);
 
     rLibrary->printVolumeContainers(out);
   
@@ -203,7 +211,37 @@ namespace panzer {
     rLibrary->evaluateVolumeFieldManagers<EvalT>(ae_inargs,*tcomm);
 
     
+    Teuchos::RCP<const Response<Traits> > coord_response =
+      rLibrary->getVolumeResponseByLabel("Aggregated Source Term Coordinates");
+    
+    TEST_ASSERT(coord_response->hasParameterList());
+    
+    Teuchos::RCP<Teuchos::ParameterList> pl = coord_response->getParameterList();
+    Teuchos::RCP<std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > coords = pl->get<Teuchos::RCP<std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate> > >("IP Coordinates");
+    
+    // NOTE: if the ordering of elements changes in the STK 2D object, this test may break
+    out << "\nPrinting element data for block: eblock-1_0" << std::endl;
+    for (std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>::const_iterator i = coords->begin(); i != coords->end(); ++i)
+      out << "pid = " << comm->MyPID() << ", lid = " << i->lid << ", coords(x,y,z) = (" << i->val[0] << "," << i->val[1] << "," << i->val[2] << ")" << std::endl;
 
+    const double double_tol = 10.0*std::numeric_limits<double>::epsilon();
+    if (comm->MyPID() == 0) {
+      for (std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>::const_iterator i = coords->begin(); i != coords->end(); ++i) {
+	if (i->lid == 0) {
+	  TEST_FLOATING_EQUALITY(i->val[0], 1.0, double_tol);
+	  TEST_FLOATING_EQUALITY(i->val[1], 1.0, double_tol);
+	}
+      }
+    }
+    else if (comm->MyPID() == 1) {
+      for (std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>::const_iterator i = coords->begin(); i != coords->end(); ++i) {
+	if (i->lid == 0) {
+	  TEST_FLOATING_EQUALITY(i->val[0], 3.0, double_tol);
+	  TEST_FLOATING_EQUALITY(i->val[1], 1.0, double_tol);
+	}
+      }
+    }
+    
 
   }
 

@@ -98,7 +98,7 @@ public:
   Teuchos::RCP<Teuchos::ParameterList> getParameterList() const
   { return parameterList_; }
 
-  void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>* p)
+  void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p)
   { parameterList_ = p; }
 
   bool hasParameterList() const { return nonnull(parameterList_); }
