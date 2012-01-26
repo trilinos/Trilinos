@@ -386,7 +386,7 @@ class Komplex_RowMatrix : public virtual Epetra_RowMatrix {
   bool UpperTriangular() const;
   //@}
   
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
   //! Returns the infinity norm of the global matrix.
   /* Returns the quantity \f$ \| A \|_\infty\f$ such that

@@ -90,7 +90,7 @@ namespace ML_Epetra
     //@}
 
     
-    //@{ \name Atribute access functions
+    //@{ \name Attribute access functions
 
     //! Computes the multilevel hierarchy.
     /*! Computes the multilevel hierarchy. This function retrives the user's defines parameters (as

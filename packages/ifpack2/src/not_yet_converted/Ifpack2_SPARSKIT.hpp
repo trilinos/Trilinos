@@ -140,7 +140,7 @@ class Ifpack2_SPARSKIT: public Ifpack2_Preconditioner {
     return(Condest_);
   }
 
-  // Atribute access functions
+  // Attribute access functions
   
   //@{ \name Additional methods required to support the Tpetra_Operator interface.
 

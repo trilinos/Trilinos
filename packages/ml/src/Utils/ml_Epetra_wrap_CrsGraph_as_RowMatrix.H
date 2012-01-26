@@ -207,7 +207,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
     }
   //@}
   
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
     bool Filled() const 
