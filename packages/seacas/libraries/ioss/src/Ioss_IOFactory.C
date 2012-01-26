@@ -31,19 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_IOFactory.h>
+
 #include <Ioss_Utils.h>
-#include <stddef.h>
-#include <map>
-#include <ostream>
 #include <string>
-#include <utility>
-
-#include "Ioss_CodeTypes.h"
-#include "Ioss_DBUsage.h"
-
-namespace Ioss {
-class DatabaseIO;
-}  // namespace Ioss
 
 Ioss::DatabaseIO* Ioss::IOFactory::create(const std::string& type,
 					  const std::string& filename,

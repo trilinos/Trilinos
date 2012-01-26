@@ -85,14 +85,14 @@ void SystemInterface::enroll_options()
 		  "\t\tIf just p#,p#,... specified, then omit sets on specified parts\n"
 		  "\t\tIf p#:id1:id2,p#:id2,id4... then omit the sets with the specified\n"
 		  "\t\tid in the specified parts.",
-		  0, "ALL");
+		  0);
 
   options_.enroll("omit_sidesets", GetLongOpt::OptionalValue,
 		  "If no value, then don't transfer any sidesets to output file.\n"
 		  "\t\tIf just p#,p#,... specified, then omit sets on specified parts\n"
 		  "\t\tIf p#:id1:id2,p#:id2,id4... then omit the sets with the specified\n"
 		  "\t\tid in the specified parts.",
-		  0, "ALL");
+		  0);
 
   options_.enroll("convert_nodal_to_nodesets", GetLongOpt::MandatoryValue,
 		  "For each part listed (or ALL),\n"
@@ -166,7 +166,7 @@ void SystemInterface::enroll_options()
 		  "\t\tthen don't transfer any information records to output file.\n"
 		  "\t\tIf 'p#,p#,...' specified, then only transfer information records on specified parts\n"
 		  "\t\tIf 'all' specified, then transfer all information records",
-		  0, "NONE");
+		  0);
 
   options_.enroll("disable_field_recognition", GetLongOpt::NoValue,
 		  "Do not try to combine scalar fields into higher-order fields such as\n"

@@ -112,8 +112,7 @@
                                                 /* point numbers in file     */
                                                 /* used for db version 2.01  */
                                                 /* and earlier               */
-#define ATT_MAX_NAME_LENGTH     "maximum_name_length"
-#define ATT_INT64_STATUS        "int64_status"
+#define ATT_MAX_NAME_LENGTH "maximum_name_length"
 
 #define DIM_NUM_NODES           "num_nodes"     /* # of nodes                */
 #define DIM_NUM_DIM             "num_dim"       /* # of dimensions; 2- or 3-d*/
@@ -499,62 +498,6 @@
 #define VAR_FRAME_IDS    "frame_ids"
 #define VAR_FRAME_TAGS   "frame_tags"
 
-#define VAR_ELBLK_IDS_GLOBAL            "el_blk_ids_global"
-#define VAR_ELBLK_CNT_GLOBAL            "el_blk_cnt_global"
-#define VAR_NS_IDS_GLOBAL               "ns_ids_global"
-#define VAR_NS_NODE_CNT_GLOBAL          "ns_node_cnt_global"
-#define VAR_NS_DF_CNT_GLOBAL            "ns_df_cnt_global"
-#define VAR_SS_IDS_GLOBAL               "ss_ids_global"
-#define VAR_SS_SIDE_CNT_GLOBAL          "ss_side_cnt_global"
-#define VAR_SS_DF_CNT_GLOBAL            "ss_df_cnt_global"
-#define VAR_FILE_TYPE                   "nem_ftype"
-#define VAR_COMM_MAP                    "comm_map"
-#define VAR_NODE_MAP_INT                "node_mapi"
-#define VAR_NODE_MAP_INT_IDX            "node_mapi_idx"
-#define VAR_NODE_MAP_BOR                "node_mapb"
-#define VAR_NODE_MAP_BOR_IDX            "node_mapb_idx"
-#define VAR_NODE_MAP_EXT                "node_mape"
-#define VAR_NODE_MAP_EXT_IDX            "node_mape_idx"
-#define VAR_ELEM_MAP_INT                "elem_mapi"
-#define VAR_ELEM_MAP_INT_IDX            "elem_mapi_idx"
-#define VAR_ELEM_MAP_BOR                "elem_mapb"
-#define VAR_ELEM_MAP_BOR_IDX            "elem_mapb_idx"
-#define VAR_INT_N_STAT                  "int_n_stat"
-#define VAR_BOR_N_STAT                  "bor_n_stat"
-#define VAR_EXT_N_STAT                  "ext_n_stat"
-#define VAR_INT_E_STAT                  "int_e_stat"
-#define VAR_BOR_E_STAT                  "bor_e_stat"
-#define VAR_N_COMM_IDS                  "n_comm_ids"
-#define VAR_N_COMM_STAT                 "n_comm_stat"
-#define VAR_N_COMM_INFO_IDX             "n_comm_info_idx"
-#define VAR_E_COMM_IDS                  "e_comm_ids"
-#define VAR_E_COMM_STAT                 "e_comm_stat"
-#define VAR_E_COMM_INFO_IDX             "e_comm_info_idx"
-#define VAR_N_COMM_NIDS                 "n_comm_nids"
-#define VAR_N_COMM_PROC                 "n_comm_proc"
-#define VAR_N_COMM_DATA_IDX             "n_comm_data_idx"
-#define VAR_E_COMM_EIDS                 "e_comm_eids"
-#define VAR_E_COMM_SIDS                 "e_comm_sids"
-#define VAR_E_COMM_PROC                 "e_comm_proc"
-#define VAR_E_COMM_DATA_IDX             "e_comm_data_idx"
-
-#define DIM_NUM_INT_NODES               "num_int_node"
-#define DIM_NUM_BOR_NODES               "num_bor_node"
-#define DIM_NUM_EXT_NODES               "num_ext_node"
-#define DIM_NUM_INT_ELEMS               "num_int_elem"
-#define DIM_NUM_BOR_ELEMS               "num_bor_elem"
-#define DIM_NUM_PROCS                   "num_processors"
-#define DIM_NUM_PROCS_F                 "num_procs_file"
-#define DIM_NUM_NODES_GLOBAL            "num_nodes_global"
-#define DIM_NUM_ELEMS_GLOBAL            "num_elems_global"
-#define DIM_NUM_NS_GLOBAL               "num_ns_global"
-#define DIM_NUM_SS_GLOBAL               "num_ss_global"
-#define DIM_NUM_ELBLK_GLOBAL            "num_el_blk_global"
-#define DIM_NUM_N_CMAPS                 "num_n_cmaps"
-#define DIM_NUM_E_CMAPS                 "num_e_cmaps"
-#define DIM_NCNT_CMAP                   "ncnt_cmap"
-#define DIM_ECNT_CMAP                   "ecnt_cmap"
-
 enum ex_element_type {
   EX_EL_UNK         =  -1,     /**< unknown entity */
   EX_EL_NULL_ELEMENT=   0,     
@@ -585,24 +528,25 @@ typedef enum ex_coordinate_frame_type ex_coordinate_frame_type;
 struct elem_blk_parm
 {
   char elem_type[33];
-  int64_t elem_blk_id;
-  int64_t num_elem_in_blk;
+  int elem_blk_id;
+  int num_elem_in_blk;
   int num_nodes_per_elem;
   int num_sides;
   int num_nodes_per_side[6];
   int num_attr;
-  int64_t elem_ctr;
+  int elem_ctr;
   ex_element_type elem_type_val;
 };
 
 struct list_item {              /* for use with ex_get_file_item */
+
   int exo_id;
   int value;
   struct list_item* next;
 };
 
 struct obj_stats {
-  int64_t *id_vals;
+  int *id_vals;
   int *stat_vals;
   long num;
   int exoid;
@@ -612,8 +556,6 @@ struct obj_stats {
 };
 
 void  ex_iqsort(int v[], int iv[], int count );
-void  ex_iqsort64(int64_t v[], int64_t iv[], int64_t count );
-
 char* ex_catstr(const char*, int);
 char* ex_catstr2(const char*, int, const char*, int);
 char* ex_dim_num_entries_in_object(ex_entity_type, int);
@@ -621,9 +563,8 @@ char* ex_dim_num_objects(ex_entity_type obj_type);
 char* ex_name_var_of_object( ex_entity_type, int, int );
 char* ex_name_of_map( ex_entity_type, int );
 
-int ex_conv_ini  (int exoid, int* comp_wordsize, int* io_wordsize, int file_wordsize, int int64_status);
+int ex_conv_ini  (int exoid, int* comp_wordsize, int* io_wordsize, int file_wordsize);
 void ex_conv_exit  (int exoid);
-
 nc_type nc_flt_code  (int exoid);
 int ex_comp_ws  (int exoid);
 int ex_get_cpu_ws(void);
@@ -650,7 +591,7 @@ extern struct obj_stats* exoII_nm;
 struct obj_stats *ex_get_stat_ptr  ( int exoid, struct obj_stats** obj_ptr);
 void ex_rm_stat_ptr  (int exoid, struct obj_stats** obj_ptr);
 
-int ex_id_lkup  (int exoid, ex_entity_type id_type, int64_t num);
+int ex_id_lkup  (int exoid, ex_entity_type id_type, int num);
 int ex_check_file_type(const char *path, int *type);
 int ex_get_dimension(int exoid, const char *dimtype, const char *label,
 		     size_t *count, int *dimid, const char *routine);
@@ -665,30 +606,4 @@ int ex_put_names_internal(int exoid, int varid, size_t count, char**names,
 			  ex_entity_type type, const char *subtype, const char *routine);
 void ex_trim_internal(char *name);
 void ex_update_max_name_length(int exoid, int length);
-int  ex_leavedef(int neid, 		/* NemesisI file ID         */
-		 const char *func_name	/* Name of calling function */
-		 );
-
-int ex_get_file_type(int neid,	/* NetCDF/Exodus file ID */
-		     char *ftype	/* Nemesis file type */
-		     );
-
-int ex_put_nemesis_version(int neid);		/* NetCDF/Exodus file ID */
-
-int ne_check_file_version(int neid	/* NetCDF/Exodus file ID */
-                      );
-
-char *ex_catstrn12(char *name, int num1, int num2);
-
-int ne_id_lkup(int            neid,		/* NetCDF/Exodus file ID */
-	       const char    *var_name,	/* Nemesis variable name */
-	       int64_t       *idx,		/* index variable for variable, length 2 */
-	       ex_entity_id   ne_var_id	/* NetCDF variable ID */
-	       );
-
-int ex_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
-	       const char *ne_var_name, /* Nemesis index variable name */
-	       int64_t *index,	 /* array of length 2 to hold results */
-	       int      pos		 /* position of this proc/cmap in index */
-	       );
 #endif

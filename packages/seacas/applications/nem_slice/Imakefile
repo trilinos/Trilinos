@@ -56,7 +56,7 @@ md_getsubopt.c
 
 OBJS = ${SRCS:.c=.o}
 
-LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) $(CHACO) $(ZOLTAN) -lm
+LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) $(NEMESISC) $(CHACO) $(ZOLTAN) -lm
 
 NormalCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
 

@@ -31,35 +31,21 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Copyright 2001, 2008, 2009 Sandia Corporation, Albuquerque, NM.
 
-#include <Ioss_Utils.h>                 // for IOSS_WARNING
-#include <assert.h>                     // for assert
-#include <exodusII/Ioex_Internals.h>    // for Internals, ElemBlock, etc
+#include <exodusII/Ioex_Internals.h>
+#include <Ioss_SubSystem.h>
+#include <Ioss_Utils.h>
+#include <algorithm>
 extern "C" {
-#include <exodusII_int.h>               // for EX_FATAL, EX_NOERR, etc
-}
-#include <netcdf.h>                     // for NC_NOERR, nc_def_var, etc
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf, NULL
-#include <stdlib.h>                     // for exit, EXIT_FAILURE
-#include <string.h>                     // for strlen, strncpy, strcpy, etc
-#include <ostream>                      // for operator<<, etc
-#include <string>                       // for string, operator==, etc
-#include <vector>                       // for vector
+#include <exodusII_int.h>
+#include <ne_nemesisI_int.h>
+#include <ne_nemesisI.h>
 
-#include "Ioss_EdgeBlock.h"
-#include "Ioss_EdgeSet.h"
-#include "Ioss_ElementBlock.h"
-#include "Ioss_ElementSet.h"
-#include "Ioss_FaceBlock.h"
-#include "Ioss_FaceSet.h"
-#include "Ioss_Field.h"
-#include "Ioss_NodeBlock.h"
-#include "Ioss_NodeSet.h"
-#include "Ioss_Property.h"
-#include "Ioss_SideBlock.h"
-#include "Ioss_SideSet.h"
-#include "Ioss_VariableType.h"
-#include "exodusII.h"                   // for ex_err, ex_opts, etc
+#include <netcdf.h>
+}
+#include <assert.h>
+
+#include <string>
+
 
 using namespace Ioex;
 
@@ -962,7 +948,7 @@ int Internals::put_metadata(const Mesh &mesh,
     }
 
     // Output the file version
-    int ierr = ex_put_nemesis_version(exodusFilePtr);
+    int ierr = ne_put_version(exodusFilePtr);
     if (ierr < 0) return (ierr);
 
     if (comm.globalNodes > 0) {

@@ -30,42 +30,44 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <Ioss_Initializer.h>
+
 #include <Ioss_Bar2.h>
 #include <Ioss_Bar3.h>
+#include <Ioss_ShellLine2D2.h>
+#include <Ioss_ShellLine2D3.h>
 #include <Ioss_Edge2.h>
+#include <Ioss_Edge3.h>
 #include <Ioss_Edge2D2.h>
 #include <Ioss_Edge2D3.h>
-#include <Ioss_Edge3.h>
+#include <Ioss_ElementVariableType.h>
+#include <Ioss_Hex8.h>
 #include <Ioss_Hex20.h>
 #include <Ioss_Hex27.h>
-#include <Ioss_Hex8.h>
-#include <Ioss_Initializer.h>
 #include <Ioss_Node.h>
-#include <Ioss_Pyramid13.h>
 #include <Ioss_Pyramid5.h>
+#include <Ioss_Pyramid13.h>
 #include <Ioss_Quad4.h>
 #include <Ioss_Quad8.h>
 #include <Ioss_Quad9.h>
 #include <Ioss_Shell4.h>
 #include <Ioss_Shell8.h>
 #include <Ioss_Shell9.h>
-#include <Ioss_ShellLine2D2.h>
-#include <Ioss_ShellLine2D3.h>
 #include <Ioss_Sphere.h>
-#include <Ioss_Super.h>
-#include <Ioss_Tet10.h>
-#include <Ioss_Tet4.h>
-#include <Ioss_Tet7.h>
-#include <Ioss_Tet8.h>
+#include <Ioss_TriShell3.h>
+#include <Ioss_TriShell6.h>
 #include <Ioss_Tri3.h>
 #include <Ioss_Tri4.h>
 #include <Ioss_Tri4a.h>
 #include <Ioss_Tri6.h>
-#include <Ioss_TriShell3.h>
-#include <Ioss_TriShell6.h>
 #include <Ioss_Unknown.h>
-#include <Ioss_Wedge15.h>
 #include <Ioss_Wedge6.h>
+#include <Ioss_Wedge15.h>
+#include <Ioss_Tet4.h>
+#include <Ioss_Tet7.h>
+#include <Ioss_Tet8.h>
+#include <Ioss_Tet10.h>
+#include <Ioss_Super.h>
 
 Ioss::Initializer::Initializer()
 {

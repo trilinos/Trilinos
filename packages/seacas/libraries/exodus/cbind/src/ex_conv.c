@@ -69,7 +69,6 @@ struct file_item {
   int                   file_id;
   nc_type               netcdf_type_code;
   int                   user_compute_wordsize;
-  int                   int64_status;
   struct file_item*     next;
 };
 
@@ -85,8 +84,7 @@ struct file_item* file_list = NULL;
 int ex_conv_ini( int  exoid,
 		 int* comp_wordsize,
 		 int* io_wordsize,
-		 int  file_wordsize,
-		 int  int64_status )
+		 int  file_wordsize )
 {
   char errmsg[MAX_ERR_LENGTH];
   struct file_item* new_file;
@@ -129,6 +127,7 @@ int ex_conv_ini( int  exoid,
     }
 
   /* check to see if requested word sizes are valid */
+
   if (!*io_wordsize ) {
     if (!file_wordsize )
       *io_wordsize = NC_FLOAT_WORDSIZE;
@@ -160,24 +159,10 @@ int ex_conv_ini( int  exoid,
     return(EX_FATAL);
   }
 
-  /* Check that the int64_status contains only valid bits... */
-  {
-    int valid_int64 = EX_ALL_INT64_API | EX_ALL_INT64_DB;
-    if ((int64_status & valid_int64) != int64_status) {
-      sprintf(errmsg,
-	      "Warning: invalid int64_status flag (%d) specified for existing file id: %d. Ignoring invalids",
-	      int64_status, exoid);
-      ex_err("ex_conv_ini",errmsg,EX_MSG);
-    }
-    int64_status &= valid_int64;
-  }
-  
   new_file = malloc(sizeof(struct file_item));
 
   new_file->file_id = exoid;
   new_file->user_compute_wordsize = *comp_wordsize;
-  new_file->int64_status = int64_status;
-  
   new_file->next = file_list;
   file_list = new_file;
 
@@ -257,40 +242,6 @@ nc_type nc_flt_code( int exoid )
     return (nc_type) -1;
   }
   return file->netcdf_type_code;
-}
-
-int ex_int64_status(int exoid)
-{
-  /* ex_int64_status() returns an int that can be tested
-     against the defines listed below to determine which, if any,
-     'types' in the database are to be stored as int64 types and which, if any,
-     types are passed/returned as int64 types in the API
-     
-     Defines:
-        EX_MAPS_INT64_DB  All maps (id, order, ...) store int64_t values
-        EX_IDS_INT64_DB   All entity ids (sets, blocks, maps) are int64_t values
-        EX_BULK_INT64_DB    
-        EX_ALL_INT64_DB   (EX_MAPS_INT64_DB|EX_IDS_INT64_DB|EX_BULK_INT64_DB)
-
-        EX_MAPS_INT64_API  All maps (id, order, ...) passed as int64_t values
-        EX_IDS_INT64_API   All entity ids (sets, blocks, maps) are passed as int64_t values
-        EX_BULK_INT64_API    
-        EX_ALL_INT64_API   (EX_MAPS_INT64_API|EX_IDS_INT64_API|EX_BULK_INT64_API)
-  */
-
-  char errmsg[MAX_ERR_LENGTH];
-  struct file_item* file;
-
-  exerrval = 0; /* clear error code */
-  FIND_FILE( file, exoid );
-
-  if (!file ) {
-    exerrval = EX_BADFILEID;
-    sprintf(errmsg,"Error: unknown file id %d for ex_int64_status().",exoid);
-    ex_err("ex_int64_status",errmsg,exerrval);
-    return 0;
-  }
-  return file->int64_status;
 }
 
 int ex_comp_ws( int exoid )

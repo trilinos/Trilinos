@@ -17,6 +17,7 @@ APPEND_GLOB(SOURCES ${DIR}/src/*.c)
 
 SET(HEADERS
   include/exodusII.h
+  include/exodusII_ext.h
   include/exodusII_int.h
 )
 

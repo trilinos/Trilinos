@@ -30,21 +30,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_ElementBlock.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_EntityBlock.h>
-#include <Ioss_Field.h>
-#include <Ioss_Property.h>
 #include <Ioss_SideBlock.h>
-#include <assert.h>
-#include <stddef.h>
+#include <Ioss_ElementBlock.h>
+#include <Ioss_EntityBlock.h>
+#include <Ioss_DatabaseIO.h>
+#include <Ioss_Property.h>
+#include <Ioss_Field.h>
+#include <Ioss_Utils.h>
+#include <Ioss_ElementTopology.h>
 #include <string>
-#include <vector>
-
-#include "Ioss_FieldManager.h"
-#include "Ioss_ParallelUtils.h"
-#include "Ioss_PropertyManager.h"
 
 Ioss::SideBlock::SideBlock(Ioss::DatabaseIO *io_database,
 			   const std::string& my_name,

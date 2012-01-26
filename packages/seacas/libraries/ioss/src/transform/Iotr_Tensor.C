@@ -30,14 +30,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <transform/Iotr_Tensor.h>
 #include <Ioss_Field.h>
 #include <Ioss_VariableType.h>
-#include <assert.h>
-#include <stddef.h>
-#include <transform/Iotr_Tensor.h>
 #include <string>
 
-#include "Ioss_Transform.h"
+#include <math.h>
+#include <assert.h>
 
 namespace Iotr {
 

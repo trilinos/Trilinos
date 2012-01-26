@@ -30,15 +30,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <transform/Iotr_MinMax.h>
 #include <Ioss_Field.h>
 #include <Ioss_VariableType.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <transform/Iotr_MinMax.h>
-#include <algorithm>
 #include <string>
 
-#include "Ioss_Transform.h"
+#include <algorithm>
+
+#include <math.h>
+#include <assert.h>
 
 namespace {
   bool IntAbsLess(int elem1, int elem2)

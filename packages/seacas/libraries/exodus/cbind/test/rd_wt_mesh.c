@@ -436,6 +436,8 @@ int read_exo_mesh (char *file_name, int rank, int *num_dim, int num_domains,
   int num_nodes_per_elem, num_attrs, num_vars, i, iter;
   size_t len_connect;
   size_t file_size;
+  double fdum;
+  char *cdum = 0;
   
   struct stat  file_status;  
   size_t glob_file_size;
@@ -587,7 +589,7 @@ int read_exo_mesh (char *file_name, int rank, int *num_dim, int num_domains,
     *num_element_fields = num_vars;
     
     /* read number of timesteps */
-    *num_timesteps = ex_inquire_int (exoid, EX_INQ_TIME);
+    ex_inquire (exoid, EX_INQ_TIME, num_timesteps, &fdum, cdum);
     if (rank == 0) {
       fprintf(stderr, "   Number of Elements\t\t%8d (per domain)\n",   *num_elems );
       fprintf(stderr, "   Number of Nodes\t\t%8d (per domain)\n",      *num_nodes );

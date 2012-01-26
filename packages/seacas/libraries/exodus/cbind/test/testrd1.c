@@ -75,10 +75,7 @@ int main (int argc, char **argv)
    int *num_elem_in_block, *num_nodes_per_elem, *num_attr;
    int num_nodes_in_set, num_elem_in_set;
    int num_sides_in_set, num_df_in_set;
-   int list_len = 0;
-   int elem_list_len = 0;
-   int node_list_len = 0;
-   int df_list_len = 0;
+   int list_len, elem_list_len, node_list_len, df_list_len;
    int node_num, time_step, var_index, beg_time, end_time, elem_num;
    int CPU_word_size,IO_word_size;
    int num_props, prop_value, *prop_values;
@@ -89,7 +86,7 @@ int main (int argc, char **argv)
    float *attrib, *dist_fact;
    float version, fdum;
 
-   char *coord_names[3], *qa_record[2][4], *info[3], *var_names[10];
+   char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
    char title[MAX_LINE_LENGTH+1], elem_type[MAX_STR_LENGTH+1];
    char *cdum = 0;
    char *prop_names[3];
@@ -846,7 +843,8 @@ int main (int argc, char **argv)
    error = ex_get_var_name(exoid, "g", 1, var_names[0]);
    printf ("\nafter ex_get_var_name, error = %3d\n", error);
 
-   printf ("There are %2d global variables; their names are :\n", num_glo_vars);
+   printf ("There are %2d global variables; their names are :\n", 
+           num_glo_vars);
    for (i=0; i<num_glo_vars; i++)
    {
       printf (" '%s'\n", var_names[i]);

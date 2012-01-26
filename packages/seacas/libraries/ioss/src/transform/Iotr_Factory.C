@@ -32,11 +32,7 @@
 
 #include <Ioss_Transform.h>
 #include <Ioss_Utils.h>
-#include <stddef.h>
-#include <map>
-#include <ostream>
 #include <string>
-#include <utility>
 
 namespace Iotr {
 

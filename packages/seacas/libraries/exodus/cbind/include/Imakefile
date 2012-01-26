@@ -1,5 +1,5 @@
 
-INCLIST=exodusII.h exodusII_int.h
+INCLIST=exodusII.h exodusII_int.h exodusII_ext.h
 
 InstallIncludeList(install,$(INCLIST),$(INCDIR))
 

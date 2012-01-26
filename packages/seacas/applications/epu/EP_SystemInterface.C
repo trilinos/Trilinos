@@ -34,14 +34,9 @@
  */
 #include "EP_SystemInterface.h"
 
-#include "GetLongOpt.h"                 // for GetLongOpt, etc
-
-#include <ctype.h>                      // for tolower
-#include <stddef.h>                     // for size_t
-#include <string>                       // for string, basic_string, etc
-#include <utility>                      // for pair, make_pair
 #include <iostream>
 #include <algorithm>
+#include <functional>
 #include <vector>
 
 #include <limits.h>
