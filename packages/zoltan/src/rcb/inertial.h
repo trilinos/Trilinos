@@ -12,16 +12,12 @@
 extern "C" {
 #endif
 
-/* macros for routines */
-#define max(a, b) ((a) < (b) ? (b) : (a))
-#define min(a, b) ((a) > (b) ? (b) : (a))
-#define sign(x)   ((x) >= 0 ? 1.0 : -1.0)
 
 /* function prototypes */
 
-extern void evals3(double[3][3], double *, double *, double *);
-extern double determinant(double[3][3]);
-extern void eigenvec3(double[3][3], double, double *, double *);
+extern void Zoltan_evals3(double[3][3], double *, double *, double *);
+extern double Zoltan_determinant(double[3][3]);
+extern void Zoltan_eigenvec3(double[3][3], double, double *, double *);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

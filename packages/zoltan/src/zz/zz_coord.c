@@ -52,8 +52,6 @@ static void inertial_matrix2D(ZZ *zz, double *X, int num_obj,
 static void inertial_matrix3D(ZZ *zz, double *X, int num_obj, 
   double *cm, double (*im)[3]) ;
 static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim);
-static int tqli(double *d, int n, double *e, double(*z)[3]);
-static void tred2(double (*a)[3], int n, double *d, double *e);
 static void projected_distances(ZZ *zz, double *coords, int num_obj,
         double *cm, double (*evecs)[3], double *d, int dim, int aa, int *order);
 static void order_decreasing(double *d, int *order);
@@ -822,10 +820,10 @@ static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
     }
   }
 
-  evals3(m, &eval1, &eval2, &eval3);
-  eigenvec3(m, eval1, evecs, &res);
-  eigenvec3(m, eval2, evecs[1], &res);
-  eigenvec3(m, eval3, evecs[2], &res);
+  Zoltan_evals3(m, &eval1, &eval2, &eval3);
+  Zoltan_eigenvec3(m, eval1, evecs, &res);
+  Zoltan_eigenvec3(m, eval2, evecs[1], &res);
+  Zoltan_eigenvec3(m, eval3, evecs[2], &res);
 
   return rc;
 }
