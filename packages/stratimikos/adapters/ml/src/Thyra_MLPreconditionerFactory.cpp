@@ -229,7 +229,7 @@ void MLPreconditionerFactory::initializePrec(
        );
   }
   //
-  // Permform initialization if needed
+  // Perform initialization if needed
   //
   const bool startingOver = (ml_precOp.get() == NULL);
   if(startingOver) 
@@ -270,12 +270,12 @@ void MLPreconditionerFactory::initializePrec(
   // Update the factorization
   //
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nComputing the factorization of the preconditioner ...\n";
+    *out << "\nComputing the preconditioner ...\n";
   timer.start(true);
   TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out).o() <<"=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
+    OSTab(out).o() <<"=> Setup time = "<<timer.totalElapsedTime()<<" sec\n";
   //
   // Compute the conditioner number estimate if asked
   //
