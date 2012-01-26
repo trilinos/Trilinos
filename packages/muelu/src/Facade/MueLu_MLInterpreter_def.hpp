@@ -1,5 +1,5 @@
-#ifndef MUELU_MLINTERPRETER_DEF_HPP_
-#define MUELU_MLINTERPRETER_DEF_HPP_
+#ifndef MUELU_MLINTERPRETER_DEF_HPP
+#define MUELU_MLINTERPRETER_DEF_HPP
 
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_MultiVector.hpp>
@@ -27,65 +27,64 @@
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 
-
 // #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLInterpreter()
-{ }
+MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLInterpreter() { }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~MLInterpreter() {}
+MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~MLInterpreter() { }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const Teuchos::ParameterList & params, const RCP<Operator> & A, const RCP<MultiVector> nsp) {
-#include "MueLu_UseShortNames.hpp" // TODO don't know why this is needed here
+#include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
-  // read in common parameters
-  int maxLevels = 10;       // multigrid prameters
-  int verbosityLevel = 10;  // verbosity level
-  int maxCoarseSize = 50;
-  int nDofsPerNode = 1;         // coalesce and drop parameters
-  double agg_threshold = 0.0;   // aggregation parameters
-  double agg_damping = 4/3;
-  int    agg_smoothingsweeps = 1;
-  int    minPerAgg = 3;       // optimal for 2d
+  // Read in common parameters
+  int    maxLevels             = 10;   // multigrid parameters
+  int    verbosityLevel        = 10;   // verbosity level
+  int    maxCoarseSize         = 50;
+  int    nDofsPerNode          = 1;    // coalesce and drop parameters
+  double agg_threshold         = 0.0;  // aggregation parameters
+  double agg_damping           = 4/3;
+  int    agg_smoothingsweeps   = 1;
+  int    minPerAgg             = 3;    // optimal for 2d
   int    maxNbrAlreadySelected = 0;
-  std::string agg_type = "Uncoupled";
-  bool   bEnergyMinimization = false; // PGAMG
-  if(params.isParameter("max levels")) maxLevels = params.get<int>("max levels");
-  if(params.isParameter("ML output"))  verbosityLevel = params.get<int>("ML output");
-  if(params.isParameter("coarse: max size")) maxCoarseSize = params.get<int>("coarse: max size");
-  if(params.isParameter("PDE equations")) nDofsPerNode = params.get<int>("PDE equations");
+  std::string agg_type         = "Uncoupled";
+  bool   bEnergyMinimization = false;  // PGAMG
+
+  if(params.isParameter("max levels"))                      maxLevels           = params.get<int>("max levels");
+  if(params.isParameter("ML output"))                       verbosityLevel      = params.get<int>("ML output");
+  if(params.isParameter("coarse: max size"))                maxCoarseSize       = params.get<int>("coarse: max size");
+  if(params.isParameter("PDE equations"))                   nDofsPerNode        = params.get<int>("PDE equations");
   if(params.isParameter("aggregation: threshold"))          agg_threshold       = params.get<double>("aggregation: threshold");
   if(params.isParameter("aggregation: damping factor"))     agg_damping         = params.get<double>("aggregation: damping factor");
   if(params.isParameter("aggregation: smoothing sweeps"))   agg_smoothingsweeps = params.get<int>   ("aggregation: smoothing sweeps");
   if(params.isParameter("aggregation: type"))               agg_type            = params.get<std::string> ("aggregation: type");
-  //if(params.isParameter("aggregation: nodes per aggregate"))minPerAgg           = params.get<int>("aggregation: nodes per aggregate");
-  if(params.isParameter("energy minimization: enable"))  bEnergyMinimization = params.get<bool>("energy minimization: enable");
+  //if(params.isParameter("aggregation: nodes per aggregate")) minPerAgg        = params.get<int>("aggregation: nodes per aggregate");
+  if(params.isParameter("energy minimization: enable"))     bEnergyMinimization = params.get<bool>("energy minimization: enable");
 
-  // translate verbosity parameter
+  // Translate verbosity parameter
   Teuchos::EVerbosityLevel eVerbLevel = Teuchos::VERB_NONE;
-  if(verbosityLevel == 0) eVerbLevel = Teuchos::VERB_NONE;
-  if(verbosityLevel > 0 ) eVerbLevel = Teuchos::VERB_LOW;
-  if(verbosityLevel > 4 ) eVerbLevel = Teuchos::VERB_MEDIUM;
-  if(verbosityLevel > 7 ) eVerbLevel = Teuchos::VERB_HIGH;
-  if(verbosityLevel > 9 ) eVerbLevel = Teuchos::VERB_EXTREME;
+  if(verbosityLevel == 0)  eVerbLevel = Teuchos::VERB_NONE;
+  if(verbosityLevel >  0 ) eVerbLevel = Teuchos::VERB_LOW;
+  if(verbosityLevel >  4 ) eVerbLevel = Teuchos::VERB_MEDIUM;
+  if(verbosityLevel >  7 ) eVerbLevel = Teuchos::VERB_HIGH;
+  if(verbosityLevel >  9 ) eVerbLevel = Teuchos::VERB_EXTREME;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::Interpreter: only 'Uncoupled' aggregation supported. error.");
+  TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::MLInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' aggregation is supported.");
 
-  // create factories
-  RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory());
+  // Create MueLu factories
+  RCP<NullspaceFactory>     nspFact = rcp(new NullspaceFactory());
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(/*Teuchos::null,nspFact*/));
   //dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
   dropFact->SetFixedBlockSize(nDofsPerNode);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
-  if(verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream withouth an object...
+  if(verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
@@ -96,7 +95,6 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
-
 
   RCP<PFactory> PFact;
   RCP<RFactory> RFact;
@@ -127,18 +125,18 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
 
   ///////////////////////////////////////////////////
 
-  // fill hierarchy
+  // Fill hierarchy
   RCP<Hierarchy> hierarchy = Teuchos::rcp(new Hierarchy(A));
   hierarchy->SetDefaultVerbLevel(toMueLuVerbLevel(eVerbLevel));
   hierarchy->SetMaxCoarseSize(Teuchos::as<Xpetra::global_size_t>(maxCoarseSize));
 
   ///////////////////////////////////////////////////////////
 
-  // set fine level nullspace
+  // Set fine level nullspace
   // use given fine level null space or extract pre-computed nullspace from ML parameter list
   if (nsp != Teuchos::null) {
     RCP<MueLu::Level> Finest = hierarchy->GetLevel();  // get finest level
-    Finest->Set("Nullspace",nsp);                       // set user given null space
+    Finest->Set("Nullspace",nsp);                      // set user given null space
   } else {
     std::string type = "";
     if(params.isParameter("null space: type")) type = params.get<std::string>("null space: type");
@@ -162,13 +160,13 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
     }
 
     RCP<MueLu::Level> Finest = hierarchy->GetLevel();  // get finest level
-    Finest->Set("Nullspace",nspVector);                       // set user given null space
+    Finest->Set("Nullspace",nspVector);                // set user given null space
     //Finest->setDefaultVerbLevel(eVerbLevel);
   }
 
   ////////////////////////////////////
 
-  // prepare factory managers
+  // Prepare factory managers
 
   bool bIsLastLevel = false;
   std::vector<RCP<FactoryManager> > vecManager(maxLevels);
@@ -179,10 +177,10 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
     if(SmooFactFine != Teuchos::null)
     	vecManager[i]->SetFactory("Smoother" ,  SmooFactFine);    // Hierarchy.Setup uses TOPSmootherFactory, that only needs "Smoother"
     vecManager[i]->SetFactory("CoarseSolver", coarsestSmooFact);
-    vecManager[i]->SetFactory("A", AcFact);       // same RAP factory
-    vecManager[i]->SetFactory("P", PFact);    // same prolongator and restrictor factories
-    vecManager[i]->SetFactory("R", RFact);    // same prolongator and restrictor factories
-    vecManager[i]->SetFactory("Nullspace", nspFact); // use same nullspace factory throughout all multigrid levels
+    vecManager[i]->SetFactory("A", AcFact);                       // same RAP factory
+    vecManager[i]->SetFactory("P", PFact);                        // same prolongator and restrictor factories
+    vecManager[i]->SetFactory("R", RFact);                        // same prolongator and restrictor factories
+    vecManager[i]->SetFactory("Nullspace", nspFact);              // use same nullspace factory throughout all multigrid levels
   }
 
   // use new Hierarchy::Setup routine
@@ -216,7 +214,7 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetCoarsestSolverFactory(const Teuchos::ParameterList & params) {
-#include "MueLu_UseShortNames.hpp" // TODO don't know why this is needed here
+#include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
 
   std::string type = "Amesos-Superlu";
   if(params.isParameter("coarse: type")) type = params.get<std::string>("coarse: type");
@@ -299,7 +297,7 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherFactory(const Teuchos::ParameterList & params, int level) {
-#include "MueLu_UseShortNames.hpp" // TODO don't know why this is needed here
+#include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
   char levelchar[11];
   sprintf(levelchar,"(level %d)",level);
   std::string levelstr(levelchar);
@@ -402,6 +400,7 @@ void MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Fill
   params.set("null space: dimension", 3);
   params.set("null space: type", "pre-computed");
   params.set("prec type","MGV");
+
   Teuchos::ParameterList & l0 = params.sublist("smoother: list (level 0)");
   Teuchos::ParameterList & l1 = params.sublist("smoother: list (level 1)");
   Teuchos::ParameterList & l2 = params.sublist("smoother: list (level 2)");
@@ -409,7 +408,6 @@ void MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Fill
   Teuchos::ParameterList & l4 = params.sublist("smoother: list (level 4)");
   Teuchos::ParameterList & l5 = params.sublist("smoother: list (level 5)");
   Teuchos::ParameterList & l6 = params.sublist("smoother: list (level 6)");
-
 
   l0.set("smoother: damping factor", 0.9);
   l0.set("smoother: sweeps", 1);
@@ -438,4 +436,4 @@ void MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Fill
 } // namespace MueLu
 
 #define MUELU_MLINTERPRETER_SHORT
-#endif /* MUELU_INTERPRETER_DEF_HPP_ */
+#endif /* MUELU_INTERPRETER_DEF_HPP */

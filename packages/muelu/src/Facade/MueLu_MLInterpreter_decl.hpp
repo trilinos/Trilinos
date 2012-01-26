@@ -5,8 +5,8 @@
  *      Author: wiesner
  */
 
-#ifndef MUELU_MLINTERPRETER_DECL_HPP_
-#define MUELU_MLINTERPRETER_DECL_HPP_
+#ifndef MUELU_MLINTERPRETER_DECL_HPP
+#define MUELU_MLINTERPRETER_DECL_HPP
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -44,14 +44,27 @@ namespace MueLu {
 
     //@}
 
-    static RCP<Hierarchy> Setup(const Teuchos::ParameterList & params, const RCP<Operator> & A, const RCP<MultiVector> nsp = Teuchos::null);
+    //! @name Build methods.
+    //@{
 
-    static void FillMLParameterList(Teuchos::ParameterList & params);
+    //! Build a MueLu::Hierarchy from an ML parameter list
+    static RCP<Hierarchy> Setup(const Teuchos::ParameterList & params, const RCP<Operator> & A, const RCP<MultiVector> nsp = Teuchos::null); // TODO: should it be renamed Build() ?
 
+    //@}
+
+    //! @name Helper functions translating parameter list to factories
+    //@{
+
+    //! Read coarse solver options and build the corresponding smoother factory
     static RCP<SmootherFactory> GetCoarsestSolverFactory(const Teuchos::ParameterList & params);
 
+    //! Read smoother options and build the corresponding smoother factory
     static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & params, int level);
 
+    //@}
+
+    //! Build an example of valid ML parameter list
+    static void FillMLParameterList(Teuchos::ParameterList & params);
 
   private:
 
@@ -61,4 +74,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_MLINTERPRETER_SHORT
-#endif /* MUELU_MLINTERPRETER_DECL_HPP_ */
+#endif /* MUELU_MLINTERPRETER_DECL_HPP */
