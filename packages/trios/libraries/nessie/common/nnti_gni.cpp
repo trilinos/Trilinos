@@ -1813,6 +1813,54 @@ NNTI_result_t NNTI_gni_wait (
     return((NNTI_result_t)nnti_rc);
 }
 
+/**
+ * @brief Wait for <tt>remote_op</tt> on any buffer in <tt>buf_list</tt> to complete.
+ *
+ * Wait for <tt>remote_op</tt> on any buffer in <tt>buf_list</tt> to complete or timeout
+ * waiting.  This is typically used to wait for a result or a bulk data
+ * transfer.  The timeout is specified in milliseconds.  A timeout of <tt>-1</tt>
+ * means wait forever.  A timeout of <tt>0</tt> means do not wait.
+ *
+ * Caveats:
+ *   1) All buffers in buf_list must be registered with the same transport.
+ *   2) You can't wait on the request queue and RDMA buffers in the same call.  Will probably be fixed in the future.
+ */
+NNTI_result_t NNTI_gni_waitany (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        uint32_t             *which,
+        NNTI_status_t        *status)
+{
+    NNTI_result_t nnti_rc=NNTI_OK;
+
+    return(nnti_rc);
+}
+
+/**
+ * @brief Wait for <tt>remote_op</tt> on all buffers in <tt>buf_list</tt> to complete.
+ *
+ * Wait for <tt>remote_op</tt> on all buffers in <tt>buf_list</tt> to complete or timeout
+ * waiting.  This is typically used to wait for a result or a bulk data
+ * transfer.  The timeout is specified in milliseconds.  A timeout of <tt>-1</tt>
+ * means wait forever.  A timeout of <tt>0</tt> means do not wait.
+ *
+ * Caveats:
+ *   1) All buffers in buf_list must be registered with the same transport.
+ *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
+ */
+NNTI_result_t NNTI_gni_waitall (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        NNTI_status_t       **status)
+{
+    NNTI_result_t nnti_rc=NNTI_OK;
+
+    return(nnti_rc);
+}
 
 /**
  * @brief Disable this transport.
