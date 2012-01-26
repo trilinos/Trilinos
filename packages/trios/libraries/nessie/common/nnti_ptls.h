@@ -165,6 +165,21 @@ int NNTI_ptl_wait (
         const int             timeout,
         NNTI_status_t        *status);
 
+int NNTI_ptl_waitany (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        uint32_t             *which,
+        NNTI_status_t        *status);
+
+int NNTI_ptl_waitall (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        NNTI_status_t       **status);
+
 int NNTI_ptl_fini (
         const NNTI_transport_t *trans_hdl);
 

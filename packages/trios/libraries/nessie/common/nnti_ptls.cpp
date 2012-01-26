@@ -489,6 +489,10 @@ int NNTI_ptl_register_memory (
         ptls_mem_hdl->ignore_bits = 0;
     }
 
+    ptls_mem_hdl->eq_h=PTL_EQ_NONE;
+    ptls_mem_hdl->me_h=0;
+    ptls_mem_hdl->md_h=0;
+
     reg_buf->buffer_addr.transport_id                            = NNTI_TRANSPORT_PORTALS;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.portals.size       = element_size;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.portals.buffer_id  = (NNTI_portals_indices)ptls_mem_hdl->buffer_id;
@@ -593,20 +597,25 @@ int NNTI_ptl_register_memory (
         }
     } else {
 
-        /* create an event queue */
-        /* TODO: should we share an event queue? */
-        nthread_lock(&nnti_ptl_lock);
-        rc = PtlEQAlloc(
-                transport_global_data.ni_h,
-                5,
-                PTL_EQ_HANDLER_NONE,
-                &ptls_mem_hdl->eq_h);
-        nthread_unlock(&nnti_ptl_lock);
-        if (rc != NNTI_OK) {
-            log_error(nnti_debug_level, "failed to allocate eventq");
-            goto cleanup;
+        if ((ptls_mem_hdl->type != GET_SRC_BUFFER) &&
+            (ptls_mem_hdl->type != PUT_DST_BUFFER) &&
+            (ptls_mem_hdl->type != RDMA_TARGET_BUFFER)) {
+
+            /* create an event queue */
+            /* TODO: should we share an event queue? */
+            nthread_lock(&nnti_ptl_lock);
+            rc = PtlEQAlloc(
+                    transport_global_data.ni_h,
+                    5,
+                    PTL_EQ_HANDLER_NONE,
+                    &ptls_mem_hdl->eq_h);
+            nthread_unlock(&nnti_ptl_lock);
+            if (rc != NNTI_OK) {
+                log_error(nnti_debug_level, "failed to allocate eventq");
+                goto cleanup;
+            }
+            log_debug(nnti_debug_level, "allocated eq=%d", ptls_mem_hdl->eq_h);
         }
-        log_debug(nnti_debug_level, "allocated eq=%d", ptls_mem_hdl->eq_h);
 
         /* create a match entry (unlink with MD) */
         nthread_lock(&nnti_ptl_lock);
@@ -621,7 +630,7 @@ int NNTI_ptl_register_memory (
                 &ptls_mem_hdl->me_h);
         nthread_unlock(&nnti_ptl_lock);
         if (rc != NNTI_OK) {
-            log_error(nnti_debug_level, "failed to allocate eventq");
+            log_error(nnti_debug_level, "failed to attach me");
             goto cleanup;
         }
         log_debug(nnti_debug_level, "allocated me=%d with bufid=%d, match_id(%d,%d), mbits=%d",
@@ -719,13 +728,18 @@ int NNTI_ptl_unregister_memory (
             goto cleanup;
         }
 
-        log_debug(debug_level, "freeing ptls_mem_hdl->eq_h: %d", ptls_mem_hdl->eq_h);
-        nthread_lock(&nnti_ptl_lock);
-        rc = PtlEQFree(ptls_mem_hdl->eq_h);
-        nthread_unlock(&nnti_ptl_lock);
-        if (rc != PTL_OK) {
-            log_error(debug_level, "failed to free EQ: %s", ptl_err_str[rc]);
-            goto cleanup;
+        if ((ptls_mem_hdl->type != GET_SRC_BUFFER) &&
+            (ptls_mem_hdl->type != PUT_DST_BUFFER) &&
+            (ptls_mem_hdl->type != RDMA_TARGET_BUFFER)) {
+
+            log_debug(debug_level, "freeing ptls_mem_hdl->eq_h: %d", ptls_mem_hdl->eq_h);
+            nthread_lock(&nnti_ptl_lock);
+            rc = PtlEQFree(ptls_mem_hdl->eq_h);
+            nthread_unlock(&nnti_ptl_lock);
+            if (rc != PTL_OK) {
+                log_error(debug_level, "failed to free EQ: %s", ptl_err_str[rc]);
+                goto cleanup;
+            }
         }
     }
 
@@ -1089,6 +1103,54 @@ cleanup:
     return(nnti_rc);
 }
 
+/**
+ * @brief Wait for <tt>remote_op</tt> on any buffer in <tt>buf_list</tt> to complete.
+ *
+ * Wait for <tt>remote_op</tt> on any buffer in <tt>buf_list</tt> to complete or timeout
+ * waiting.  This is typically used to wait for a result or a bulk data
+ * transfer.  The timeout is specified in milliseconds.  A timeout of <tt>-1</tt>
+ * means wait forever.  A timeout of <tt>0</tt> means do not wait.
+ *
+ * Caveats:
+ *   1) All buffers in buf_list must be registered with the same transport.
+ *   2) You can't wait on the request queue and RDMA buffers in the same call.  Will probably be fixed in the future.
+ */
+int NNTI_ptl_waitany (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        uint32_t             *which,
+        NNTI_status_t        *status)
+{
+    int nnti_rc=NNTI_OK;
+
+    return(nnti_rc);
+}
+
+/**
+ * @brief Wait for <tt>remote_op</tt> on all buffers in <tt>buf_list</tt> to complete.
+ *
+ * Wait for <tt>remote_op</tt> on all buffers in <tt>buf_list</tt> to complete or timeout
+ * waiting.  This is typically used to wait for a result or a bulk data
+ * transfer.  The timeout is specified in milliseconds.  A timeout of <tt>-1</tt>
+ * means wait forever.  A timeout of <tt>0</tt> means do not wait.
+ *
+ * Caveats:
+ *   1) All buffers in buf_list must be registered with the same transport.
+ *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
+ */
+int NNTI_ptl_waitall (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        NNTI_status_t       **status)
+{
+    int nnti_rc=NNTI_OK;
+
+    return(nnti_rc);
+}
 
 /**
  * @brief Disable this transport.
@@ -1100,7 +1162,7 @@ cleanup:
 int NNTI_ptl_fini (
         const NNTI_transport_t *trans_hdl)
 {
-    PtlFini();
+//    PtlFini();
 
     return(NNTI_OK);
 }
