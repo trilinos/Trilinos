@@ -30,21 +30,22 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_VariableType.h>
-
-#include <Ioss_Utils.h>
 #include <Ioss_CompositeVariableType.h>
 #include <Ioss_ConstructedVariableType.h>
 #include <Ioss_NamedSuffixVariableType.h>
-
+#include <Ioss_Utils.h>
+#include <Ioss_VariableType.h>
+#include <assert.h>
+#include <stddef.h>
 #include <algorithm>
-#include <string>
-#include <cstring>
 #include <cstdio>
 #include <cstdlib>
-#include <assert.h>
+#include <cstring>
+#include <map>
 #include <sstream>
-#include <cctype>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace {
   class Deleter {

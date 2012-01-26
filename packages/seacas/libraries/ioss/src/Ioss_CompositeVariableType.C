@@ -31,11 +31,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_CompositeVariableType.h>
+#include <Ioss_Utils.h>
+#include <Ioss_VariableType.h>
 #include <assert.h>
 #include <cstdio>
-#include <Ioss_VariableType.h>
-#include <Ioss_Utils.h>
+#include <map>
 #include <string>
+#include <utility>
 
 namespace Ioss {
 std::string CompositeVariableType::composite_name(const std::string &base, int copies)

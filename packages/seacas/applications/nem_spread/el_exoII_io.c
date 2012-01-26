@@ -57,7 +57,6 @@
 
 #include "netcdf.h"
 #include "exodusII.h"
-#include "ne_nemesisI.h"
 
 #include "ps_pario_const.h"
 
@@ -868,9 +867,9 @@ static void read_elem_blk_ids(int mesh_exoid, int max_name_length)
                                            &Num_Attr_Per_Elem[i]),
                          "ex_get_elem_block");
 
-      check_exodus_error(ne_get_elem_type(mesh_exoid, Elem_Blk_Ids[i],
+      check_exodus_error(ex_get_elem_type(mesh_exoid, Elem_Blk_Ids[i],
                                           Elem_Blk_Types[i]),
-                         "ne_get_elem_type");
+                         "ex_get_elem_type");
 
       /* Convert element block types to lower case here */
       string_to_lower(Elem_Blk_Types[i], '\0');
@@ -1189,10 +1188,10 @@ static void read_coord(int exoid, int io_ws, int max_name_length)
 
     /* Read a slab of coordinate values from the Exodus II mesh file */
     if (Proc == 0) {
-      check_exodus_error(ne_get_n_coord(exoid, (istart_node + 1),
+      check_exodus_error(ex_get_n_coord(exoid, (istart_node + 1),
                                         num_coord_in_mesg, x_coor,
                                         y_coor, z_coor),
-                         "ne_get_n_coord");
+                         "ex_get_n_coord");
     }
 
     /* Broadcast the slab of values to all of the processors */
@@ -1751,12 +1750,12 @@ static void read_elem_blk(int exoid, int io_ws)
 
           if (num_elem_left_over == 0 || i < num_elem_messages - 1) {
             int el_type;
-            check_exodus_error(ne_get_n_elem_conn(exoid,
+            check_exodus_error(ex_get_n_elem_conn(exoid,
                                                   Elem_Blk_Ids[ielem_blk],
                                                   (istart_elem + 1),
                                                   num_elem_per_message,
                                                   elem_blk),
-                               "ne_get_n_elem_conn");
+                               "ex_get_n_elem_conn");
             if(Debug_Flag >= 2 && Proc == 0)
               printf("\t\tread connectivity\n");
 
@@ -1771,12 +1770,12 @@ static void read_elem_blk(int exoid, int io_ws)
 
           }
           else {
-            check_exodus_error(ne_get_n_elem_conn(exoid,
+            check_exodus_error(ex_get_n_elem_conn(exoid,
                                                   Elem_Blk_Ids[ielem_blk],
                                                   (istart_elem + 1),
                                                   num_elem_left_over,
                                                   elem_blk),
-                               "ne_get_n_elem_conn");
+                               "ex_get_n_elem_conn");
             if(Debug_Flag >= 2 && Proc == 0)
               printf("\t\tread connectivity\n");
 
@@ -1869,21 +1868,21 @@ static void read_elem_blk(int exoid, int io_ws)
 
         if (Proc == 0) {
           if (num_attr_left_over == 0 || i < (num_attr_messages - 1)) {
-            check_exodus_error(ne_get_n_elem_attr(exoid,
+            check_exodus_error(ex_get_n_elem_attr(exoid,
                                                   Elem_Blk_Ids[ielem_blk],
                                                   (istart_attr + 1),
                                                   num_attr_per_message,
                                                   elem_attr),
-                               "ne_get_n_elem_attr");
+                               "ex_get_n_elem_attr");
 
           }
           else {
-            check_exodus_error(ne_get_n_elem_attr(exoid,
+            check_exodus_error(ex_get_n_elem_attr(exoid,
                                                   Elem_Blk_Ids[ielem_blk],
                                                   (istart_attr + 1),
                                                   num_attr_left_over,
                                                   elem_attr),
-                               "ne_get_n_elem_attr");
+                               "ex_get_n_elem_attr");
 
           }
 
@@ -2777,18 +2776,18 @@ static void read_node_sets(int exoid, int *num_nodes_in_node_set,
 
         /* Read in the part of the node set that will fit in the message */
         if (Proc == 0) {
-          check_exodus_error(ne_get_n_node_set(exoid, Node_Set_Ids[i],
+          check_exodus_error(ex_get_n_node_set(exoid, Node_Set_Ids[i],
                                                (istart_ns + 1),
                                                num_node_per_message,
                                                node_set),
-                             "ne_get_n_node_set");
+                             "ex_get_n_node_set");
 
           if(num_df_in_nsets[i] > 0) {
-            check_exodus_error(ne_get_n_node_set_df(exoid, Node_Set_Ids[i],
+            check_exodus_error(ex_get_n_node_set_df(exoid, Node_Set_Ids[i],
                                                     (istart_ns + 1),
                                                     num_node_per_message,
                                                     node_set_df),
-                               "ne_get_n_node_set_df");
+                               "ex_get_n_node_set_df");
           }
         }
 
@@ -3460,11 +3459,11 @@ static void read_side_sets(int exoid, int *num_elem_in_ssets,
         /* Read in the part of the side set that will fit in the message. */
 
         if (Proc == 0) {
-          check_exodus_error(ne_get_n_side_set(exoid, Side_Set_Ids[i],
+          check_exodus_error(ex_get_n_side_set(exoid, Side_Set_Ids[i],
                                                (istart_ss + 1),
                                                num_elem_per_message,
                                                ss_elem_list, ss_side_list),
-                             "ne_get_n_side_set");
+                             "ex_get_n_side_set");
 
           /* Fill in the distribution factor pointer vector */
           if(imess == 0) {
@@ -3690,11 +3689,11 @@ static void read_side_sets(int exoid, int *num_elem_in_ssets,
 
           /* Read in the part of the side set df's that will fit in the msg. */
           if(Proc == 0) {
-            check_exodus_error(ne_get_n_side_set_df(exoid, Side_Set_Ids[i],
+            check_exodus_error(ex_get_n_side_set_df(exoid, Side_Set_Ids[i],
                                                     (istart_ss + 1),
                                                     num_elem_per_message,
                                                     ss_dist_fact),
-                               "ne_get_n_side_set_df");
+                               "ex_get_n_side_set_df");
           }
 
           /* Broadcast the side set df information to all processors */

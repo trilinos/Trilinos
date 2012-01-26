@@ -16,6 +16,7 @@ class GetLongOpt {
     OptType type;		// option type
     const char *description;	// a description of option
     const char *value;	// value of option (string)
+    const char *opt_value;	// If optional value and value not entered, assign opt_value to value
     Cell *next;		// pointer to the next cell
 
     Cell() { option = description = value = 0; next = 0; }
@@ -40,7 +41,8 @@ class GetLongOpt {
   int parse(char * const str, char * const p);
 
   int enroll(const char * const opt, const OptType t,
-	     const char * const desc, const char * const val);
+	     const char * const desc, const char * const val,
+	     const char * const opt_val=NULL);
   const char *retrieve(const char * const opt) const;
 
   void usage(std::ostream &outfile = std::cout) const;

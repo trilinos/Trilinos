@@ -15,33 +15,16 @@ c	09/07/93 V.R. Yarberry - Modified for API 2.00
       integer num_side_sets
       integer i, j, k, elem_map(100), connect(100), nnpe(10)
       integer ids(10) 
-      integer num_elem_per_set(10), num_nodes_per_set(10)
-      integer num_df_per_set(10)
-      integer num_df_in_set, num_sides_in_set
-      integer df_ind(10),node_ind(10),elem_ind(10),num_qa_rec,num_info
-      integer num_glo_vars, num_nod_vars, num_ele_vars
-      integer truth_tab(3,5)
-      integer num_time_steps
       integer num_elem_in_block(10), num_nodes_per_elem(10)
-      integer num_attr(10), node_ctr_list(10), node_ctr
-      integer num_nodes_in_set, num_elem_in_set
-      integer df_list_len, list_len, elem_list_len, node_list_len
-      integer node_num, time_step, var_index, beg_time, end_time
-      integer elem_num
+      integer num_attr(10)
       integer cpu_ws,io_ws, mod_sz
-      integer num_props, prop_value
 
-      real time_value, time_values(100), var_values(100)
       real x(100), y(100), z(100)
-      real attrib(100), dist_fact(100)
-      real vers, fdum
+      real vers
 
-      character*(MXSTLN) coord_names(3), qa_record(4,2), var_names(3)
-      character*(MXLNLN) inform(3), titl
+      character*(MXSTLN) coord_names(3)
+      character*(MXLNLN) titl
       character*(MXSTLN) eltype(10)
-      character cdum*1
-      character*(MXSTLN) prop_names(3)
-      character*(MXSTLN) attrib_names(100)
 
       data iin /5/, iout /6/
 

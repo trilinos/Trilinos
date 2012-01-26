@@ -34,7 +34,8 @@ GetLongOpt::basename(char * const pathname)
 
 int
 GetLongOpt::enroll(const char * const opt, const OptType t,
-const char * const desc, const char * const val)
+		   const char * const desc,
+		   const char * const val, const char * const optval)
 {
    if ( enroll_done ) return 0;
 
@@ -43,6 +44,7 @@ const char * const desc, const char * const val)
    c->type = t;
    c->description = desc ? desc : "no description available";
    c->value = val;
+   c->opt_value = optval;
    c->next = 0;
 
    if ( last == 0 ) {
@@ -250,7 +252,10 @@ GetLongOpt::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
 	    c->value = nexttoken;
 	    return 1;
 	 }
-	 else return 0;
+	 else {
+	   c->value = c->opt_value;
+	   return 0;
+	 }
       }
    case GetLongOpt::MandatoryValue :
       if ( *valtoken == '=' ) {

@@ -24,7 +24,7 @@ c conversion routines
       cpu_ws = 8
       io_ws = 4
 
-      exoid = exopen ("testcp.exo", EXREAD, cpu_ws, io_ws, vers, ierr)
+      exoid = exopen ("test.exo", EXREAD, cpu_ws, io_ws, vers, ierr)
       write (iout, '(/"after exopen, error = ",i3)')
      1			ierr
 
@@ -45,7 +45,7 @@ c conversion routines
 
       exoid1 = excre ("testcp.exo",
      1               EXCLOB+EXNORM, cpu_ws, io_ws, ierr)
-      write (iout,'("after excre, id = ", i3, ", error = ",i3)') 
+      write (iout,'("after excre, id = ", i6, ", error = ",i4)') 
      1               exoid1, ierr
       write (iout,'(" I/O word size: ",i4)') io_ws
 

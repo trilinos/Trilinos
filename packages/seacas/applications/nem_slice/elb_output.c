@@ -39,7 +39,6 @@
 #include <time.h>
 
 #include <exodusII.h>
-#include <ne_nemesisI.h>
 
 #include "elb_const.h"
 #include "elb_allo_const.h"
@@ -253,7 +252,7 @@ int write_nemesis(char *nemI_out_file,
   free(lqa_record);
 
   /* Output the the initial Nemesis global information */
-  if(ne_put_init_global(exoid, mesh->num_nodes, mesh->num_elems,
+  if(ex_put_init_global(exoid, mesh->num_nodes, mesh->num_elems,
                         mesh->num_el_blks, 0, 0) < 0)
   {
     Gen_Error(0, "fatal: failed to output initial Nemesis parameters");
@@ -329,14 +328,14 @@ int write_nemesis(char *nemI_out_file,
     }
   }
 
-  if(ne_put_init_info(exoid, machine->num_procs, machine->num_procs, "s") < 0)
+  if(ex_put_init_info(exoid, machine->num_procs, machine->num_procs, "s") < 0)
   {
     Gen_Error(0, "fatal: unable to output init info");
     ex_close(exoid);
     return 0;
   }
 
-  if(ne_put_loadbal_param_cc(exoid, lb->num_int_nodes, lb->num_bor_nodes,
+  if(ex_put_loadbal_param_cc(exoid, lb->num_int_nodes, lb->num_bor_nodes,
                              lb->num_ext_nodes, lb->num_int_elems,
                              lb->num_bor_elems, num_nmap_cnts,
                              num_emap_cnts) < 0)
@@ -372,7 +371,7 @@ int write_nemesis(char *nemI_out_file,
     }
 
     /* Output the communication map parameters */
-    if(ne_put_cmap_params_cc(exoid, node_cmap_ids_cc, node_cmap_cnts_cc,
+    if(ex_put_cmap_params_cc(exoid, node_cmap_ids_cc, node_cmap_cnts_cc,
                              node_proc_ptr, NULL, NULL, NULL) < 0)
     {
       Gen_Error(0, "fatal: unable to output communication map parameters");
@@ -384,7 +383,7 @@ int write_nemesis(char *nemI_out_file,
     for(proc=0; proc < machine->num_procs; proc++)
     {
       /* Output the nodal map */
-      if(ne_put_node_map(exoid, lb->int_nodes[proc], lb->bor_nodes[proc],
+      if(ex_put_processor_node_maps(exoid, lb->int_nodes[proc], lb->bor_nodes[proc],
                          lb->ext_nodes[proc], proc) < 0)
       {
         Gen_Error(0, "fatal: failed to output node map");
@@ -393,7 +392,7 @@ int write_nemesis(char *nemI_out_file,
       }
 
       /* Output the elemental map */
-      if(ne_put_elem_map(exoid, lb->int_elems[proc], NULL, proc) < 0)
+      if(ex_put_processor_elem_maps(exoid, lb->int_elems[proc], NULL, proc) < 0)
       {
         Gen_Error(0, "fatal: failed to output element map");
         ex_close(exoid);
@@ -409,7 +408,7 @@ int write_nemesis(char *nemI_out_file,
       qsort2(lb->ext_procs[proc], lb->ext_nodes[proc], lb->num_ext_nodes[proc]);
 
       /* Output the nodal communication map */
-      if(ne_put_node_cmap(exoid, 1, lb->ext_nodes[proc],
+      if(ex_put_node_cmap(exoid, 1, lb->ext_nodes[proc],
                           lb->ext_procs[proc], proc) < 0)
       {
         Gen_Error(0, "fatal: failed to output nodal communication map");
@@ -467,7 +466,7 @@ int write_nemesis(char *nemI_out_file,
     }
 
     /* Output the communication map parameters */
-    if(ne_put_cmap_params_cc(exoid, node_cmap_ids_cc, node_cmap_cnts_cc,
+    if(ex_put_cmap_params_cc(exoid, node_cmap_ids_cc, node_cmap_cnts_cc,
                              node_proc_ptr, elem_cmap_ids_cc,
                              elem_cmap_cnts_cc, elem_proc_ptr) < 0)
     {
@@ -482,7 +481,7 @@ int write_nemesis(char *nemI_out_file,
     for(proc=0; proc < machine->num_procs; proc++)
     {
       /* Output the nodal map */
-      if(ne_put_node_map(exoid, lb->int_nodes[proc], lb->bor_nodes[proc],
+      if(ex_put_processor_node_maps(exoid, lb->int_nodes[proc], lb->bor_nodes[proc],
                          NULL, proc) < 0)
       {
         Gen_Error(0, "fatal: failed to output node map");
@@ -491,7 +490,7 @@ int write_nemesis(char *nemI_out_file,
       }
 
       /* Output the elemental map */
-      if(ne_put_elem_map(exoid, lb->int_elems[proc], lb->bor_elems[proc],
+      if(ex_put_processor_elem_maps(exoid, lb->int_elems[proc], lb->bor_elems[proc],
                          proc) < 0)
       {
         Gen_Error(0, "fatal: failed to output element map");
@@ -535,7 +534,7 @@ int write_nemesis(char *nemI_out_file,
 	qsort2(n_cmap_procs, n_cmap_nodes, cnt3);
 
         /* Output the nodal communication map */
-        if(ne_put_node_cmap(exoid, 1, n_cmap_nodes, n_cmap_procs, proc) < 0)
+        if(ex_put_node_cmap(exoid, 1, n_cmap_nodes, n_cmap_procs, proc) < 0)
         {
           Gen_Error(0, "fatal: unable to output nodal communication map");
           ex_close(exoid);
@@ -549,7 +548,7 @@ int write_nemesis(char *nemI_out_file,
       /* Output the elemental communication map */
       if(lb->e_cmap_size[proc] > 0)
       {
-        if(ne_put_elem_cmap(exoid, 1, lb->e_cmap_elems[proc],
+        if(ex_put_elem_cmap(exoid, 1, lb->e_cmap_elems[proc],
                             lb->e_cmap_sides[proc],
                             lb->e_cmap_procs[proc], proc) < 0)
         {

@@ -9,30 +9,17 @@ c
       integer exoid, num_dim,num_nodes,elem_map(5),num_elem,num_elem_blk
       integer num_elem_in_block(10), num_nodes_per_elem(10),numattr(10)
       integer num_node_sets, num_side_sets
-      integer i, j, k, m, connect(37), nnpe(10)
-      integer node_list(100), elem_list(100), side_list(100)
-      integer ebids(10),ids(10), num_nodes_per_set(10)
-      integer num_elem_per_set(10), num_df_per_set(10)
-      integer df_ind(10), node_ind(10), elem_ind(10)
+      integer i, connect(37), nnpe(10)
+      integer ebids(10)
       integer num_qa_rec, num_info
-      integer num_glo_vars, num_nod_vars, num_ele_vars
-      integer truth_tab(3,5)
-      integer whole_time_step, num_time_steps
       integer cpu_word_size, io_word_size
-      integer prop_array(2)
 
-      real glob_var_vals(100), nodal_var_vals(100) 
-      real time_value, elem_var_vals(100)
       real x(100), y(100), z(100)
-      real attrib(100), dist_fact(100)
 
       character*(MXSTLN) coord_names(3)
       character*(MXSTLN) cname
-      character*(MXSTLN) var_names(3)
       character*(MXSTLN) qa_record(4,2)
       character*(MXLNLN) inform(3)
-      character*(MXSTLN) prop_names(2)
-      character*(MXSTLN) attrib_names(1)
 
       data iin /5/, iout /6/
 

@@ -726,7 +726,7 @@ c     side set #6 - Wedges
       num_elem_per_set(3) = 7
       num_elem_per_set(4) = 4
       num_elem_per_set(5) = 2
-      num_elem_per_set(6) = 6
+      num_elem_per_set(6) = 5
 c     Uncomment following line to test NULL side sets
 c     num_elem_per_set(6) = 0
 
@@ -782,7 +782,6 @@ c     side_list(4) = 4
       call excn2s(exoid, num_elem_per_set, num_nodes_per_set, elem_ind,
      1		node_ind, elem_list, node_list, side_list, ierr)
       write (iout, '("after excn2s, error = ", i4)' ) ierr
-
 
       num_df_per_set(1) = 4
       num_df_per_set(2) = 4

@@ -30,15 +30,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_EntityBlock.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_ElementTopology.h>
-#include <Ioss_VariableType.h>
-#include <Ioss_Property.h>
+#include <Ioss_EntityBlock.h>
 #include <Ioss_Field.h>
-
+#include <Ioss_Property.h>
+#include <stddef.h>
+#include <ostream>
 #include <string>
-#include <assert.h>
+
+#include "Ioss_FieldManager.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Utils.h"
 
 Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database,
 			       const std::string& my_name,

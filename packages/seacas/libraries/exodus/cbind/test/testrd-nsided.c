@@ -187,6 +187,7 @@ int main (int argc, char **argv)
   {
     int num_attrs = 0;
     error = ex_get_attr_param(exoid, EX_NODAL, 0, &num_attrs);
+    printf (" after ex_get_attr_param, error = %d\n", error);
     printf ("num nodal attributes = %d\n", num_attrs);
     if (num_attrs > 0) {
       for (j=0; j<num_attrs; j++) {
@@ -200,6 +201,7 @@ int main (int argc, char **argv)
 	for (j=0; j<num_attrs; j++) {
 	  printf ("nodal attribute %d = '%s'\n", j, attrib_names[j]);
 	  error = ex_get_one_attr(exoid, EX_NODAL, 0, j+1, attrib);
+	  printf (" after ex_get_one_attr, error = %d\n", error);
 	  for (i=0; i < num_nodes; i++) {
 	    printf ("%5.1f\n", attrib[i]);
 	  }
@@ -279,6 +281,7 @@ int main (int argc, char **argv)
       for (j=0; j<num_elem_blk; j++) {
 	error = ex_get_prop(exoid, EX_ELEM_BLOCK, ids[j], prop_names[i],
 			    &prop_value);
+	printf (" after ex_get_prop, error = %d\n", error);
 	if (error == 0)
 	  printf ("element block %2d, property(%2d): '%s'= %5d\n",
 		  j+1, i+1, prop_names[i], prop_value);
@@ -320,6 +323,7 @@ int main (int argc, char **argv)
 	  printf("\n");
 	  nnodes += nnpe[j];
 	}
+	free(nnpe);
       } else {
 	connect = (int *) calloc((num_nodes_per_elem[i] * num_elem_in_block[i]), 
 				 sizeof(int));
@@ -337,28 +341,26 @@ int main (int argc, char **argv)
   }
 
   /* read element block attributes */
-  if (num_attr[i] > 0) {
-    for (i=0; i<num_elem_blk; i++) {
-      if (num_elem_in_block[i] > 0) {
-	for (j=0; j<num_attr[i]; j++)
-	  attrib_names[j] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
-	
-	attrib = (float *) calloc(num_attr[i]*num_elem_in_block[i],sizeof(float));
-	error = ex_get_elem_attr (exoid, ids[i], attrib);
-	printf ("\n after ex_get_elem_attr, error = %d\n", error);
+  for (i=0; i<num_elem_blk; i++) {
+    if (num_attr[i] > 0) {
+      for (j=0; j<num_attr[i]; j++)
+	attrib_names[j] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
+      
+      attrib = (float *) calloc(num_attr[i]*num_elem_in_block[i],sizeof(float));
+      error = ex_get_elem_attr (exoid, ids[i], attrib);
+      printf ("\n after ex_get_elem_attr, error = %d\n", error);
+      
+      if (error == 0) {
+	error = ex_get_elem_attr_names (exoid, ids[i], attrib_names);
+	printf (" after ex_get_elem_attr_names, error = %d\n", error);
 	
 	if (error == 0) {
-	  error = ex_get_elem_attr_names (exoid, ids[i], attrib_names);
-	  printf (" after ex_get_elem_attr_names, error = %d\n", error);
-	  
-	  if (error == 0) {
-	    printf ("element block %d attribute '%s' = %6.4f\n", ids[i], attrib_names[0], *attrib);
-	  }
+	  printf ("element block %d attribute '%s' = %6.4f\n", ids[i], attrib_names[0], *attrib);
 	}
-	free (attrib);
-	for (j=0; j<num_attr[i]; j++)
-	  free (attrib_names[j]);
       }
+      free (attrib);
+      for (j=0; j<num_attr[i]; j++)
+	free (attrib_names[j]);
     }
   }
   
@@ -434,6 +436,7 @@ int main (int argc, char **argv)
 	{
 	  int num_attrs = 0;
 	  error = ex_get_attr_param(exoid, EX_NODE_SET, ids[i], &num_attrs);
+	  printf (" after ex_get_attr_param, error = %d\n", error);
 	  printf ("num nodeset attributes for nodeset %d = %d\n", ids[i], num_attrs);
 	  if (num_attrs > 0) {
 	    for (j=0; j<num_attrs; j++) {
@@ -447,6 +450,7 @@ int main (int argc, char **argv)
 	      for (j=0; j<num_attrs; j++) {
 		printf ("nodeset attribute %d = '%s'\n", j, attrib_names[j]);
 		error = ex_get_one_attr(exoid, EX_NODE_SET, ids[i], j+1, attrib);
+		printf (" after ex_get_one_attr, error = %d\n", error);
 		for (k=0; k < num_nodes_in_set; k++) {
 		  printf ("%5.1f\n", attrib[k]);
 		}
@@ -1138,6 +1142,10 @@ int main (int argc, char **argv)
   }
   if (num_node_sets > 0)
     free (num_nodes_per_set);
+
+  for (i=0; i<num_elem_blk; i++) {
+    free(elem_type[i]);
+  }
 
   error = ex_close (exoid);
   printf ("\nafter ex_close, error = %3d\n", error);

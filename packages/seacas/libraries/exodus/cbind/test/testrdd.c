@@ -76,7 +76,10 @@ int main (int argc, char **argv)
    int *num_elem_in_block, *num_nodes_per_elem, *num_attr;
    int num_nodes_in_set, num_elem_in_set;
    int num_sides_in_set, num_df_in_set;
-   int list_len, elem_list_len, node_list_len, df_list_len;
+   int list_len = 0;
+   int elem_list_len = 0;
+   int node_list_len = 0;
+   int df_list_len = 0;
    int node_num, time_step, var_index, beg_time, end_time, elem_num;
    int CPU_word_size,IO_word_size;
    int num_props, prop_value, *prop_values;

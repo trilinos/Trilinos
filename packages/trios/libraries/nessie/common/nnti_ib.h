@@ -82,6 +82,21 @@ NNTI_result_t NNTI_ib_wait (
         const int             timeout,
         NNTI_status_t        *status);
 
+NNTI_result_t NNTI_ib_waitany (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        uint32_t             *which,
+        NNTI_status_t        *status);
+
+NNTI_result_t NNTI_ib_waitall (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        NNTI_status_t       **status);
+
 NNTI_result_t NNTI_ib_fini (
         const NNTI_transport_t *trans_hdl);
 

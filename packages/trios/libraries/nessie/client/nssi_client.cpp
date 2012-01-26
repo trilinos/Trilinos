@@ -792,15 +792,15 @@ static int cleanup_long_args(
     /* If we created a portal for long arguments, we need to wait
      * for the server to fetch the arguments.
      */
-    rc=NNTI_wait(
-            &req->long_args_hdl,
-            NNTI_GET_SRC,
-            -1,
-            &status);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed waiting for service to get long args: %s",
-                nnti_err_str(rc));
-    }
+//    rc=NNTI_wait(
+//            &req->long_args_hdl,
+//            NNTI_GET_SRC,
+//            -1,
+//            &status);
+//    if (rc != NNTI_OK) {
+//        log_error(rpc_debug_level, "failed waiting for service to get long args: %s",
+//                nnti_err_str(rc));
+//    }
 
     buf=NNTI_BUFFER_C_POINTER(&req->long_args_hdl);
     rc=NNTI_unregister_memory(&req->long_args_hdl);
@@ -1188,20 +1188,20 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 
     default:
         /* if the request status is not complete, we need to do some work */
-        if (req->data != NULL) {
-            log_debug(debug_level, "calling NNTI_wait for data_hdl");
-            rc=NNTI_wait(
-                    &req->data_hdl,
-                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
-                    timeout,
-                    &status);
-            if (status.result != NNTI_OK) {
-                log_info(debug_level, "NNTI_wait for data_hdl failed");
-                rc = status.result;
-                req->status = NSSI_REQUEST_ERROR;
-                break;
-            }
-        }
+//        if (req->data != NULL) {
+//            log_debug(debug_level, "calling NNTI_wait for data_hdl");
+//            rc=NNTI_wait(
+//                    &req->data_hdl,
+//                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
+//                    timeout,
+//                    &status);
+//            if (status.result != NNTI_OK) {
+//                log_info(debug_level, "NNTI_wait for data_hdl failed");
+//                rc = status.result;
+//                req->status = NSSI_REQUEST_ERROR;
+//                break;
+//            }
+//        }
         log_debug(debug_level, "calling NNTI_wait for result");
         rc=NNTI_wait(
                 &req->short_result_hdl,

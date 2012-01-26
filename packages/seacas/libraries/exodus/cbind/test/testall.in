@@ -38,10 +38,10 @@
 
 #set PREFIX = "valgrind --tool=memcheck"
 set PREFIX = ""
-set SUFFIX = ".exe"
+set SUFFIX = ""
 set BINDIR = @CMAKE_CURRENT_BINARY_DIR@
 set SRCDIR = @CMAKE_CURRENT_SOURCE_DIR@
-set NCDUMP = @SEACASExodus_Netcdf_EXECUTABLE_NCDUMP@
+set NCDUMP = @Netcdf_LIBRARY_DIRS@/../bin/ncdump
 echo "************************************************************************"
 echo "************************************************************************"
 rm -f test.output
@@ -55,11 +55,6 @@ echo "testrd - single precision read test..."
 echo "begin testrd" >> test.output
 ${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | diff - ${SRCDIR}/testrd.dmp | tee testrd.res
 echo "end testrd" >> test.output
-
-echo "testrdv - single precision read test with varid..."
-echo "begin testrdv" >> test.output
-${PREFIX} ${BINDIR}/testrdv${SUFFIX} | grep -v version | diff - ${SRCDIR}/testrdv.dmp | tee testrdv.res
-echo "end testrdv" >> test.output
 
 echo "testcp_ss - single-to-single precision copy test..."
 echo "begin testcp_ss" >> test.output
@@ -229,6 +224,11 @@ echo "testrd-long-name - read long name file..."
 echo "begin testrd-long-name" >> test.output
 ${PREFIX} ${BINDIR}/testrd-long-name${SUFFIX} | grep -v version | diff - ${SRCDIR}/testrd-long-name.dmp | tee testrd-long-name.res
 echo "end testrd-long-name" >> test.output
+
+echo "test_nemesis - read long name file..."
+echo "begin test_nemesis" >> test.output
+${PREFIX} ${BINDIR}/test_nemesis${SUFFIX} | grep -v version | diff - ${SRCDIR}/test_nemesis.dmp | tee test_nemesis.res
+echo "end test_nemesis" >> test.output
 
 echo "************************************************************************"
 echo "************************************************************************"

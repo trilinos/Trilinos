@@ -269,18 +269,17 @@ void fprint_NNTI_remote_addr(
                 fprintf(fp, "%s    size       = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.portals.size);
                 break;
             case NSSI_RPC_IB:
-                fprintf(fp, "%s    buf      = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.ib.buf);
+                fprintf(fp, "%s    buf      = %p,\n", subprefix,   addr->NNTI_remote_addr_t_u.ib.buf);
                 fprintf(fp, "%s    key      = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.ib.key);
                 fprintf(fp, "%s    size     = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.ib.size);
-                fprintf(fp, "%s    qp_index = %lld,\n", subprefix, (long long)addr->NNTI_remote_addr_t_u.ib.qp_index);
                 break;
             case NSSI_RPC_LUC:
-                fprintf(fp, "%s    buf  = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.luc.buf);
+                fprintf(fp, "%s    buf  = %p,\n", subprefix, addr->NNTI_remote_addr_t_u.luc.buf);
                 fprintf(fp, "%s    size = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.luc.size);
                 break;
             case NSSI_RPC_GEMINI:
                 fprintf(fp, "%s    type       = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.gni.type);
-                fprintf(fp, "%s    buf        = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.gni.buf);
+                fprintf(fp, "%s    buf        = %p,\n", subprefix, addr->NNTI_remote_addr_t_u.gni.buf);
                 fprintf(fp, "%s    mem_hdl    = (%llu, %llu),\n",
                         subprefix, addr->NNTI_remote_addr_t_u.gni.mem_hdl.qword1, addr->NNTI_remote_addr_t_u.gni.mem_hdl.qword2);
                 fprintf(fp, "%s    size       = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.gni.size);
@@ -375,7 +374,7 @@ void fprint_NNTI_buffer(
         }
 
         /* header */
-        fprintf(fp, "%s %s = {\n", prefix, name);
+        fprintf(fp, "%s %s (%p) = {\n", prefix, name, addr);
 
         /* contents */
         fprintf(fp, "%s    transport_id = %ld,\n", subprefix, (long)addr->transport_id);
@@ -385,8 +384,8 @@ void fprint_NNTI_buffer(
         fprint_NNTI_peer(fp, "peer", subprefix, &addr->peer);
 
         fprintf(fp, "%s    payload_size = %llu,\n", subprefix, (unsigned long long)addr->payload_size);
-        fprintf(fp, "%s    payload = %llu,\n", subprefix, (unsigned long long)addr->payload);
-        fprintf(fp, "%s    transport_private = %llu,\n", subprefix, (unsigned long long)addr->transport_private);
+        fprintf(fp, "%s    payload = %p,\n", subprefix, addr->payload);
+        fprintf(fp, "%s    transport_private = %p,\n", subprefix, addr->transport_private);
 
         /* footer */
         fprintf(fp, "%s }\n", subprefix);

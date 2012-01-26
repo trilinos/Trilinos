@@ -79,15 +79,7 @@ SUBDIRS = forbind
 INCLIST1 = ne_nemesisI.h ne_nemesisI_int.h
 INCLIST2 = ne_nemesis_int.inc
 
-SRCS = \
-ne_gcmp.c    ne_gebig.c   ne_gelcm.c   ne_gelm.c    ne_gelt.c    ne_gennm.c \
-ne_genv.c    ne_giinf.c   ne_ginig.c   ne_glbp.c    ne_gncm.c    ne_gncor.c \
-ne_gneat.c   ne_gnelc.c   ne_gnm.c     ne_gnnnm.c   ne_gnns.c    ne_gnnsd.c \
-ne_gnnv.c    ne_gnspg.c   ne_gnss.c    ne_gnssd.c   ne_gsspg.c   ne_pcmp.c \
-ne_pcmpc.c   ne_pebig.c   ne_pelcm.c   ne_pelm.c    ne_pennm.c   ne_pevs.c \
-ne_piinf.c   ne_pinig.c   ne_plbp.c    ne_plbpc.c   ne_pncm.c    ne_pncor.c \
-ne_pneat.c   ne_pnelc.c   ne_pnm.c     ne_pnnnm.c   ne_pnns.c    ne_pnnsd.c \
-ne_pnspg.c   ne_pnss.c    ne_pnssd.c   ne_pnvs.c    ne_psspg.c   ne_util.c
+SRCS = 	nemesis_wrapper.c
 
 OBJS = ${SRCS:.c=.o}
 
@@ -139,13 +131,15 @@ InstallParallelLibrary(nemIf32,$(PLIBDIR))
 CTESTLIBS = $(EXOIIV2C) $(NETCDF) -lm
 FTESTLIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) -lm
 
-test: libnemesis.a libnemIf.a ne_test.c forbind/ne_test.F
-	$(CC) -c $(CFLAGS) ne_test.c
-	$(CC) $(LDOPTIONS) -o ne_ctest ne_test.o libnemesis.a $(LIBPATH) $(CTESTLIBS)
-	$(FC) -c $(FFLAGS) $(STD_DEFINES) -I./forbind forbind/ne_test.F
-	$(FC) $(LDOPTIONS) -o ne_ftest ne_test.o libnemIf.a libnemesis.a $(LIBPATH) $(FTESTLIBS)
+test: libnemesis.a libnemIf.a ne_ctest_wrap.c forbind/ne_ftest.F
+	$(CC) -c $(CFLAGS) ne_ctest_wrap.c
+	$(CC) $(LDOPTIONS) -o ne_ctest_wrap ne_ctest_wrap.o libnemesis.a $(LIBPATH) $(CTESTLIBS)
+	$(FC) -c $(FFLAGS) $(STD_DEFINES) -I./forbind forbind/ne_ftest.F
+	$(FC) $(LDOPTIONS) -o ne_ftest ne_ftest.o libnemIf.a $(LIBPATH) $(FTESTLIBS)
 
-ExtraStuffToClean(ne_ctest ne_ftest ne_test.exoII  ne_test.nemI)
+ExtraStuffToClean(ne_ctest_wrap ne_ftest ne_test.exoII  ne_test.nemI)
+
+$(OBJS): ne_nemesisI.h
 
 DependTarget()
 LibraryObjectRule()

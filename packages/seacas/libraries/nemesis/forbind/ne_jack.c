@@ -66,9 +66,6 @@
 #include        "netcdf.h"
 #include        "exodusII.h"
 #include        "exodusII_int.h"
-#include        "ne_nemesisI.h"
-#include        "ne_nemesisI_int.h"
-
 
 /*
  * The Build64 is for the "normal" SEACAS build which uses compiler
@@ -85,10 +82,10 @@
  * routines in this file directly.
  *
  */
-
 #if defined(Build64) && !defined(DEFAULT_REAL_INT)
 /* 64-bit */
-#define real double
+typedef double real;
+typedef ex_entity_id entity_id;
 #ifdef ADDC_
 #define F2C(name) name##4_
 #else
@@ -97,7 +94,8 @@
 
 #else
 /* 32-bit */
-#define real float
+typedef float real;
+typedef int entity_id;
 #ifdef ADDC_
 #define F2C(name) name##_
 #else
@@ -106,40 +104,31 @@
 #endif
 
 
+
 extern int ncopts;   /* default is (NC_FATAL | NC_VERBOSE) */
 extern int exerrval; /* global int that contains a Exodus-specific error code */
 
 /* blank fill C string to make FORTRAN string */
 static void
-ne_fcdcpy (fstring, fslen, sstring)
-    char *fstring;              /* output string to be blank-filled */
-    int fslen;                  /* length of output string */
-    char *sstring;              /* input string, null-terminated */
+ex_fcdcpy (char *fstring, size_t fslen, char *sstring)
+                                /* output string to be blank-filled */
+                                /* length of output string */
+                                /* input string, null-terminated */
 {
-    int i, len = strlen(sstring);
-
-    for (i = 0; i < len; i++)
-        *(fstring + i) = *(sstring + i);
-    for (i = len; i < fslen; i++)
-        *(fstring + i) = ' ';
-}
-
-/* ne_lenstr - string length (w/o trailing blanks) */
-static int ne_lenstr (char *string)
-{
-  char *ptr;
-
-  ptr=string+strlen(string);    /* start at end of string including blanks */
-  while (*(--ptr) == ' ');      /* skip blanks */
-  return(ptr-string+1);         /* return trimmed length of string */
+  size_t i, len = strlen(sstring);
+  
+  for (i = 0; i < len; i++)
+    *(fstring + i) = *(sstring + i);
+  for (i = len; i < fslen; i++)
+    *(fstring + i) = ' ';
 }
 
 /* copy function used to copy strings and strip trailing blanks */
 static void
-ne_fstrncpy (target, source, maxlen)
-    char *target;               /* space to be copied into */
-    char *source;               /* string to be copied */
-    int maxlen;                 /* maximum length of *source */
+ex_fstrncpy (char *target, char *source, size_t maxlen)
+                                /* space to be copied into */
+                                /* string to be copied */
+                                /* maximum length of *source */
 {
     while (maxlen-- && *source != '\0')
         *target++ = *source++;
@@ -167,38 +156,33 @@ ne_fstrncpy (target, source, maxlen)
  *  Get initial information from nemesis file
  */
 void
-F2C(negii)(idne, nproc, nproc_in_f, ftype, ierr, ftypelen)
-    int		*idne;	
-    int		*nproc;	
-    int		*nproc_in_f;	
-    char	*ftype;	
-    int		ftypelen;
-    int		*ierr;	
+F2C(negii)(int	*idne,	
+	   int	*nproc,
+	   int	*nproc_in_f,
+	   char	*ftype,
+	   int  *ierr, 
+	   size_t ftypelen)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  int slen;
+  size_t slen = 1;
   char *file_type;
 
   /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
               the Fortran programmer passed it. It is best at
               this time to hard code it per NEPII spec. */
-  slen = 1;
-  if (ftypelen != 1)
-  {
-    slen = ftypelen;
+  if (ftypelen != 1) {
 #if defined(EXODUS_STRING_LENGTH_WARNING)
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,"Warning: file type string length is %d in file id %d\n",
             ftypelen, *idne);
     ex_err("negii",errmsg,EX_MSG);
 #endif
+    slen = ftypelen;
   }
 
   file_type = (char *) malloc((slen+1)*sizeof(char));
 
-  if ((*ierr = ne_get_init_info(*idne, nproc, nproc_in_f, file_type)) != 0)
-  {
+  if ((*ierr = ex_get_init_info(*idne, nproc, nproc_in_f, file_type)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to get initial information from file id %d",
 	    *idne);
@@ -206,7 +190,7 @@ F2C(negii)(idne, nproc, nproc_in_f, ftype, ierr, ftypelen)
   }
 
   if (*ierr == 0)
-    ne_fcdcpy (ftype, slen, file_type);
+    ex_fcdcpy (ftype, slen, file_type);
 
   free(file_type);
 }
@@ -215,26 +199,23 @@ F2C(negii)(idne, nproc, nproc_in_f, ftype, ierr, ftypelen)
  *  Write initial information from nemesis file
  */
 void
-F2C(nepii)(idne, nproc, nproc_in_f, ftype, ierr, ftypelen)
-    int		*idne;	
-    int		*nproc;	
-    int		*nproc_in_f;	
-    char	*ftype;	
-    int		ftypelen;
-    int		*ierr;	
+F2C(nepii)(int	*idne,
+	   int	*nproc,
+	   int	*nproc_in_f,
+	   char	*ftype,
+	   int  *ierr,
+	   size_t ftypelen)
 {
 
   char errmsg[MAX_ERR_LENGTH];
 
-  int slen;
+  size_t slen = 1;
   char *file_type;
 
   /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
               the Fortran programmer passed it. It is best at
               this time to hard code it per NEPII spec. */
-  slen = 1;
-  if (ftypelen != 1)
-  {
+  if (ftypelen != 1) {
     slen = ftypelen;
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     sprintf(errmsg,"Warning: file type string length is %d in file id %d\n",
@@ -245,9 +226,9 @@ F2C(nepii)(idne, nproc, nproc_in_f, ftype, ierr, ftypelen)
 
   file_type = (char *) malloc((slen+1)*sizeof(char));
 
-  (void) ne_fstrncpy (file_type, ftype, slen);
+  ex_fstrncpy (file_type, ftype, slen);
 
-  if ((*ierr = ne_put_init_info(*idne, *nproc, *nproc_in_f, file_type)) != 0)
+  if ((*ierr = ex_put_init_info(*idne, *nproc, *nproc_in_f, file_type)) != 0)
   {
     sprintf(errmsg,
 	    "Error: failed to put initial information in file id %d",
@@ -262,21 +243,17 @@ F2C(nepii)(idne, nproc, nproc_in_f, ftype, ierr, ftypelen)
  * Read initial global information
  */
 void
-F2C(negig)(idne, nnodes_g, nelems_g, nelem_blks_g, nnode_sets_g, nside_sets_g, ierr)
-    int		*idne;	
-    int		*nnodes_g;	
-    int		*nelems_g;	
-    int		*nelem_blks_g;	
-    int		*nnode_sets_g;	
-    int		*nside_sets_g;	
-    int		*ierr;	
+F2C(negig)(int	*idne,
+	   void_int	*nnodes_g,
+	   void_int	*nelems_g,
+	   void_int	*nelem_blks_g,
+	   void_int	*nnode_sets_g,
+	   void_int	*nside_sets_g,
+	   int	*ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_init_global(*idne, nnodes_g, nelems_g, nelem_blks_g,
-                                  nnode_sets_g, nside_sets_g)) != 0)
-  {
+  if ((*ierr = ex_get_init_global(*idne, nnodes_g, nelems_g, nelem_blks_g,
+                                  nnode_sets_g, nside_sets_g)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read initial global information from file id %d",
 	    *idne);
@@ -288,21 +265,34 @@ F2C(negig)(idne, nnodes_g, nelems_g, nelem_blks_g, nnode_sets_g, nside_sets_g, i
  * Write initial global information
  */
 void
-F2C(nepig)(idne, nnodes_g, nelems_g, nelem_blks_g, nnode_sets_g, nside_sets_g, ierr)
-    int		*idne;	
-    int		*nnodes_g;	
-    int		*nelems_g;	
-    int		*nelem_blks_g;	
-    int		*nnode_sets_g;	
-    int		*nside_sets_g;	
-    int		*ierr;	
+F2C(nepig)(int	*idne,
+	   void_int	*nnodes_g,
+	   void_int	*nelems_g,
+	   void_int	*nelem_blks_g,
+	   void_int	*nnode_sets_g,
+	   void_int	*nside_sets_g,
+	   int	*ierr)
 {
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    int64_t *n_nnodes_g = (int64_t*)nnodes_g;
+    int64_t *n_nelems_g = (int64_t*)nelems_g;
+    int64_t *n_nelem_blks_g = (int64_t*)nelem_blks_g;
+    int64_t *n_nnode_sets_g = (int64_t*)nnode_sets_g;
+    int64_t *n_nside_sets_g = (int64_t*)nside_sets_g;
+    *ierr =  ex_put_init_global(*idne, *n_nnodes_g, *n_nelems_g, *n_nelem_blks_g,
+				*n_nnode_sets_g, *n_nside_sets_g);
+  } else {
+    int *n_nnodes_g = (int*)nnodes_g;
+    int *n_nelems_g = (int*)nelems_g;
+    int *n_nelem_blks_g = (int*)nelem_blks_g;
+    int *n_nnode_sets_g = (int*)nnode_sets_g;
+    int *n_nside_sets_g = (int*)nside_sets_g;
+    *ierr =  ex_put_init_global(*idne, *n_nnodes_g, *n_nelems_g, *n_nelem_blks_g,
+				*n_nnode_sets_g, *n_nside_sets_g);
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr =  ne_put_init_global(*idne, *nnodes_g, *nelems_g, *nelem_blks_g,
-                                   *nnode_sets_g, *nside_sets_g)) != 0)
-  {
+  if (*ierr != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to store initial global information in file id %d",
 	    *idne);
@@ -314,25 +304,21 @@ F2C(nepig)(idne, nnodes_g, nelems_g, nelem_blks_g, nnode_sets_g, nside_sets_g, i
  * Read load balance parameters
  */
 void
-F2C(neglbp)(idne, nint_nodes, nbor_nodes, next_nodes, nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps, processor, ierr)
-    int		*idne;	
-    int		*nint_nodes;	
-    int		*nbor_nodes;	
-    int		*next_nodes;	
-    int		*nint_elems;	
-    int		*nbor_elems;	
-    int		*nnode_cmaps;	
-    int		*nelem_cmaps;	
-    int		*processor;	
-    int		*ierr;	
+F2C(neglbp)(int	*idne,
+	    void_int	*nint_nodes,
+	    void_int	*nbor_nodes,
+	    void_int	*next_nodes,
+	    void_int	*nint_elems,
+	    void_int	*nbor_elems,
+	    void_int	*nnode_cmaps,
+	    void_int	*nelem_cmaps,
+	    int	*processor,
+	    int	*ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_loadbal_param(*idne, nint_nodes, nbor_nodes,
+  if ((*ierr = ex_get_loadbal_param(*idne, nint_nodes, nbor_nodes,
                                     next_nodes, nint_elems, nbor_elems,
-                                    nnode_cmaps, nelem_cmaps, *processor)) != 0)
-  {
+                                    nnode_cmaps, nelem_cmaps, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read load balance parameters from file id %d",
 	    *idne);
@@ -344,26 +330,44 @@ F2C(neglbp)(idne, nint_nodes, nbor_nodes, next_nodes, nint_elems, nbor_elems, nn
  * Write load balance parameters
  */
 void
-F2C(neplbp)(idne, nint_nodes, nbor_nodes, next_nodes, nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps, processor, ierr)
-    int		*idne;	
-    int		*nint_nodes;	
-    int		*nbor_nodes;	
-    int		*next_nodes;	
-    int		*nint_elems;	
-    int		*nbor_elems;	
-    int		*nnode_cmaps;	
-    int		*nelem_cmaps;	
-    int		*processor;	
-    int		*ierr;	
+F2C(neplbp)(int	*idne,
+	    void_int	*nint_nodes,
+	    void_int	*nbor_nodes,
+	    void_int	*next_nodes,
+	    void_int	*nint_elems,
+	    void_int	*nbor_elems,
+	    void_int	*nnode_cmaps,
+	    void_int	*nelem_cmaps,
+	    int	*processor,
+	    int	*ierr)	
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_loadbal_param(*idne, *nint_nodes, *nbor_nodes,
-                                    *next_nodes, *nint_elems, *nbor_elems,
-                                    *nnode_cmaps, *nelem_cmaps,
-                                    *processor)) != 0)
-  {
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    int64_t *n_nint_nodes = (int64_t*)nint_nodes;
+    int64_t *n_nbor_nodes = (int64_t*)nbor_nodes;
+    int64_t *n_next_nodes = (int64_t*)next_nodes;
+    int64_t *n_nint_elems = (int64_t*)nint_elems;
+    int64_t *n_nbor_elems = (int64_t*)nbor_elems;
+    int64_t *n_nnode_cmaps = (int64_t*)nnode_cmaps;
+    int64_t *n_nelem_cmaps = (int64_t*)nelem_cmaps;
+    *ierr = ex_put_loadbal_param(*idne, *n_nint_nodes, *n_nbor_nodes,
+				 *n_next_nodes, *n_nint_elems, *n_nbor_elems,
+				 *n_nnode_cmaps, *n_nelem_cmaps,
+				 *processor);
+  } else {
+    int *n_nint_nodes = (int*)nint_nodes;
+    int *n_nbor_nodes = (int*)nbor_nodes;
+    int *n_next_nodes = (int*)next_nodes;
+    int *n_nint_elems = (int*)nint_elems;
+    int *n_nbor_elems = (int*)nbor_elems;
+    int *n_nnode_cmaps = (int*)nnode_cmaps;
+    int *n_nelem_cmaps = (int*)nelem_cmaps;
+    *ierr = ex_put_loadbal_param(*idne, *n_nint_nodes, *n_nbor_nodes,
+				 *n_next_nodes, *n_nint_elems, *n_nbor_elems,
+				 *n_nnode_cmaps, *n_nelem_cmaps,
+				 *processor);
+  }
+  if (*ierr != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to store load balance parameters in file id %d",
 	    *idne);
@@ -375,24 +379,20 @@ F2C(neplbp)(idne, nint_nodes, nbor_nodes, next_nodes, nint_elems, nbor_elems, nn
  * Write concatenated load balance parameters
  */
 void
-F2C(neplbpc)(idne, nint_nodes, nbor_nodes, next_nodes, nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps, ierr)
-    int		*idne;	
-    int		*nint_nodes;	
-    int		*nbor_nodes;	
-    int		*next_nodes;	
-    int		*nint_elems;	
-    int		*nbor_elems;	
-    int		*nnode_cmaps;	
-    int		*nelem_cmaps;	
-    int		*ierr;	
+F2C(neplbpc)(int *idne,
+	     void_int *nint_nodes,	
+	     void_int *nbor_nodes,	
+	     void_int *next_nodes,	
+	     void_int *nint_elems,	
+	     void_int *nbor_elems,	
+	     void_int *nnode_cmaps,	
+	     void_int *nelem_cmaps,	
+	     int *ierr)	
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_loadbal_param_cc(*idne, nint_nodes, nbor_nodes,
+  if ((*ierr = ex_put_loadbal_param_cc(*idne, nint_nodes, nbor_nodes,
                                        next_nodes, nint_elems, nbor_elems,
-                                       nnode_cmaps, nelem_cmaps)) != 0)
-  {
+                                       nnode_cmaps, nelem_cmaps)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to store load balance parameters in file id %d",
 	    *idne);
@@ -404,19 +404,14 @@ F2C(neplbpc)(idne, nint_nodes, nbor_nodes, next_nodes, nint_elems, nbor_elems, n
  * Read global node set parameters
  */
 void
-F2C(negnspg)(idne, ns_ids_glob, ns_n_cnt_glob, ns_df_cnt_glob, ierr)
-    int		*idne;	
-    int		*ns_ids_glob;	
-    int		*ns_n_cnt_glob;	
-    int		*ns_df_cnt_glob;	
-    int		*ierr;	
+F2C(negnspg)(int *idne,
+	     void_int *ns_ids_glob,
+	     void_int *ns_n_cnt_glob,
+	     void_int *ns_df_cnt_glob,
+	     int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_ns_param_global(*idne, ns_ids_glob, ns_n_cnt_glob,
-                                      ns_df_cnt_glob)) != 0)
-  {
+  if ((*ierr = ex_get_ns_param_global(*idne, ns_ids_glob, ns_n_cnt_glob, ns_df_cnt_glob)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read global node set parameters from file id %d",
 	    *idne);
@@ -428,19 +423,15 @@ F2C(negnspg)(idne, ns_ids_glob, ns_n_cnt_glob, ns_df_cnt_glob, ierr)
  * Write global node set parameters
  */
 void
-F2C(nepnspg)(idne, global_ids, global_n_cnts, global_df_cnts, ierr)
-    int		*idne;	
-    int		*global_ids;	
-    int		*global_n_cnts;	
-    int		*global_df_cnts;	
-    int		*ierr;	
+F2C(nepnspg)(int *idne,
+	     void_int *global_ids,
+	     void_int *global_n_cnts,
+	     void_int *global_df_cnts,
+	     int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_ns_param_global(*idne, global_ids, global_n_cnts,
-                                      global_df_cnts)) != 0)
+  if ((*ierr = ex_put_ns_param_global(*idne, global_ids, global_n_cnts, global_df_cnts)) != 0)
   {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to store global node set parameters in file id %d",
 	    *idne);
@@ -452,19 +443,16 @@ F2C(nepnspg)(idne, global_ids, global_n_cnts, global_df_cnts, ierr)
  * Read global side set parameters
  */
 void
-F2C(negsspg)(idne, ss_ids_glob, ss_n_cnt_glob, ss_df_cnt_glob, ierr)
-    int		*idne;	
-    int		*ss_ids_glob;	
-    int		*ss_n_cnt_glob;	
-    int		*ss_df_cnt_glob;	
-    int		*ierr;	
+F2C(negsspg)(int *idne,
+	     void_int *ss_ids_glob,
+	     void_int *ss_n_cnt_glob,
+	     void_int *ss_df_cnt_glob,
+	     int *ierr)
 {
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_ss_param_global(*idne, ss_ids_glob, ss_n_cnt_glob,
-                                      ss_df_cnt_glob)) != 0)
+  if ((*ierr = ex_get_ss_param_global(*idne, ss_ids_glob, ss_n_cnt_glob, ss_df_cnt_glob)) != 0)
   {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read global side set parameters from file id %d",
 	    *idne);
@@ -476,19 +464,14 @@ F2C(negsspg)(idne, ss_ids_glob, ss_n_cnt_glob, ss_df_cnt_glob, ierr)
  * Write global side set parameters
  */
 void
-F2C(nepsspg)(idne, global_ids, global_el_cnts, global_df_cnts, ierr)
-    int		*idne;	
-    int		*global_ids;	
-    int		*global_el_cnts;	
-    int		*global_df_cnts;	
-    int		*ierr;	
+F2C(nepsspg)(int *idne,
+	     void_int *global_ids,
+	     void_int *global_el_cnts,
+	     void_int *global_df_cnts,
+	     int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_ss_param_global(*idne, global_ids, global_el_cnts,
-                                      global_df_cnts)) != 0)
-  {
+  if ((*ierr = ex_put_ss_param_global(*idne, global_ids, global_el_cnts, global_df_cnts)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to store global side set parameters in file id %d",
 	    *idne);
@@ -500,17 +483,13 @@ F2C(nepsspg)(idne, global_ids, global_el_cnts, global_df_cnts, ierr)
  * Read global element block information
  */
 void
-F2C(negebig)(idne, el_blk_ids, el_blk_cnts, ierr)
-    int		*idne;	
-    int		*el_blk_ids;	
-    int		*el_blk_cnts;	
-    int		*ierr;	
+F2C(negebig)(int *idne,
+	     void_int *el_blk_ids,
+	     void_int *el_blk_cnts,
+	     int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_eb_info_global(*idne, el_blk_ids, el_blk_cnts)) != 0)
-  {
+  if ((*ierr = ex_get_eb_info_global(*idne, el_blk_ids, el_blk_cnts)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read global element block info from file id %d",
 	    *idne);
@@ -522,17 +501,13 @@ F2C(negebig)(idne, el_blk_ids, el_blk_cnts, ierr)
  * Write global element block information
  */
 void
-F2C(nepebig)(idne, el_blk_ids, el_blk_cnts, ierr)
-    int		*idne;	
-    int		*el_blk_ids;	
-    int		*el_blk_cnts;	
-    int		*ierr;	
+F2C(nepebig)(int *idne,
+	     void_int *el_blk_ids,
+	     void_int *el_blk_cnts,
+	     int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_eb_info_global(*idne, el_blk_ids, el_blk_cnts)) != 0)
-  {
+  if ((*ierr = ex_put_eb_info_global(*idne, el_blk_ids, el_blk_cnts)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to store global element block info in file id %d",
 	    *idne);
@@ -544,22 +519,25 @@ F2C(nepebig)(idne, el_blk_ids, el_blk_cnts, ierr)
  * Read side set element list and side set side list
  */
 void
-F2C(negnss)(idne, ss_id, start_side_num, num_sides, ss_elem_list, ss_side_list, ierr)
-    int		*idne;	
-    int		*ss_id;	
-    int		*start_side_num;	
-    int		*num_sides;	
-    int		*ss_elem_list;	
-    int		*ss_side_list;	
-    int		*ierr;	
+F2C(negnss)(int *idne,
+	    entity_id *ss_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *ss_elem_list,
+	    void_int *ss_side_list,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_side_set(*idne, *ss_id, *start_side_num, *num_sides,
-                                 ss_elem_list, ss_side_list)) != 0)
-
-  {
+  if ((*ierr = ex_get_n_side_set(*idne, *ss_id, st, cnt, ss_elem_list, ss_side_list)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read side set element list from file id %d",
 	    *idne);
@@ -571,22 +549,25 @@ F2C(negnss)(idne, ss_id, start_side_num, num_sides, ss_elem_list, ss_side_list, 
  * Write side set element list and side set side list
  */
 void
-F2C(nepnss)(idne, ss_id, start_side_num, num_sides, ss_elem_list, ss_side_list, ierr)
-    int		*idne;	
-    int		*ss_id;	
-    int		*start_side_num;	
-    int		*num_sides;	
-    int		*ss_elem_list;	
-    int		*ss_side_list;	
-    int		*ierr;	
+F2C(nepnss)(int *idne,
+	    entity_id *ss_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *ss_elem_list,
+	    void_int *ss_side_list,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_n_side_set(*idne, *ss_id, *start_side_num, *num_sides,
-                                 ss_elem_list, ss_side_list)) != 0)
-
-  {
+  if ((*ierr = ex_put_n_side_set(*idne, *ss_id, st, cnt, ss_elem_list, ss_side_list)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write side set element list to file id %d",
 	    *idne);
@@ -598,21 +579,24 @@ F2C(nepnss)(idne, ss_id, start_side_num, num_sides, ss_elem_list, ss_side_list, 
  * Read side set distribution factor
  */
 void
-F2C(negnssd)(idne, ss_id, start_num, num_df_to_get, ss_df, ierr)
-    int		*idne;	
-    int		*ss_id;	
-    int		*start_num;	
-    int		*num_df_to_get;	
-    real	*ss_df;	
-    int		*ierr;	
+F2C(negnssd)(int *idne,
+	     entity_id *ss_id,
+	     void_int *start,
+	     void_int *count,
+	     real *ss_df,
+	     int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_side_set_df(*idne, *ss_id, *start_num,
-                                    *num_df_to_get, ss_df)) != 0)
-
-  {
+  if ((*ierr = ex_get_n_side_set_df(*idne, *ss_id, st, cnt, ss_df)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read side set dist factor from file id %d",
 	    *idne);
@@ -624,21 +608,24 @@ F2C(negnssd)(idne, ss_id, start_num, num_df_to_get, ss_df, ierr)
  * Write side set distribution factor
  */
 void
-F2C(nepnssd)(idne, ss_id, start_num, num_df_to_get, ss_df, ierr)
-    int		*idne;	
-    int		*ss_id;	
-    int		*start_num;	
-    int		*num_df_to_get;	
-    real	*ss_df;	
-    int		*ierr;	
+F2C(nepnssd)(int *idne,
+	     entity_id *ss_id,
+	     void_int *start,
+	     void_int *count,
+	     real *ss_df,
+	     int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_n_side_set_df(*idne, *ss_id, *start_num,
-                                    *num_df_to_get, ss_df)) != 0)
-
-  {
+  if ((*ierr = ex_put_n_side_set_df(*idne, *ss_id, st, cnt, ss_df)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write side set dist factor to file id %d",
 	    *idne);
@@ -650,21 +637,24 @@ F2C(nepnssd)(idne, ss_id, start_num, num_df_to_get, ss_df, ierr)
  * Read node set list for a single node set
  */
 void
-F2C(negnns)(idne, ns_id, start_node_num, num_node, ns_node_list, ierr)
-    int		*idne;	
-    int		*ns_id;	
-    int		*start_node_num;	
-    int		*num_node;	
-    int		*ns_node_list;	
-    int		*ierr;	
+F2C(negnns)(int *idne,
+	    entity_id *ns_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *ns_node_list,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_node_set(*idne, *ns_id, *start_node_num,
-                                 *num_node, ns_node_list)) != 0)
-
-  {
+  if ((*ierr = ex_get_n_node_set(*idne, *ns_id, st, cnt,ns_node_list)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read node set node list from file id %d",
 	    *idne);
@@ -676,21 +666,24 @@ F2C(negnns)(idne, ns_id, start_node_num, num_node, ns_node_list, ierr)
  * Write node set list for a single node set
  */
 void
-F2C(nepnns)(idne, ns_id, start_node_num, num_node, ns_node_list, ierr)
-    int		*idne;	
-    int		*ns_id;	
-    int		*start_node_num;	
-    int		*num_node;	
-    int		*ns_node_list;	
-    int		*ierr;	
+F2C(nepnns)(int *idne,
+	    entity_id *ns_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *ns_node_list,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_n_node_set(*idne, *ns_id, *start_node_num,
-                                 *num_node, ns_node_list)) != 0)
-
-  {
+  if ((*ierr = ex_put_n_node_set(*idne, *ns_id, st, cnt, ns_node_list)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write node set node list to file id %d",
 	    *idne);
@@ -702,21 +695,24 @@ F2C(nepnns)(idne, ns_id, start_node_num, num_node, ns_node_list, ierr)
  * Read node set distribution factor
  */
 void
-F2C(negnnsd)(idne, ns_id, start_num, num_df_to_get, ns_df, ierr)
-    int		*idne;	
-    int		*ns_id;	
-    int		*start_num;	
-    int		*num_df_to_get;	
-    real	*ns_df;	
-    int		*ierr;	
+F2C(negnnsd)(int *idne,
+	     entity_id *ns_id,
+	     void_int *start,
+	     void_int *count,
+	     real *ns_df,
+	     int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_node_set_df(*idne, *ns_id, *start_num,
-                                    *num_df_to_get, ns_df)) != 0)
-
-  {
+  if ((*ierr = ex_get_n_node_set_df(*idne, *ns_id, st, cnt, ns_df)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read node set dist factor from file id %d",
 	    *idne);
@@ -728,21 +724,24 @@ F2C(negnnsd)(idne, ns_id, start_num, num_df_to_get, ns_df, ierr)
  * Write node set distribution factor
  */
 void
-F2C(nepnnsd)(idne, ns_id, start_num, num_df_to_get, ns_df, ierr)
-    int		*idne;	
-    int		*ns_id;	
-    int		*start_num;	
-    int		*num_df_to_get;	
-    real	*ns_df;	
-    int		*ierr;	
+F2C(nepnnsd)(int *idne,
+	     entity_id *ns_id,
+	     void_int *start,
+	     void_int *count,
+	     real *ns_df,
+	     int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_n_node_set_df(*idne, *ns_id, *start_num,
-                                    *num_df_to_get, ns_df)) != 0)
-
-  {
+  if ((*ierr = ex_put_n_node_set_df(*idne, *ns_id, st, cnt, ns_df)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write node set dist factor to file id %d",
 	    *idne);
@@ -754,21 +753,25 @@ F2C(nepnnsd)(idne, ns_id, start_num, num_df_to_get, ns_df, ierr)
  * Read coordinates of the nodes
  */
 void
-F2C(negcor)(idne, start_node_num, num_nodes, x_coor, y_coor, z_coor, ierr)
-    int		*idne;	
-    int		*start_node_num;	
-    int		*num_nodes;	
-    real	*x_coor;	
-    real	*y_coor;	
-    real	*z_coor;	
-    int		*ierr;	
+F2C(negcor)(int *idne,
+	    void_int *start,
+	    void_int *count,
+	    real *x_coor,
+	    real *y_coor,
+	    real *z_coor,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_coord(*idne, *start_node_num, *num_nodes,
-                              x_coor, y_coor, z_coor)) != 0)
-  {
+  if ((*ierr = ex_get_n_coord(*idne, st, cnt, x_coor, y_coor, z_coor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read node coordinates from file id %d",
 	    *idne);
@@ -780,21 +783,25 @@ F2C(negcor)(idne, start_node_num, num_nodes, x_coor, y_coor, z_coor, ierr)
  * Write coordinates of the nodes
  */
 void
-F2C(nepcor)(idne, start_node_num, num_nodes, x_coor, y_coor, z_coor, ierr)
-    int		*idne;	
-    int		*start_node_num;	
-    int		*num_nodes;	
-    real	*x_coor;	
-    real	*y_coor;	
-    real	*z_coor;	
-    int		*ierr;	
+F2C(nepcor)(int *idne,
+	    void_int *start,
+	    void_int *count,
+	    real *x_coor,
+	    real *y_coor,
+	    real *z_coor,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_n_coord(*idne, *start_node_num, *num_nodes,
-                              x_coor, y_coor, z_coor)) != 0)
-  {
+  if ((*ierr = ex_put_n_coord(*idne, st, cnt, x_coor, y_coor, z_coor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write node coordinates to file id %d",
 	    *idne);
@@ -806,20 +813,24 @@ F2C(nepcor)(idne, start_node_num, num_nodes, x_coor, y_coor, z_coor, ierr)
  * Read an element block's connectivity list
  */
 void
-F2C(negnec)(idne, elem_blk_id, start_elem_num, num_elems, connect, ierr)
-    int		*idne;	
-    int		*elem_blk_id;	
-    int		*start_elem_num;	
-    int		*num_elems;	
-    int		*connect;	
-    int		*ierr;	
+F2C(negnec)(int *idne,
+	    entity_id *elem_blk_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *connect,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_elem_conn(*idne, *elem_blk_id, *start_elem_num,
-                                  *num_elems, connect)) != 0)
-  {
+  if ((*ierr = ex_get_n_elem_conn(*idne, *elem_blk_id, st, cnt, connect)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read element block connectivity from file id %d",
 	    *idne);
@@ -831,20 +842,24 @@ F2C(negnec)(idne, elem_blk_id, start_elem_num, num_elems, connect, ierr)
  * Write an element block's connectivity list
  */
 void
-F2C(nepnec)(idne, elem_blk_id, start_elem_num, num_elems, connect, ierr)
-    int		*idne;	
-    int		*elem_blk_id;	
-    int		*start_elem_num;	
-    int		*num_elems;	
-    int		*connect;	
-    int		*ierr;	
+F2C(nepnec)(int *idne,
+	    entity_id *elem_blk_id,
+	    void_int *start,
+	    void_int *count,
+	    void_int *connect,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_n_elem_conn(*idne, *elem_blk_id, *start_elem_num,
-                                  *num_elems, connect)) != 0)
-  {
+  if ((*ierr = ex_put_n_elem_conn(*idne, *elem_blk_id, st, cnt, connect)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write element block connectivity to file id %d",
 	    *idne);
@@ -856,20 +871,24 @@ F2C(nepnec)(idne, elem_blk_id, start_elem_num, num_elems, connect, ierr)
  * Read an element block's attributes
  */
 void
-F2C(negneat)(idne, elem_blk_id, start_elem_num, num_elems, attrib, ierr)
-    int		*idne;	
-    int		*elem_blk_id;	
-    int		*start_elem_num;	
-    int		*num_elems;	
-    real	*attrib;	
-    int		*ierr;	
+F2C(negneat)(int *idne,
+	     entity_id *elem_blk_id,
+	     void_int *start,
+	     void_int *count,
+	     real *attrib,
+	     int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_elem_attr(*idne, *elem_blk_id, *start_elem_num,
-                                  *num_elems, attrib)) != 0)
-  {
+  if ((*ierr = ex_get_n_elem_attr(*idne, *elem_blk_id, st, cnt, attrib)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read element block attribute from file id %d",
 	    *idne);
@@ -881,20 +900,24 @@ F2C(negneat)(idne, elem_blk_id, start_elem_num, num_elems, attrib, ierr)
  * Write an element block's attributes
  */
 void
-F2C(nepneat)(idne, elem_blk_id, start_elem_num, num_elems, attrib, ierr)
-    int		*idne;	
-    int		*elem_blk_id;	
-    int		*start_elem_num;	
-    int		*num_elems;	
-    real	*attrib;	
-    int		*ierr;	
+F2C(nepneat)(int *idne,
+	     entity_id *elem_blk_id,
+	     void_int *start,
+	     void_int *count,
+	     real *attrib,
+	     int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_n_elem_attr(*idne, *elem_blk_id, *start_elem_num,
-                                  *num_elems, attrib)) != 0)
-  {
+  if ((*ierr = ex_put_n_elem_attr(*idne, *elem_blk_id, st, cnt, attrib)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write element block attribute to file id %d",
 	    *idne);
@@ -906,37 +929,32 @@ F2C(nepneat)(idne, elem_blk_id, start_elem_num, num_elems, attrib, ierr)
  * Read the element type for a specific element block
  */
 void
-F2C(negelt)(idne, elem_blk_id, elem_type, ierr, elem_typelen)
-    int		*idne;	
-    int		*elem_blk_id;	
-    char	*elem_type;	
-    int		elem_typelen;
-    int		*ierr;	
+F2C(negelt)(int *idne,
+	    entity_id *elem_blk_id,
+	    char *elem_type,
+	    int *ierr,
+	    size_t elem_typelen)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  int slen;
+  size_t slen = MAX_STR_LENGTH;
   char *etype;
 
   /* WARNING: ftypelen SHOULD be MAX_STR_LENGTH, but may not be depending
               on how the Fortran programmer passed it. It is best at
               this time to hard code it per NEMESIS spec. */
-  slen = MAX_STR_LENGTH;
-  if (elem_typelen != MAX_STR_LENGTH)
-  {
-    slen = elem_typelen;
+  if (elem_typelen != MAX_STR_LENGTH) {
 #if defined(EXODUS_STRING_LENGTH_WARNING)
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,"Warning: element type string length is %d in file id %d\n",
             elem_typelen, *idne);
     ex_err("negelt",errmsg,EX_MSG);
 #endif
+    slen = elem_typelen;
   }
 
   etype = (char *) malloc((slen+1)*sizeof(char));
 
-  if ((*ierr = ne_get_elem_type(*idne, *elem_blk_id, etype)) != 0)
-  {
+  if ((*ierr = ex_get_elem_type(*idne, *elem_blk_id, etype)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read element block type from file id %d",
 	    *idne);
@@ -944,7 +962,7 @@ F2C(negelt)(idne, elem_blk_id, elem_type, ierr, elem_typelen)
   }
 
   if (*ierr == 0)
-    ne_fcdcpy (elem_type, slen, etype);
+    ex_fcdcpy (elem_type, slen, etype);
 
   free(etype);
 }
@@ -953,25 +971,30 @@ F2C(negelt)(idne, elem_blk_id, elem_type, ierr, elem_typelen)
  * Read a variable for an element block
  */
 void
-F2C(negnev)(idne, time_step, elem_var_index, elem_blk_id, num_elem_this_blk, start_elem_num, num_elem, elem_var_vals, ierr)
-    int		*idne;	
-    int		*time_step;	
-    int		*elem_var_index;	
-    int		*elem_blk_id;	
-    int		*num_elem_this_blk;	
-    int		*start_elem_num;	
-    int		*num_elem;	
-    real	*elem_var_vals;	
-    int		*ierr;	
+F2C(negnev)(int *idne,
+	    int *time_step,
+	    int *elem_var_index,
+	    entity_id *elem_blk_id,
+	    void_int *num_elem_this_blk,
+	    void_int *start,
+	    void_int *count,
+	    real *elem_var_vals,
+	    int *ierr)
 {
+  int64_t st, cnt, ne;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+    ne = *(int64_t*)num_elem_this_blk;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+    ne = *(int*)num_elem_this_blk;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_elem_var(*idne, *time_step, *elem_var_index,
-                                  *elem_blk_id, *num_elem_this_blk,
-                                  *start_elem_num, *num_elem,
-                                  elem_var_vals)) != 0)
-  {
+  if ((*ierr = ex_get_n_elem_var(*idne, *time_step, *elem_var_index,
+				 *elem_blk_id, ne, st, cnt, elem_var_vals)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read element block variable from file id %d",
 	    *idne);
@@ -983,23 +1006,27 @@ F2C(negnev)(idne, time_step, elem_var_index, elem_blk_id, num_elem_this_blk, sta
  * Write a variable slab for an element block
  */
 void
-F2C(nepevs)(idne, time_step, elem_var_index, elem_blk_id, start_pos, num_vals, elem_var_vals, ierr)
-    int		*idne;	
-    int		*time_step;	
-    int		*elem_var_index;	
-    int		*elem_blk_id;	
-    int		*start_pos;	
-    int		*num_vals;	
-    real	*elem_var_vals;	
-    int		*ierr;	
+F2C(nepevs)(int *idne,
+	    int *time_step,
+	    int *elem_var_index,
+	    entity_id *elem_blk_id,
+	    void_int *start,
+	    void_int *count,
+	    real *elem_var_vals,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_elem_var_slab(*idne, *time_step, *elem_var_index,
-                                    *elem_blk_id, *start_pos, *num_vals,
-                                    elem_var_vals)) != 0)
-  {
+  if ((*ierr = ex_put_elem_var_slab(*idne, *time_step, *elem_var_index,
+                                    *elem_blk_id, st, cnt, elem_var_vals)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write elem block variable slab to file id %d",
 	    *idne);
@@ -1011,22 +1038,26 @@ F2C(nepevs)(idne, time_step, elem_var_index, elem_blk_id, start_pos, num_vals, e
  * Read the values of a single nodal variable for a single time step
  */
 void
-F2C(negnnv)(idne, time_step, nodal_var_index, start_node_num, num_nodes, nodal_vars, ierr)
-    int		*idne;	
-    int		*time_step;	
-    int		*nodal_var_index;	
-    int		*start_node_num;	
-    int		*num_nodes;	
-    real	*nodal_vars;	
-    int		*ierr;	
+F2C(negnnv)(int *idne,
+	    int *time_step,
+	    int *nodal_var_index,
+	    void_int *start,
+	    void_int *count,
+	    real *nodal_vars,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_nodal_var(*idne, *time_step, *nodal_var_index,
-                                  *start_node_num, *num_nodes,
-                                  nodal_vars)) != 0)
-  {
+  if ((*ierr = ex_get_n_nodal_var(*idne, *time_step, *nodal_var_index,
+                                  st, cnt, nodal_vars)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read nodal variable from file id %d",
 	    *idne);
@@ -1038,22 +1069,26 @@ F2C(negnnv)(idne, time_step, nodal_var_index, start_node_num, num_nodes, nodal_v
  * Write nodal variable slab
  */
 void
-F2C(nepnvs)(idne, time_step, nodal_var_index, start_pos, num_vals, nodal_var_vals, ierr)
-    int		*idne;	
-    int		*time_step;	
-    int		*nodal_var_index;	
-    int		*start_pos;	
-    int		*num_vals;	
-    real	*nodal_var_vals;	
-    int		*ierr;	
+F2C(nepnvs)(int *idne,
+	    int *time_step,
+	    int *nodal_var_index,
+	    void_int *start,
+	    void_int *count,
+	    real *nodal_var_vals,
+	    int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)start;
+    cnt = *(int64_t*)count;
+  } else {
+    st = *(int*)start;
+    cnt = *(int*)count;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_nodal_var_slab(*idne, *time_step, *nodal_var_index,
-                                     *start_pos, *num_vals,
-                                     nodal_var_vals)) != 0)
-  {
+  if ((*ierr = ex_put_nodal_var_slab(*idne, *time_step, *nodal_var_index,
+                                     st, cnt, nodal_var_vals)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write nodal variable slab to file id %d",
 	    *idne);
@@ -1065,18 +1100,23 @@ F2C(nepnvs)(idne, time_step, nodal_var_index, start_pos, num_vals, nodal_var_val
  * Read the element numbering map
  */
 void
-F2C(negnenm)(idne, starte, num_ent, elem_map, ierr)
-    int		*idne;	
-    int		*starte;	
-    int		*num_ent;	
-    int		*elem_map;	
-    int		*ierr;	
+F2C(negnenm)(int *idne,
+	     void_int *starte,
+	     void_int *num_ent,
+	     void_int *elem_map,
+	     int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)starte;
+    cnt = *(int64_t*)num_ent;
+  } else {
+    st = *(int*)starte;
+    cnt = *(int*)num_ent;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_elem_num_map(*idne, *starte, *num_ent, elem_map)) != 0)
-  {
+  if ((*ierr = ex_get_n_elem_num_map(*idne, st, cnt, elem_map)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read element numbering map from file id %d",
 	    *idne);
@@ -1088,18 +1128,23 @@ F2C(negnenm)(idne, starte, num_ent, elem_map, ierr)
  * Write the element numbering map
  */
 void
-F2C(nepnenm)(idne, starte, num_ent, elem_map, ierr)
-    int		*idne;	
-    int		*starte;	
-    int		*num_ent;	
-    int		*elem_map;	
-    int		*ierr;	
+F2C(nepnenm)(int *idne,
+	     void_int *starte,
+	     void_int *num_ent,
+	     void_int *elem_map,
+	     int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)starte;
+    cnt = *(int64_t*)num_ent;
+  } else {
+    st = *(int*)starte;
+    cnt = *(int*)num_ent;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_n_elem_num_map(*idne, *starte, *num_ent, elem_map)) != 0)
-  {
+  if ((*ierr = ex_put_n_elem_num_map(*idne, st, cnt, elem_map)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write element numbering map to file id %d",
 	    *idne);
@@ -1111,18 +1156,23 @@ F2C(nepnenm)(idne, starte, num_ent, elem_map, ierr)
  * Read the node numbering map
  */
 void
-F2C(negnnnm)(idne, startn, num_ent, node_map, ierr)
-    int		*idne;	
-    int		*startn;	
-    int		*num_ent;	
-    int		*node_map;	
-    int		*ierr;	
+F2C(negnnnm)(int *idne,
+	     void_int *startn,
+	     void_int *num_ent,
+	     void_int *node_map,
+	     int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)startn;
+    cnt = *(int64_t*)num_ent;
+  } else {
+    st = *(int*)startn;
+    cnt = *(int*)num_ent;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_n_node_num_map(*idne, *startn, *num_ent, node_map)) != 0)
-  {
+  if ((*ierr = ex_get_n_node_num_map(*idne, st, cnt, node_map)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read node numbering map from file id %d",
 	    *idne);
@@ -1134,18 +1184,23 @@ F2C(negnnnm)(idne, startn, num_ent, node_map, ierr)
  * Write the node numbering map
  */
 void
-F2C(nepnnnm)(idne, startn, num_ent, node_map, ierr)
-    int		*idne;	
-    int		*startn;	
-    int		*num_ent;	
-    int		*node_map;	
-    int		*ierr;	
+F2C(nepnnnm)(int *idne,
+	     void_int *startn,
+	     void_int *num_ent,
+	     void_int *node_map,
+	     int *ierr)
 {
+  int64_t st, cnt;
+  if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
+    st = *(int64_t*)startn;
+    cnt = *(int64_t*)num_ent;
+  } else {
+    st = *(int*)startn;
+    cnt = *(int*)num_ent;
+  }
 
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_n_node_num_map(*idne, *startn, *num_ent, node_map)) != 0)
-  {
+  if ((*ierr = ex_put_n_node_num_map(*idne, st, cnt, node_map)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write node numbering map to file id %d",
 	    *idne);
@@ -1157,20 +1212,15 @@ F2C(nepnnnm)(idne, startn, num_ent, node_map, ierr)
  * Read the node map for a processor
  */
 void
-F2C(negnm)(idne, node_mapi, node_mapb, node_mape, processor, ierr)
-    int		*idne;	
-    int		*node_mapi;	
-    int		*node_mapb;	
-    int		*node_mape;	
-    int		*processor;	
-    int		*ierr;	
+F2C(negnm)(int *idne,
+	   void_int *node_mapi,
+	   void_int *node_mapb,
+	   void_int *node_mape,
+	   int *processor,
+	   int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_node_map(*idne, node_mapi, node_mapb, node_mape,
-                               *processor)) != 0)
-  {
+  if ((*ierr = ex_get_processor_node_maps(*idne, node_mapi, node_mapb, node_mape, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read processor node map from file id %d",
 	    *idne);
@@ -1182,20 +1232,15 @@ F2C(negnm)(idne, node_mapi, node_mapb, node_mape, processor, ierr)
  * Write a node map for a processor
  */
 void
-F2C(nepnm)(idne, node_mapi, node_mapb, node_mape, processor, ierr)
-    int		*idne;	
-    int		*node_mapi;	
-    int		*node_mapb;	
-    int		*node_mape;	
-    int		*processor;	
-    int		*ierr;	
+F2C(nepnm)(int *idne,
+	   void_int *node_mapi,
+	   void_int *node_mapb,
+	   void_int *node_mape,
+	   int *processor,
+	   int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_node_map(*idne, node_mapi, node_mapb, node_mape,
-                               *processor)) != 0)
-  {
+  if ((*ierr = ex_put_processor_node_maps(*idne, node_mapi, node_mapb, node_mape, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write processor node map to file id %d",
 	    *idne);
@@ -1207,18 +1252,14 @@ F2C(nepnm)(idne, node_mapi, node_mapb, node_mape, processor, ierr)
  * Read the element map for a processor
  */
 void
-F2C(negem)(idne, elem_mapi, elem_mapb, processor, ierr)
-    int		*idne;	
-    int		*elem_mapi;	
-    int		*elem_mapb;	
-    int		*processor;	
-    int		*ierr;	
+F2C(negem)(int *idne,
+	   void_int *elem_mapi,
+	   void_int *elem_mapb,
+	   int *processor,
+	   int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_elem_map(*idne, elem_mapi, elem_mapb, *processor)) != 0)
-  {
+  if ((*ierr = ex_get_processor_elem_maps(*idne, elem_mapi, elem_mapb, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read processor element map from file id %d",
 	    *idne);
@@ -1230,18 +1271,14 @@ F2C(negem)(idne, elem_mapi, elem_mapb, processor, ierr)
  * Write the element map for a processor
  */
 void
-F2C(nepem)(idne, elem_mapi, elem_mapb, processor, ierr)
-    int		*idne;	
-    int		*elem_mapi;	
-    int		*elem_mapb;	
-    int		*processor;	
-    int		*ierr;	
+F2C(nepem)(int *idne,
+	   void_int *elem_mapi,
+	   void_int *elem_mapb,
+	   int *processor,
+	   int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_elem_map(*idne, elem_mapi, elem_mapb, *processor)) != 0)
-  {
+  if ((*ierr = ex_put_processor_elem_maps(*idne, elem_mapi, elem_mapb, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write processor element map to file id %d",
 	    *idne);
@@ -1253,21 +1290,17 @@ F2C(nepem)(idne, elem_mapi, elem_mapb, processor, ierr)
  * Read the communications map parameters for a single processor
  */
 void
-F2C(negcmp)(idne, ncmap_ids, ncmap_node_cnts, ecmap_ids, ecmap_elem_cnts, processor, ierr)
-    int		*idne;	
-    int		*ncmap_ids;	
-    int		*ncmap_node_cnts;	
-    int		*ecmap_ids;	
-    int		*ecmap_elem_cnts;	
-    int		*processor;	
-    int		*ierr;	
+F2C(negcmp)(int *idne,
+	    void_int *ncmap_ids,
+	    void_int *ncmap_node_cnts,
+	    void_int *ecmap_ids,
+	    void_int *ecmap_elem_cnts,
+	    int *processor,
+	    int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_cmap_params(*idne, ncmap_ids, ncmap_node_cnts,
-                                  ecmap_ids, ecmap_elem_cnts, *processor)) != 0)
-  {
+  if ((*ierr = ex_get_cmap_params(*idne, ncmap_ids, ncmap_node_cnts,
+                                  ecmap_ids, ecmap_elem_cnts, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read comm map parameters from file id %d",
 	    *idne);
@@ -1279,21 +1312,17 @@ F2C(negcmp)(idne, ncmap_ids, ncmap_node_cnts, ecmap_ids, ecmap_elem_cnts, proces
  * Write the communications map parameters for a single processor
  */
 void
-F2C(nepcmp)(idne, nmap_ids, nmap_node_cnts, emap_ids, emap_elem_cnts, processor, ierr)
-    int		*idne;	
-    int		*nmap_ids;	
-    int		*nmap_node_cnts;	
-    int		*emap_ids;	
-    int		*emap_elem_cnts;	
-    int		*processor;	
-    int		*ierr;	
+F2C(nepcmp)(int *idne,
+	    void_int *nmap_ids,
+	    void_int *nmap_node_cnts,
+	    void_int *emap_ids,
+	    void_int *emap_elem_cnts,
+	    int *processor,
+	    int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_cmap_params(*idne, nmap_ids, nmap_node_cnts,
-                                  emap_ids, emap_elem_cnts, *processor)) != 0)
-  {
+  if ((*ierr = ex_put_cmap_params(*idne, nmap_ids, nmap_node_cnts,
+                                  emap_ids, emap_elem_cnts, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write comm map parameters to file id %d",
 	    *idne);
@@ -1305,23 +1334,19 @@ F2C(nepcmp)(idne, nmap_ids, nmap_node_cnts, emap_ids, emap_elem_cnts, processor,
  * Write the communications map parameters for all processors
  */
 void
-F2C(nepcmpc)(idne, nmap_ids, nmap_node_cnts, nproc_ptrs, emap_ids, emap_elem_cnts, eproc_ptrs, ierr)
-    int		*idne;	
-    int		*nmap_ids;	
-    int		*nmap_node_cnts;	
-    int		*nproc_ptrs;	
-    int		*emap_ids;	
-    int		*emap_elem_cnts;	
-    int		*eproc_ptrs;	
-    int		*ierr;	
+F2C(nepcmpc)(int *idne,
+	     void_int *nmap_ids,
+	     void_int *nmap_node_cnts,
+	     void_int *nproc_ptrs,
+	     void_int *emap_ids,
+	     void_int *emap_elem_cnts,
+	     void_int *eproc_ptrs,
+	     int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_cmap_params_cc(*idne, nmap_ids, nmap_node_cnts,
+  if ((*ierr = ex_put_cmap_params_cc(*idne, nmap_ids, nmap_node_cnts,
                                      nproc_ptrs, emap_ids, emap_elem_cnts,
-                                     eproc_ptrs)) != 0)
-  {
+                                     eproc_ptrs)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write comm map parameters to file id %d",
 	    *idne);
@@ -1333,20 +1358,15 @@ F2C(nepcmpc)(idne, nmap_ids, nmap_node_cnts, nproc_ptrs, emap_ids, emap_elem_cnt
  * Read the nodal communications map for a single processor
  */
 void
-F2C(negncm)(idne, map_id, node_ids, proc_ids, processor, ierr)
-    int		*idne;	
-    int		*map_id;	
-    int		*node_ids;	
-    int		*proc_ids;	
-    int		*processor;	
-    int		*ierr;	
+F2C(negncm)(int *idne,
+	    entity_id *map_id,
+	    void_int *node_ids,
+	    void_int *proc_ids,
+	    int *processor,
+	    int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_node_cmap(*idne, *map_id, node_ids, proc_ids,
-                                *processor)) != 0)
-  {
+  if ((*ierr = ex_get_node_cmap(*idne, *map_id, node_ids, proc_ids, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read nodal communications map from file id %d",
 	    *idne);
@@ -1358,20 +1378,15 @@ F2C(negncm)(idne, map_id, node_ids, proc_ids, processor, ierr)
  * Write the nodal communications map for a single processor
  */
 void
-F2C(nepncm)(idne, map_id, node_ids, proc_ids, processor, ierr)
-    int		*idne;	
-    int		*map_id;	
-    int		*node_ids;	
-    int		*proc_ids;	
-    int		*processor;	
-    int		*ierr;	
+F2C(nepncm)(int *idne,
+	    entity_id *map_id,
+	    void_int *node_ids,
+	    void_int *proc_ids,
+	    int *processor,
+	    int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_node_cmap(*idne, *map_id, node_ids, proc_ids,
-                                *processor)) != 0)
-  {
+  if ((*ierr = ex_put_node_cmap(*idne, *map_id, node_ids, proc_ids, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write nodal communications map to file id %d",
 	    *idne);
@@ -1383,21 +1398,16 @@ F2C(nepncm)(idne, map_id, node_ids, proc_ids, processor, ierr)
  * Read the elemental communications map for a single processor
  */
 void
-F2C(negecm)(idne, map_id, elem_ids, side_ids, proc_ids, processor, ierr)
-    int		*idne;	
-    int		*map_id;	
-    int		*elem_ids;	
-    int		*side_ids;	
-    int		*proc_ids;	
-    int		*processor;	
-    int		*ierr;	
+F2C(negecm)(int *idne,
+	    entity_id *map_id,
+	    void_int *elem_ids,
+	    void_int *side_ids,
+	    void_int *proc_ids,
+	    int *processor,
+	    int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_get_elem_cmap(*idne, *map_id, elem_ids, side_ids, proc_ids,
-                                *processor)) != 0)
-  {
+  if ((*ierr = ex_get_elem_cmap(*idne, *map_id, elem_ids, side_ids, proc_ids, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to read elemental comm map from file id %d",
 	    *idne);
@@ -1409,21 +1419,16 @@ F2C(negecm)(idne, map_id, elem_ids, side_ids, proc_ids, processor, ierr)
  * Write the elemental communications map for a single processor
  */
 void
-F2C(nepecm)(idne, map_id, elem_ids, side_ids, proc_ids, processor, ierr)
-    int		*idne;	
-    int		*map_id;	
-    int		*elem_ids;	
-    int		*side_ids;	
-    int		*proc_ids;	
-    int		*processor;	
-    int		*ierr;	
+F2C(nepecm)(int *idne,
+	    entity_id *map_id,
+	    void_int *elem_ids,
+	    void_int *side_ids,
+	    void_int *proc_ids,
+	    int *processor,
+	    int *ierr)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
-  if ((*ierr = ne_put_elem_cmap(*idne, *map_id, elem_ids, side_ids, proc_ids,
-                                *processor)) != 0)
-  {
+  if ((*ierr = ex_put_elem_cmap(*idne, *map_id, elem_ids, side_ids, proc_ids, *processor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to write elemental comm map to file id %d",
 	    *idne);

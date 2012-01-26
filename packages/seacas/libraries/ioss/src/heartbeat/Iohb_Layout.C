@@ -31,8 +31,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <heartbeat/Iohb_Layout.h>
-#include <string>
 #include <iomanip>
+#include <ostream>
+#include <string>
+#include <vector>
 
 namespace Iohb {
   Layout::Layout(bool show_labels, int precision)
