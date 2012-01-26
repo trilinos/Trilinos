@@ -137,31 +137,31 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
   if (nsp != Teuchos::null) {
     RCP<MueLu::Level> Finest = hierarchy->GetLevel();  // get finest level
     Finest->Set("Nullspace",nsp);                      // set user given null space
-  } else {
+  } else if(params.isParameter("null space: type")) {
     std::string type = "";
-    if(params.isParameter("null space: type")) type = params.get<std::string>("null space: type");
+    type = params.get<std::string>("null space: type");
     TEUCHOS_TEST_FOR_EXCEPTION(type != "pre-computed", Exceptions::RuntimeError, "MueLu::Interpreter: no valid nullspace (no pre-computed null space). error.");
     int dimns = -1;
     if(params.isParameter("null space: dimension")) dimns = params.get<int>("null space: dimension");
     TEUCHOS_TEST_FOR_EXCEPTION(dimns == -1, Exceptions::RuntimeError, "MueLu::Interpreter: no valid nullspace (nullspace dim = -1). error.");
-
+    
     const RCP<const Map> rowMap = A->getRowMap();
     RCP<MultiVector> nspVector = MultiVectorFactory::Build(rowMap,dimns,true);
     double* nsdata = NULL;
     if(params.isParameter("null space: vectors")) nsdata = params.get<double*>("null space: vectors");
     TEUCHOS_TEST_FOR_EXCEPTION(nsdata == NULL, Exceptions::RuntimeError, "MueLu::Interpreter: no valid nullspace (nsdata = NULL). error.");
-
+    
     for ( size_t i=0; i < Teuchos::as<size_t>(dimns); i++) {
       Teuchos::ArrayRCP<Scalar> nspVectori = nspVector->getDataNonConst(i);
       const size_t myLength = nspVector->getLocalLength();
       for(size_t j=0; j<myLength; j++) {
         nspVectori[j] = nsdata[i*myLength+j];
       }
-    }
-
-    RCP<MueLu::Level> Finest = hierarchy->GetLevel();  // get finest level
-    Finest->Set("Nullspace",nspVector);                // set user given null space
-    //Finest->setDefaultVerbLevel(eVerbLevel);
+      }
+    
+      RCP<MueLu::Level> Finest = hierarchy->GetLevel();  // get finest level
+      Finest->Set("Nullspace",nspVector);                // set user given null space
+      //Finest->setDefaultVerbLevel(eVerbLevel);
   }
 
   ////////////////////////////////////
