@@ -151,7 +151,7 @@ int ex_put_partial_num_map (int exoid,
        specific file and returns that value.
     */
     cur_num_maps = ex_get_file_item(exoid, ex_get_counter_list(map_type));
-    if (cur_num_maps >= num_maps) {
+    if (cur_num_maps >= (int)num_maps) {
       exerrval = EX_FATAL;
       sprintf(errmsg,
 	      "Error: exceeded number of %ss (%"ST_ZU") specified in file id %d",

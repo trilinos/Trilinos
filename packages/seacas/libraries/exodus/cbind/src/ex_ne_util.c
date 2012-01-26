@@ -305,6 +305,7 @@ int ex_put_nemesis_version(int exoid)
 /*****************************************************************************/
 int ne_check_file_version(int exoid)
 {
+#if 0
   const char  *func_name="ne_check_file_version";
 
   float  file_ver;
@@ -331,6 +332,7 @@ int ne_check_file_version(int exoid)
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
+#endif
   return (EX_NOERR);
 }
 

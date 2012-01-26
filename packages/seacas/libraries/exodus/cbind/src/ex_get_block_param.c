@@ -269,11 +269,7 @@ int ex_get_block_param( int exoid,
     }
     
     /* get rid of trailing blanks */
-    i=len;
-    while (i < MAX_STR_LENGTH+1 && block->topology[i] != ' ') {
-      i++;
-    }
-    block->topology[i] = '\0';
+    ex_trim_internal(block->topology);
   }
   return (EX_NOERR);
 }
