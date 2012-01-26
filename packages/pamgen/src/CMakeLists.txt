@@ -37,24 +37,6 @@ INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/extra_functions)
 #
 
 APPEND_SET(HEADERS
-  Random.h
-  StrLoopLimits.h
-  Vector.h
-  bc_specification.h
-  brick_inline_mesh_desc.h
-  calc_decomp_cuts.h
-  element_density_function.h
-  geometry_transform.h
-  inline_geometries.h
-  inline_mes_driver_lt.h
-  inline_mesh_desc.h
-  inline_mesh_driver_lt.h
-  legacy_inline_mesh_desc.h
-  parse_routines.h
-  radial_inline_mesh_desc.h
-  radial_trisection_inline_mesh_desc.h
-  topology_enum.h
-  uns_inline_decomp.h
   create_inline_mesh.h
   )
 
@@ -79,17 +61,6 @@ APPEND_SET(SOURCES
 # Parser Files
 #
 
-APPEND_SET(HEADERS
-  ../parser/InputBlock.h
-  ../parser/keyword.h
-  ../parser/parse_table.h
-  ../parser/parser.h
-  ../parser/token.h
-  ../parser/token_enum.h
-  ../parser/token_stream.h
-  ../parser/token_value.h
-  )
-
 APPEND_SET(SOURCES
   ../parser/InputBlock.C
   ../parser/lexer.C
@@ -109,7 +80,6 @@ APPEND_SET(HEADERS
   ../mesh_spec_lt/im_exodusII_ext.h
   ../mesh_spec_lt/im_ne_nemesisI.h
   ../mesh_spec_lt/im_ne_nemesisI_l.h
-  ../mesh_spec_lt/mesh_specification.h
   )
 
 APPEND_SET(PE_HEADERS
@@ -118,7 +88,6 @@ APPEND_SET(PE_HEADERS
   ../mesh_spec_lt/im_exodusII_ext.h
   ../mesh_spec_lt/im_ne_nemesisI.h
   ../mesh_spec_lt/im_ne_nemesisI_l.h
-  ../mesh_spec_lt/mesh_specification.h
   )
 
 APPEND_SET(SOURCES
@@ -178,11 +147,6 @@ APPEND_SET(SOURCES
 # ASRC Files
 #
 
-APPEND_SET(HEADERS
-  ../asrc/code_types.h
-  ../asrc/element_dictionary.h
-  ../asrc/fudges.h
-  )
 
 APPEND_SET(SOURCES
   ../asrc/element_dictionary.C
