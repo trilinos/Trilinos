@@ -17,7 +17,7 @@ namespace MueLu {
     @class UCAggregationCommHelper
     @brief Helper class for providing arbitrated communication across processors
 
-    This class is mainly used by the aggregation phase to uniquely place unknowns in aggregates in parallel.
+    For more details, see the comments for the ArbitrateAndCommunicate methods.
   */
 
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
@@ -85,15 +85,19 @@ namespace MueLu {
     }
 
     /*!
-     @brief Given a vector of nonnegative weights, this method determines which processor has the maximum weight.
-            Tie-breaking is possible, see the detailed comments.
+    @brief This class uses a weighted rendezvous algorithm to do a global reduction on a vector that may be based on a non unique map.
 
-     For each GlobalId associated with weight.getMap():
+    A non-unique map is one that has at least one global ID that occurs on two or more processes.  For each repeated ID \f$i\f$, the
+    algorithm finds the maximum value \f$v[i]\f$ in the weight vector \f$v\f$.  This value is communicated to all processors that
+    have \f$i\f$ in their local map.  More details are below.
+ 
+
+     For each GlobalId \f$K\f$ associated with weight.getMap():
     
-          1) find the maximum absolute value of weight[] distributed across all
+          -# Find the maximum absolute value of \f$weight[K]\f$ across all
              processors and assign this to all local elements of weight[] (across 
-             processors) associated with the GlobalId.
-          2) set procWinner[] to the MyPid() that had the largest element.
+             processors) that are associated with \f$K\f$.
+          -# Set procWinner[] to the MyPid() that had the largest element.
              procWinner[] is still set if only one processor owns a GlobalId. 
     
              The ONLY CASE when procWinner[i] is NOT set corresponds to when
@@ -104,25 +108,41 @@ namespace MueLu {
              the same value. We want to skip the maximum calculation with 
              tiebreaking to avoid another processor claiming ownership.
     
-          3) optionally, set companion[] (across all relevant processors) to the
+          -# Optionally, set companion[] (across all relevant processors) to the
              local companion value associated with the procWinner[] processor.
     
-      Input:
-         @param weight                   Vector of weights. ASSUMED TO BE nonnegative.
+         @param weight[in,out]
+                                 - On input, vector of NONNEGATIVE weights.
+                                 - On output, \f$ \mbox{weight}[k]  \Leftarrow  \max(\mbox{weight}[k_{p1}],\dots,\mbox{weight}[k_{pn}]) \f$
+                                  where \f$ \mbox{weight}[k_{pj}] \f$ is processor \f$pj\f$'s value for GID \f$k\f$.
     
-         @param procWinner               Allocated but contents ignored.
+         @param procWinner[in,out]
+                                  - On input, allocated but contents ignored.
+                                  - On output, \f$\mbox{procWinner}[k] \Leftarrow pj\f$  such that
+                                    \f$\mbox{weight}[k_{pj}] = \max(\mbox{weight}[k_{p1}],...,\mbox{weight}[k_{pn}])\f$, where
+                                    \f$ \mbox{weight}[k_{pj}] \f$ is processor \f$pj\f$'s value for GID \f$k\f$.
+                                  NOTE: If all input \f$\mbox{weight}[k_{pi}]\f$'s are zero, then \f$\mbox{procWinner}[k]\f$ is left untouched.
     
-         @param companion                Either NULL or allocated but contents ignored.
-                                  If NULL, step 3 above is skipped.
+         @param companion[in,out]
+                                  - On input, either NULL or allocated but contents ignored.  If NULL, step 3 above is skipped.
+                                  - On output, if not null, \f$\mbox{companion}[k] \Leftarrow \mbox{companion}[k_j]\f$ where
+                                  \f$\mbox{companion}[k_j]\f$ lives on processor \f$\mbox{procWinner}[k]\f$.
+                                  and corresponds to the same GlobalId as \f$k\f$.
+                                  NOTE: If for a particular GlobalId, no processor
+                                        has a value of procWinner that matches
+                                        its MyPid, the corresponding companion
+                                        is not altered.
     
 
-         @param perturb                  Optional arguments that is either true or 
-                                  false (default: true). weight is perturbed
-                                  and the perturbed values are used in step 1)
-                                  above. Returned values reflect the perturbed
-                                  data. This option avoids having lots of
-                                  tiebreaks where the large MyPid() always wins.
+         @param perturb[in]                  Optional arguments that is either true or 
+                                             false (default: true). weight is perturbed
+                                             and the perturbed values are used in step 1)
+                                             above. Returned values reflect the perturbed
+                                             data. This option avoids having lots of
+                                             tiebreaks where the large MyPid() always wins.
     
+      */
+      /*
       Output:
          @param weight            \f$ weight[k]  \Leftarrow  \max(weight[k_1],\dots,weight[k_n]) \f$
                                   where \f$ weight[k_j] \f$ live on different processors
@@ -144,7 +164,7 @@ namespace MueLu {
                                         its MyPid, the corresponding companion
                                         is not altered.
     */
-    void ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const; //ArbitrateAndCommunicate(Vector&, LOVector &, LOVector *, const bool) const
+    void ArbitrateAndCommunicate(Vector &weight, LOVector &procWinner, LOVector *companion, const bool perturb) const; //ArbitrateAndCommunicate(Vector&, LOVector &, LOVector *, const bool) const
 
     /*!  @brief Redistribute data in source to dest where both source and dest might have multiple copies of the same global id across many processors.
        
