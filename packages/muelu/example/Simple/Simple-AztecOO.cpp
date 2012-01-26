@@ -1,3 +1,7 @@
+//
+// To compile and run this example, the optional dependency AztecOO must be available.
+//
+
 #include <iostream>
 
 #include <Epetra_Map.h>
