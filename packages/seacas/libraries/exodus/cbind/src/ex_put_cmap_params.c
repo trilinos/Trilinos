@@ -365,7 +365,7 @@ int ex_put_cmap_params(int  exoid,
       nl_ncnt_cmap += ncnc;
 
       /* fill the cmap data index */
-      if ((status = nc_put_var1_longlong(exoid, n_varid_idx, start, (long long*)&nl_ncnt_cmap)) != NC_NOERR) {
+      if ((status = nc_put_var1_longlong(exoid, n_varid_idx, start, &nl_ncnt_cmap)) != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
                 "Error: failed to output int elem map index in file ID %d",
@@ -440,7 +440,7 @@ int ex_put_cmap_params(int  exoid,
       nl_ecnt_cmap += ecec;
 
       /* fill the cmap data index */
-      if ((status = nc_put_var1_longlong(exoid, e_varid_idx, start, (long long*)&nl_ecnt_cmap)) != NC_NOERR) {
+      if ((status = nc_put_var1_longlong(exoid, e_varid_idx, start, &nl_ecnt_cmap)) != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
                 "Error: failed to output int elem map index in file ID %d",

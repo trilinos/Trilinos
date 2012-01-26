@@ -96,4 +96,6 @@ C     of dimension (NUMEL, NVAREL)
  130    continue
  120  continue
       RETURN
+ 200  CONTINUE
+      RETURN 1
       END

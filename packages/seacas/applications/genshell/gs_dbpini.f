@@ -111,6 +111,7 @@ C   --   NVAREL - IN - the number of element variables (if OPTION)
       END IF
 
 10000 FORMAT (/, 1X, 'DATABASE INITIAL VARIABLES')
+10010 FORMAT (/, 1X, 'Database:  ', A)
 10020 FORMAT (/, 1X, A)
 10030 FORMAT (
      &      /, 1X, 'Number of coordinates per node         =', I10

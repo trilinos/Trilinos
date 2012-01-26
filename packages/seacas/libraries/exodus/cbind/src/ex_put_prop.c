@@ -385,7 +385,7 @@ int ex_put_prop (int   exoid,
   start[0] = start[0] - 1; 
 
   /* value is of type 'ex_entity_id' which is a typedef to int64_t or long long */
-  status = nc_put_var1_longlong(exoid, propid, start, (long long*)&value);
+  status = nc_put_var1_longlong(exoid, propid, start, &value);
 
   if (status != NC_NOERR) {
     exerrval = status;
