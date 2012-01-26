@@ -288,7 +288,7 @@ void IfpackPreconditionerFactory::initializePrec(
     );
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_MEDIUM)) {
     *out << "\nDescription of created preconditioner:\n";
-    OSTab tab(out);
+    OSTab tab2(out);
     ifpack_precOp->Print(*out);
   }
 

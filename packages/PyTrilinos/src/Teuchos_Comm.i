@@ -39,6 +39,9 @@
 #include "Teuchos_CommHelpers.hpp"
 %}
 
+// Teuchos Array support
+%include "Teuchos_Array.i"
+
 /////////////////////////////////////
 // Teuchos::VerbosityLevel support //
 /////////////////////////////////////

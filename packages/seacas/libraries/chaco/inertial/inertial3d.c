@@ -41,7 +41,7 @@ inertial3d (
     int       i;		/* loop counter */
     double    seconds();
 
-    void      eigenvec3(), evals3(), rec_median_1();
+    void      ch_eigenvec3(), ch_evals3(), rec_median_1();
 
     /* Compute center of mass and total mass. */
     time = seconds();
@@ -105,8 +105,8 @@ inertial3d (
     tensor[0][1] = tensor[1][0] = xy;
     tensor[0][2] = tensor[2][0] = xz;
     tensor[1][2] = tensor[2][1] = yz;
-    evals3(tensor, &res, &res, &eval);
-    eigenvec3(tensor, eval, evec, &res);
+    ch_evals3(tensor, &res, &res, &eval);
+    ch_eigenvec3(tensor, eval, evec, &res);
 
     inertial_axis_time += seconds() - time;
 

@@ -140,7 +140,7 @@ bool Thyra::test_single_amesos_thyra_solver(
   linearOpTester.set_all_warning_tol(1e-2*maxFwdError);
   linearOpTester.show_all_tests(showAllTests);
   linearOpTester.dump_all(dumpAll);
-  result = linearOpTester.check(*nsA,out.get());
+  result = linearOpTester.check(*nsA,out());
   if(!result) success = false;
 
   if(out.get()) *out << "\nE) Testing the LinearOpWithSolveBase interface of nsA ...\n";
@@ -182,7 +182,7 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   Thyra::seed_randomize<double>(0);
 
-  result = linearOpTester.check(*nsA, out.get());
+  result = linearOpTester.check(*nsA, out());
   if(!result) success = false;
 
   if(out.get()) *out << "\nH) Testing the LinearOpWithSolveBase interface of nsA ...\n";
@@ -203,12 +203,12 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   Thyra::seed_randomize<double>(0);
 
-  result = linearOpTester.check(*nsA, out.get());
+  result = linearOpTester.check(*nsA, out());
   if(!result) success = false;
 
   if(out.get()) *out << "\nK) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
-  result = linearOpWithSolveTester.check(*nsA,out.get());
+  result = linearOpWithSolveTester.check(*nsA, out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nL) Create an implicitly scaled (by 2.5) and transposed matrix A3 = scale(2.5,transpose(A)) and initialize nsA2 ...\n";
@@ -222,7 +222,7 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   Thyra::seed_randomize<double>(0);
 
-  result = linearOpTester.check(*nsA2,out.get());
+  result = linearOpTester.check(*nsA2,out());
   if(!result) success = false;
 
   if(out.get()) *out << "\nN) Testing the LinearOpWithSolveBase interface of nsA2 ...\n";
@@ -234,7 +234,7 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   result = linearOpTester.compare(
     *transpose(Teuchos::rcp_implicit_cast<const LinearOpBase<double> >(nsA)),*nsA2
-    ,out.get()
+    ,out()
     );
   if(!result) success = false;
 
@@ -249,7 +249,7 @@ bool Thyra::test_single_amesos_thyra_solver(
   RCP<const LinearOpBase<double> >
     invA = inverse<double>(nsA.getConst());
 
-  result = linearOpTester.check(*invA,out.get());
+  result = linearOpTester.check(*invA,out());
   if(!result) success = false;
 
 #else // SUN_CXX

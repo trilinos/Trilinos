@@ -8,7 +8,7 @@
 
 /* Find eigenvalues of 3x3 symmetric system by solving cubic. */
 void 
-evals3 (
+ch_evals3 (
     double H[3][3],		/* 3x3 sym matrix for lowest eigenvalue */
     double *eval1,		/* smallest eigenvalue */
     double *eval2,		/* middle eigenvalue */
@@ -134,7 +134,7 @@ kramer3 (	/* Use Kramer's rule to solve 3x3 */
 
 /* Find the eigenvector of symmetric 3x3 matrix w/ given eigenvalue. */
 void 
-eigenvec3 (
+ch_eigenvec3 (
     double A[3][3],		/* matrix to find eigenvector of */
     double eval,			/* eigenvalue */
     double evec[3],		/* eigenvector returned */
