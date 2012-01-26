@@ -19,6 +19,9 @@
 /* define if we have the Ovis library*/
 #cmakedefine HAVE_ZOLTAN2_OVIS
 
+/* define if we have the Ovis library*/
+#cmakedefine HAVE_ZOLTAN2_ANASAZI
+
 /* define to turn on runtime display of
  * total memory committed at points throughout
  * the execution of zoltan2

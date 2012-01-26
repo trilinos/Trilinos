@@ -78,6 +78,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_LINUX_MEMORY_REPORT
   "turn on runtime display of proc/meminfo data"
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ANASAZI
+  HAVE_${PACKAGE_NAME_UC}_ANASAZI
+  "Anasazi is present"
+  OFF )
+
 #
 # See the comment in Zoltan2_AlgScotch.hpp to learn how to
 # modify the scotch library to return the maximum memory used.
