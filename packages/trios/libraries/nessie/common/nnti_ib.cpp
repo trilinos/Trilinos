@@ -163,6 +163,9 @@ typedef struct {
     uint8_t          last_op;
     ib_op_state_t    op_state;
     uint8_t          is_last_op_complete;
+
+    /* this is a copy of the last work completion that arrived for this buffer */
+    struct ibv_wc    last_wc;
 } ib_memory_handle;
 
 typedef struct {
@@ -236,11 +239,21 @@ static NNTI_result_t setup_mr_sge_sqwr(
         uint32_t mr_count);
 static NNTI_result_t destroy_mr_sge_wr(
         ib_memory_handle *hdl);
+static const NNTI_buffer_t *decode_event_buffer(
+        const NNTI_buffer_t  *wait_buf,
+        const struct ibv_wc  *wc);
 static int process_event(
         const NNTI_buffer_t  *reg_buf,
         const struct ibv_wc  *wc);
 static int8_t is_buf_op_complete(
         const NNTI_buffer_t *reg_buf);
+static int8_t is_any_buf_op_complete(
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        uint32_t             *which);
+static int8_t is_all_buf_ops_complete(
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count);
 static void create_peer(
         NNTI_peer_t *peer,
         char *name,
@@ -1204,7 +1217,7 @@ NNTI_result_t NNTI_ib_get (
  *
  */
 NNTI_result_t NNTI_ib_wait (
-        const NNTI_buffer_t  *wait_buf,
+        const NNTI_buffer_t  *reg_buf,
         const NNTI_buf_ops_t  remote_op,
         const int             timeout,
         NNTI_status_t        *status)
@@ -1214,6 +1227,8 @@ NNTI_result_t NNTI_ib_wait (
     ib_request_queue_handle *q_hdl=NULL;
     ib_connection           *conn=NULL;
 
+    const NNTI_buffer_t  *wait_buf=NULL;
+
     int ibv_rc=0;
     NNTI_result_t rc;
     int elapsed_time = 0;
@@ -1222,15 +1237,18 @@ NNTI_result_t NNTI_ib_wait (
     log_level debug_level=nnti_debug_level;
 
     trios_declare_timer(call_time);
+    trios_declare_timer(total_time);
 
     struct ibv_wc wc;
 
+    trios_start_timer(total_time);
+
     log_debug(debug_level, "enter");
 
-    assert(wait_buf);
+    assert(reg_buf);
     assert(status);
 
-    ib_mem_hdl=(ib_memory_handle *)wait_buf->transport_private;
+    ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
     assert(ib_mem_hdl);
 
     q_hdl     =&transport_global_data.req_queue;
@@ -1249,11 +1267,11 @@ NNTI_result_t NNTI_ib_wait (
     }
 #endif
 
-    if (is_buf_op_complete(wait_buf) == TRUE) {
-        log_debug(debug_level, "buffer op already complete (wait_buf=%p)", wait_buf);
+    if (is_buf_op_complete(reg_buf) == TRUE) {
+        log_debug(debug_level, "buffer op already complete (reg_buf=%p)", reg_buf);
         nnti_rc = NNTI_OK;
     } else {
-        log_debug(debug_level, "buffer op NOT complete (wait_buf=%p)", wait_buf);
+        log_debug(debug_level, "buffer op NOT complete (reg_buf=%p)", reg_buf);
 
         if (timeout < 0)
             timeout_per_call = MIN_TIMEOUT;
@@ -1284,16 +1302,17 @@ NNTI_result_t NNTI_ib_wait (
                 print_wc(&wc);
 
                 if (wc.status != IBV_WC_SUCCESS) {
-                    log_error(debug_level, "Failed status %s (%d) for wr_id %d",
+                    log_error(debug_level, "Failed status %s (%d) for wr_id %lu",
                             ibv_wc_status_str(wc.status),
-                            wc.status, (int) wc.wr_id);
+                            wc.status, wc.wr_id);
                     nnti_rc=NNTI_EIO;
                     break;
                 }
 
+                wait_buf=decode_event_buffer(reg_buf, &wc);
                 process_event(wait_buf, &wc);
 
-                if (is_buf_op_complete(wait_buf) == TRUE) {
+                if (is_buf_op_complete(reg_buf) == TRUE) {
                     nnti_rc = NNTI_OK;
                     break;
                 }
@@ -1348,7 +1367,7 @@ retry:
     status->op     = remote_op;
     status->result = nnti_rc;
     if (nnti_rc==NNTI_OK) {
-        status->start  = (uint64_t)wait_buf->payload;
+        status->start  = (uint64_t)reg_buf->payload;
         switch (ib_mem_hdl->last_op) {
             case IB_OP_PUT_INITIATOR:
 #if defined(USE_RDMA_TARGET_ACK)
@@ -1392,7 +1411,7 @@ retry:
 
     if (logging_debug(debug_level)) {
         fprint_NNTI_status(logger_get_file(), "status",
-                "end of NNTI_wait", status);
+                "end of NNTI_ib_wait", status);
     }
 
     if (nnti_rc==NNTI_OK) {
@@ -1420,6 +1439,502 @@ retry:
     }
 
     log_debug(debug_level, "exit");
+
+    trios_stop_timer("NNTI_ib_wait", total_time);
+
+    return(nnti_rc);
+}
+
+/**
+ * @brief Wait for <tt>remote_op</tt> on any buffer in <tt>buf_list</tt> to complete.
+ *
+ * Wait for <tt>remote_op</tt> on any buffer in <tt>buf_list</tt> to complete or timeout
+ * waiting.  This is typically used to wait for a result or a bulk data
+ * transfer.  The timeout is specified in milliseconds.  A timeout of <tt>-1</tt>
+ * means wait forever.  A timeout of <tt>0</tt> means do not wait.
+ *
+ * Caveats:
+ *   1) All buffers in buf_list must be registered with the same transport.
+ *   2) You can't wait on the request queue and RDMA buffers in the same call.  Will probably be fixed in the future.
+ */
+NNTI_result_t NNTI_ib_waitany (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        uint32_t             *which,
+        NNTI_status_t        *status)
+{
+    NNTI_result_t nnti_rc=NNTI_OK;
+    ib_memory_handle        *ib_mem_hdl=NULL;
+    ib_request_queue_handle *q_hdl=NULL;
+    ib_connection           *conn=NULL;
+    const NNTI_buffer_t     *wait_buf=NULL;
+
+    int ibv_rc=0;
+    NNTI_result_t rc;
+    int elapsed_time = 0;
+    int timeout_per_call;
+
+    log_level debug_level=nnti_debug_level;
+
+    trios_declare_timer(call_time);
+    trios_declare_timer(total_time);
+
+    struct ibv_wc wc;
+
+    trios_start_timer(total_time);
+
+    log_debug(debug_level, "enter");
+
+    assert(buf_list);
+    assert(buf_count > 0);
+    if (buf_count > 1) {
+        /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
+        for (int i=0;i<buf_count;i++) {
+            if (buf_list[i] != NULL) {
+                assert(((ib_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
+            }
+        }
+    }
+    assert(status);
+
+    if (buf_count == 1) {
+        nnti_rc=NNTI_wait(buf_list[0], remote_op, timeout, status);
+        *which=0;
+        goto cleanup;
+    }
+
+#if !defined(USE_RDMA_TARGET_ACK)
+    if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
+        memset(status, 0, sizeof(NNTI_status_t));
+        status->op     = remote_op;
+        status->result = NNTI_EINVAL;
+        return(NNTI_EINVAL);
+    }
+#endif
+
+    if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
+        log_debug(debug_level, "buffer op already complete (which=%u, buf_list[%d]=%p)", *which, *which, buf_list[*which]);
+        nnti_rc = NNTI_OK;
+    } else {
+        log_debug(debug_level, "buffer op NOT complete (buf_list=%p)", buf_list);
+
+        if (timeout < 0)
+            timeout_per_call = MIN_TIMEOUT;
+        else
+            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+
+        while (1)   {
+            if (trios_exit_now()) {
+                log_debug(debug_level, "caught abort signal");
+                nnti_rc=NNTI_ECANCELED;
+                break;
+            }
+
+            memset(&wc, 0, sizeof(struct ibv_wc));
+            trios_start_timer(call_time);
+            ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
+            trios_stop_timer("NNTI_ib_waitany - ibv_poll_cq", call_time);
+            if (ibv_rc < 0) {
+                log_debug(debug_level, "ibv_poll_cq failed: %d", ibv_rc);
+                break;
+            }
+            log_debug(debug_level, "ibv_poll_cq(cq=%p) rc==%d", transport_global_data.data_cq, ibv_rc);
+
+            if (ibv_rc > 0) {
+                log_debug(debug_level, "got wc from cq=%p", transport_global_data.data_cq);
+                log_debug(debug_level, "polling status is %s", ibv_wc_status_str(wc.status));
+
+                print_wc(&wc);
+
+                if (wc.status != IBV_WC_SUCCESS) {
+                    log_error(debug_level, "Failed status %s (%d) for wr_id %lu",
+                            ibv_wc_status_str(wc.status),
+                            wc.status, wc.wr_id);
+                    nnti_rc=NNTI_EIO;
+                    break;
+                }
+
+                wait_buf=decode_event_buffer(buf_list[0], &wc);
+                process_event(wait_buf, &wc);
+
+                if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
+                    nnti_rc = NNTI_OK;
+                    break;
+                }
+            } else {
+retry:
+//            nthread_lock(&nnti_ib_lock);
+                trios_start_timer(call_time);
+                rc = poll_comp_channel(transport_global_data.data_comp_channel, transport_global_data.data_cq, timeout_per_call);
+                trios_stop_timer("NNTI_ib_waitany - poll_comp_channel", call_time);
+//            nthread_unlock(&nnti_ib_lock);
+                /* case 1: success */
+                if (rc == NNTI_OK) {
+                    nnti_rc = NNTI_OK;
+                    continue;
+                }
+                /* case 2: timed out */
+                else if (rc==NNTI_ETIMEDOUT) {
+                    elapsed_time += timeout_per_call;
+
+                    /* if the caller asked for a legitimate timeout, we need to exit */
+                    if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
+                        log_debug(debug_level, "poll_comp_channel timed out");
+                        nnti_rc = NNTI_ETIMEDOUT;
+                        break;
+                    }
+                    /* continue if the timeout has not expired */
+                    log_debug(debug_level, "poll_comp_channel timedout... retrying");
+
+                    nthread_yield();
+
+                    goto retry;
+                }
+                /* case 3: failure */
+                else {
+                    log_error(debug_level, "poll_comp_channel failed (cq==%p): %s",
+                            transport_global_data.data_cq, strerror(errno));
+                    nnti_rc = NNTI_EIO;
+                    break;
+                }
+            }
+        }
+    }
+
+
+    ib_mem_hdl=(ib_memory_handle *)buf_list[*which]->transport_private;
+    assert(ib_mem_hdl);
+    conn = ib_mem_hdl->conn;
+
+    memset(status, 0, sizeof(NNTI_status_t));
+    status->op     = remote_op;
+    status->result = nnti_rc;
+    if (nnti_rc==NNTI_OK) {
+        status->start  = (uint64_t)buf_list[*which]->payload;
+        switch (ib_mem_hdl->last_op) {
+            case IB_OP_PUT_INITIATOR:
+#if defined(USE_RDMA_TARGET_ACK)
+            case IB_OP_GET_TARGET:
+#endif
+            case IB_OP_SEND:
+                create_peer(&status->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                create_peer(&status->dest, conn->peer_name, conn->peer_addr, conn->peer_port);
+                break;
+            case IB_OP_GET_INITIATOR:
+#if defined(USE_RDMA_TARGET_ACK)
+            case IB_OP_PUT_TARGET:
+#endif
+            case IB_OP_NEW_REQUEST:
+            case IB_OP_RECEIVE:
+                create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port);
+                create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                break;
+        }
+        switch (ib_mem_hdl->last_op) {
+            case IB_OP_NEW_REQUEST:
+                status->offset = ib_mem_hdl->offset[wc.wr_id];
+                status->length = wc.byte_len;
+                break;
+            case IB_OP_SEND:
+            case IB_OP_RECEIVE:
+                status->offset = 0;
+                status->length = wc.byte_len;
+                break;
+            case IB_OP_GET_INITIATOR:
+            case IB_OP_PUT_INITIATOR:
+#if defined(USE_RDMA_TARGET_ACK)
+            case IB_OP_GET_TARGET:
+            case IB_OP_PUT_TARGET:
+#endif
+                status->offset = ib_mem_hdl->ack.offset;
+                status->length = ib_mem_hdl->ack.length;
+                break;
+        }
+    }
+
+    if (logging_debug(debug_level)) {
+        fprint_NNTI_status(logger_get_file(), "status",
+                "end of NNTI_ib_waitany", status);
+    }
+
+    if (nnti_rc==NNTI_OK) {
+        struct ibv_recv_wr *bad_wr;
+
+        if  (ib_mem_hdl->type == REQUEST_BUFFER) {
+            log_debug(debug_level, "re-posting srq_recv for REQUEST_BUFFER");
+            if (ibv_post_srq_recv(transport_global_data.req_srq, &ib_mem_hdl->rq_wr[wc.wr_id], &bad_wr)) {
+                log_error(debug_level, "failed to post SRQ recv: %s", strerror(errno));
+                nnti_rc = NNTI_EIO;
+            }
+        }
+
+#if defined(USE_RDMA_TARGET_ACK)
+        if  ((ib_mem_hdl->last_op == IB_OP_GET_TARGET) ||
+             (ib_mem_hdl->last_op == IB_OP_PUT_TARGET)) {
+            log_debug(debug_level, "re-posting recv for RDMA target");
+            if (ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
+                log_error(debug_level, "failed to re-post ACK recv (ack_rq_wr=%p ; bad_wr=%p): %s",
+                        &ib_mem_hdl->ack_rq_wr, bad_wr, strerror(errno));
+                return (NNTI_result_t)errno;
+            }
+        }
+#endif
+    }
+
+cleanup:
+    log_debug(debug_level, "exit");
+
+    trios_stop_timer("NNTI_ib_waitany", total_time);
+
+    return(nnti_rc);
+}
+
+/**
+ * @brief Wait for <tt>remote_op</tt> on all buffers in <tt>buf_list</tt> to complete.
+ *
+ * Wait for <tt>remote_op</tt> on all buffers in <tt>buf_list</tt> to complete or timeout
+ * waiting.  This is typically used to wait for a result or a bulk data
+ * transfer.  The timeout is specified in milliseconds.  A timeout of <tt>-1</tt>
+ * means wait forever.  A timeout of <tt>0</tt> means do not wait.
+ *
+ * Caveats:
+ *   1) All buffers in buf_list must be registered with the same transport.
+ *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
+ */
+NNTI_result_t NNTI_ib_waitall (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        NNTI_status_t       **status)
+{
+    NNTI_result_t nnti_rc=NNTI_OK;
+    ib_memory_handle        *ib_mem_hdl=NULL;
+    ib_request_queue_handle *q_hdl=NULL;
+    ib_connection           *conn=NULL;
+    const NNTI_buffer_t     *wait_buf=NULL;
+
+    int ibv_rc=0;
+    NNTI_result_t rc;
+    int elapsed_time = 0;
+    int timeout_per_call;
+
+    log_level debug_level=nnti_debug_level;
+
+    trios_declare_timer(call_time);
+    trios_declare_timer(total_time);
+
+    struct ibv_wc wc;
+
+    trios_start_timer(total_time);
+
+    log_debug(debug_level, "enter");
+
+    assert(buf_list);
+    assert(buf_count > 0);
+    if (buf_count > 1) {
+        /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
+        for (int i=0;i<buf_count;i++) {
+            if (buf_list[i] != NULL) {
+                assert(((ib_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
+            }
+        }
+    }
+    assert(status);
+
+    if (buf_count == 1) {
+        nnti_rc=NNTI_wait(buf_list[0], remote_op, timeout, status[0]);
+        goto cleanup;
+    }
+
+#if !defined(USE_RDMA_TARGET_ACK)
+    if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
+        for (int i=0;i<buf_count;i++) {
+            memset(status[i], 0, sizeof(NNTI_status_t));
+            status[i]->op     = remote_op;
+            status[i]->result = NNTI_EINVAL;
+        }
+        return(NNTI_EINVAL);
+    }
+#endif
+
+    if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
+        log_debug(debug_level, "all buffer ops already complete");
+        nnti_rc = NNTI_OK;
+    } else {
+        log_debug(debug_level, "all buffer ops NOT complete (buf_list=%p)", buf_list);
+
+        if (timeout < 0)
+            timeout_per_call = MIN_TIMEOUT;
+        else
+            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+
+        while (1)   {
+            if (trios_exit_now()) {
+                log_debug(debug_level, "caught abort signal");
+                nnti_rc=NNTI_ECANCELED;
+                break;
+            }
+
+            memset(&wc, 0, sizeof(struct ibv_wc));
+            trios_start_timer(call_time);
+            ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
+            trios_stop_timer("NNTI_ib_waitany - ibv_poll_cq", call_time);
+            if (ibv_rc < 0) {
+                log_debug(debug_level, "ibv_poll_cq failed: %d", ibv_rc);
+                break;
+            }
+            log_debug(debug_level, "ibv_poll_cq(cq=%p) rc==%d", transport_global_data.data_cq, ibv_rc);
+
+            if (ibv_rc > 0) {
+                log_debug(debug_level, "got wc from cq=%p", transport_global_data.data_cq);
+                log_debug(debug_level, "polling status is %s", ibv_wc_status_str(wc.status));
+
+                print_wc(&wc);
+
+                if (wc.status != IBV_WC_SUCCESS) {
+                    log_error(debug_level, "Failed status %s (%d) for wr_id %lu",
+                            ibv_wc_status_str(wc.status),
+                            wc.status, wc.wr_id);
+                    nnti_rc=NNTI_EIO;
+                    break;
+                }
+
+                wait_buf=decode_event_buffer(buf_list[0], &wc);
+                process_event(wait_buf, &wc);
+
+                if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
+                    nnti_rc = NNTI_OK;
+                    break;
+                }
+            } else {
+retry:
+//            nthread_lock(&nnti_ib_lock);
+                trios_start_timer(call_time);
+                rc = poll_comp_channel(transport_global_data.data_comp_channel, transport_global_data.data_cq, timeout_per_call);
+                trios_stop_timer("NNTI_ib_waitany - poll_comp_channel", call_time);
+//            nthread_unlock(&nnti_ib_lock);
+                /* case 1: success */
+                if (rc == NNTI_OK) {
+                    nnti_rc = NNTI_OK;
+                    continue;
+                }
+                /* case 2: timed out */
+                else if (rc==NNTI_ETIMEDOUT) {
+                    elapsed_time += timeout_per_call;
+
+                    /* if the caller asked for a legitimate timeout, we need to exit */
+                    if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
+                        log_debug(debug_level, "poll_comp_channel timed out");
+                        nnti_rc = NNTI_ETIMEDOUT;
+                        break;
+                    }
+                    /* continue if the timeout has not expired */
+                    log_debug(debug_level, "poll_comp_channel timedout... retrying");
+
+                    nthread_yield();
+
+                    goto retry;
+                }
+                /* case 3: failure */
+                else {
+                    log_error(debug_level, "poll_comp_channel failed (cq==%p): %s",
+                            transport_global_data.data_cq, strerror(errno));
+                    nnti_rc = NNTI_EIO;
+                    break;
+                }
+            }
+        }
+    }
+
+
+    for (int i=0;i<buf_count;i++) {
+        ib_mem_hdl=(ib_memory_handle *)buf_list[i]->transport_private;
+        assert(ib_mem_hdl);
+        conn = ib_mem_hdl->conn;
+
+        memset(status[i], 0, sizeof(NNTI_status_t));
+        status[i]->op     = remote_op;
+        status[i]->result = nnti_rc;
+        if (nnti_rc==NNTI_OK) {
+            status[i]->start  = (uint64_t)buf_list[i]->payload;
+            switch (ib_mem_hdl->last_op) {
+            case IB_OP_PUT_INITIATOR:
+#if defined(USE_RDMA_TARGET_ACK)
+            case IB_OP_GET_TARGET:
+#endif
+            case IB_OP_SEND:
+                create_peer(&status[i]->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                create_peer(&status[i]->dest, conn->peer_name, conn->peer_addr, conn->peer_port);
+                break;
+            case IB_OP_GET_INITIATOR:
+#if defined(USE_RDMA_TARGET_ACK)
+            case IB_OP_PUT_TARGET:
+#endif
+            case IB_OP_NEW_REQUEST:
+            case IB_OP_RECEIVE:
+                create_peer(&status[i]->src, conn->peer_name, conn->peer_addr, conn->peer_port);
+                create_peer(&status[i]->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                break;
+            }
+            switch (ib_mem_hdl->last_op) {
+            case IB_OP_NEW_REQUEST:
+                status[i]->offset = ib_mem_hdl->offset[ib_mem_hdl->last_wc.wr_id];
+                status[i]->length = ib_mem_hdl->last_wc.byte_len;
+                break;
+            case IB_OP_SEND:
+            case IB_OP_RECEIVE:
+                status[i]->offset = 0;
+                status[i]->length = ib_mem_hdl->last_wc.byte_len;
+                break;
+            case IB_OP_GET_INITIATOR:
+            case IB_OP_PUT_INITIATOR:
+#if defined(USE_RDMA_TARGET_ACK)
+            case IB_OP_GET_TARGET:
+            case IB_OP_PUT_TARGET:
+#endif
+                status[i]->offset = ib_mem_hdl->ack.offset;
+                status[i]->length = ib_mem_hdl->ack.length;
+                break;
+            }
+        }
+
+        if (logging_debug(debug_level)) {
+            fprint_NNTI_status(logger_get_file(), "status[i]",
+                    "end of NNTI_ib_waitall", status[i]);
+        }
+
+        if (nnti_rc==NNTI_OK) {
+            struct ibv_recv_wr *bad_wr;
+
+            if  (ib_mem_hdl->type == REQUEST_BUFFER) {
+                log_debug(debug_level, "re-posting srq_recv for REQUEST_BUFFER");
+                if (ibv_post_srq_recv(transport_global_data.req_srq, &ib_mem_hdl->rq_wr[ib_mem_hdl->last_wc.wr_id], &bad_wr)) {
+                    log_error(debug_level, "failed to post SRQ recv: %s", strerror(errno));
+                    nnti_rc = NNTI_EIO;
+                }
+            }
+
+#if defined(USE_RDMA_TARGET_ACK)
+            if  ((ib_mem_hdl->last_op == IB_OP_GET_TARGET) ||
+                    (ib_mem_hdl->last_op == IB_OP_PUT_TARGET)) {
+                log_debug(debug_level, "re-posting recv for RDMA target");
+                if (ibv_post_recv(ib_mem_hdl->qp, &ib_mem_hdl->ack_rq_wr, &bad_wr)) {
+                    log_error(debug_level, "failed to re-post ACK recv (ack_rq_wr=%p ; bad_wr=%p): %s",
+                            &ib_mem_hdl->ack_rq_wr, bad_wr, strerror(errno));
+                    return (NNTI_result_t)errno;
+                }
+            }
+#endif
+        }
+    }
+
+cleanup:
+    log_debug(debug_level, "exit");
+
+    trios_stop_timer("NNTI_ib_waitall", total_time);
 
     return(nnti_rc);
 }
@@ -1819,11 +2334,47 @@ static void send_ack (
 }
 #endif
 
+static const NNTI_buffer_t *decode_event_buffer(
+        const NNTI_buffer_t  *wait_buf,
+        const struct ibv_wc  *wc)
+{
+    const NNTI_buffer_t *event_buf=NULL;
+    ib_memory_handle *ib_mem_hdl=NULL;
+
+    log_debug(nnti_debug_level, "enter");
+
+    if ((wait_buf != NULL) && (wait_buf->transport_private != NULL) && (((ib_memory_handle *)wait_buf->transport_private)->type == REQUEST_BUFFER)) {
+        event_buf=wait_buf;
+        ib_mem_hdl=(ib_memory_handle *)event_buf->transport_private;
+        assert(ib_mem_hdl);
+
+        log_debug(nnti_debug_level, "the wait buffer is a REQUEST BUFFER, so wc.wr_id is the request buffer index.");
+    } else {
+        event_buf=(NNTI_buffer_t *)wc->wr_id;
+        ib_mem_hdl=(ib_memory_handle *)event_buf->transport_private;
+        assert(ib_mem_hdl);
+
+        if (wc->wr_id == (uint64_t)wait_buf) {
+            log_debug(nnti_debug_level, "the wc matches the wait buffer (cq=%p, wr_id=%p, wait_buf=%p)",
+                    (void *)ib_mem_hdl->cq, wc->wr_id, wait_buf);
+        } else {
+            log_debug(nnti_debug_level, "the wc does NOT match the wait buffer (cq=%p, wr_id=%p, wait_buf=%p)",
+                    (void *)ib_mem_hdl->cq, wc->wr_id, wait_buf);
+        }
+    }
+
+    log_debug(nnti_debug_level, "exit (event_buf==%p)", event_buf);
+
+    return(event_buf);
+}
+
 int process_event(
         const NNTI_buffer_t  *wait_buf,
         const struct ibv_wc  *wc)
 {
     NNTI_result_t rc=NNTI_OK;
+
+    const NNTI_buffer_t *event_buf=NULL;
 
     ib_memory_handle *ib_mem_hdl=NULL;
 
@@ -1833,45 +2384,32 @@ int process_event(
         return NNTI_EIO;
     }
 
-    ib_mem_hdl=(ib_memory_handle *)wait_buf->transport_private;
+
+    event_buf=wait_buf;
+    ib_mem_hdl=(ib_memory_handle *)event_buf->transport_private;
     assert(ib_mem_hdl);
-    if (ib_mem_hdl->type == REQUEST_BUFFER) {
-        ib_mem_hdl=(ib_memory_handle *)wait_buf->transport_private;
-        assert(ib_mem_hdl);
 
-        log_debug(debug_level, "the wait buffer is a REQUEST BUFFER, so wc.wr_id is the request buffer index.");
-    } else {
-        ib_mem_hdl=(ib_memory_handle *)((NNTI_buffer_t *)wc->wr_id)->transport_private;
-        assert(ib_mem_hdl);
+    log_debug(nnti_debug_level, "event_buf=%p; ib_mem_hdl->last_op=%d", event_buf, ib_mem_hdl->last_op);
 
-        if (wc->wr_id == (uint64_t)wait_buf) {
-            log_debug(debug_level, "the wc matches the wait buffer (cq=%p, wr_id=%p, wait_buf=%p)",
-                    (void *)ib_mem_hdl->cq, wc->wr_id, wait_buf);
-        } else {
-            log_debug(debug_level, "the wc does NOT match the wait buffer (cq=%p, wr_id=%p, wait_buf=%p)",
-                    (void *)ib_mem_hdl->cq, wc->wr_id, wait_buf);
-        }
-    }
-
-    log_debug(nnti_debug_level, "wait_buf=%p; ib_mem_hdl->last_op=%d", wait_buf, ib_mem_hdl->last_op);
+    ib_mem_hdl->last_wc = *wc;
 
     debug_level=nnti_debug_level;
     switch (ib_mem_hdl->type) {
         case SEND_BUFFER:
             if (wc->opcode==IBV_WC_SEND) {
-                log_debug(debug_level, "send completion - wc==%p, wait_buf==%p", wc, wait_buf);
+                log_debug(debug_level, "send completion - wc==%p, event_buf==%p", wc, event_buf);
                 ib_mem_hdl->last_op=IB_OP_SEND;
                 ib_mem_hdl->op_state = SEND_COMPLETE;
             }
             break;
         case PUT_SRC_BUFFER:
             if (wc->opcode==IBV_WC_RDMA_WRITE) {
-                log_debug(debug_level, "RDMA write event - wc==%p, wait_buf==%p, op_state==%d", wc, wait_buf, ib_mem_hdl->op_state);
+                log_debug(debug_level, "RDMA write event - wc==%p, event_buf==%p, op_state==%d", wc, event_buf, ib_mem_hdl->op_state);
                 if (ib_mem_hdl->op_state==RDMA_WRITE_INIT) {
-                    log_debug(debug_level, "RDMA write (initiator) completion - wc==%p, wait_buf==%p", wc, wait_buf);
+                    log_debug(debug_level, "RDMA write (initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
 #if defined(USE_RDMA_TARGET_ACK)
                     ib_mem_hdl->op_state=RDMA_WRITE_NEED_ACK;
-                    send_ack(wait_buf);
+                    send_ack(event_buf);
 #else
                     ib_mem_hdl->op_state = RDMA_WRITE_COMPLETE;
 #endif
@@ -1880,7 +2418,7 @@ int process_event(
             if (wc->opcode==IBV_WC_SEND) {
 #if defined(USE_RDMA_TARGET_ACK)
                 if (ib_mem_hdl->op_state==RDMA_WRITE_NEED_ACK) {
-                    log_debug(debug_level, "RDMA write ACK (initiator) completion - wc==%p, wait_buf==%p", wc, wait_buf);
+                    log_debug(debug_level, "RDMA write ACK (initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
                     ib_mem_hdl->last_op=IB_OP_PUT_INITIATOR;
                     ib_mem_hdl->op_state = RDMA_WRITE_COMPLETE;
                 }
@@ -1889,12 +2427,12 @@ int process_event(
             break;
         case GET_DST_BUFFER:
             if (wc->opcode==IBV_WC_RDMA_READ) {
-                log_debug(debug_level, "RDMA read event - wc==%p, wait_buf==%p, op_state==%d", wc, wait_buf, ib_mem_hdl->op_state);
+                log_debug(debug_level, "RDMA read event - wc==%p, event_buf==%p, op_state==%d", wc, event_buf, ib_mem_hdl->op_state);
                 if (ib_mem_hdl->op_state==RDMA_READ_INIT) {
-                    log_debug(debug_level, "RDMA read (initiator) completion - wc==%p, wait_buf==%p", wc, wait_buf);
+                    log_debug(debug_level, "RDMA read (initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
 #if defined(USE_RDMA_TARGET_ACK)
                     ib_mem_hdl->op_state=RDMA_READ_NEED_ACK;
-                    send_ack(wait_buf);
+                    send_ack(event_buf);
 #else
                     ib_mem_hdl->op_state = RDMA_READ_COMPLETE;
 #endif
@@ -1903,7 +2441,7 @@ int process_event(
             if (wc->opcode==IBV_WC_SEND) {
 #if defined(USE_RDMA_TARGET_ACK)
                 if (ib_mem_hdl->op_state==RDMA_READ_NEED_ACK) {
-                    log_debug(debug_level, "RDMA read ACK (initiator) completion - wc==%p, wait_buf==%p", wc, wait_buf);
+                    log_debug(debug_level, "RDMA read ACK (initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
                     ib_mem_hdl->last_op=IB_OP_GET_INITIATOR;
                     ib_mem_hdl->op_state = RDMA_READ_COMPLETE;
                 }
@@ -1912,35 +2450,35 @@ int process_event(
             break;
         case REQUEST_BUFFER:
             if (wc->opcode==IBV_WC_RECV) {
-                log_debug(debug_level, "recv completion - wc==%p, wait_buf==%p", wc, wait_buf);
+                log_debug(debug_level, "recv completion - wc==%p, event_buf==%p", wc, event_buf);
                 ib_mem_hdl->last_op=IB_OP_NEW_REQUEST;
                 ib_mem_hdl->op_state = RECV_COMPLETE;
             }
             break;
         case RECEIVE_BUFFER:
             if (wc->opcode==IBV_WC_RECV) {
-                log_debug(debug_level, "recv completion - wc==%p, wait_buf==%p", wc, wait_buf);
+                log_debug(debug_level, "recv completion - wc==%p, event_buf==%p", wc, event_buf);
                 ib_mem_hdl->last_op=IB_OP_RECEIVE;
                 ib_mem_hdl->op_state = RECV_COMPLETE;
             }
             break;
         case PUT_DST_BUFFER:
             if (wc->opcode==IBV_WC_RECV) {
-                log_debug(debug_level, "RDMA write (target) completion - wc==%p, wait_buf==%p", wc, wait_buf);
+                log_debug(debug_level, "RDMA write (target) completion - wc==%p, event_buf==%p", wc, event_buf);
                 ib_mem_hdl->last_op=IB_OP_PUT_TARGET;
                 ib_mem_hdl->op_state = RDMA_WRITE_COMPLETE;
             }
             break;
         case GET_SRC_BUFFER:
             if (wc->opcode==IBV_WC_RECV) {
-                log_debug(debug_level, "RDMA read (target) completion - wc==%p, wait_buf==%p", wc, wait_buf);
+                log_debug(debug_level, "RDMA read (target) completion - wc==%p, event_buf==%p", wc, event_buf);
                 ib_mem_hdl->last_op=IB_OP_GET_TARGET;
                 ib_mem_hdl->op_state = RDMA_READ_COMPLETE;
             }
             break;
         case RDMA_TARGET_BUFFER:
             if (wc->opcode==IBV_WC_RECV) {
-                log_debug(debug_level, "RDMA target completion - wc==%p, wait_buf==%p", wc, wait_buf);
+                log_debug(debug_level, "RDMA target completion - wc==%p, event_buf==%p", wc, event_buf);
                 ib_mem_hdl->op_state = RDMA_COMPLETE;
 #if defined(USE_RDMA_TARGET_ACK)
                 ib_mem_hdl->last_op=ib_mem_hdl->ack.op;
@@ -1952,11 +2490,13 @@ int process_event(
     return (rc);
 }
 
-int8_t is_buf_op_complete(
+static int8_t is_buf_op_complete(
         const NNTI_buffer_t *reg_buf)
 {
     int8_t rc=FALSE;
     ib_memory_handle *ib_mem_hdl=NULL;
+
+    log_debug(nnti_debug_level, "enter");
 
     ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
 
@@ -1998,6 +2538,50 @@ int8_t is_buf_op_complete(
             }
             break;
     }
+
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
+
+    return(rc);
+}
+
+static int8_t is_any_buf_op_complete(
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        uint32_t             *which)
+{
+    int8_t rc=FALSE;
+
+    log_debug(nnti_debug_level, "enter");
+
+    for (int i=0;i<buf_count;i++) {
+        if ((buf_list[i] != NULL) && (is_buf_op_complete(buf_list[i]) == TRUE)) {
+            *which=i;
+            rc = TRUE;
+            break;
+        }
+    }
+
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
+
+    return(rc);
+}
+
+static int8_t is_all_buf_ops_complete(
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count)
+{
+    int8_t rc=TRUE;
+
+    log_debug(nnti_debug_level, "enter");
+
+    for (int i=0;i<buf_count;i++) {
+        if ((buf_list[i] != NULL) && (is_buf_op_complete(buf_list[i]) == FALSE)) {
+            rc = FALSE;
+            break;
+        }
+    }
+
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
 
     return(rc);
 }
@@ -2163,9 +2747,9 @@ static void transition_qp_to_ready(
     attr.qp_state = IBV_QPS_RTS;
     attr.sq_psn = 0;
     attr.max_rd_atomic = 1;
-    attr.timeout = 12;  /* 4.096us * 2^12 */
-    attr.retry_cnt = 5;
-    attr.rnr_retry = 5;
+    attr.timeout = 24;  /* 4.096us * 2^24 */
+    attr.retry_cnt = 7;
+    attr.rnr_retry = 7;
     if (ibv_modify_qp(qp, &attr, mask)) {
         log_error(nnti_debug_level, "failed to modify qp from RTR to RTS state");
     }
