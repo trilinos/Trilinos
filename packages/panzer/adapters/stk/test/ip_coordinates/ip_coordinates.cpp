@@ -189,7 +189,7 @@ namespace panzer {
     aggregated_block_names.push_back("eblock-1_0");
     aggregated_block_eval_types.push_back("Residual");
     ResponseId aggIpcResp  = buildResponse("Source Term Coordinates","IP Coordinates");
-    rLibrary->reserveLabeledVolumeResponse("Aggregated Source Term Coordinates",aggIpcResp,aggregated_block_names,aggregated_block_eval_types);
+    rLibrary->reserveLabeledBlockAggregatedVolumeResponse("Aggregated Source Term Coordinates",aggIpcResp,aggregated_block_names,aggregated_block_eval_types);
 
     rLibrary->printVolumeContainers(out);
   
@@ -212,7 +212,7 @@ namespace panzer {
 
     
     Teuchos::RCP<const Response<Traits> > coord_response =
-      rLibrary->getVolumeResponseByLabel("Aggregated Source Term Coordinates");
+      rLibrary->getBlockAggregatedVolumeResponseByLabel("Aggregated Source Term Coordinates");
     
     TEST_ASSERT(coord_response->hasParameterList());
     
