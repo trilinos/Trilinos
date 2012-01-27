@@ -300,7 +300,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::Set_Up()
   if(mod != 0){
     error_stream << "Radial_Trisection_Inline_Mesh_Desc::Set_Up"
 		 << "The number of elements in the circumferential direction " << total_theta << "\n"
-		 << "must be divisible by the number of trisection_blocks " << trisection_blocks << "." << "\n";
+		 << "must be divisible by twice the number of trisection_blocks " << trisection_blocks << "." << "\n";
     return 1;
   }
 

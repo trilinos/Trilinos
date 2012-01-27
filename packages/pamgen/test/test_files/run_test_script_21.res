@@ -16,8 +16,8 @@ Using  BISECTION decomposition.
 Exodus header info:
 Title: PAMGEN Inline Mesh
 Dimension 2 
-Number of Nodes 159 
-Number of Elements 136 
+Number of Nodes 204 
+Number of Elements 176 
 Number of Element Blocks 17 
 Number of Node Sets 9 
 Number of Side Sets 8 
@@ -31,56 +31,56 @@ num block properties 0
 num node set properties 0
 num side set properties 0
 A taste of coords
-X 0.087104 Y 0.036080 
-X 0.101622 Y 0.042093 
-X 0.116139 Y 0.048106 
-X 0.089109 Y 0.023223 
-X 0.091113 Y 0.010366 
-X 0.093117 Y -0.002491 
-X 0.095122 Y -0.015348 
-X 0.097126 Y -0.028204 
-X 0.099131 Y -0.041061 
-X 0.101135 Y -0.053918 
+X 0.006013 Y -0.014517 
+X -0.008227 Y -0.019863 
+X -0.022468 Y -0.025208 
+X -0.036709 Y -0.030553 
+X -0.050949 Y -0.035898 
+X -0.065190 Y -0.041243 
+X -0.079430 Y -0.046588 
+X -0.093671 Y -0.051933 
+X -0.107912 Y -0.057279 
+X 0.012027 Y -0.029035 
 coord name 0 X
 coord name 1 Y
 A tast of map
-map i=0, val=241
-map i=1, val=242
-map i=2, val=243
-map i=3, val=244
-map i=4, val=245
-map i=5, val=246
-map i=6, val=247
-map i=7, val=248
-map i=8, val=249
-map i=9, val=250
+map i=0, val=137
+map i=1, val=138
+map i=2, val=139
+map i=3, val=140
+map i=4, val=141
+map i=5, val=142
+map i=6, val=143
+map i=7, val=144
+map i=8, val=145
+map i=9, val=146
 A tast of global elem numbers
-global el num  i=0, val=241
-global el num  i=1, val=242
-global el num  i=2, val=243
-global el num  i=3, val=244
-global el num  i=4, val=245
-global el num  i=5, val=246
-global el num  i=6, val=247
-global el num  i=7, val=248
-global el num  i=8, val=249
-global el num  i=9, val=250
+global el num  i=0, val=137
+global el num  i=1, val=138
+global el num  i=2, val=139
+global el num  i=3, val=140
+global el num  i=4, val=141
+global el num  i=5, val=142
+global el num  i=6, val=143
+global el num  i=7, val=144
+global el num  i=8, val=145
+global el num  i=9, val=146
 A tast of global elem numbers
-global node num  i=0, val=7
-global node num  i=1, val=8
-global node num  i=2, val=9
-global node num  i=3, val=266
-global node num  i=4, val=267
-global node num  i=5, val=268
-global node num  i=6, val=269
-global node num  i=7, val=270
-global node num  i=8, val=271
-global node num  i=9, val=272
+global node num  i=0, val=154
+global node num  i=1, val=155
+global node num  i=2, val=156
+global node num  i=3, val=157
+global node num  i=4, val=158
+global node num  i=5, val=159
+global node num  i=6, val=160
+global node num  i=7, val=161
+global node num  i=8, val=162
+global node num  i=9, val=163
 block i = 0 has id 1 
 block i = 0
 block id 1
 element_type QUAD
-num elements 56
+num elements 96
 nodes per element 4
 element attributes 0
 block i = 1 has id 2 
@@ -143,150 +143,153 @@ block i = 9 has id 10
 block i = 9
 block id 10
 element_type QUAD
-num elements 0
+num elements 28
 nodes per element 4
 element attributes 0
 block i = 10 has id 11 
 block i = 10
 block id 11
 element_type QUAD
-num elements 0
+num elements 28
 nodes per element 4
 element attributes 0
 block i = 11 has id 12 
 block i = 11
 block id 12
 element_type QUAD
-num elements 0
+num elements 12
 nodes per element 4
 element attributes 0
 block i = 12 has id 13 
 block i = 12
 block id 13
 element_type QUAD
-num elements 0
+num elements 12
 nodes per element 4
 element attributes 0
 block i = 13 has id 14 
 block i = 13
 block id 14
 element_type QUAD
-num elements 8
+num elements 0
 nodes per element 4
 element attributes 0
 block i = 14 has id 15 
 block i = 14
 block id 15
 element_type QUAD
-num elements 8
+num elements 0
 nodes per element 4
 element attributes 0
 block i = 15 has id 16 
 block i = 15
 block id 16
 element_type QUAD
-num elements 32
+num elements 0
 nodes per element 4
 element attributes 0
 block i = 16 has id 17 
 block i = 16
 block id 17
 element_type QUAD
-num elements 32
+num elements 0
 nodes per element 4
 element attributes 0
-block 1 element 0 connectivty 1 4 12 2 
-block 1 element 1 connectivty 4 5 13 12 
-block 1 element 2 connectivty 5 6 14 13 
-block 1 element 3 connectivty 6 7 15 14 
-block 1 element 4 connectivty 7 8 16 15 
-block 1 element 5 connectivty 8 9 17 16 
-block 1 element 6 connectivty 9 10 18 17 
-block 1 element 7 connectivty 10 11 19 18 
-block 1 element 8 connectivty 2 12 20 3 
-block 1 element 9 connectivty 12 13 21 20 
-block 14 element 0 connectivty 43 44 56 55 
-block 14 element 1 connectivty 44 45 57 56 
-block 14 element 2 connectivty 45 46 58 57 
-block 14 element 3 connectivty 46 47 59 58 
-block 14 element 4 connectivty 55 56 68 67 
-block 14 element 5 connectivty 56 57 69 68 
-block 14 element 6 connectivty 57 58 70 69 
-block 14 element 7 connectivty 58 59 71 70 
-block 15 element 0 connectivty 47 48 60 59 
-block 15 element 1 connectivty 48 49 61 60 
-block 15 element 2 connectivty 49 50 62 61 
-block 15 element 3 connectivty 50 51 63 62 
-block 15 element 4 connectivty 59 60 72 71 
-block 15 element 5 connectivty 60 61 73 72 
-block 15 element 6 connectivty 61 62 74 73 
-block 15 element 7 connectivty 62 63 75 74 
-block 16 element 0 connectivty 67 68 80 79 
-block 16 element 1 connectivty 68 69 81 80 
-block 16 element 2 connectivty 69 70 82 81 
-block 16 element 3 connectivty 70 71 83 82 
-block 16 element 4 connectivty 79 80 92 91 
-block 16 element 5 connectivty 80 81 93 92 
-block 16 element 6 connectivty 81 82 94 93 
-block 16 element 7 connectivty 82 83 95 94 
-block 16 element 8 connectivty 91 92 104 103 
-block 16 element 9 connectivty 92 93 105 104 
-block 17 element 0 connectivty 71 72 84 83 
-block 17 element 1 connectivty 72 73 85 84 
-block 17 element 2 connectivty 73 74 86 85 
-block 17 element 3 connectivty 74 75 87 86 
-block 17 element 4 connectivty 83 84 96 95 
-block 17 element 5 connectivty 84 85 97 96 
-block 17 element 6 connectivty 85 86 98 97 
-block 17 element 7 connectivty 86 87 99 98 
-block 17 element 8 connectivty 95 96 108 107 
-block 17 element 9 connectivty 96 97 109 108 
+block 1 element 0 connectivty 1 2 11 10 
+block 1 element 1 connectivty 2 3 12 11 
+block 1 element 2 connectivty 3 4 13 12 
+block 1 element 3 connectivty 4 5 14 13 
+block 1 element 4 connectivty 5 6 15 14 
+block 1 element 5 connectivty 6 7 16 15 
+block 1 element 6 connectivty 7 8 17 16 
+block 1 element 7 connectivty 8 9 18 17 
+block 1 element 8 connectivty 10 11 20 19 
+block 1 element 9 connectivty 11 12 21 20 
+block 10 element 0 connectivty 76 77 89 88 
+block 10 element 1 connectivty 77 78 90 89 
+block 10 element 2 connectivty 78 79 91 90 
+block 10 element 3 connectivty 79 80 92 91 
+block 10 element 4 connectivty 88 89 101 100 
+block 10 element 5 connectivty 89 90 102 101 
+block 10 element 6 connectivty 90 91 103 102 
+block 10 element 7 connectivty 91 92 104 103 
+block 10 element 8 connectivty 100 101 113 112 
+block 10 element 9 connectivty 101 102 114 113 
+block 11 element 0 connectivty 80 81 93 92 
+block 11 element 1 connectivty 81 82 94 93 
+block 11 element 2 connectivty 82 83 95 94 
+block 11 element 3 connectivty 83 84 96 95 
+block 11 element 4 connectivty 92 93 105 104 
+block 11 element 5 connectivty 93 94 106 105 
+block 11 element 6 connectivty 94 95 107 106 
+block 11 element 7 connectivty 95 96 108 107 
+block 11 element 8 connectivty 104 105 117 116 
+block 11 element 9 connectivty 105 106 118 117 
+block 12 element 0 connectivty 160 161 173 172 
+block 12 element 1 connectivty 161 162 174 173 
+block 12 element 2 connectivty 162 163 175 174 
+block 12 element 3 connectivty 163 164 176 175 
+block 12 element 4 connectivty 172 173 185 184 
+block 12 element 5 connectivty 173 174 186 185 
+block 12 element 6 connectivty 174 175 187 186 
+block 12 element 7 connectivty 175 176 188 187 
+block 12 element 8 connectivty 184 185 197 196 
+block 12 element 9 connectivty 185 186 198 197 
+block 13 element 0 connectivty 164 165 177 176 
+block 13 element 1 connectivty 165 166 178 177 
+block 13 element 2 connectivty 166 167 179 178 
+block 13 element 3 connectivty 167 168 180 179 
+block 13 element 4 connectivty 176 177 189 188 
+block 13 element 5 connectivty 177 178 190 189 
+block 13 element 6 connectivty 178 179 191 190 
+block 13 element 7 connectivty 179 180 192 191 
+block 13 element 8 connectivty 188 189 201 200 
+block 13 element 9 connectivty 189 190 202 201 
 Nodeset i = 0 id = 40 has 11 nodes
-nodeset node i=0 = 39
-nodeset node i=1 = 51
-nodeset node i=2 = 63
-nodeset node i=3 = 75
-nodeset node i=4 = 87
-nodeset node i=5 = 99
-nodeset node i=6 = 111
-nodeset node i=7 = 123
-nodeset node i=8 = 135
-nodeset node i=9 = 147
-Nodeset i = 1 id = 801 has 9 nodes
-nodeset node i=0 = 39
-nodeset node i=1 = 75
-nodeset node i=2 = 87
-nodeset node i=3 = 99
-nodeset node i=4 = 111
-nodeset node i=5 = 123
-nodeset node i=6 = 135
-nodeset node i=7 = 147
-nodeset node i=8 = 159
-Nodeset i = 2 id = 701 has 3 nodes
-nodeset node i=0 = 51
-nodeset node i=1 = 63
-nodeset node i=2 = 75
-Nodeset i = 3 id = 601 has 0 nodes
-Nodeset i = 4 id = 501 has 0 nodes
+nodeset node i=0 = 84
+nodeset node i=1 = 96
+nodeset node i=2 = 108
+nodeset node i=3 = 120
+nodeset node i=4 = 132
+nodeset node i=5 = 144
+nodeset node i=6 = 156
+nodeset node i=7 = 168
+nodeset node i=8 = 180
+nodeset node i=9 = 192
+Nodeset i = 1 id = 801 has 0 nodes
+Nodeset i = 2 id = 701 has 0 nodes
+Nodeset i = 3 id = 601 has 4 nodes
+nodeset node i=0 = 168
+nodeset node i=1 = 180
+nodeset node i=2 = 192
+nodeset node i=3 = 204
+Nodeset i = 4 id = 501 has 8 nodes
+nodeset node i=0 = 84
+nodeset node i=1 = 96
+nodeset node i=2 = 108
+nodeset node i=3 = 120
+nodeset node i=4 = 132
+nodeset node i=5 = 144
+nodeset node i=6 = 156
+nodeset node i=7 = 168
 Nodeset i = 5 id = 401 has 0 nodes
 Nodeset i = 6 id = 301 has 0 nodes
 Nodeset i = 7 id = 201 has 0 nodes
-Nodeset i = 8 id = 101 has 1 nodes
-nodeset node i=0 = 39
-Side set index 0 id 800 has 8 elements
-element 108 and face 2
-element 112 and face 2
-element 116 and face 2
-element 120 and face 2
-element 124 and face 2
+Nodeset i = 8 id = 101 has 0 nodes
+Side set index 0 id 800 has 0 elements
+Side set index 1 id 700 has 0 elements
+Side set index 2 id 600 has 3 elements
+element 168 and face 2
+element 172 and face 2
+element 176 and face 2
+Side set index 3 id 500 has 7 elements
 element 128 and face 2
 element 132 and face 2
 element 136 and face 2
-Side set index 1 id 700 has 2 elements
-element 68 and face 2
-element 72 and face 2
-Side set index 2 id 600 has 0 elements
-Side set index 3 id 500 has 0 elements
+element 140 and face 2
+element 144 and face 2
+element 148 and face 2
+element 152 and face 2
 Side set index 4 id 400 has 0 elements
 Side set index 5 id 300 has 0 elements
 Side set index 6 id 200 has 0 elements
@@ -340,21 +343,21 @@ global ss info for ss index 5 id 300 num_elements = 8 num_ss_df = 0
 global ss info for ss index 6 id 200 num_elements = 8 num_ss_df = 0
 global ss info for ss index 7 id 100 num_elements = 8 num_ss_df = 0
 Loadbal params:
-num_internal_nodes 124
-num_border_nodes35
+num_internal_nodes 159
+num_border_nodes45
 num_external_nodes0
-num_internal_elems103
-num_border_elems33
+num_internal_elems134
+num_border_elems42
 num_node_comm_maps2
 num_elem_comm_maps2
-internal node i=0 = 12
-internal node i=1 = 13
-internal node i=2 = 14
-internal node i=3 = 15
-internal node i=4 = 16
-internal node i=5 = 17
-internal node i=6 = 18
-internal node i=7 = 19
+internal node i=0 = 11
+internal node i=1 = 12
+internal node i=2 = 13
+internal node i=3 = 14
+internal node i=4 = 15
+internal node i=5 = 16
+internal node i=6 = 17
+internal node i=7 = 18
 internal node i=8 = 20
 internal node i=9 = 21
 border node i=0 = 1
@@ -374,9 +377,9 @@ internal elem i=3 = 13
 internal elem i=4 = 14
 internal elem i=5 = 15
 internal elem i=6 = 16
-internal elem i=7 = 21
-internal elem i=8 = 22
-internal elem i=9 = 23
+internal elem i=7 = 18
+internal elem i=8 = 19
+internal elem i=9 = 20
 border elem i=0 = 1
 border elem i=1 = 2
 border elem i=2 = 3
@@ -387,50 +390,50 @@ border elem i=6 = 7
 border elem i=7 = 8
 border elem i=8 = 9
 border elem i=9 = 17
-node_cmap_id i = 0 node_cmap_id = 1 node_cmap_node_cnts = 21
-node_cmap_id i = 1 node_cmap_id = 2 node_cmap_node_cnts = 15
-elem_cmap_id i = 0 elem_cmap_id = 1 elem_cmap_elem_cnts = 20
-elem_cmap_id i = 1 elem_cmap_id = 2 elem_cmap_elem_cnts = 14
+node_cmap_id i = 0 node_cmap_id = 1 node_cmap_node_cnts = 25
+node_cmap_id i = 1 node_cmap_id = 4 node_cmap_node_cnts = 21
+elem_cmap_id i = 0 elem_cmap_id = 1 elem_cmap_elem_cnts = 24
+elem_cmap_id i = 1 elem_cmap_id = 4 elem_cmap_elem_cnts = 20
 node_cmap_id i=0 = 1 comm_node_ids = 1 comm_node_proc_ids = 1
-node_cmap_id i=1 = 1 comm_node_ids = 4 comm_node_proc_ids = 1
-node_cmap_id i=2 = 1 comm_node_ids = 5 comm_node_proc_ids = 1
-node_cmap_id i=3 = 1 comm_node_ids = 6 comm_node_proc_ids = 1
-node_cmap_id i=4 = 1 comm_node_ids = 7 comm_node_proc_ids = 1
-node_cmap_id i=5 = 1 comm_node_ids = 8 comm_node_proc_ids = 1
-node_cmap_id i=6 = 1 comm_node_ids = 9 comm_node_proc_ids = 1
-node_cmap_id i=7 = 1 comm_node_ids = 10 comm_node_proc_ids = 1
-node_cmap_id i=8 = 1 comm_node_ids = 11 comm_node_proc_ids = 1
-node_cmap_id i=9 = 1 comm_node_ids = 40 comm_node_proc_ids = 1
-node_cmap_id i=0 = 2 comm_node_ids = 1 comm_node_proc_ids = 2
-node_cmap_id i=1 = 2 comm_node_ids = 2 comm_node_proc_ids = 2
-node_cmap_id i=2 = 2 comm_node_ids = 3 comm_node_proc_ids = 2
-node_cmap_id i=3 = 2 comm_node_ids = 28 comm_node_proc_ids = 2
-node_cmap_id i=4 = 2 comm_node_ids = 29 comm_node_proc_ids = 2
-node_cmap_id i=5 = 2 comm_node_ids = 30 comm_node_proc_ids = 2
-node_cmap_id i=6 = 2 comm_node_ids = 31 comm_node_proc_ids = 2
-node_cmap_id i=7 = 2 comm_node_ids = 32 comm_node_proc_ids = 2
-node_cmap_id i=8 = 2 comm_node_ids = 33 comm_node_proc_ids = 2
-node_cmap_id i=9 = 2 comm_node_ids = 34 comm_node_proc_ids = 2
-elem_cmap_id i=0 = 1 comm_elem_ids = 1 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=1 = 1 comm_elem_ids = 2 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=2 = 1 comm_elem_ids = 3 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=3 = 1 comm_elem_ids = 4 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=4 = 1 comm_elem_ids = 5 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=5 = 1 comm_elem_ids = 6 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=6 = 1 comm_elem_ids = 7 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=7 = 1 comm_elem_ids = 8 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=8 = 1 comm_elem_ids = 17 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=9 = 1 comm_elem_ids = 18 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=0 = 2 comm_elem_ids = 1 comm_side_ids = 4 comm_elem_proc_ids = 2
-elem_cmap_id i=1 = 2 comm_elem_ids = 9 comm_side_ids = 4 comm_elem_proc_ids = 2
-elem_cmap_id i=2 = 2 comm_elem_ids = 53 comm_side_ids = 3 comm_elem_proc_ids = 2
-elem_cmap_id i=3 = 2 comm_elem_ids = 54 comm_side_ids = 3 comm_elem_proc_ids = 2
-elem_cmap_id i=4 = 2 comm_elem_ids = 55 comm_side_ids = 3 comm_elem_proc_ids = 2
-elem_cmap_id i=5 = 2 comm_elem_ids = 56 comm_side_ids = 3 comm_elem_proc_ids = 2
-elem_cmap_id i=6 = 2 comm_elem_ids = 101 comm_side_ids = 3 comm_elem_proc_ids = 2
-elem_cmap_id i=7 = 2 comm_elem_ids = 102 comm_side_ids = 3 comm_elem_proc_ids = 2
-elem_cmap_id i=8 = 2 comm_elem_ids = 103 comm_side_ids = 3 comm_elem_proc_ids = 2
-elem_cmap_id i=9 = 2 comm_elem_ids = 104 comm_side_ids = 3 comm_elem_proc_ids = 2
+node_cmap_id i=1 = 1 comm_node_ids = 10 comm_node_proc_ids = 1
+node_cmap_id i=2 = 1 comm_node_ids = 19 comm_node_proc_ids = 1
+node_cmap_id i=3 = 1 comm_node_ids = 28 comm_node_proc_ids = 1
+node_cmap_id i=4 = 1 comm_node_ids = 37 comm_node_proc_ids = 1
+node_cmap_id i=5 = 1 comm_node_ids = 46 comm_node_proc_ids = 1
+node_cmap_id i=6 = 1 comm_node_ids = 55 comm_node_proc_ids = 1
+node_cmap_id i=7 = 1 comm_node_ids = 64 comm_node_proc_ids = 1
+node_cmap_id i=8 = 1 comm_node_ids = 65 comm_node_proc_ids = 1
+node_cmap_id i=9 = 1 comm_node_ids = 66 comm_node_proc_ids = 1
+node_cmap_id i=0 = 4 comm_node_ids = 1 comm_node_proc_ids = 4
+node_cmap_id i=1 = 4 comm_node_ids = 2 comm_node_proc_ids = 4
+node_cmap_id i=2 = 4 comm_node_ids = 3 comm_node_proc_ids = 4
+node_cmap_id i=3 = 4 comm_node_ids = 4 comm_node_proc_ids = 4
+node_cmap_id i=4 = 4 comm_node_ids = 5 comm_node_proc_ids = 4
+node_cmap_id i=5 = 4 comm_node_ids = 6 comm_node_proc_ids = 4
+node_cmap_id i=6 = 4 comm_node_ids = 7 comm_node_proc_ids = 4
+node_cmap_id i=7 = 4 comm_node_ids = 8 comm_node_proc_ids = 4
+node_cmap_id i=8 = 4 comm_node_ids = 9 comm_node_proc_ids = 4
+node_cmap_id i=9 = 4 comm_node_ids = 73 comm_node_proc_ids = 4
+elem_cmap_id i=0 = 1 comm_elem_ids = 1 comm_side_ids = 4 comm_elem_proc_ids = 1
+elem_cmap_id i=1 = 1 comm_elem_ids = 9 comm_side_ids = 4 comm_elem_proc_ids = 1
+elem_cmap_id i=2 = 1 comm_elem_ids = 17 comm_side_ids = 4 comm_elem_proc_ids = 1
+elem_cmap_id i=3 = 1 comm_elem_ids = 25 comm_side_ids = 4 comm_elem_proc_ids = 1
+elem_cmap_id i=4 = 1 comm_elem_ids = 33 comm_side_ids = 4 comm_elem_proc_ids = 1
+elem_cmap_id i=5 = 1 comm_elem_ids = 41 comm_side_ids = 4 comm_elem_proc_ids = 1
+elem_cmap_id i=6 = 1 comm_elem_ids = 49 comm_side_ids = 4 comm_elem_proc_ids = 1
+elem_cmap_id i=7 = 1 comm_elem_ids = 49 comm_side_ids = 3 comm_elem_proc_ids = 1
+elem_cmap_id i=8 = 1 comm_elem_ids = 50 comm_side_ids = 3 comm_elem_proc_ids = 1
+elem_cmap_id i=9 = 1 comm_elem_ids = 51 comm_side_ids = 3 comm_elem_proc_ids = 1
+elem_cmap_id i=0 = 4 comm_elem_ids = 1 comm_side_ids = 1 comm_elem_proc_ids = 4
+elem_cmap_id i=1 = 4 comm_elem_ids = 2 comm_side_ids = 1 comm_elem_proc_ids = 4
+elem_cmap_id i=2 = 4 comm_elem_ids = 3 comm_side_ids = 1 comm_elem_proc_ids = 4
+elem_cmap_id i=3 = 4 comm_elem_ids = 4 comm_side_ids = 1 comm_elem_proc_ids = 4
+elem_cmap_id i=4 = 4 comm_elem_ids = 5 comm_side_ids = 1 comm_elem_proc_ids = 4
+elem_cmap_id i=5 = 4 comm_elem_ids = 6 comm_side_ids = 1 comm_elem_proc_ids = 4
+elem_cmap_id i=6 = 4 comm_elem_ids = 7 comm_side_ids = 1 comm_elem_proc_ids = 4
+elem_cmap_id i=7 = 4 comm_elem_ids = 8 comm_side_ids = 1 comm_elem_proc_ids = 4
+elem_cmap_id i=8 = 4 comm_elem_ids = 57 comm_side_ids = 1 comm_elem_proc_ids = 4
+elem_cmap_id i=9 = 4 comm_elem_ids = 58 comm_side_ids = 1 comm_elem_proc_ids = 4
 INFO Records
 Inline mesh specification requested: 
 	1024 Elements 
@@ -449,8 +452,8 @@ Using  BISECTION decomposition.
 Exodus header info:
 Title: PAMGEN Inline Mesh
 Dimension 2 
-Number of Nodes 199 
-Number of Elements 168 
+Number of Nodes 191 
+Number of Elements 160 
 Number of Element Blocks 17 
 Number of Node Sets 9 
 Number of Side Sets 8 
@@ -470,10 +473,10 @@ X 0.029035 Y 0.012027
 X 0.043552 Y 0.018040 
 X 0.058069 Y 0.024053 
 X 0.072587 Y 0.030066 
-X 0.087104 Y 0.036080 
 X 0.006013 Y -0.014517 
 X 0.012027 Y -0.029035 
 X 0.018040 Y -0.043552 
+X 0.024053 Y -0.058069 
 coord name 0 X
 coord name 1 Y
 A tast of map
@@ -505,15 +508,15 @@ global node num  i=2, val=3
 global node num  i=3, val=4
 global node num  i=4, val=5
 global node num  i=5, val=6
-global node num  i=6, val=7
-global node num  i=7, val=154
-global node num  i=8, val=163
-global node num  i=9, val=172
+global node num  i=6, val=154
+global node num  i=7, val=163
+global node num  i=8, val=172
+global node num  i=9, val=181
 block i = 0 has id 1 
 block i = 0
 block id 1
 element_type QUAD
-num elements 88
+num elements 80
 nodes per element 4
 element attributes 0
 block i = 1 has id 2 
@@ -590,28 +593,28 @@ block i = 11 has id 12
 block i = 11
 block id 12
 element_type QUAD
-num elements 16
+num elements 20
 nodes per element 4
 element attributes 0
 block i = 12 has id 13 
 block i = 12
 block id 13
 element_type QUAD
-num elements 16
+num elements 20
 nodes per element 4
 element attributes 0
 block i = 13 has id 14 
 block i = 13
 block id 14
 element_type QUAD
-num elements 24
+num elements 20
 nodes per element 4
 element attributes 0
 block i = 14 has id 15 
 block i = 14
 block id 15
 element_type QUAD
-num elements 24
+num elements 20
 nodes per element 4
 element attributes 0
 block i = 15 has id 16 
@@ -628,96 +631,96 @@ element_type QUAD
 num elements 0
 nodes per element 4
 element attributes 0
-block 1 element 0 connectivty 1 8 20 2 
-block 1 element 1 connectivty 8 9 21 20 
-block 1 element 2 connectivty 9 10 22 21 
-block 1 element 3 connectivty 10 11 23 22 
-block 1 element 4 connectivty 11 12 24 23 
-block 1 element 5 connectivty 12 13 25 24 
-block 1 element 6 connectivty 13 14 26 25 
-block 1 element 7 connectivty 14 15 27 26 
+block 1 element 0 connectivty 1 7 20 2 
+block 1 element 1 connectivty 7 8 21 20 
+block 1 element 2 connectivty 8 9 22 21 
+block 1 element 3 connectivty 9 10 23 22 
+block 1 element 4 connectivty 10 11 24 23 
+block 1 element 5 connectivty 11 12 25 24 
+block 1 element 6 connectivty 12 13 26 25 
+block 1 element 7 connectivty 13 14 27 26 
 block 1 element 8 connectivty 2 20 28 3 
 block 1 element 9 connectivty 20 21 29 28 
-block 12 element 0 connectivty 71 72 84 83 
-block 12 element 1 connectivty 72 73 85 84 
-block 12 element 2 connectivty 73 74 86 85 
-block 12 element 3 connectivty 74 75 87 86 
-block 12 element 4 connectivty 83 84 96 95 
-block 12 element 5 connectivty 84 85 97 96 
-block 12 element 6 connectivty 85 86 98 97 
-block 12 element 7 connectivty 86 87 99 98 
-block 12 element 8 connectivty 95 96 108 107 
-block 12 element 9 connectivty 96 97 109 108 
-block 13 element 0 connectivty 75 76 88 87 
-block 13 element 1 connectivty 76 77 89 88 
-block 13 element 2 connectivty 77 78 90 89 
-block 13 element 3 connectivty 78 79 91 90 
-block 13 element 4 connectivty 87 88 100 99 
-block 13 element 5 connectivty 88 89 101 100 
-block 13 element 6 connectivty 89 90 102 101 
-block 13 element 7 connectivty 90 91 103 102 
-block 13 element 8 connectivty 99 100 112 111 
-block 13 element 9 connectivty 100 101 113 112 
-block 14 element 0 connectivty 119 120 132 131 
-block 14 element 1 connectivty 120 121 133 132 
-block 14 element 2 connectivty 121 122 134 133 
-block 14 element 3 connectivty 122 123 135 134 
-block 14 element 4 connectivty 131 132 144 143 
-block 14 element 5 connectivty 132 133 145 144 
-block 14 element 6 connectivty 133 134 146 145 
-block 14 element 7 connectivty 134 135 147 146 
-block 14 element 8 connectivty 143 144 156 155 
-block 14 element 9 connectivty 144 145 157 156 
-block 15 element 0 connectivty 123 124 136 135 
-block 15 element 1 connectivty 124 125 137 136 
-block 15 element 2 connectivty 125 126 138 137 
-block 15 element 3 connectivty 126 127 139 138 
-block 15 element 4 connectivty 135 136 148 147 
-block 15 element 5 connectivty 136 137 149 148 
-block 15 element 6 connectivty 137 138 150 149 
-block 15 element 7 connectivty 138 139 151 150 
-block 15 element 8 connectivty 147 148 160 159 
-block 15 element 9 connectivty 148 149 161 160 
+block 12 element 0 connectivty 63 64 76 75 
+block 12 element 1 connectivty 64 65 77 76 
+block 12 element 2 connectivty 65 66 78 77 
+block 12 element 3 connectivty 66 67 79 78 
+block 12 element 4 connectivty 75 76 88 87 
+block 12 element 5 connectivty 76 77 89 88 
+block 12 element 6 connectivty 77 78 90 89 
+block 12 element 7 connectivty 78 79 91 90 
+block 12 element 8 connectivty 87 88 100 99 
+block 12 element 9 connectivty 88 89 101 100 
+block 13 element 0 connectivty 67 68 80 79 
+block 13 element 1 connectivty 68 69 81 80 
+block 13 element 2 connectivty 69 70 82 81 
+block 13 element 3 connectivty 70 71 83 82 
+block 13 element 4 connectivty 79 80 92 91 
+block 13 element 5 connectivty 80 81 93 92 
+block 13 element 6 connectivty 81 82 94 93 
+block 13 element 7 connectivty 82 83 95 94 
+block 13 element 8 connectivty 91 92 104 103 
+block 13 element 9 connectivty 92 93 105 104 
+block 14 element 0 connectivty 123 124 136 135 
+block 14 element 1 connectivty 124 125 137 136 
+block 14 element 2 connectivty 125 126 138 137 
+block 14 element 3 connectivty 126 127 139 138 
+block 14 element 4 connectivty 135 136 148 147 
+block 14 element 5 connectivty 136 137 149 148 
+block 14 element 6 connectivty 137 138 150 149 
+block 14 element 7 connectivty 138 139 151 150 
+block 14 element 8 connectivty 147 148 160 159 
+block 14 element 9 connectivty 148 149 161 160 
+block 15 element 0 connectivty 127 128 140 139 
+block 15 element 1 connectivty 128 129 141 140 
+block 15 element 2 connectivty 129 130 142 141 
+block 15 element 3 connectivty 130 131 143 142 
+block 15 element 4 connectivty 139 140 152 151 
+block 15 element 5 connectivty 140 141 153 152 
+block 15 element 6 connectivty 141 142 154 153 
+block 15 element 7 connectivty 142 143 155 154 
+block 15 element 8 connectivty 151 152 164 163 
+block 15 element 9 connectivty 152 153 165 164 
 Nodeset i = 0 id = 40 has 11 nodes
-nodeset node i=0 = 79
-nodeset node i=1 = 91
-nodeset node i=2 = 103
-nodeset node i=3 = 115
-nodeset node i=4 = 127
-nodeset node i=5 = 139
-nodeset node i=6 = 151
-nodeset node i=7 = 163
-nodeset node i=8 = 175
-nodeset node i=9 = 187
+nodeset node i=0 = 71
+nodeset node i=1 = 83
+nodeset node i=2 = 95
+nodeset node i=3 = 107
+nodeset node i=4 = 119
+nodeset node i=5 = 131
+nodeset node i=6 = 143
+nodeset node i=7 = 155
+nodeset node i=8 = 167
+nodeset node i=9 = 179
 Nodeset i = 1 id = 801 has 0 nodes
-Nodeset i = 2 id = 701 has 7 nodes
-nodeset node i=0 = 127
-nodeset node i=1 = 139
-nodeset node i=2 = 151
-nodeset node i=3 = 163
-nodeset node i=4 = 175
-nodeset node i=5 = 187
-nodeset node i=6 = 199
-Nodeset i = 3 id = 601 has 5 nodes
-nodeset node i=0 = 79
-nodeset node i=1 = 91
-nodeset node i=2 = 103
-nodeset node i=3 = 115
-nodeset node i=4 = 127
+Nodeset i = 2 id = 701 has 6 nodes
+nodeset node i=0 = 131
+nodeset node i=1 = 143
+nodeset node i=2 = 155
+nodeset node i=3 = 167
+nodeset node i=4 = 179
+nodeset node i=5 = 191
+Nodeset i = 3 id = 601 has 6 nodes
+nodeset node i=0 = 71
+nodeset node i=1 = 83
+nodeset node i=2 = 95
+nodeset node i=3 = 107
+nodeset node i=4 = 119
+nodeset node i=5 = 131
 Nodeset i = 4 id = 501 has 0 nodes
 Nodeset i = 5 id = 401 has 0 nodes
 Nodeset i = 6 id = 301 has 0 nodes
 Nodeset i = 7 id = 201 has 0 nodes
 Nodeset i = 8 id = 101 has 0 nodes
 Side set index 0 id 800 has 0 elements
-Side set index 1 id 700 has 6 elements
+Side set index 1 id 700 has 5 elements
+element 144 and face 2
 element 148 and face 2
 element 152 and face 2
 element 156 and face 2
 element 160 and face 2
-element 164 and face 2
-element 168 and face 2
-Side set index 2 id 600 has 4 elements
+Side set index 2 id 600 has 5 elements
+element 104 and face 2
 element 108 and face 2
 element 112 and face 2
 element 116 and face 2
@@ -776,10 +779,10 @@ global ss info for ss index 5 id 300 num_elements = 8 num_ss_df = 0
 global ss info for ss index 6 id 200 num_elements = 8 num_ss_df = 0
 global ss info for ss index 7 id 100 num_elements = 8 num_ss_df = 0
 Loadbal params:
-num_internal_nodes 148
+num_internal_nodes 140
 num_border_nodes51
 num_external_nodes0
-num_internal_elems121
+num_internal_elems113
 num_border_elems47
 num_node_comm_maps5
 num_elem_comm_maps4
@@ -823,72 +826,70 @@ border elem i=6 = 7
 border elem i=7 = 8
 border elem i=8 = 9
 border elem i=9 = 17
-node_cmap_id i = 0 node_cmap_id = 0 node_cmap_node_cnts = 21
-node_cmap_id i = 1 node_cmap_id = 2 node_cmap_node_cnts = 7
+node_cmap_id i = 0 node_cmap_id = 0 node_cmap_node_cnts = 25
+node_cmap_id i = 1 node_cmap_id = 2 node_cmap_node_cnts = 6
 node_cmap_id i = 2 node_cmap_id = 3 node_cmap_node_cnts = 1
 node_cmap_id i = 3 node_cmap_id = 4 node_cmap_node_cnts = 2
-node_cmap_id i = 4 node_cmap_id = 5 node_cmap_node_cnts = 24
-elem_cmap_id i = 0 elem_cmap_id = 0 elem_cmap_elem_cnts = 20
-elem_cmap_id i = 1 elem_cmap_id = 2 elem_cmap_elem_cnts = 6
+node_cmap_id i = 4 node_cmap_id = 5 node_cmap_node_cnts = 21
+elem_cmap_id i = 0 elem_cmap_id = 0 elem_cmap_elem_cnts = 24
+elem_cmap_id i = 1 elem_cmap_id = 2 elem_cmap_elem_cnts = 5
 elem_cmap_id i = 2 elem_cmap_id = 4 elem_cmap_elem_cnts = 1
-elem_cmap_id i = 3 elem_cmap_id = 5 elem_cmap_elem_cnts = 23
+elem_cmap_id i = 3 elem_cmap_id = 5 elem_cmap_elem_cnts = 20
 node_cmap_id i=0 = 0 comm_node_ids = 7 comm_node_proc_ids = 0
-node_cmap_id i=1 = 0 comm_node_ids = 60 comm_node_proc_ids = 0
-node_cmap_id i=2 = 0 comm_node_ids = 61 comm_node_proc_ids = 0
-node_cmap_id i=3 = 0 comm_node_ids = 62 comm_node_proc_ids = 0
-node_cmap_id i=4 = 0 comm_node_ids = 63 comm_node_proc_ids = 0
-node_cmap_id i=5 = 0 comm_node_ids = 64 comm_node_proc_ids = 0
-node_cmap_id i=6 = 0 comm_node_ids = 65 comm_node_proc_ids = 0
-node_cmap_id i=7 = 0 comm_node_ids = 66 comm_node_proc_ids = 0
-node_cmap_id i=8 = 0 comm_node_ids = 67 comm_node_proc_ids = 0
-node_cmap_id i=9 = 0 comm_node_ids = 188 comm_node_proc_ids = 0
+node_cmap_id i=1 = 0 comm_node_ids = 8 comm_node_proc_ids = 0
+node_cmap_id i=2 = 0 comm_node_ids = 9 comm_node_proc_ids = 0
+node_cmap_id i=3 = 0 comm_node_ids = 10 comm_node_proc_ids = 0
+node_cmap_id i=4 = 0 comm_node_ids = 11 comm_node_proc_ids = 0
+node_cmap_id i=5 = 0 comm_node_ids = 12 comm_node_proc_ids = 0
+node_cmap_id i=6 = 0 comm_node_ids = 13 comm_node_proc_ids = 0
+node_cmap_id i=7 = 0 comm_node_ids = 14 comm_node_proc_ids = 0
+node_cmap_id i=8 = 0 comm_node_ids = 15 comm_node_proc_ids = 0
+node_cmap_id i=9 = 0 comm_node_ids = 16 comm_node_proc_ids = 0
 node_cmap_id i=0 = 2 comm_node_ids = 1 comm_node_proc_ids = 2
 node_cmap_id i=1 = 2 comm_node_ids = 2 comm_node_proc_ids = 2
 node_cmap_id i=2 = 2 comm_node_ids = 3 comm_node_proc_ids = 2
 node_cmap_id i=3 = 2 comm_node_ids = 4 comm_node_proc_ids = 2
 node_cmap_id i=4 = 2 comm_node_ids = 5 comm_node_proc_ids = 2
 node_cmap_id i=5 = 2 comm_node_ids = 6 comm_node_proc_ids = 2
-node_cmap_id i=6 = 2 comm_node_ids = 7 comm_node_proc_ids = 2
 node_cmap_id i=0 = 3 comm_node_ids = 1 comm_node_proc_ids = 3
 node_cmap_id i=0 = 4 comm_node_ids = 1 comm_node_proc_ids = 4
-node_cmap_id i=1 = 4 comm_node_ids = 8 comm_node_proc_ids = 4
-node_cmap_id i=0 = 5 comm_node_ids = 8 comm_node_proc_ids = 5
-node_cmap_id i=1 = 5 comm_node_ids = 9 comm_node_proc_ids = 5
-node_cmap_id i=2 = 5 comm_node_ids = 10 comm_node_proc_ids = 5
-node_cmap_id i=3 = 5 comm_node_ids = 11 comm_node_proc_ids = 5
-node_cmap_id i=4 = 5 comm_node_ids = 12 comm_node_proc_ids = 5
-node_cmap_id i=5 = 5 comm_node_ids = 13 comm_node_proc_ids = 5
-node_cmap_id i=6 = 5 comm_node_ids = 14 comm_node_proc_ids = 5
-node_cmap_id i=7 = 5 comm_node_ids = 15 comm_node_proc_ids = 5
-node_cmap_id i=8 = 5 comm_node_ids = 16 comm_node_proc_ids = 5
-node_cmap_id i=9 = 5 comm_node_ids = 17 comm_node_proc_ids = 5
-elem_cmap_id i=0 = 0 comm_elem_ids = 41 comm_side_ids = 3 comm_elem_proc_ids = 0
-elem_cmap_id i=1 = 0 comm_elem_ids = 42 comm_side_ids = 3 comm_elem_proc_ids = 0
-elem_cmap_id i=2 = 0 comm_elem_ids = 43 comm_side_ids = 3 comm_elem_proc_ids = 0
-elem_cmap_id i=3 = 0 comm_elem_ids = 44 comm_side_ids = 3 comm_elem_proc_ids = 0
-elem_cmap_id i=4 = 0 comm_elem_ids = 45 comm_side_ids = 3 comm_elem_proc_ids = 0
-elem_cmap_id i=5 = 0 comm_elem_ids = 46 comm_side_ids = 3 comm_elem_proc_ids = 0
-elem_cmap_id i=6 = 0 comm_elem_ids = 47 comm_side_ids = 3 comm_elem_proc_ids = 0
-elem_cmap_id i=7 = 0 comm_elem_ids = 48 comm_side_ids = 3 comm_elem_proc_ids = 0
-elem_cmap_id i=8 = 0 comm_elem_ids = 85 comm_side_ids = 3 comm_elem_proc_ids = 0
-elem_cmap_id i=9 = 0 comm_elem_ids = 86 comm_side_ids = 3 comm_elem_proc_ids = 0
+node_cmap_id i=1 = 4 comm_node_ids = 7 comm_node_proc_ids = 4
+node_cmap_id i=0 = 5 comm_node_ids = 6 comm_node_proc_ids = 5
+node_cmap_id i=1 = 5 comm_node_ids = 52 comm_node_proc_ids = 5
+node_cmap_id i=2 = 5 comm_node_ids = 53 comm_node_proc_ids = 5
+node_cmap_id i=3 = 5 comm_node_ids = 54 comm_node_proc_ids = 5
+node_cmap_id i=4 = 5 comm_node_ids = 55 comm_node_proc_ids = 5
+node_cmap_id i=5 = 5 comm_node_ids = 56 comm_node_proc_ids = 5
+node_cmap_id i=6 = 5 comm_node_ids = 57 comm_node_proc_ids = 5
+node_cmap_id i=7 = 5 comm_node_ids = 58 comm_node_proc_ids = 5
+node_cmap_id i=8 = 5 comm_node_ids = 59 comm_node_proc_ids = 5
+node_cmap_id i=9 = 5 comm_node_ids = 180 comm_node_proc_ids = 5
+elem_cmap_id i=0 = 0 comm_elem_ids = 2 comm_side_ids = 1 comm_elem_proc_ids = 0
+elem_cmap_id i=1 = 0 comm_elem_ids = 3 comm_side_ids = 1 comm_elem_proc_ids = 0
+elem_cmap_id i=2 = 0 comm_elem_ids = 4 comm_side_ids = 1 comm_elem_proc_ids = 0
+elem_cmap_id i=3 = 0 comm_elem_ids = 5 comm_side_ids = 1 comm_elem_proc_ids = 0
+elem_cmap_id i=4 = 0 comm_elem_ids = 6 comm_side_ids = 1 comm_elem_proc_ids = 0
+elem_cmap_id i=5 = 0 comm_elem_ids = 7 comm_side_ids = 1 comm_elem_proc_ids = 0
+elem_cmap_id i=6 = 0 comm_elem_ids = 8 comm_side_ids = 1 comm_elem_proc_ids = 0
+elem_cmap_id i=7 = 0 comm_elem_ids = 41 comm_side_ids = 4 comm_elem_proc_ids = 0
+elem_cmap_id i=8 = 0 comm_elem_ids = 41 comm_side_ids = 1 comm_elem_proc_ids = 0
+elem_cmap_id i=9 = 0 comm_elem_ids = 42 comm_side_ids = 1 comm_elem_proc_ids = 0
 elem_cmap_id i=0 = 2 comm_elem_ids = 1 comm_side_ids = 4 comm_elem_proc_ids = 2
 elem_cmap_id i=1 = 2 comm_elem_ids = 9 comm_side_ids = 4 comm_elem_proc_ids = 2
 elem_cmap_id i=2 = 2 comm_elem_ids = 17 comm_side_ids = 4 comm_elem_proc_ids = 2
 elem_cmap_id i=3 = 2 comm_elem_ids = 25 comm_side_ids = 4 comm_elem_proc_ids = 2
 elem_cmap_id i=4 = 2 comm_elem_ids = 33 comm_side_ids = 4 comm_elem_proc_ids = 2
-elem_cmap_id i=5 = 2 comm_elem_ids = 41 comm_side_ids = 4 comm_elem_proc_ids = 2
 elem_cmap_id i=0 = 4 comm_elem_ids = 1 comm_side_ids = 1 comm_elem_proc_ids = 4
-elem_cmap_id i=0 = 5 comm_elem_ids = 2 comm_side_ids = 1 comm_elem_proc_ids = 5
-elem_cmap_id i=1 = 5 comm_elem_ids = 3 comm_side_ids = 1 comm_elem_proc_ids = 5
-elem_cmap_id i=2 = 5 comm_elem_ids = 4 comm_side_ids = 1 comm_elem_proc_ids = 5
-elem_cmap_id i=3 = 5 comm_elem_ids = 5 comm_side_ids = 1 comm_elem_proc_ids = 5
-elem_cmap_id i=4 = 5 comm_elem_ids = 6 comm_side_ids = 1 comm_elem_proc_ids = 5
-elem_cmap_id i=5 = 5 comm_elem_ids = 7 comm_side_ids = 1 comm_elem_proc_ids = 5
-elem_cmap_id i=6 = 5 comm_elem_ids = 8 comm_side_ids = 1 comm_elem_proc_ids = 5
-elem_cmap_id i=7 = 5 comm_elem_ids = 49 comm_side_ids = 4 comm_elem_proc_ids = 5
-elem_cmap_id i=8 = 5 comm_elem_ids = 49 comm_side_ids = 1 comm_elem_proc_ids = 5
-elem_cmap_id i=9 = 5 comm_elem_ids = 50 comm_side_ids = 1 comm_elem_proc_ids = 5
+elem_cmap_id i=0 = 5 comm_elem_ids = 33 comm_side_ids = 3 comm_elem_proc_ids = 5
+elem_cmap_id i=1 = 5 comm_elem_ids = 34 comm_side_ids = 3 comm_elem_proc_ids = 5
+elem_cmap_id i=2 = 5 comm_elem_ids = 35 comm_side_ids = 3 comm_elem_proc_ids = 5
+elem_cmap_id i=3 = 5 comm_elem_ids = 36 comm_side_ids = 3 comm_elem_proc_ids = 5
+elem_cmap_id i=4 = 5 comm_elem_ids = 37 comm_side_ids = 3 comm_elem_proc_ids = 5
+elem_cmap_id i=5 = 5 comm_elem_ids = 38 comm_side_ids = 3 comm_elem_proc_ids = 5
+elem_cmap_id i=6 = 5 comm_elem_ids = 39 comm_side_ids = 3 comm_elem_proc_ids = 5
+elem_cmap_id i=7 = 5 comm_elem_ids = 40 comm_side_ids = 3 comm_elem_proc_ids = 5
+elem_cmap_id i=8 = 5 comm_elem_ids = 77 comm_side_ids = 3 comm_elem_proc_ids = 5
+elem_cmap_id i=9 = 5 comm_elem_ids = 78 comm_side_ids = 3 comm_elem_proc_ids = 5
 INFO Records
 Inline mesh specification requested: 
 	1024 Elements 
@@ -1284,30 +1285,19 @@ border elem i=6 = 7
 border elem i=7 = 8
 border elem i=8 = 9
 border elem i=9 = 17
-node_cmap_id i = 0 node_cmap_id = 0 node_cmap_node_cnts = 15
-node_cmap_id i = 1 node_cmap_id = 1 node_cmap_node_cnts = 7
-node_cmap_id i = 2 node_cmap_id = 3 node_cmap_node_cnts = 26
-node_cmap_id i = 3 node_cmap_id = 4 node_cmap_node_cnts = 1
-elem_cmap_id i = 0 elem_cmap_id = 0 elem_cmap_elem_cnts = 14
-elem_cmap_id i = 1 elem_cmap_id = 1 elem_cmap_elem_cnts = 6
-elem_cmap_id i = 2 elem_cmap_id = 3 elem_cmap_elem_cnts = 25
-node_cmap_id i=0 = 0 comm_node_ids = 7 comm_node_proc_ids = 0
-node_cmap_id i=1 = 0 comm_node_ids = 8 comm_node_proc_ids = 0
-node_cmap_id i=2 = 0 comm_node_ids = 9 comm_node_proc_ids = 0
-node_cmap_id i=3 = 0 comm_node_ids = 82 comm_node_proc_ids = 0
-node_cmap_id i=4 = 0 comm_node_ids = 83 comm_node_proc_ids = 0
-node_cmap_id i=5 = 0 comm_node_ids = 84 comm_node_proc_ids = 0
-node_cmap_id i=6 = 0 comm_node_ids = 85 comm_node_proc_ids = 0
-node_cmap_id i=7 = 0 comm_node_ids = 86 comm_node_proc_ids = 0
-node_cmap_id i=8 = 0 comm_node_ids = 87 comm_node_proc_ids = 0
-node_cmap_id i=9 = 0 comm_node_ids = 88 comm_node_proc_ids = 0
+node_cmap_id i = 0 node_cmap_id = 1 node_cmap_node_cnts = 6
+node_cmap_id i = 1 node_cmap_id = 3 node_cmap_node_cnts = 26
+node_cmap_id i = 2 node_cmap_id = 4 node_cmap_node_cnts = 1
+node_cmap_id i = 3 node_cmap_id = 5 node_cmap_node_cnts = 16
+elem_cmap_id i = 0 elem_cmap_id = 1 elem_cmap_elem_cnts = 5
+elem_cmap_id i = 1 elem_cmap_id = 3 elem_cmap_elem_cnts = 25
+elem_cmap_id i = 2 elem_cmap_id = 5 elem_cmap_elem_cnts = 15
 node_cmap_id i=0 = 1 comm_node_ids = 1 comm_node_proc_ids = 1
 node_cmap_id i=1 = 1 comm_node_ids = 2 comm_node_proc_ids = 1
 node_cmap_id i=2 = 1 comm_node_ids = 3 comm_node_proc_ids = 1
 node_cmap_id i=3 = 1 comm_node_ids = 4 comm_node_proc_ids = 1
 node_cmap_id i=4 = 1 comm_node_ids = 5 comm_node_proc_ids = 1
 node_cmap_id i=5 = 1 comm_node_ids = 6 comm_node_proc_ids = 1
-node_cmap_id i=6 = 1 comm_node_ids = 7 comm_node_proc_ids = 1
 node_cmap_id i=0 = 3 comm_node_ids = 1 comm_node_proc_ids = 3
 node_cmap_id i=1 = 3 comm_node_ids = 10 comm_node_proc_ids = 3
 node_cmap_id i=2 = 3 comm_node_ids = 19 comm_node_proc_ids = 3
@@ -1319,22 +1309,21 @@ node_cmap_id i=7 = 3 comm_node_ids = 64 comm_node_proc_ids = 3
 node_cmap_id i=8 = 3 comm_node_ids = 73 comm_node_proc_ids = 3
 node_cmap_id i=9 = 3 comm_node_ids = 74 comm_node_proc_ids = 3
 node_cmap_id i=0 = 4 comm_node_ids = 1 comm_node_proc_ids = 4
-elem_cmap_id i=0 = 0 comm_elem_ids = 7 comm_side_ids = 1 comm_elem_proc_ids = 0
-elem_cmap_id i=1 = 0 comm_elem_ids = 8 comm_side_ids = 1 comm_elem_proc_ids = 0
-elem_cmap_id i=2 = 0 comm_elem_ids = 65 comm_side_ids = 1 comm_elem_proc_ids = 0
-elem_cmap_id i=3 = 0 comm_elem_ids = 66 comm_side_ids = 1 comm_elem_proc_ids = 0
-elem_cmap_id i=4 = 0 comm_elem_ids = 67 comm_side_ids = 1 comm_elem_proc_ids = 0
-elem_cmap_id i=5 = 0 comm_elem_ids = 68 comm_side_ids = 1 comm_elem_proc_ids = 0
-elem_cmap_id i=6 = 0 comm_elem_ids = 109 comm_side_ids = 1 comm_elem_proc_ids = 0
-elem_cmap_id i=7 = 0 comm_elem_ids = 110 comm_side_ids = 1 comm_elem_proc_ids = 0
-elem_cmap_id i=8 = 0 comm_elem_ids = 111 comm_side_ids = 1 comm_elem_proc_ids = 0
-elem_cmap_id i=9 = 0 comm_elem_ids = 112 comm_side_ids = 1 comm_elem_proc_ids = 0
+node_cmap_id i=0 = 5 comm_node_ids = 6 comm_node_proc_ids = 5
+node_cmap_id i=1 = 5 comm_node_ids = 7 comm_node_proc_ids = 5
+node_cmap_id i=2 = 5 comm_node_ids = 8 comm_node_proc_ids = 5
+node_cmap_id i=3 = 5 comm_node_ids = 9 comm_node_proc_ids = 5
+node_cmap_id i=4 = 5 comm_node_ids = 82 comm_node_proc_ids = 5
+node_cmap_id i=5 = 5 comm_node_ids = 83 comm_node_proc_ids = 5
+node_cmap_id i=6 = 5 comm_node_ids = 84 comm_node_proc_ids = 5
+node_cmap_id i=7 = 5 comm_node_ids = 85 comm_node_proc_ids = 5
+node_cmap_id i=8 = 5 comm_node_ids = 86 comm_node_proc_ids = 5
+node_cmap_id i=9 = 5 comm_node_ids = 87 comm_node_proc_ids = 5
 elem_cmap_id i=0 = 1 comm_elem_ids = 1 comm_side_ids = 1 comm_elem_proc_ids = 1
 elem_cmap_id i=1 = 1 comm_elem_ids = 2 comm_side_ids = 1 comm_elem_proc_ids = 1
 elem_cmap_id i=2 = 1 comm_elem_ids = 3 comm_side_ids = 1 comm_elem_proc_ids = 1
 elem_cmap_id i=3 = 1 comm_elem_ids = 4 comm_side_ids = 1 comm_elem_proc_ids = 1
 elem_cmap_id i=4 = 1 comm_elem_ids = 5 comm_side_ids = 1 comm_elem_proc_ids = 1
-elem_cmap_id i=5 = 1 comm_elem_ids = 6 comm_side_ids = 1 comm_elem_proc_ids = 1
 elem_cmap_id i=0 = 3 comm_elem_ids = 1 comm_side_ids = 4 comm_elem_proc_ids = 3
 elem_cmap_id i=1 = 3 comm_elem_ids = 9 comm_side_ids = 4 comm_elem_proc_ids = 3
 elem_cmap_id i=2 = 3 comm_elem_ids = 17 comm_side_ids = 4 comm_elem_proc_ids = 3
@@ -1345,6 +1334,16 @@ elem_cmap_id i=6 = 3 comm_elem_ids = 49 comm_side_ids = 4 comm_elem_proc_ids = 3
 elem_cmap_id i=7 = 3 comm_elem_ids = 57 comm_side_ids = 4 comm_elem_proc_ids = 3
 elem_cmap_id i=8 = 3 comm_elem_ids = 57 comm_side_ids = 3 comm_elem_proc_ids = 3
 elem_cmap_id i=9 = 3 comm_elem_ids = 58 comm_side_ids = 3 comm_elem_proc_ids = 3
+elem_cmap_id i=0 = 5 comm_elem_ids = 6 comm_side_ids = 1 comm_elem_proc_ids = 5
+elem_cmap_id i=1 = 5 comm_elem_ids = 7 comm_side_ids = 1 comm_elem_proc_ids = 5
+elem_cmap_id i=2 = 5 comm_elem_ids = 8 comm_side_ids = 1 comm_elem_proc_ids = 5
+elem_cmap_id i=3 = 5 comm_elem_ids = 65 comm_side_ids = 1 comm_elem_proc_ids = 5
+elem_cmap_id i=4 = 5 comm_elem_ids = 66 comm_side_ids = 1 comm_elem_proc_ids = 5
+elem_cmap_id i=5 = 5 comm_elem_ids = 67 comm_side_ids = 1 comm_elem_proc_ids = 5
+elem_cmap_id i=6 = 5 comm_elem_ids = 68 comm_side_ids = 1 comm_elem_proc_ids = 5
+elem_cmap_id i=7 = 5 comm_elem_ids = 109 comm_side_ids = 1 comm_elem_proc_ids = 5
+elem_cmap_id i=8 = 5 comm_elem_ids = 110 comm_side_ids = 1 comm_elem_proc_ids = 5
+elem_cmap_id i=9 = 5 comm_elem_ids = 111 comm_side_ids = 1 comm_elem_proc_ids = 5
 INFO Records
 Inline mesh specification requested: 
 	1024 Elements 
@@ -2184,13 +2183,23 @@ border elem i=6 = 7
 border elem i=7 = 8
 border elem i=8 = 17
 border elem i=9 = 18
-node_cmap_id i = 0 node_cmap_id = 1 node_cmap_node_cnts = 2
-node_cmap_id i = 1 node_cmap_id = 2 node_cmap_node_cnts = 1
-node_cmap_id i = 2 node_cmap_id = 3 node_cmap_node_cnts = 27
-node_cmap_id i = 3 node_cmap_id = 5 node_cmap_node_cnts = 21
-elem_cmap_id i = 0 elem_cmap_id = 1 elem_cmap_elem_cnts = 1
-elem_cmap_id i = 1 elem_cmap_id = 3 elem_cmap_elem_cnts = 26
-elem_cmap_id i = 2 elem_cmap_id = 5 elem_cmap_elem_cnts = 20
+node_cmap_id i = 0 node_cmap_id = 0 node_cmap_node_cnts = 21
+node_cmap_id i = 1 node_cmap_id = 1 node_cmap_node_cnts = 2
+node_cmap_id i = 2 node_cmap_id = 2 node_cmap_node_cnts = 1
+node_cmap_id i = 3 node_cmap_id = 3 node_cmap_node_cnts = 27
+elem_cmap_id i = 0 elem_cmap_id = 0 elem_cmap_elem_cnts = 20
+elem_cmap_id i = 1 elem_cmap_id = 1 elem_cmap_elem_cnts = 1
+elem_cmap_id i = 2 elem_cmap_id = 3 elem_cmap_elem_cnts = 26
+node_cmap_id i=0 = 0 comm_node_ids = 34 comm_node_proc_ids = 0
+node_cmap_id i=1 = 0 comm_node_ids = 35 comm_node_proc_ids = 0
+node_cmap_id i=2 = 0 comm_node_ids = 36 comm_node_proc_ids = 0
+node_cmap_id i=3 = 0 comm_node_ids = 37 comm_node_proc_ids = 0
+node_cmap_id i=4 = 0 comm_node_ids = 38 comm_node_proc_ids = 0
+node_cmap_id i=5 = 0 comm_node_ids = 39 comm_node_proc_ids = 0
+node_cmap_id i=6 = 0 comm_node_ids = 40 comm_node_proc_ids = 0
+node_cmap_id i=7 = 0 comm_node_ids = 41 comm_node_proc_ids = 0
+node_cmap_id i=8 = 0 comm_node_ids = 42 comm_node_proc_ids = 0
+node_cmap_id i=9 = 0 comm_node_ids = 175 comm_node_proc_ids = 0
 node_cmap_id i=0 = 1 comm_node_ids = 1 comm_node_proc_ids = 1
 node_cmap_id i=1 = 1 comm_node_ids = 34 comm_node_proc_ids = 1
 node_cmap_id i=0 = 2 comm_node_ids = 1 comm_node_proc_ids = 2
@@ -2204,16 +2213,16 @@ node_cmap_id i=6 = 3 comm_node_ids = 7 comm_node_proc_ids = 3
 node_cmap_id i=7 = 3 comm_node_ids = 8 comm_node_proc_ids = 3
 node_cmap_id i=8 = 3 comm_node_ids = 9 comm_node_proc_ids = 3
 node_cmap_id i=9 = 3 comm_node_ids = 10 comm_node_proc_ids = 3
-node_cmap_id i=0 = 5 comm_node_ids = 34 comm_node_proc_ids = 5
-node_cmap_id i=1 = 5 comm_node_ids = 35 comm_node_proc_ids = 5
-node_cmap_id i=2 = 5 comm_node_ids = 36 comm_node_proc_ids = 5
-node_cmap_id i=3 = 5 comm_node_ids = 37 comm_node_proc_ids = 5
-node_cmap_id i=4 = 5 comm_node_ids = 38 comm_node_proc_ids = 5
-node_cmap_id i=5 = 5 comm_node_ids = 39 comm_node_proc_ids = 5
-node_cmap_id i=6 = 5 comm_node_ids = 40 comm_node_proc_ids = 5
-node_cmap_id i=7 = 5 comm_node_ids = 41 comm_node_proc_ids = 5
-node_cmap_id i=8 = 5 comm_node_ids = 42 comm_node_proc_ids = 5
-node_cmap_id i=9 = 5 comm_node_ids = 175 comm_node_proc_ids = 5
+elem_cmap_id i=0 = 0 comm_elem_ids = 17 comm_side_ids = 3 comm_elem_proc_ids = 0
+elem_cmap_id i=1 = 0 comm_elem_ids = 18 comm_side_ids = 3 comm_elem_proc_ids = 0
+elem_cmap_id i=2 = 0 comm_elem_ids = 19 comm_side_ids = 3 comm_elem_proc_ids = 0
+elem_cmap_id i=3 = 0 comm_elem_ids = 20 comm_side_ids = 3 comm_elem_proc_ids = 0
+elem_cmap_id i=4 = 0 comm_elem_ids = 21 comm_side_ids = 3 comm_elem_proc_ids = 0
+elem_cmap_id i=5 = 0 comm_elem_ids = 22 comm_side_ids = 3 comm_elem_proc_ids = 0
+elem_cmap_id i=6 = 0 comm_elem_ids = 23 comm_side_ids = 3 comm_elem_proc_ids = 0
+elem_cmap_id i=7 = 0 comm_elem_ids = 24 comm_side_ids = 3 comm_elem_proc_ids = 0
+elem_cmap_id i=8 = 0 comm_elem_ids = 65 comm_side_ids = 3 comm_elem_proc_ids = 0
+elem_cmap_id i=9 = 0 comm_elem_ids = 66 comm_side_ids = 3 comm_elem_proc_ids = 0
 elem_cmap_id i=0 = 1 comm_elem_ids = 17 comm_side_ids = 4 comm_elem_proc_ids = 1
 elem_cmap_id i=0 = 3 comm_elem_ids = 1 comm_side_ids = 1 comm_elem_proc_ids = 3
 elem_cmap_id i=1 = 3 comm_elem_ids = 2 comm_side_ids = 1 comm_elem_proc_ids = 3
@@ -2225,16 +2234,6 @@ elem_cmap_id i=6 = 3 comm_elem_ids = 7 comm_side_ids = 1 comm_elem_proc_ids = 3
 elem_cmap_id i=7 = 3 comm_elem_ids = 8 comm_side_ids = 1 comm_elem_proc_ids = 3
 elem_cmap_id i=8 = 3 comm_elem_ids = 17 comm_side_ids = 1 comm_elem_proc_ids = 3
 elem_cmap_id i=9 = 3 comm_elem_ids = 18 comm_side_ids = 1 comm_elem_proc_ids = 3
-elem_cmap_id i=0 = 5 comm_elem_ids = 17 comm_side_ids = 3 comm_elem_proc_ids = 5
-elem_cmap_id i=1 = 5 comm_elem_ids = 18 comm_side_ids = 3 comm_elem_proc_ids = 5
-elem_cmap_id i=2 = 5 comm_elem_ids = 19 comm_side_ids = 3 comm_elem_proc_ids = 5
-elem_cmap_id i=3 = 5 comm_elem_ids = 20 comm_side_ids = 3 comm_elem_proc_ids = 5
-elem_cmap_id i=4 = 5 comm_elem_ids = 21 comm_side_ids = 3 comm_elem_proc_ids = 5
-elem_cmap_id i=5 = 5 comm_elem_ids = 22 comm_side_ids = 3 comm_elem_proc_ids = 5
-elem_cmap_id i=6 = 5 comm_elem_ids = 23 comm_side_ids = 3 comm_elem_proc_ids = 5
-elem_cmap_id i=7 = 5 comm_elem_ids = 24 comm_side_ids = 3 comm_elem_proc_ids = 5
-elem_cmap_id i=8 = 5 comm_elem_ids = 65 comm_side_ids = 3 comm_elem_proc_ids = 5
-elem_cmap_id i=9 = 5 comm_elem_ids = 66 comm_side_ids = 3 comm_elem_proc_ids = 5
 INFO Records
 Inline mesh specification requested: 
 	1024 Elements 
@@ -2253,8 +2252,8 @@ Using  BISECTION decomposition.
 Exodus header info:
 Title: PAMGEN Inline Mesh
 Dimension 2 
-Number of Nodes 216 
-Number of Elements 188 
+Number of Nodes 180 
+Number of Elements 156 
 Number of Element Blocks 17 
 Number of Node Sets 9 
 Number of Side Sets 8 
@@ -2268,56 +2267,56 @@ num block properties 0
 num node set properties 0
 num side set properties 0
 A taste of coords
-X 0.006013 Y -0.014517 
-X -0.008227 Y -0.019863 
-X -0.022468 Y -0.025208 
-X -0.036709 Y -0.030553 
-X -0.050949 Y -0.035898 
-X -0.065190 Y -0.041243 
-X -0.079430 Y -0.046588 
-X -0.093671 Y -0.051933 
-X -0.107912 Y -0.057279 
-X 0.012027 Y -0.029035 
+X 0.072587 Y 0.030066 
+X 0.087104 Y 0.036080 
+X 0.101622 Y 0.042093 
+X 0.116139 Y 0.048106 
+X 0.075259 Y 0.016933 
+X 0.077932 Y 0.003799 
+X 0.080605 Y -0.009334 
+X 0.083277 Y -0.022468 
+X 0.085950 Y -0.035602 
+X 0.088622 Y -0.048735 
 coord name 0 X
 coord name 1 Y
 A tast of map
-map i=0, val=137
-map i=1, val=138
-map i=2, val=139
-map i=3, val=140
-map i=4, val=141
-map i=5, val=142
-map i=6, val=143
-map i=7, val=144
-map i=8, val=145
-map i=9, val=146
+map i=0, val=233
+map i=1, val=234
+map i=2, val=235
+map i=3, val=236
+map i=4, val=237
+map i=5, val=238
+map i=6, val=239
+map i=7, val=240
+map i=8, val=241
+map i=9, val=242
 A tast of global elem numbers
-global el num  i=0, val=137
-global el num  i=1, val=138
-global el num  i=2, val=139
-global el num  i=3, val=140
-global el num  i=4, val=141
-global el num  i=5, val=142
-global el num  i=6, val=143
-global el num  i=7, val=144
-global el num  i=8, val=145
-global el num  i=9, val=146
+global el num  i=0, val=233
+global el num  i=1, val=234
+global el num  i=2, val=235
+global el num  i=3, val=236
+global el num  i=4, val=237
+global el num  i=5, val=238
+global el num  i=6, val=239
+global el num  i=7, val=240
+global el num  i=8, val=241
+global el num  i=9, val=242
 A tast of global elem numbers
-global node num  i=0, val=154
-global node num  i=1, val=155
-global node num  i=2, val=156
-global node num  i=3, val=157
-global node num  i=4, val=158
-global node num  i=5, val=159
-global node num  i=6, val=160
-global node num  i=7, val=161
-global node num  i=8, val=162
-global node num  i=9, val=163
+global node num  i=0, val=6
+global node num  i=1, val=7
+global node num  i=2, val=8
+global node num  i=3, val=9
+global node num  i=4, val=258
+global node num  i=5, val=259
+global node num  i=6, val=260
+global node num  i=7, val=261
+global node num  i=8, val=262
+global node num  i=9, val=263
 block i = 0 has id 1 
 block i = 0
 block id 1
 element_type QUAD
-num elements 100
+num elements 68
 nodes per element 4
 element attributes 0
 block i = 1 has id 2 
@@ -2380,110 +2379,121 @@ block i = 9 has id 10
 block i = 9
 block id 10
 element_type QUAD
-num elements 28
+num elements 0
 nodes per element 4
 element attributes 0
 block i = 10 has id 11 
 block i = 10
 block id 11
 element_type QUAD
-num elements 28
+num elements 0
 nodes per element 4
 element attributes 0
 block i = 11 has id 12 
 block i = 11
 block id 12
 element_type QUAD
-num elements 16
+num elements 0
 nodes per element 4
 element attributes 0
 block i = 12 has id 13 
 block i = 12
 block id 13
 element_type QUAD
-num elements 16
+num elements 0
 nodes per element 4
 element attributes 0
 block i = 13 has id 14 
 block i = 13
 block id 14
 element_type QUAD
-num elements 0
+num elements 12
 nodes per element 4
 element attributes 0
 block i = 14 has id 15 
 block i = 14
 block id 15
 element_type QUAD
-num elements 0
+num elements 12
 nodes per element 4
 element attributes 0
 block i = 15 has id 16 
 block i = 15
 block id 16
 element_type QUAD
-num elements 0
+num elements 32
 nodes per element 4
 element attributes 0
 block i = 16 has id 17 
 block i = 16
 block id 17
 element_type QUAD
-num elements 0
+num elements 32
 nodes per element 4
 element attributes 0
-block 1 element 0 connectivty 1 2 11 10 
-block 1 element 1 connectivty 2 3 12 11 
-block 1 element 2 connectivty 3 4 13 12 
-block 1 element 3 connectivty 4 5 14 13 
-block 1 element 4 connectivty 5 6 15 14 
-block 1 element 5 connectivty 6 7 16 15 
-block 1 element 6 connectivty 7 8 17 16 
-block 1 element 7 connectivty 8 9 18 17 
-block 1 element 8 connectivty 10 11 20 19 
-block 1 element 9 connectivty 11 12 21 20 
-block 10 element 0 connectivty 76 77 89 88 
-block 10 element 1 connectivty 77 78 90 89 
-block 10 element 2 connectivty 78 79 91 90 
-block 10 element 3 connectivty 79 80 92 91 
-block 10 element 4 connectivty 88 89 101 100 
-block 10 element 5 connectivty 89 90 102 101 
-block 10 element 6 connectivty 90 91 103 102 
-block 10 element 7 connectivty 91 92 104 103 
-block 10 element 8 connectivty 100 101 113 112 
-block 10 element 9 connectivty 101 102 114 113 
-block 11 element 0 connectivty 80 81 93 92 
-block 11 element 1 connectivty 81 82 94 93 
-block 11 element 2 connectivty 82 83 95 94 
-block 11 element 3 connectivty 83 84 96 95 
-block 11 element 4 connectivty 92 93 105 104 
-block 11 element 5 connectivty 93 94 106 105 
-block 11 element 6 connectivty 94 95 107 106 
-block 11 element 7 connectivty 95 96 108 107 
-block 11 element 8 connectivty 104 105 117 116 
-block 11 element 9 connectivty 105 106 118 117 
-block 12 element 0 connectivty 160 161 173 172 
-block 12 element 1 connectivty 161 162 174 173 
-block 12 element 2 connectivty 162 163 175 174 
-block 12 element 3 connectivty 163 164 176 175 
-block 12 element 4 connectivty 172 173 185 184 
-block 12 element 5 connectivty 173 174 186 185 
-block 12 element 6 connectivty 174 175 187 186 
-block 12 element 7 connectivty 175 176 188 187 
-block 12 element 8 connectivty 184 185 197 196 
-block 12 element 9 connectivty 185 186 198 197 
-block 13 element 0 connectivty 164 165 177 176 
-block 13 element 1 connectivty 165 166 178 177 
-block 13 element 2 connectivty 166 167 179 178 
-block 13 element 3 connectivty 167 168 180 179 
-block 13 element 4 connectivty 176 177 189 188 
-block 13 element 5 connectivty 177 178 190 189 
-block 13 element 6 connectivty 178 179 191 190 
-block 13 element 7 connectivty 179 180 192 191 
-block 13 element 8 connectivty 188 189 201 200 
-block 13 element 9 connectivty 189 190 202 201 
+block 1 element 0 connectivty 1 5 13 2 
+block 1 element 1 connectivty 5 6 14 13 
+block 1 element 2 connectivty 6 7 15 14 
+block 1 element 3 connectivty 7 8 16 15 
+block 1 element 4 connectivty 8 9 17 16 
+block 1 element 5 connectivty 9 10 18 17 
+block 1 element 6 connectivty 10 11 19 18 
+block 1 element 7 connectivty 11 12 20 19 
+block 1 element 8 connectivty 2 13 21 3 
+block 1 element 9 connectivty 13 14 22 21 
+block 14 element 0 connectivty 52 53 65 64 
+block 14 element 1 connectivty 53 54 66 65 
+block 14 element 2 connectivty 54 55 67 66 
+block 14 element 3 connectivty 55 56 68 67 
+block 14 element 4 connectivty 64 65 77 76 
+block 14 element 5 connectivty 65 66 78 77 
+block 14 element 6 connectivty 66 67 79 78 
+block 14 element 7 connectivty 67 68 80 79 
+block 14 element 8 connectivty 76 77 89 88 
+block 14 element 9 connectivty 77 78 90 89 
+block 15 element 0 connectivty 56 57 69 68 
+block 15 element 1 connectivty 57 58 70 69 
+block 15 element 2 connectivty 58 59 71 70 
+block 15 element 3 connectivty 59 60 72 71 
+block 15 element 4 connectivty 68 69 81 80 
+block 15 element 5 connectivty 69 70 82 81 
+block 15 element 6 connectivty 70 71 83 82 
+block 15 element 7 connectivty 71 72 84 83 
+block 15 element 8 connectivty 80 81 93 92 
+block 15 element 9 connectivty 81 82 94 93 
+block 16 element 0 connectivty 88 89 101 100 
+block 16 element 1 connectivty 89 90 102 101 
+block 16 element 2 connectivty 90 91 103 102 
+block 16 element 3 connectivty 91 92 104 103 
+block 16 element 4 connectivty 100 101 113 112 
+block 16 element 5 connectivty 101 102 114 113 
+block 16 element 6 connectivty 102 103 115 114 
+block 16 element 7 connectivty 103 104 116 115 
+block 16 element 8 connectivty 112 113 125 124 
+block 16 element 9 connectivty 113 114 126 125 
+block 17 element 0 connectivty 92 93 105 104 
+block 17 element 1 connectivty 93 94 106 105 
+block 17 element 2 connectivty 94 95 107 106 
+block 17 element 3 connectivty 95 96 108 107 
+block 17 element 4 connectivty 104 105 117 116 
+block 17 element 5 connectivty 105 106 118 117 
+block 17 element 6 connectivty 106 107 119 118 
+block 17 element 7 connectivty 107 108 120 119 
+block 17 element 8 connectivty 116 117 129 128 
+block 17 element 9 connectivty 117 118 130 129 
 Nodeset i = 0 id = 40 has 12 nodes
-nodeset node i=0 = 84
+nodeset node i=0 = 48
+nodeset node i=1 = 60
+nodeset node i=2 = 72
+nodeset node i=3 = 84
+nodeset node i=4 = 96
+nodeset node i=5 = 108
+nodeset node i=6 = 120
+nodeset node i=7 = 132
+nodeset node i=8 = 144
+nodeset node i=9 = 156
+Nodeset i = 1 id = 801 has 9 nodes
+nodeset node i=0 = 48
 nodeset node i=1 = 96
 nodeset node i=2 = 108
 nodeset node i=3 = 120
@@ -2492,36 +2502,20 @@ nodeset node i=5 = 144
 nodeset node i=6 = 156
 nodeset node i=7 = 168
 nodeset node i=8 = 180
-nodeset node i=9 = 192
-Nodeset i = 1 id = 801 has 0 nodes
-Nodeset i = 2 id = 701 has 0 nodes
-Nodeset i = 3 id = 601 has 5 nodes
-nodeset node i=0 = 168
-nodeset node i=1 = 180
-nodeset node i=2 = 192
-nodeset node i=3 = 204
-nodeset node i=4 = 216
-Nodeset i = 4 id = 501 has 8 nodes
-nodeset node i=0 = 84
-nodeset node i=1 = 96
-nodeset node i=2 = 108
-nodeset node i=3 = 120
-nodeset node i=4 = 132
-nodeset node i=5 = 144
-nodeset node i=6 = 156
-nodeset node i=7 = 168
+Nodeset i = 2 id = 701 has 4 nodes
+nodeset node i=0 = 60
+nodeset node i=1 = 72
+nodeset node i=2 = 84
+nodeset node i=3 = 96
+Nodeset i = 3 id = 601 has 0 nodes
+Nodeset i = 4 id = 501 has 0 nodes
 Nodeset i = 5 id = 401 has 0 nodes
 Nodeset i = 6 id = 301 has 0 nodes
 Nodeset i = 7 id = 201 has 0 nodes
-Nodeset i = 8 id = 101 has 0 nodes
-Side set index 0 id 800 has 0 elements
-Side set index 1 id 700 has 0 elements
-Side set index 2 id 600 has 4 elements
-element 176 and face 2
-element 180 and face 2
-element 184 and face 2
-element 188 and face 2
-Side set index 3 id 500 has 7 elements
+Nodeset i = 8 id = 101 has 1 nodes
+nodeset node i=0 = 48
+Side set index 0 id 800 has 8 elements
+element 128 and face 2
 element 132 and face 2
 element 136 and face 2
 element 140 and face 2
@@ -2529,6 +2523,12 @@ element 144 and face 2
 element 148 and face 2
 element 152 and face 2
 element 156 and face 2
+Side set index 1 id 700 has 3 elements
+element 84 and face 2
+element 88 and face 2
+element 92 and face 2
+Side set index 2 id 600 has 0 elements
+Side set index 3 id 500 has 0 elements
 Side set index 4 id 400 has 0 elements
 Side set index 5 id 300 has 0 elements
 Side set index 6 id 200 has 0 elements
@@ -2582,23 +2582,23 @@ global ss info for ss index 5 id 300 num_elements = 8 num_ss_df = 0
 global ss info for ss index 6 id 200 num_elements = 8 num_ss_df = 0
 global ss info for ss index 7 id 100 num_elements = 8 num_ss_df = 0
 Loadbal params:
-num_internal_nodes 172
-num_border_nodes44
+num_internal_nodes 144
+num_border_nodes36
 num_external_nodes0
-num_internal_elems147
-num_border_elems41
+num_internal_elems122
+num_border_elems34
 num_node_comm_maps2
 num_elem_comm_maps2
-internal node i=0 = 11
-internal node i=1 = 12
-internal node i=2 = 13
-internal node i=3 = 14
-internal node i=4 = 15
-internal node i=5 = 16
-internal node i=6 = 17
-internal node i=7 = 18
-internal node i=8 = 20
-internal node i=9 = 21
+internal node i=0 = 13
+internal node i=1 = 14
+internal node i=2 = 15
+internal node i=3 = 16
+internal node i=4 = 17
+internal node i=5 = 18
+internal node i=6 = 19
+internal node i=7 = 20
+internal node i=8 = 21
+internal node i=9 = 22
 border node i=0 = 1
 border node i=1 = 2
 border node i=2 = 3
@@ -2629,47 +2629,47 @@ border elem i=6 = 7
 border elem i=7 = 8
 border elem i=8 = 9
 border elem i=9 = 17
-node_cmap_id i = 0 node_cmap_id = 1 node_cmap_node_cnts = 24
-node_cmap_id i = 1 node_cmap_id = 4 node_cmap_node_cnts = 21
-elem_cmap_id i = 0 elem_cmap_id = 1 elem_cmap_elem_cnts = 23
-elem_cmap_id i = 1 elem_cmap_id = 4 elem_cmap_elem_cnts = 20
+node_cmap_id i = 0 node_cmap_id = 1 node_cmap_node_cnts = 21
+node_cmap_id i = 1 node_cmap_id = 2 node_cmap_node_cnts = 16
+elem_cmap_id i = 0 elem_cmap_id = 1 elem_cmap_elem_cnts = 20
+elem_cmap_id i = 1 elem_cmap_id = 2 elem_cmap_elem_cnts = 15
 node_cmap_id i=0 = 1 comm_node_ids = 1 comm_node_proc_ids = 1
-node_cmap_id i=1 = 1 comm_node_ids = 10 comm_node_proc_ids = 1
-node_cmap_id i=2 = 1 comm_node_ids = 19 comm_node_proc_ids = 1
-node_cmap_id i=3 = 1 comm_node_ids = 28 comm_node_proc_ids = 1
-node_cmap_id i=4 = 1 comm_node_ids = 37 comm_node_proc_ids = 1
-node_cmap_id i=5 = 1 comm_node_ids = 46 comm_node_proc_ids = 1
-node_cmap_id i=6 = 1 comm_node_ids = 55 comm_node_proc_ids = 1
-node_cmap_id i=7 = 1 comm_node_ids = 64 comm_node_proc_ids = 1
-node_cmap_id i=8 = 1 comm_node_ids = 65 comm_node_proc_ids = 1
-node_cmap_id i=9 = 1 comm_node_ids = 66 comm_node_proc_ids = 1
-node_cmap_id i=0 = 4 comm_node_ids = 1 comm_node_proc_ids = 4
-node_cmap_id i=1 = 4 comm_node_ids = 2 comm_node_proc_ids = 4
-node_cmap_id i=2 = 4 comm_node_ids = 3 comm_node_proc_ids = 4
-node_cmap_id i=3 = 4 comm_node_ids = 4 comm_node_proc_ids = 4
-node_cmap_id i=4 = 4 comm_node_ids = 5 comm_node_proc_ids = 4
-node_cmap_id i=5 = 4 comm_node_ids = 6 comm_node_proc_ids = 4
-node_cmap_id i=6 = 4 comm_node_ids = 7 comm_node_proc_ids = 4
-node_cmap_id i=7 = 4 comm_node_ids = 8 comm_node_proc_ids = 4
-node_cmap_id i=8 = 4 comm_node_ids = 9 comm_node_proc_ids = 4
-node_cmap_id i=9 = 4 comm_node_ids = 73 comm_node_proc_ids = 4
-elem_cmap_id i=0 = 1 comm_elem_ids = 1 comm_side_ids = 4 comm_elem_proc_ids = 1
-elem_cmap_id i=1 = 1 comm_elem_ids = 9 comm_side_ids = 4 comm_elem_proc_ids = 1
-elem_cmap_id i=2 = 1 comm_elem_ids = 17 comm_side_ids = 4 comm_elem_proc_ids = 1
-elem_cmap_id i=3 = 1 comm_elem_ids = 25 comm_side_ids = 4 comm_elem_proc_ids = 1
-elem_cmap_id i=4 = 1 comm_elem_ids = 33 comm_side_ids = 4 comm_elem_proc_ids = 1
-elem_cmap_id i=5 = 1 comm_elem_ids = 41 comm_side_ids = 4 comm_elem_proc_ids = 1
-elem_cmap_id i=6 = 1 comm_elem_ids = 49 comm_side_ids = 4 comm_elem_proc_ids = 1
-elem_cmap_id i=7 = 1 comm_elem_ids = 49 comm_side_ids = 3 comm_elem_proc_ids = 1
-elem_cmap_id i=8 = 1 comm_elem_ids = 50 comm_side_ids = 3 comm_elem_proc_ids = 1
-elem_cmap_id i=9 = 1 comm_elem_ids = 51 comm_side_ids = 3 comm_elem_proc_ids = 1
-elem_cmap_id i=0 = 4 comm_elem_ids = 1 comm_side_ids = 1 comm_elem_proc_ids = 4
-elem_cmap_id i=1 = 4 comm_elem_ids = 2 comm_side_ids = 1 comm_elem_proc_ids = 4
-elem_cmap_id i=2 = 4 comm_elem_ids = 3 comm_side_ids = 1 comm_elem_proc_ids = 4
-elem_cmap_id i=3 = 4 comm_elem_ids = 4 comm_side_ids = 1 comm_elem_proc_ids = 4
-elem_cmap_id i=4 = 4 comm_elem_ids = 5 comm_side_ids = 1 comm_elem_proc_ids = 4
-elem_cmap_id i=5 = 4 comm_elem_ids = 6 comm_side_ids = 1 comm_elem_proc_ids = 4
-elem_cmap_id i=6 = 4 comm_elem_ids = 7 comm_side_ids = 1 comm_elem_proc_ids = 4
-elem_cmap_id i=7 = 4 comm_elem_ids = 8 comm_side_ids = 1 comm_elem_proc_ids = 4
-elem_cmap_id i=8 = 4 comm_elem_ids = 57 comm_side_ids = 1 comm_elem_proc_ids = 4
-elem_cmap_id i=9 = 4 comm_elem_ids = 58 comm_side_ids = 1 comm_elem_proc_ids = 4
+node_cmap_id i=1 = 1 comm_node_ids = 5 comm_node_proc_ids = 1
+node_cmap_id i=2 = 1 comm_node_ids = 6 comm_node_proc_ids = 1
+node_cmap_id i=3 = 1 comm_node_ids = 7 comm_node_proc_ids = 1
+node_cmap_id i=4 = 1 comm_node_ids = 8 comm_node_proc_ids = 1
+node_cmap_id i=5 = 1 comm_node_ids = 9 comm_node_proc_ids = 1
+node_cmap_id i=6 = 1 comm_node_ids = 10 comm_node_proc_ids = 1
+node_cmap_id i=7 = 1 comm_node_ids = 11 comm_node_proc_ids = 1
+node_cmap_id i=8 = 1 comm_node_ids = 12 comm_node_proc_ids = 1
+node_cmap_id i=9 = 1 comm_node_ids = 49 comm_node_proc_ids = 1
+node_cmap_id i=0 = 2 comm_node_ids = 1 comm_node_proc_ids = 2
+node_cmap_id i=1 = 2 comm_node_ids = 2 comm_node_proc_ids = 2
+node_cmap_id i=2 = 2 comm_node_ids = 3 comm_node_proc_ids = 2
+node_cmap_id i=3 = 2 comm_node_ids = 4 comm_node_proc_ids = 2
+node_cmap_id i=4 = 2 comm_node_ids = 37 comm_node_proc_ids = 2
+node_cmap_id i=5 = 2 comm_node_ids = 38 comm_node_proc_ids = 2
+node_cmap_id i=6 = 2 comm_node_ids = 39 comm_node_proc_ids = 2
+node_cmap_id i=7 = 2 comm_node_ids = 40 comm_node_proc_ids = 2
+node_cmap_id i=8 = 2 comm_node_ids = 41 comm_node_proc_ids = 2
+node_cmap_id i=9 = 2 comm_node_ids = 42 comm_node_proc_ids = 2
+elem_cmap_id i=0 = 1 comm_elem_ids = 1 comm_side_ids = 1 comm_elem_proc_ids = 1
+elem_cmap_id i=1 = 1 comm_elem_ids = 2 comm_side_ids = 1 comm_elem_proc_ids = 1
+elem_cmap_id i=2 = 1 comm_elem_ids = 3 comm_side_ids = 1 comm_elem_proc_ids = 1
+elem_cmap_id i=3 = 1 comm_elem_ids = 4 comm_side_ids = 1 comm_elem_proc_ids = 1
+elem_cmap_id i=4 = 1 comm_elem_ids = 5 comm_side_ids = 1 comm_elem_proc_ids = 1
+elem_cmap_id i=5 = 1 comm_elem_ids = 6 comm_side_ids = 1 comm_elem_proc_ids = 1
+elem_cmap_id i=6 = 1 comm_elem_ids = 7 comm_side_ids = 1 comm_elem_proc_ids = 1
+elem_cmap_id i=7 = 1 comm_elem_ids = 8 comm_side_ids = 1 comm_elem_proc_ids = 1
+elem_cmap_id i=8 = 1 comm_elem_ids = 25 comm_side_ids = 1 comm_elem_proc_ids = 1
+elem_cmap_id i=9 = 1 comm_elem_ids = 26 comm_side_ids = 1 comm_elem_proc_ids = 1
+elem_cmap_id i=0 = 2 comm_elem_ids = 1 comm_side_ids = 4 comm_elem_proc_ids = 2
+elem_cmap_id i=1 = 2 comm_elem_ids = 9 comm_side_ids = 4 comm_elem_proc_ids = 2
+elem_cmap_id i=2 = 2 comm_elem_ids = 17 comm_side_ids = 4 comm_elem_proc_ids = 2
+elem_cmap_id i=3 = 2 comm_elem_ids = 65 comm_side_ids = 3 comm_elem_proc_ids = 2
+elem_cmap_id i=4 = 2 comm_elem_ids = 66 comm_side_ids = 3 comm_elem_proc_ids = 2
+elem_cmap_id i=5 = 2 comm_elem_ids = 67 comm_side_ids = 3 comm_elem_proc_ids = 2
+elem_cmap_id i=6 = 2 comm_elem_ids = 68 comm_side_ids = 3 comm_elem_proc_ids = 2
+elem_cmap_id i=7 = 2 comm_elem_ids = 121 comm_side_ids = 3 comm_elem_proc_ids = 2
+elem_cmap_id i=8 = 2 comm_elem_ids = 122 comm_side_ids = 3 comm_elem_proc_ids = 2
+elem_cmap_id i=9 = 2 comm_elem_ids = 123 comm_side_ids = 3 comm_elem_proc_ids = 2
