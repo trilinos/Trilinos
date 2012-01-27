@@ -67,7 +67,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Operator {
     virtual ~Epetra_Operator() {};
   //@}
   
-  //! @name Atribute set methods
+  //! @name Attribute set methods
   //@{ 
 
     //! If set true, transpose of this operator will be applied.
@@ -120,7 +120,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Operator {
     virtual double NormInf() const = 0;
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 
     //! Returns a character string describing the operator

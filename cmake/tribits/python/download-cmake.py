@@ -74,6 +74,7 @@ import sys
 import tarfile
 import urllib
 import zipfile
+import socket
 
 
 #
@@ -84,16 +85,7 @@ import zipfile
 default_http_proxy = ""
 hostname = ""
 
-if sys.platform == 'darwin':
-  hostname = subprocess.Popen(["hostname"], stdout=subprocess.PIPE).communicate()[0]
-  # `hostname` works on s903186...
-
-if sys.platform == 'linux2':
-  hostname = subprocess.Popen(["hostname", "--fqdn"], stdout=subprocess.PIPE).communicate()[0]
-  # `hostname --fqdn` works on trilinos-test...
-
-if sys.platform == 'win32':
-  hostname = "" # best way to get fully qualified hostname from win32 system call?
+hostname = socket.getfqdn()
 
 if hostname != '':
   hostname = hostname.strip()

@@ -69,6 +69,21 @@ typedef NNTI_result_t (*NNTI_WAIT_FN) (
         const int             timeout,
         NNTI_status_t        *status);
 
+typedef NNTI_result_t (*NNTI_WAITANY_FN) (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        uint32_t             *which,
+        NNTI_status_t        *status);
+
+typedef NNTI_result_t (*NNTI_WAITALL_FN) (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        NNTI_status_t       **status);
+
 typedef NNTI_result_t (*NNTI_FINI_FN) (
         const NNTI_transport_t *trans_hdl);
 
@@ -84,6 +99,8 @@ typedef struct NNTI_transport_ops_t
     NNTI_PUT_FN               nnti_put_fn;
     NNTI_GET_FN               nnti_get_fn;
     NNTI_WAIT_FN              nnti_wait_fn;
+    NNTI_WAITANY_FN           nnti_waitany_fn;
+    NNTI_WAITALL_FN           nnti_waitall_fn;
     NNTI_FINI_FN              nnti_fini_fn;
 } NNTI_transport_ops_t;
 

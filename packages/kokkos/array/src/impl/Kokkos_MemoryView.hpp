@@ -44,6 +44,8 @@
 #ifndef KOKKOS_MEMORYVIEW_HPP
 #define KOKKOS_MEMORYVIEW_HPP
 
+#include <impl/Kokkos_forward.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
@@ -73,6 +75,36 @@ public:
 };
 
 template< class DeviceType > class MemoryManager ;
+
+template< class ValueType , class DeviceType >
+class CreateMirror< MemoryView< ValueType , DeviceType > , true > {
+public:
+
+  typedef  MemoryView< ValueType , DeviceType >  View ;
+  typedef  typename View::HostMirror             HostMirror ;
+
+  template< typename SizeType >
+  static
+  HostMirror create( const View & v , const SizeType & count )
+    { return v ; }
+};
+
+template< class ValueType , class DeviceType >
+class CreateMirror< MemoryView< ValueType , DeviceType > , false > {
+public:
+
+  typedef  MemoryView< ValueType , DeviceType >  View ;
+  typedef  typename View::HostMirror             HostMirror ;
+
+  template< typename SizeType >
+  static
+  HostMirror create( const View & v , const SizeType & count )
+    {
+      HostMirror tmp ;
+      tmp.allocate( count , std::string() );
+      return tmp ;
+    }
+};
 
 } // namespace Impl
 } // namespace Kokkos

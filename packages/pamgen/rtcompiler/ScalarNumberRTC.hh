@@ -46,7 +46,8 @@ class ScalarNumber: public Value
   void setValue(double value) {_value = (T) value;}
 
   std::ostream& operator<<(std::ostream& os) const {
-    os << "ScalarNumber:" << _value; 
+    //os << "ScalarNumber:" << _value;
+    os << _value; 
     return os;
   }
 

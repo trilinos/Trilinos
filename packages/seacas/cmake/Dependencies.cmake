@@ -17,6 +17,9 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Exomatlab   applications/exomatlab  SS  REQUIRED
   Exotxt      applications/exotxt     SS  REQUIRED
   Gjoin       applications/gjoin      SS  REQUIRED
+  Gen3D       applications/gen3d      SS  REQUIRED
+  Genshell    applications/genshell   SS  REQUIRED
+  Grepos      applications/grepos     SS  REQUIRED
   Grope       applications/grope      SS  REQUIRED
   Mapvarlib   libraries/mapvarlib     SS  REQUIRED
   Mapvar      applications/mapvar     SS  REQUIRED

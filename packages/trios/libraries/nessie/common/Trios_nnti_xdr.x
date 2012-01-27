@@ -364,8 +364,6 @@ struct NNTI_ib_rdma_addr_t {
     uint32_t key;
     /** @brief Size of the the memory buffer. */
     uint32_t size;
-    /** @brief Index into the Queue Pair pool. */
-    int32_t  qp_index;
 };
 
 

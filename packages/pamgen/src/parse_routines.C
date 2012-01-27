@@ -145,7 +145,7 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
   sdimension = incoming_dim;
   parse_error_count = & sparse_error_count;
   
-  Parse_Table parse_table;
+  Parse_Table * parse_table = new Parse_Table;
 
   Keyword keyword_table[] = {
     {"MESH", 0, PAMGEN_NEVADA::Parse_Inline_Mesh_Tok},
@@ -153,20 +153,27 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
     {"THREE D MESH", 0, PAMGEN_NEVADA::Parse_Inline_Mesh_3D_Tok},
   };
 
-  parse_table.merge(keyword_table,3);
+  parse_table->merge(keyword_table,3);
 
-  InputBlock input_tree;
-  input_tree.set( file_name.c_str(), 0 );
+  InputBlock * input_tree = new InputBlock;
+  input_tree->set( file_name.c_str(), 0 );
   
-  Token_Stream token_stream(input_stream, Inline_Mesh_Desc::echo_stream, &input_tree,0,0,true);
+  Token_Stream token_stream(input_stream, Inline_Mesh_Desc::echo_stream, input_tree,0,0,true);
   
-  PAMGEN_NEVADA::Parse(&token_stream,&parse_table,TK_EXIT);
+  PAMGEN_NEVADA::Parse(&token_stream,parse_table,TK_EXIT);
 
   if(!Inline_Mesh_Desc::static_storage)return Inline_Mesh_Desc::static_storage;
 
   if(token_stream.Error_Count() != 0)return NULL;
 
-  long long error_code = Inline_Mesh_Desc::static_storage->Check_Block_BC_Sets();
+  long long error_code = Inline_Mesh_Desc::static_storage->Check_Blocks();
+  if(error_code){
+    (*parse_error_count) ++;
+    Inline_Mesh_Desc::echo_stream << "SETUP ERROR IN CHECK_BLOCKS " << Inline_Mesh_Desc::static_storage->getErrorString() << std::endl;
+    return NULL;
+  }
+
+  error_code = Inline_Mesh_Desc::static_storage->Check_Block_BC_Sets();
   if(error_code){
     (*parse_error_count) ++;
     Inline_Mesh_Desc::echo_stream << "SETUP ERROR IN CHECK_BLOCK_BC_SETS " << Inline_Mesh_Desc::static_storage->getErrorString() << std::endl;
@@ -218,6 +225,8 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
       Inline_Mesh_Desc::static_storage->info_stream << " Edges.\n";
     }
 }
+  if(parse_table)delete parse_table;
+  if(input_tree) delete input_tree;
   return Inline_Mesh_Desc::static_storage;
 }
 

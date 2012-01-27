@@ -87,6 +87,7 @@
 #include <typeinfo>
 #include <string>
 
+#include <impl/Kokkos_forward.hpp>
 #include <impl/Kokkos_MemoryView.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
 
@@ -160,6 +161,25 @@ public:
 };
 
 //----------------------------------------------------------------------------
+
+template< typename ValueType >
+class DeepCopy< MemoryView< ValueType, Host > ,
+                MemoryView< ValueType, Host > > {
+public:
+
+  static
+  void run( const MemoryView< ValueType , Host > & dst ,
+            const MemoryView< ValueType , Host > & src ,
+            const size_t count )
+  {
+    ValueType * d = dst.ptr_on_device();
+    const ValueType * s = src.ptr_on_device();
+    if ( d != s ) {
+      const ValueType * const s_end = s + count ;
+      while ( s_end != s ) { *d++ = *s++ ; }
+    }
+  }
+};
 
 } // namespace Impl
 } // namespace Kokkos

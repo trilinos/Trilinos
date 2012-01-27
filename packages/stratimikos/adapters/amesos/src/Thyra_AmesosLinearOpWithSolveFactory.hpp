@@ -46,7 +46,7 @@ namespace Thyra {
  * This class creates objects of type <tt>AmesosLinearOpWithSolve</tt>
  * (through the <tt>LinearOpWithSolveBase</tt> interface) which can then be
  * used to solve for linear systems.  The <tt>%AmesosLinearOpWithSolve</tt>
- * objects created an initialized by this object are completely indpendent
+ * objects created and initialized by this object are completely independent
  * from <tt>*this</tt>.  This allows for multiple
  * <tt>%AmesosLinearOpWithSolve</tt> objects to be created and maintained
  * simultaneously and for <tt>*this</tt> factory object to be destroyed

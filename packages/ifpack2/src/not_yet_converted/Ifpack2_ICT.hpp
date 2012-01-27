@@ -164,7 +164,7 @@ class Ifpack2_ICT: public Ifpack2_Preconditioner {
     return(Condest_);
   }
 
-  // Atribute access functions
+  // Attribute access functions
     
   //! Returns the number of nonzero entries in the global graph.
   int NumGlobalNonzeros() const {return(H().NumGlobalNonzeros());};

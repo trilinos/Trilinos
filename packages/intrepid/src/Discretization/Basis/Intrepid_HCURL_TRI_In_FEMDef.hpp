@@ -132,7 +132,7 @@ namespace Intrepid {
     // get the points on the line
     FieldContainer<Scalar> linePts( n , 1 );
     if (pointType == POINTTYPE_WARPBLEND) {
-      CubatureDirectLineGauss<Scalar> edgeRule( n );
+      CubatureDirectLineGauss<Scalar> edgeRule( 2*n - 1 );
       FieldContainer<Scalar> edgeCubWts( n );
       edgeRule.getCubature( linePts , edgeCubWts );
     }
@@ -262,7 +262,7 @@ namespace Intrepid {
     // the rest of the dofs are internal
     const int numFaceDof = (degree-1)*degree;
     int faceDofCur = 0;
-    for (int i=3*degree;i<degree*(degree+1);i++) {
+    for (int i=3*degree;i<degree*(degree+2);i++) {
       tag_cur[0] = 2;  tag_cur[1] = 0;  tag_cur[2] = faceDofCur;  tag_cur[3] = numFaceDof;
       tag_cur += tagSize;
       faceDofCur++;
@@ -329,11 +329,11 @@ namespace Intrepid {
               // dy of x component
               outputValues(i,j) = 0.0;
               for (int k=0;k<scalarBigN;k++) {
-                outputValues(i,j) += coeffs_(k,i) * phisCur(k,j,1);
+                outputValues(i,j) -= coeffs_(k,i) * phisCur(k,j,1);
               }
               // -dx of y component
               for (int k=0;k<scalarBigN;k++) {
-                outputValues(i,j) -= coeffs_(k+scalarBigN,i) * phisCur(k,j,0);
+                outputValues(i,j) += coeffs_(k+scalarBigN,i) * phisCur(k,j,0);
               }
             }
           }

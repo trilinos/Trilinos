@@ -84,7 +84,7 @@ public:
   //@}
 
   
-  //! @name Atribute set methods
+  //! @name Attribute set methods
   //@{ 
 
   //! Sets the parameter list
@@ -130,7 +130,7 @@ public:
   virtual double NormInf() const {return -1;}
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 
   //! Returns a character string describing the operator

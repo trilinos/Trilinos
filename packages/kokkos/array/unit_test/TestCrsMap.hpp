@@ -67,9 +67,13 @@ public:
   typedef Kokkos::Host        host ;
 
   typedef Kokkos::CrsMap< device > dView ;
-  typedef Kokkos::CrsMap< host >   hView ;
+  typedef Kokkos::CrsMap< device >::HostMirror hView ;
 
-  TestCrsMap() { run_test(); }
+  TestCrsMap()
+  {
+    run_test();
+    run_test_graph();
+  }
 
   void run_test()
   {
@@ -86,8 +90,8 @@ public:
     size_t x_count = 0 ;
     size_t y_count = 0 ;
 
-    int x_row_size[ LENGTH ];
-    size_t y_row_size[ LENGTH ];
+    std::vector<int> x_row_size( LENGTH );
+    std::vector<size_t> y_row_size( LENGTH );
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       const int size = ( i + 1 ) % 16 ;
       x_row_size[i] = size ;
@@ -96,24 +100,31 @@ public:
       y_count += size ;
     }
 
-    dx = Kokkos::create_labeled_crsmap<device>( "dx" , x_row_size , x_row_size + LENGTH );
-    dy = Kokkos::create_labeled_crsmap<device>( "dy" , y_row_size , y_row_size + LENGTH );
+    dx = Kokkos::create_labeled_crsmap<device>( "dx" , x_row_size );
+    dy = Kokkos::create_labeled_crsmap<device>( "dy" , y_row_size );
 
     ASSERT_TRUE(dx);
     ASSERT_TRUE(dy);
     ASSERT_NE( dx , dy );
 
-    ASSERT_EQ( dx.first_count() , LENGTH );
-    ASSERT_EQ( dy.first_count() , LENGTH );
-    ASSERT_EQ( dx.size() , (device::size_type) x_count );
-    ASSERT_EQ( dy.size() , (device::size_type) y_count );
+    ASSERT_EQ( dx.row_count() , LENGTH );
+    ASSERT_EQ( dy.row_count() , LENGTH );
+    ASSERT_EQ( dx.row_range_count() , (device::size_type) x_count );
+    ASSERT_EQ( dy.row_range_count() , (device::size_type) y_count );
 
-    hx = Kokkos::create_crsmap<Kokkos::Host>( dx );
-    hy = Kokkos::create_crsmap<Kokkos::Host>( dy );
+    hx = Kokkos::create_mirror( dx );
+    hy = Kokkos::create_mirror( dy );
+
+    ASSERT_EQ( hx.row_count() , LENGTH );
+    ASSERT_EQ( hy.row_count() , LENGTH );
+    ASSERT_EQ( hx.row_range_count() , (device::size_type) x_count );
+    ASSERT_EQ( hy.row_range_count() , (device::size_type) y_count );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      ASSERT_EQ( (int) hx.second_count(i) , x_row_size[i] );
-      ASSERT_EQ( hx.second_count(i) , hy.second_count(i) );
+      hView::range_type x_range = hx.row_range(i);
+      hView::range_type y_range = hy.row_range(i);
+      ASSERT_EQ( (int) ( x_range.second - x_range.first ) , x_row_size[i] );
+      ASSERT_EQ( (size_t) ( y_range.second - y_range.first ) , y_row_size[i] );
     }
 
     dz = dx ; ASSERT_EQ( dx, dz); ASSERT_NE( dy, dz);
@@ -131,6 +142,36 @@ public:
     ASSERT_FALSE(dx);
     ASSERT_FALSE(dy);
     ASSERT_FALSE(dz);
+  }
+
+  void run_test_graph()
+  {
+    enum { LENGTH = 1000 };
+    dView dx ;
+    hView hx ;
+
+    std::vector< std::vector< int > > graph( LENGTH );
+
+    for ( size_t i = 0 ; i < LENGTH ; ++i ) {
+      graph[i].reserve(8);
+      for ( size_t j = 0 ; j < 8 ; ++j ) {
+        graph[i].push_back( i + j * 3 );
+      }
+    }
+
+    dx = Kokkos::create_labeled_crsmap<device>( "dx" , graph );
+    hx = Kokkos::create_mirror( dx );
+   
+    ASSERT_EQ( hx.row_count() , LENGTH );
+
+    for ( size_t i = 0 ; i < LENGTH ; ++i ) {
+      const hView::range_type r = hx.row_range(i);
+      const size_t n = r.second - r.first ;
+      ASSERT_EQ( n , graph[i].size() );
+      for ( size_t j = 0 ; j < n ; ++j ) {
+        ASSERT_EQ( (int) hx.column( j + r.first ) , graph[i][j] );
+      }
+    }
   }
 };
 

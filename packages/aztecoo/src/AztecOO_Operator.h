@@ -74,7 +74,7 @@ class AztecOO_Operator: public virtual Epetra_Operator {
   ~AztecOO_Operator();
   //@}
   
-  //@{ \name Atribute set methods.
+  //@{ \name Attribute set methods.
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -128,7 +128,7 @@ class AztecOO_Operator: public virtual Epetra_Operator {
   double NormInf() const {return(0.0);};
   //@}
   
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
   //! Returns a character string describing the operator
   const char * Label() const {return(Label_);};

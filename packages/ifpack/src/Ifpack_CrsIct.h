@@ -265,7 +265,7 @@ class IFPACK_DEPRECATED Ifpack_CrsIct: public Epetra_Object, public Epetra_CompO
     the infinity-norm estimate of the condition number of the inverse of LDU.
   */
   int Condest(bool Trans, double & ConditionNumberEstimate) const;
-  // Atribute access functions
+  // Attribute access functions
   
   //! Get absolute threshold value
   double GetAbsoluteThreshold() {return Athresh_;}

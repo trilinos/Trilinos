@@ -65,8 +65,8 @@ opt3d (
 int kk;
     double    func3d(), constraint();
     double    drandom();
-    void      grad3d(), hess3d(), gradcon(), hesscon(), kramer3(), eigenvec3();
-    void      evals3();
+    void      grad3d(), hess3d(), gradcon(), hesscon(), kramer3(), ch_eigenvec3();
+    void      ch_evals3();
 
     /* Set parameters. */
     best[0]=best[1]=best[2]=0.0;
@@ -202,7 +202,7 @@ int kk;
 
 kk = 0;
 if (kk) {
-  evals3(hessc, &eval, &res, &res);
+  ch_evals3(hessc, &eval, &res, &res);
 }
    
 
@@ -219,7 +219,7 @@ if (kk) {
 		    hess_min = hess_tol;
 
 		/* Find smallest eigenvalue of hess. */
-		evals3(hess, &eval, &res, &res);
+		ch_evals3(hess, &eval, &res, &res);
 
 		/* If eval < 0, add to diagonal to make pos def. */
 		if (eval < -pdtol)
@@ -247,7 +247,7 @@ if (kk) {
 		    /* Convergence to non-min. */
 		    for (i = 0; i < 3; i++)
 			hess[i][i] -= hess_min - eval;
-		    eigenvec3(hess, eval, step, &res);
+		    ch_eigenvec3(hess, eval, step, &res);
 		    step_size = fabs(step[0]) + fabs(step[1]) + fabs(step[2]);
 		    a = step_min / step_size;
 		    for (i = 0; i < 3; i++)
