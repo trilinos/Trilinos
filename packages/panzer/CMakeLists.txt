@@ -61,10 +61,16 @@ COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_STK_AND_SEACAS_SUPPORT
     " enabled, otherwise defaults to OFF."
   )
 
+# Explicit Template Instantiation
+## This should be removed in favor of tribits eti support
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
   "PANZER_EXPLICIT_TEMPLATE_INSTANTIATION"
   "Build with explicit template instantion enabled.  Defaults to ON."
   ON )
+
+TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT "_decl.hpp")
+SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DEF_EXT "_impl.hpp")
 
 ## Explicit instatiation support
 #TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION

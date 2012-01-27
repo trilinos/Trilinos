@@ -25,6 +25,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/dofmngr)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/evaluators)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/responses)
 
+# auto generate headers, add to dependencies and include directories
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR})
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/dofmngr)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/evaluators)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/responses)
+APPEND_GLOB(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/*.hpp)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
 APPEND_SET(HEADERS
   Panzer_ArrayTraits.hpp
   Panzer_AssemblyEngine.hpp
@@ -124,8 +132,8 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_DOFManagerFactory.hpp
   dofmngr/Panzer_DOFManagerFactoryT.hpp
   dofmngr/Panzer_LinearObjFactory.hpp
-  evaluators/Panzer_Constant.hpp
-  evaluators/Panzer_ConstantT.hpp
+  evaluators/Panzer_Constant_impl.hpp
+  evaluators/Panzer_Constant_decl.hpp
   evaluators/Panzer_Dirichlet_Residual.hpp
   evaluators/Panzer_Dirichlet_ResidualT.hpp
   evaluators/Panzer_DOF.hpp

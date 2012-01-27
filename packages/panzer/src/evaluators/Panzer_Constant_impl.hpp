@@ -1,3 +1,5 @@
+#ifndef PANZER_CONSTANT_IMPL_HPP
+#define PANZER_CONSTANT_IMPL_HPP
 
 namespace panzer {
 
@@ -30,3 +32,5 @@ PHX_EVALUATE_FIELDS(Constant,d)
 //**********************************************************************
 
 }
+
+#endif
