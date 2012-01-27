@@ -76,10 +76,10 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
       tmp(cell,qp) = multiplier * scalar(cell,qp);
       for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
 	   field != field_multipliers.end(); ++field)
-	tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
+        tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
     }
   }
- 
+
   if(workset.num_cells>0)
      Intrepid::FunctionSpaceTools::
        integrate<ScalarT>(integral, tmp, 

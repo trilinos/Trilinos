@@ -36,6 +36,8 @@ namespace sg_utils {
       // now blindly use fastAccessCoeff
       for(std::size_t i=0;i<in_vector.size();i++)
          value.fastAccessCoeff(i) = in_vector[i];
+      for(int i=in_vector.size();i<value.size();i++) // make sure to zero out unused values
+         value.fastAccessCoeff(i) = 0.0;
    }
 
    //! Converts a vector value into a scalar depending on the scalar type (specific for SGJacobian)
@@ -54,6 +56,8 @@ namespace sg_utils {
       // now blindly use fastAccessCoeff
       for(std::size_t i=0;i<in_vector.size();i++)
          value.val().fastAccessCoeff(i) = in_vector[i];
+      for(int i=in_vector.size();i<value.val().size();i++)
+         value.val().fastAccessCoeff(i) = 0.0;
    }
 }
 }

@@ -638,6 +638,14 @@ evalModel_sg_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArg
 
             // pull value out of stochastic type
             vec[0] = value.fastAccessCoeff(j);
+            for(int l=1;l<vec.MyLength();l++)
+               vec[i] = 0.0;
+         }
+
+         // zero out uninitialized values: Stokhos didn't require these fields
+         for(int j=value.size();j<sg_vec->size();j++) {
+            Epetra_Vector & vec = (*sg_vec)[j];
+            vec.PutScalar(0.0);
          }
       }
    }
