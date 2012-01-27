@@ -19,6 +19,7 @@
 namespace sierra {
 namespace Fmwk {
 class MeshObj;
+unsigned get_derived_type(const MeshObj*);
 }
 }
 #endif
@@ -188,7 +189,7 @@ private:
   template <class MeshObj>
   Relation(MeshObj *obj, const unsigned relation_type, const unsigned ordinal, const unsigned Orient = 0)
     :
-    m_raw_relation( Relation::raw_relation_id( obj->derived_type() , ordinal )), // makes this m_raw_relation forever incomparable with Relations constructed STK-style
+    m_raw_relation( Relation::raw_relation_id( get_derived_type(obj) , ordinal )), // makes this m_raw_relation forever incomparable with Relations constructed STK-style
     m_attribute(Orient),
     m_target_entity( NULL ),
 
