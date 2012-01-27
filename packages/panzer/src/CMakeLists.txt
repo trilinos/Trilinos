@@ -172,6 +172,8 @@ APPEND_SET(HEADERS
   responses/Panzer_ResponseAggregatorBase.hpp
   responses/Panzer_ResponseAggregator_Manager.hpp
   responses/Panzer_ResponseAggregator_ManagerT.hpp
+  responses/Panzer_ResponseAggregator_IPCoordinates.hpp
+  responses/Panzer_ResponseAggregator_IPCoordinatesT.hpp
   responses/Panzer_ResponseFunctional_Aggregator.hpp
   responses/Panzer_ResponseFunctional_AggregatorT.hpp
   responses/Panzer_ResponseScatterEvaluator.hpp
@@ -181,6 +183,8 @@ APPEND_SET(HEADERS
   responses/Panzer_ResponseContainer.hpp
   responses/Panzer_ResponseUtilities.hpp
   responses/Panzer_RLDynamicDispatch.hpp
+  responses/Panzer_IPCoordinates.hpp
+  responses/Panzer_IPCoordinatesT.hpp
   ) 
 
 APPEND_SET(SOURCES
@@ -215,6 +219,7 @@ APPEND_SET(SOURCES
   dofmngr/Panzer_EpetraLinearObjFactory.cpp
   responses/Panzer_ResponseUtilities.cpp
   responses/Panzer_ResponseFunctional_Aggregator.cpp
+  responses/Panzer_ResponseAggregator_IPCoordinates.cpp
   evaluators/Panzer_Constant.cpp
   evaluators/Panzer_DOF_PointField.cpp
   evaluators/Panzer_GatherBasisCoordinates.cpp

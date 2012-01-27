@@ -676,7 +676,7 @@ namespace panzer_stk {
                               "Invalid element block \""+(*itr)+"\" specified for response labeled \""+label+"\"."); 
         }
 
-        rLibrary.reserveLabeledVolumeResponse(label,rid,eBlocks,eTypes);
+        rLibrary.reserveLabeledBlockAggregatedVolumeResponse(label,rid,eBlocks,eTypes);
      }
   }
 

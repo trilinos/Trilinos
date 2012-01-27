@@ -83,7 +83,7 @@ public:
 
    /** Get a particular volume response by label.
      */ 
-   Teuchos::RCP<const Response<TraitsT> > getVolumeResponseByLabel(const std::string & label) const;
+   Teuchos::RCP<const Response<TraitsT> > getBlockAggregatedVolumeResponseByLabel(const std::string & label) const;
 
    //! Reserve a response for actual calculation (by response id and element block).
    template <typename EvalT>
@@ -104,9 +104,9 @@ public:
      * \param[in] eBlocks Element blocks to be aggregated over.
      * \param[in] evalTypes String of evaluation types for the response (Residual,Jacobian, etc...)
      */
-   void reserveLabeledVolumeResponse(const std::string & label,const ResponseId & rid,
-                                     const std::list<std::string> & eBlocks,
-                                     const std::list<std::string> & evalTypes);
+   void reserveLabeledBlockAggregatedVolumeResponse(const std::string & label,const ResponseId & rid,
+						    const std::list<std::string> & eBlocks,
+						    const std::list<std::string> & evalTypes);
 
    /** Veryify that this response and element block are actual valid choices
      * for the evaluation type. This is optional error checking but makes debugging

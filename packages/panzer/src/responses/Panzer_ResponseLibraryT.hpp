@@ -54,9 +54,9 @@ reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock,const st
 
 template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
-reserveLabeledVolumeResponse(const std::string & label,const ResponseId & rid,
-                             const std::list<std::string> & eBlocks,
-                             const std::list<std::string> & evalTypes)
+reserveLabeledBlockAggregatedVolumeResponse(const std::string & label,const ResponseId & rid,
+					    const std::list<std::string> & eBlocks,
+					    const std::list<std::string> & evalTypes)
 {
    TEUCHOS_TEST_FOR_EXCEPTION(labeledResponses_.find(label)!=labeledResponses_.end(),std::logic_error,
                       "ResponseLibrary::reserveLabeledVolumeResponse: Adding response labeled \""+label+"\" "
@@ -136,7 +136,7 @@ getVolumeResponse(const ResponseId & rid,const std::string & eBlock) const
   */ 
 template <typename TraitsT>
 Teuchos::RCP<const Response<TraitsT> > ResponseLibrary<TraitsT>::
-getVolumeResponseByLabel(const std::string & label) const
+getBlockAggregatedVolumeResponseByLabel(const std::string & label) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -367,7 +367,7 @@ getLabeledVolumeResponses(std::vector<Teuchos::RCP<const Response<TraitsT> > > &
 
    for(typename std::map<std::string,ResponseDescriptor>::const_iterator itr=labeledResponses_.begin();
        itr!=labeledResponses_.end();++itr)
-      responses.push_back(getVolumeResponseByLabel(itr->first));
+      responses.push_back(getBlockAggregatedVolumeResponseByLabel(itr->first));
 }
 
 //! get all labeled respones

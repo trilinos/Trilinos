@@ -98,7 +98,15 @@ public:
    //! perform global reduction on this set of response data
    virtual void globalReduction(const Teuchos::Comm<int> & comm,ResponseData<TraitsT>  & rd) const = 0;
 
-   //! Aggregate a set of responses locally
+   /** \brief Aggregate a set of responses locally over a set of element blocks
+    *
+    *  This aggregation takes place after the globalReduction().  It
+    *  will take the responses from each element block and aggregate
+    *  them into a single destination response that is created by
+    *  reserving a labeled response on the library.  Therefore this
+    *  method will only be called if the user calls
+    *  getBlockAggregatedVolumeResponseByLabel() on the response library.
+    */
    virtual void aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const = 0;
 
    virtual void setGlobalIndexer(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi) = 0;

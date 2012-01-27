@@ -3,6 +3,7 @@
 
 #include "Panzer_config.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace panzer {
 
@@ -94,6 +95,14 @@ public:
 
    bool hasDerivative() const { return hasDerivative_; }
 
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList() const
+  { return parameterList_; }
+
+  void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p)
+  { parameterList_ = p; }
+
+  bool hasParameterList() const { return nonnull(parameterList_); }
+
 #ifdef HAVE_STOKHOS
    //! Get the SG value for this reponses
    typename TraitsT::SGType getSGValue() const
@@ -112,6 +121,7 @@ private:
    ResponseId rid_;
    typename TraitsT::RealType value_;
    Teuchos::RCP<LinearObjContainer> derivative_;
+   Teuchos::RCP<Teuchos::ParameterList> parameterList_;
    bool hasValue_, hasDerivative_;
 
    #ifdef HAVE_STOKHOS
