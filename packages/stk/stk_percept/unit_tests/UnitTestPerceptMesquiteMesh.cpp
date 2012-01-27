@@ -94,7 +94,7 @@ namespace stk
     namespace unit_tests 
     {
 
-#define DO_TESTS 1
+#define DO_TESTS 0
 #if DO_TESTS
 
 #define EXTRA_PRINT 0
