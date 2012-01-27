@@ -73,7 +73,6 @@
 #if defined( KOKKOS_CRSMAP_HPP ) && ! defined( KOKKOS_HOST_CRSMAP )
 #define KOKKOS_HOST_CRSMAP
 #include <impl/Kokkos_CrsMap_macros.hpp>
-#include <Host/Kokkos_Host_CrsMap.hpp>
 #endif
 
 //----------------------------------------------------------------------------

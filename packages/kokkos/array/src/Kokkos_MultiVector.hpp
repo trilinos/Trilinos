@@ -252,7 +252,7 @@ typename MultiVector< ValueType , DeviceType >::HostMirror
 create_mirror( const MultiVector< ValueType , DeviceType > & v )
 {
   typedef MultiVector< ValueType , DeviceType >  view_type ;
-  typedef typename view_type::HostMirror           host_view ;
+  typedef typename view_type::HostMirror         host_view ;
   typedef typename host_view::device_type        host_device ;
   typedef typename host_device::memory_space     host_memory ;
   typedef typename DeviceType::memory_space      memory ;
@@ -265,8 +265,7 @@ create_mirror( const MultiVector< ValueType , DeviceType > & v )
 #endif
        };
 
-  return Impl::CreateMirror< MultiVector< ValueType , DeviceType > , optimize >
-    ::create( v );
+  return Impl::CreateMirror< view_type , optimize >::create( v );
 }
 
 //----------------------------------------------------------------------------
