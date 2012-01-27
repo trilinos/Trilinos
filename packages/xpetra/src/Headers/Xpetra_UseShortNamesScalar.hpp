@@ -48,6 +48,10 @@ typedef Xpetra::OperatorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, Local
 typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
 
+#ifdef XPETRA_EPETRACRSMATRIX_SHORT
+typedef Xpetra::EpetraCrsMatrix EpetraCrsMatrix;
+#endif
+
 #ifdef XPETRA_TPETRAMULTIVECTOR_SHORT
 typedef Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
 #endif

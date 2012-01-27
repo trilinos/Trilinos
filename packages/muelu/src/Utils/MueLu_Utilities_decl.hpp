@@ -76,10 +76,6 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
   class Utils {
 #undef MUELU_UTILITIES_SHORT
 #include "MueLu_UseShortNames.hpp"
-#ifdef HAVE_MUELU_EPETRA
-  typedef Xpetra::EpetraCrsMatrix   EpetraCrsMatrix;    // TODO: mv in Xpetra_UseShortNamesScalar
-    //typedef Xpetra::EpetraMultiVector EpetraMultiVector;
-#endif
 
   public:
 #ifdef HAVE_MUELU_EPETRA

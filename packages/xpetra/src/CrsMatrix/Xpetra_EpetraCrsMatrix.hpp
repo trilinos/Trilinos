@@ -212,4 +212,5 @@ namespace Xpetra {
 
 } // Xpetra namespace
 
+#define XPETRA_EPETRACRSMATRIX_SHORT
 #endif // XPETRA_EPETRACRSMATRIX_HPP
