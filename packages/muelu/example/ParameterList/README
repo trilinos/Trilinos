@@ -9,6 +9,7 @@ Example:
 Usage:
  ./MueLu_MLParameterList.exe                            : use hard-coded parameter list
  ./MueLu_MLParameterList.exe --xml=ml_ParameterList.xml : use xml configuration file
+ ./MueLu_MLParameterList.exe --muelu=0 --ml=1           : use ml instead of muelu
 
 Option:
  use --help to list available options.
