@@ -15,19 +15,6 @@ build<panzer::Traits::Residual>() const
    return respAgg;
 }
 
-#ifdef HAVE_STOKHOS
-template < >
-Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > ResponseAggregator_IPCoordinates_Builder::
-build<panzer::Traits::SGResidual>() const
-{ 
-   Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > respAgg =
-      Teuchos::rcp(new ResponseAggregator_IPCoordinates<panzer::Traits::SGResidual,panzer::Traits>); 
-   respAgg->setLinearObjFactory(getLinearObjFactory());
-   respAgg->setGlobalIndexer(getGlobalIndexer());
-   return respAgg;
-}
-#endif
-
 }
 
 #ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
