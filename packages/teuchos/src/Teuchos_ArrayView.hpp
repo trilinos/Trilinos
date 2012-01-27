@@ -398,6 +398,24 @@ Teuchos::ArrayView<const T> Teuchos::arrayViewFromVector( const std::vector<T>& 
 }
 
 
+inline
+Teuchos::ArrayView<char> Teuchos::arrayViewFromString( std::string& str )
+{
+  if (str.size() == 0)
+    return null;
+  return arrayView<char>(&str[0], str.size());
+}
+
+
+inline
+Teuchos::ArrayView<const char> Teuchos::arrayViewFromString( const std::string& str )
+{
+  if (str.size() == 0)
+    return null;
+  return arrayView<const char>(&str[0], str.size());
+}
+
+
 #ifndef __sun
 
 template<class T> inline

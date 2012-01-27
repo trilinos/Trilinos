@@ -425,6 +425,20 @@ template<class T>
 ArrayView<const T> arrayViewFromVector( const std::vector<T>& vec );
 
 
+/** \brief Construct a non-const view of an std::string.
+ *
+ * \relates ArrayView
+ */
+ArrayView<char> arrayViewFromString( std::string& str );
+
+
+/** \brief Construct a const view of an std::string.
+ *
+ * \relates ArrayView
+ */
+ArrayView<const char> arrayViewFromString( const std::string& str );
+
+
 #ifndef __sun
 
 

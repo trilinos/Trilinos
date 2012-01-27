@@ -58,6 +58,7 @@ using Teuchos::ArrayRCP;
 using Teuchos::arcp;
 using Teuchos::ArrayView;
 using Teuchos::arrayView;
+using Teuchos::arrayViewFromString;
 using Teuchos::av_const_cast;
 using Teuchos::av_reinterpret_cast;
 using Teuchos::DanglingReferenceError;
@@ -151,6 +152,45 @@ TEUCHOS_UNIT_TEST( ArrayView, av_reinterpret_cast_int_to_char )
   TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
     implicit_ptr_cast<void>((&av_char[num_chars-1])+1));
 
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayView, arrayViewFromString_nonconst_null )
+{
+  std::string str;
+  ArrayView<char> av = arrayViewFromString(str);
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayView, arrayViewFromString_nonconst_nonnull )
+{
+  std::string str = "something";
+  ArrayView<char> av = arrayViewFromString(str);
+  TEST_EQUALITY_CONST(av.size(), 9);
+  TEST_EQUALITY_CONST(av[0], 's');
+  TEST_EQUALITY_CONST(av[8], 'g');
+  av[0] = '1';
+  av[8] = '2';
+  TEST_EQUALITY_CONST(str, "1omethin2");
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayView, arrayViewFromString_const_null )
+{
+  const std::string str;
+  const ArrayView<const char> av = arrayViewFromString(str);
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayView, arrayViewFromString_const_nonnull )
+{
+  const std::string str = "something";
+  const ArrayView<const char> av = arrayViewFromString(str);
+  TEST_EQUALITY_CONST(av.size(), 9);
+  TEST_EQUALITY_CONST(av[0], 's');
+  TEST_EQUALITY_CONST(av[8], 'g');
 }
 
 
