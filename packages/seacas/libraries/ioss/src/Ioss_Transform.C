@@ -31,12 +31,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_Transform.h>
-#include <string>
+#include <Ioss_Field.h>
 #include <vector>
+#include <string>
 
 namespace Ioss {
-
-class Field;
 
   Transform::Transform() {}
   Transform::~Transform() {}

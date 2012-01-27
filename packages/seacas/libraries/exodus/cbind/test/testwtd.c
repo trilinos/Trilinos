@@ -303,8 +303,8 @@ int main (int argc, char **argv)
    error = ex_put_node_set_param (exoid, 20, 5, 5);
    printf ("after ex_put_node_set_param, error = %d\n", error);
 
-   node_list[0] = 10; node_list[1] = 11; node_list[2] = 12; 
-   node_list[3] = 13; node_list[4] = 14; 
+   node_list[0] = 100; node_list[1] = 101; node_list[2] = 102; 
+   node_list[3] = 103; node_list[4] = 104; 
 
    dist_fact[0] = 1.0; dist_fact[1] = 2.0; dist_fact[2] = 3.0;
    dist_fact[3] = 4.0; dist_fact[4] = 5.0;
@@ -317,7 +317,7 @@ int main (int argc, char **argv)
    error = ex_put_node_set_param (exoid, 21, 3, 3);
    printf ("after ex_put_node_set_param, error = %d\n", error);
 
-   node_list[0] = 20; node_list[1] = 21; node_list[2] = 22; 
+   node_list[0] = 200; node_list[1] = 201; node_list[2] = 202; 
 
    dist_fact[0] = 1.1; dist_fact[1] = 2.1; dist_fact[2] = 3.1;
 

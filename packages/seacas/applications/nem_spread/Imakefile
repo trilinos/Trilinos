@@ -49,7 +49,7 @@ ps_restart.c             rf_allo.c                rf_comm.c \
 rf_mesh_param.c          rf_pre_proc.c            rf_util.c \
 sort_utils.c		 md_timer_getrusage.c md_wrap_generic_c.c
 
-LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) -lm
+LIBS = $(SUPLIB) $(NEMESISC) $(EXOIIV2C) $(NETCDF) -lm
 OBJS = ${SRCS:.c=.o}
 
 NormalCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))

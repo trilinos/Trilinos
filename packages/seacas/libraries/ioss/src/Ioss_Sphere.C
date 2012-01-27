@@ -30,12 +30,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_ElementVariableType.h>
 #include <Ioss_Sphere.h>
+#include <Ioss_ElementVariableType.h>
+#include <string>
 #include <assert.h>
-#include <stddef.h>
-
-#include "Ioss_ElementTopology.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
@@ -78,8 +76,6 @@ Ioss::Sphere::Sphere()
   Ioss::ElementTopology::alias("sphere", "Particle_1_2D");
   Ioss::ElementTopology::alias("sphere", "circle");  
   Ioss::ElementTopology::alias("sphere", "circle1");
-  Ioss::ElementTopology::alias("sphere", "point");
-  Ioss::ElementTopology::alias("sphere", "point1");
 }
 
 Ioss::Sphere::~Sphere() {}

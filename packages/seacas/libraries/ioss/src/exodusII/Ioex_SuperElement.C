@@ -30,21 +30,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <exodusII/Ioex_SuperElement.h>  // for SuperElement
+#include <exodusII/Ioex_SuperElement.h>
 
-#include <Ioss_Field.h>                 // for Field, etc
-#include <Ioss_Property.h>              // for Property, etc
-#include <Ioss_Utils.h>                 // for IOSS_ERROR, Utils
+#include <Ioss_Property.h>
+#include <Ioss_Field.h>
+#include <Ioss_Utils.h>
+#include <string>
 
-#include <assert.h>                     // for assert
-#include <netcdf.h>                     // for NC_NOERR, nc_close, etc
-#include <stddef.h>                     // for size_t, NULL
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <string>                       // for char_traits, operator<<, etc
+#include <assert.h>
 
-#include <Ioss_FieldManager.h>          // for FieldManager
-#include <Ioss_GroupingEntity.h>        // for GroupingEntity
-#include <Ioss_PropertyManager.h>       // for PropertyManager
+#include <netcdf.h>
 
 namespace {
   int nc_get_array(int ncid, const char *name, double *data)

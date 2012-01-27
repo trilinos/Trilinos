@@ -83,7 +83,7 @@ public:
 
   //@}
 
-  //@{ \name Atribute set methods.
+  //@{ \name Attribute set methods.
 
    //! If true, transpose of this operator will be applied (not implemented).
     /*! This flag allows the transpose of the given operator to be used 
@@ -132,7 +132,7 @@ public:
     virtual double NormInf() const;
   //@}
   
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
     //! Returns a character string describing the operator
     virtual const char * Label() const;

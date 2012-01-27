@@ -506,6 +506,8 @@ c
 270      continue
       endif
 
+275   continue
+
 c
 c read QA records
 c

@@ -30,17 +30,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <exodusII/Ioex_DatabaseIO.h>   // for DatabaseIO
-#include <exodusII/Ioex_IOFactory.h>    // for IOFactory
-
-#include <stddef.h>                     // for NULL
-#include <string>                       // for string
-
-#include "Ioss_CodeTypes.h"             // for MPI_Comm
-#include "Ioss_DBUsage.h"               // for DatabaseUsage
-#include "Ioss_IOFactory.h"             // for IOFactory
-
-namespace Ioss { class DatabaseIO; }
+#include <exodusII/Ioex_IOFactory.h>
+#include <exodusII/Ioex_DatabaseIO.h>
+#include <exodusII/Ioex_Internals.h>
+#include <string>
 
 namespace Ioex {
 

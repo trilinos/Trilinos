@@ -20,9 +20,9 @@ CXXEXTRA_INCLUDES = -I.
 LIBRARY = libaprepro.a
 
 INCLIST = aprepro.h
-aprepro.cc: aprepro_parser.h
+apr_aprepro.cc: aprepro_parser.h
 
-SRCS = aprepro.cc apr_util.cc apr_stats.cc apr_init.cc apr_builtin.cc apr_units.cc apr_tokenize.cc
+SRCS = apr_aprepro.cc apr_util.cc apr_stats.cc apr_init.cc apr_builtin.cc apr_units.cc apr_tokenize.cc
 OBJS = $(SRCS:.cc=.o)  apr_scanner.o  apr_parser.o 
 
 NormalLibraryTarget(aprepro,$(OBJS))

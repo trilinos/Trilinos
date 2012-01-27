@@ -163,7 +163,7 @@ public:
 
   //@}
 
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
   //! If FillComplete() has been called, this query returns true, otherwise it returns false.
   virtual bool Filled() const

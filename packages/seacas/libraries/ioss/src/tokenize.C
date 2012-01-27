@@ -1,4 +1,4 @@
-#include <tokenize.h>
+#include "tokenize.h"
 #include <algorithm>
 
 void Ioss::tokenize(const std::string& str, const std::string& separators,
@@ -27,7 +27,6 @@ void Ioss::tokenize(const std::string& str, const std::string& separators,
 
 #if 0
 #include <iostream>
-
 using std::cout;
 using std::cin;
 

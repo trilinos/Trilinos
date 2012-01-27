@@ -253,7 +253,7 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   {
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-      *out << "\nComputing the factorization of the preconditioner ...\n";
+      *out << "\nComputing the preconditioner ...\n";
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor factorizationTimeMonitor(*factorizationTimer);
 #endif
@@ -261,7 +261,7 @@ void IfpackPreconditionerFactory::initializePrec(
     TEUCHOS_TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
     timer.stop();
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-      OSTab(out).o() <<"=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
+      OSTab(out).o() <<"=> Setup time = "<<timer.totalElapsedTime()<<" sec\n";
   }
   //
   // Compute the conditioner number estimate if asked

@@ -53,6 +53,8 @@
 
 #include "ps_pario_const.h"
 
+#include "ne_nemesisI.h"
+
 /************ R O U T I N E S   I N   T H I S   F I L E ***********************
 *
 *  Name_of_Routine		type		     Called by
@@ -346,11 +348,11 @@ void load_lb_info(void)
                     Bor_Elem_Num[iproc] + psum;
 
       /* Get the node map for processor "iproc" */
-      if(ex_get_processor_node_maps(lb_exoid, &Integer_Vector[0],
-				    &Integer_Vector[Int_Node_Num[iproc]],
-				    &Integer_Vector[Int_Node_Num[iproc]+
-						    Bor_Node_Num[iproc]],
-				    iproc) < 0) {
+      if(ne_get_node_map(lb_exoid, &Integer_Vector[0],
+                         &Integer_Vector[Int_Node_Num[iproc]],
+                         &Integer_Vector[Int_Node_Num[iproc]+
+                                        Bor_Node_Num[iproc]],
+                         iproc) < 0) {
         fprintf(stderr, "%s: ERROR, failed to get node map for Proc %d!\n",
                 yo, iproc);
         exit(1);
@@ -360,9 +362,9 @@ void load_lb_info(void)
                  Ext_Node_Num[iproc];
 
       /* Get the element map for processor number "iproc" */
-      if(ex_get_processor_elem_maps(lb_exoid, &Integer_Vector[vec_indx],
-				    &Integer_Vector[vec_indx+Int_Elem_Num[iproc]],
-				    iproc) < 0) {
+      if(ne_get_elem_map(lb_exoid, &Integer_Vector[vec_indx],
+                         &Integer_Vector[vec_indx+Int_Elem_Num[iproc]],
+                         iproc) < 0) {
         fprintf(stderr, "%s: ERROR, failed to get element map for Proc %d!\n",
                 yo, iproc);
         exit(1);
@@ -371,7 +373,7 @@ void load_lb_info(void)
       if(Node_Comm_Num[iproc] > 0) {
         vec_indx += Int_Elem_Num[iproc] + Bor_Elem_Num[iproc];
 
-        if(ex_get_node_cmap(lb_exoid, comm_vec[ijump],
+        if(ne_get_node_cmap(lb_exoid, comm_vec[ijump],
                             &Integer_Vector[vec_indx],
                             &Integer_Vector[vec_indx+comm_vec[ijump+1]],
                             iproc) < 0) {
@@ -390,7 +392,7 @@ void load_lb_info(void)
       if(Elem_Comm_Num[iproc] > 0) {
         vec_indx += 2*comm_vec[ijump+1];
 
-        if(ex_get_elem_cmap(lb_exoid, comm_vec[ijump+2],
+        if(ne_get_elem_cmap(lb_exoid, comm_vec[ijump+2],
                           &Integer_Vector[vec_indx],
                           &Integer_Vector[vec_indx+comm_vec[ijump+3]],
                           &Integer_Vector[vec_indx+2*comm_vec[ijump+3]],
@@ -822,7 +824,7 @@ static void read_proc_init(int lb_exoid, int proc_info[], int **proc_ids_ptr)
     if(Debug_Flag == 0)
       ex_opts(EX_VERBOSE);
 
-    if(ex_get_init_info(lb_exoid, &proc_info[0], &proc_info[1], ftype) < 0) {
+    if(ne_get_init_info(lb_exoid, &proc_info[0], &proc_info[1], ftype) < 0) {
       fprintf(stderr, "%s: ERROR, could not get init info!\n",
               yo);
       exit(1);
@@ -909,10 +911,10 @@ static void read_lb_init(int lb_exoid,
       ex_opts(EX_VERBOSE);
 
     /* Read the title of the LB File and about the size of the mesh */
-    error = ex_get_init_global(lb_exoid, &num_nodes, &num_elem,
+    error = ne_get_init_global(lb_exoid, &num_nodes, &num_elem,
                                &num_elem_blk, &num_node_sets, &num_side_sets);
 
-    check_exodus_error (error, "ex_get_init");
+    check_exodus_error (error, "ne_get_init");
 
     if(Debug_Flag == 0)
       ex_opts(!EX_VERBOSE);
@@ -973,7 +975,7 @@ in mesh file",yo);
 
     for(i=0; i < Proc_Info[0]; i++) {
 
-      if(ex_get_loadbal_param(lb_exoid,
+      if(ne_get_loadbal_param(lb_exoid,
                               &Int_Node_Num[i], &Bor_Node_Num[i],
                               &Ext_Node_Num[i], &Int_Elem_Num[i],
                               &Bor_Elem_Num[i], &Node_Comm_Num[i],
@@ -1112,7 +1114,7 @@ static void read_cmap_params(int lb_exoid, int *Node_Comm_Num,
       elem_cm_cnts = elem_cm_ids  + Elem_Comm_Num[iproc];
 
       /* Read the communication map IDs for processor "iproc" */
-      if(ex_get_cmap_params(lb_exoid, node_cm_ids, node_cm_cnts,
+      if(ne_get_cmap_params(lb_exoid, node_cm_ids, node_cm_cnts,
                             elem_cm_ids, elem_cm_cnts, iproc) < 0) {
         fprintf(stderr,
                 "%s: ERROR, unable to read communication map params\n",

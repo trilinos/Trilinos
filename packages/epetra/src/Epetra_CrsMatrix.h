@@ -819,7 +819,7 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 	
   //! Returns the infinity norm of the global matrix.

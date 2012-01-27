@@ -36,6 +36,8 @@
 #if !defined(NO_EXODUSII)
 #include "my_aprepro.h"
 #include "exodusII.h"
+#include "ne_nemesisI.h"
+#include "netcdf.h"
 
 #include "y.tab.h"
 
@@ -175,13 +177,13 @@ char *do_exodus_meta(char *filename)
     int global_ssets;
     int error;
     
-    error = ex_get_init_info(exoid, &proc_count, &proc_in_file, file_type);
+    error = ne_get_init_info(exoid, &proc_count, &proc_in_file, file_type);
 
     if (error >= 0) {
       ptr = putsym("ex_processor_count", VAR, 0);
       ptr->value.var = proc_count;
       
-      ex_get_init_global(exoid, &global_nodes, &global_elements,
+      ne_get_init_global(exoid, &global_nodes, &global_elements,
 			 &global_blocks, &global_nsets, &global_ssets);
       
       ptr = putsym("ex_node_count_global", VAR, 0);

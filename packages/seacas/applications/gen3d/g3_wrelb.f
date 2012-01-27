@@ -121,8 +121,7 @@ C ... Update block names
 
       IEL = 1
       IATR = 1
-      lstid = 0
-      
+
       DO 40 IELB = 1, NELBLK
 
 C      --Block id and start/end for blocks that become multiple blocks

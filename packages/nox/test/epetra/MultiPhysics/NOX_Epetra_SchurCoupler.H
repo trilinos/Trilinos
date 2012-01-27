@@ -74,7 +74,7 @@ public:
 
   // Inherited methods from Epetra_Operator
 
-  //! @name Atribute set methods
+  //! @name Attribute set methods
   //@{ 
 
     //! If set true, transpose of this operator will be applied.
@@ -127,7 +127,7 @@ public:
     virtual double NormInf() const;
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 
     //! Returns a character string describing the operator

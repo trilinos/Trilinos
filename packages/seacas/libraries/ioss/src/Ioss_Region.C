@@ -30,41 +30,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_DatabaseIO.h>
 #include <Ioss_Region.h>
-#include <Ioss_Utils.h>
+
 #include <assert.h>
-#include <ctype.h>
-#include <limits.h>
-#include <stddef.h>
-#include <algorithm>
+
+#include <sstream>
+#include <cstring>
+#include <string>
 #include <iomanip>
 #include <iostream>
-#include <map>
-#include <string>
-#include <utility>
-#include <vector>
+#include <algorithm>
+#include <limits.h>
 
-#include "Ioss_CommSet.h"
-#include "Ioss_DBUsage.h"
-#include "Ioss_EdgeBlock.h"
-#include "Ioss_EdgeSet.h"
-#include "Ioss_ElementBlock.h"
-#include "Ioss_ElementSet.h"
-#include "Ioss_ElementTopology.h"
-#include "Ioss_EntityBlock.h"
-#include "Ioss_EntityType.h"
-#include "Ioss_FaceBlock.h"
-#include "Ioss_FaceSet.h"
-#include "Ioss_Field.h"
-#include "Ioss_GroupingEntity.h"
-#include "Ioss_NodeBlock.h"
-#include "Ioss_NodeSet.h"
-#include "Ioss_Property.h"
-#include "Ioss_PropertyManager.h"
-#include "Ioss_SideBlock.h"
-#include "Ioss_SideSet.h"
-#include "Ioss_State.h"
+#include <Ioss_DatabaseIO.h>
+#include <Ioss_SubSystem.h>
+#include <Ioss_Utils.h>
 
 namespace {
   const std::string id_str()           { return std::string("id");}

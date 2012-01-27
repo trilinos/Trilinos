@@ -32,29 +32,19 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DatabaseIO.h>
-#include <Ioss_ElementBlock.h>
-#include <Ioss_ElementTopology.h>
+#include <Ioss_SubSystem.h>
 #include <Ioss_ParallelUtils.h>
-#include <Ioss_Region.h>
 #include <Ioss_Utils.h>
-#include <assert.h>
-#include <stddef.h>
-#include <algorithm>
-#include <iomanip>
-#include <iostream>
-#include <iterator>
-#include <set>
+#include <Ioss_ElementBlock.h>
+#include <Ioss_Region.h>
+#include <Ioss_ElementTopology.h>
 #include <string>
-#include <utility>
-#include <vector>
 
-#include "Ioss_DBUsage.h"
-#include "Ioss_Field.h"
-#include "Ioss_GroupingEntity.h"
-#include "Ioss_Property.h"
-#include "Ioss_SerializeIO.h"
-#include "Ioss_State.h"
-#include "Ioss_SurfaceSplit.h"
+#include <set>
+#include <iostream>
+#include <iomanip>
+#include <algorithm>
+#include <assert.h>
 
 namespace {
   void log_field(const char *symbol, const Ioss::GroupingEntity *entity,
@@ -240,7 +230,7 @@ void Ioss::DatabaseIO::check_side_topology() const
 }
 
 #include <sys/time.h>
-
+#include <unistd.h>
 namespace {
   static struct timeval tp;
   static double initial_time = -1.0;

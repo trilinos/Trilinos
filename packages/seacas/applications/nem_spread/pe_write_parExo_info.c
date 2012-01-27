@@ -41,6 +41,7 @@
 
 #include "netcdf.h"
 #include "exodusII.h"
+#include "ne_nemesisI.h"
 
 #include "sort_utils.h"
 #include "rf_salsa.h"
@@ -180,7 +181,7 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
     printf("\tNumber Global Side Sets: %d\n", Num_Side_Set);
   }
 
-  if(ex_put_init_global(mesh_exoid, Num_Node, Num_Elem,
+  if(ne_put_init_global(mesh_exoid, Num_Node, Num_Elem,
                         Num_Elem_Blk, Num_Node_Set,
                         Num_Side_Set) < 0) {
     fprintf(stderr, "[%d, %s]: ERROR, Unable to put global initial "
@@ -364,7 +365,7 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
     printf("\tNumber of Proccesor for: %d\n", num_proc_for);
   }
 
-  if(ex_put_init_info(mesh_exoid, num_proc_for, 1, "p") < 0) {
+  if(ne_put_init_info(mesh_exoid, num_proc_for, 1, "p") < 0) {
     fprintf(stderr, "[%d, %s]: ERROR, unable to output init info!\n",
             Proc, yo);
     exit(1);
@@ -383,7 +384,7 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
     printf("\tProccesor For: %d\n", proc_for);
   }
 
-  if(ex_put_loadbal_param(mesh_exoid, Num_Internal_Nodes[iproc],
+  if(ne_put_loadbal_param(mesh_exoid, Num_Internal_Nodes[iproc],
                           Num_Border_Nodes[iproc], Num_External_Nodes[iproc],
                           Num_Internal_Elems[iproc], Num_Border_Elems[iproc],
                           ncomm_cnt, ecomm_cnt,
@@ -401,7 +402,7 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
   bytes_out += 4*sizeof(int);
   tt1 = second();
 
-  if(ex_put_cmap_params(mesh_exoid,
+  if(ne_put_cmap_params(mesh_exoid,
                         n_comm_ids,
                         n_comm_ncnts,
                         e_comm_ids,
@@ -471,7 +472,7 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
     tt1 = second();
 
     for(i1=0; i1 < ncomm_cnt; i1++) {
-      if(ex_put_node_cmap(mesh_exoid, n_comm_ids[i1], n_comm_map[i1].node_ids,
+      if(ne_put_node_cmap(mesh_exoid, n_comm_ids[i1], n_comm_map[i1].node_ids,
                           n_comm_map[i1].proc_ids, proc_for) < 0) {
         fprintf(stderr, "[%d, %s]: ERROR, unable to output nodal comm map!\n",
                 Proc, yo);
@@ -492,7 +493,7 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
     tt1 = second();
 
     for(i1=0; i1 < ecomm_cnt; i1++) {
-      if(ex_put_elem_cmap(mesh_exoid, e_comm_ids[i1], e_comm_map[i1].elem_ids,
+      if(ne_put_elem_cmap(mesh_exoid, e_comm_ids[i1], e_comm_map[i1].elem_ids,
 			  e_comm_map[i1].side_ids, e_comm_map[i1].proc_ids,
 			  proc_for) < 0) {
         fprintf(stderr,
@@ -524,7 +525,7 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
     bytes_out += 3*Num_Node_Set*sizeof(int);
     tt1 = second();
 
-    if(ex_put_ns_param_global(mesh_exoid, Node_Set_Ids,
+    if(ne_put_ns_param_global(mesh_exoid, Node_Set_Ids,
                               Num_Nodes_In_NS, glob_ns_df_cnts) < 0) {
       fprintf(stderr,
               "[%d, %s]: ERROR, unable to output global node-set params\n",
@@ -550,7 +551,7 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
     bytes_out += 3*Num_Side_Set*sizeof(int);
     tt1 = second();
 
-    if(ex_put_ss_param_global(mesh_exoid, Side_Set_Ids,
+    if(ne_put_ss_param_global(mesh_exoid, Side_Set_Ids,
                               Num_Elems_In_SS, glob_ss_df_cnts) < 0) {
       fprintf(stderr,
               "[%d, %s]: ERROR, unable to output global side-set params\n",
@@ -568,7 +569,7 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
   bytes_out += Num_Elem_Blk*sizeof(int);
   tt1 = second();
 
-  if(ex_put_eb_info_global(mesh_exoid, Elem_Blk_Ids, Num_Elems_In_EB) < 0) {
+  if(ne_put_eb_info_global(mesh_exoid, Elem_Blk_Ids, Num_Elems_In_EB) < 0) {
     fprintf(stderr,
             "[%d, %s]: ERROR, unable to output global elem blk IDs\n",
             Proc, yo);
@@ -775,8 +776,8 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
   bytes_out += itotal_nodes*sizeof(int);
   tt1 = second();
 
-  if(ex_put_processor_node_maps(mesh_exoid, nem_node_mapi, nem_node_mapb,
-				nem_node_mape, proc_for) < 0) {
+  if(ne_put_node_map(mesh_exoid, nem_node_mapi, nem_node_mapb,
+		     nem_node_mape, proc_for) < 0) {
     fprintf(stderr,
             "[%d, %s]: ERROR, could not write Nemesis nodal number map!\n",
             Proc, yo);
@@ -1041,9 +1042,9 @@ void write_parExo_data(int mesh_exoid, int max_name_length,
     }
       
     /* Also output the Nemesis element map */
-    if(ex_put_processor_elem_maps(mesh_exoid, Elem_Map[iproc],
-				  Elem_Map[iproc] + Num_Internal_Elems[iproc],
-				  proc_for) < 0) {
+    if(ne_put_elem_map(mesh_exoid, Elem_Map[iproc],
+		       Elem_Map[iproc] + Num_Internal_Elems[iproc],
+		       proc_for) < 0) {
       fprintf(stderr, "[%d, %s]: ERROR, unable to output nemesis element map!\n",
 	      Proc, yo);
       ex_close(mesh_exoid);

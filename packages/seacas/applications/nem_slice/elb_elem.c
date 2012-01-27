@@ -86,12 +86,6 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
   }
   break;
 
-  case 'c':
-  case 'C':
-  if(strncasecmp(elem_name, "CIRCLE", 6) == 0)
-    answer = SPHERE;
-  break;
-  
   case 's':
   case 'S':
   if(strncasecmp(elem_name, "SPHERE", 6) == 0)
@@ -272,9 +266,7 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
   }
   
   if (answer == NULL_EL) {
-    char errstr[80];
-    sprintf(errstr, "fatal: unknown element type '%s' read", elem_name);
-    Gen_Error(0, errstr);
+    Gen_Error(0, "fatal: unknown element type read");
     error_report();
     exit(1);
   }

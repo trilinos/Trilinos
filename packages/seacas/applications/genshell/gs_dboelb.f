@@ -31,6 +31,7 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
+C$Id: dboelb.f,v 1.2 2001/09/18 18:38:49 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE DBOELB (A, NDB,
      &   IDELB, NUMELB, NUMLNK, NUMATR, LINK, NAMELB, ATRIB, ATRIBNW)
@@ -91,6 +92,7 @@ C     7 values per element.
           call expeat(ndb, idelb, atrib, ierr)
         end if
       end if
+ 100  CONTINUE
 
       RETURN
       END

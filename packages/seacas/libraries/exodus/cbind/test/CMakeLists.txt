@@ -84,6 +84,7 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
     testrd_nc
     testwt-zeroe
     testwt-zeron
+    testrdv
     testwt-long-name
     testrd-long-name
     testwt-one-attrib
@@ -93,7 +94,6 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
     testwt-nsided
     testrd-nfaced
     testwt-nfaced
-    test_nemesis
     create_mesh
     rd_wt_mesh
   )

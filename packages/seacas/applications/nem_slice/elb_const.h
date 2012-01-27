@@ -44,7 +44,7 @@
 /* Maximum length of a filename */
 #define MAX_FNL 2048
 
-#define ELB_VERSION	"3.38"
+#define ELB_VERSION	"3.37"
 #define UTIL_NAME	"nem_slice"
 #define ELB_FALSE	0
 #define ELB_TRUE	1

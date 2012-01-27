@@ -56,7 +56,7 @@ aprepro.l  aprepro.y  my_aprepro.h
 
 #endif
 
-LIBS=$(SUPLIB) $(EXOIIV2C) $(NETCDF) -lm 
+LIBS=$(SUPLIB) $(NEMESISC) $(EXOIIV2C) $(NETCDF) -lm 
 
 OBJS = \
 y.tab.o    ap_builtin.o  aprepro.o     ap_stat.o  ap_getline_int.o \

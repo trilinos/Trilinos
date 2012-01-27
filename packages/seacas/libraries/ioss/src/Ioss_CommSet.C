@@ -32,15 +32,11 @@
 
 #include <Ioss_CommSet.h>
 #include <Ioss_DatabaseIO.h>
-#include <Ioss_Field.h>
 #include <Ioss_Property.h>
-#include <assert.h>
-#include <stddef.h>
-#include <string>
+#include <Ioss_Field.h>
 
-#include "Ioss_FieldManager.h"
-#include "Ioss_GroupingEntity.h"
-#include "Ioss_PropertyManager.h"
+#include <string>
+#include <assert.h>
 
 Ioss::CommSet::CommSet(Ioss::DatabaseIO *io_database,
 		       const std::string& my_name,

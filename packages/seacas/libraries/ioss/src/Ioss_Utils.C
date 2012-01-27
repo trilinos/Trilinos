@@ -31,30 +31,31 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_Utils.h>
-#include <assert.h>
-#include <stddef.h>
-#include <sys/select.h>
+
 #include <time.h>
-#include <algorithm>
-#include <cctype>
-#include <cstdlib>
-#include <cstring>
+#include <sstream>
 #include <string>
-#include <vector>
+#include <cstring>
+#include <cstdlib>
+#include <cctype>
+#include <assert.h>
+
+#include <algorithm>
 
 #ifndef _WIN32
 #include <sys/utsname.h>
 #endif
 
-#include <Ioss_ElementBlock.h>
 #include <Ioss_ElementTopology.h>
-#include <Ioss_Field.h>
 #include <Ioss_GroupingEntity.h>
-#include <Ioss_Region.h>
 #include <Ioss_SideBlock.h>
-#include <fstream>
+#include <Ioss_ElementBlock.h>
+#include <Ioss_Region.h>
+#include <Ioss_SerializeIO.h>
+#include <Ioss_Field.h>
 
-#include "Ioss_Property.h"
+#include <iostream>
+#include <fstream>
 
 namespace {
   inline int to_lower(int c) { return std::tolower(c); }

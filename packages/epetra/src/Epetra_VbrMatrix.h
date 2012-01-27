@@ -875,7 +875,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
 
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 
     //! Returns the infinity norm of the global matrix.
