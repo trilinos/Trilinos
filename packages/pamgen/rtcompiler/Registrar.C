@@ -420,6 +420,13 @@ double Printf::execute(Value** args)
       cout << *(args[numVarArgsUsed+1]);
       numVarArgsUsed++;
     }
+    else if ( ((char) args[0]->getArrayValue(i)) == '\"') {
+      // Do not print
+    }
+    else if ( ((char) args[0]->getArrayValue(i)) == '\\' &&
+              ((char) args[0]->getArrayValue(i+1)) == '\"') {
+      // Do not print
+    }
     else {
       cout << ((char) args[0]->getArrayValue(i));
     }
