@@ -222,7 +222,7 @@ namespace panzer {
     // NOTE: if the ordering of elements changes in the STK 2D object, this test may break
     out << "\nPrinting element data for block: eblock-1_0" << std::endl;
     for (std::vector<panzer::IPCoordinates<panzer::Traits::Residual, Traits>::Coordinate>::const_iterator i = coords->begin(); i != coords->end(); ++i)
-      out << "pid = " << comm->MyPID() << ", lid = " << i->lid << ", coords(x,y,z) = (" << i->val[0] << "," << i->val[1] << "," << i->val[2] << ")" << std::endl;
+      out << "pid = " << comm->MyPID() << ", lid = " << i->lid << ", coords(x,y,z) = (" << i->val[0] << "," << i->val[1] << ")" << std::endl;
 
     const double double_tol = 10.0*std::numeric_limits<double>::epsilon();
     if (comm->MyPID() == 0) {
