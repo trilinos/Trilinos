@@ -3054,5 +3054,92 @@ namespace stk {
 
     }
 
+    void PerceptMesh::addParallelInfoFields(bool elemental, bool nodal, 
+                                            std::string elemental_proc_rank_name,
+                                            std::string nodal_fixed_flag, // boundary flag for telling Mesquite these nodes shouldn't be moved
+                                            std::string nodal_global_id_name, 
+                                            std::string nodal_proc_id_name, 
+                                            std::string nodal_local_id_name)
+    {
+      if (elemental)
+        {
+          int scalarDimension = 0; // a scalar
+          addField(elemental_proc_rank_name, element_rank(), scalarDimension);
+        }
+      if (nodal)
+        {
+          int scalarDimension = 0; // a scalar
+          addField(nodal_global_id_name, node_rank(), scalarDimension);
+          addField(nodal_proc_id_name, node_rank(), scalarDimension);
+          addField(nodal_local_id_name, node_rank(), scalarDimension);
+          addField(nodal_fixed_flag, node_rank(), scalarDimension);
+        }
+    }
+
+    void PerceptMesh::populateParallelInfoFields(bool elemental, bool nodal, 
+                                                 stk::mesh::Selector* fixed_node_selector,
+                                                 std::string elemental_proc_rank_name,
+                                                 std::string nodal_fixed_flag,
+                                                 std::string nodal_global_id_name, 
+                                                 std::string nodal_proc_id_name, 
+                                                 std::string nodal_local_id_name)
+    {
+      if (elemental)
+        {
+          stk::mesh::FieldBase * field = getField(elemental_proc_rank_name);
+          const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank() );
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+              //if (removePartSelector(**k))
+              {
+                stk::mesh::Bucket & bucket = **k ;
+                const unsigned num_entity_in_bucket = bucket.size();
+                for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+                  {
+                    stk::mesh::Entity& element = bucket[ientity];
+                    double *fdata = PerceptMesh::field_data( field , element );
+                    if (fdata) fdata[0] = element.owner_rank();
+                  }
+              }
+            }
+        }
+      if (nodal)
+        {
+          stk::mesh::FieldBase * field_gid = getField(nodal_global_id_name);
+          stk::mesh::FieldBase * field_pid = getField(nodal_proc_id_name);
+          stk::mesh::FieldBase * field_lid = getField(nodal_local_id_name);
+          stk::mesh::FieldBase * field_fix = getField(nodal_fixed_flag);
+          unsigned lid=0;
+          const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( node_rank() );
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+              //if (removePartSelector(**k))
+              {
+                stk::mesh::Bucket & bucket = **k ;
+                const unsigned num_entity_in_bucket = bucket.size();
+                for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+                  {
+                    stk::mesh::Entity& node = bucket[ientity];
+                    double *fdata_gid = PerceptMesh::field_data( field_gid , node );
+                    double *fdata_pid = PerceptMesh::field_data( field_pid , node );
+                    double *fdata_lid = PerceptMesh::field_data( field_lid , node );
+                    double *fdata_fix = PerceptMesh::field_data( field_fix , node );
+                    if (fdata_gid) fdata_gid[0] = node.identifier();
+                    if (fdata_pid) fdata_pid[0] = node.owner_rank();
+                    if (fdata_lid) fdata_lid[0] = lid++;
+                    if (fdata_fix)
+                      {
+                        if (fixed_node_selector)
+                          fdata_fix[0] = (*fixed_node_selector)(node) ? 1 : 0;
+                        else
+                          fdata_fix[0] = 0;
+                      }
+                  }
+              }
+            }
+        }
+    }
+
+
   } // stk
 } // percept

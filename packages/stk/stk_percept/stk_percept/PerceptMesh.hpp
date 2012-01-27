@@ -185,6 +185,24 @@ namespace stk {
       void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
       std::string printEntityCompact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
 
+      /// add some fields that are useful for debugging or for exporting meshes to Mesquite - must be
+      ///   done before commit()
+      void addParallelInfoFields(bool elemental, bool nodal, 
+                                 std::string elemental_proc_rank_name = "proc_rank",
+                                 std::string nodal_fixed_flag="fixed", // boundary flag for telling Mesquite these nodes shouldn't be moved
+                                 std::string nodal_global_id_name="GLOBAL_ID", 
+                                 std::string nodal_proc_id_name="PROCESSOR_ID", 
+                                 std::string nodal_local_id_name="LOCAL_ID");
+
+      /// fill the fields from addParallelInfoFields with data from stk_mesh database
+      void populateParallelInfoFields(bool elemental, bool nodal, 
+                                      stk::mesh::Selector* fixed_node_selector=0,
+                                      std::string elemental_proc_rank_name = "proc_rank",
+                                      std::string nodal_fixed_flag="fixed", // boundary flag for telling Mesquite these nodes shouldn't be moved
+                                      std::string nodal_global_id_name="GLOBAL_ID", 
+                                      std::string nodal_proc_id_name="PROCESSOR_ID", 
+                                      std::string nodal_local_id_name="LOCAL_ID");
+
       //========================================================================================================================
       /// low-level interfaces
       /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted
