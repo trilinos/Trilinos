@@ -28,11 +28,504 @@ namespace MueLuTests {
 
   } //Constructor
 
+  // -----------------------------------------------------------------------
+
+  TEUCHOS_UNIT_TEST(Repartition, DeterminePartitionPlacement1)
+  {
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Tests the algorithm for assigning partitions to PIDs." << std::endl;
+    out << "The matrix is distributed across 4 processors, and there are 4 partitions." << std::endl;
+    out << "Process 0 ends up owning a partition for which it originally has no unknowns." << std::endl;
+    out << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    int mypid = comm->getRank();
+
+    if (comm->getSize() != 4) {
+      std::cout << std::endl;
+      std::cout << "This test must be run on 4 processors!" << std::endl << std::endl;
+      return;
+    }
+
+    Level level;
+    RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+    level.SetFactoryManager(factoryHandler);
+    int nx=4;
+    int ny=6;
+    GO numGlobalElements = nx*ny; //24
+
+    // Describes the initial layout of matrix rows across processors.
+    size_t numMyElements;
+    switch(mypid) {
+       case 0:
+         numMyElements = 6;
+         break;
+       case 1:
+         numMyElements = 6;
+         break;
+       case 2:
+         numMyElements = 6;
+         break;
+       case 3:
+         numMyElements = 6;
+         break;
+    } //switch
+    GO indexBase = 0;
+    RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
+    
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx",nx);
+    matrixList.set("ny",ny);
+    matrixList.set("keepBCs",true); //keeps Dirichlet rows
+    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    level.Set<RCP<Operator> >("A",Op);
+
+    Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
+    if (decomposition->getLocalLength() > 0)
+      partitionThisDofBelongsTo = decomposition->getDataNonConst(0);
+
+    // Indicate the number of partitions that there should be.
+    level.Set<GO>("number of partitions",4);
+
+    /* Assign the partition that each unknown belongs to.  In this case,
+
+       partition 0 has 6 unknowns 
+       partition 1 has 6 unknowns 
+       partition 2 has 9 unknowns 
+       partition 3 has 3 unknowns 
+    */
+
+    switch (mypid)  {
+      case 0:                                       //  nnz by row    nnz by partition
+        partitionThisDofBelongsTo[2] = 0;           //           1
+        partitionThisDofBelongsTo[3] = 0;           //           1          3
+        partitionThisDofBelongsTo[4] = 0;           //           1
+        partitionThisDofBelongsTo[5] = 1;           //           5          6
+        partitionThisDofBelongsTo[0] = 2;           //           1
+        partitionThisDofBelongsTo[1] = 2;           //           1          2
+        break;
+      case 1:
+        partitionThisDofBelongsTo[0] = 0;           //           5
+        partitionThisDofBelongsTo[1] = 0;           //           1          6
+        partitionThisDofBelongsTo[2] = 1;           //           1
+        partitionThisDofBelongsTo[3] = 1;           //           5          6
+        partitionThisDofBelongsTo[4] = 2;           //           5
+        partitionThisDofBelongsTo[5] = 2;           //           1          6
+        break;
+      case 2:
+        partitionThisDofBelongsTo[1] = 0;           //           5          5
+        partitionThisDofBelongsTo[0] = 2;           //           1
+        partitionThisDofBelongsTo[2] = 2;           //           5          8
+        partitionThisDofBelongsTo[3] = 2;           //           1    
+        partitionThisDofBelongsTo[4] = 2;           //           1
+        partitionThisDofBelongsTo[5] = 3;           //           5          5
+        break;
+      case 3:
+        partitionThisDofBelongsTo[0] = 1;           //           5
+        partitionThisDofBelongsTo[1] = 1;           //           1          7
+        partitionThisDofBelongsTo[2] = 1;           //           1
+        partitionThisDofBelongsTo[3] = 2;           //           1          1
+        partitionThisDofBelongsTo[4] = 3;           //           1
+        partitionThisDofBelongsTo[5] = 3;           //           1          2
+        break;
+      default:
+        break;
+    } //switch
+
+    RCP<Vector> decompositionAsScalar = VectorFactory::Build(map,false);
+    Teuchos::ArrayRCP<SC> das;
+    if (decompositionAsScalar->getLocalLength() > 0)
+      das = decompositionAsScalar->getDataNonConst(0);
+    for (int i=0; i<das.size(); ++i)
+      das[i] = partitionThisDofBelongsTo[i];
+    das = Teuchos::null;
+
+    partitionThisDofBelongsTo = Teuchos::null;
+
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
+
+    RCP<Repartition> repart = rcp(new Repartition());
+    GO myPartitionNumber;
+    Array<int> partitionOwners;
+    repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
+
+    TEST_EQUALITY(partitionOwners[0],1);
+    TEST_EQUALITY(partitionOwners[1],3);
+    TEST_EQUALITY(partitionOwners[2],2);
+    TEST_EQUALITY(partitionOwners[3],0);
+  } //DeterminePartitionPlacement1
+
+  // -----------------------------------------------------------------------
+
+  TEUCHOS_UNIT_TEST(Repartition, DeterminePartitionPlacement2)
+  {
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Tests the algorithm for assigning partitions to PIDs." << std::endl;
+    out << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    int mypid = comm->getRank();
+
+    if (comm->getSize() != 4) {
+      std::cout << std::endl;
+      std::cout << "This test must be run on 4 processors!" << std::endl << std::endl;
+      return;
+    }
+
+    Level level;
+    RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+    level.SetFactoryManager(factoryHandler);
+    int nx=4;
+    int ny=6;
+    GO numGlobalElements = nx*ny; //24
+
+    // Describes the initial layout of matrix rows across processors.
+    size_t numMyElements;
+    switch(mypid) {
+       case 0:
+         numMyElements = 6;
+         break;
+       case 1:
+         numMyElements = 6;
+         break;
+       case 2:
+         numMyElements = 6;
+         break;
+       case 3:
+         numMyElements = 6;
+         break;
+    } //switch
+    GO indexBase = 0;
+    RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
+    
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx",nx);
+    matrixList.set("ny",ny);
+    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    level.Set<RCP<Operator> >("A",Op);
+
+    Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
+    if (decomposition->getLocalLength() > 0)
+      partitionThisDofBelongsTo = decomposition->getDataNonConst(0);
+
+    // Indicate the number of partitions that there should be.
+    level.Set<GO>("number of partitions",4);
+
+    /* Assign the partition that each unknown belongs to.  In this case,
+
+       partition 0 has 6 unknowns 
+       partition 1 has 6 unknowns 
+       partition 2 has 8 unknowns 
+       partition 3 has 4 unknowns 
+    */
+
+    switch (mypid)  {
+      case 0:                                    //nnz in this row       nnz by partition
+        partitionThisDofBelongsTo[0] = 0;        //       3
+        partitionThisDofBelongsTo[1] = 0;        //       4                     7
+        partitionThisDofBelongsTo[2] = 1;        //       4
+        partitionThisDofBelongsTo[3] = 1;        //       3                     7
+        partitionThisDofBelongsTo[4] = 3;        //       4
+        partitionThisDofBelongsTo[5] = 3;        //       5                     9
+        break;
+      case 1:
+        partitionThisDofBelongsTo[0] = 0;        //       5
+        partitionThisDofBelongsTo[1] = 0;        //       4                     9
+        partitionThisDofBelongsTo[2] = 1;        //       4
+        partitionThisDofBelongsTo[3] = 1;        //       5                     9
+        partitionThisDofBelongsTo[4] = 2;        //       5
+        partitionThisDofBelongsTo[5] = 2;        //       4                     9
+        break;
+      case 2:
+        partitionThisDofBelongsTo[0] = 0;        //       4
+        partitionThisDofBelongsTo[1] = 0;        //       5                     9
+        partitionThisDofBelongsTo[2] = 2;        //       5
+        partitionThisDofBelongsTo[3] = 2;        //       4                     9
+        partitionThisDofBelongsTo[4] = 3;        //       4
+        partitionThisDofBelongsTo[5] = 3;        //       5                     9
+        break;
+      case 3:
+        partitionThisDofBelongsTo[0] = 1;        //       5
+        partitionThisDofBelongsTo[1] = 1;        //       4                     9
+        partitionThisDofBelongsTo[2] = 2;        //       3
+        partitionThisDofBelongsTo[3] = 2;        //       4                     7
+        partitionThisDofBelongsTo[4] = 3;        //       4
+        partitionThisDofBelongsTo[5] = 3;        //       3                     7
+        break;
+      default:
+        break;
+    } //switch
+
+    RCP<Vector> decompositionAsScalar = VectorFactory::Build(map,false);
+    Teuchos::ArrayRCP<SC> das;
+    if (decompositionAsScalar->getLocalLength() > 0)
+      das = decompositionAsScalar->getDataNonConst(0);
+    for (int i=0; i<das.size(); ++i)
+      das[i] = partitionThisDofBelongsTo[i];
+    das = Teuchos::null;
+
+    partitionThisDofBelongsTo = Teuchos::null;
+
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
+
+    RCP<Repartition> repart = rcp(new Repartition());
+    GO myPartitionNumber;
+    Array<int> partitionOwners;
+    repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
+
+    TEST_EQUALITY(partitionOwners[0],2);
+    TEST_EQUALITY(partitionOwners[1],3);
+    TEST_EQUALITY(partitionOwners[2],1);
+    TEST_EQUALITY(partitionOwners[3],0);
+  } //DeterminePartitionPlacement2
+
+  // -----------------------------------------------------------------------
+
+  TEUCHOS_UNIT_TEST(Repartition, DeterminePartitionPlacement3)
+  {
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Tests the algorithm for assigning partitions to PIDs." << std::endl;
+    out << "Matrix is initially placed on pids 0 and 1, but there are 4 partitions." << std::endl;
+    out << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    int mypid = comm->getRank();
+
+    if (comm->getSize() != 4) {
+      std::cout << std::endl;
+      std::cout << "This test must be run on 4 processors!" << std::endl << std::endl;
+      return;
+    }
+
+    Level level;
+    RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+    level.SetFactoryManager(factoryHandler);
+    int nx=5;
+    int ny=3;
+    GO numGlobalElements = nx*ny; //15
+
+    // Describes the initial layout of matrix rows across processors.
+    size_t numMyElements;
+    switch(mypid) {
+       case 0:
+         numMyElements = 8;
+         break;
+       case 1:
+         numMyElements = 7;
+         break;
+       case 2:
+         numMyElements = 0;
+         break;
+       case 3:
+         numMyElements = 0;
+         break;
+    } //switch
+    GO indexBase = 0;
+    RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
+    
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx",nx);
+    matrixList.set("ny",ny);
+    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    level.Set<RCP<Operator> >("A",Op);
+
+    Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
+    if (decomposition->getLocalLength() > 0)
+      partitionThisDofBelongsTo = decomposition->getDataNonConst(0);
+
+    // Indicate the number of partitions that there should be.
+    level.Set<GO>("number of partitions",4);
+
+    /* Assign the partition that each unknown belongs to.  In this case,
+
+       partition 0 has 3 unknowns 
+       partition 1 has 4 unknowns 
+       partition 2 has 3 unknowns 
+       partition 3 has 5 unknowns 
+    */
+
+    switch (mypid)  {
+      case 0:                                //nnz in this row        nnz by partition
+        partitionThisDofBelongsTo[0] = 0;    //       3
+        partitionThisDofBelongsTo[1] = 0;    //       4                     7
+        partitionThisDofBelongsTo[2] = 1;    //       4
+        partitionThisDofBelongsTo[3] = 1;    //       4                    11
+        partitionThisDofBelongsTo[4] = 1;    //       3
+        partitionThisDofBelongsTo[5] = 2;    //       4
+        partitionThisDofBelongsTo[6] = 2;    //       5                     9
+        partitionThisDofBelongsTo[7] = 3;    //       5                     5
+        break;
+      case 1:
+        partitionThisDofBelongsTo[0] = 0;    //       5                     5
+        partitionThisDofBelongsTo[1] = 1;    //       4                     4
+        partitionThisDofBelongsTo[2] = 2;    //       3                     3
+        partitionThisDofBelongsTo[3] = 3;    //       4
+        partitionThisDofBelongsTo[4] = 3;    //       4                    16
+        partitionThisDofBelongsTo[5] = 3;    //       4
+        partitionThisDofBelongsTo[6] = 3;    //       3
+        break;
+      case 2:
+        break;
+      case 3:
+        break;
+      default:
+        break;
+    } //switch
+
+    RCP<Vector> decompositionAsScalar = VectorFactory::Build(map,false);
+    Teuchos::ArrayRCP<SC> das;
+    if (decompositionAsScalar->getLocalLength() > 0)
+      das = decompositionAsScalar->getDataNonConst(0);
+    for (int i=0; i<das.size(); ++i)
+      das[i] = partitionThisDofBelongsTo[i];
+    das = Teuchos::null;
+
+    partitionThisDofBelongsTo = Teuchos::null;
+
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
+
+    RCP<Repartition> repart = rcp(new Repartition());
+    GO myPartitionNumber;
+    Array<int> partitionOwners;
+    repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
+
+    TEST_EQUALITY(partitionOwners[0],3);
+    TEST_EQUALITY(partitionOwners[1],0);
+    TEST_EQUALITY(partitionOwners[2],2);
+    TEST_EQUALITY(partitionOwners[3],1);
+  } //DeterminePartitionPlacement3
+
+  // -----------------------------------------------------------------------
+
+  TEUCHOS_UNIT_TEST(Repartition, DeterminePartitionPlacement4)
+  {
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Tests the algorithm for assigning partitions to PIDs." << std::endl;
+    out << "Matrix is distributed across all four processors, but there are only 3 partitions." << std::endl;
+    out << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    int mypid = comm->getRank();
+
+    if (comm->getSize() != 4) {
+      std::cout << std::endl;
+      std::cout << "This test must be run on 4 processors!" << std::endl << std::endl;
+      return;
+    }
+
+    Level level;
+    RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+    level.SetFactoryManager(factoryHandler);
+    int nx=5;
+    int ny=3;
+    GO numGlobalElements = nx*ny; //15
+
+    // Describes the initial layout of matrix rows across processors.
+    size_t numMyElements;
+    switch(mypid) {
+       case 0:
+         numMyElements = 3;
+         break;
+       case 1:
+         numMyElements = 4;
+         break;
+       case 2:
+         numMyElements = 3;
+         break;
+       case 3:
+         numMyElements = 5;
+         break;
+    } //switch
+    GO indexBase = 0;
+    RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
+    
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx",nx);
+    matrixList.set("ny",ny);
+    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    level.Set<RCP<Operator> >("A",Op);
+
+    Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
+    if (decomposition->getLocalLength() > 0)
+      partitionThisDofBelongsTo = decomposition->getDataNonConst(0);
+
+    // Indicate the number of partitions that there should be.
+    level.Set<GO>("number of partitions",3);
+
+    /* Assign the partition that each unknown belongs to.  In this case,
+
+       partition 0 has 3 unknowns 
+       partition 1 has 4 unknowns 
+       partition 2 has 3 unknowns 
+       partition 3 has 5 unknowns 
+    */
+
+    switch (mypid)  {
+      case 0:                              // nnz in this row      nnz in this partition
+        partitionThisDofBelongsTo[0] = 0;  //       3                        3
+        partitionThisDofBelongsTo[1] = 1;  //       4                        4
+        partitionThisDofBelongsTo[2] = 2;  //       4                        4
+        break;
+      case 1:
+        partitionThisDofBelongsTo[0] = 0;  //       4                        4
+        partitionThisDofBelongsTo[1] = 1;  //       3                        3
+        partitionThisDofBelongsTo[2] = 2;  //       4
+        partitionThisDofBelongsTo[3] = 2;  //       5                        9
+        break;
+      case 2:
+        partitionThisDofBelongsTo[0] = 0;  //       5
+        partitionThisDofBelongsTo[1] = 0;  //       5                       10
+        partitionThisDofBelongsTo[2] = 1;  //       4                        4
+        break;
+      case 3:
+        partitionThisDofBelongsTo[0] = 0;  //       3
+        partitionThisDofBelongsTo[1] = 0;  //       4                        7
+        partitionThisDofBelongsTo[2] = 1;  //       4
+        partitionThisDofBelongsTo[3] = 1;  //       4
+        partitionThisDofBelongsTo[4] = 1;  //       3                       11
+        break;
+      default:
+        break;
+    } //switch
+
+    RCP<Vector> decompositionAsScalar = VectorFactory::Build(map,false);
+    Teuchos::ArrayRCP<SC> das;
+    if (decompositionAsScalar->getLocalLength() > 0)
+      das = decompositionAsScalar->getDataNonConst(0);
+    for (int i=0; i<das.size(); ++i)
+      das[i] = partitionThisDofBelongsTo[i];
+    das = Teuchos::null;
+
+    partitionThisDofBelongsTo = Teuchos::null;
+
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
+
+    RCP<Repartition> repart = rcp(new Repartition());
+    GO myPartitionNumber;
+    Array<int> partitionOwners;
+    repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
+
+    TEST_EQUALITY(partitionOwners[0],2);
+    TEST_EQUALITY(partitionOwners[1],3);
+    TEST_EQUALITY(partitionOwners[2],1);
+  } //DeterminePartitionPlacement4
+
+  // -----------------------------------------------------------------------
+
   TEUCHOS_UNIT_TEST(Repartition, Build)
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
     out << "version: " << MueLu::Version() << std::endl;
+    out << "Tests build of the permutation matrix for repartitioning." << std::endl;
     out << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -109,6 +602,8 @@ namespace MueLuTests {
         partitionThisDofBelongsTo[3] = 2;
         partitionThisDofBelongsTo[4] = 1;
         break;
+      case 2:
+        break;
       case 3:
         partitionThisDofBelongsTo[0] = 2;
         partitionThisDofBelongsTo[1] = 0;
@@ -136,26 +631,41 @@ namespace MueLuTests {
 
     repart->Build(level);
 
+    // Test permutation matrix by multiplying against vector that describes partition numbering.
+    // The local resulting vector should contain the partition number that this pid owns.
+    // In this case, pid 0 owns partition 2
+    //               pid 1 owns partition 1
+    //               pid 2 does not own a partition
+    //               pid 3 owns partition 0
     RCP<Operator> permMat;
     level.Get("permMat",permMat,repart.get());
     RCP<Vector> result = VectorFactory::Build(permMat->getRangeMap(),false);
     permMat->apply(*decompositionAsScalar,*result,Teuchos::NO_TRANS,1,0);
     int thisPidFailed=-1;
-    // local entries in the resulting vector should be equal to the PID
+    // local entries in the resulting vector should be equal to the partition number
     Teuchos::ArrayRCP<SC> resultData;
     if (result->getLocalLength() > 0)
       resultData = result->getDataNonConst(0);
     for (int i=0; i<resultData.size(); ++i) {
-      if (resultData[i] != mypid) {
-        thisPidFailed = mypid; // error condition
-        break;
-      }
+      switch(mypid) {
+        case 0:
+           if (resultData[i] != 2)
+             thisPidFailed = mypid;
+           break;
+        case 1:
+           if (resultData[i] != 1)
+             thisPidFailed = mypid;
+           break;
+        case 2: //pid 2 should have no data after permutation
+           thisPidFailed = mypid;
+           break;
+        case 3:
+           if (resultData[i] != 0)
+             thisPidFailed = mypid;
+           break;
+      } //switch
     }
     resultData = Teuchos::null;
-
-    //RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    //fos->setOutputToRootOnly(-1);
-    //result->describe(*fos,Teuchos::VERB_EXTREME);
 
     // Test passes if all pid's return -1. If a pid hits an error, it sets
     // thisPidFailed equal to comm->getRank().  In this way, you can tell with --details=ALL
@@ -163,8 +673,6 @@ namespace MueLuTests {
     int whichPidFailed;
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,thisPidFailed,Teuchos::outArg(whichPidFailed));
     TEST_EQUALITY(whichPidFailed,-1);
-
-    //  Ptent->apply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
 
   } //Build
 
