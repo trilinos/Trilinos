@@ -216,7 +216,13 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetCoarsestSolverFactory(const Teuchos::ParameterList & params) {
 #include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
 
-  std::string type = "Amesos-Superlu";
+#if   defined(HAVE_MUELU_AMESOS2)
+  std::string type = "Amesos-Superlu"; // propose SuperLU as coarsest solver if AMESOS2 is enabled // TODO: check if SuperLU is available in Amesos2
+#else
+  std::string type = "Amesos-KLU";     // propose KLU as coarsest solver // TODO: only available with Epetra? 
+  // TODO: what if neither KLU nor SuperLU are available??
+#endif
+  
   if(params.isParameter("coarse: type")) type = params.get<std::string>("coarse: type");
 
   RCP<SmootherPrototype> smooProto;
