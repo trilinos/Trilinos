@@ -37,6 +37,7 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
   using Teuchos::StringToIntegralParameterEntryValidator;
   using Teuchos::AnyNumberParameterEntryValidator;
   using Teuchos::FileNameValidator;
+
   using std::string;
 
   bool isDefault=true, isNotDefault=false;
@@ -301,7 +302,19 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
 
   Teuchos::ParameterList &partitioning = 
     pl.sublist("partitioning", false, string("Partitioning problem parameters"));
+    /*-----------------------------------------*/
 
+  parameterName = string("topology");
+  strDefault = string("all");
+  intRangeValidatorP = rcp(new IntegerRangeListValidator<int>(1, 10000));
+  docString.str("topology of compute node for hierarchical partitioning TODO");
+  entry = ParameterEntry(
+        strDefault, !isDefault, isNotList,
+        docString.str(), 
+        intRangeValidatorP);
+
+  partitioning.setEntry(parameterName, entry);
+  
     /*-----------------------------------------*/
 
   parameterName = string("randomize_input");
@@ -343,21 +356,6 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
 
     /*-----------------------------------------*/
 
-  parameterName = string("use_node_topology");
-  intDefault = 0;
-  str2intValidatorP = 
-    Teuchos::rcp(new StringToIntegralParameterEntryValidator<int>(
-      yesNoWords, yesNoNumbers, string("randomize_input")));
-  docString.str("todo");
-  entry = ParameterEntry(
-        intDefault, isDefault, isNotList,
-        docString.str(), 
-        str2intValidatorP);
-
-  partitioning.setEntry(parameterName, entry);
-
-    /*-----------------------------------------*/
-
   parameterName = string("imbalance_tolerance");  
   doubleDefault = 1.1;
   doubleValidatorP = 
@@ -378,12 +376,13 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
   // the same value.
 
   size_t veryLarge = size_t(1) << (sizeof(size_t)*8 - 2);
+  size_t minVal(1);
   sizetValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<size_t>(1,veryLarge));
+    Teuchos::rcp(new EnhancedNumberValidator<size_t>(minVal,veryLarge));
 
   parameterName = string("num_global_parts");  
   docString.str("");
-  entry = ParameterEntry(0, !isDefault, isNotList, docString.str(), 
+  entry = ParameterEntry(minVal, !isDefault, isNotList, docString.str(), 
     sizetValidatorP) ;
 
   partitioning.setEntry(parameterName, entry);
@@ -396,12 +395,13 @@ void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
   // If num_global_parts is also set, num_global_parts must be 
   // the sum of the value of num_local_parts on each process.
 
+  minVal = 0;
   sizetValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<size_t>(0,veryLarge));
+    Teuchos::rcp(new EnhancedNumberValidator<size_t>(minVal,veryLarge));
 
   parameterName = string("num_local_parts");  
   docString.str("");
-  entry = ParameterEntry(0, !isDefault, isNotList, docString.str(), 
+  entry = ParameterEntry(minVal, !isDefault, isNotList, docString.str(), 
     sizetValidatorP);
 
   partitioning.setEntry(parameterName, entry);

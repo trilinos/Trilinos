@@ -38,6 +38,20 @@ namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////
 // Declarations
+//
+// An IntegerRangeList is a concise way to provide a list of
+// identifiers.  Valid values are:
+//
+// a comma separated list of integers
+// a range of integers given as two integers separated by a dash
+// the word "all"
+// any comma separated list of the above three
+//
+// Examples:
+//    1,5,12,30-39,101
+//    all
+//
+// Redundant specifiers are and'ed:  "1,5,all" is just "all"
 ////////////////////////////////////////////////////////////////////
 
 template <typename Integral>
