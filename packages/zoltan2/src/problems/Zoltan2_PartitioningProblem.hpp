@@ -158,6 +158,11 @@ private:
   ArrayRCP<ArrayRCP<size_t> > partIds_;
   ArrayRCP<ArrayRCP<float> > partSizes_;
   int numberOfCriteria_;
+
+  // Number of parts to be computed at each level in hierarchical partitioning.
+  
+  ArrayRCP<int> numberOfParts_;
+  bool hierarchical_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -169,7 +174,7 @@ template <typename Adapter>
       generalParams_(), partitioningParams_(),solution_(),
       inputType_(InvalidAdapterType), modelType_(InvalidModel), algorithm_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
-      numberOfCriteria_()
+      numberOfCriteria_(), numberOfParts_(), hierarchical_(false)
 #else
 template <typename Adapter>
   PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
@@ -178,7 +183,8 @@ template <typename Adapter>
       generalParams_(), partitioningParams_(),solution_(),
       inputType_(InvalidAdapterType), modelType_(InvalidModel), algorithm_(),
       numberOfWeights_(), 
-      partIds_(), partSizes_(), numberOfCriteria_()
+      partIds_(), partSizes_(), numberOfCriteria_(), 
+      numberOfParts_(), hierarchical_(false)
 #endif
 {
   HELLO;
@@ -235,6 +241,8 @@ void PartitioningProblem<Adapter>::solve()
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
+
+  // TODO: If hierarchical_
 
   // Create the solution. The algorithm will query the Solution
   //   for part and weight information. The algorithm will
@@ -300,6 +308,29 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
 
   string paramNotSet("unset");
 
+  // Hierarchical partitioning?
+
+  ParameterEntry *topo = partitioningParams_->getEntryPtr("topology");
+  if (topo){
+    Array<int> *values = NULL;
+    Array<int> &valueList = topo->getValue(values);
+    if (!Zoltan2::noValuesAreInRangeList(valueList)){
+      int *n = new int [valueList.size() + 1];
+      numberOfParts_ = arcp(n, 0, valueList.size() + 1, true);
+      int procsPerNode = 1;
+      for (int i=0; i < valueList.size(); i++){
+        numberOfParts_[i+1] = valueList[i];
+        procsPerNode *= valueList[i];
+      }
+      numberOfParts_[0] = this->env_->numProcs_ / procsPerNode;
+
+      if (this->env_->numProcs_ % procsPerNode > 0)
+        numberOfParts_[0]++;
+    }
+  }
+
+  hierarchical_ = numberOfParts_.size() > 0;
+
   // What type of input did the User provide.  If they didn't
   //   specify a model and/or an algorithm, we can use the input
   //   type to choose some defaults.
@@ -353,6 +384,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem()
 
       modelType_ = GraphModelType;
       algorithm_ = algorithm;
+      // TODO: add a parameter by which user tells us there are
+      // no self edges to be removed.
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
     }
