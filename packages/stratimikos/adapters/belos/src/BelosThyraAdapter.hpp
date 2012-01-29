@@ -288,10 +288,10 @@ namespace Belos {
 
     /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
      */
-    static void MvScale ( TMVB& mv, const std::vector<ScalarType>& alpha )
+    static void MvScale (TMVB& mv, const std::vector<ScalarType>& alpha)
     {
       for (unsigned int i=0; i<alpha.size(); i++) {
-        Thyra::scale<ScalarType>(alpha[i], mv.col(i).ptr());
+        Thyra::scale<ScalarType> (alpha[i], mv.col(i).ptr());
       }
     }
 

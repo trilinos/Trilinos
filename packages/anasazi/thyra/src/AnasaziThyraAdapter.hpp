@@ -302,15 +302,21 @@ namespace Anasazi {
 
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */
-    static void MvScale (  Thyra::MultiVectorBase< ScalarType > & mv, const ScalarType alpha )
-    { Thyra::scale(alpha,&mv); }
+    static void 
+    MvScale (Thyra::MultiVectorBase<ScalarType>& mv, 
+	     const ScalarType alpha)
+    { 
+      Thyra::scale (alpha, Teuchos::inOutArg (mv)); 
+    }
     
     /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
      */
-    static void MvScale (  Thyra::MultiVectorBase< ScalarType > & mv, const std::vector<ScalarType>& alpha ) 
+    static void 
+    MvScale (Thyra::MultiVectorBase<ScalarType>& mv, 
+	     const std::vector<ScalarType>& alpha) 
     { 
       for (unsigned int i=0; i<alpha.size(); i++) {
-        Thyra::scale(alpha[i],mv.col(i).get());
+        Thyra::scale (alpha[i], mv.col(i).ptr());
       }
     }
     
