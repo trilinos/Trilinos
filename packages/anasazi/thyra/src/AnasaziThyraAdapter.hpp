@@ -82,13 +82,14 @@ namespace Anasazi {
       
       \return Reference-counted pointer to the new MultiVectorBase.
     */
-    static Teuchos::RCP< Thyra::MultiVectorBase<ScalarType> > CloneCopy( const  Thyra::MultiVectorBase< ScalarType > & mv )
+    static Teuchos::RCP<Thyra::MultiVectorBase<ScalarType> > 
+    CloneCopy (const Thyra::MultiVectorBase<ScalarType>& mv)
     { 
-      int numvecs = mv.domain()->dim();
+      const int numvecs = mv.domain()->dim();
       // create the new multivector
-      Teuchos::RCP<  Thyra::MultiVectorBase< ScalarType >  > cc = Thyra::createMembers( mv.range(), numvecs );
+      Teuchos::RCP<Thyra::MultiVectorBase<ScalarType> > cc = Thyra::createMembers (mv.range(), numvecs);
       // copy the data from the source multivector to the new multivector
-      Thyra::assign(&*cc, mv);
+      Thyra::assign (Teuchos::outArg (*cc), mv);
       return cc;
     }
 
@@ -99,13 +100,13 @@ namespace Anasazi {
     */
     static Teuchos::RCP< Thyra::MultiVectorBase< ScalarType > > CloneCopy( const  Thyra::MultiVectorBase< ScalarType > & mv, const std::vector<int>& index )
     { 
-      int numvecs = index.size();
+      const int numvecs = index.size();
       // create the new multivector
-      Teuchos::RCP<  Thyra::MultiVectorBase< ScalarType >  > cc = Thyra::createMembers( mv.range(), numvecs );
+      Teuchos::RCP<Thyra::MultiVectorBase<ScalarType> > cc = Thyra::createMembers (mv.range(), numvecs);
       // create a view to the relevant part of the source multivector
-      Teuchos::RCP< const  Thyra::MultiVectorBase< ScalarType >  > view = mv.subView( numvecs, &(index[0]) );
+      Teuchos::RCP<const Thyra::MultiVectorBase<ScalarType> > view = mv.subView (numvecs, &(index[0]));
       // copy the data from the relevant view to the new multivector
-      Thyra::assign(&*cc, *view);
+      Thyra::assign (Teuchos::outArg (*cc), *view);
       return cc;
     }
 
@@ -118,8 +119,7 @@ namespace Anasazi {
       // Create a view to the relevant part of the source multivector
       Teuchos::RCP<const TMVB> view = mv.subView (index);
       // Copy the data from the view to the new multivector.
-      // &*cc converts cc from an RCP to a Ptr.
-      Thyra::assign (&*cc, *view);
+      Thyra::assign (Teuchos::outArg (*cc), *view);
       return cc;
     }
 
@@ -357,7 +357,7 @@ namespace Anasazi {
       // create a view to the relevant part of the destination multivector
       Teuchos::RCP<  Thyra::MultiVectorBase< ScalarType >  > reldest = mv.subView( numvecs, &(index[0]) );
       // copy the data to the destination multivector subview
-      Thyra::assign(&*reldest, *relsource);
+      Thyra::assign (Teuchos::outArg (*reldest), *relsource);
     }
 
     static void 
@@ -407,38 +407,37 @@ namespace Anasazi {
       else
 	A_view = A.subView (Teuchos::Range1D(0, index.size()-1));
 
-      // Copy the data to the destination multivector.  "&*" is a
-      // typical Thyra idiom for turning an RCP into a raw pointer.
-      Thyra::assign (&*mv_view, *A_view);
+      // Copy the data to the destination multivector.
+      Thyra::assign (Teuchos::outArg (*mv_view), *A_view);
     }
 
     static void 
     Assign (const TMVB& A, TMVB& mv)
     { 
+      using Teuchos::ptr;
+      using Teuchos::Range1D;
+      using Teuchos::RCP;
+
       const int numColsA = A.domain()->dim();
       const int numColsMv = mv.domain()->dim();
-      if (numColsA > numColsMv)
-	{
-	  std::ostringstream os;
-	  os << "Anasazi::MultiVecTraits<Scalar, Thyra::MultiVectorBase<Scalar>"
-	    " >::Assign(A, mv): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
-			     os.str() << "Input multivector 'A' has " 
-			     << numColsA << " columns, but output multivector "
-			     "'mv' has only " << numColsMv << " columns.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-	}
+      if (numColsA > numColsMv) {
+	const std::string prefix ("Anasazi::MultiVecTraits<Scalar, "
+				  "Thyra::MultiVectorBase<Scalar>"
+				  " >::Assign(A, mv): ");
+	TEUCHOS_TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
+				   prefix << "Input multivector 'A' has " 
+				   << numColsA << " columns, but output multivector "
+				   "'mv' has only " << numColsMv << " columns.");
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+      }
       // Copy the data to the destination multivector.
-      if (numColsA == numColsMv)
-	Thyra::assign (&mv, A);
-      else
-	{
-	  Teuchos::RCP<TMVB> mv_view = 
-	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
-	  // "&*" is a typical Thyra idiom for turning an RCP into a
-	  // raw pointer.
-	  Thyra::assign (&*mv_view, A);
-	}
+      if (numColsA == numColsMv) {
+	Thyra::assign (outArg (mv), A);
+      } 
+      else {
+	RCP<TMVB> mv_view = CloneViewNonConst (mv, Range1D(0, numColsA-1));
+	Thyra::assign (outArg (*mv_view), A);
+      }
     }
 
     /*! \brief Replace the vectors in \c mv with random vectors.
@@ -454,8 +453,12 @@ namespace Anasazi {
 
     /*! \brief Replace each element of the vectors in \c mv with \c alpha.
      */
-    static void MvInit(  Thyra::MultiVectorBase< ScalarType > & mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
-    { Thyra::assign(&mv,alpha); }
+    static void 
+    MvInit (Thyra::MultiVectorBase< ScalarType >& mv, 
+	    ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero())
+    { 
+      Thyra::assign (Teuchos::outArg (mv), alpha); 
+    }
 
     //@}
 

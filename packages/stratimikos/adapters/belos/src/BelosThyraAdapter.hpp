@@ -437,14 +437,13 @@ namespace Belos {
 	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
       // Copy the data to the destination multivector.
-      if (numColsA == numColsMv)
-	Thyra::assign (&mv, A);
-      else
-	{
-	  Teuchos::RCP<TMVB> mv_view = 
-	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
-	  Thyra::assign (mv_view.ptr(), A);
-	}
+      if (numColsA == numColsMv) {
+	Thyra::assign (Teuchos::outArg (mv), A);
+      } else {
+	Teuchos::RCP<TMVB> mv_view = 
+	  CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
+	Thyra::assign (mv_view.ptr(), A);
+      }
     }
 
     /*! \brief Replace the vectors in \c mv with random vectors.
@@ -459,10 +458,12 @@ namespace Belos {
         Teuchos::outArg(mv));
     }
 
-    /*! \brief Replace each element of the vectors in \c mv with \c alpha.
-     */
-    static void MvInit( TMVB& mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
-      { Thyra::assign(Teuchos::outArg(mv), alpha); }
+    //! Replace each element of the vectors in \c mv with \c alpha.
+    static void 
+    MvInit (TMVB& mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero())
+    { 
+      Thyra::assign (Teuchos::outArg (mv), alpha); 
+    }
 
     //@}
 
