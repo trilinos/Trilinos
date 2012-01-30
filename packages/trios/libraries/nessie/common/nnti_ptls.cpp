@@ -152,6 +152,13 @@ static int process_event(
         const ptl_event_t    *event);
 static int is_buf_op_complete(
         const NNTI_buffer_t *reg_buf);
+static int8_t is_any_buf_op_complete(
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        uint32_t             *which);
+static int8_t is_all_buf_ops_complete(
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count);
 static void create_peer(
         NNTI_peer_t *peer,
         ptl_nid_t nid,
@@ -977,10 +984,11 @@ int NNTI_ptl_wait (
     int elapsed_time=0;
     int timeout_per_call;
     ptl_event_t event;
-    int which=0;
+    int which_eq=0;
 
     log_level debug_level=nnti_debug_level;
 
+    log_debug(debug_level, "enter");
 
     assert(reg_buf);
     assert(status);
@@ -1013,7 +1021,7 @@ int NNTI_ptl_wait (
         memset(&event, 0, sizeof(ptl_event_t));
         log_debug(debug_level, "lock before poll");
 //        nthread_lock(&nnti_ptl_lock);
-        rc = PtlEQPoll(&ptls_mem_hdl->eq_h, 1, timeout_per_call, &event, &which);
+        rc = PtlEQPoll(&ptls_mem_hdl->eq_h, 1, timeout_per_call, &event, &which_eq);
 //        nthread_lock(&nnti_ptl_lock);
         log_debug(debug_level, "polling status is %s", ptl_err_str[rc]);
 
@@ -1066,7 +1074,7 @@ int NNTI_ptl_wait (
         /* case 4: failure */
         else {
             log_error(debug_level, "PtlEQPoll failed (eq_handle[%d]==%d): %s",
-                    which, ptls_mem_hdl->eq_h, ptl_err_str[rc]);
+                    which_eq, ptls_mem_hdl->eq_h, ptl_err_str[rc]);
             nnti_rc = NNTI_EIO;
             break;
         }
@@ -1167,6 +1175,7 @@ int NNTI_ptl_wait (
     }
 
 cleanup:
+    log_debug(debug_level, "exit");
     return(nnti_rc);
 }
 
@@ -1191,7 +1200,163 @@ int NNTI_ptl_waitany (
         NNTI_status_t        *status)
 {
     int nnti_rc=NNTI_OK;
+    portals_memory_handle *ptls_mem_hdl=NULL;
 
+    const NNTI_buffer_t  *wait_buf=NULL;
+
+    int rc=PTL_OK;
+    int elapsed_time=0;
+    int timeout_per_call;
+    ptl_event_t event;
+    int which_eq=0;
+
+    log_level debug_level=nnti_debug_level;
+
+    log_debug(debug_level, "enter");
+
+    assert(buf_list);
+    assert(buf_count > 0);
+    if (buf_count > 1) {
+        /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
+        for (int i=0;i<buf_count;i++) {
+            if (buf_list[i] != NULL) {
+                assert(((portals_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
+            }
+        }
+    }
+    assert(status);
+
+    if (buf_count == 1) {
+        nnti_rc=NNTI_ptl_wait(buf_list[0], remote_op, timeout, status);
+        *which=0;
+        goto cleanup;
+    }
+
+    if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
+        log_debug(debug_level, "buffer op already complete (which=%u, buf_list[%d]=%p)", *which, *which, buf_list[*which]);
+        nnti_rc = NNTI_OK;
+    } else {
+        log_debug(debug_level, "buffer op NOT complete (buf_list=%p)", buf_list);
+
+        if (timeout < 0)
+            timeout_per_call = MIN_TIMEOUT;
+        else
+            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+
+        while (1)   {
+            if (trios_exit_now()) {
+                log_debug(debug_level, "caught abort signal");
+                return NNTI_ECANCELED;
+            }
+
+            log_debug(debug_level, "waiting on eq_h(%d)", transport_global_data.data_eq_h);
+
+            memset(&event, 0, sizeof(ptl_event_t));
+            log_debug(debug_level, "lock before poll");
+            //        nthread_lock(&nnti_ptl_lock);
+            rc = PtlEQPoll(&transport_global_data.data_eq_h, 1, timeout_per_call, &event, &which_eq);
+            //        nthread_lock(&nnti_ptl_lock);
+            log_debug(debug_level, "polling status is %s", ptl_err_str[rc]);
+
+            log_debug(debug_level, "Poll Event= {");
+            log_debug(debug_level, "\ttype         = %d", event.type);
+            log_debug(debug_level, "\tinitiator    = (%llu, %llu)", (unsigned long long)event.initiator.nid, (unsigned long long)event.initiator.pid);
+            log_debug(debug_level, "\tuid          = %d", event.uid);
+            log_debug(debug_level, "\tjid          = %d", event.jid);
+            log_debug(debug_level, "\tpt_index     = %d", event.pt_index);
+            log_debug(debug_level, "\tmatch_bits   = %d", event.match_bits);
+            log_debug(debug_level, "\trlength      = %llu", (unsigned long long)event.rlength);
+            log_debug(debug_level, "\tmlength      = %llu", (unsigned long long)event.mlength);
+            log_debug(debug_level, "\toffset       = %llu", (unsigned long long)event.offset);
+            log_debug(debug_level, "\tmd_handle    = %d", event.md_handle);
+            log_debug(debug_level, "\tmd.start     = %p", event.md.start);
+            log_debug(debug_level, "\tmd.length    = %d", event.md.length);
+            log_debug(debug_level, "\tmd.max_size  = %d", event.md.max_size);
+            log_debug(debug_level, "\tmd.threshold = %d", event.md.threshold);
+            log_debug(debug_level, "\tmd.user_ptr  = %p", event.md.user_ptr);
+
+
+            /* case 1: success */
+            if (rc == PTL_OK) {
+                nnti_rc = NNTI_OK;
+            }
+            /* case 2: success, but some events were dropped */
+            else if (rc == PTL_EQ_DROPPED) {
+                log_warn(debug_level, "PtlEQPoll dropped some events");
+                log_warn(debug_level, "PtlEQPoll succeeded, but at least one event was dropped");
+                nnti_rc = NNTI_OK;
+            }
+            /* case 3: timed out */
+            else if (rc == PTL_EQ_EMPTY) {
+                elapsed_time += timeout_per_call;
+
+                /* if the caller asked for a legitimate timeout, we need to exit */
+                if (((timeout > 0) && (elapsed_time >= timeout))) {
+                    log_debug(debug_level, "PtlEQPoll timed out: %s",
+                            ptl_err_str[rc]);
+                    nnti_rc = NNTI_ETIMEDOUT;
+                    break;
+                }
+                /* continue if the timeout has not expired */
+                /* log_debug(debug_level, "timedout... continuing"); */
+
+
+
+                continue;
+            }
+            /* case 4: failure */
+            else {
+                log_error(debug_level, "PtlEQPoll failed (eq_handle[%d]==%d): %s",
+                        which_eq, transport_global_data.data_eq_h, ptl_err_str[rc]);
+                nnti_rc = NNTI_EIO;
+                break;
+            }
+
+            wait_buf=decode_event_buffer(buf_list[0], &event);
+            process_event(wait_buf, &event);
+
+            if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
+                break;
+            }
+        }
+    }
+
+    ptls_mem_hdl=(portals_memory_handle *)buf_list[*which]->transport_private;
+    if ((rc!=PTL_OK) && (ptls_mem_hdl->last_event.ni_fail_type != PTL_NI_OK)) {
+        log_error(debug_level, "NI reported error: ni_fail_type=%s",
+                PtlNIFailStr(transport_global_data.ni_h, ptls_mem_hdl->last_event.ni_fail_type));
+        nnti_rc = NNTI_EIO;
+    }
+
+    memset(status, 0, sizeof(NNTI_status_t));
+    status->op     = remote_op;
+    status->start  = (uint64_t)ptls_mem_hdl->last_event.md.start;
+    status->offset = ptls_mem_hdl->last_event.offset;
+    status->length = ptls_mem_hdl->last_event.mlength;
+    status->result = (NNTI_result_t)nnti_rc;
+    switch (ptls_mem_hdl->last_op) {
+        case PTL_OP_PUT_INITIATOR:
+        case PTL_OP_GET_TARGET:
+        case PTL_OP_SEND:
+            create_peer(&status->src, transport_global_data.me.nid, transport_global_data.me.pid); // allocates url
+            create_peer(&status->dest, ptls_mem_hdl->last_event.initiator.nid, ptls_mem_hdl->last_event.initiator.pid); // allocates url
+            break;
+        case PTL_OP_GET_INITIATOR:
+        case PTL_OP_PUT_TARGET:
+        case PTL_OP_NEW_REQUEST:
+        case PTL_OP_RECEIVE:
+            create_peer(&status->src, ptls_mem_hdl->last_event.initiator.nid, ptls_mem_hdl->last_event.initiator.pid); // allocates url
+            create_peer(&status->dest, transport_global_data.me.nid, transport_global_data.me.pid); // allocates url
+            break;
+    }
+
+    if (logging_debug(debug_level)) {
+        fprint_NNTI_status(logger_get_file(), "status",
+                "end of NNTI_ptl_wait", status);
+    }
+
+cleanup:
+    log_debug(debug_level, "exit");
     return(nnti_rc);
 }
 
@@ -1215,7 +1380,169 @@ int NNTI_ptl_waitall (
         NNTI_status_t       **status)
 {
     int nnti_rc=NNTI_OK;
+    portals_memory_handle *ptls_mem_hdl=NULL;
 
+    const NNTI_buffer_t  *wait_buf=NULL;
+
+    int rc=PTL_OK;
+    int elapsed_time=0;
+    int timeout_per_call;
+    ptl_event_t event;
+    int which_eq=0;
+
+    log_level debug_level=nnti_debug_level;
+
+    log_debug(debug_level, "enter");
+
+    assert(buf_list);
+    assert(buf_count > 0);
+    if (buf_count > 1) {
+        /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
+        for (int i=0;i<buf_count;i++) {
+            if (buf_list[i] != NULL) {
+                assert(((portals_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
+            }
+        }
+    }
+    assert(status);
+
+    if (buf_count == 1) {
+        nnti_rc=NNTI_ptl_wait(buf_list[0], remote_op, timeout, status[0]);
+        goto cleanup;
+    }
+
+    if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
+        log_debug(debug_level, "all buffer ops already complete (buf_list=%p)", buf_list);
+        nnti_rc = NNTI_OK;
+    } else {
+        log_debug(debug_level, "all buffer ops NOT complete (buf_list=%p)", buf_list);
+
+        if (timeout < 0)
+            timeout_per_call = MIN_TIMEOUT;
+        else
+            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+
+        while (1)   {
+            if (trios_exit_now()) {
+                log_debug(debug_level, "caught abort signal");
+                return NNTI_ECANCELED;
+            }
+
+            log_debug(debug_level, "waiting on eq_h(%d)", transport_global_data.data_eq_h);
+
+            memset(&event, 0, sizeof(ptl_event_t));
+            log_debug(debug_level, "lock before poll");
+            //        nthread_lock(&nnti_ptl_lock);
+            rc = PtlEQPoll(&transport_global_data.data_eq_h, 1, timeout_per_call, &event, &which_eq);
+            //        nthread_lock(&nnti_ptl_lock);
+            log_debug(debug_level, "polling status is %s", ptl_err_str[rc]);
+
+            log_debug(debug_level, "Poll Event= {");
+            log_debug(debug_level, "\ttype         = %d", event.type);
+            log_debug(debug_level, "\tinitiator    = (%llu, %llu)", (unsigned long long)event.initiator.nid, (unsigned long long)event.initiator.pid);
+            log_debug(debug_level, "\tuid          = %d", event.uid);
+            log_debug(debug_level, "\tjid          = %d", event.jid);
+            log_debug(debug_level, "\tpt_index     = %d", event.pt_index);
+            log_debug(debug_level, "\tmatch_bits   = %d", event.match_bits);
+            log_debug(debug_level, "\trlength      = %llu", (unsigned long long)event.rlength);
+            log_debug(debug_level, "\tmlength      = %llu", (unsigned long long)event.mlength);
+            log_debug(debug_level, "\toffset       = %llu", (unsigned long long)event.offset);
+            log_debug(debug_level, "\tmd_handle    = %d", event.md_handle);
+            log_debug(debug_level, "\tmd.start     = %p", event.md.start);
+            log_debug(debug_level, "\tmd.length    = %d", event.md.length);
+            log_debug(debug_level, "\tmd.max_size  = %d", event.md.max_size);
+            log_debug(debug_level, "\tmd.threshold = %d", event.md.threshold);
+            log_debug(debug_level, "\tmd.user_ptr  = %p", event.md.user_ptr);
+
+
+            /* case 1: success */
+            if (rc == PTL_OK) {
+                nnti_rc = NNTI_OK;
+            }
+            /* case 2: success, but some events were dropped */
+            else if (rc == PTL_EQ_DROPPED) {
+                log_warn(debug_level, "PtlEQPoll dropped some events");
+                log_warn(debug_level, "PtlEQPoll succeeded, but at least one event was dropped");
+                nnti_rc = NNTI_OK;
+            }
+            /* case 3: timed out */
+            else if (rc == PTL_EQ_EMPTY) {
+                elapsed_time += timeout_per_call;
+
+                /* if the caller asked for a legitimate timeout, we need to exit */
+                if (((timeout > 0) && (elapsed_time >= timeout))) {
+                    log_debug(debug_level, "PtlEQPoll timed out: %s",
+                            ptl_err_str[rc]);
+                    nnti_rc = NNTI_ETIMEDOUT;
+                    break;
+                }
+                /* continue if the timeout has not expired */
+                /* log_debug(debug_level, "timedout... continuing"); */
+
+
+
+                continue;
+            }
+            /* case 4: failure */
+            else {
+                log_error(debug_level, "PtlEQPoll failed (eq_handle[%d]==%d): %s",
+                        which_eq, transport_global_data.data_eq_h, ptl_err_str[rc]);
+                nnti_rc = NNTI_EIO;
+                break;
+            }
+
+            wait_buf=decode_event_buffer(buf_list[0], &event);
+            process_event(wait_buf, &event);
+
+            if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
+                break;
+            }
+        }
+    }
+
+    ptls_mem_hdl=(portals_memory_handle *)buf_list[0]->transport_private;
+    if ((rc!=PTL_OK) && (ptls_mem_hdl->last_event.ni_fail_type != PTL_NI_OK)) {
+        log_error(debug_level, "NI reported error: ni_fail_type=%s",
+                PtlNIFailStr(transport_global_data.ni_h, ptls_mem_hdl->last_event.ni_fail_type));
+        nnti_rc = NNTI_EIO;
+    }
+
+
+
+    for (int i=0;i<buf_count;i++) {
+        ptls_mem_hdl=(portals_memory_handle *)buf_list[i]->transport_private;
+        assert(ptls_mem_hdl);
+
+        memset(status[i], 0, sizeof(NNTI_status_t));
+        status[i]->op     = remote_op;
+        status[i]->start  = (uint64_t)ptls_mem_hdl->last_event.md.start;
+        status[i]->offset = ptls_mem_hdl->last_event.offset;
+        status[i]->length = ptls_mem_hdl->last_event.mlength;
+        status[i]->result = (NNTI_result_t)nnti_rc;
+        switch (ptls_mem_hdl->last_op) {
+        case PTL_OP_PUT_INITIATOR:
+        case PTL_OP_GET_TARGET:
+        case PTL_OP_SEND:
+            create_peer(&status[i]->src, transport_global_data.me.nid, transport_global_data.me.pid); // allocates url
+            create_peer(&status[i]->dest, ptls_mem_hdl->last_event.initiator.nid, ptls_mem_hdl->last_event.initiator.pid); // allocates url
+            break;
+        case PTL_OP_GET_INITIATOR:
+        case PTL_OP_PUT_TARGET:
+        case PTL_OP_NEW_REQUEST:
+        case PTL_OP_RECEIVE:
+            create_peer(&status[i]->src, ptls_mem_hdl->last_event.initiator.nid, ptls_mem_hdl->last_event.initiator.pid); // allocates url
+            create_peer(&status[i]->dest, transport_global_data.me.nid, transport_global_data.me.pid); // allocates url
+            break;
+        }
+
+        if (logging_debug(debug_level)) {
+            fprint_NNTI_status(logger_get_file(), "status[i]",
+                    "end of NNTI_ptl_wait", status[i]);
+        }
+    }
+
+cleanup:
+    log_debug(debug_level, "exit");
     return(nnti_rc);
 }
 
@@ -1528,6 +1855,48 @@ static int is_buf_op_complete(
         log_debug(nnti_debug_level, "op is complete");
     }
     log_debug(nnti_debug_level, "exit (reg_buf=%p, eq_h=%d)", reg_buf, ptls_mem_hdl->eq_h);
+
+    return(rc);
+}
+
+static int8_t is_any_buf_op_complete(
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        uint32_t             *which)
+{
+    int8_t rc=FALSE;
+
+    log_debug(nnti_debug_level, "enter");
+
+    for (int i=0;i<buf_count;i++) {
+        if ((buf_list[i] != NULL) && (is_buf_op_complete(buf_list[i]) == TRUE)) {
+            *which=i;
+            rc = TRUE;
+            break;
+        }
+    }
+
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
+
+    return(rc);
+}
+
+static int8_t is_all_buf_ops_complete(
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count)
+{
+    int8_t rc=TRUE;
+
+    log_debug(nnti_debug_level, "enter");
+
+    for (int i=0;i<buf_count;i++) {
+        if ((buf_list[i] != NULL) && (is_buf_op_complete(buf_list[i]) == FALSE)) {
+            rc = FALSE;
+            break;
+        }
+    }
+
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
 
     return(rc);
 }
