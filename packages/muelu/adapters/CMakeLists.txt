@@ -9,7 +9,8 @@ SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/belos)
 
-#TODO: IF HAVE_MUELU_BELOOS
+IF (${PACKAGE_NAME}_ENABLE_Belos)
+
 APPEND_SET(HEADERS
   belos/BelosOperatorT.hpp
   belos/BelosXpetraAdapter.hpp
@@ -17,6 +18,8 @@ APPEND_SET(HEADERS
   belos/BelosXpetraAdapterOperator.hpp
   belos/BelosMueLuAdapter.hpp
   )
+
+ENDIF()
 
 #
 # Epetra
