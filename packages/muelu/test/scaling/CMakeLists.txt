@@ -53,7 +53,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos2)
   
-  XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} "mpi"        4)
-  XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} "serial mpi" 1)
+  XPETRA_ADD_TEST_TPETRA(${MueLu_ScalingTestName} "mpi"        4)
+  XPETRA_ADD_TEST_TPETRA(${MueLu_ScalingTestName} "serial mpi" 1)
 
 ENDIF()
