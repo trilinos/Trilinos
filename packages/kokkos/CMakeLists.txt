@@ -172,7 +172,6 @@ ENDIF()
 
 IF (Kokkos_ENABLE_Array)
   ADD_SUBDIRECTORY(array)
-  #ADD_SUBDIRECTORY(array_v1)
 ENDIF()
 
 ######################################################################
