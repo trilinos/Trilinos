@@ -1500,7 +1500,7 @@ NNTI_result_t NNTI_ib_waitany (
     assert(status);
 
     if (buf_count == 1) {
-        nnti_rc=NNTI_wait(buf_list[0], remote_op, timeout, status);
+        nnti_rc=NNTI_ib_wait(buf_list[0], remote_op, timeout, status);
         *which=0;
         goto cleanup;
     }
@@ -1745,7 +1745,7 @@ NNTI_result_t NNTI_ib_waitall (
     assert(status);
 
     if (buf_count == 1) {
-        nnti_rc=NNTI_wait(buf_list[0], remote_op, timeout, status[0]);
+        nnti_rc=NNTI_ib_wait(buf_list[0], remote_op, timeout, status[0]);
         goto cleanup;
     }
 
@@ -1761,7 +1761,7 @@ NNTI_result_t NNTI_ib_waitall (
 #endif
 
     if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
-        log_debug(debug_level, "all buffer ops already complete");
+        log_debug(debug_level, "all buffer ops already complete (buf_list=%p)", buf_list);
         nnti_rc = NNTI_OK;
     } else {
         log_debug(debug_level, "all buffer ops NOT complete (buf_list=%p)", buf_list);
