@@ -1,5 +1,5 @@
-#ifndef PANZER_EVALUATOR_IP_COORDINATES_T_HPP
-#define PANZER_EVALUATOR_IP_COORDINATES_T_HPP
+#ifndef PANZER_EVALUATOR_IP_COORDINATES_IMPL_HPP
+#define PANZER_EVALUATOR_IP_COORDINATES_IMPL_HPP
 
 #include "Panzer_Workset_Utilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"

@@ -47,6 +47,6 @@ private:
 
 }
 
-#include "Panzer_ResponseScatterEvaluatorT.hpp"
+#include "Panzer_ResponseScatterEvaluator_impl.hpp"
 
 #endif

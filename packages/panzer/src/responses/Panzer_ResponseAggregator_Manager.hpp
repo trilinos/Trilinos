@@ -87,6 +87,6 @@ private:
 
 } // end namespace panzer
 
-#include "Panzer_ResponseAggregator_ManagerT.hpp"
+#include "Panzer_ResponseAggregator_Manager_impl.hpp"
 
 #endif

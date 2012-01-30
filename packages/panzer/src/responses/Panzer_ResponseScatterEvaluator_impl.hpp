@@ -1,5 +1,5 @@
-#ifndef __Panzer_ResponseScatterEvaluatorT_hpp__
-#define __Panzer_ResponseScatterEvaluatorT_hpp__
+#ifndef __Panzer_ResponseScatterEvaluator_impl_hpp__
+#define __Panzer_ResponseScatterEvaluator_impl_hpp__
 
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Panzer_String_Utilities.hpp"

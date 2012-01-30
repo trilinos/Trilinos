@@ -220,6 +220,6 @@ private:
 
 }
 
-#include "Panzer_ResponseLibraryT.hpp"
+#include "Panzer_ResponseLibrary_impl.hpp"
 
 #endif

@@ -34,7 +34,10 @@ APPEND_GLOB(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/*.hpp)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/*.hpp)
+APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/responses/*.hpp)
+
 APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/*.cpp)
+APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/responses/*.cpp)
 
 APPEND_SET(HEADERS
   Panzer_ArrayTraits.hpp
@@ -135,23 +138,6 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_DOFManagerFactory.hpp
   dofmngr/Panzer_DOFManagerFactoryT.hpp
   dofmngr/Panzer_LinearObjFactory.hpp
-  responses/Panzer_Response.hpp
-  responses/Panzer_ResponseAggregatorBase.hpp
-  responses/Panzer_ResponseAggregator_Manager.hpp
-  responses/Panzer_ResponseAggregator_ManagerT.hpp
-  responses/Panzer_ResponseAggregator_IPCoordinates.hpp
-  responses/Panzer_ResponseAggregator_IPCoordinatesT.hpp
-  responses/Panzer_ResponseFunctional_Aggregator.hpp
-  responses/Panzer_ResponseFunctional_AggregatorT.hpp
-  responses/Panzer_ResponseScatterEvaluator.hpp
-  responses/Panzer_ResponseScatterEvaluatorT.hpp
-  responses/Panzer_ResponseLibrary.hpp
-  responses/Panzer_ResponseLibraryT.hpp
-  responses/Panzer_ResponseContainer.hpp
-  responses/Panzer_ResponseUtilities.hpp
-  responses/Panzer_RLDynamicDispatch.hpp
-  responses/Panzer_IPCoordinates.hpp
-  responses/Panzer_IPCoordinatesT.hpp
   ) 
 
 APPEND_SET(SOURCES
@@ -184,9 +170,6 @@ APPEND_SET(SOURCES
   dofmngr/Panzer_DOFManager.cpp
   dofmngr/Panzer_BlockedDOFManager.cpp
   dofmngr/Panzer_EpetraLinearObjFactory.cpp
-  responses/Panzer_ResponseUtilities.cpp
-  responses/Panzer_ResponseFunctional_Aggregator.cpp
-  responses/Panzer_ResponseAggregator_IPCoordinates.cpp
   )
 
 IF(${PACKAGE_NAME}_ENABLE_Stokhos)
@@ -195,7 +178,6 @@ IF(${PACKAGE_NAME}_ENABLE_Stokhos)
     dofmngr/Panzer_SGEpetraLinearObjFactory.hpp
     dofmngr/Panzer_SGEpetraLinearObjFactoryT.hpp
     dofmngr/Panzer_SGEpetraLinearObjContainer.hpp
-    responses/Panzer_ResponseFunctional_AggregatorSGT.hpp
     )
   APPEND_SET(SOURCES
     dofmngr/Panzer_SGEpetraLinearObjFactory.cpp

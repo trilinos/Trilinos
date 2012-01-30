@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 #include "Panzer_ResponseScatterEvaluator.hpp"

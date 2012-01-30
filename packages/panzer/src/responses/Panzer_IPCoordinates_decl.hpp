@@ -1,5 +1,5 @@
-#ifndef PANZER_EVALUATOR_IP_COORDINATES_HPP
-#define PANZER_EVALUATOR_IP_COORDINATES_HPP
+#ifndef PANZER_EVALUATOR_IP_COORDINATES_DECL_HPP
+#define PANZER_EVALUATOR_IP_COORDINATES_DECL_HPP
 
 #include "Panzer_config.hpp"
 
@@ -58,7 +58,5 @@ namespace panzer {
   };
   
 }
-
-#include "Panzer_IPCoordinatesT.hpp"
 
 #endif
