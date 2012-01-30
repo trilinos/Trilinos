@@ -454,7 +454,7 @@ namespace MueLu {
                                            decomposition->getMap()->getIndexBase(),
                                            comm);
 
-    UCAggregationCommHelper<LO,GO,NO,LMO> commHelper(uniqueMap,targetMap);
+    MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> commHelper(uniqueMap,targetMap);
     myPartitionNumber = -1;
     GO doArbitrate = 1;
 
