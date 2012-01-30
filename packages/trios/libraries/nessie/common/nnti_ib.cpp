@@ -2354,7 +2354,7 @@ static const NNTI_buffer_t *decode_event_buffer(
         ib_mem_hdl=(ib_memory_handle *)event_buf->transport_private;
         assert(ib_mem_hdl);
 
-        if (wc->wr_id == (uint64_t)wait_buf) {
+        if (event_buf == wait_buf) {
             log_debug(nnti_debug_level, "the wc matches the wait buffer (cq=%p, wr_id=%p, wait_buf=%p)",
                     (void *)ib_mem_hdl->cq, wc->wr_id, wait_buf);
         } else {
