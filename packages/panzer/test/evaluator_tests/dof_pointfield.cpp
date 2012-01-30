@@ -18,7 +18,7 @@ using Teuchos::rcp;
 #include "Panzer_Workset.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_BasisValues.hpp"
 
 #include "Panzer_DOF.hpp"

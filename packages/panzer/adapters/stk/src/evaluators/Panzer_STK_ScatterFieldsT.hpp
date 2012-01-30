@@ -6,7 +6,7 @@
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
-#include "Panzer_Basis.hpp"
+#include "Panzer_BasisIRLayout.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 

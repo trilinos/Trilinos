@@ -8,7 +8,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Panzer_BCStrategy_Dirichlet_DefaultImpl.hpp"
 #include "Panzer_Traits.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_BasisIRLayout.hpp"
 #include "Phalanx_FieldManager.hpp"
 
 namespace user_app {

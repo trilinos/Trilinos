@@ -9,7 +9,7 @@
 #include "Phalanx_FieldManager.hpp"
 
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_BasisIRLayout.hpp"
 
 // include evaluators here
 #include "Panzer_Integrator_BasisTimesScalar.hpp"

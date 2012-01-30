@@ -33,7 +33,7 @@ APPEND_SET(HEADERS
   Panzer_AssemblyEngine_TemplateBuilder.hpp
   Panzer_AssemblyEngine_TemplateManager.hpp
   Panzer_Base.hpp
-  Panzer_Basis.hpp
+  Panzer_BasisIRLayout.hpp
   Panzer_PureBasis.hpp
   Panzer_BasisValues.hpp
   Panzer_BasisValuesT.hpp
@@ -188,7 +188,7 @@ APPEND_SET(HEADERS
   ) 
 
 APPEND_SET(SOURCES
-  Panzer_Basis.cpp
+  Panzer_BasisIRLayout.cpp
   Panzer_PureBasis.cpp
   Panzer_BC.cpp
   Panzer_BCStrategy.cpp
