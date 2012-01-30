@@ -67,12 +67,15 @@ namespace MueLu {
     //! @\param[in] const RCP<Level>& previousLevel
     void SetPreviousLevel(const RCP<Level> & previousLevel);
 
-    //! @name Set factory manager
+    //! @name Set/Get factory manager
     //@{
     //! Set default factories (used internally by Hierarchy::SetLevel()).
     // Users should not use this method.
     void SetFactoryManager(const RCP<const FactoryManagerBase> & factoryManager);
-
+    
+    //! returns the current factory manager
+    // Users should not use this method
+    const RCP<const FactoryManagerBase> GetFactoryManager();
     //@}
 
     //@{

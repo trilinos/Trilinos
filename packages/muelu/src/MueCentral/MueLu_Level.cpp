@@ -61,6 +61,10 @@ namespace MueLu {
     factoryManager_ = factoryManager;
   }
 
+  const RCP<const FactoryManagerBase> Level::GetFactoryManager() {
+    return factoryManager_;
+  }
+
   void Level::AddKeepFlag(const std::string& ename, const FactoryBase* factory, KeepType keepType) {
     needs_.AddKeepFlag(ename, GetFactory(ename, factory), keepType);
   }
