@@ -6,7 +6,7 @@
 #include <typeinfo>
 #include "Panzer_InputEquationSet.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_BasisIRLayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"

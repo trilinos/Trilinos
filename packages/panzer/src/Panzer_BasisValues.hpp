@@ -5,7 +5,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Intrepid_Basis.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_BasisIRLayout.hpp"
 
 namespace panzer {
 

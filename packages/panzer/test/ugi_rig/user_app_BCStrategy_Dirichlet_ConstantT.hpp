@@ -6,7 +6,7 @@
 #include "Panzer_PhysicsBlock.hpp"
 
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_BasisIRLayout.hpp"
 
 // Evaluators
 #include "Panzer_Constant.hpp"

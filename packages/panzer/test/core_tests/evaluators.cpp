@@ -12,7 +12,7 @@
 
 #include "Panzer_CellData.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_BasisIRLayout.hpp"
 
 // Evaluators to test
 #include "Panzer_Constant.hpp"

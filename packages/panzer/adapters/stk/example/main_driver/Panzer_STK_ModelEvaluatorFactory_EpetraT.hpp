@@ -11,7 +11,7 @@
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ClosureModel_Factory.hpp"

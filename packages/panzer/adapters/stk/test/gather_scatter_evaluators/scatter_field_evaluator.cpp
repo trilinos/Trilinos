@@ -17,7 +17,7 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
-#include "Panzer_Basis.hpp"
+#include "Panzer_BasisIRLayout.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
