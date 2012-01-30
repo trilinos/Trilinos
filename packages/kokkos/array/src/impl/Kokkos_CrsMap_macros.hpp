@@ -70,16 +70,17 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type row_range_count() const { return m_entry_count ; }
 
-  typedef std::pair<size_type,size_type> range_type ;
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  size_type row_range_begin( const iType & row ) const
+    { return m_memory[row]; }
 
   template< typename iType >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  range_type row_range( const iType & row ) const
-    {
-      const size_type * const offset = m_memory.ptr_on_device() + row ;
-      return range_type( offset[0] , offset[1] );
-    }
+  size_type row_range_end( const iType & row ) const
+    { return m_memory[row+1]; }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION

@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//                         Kokkos Array
+//              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,17 +35,64 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact H. Carter Edwards (hcedwar@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
 */
 
+#ifndef KOKKOS_BLOCKCRSMATRIX_HPP
+#define KOKKOS_BLOCKCRSMATRIX_HPP
 
-int mainCuda();
+#include <Kokkos_CrsMap.hpp>
+#include <Kokkos_MultiVector.hpp>
 
-int main()
-{
-  return mainCuda();
+namespace Kokkos {
+
+/** \brief  CRS matrix of dense blocks.
+ *
+ *  Matrix coefficients are stored by block and then by Crs entry.
+ *    m_values( block.size() , m_graph.entry_count() )
+ *
+ *  Vectors are conformally stored as
+ *    MultiVector( block.dimension() , m_graph.row_count() )
+ */
+template< template < class > class BlockSpec , typename ValueType , class Device >
+class BlockCrsMatrix {
+public:
+  typedef Device     device_type ;
+  typedef ValueType  value_type ;
+
+  MultiVector< value_type, device_type >  values ;
+  CrsMap< device_type >                   graph ;
+  BlockSpec< device_type >                block ;
+};
+
+namespace Impl {
+
+template< class A , class X , class Y >
+class Multiply ;
+
 }
+
+template< template< class > class BlockSpec ,
+          typename MatrixValueType ,
+          typename VectorValueType ,
+          class Device >
+void multiply( const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
+               const MultiVector<VectorValueType,Device>              & x ,
+               const MultiVector<VectorValueType,Device>              & y )
+{
+  typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device> matrix_type ;
+  typedef MultiVector<VectorValueType,Device>              vector_type ;
+
+  Impl::Multiply<matrix_type,vector_type,vector_type>::execute( A , x , y );
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+} // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_BLOCKCRSMATRIX_HPP */
 

@@ -63,6 +63,17 @@ struct CudaTraits {
     ConstantGlobalBufferType[ ConstantMemoryCapacity / sizeof(unsigned long) ];
 
   enum { ConstantMemoryUseThreshold = 0x000400 /* 1k bytes */ };
+
+  static inline
+#if defined( __CUDACC__ )
+  __device__ __host__
+#endif
+  Cuda::size_type warp_align( Cuda::size_type i )
+    {
+      enum { M =  Cuda::size_type( WarpIndexMask ) };
+      enum { N = ~Cuda::size_type( WarpIndexMask ) };
+      return ( i + M ) & N ;
+    }
 };
 
 } // namespace Impl

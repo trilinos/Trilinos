@@ -121,10 +121,12 @@ public:
     ASSERT_EQ( hy.row_range_count() , (device::size_type) y_count );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      hView::range_type x_range = hx.row_range(i);
-      hView::range_type y_range = hy.row_range(i);
-      ASSERT_EQ( (int) ( x_range.second - x_range.first ) , x_row_size[i] );
-      ASSERT_EQ( (size_t) ( y_range.second - y_range.first ) , y_row_size[i] );
+      const size_t x_range_begin = hx.row_range_begin(i);
+      const size_t x_range_end   = hx.row_range_end(i);
+      const size_t y_range_begin = hy.row_range_begin(i);
+      const size_t y_range_end   = hy.row_range_end(i);
+      ASSERT_EQ( (int) ( x_range_end - x_range_begin ) , x_row_size[i] );
+      ASSERT_EQ( (size_t) ( y_range_end - y_range_begin ) , y_row_size[i] );
     }
 
     dz = dx ; ASSERT_EQ( dx, dz); ASSERT_NE( dy, dz);
@@ -165,11 +167,11 @@ public:
     ASSERT_EQ( hx.row_count() , LENGTH );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      const hView::range_type r = hx.row_range(i);
-      const size_t n = r.second - r.first ;
+      const size_t begin = hx.row_range_begin(i);
+      const size_t n = hx.row_range_end(i) - begin ;
       ASSERT_EQ( n , graph[i].size() );
       for ( size_t j = 0 ; j < n ; ++j ) {
-        ASSERT_EQ( (int) hx.column( j + r.first ) , graph[i][j] );
+        ASSERT_EQ( (int) hx.column( j + begin ) , graph[i][j] );
       }
     }
   }

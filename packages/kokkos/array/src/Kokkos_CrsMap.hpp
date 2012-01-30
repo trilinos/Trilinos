@@ -44,14 +44,9 @@
 #ifndef KOKKOS_CRSMAP_HPP
 #define KOKKOS_CRSMAP_HPP
 
-#include <cstddef>
 #include <string>
-#include <utility>
-#include <iterator>
-#include <limits>
 #include <impl/Kokkos_forward.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
-#include <impl/Kokkos_ArrayBounds.hpp>
 
 namespace Kokkos {
 
