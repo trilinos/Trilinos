@@ -30,13 +30,13 @@ build<panzer::Traits::SGResidual>() const
 
 }
 
-#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#include "Panzer_ResponseFunctional_AggregatorT.hpp"
+#include "Panzer_ResponseFunctional_Aggregator_impl.hpp"
 #ifdef HAVE_STOKHOS
-   #include "Panzer_ResponseFunctional_AggregatorSGT.hpp"
+   #include "Panzer_ResponseFunctional_AggregatorSG_impl.hpp"
 #endif 
 
 template class panzer::ResponseFunctional_Aggregator<panzer::Traits::Residual,panzer::Traits>;

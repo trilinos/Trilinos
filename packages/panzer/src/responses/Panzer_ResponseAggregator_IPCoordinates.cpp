@@ -17,11 +17,11 @@ build<panzer::Traits::Residual>() const
 
 }
 
-#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#include "Panzer_ResponseAggregator_IPCoordinatesT.hpp"
+#include "Panzer_ResponseAggregator_IPCoordinates_impl.hpp"
 
 template class panzer::ResponseAggregator_IPCoordinates<panzer::Traits::Residual,panzer::Traits>;
 

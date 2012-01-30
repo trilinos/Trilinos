@@ -1,5 +1,5 @@
-#ifndef __Panzer_ResponseFunctional_AggregatorSGT_hpp__
-#define __Panzer_ResponseFunctional_AggregatorSGT_hpp__
+#ifndef __Panzer_ResponseFunctional_AggregatorSG_impl_hpp__
+#define __Panzer_ResponseFunctional_AggregatorSG_impl_hpp__
 
 #include "Panzer_config.hpp"
 

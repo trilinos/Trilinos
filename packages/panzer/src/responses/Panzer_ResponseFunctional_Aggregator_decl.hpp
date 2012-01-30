@@ -1,5 +1,5 @@
-#ifndef __Panzer_ResponseFunctional_Aggregator_hpp__
-#define __Panzer_ResponseFunctional_Aggregator_hpp__
+#ifndef __Panzer_ResponseFunctional_Aggregator_decl_hpp__
+#define __Panzer_ResponseFunctional_Aggregator_decl_hpp__
 
 #include "Panzer_config.hpp"
 
@@ -236,12 +236,5 @@ Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > ResponseFunctional_Aggrega
 #endif
 
 }
-
-#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
-#include "Panzer_ResponseFunctional_AggregatorT.hpp"
-#ifdef HAVE_STOKHOS
-   #include "Panzer_ResponseFunctional_AggregatorSGT.hpp"
-#endif
-#endif
 
 #endif

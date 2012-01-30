@@ -1,5 +1,5 @@
-#ifndef __Panzer_ResponseAggregator_IPCoordinates_hpp__
-#define __Panzer_ResponseAggregator_IPCoordinates_hpp__
+#ifndef __Panzer_ResponseAggregator_IPCoordinates_decl_hpp__
+#define __Panzer_ResponseAggregator_IPCoordinates_decl_hpp__
 
 #include "Panzer_config.hpp"
 
@@ -127,9 +127,5 @@ template < >
 Teuchos::RCP<ResponseAggregatorBase<panzer::Traits> > ResponseAggregator_IPCoordinates_Builder::build<panzer::Traits::Residual>() const;
 
 }
-
-#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
-#include "Panzer_ResponseAggregator_IPCoordinatesT.hpp"
-#endif
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef __Panzer_ResponseAggregator_IPCoordinates_T_hpp__
-#define __Panzer_ResponseAggregator_IPCoordinates_T_hpp__
+#ifndef __Panzer_ResponseAggregator_IPCoordinates_impl_hpp__
+#define __Panzer_ResponseAggregator_IPCoordinates_impl_hpp__
 
 #include "Panzer_config.hpp"
 
