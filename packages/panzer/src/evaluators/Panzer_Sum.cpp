@@ -4,9 +4,9 @@
 
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#include "Panzer_Parameter_decl.hpp"
-#include "Panzer_Parameter_impl.hpp"
+#include "Panzer_Sum_decl.hpp"
+#include "Panzer_Sum_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::Parameter)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::Sum)
 
 #endif

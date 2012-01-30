@@ -1,11 +1,11 @@
 #include "Panzer_config.hpp"
 
-#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#include "Panzer_DOF_PointField.hpp"
-#include "Panzer_DOF_PointFieldT.hpp"
+#include "Panzer_DOF_PointField_decl.hpp"
+#include "Panzer_DOF_PointField_impl.hpp"
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::DOF_PointField)
 

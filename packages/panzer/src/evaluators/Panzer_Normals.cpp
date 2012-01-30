@@ -4,9 +4,9 @@
 
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#include "Panzer_Parameter_decl.hpp"
-#include "Panzer_Parameter_impl.hpp"
+#include "Panzer_Normals_decl.hpp"
+#include "Panzer_Normals_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::Parameter)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::Normals)
 
 #endif

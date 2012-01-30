@@ -33,6 +33,9 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/responses)
 APPEND_GLOB(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/*.hpp)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
+APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/*.hpp)
+APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/*.cpp)
+
 APPEND_SET(HEADERS
   Panzer_ArrayTraits.hpp
   Panzer_AssemblyEngine.hpp
@@ -132,50 +135,6 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_DOFManagerFactory.hpp
   dofmngr/Panzer_DOFManagerFactoryT.hpp
   dofmngr/Panzer_LinearObjFactory.hpp
-  evaluators/Panzer_Constant_impl.hpp
-  evaluators/Panzer_Constant_decl.hpp
-  evaluators/Panzer_Dirichlet_Residual.hpp
-  evaluators/Panzer_Dirichlet_ResidualT.hpp
-  evaluators/Panzer_DOF.hpp
-  evaluators/Panzer_DOFT.hpp
-  evaluators/Panzer_DOF_PointField.hpp
-  evaluators/Panzer_DOF_PointFieldT.hpp
-  evaluators/Panzer_DOFGradient.hpp
-  evaluators/Panzer_DOFGradientT.hpp
-  evaluators/Panzer_GatherBasisCoordinates.hpp
-  evaluators/Panzer_GatherBasisCoordinatesT.hpp
-  evaluators/Panzer_GatherIntegrationCoordinates.hpp
-  evaluators/Panzer_GatherIntegrationCoordinatesT.hpp
-  evaluators/Panzer_GatherSolution_Epetra.hpp
-  evaluators/Panzer_GatherSolution_EpetraT.hpp
-  evaluators/Panzer_GatherOrientation.hpp
-  evaluators/Panzer_GatherOrientationT.hpp
-  evaluators/Panzer_GlobalStatistics.hpp
-  evaluators/Panzer_GlobalStatisticsT.hpp
-  evaluators/Panzer_Integrator_BasisTimesScalar.hpp
-  evaluators/Panzer_Integrator_BasisTimesScalarT.hpp
-  evaluators/Panzer_Integrator_GradBasisDotVector.hpp
-  evaluators/Panzer_Integrator_GradBasisDotVectorT.hpp
-  evaluators/Panzer_Integrator_Scalar.hpp
-  evaluators/Panzer_Integrator_ScalarT.hpp
-  evaluators/Panzer_Normals.hpp
-  evaluators/Panzer_NormalsT.hpp
-  evaluators/Panzer_Parameter.hpp
-  evaluators/Panzer_ParameterT.hpp
-  evaluators/Panzer_ScalarToVector.hpp
-  evaluators/Panzer_ScalarToVectorT.hpp
-  evaluators/Panzer_ScatterResidual_Epetra.hpp
-  evaluators/Panzer_ScatterResidual_EpetraT.hpp
-  evaluators/Panzer_ScatterDirichletResidual_Epetra.hpp
-  evaluators/Panzer_ScatterDirichletResidual_EpetraT.hpp
-  evaluators/Panzer_ScatterInitialCondition_Epetra.hpp
-  evaluators/Panzer_ScatterInitialCondition_EpetraT.hpp
-  evaluators/Panzer_TestScatter.hpp
-  evaluators/Panzer_TestScatterT.hpp
-  evaluators/Panzer_Sum.hpp
-  evaluators/Panzer_SumT.hpp
-  evaluators/Panzer_VectorToScalar.hpp
-  evaluators/Panzer_VectorToScalarT.hpp
   responses/Panzer_Response.hpp
   responses/Panzer_ResponseAggregatorBase.hpp
   responses/Panzer_ResponseAggregator_Manager.hpp
@@ -228,11 +187,6 @@ APPEND_SET(SOURCES
   responses/Panzer_ResponseUtilities.cpp
   responses/Panzer_ResponseFunctional_Aggregator.cpp
   responses/Panzer_ResponseAggregator_IPCoordinates.cpp
-  evaluators/Panzer_Constant.cpp
-  evaluators/Panzer_DOF_PointField.cpp
-  evaluators/Panzer_GatherBasisCoordinates.cpp
-  evaluators/Panzer_GatherIntegrationCoordinates.cpp
-  evaluators/Panzer_Parameter.cpp
   )
 
 IF(${PACKAGE_NAME}_ENABLE_Stokhos)
@@ -241,14 +195,6 @@ IF(${PACKAGE_NAME}_ENABLE_Stokhos)
     dofmngr/Panzer_SGEpetraLinearObjFactory.hpp
     dofmngr/Panzer_SGEpetraLinearObjFactoryT.hpp
     dofmngr/Panzer_SGEpetraLinearObjContainer.hpp
-    evaluators/Panzer_GatherSolution_EpetraSG.hpp
-    evaluators/Panzer_GatherSolution_EpetraSGT.hpp
-    evaluators/Panzer_ScatterResidual_EpetraSG.hpp
-    evaluators/Panzer_ScatterResidual_EpetraSGT.hpp
-    evaluators/Panzer_ScatterDirichletResidual_EpetraSG.hpp
-    evaluators/Panzer_ScatterDirichletResidual_EpetraSGT.hpp
-    evaluators/Panzer_ScatterInitialCondition_EpetraSG.hpp
-    evaluators/Panzer_ScatterInitialCondition_EpetraSGT.hpp
     responses/Panzer_ResponseFunctional_AggregatorSGT.hpp
     )
   APPEND_SET(SOURCES

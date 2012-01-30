@@ -20,6 +20,9 @@ using Teuchos::rcp;
 
 #include "Panzer_Normals.hpp"
 #include "Panzer_Integrator_Scalar.hpp"
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
+#include "Panzer_Integrator_Scalar_impl.hpp"
+#endif
 
 #include "Phalanx_FieldManager.hpp"
 

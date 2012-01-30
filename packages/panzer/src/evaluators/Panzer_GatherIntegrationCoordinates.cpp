@@ -1,11 +1,11 @@
 #include "Panzer_config.hpp"
 
-#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#include "Panzer_GatherIntegrationCoordinates.hpp"
-#include "Panzer_GatherIntegrationCoordinatesT.hpp"
+#include "Panzer_GatherIntegrationCoordinates_decl.hpp"
+#include "Panzer_GatherIntegrationCoordinates_impl.hpp"
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::GatherIntegrationCoordinates)
 
