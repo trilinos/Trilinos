@@ -1,11 +1,10 @@
-//TODO: Copyright Header
-
 #ifndef THYRA_MUELU_PRECONDITIONER_FACTORY_DECL_HPP
 #define THYRA_MUELU_PRECONDITIONER_FACTORY_DECL_HPP
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 namespace Thyra {
 
@@ -92,7 +91,10 @@ private:
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
 };
-
+  
+  //! Dynamically register MueLu adapters in Stratimikos
+  void addMueLuToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
+                                    const std::string & stratName="MueLu");
 
 } // namespace Thyra
 

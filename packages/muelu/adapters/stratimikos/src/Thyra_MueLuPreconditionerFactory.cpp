@@ -1,5 +1,3 @@
-//TODO: Copyright Header
-
 #include "Thyra_MueLuPreconditionerFactory.hpp"
 
 #include "Thyra_EpetraOperatorViewExtractorStd.hpp"
@@ -13,7 +11,7 @@
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
 #include "Teuchos_StaticSetupMacro.hpp"
 #include "Teuchos_iostream_helpers.hpp"
-
+#include "Teuchos_AbstractFactoryStd.hpp"
 #include "Xpetra_EpetraCrsMatrix.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_Operator.hpp"
@@ -450,6 +448,21 @@ std::string MueLuPreconditionerFactory::description() const
   std::ostringstream oss;
   oss << "Thyra::MueLuPreconditionerFactory";
   return oss.str();
+}
+
+//
+//
+//
+
+void addMueLuToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
+                                  const std::string & stratName)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(builder.getValidParameters()->sublist("Preconditioner Types").isParameter(stratName),std::logic_error,
+                             "MueLu::addMueLuToStratimikosBuilder cannot add \"" + stratName +"\" because it is already included in builder!");
+  
+  // use default constructor to add Teko::StratimikosFactory
+  builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Thyra::PreconditionerFactoryBase<double>,Thyra::MueLuPreconditionerFactory>(),
+                                            stratName);
 }
 
 } // namespace Thyra
