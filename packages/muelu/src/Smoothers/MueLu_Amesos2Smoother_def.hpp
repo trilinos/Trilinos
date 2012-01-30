@@ -20,13 +20,15 @@ namespace MueLu {
     : type_(type), paramList_(paramList), AFact_(AFact)
   {
     // set default solver type
+    if(type_ == "") {
 #if defined(HAVE_AMESOS2_SUPERLU)
-    if(type_ == "") type_ = "Superlu";    // 1. default smoother (if Superlu is available)
+      type_ = "Superlu";   // 1. default smoother (if Superlu is available)
 #elif defined(HAVE_AMESOS2_KLU)
-    if(type_ == "") type_ = "Klu";        // 2. default smoother (if KLU is available)
+    type_ = "Klu";         // 2. default smoother (if KLU is available)
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
-    if(type_ == "") type_ = "Superludist";// 3. default smoother (if Superludist is available)
+    type_ = "Superludist"; // 3. default smoother (if Superludist is available)
 #endif
+    } // if(type_ == "")
 
     // check for valid direct solver type
     TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" &&
