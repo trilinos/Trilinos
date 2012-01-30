@@ -45,7 +45,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
 
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/stratimikos/src)
   
   APPEND_SET(HEADERS
     stratimikos/src/Thyra_MueLuPreconditionerFactory.hpp

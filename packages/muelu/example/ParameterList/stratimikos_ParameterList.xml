@@ -6,8 +6,8 @@
       <ParameterList name="Solver Types">
         <ParameterList name="Block GMRES">
           <Parameter name="Block Size" type="int" value="1"/>
-          <Parameter name="Convergence Tolerance" type="double" value="1e-13"/>
-          <Parameter name="Maximum Iterations" type="int" value="400"/>
+          <Parameter name="Convergence Tolerance" type="double" value="1e-4"/>
+          <Parameter name="Maximum Iterations" type="int" value="20"/>
           <Parameter name="Output Frequency" type="int" value="1"/>
           <Parameter name="Show Maximum Residual Norm Only" type="bool" value="1"/>
         </ParameterList>
