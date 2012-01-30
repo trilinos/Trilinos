@@ -1,3 +1,5 @@
+#ifndef PANZER_INTEGRATION_VALUES_IMPL_HPP
+#define PANZER_INTEGRATION_VALUES_IMPL_HPP
 
 #include "Shards_CellTopology.hpp"
 #include "Intrepid_FieldContainer.hpp"
@@ -268,3 +270,5 @@ namespace panzer {
 
   }
 }
+
+#endif

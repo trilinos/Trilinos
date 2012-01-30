@@ -1,5 +1,5 @@
-#ifndef PANZER_INITIAL_CONDITION_BUILDER_HPP
-#define PANZER_INITIAL_CONDITION_BUILDER_HPP
+#ifndef PANZER_INITIAL_CONDITION_BUILDER_DECL_HPP
+#define PANZER_INITIAL_CONDITION_BUILDER_DECL_HPP
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_PhysicsBlock.hpp"
@@ -42,6 +42,6 @@ namespace panzer {
   
 }
 
-#include "Panzer_InitialCondition_BuilderT.hpp"
+#include "Panzer_InitialCondition_Builder_impl.hpp"
 
 #endif

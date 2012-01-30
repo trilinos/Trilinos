@@ -122,6 +122,6 @@ std::ostream& operator<<(std::ostream& os, const panzer::FieldManagerBuilder<LO,
 
 } // namespace panzer
 
-#include "Panzer_FieldManagerBuilderT.hpp"
+#include "Panzer_FieldManagerBuilder_impl.hpp"
 
 #endif

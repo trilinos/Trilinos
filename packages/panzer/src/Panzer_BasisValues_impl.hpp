@@ -1,3 +1,5 @@
+#ifndef PANZER_BASIS_VALUES_IMPL_HPP
+#define PANZER_BASIS_VALUES_IMPL_HPP
 
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_CellTools.hpp"
@@ -117,3 +119,5 @@ namespace panzer {
   }
 
 }
+
+#endif

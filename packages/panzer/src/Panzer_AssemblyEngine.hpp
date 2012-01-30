@@ -57,6 +57,6 @@ namespace panzer {
   
 }
 
-#include "Panzer_AssemblyEngineT.hpp"
+#include "Panzer_AssemblyEngine_impl.hpp"
 
 #endif

@@ -18,6 +18,6 @@ namespace panzer {
 
 }
 
-#include "Panzer_ParameterLibraryUtilitiesT.hpp"
+#include "Panzer_ParameterLibraryUtilities_impl.hpp"
 
 #endif

@@ -1,3 +1,6 @@
+#ifndef PANZER_BCSTRATEGY_DIRICHLET_DEFAULT_IMPL_IMPL_HPP
+#define PANZER_BCSTRATEGY_DIRICHLET_DEFAULT_IMPL_IMPL_HPP
+
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -191,3 +194,5 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 }
 
 // ***********************************************************************
+
+#endif

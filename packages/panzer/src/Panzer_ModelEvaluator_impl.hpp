@@ -1,5 +1,5 @@
-#ifndef PANZER_MODEL_EVALUATOR_DEF_HPP
-#define PANZER_MODEL_EVALUATOR_DEF_HPP
+#ifndef PANZER_MODEL_EVALUATOR_IMPL_HPP
+#define PANZER_MODEL_EVALUATOR_IMPL_HPP
 
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Tpetra_CrsMatrix.hpp"

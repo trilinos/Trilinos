@@ -1,5 +1,5 @@
-#ifndef PANZER_EQUATION_SET_DEFAULTIMPL_HPP
-#define PANZER_EQUATION_SET_DEFAULTIMPL_HPP
+#ifndef PANZER_EQUATION_SET_DEFAULTIMPL_DECL_HPP
+#define PANZER_EQUATION_SET_DEFAULTIMPL_DECL_HPP
 
 #include "Panzer_EquationSet.hpp"
 #include "Panzer_InputEquationSet.hpp"
@@ -96,9 +96,5 @@ namespace panzer {
   };
   
 }
-
-#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
-#include "Panzer_EquationSet_DefaultImplT.hpp"
-#endif
 
 #endif

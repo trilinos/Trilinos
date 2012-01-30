@@ -1,5 +1,5 @@
-#ifndef PANZER_MODEL_EVALUATOR_FACTORY_HPP
-#define PANZER_MODEL_EVALUATOR_FACTORY_HPP
+#ifndef PANZER_MODEL_EVALUATOR_FACTORY_DECL_HPP
+#define PANZER_MODEL_EVALUATOR_FACTORY_DECL_HPP
 
 #include "Teuchos_RCP.hpp"
 
@@ -16,6 +16,6 @@ namespace panzer {
     
 }
 
-#include "Panzer_ModelEvaluator_FactoryT.hpp"
+#include "Panzer_ModelEvaluator_Factory_impl.hpp"
 
 #endif

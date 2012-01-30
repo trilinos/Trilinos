@@ -1,6 +1,6 @@
 
-#ifndef PANZER_BCSTRATEGY_DIRICHLET_DEFAULT_IMPL_HPP
-#define PANZER_BCSTRATEGY_DIRICHLET_DEFAULT_IMPL_HPP
+#ifndef PANZER_BCSTRATEGY_DIRICHLET_DEFAULT_IMPL_DECL_HPP
+#define PANZER_BCSTRATEGY_DIRICHLET_DEFAULT_IMPL_DECL_HPP
 
 #include <vector>
 #include <string>
@@ -49,6 +49,6 @@ namespace panzer {
 
 }
 
-#include "Panzer_BCStrategy_Dirichlet_DefaultImplT.hpp"
+#include "Panzer_BCStrategy_Dirichlet_DefaultImpl_impl.hpp"
 
 #endif

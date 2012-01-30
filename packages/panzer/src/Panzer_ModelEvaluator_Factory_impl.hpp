@@ -1,5 +1,5 @@
-#ifndef PANZER_MODEL_EVALUATOR_FACTORY_T_HPP
-#define PANZER_MODEL_EVALUATOR_FACTORY_T_HPP
+#ifndef PANZER_MODEL_EVALUATOR_FACTORY_IMPL_HPP
+#define PANZER_MODEL_EVALUATOR_FACTORY_IMPL_HPP
 
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"

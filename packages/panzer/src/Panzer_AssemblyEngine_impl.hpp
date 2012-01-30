@@ -1,3 +1,6 @@
+#ifndef PANZER_ASSEMBLY_ENGINE_IMPL_HPP
+#define PANZER_ASSEMBLY_ENGINE_IMPL_HPP
+
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
@@ -229,3 +232,5 @@ evaluateBCs(const panzer::BCType bc_type,
   }
 
 }
+
+#endif

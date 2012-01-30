@@ -42,6 +42,6 @@ namespace panzer {
 
 } // namespace panzer
 
-#include "Panzer_IntegrationValuesT.hpp"
+#include "Panzer_IntegrationValues_impl.hpp"
 
 #endif

@@ -1,3 +1,6 @@
+#ifndef PANZER_FIELD_MANAGER_BUILDER_IMPL_HPP
+#define PANZER_FIELD_MANAGER_BUILDER_IMPL_HPP
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -180,3 +183,5 @@ std::ostream& panzer::operator<<(std::ostream& os, const panzer::FieldManagerBui
   rfd.print(os);
   return os;
 }
+
+#endif

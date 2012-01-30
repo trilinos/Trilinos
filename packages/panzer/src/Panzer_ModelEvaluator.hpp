@@ -1,5 +1,5 @@
-#ifndef PANZER_MODEL_EVALUATOR_HPP
-#define PANZER_MODEL_EVALUATOR_HPP
+#ifndef PANZER_MODEL_EVALUATOR_DECL_HPP
+#define PANZER_MODEL_EVALUATOR_DECL_HPP
 
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Tpetra_ConfigDefs.hpp"
@@ -86,6 +86,6 @@ private: // data members
 
 }
 
-#include "Panzer_ModelEvaluatorT.hpp"
+#include "Panzer_ModelEvaluator_impl.hpp"
 
 #endif 

@@ -1,6 +1,6 @@
 
-#ifndef PANZER_BASIS_VALUES_UTILITIES_HPP
-#define PANZER_BASIS_VALUES_UTILITIES_HPP
+#ifndef PANZER_BASIS_VALUES_DECL_HPP
+#define PANZER_BASIS_VALUES_DECL_HPP
 
 #include "Teuchos_RCP.hpp"
 
@@ -48,7 +48,7 @@ namespace panzer {
 
 } // namespace panzer
 
-#include "Panzer_BasisValuesT.hpp"
+#include "Panzer_BasisValues_impl.hpp"
 
 #endif
 
