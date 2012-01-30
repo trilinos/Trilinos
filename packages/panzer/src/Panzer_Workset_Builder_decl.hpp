@@ -1,6 +1,6 @@
 
-#ifndef CHARON_WORKSET_BUILDER_HPP
-#define CHARON_WORKSET_BUILDER_HPP
+#ifndef CHARON_WORKSET_BUILDER_DECL_HPP
+#define CHARON_WORKSET_BUILDER_DECL_HPP
 
 #include <vector>
 #include <map>
@@ -47,7 +47,5 @@ namespace panzer {
 		 unsigned base_cell_dim);
 
 }
-
-#include "Panzer_Workset_BuilderT.hpp"
 
 #endif

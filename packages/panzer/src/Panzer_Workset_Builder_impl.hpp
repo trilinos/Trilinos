@@ -1,3 +1,5 @@
+#ifndef PANZER_WORKSET_BUILDER_IMPL_HPP
+#define PANZER_WORKSET_BUILDER_IMPL_HPP
 
 #include <iostream>
 #include <vector>
@@ -401,3 +403,5 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 
   return worksets_ptr;
 }
+
+#endif
