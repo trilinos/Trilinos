@@ -61,7 +61,7 @@ registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<
 
    fm.template registerEvaluator<panzer::Traits::Residual>(eval);
 
-   fm.template requireField<panzer::Traits::Residual>(eval->template getEvaluatedField().fieldTag());
+   fm.template requireField<panzer::Traits::Residual>(eval->getEvaluatedField().fieldTag());
 }
 
 //! perform global reduction on this set of response data
