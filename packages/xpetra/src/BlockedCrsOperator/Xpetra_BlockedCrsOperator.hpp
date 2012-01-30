@@ -74,7 +74,7 @@ public:
     rangemaps_(rangeMaps)
   {
     // Set matrix data
-    matrixData_ = Teuchos::null; //CrsMatrixFactory::Build(rowMap, maxNumEntriesPerRow, pftype); // TODO remove me
+    //matrixData_ = Teuchos::null; //CrsMatrixFactory::Build(rowMap, maxNumEntriesPerRow, pftype); // TODO remove me
 
     blocks_.reserve(Rows()*Cols());
 
@@ -89,7 +89,7 @@ public:
     }
 
     // Default view
-    //CreateDefaultView();
+    CreateDefaultView();
   }
 
   //! Destructor
@@ -715,34 +715,16 @@ private:
   // Because ColMap might not be available before fillComplete().
   void CreateDefaultView() {
 
-    // no support for different views.
-    // but each block matrix has its own views!
-
     // Create default view
-    //this->defaultViewLabel_ = "point";
-    //CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());
+    this->defaultViewLabel_ = "point";
+    CreateView(this->GetDefaultViewLabel(), getRangeMap(), getDomainMap());
 
     // Set current view
-    //this->currentViewLabel_ = this->GetDefaultViewLabel();
+    this->currentViewLabel_ = this->GetDefaultViewLabel();
   }
 
-
-  /** \name Block maps */
-  //@{
-
-
-
-  /// range map for given row block
-  //const Teuchos::RCP<const MapClass> RangeMap(size_t r) const { return rangemaps_->Map(r); }
-
-  /// domain map for given row block
-  //const Teuchos::RCP<const MapClass> DomainMap(size_t c) const { return domainmaps_->Map(c); }
-
-  //@}
-
-
 private:
-  Teuchos::RCP<CrsMatrixClass> matrixData_;
+  // Teuchos::RCP<CrsMatrixClass> matrixData_;
 
   /// the full domain map together with all partial domain maps
   Teuchos::RCP<const MapExtractorClass> domainmaps_;
