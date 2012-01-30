@@ -216,12 +216,13 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetCoarsestSolverFactory(const Teuchos::ParameterList & params) {
 #include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
 
-#if   defined(HAVE_MUELU_AMESOS2)
+#if (defined(HAVE_MUELU_EPETRA) && defined( HAVE_MUELU_AMESOS)) || (defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2))
   std::string type = "Amesos-Superlu"; // propose SuperLU as coarsest solver if AMESOS2 is enabled // TODO: check if SuperLU is available in Amesos2
 #else
-  std::string type = "Amesos-KLU";     // propose KLU as coarsest solver // TODO: only available with Epetra? 
-  // TODO: what if neither KLU nor SuperLU are available??
+  std::string type = "symmetric Gauss-Seidel";     // use a sym Gauss-Seidel (with no damping) as fallback "coarse solver" (TODO: needs Ifpack(2))
 #endif
+
+  // TODO: what if neither KLU nor SuperLU are available??
   
   if(params.isParameter("coarse: type")) type = params.get<std::string>("coarse: type");
 
@@ -233,24 +234,30 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
   if(type == "Jacobi") {
     if(params.isParameter("coarse: sweeps"))
       ifpackList.set<int>("relaxation: sweeps", params.get<int>("coarse: sweeps"));
-    if(params.get<double>("coarse: damping factor"))
+    else ifpackList.set<int>("relaxation: sweeps", 1);
+    if(params.isParameter("coarse: damping factor"))
       ifpackList.set("relaxation: damping factor", params.get<double>("coarse: damping factor"));
+    else ifpackList.set("relaxation: damping factor", 1.0);
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Jacobi");
     smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
   } else if(type == "Gauss-Seidel") {
     if(params.isParameter("coarse: sweeps"))
       ifpackList.set<int>("relaxation: sweeps", params.get<int>("coarse: sweeps"));
-    if(params.get<double>("coarse: damping factor"))
+    else ifpackList.set<int>("relaxation: sweeps", 1);
+    if(params.isParameter("coarse: damping factor"))
       ifpackList.set("relaxation: damping factor", params.get<double>("coarse: damping factor"));
+    else ifpackList.set("relaxation: damping factor", 1.0);
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Gauss-Seidel");
     smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
   } else if (type == "symmetric Gauss-Seidel") {
     if(params.isParameter("coarse: sweeps"))
       ifpackList.set<int>("relaxation: sweeps", params.get<int>("coarse: sweeps"));
-    if(params.get<double>("coarse: damping factor"))
+    else ifpackList.set<int>("relaxation: sweeps", 1);
+    if(params.isParameter("coarse: damping factor"))
       ifpackList.set("relaxation: damping factor", params.get<double>("coarse: damping factor"));
+    else ifpackList.set("relaxation: damping factor", 1.0);
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
     smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
