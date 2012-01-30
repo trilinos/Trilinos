@@ -292,7 +292,7 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
     Teuchos::ParameterList coarsestSmooList;
     smooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
   } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown coarsest solver type. not supported by MueLu.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown coarsest solver type. '" << type << "' not supported by MueLu.");
   }
 
   // create smoother factory
@@ -364,7 +364,7 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
     // TODO what about the other parameters
   } else if(type == "IFPACK") {
 #ifdef HAVE_MUELU_IFPACK
-    // TODO change to TrilnosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
+    // TODO change to TrilinosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
     ifpackType = params.sublist("smoother: list " + levelstr).get<std::string>("smoother: ifpack type");
     if(ifpackType == "ILU") {
       ifpackList.set<int>("fact: level-of-fill", (int)smolevelsublist.get<double>("smoother: ifpack level-of-fill"));
