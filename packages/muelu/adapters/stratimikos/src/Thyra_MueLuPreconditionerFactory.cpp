@@ -5,10 +5,7 @@
 #include "Thyra_EpetraOperatorViewExtractorStd.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
-#include "ml_MultiLevelPreconditioner.h"
-#include "ml_MultiLevelOperator.h"
-#include "ml_ValidateParameters.h"
-#include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -17,45 +14,16 @@
 #include "Teuchos_StaticSetupMacro.hpp"
 #include "Teuchos_iostream_helpers.hpp"
 
+#include "Xpetra_EpetraCrsMatrix.hpp"
+#include "Xpetra_CrsMatrix.hpp"
+#include "Xpetra_Operator.hpp"
+#include "Xpetra_CrsOperator.hpp"
+
+#include "MueLu_EpetraOperator.hpp"
 
 namespace {
 
-
-enum EMueLuProblemType {
-  MueLu_PROBTYPE_NONE,
-  MueLu_PROBTYPE_SMOOTHED_AGGREGATION, 
-  MueLu_PROBTYPE_DOMAIN_DECOMPOSITION,
-  MueLu_PROBTYPE_DOMAIN_DECOMPOSITION_MueLu,
-  MueLu_PROBTYPE_MAXWELL
-};
-const std::string BaseMethodDefaults_valueNames_none = "none";
-const Teuchos::Array<std::string> BaseMethodDefaults_valueNames
-= Teuchos::tuple<std::string>(
-  BaseMethodDefaults_valueNames_none,
-  "SA", 
-  "DD",
-  "DD-ML",
-  "maxwell"
-  );
-
-
-TEUCHOS_ENUM_INPUT_STREAM_OPERATOR(EMueLuProblemType)
-
-
-TEUCHOS_STATIC_SETUP()
-{
-  TEUCHOS_ADD_STRINGTOINTEGRALVALIDATOR_CONVERTER(EMueLuProblemType);
-}
-
-const std::string BaseMethodDefaults_name = "Base Method Defaults";
-const std::string BaseMethodDefaults_default = "DD";
-Teuchos::RCP<
-  Teuchos::StringToIntegralParameterEntryValidator<EMueLuProblemType>
-  >
-BaseMethodDefaults_validator;
-  
 const std::string MueLuSettings_name = "MueLu Settings";
-
 
 } // namespace
 
@@ -97,7 +65,7 @@ bool MueLuPreconditionerFactory::isCompatible(
     outArg(epetraFwdOpAdjointSupport),
     outArg(epetraFwdOpScalar)
     );
-  if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
+  if( !dynamic_cast<const Epetra_CrsMatrix*>(&*epetraFwdOp) )
     return false;
   return true;
 }
@@ -105,13 +73,13 @@ bool MueLuPreconditionerFactory::isCompatible(
 
 bool MueLuPreconditionerFactory::applySupportsConj(EConj conj) const
 {
-  return true;
+  return false;
 }
 
 
 bool MueLuPreconditionerFactory::applyTransposeSupportsConj(EConj conj) const
 {
-  return false; // See comment below
+  return false;
 }
 
 
@@ -139,8 +107,11 @@ void MueLuPreconditionerFactory::initializePrec(
   using Teuchos::set_extra_data;
   using Teuchos::get_optional_extra_data;
   using Teuchos::implicit_cast;
+
+
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
+
   const RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
@@ -152,9 +123,11 @@ void MueLuPreconditionerFactory::initializePrec(
   TEUCHOS_TEST_FOR_EXCEPT(fwdOp.get()==NULL);
   TEUCHOS_TEST_FOR_EXCEPT(prec==NULL);
 #endif
+
   //
   // Unwrap and get the forward Epetra_Operator object
   //
+
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
   EOpTransp epetraFwdOpTransp;
   EApplyEpetraOpAs epetraFwdOpApplyAs;
@@ -165,90 +138,98 @@ void MueLuPreconditionerFactory::initializePrec(
     outArg(epetraFwdOpAdjointSupport),outArg(epetraFwdOpScalar)
                                              );
   // Validate what we get is what we need
-  RCP<const Epetra_RowMatrix>
-    epetraFwdRowMat = rcp_dynamic_cast<const Epetra_RowMatrix>(epetraFwdOp,true);
+
+  RCP<const Epetra_CrsMatrix>
+    epetraFwdCrsMat = rcp_dynamic_cast<const Epetra_CrsMatrix>(epetraFwdOp,true);
   TEUCHOS_TEST_FOR_EXCEPTION(
     epetraFwdOpApplyAs != EPETRA_OP_APPLY_APPLY, std::logic_error
-    ,"Error, incorrect apply mode for an Epetra_RowMatrix"
+    ,"Error, incorrect apply mode for an Epetra_CrsMatrix"
     );
 
   //
   // Get the concrete preconditioner object
   //
+
   DefaultPreconditioner<double>
     *defaultPrec = &Teuchos::dyn_cast<DefaultPreconditioner<double> >(*prec);
+
   //
   // Get the EpetraLinearOp object that is used to implement the preconditoner linear op
   //
+
   RCP<EpetraLinearOp>
     epetra_precOp = rcp_dynamic_cast<EpetraLinearOp>(defaultPrec->getNonconstUnspecifiedPrecOp(),true);
+
   //
-  // Get the embedded ML_Epetra::MultiLevelPreconditioner object if it exists
+  // Get the embedded MueLu::EpetraOperator object if it exists
   //
-  Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_precOp;
+
+  Teuchos::RCP<MueLu::EpetraOperator> muelu_precOp;
   if(epetra_precOp.get())
-    ml_precOp = rcp_dynamic_cast<ML_Epetra::MultiLevelPreconditioner>(epetra_precOp->epetra_op(),true);
+    muelu_precOp = rcp_dynamic_cast<MueLu::EpetraOperator>(epetra_precOp->epetra_op(),true);
   //
   // Get the attached forward operator if it exists and make sure that it matches
   //
-  if(ml_precOp!=Teuchos::null) {
-    // Get the forward operator and make sure that it matches what is
-    // already being used!
-    const Epetra_RowMatrix & rm = ml_precOp->RowMatrix();
+  if(muelu_precOp!=Teuchos::null) {
+    // TODO
+//     // Get the forward operator and make sure that it matches what is
+//     // already being used!
+//     const Epetra_CrsMatrix & rm = muelu_precOp->CrsMatrix();
    
-    TEUCHOS_TEST_FOR_EXCEPTION(
-       &rm!=&*epetraFwdRowMat, std::logic_error
-       ,"ML requires Epetra_RowMatrix to be the same for each initialization of the preconditioner"
-       );
+//     TEUCHOS_TEST_FOR_EXCEPTION(
+//        &rm!=&*epetraFwdRowMat, std::logic_error
+//        ,"MueLu requires Epetra_RowMatrix to be the same for each initialization of the preconditioner"
+//        );
   }
   //
-  // Permform initialization if needed
+  // Perform initialization if needed
   //
-  const bool startingOver = (ml_precOp.get() == NULL);
+  const bool startingOver = (muelu_precOp.get() == NULL);
   if(startingOver) 
   {
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-      *out << "\nCreating the initial ML_Epetra::MultiLevelPreconditioner object...\n";
+      *out << "\nCreating the initial MueLu::EpetraOperator object...\n";
     timer.start(true);
     // Create the initial preconditioner: DO NOT compute it yet
-    ml_precOp = rcp(
-      new ML_Epetra::MultiLevelPreconditioner(
-        *epetraFwdRowMat, paramList_->sublist(MueLuSettings_name),false
-        )
-      );
+
+    typedef Kokkos::DefaultNode::DefaultNodeType NO;
+    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LMO;
+
+    // Turns a Epetra_CrsMatrix into a MueLu::Operator
+    RCP<Epetra_CrsMatrix> epetraFwdCrsMatNonConst = rcp_const_cast<Epetra_CrsMatrix>(epetraFwdCrsMat); // !! TODO: MueLu interface should accept const matrix as input.
+
+    RCP<Xpetra::CrsMatrix<double, int, int, NO, LMO> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(epetraFwdCrsMatNonConst)); //TODO: should not be needed
+    RCP<Xpetra::Operator <double, int, int, NO, LMO> > mueluA  = rcp(new Xpetra::CrsOperator<double, int, int, NO, LMO>(mueluA_));
+
+    const RCP<MueLu::Hierarchy<double,int, int, NO, LMO > > muelu_hierarchy = rcp(new MueLu::Hierarchy<double,int, int, NO, LMO >(mueluA));
+    muelu_precOp = rcp(new MueLu::EpetraOperator(muelu_hierarchy));
     
     timer.stop();
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       OSTab(out).o() <<"> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
-    // RAB: Above, I am just passing a string to ML::Create(...) in order
-    // get this code written.  However, in the future, it would be good to
-    // copy the contents of what is in ML::Create(...) into a local
-    // function and then use switch(...) to create the initial
-    // ML_Epetra::MultiLevelPreconditioner object.  This would result in better validation
-    // and faster code.
-    // Set parameters if the list exists
-    if(paramList_.get())
-      TEUCHOS_TEST_FOR_EXCEPT(
-        0!=ml_precOp->SetParameterList(paramList_->sublist(MueLuSettings_name))
-        );
-    // Initialize the structure for the preconditioner
-    //        TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->Initialize());
+
+    //     if(paramList_.get())
+    //       TEUCHOS_TEST_FOR_EXCEPT(
+    //         0!=muelu_precOp->SetParameterList(paramList_->sublist(MueLuSettings_name))
+    //         );
   }
+
   //
-  // Attach the epetraFwdOp to the ml_precOp to guarantee that it will not go away
+  // Attach the epetraFwdOp to the muelu_precOp to guarantee that it will not go away
   //
-  set_extra_data(epetraFwdOp, "IFPF::epetraFwdOp", Teuchos::inOutArg(ml_precOp),
+  set_extra_data(epetraFwdOp, "IFPF::epetraFwdOp", Teuchos::inOutArg(muelu_precOp),
     Teuchos::POST_DESTROY, false);
+
   //
   // Update the factorization
   //
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nComputing the factorization of the preconditioner ...\n";
+    *out << "\nComputing the preconditioner ...\n";
   timer.start(true);
-  TEUCHOS_TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
+  muelu_precOp->GetHierarchy()->Setup();
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out).o() <<"=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
+    OSTab(out).o() <<"=> Setup time = "<<timer.totalElapsedTime()<<" sec\n";
   //
   // Compute the conditioner number estimate if asked
   //
@@ -256,9 +237,9 @@ void MueLuPreconditionerFactory::initializePrec(
   // ToDo: Implement
 
   //
-  // Attach fwdOp to the ml_precOp
+  // Attach fwdOp to the muelu_precOp
   //
-  set_extra_data(fwdOp, "IFPF::fwdOp", Teuchos::inOutArg(ml_precOp),
+  set_extra_data(fwdOp, "IFPF::fwdOp", Teuchos::inOutArg(muelu_precOp),
     Teuchos::POST_DESTROY, false);
   //
   // Initialize the output EpetraLinearOp
@@ -267,7 +248,7 @@ void MueLuPreconditionerFactory::initializePrec(
     epetra_precOp = rcp(new EpetraLinearOp);
   }
   epetra_precOp->initialize(
-    ml_precOp
+    muelu_precOp
     ,epetraFwdOpTransp
     ,EPETRA_OP_APPLY_APPLY_INVERSE
     ,EPETRA_OP_ADJOINT_UNSUPPORTED  // ToDo: Look into adjoints again.
@@ -303,38 +284,38 @@ void MueLuPreconditionerFactory::setParameterList(
   Teuchos::RCP<ParameterList> const& paramList
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
-  paramList->validateParameters(*this->getValidParameters(),0);
-  paramList_ = paramList;
-  const EMueLuProblemType
-    defaultType = BaseMethodDefaults_validator->getIntegralValue(
-      *paramList_,BaseMethodDefaults_name,BaseMethodDefaults_default
-      );
-  if( MueLu_PROBTYPE_NONE != defaultType ) {
-    const std::string
-      defaultTypeStr = BaseMethodDefaults_valueNames[defaultType];
-    Teuchos::ParameterList defaultParams;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)
-      ,Teuchos::Exceptions::InvalidParameterValue
-      ,"Error, the ML problem type \"" << defaultTypeStr << "\' is not recongnised by ML!"
-      );
-    // Note, the only way the above exception message could be generated is if
-    // a default problem type was removed from ML_Epetra::SetDefaults(...).
-    // When a new problem type is added to this function, it must be added to
-    // our enum EMLProblemType along with associated objects ...  In other
-    // words, this adapter must be maintained as ML is maintained.  An
-    // alternative design would be to just pass in whatever string to this
-    // function.  This would improve maintainability but it would not generate
-    // very good error messages when a bad string was passed in.  Currenly,
-    // the error message attached to the exception will contain the list of
-    // valid problem types.
-    paramList_->sublist(MueLuSettings_name).setParametersNotAlreadySet(
-      defaultParams);
-  }
-#ifdef TEUCHOS_DEBUG
-  paramList->validateParameters(*this->getValidParameters(),0);
-#endif
+     TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
+//   paramList->validateParameters(*this->getValidParameters(),0);
+     paramList_ = paramList;
+//   const EMueLuProblemType
+//     defaultType = BaseMethodDefaults_validator->getIntegralValue(
+//       *paramList_,BaseMethodDefaults_name,BaseMethodDefaults_default
+//       );
+//   if( MueLu_PROBTYPE_NONE != defaultType ) {
+//     const std::string
+//       defaultTypeStr = BaseMethodDefaults_valueNames[defaultType];
+//     Teuchos::ParameterList defaultParams;
+//     TEUCHOS_TEST_FOR_EXCEPTION(
+//       0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)
+//       ,Teuchos::Exceptions::InvalidParameterValue
+//       ,"Error, the ML problem type \"" << defaultTypeStr << "\' is not recongnised by ML!"
+//       );
+//     // Note, the only way the above exception message could be generated is if
+//     // a default problem type was removed from ML_Epetra::SetDefaults(...).
+//     // When a new problem type is added to this function, it must be added to
+//     // our enum EMLProblemType along with associated objects ...  In other
+//     // words, this adapter must be maintained as ML is maintained.  An
+//     // alternative design would be to just pass in whatever string to this
+//     // function.  This would improve maintainability but it would not generate
+//     // very good error messages when a bad string was passed in.  Currenly,
+//     // the error message attached to the exception will contain the list of
+//     // valid problem types.
+//     paramList_->sublist(MueLuSettings_name).setParametersNotAlreadySet(
+//       defaultParams);
+//   }
+// #ifdef TEUCHOS_DEBUG
+//   paramList->validateParameters(*this->getValidParameters(),0);
+// #endif
 }
 
 
@@ -365,11 +346,11 @@ RCP<const ParameterList>
 MueLuPreconditionerFactory::getValidParameters() const
 {
 
-  using Teuchos::rcp;
-  using Teuchos::tuple;
-  using Teuchos::implicit_cast;
-  using Teuchos::rcp_implicit_cast;
-  typedef Teuchos::ParameterEntryValidator PEV;
+//   using Teuchos::rcp;
+//   using Teuchos::tuple;
+//   using Teuchos::implicit_cast;
+//   using Teuchos::rcp_implicit_cast;
+//   typedef Teuchos::ParameterEntryValidator PEV;
 
   static RCP<const ParameterList> validPL;
 
@@ -378,80 +359,80 @@ MueLuPreconditionerFactory::getValidParameters() const
     RCP<ParameterList>
       pl = rcp(new ParameterList());
 
-    BaseMethodDefaults_validator = rcp(
-      new Teuchos::StringToIntegralParameterEntryValidator<EMueLuProblemType>(
-        BaseMethodDefaults_valueNames,
-        tuple<std::string>(
-          "Do not set any default parameters",
-          "Set default parameters for a smoothed aggregation method",
-          "Set default parameters for a domain decomposition method",
-          "Set default parameters for a domain decomposition method special to ML",
-          "Set default parameters for a Maxwell-type of linear operator"
-          ),
-        tuple<EMueLuProblemType>(
-          MueLu_PROBTYPE_NONE,
-          MueLu_PROBTYPE_SMOOTHED_AGGREGATION,
-          MueLu_PROBTYPE_DOMAIN_DECOMPOSITION,
-          MueLu_PROBTYPE_DOMAIN_DECOMPOSITION_MueLu,
-          MueLu_PROBTYPE_MAXWELL
-          ),
-        BaseMethodDefaults_name
-        )
-      );
+//     BaseMethodDefaults_validator = rcp(
+//       new Teuchos::StringToIntegralParameterEntryValidator<EMueLuProblemType>(
+//         BaseMethodDefaults_valueNames,
+//         tuple<std::string>(
+//           "Do not set any default parameters",
+//           "Set default parameters for a smoothed aggregation method",
+//           "Set default parameters for a domain decomposition method",
+//           "Set default parameters for a domain decomposition method special to ML",
+//           "Set default parameters for a Maxwell-type of linear operator"
+//           ),
+//         tuple<EMueLuProblemType>(
+//           MueLu_PROBTYPE_NONE,
+//           MueLu_PROBTYPE_SMOOTHED_AGGREGATION,
+//           MueLu_PROBTYPE_DOMAIN_DECOMPOSITION,
+//           MueLu_PROBTYPE_DOMAIN_DECOMPOSITION_MueLu,
+//           MueLu_PROBTYPE_MAXWELL
+//           ),
+//         BaseMethodDefaults_name
+//         )
+//       );
 
-    pl->set(BaseMethodDefaults_name,BaseMethodDefaults_default,
-      "Select the default method type which also sets parameter defaults\n"
-      "in the sublist \"" + MueLuSettings_name + "\"!",
-      rcp_implicit_cast<const PEV>(BaseMethodDefaults_validator)
-      );
+//     pl->set(BaseMethodDefaults_name,BaseMethodDefaults_default,
+//       "Select the default method type which also sets parameter defaults\n"
+//       "in the sublist \"" + MueLuSettings_name + "\"!",
+//       rcp_implicit_cast<const PEV>(BaseMethodDefaults_validator)
+//       );
 
-/* 2007/07/02: rabartl:  The statement below should be the correct way to
- * get the list of valid parameters but it seems to be causing problems so
- * I am commenting it out for now.
- */
-/*
-    pl->sublist(
-      MueLuSettings_name, false,
-      "Parameters directly accepted by ML_Epetra interface."
-      ).setParameters(*rcp(ML_Epetra::GetValidMueLuPParameters()));
-*/
+// /* 2007/07/02: rabartl:  The statement below should be the correct way to
+//  * get the list of valid parameters but it seems to be causing problems so
+//  * I am commenting it out for now.
+//  */
+// /*
+//     pl->sublist(
+//       MueLuSettings_name, false,
+//       "Parameters directly accepted by ML_Epetra interface."
+//       ).setParameters(*rcp(ML_Epetra::GetValidMueLuPParameters()));
+// */
     
-    {
-      ParameterList &mlSettingsPL = pl->sublist(
-        MueLuSettings_name, false,
-        "Sampling of the parameters directly accepted by ML\n"
-        "This list of parameters is generated by combining all of\n"
-        "the parameters set for all of the default problem types supported\n"
-        "by MueLu.  Therefore, do not assume these parameters are at values that\n"
-        "are reasonable to MueLu.  This list is just to give a sense of some of\n"
-        "the parameters that MueLu accepts.  Consult MueLu documentation on how to\n"
-        "set these parameters.  Also, you can print the parameter list after\n"
-        "it is used and see what defaults where set for each default problem\n"
-        "type.  Warning! the parameters in this sublist are currently *not*\n"
-        "being validated by MueLu!"
-        );
-      //std::cout << "\nMueLuSettings doc before = " << pl->getEntryPtr(MueLuSettings_name)->docString() << "\n";
-      { // Set of valid parameters (but perhaps not accetable values)
-        for (
-          int i = 0;
-          i < implicit_cast<int>(BaseMethodDefaults_valueNames.size());
-          ++i
-          )
-        {
-          ParameterList defaultParams;
-          const std::string defaultTypeStr = BaseMethodDefaults_valueNames[i];
-          if (defaultTypeStr != BaseMethodDefaults_valueNames_none) {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)
-              ,Teuchos::Exceptions::InvalidParameterValue
-              ,"Error, the ML problem type \"" << defaultTypeStr
-              << "\' is not recongnised by ML!"
-              );
-            mlSettingsPL.setParameters(defaultParams);
-          }
-        }
-      }
-    }
+//     {
+//       ParameterList &mlSettingsPL = pl->sublist(
+//         MueLuSettings_name, false,
+//         "Sampling of the parameters directly accepted by ML\n"
+//         "This list of parameters is generated by combining all of\n"
+//         "the parameters set for all of the default problem types supported\n"
+//         "by MueLu.  Therefore, do not assume these parameters are at values that\n"
+//         "are reasonable to MueLu.  This list is just to give a sense of some of\n"
+//         "the parameters that MueLu accepts.  Consult MueLu documentation on how to\n"
+//         "set these parameters.  Also, you can print the parameter list after\n"
+//         "it is used and see what defaults where set for each default problem\n"
+//         "type.  Warning! the parameters in this sublist are currently *not*\n"
+//         "being validated by MueLu!"
+//         );
+//       //std::cout << "\nMueLuSettings doc before = " << pl->getEntryPtr(MueLuSettings_name)->docString() << "\n";
+//       { // Set of valid parameters (but perhaps not accetable values)
+//         for (
+//           int i = 0;
+//           i < implicit_cast<int>(BaseMethodDefaults_valueNames.size());
+//           ++i
+//           )
+//         {
+//           ParameterList defaultParams;
+//           const std::string defaultTypeStr = BaseMethodDefaults_valueNames[i];
+//           if (defaultTypeStr != BaseMethodDefaults_valueNames_none) {
+//             TEUCHOS_TEST_FOR_EXCEPTION(
+//               0!=ML_Epetra::SetDefaults(defaultTypeStr,defaultParams)
+//               ,Teuchos::Exceptions::InvalidParameterValue
+//               ,"Error, the ML problem type \"" << defaultTypeStr
+//               << "\' is not recongnised by ML!"
+//               );
+//             mlSettingsPL.setParameters(defaultParams);
+//           }
+//         }
+//       }
+//     }
 
     validPL = pl;
 
@@ -464,13 +445,11 @@ MueLuPreconditionerFactory::getValidParameters() const
 
 // Public functions overridden from Teuchos::Describable
 
-
 std::string MueLuPreconditionerFactory::description() const
 {
   std::ostringstream oss;
   oss << "Thyra::MueLuPreconditionerFactory";
   return oss.str();
 }
-
 
 } // namespace Thyra

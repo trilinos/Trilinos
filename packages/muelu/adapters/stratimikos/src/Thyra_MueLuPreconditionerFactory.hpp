@@ -3,13 +3,11 @@
 #ifndef THYRA_MUELU_PRECONDITIONER_FACTORY_DECL_HPP
 #define THYRA_MUELU_PRECONDITIONER_FACTORY_DECL_HPP
 
-
 #include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 
 namespace Thyra {
-
 
 /** \brief Concrete preconditioner factory subclass based on MueLu.
  *
@@ -27,7 +25,7 @@ public:
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.
    *
-   * This view will then be dynamically casted to <tt>Epetra_RowMatrix</tt>
+   * This view will then be dynamically casted to <tt>Epetra_CrsMatrix</tt>
    * before it is used.
    *
    * The default implementation used is <tt>EpetraOperatorViewExtractorBase</tt>.
