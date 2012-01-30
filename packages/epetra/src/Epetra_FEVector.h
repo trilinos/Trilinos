@@ -86,6 +86,30 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
                    int numVectors=1,
 		   bool ignoreNonLocalEntries=false);
 
+  //! Set multi-vector values from two-dimensional array.
+  /*!
+    \param In 
+    Epetra_DataAccess - Enumerated type set to Copy or View.
+    \param In 
+    Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+    \param In
+    A - Pointer to an array of double precision numbers.  The first vector starts at A.
+    The second vector starts at A+MyLDA, the third at A+2*MyLDA, and so on.
+    \param In
+    MyLDA - The "Leading Dimension", or stride between vectors in memory.
+    \warning This value refers to the stride on the calling processor.  Thus it is a
+    local quantity, not a global quantity.
+    \param In 
+    NumVectors - Number of vectors in multi-vector.
+
+    \return Integer error code, set to 0 if successful.
+
+    See Detailed Description section for further discussion.
+  */
+  Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
+		     double *A, int MyLDA, int NumVectors,
+        bool ignoreNonLocalEntries=false);
+  
   /** Copy constructor. */
   Epetra_FEVector(const Epetra_FEVector& source);
 
