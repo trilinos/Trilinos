@@ -1,5 +1,5 @@
-#ifndef PANZER_BCSTRATEGY_T_HPP
-#define PANZER_BCSTRATEGY_T_HPP
+#ifndef PANZER_BCSTRATEGY_IMPL_HPP
+#define PANZER_BCSTRATEGY_IMPL_HPP
 
 template <typename EvalT>
 panzer::BCStrategy<EvalT>::

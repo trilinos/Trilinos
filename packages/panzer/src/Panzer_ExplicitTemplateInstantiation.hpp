@@ -76,6 +76,29 @@
   PANZER_INSTANTIATE_TEMPLATE_CLASS_SGRESIDUAL_THREE_T(name,ExtraT) \
   PANZER_INSTANTIATE_TEMPLATE_CLASS_SGJACOBIAN_THREE_T(name,ExtraT)
 
+// THREE (two user defined) template arguments
+#define PANZER_INSTANTIATE_TEMPLATE_CLASS_RESIDUAL_THREE_2U_T(name,FirstExtraT,SecondExtraT) \
+  template class name<panzer::Traits::Residual,FirstExtraT,SecondExtraT>; 
+
+#define PANZER_INSTANTIATE_TEMPLATE_CLASS_JACOBIAN_THREE_2U_T(name,FirstExtraT,SecondExtraT) \
+  template class name<panzer::Traits::Jacobian,FirstExtraT,SecondExtraT>; 
+
+#ifdef HAVE_STOKHOS
+   #define PANZER_INSTANTIATE_TEMPLATE_CLASS_SGRESIDUAL_THREE_2U_T(name,FirstExtraT,SecondExtraT) \
+     template class name<panzer::Traits::SGResidual,FirstExtraT,SecondExtraT>; 
+   #define PANZER_INSTANTIATE_TEMPLATE_CLASS_SGJACOBIAN_THREE_2U_T(name,FirstExtraT,SecondExtraT) \
+     template class name<panzer::Traits::SGJacobian,FirstExtraT,SecondExtraT>; 
+#else
+   #define PANZER_INSTANTIATE_TEMPLATE_CLASS_SGRESIDUAL_THREE_2U_T(name,FirstExtraT,SecondExtraT) 
+   #define PANZER_INSTANTIATE_TEMPLATE_CLASS_SGJACOBIAN_THREE_2U_T(name,FirstExtraT,SecondExtraT) 
+#endif
+
+#define PANZER_INSTANTIATE_TEMPLATE_CLASS_THREE_2U_T(name,FirstExtraT,SecondExtraT) \
+  PANZER_INSTANTIATE_TEMPLATE_CLASS_RESIDUAL_THREE_2U_T(name,FirstExtraT,SecondExtraT) \
+  PANZER_INSTANTIATE_TEMPLATE_CLASS_JACOBIAN_THREE_2U_T(name,FirstExtraT,SecondExtraT) \
+  PANZER_INSTANTIATE_TEMPLATE_CLASS_SGRESIDUAL_THREE_2U_T(name,FirstExtraT,SecondExtraT) \
+  PANZER_INSTANTIATE_TEMPLATE_CLASS_SGJACOBIAN_THREE_2U_T(name,FirstExtraT,SecondExtraT)
+
 // FOUR (two user defined) template arguments
 #define PANZER_INSTANTIATE_TEMPLATE_CLASS_RESIDUAL_FOUR_T(name,FirstExtraT,SecondExtraT) \
   template class name<panzer::Traits::Residual, panzer::Traits,FirstExtraT,SecondExtraT>; 
