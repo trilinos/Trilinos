@@ -1,3 +1,6 @@
+#ifndef PANZER_SG_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
+#define PANZER_SG_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
+
 #ifdef HAVE_STOKHOS
 
 #include "EpetraExt_BlockUtility.h"
@@ -233,5 +236,7 @@ getSGBlockMap() const
 }
 
 }
+
+#endif
 
 #endif

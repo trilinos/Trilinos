@@ -1,5 +1,5 @@
-#ifndef __Panzer_SGEpetraLinearObjFactory_hpp__
-#define __Panzer_SGEpetraLinearObjFactory_hpp__
+#ifndef __Panzer_SGEpetraLinearObjFactory_decl_hpp__
+#define __Panzer_SGEpetraLinearObjFactory_decl_hpp__
 
 #include "Panzer_config.hpp"
 #ifdef HAVE_STOKHOS
@@ -138,10 +138,6 @@ protected:
 };
 
 }
-
-#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
-#include "Panzer_SGEpetraLinearObjFactoryT.hpp"
-#endif
 
 #endif
 #endif
