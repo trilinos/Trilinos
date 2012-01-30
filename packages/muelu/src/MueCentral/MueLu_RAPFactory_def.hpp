@@ -6,6 +6,8 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Memory.hpp"
 
+#include "Xpetra_BlockedCrsOperator.hpp"
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -30,6 +32,10 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
+    typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass; // TODO move me
+
+    Monitor m(*this, "Computing Ac = RAP");
+
     std::ostringstream buf; buf << coarseLevel.GetLevelID();
     RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("RAP::Build_"+buf.str()));
     timer->start(true);
@@ -38,6 +44,36 @@ namespace MueLu {
     RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
     RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",AFact_.get());
 
+    const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);
+    if(bA!=Teuchos::null) {
+      RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
+      BuildRAPBlock(fineLevel,coarseLevel, R, A, P);
+    }
+    else {
+
+      if (implicitTranspose_) {
+        BuildRAPImplicit(fineLevel,coarseLevel,A,P);
+      } else {
+        // explicit version
+        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
+        BuildRAPExplicit(fineLevel,coarseLevel,R,A,P);
+      }
+    }
+
+    timer->stop();
+    MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
+
+    // call Build of all user-given transfer factories
+    std::vector<RCP<FactoryBase> >::const_iterator it;
+    for(it=TransferFacts_.begin(); it!=TransferFacts_.end(); it++) {
+      GetOStream(Runtime0, 0) << "Ac: call transfer factory " << (*it).get() << ": " << (*it)->description() << std::endl;
+      (*it)->CallBuild(coarseLevel);
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPExplicit(Level &fineLevel, Level &coarseLevel, const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const {
+    std::ostringstream buf; buf << coarseLevel.GetLevelID();
     RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P_"+buf.str()));
     apTimer->start(true);
     RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,P,false);
@@ -46,43 +82,43 @@ namespace MueLu {
     //std::string filename="AP.dat";
     //Utils::Write(filename,AP);
 
-    Monitor m(*this, "Computing Ac = RAP");
+    RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP_"+buf.str()));
+    rapTimer->start(true);
+    RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
+    rapTimer->stop();
+    MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
 
-    RCP<Operator> RAP;
-    if (implicitTranspose_) {
-      //RCP<Operator> RA = Utils::TwoMatrixMultiply(P,true,A,false);
-      //filename = "PtA.dat";
-      //Utils::Write(filename,AP);
-
-      // avoid implicitTranspose for Epetra, since EpetraExt matrix-matrix multiplication
-      // with implicit transpose flags has bugs. This will hopefully be fixed, soon. (see bug #5363)
-      //if(RAP->getRangeMap()->lib() == Xpetra::UseEpetra)
-      GetOStream(Warnings0, 0) << "The implicitTranspose_ flag within RAPFactory for Epetra in parallel produces wrong results" << std::endl;
-
-      RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
-    } else {
-      RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
-      RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP_"+buf.str()));
-      rapTimer->start(true);
-      RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
-      rapTimer->stop();
-      MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
-
-    }
-      
     coarseLevel.Set("A", RAP, this);
+    GetOStream(Statistics0, 0) << "Ac (explicit): # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
+  }
 
-    timer->stop();
-    MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPImplicit(Level &fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P) const {
+    GetOStream(Warnings0, 0) << "The implicitTranspose_ flag within RAPFactory for Epetra in parallel produces wrong results" << std::endl;
+    RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,P,false);
+    RCP<Operator> RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
+    coarseLevel.Set("A", RAP, this);
+    GetOStream(Statistics0, 0) << "Ac (implicit): # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
+  }
 
-    GetOStream(Statistics0, 0) << "Ac: # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPBlock(Level &fineLevel, Level &coarseLevel, const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const {
+    typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass;
+    const RCP<BlockedCrsOperatorClass> bR = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(R);
+    const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);
+    const RCP<BlockedCrsOperatorClass> bP = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(P);
+    TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: input matrix A is not of type BlockedCrsOperator! error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(bP==Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: input matrix P is not of type BlockedCrsOperator! error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(bR==Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: input matrix R is not of type BlockedCrsOperator! error.");
+    if(implicitTranspose_) GetOStream(Warnings0, 0) << "No support for implicitTranspose_ flag within RAPFactory for blocked matrices" << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(bA->Cols()!=bP->Rows(), Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: block matrix dimensions do not match. error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows()!=bR->Cols(), Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: block matrix dimensions do not match. error.");
 
-    // call Build of all user-given transfer factories
-    std::vector<RCP<FactoryBase> >::const_iterator it;
-    for(it=TransferFacts_.begin(); it!=TransferFacts_.end(); it++) {
-      GetOStream(Runtime0, 0) << "Ac: call transfer factory " << (*it).get() << ": " << (*it)->description() << std::endl;
-      (*it)->CallBuild(coarseLevel);
-    }
+    RCP<BlockedCrsOperatorClass> bAP  = Utils::TwoMatrixMultiplyBlock(bA, false, bP, false, true, true);
+    RCP<BlockedCrsOperatorClass> bRAP = Utils::TwoMatrixMultiplyBlock(bR, false, bAP, false, true, true);
+
+    coarseLevel.Set("A", Teuchos::rcp_dynamic_cast<Operator>(bRAP), this);
+    GetOStream(Statistics0, 0) << "Ac (blocked): # global rows = " << bRAP->getGlobalNumRows() << ", estim. global nnz = " << bRAP->getGlobalNumEntries() << std::endl;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

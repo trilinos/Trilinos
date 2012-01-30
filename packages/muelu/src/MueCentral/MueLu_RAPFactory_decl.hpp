@@ -24,9 +24,6 @@ namespace MueLu {
   public:
     //! @name Constructors/Destructors.
     //@{
-    /*RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null)
-      : PFact_(PFact), RFact_(RFact),
-      implicitTranspose_(false);*/
 
     RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null);
 
@@ -71,6 +68,13 @@ namespace MueLu {
 
     //@}
   private:
+    //! @name internal Build methods.
+    //@{
+    void BuildRAPExplicit(Level &fineLevel, Level &coarseLevel, const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const;
+    void BuildRAPImplicit(Level &fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P) const;
+    void BuildRAPBlock(Level &fineLevel, Level &coarseLevel, const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const;
+    //@}
+
     //! P Factory
     RCP<FactoryBase> PFact_;
 
