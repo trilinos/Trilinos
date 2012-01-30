@@ -216,14 +216,12 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetCoarsestSolverFactory(const Teuchos::ParameterList & params) {
 #include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
 
-#if (defined(HAVE_MUELU_EPETRA) && defined( HAVE_MUELU_AMESOS)) || (defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2))
-  std::string type = "Amesos-Superlu"; // propose SuperLU as coarsest solver if AMESOS2 is enabled // TODO: check if SuperLU is available in Amesos2
+#if (defined(HAVE_MUELU_EPETRA) && defined( HAVE_MUELU_AMESOS)) || (defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)) // FIXME: test is wrong (ex: compiled with Epetra&&Tpetra&&Amesos2 but without Amesos => error running Epetra problem)
+  std::string type = ""; // use default defined by AmesosSmoother or Amesos2Smoother
 #else
-  std::string type = "symmetric Gauss-Seidel";     // use a sym Gauss-Seidel (with no damping) as fallback "coarse solver" (TODO: needs Ifpack(2))
+  std::string type = "symmetric Gauss-Seidel"; // use a sym Gauss-Seidel (with no damping) as fallback "coarse solver" (TODO: needs Ifpack(2))
 #endif
 
-  // TODO: what if neither KLU nor SuperLU are available??
-  
   if(params.isParameter("coarse: type")) type = params.get<std::string>("coarse: type");
 
   RCP<SmootherPrototype> smooProto;
@@ -270,7 +268,7 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
     smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
   } else if(type == "IFPACK") {
 #ifdef HAVE_MUELU_IFPACK
-    // TODO change to TrilnosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
+    // TODO change to TrilinosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
     ifpackType = params.get<std::string>("coarse: ifpack type");
     if(ifpackType == "ILU") {
       ifpackList.set<int>("fact: level-of-fill", (int)params.get<double>("coarse: ifpack level-of-fill"));
@@ -283,14 +281,13 @@ RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: MueLu compiled without Ifpack support");
 #endif // HAVE_MUELU_IFPACK
   } else if(type == "Amesos-Superlu") {
-    Teuchos::ParameterList coarsestSmooList;
-    smooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
+    smooProto = Teuchos::rcp( new DirectSolver("Superlu") );
   } else if(type == "Amesos-Superludist") {
-    Teuchos::ParameterList coarsestSmooList;
-    smooProto = Teuchos::rcp( new DirectSolver("Superludist", coarsestSmooList) );
+    smooProto = Teuchos::rcp( new DirectSolver("Superludist") );
   } else if(type == "Amesos-KLU") {
-    Teuchos::ParameterList coarsestSmooList;
-    smooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
+    smooProto = Teuchos::rcp( new DirectSolver("Klu") );
+  } else if(type == "") {
+    smooProto = Teuchos::rcp( new DirectSolver("") );
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown coarsest solver type. '" << type << "' not supported by MueLu.");
   }
