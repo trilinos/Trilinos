@@ -40,8 +40,9 @@ int main(int argc, char *argv[]) {
 
   std::string xmlFileName; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
   int muelu = true;        clp.setOption("muelu", &muelu,       "use muelu"); //TODO: bool instead of int
+  int ml    = false;       
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
-  int ml    = false;       clp.setOption("ml",    &ml,          "use ml");
+  clp.setOption("ml",    &ml,          "use ml");
 #endif
 
   switch (clp.parse(argc,argv)) {
