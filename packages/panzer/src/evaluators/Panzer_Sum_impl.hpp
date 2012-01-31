@@ -1,3 +1,6 @@
+#ifndef PANZER_SUM_IMPL_HPP
+#define PANZER_SUM_IMPL_HPP
+
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -53,3 +56,5 @@ PHX_EVALUATE_FIELDS(Sum,workset)
 //**********************************************************************
 
 }
+
+#endif

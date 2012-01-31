@@ -5,6 +5,7 @@
 #ifdef HAVE_STOKHOS
 
 #include "Panzer_SGEpetraLinearObjContainer.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
 
 // **********************************************************************
 // Specialization: SGResidual

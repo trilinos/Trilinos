@@ -5,6 +5,7 @@
 #ifdef HAVE_STOKHOS
 
 #include "Panzer_SGEpetraLinearObjContainer.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
 
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"

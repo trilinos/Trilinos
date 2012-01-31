@@ -124,4 +124,6 @@ aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const R
 
 }
 
+#include "Panzer_ResponseFunctional_AggregatorSG_impl.hpp"
+
 #endif

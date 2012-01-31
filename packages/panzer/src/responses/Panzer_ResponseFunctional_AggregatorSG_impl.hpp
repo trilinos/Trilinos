@@ -3,6 +3,8 @@
 
 #include "Panzer_config.hpp"
 
+#ifdef HAVE_STOKHOS
+
 #include <string>
 #include <vector>
 
@@ -124,5 +126,7 @@ aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const R
 }
 
 }
+
+#endif
 
 #endif
