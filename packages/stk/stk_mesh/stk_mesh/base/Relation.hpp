@@ -195,7 +195,7 @@ private:
 
     m_meshObj(obj),
     m_relationType(relation_type),
-    m_derivedType(obj->derived_type()) // Needs to be maintained seperately from the rank within m_raw_relation because it may be different!!
+    m_derivedType(get_derived_type(obj)) // Needs to be maintained seperately from the rank within m_raw_relation because it may be different!!
   {}
 
   sierra::Fmwk::MeshObj *getMeshObj() const {
