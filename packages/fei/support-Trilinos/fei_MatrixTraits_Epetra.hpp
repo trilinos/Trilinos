@@ -80,7 +80,7 @@ namespace fei {
         const Epetra_Map& erowmap = A->RowMap();
         const Epetra_Map& ecolmap = A->ColMap();
         int local_row = erowmap.LID(row);
-        int local_col = ecolmap.LID(row);
+        int local_col = ecolmap.LID(col);
     
         int* rowOffsets;
         int* colIndices;
