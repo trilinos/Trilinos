@@ -1,5 +1,5 @@
-#ifndef __Panzer_DOFManagerFactory_hpp__
-#define __Panzer_DOFManagerFactory_hpp__
+#ifndef __Panzer_DOFManagerFactory_decl_hpp__
+#define __Panzer_DOFManagerFactory_decl_hpp__
 
 #include "Panzer_UniqueGlobalIndexerFactory.hpp"
 
@@ -28,7 +28,5 @@ public:
 };
 
 }
-
-#include "Panzer_DOFManagerFactoryT.hpp"
 
 #endif

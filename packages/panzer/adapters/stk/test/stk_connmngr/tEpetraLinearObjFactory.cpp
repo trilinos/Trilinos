@@ -28,12 +28,6 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
-#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
-#include "Panzer_EpetraLinearObjFactoryT.hpp" // explicitly include this file
-
-template class panzer::EpetraLinearObjFactory<panzer::Traits,char>;
-#endif
-
 namespace panzer_stk {
 
 Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)

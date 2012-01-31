@@ -1,10 +1,10 @@
 #include "Panzer_config.hpp"
 
-#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
 #include "Panzer_Traits.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
-#include "Panzer_EpetraLinearObjFactoryT.hpp"
+#include "Panzer_EpetraLinearObjFactory_decl.hpp"
+#include "Panzer_EpetraLinearObjFactory_impl.hpp"
 
 template class panzer::EpetraLinearObjFactory<panzer::Traits,int>;
 template class panzer::EpetraLinearObjFactory<panzer::Traits,short>;

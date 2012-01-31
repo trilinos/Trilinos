@@ -1,3 +1,6 @@
+#ifndef PANZER_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
+#define PANZER_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
+
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
 #include "Epetra_MultiVector.h"
@@ -433,3 +436,5 @@ const Teuchos::RCP<const Epetra_Comm> EpetraLinearObjFactory<Traits,LocalOrdinal
 }
 
 }
+
+#endif

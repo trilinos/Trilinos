@@ -1,5 +1,5 @@
-#ifndef __Panzer_EpetraLinearObjFactory_hpp__
-#define __Panzer_EpetraLinearObjFactory_hpp__
+#ifndef __Panzer_EpetraLinearObjFactory_decl_hpp__
+#define __Panzer_EpetraLinearObjFactory_decl_hpp__
 
 #include <map>
 
@@ -170,9 +170,5 @@ protected:
 };
 
 }
-
-#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
-#include "Panzer_EpetraLinearObjFactoryT.hpp"
-#endif
 
 #endif

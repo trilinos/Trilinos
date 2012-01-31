@@ -1,3 +1,6 @@
+#ifndef PANZER_DOF_MANAGER_IMPL_HPP
+#define PANZER_DOF_MANAGER_IMPL_HPP
+
 // FEI includes
 #include "fei_Factory_Trilinos.hpp"
 
@@ -638,3 +641,5 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vec
 ///////////////////////////////////////////////////////////////////////////
 
 }
+
+#endif

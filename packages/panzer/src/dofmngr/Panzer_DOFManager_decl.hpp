@@ -1,5 +1,5 @@
-#ifndef __Panzer_DOFManager_hpp__
-#define __Panzer_DOFManager_hpp__
+#ifndef __Panzer_DOFManager_decl_hpp__
+#define __Panzer_DOFManager_decl_hpp__
 
 #include <map>
 
@@ -416,9 +416,5 @@ protected:
 };
 
 }
-
-#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
-#include "Panzer_DOFManagerT.hpp"
-#endif
 
 #endif

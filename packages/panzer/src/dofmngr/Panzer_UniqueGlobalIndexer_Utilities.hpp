@@ -1,5 +1,5 @@
-#ifndef __Panzer_UniqueGlobalIndexer_Utilities_hpp__
-#define __Panzer_UniqueGlobalIndexer_Utilities_hpp__
+#ifndef __Panzer_UniqueGlobalIndexer_Utilities_decl_hpp__
+#define __Panzer_UniqueGlobalIndexer_Utilities_decl_hpp__
 
 #include <map>
 #include <string>
@@ -173,6 +173,6 @@ private:
 
 } // end namspace panzer
 
-#include "Panzer_UniqueGlobalIndexer_UtilitiesT.hpp"
+#include "Panzer_UniqueGlobalIndexer_Utilities_impl.hpp"
 
 #endif

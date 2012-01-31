@@ -8,7 +8,7 @@
 #include <vector>
 #include <set>
 
-#include "dofmngr/Panzer_DOFManager.hpp"
+#include "Panzer_DOFManager.hpp"
 
 // include some intrepid basis functions
 // 2D basis 

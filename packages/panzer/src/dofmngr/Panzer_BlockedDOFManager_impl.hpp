@@ -1,3 +1,6 @@
+#ifndef PANZER_BLOCKED_DOF_MANAGER_IMPL_HPP
+#define PANZER_BLOCKED_DOF_MANAGER_IMPL_HPP
+
 #include <map>
 
 #include "Panzer_GeometricAggFieldPattern.hpp"
@@ -718,3 +721,5 @@ int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getNumFieldBlocks() const
 ///////////////////////////////////////////////////////////////////////////
 
 }
+
+#endif

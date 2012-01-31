@@ -1,3 +1,8 @@
+#ifndef PANZER_DOF_MANAGER_FACTORY_IMPL_HPP
+#define PANZER_DOF_MANAGER_FACTORY_IMPL_HPP
+
+#include "Panzer_DOFManager.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 
 namespace panzer {
 
@@ -68,3 +73,5 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
 }
 
 }
+
+#endif

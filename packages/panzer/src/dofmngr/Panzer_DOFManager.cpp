@@ -1,10 +1,9 @@
 #include "Panzer_config.hpp"
 
-// build it just for fun
-#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
-#include "Panzer_DOFManager.hpp"
-#include "Panzer_DOFManagerT.hpp"
+#include "Panzer_DOFManager_decl.hpp"
+#include "Panzer_DOFManager_impl.hpp"
 
 template class panzer::DOFManager<int,long int>;
 template class panzer::DOFManager<int,int>;
