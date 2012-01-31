@@ -1,5 +1,5 @@
 
-// #include <Kokkos_ProductTensor.hpp>
+#include <Kokkos_ProductTensor.hpp>
 
 #include <Kokkos_SymmetricDiagonalSpec.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
@@ -9,15 +9,15 @@
 #include <Kokkos_Host.hpp>
 
 #include <Kokkos_Host_macros.hpp>
-// #include <impl/Kokkos_ProductTensor_macros.hpp>
+#include <impl/Kokkos_ProductTensor_macros.hpp>
 #include <impl/Kokkos_SymmetricDiagonalSpec_macros.hpp>
 #include <impl/Kokkos_BlockCrsMatrix_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
 
 //
 
-// #include <TestSparseProductTensor.hpp>
 #include <TestBlockCrsMatrix.hpp>
+#include <TestTensorCrsMatrix.hpp>
 
 int mainHost()
 {
@@ -36,6 +36,11 @@ int mainHost()
   unit_test::test_block_crs_matrix<Kokkos::Host>( 11 , 8 );
   unit_test::test_block_crs_matrix<Kokkos::Host>( 12 , 10 );
   unit_test::test_block_crs_matrix<Kokkos::Host>( 13 , 10 );
+
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host>( 1 , 2 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host>( 1 , 5 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host>( 2 , 1 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host>( 5 , 1 );
 
   Kokkos::Host::finalize();
 

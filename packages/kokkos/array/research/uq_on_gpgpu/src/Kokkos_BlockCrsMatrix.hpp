@@ -57,15 +57,16 @@ namespace Kokkos {
  *  Vectors are conformally stored as
  *    MultiVector( block.dimension() , m_graph.row_count() )
  */
-template< template < class > class BlockSpec , typename ValueType , class Device >
+template< class BlockSpec , typename ValueType , class Device >
 class BlockCrsMatrix {
 public:
   typedef Device     device_type ;
   typedef ValueType  value_type ;
+  typedef BlockSpec  block_spec ;
 
   MultiVector< value_type, device_type >  values ;
   CrsMap< device_type >                   graph ;
-  BlockSpec< device_type >                block ;
+  block_spec                              block ;
 };
 
 namespace Impl {
@@ -75,7 +76,7 @@ class Multiply ;
 
 }
 
-template< template< class > class BlockSpec ,
+template< class BlockSpec ,
           typename MatrixValueType ,
           typename VectorValueType ,
           class Device >

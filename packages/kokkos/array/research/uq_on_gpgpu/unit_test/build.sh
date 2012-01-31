@@ -58,7 +58,7 @@ then
 
   HWLOC_LIB_PATH="${HAVE_HWLOC}/lib"
 
-  echo "LD_LIBRARY_PATH must include ${HWLOC_LIBRARY_PATH}"
+  echo "LD_LIBRARY_PATH must include ${HWLOC_LIB_PATH}"
 
   CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/Kokkos_Host_hwloc.cpp"
   LIB="${LIB} -L${HWLOC_LIB_PATH} -lhwloc"
