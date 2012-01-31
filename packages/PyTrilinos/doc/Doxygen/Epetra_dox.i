@@ -14,7 +14,7 @@ For Epetra_BlockMap objects, a Epetra_Directory object must be created
 to allow referencing of non-local elements. The Epetra_BasicDirectory
 produces and contains a uniform linear Epetra_BlockMap and a ProcList_
 allowing blocks of non-local elements to be accessed by dereferencing
-throught the Epetra_BasicDirectory.
+through the Epetra_BasicDirectory.
 
 This class currently has one constructor, taking a Epetra_BlockMap
 object.
@@ -1213,7 +1213,7 @@ and returns the local index (in LIDList) of the GID on that processor.
 
 If a GID is present on more than one processor, the lowest rank
 processor ID is used, as is the LID for that processor. If a GID is
-not present on any processor, the correspoding PID will return as -1.
+not present on any processor, the corresponding PID will return as -1.
 ";
 
 %feature("docstring")  Epetra_BlockMap::RemoteIDList "int
@@ -3020,9 +3020,12 @@ RowMap().PointSameAs(newmap)==true ";
 Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap &newmap)
 
 Replaces the current ColMap with the user-specified map object, but
-only if currentmap->PointSameAs(newmap) is true. This is a collective
+only if no entries have been inserted into the graph yet (both
+IndicesAreLocal() and IndicesAreGlobal() are false) or
+currentmap->PointSameAs(newmap) is true. This is a collective
 function. Returns 0 if map is replaced, -1 if not.
 
+( IndicesAreLocal()==false && IndicesAreGlobal()==false) ||
 ColMap().PointSameAs(newmap)==true ";
 
 %feature("docstring")  Epetra_CrsGraph::ColMap "const
@@ -4536,9 +4539,12 @@ Epetra_CrsMatrix::ReplaceColMap(const Epetra_BlockMap &newmap)
 Replaces the current ColMap with the user-specified map object.
 
 Replaces the current ColMap with the user-specified map object, but
-only if currentmap->PointSameAs(newmap) is true. This is a collective
+only if no entries have been inserted into the matrix (both
+IndicesAreLocal() and IndicesAreGlobal() are false) or
+currentmap->PointSameAs(newmap) is true. This is a collective
 function. Returns 0 if map is replaced, -1 if not.
 
+( IndicesAreLocal()==false && IndicesAreGlobal()==false) ||
 ColMap().PointSameAs(newmap)==true ";
 
 %feature("docstring")  Epetra_CrsMatrix::ColMap "const Epetra_Map&
@@ -10591,6 +10597,54 @@ int *&sizes, int &len_import_objs, char *&import_objs)
 
 Do reverse post of buffer of export objects (can do other local work
 before executing Waits) ";
+
+/*  Attribute Accessor Methods  */
+
+%feature("docstring")  Epetra_MpiDistributor::NumReceives "int
+Epetra_MpiDistributor::NumReceives() const
+
+The number of procs from which we will receive data. ";
+
+%feature("docstring")  Epetra_MpiDistributor::NumSends "int
+Epetra_MpiDistributor::NumSends() const
+
+The number of procs to which we will send data. ";
+
+%feature("docstring")  Epetra_MpiDistributor::MaxSendLength "int
+Epetra_MpiDistributor::MaxSendLength() const
+
+Maximum number of values that this proc is sending to another single
+proc. ";
+
+%feature("docstring")  Epetra_MpiDistributor::TotalReceiveLength "int
+Epetra_MpiDistributor::TotalReceiveLength() const
+
+Total number of values that this proc is receiving from other procs.
+";
+
+%feature("docstring")  Epetra_MpiDistributor::ProcsFrom "const int*
+Epetra_MpiDistributor::ProcsFrom() const
+
+A list of procs sending values to this proc. ";
+
+%feature("docstring")  Epetra_MpiDistributor::ProcsTo "const int*
+Epetra_MpiDistributor::ProcsTo() const
+
+A list of procs to which this proc is sending values. ";
+
+%feature("docstring")  Epetra_MpiDistributor::LengthsFrom "const int*
+Epetra_MpiDistributor::LengthsFrom() const
+
+Number of values we're receiving from each proc.
+
+We will receive LengthsFrom[i] values from proc ProcsFrom[i]. ";
+
+%feature("docstring")  Epetra_MpiDistributor::LengthsTo "const int*
+Epetra_MpiDistributor::LengthsTo() const
+
+Number of values we're sending to each proc.
+
+We will send LengthsTo[i] values to procs ProcsTo[i]. ";
 
 /*  Print object to an output stream  */
 
