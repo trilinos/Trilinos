@@ -6,6 +6,10 @@
 typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Hierarchy;
 #endif
 
+#ifdef MUELU_HIERARCHYFACTORY_SHORT
+typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> HierarchyFactory;
+#endif
+
 #ifdef MUELU_SAPFACTORY_SHORT
 typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SaPFactory;
 #endif
@@ -110,6 +114,10 @@ typedef MueLu::SegregationAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,
 typedef MueLu::SegregationATransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SegregationATransferFactory;
 #endif
 
+#ifdef MUELU_REPARTITION_SHORT
+typedef MueLu::Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Repartition;
+#endif
+
 #ifdef MUELU_MLINTERPRETER_SHORT
 typedef MueLu::MLInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MLInterpreter;
 #endif
@@ -117,8 +125,4 @@ typedef MueLu::MLInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
-#endif
-
-#ifdef MUELU_REPARTITION_SHORT
-typedef MueLu::Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Repartition;
 #endif

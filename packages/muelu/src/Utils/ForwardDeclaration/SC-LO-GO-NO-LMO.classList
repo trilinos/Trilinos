@@ -5,6 +5,7 @@ FactoryManager
 GaussSeidelSmoother
 GenericRFactory
 Hierarchy
+HierarchyFactory
 #HierarchyHelpers
 #Ifpack2Smoother
 MergedSmoother
