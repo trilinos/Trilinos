@@ -62,26 +62,14 @@ COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_STK_AND_SEACAS_SUPPORT
   )
 
 # Explicit Template Instantiation
-## This should be removed in favor of tribits eti support
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
-  "PANZER_EXPLICIT_TEMPLATE_INSTANTIATION"
-  "Build with explicit template instantion enabled.  Defaults to ON."
-  ON )
-
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT "_decl.hpp")
 SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DEF_EXT "_impl.hpp")
 
-## Explicit instatiation support
-#TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION
-#  PANZER_HAVE_EXPLICIT_INSTANTIATION
-#  "Build Panzer with explicit instantiation enabled."
-#  OFF )
-
+## One day hope to add enabling evaluation types from configure flag
 #ADD_OPTION(${PACKAGE_NAME}_EXPLICIT_INSTANTIATION_EVALUATION_TYPES
 #  "Set the explicit instantiation evaluation types."
 #  "panzer::Traits::Residual 2 panzer::Traits::Jacobian 1" )
-
 #FILE(WRITE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ${DEPS_XML} )
 
 
