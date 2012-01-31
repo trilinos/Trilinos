@@ -83,6 +83,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   Amesos2.hpp
+  Amesos2_AbstractConcreteMatrixAdapter_def.hpp
   Amesos2_Control.hpp
   Amesos2_Factory.hpp
   Amesos2_FunctionMap.hpp
@@ -96,13 +97,16 @@ APPEND_SET(HEADERS
   Amesos2_MatrixAdapter_decl.hpp
   Amesos2_MatrixAdapter_def.hpp
   Amesos2_AbstractConcreteMatrixAdapter.hpp
+  Amesos2_ctassert.hpp
   Amesos2_ConcreteMatrixAdapter.hpp
   Amesos2_ConcreteMatrixAdapter_decl.hpp
   Amesos2_ConcreteMatrixAdapter_def.hpp
   Amesos2_MatrixHelper.hpp
+  Amesos2_MatrixTraits.hpp
   Amesos2_Meta.hpp
   Amesos2_MultiVecAdapter.hpp
   Amesos2_MultiVecAdapter_decl.hpp
+  Amesos2_MultiVecAdapter_def.hpp
   Amesos2_Solver.hpp
   Amesos2_Solver_decl.hpp
   Amesos2_SolverCore.hpp
@@ -115,6 +119,7 @@ APPEND_SET(HEADERS
   Amesos2_TpetraMultiVecAdapter_decl.hpp
   Amesos2_TpetraMultiVecAdapter_def.hpp
   Amesos2_TypeMap.hpp
+  Amesos2_TypeDecl.hpp
   Amesos2_Util.hpp
   Amesos2_Version.hpp
   )
