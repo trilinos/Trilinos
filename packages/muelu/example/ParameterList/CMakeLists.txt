@@ -22,12 +22,12 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     SOURCE_FILES ml_ParameterList.xml
     )
   
-  IF (${PACKAGE_NAME}_ENABLE_Amesos2)
-    XPETRA_ADD_TEST_TPETRA(MLCompatible "serial mpi" 1-4)
-  ENDIF()
+#   IF (${PACKAGE_NAME}_ENABLE_Amesos2)
+#     XPETRA_ADD_TEST_TPETRA(MLCompatible "serial mpi" 1-4)
+#   ENDIF()
   
-  IF (${PACKAGE_NAME}_ENABLE_Amesos)
-    XPETRA_ADD_TEST_EPETRA(MLCompatible "serial mpi" 1-4)
-  ENDIF()
+#   IF (${PACKAGE_NAME}_ENABLE_Amesos)
+#     XPETRA_ADD_TEST_EPETRA(MLCompatible "serial mpi" 1-4)
+#   ENDIF()
   
 ENDIF()
