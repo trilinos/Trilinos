@@ -31,6 +31,6 @@ namespace user_app {
 
 }
 
-#include "user_app_EquationSet_EnergyT.hpp"
+#include "user_app_EquationSet_Energy_impl.hpp"
 
 #endif

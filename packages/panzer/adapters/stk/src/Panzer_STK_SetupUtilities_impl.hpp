@@ -1,3 +1,6 @@
+#ifndef PANZER_STK_SETUP_UTILITIES_IMPL_HPP
+#define PANZER_STK_SETUP_UTILITIES_IMPL_HPP
+
 namespace panzer_stk {
 namespace workset_utils {
 
@@ -24,3 +27,5 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
 
 }
 }
+
+#endif

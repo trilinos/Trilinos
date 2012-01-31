@@ -8,10 +8,10 @@ SET(UNIT_TEST_DRIVER
 SET(SOURCES
     closure_model.cpp 
     user_app_ClosureModel_Factory.hpp
-    user_app_ClosureModel_FactoryT.hpp 
+    user_app_ClosureModel_Factory_impl.hpp 
     user_app_ClosureModel_Factory_TemplateBuilder.hpp
     user_app_ConstantModel.hpp
-    user_app_ConstantModelT.hpp
+    user_app_ConstantModel_impl.hpp
     ) 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

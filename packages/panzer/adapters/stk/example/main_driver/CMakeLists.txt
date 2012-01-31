@@ -14,7 +14,7 @@ SET(main_driver_SOURCES
   user_app_RythmosObserverFactory_Epetra.hpp
   user_app_RythmosObserver_EpetraToExodus.hpp
   Panzer_STK_ModelEvaluatorFactory_Epetra.hpp
-  Panzer_STK_ModelEvaluatorFactory_EpetraT.hpp
+  Panzer_STK_ModelEvaluatorFactory_Epetra_impl.hpp
   Panzer_STK_NOXObserverFactory.hpp
   Panzer_STK_RythmosObserverFactory.hpp
   )

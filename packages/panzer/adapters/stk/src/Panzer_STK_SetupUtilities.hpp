@@ -138,6 +138,6 @@ void getSideElements(const panzer_stk::STK_Interface & mesh,
 }
 }
 
-#include "Panzer_STK_SetupUtilitiesT.hpp"
+#include "Panzer_STK_SetupUtilities_impl.hpp"
 
 #endif

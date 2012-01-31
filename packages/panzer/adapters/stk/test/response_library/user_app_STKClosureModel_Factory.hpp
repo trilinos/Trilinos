@@ -27,6 +27,6 @@ namespace user_app {
 
 }
 
-#include "user_app_STKClosureModel_FactoryT.hpp"
+#include "user_app_STKClosureModel_Factory_impl.hpp"
 
 #endif

@@ -49,6 +49,6 @@ protected:
 
 }
 
-#include "Example_PoissonEquationSetT.hpp"
+#include "Example_PoissonEquationSet_impl.hpp"
 
 #endif

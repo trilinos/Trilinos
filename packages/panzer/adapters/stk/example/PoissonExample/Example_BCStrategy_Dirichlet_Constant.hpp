@@ -33,6 +33,6 @@ namespace Example {
 
 }
 
-#include "Example_BCStrategy_Dirichlet_ConstantT.hpp"
+#include "Example_BCStrategy_Dirichlet_Constant_impl.hpp"
 
 #endif

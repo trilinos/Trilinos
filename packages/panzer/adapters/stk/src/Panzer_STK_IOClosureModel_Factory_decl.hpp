@@ -1,5 +1,5 @@
-#ifndef PANZER_STK_IOCLOSURE_MODEL_FACTORY_HPP
-#define PANZER_STK_IOCLOSURE_MODEL_FACTORY_HPP
+#ifndef PANZER_STK_IOCLOSURE_MODEL_FACTORY_DECL_HPP
+#define PANZER_STK_IOCLOSURE_MODEL_FACTORY_DECL_HPP
 
 #include "Panzer_config.hpp"
 #include "Panzer_Traits.hpp"
@@ -67,9 +67,5 @@ namespace panzer_stk {
 		       PHX::FieldManager<panzer::Traits>& fm) const;
 
 }
-
-#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
-#include "Panzer_STK_IOClosureModel_FactoryT.hpp"
-#endif
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef __PANZER_STK_ScatterFields_HPP__
-#define __PANZER_STK_ScatterFields_HPP__
+#ifndef __PANZER_STK_ScatterFields_decl_HPP__
+#define __PANZER_STK_ScatterFields_decl_HPP__
 
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
@@ -9,6 +9,7 @@
 
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
+#include "Panzer_STK_Interface.hpp"
 
 namespace panzer_stk {
 
@@ -34,9 +35,7 @@ PHX_EVALUATOR_CLASS_END
 
 }
 
-// **************************************************************
-
-#include "Panzer_STK_ScatterFieldsT.hpp"
+#include "Panzer_STK_ScatterFields_impl.hpp"
 
 // **************************************************************
 #endif

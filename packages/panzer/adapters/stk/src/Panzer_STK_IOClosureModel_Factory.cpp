@@ -61,11 +61,12 @@ buildClosureModels(const std::string& model_id,
   return evaluators;
 }
 
-#ifdef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#include "Panzer_STK_IOClosureModel_FactoryT.hpp"
+#include "Panzer_STK_IOClosureModel_Factory_decl.hpp"
+#include "Panzer_STK_IOClosureModel_Factory_impl.hpp"
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer_stk::IOClosureModelFactory)
 

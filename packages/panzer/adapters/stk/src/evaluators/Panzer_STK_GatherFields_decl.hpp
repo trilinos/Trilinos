@@ -1,5 +1,5 @@
-#ifndef __PANZER_STK_GatherFields_HPP__
-#define __PANZER_STK_GatherFields_HPP__
+#ifndef __PANZER_STK_GatherFields_decl_HPP__
+#define __PANZER_STK_GatherFields_decl_HPP__
 
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
@@ -77,10 +77,6 @@ private:
 };
 
 }
-
-// **************************************************************
-
-#include "Panzer_STK_GatherFieldsT.hpp"
 
 // **************************************************************
 #endif

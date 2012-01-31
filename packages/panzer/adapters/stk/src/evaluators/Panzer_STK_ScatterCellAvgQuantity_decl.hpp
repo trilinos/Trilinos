@@ -1,5 +1,5 @@
-#ifndef __PANZER_STK_ScatterCellAvgQuantity_HPP__
-#define __PANZER_STK_ScatterCellAvgQuantity_HPP__
+#ifndef __PANZER_STK_ScatterCellAvgQuantity_decl_HPP__
+#define __PANZER_STK_ScatterCellAvgQuantity_decl_HPP__
 
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
@@ -40,12 +40,6 @@ PHX_EVALUATOR_CLASS(ScatterCellAvgQuantity)
 PHX_EVALUATOR_CLASS_END
 
 }
-
-// **************************************************************
-
-#ifndef PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
-#include "Panzer_STK_ScatterCellAvgQuantityT.hpp"
-#endif
 
 // **************************************************************
 #endif

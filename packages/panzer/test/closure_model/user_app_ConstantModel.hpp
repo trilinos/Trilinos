@@ -63,6 +63,6 @@ private:
 
 }
 
-#include "user_app_ConstantModelT.hpp"
+#include "user_app_ConstantModel_impl.hpp"
 
 #endif

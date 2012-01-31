@@ -27,6 +27,6 @@ public:
 
 }
 
-#include "Example_ClosureModel_FactoryT.hpp"
+#include "Example_ClosureModel_Factory_impl.hpp"
 
 #endif

@@ -181,6 +181,6 @@ buildPeriodicBC_Matcher(const std::string & left, const std::string & right, con
 
 } // end panzer_stk
 
-#include "Panzer_STK_PeriodicBC_MatcherT.hpp"
+#include "Panzer_STK_PeriodicBC_Matcher_impl.hpp"
 
 #endif

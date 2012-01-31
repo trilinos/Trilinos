@@ -26,6 +26,6 @@ PHX_EVALUATOR_CLASS_END
 
 }
 
-#include "user_app_ConvectionT.hpp"
+#include "user_app_Convection_impl.hpp"
 
 #endif

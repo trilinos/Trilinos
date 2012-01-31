@@ -1,3 +1,6 @@
+#ifndef PANZER_STK_GATHER_FIELDS_IMPL_HPP
+#define PANZER_STK_GATHER_FIELDS_IMPL_HPP
+
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
@@ -81,3 +84,5 @@ evaluateFields(typename Traits::EvalData workset)
       }
    }
 }
+
+#endif

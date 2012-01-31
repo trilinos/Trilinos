@@ -27,6 +27,6 @@ namespace user_app {
 
 }
 
-#include "user_app_ClosureModel_FactoryT.hpp"
+#include "user_app_ClosureModel_Factory_impl.hpp"
 
 #endif

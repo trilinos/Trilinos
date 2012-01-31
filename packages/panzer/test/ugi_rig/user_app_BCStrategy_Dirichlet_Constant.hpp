@@ -36,6 +36,6 @@ namespace user_app {
 
 }
 
-#include "user_app_BCStrategy_Dirichlet_ConstantT.hpp"
+#include "user_app_BCStrategy_Dirichlet_Constant_impl.hpp"
 
 #endif

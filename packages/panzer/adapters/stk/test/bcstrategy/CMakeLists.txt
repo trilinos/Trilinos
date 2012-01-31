@@ -11,7 +11,7 @@ SET(UNIT_TEST_DRIVER
 SET(SOURCES
     bcstrategy.cpp
     user_app_BCStrategy_Dirichlet_Constant.hpp
-    user_app_BCStrategy_Dirichlet_ConstantT.hpp
+    user_app_BCStrategy_Dirichlet_Constant_impl.hpp
     user_app_BCStrategy_Factory.hpp
     ) 
 

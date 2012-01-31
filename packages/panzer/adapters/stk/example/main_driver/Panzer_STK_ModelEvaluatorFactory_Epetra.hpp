@@ -101,6 +101,6 @@ namespace panzer_stk {
 
 }
 
-#include "Panzer_STK_ModelEvaluatorFactory_EpetraT.hpp"
+#include "Panzer_STK_ModelEvaluatorFactory_Epetra_impl.hpp"
 
 #endif

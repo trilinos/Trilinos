@@ -64,7 +64,7 @@ private:
 
 }
 
-#include "Panzer_STK_ParameterListCallbackT.hpp"
+#include "Panzer_STK_ParameterListCallback_impl.hpp"
 
 #endif // HAVE_TEKO
 
