@@ -445,7 +445,7 @@ returns false. ";
 If matrix is upper triangular, this query returns true, otherwise it
 returns false. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_BasicRowMatrix::NormInf "virtual double
 Epetra_BasicRowMatrix::NormInf() const
@@ -2786,7 +2786,7 @@ construction, or b) the MakeColMap function has been called. (Calling
 either of the FillComplete functions will result in MakeColMap being
 called.) ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_CrsGraph::NumMyRows "int
 Epetra_CrsGraph::NumMyRows() const
@@ -4378,7 +4378,7 @@ Epetra_CrsMatrix::NoDiagonal() const
 If matrix has no diagonal entries in global index space, this query
 returns true, otherwise it returns false. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_CrsMatrix::NormInf "double
 Epetra_CrsMatrix::NormInf() const
@@ -7949,7 +7949,7 @@ In:  - A fully-constructed Epetra_Operator object. ";
 
 Destructor. ";
 
-/*  Atribute set methods  */
+/*  Attribute set methods  */
 
 %feature("docstring")  Epetra_InvOperator::SetUseTranspose "int
 Epetra_InvOperator::SetUseTranspose(bool UseTranspose_in)
@@ -8011,7 +8011,7 @@ Epetra_InvOperator::NormInf() const
 
 Returns the infinity norm of the global matrix. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_InvOperator::Label "const char*
 Epetra_InvOperator::Label() const
@@ -12434,7 +12434,7 @@ Epetra_Operator::~Epetra_Operator()
 
 Destructor. ";
 
-/*  Atribute set methods  */
+/*  Attribute set methods  */
 
 %feature("docstring")  Epetra_Operator::SetUseTranspose "virtual int
 Epetra_Operator::SetUseTranspose(bool UseTranspose)=0
@@ -12500,7 +12500,7 @@ Epetra_Operator::NormInf() const =0
 
 Returns the infinity norm of the global matrix. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_Operator::Label "virtual const char*
 Epetra_Operator::Label() const =0
@@ -14212,7 +14212,7 @@ In:  x -The Epetra_Vector used for scaling this.
 
 Integer error code, set to 0 if successful. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_RowMatrix::Filled "virtual bool
 Epetra_RowMatrix::Filled() const =0
@@ -15354,7 +15354,7 @@ Epetra_SerialDenseOperator::~Epetra_SerialDenseOperator()
 
 Destructor. ";
 
-/*  Atribute set methods  */
+/*  Attribute set methods  */
 
 %feature("docstring")  Epetra_SerialDenseOperator::SetUseTranspose "virtual int Epetra_SerialDenseOperator::SetUseTranspose(bool
 UseTranspose)=0
@@ -15413,7 +15413,7 @@ double Epetra_SerialDenseOperator::NormInf() const =0
 
 Returns the infinity norm of the global matrix. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_SerialDenseOperator::Label "virtual
 const char* Epetra_SerialDenseOperator::Label() const =0
@@ -18350,7 +18350,7 @@ Epetra_VbrMatrix::NoDiagonal() const
 If matrix has no diagonal entries based on global row/column index
 comparisons, this query returns true, otherwise it returns false. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_VbrMatrix::NormInf "double
 Epetra_VbrMatrix::NormInf() const

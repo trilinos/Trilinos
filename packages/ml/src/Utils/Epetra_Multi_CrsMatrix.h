@@ -58,7 +58,7 @@ public:
   virtual ~Epetra_Multi_CrsMatrix();
   //@}
   
-  //! @name Atribute set methods
+  //! @name Attribute set methods
   //@{ 
  
   //! Sets use transpose (not implemented).
@@ -95,7 +95,7 @@ public:
   
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 
   //! Returns the infinity norm (not implemented).

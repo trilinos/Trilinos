@@ -17,6 +17,10 @@
 extern "C" {
 #endif
 
+/* macros for routines */
+#define max(a, b) ((a) < (b) ? (b) : (a))
+#define min(a, b) ((a) > (b) ? (b) : (a))
+#define sign(x)   ((x) >= 0 ? 1.0 : -1.0)
 
 /* This software was developed by Bruce Hendrickson and Robert Leland   *
  * at Sandia National Laboratories under US Department of Energy        *
@@ -162,8 +166,8 @@ int Zoltan_RIB_inertial3d(
      tensor[0][1] = tensor[1][0] = xyt;
      tensor[0][2] = tensor[2][0] = xzt;
      tensor[1][2] = tensor[2][1] = yzt;
-     evals3(tensor, &res, &res, &eval);
-     eigenvec3(tensor, eval, evec, &res);
+     Zoltan_evals3(tensor, &res, &res, &eval);
+     Zoltan_eigenvec3(tensor, eval, evec, &res);
 
      /* Calculate value to sort/split on for each cell. */
      /* This is inner product with eigenvector. */
@@ -176,7 +180,7 @@ int Zoltan_RIB_inertial3d(
 }
 
 /* Find eigenvalues of 3x3 symmetric system by solving cubic. */
-void evals3(
+void Zoltan_evals3(
      double H[3][3],            /* 3x3 sym matrix for lowest eigenvalue */
      double *eval1,             /* smallest eigenvalue */
      double *eval2,             /* middle eigenvalue */
@@ -212,7 +216,7 @@ void evals3(
      a2 = (mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0]) +
           (mat[0][0] * mat[2][2] - mat[0][2] * mat[2][0]) +
           (mat[1][1] * mat[2][2] - mat[1][2] * mat[2][1]);
-     a3 = -determinant(mat);
+     a3 = -Zoltan_determinant(mat);
 
      if (a3 == 0) {
         root1 = 0;              /* Solve quadratic. */
@@ -270,7 +274,7 @@ void evals3(
 }
 
 
-double determinant(
+double Zoltan_determinant(
      double A[3][3]             /* matrix A */
 )
 {
@@ -285,7 +289,7 @@ double determinant(
 
 
 /* Find the eigenvector of symmetric 3x3 matrix w/ given eigenvalue. */
-void eigenvec3(
+void Zoltan_eigenvec3(
      double A[3][3],            /* matrix to find eigenvector of */
      double eval,               /* eigenvalue */
      double evec[3],            /* eigenvector returned */

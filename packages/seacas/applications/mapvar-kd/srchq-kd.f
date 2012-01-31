@@ -138,16 +138,16 @@ c ... Calculate min/max extents of all points...
 C Build KD Tree
       if (idebug .ge. 2) then
         call excpus(t1)
-        write(nout, *) '	In kdBuildTree ', npts4
-        write(ntpout, *) '	In kdBuildTree ', npts4
+        write(nout, *) '        In kdBuildTree ', npts4
+        write(ntpout, *) '      In kdBuildTree ', npts4
       end if
 
       call kdbuildtree(xyzpts, npts4, ndim4)
 
       if (idebug .ge. 2) then
         call excpus(t2)
-        write(nout, *) '	Out of kdBuildTree', t2-t1
-        write(ntpout, *) '	Out of kdBuildTree', t2-t1
+        write(nout, *) '        Out of kdBuildTree', t2-t1
+        write(ntpout, *) '      Out of kdBuildTree', t2-t1
       end if
 C
 C LOOP OVER SURFACES AND SEARCH FOR POINTS WITHIN CAPTURE BOX

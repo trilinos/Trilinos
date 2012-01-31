@@ -58,6 +58,7 @@ public:
   std::string getWarningString(){return warning_stream.str();}
  
   long long Check_Block_BC_Sets();
+  long long Check_Blocks();
  
   virtual long long Rename_Block_BC_Sets(){return 0;};
 

@@ -10,5 +10,6 @@ mesh
       zmax = 2.0
       nz = 10
       bz = 2
+      by = 1
    end
 end

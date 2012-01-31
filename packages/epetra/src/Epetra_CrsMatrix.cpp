@@ -2174,7 +2174,7 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
           for(j=0; j<NumEntries; ++j) {
             Indices[j] = LCID(colMap.GID(Indices[j]));
           }
-	  ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
+	  ierr = ReplaceMyValues(ToRow, NumEntries, values, Indices);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }

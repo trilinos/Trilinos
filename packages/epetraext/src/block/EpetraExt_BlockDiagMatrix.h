@@ -98,7 +98,7 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
   //@}
 
 
-  //! @name Atribute set methods
+  //! @name Attribute set methods
   //@{ 
 
   //! SetUseTranspose - not implemented

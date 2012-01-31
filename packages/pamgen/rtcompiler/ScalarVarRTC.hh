@@ -36,7 +36,7 @@ class ScalarVar : public Variable
   }
 
   std::ostream& operator<<(std::ostream& os) const {
-    os << "ScalarVar:" << _name << "=" << _value;
+    os << _value;
     return os;
   }
 

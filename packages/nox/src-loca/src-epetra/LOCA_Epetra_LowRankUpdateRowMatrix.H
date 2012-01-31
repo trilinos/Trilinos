@@ -166,7 +166,7 @@ namespace LOCA {
 
       //@}
   
-      //@{ \name Atribute access functions
+      //@{ \name Attribute access functions
       
       /*! 
        * \brief If FillComplete() has been called, this query returns true, 

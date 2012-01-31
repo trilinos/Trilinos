@@ -71,8 +71,7 @@ SET( CTEST_PARALLEL_LEVEL "12" )
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
-#disabling Mesquite because of a build error when shared libs is turned on.
-SET(EXTRA_EXCLUDE_PACKAGES Mesquite STK Claps Zoltan2)
+SET(EXTRA_EXCLUDE_PACKAGES STK Claps Zoltan2)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"

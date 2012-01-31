@@ -44,23 +44,21 @@
 #ifndef KOKKOS_CRSMAP_HPP
 #define KOKKOS_CRSMAP_HPP
 
-#include <cstddef>
 #include <string>
-#include <utility>
-#include <iterator>
-#include <limits>
 #include <impl/Kokkos_forward.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
-#include <impl/Kokkos_ArrayBounds.hpp>
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
 /** \brief  Compressed row storage map.
  *
- *  one-to-one map ( I , J ) -> index
- *  where I in [ 0 .. N ) and J in [ 0 .. M_I )
- *  and 0 <= index < sum( M_I )
+ *  Define a range of entries for each row:
+ *    range(row).first <= entry <= range(row).second
+ *    where range(row).second == range(row+1).first
+ *
+ *  Optionally include a map of entry -> column defining
+ *    ( row , column(entry) )
  */
 template< class DeviceType ,
           typename SizeType = typename DeviceType::size_type >
@@ -68,36 +66,28 @@ class CrsMap {
 public:
   typedef DeviceType  device_type ;
   typedef SizeType    size_type ;
+  typedef CrsMap< size_type , void /* Host */ > HostMirror ;
 
   /*------------------------------------------------------------------*/
-  /** \brief  Domain of first index is [ 0 .. first_count() - 1 ] */
-  size_type first_count() const ;
+  /** \brief  Number of rows */
+  size_type row_count() const ;
 
-  /** \brief  Domain of second index is
-   *          [ 0 .. second_count(first) - 1 ]
-   */
-  template< typename iType >
-  size_type second_count( const iType & first ) const ;
-
-  /** \brief  Total number of values,
-   *          only available on the device.
-   */
-  size_type size() const ;
-
-  /*------------------------------------------------------------------*/
-  /** \brief  Map indices */
-  template< typename iType , typename jType >
-  size_type operator()( const iType & first , const jType & second ) const ;
+  /** \brief  End of row map */
+  size_type row_range_count() const ;
 
   typedef std::pair<size_type,size_type> range_type ;
 
-  /** \brief  Range of indices for a given 'first' index.
-   *
-   *    second_count(first) == range.second - range.first
-   *    operator()(first,0) == range.first ;
-   */
+  /** \brief  Range of entries for a given row. */
   template< typename iType >
-  range_type range( const iType & first ) const ;
+  range_type row_range( const iType & row ) const ;
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Has column mapping : entry -> column */
+  bool has_column() const ;
+
+  /** \brief  Column mapping : entry -> column */
+  template< typename iType >
+  size_type column( const iType & entry ) const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
@@ -128,55 +118,52 @@ public:
   bool operator != ( const CrsMap & ) const ;
 };
 
-//----------------------------------------------------------------------------
-
-namespace Impl {
-
-template< class DstType , class SrcType = DstType > class CreateCrsMap ;
-
-} // namespace Impl
+} // namespace Kokkos
 
 //----------------------------------------------------------------------------
-/** \brief  Create a CrsMap with the input row sizes.
- *
- *  Constructed array has the following properties:
- *
- *  first_count()  == std::distance( second_size_begin , second_size_end );
- *  second_count(first) == * iter
- *    where  iter = second_size_begin ; std::advance( iter , first );
- */
-template< class CrsMapType , typename IteratorType >
-typename Impl::CreateCrsMap< CrsMapType >::type
-create_labeled_crsmap( const std::string & label ,
-                       const IteratorType second_size_begin ,
-                       const IteratorType second_size_end )
+//----------------------------------------------------------------------------
+
+#include <impl/Kokkos_CrsMap_create.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+template< class CrsMapType , typename InputType >
+typename Impl::CreateCrsMap< CrsMapType , InputType >::type
+create_labeled_crsmap( const std::string & label , const InputType & input )
 {
-  // Verify the iterator type dereferences to an integer
-
-  typedef std::iterator_traits<IteratorType> traits ;
-  typedef typename traits::value_type int_type ;
-  enum { iterator_to_integer = std::numeric_limits<int_type>::is_integer };
-  enum { OK = Impl::StaticAssert< iterator_to_integer >::value };
-
-  return Impl::CreateCrsMap< CrsMapType >
-    ::create( label , second_size_begin , second_size_end );
+  return Impl::CreateCrsMap< CrsMapType , InputType >
+             ::create( label , input );
 }
 
-template< class CrsMapType , typename IteratorType >
-typename Impl::CreateCrsMap< CrsMapType >::type
-create_crsmap( const std::string & label ,
-               const IteratorType second_size_begin ,
-               const IteratorType second_size_end )
-{ return create_labeled_crsmap<CrsMapType>( std::string() , second_size_begin , second_size_end ); }
+template< class DeviceType , typename SizeType >
+typename CrsMap< DeviceType , SizeType >::HostMirror
+create_mirror( const CrsMap< DeviceType , SizeType > & input )
+{
+  typedef CrsMap< DeviceType , SizeType >     view_type ;
+  typedef typename view_type::HostMirror      host_view ;
+  typedef typename host_view::device_type     host_device ;
+  typedef typename host_device::memory_space  host_memory ;
+  typedef typename DeviceType::memory_space   memory ;
 
-template< class DstType , class SrcType >
-typename Impl::CreateCrsMap< DstType , SrcType >::type
-create_crsmap( const SrcType & src )
-{ return Impl::CreateCrsMap< DstType , SrcType >::create( src ); }
+  enum { optimize = Impl::SameType< memory , host_memory >::value &&
+#if defined( KOKKOS_MIRROR_VIEW_OPTIMIZE )
+                    KOKKOS_MIRROR_VIEW_OPTIMIZE
+#else
+                    false
+#endif
+       };
 
+  return Impl::CreateMirror< view_type , optimize >::create( input );
+}
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 } // namespace Kokkos
+
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

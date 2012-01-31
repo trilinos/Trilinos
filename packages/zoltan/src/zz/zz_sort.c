@@ -290,6 +290,38 @@ int  equal, larger;
 
 
 /* Sorting values in array list in increasing order. Criteria is int. */
+static void quickpart_list_inc_one_int (
+  int *list, int start, int end, int *equal, int *larger)
+{
+int i, key, change, parchange;
+
+  key = list ? list[(end+start)/2] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i] < key) {
+      change            = list[i];
+      list[i]           = list[*larger];
+      list[(*larger)++] = list[*equal];
+      list[(*equal)++]  = change;
+    }
+    else if (list[i] == key) {
+      list[i]           = list[*larger];
+      list[(*larger)++] = key;
+    }
+}
+
+void Zoltan_quicksort_list_inc_one_int (int* list, int start, int end)
+{
+int  equal, larger;
+
+  if (start < end) {
+    quickpart_list_inc_one_int (list, start, end, &equal, &larger);
+    Zoltan_quicksort_list_inc_one_int (list, start,  equal-1);
+    Zoltan_quicksort_list_inc_one_int (list, larger, end);
+  }
+}
+
 /* Also rearrange values in array parlist to match the new order of list. */
 static void quickpart_list_inc_int (
   int *list, int *parlist, int start, int end, int *equal, int *larger)

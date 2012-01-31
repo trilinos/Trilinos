@@ -68,7 +68,7 @@ namespace PAMGEN_NEVADA {
     //The following prevents remainder building up on last cut.
     long long local_split_size = inc_nels[split_direction];
     
-    if((dels[split_direction]%remaining_cuts[split_direction]) >= 1)local_split_size ++;
+    if((dels[split_direction]%remaining_cuts[split_direction]) > 1)local_split_size ++;
     
     
     split_value = lows[split_direction] + local_split_size;

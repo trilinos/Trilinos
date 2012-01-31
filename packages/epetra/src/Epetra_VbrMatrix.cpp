@@ -308,7 +308,7 @@ void Epetra_VbrMatrix::InitializeDefaults() { // Initialize all attributes that 
   // State variable for extracting block diagonal entries
   CurBlockDiag_ = -1; // Set to -1 to allow a simple sanity check when extracting entries
 
-  // Atributes that support the Epetra_RowMatrix and Epetra_Operator interfaces
+  // Attributes that support the Epetra_RowMatrix and Epetra_Operator interfaces
   RowMatrixRowMap_ = 0;
   RowMatrixColMap_ = 0;
   RowMatrixImporter_ = 0;
