@@ -315,7 +315,15 @@ namespace fei {
 
     int getOffset(int row, int col)
       {
-        return fei::MatrixTraits<T>::getOffset(matrix_.get(),row,col);
+        fei::SharedPtr<fei::MatrixGraph> mgraph = getMatrixGraph();
+        fei::SharedPtr<fei::VectorSpace> rowspace = mgraph->getRowSpace();
+        fei::SharedPtr<fei::VectorSpace> colspace = mgraph->getColSpace();
+        int row_index, col_index;
+        int nodeType = 0;//fix this!!! hard-coded 0
+        rowspace->getGlobalIndex(nodeType, row, row_index);
+        colspace->getGlobalIndex(nodeType, col, col_index);
+        
+        return fei::MatrixTraits<T>::getOffset(matrix_.get(),row_index,col_index);
       }
 
   private:
