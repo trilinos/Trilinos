@@ -18,6 +18,8 @@
 #include "Xpetra_CrsOperator.hpp"
 
 #include "MueLu_EpetraOperator.hpp"
+#include "MueLu_FactoryManager.hpp" //TMP
+#include "MueLu_RAPFactory.hpp" //TMP
 
 namespace {
 
@@ -106,6 +108,8 @@ void MueLuPreconditionerFactory::initializePrec(
   using Teuchos::get_optional_extra_data;
   using Teuchos::implicit_cast;
 
+  typedef Kokkos::DefaultNode::DefaultNodeType NO;
+  typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LMO;
 
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
@@ -190,9 +194,6 @@ void MueLuPreconditionerFactory::initializePrec(
     timer.start(true);
     // Create the initial preconditioner: DO NOT compute it yet
 
-    typedef Kokkos::DefaultNode::DefaultNodeType NO;
-    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LMO;
-
     // Turns a Epetra_CrsMatrix into a MueLu::Operator
     RCP<Epetra_CrsMatrix> epetraFwdCrsMatNonConst = rcp_const_cast<Epetra_CrsMatrix>(epetraFwdCrsMat); // !! TODO: MueLu interface should accept const matrix as input.
 
@@ -224,7 +225,12 @@ void MueLuPreconditionerFactory::initializePrec(
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     *out << "\nComputing the preconditioner ...\n";
   timer.start(true);
-  muelu_precOp->GetHierarchy()->Setup();
+
+  MueLu::FactoryManager<double, int, int, NO, LMO> M;                         // -
+  M.SetFactory("A", rcp(new MueLu::RAPFactory<double, int, int, NO, LMO>())); // TODO: to be remove, but will require some work
+  muelu_precOp->GetHierarchy()->Setup(M);                                     // - 
+  // Should be instead: muelu_precOp->GetHierarchy()->Setup();
+
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     OSTab(out).o() <<"=> Setup time = "<<timer.totalElapsedTime()<<" sec\n";
