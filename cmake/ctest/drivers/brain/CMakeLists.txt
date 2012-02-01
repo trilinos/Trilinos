@@ -33,6 +33,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   OPENMP_OPT
   ctest_linux_nightly_openmp_development_opt_brain.cmake
   CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
   TIMEOUT_MINUTES 180
 )
 
