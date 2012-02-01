@@ -13,6 +13,13 @@ TAGFILES += \
   $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/muelu-xpetra.tag=$(TRILINOS_HOME)/MueLu/muelu/xpetra/doc/html 
+#
+# Use MathJax for nice rescaling of LaTeX output. Needs a fairly recent version of doxygen.
+#
+#USE_MATHJAX            = YES
+# this path *must* be relative to muelu/doc/html
+#MATHJAX_RELPATH        = ../../../../../../../Software/mathjax-MathJax-f5cd294
+#
 
 #
 # Package options
