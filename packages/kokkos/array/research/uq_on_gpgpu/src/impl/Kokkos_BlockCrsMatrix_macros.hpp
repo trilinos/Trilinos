@@ -52,8 +52,7 @@
 namespace Kokkos {
 namespace Impl {
 
-template< template < class > class BlockSpec ,
-          typename MatrixValue , typename VectorValue >
+template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
   BlockCrsMatrix< BlockSpec , MatrixValue , KOKKOS_MACRO_DEVICE > ,
   Kokkos::MultiVector< VectorValue , KOKKOS_MACRO_DEVICE > ,

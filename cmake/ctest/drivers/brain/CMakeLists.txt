@@ -5,7 +5,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   ctest_linux_nightly_mpi_development_opt_gcc_4.6.1_brain.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
-  TIMEOUT_MINUTES 240
+  TIMEOUT_MINUTES 300
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -33,6 +33,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   OPENMP_OPT
   ctest_linux_nightly_openmp_development_opt_brain.cmake
   CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
   TIMEOUT_MINUTES 180
 )
 

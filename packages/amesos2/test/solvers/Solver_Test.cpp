@@ -423,7 +423,7 @@ struct solution_checker<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,No
 
     return Teuchos::compareFloatingArrays(ts_norms, "true_solution",
 					  gs_norms, "given_solution",
-					  0.005, *compare_fos);
+					  Teuchos::as<mag_t> (0.005), *compare_fos);
   }
 };
 
