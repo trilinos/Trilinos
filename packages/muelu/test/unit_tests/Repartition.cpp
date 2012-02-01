@@ -5,6 +5,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 
 #include "MueLu_Repartition.hpp"
+#include "MueLu_Zoltan.hpp"
 
 #define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include "MueLu_GalleryUtils.hpp"
@@ -12,6 +13,7 @@
 #include "Xpetra_VectorFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_ExportFactory.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -144,9 +146,15 @@ namespace MueLuTests {
 
     partitionThisDofBelongsTo = Teuchos::null;
 
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
+    // This test uses a made up partitioning  that is given via Level to Repartition.  It must be
+    // associated with an instance of the ZoltanInterface so that it can be found inside
+    // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(3));
+    level.Request("partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
+    RCP<Repartition> repart = rcp(new Repartition(zoltan));
 
-    RCP<Repartition> repart = rcp(new Repartition());
     GO myPartitionNumber;
     Array<int> partitionOwners;
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
@@ -270,9 +278,15 @@ namespace MueLuTests {
 
     partitionThisDofBelongsTo = Teuchos::null;
 
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
+    // This test uses a made up partitioning  that is given via Level to Repartition.  It must be
+    // associated with an instance of the ZoltanInterface so that it can be found inside
+    // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(3));
+    level.Request("partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
+    RCP<Repartition> repart = rcp(new Repartition(zoltan));
 
-    RCP<Repartition> repart = rcp(new Repartition());
     GO myPartitionNumber;
     Array<int> partitionOwners;
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
@@ -388,9 +402,15 @@ namespace MueLuTests {
 
     partitionThisDofBelongsTo = Teuchos::null;
 
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
+    // This test uses a made up partitioning  that is given via Level to Repartition.  It must be
+    // associated with an instance of the ZoltanInterface so that it can be found inside
+    // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(3));
+    level.Request("partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
+    RCP<Repartition> repart = rcp(new Repartition(zoltan));
 
-    RCP<Repartition> repart = rcp(new Repartition());
     GO myPartitionNumber;
     Array<int> partitionOwners;
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
@@ -506,9 +526,15 @@ namespace MueLuTests {
 
     partitionThisDofBelongsTo = Teuchos::null;
 
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
+    // This test uses a made up partitioning  that given via Level to Repartition.  It must be
+    // associated with an instance of the ZoltanInterface so that it can be found inside
+    // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(3));
+    level.Request("partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
+    RCP<Repartition> repart = rcp(new Repartition(zoltan));
 
-    RCP<Repartition> repart = rcp(new Repartition());
     GO myPartitionNumber;
     Array<int> partitionOwners;
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
@@ -624,10 +650,15 @@ namespace MueLuTests {
 
     partitionThisDofBelongsTo = Teuchos::null;
 
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
-
-    RCP<Repartition> repart = rcp(new Repartition());
-    level.Request("permMat",repart.get());  // request permutation matrix
+    // This test uses a made up partitioning  that is given via Level to Repartition.  It must be
+    // associated with an instance of the ZoltanInterface so that it can be found inside
+    // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(3));
+    level.Request("partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
+    RCP<Repartition> repart = rcp(new Repartition(zoltan));
+    level.Request("Permutation",repart.get());  // request permutation matrix
 
     repart->Build(level);
 
@@ -638,7 +669,7 @@ namespace MueLuTests {
     //               pid 2 does not own a partition
     //               pid 3 owns partition 0
     RCP<Operator> permMat;
-    level.Get("permMat",permMat,repart.get());
+    level.Get("Permutation",permMat,repart.get());
     RCP<Vector> result = VectorFactory::Build(permMat->getRangeMap(),false);
     permMat->apply(*decompositionAsScalar,*result,Teuchos::NO_TRANS,1,0);
     int thisPidFailed=-1;

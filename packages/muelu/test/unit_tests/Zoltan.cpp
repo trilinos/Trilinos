@@ -22,7 +22,8 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(comm));
+    GO numPartitions=99;
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(numPartitions));
     TEST_EQUALITY(zoltan != Teuchos::null, true);
 
   } //Constructor
@@ -98,9 +99,9 @@ namespace MueLuTests {
     RCP<MultiVector> XYZ = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map>("2D",rowMap,list);
     level.Set("coordinates",XYZ);
 
-    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(comm));
     LO numPartitions = comm->getSize();
-    zoltan->SetNumberOfPartitions(numPartitions);
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(numPartitions));
+    //zoltan->SetNumberOfPartitions(numPartitions);
     //zoltan->SetOutputLevel(0); //options are 0=none, 1=summary, 2=every pid prints
     zoltan->Build(level);
 
