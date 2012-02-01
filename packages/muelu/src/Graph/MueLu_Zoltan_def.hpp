@@ -15,16 +15,8 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact) : AFact_(AFact)
-  {
-
-    Zoltan_Initialize(0, NULL, &zoltanVersion_);
-    //TODO define zoltanComm_ as a subcommunicator?!;
-    comm_ = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    zoltanComm_ = comm_->getRawMpiComm();
-    zoltanObj_ = rcp( new Zoltan( (*zoltanComm_)() ) );  //extract the underlying MPI_Comm handle and create a Zoltan object
-    if (zoltanObj_==Teuchos::null) throw(Exceptions::RuntimeError("MueLu::Zoltan : Unable to create Zoltan data structure"));
-  } //ctor
+  ZoltanInterface(GO numPartitions, RCP<const FactoryBase> AFact) : numPartitions_(numPartitions), AFact_(AFact)
+  {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
@@ -38,18 +30,23 @@ namespace MueLu {
   SetNumberOfPartitions(GO const numPartitions)
   {
     numPartitions_ = numPartitions;
-    std::stringstream ss;
-    ss << numPartitions;
-    zoltanObj_->Set_Param("num_global_partitions",ss.str());
   } //SetNumberOfPartitions()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  Build(Level &level)
+  Build(Level &level) const
   {
+    RCP<Operator> A = level.Get< RCP<Operator> >("A",AFact_.get());
     // Tell Zoltan what kind of local/global IDs we will use.
     // In our case, each GID is two ints and there are no local ids.
     // One can skip this step if the IDs are just single ints.
+    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A->getRowMap()->getComm());
+    float zoltanVersion_;
+    Zoltan_Initialize(0, NULL, &zoltanVersion_);
+    //TODO define zoltanComm_ as a subcommunicator?!;
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm_ = mpiComm->getRawMpiComm();
+    RCP<Zoltan> zoltanObj_ = rcp( new Zoltan( (*zoltanComm_)() ) );  //extract the underlying MPI_Comm handle and create a Zoltan object
+    if (zoltanObj_==Teuchos::null) throw(Exceptions::RuntimeError("MueLu::Zoltan : Unable to create Zoltan data structure"));
     int rv;
     if ((rv=zoltanObj_->Set_Param("num_gid_entries", "1")) != ZOLTAN_OK )
       throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'num_gid_entries' returned error code " + Teuchos::toString(rv)));
@@ -58,9 +55,12 @@ namespace MueLu {
     if ( (rv=zoltanObj_->Set_Param("obj_weight_dim", "1") ) != ZOLTAN_OK )
       throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'obj_weight_dim' returned error code " + Teuchos::toString(rv)));
 
-    RCP<Operator> A = level.Get< RCP<Operator> >("A",AFact_.get());
+    std::stringstream ss;
+    ss << numPartitions_;
+    zoltanObj_->Set_Param("num_global_partitions",ss.str());
+
     RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("coordinates",MueLu::NoFactory::get());
-    problemDimension_ = XYZ->getNumVectors();
+    size_t problemDimension_ = XYZ->getNumVectors();
 
     zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,(void *) &*A);
     zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros,(void *) &*A);
@@ -95,10 +95,6 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition;
     if (newDecomp) {
       decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,false); //Don't bother initializing, as this will just be overwritten.
-      //TODO Right now, the new partition is numbered 0 ... n.  Will Zoltan let us used different partitioning
-      //numbers, e.g., the processor ID?  I can imagine cases where we'd like migrate to a nonconsecutive subset
-      //of processors.
-      //Answer -- no.   So, we'll have to look at make decisions here about which PIDs should be active.
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
       for (typename ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
         *i = mypid;
@@ -195,27 +191,6 @@ namespace MueLu {
     *ierr = ZOLTAN_OK;
 
   } //GetProblemGeometry
-
-  /*
-    void Build() {
-
-    if (Zoltan_LB_Partition(&*zoltanObj_, &new_decomp, &num_gid_entries, &num_lid_entries,
-    &num_imported, &import_gids,
-    &import_lids, &import_procs, &import_to_part,
-    &num_exported, &export_gids,
-    &export_lids, &export_procs, &export_to_part) == ZOLTAN_FATAL){
-    printf("fatal(8)  error returned from Zoltan_LB_Partition()\n");
-    return 0;
-    }
-
-    //cleanup
-    Zoltan_LB_Free_Part(&import_gids, &import_lids,
-    &import_procs, &import_to_part);
-    Zoltan_LB_Free_Part(&export_gids, &export_lids,
-    &export_procs, &export_to_part);
-
-    } //Build
-  */
 
 } //namespace MueLu
 

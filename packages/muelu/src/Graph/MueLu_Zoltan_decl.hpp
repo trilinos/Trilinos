@@ -12,7 +12,7 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
-#include "MueLu_BaseClass.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Zoltan_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
@@ -30,7 +30,7 @@ namespace MueLu {
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType,
             class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class ZoltanInterface : public BaseClass {
+  class ZoltanInterface : public SingleLevelFactoryBase {
 
     typedef double Scalar; // FIXME
 #undef MUELU_ZOLTAN_SHORT
@@ -42,7 +42,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    ZoltanInterface(RCP<const Teuchos::Comm<int> > const &comm, RCP<const FactoryBase> AFact = Teuchos::null);
+    ZoltanInterface(GO numPartitions, RCP<const FactoryBase> AFact = Teuchos::null);
 
     //! Destructor
     virtual ~ZoltanInterface() { }
@@ -61,7 +61,7 @@ namespace MueLu {
 
     //! @name Build methods.
     //@{
-    void Build(Level &level);
+    void Build(Level &level) const;
 
     //@}
 
@@ -111,13 +111,8 @@ namespace MueLu {
 
   private:
 
-    RCP<const Teuchos::MpiComm<int> > comm_;
-    RCP<const FactoryBase> AFact_;
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm_;
-    RCP<Zoltan> zoltanObj_;
-    float zoltanVersion_;
-    size_t problemDimension_;
     GO numPartitions_;
+    RCP<const FactoryBase> AFact_;
 
   };  //class ZoltanInterface
 
