@@ -93,6 +93,8 @@ namespace stk
   {
     namespace unit_tests 
     {
+      Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector);
+
 
 #define DO_TESTS 0
 #if DO_TESTS
@@ -142,12 +144,18 @@ namespace stk
             fixture.generate_mesh();
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-#if 0
+
             eMesh.reopen();
-            int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+            eMesh.addParallelInfoFields(true,true);
             eMesh.commit();
-#endif
+
+            stk::mesh::Selector boundarySelector_1(*eMesh.getNonConstPart("surface_1") );
+            stk::mesh::Selector boundarySelector_2(*eMesh.getNonConstPart("surface_2") );
+            stk::mesh::Selector boundarySelector_3(*eMesh.getNonConstPart("surface_3") );
+            stk::mesh::Selector boundarySelector_4(*eMesh.getNonConstPart("surface_4") );
+            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+
+            eMesh.populateParallelInfoFields(true,true,&boundarySelector);
 
             eMesh.printInfo("quad fixture",  2);
             eMesh.saveAs(input_files_loc+"quad_smooth.0.e");
@@ -163,13 +171,8 @@ namespace stk
                 data[1] += .3;
               }
 
-            eMesh.saveAs(output_files_loc+"quad_smooth.0_perturbed.e");
+            eMesh.saveAs(input_files_loc+"quad_smooth.0_perturbed.e");
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.getNonConstPart("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.getNonConstPart("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.getNonConstPart("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.getNonConstPart("surface_4") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
             if (p_size == 1)
               {
@@ -330,9 +333,9 @@ namespace stk
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
-        unsigned par_size_max = 1;
-
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        unsigned par_size_max = s_par_size_max;
+        
+        const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 2)
           if (p_size <= par_size_max)
@@ -350,12 +353,17 @@ namespace stk
             eMesh.printInfo("quad fixture",  2);
             eMesh.saveAs(input_files_loc+"quad_3_smooth.0.e");
 
+            eMesh.reopen();
+            eMesh.addParallelInfoFields(true,true);
+            eMesh.commit();
 
             stk::mesh::Selector boundarySelector_1(*eMesh.getNonConstPart("surface_1") );
             stk::mesh::Selector boundarySelector_2(*eMesh.getNonConstPart("surface_2") );
             stk::mesh::Selector boundarySelector_3(*eMesh.getNonConstPart("surface_3") );
             stk::mesh::Selector boundarySelector_4(*eMesh.getNonConstPart("surface_4") );
             stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+
+            eMesh.populateParallelInfoFields(true,true,&boundarySelector);
 
             const std::vector<stk::mesh::Bucket*> & buckets = eMesh.getBulkData()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
@@ -381,6 +389,15 @@ namespace stk
 
             eMesh.saveAs(input_files_loc+"quad_3_smooth.0_perturbed.e");
 
+            {
+              Mesquite::MsqError err;
+              Mesquite::MeshImpl *msqMesh = create_mesquite_mesh(&eMesh, &boundarySelector);
+              std::ostringstream vtk_file;
+              vtk_file << "par_original_quad_mesh." << p_size << "." << p_rank << ".vtk";
+              msqMesh->write_vtk(vtk_file.str().c_str(), err); 
+              if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
+            }
+
             //bool do_jacobi = true;
             //Mesquite::MsqDebug::enable(1);
             //Mesquite::MsqDebug::enable(2);
@@ -402,6 +419,15 @@ namespace stk
                 si.run(pmm, pmd);
               }
             eMesh.saveAs(output_files_loc+"quad_3_si_smooth.1.e");
+
+            {
+              Mesquite::MsqError err;
+              Mesquite::MeshImpl *msqMesh = create_mesquite_mesh(&eMesh, &boundarySelector);
+              std::ostringstream vtk_file;
+              vtk_file << "par_smoothed_quad_mesh." << p_size << "." << p_rank << ".vtk";
+              msqMesh->write_vtk(vtk_file.str().c_str(), err); 
+              if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
+            }
 
           }
       }
@@ -556,7 +582,7 @@ namespace stk
         unsigned num_elem=0;
         unsigned num_node=0;
         std::map<unsigned, int> local_id;
-        unsigned rank=eMesh->getParallelRank();
+        //unsigned rank=eMesh->getParallelRank();
         //unsigned psize=eMesh->getParallelSize();
 
         const std::vector<stk::mesh::Bucket*> & node_buckets = eMesh->getBulkData()->buckets( eMesh->node_rank() );
@@ -577,10 +603,8 @@ namespace stk
                   coords.push_back(coord[1]);
                   if (eMesh->getSpatialDim()==3) 
                     coords.push_back(coord[2]);
-
-                  if (node.identifier() == 151) 
-                    std::cout << "P[" << rank << "] id= " << node.identifier() << " ownrank = " 
-                              << node.owner_rank() << " fixed= " << is_fixed << std::endl;
+                  else
+                    coords.push_back(0.0);
 
                   gids.push_back(node.identifier());
                   pids.push_back(node.owner_rank());
@@ -615,8 +639,69 @@ namespace stk
 
         Mesquite::MsqError err;
         // FIXME - works for hexes only...
-        EntityTopology hex_topo = HEXAHEDRON;
-        Mesquite::MeshImpl *mesh = new Mesquite::MeshImpl(num_node, num_elem, hex_topo, 
+        EntityTopology topo = HEXAHEDRON;
+        const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*buckets[0]);
+        switch(topology->key) 
+          {
+          case shards::Triangle<3>::key:
+            topo = TRIANGLE;
+            break;
+          case shards::Quadrilateral<4>::key:
+            topo = QUADRILATERAL;
+            break;
+          case shards::Tetrahedron<4>::key:
+            topo = TETRAHEDRON;
+            break;
+          case shards::Hexahedron<8>::key:
+            topo = HEXAHEDRON;
+            break;
+          case shards::Wedge<6>::key:
+            topo = PRISM;
+            break;
+
+          case shards::Node::key:
+          case shards::Particle::key:
+          case shards::Line<2>::key:
+          case shards::Line<3>::key:
+          case shards::ShellLine<2>::key:
+          case shards::ShellLine<3>::key:
+          case shards::Beam<2>::key:
+          case shards::Beam<3>::key:
+      
+          case shards::Triangle<4>::key:
+          case shards::Triangle<6>::key:
+          case shards::ShellTriangle<3>::key:
+          case shards::ShellTriangle<6>::key:
+      
+          case shards::Quadrilateral<8>::key:
+          case shards::Quadrilateral<9>::key:
+          case shards::ShellQuadrilateral<4>::key:
+          case shards::ShellQuadrilateral<8>::key:
+          case shards::ShellQuadrilateral<9>::key:
+      
+          case shards::Tetrahedron<8>::key:
+          case shards::Tetrahedron<10>::key:
+          case shards::Tetrahedron<11>::key:
+      
+          case shards::Hexahedron<20>::key:
+          case shards::Hexahedron<27>::key:
+      
+          case shards::Pyramid<5>::key:
+          case shards::Pyramid<13>::key:
+          case shards::Pyramid<14>::key:
+      
+          case shards::Wedge<15>::key:
+          case shards::Wedge<18>::key:
+      
+          case shards::Pentagon<5>::key:
+          case shards::Hexagon<6>::key:
+          default:
+            throw std::runtime_error("unknown/unhandled topology in create_mesquite_mesh");
+            break;
+
+          }
+
+        Mesquite::MeshImpl *mesh = new Mesquite::MeshImpl(num_node, num_elem, topo, 
                                                           fixed_bool, &coords[0], &connectivity[0]);
 
         std::vector<Mesh::VertexHandle> vertices;
@@ -699,14 +784,7 @@ namespace stk
             Mesquite::MsqError err;
             Mesquite::MeshImpl *msqMesh = create_mesquite_mesh(&eMesh, &boundarySelector);
             std::ostringstream vtk_file;
-            if (p_size > 1)
-              {
-                vtk_file << "par_original_hex_mesh." << p_size << "." << p_rank << ".vtk";
-              }
-            else
-              {
-                vtk_file << "par_original_hex_mesh.1.0.vtk" ;
-              }
+            vtk_file << "par_original_hex_mesh." << p_size << "." << p_rank << ".vtk";
 
             msqMesh->write_vtk(vtk_file.str().c_str(), err); 
             if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
@@ -734,14 +812,7 @@ namespace stk
 
             msqMesh = create_mesquite_mesh(&eMesh, &boundarySelector);
             std::ostringstream vtk_file1;
-            if (p_size > 1)
-              {
-                vtk_file1 << "par_untangle_original_hex_mesh." << p_size << "." << p_rank << ".vtk";
-              }
-            else
-              {
-                vtk_file1 << "par_untangle_original_hex_mesh.1.0.vtk" ;
-              }
+            vtk_file1 << "par_untangle_original_hex_mesh." << p_size << "." << p_rank << ".vtk";
 
             msqMesh->write_vtk(vtk_file1.str().c_str(), err); 
             if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
