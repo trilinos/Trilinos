@@ -36,7 +36,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    Repartition();
+    Repartition(RCP<SingleLevelFactoryBase> loadBalancer=Teuchos::null, GO minRowsPerProcessor=1000, SC nnzMaxMinRatio=1.2, GO startLevel=1, GO minNnzPerProcessor=-1);
 
     //! Destructor.
     virtual ~Repartition();
@@ -46,6 +46,11 @@ namespace MueLu {
     //! @name Input
     //@{
 
+    /*! @brief Determines the data that Repartition needs, and the factories that generate that data.
+
+        If this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+        will fall back to the settings in FactoryManager.
+    */
     void DeclareInput(Level &currentLevel) const;
 
     //@}
@@ -72,8 +77,49 @@ namespace MueLu {
       @param[out] partitionOwner    An Array (fancy std::vector) such that the PID of the process that owns partition i is given by partitionOwner[i].
     */
     void DeterminePartitionPlacement(Level & currentLevel, GlobalOrdinal &myPartitionNumber, Array<int> &partitionOwner) const;
+  //! @name Get/Set methods.
+  //@{
+
+  /*! @brief Suppress any possible repartitioning until specified level.
+
+      Setting this to a very large number will prevent repartitioning from ever happening.
+  */
+  void SetStartLevel(int startLevel);
+
+  /*! @brief Set imbalance threshold, below which repartitioning is initiatied.
+  
+  Imbalance is measured by \f$\max_k{N_k} / min_k{N_k}\f$, where \f$N_k\f$ is the number of nonzeros in the local matrix on process \f$k\f$.
+  */
+  void SetImbalanceThreshold(Scalar threshold);
+
+  /*! @brief Set minimum allowable number of rows on any single process, below which repartitioning is initiated.
+      
+      This option takes precedence over SetMinNnzPerProcessor.
+  */
+  void SetMinRowsPerProcessor(GO threshold);
+
+  /*! @brief Set minimum allowable number of nonzeros on any single process, below which repartitioning is initiated.
+
+      This option is ignored if SetMinRowPerProcessor is set.
+  */
+
+  /*! @brief @todo Currently does nothing.
+  */
+  void SetMinNnzPerProcessor(GO threshold);
+
+  //@}
 
   private:
+    //! Load-balancing factory.
+    RCP<SingleLevelFactoryBase> loadBalancer_;
+    //! Minimum number of rows over all processes.  If any process falls below this, repartitioning is initiated.
+    GO     minRowsPerProcessor_;
+    //! Imbalance threshold, below which repartitioning is initiatied.  Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes.
+    Scalar nnzMaxMinRatio_;
+    //! First level at which repartitioning can possibly occur.  Repartitioning at finer levels is suppressed.
+    int    startLevel_;
+    //! Minimum number of nonzeros over all processes.  If any process falls below this, repartitioning is initiated.
+    GO     minNnzPerProcessor_;
 
   }; // class Repartition
 

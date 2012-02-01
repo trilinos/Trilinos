@@ -26,17 +26,28 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Repartition<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Repartition()
+  Repartition<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Repartition(RCP<SingleLevelFactoryBase> loadBalancer,
+                GO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, GO minNnzPerProcessor) :
+    loadBalancer_(loadBalancer),
+    minRowsPerProcessor_(minRowsPerProcessor),
+    nnzMaxMinRatio_(nnzMaxMinRatio),
+    startLevel_(startLevel),
+    minNnzPerProcessor_(minNnzPerProcessor)
   { }
+
+  //----------------------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Repartition<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~Repartition() {}
 
+  //----------------------------------------------------------------------
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Repartition<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    // TODO: declare input for factory
-    //currentLevel.DeclareInput(varName_,factory_,this);
+    currentLevel.DeclareInput("partition",loadBalancer_.get(),this);
   }
+
+  //----------------------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Repartition<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const {
@@ -44,15 +55,79 @@ namespace MueLu {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
 
+    //typedef Xpetra::Vector<GO,LO,GO,NO> GOVector; //TODO clean up the code below with this typedef
+
+    // ======================================================================================================
+    // Determine whether partitioning is needed.
+    // ======================================================================================================
+
+    bool doRepartition=0;
+    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A");
+    RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+    int mypid = comm->getRank();
+    //std::cout << "current level = " << currentLevel.GetLevelID() << ", startLevel=" << startLevel_
+    //          << ", minRowsPerProcessor=" << minRowsPerProcessor_ << ", nnzMaxMinRatio=" << nnzMaxMinRatio_
+    //          << ", startLevel=" << startLevel_ << ", minNnzPerProcessor=" << minNnzPerProcessor_ << std::endl;
+    Scalar imbalance;
+    GO minNumRows;
+    if (currentLevel.GetLevelID() >= startLevel_) {
+      if (minRowsPerProcessor_ > 0) {
+        //Check whether any row has too few rows
+        size_t numMyRows = A->getNodeNumRows();
+        GO maxNumRows;
+        maxAll(comm, (GO)numMyRows, maxNumRows);
+        minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
+        if (minNumRows < minRowsPerProcessor_) {
+          doRepartition=true; 
+        }
+        //std::cout << "minNumRows = " << minNumRows << std::endl;
+      }
+      //Check whether the number of nonzeros per process is imbalanced
+      size_t numMyNnz  = A->getNodeNumEntries();
+      GO maxNnz, minNnz;
+      maxAll(comm,(GO)numMyNnz,maxNnz);
+      //min nnz over all proc (disallow any processors with 0 nnz)
+      minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
+      imbalance = ((SC) maxNnz) / minNnz;
+      if (imbalance > nnzMaxMinRatio_)
+        doRepartition=true;
+      //std::cout << "imbalance = " << imbalance << std::endl;
+    } else {
+      if (mypid==0) {
+        std::cout << "No repartitioning necessary:" << std::endl;
+        std::cout << "    current level = " << currentLevel.GetLevelID()
+                  << ", first level where repartitioning can happen is "
+                  << startLevel_ << std::endl;
+      }
+      return;
+    }
+
+    if (!doRepartition) {
+      if (mypid==0) {
+        std::cout << "No repartitioning necessary:" << std::endl;
+        std::cout << "    nonzero imbalance = " << imbalance << ", max allowable = " << nnzMaxMinRatio_ << std::endl;
+        std::cout << "    min # rows per proc = " << minNumRows << ", min allowable = " << minRowsPerProcessor_
+                  << std::endl;
+      }
+      return;
+    }
+    
+    if (mypid == 0) {
+        std::cout << "Repartitioning necessary:" << std::endl;
+        std::cout << "    current level = " << currentLevel.GetLevelID()
+                  << ", first level where repartitioning can happen is "
+                  << startLevel_ << std::endl;
+        std::cout << "    nonzero imbalance = " << imbalance << ", max allowable = " << nnzMaxMinRatio_ << std::endl;
+        std::cout << "    min # rows per proc = " << minNumRows << ", min allowable = " << minRowsPerProcessor_
+                  << std::endl;
+    }
+
     // ======================================================================================================
     // Determine the global size of each partition.
     // ======================================================================================================
     // Length of vector "decomposition" is local number of DOFs.  Its entries are partition numbers each DOF belongs to.
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition");
-    RCP<const Teuchos::Comm<int> > comm = decomposition->getMap()->getComm();
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition", loadBalancer_.get());
     GO numPartitions = currentLevel.Get<GO>("number of partitions");
-
-    int mypid = comm->getRank();
 
     // Use a hashtable to record how many local rows belong to each partition.
     RCP<Teuchos::Hashtable<GO,GO> > hashTable;
@@ -330,7 +405,6 @@ namespace MueLu {
     }
 
     //load source vector with unpermuted GIDs.
-    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A");
     RCP<const Map> originalRowMap = A->getRowMap();
 
     //sanity check
@@ -364,7 +438,7 @@ namespace MueLu {
 
     permutationMatrix->fillComplete(A->getDomainMap(),targetMap);
 
-    currentLevel.Set<RCP<Operator> >("permMat",permutationMatrix, this);
+    currentLevel.Set<RCP<Operator> >("Permutation",permutationMatrix, this);
 
     /*
     sleep(1);comm->barrier();
@@ -378,7 +452,7 @@ namespace MueLu {
 
   } //Build
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  //----------------------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::DeterminePartitionPlacement(Level & currentLevel, GO &myPartitionNumber,
@@ -387,7 +461,7 @@ namespace MueLu {
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A");
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     GO numPartitions = currentLevel.Get<GO>("number of partitions");
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition");
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition", loadBalancer_.get());
     // Figure out how many nnz there are per row.
     RCP<Xpetra::Vector<GO,LO,GO,NO> > nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);
     ArrayRCP<GO> nnzPerRow;
@@ -558,6 +632,34 @@ namespace MueLu {
     partitionOwners = procWinnerConst(); //only works if procWinner is const ...
 
   } //DeterminePartitionPlacement
+
+  //----------------------------------------------------------------------
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::SetStartLevel(int startLevel) {
+    startLevel_ = startLevel;
+  }
+
+  //----------------------------------------------------------------------
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::SetImbalanceThreshold(Scalar threshold) {
+    nnzMaxMinRatio_ = threshold;
+  }
+
+  //----------------------------------------------------------------------
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::SetMinRowsPerProcessor(GO threshold) {
+    minRowsPerProcessor_ = threshold;
+  }
+
+  //----------------------------------------------------------------------
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::SetMinNnzPerProcessor(GO threshold) {
+    minNnzPerProcessor_ = threshold;
+  }
 
 } // namespace MueLu
 
