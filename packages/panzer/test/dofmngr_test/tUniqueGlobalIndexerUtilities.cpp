@@ -152,11 +152,11 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
    int uFieldNum = globalIndexer->getFieldNum("U");
    int tFieldNum = globalIndexer->getFieldNum("T");
 
-   Teuchos::RCP<Tpetra::Vector<int,std::size_t,int> > reducedFieldVector 
-         = panzer::buildGhostedFieldReducedVector(*globalIndexer);
+   Teuchos::RCP<Tpetra::Vector<int,int,int> > reducedFieldVector 
+         = panzer::buildGhostedFieldReducedVector<short,int,Kokkos::DefaultNode::DefaultNodeType>(*globalIndexer);
 
-   Tpetra::Vector<int,std::size_t,int> reducedUDataVector(getFieldMap(uFieldNum,*reducedFieldVector));
-   Tpetra::Vector<int,std::size_t,int> reducedTDataVector(getFieldMap(tFieldNum,*reducedFieldVector));
+   Tpetra::Vector<int,int,int> reducedUDataVector(getFieldMap(uFieldNum,*reducedFieldVector));
+   Tpetra::Vector<int,int,int> reducedTDataVector(getFieldMap(tFieldNum,*reducedFieldVector));
 
    TEST_EQUALITY(reducedUDataVector.getLocalLength(),8);
    TEST_EQUALITY(reducedTDataVector.getLocalLength(),4);
@@ -239,8 +239,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
    fillFieldContainer(globalIndexer->getFieldNum("U"),"block_1",*globalIndexer,dataU["block_1"]);
    fillFieldContainer(globalIndexer->getFieldNum("T"),"block_0",*globalIndexer,dataT["block_0"]);
 
-   Teuchos::RCP<Tpetra::MultiVector<int,std::size_t,int> > reducedUDataVector = atfv.getGhostedDataVector<int>("U",dataU);
-   Teuchos::RCP<Tpetra::MultiVector<int,std::size_t,int> > reducedTDataVector = atfv.getGhostedDataVector<int>("T",dataT);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,int> > reducedUDataVector = atfv.getGhostedDataVector<int>("U",dataU);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,int> > reducedTDataVector = atfv.getGhostedDataVector<int>("T",dataT);
 
    std::vector<int> ghostedFields_u(reducedUDataVector->getLocalLength());
    std::vector<int> ghostedFields_t(reducedTDataVector->getLocalLength());
@@ -316,8 +316,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
    fillFieldContainer(globalIndexer->getFieldNum("U"),"block_1",*globalIndexer,dataU["block_1"]);
    fillFieldContainer(globalIndexer->getFieldNum("T"),"block_0",*globalIndexer,dataT["block_0"]);
 
-   Teuchos::RCP<Tpetra::MultiVector<int,std::size_t,int> > reducedUDataVector = atfv.getDataVector<int>("U",dataU);
-   Teuchos::RCP<Tpetra::MultiVector<int,std::size_t,int> > reducedTDataVector = atfv.getDataVector<int>("T",dataT);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,int> > reducedUDataVector = atfv.getDataVector<int>("U",dataU);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,int> > reducedTDataVector = atfv.getDataVector<int>("T",dataT);
 
    std::vector<int> fields_u(reducedUDataVector->getLocalLength());
    std::vector<int> fields_t(reducedTDataVector->getLocalLength());
@@ -384,8 +384,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
    fillFieldContainer(globalIndexer->getFieldNum("U"),"block_1",*globalIndexer,dataU["block_1"],numCols);
    fillFieldContainer(globalIndexer->getFieldNum("T"),"block_0",*globalIndexer,dataT["block_0"],numCols);
 
-   Teuchos::RCP<Tpetra::MultiVector<int,std::size_t,int> > reducedUDataVector = atfv.getDataVector<int>("U",dataU);
-   Teuchos::RCP<Tpetra::MultiVector<int,std::size_t,int> > reducedTDataVector = atfv.getDataVector<int>("T",dataT);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,int> > reducedUDataVector = atfv.getDataVector<int>("U",dataU);
+   Teuchos::RCP<Tpetra::MultiVector<int,int,int> > reducedTDataVector = atfv.getDataVector<int>("T",dataT);
 
    TEST_EQUALITY(reducedUDataVector->getNumVectors(),numCols);
    TEST_EQUALITY(reducedTDataVector->getNumVectors(),numCols);

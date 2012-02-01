@@ -11,11 +11,11 @@
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> >
+Teuchos::RCP<Tpetra::Vector<int,int,GlobalOrdinalT,Node> >
 buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)
 {
-   typedef Tpetra::Map<std::size_t,GlobalOrdinalT,Node> Map;
-   typedef Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> IntVector;
+   typedef Tpetra::Map<int,GlobalOrdinalT,Node> Map;
+   typedef Tpetra::Vector<int,int,GlobalOrdinalT,Node> IntVector;
 
    std::vector<GlobalOrdinalT> indices;
    std::vector<std::string> blocks;
@@ -70,9 +70,9 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
                              std::vector<int> & fieldNumbers,
-                             const Teuchos::RCP<const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> > & reducedVec)
+                             const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,Node> > & reducedVec)
 {
-   typedef Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> IntVector;
+   typedef Tpetra::Vector<int,int,GlobalOrdinalT,Node> IntVector;
 
    Teuchos::RCP<const IntVector> dest = buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>(ugi,reducedVec);
 
@@ -81,13 +81,13 @@ void buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdin
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> >
+Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,Node> >
 buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                        const Teuchos::RCP<const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> > & reducedVec)
+                        const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,Node> > & reducedVec)
 {
-   typedef Tpetra::Map<std::size_t,GlobalOrdinalT,Node> Map;
-   typedef Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> IntVector;
-   typedef Tpetra::Import<std::size_t,GlobalOrdinalT,Node> Importer;
+   typedef Tpetra::Map<int,GlobalOrdinalT,Node> Map;
+   typedef Tpetra::Vector<int,int,GlobalOrdinalT,Node> IntVector;
+   typedef Tpetra::Import<int,GlobalOrdinalT,Node> Importer;
 
    // first step: get a reduced field number vector and build a map to 
    // contain the full field number vector
@@ -121,11 +121,11 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
 template <typename ScalarT,typename ArrayT,typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void updateGhostedDataReducedVector(const std::string & fieldName,const std::string blockId,
                                     const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                                    const ArrayT & data,Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> & dataVector)
+                                    const ArrayT & data,Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> & dataVector)
 {
-   typedef Tpetra::Map<std::size_t,GlobalOrdinalT,Node> Map;
-   typedef Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> IntVector;
-   typedef Tpetra::Import<std::size_t,GlobalOrdinalT,Node> Importer;
+   typedef Tpetra::Map<int,GlobalOrdinalT,Node> Map;
+   typedef Tpetra::Vector<int,int,GlobalOrdinalT,Node> IntVector;
+   typedef Tpetra::Import<int,GlobalOrdinalT,Node> Importer;
 
    TEUCHOS_TEST_FOR_EXCEPTION(!ugi.fieldInBlock(fieldName,blockId),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: field name = \""+fieldName+"\" is not in element block = \"" +blockId +"\"!");
@@ -179,10 +179,10 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
 /** Construct a map that only uses a certain field.
  */
 template <typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const Tpetra::Map<std::size_t,GlobalOrdinalT,Node> >
-getFieldMap(int fieldNum,const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> & fieldTVector)
+Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
+getFieldMap(int fieldNum,const Tpetra::Vector<int,int,GlobalOrdinalT,Node> & fieldTVector)
 {
-   Teuchos::RCP<const Tpetra::Map<std::size_t,GlobalOrdinalT,Node> > origMap = fieldTVector.getMap();
+   Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> > origMap = fieldTVector.getMap();
    std::vector<int> fieldVector(fieldTVector.getLocalLength());
    fieldTVector.get1dCopy(Teuchos::arrayViewFromVector(fieldVector));
 
@@ -192,8 +192,8 @@ getFieldMap(int fieldNum,const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Nod
          mapVector.push_back(origMap->getGlobalElement(i));
    }
 
-   Teuchos::RCP<Tpetra::Map<std::size_t,GlobalOrdinalT,Node> > finalMap 
-      = Teuchos::rcp(new Tpetra::Map<std::size_t,GlobalOrdinalT,Node>(
+   Teuchos::RCP<Tpetra::Map<int,GlobalOrdinalT,Node> > finalMap 
+      = Teuchos::rcp(new Tpetra::Map<int,GlobalOrdinalT,Node>(
                                 Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(mapVector),
                                 Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), origMap->getComm()));
 
@@ -211,7 +211,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 template <typename ScalarT,typename ArrayT>
-Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
+Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> >
 ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
 {
@@ -241,8 +241,8 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
       gh_reducedFieldMaps_[fieldNum] = reducedMap;
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> > finalReducedVec
-      = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node>(reducedMap,numCols));
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> > finalReducedVec
+      = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node>(reducedMap,numCols));
    for(std::size_t b=0;b<blockIds.size();b++) {
       std::string block = blockIds[b];
 
@@ -268,11 +268,11 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
       gh_fieldMaps_[fieldNum] = map;
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> > finalVec
-      = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node>(map,numCols));
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> > finalVec
+      = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node>(map,numCols));
 
    // do import from finalReducedVec
-   Tpetra::Import<std::size_t,GlobalOrdinalT,Node> importer(reducedMap,map);
+   Tpetra::Import<int,GlobalOrdinalT,Node> importer(reducedMap,map);
    finalVec->doImport(*finalReducedVec,importer,Tpetra::INSERT);
 
    return finalVec;
@@ -280,7 +280,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 template <typename ScalarT,typename ArrayT>
-Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
+Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> >
 ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    getDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
 {
@@ -288,7 +288,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    if(fieldVector_==Teuchos::null)
       buildFieldVector(*gh_fieldVector_);
 
-   Teuchos::RCP<const Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> > sourceVec
+   Teuchos::RCP<const Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> > sourceVec
          = getGhostedDataVector<ScalarT,ArrayT>(fieldName,data);
 
    // use lazy construction for each field
@@ -299,11 +299,11 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
       fieldMaps_[fieldNum] = destMap;
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> > destVec
-         = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node>(destMap,sourceVec->getNumVectors()));
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> > destVec
+         = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node>(destMap,sourceVec->getNumVectors()));
    
    // do import
-   Tpetra::Import<std::size_t,GlobalOrdinalT> importer(sourceVec->getMap(),destMap);
+   Tpetra::Import<int,GlobalOrdinalT> importer(sourceVec->getMap(),destMap);
    destVec->doImport(*sourceVec,importer,Tpetra::INSERT); 
 
    return destVec;
@@ -311,7 +311,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
-        buildFieldVector(const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> & source) const
+        buildFieldVector(const Tpetra::Vector<int,int,GlobalOrdinalT,Node> & source) const
 {
    // build (unghosted) vector and map
    std::vector<GlobalOrdinalT> indices;
@@ -322,7 +322,7 @@ void ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
                                 Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), ugi_->getComm()));
    Teuchos::RCP<IntVector> localFieldVector = Teuchos::rcp(new IntVector(destMap));
 
-   Tpetra::Import<std::size_t,GlobalOrdinalT> importer(source.getMap(),destMap);
+   Tpetra::Import<int,GlobalOrdinalT> importer(source.getMap(),destMap);
    localFieldVector->doImport(source,importer,Tpetra::INSERT);
 
    fieldVector_ = localFieldVector;

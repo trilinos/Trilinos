@@ -95,7 +95,7 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
       connManager_->getDofCoords(blockId,*fieldPattern,localCellIds,fieldData);
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<double,std::size_t,GlobalOrdinalT,Node> > resultVec 
+   Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > resultVec 
       = arrayToVector_->template getDataVector<double>(coordFieldName_,data);
 
    switch(resultVec->getNumVectors()) {
