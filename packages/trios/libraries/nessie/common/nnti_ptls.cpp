@@ -628,9 +628,9 @@ int NNTI_ptl_register_memory (
         }
     } else {
 
-        if ((ptls_mem_hdl->type != GET_SRC_BUFFER) &&
-            (ptls_mem_hdl->type != PUT_DST_BUFFER) &&
-            (ptls_mem_hdl->type != RDMA_TARGET_BUFFER)) {
+//        if ((ptls_mem_hdl->type != GET_SRC_BUFFER) &&
+//            (ptls_mem_hdl->type != PUT_DST_BUFFER) &&
+//            (ptls_mem_hdl->type != RDMA_TARGET_BUFFER)) {
 
 //            /* create an event queue */
 //            /* TODO: should we share an event queue? */
@@ -648,7 +648,7 @@ int NNTI_ptl_register_memory (
 //            log_debug(nnti_debug_level, "allocated eq=%d", ptls_mem_hdl->eq_h);
 
             ptls_mem_hdl->eq_h = transport_global_data.data_eq_h;
-        }
+//        }
 
         /* create a match entry (unlink with MD) */
         nthread_lock(&nnti_ptl_lock);
@@ -762,10 +762,10 @@ int NNTI_ptl_unregister_memory (
             goto cleanup;
         }
 
-        if ((ptls_mem_hdl->type != GET_SRC_BUFFER) &&
-            (ptls_mem_hdl->type != PUT_DST_BUFFER) &&
-            (ptls_mem_hdl->type != RDMA_TARGET_BUFFER)) {
-
+//        if ((ptls_mem_hdl->type != GET_SRC_BUFFER) &&
+//            (ptls_mem_hdl->type != PUT_DST_BUFFER) &&
+//            (ptls_mem_hdl->type != RDMA_TARGET_BUFFER)) {
+//
 //            log_debug(debug_level, "freeing ptls_mem_hdl->eq_h: %d", ptls_mem_hdl->eq_h);
 //            nthread_lock(&nnti_ptl_lock);
 //            rc = PtlEQFree(ptls_mem_hdl->eq_h);
@@ -774,7 +774,7 @@ int NNTI_ptl_unregister_memory (
 //                log_error(debug_level, "failed to free EQ: %s", ptl_err_str[rc]);
 //                goto cleanup;
 //            }
-        }
+//        }
 
         ptls_mem_hdl->eq_h=PTL_EQ_NONE;
     }
