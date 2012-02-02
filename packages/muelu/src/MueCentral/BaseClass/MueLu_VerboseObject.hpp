@@ -12,45 +12,56 @@
 
 namespace MueLu {
 
-  // This class is inspired by BelosOutputManager but:
-  // - it uses Teuchos stream
-  // - it allows to print message on proc0 or every processors
-  // - it is a base class
+  /*!
+    @class VerboseObject class.
+    @brief Verbose class for MueLu classes
 
-  // TODO:
-  // - Right now, you can't change the verbosity level globally.
-  //   We have to take into account Teuchos::EVerbosityLevel from the base class Teuchos::VerboseObject and somehow convert it to a MsgType.
-  // - Allow users to define the global verbosity level using both MueLu::MsgType and Teuchos::EVerbosityLevel?
+    This class is inspired by BelosOutputManager but:
+      - it uses Teuchos stream
+      - it allows to print message on proc0 or every processors
+      - it is a base class
 
-  // TODO: add a function to get the object 'local' verb level (GetVerbLevel does not do this)?
-  // TODO: interface without fancyOSstream but std::stream
+     @todo TODO
+     - Right now, you can't change the verbosity level globally.
+       We have to take into account Teuchos::EVerbosityLevel from the base class Teuchos::VerboseObject and somehow convert it to a MsgType.
+     - Allow users to define the global verbosity level using both MueLu::MsgType and Teuchos::EVerbosityLevel?
 
-  // TODO: add 'const' and mutable
+     @todo TODO
+     -# add a function to get the object 'local' verb level (GetVerbLevel does not do this)?
+     -# interface without fancyOSstream but std::stream
+     -# add 'const' and mutable
 
-  //! Verbose class for MueLu classes
+  */
   class VerboseObject
     : public Teuchos::VerboseObject<VerboseObject>
   {
     
   public:
     
+    //! @name Constructors/Destructors.
+    //@{
     VerboseObject();
 
     //! Destructor.
     virtual ~VerboseObject();
+    //@}
 
-    //! Get the verbosity level
-    // If a verbosity level have not been specified for this object (using SetVerbLevel), this method returns the default/global verbose level.
+    /*! @brief Get the verbosity level
+
+       If a verbosity level has not been specified for this object (using SetVerbLevel), this method returns the default/global verbose level.
+    */
     VerbLevel GetVerbLevel() const;
   
     //! Set the verbosity level of this object
     void SetVerbLevel(const VerbLevel verbLevel);
 
-    //! Get proc rank used for printing (do not use this information for any other purpose)
+    //! Get proc rank used for printing. <b>Do not use this information for any other purpose.</b>
     int GetProcRankVerbose() const;
 
-    //! Find out whether we need to print out information for a specific message type.
-    /*! This method is used to determine whether computations are necessary for this message type. */
+    /*! @brief Find out whether we need to print out information for a specific message type.
+
+        This method is used to determine whether computations are necessary for this message type.
+    */
     bool IsPrint(MsgType type, int thisProcRankOnly = -1) const;
 
     //! Get an output stream for outputting the input message type.
@@ -71,15 +82,17 @@ namespace MueLu {
     //! Get the default (global) verbosity level.
     static VerbLevel GetDefaultVerbLevel();
 
-  //@}
+    //@}
 
   private:
-    VerbLevel verbLevel_; // verbose level specific to 'this'
+    //! Verbose level specific to 'this'
+    VerbLevel verbLevel_;
     int procRank_;
 
     static RCP<Teuchos::FancyOStream> blackHole_;
 
-    static VerbLevel globalVerbLevel_; // Global verbose level. This verbose level is used when the verbose level of the object is not specified (verbLevel_ == NotSpecified)
+    //! Global verbose level. This verbose level is used when the verbose level of the object is not specified (verbLevel_ == NotSpecified)
+    static VerbLevel globalVerbLevel_;
   }; // class VerboseObject
 
 } // namespace MueLu
