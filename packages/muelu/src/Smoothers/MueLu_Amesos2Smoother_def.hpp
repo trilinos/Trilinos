@@ -19,14 +19,19 @@ namespace MueLu {
   Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amesos2Smoother(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact)
     : type_(type), paramList_(paramList), AFact_(AFact)
   {
-    // set default solver type
+
+    // Set default solver type
+    // TODO: It would be great is Amesos2 provides directly this kind of logic for us
     if(type_ == "") {
-#if defined(HAVE_AMESOS2_SUPERLU)
-      type_ = "Superlu";   // 1. default smoother (if Superlu is available)
+#if defined(HAVE_AMESOS2_SUPERLUDIST)
+      type_ = "Superludist";
 #elif defined(HAVE_AMESOS2_KLU)
-    type_ = "Klu";         // 2. default smoother (if KLU is available)
-#elif defined(HAVE_AMESOS2_SUPERLUDIST)
-    type_ = "Superludist"; // 3. default smoother (if Superludist is available)
+      type_ = "Klu";
+#elif defined(HAVE_AMESOS2_SUPERLU)
+      type_ = "Superlu";
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): Amesos2 have been compiled without SuperLU_DIST, SuperLU or Klu. "
+                                 "By default, MueLu tries to use one of these libraries. Amesos2 must be compiled with one of these solvers or a valid Amesos2 solver have to be specified explicitly.");
 #endif
     } // if(type_ == "")
 
@@ -53,7 +58,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~Amesos2Smoother() {}
+  Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~Amesos2Smoother() { }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
