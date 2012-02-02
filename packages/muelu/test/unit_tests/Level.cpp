@@ -184,5 +184,53 @@ namespace MueLuTests {
     TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);
   }
 
+
+  // Helper class for unit test 'Level/CircularDependencies'
+  class CircularFactory : public SingleLevelFactoryBase {
+    
+  public:
+    
+    CircularFactory(int value) : value_(value) { }
+    
+    virtual ~CircularFactory() { }
+ 
+    void SetCircularFactory(RCP<FactoryBase> circular) { circular_ = circular; }
+
+    void DeclareInput(Level &level) const {
+      level.DeclareInput("data", circular_.get(), this);
+    }
+
+    void Build(Level& level) const {
+      level.Set("data", value_, this);
+      int value = level.Get<int>("data", circular_.get());
+      level.Set("data", value+value_, this);
+    }
+
+  private:
+
+    int value_;
+    RCP<FactoryBase> circular_;
+
+  }; //class CircularFactory
+
+  //! Test if circular dependencies between factories are allowed
+  //  This test Corresponds to a use-case found developping repartitionning capability
+  TEUCHOS_UNIT_TEST(Level, CircularDependency) {
+    CircularFactory A(2);
+    CircularFactory B(3);
+    
+    A.SetCircularFactory(rcpFromRef(B));
+    B.SetCircularFactory(rcpFromRef(A));
+
+    Level level; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+
+    level.Request("data", &A);
+
+    A.Build(level);
+    
+    TEST_EQUALITY(level.Get<int>("data", &B), (2 + 3));
+    TEST_EQUALITY(level.Get<int>("data", &A), (2 + 3) + 2);
+  }
+
 } // namespace MueLuTests
 
