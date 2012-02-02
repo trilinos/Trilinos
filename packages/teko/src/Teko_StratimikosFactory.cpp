@@ -365,7 +365,7 @@ StratimikosFactory::getValidParameters() const
   return validPL;
 }
 
-/** Build the segragated jacobian operator according to
+/** Build the segregated jacobian operator according to
   * the input parameter list.
   */
 Teuchos::RCP<Epetra_Operator> StratimikosFactory::buildWrappedEpetraOperator(
