@@ -364,6 +364,13 @@ struct NNTI_ib_rdma_addr_t {
     uint32_t key;
     /** @brief Size of the the memory buffer. */
     uint32_t size;
+
+    /** @brief Address of the ACK buffer cast to a uint64_t. */
+    uint64_t ack_buf;
+    /** @brief The key that a remote processes needs to access the ACK buffer. */
+    uint32_t ack_key;
+    /** @brief Size of the the ACK buffer. */
+    uint32_t ack_size;
 };
 
 
