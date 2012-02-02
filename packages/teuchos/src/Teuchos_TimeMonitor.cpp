@@ -196,7 +196,9 @@ namespace Teuchos {
   };
 
   // Typedef used internally by TimeMonitor::summarize() and its
-  // helper functions.
+  // helper functions.  The map is keyed on timer label (a string).
+  // Each value is a pair: (total number of seconds over all calls to
+  // that timer, total number of calls to that timer).
   typedef std::map<std::string, std::pair<double, int> > timer_map_t;
 
   TimeMonitor::TimeMonitor (Time& timer, bool reset) 
@@ -221,23 +223,23 @@ namespace Teuchos {
 #ifdef TEUCHOS_DEBUG
     typedef Array<RCP<Time> >::size_type size_type;
     const size_type numTimers = timers.size();
-    for (size_type i = 0; i < numTimers; ++i) 
-      {
-	Time &timer = *timers[i];
-	// We throw a runtime_error rather than a logic_error, because
-	// logic_error suggests a bug in the implementation of
-	// TimeMonitor.  Calling zeroOutTimers() when a timer is
-	// running is not TimeMonitor's fault.
-	TEUCHOS_TEST_FOR_EXCEPTION(timer.isRunning(), std::runtime_error,
-			   "The timer i = " << i << " with name \"" 
-			   << timer.name() << "\" is currently running and may not "
-			   "be reset.");
-      }
+    for (size_type i = 0; i < numTimers; ++i) {
+      Time &timer = *timers[i];
+      // We throw a runtime_error rather than a logic_error, because
+      // logic_error suggests a bug in the implementation of
+      // TimeMonitor.  Calling zeroOutTimers() when a timer is
+      // running is not TimeMonitor's fault.
+      TEUCHOS_TEST_FOR_EXCEPTION(timer.isRunning(), std::runtime_error,
+				 "The timer i = " << i << " with name \"" 
+				 << timer.name() << "\" is currently running and may not "
+				 "be reset.");
+    }
 #endif // TEUCHOS_DEBUG
 
     for (Array<RCP<Time> >::const_iterator it = timers.begin(); 
-	 it != timers.end(); ++it)
+	 it != timers.end(); ++it) {
       (*it)->reset ();
+    }
   }
 
   // An anonymous namespace is the standard way of limiting linkage of
@@ -255,6 +257,51 @@ namespace Teuchos {
       return std::make_pair (name, std::make_pair (double(0), int(0)));
     }
 
+    // \fn collectLocalTimerData
+    // \brief Collect and sort local timer data by timer names.
+    //
+    // \param localData [out] Map whose keys are the timer names, and
+    //   whose value for each key is the total elapsed time (in
+    //   seconds) and the call count for the timer with that name.
+    //
+    // \param localCounters [in] Timers from which to extract data.
+    //
+    // Extract the total elapsed time and call count from each timer
+    // in the given array.  Merge results for timers with duplicate
+    // labels, by summing their total elapsed times and call counts
+    // pairwise.
+    void
+    collectLocalTimerData (timer_map_t& localData,
+			   ArrayView<const RCP<Time> > localCounters)
+    {
+      using std::make_pair;
+      typedef timer_map_t::const_iterator const_iter_t;
+      typedef timer_map_t::iterator iter_t;
+
+      timer_map_t theLocalData;
+      for (ArrayView<const RCP<Time> >::const_iterator it = localCounters.begin();
+	   it != localCounters.end(); ++it) {
+	const std::string& name = (*it)->name();
+	const double timing = (*it)->totalElapsedTime();
+	const int numCalls = (*it)->numCalls();
+
+	// Merge timers with duplicate labels, by summing their
+	// total elapsed times and call counts.
+	iter_t loc = theLocalData.find (name);
+	if (loc == theLocalData.end()) {
+	  // Use loc as an insertion location hint.
+	  theLocalData.insert (loc, make_pair (name, make_pair (timing, numCalls)));
+	}
+	else {
+	  loc->second.first += timing;
+	  loc->second.second += numCalls;
+	}
+      }
+      // This avoids copying the map, and also makes this method
+      // satisfy the strong exception guarantee.
+      localData.swap (theLocalData);
+    }
+
     // \brief Locally filter out timer data with zero call counts.
     //
     // \param timerData [in/out]
@@ -263,63 +310,31 @@ namespace Teuchos {
     {
       timer_map_t newTimerData;
       for (timer_map_t::const_iterator it = timerData.begin(); 
-	   it != timerData.end(); ++it)
-	{
-	  if (it->second.second > 0)
-	    newTimerData[it->first] = it->second;
+	   it != timerData.end(); ++it) {
+	if (it->second.second > 0) {
+	  newTimerData[it->first] = it->second;
 	}
+      }
       timerData.swap (newTimerData);
     }
 
-    //
-    // \brief Collect and sort local timer data by timer names.
-    //
-    void
-    collectLocalTimerData (timer_map_t& localData,
-			   const Array<RCP<Time> >& localCounters)
-    {
-      using std::make_pair;
-      typedef timer_map_t::const_iterator const_iter_t;
-      typedef timer_map_t::iterator iter_t;
-
-      timer_map_t theLocalData;
-      for (Array<RCP<Time> >::const_iterator it = localCounters.begin();
-	   it != localCounters.end(); ++it)
-	{
-	  const std::string& name = (*it)->name();
-	  const double timing = (*it)->totalElapsedTime();
-	  const int numCalls = (*it)->numCalls();
-
-	  // Merge timers with duplicate labels, by summing their
-	  // total elapsed times and call counts.
-	  iter_t loc = theLocalData.find (name);
-	  if (loc == theLocalData.end())
-	    // Use loc as an insertion location hint.
-	    theLocalData.insert (loc, make_pair (name, make_pair (timing, numCalls)));
-	  else
-	    {
-	      loc->second.first += timing;
-	      loc->second.second += numCalls;
-	    }
-	}
-      // This avoids copying the map, and also makes this method
-      // satisfy the strong exception guarantee.
-      localData.swap (theLocalData);
-    }
-
+    /// \fn collectLocalTimerDataAndNames
     /// \brief Collect the local timer data and timer names from the timers.
     ///
-    /// \param localTimerData [out] On output: timer data extracted
-    ///   from localTimers.  Resized as necessary.  Contents on input
-    ///   are ignored (should be empty on input).
-    /// \param localTimerNames [out] On output: names of timers
-    ///   extracted from localTimers.  Resized as necessary.  Contents
-    ///   on input are ignored (should be empty on input).
-    /// \param localTimers [in] List of local timers.
-    /// \param writeZeroTimers [in] If true, filter out timers with zero
-    ///   call counts.
+    /// \param localTimerData [out] Timer data extracted from
+    ///   localTimers.  Contents on input are ignored and overwritten.
+    ///   See the documentation of \c collectLocalTimerData().
     ///
-    /// \return (local timer data, local timer names).
+    /// \param localTimerNames [out] On output: names of timers
+    ///   extracted from \c localTimers, in the same order as the keys
+    ///   of \c localTimerData.  Resized as necessary.  Contents on
+    ///   input are ignored and overwritten.
+    ///
+    /// \param localTimers [in] (Local) timers from which to extract data.
+    ///
+    /// \param writeZeroTimers [in] If true, do not include timers
+    ///   with zero call counts in the \c localTimerData and \c
+    ///   localTimerNames output.
     void
     collectLocalTimerDataAndNames (timer_map_t& localTimerData,
 				   Array<std::string>& localTimerNames,
@@ -348,8 +363,8 @@ namespace Teuchos {
 
     /// \brief Merge local timer data into global data.
     ///
-    /// Call this method in summarize() only if the writeGlobalStats
-    /// argument is true.
+    /// Call this method in \c summarize() only if the \c
+    /// writeGlobalStats argument is true.
     ///
     /// \param globalTimerData [out] Result of merging localTimerData
     ///   over the processes in the given communicator.
@@ -375,6 +390,11 @@ namespace Teuchos {
     ///   will create corresponding timer data in localTimerData with
     ///   zero elapsed times and call counts.  (This pads the output
     ///   so it fits in a tabular form.)
+    ///
+    /// \param setOp [in] If \c Intersection, compute the intersection
+    ///   of all created timers over all processes in the
+    ///   communicator.  If \c Union, compute the union of all created
+    ///   timers over all processes in the communicator.
     void
     collectGlobalTimerData (timer_map_t& globalTimerData,
 			    Array<std::string>& globalTimerNames,
@@ -567,7 +587,9 @@ namespace Teuchos {
       }
 
       // For each timer name, compute the min timing and its
-      // corresponding call count.
+      // corresponding call count.  If two processes have the same
+      // timing but different call counts, the minimum call count will
+      // be used.
       Array<std::pair<double, int> > minTimingsAndCallCounts (numTimers);
       if (numTimers > 0) {
 	reduceAll (*comm, MinLoc<int, double, int>(), numTimers, 
@@ -575,7 +597,9 @@ namespace Teuchos {
       }
 
       // For each timer name, compute the max timing and its
-      // corresponding call count.
+      // corresponding call count.  If two processes have the same
+      // timing but different call counts, the minimum call count will
+      // be used.
       Array<std::pair<double, int> > maxTimingsAndCallCounts (numTimers);
       if (numTimers > 0) {
 	reduceAll (*comm, MaxLoc<int, double, int>(), numTimers, 
