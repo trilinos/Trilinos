@@ -446,7 +446,6 @@ public:
 
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tX   = Teuchos::rcp(&X,false);
     Teuchos::RCP<      MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpY = MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Y.getMap(), Y.getNumVectors());
-    //Teuchos::RCP<      MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tY   = Teuchos::rcp(&Y,false);
 
     if (mode == Teuchos::NO_TRANS)
     {
