@@ -67,14 +67,11 @@ class SymmetricDiagonalSpec {
 public:
   typedef typename Device::size_type size_type ;
 
-  /** \brief  Dimension of the square matrix. */
+  /** \brief  Dimension of vector block */
   size_type dimension() const ;
 
-  /** \brief  Storage size for unique coefficients */
+  /** \brief  Storage size for block coefficients */
   size_type size() const ;
-
-  /** \brief  Storage location for the (row,column) entry */
-  size_type offset( const size_type row , const size_type column ) const ;
 
   /** \brief  Matrix-vector multiply */
   template< typename MatrixValueType , typename VectorValueType >
@@ -87,7 +84,12 @@ public:
   SymmetricDiagonalSpec( const SymmetricDiagonalSpec & );
   SymmetricDiagonalSpec & operator = ( const SymmetricDiagonalSpec & );
 
+  /* Type specific members: */
+
   explicit SymmetricDiagonalSpec( const size_type dim );
+
+  /** \brief  Storage location for the (row,column) entry */
+  size_type offset( const size_type row , const size_type column ) const ;
 };
 
 //----------------------------------------------------------------------------

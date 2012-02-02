@@ -100,6 +100,8 @@ int      *sizes)		/* variable size of objects (if not NULL) */
     plan->plan_reverse->indices_to_ptr = NULL;
     plan->plan_reverse->indices_from_ptr = NULL;
     plan->plan_reverse->maxed_recvs = 0;
+    plan->plan_reverse->plan_reverse = NULL;
+    plan->plan_reverse->recv_buff = NULL;
 
     if (MPI_RECV_LIMIT > 0){
       /* If we have a limit to the number of posted receives we are allowed,
