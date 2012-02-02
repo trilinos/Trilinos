@@ -18,7 +18,7 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     COMM serial mpi
     )
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(MLCompatible_cp
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterList_cp
     SOURCE_FILES muelu_ParameterList.xml
     )
   
