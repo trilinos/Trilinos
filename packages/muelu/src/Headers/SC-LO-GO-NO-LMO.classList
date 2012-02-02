@@ -28,3 +28,6 @@ SegregationATransferFactory
 Repartition
 MLInterpreter
 #AggregationExportFactory
+BlockedPFactory
+SubBlockAFactory
+BlockedGaussSeidelSmoother

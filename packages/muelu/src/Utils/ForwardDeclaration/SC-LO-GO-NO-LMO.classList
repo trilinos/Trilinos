@@ -24,3 +24,6 @@ DemoFactory
 MLInterpreter
 #AggregationExportFactory
 Repartition
+BlockedPFactory
+SubBlockAFactory
+BlockedGaussSeidelSmoother

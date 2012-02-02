@@ -23,4 +23,6 @@ TrilinosSmoother
 #Utilities
 #AggregationExportFactory
 Repartition
-
+BlockedPFactory
+SubBlockAFactory
+BlockedGaussSeidelSmoother
