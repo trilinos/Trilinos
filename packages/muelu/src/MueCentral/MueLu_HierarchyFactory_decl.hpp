@@ -58,7 +58,7 @@ namespace MueLu {
     //@}
 
   private:
-    Array<FactoryManagerBase> config_; // store up to one FactoryManager per level.
+    Array<RCP<FactoryManagerBase> > config_; // store up to one FactoryManager per level.
 
   }; // class
 
