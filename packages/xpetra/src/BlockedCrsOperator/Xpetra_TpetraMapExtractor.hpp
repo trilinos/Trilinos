@@ -44,6 +44,7 @@ namespace Xpetra
           importer_[i] = Teuchos::rcp(new Xpetra::TpetraImport<LocalOrdinal,GlobalOrdinal,Node>(tfullmap,tmapi));
         }
       }
+      TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency()==false,std::logic_error,"logic error. full map and sub maps are inconsistently distributed over the processors.");
     }
 
     //! TpetraMapExtractor constructor
@@ -65,6 +66,7 @@ namespace Xpetra
           std::cout << *importer_[i] << std::endl;
         }
       }
+      TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency()==false,std::logic_error,"logic error. full map and sub maps are inconsistently distributed over the processors.");
     }
 
     //! Destructor
@@ -228,7 +230,23 @@ namespace Xpetra
     const Teuchos::RCP<const MapClass> getFullMap() const { return fullmap_; }
 
     //@}
+  private:
 
+    virtual bool CheckConsistency() const {
+      const Teuchos::RCP<const MapClass> fullMap = getFullMap();
+
+      for(size_t i = 0; i<NumMaps(); i++) {
+        const Teuchos::RCP<const MapClass> map = getMap(i);
+
+        Teuchos::ArrayView< const GlobalOrdinal > mapGids = map->getNodeElementList();
+        typename Teuchos::ArrayView< const GlobalOrdinal >::const_iterator it;
+        for(it = mapGids.begin(); it!=mapGids.end(); it++) {
+          if(fullMap->isNodeGlobalElement(*it)==false)
+            return false; // Global ID (*it) not found locally on this proc in fullMap -> error
+        }
+      }
+      return true;
+    }
   protected:
     std::vector<Teuchos::RCP<const TpetraMapClass > > maps_;
     Teuchos::RCP<const TpetraMapClass > fullmap_;

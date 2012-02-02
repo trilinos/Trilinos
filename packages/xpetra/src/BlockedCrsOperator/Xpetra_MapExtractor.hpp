@@ -87,6 +87,8 @@ namespace Xpetra
 
     //@}
 
+  private:
+    virtual bool CheckConsistency() const = 0;
   };
 }
 
