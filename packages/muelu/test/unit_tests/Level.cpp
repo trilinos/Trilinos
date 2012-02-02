@@ -225,9 +225,9 @@ namespace MueLuTests {
 
     level.Request("data", &A);
 
-    A.Build(level);
-    
     TEST_EQUALITY(level.Get<int>("data", &A), (2 + 2));
+
+    level.Release("data", &A);
   }
 
   //! Test if circular dependencies between factories are allowed
@@ -244,9 +244,12 @@ namespace MueLuTests {
     level.Request("data", &A);
 
     A.Build(level);
-    
-    TEST_EQUALITY(level.Get<int>("data", &B), (2 + 3));
+
     TEST_EQUALITY(level.Get<int>("data", &A), (2 + 3) + 2);
+    TEST_EQUALITY(level.Get<int>("data", &B), (2 + 3));
+
+    level.Release(A); // needed because A.Build(level) have been called manually
+    level.Release("data", &A);
   }
 
 } // namespace MueLuTests
