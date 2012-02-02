@@ -93,7 +93,7 @@ Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Ma
     nonlocalMap_(NULL),
     exporter_(NULL),
     nonlocalVector_(NULL),
-    ignoreNonLocalEntries_(ignoreNonLocalEntries_)
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
   myFirstID_ = Map.MinMyGID();
   myNumIDs_ = Map.NumMyElements();
@@ -118,7 +118,7 @@ Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Ma
     nonlocalMap_(NULL),
     exporter_(NULL),
     nonlocalVector_(NULL),
-    ignoreNonLocalEntries_(ignoreNonLocalEntries_)
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
   myFirstID_ = Map.MinMyGID();
   myNumIDs_ = Map.NumMyElements();
