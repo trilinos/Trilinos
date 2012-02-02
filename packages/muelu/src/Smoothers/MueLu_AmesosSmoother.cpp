@@ -35,25 +35,12 @@ namespace MueLu {
 #endif 
     } // if(type_ == "")
 
-    // check for valid direct solver type
-    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Amesos_Klu", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): type of Amesos direct solver can be 'Klu'/'Amesos_Klu', 'Superlu' or 'Superludist'");
-    if (type_ == "Superlu") {
-#if not defined(HAVE_AMESOS_SUPERLU)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU. SuperLU cannot be used");
-#endif
+    // Check the validity of the solver type parameter
+    {
+      Amesos factory;
+      TEUCHOS_TEST_FOR_EXCEPTION(factory.Query(type_) == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): The Amesos library reported that the solver '" << type_ << "' is not available. "
+                                 "Amesos have been compiled without the support of this solver or the solver name is misspelled.");
     }
-    if (type_ == "Superludist") {
-#if not defined(HAVE_AMESOS_SUPERLUDIST)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU_DIST. SuperLU_DIST cannot be used");
-#endif
-    }
-    if (type_ == "Klu" || type_ == "Amesos_Klu") {
-#if not defined(HAVE_AMESOS_KLU)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU. KLU cannot be used");
-#endif
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
   }
 
   AmesosSmoother::~AmesosSmoother() { }
