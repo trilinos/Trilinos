@@ -231,7 +231,7 @@ namespace Xpetra
         const Teuchos::RCP<const MapClass> map = getMap(i);
 
         Teuchos::ArrayView< const int > mapGids = map->getNodeElementList();
-        typename Teuchos::ArrayView< const int >::const_iterator it;
+        Teuchos::ArrayView< const int >::const_iterator it;
         for(it = mapGids.begin(); it!=mapGids.end(); it++) {
           if(fullMap->isNodeGlobalElement(*it)==false)
             return false; // Global ID (*it) not found locally on this proc in fullMap -> error
