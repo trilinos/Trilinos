@@ -34,17 +34,17 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Amesos_Klu", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): type of Amesos direct solver can be 'Klu'/'Amesos_Klu', 'Superlu' or 'Superludist'");
     if (type_ == "Superlu") {
 #if not defined(HAVE_AMESOS_SUPERLU)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU. Cannot define a solver by default for this AmesosSmoother object");
+      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU. SuperLU cannot be used");
 #endif
     }
     if (type_ == "Superludist") {
 #if not defined(HAVE_AMESOS_SUPERLUDIST)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU_DIST. Cannot define a solver by default for this AmesosSmoother object");
+      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU_DIST. SuperLU_DIST cannot be used");
 #endif
     }
     if (type_ == "Klu" || type_ == "Amesos_Klu") {
 #if not defined(HAVE_AMESOS_KLU)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU. Cannot define a solver by default for this AmesosSmoother object");
+      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU. KLU cannot be used");
 #endif
     }
 
