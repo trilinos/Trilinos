@@ -110,6 +110,26 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
 		     double *A, int MyLDA, int NumVectors,
         bool ignoreNonLocalEntries=false);
   
+  //! Set multi-vector values from array of pointers.
+  /*!
+    \param In 
+    Epetra_DataAccess - Enumerated type set to Copy or View.
+    \param In 
+    Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+    \param In
+    ArrayOfPointers - An array of pointers such that ArrayOfPointers[i] points to the memory
+    location containing ith vector to be copied.
+    \param In 
+    NumVectors - Number of vectors in multi-vector.
+
+    \return Integer error code, set to 0 if successful.
+
+    See Detailed Description section for further discussion.
+  */
+  Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
+		     double **ArrayOfPointers, int NumVectors,
+            bool ignoreNonLocalEntries=false);
+
   /** Copy constructor. */
   Epetra_FEVector(const Epetra_FEVector& source);
 
