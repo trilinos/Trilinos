@@ -19,6 +19,7 @@
 
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MultiVector.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_CrsMatrixFactory.hpp"
@@ -443,8 +444,9 @@ public:
   {
     // TODO: check maps
 
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tX = Teuchos::rcp(&X,false);
-    Teuchos::RCP<      MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tY = Teuchos::rcp(&Y,false);
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tX   = Teuchos::rcp(&X,false);
+    Teuchos::RCP<      MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpY = MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Y.getMap(), Y.getNumVectors());
+    //Teuchos::RCP<      MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tY   = Teuchos::rcp(&Y,false);
 
     if (mode == Teuchos::NO_TRANS)
     {
@@ -459,8 +461,9 @@ public:
           bmat->apply(*colx,*rowy);
           rowresult->update(ScalarTraits< Scalar >::one(),*rowy,ScalarTraits< Scalar >::one());
         }
-        rangemaps_->InsertVector(rowresult,rblock,tY);
+        rangemaps_->InsertVector(rowresult,rblock,tmpY);
       }
+      Y.update(alpha,*tmpY,beta);
     }
     else if (mode == Teuchos::TRANS)
     {
@@ -476,8 +479,9 @@ public:
           bmat->apply(*colx,*rowy,Teuchos::TRANS);
           rowresult->update(ScalarTraits< Scalar >::one(),*rowy,ScalarTraits< Scalar >::one());
         }
-        domainmaps_->InsertVector(rowresult,cblock,tY);
+        domainmaps_->InsertVector(rowresult,cblock,tmpY);
       }
+      Y.update(alpha,*tmpY,beta);
     }
     else
       TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
