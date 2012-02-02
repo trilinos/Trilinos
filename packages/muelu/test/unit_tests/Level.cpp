@@ -17,6 +17,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
+#include "MueLu_SingleLevelFactoryBase.hpp"
 
 namespace MueLuTests {
 
@@ -185,8 +186,8 @@ namespace MueLuTests {
   }
 
 
-  // Helper class for unit test 'Level/CircularDependencies'
-  class CircularFactory : public SingleLevelFactoryBase {
+  // Helper class for unit test 'Level/CircularDependency'
+  class CircularFactory : public MueLu::SingleLevelFactoryBase {
     
   public:
     
@@ -213,9 +214,25 @@ namespace MueLuTests {
 
   }; //class CircularFactory
 
+  //! Even though it's very special, a factory can generate data, that it requests itself.
+  //  Level must avoid self-recursive calls of Request
+  TEUCHOS_UNIT_TEST(Level, CircularDependencyWith1Factory) {
+    CircularFactory A(2);
+    
+    A.SetCircularFactory(rcpFromRef(A));
+
+    Level level; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+
+    level.Request("data", &A);
+
+    A.Build(level);
+    
+    TEST_EQUALITY(level.Get<int>("data", &A), (2 + 2));
+  }
+
   //! Test if circular dependencies between factories are allowed
   //  This test Corresponds to a use-case found developping repartitionning capability
-  TEUCHOS_UNIT_TEST(Level, CircularDependency) {
+  TEUCHOS_UNIT_TEST(Level, CircularDependencyWithTwoFactories) {
     CircularFactory A(2);
     CircularFactory B(3);
     

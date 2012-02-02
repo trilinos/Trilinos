@@ -131,14 +131,8 @@ namespace MueLu {
     // That is why a temporary boolean "test" is used!
     TEUCHOS_TEST_FOR_EXCEPTION(needs_.IsRequestedFactory(fac) != true, Exceptions::RuntimeError, "Level::Request(ename, factory): internal logic error.");
 
-    // check if generating factory is not the requesting factory and avoid self-recursive calls of Request
-    // Even though it's very special, a factory can generate data, that it requests itself.
-    if(fac != requestedBy) {
-
-      // call Request for factory dependencies
-      if (test) { Request(*fac); }
-    }
-
+    // Call Request for factory dependencies
+    if (test) { Request(*fac); }
   }
 
   //TODO: finish this
