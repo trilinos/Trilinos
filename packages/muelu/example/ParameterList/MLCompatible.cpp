@@ -35,8 +35,8 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp(false); // Note: 
 
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-  Xpetra::Parameters             xpetraParameters(clp);       // manage parameters of xpetra
+  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
+  Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
 
   std::string xmlFileName; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
   int muelu = true;        clp.setOption("muelu", &muelu,       "use muelu"); //TODO: bool instead of int
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     //
     
     // Multigrid Hierarchy
-    RCP<Hierarchy> H = MLInterpreter::Setup(*params, A);
+    RCP<Hierarchy> H = MLInterpreter::Setup(*params, A); //TODO: interface wrong. A should not be an argument.
     
     H->setVerbLevel(Teuchos::VERB_HIGH);
     

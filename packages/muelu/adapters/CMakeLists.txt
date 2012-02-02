@@ -9,7 +9,8 @@ SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/belos)
 
-#TODO: IF HAVE_MUELU_BELOOS
+IF (${PACKAGE_NAME}_ENABLE_Belos)
+
 APPEND_SET(HEADERS
   belos/BelosOperatorT.hpp
   belos/BelosXpetraAdapter.hpp
@@ -17,6 +18,8 @@ APPEND_SET(HEADERS
   belos/BelosXpetraAdapterOperator.hpp
   belos/BelosMueLuAdapter.hpp
   )
+
+ENDIF()
 
 #
 # Epetra
@@ -32,6 +35,24 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
   
   APPEND_SET(SOURCES
     epetra/MueLu_EpetraOperator.cpp
+    )
+
+ENDIF()
+
+#
+# Stratimikos
+#
+
+IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/stratimikos/src)
+  
+  APPEND_SET(HEADERS
+    stratimikos/src/Thyra_MueLuPreconditionerFactory.hpp
+    )
+  
+  APPEND_SET(SOURCES
+    stratimikos/src/Thyra_MueLuPreconditionerFactory.cpp
     )
 
 ENDIF()
