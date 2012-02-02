@@ -41,7 +41,12 @@ extern "C" {
  *   the hash value, an unsigned integer between 0 and n-1
  */
 
+#ifndef HAVE_ZOLTAN_KNUTH_HASH
 #define ZZ_MURMUR_HASH
+#else
+#define ZZ_KNUTH_HASH
+#endif
+
 #ifdef ZZ_MURMUR_HASH
 #include "murmur3.h"
 

@@ -65,6 +65,9 @@
 /* HUND support */
 #cmakedefine HAVE_ZOLTAN_HUND
 
+/* Revert to Old Hash function support */
+#cmakedefine HAVE_ZOLTAN_KNUTH_HASH
+
 #ifdef HAVE_ZOLTAN_HUND
 #define CEDRIC_2D_PARTITIONS
 #endif

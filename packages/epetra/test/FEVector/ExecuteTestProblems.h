@@ -61,3 +61,5 @@ int fevec4(Epetra_Comm& Comm, bool verbose);
 int fevec5(Epetra_Comm& Comm, bool verbose);
 
 int fevec6(Epetra_Comm& Comm, bool verbose);
+
+int fevec7(Epetra_Comm& Comm, bool verbose);
