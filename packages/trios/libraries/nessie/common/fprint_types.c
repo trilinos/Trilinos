@@ -269,9 +269,12 @@ void fprint_NNTI_remote_addr(
                 fprintf(fp, "%s    size       = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.portals.size);
                 break;
             case NSSI_RPC_IB:
-                fprintf(fp, "%s    buf      = %p,\n", subprefix,   addr->NNTI_remote_addr_t_u.ib.buf);
-                fprintf(fp, "%s    key      = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.ib.key);
+                fprintf(fp, "%s    buf      = %p,\n",   subprefix, addr->NNTI_remote_addr_t_u.ib.buf);
+                fprintf(fp, "%s    key      = %x,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.ib.key);
                 fprintf(fp, "%s    size     = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.ib.size);
+                fprintf(fp, "%s    ack_buf  = %p,\n",   subprefix, addr->NNTI_remote_addr_t_u.ib.ack_buf);
+                fprintf(fp, "%s    ack_key  = %x,\n",   subprefix, addr->NNTI_remote_addr_t_u.ib.ack_key);
+                fprintf(fp, "%s    ack_size = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.ib.ack_size);
                 break;
             case NSSI_RPC_LUC:
                 fprintf(fp, "%s    buf  = %p,\n", subprefix, addr->NNTI_remote_addr_t_u.luc.buf);
@@ -421,7 +424,7 @@ void fprint_NNTI_status(
         /* contents */
         fprintf(fp, "%s    op     = %llu,\n", subprefix, (unsigned long long)status->op);
         fprintf(fp, "%s    result = %llu,\n", subprefix, (unsigned long long)status->result);
-        fprintf(fp, "%s    start  = %llu,\n", subprefix, (unsigned long long)status->start);
+        fprintf(fp, "%s    start  = %p,\n",   subprefix, (void *)status->start);
         fprintf(fp, "%s    offset = %llu,\n", subprefix, (unsigned long long)status->offset);
         fprintf(fp, "%s    length = %llu,\n", subprefix, (unsigned long long)status->length);
 
