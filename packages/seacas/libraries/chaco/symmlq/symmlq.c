@@ -52,14 +52,14 @@ int symmlq_(integer *n,
   static doublereal alfa, diag, dbar, beta, gbar, oldb, epsa;
   extern doublereal ch_ddot_();
   static doublereal gmin, gmax, zbar, epsr, epsx, beta1;
-  extern doublereal chdnrm2_();
+  extern doublereal chdnrm2();
   static integer i;
   static doublereal gamma, s, t, delta, z, denom;
   extern /* Subroutine */ int aprod_();
   static doublereal bstep;
-  extern /* Subroutine */ int chdcopy_();
+  extern /* Subroutine */ int chdcopy();
   static doublereal epsln;
-  extern /* Subroutine */ int chdaxpy_();
+  extern /* Subroutine */ int chdaxpy();
   static doublereal tnorm, cs, ynorm2, sn, cgnorm;
   extern /* Subroutine */ int msolve_();
   static doublereal snprod, lqnorm, qrnorm, eps, rhs1, rhs2;
@@ -507,7 +507,7 @@ int symmlq_(integer *n,
   eps /= 2.;
   x[1] = eps;
   y[1] = 1.;
-  chdaxpy_(&c__1, &c_b4, &x[1], &c__1, &y[1], &c__1);
+  chdaxpy(&c__1, &c_b4, &x[1], &c__1, &y[1], &c__1);
   if (y[1] > 1.) {
     goto L10;
   }
@@ -534,8 +534,8 @@ int symmlq_(integer *n,
   /*     Set up y for the first Lanczos vector v1. */
   /*     y is really beta1 * P * v1  where  P = C**(-1). */
   /*     y and beta1 will be zero if b = 0. */
-  chdcopy_(n, &b[1], &c__1, &y[1], &c__1);
-  chdcopy_(n, &b[1], &c__1, &r1[1], &c__1);
+  chdcopy(n, &b[1], &c__1, &y[1], &c__1);
+  chdcopy(n, &b[1], &c__1, &r1[1], &c__1);
   if (*precon) {
     msolve_(n, &r1[1], &y[1], a, &vwsqrt[1], &work[1]);
   }
@@ -594,13 +594,13 @@ int symmlq_(integer *n,
   chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
   alfa = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
   d__1 = -alfa / beta1;
-  chdaxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
+  chdaxpy(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
   /*     Make sure  r2  will be orthogonal to the first  v. */
   z = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
   s = ch_ddot_(n, &v[1], &c__1, &v[1], &c__1);
   d__1 = -z / s;
-  chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
-  chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
+  chdaxpy(n, &d__1, &v[1], &c__1, &y[1], &c__1);
+  chdcopy(n, &y[1], &c__1, &r2[1], &c__1);
   if (*precon) {
     msolve_(n, &r2[1], &y[1], a, &vwsqrt[1], &work[1]);
   }
@@ -616,7 +616,7 @@ int symmlq_(integer *n,
     *istop = -1;
   }
   /*     See if the local reorthogonalization achieved anything. */
-  denom = sqrt(s) * chdnrm2_(n, &r2[1], &c__1) + eps;
+  denom = sqrt(s) * chdnrm2(n, &r2[1], &c__1) + eps;
   s = z / denom;
   t = ch_ddot_(n, &v[1], &c__1, &r2[1], &c__1) / denom;
   /*     if (nout .gt. 0  .and.  goodb) then */
@@ -643,7 +643,7 @@ int symmlq_(integer *n,
       /* L200: */
     }
   } else {
-    chdcopy_(n, &v[1], &c__1, &w[1], &c__1);
+    chdcopy(n, &v[1], &c__1, &w[1], &c__1);
   }
   /*     ------------------------------------------------------------------ 
    */
@@ -761,7 +761,7 @@ int symmlq_(integer *n,
   }
   aprod_(n, &v[1], &y[1], a, &vwsqrt[1], &work[1], orthlist);
   d__1 = -(*shift);
-  chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
+  chdaxpy(n, &d__1, &v[1], &c__1, &y[1], &c__1);
   d__1 = -beta / oldb;
   chdaxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
   alfa = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
@@ -771,9 +771,9 @@ int symmlq_(integer *n,
   d__2 = beta;
   tnorm = tnorm + d__1 * d__1 + d__2 * d__2 * 2.;
   d__1 = -alfa / beta;
-  chdaxpy_(n, &d__1, &r2[1], &c__1, &y[1], &c__1);
-  chdcopy_(n, &r2[1], &c__1, &r1[1], &c__1);
-  chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
+  chdaxpy(n, &d__1, &r2[1], &c__1, &y[1], &c__1);
+  chdcopy(n, &r2[1], &c__1, &r1[1], &c__1);
+  chdcopy(n, &y[1], &c__1, &r2[1], &c__1);
   if (*precon) {
     msolve_(n, &r2[1], &y[1], a, &vwsqrt[1], &work[1]);
   }
@@ -836,18 +836,18 @@ int symmlq_(integer *n,
     d__1 = zbar;
     *ynorm = sqrt(ynorm2 + d__1 * d__1);
     *rnorm = cgnorm;
-    chdaxpy_(n, &zbar, &w[1], &c__1, &x[1], &c__1);
+    chdaxpy(n, &zbar, &w[1], &c__1, &x[1], &c__1);
   } else {
     *rnorm = lqnorm;
   }
   if (*goodb) {
     /*        Add the step along  b. */
     bstep /= beta1;
-    chdcopy_(n, &b[1], &c__1, &y[1], &c__1);
+    chdcopy(n, &b[1], &c__1, &y[1], &c__1);
     if (*precon) {
       msolve_(n, &b[1], &y[1], a, &vwsqrt[1], &work[1]);
     }
-    chdaxpy_(n, &bstep, &y[1], &c__1, &x[1], &c__1);
+    chdaxpy(n, &bstep, &y[1], &c__1, &x[1], &c__1);
   }
   /*     ================================================================== 
    */

@@ -16,7 +16,7 @@
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-int chdaxpy_(integer *n, doublereal *da, doublereal *dx, integer *incx, doublereal *dy, integer *incy)
+int chdaxpy(integer *n, doublereal *da, doublereal *dx, integer *incx, doublereal *dy, integer *incy)
 {
     /* System generated locals */
     integer   i__1;
@@ -97,7 +97,7 @@ L40:
 }				/* daxpy_ */
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-int chdcopy_(integer  *n,
+int chdcopy(integer  *n,
 	     doublereal *dx,
 	     integer  *incx,
 	     doublereal *dy,
@@ -270,7 +270,7 @@ L60:
 }				/* ddot_ */
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-doublereal chdnrm2_(integer  *n,
+doublereal chdnrm2(integer  *n,
 		    doublereal *dx,
 		    integer  *incx)
 {
