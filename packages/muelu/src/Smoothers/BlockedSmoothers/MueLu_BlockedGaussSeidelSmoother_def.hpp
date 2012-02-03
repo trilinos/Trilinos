@@ -51,8 +51,9 @@ namespace MueLu {
     for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
       SetFactoryManager currentSFM  (currentLevel,   *it);
 
-      // request "Smoother" for current subblock row. TODO check me: what about postsmoother?
-      currentLevel.DeclareInput("PreSmoother",(*it)->GetFactory("Smoother").get()); // ask factory manager?
+      // request "Smoother" for current subblock row.
+      currentLevel.DeclareInput("PreSmoother",(*it)->GetFactory("Smoother").get()); // TODO check me: what about postsmoother?
+      currentLevel.DeclareInput("A",(*it)->GetFactory("A").get()); // request A for comparing maps (to setup a map of the real block rows and the ordering of given blocks in Inverse_)
     }
   }
 
@@ -81,13 +82,28 @@ namespace MueLu {
     // TODO do setup -> called by SmootherFactory::BuildSmoother
 
     // loop over all factory managers for the subblocks of blocked operator A
+    size_t bgsOrderingIndex = 0;
+    //std::map<size_t,size_t> bgsOrderingIndex2blockRowIndex;
     std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
     for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
       SetFactoryManager currentSFM  (currentLevel,   *it);
 
-      // request "Smoother" for current subblock row
+      // extract Smoother for current block row (BGS ordering)
       RCP<const SmootherBase> Smoo = currentLevel.Get< RCP<SmootherBase> >("PreSmoother",(*it)->GetFactory("Smoother").get());
       Inverse_.push_back(Smoo);
+
+      // extract i-th diagonal block Aii -> determine block
+      RCP<Operator> Aii = currentLevel.Get< RCP<Operator> >("A",(*it)->GetFactory("A").get());
+      for(size_t i = 0; i<rangeMapExtractor_->NumMaps(); i++) {
+        if(rangeMapExtractor_->getMap(i)->isSameAs(*(Aii->getRangeMap()))) {
+          // map found: i is the true block row index
+          // fill std::map with information bgsOrderingIndex -> i
+          bgsOrderingIndex2blockRowIndex_[bgsOrderingIndex] = i;
+          break;
+        }
+      }
+
+      bgsOrderingIndex++;
     }
 
     SmootherPrototype::IsSetup(true);
@@ -116,10 +132,10 @@ namespace MueLu {
         A_->apply(X, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
 
         // extract corresponding subvectors from X and residual
-        Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(rcpX, i);
-        Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, i);
+        Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(rcpX, bgsOrderingIndex2blockRowIndex_.at(i));
+        Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, bgsOrderingIndex2blockRowIndex_.at(i));
 
-        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(i, X.getNumVectors());
+        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(bgsOrderingIndex2blockRowIndex_.at(i), X.getNumVectors());
 
         // apply solver/smoother
         Inverse_.at(i)->Apply(*tXi, *ri, false);
@@ -128,7 +144,7 @@ namespace MueLu {
         Xi->update(omega_,*tXi,1.0);  // X_{i+1} = X_i + omega \Delta X_i
 
         // update corresponding part of rhs and lhs
-        domainMapExtractor_->InsertVector(Xi, i, rcpX); // TODO wrong! fix me
+        domainMapExtractor_->InsertVector(Xi, bgsOrderingIndex2blockRowIndex_.at(i), rcpX); // TODO wrong! fix me
       }
 
     }
@@ -153,22 +169,19 @@ namespace MueLu {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0) {
-      out0 << "Prec. type: " << type_ << std::endl;
+      out0 << "Prec. type: " << type_ << " Sweeps: " << nSweeps_ << " damping: " << omega_ << std::endl;
     }
 
-    /*if (verbLevel & Parameters1) {
-      out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
-    }*/
-
-    /*if (verbLevel & External) {
-      if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
+    if (verbLevel & Debug) {
+      std::map<size_t,size_t>::const_iterator itOrdering;
+      for(itOrdering = bgsOrderingIndex2blockRowIndex_.begin(); itOrdering!=bgsOrderingIndex2blockRowIndex_.end(); itOrdering++) {
+        std::cout << "block GaussSeidel ordering index: " << (*itOrdering).first << " -> block row in blocked A: " << (*itOrdering).second << std::endl;
+      }
     }
 
     if (verbLevel & Debug) {
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
-           << "-" << std::endl
-           << "RCP<prec_>: " << prec_ << std::endl;
-    }*/
+    }
   }
 
 } // namespace MueLu
