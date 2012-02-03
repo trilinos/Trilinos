@@ -18,7 +18,10 @@ public:
    virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const = 0;
 
    //! Get vector of unique bases contained in this field library
-   void uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const;
+   virtual void uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const = 0;
+
+   //! Get vector of unique bases contained in this field library
+   virtual void basisPairs(std::list<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const = 0;
 };
 
 /** There is one of these objects per equation set.
@@ -43,6 +46,9 @@ public:
      * the field library.
      */
    void print(std::ostream & os) const;
+
+   //! Get vector of unique bases contained in this field library
+   virtual void basisPairs(std::list<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const;
 
 private:
 
@@ -83,6 +89,9 @@ public:
      * the field library.
      */
    void print(std::ostream & os) const;
+
+   //! Get vector of unique bases contained in this field library
+   virtual void basisPairs(std::list<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const;
 
 private:
 

@@ -4,6 +4,7 @@
 #include "Panzer_String_Utilities.hpp"
 
 #include "Panzer_STK_ScatterCellAvgQuantity.hpp"
+#include "Panzer_STK_ScatterCellQuantity.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -14,20 +15,22 @@ IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT
                       const Teuchos::ParameterList & outputList)
    : mesh_(mesh), userCMF_(userCMF)
 {
-   parseOutputList(outputList.sublist("Cell Average Quantities"));
+   parseOutputList(outputList.sublist("Cell Average Quantities"),blockIdToCellAvgFields_);
+   parseOutputList(outputList.sublist("Cell Quantities"),blockIdToCellFields_);
 }
 
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
 void panzer_stk::IOClosureModelFactory<EvalT>::
-parseOutputList(const Teuchos::ParameterList & pl)
+parseOutputList(const Teuchos::ParameterList & pl,
+                std::map<std::string,std::vector<std::string> > & blockIdToFields) const
 {
    for(Teuchos::ParameterList::ConstIterator itr=pl.begin();
        itr!=pl.end();++itr) {
       const std::string & blockId = itr->first;
       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-      std::vector<std::string> & tokens = blockIdToFields_[blockId];
+      std::vector<std::string> & tokens = blockIdToFields[blockId];
  
       // break up comma seperated fields
       panzer::StringTokenizer(tokens,fields,",",true);

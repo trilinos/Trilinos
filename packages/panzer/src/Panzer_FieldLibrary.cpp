@@ -51,6 +51,21 @@ void FieldLayoutLibrary::print(std::ostream & os) const
    }
 }
 
+void FieldLayoutLibrary::basisPairs(std::list<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const
+{
+   typedef std::map<std::string,Teuchos::RCP<panzer::BasisIRLayout> > Map;
+   bases.clear();
+   
+   for(Map::const_iterator itr=fieldToLayout_.begin();itr!=fieldToLayout_.end();++itr) {
+      std::string fieldName = itr->first; 
+      Teuchos::RCP<const PureBasis> basis = itr->second->getBasis();
+
+      bases.push_back(std::make_pair(fieldName,basis));
+   }
+}
+
+///////////////////////////////////////////////////////////////////
+
 Teuchos::RCP<const panzer::PureBasis> FieldLibrary::lookupBasis(const std::string & fieldName) const
 {
    typedef std::map<std::string,Teuchos::RCP<panzer::PureBasis> > Map;
@@ -104,6 +119,20 @@ void FieldLibrary::print(std::ostream & os) const
       os << "\"" << fieldName << "\"" << " {" << basis->name() 
          << "(dim=" << basis->getDimension() 
          << ",cells=" << basis->getNumCells() << ") ";
+   }
+}
+
+//! Get vector of unique bases contained in this field library
+void FieldLibrary::basisPairs(std::list<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const
+{
+   typedef std::map<std::string,Teuchos::RCP<panzer::PureBasis> > Map;
+   bases.clear();
+   
+   for(Map::const_iterator itr=fieldToBasis_.begin();itr!=fieldToBasis_.end();++itr) {
+      std::string fieldName = itr->first; 
+      Teuchos::RCP<PureBasis> basis = itr->second;
+
+      bases.push_back(std::make_pair(fieldName,basis.getConst()));
    }
 }
 

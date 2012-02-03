@@ -34,13 +34,17 @@ namespace panzer_stk {
 		       PHX::FieldManager<panzer::Traits>& fm) const;
 
   private:
-    void parseOutputList(const Teuchos::ParameterList & pl);
+    void parseOutputList(const Teuchos::ParameterList & pl,
+                         std::map<std::string,std::vector<std::string> > & blockIdToFields) const;
 
     //! Mesh pointer, will be passed around
     Teuchos::RCP<STK_Interface> mesh_;
  
-    //! Map showing which fields need to be written out for each element block
-    std::map<std::string,std::vector<std::string> > blockIdToFields_;
+    //! Map showing which cell averaged fields need to be written out for each element block
+    std::map<std::string,std::vector<std::string> > blockIdToCellAvgFields_;
+
+    //! Map showing which cell fields need to be written out for each element block
+    std::map<std::string,std::vector<std::string> > blockIdToCellFields_;
 
     /** Map stating if an evaluator for a particular block ID has been included.
       *
