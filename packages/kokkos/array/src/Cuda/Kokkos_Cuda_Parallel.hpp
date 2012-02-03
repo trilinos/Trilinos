@@ -55,6 +55,7 @@ struct CudaTraits {
   enum { WarpIndexShift = 5       /* WarpSize == 1 << WarpShift */ };
   enum { SharedMemoryBanks_13 = 16 /* Compute device 1.3 */ };
   enum { SharedMemoryBanks_20 = 32 /* Compute device 2.0 */ };
+  enum { UpperBoundGridCount = 65535 /* Hard upper bound */ };
  
   enum { ConstantMemoryCapacity = 0x010000 /* 64k bytes */ };
   enum { ConstantMemoryCache    = 0x002000 /*  8k bytes */ };
@@ -68,11 +69,17 @@ struct CudaTraits {
 #if defined( __CUDACC__ )
   __device__ __host__
 #endif
+  Cuda::size_type warp_count( Cuda::size_type i )
+    { return ( i + WarpIndexMask ) >> WarpIndexShift ; }
+
+  static inline
+#if defined( __CUDACC__ )
+  __device__ __host__
+#endif
   Cuda::size_type warp_align( Cuda::size_type i )
     {
-      enum { M =  Cuda::size_type( WarpIndexMask ) };
-      enum { N = ~Cuda::size_type( WarpIndexMask ) };
-      return ( i + M ) & N ;
+      enum { Mask = ~Cuda::size_type( WarpIndexMask ) };
+      return ( i + WarpIndexMask ) & Mask ;
     }
 };
 
@@ -104,6 +111,12 @@ Cuda::size_type * cuda_internal_reduce_multiblock_scratch_flag();
 __device__ __constant__
 Kokkos::Impl::CudaTraits::ConstantGlobalBufferType
 kokkos_impl_cuda_constant_memory_buffer ;
+
+template< typename T >
+inline
+__device__
+T * kokkos_impl_cuda_shared_memory()
+{ extern __shared__ Kokkos::Cuda::size_type sh[]; return (T*) sh ; }
 
 namespace Kokkos {
 namespace Impl {

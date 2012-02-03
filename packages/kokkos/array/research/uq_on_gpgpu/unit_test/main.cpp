@@ -42,12 +42,13 @@
 */
 
 
-int mainHost();
-int mainCuda();
+extern int mainHost();
+extern int mainCuda();
 
 int main()
 {
-  return mainHost();
-  return mainCuda();
+  mainHost();
+  mainCuda();
+  return 0 ;
 }
 

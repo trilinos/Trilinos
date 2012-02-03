@@ -99,7 +99,7 @@ public:
                  const VectorValue * const x ,
                        VectorValue & y ) const
   {
-    extern __shared__ VectorValue sh[];
+    VectorValue * const sh = kokkos_impl_cuda_shared_memory<VectorValue>();
 
     const size_type shared_offset = Impl::CudaTraits::warp_align( m_dimension );
 

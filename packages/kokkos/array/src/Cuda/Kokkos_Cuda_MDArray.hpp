@@ -85,7 +85,7 @@ public:
     MemoryManager< Cuda >::
       copy_to_device_from_host( dst.m_memory.ptr_on_device(),
                                 src.m_memory.ptr_on_device(),
-                                 size );
+                                size );
   }
 };
 

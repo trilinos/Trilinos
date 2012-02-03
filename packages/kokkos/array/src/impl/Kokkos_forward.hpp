@@ -53,6 +53,7 @@ namespace Impl {
 template< class ViewType > class Initialize ;
 template< class DstType , class SrcType >  class DeepCopy ;
 template< class ViewType , bool MirrorIsView > class CreateMirror ;
+template< class MatrixType , class InputType , class OutputType > class Multiply ;
 }
 }
 

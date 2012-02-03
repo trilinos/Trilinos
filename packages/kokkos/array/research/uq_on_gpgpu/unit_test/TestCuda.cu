@@ -41,8 +41,7 @@
 //@HEADER
 */
 
-// #include <Kokkos_ProductTensor.hpp>
-
+#include <Kokkos_ProductTensor.hpp>
 #include <Kokkos_SymmetricDiagonalSpec.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
 
@@ -50,13 +49,20 @@
 
 #include <Kokkos_Host.hpp>
 #include <Kokkos_Cuda.hpp>
+
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_ProductTensor_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
+
 #include <Cuda/Kokkos_Cuda_SymmetricDiagonalSpec.hpp>
+#include <Cuda/Kokkos_Cuda_ProductTensor.hpp>
 #include <Cuda/Kokkos_Cuda_BlockCrsMatrix.hpp>
 
 //
 
-// #include <TestSparseProductTensor.hpp>
 #include <TestBlockCrsMatrix.hpp>
+#include <TestTensorCrsMatrix.hpp>
 
 int mainCuda()
 {
@@ -75,6 +81,14 @@ int mainCuda()
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 11 , 8 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 12 , 10 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 13 , 10 );
+
+  typedef unsigned long long int IntType ;
+
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 2 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 5 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 2 , 1 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 1 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 100 , 10 );
 
   Kokkos::Cuda::finalize();
 

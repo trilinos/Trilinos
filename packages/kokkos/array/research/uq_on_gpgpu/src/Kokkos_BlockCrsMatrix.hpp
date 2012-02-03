@@ -69,13 +69,6 @@ public:
   block_spec                              block ;
 };
 
-namespace Impl {
-
-template< class A , class X , class Y >
-class Multiply ;
-
-}
-
 template< class BlockSpec ,
           typename MatrixValueType ,
           typename VectorValueType ,

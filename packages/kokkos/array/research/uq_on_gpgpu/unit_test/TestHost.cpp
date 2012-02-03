@@ -79,10 +79,11 @@ int mainHost()
   unit_test::test_block_crs_matrix<Kokkos::Host>( 12 , 10 );
   unit_test::test_block_crs_matrix<Kokkos::Host>( 13 , 10 );
 
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host>( 1 , 2 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host>( 1 , 5 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host>( 2 , 1 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host>( 5 , 1 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 1 , 2 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 1 , 5 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 2 , 1 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 5 , 1 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 100 , 10 );
 
   Kokkos::Host::finalize();
 

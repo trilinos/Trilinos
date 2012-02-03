@@ -43,6 +43,7 @@
 
 
 
+#include <iostream>
 #include <stdexcept>
 #include <sstream>
 #include <vector>
@@ -62,10 +63,11 @@ IntType map_coord( const IntType & N ,
 }
 
 // Some arbitrary values for testing.
+template< typename IntType >
 inline
-long generate_matrix_value( const long inner_row ,
-                            const long outer_row ,
-                            const long outer_column )
+IntType generate_matrix_value( const IntType inner_row ,
+                              const IntType outer_row ,
+                              const IntType outer_column )
 {
   return 1 + inner_row + 10 * outer_row + 20 * outer_column ;
 }
@@ -130,7 +132,7 @@ void generate_matrix(
 
   matrix.block  = Kokkos::create_sparse_product_tensor<3,ScalarType,Device>( tensor_input );
   matrix.graph  = Kokkos::create_labeled_crsmap<Device>( std::string("test crs graph") , graph );
-  matrix.values = Kokkos::create_multivector<long,Device>( matrix.block.size() , total );
+  matrix.values = Kokkos::create_multivector<ScalarType,Device>( matrix.block.size() , total );
 
   host_graph_type  h_graph  = Kokkos::create_mirror( matrix.graph );
   host_values_type h_values = Kokkos::create_mirror( matrix.values );
@@ -154,16 +156,16 @@ void generate_matrix(
 }
 
 
-template< class Device >
-void test_tensor_crs_matrix( const size_t M , const size_t N )
+template< class Device , typename IntType >
+void test_tensor_crs_matrix( const size_t M , const size_t N , const bool print = false )
 {
   const size_t length = N * N * N ;
 
-  typedef long value_type ; // to avoid comparison round-off differences
+  typedef IntType value_type ; // to avoid comparison round-off differences
 
   typedef Kokkos::CrsMap< Device >        graph_type ;
   typedef typename graph_type::HostMirror host_graph_type ;
-  typedef Kokkos::SparseProductTensor< 3 , long , Device > block_spec ;
+  typedef Kokkos::SparseProductTensor< 3 , IntType , Device > block_spec ;
   typedef Kokkos::ProductTensorIndex<3,Device>             index_type ;
 
   Kokkos::BlockCrsMatrix< block_spec , value_type , Device > matrix ;
@@ -192,7 +194,7 @@ void test_tensor_crs_matrix( const size_t M , const size_t N )
 
   host_graph_type h_graph  = Kokkos::create_mirror( matrix.graph );
 
-  std::map< index_type , long > tensor_input ;
+  std::map< index_type , IntType > tensor_input ;
 
   generate_tensor( M , tensor_input );
 
@@ -209,12 +211,12 @@ void test_tensor_crs_matrix( const size_t M , const size_t N )
 
         const size_t outer_column = h_graph.column( outer_entry );
 
-        for ( typename std::map< index_type , long >::iterator
+        for ( typename std::map< index_type , IntType >::iterator
               iter =  tensor_input.begin() ;
               iter != tensor_input.end() ; ++iter ) {
 
           const index_type index = (*iter).first ;
-          const long       coeff = (*iter).second ;
+          const IntType    coeff = (*iter).second ;
 
           size_t i , j ;
 
@@ -234,8 +236,8 @@ void test_tensor_crs_matrix( const size_t M , const size_t N )
             continue ;
           }
 
-          const long ai = generate_matrix_value( i , outer_row , outer_column );
-          const long aj = generate_matrix_value( j , outer_row , outer_column );
+          const IntType ai = generate_matrix_value( i , outer_row , outer_column );
+          const IntType aj = generate_matrix_value( j , outer_row , outer_column );
 
           value += coeff * ( i == j ? ( ai * hx( i , outer_column ) )
                                     : ( ai * hx( j , outer_column ) +
@@ -249,6 +251,10 @@ void test_tensor_crs_matrix( const size_t M , const size_t N )
             << value << " != " << hy(inner_row,outer_row)
             << " = hy( " << inner_row << "," << outer_row << ")" ;
         throw std::runtime_error(msg.str());
+      }
+      else if ( print ) {
+        std::cout << " = hy( " << inner_row << "," << outer_row << ") = "
+                  << hy( inner_row , outer_row ) << std::endl ;
       }
     }
   }

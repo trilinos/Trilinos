@@ -93,12 +93,10 @@ then
 
   ${NVCC} ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES} ;
 else
-  CXX_SOURCE="${CXX_SOURCES} TestCudaStub.cpp"
+  CXX_SOURCES="${CXX_SOURCES} TestCudaStub.cpp"
 fi
 
 #-----------------------------------------------------------------------------
-
-echo "Building regular files as: " ${CXX} ${CXXFLAGS} ${OPTFLAGS}
 
 ${CXX} ${CXXFLAGS} ${OPTFLAGS} ${INC_PATH} ${TEST_MACRO} -o test_uq.exe ${CXX_SOURCES} ${LIB}
 

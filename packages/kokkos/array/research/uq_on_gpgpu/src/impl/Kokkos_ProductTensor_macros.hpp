@@ -95,20 +95,41 @@ public:
     return *this ;
   }
 
-  /** \brief  Construct with the dense symmetric compression map */
+private:
+
+  template< unsigned I , unsigned J >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  ProductTensorIndex( size_type I , size_type J , size_type K )
+  void order()
   {
-    // Sort the indices I >= J >= K
-    if ( I < K ) { m_coord[3] = I ; I = K ; K = m_coord[3] ; }
-    if ( J < K ) { m_coord[3] = J ; J = K ; K = m_coord[3] ; }
-    if ( I < J ) { m_coord[3] = I ; I = J ; J = m_coord[3] ; }
+    if ( m_coord[I] < m_coord[J] ) {
+      m_coord[3] = m_coord[I] ;
+      m_coord[I] = m_coord[J] ;
+      m_coord[J] = m_coord[3] ;
+    }
+  }
 
-    m_coord[0] = I ;
-    m_coord[1] = J ;
-    m_coord[2] = K ;
-    m_coord[3] = ( I * ( I + 1 ) * ( I + 2 ) ) / 6 + ( J * ( J + 1 ) ) / 2 + K ;
+public:
+
+  /** \brief  Construct with the dense symmetric compression map */
+  template< typename iType , typename jType , typename kType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  ProductTensorIndex( const iType & argI ,
+                      const jType & argJ ,
+                      const kType & argK )
+  {
+    m_coord[0] = argI ;
+    m_coord[1] = argJ ;
+    m_coord[2] = argK ;
+
+    // Sort the indices I >= J >= K
+    order<0,2>();
+    order<1,2>();
+    order<0,1>();
+
+    m_coord[3] = ( m_coord[0] * ( m_coord[0] + 1 ) * ( m_coord[0] + 2 ) ) / 6 +
+                 ( m_coord[1] * ( m_coord[1] + 1 ) ) / 2 + m_coord[2] ;
   }
 
   template< class D >
