@@ -13,6 +13,7 @@ APPEND_SET(HEADERS
   MueLu_GalleryParameters.hpp
   MueLu_MatrixFactory.hpp  
   MueLu_MatrixTypes.hpp
+  MueLu_VectorTraits.hpp
   )
 
 APPEND_SET(SOURCES

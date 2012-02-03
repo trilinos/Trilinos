@@ -7,11 +7,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Assert.hpp"
 
-#ifdef XPETRA_ENABLED
-// needed for the specialized traits:
-#include "Xpetra_Map.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#endif
+#include "MueLu_VectorTraits.hpp"
 
 #include <iostream>
 
@@ -19,14 +15,14 @@ namespace MueLu {
   
   class GalleryUtils {
 
-#   include "Xpetra_UseShortNames.hpp"
-
     public:
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map>
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename MultiVector>
     static Teuchos::RCP<MultiVector>
     CreateCartesianCoordinates(std::string const &coordType, RCP<const Map> const & map, Teuchos::ParameterList& list)
     {
+      using MueLu::Gallery::VectorTraits;
+
       Teuchos::RCP<MultiVector> coordinates;
 
       Scalar delta_x, delta_y, delta_z;
@@ -45,7 +41,7 @@ namespace MueLu {
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
 
       if (coordType == "1D") {
-        coordinates = MultiVectorFactory::Build(map,1);
+        coordinates = VectorTraits<Map,MultiVector>::Build(map,1,false);
         Teuchos::ArrayRCP<ArrayRCP<Scalar> > Coord(1);
         Coord[0] = coordinates->getDataNonConst(0);
 
@@ -58,7 +54,7 @@ namespace MueLu {
 
       } else if (coordType == "2D") {
 
-        coordinates = MultiVectorFactory::Build(map,2);
+        coordinates = VectorTraits<Map,MultiVector>::Build(map,2,false);
         Teuchos::ArrayRCP<ArrayRCP<Scalar> > Coord(2);
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
@@ -77,7 +73,7 @@ namespace MueLu {
 
       } else if (coordType == "3D") {
 
-        coordinates = MultiVectorFactory::Build(map,3);
+        coordinates = VectorTraits<Map,MultiVector>::Build(map,3,false);
         Teuchos::ArrayRCP<ArrayRCP<Scalar> > Coord(3);
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
