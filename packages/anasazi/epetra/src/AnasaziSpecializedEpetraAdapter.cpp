@@ -278,4 +278,68 @@ namespace Anasazi {
     }
   }
 
+  ///////////////////////////////////////////////////////////////////////////////
+  //
+  //--------Anasazi::EpetraOpMVOp Implementation-------------------------------------
+  //
+  ///////////////////////////////////////////////////////////////////////////////
+
+  void EpetraOpMVOp::Apply ( const MultiVec<double>& X,
+                                   MultiVec<double>& Y ) const
+  {
+    //
+    // This standard operator computes Y = A*X
+    //
+    MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
+    EpetraOpMultiVec* vec_X = dynamic_cast<EpetraOpMultiVec* >(&temp_X);
+    EpetraOpMultiVec* vec_Y = dynamic_cast<EpetraOpMultiVec* >(&Y);
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vec_X==NULL, std::invalid_argument, "Anasazi::EpetraOpMVOp::Apply() cast of MultiVec<double> to EpetraOpMultiVec failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( vec_Y==NULL, std::invalid_argument, "Anasazi::EpetraOpMVOp::Apply() cast of MultiVec<double> to EpetraOpMultiVec failed.");
+
+    int info = Epetra_OP->Apply( *(vec_X->GetEpetraMultiVector()), *(vec_Y->GetEpetraMultiVector()) );
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError,
+                        "Anasazi::EpetraOpMVOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+  }
+
+
+  ///////////////////////////////////////////////////////////////////////////////
+  //
+  //--------Anasazi::EpetraOpMVGenOp Implementation----------------------------------
+  //
+  ///////////////////////////////////////////////////////////////////////////////
+
+  void EpetraOpMVGenOp::Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const
+  {
+    //
+    // This generalized operator computes Y = A^{-1}*M*X
+    //
+    int info=0;
+    MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
+    EpetraOpMultiVec* vec_X = dynamic_cast<EpetraOpMultiVec* >(&temp_X);
+    EpetraOpMultiVec* vec_Y = dynamic_cast<EpetraOpMultiVec* >(&Y);
+    Epetra_MultiVector temp_Y(*(vec_Y->GetEpetraMultiVector()));
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vec_X==NULL, std::invalid_argument, "Anasazi::EpetraOpMVGenOp::Apply() cast of MultiVec<double> to EpetraOpMultiVec failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION( vec_Y==NULL, std::invalid_argument, "Anasazi::EpetraOpMVGenOp::Apply() cast of MultiVec<double> to EpetraOpMultiVec failed.");
+    //
+    // Need to cast away constness because the member function Apply is not declared const.  
+    // Change the transpose setting for the operator if necessary and change it back when done.
+    //
+    // Apply M
+    info = Epetra_MOP->Apply( *(vec_X->GetEpetraMultiVector()), temp_Y );
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError,
+                        "Anasazi::EpetraOpMVGenOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+    // Apply A or A^{-1}
+    if (isAInverse_) {
+      info = Epetra_AOP->ApplyInverse( temp_Y, *(vec_Y->GetEpetraMultiVector()) );
+    }
+    else {
+      info = Epetra_AOP->Apply( temp_Y, *(vec_Y->GetEpetraMultiVector()) );
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OperatorError,
+                        "Anasazi::EpetraOpMVGenOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+  }
+
+
 } // namespace Anasazi

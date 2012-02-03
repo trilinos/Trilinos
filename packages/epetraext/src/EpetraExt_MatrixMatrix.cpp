@@ -138,6 +138,20 @@ int mult_A_B(CrsMatrixStruct& Aview,
   //
   //Our goal, of course, is to navigate the data in A and B once, without
   //performing searches for column-indices, etc.
+
+
+  // Run through all the hash table lookups once and for all
+  int * Acol2Brow=new int[Aview.colMap->NumMyElements()];
+  if(Aview.colMap->SameAs(*Bview.rowMap)){
+    // Maps are the same: Use local IDs as the hash
+    for(int i=0;i<Aview.colMap->NumMyElements();i++)
+      Acol2Brow[i]=i;				
+  }
+  else {
+    // Maps are not the same:  Use the map's hash
+    for(int i=0;i<Aview.colMap->NumMyElements();i++)
+      Acol2Brow[i]=Bview.rowMap->LID(Aview.colMap->GID(i));
+  }
   
   // Mark indices as empty w/ -1
   for(k=0;k<C_numCols;k++) c_index[k]=-1;
@@ -172,8 +186,12 @@ int mult_A_B(CrsMatrixStruct& Aview,
 
     This algorithm also has a few twists worth documenting.  
 
-    1) We know (by inspection of the code in Multiply that Aview's ColMap is Bview's RowMap.  This
-    means we can completely avoid GID/LID conversions here.
+    1) First off, we compute the Acol2Brow array above.  This array answers the question:
+
+    "Given a LCID in A, what LRID in B corresponds to it?"
+
+    Since this involves LID calls, this is a hash table lookup.  Thus we do this once for every 
+    LCID in A, rather than call LID inside the MMM loop.
 
     2) The second major twist involves the c_index, c_cols and c_vals arrays.  The arrays c_cols 
     and c_vals store the *local* column index and values accumulator respectively.  These 
@@ -206,7 +224,7 @@ int mult_A_B(CrsMatrixStruct& Aview,
 
     // Local matrix: Do the "middle product"
     for(k=0; k<Aview.numEntriesPerRow[i]; ++k) {
-      int Ak=Aindices_i[k];
+      int Ak=Acol2Brow[Aindices_i[k]];
       double Aval = Aval_i[k];
       // We're skipping remote entries on this pass.
       if(Bview.remote[Ak] || Aval==0) continue;
@@ -254,7 +272,7 @@ int mult_A_B(CrsMatrixStruct& Aview,
 
     // Remote matrix: Do the "middle product"
     for(k=0; k<Aview.numEntriesPerRow[i]; ++k) {
-      int Ak=Aindices_i[k];
+      int Ak=Acol2Brow[Aindices_i[k]];
       double Aval = Aval_i[k];
       // We're skipping local entries on this pass.
       if(!Bview.remote[Ak] || Aval==0) continue;
@@ -293,6 +311,7 @@ int mult_A_B(CrsMatrixStruct& Aview,
   delete [] dwork;
   delete [] iwork;
   delete [] c_index;
+  delete [] Acol2Brow;
   return(0);
 }
 

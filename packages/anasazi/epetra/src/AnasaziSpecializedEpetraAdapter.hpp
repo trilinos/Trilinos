@@ -279,7 +279,115 @@ namespace Anasazi {
 #pragma warning(pop)
 #endif
   };
+ 
+
+  //////////////////////////////////////////////////////////////////
+  //
+  //--------template class AnasaziEpetraOpMVOp---------------------
+  //
+  //////////////////////////////////////////////////////////////////
+
+  /*! 
+    \brief Adapter class for creating an operator to apply to an Anasazi::EpetraOpMultiVec.
+
+    \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
+    only provide a double-precision eigensolver.
+  */
+
+  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraOpMVOp : public virtual Operator<double> {
+  public:
+    //! Basic constructor for applying operator \f$A\f$ [default] or \f$A^T\f$.
+    /*! If \c isTrans is false this operator will apply \f$A\f$, else it will apply \f$A^T\f$.
+    */
+    EpetraOpMVOp(const Teuchos::RCP<const Epetra_Operator> &OP,
+                 bool isTrans = false )
+      : Epetra_OP( OP ), isTrans_( isTrans )
+    {
+    }
+
+    //! Destructor
+    ~EpetraOpMVOp() {};
+
+    //! Apply method 
+    /*! This method will apply \f$A\f$ or \f$A^T\f$ to \c X, returning \c Y.
+     */
+    void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const;
+
+  private:
+
+//use pragmas to disable some false-positive warnings for windows 
+// sharedlibs export
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4251)
+#endif
+    Teuchos::RCP<const Epetra_Operator> Epetra_OP;
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+    bool isTrans_;
+  };
+
+
+  //////////////////////////////////////////////////////////////////
+  //
+  //--------template class AnasaziEpetraOpMVGenOp-------------------
+  //
+  //////////////////////////////////////////////////////////////////
+
+  /*! 
+    \brief Adapter class for creating a generalized operator to apply to an Anasazi::EpetraOpMultiVec.
+
+    This class will apply the operation \f$A^{-1}M\f$ [default] or \f$AM\f$, for the \c Apply method of the
+    Epetra_Operator / Anasazi::Operator.  The Anasazi::EpetraOpMVGenOp operator is useful when spectral 
+    transformations are used within eigensolvers.  For instance, \f$A^{-1}M\f$ is a shift and invert 
+    spectral transformation commonly used with Anasazi::BlockKrylovSchur to compute the smallest-magnitude
+    eigenvalues for the eigenproblem \f$Ax = \lambda Mx\f$.
+
+    \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
+    only provide a double-precision eigensolver.
+  */
   
+  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraOpMVGenOp : public virtual Operator<double> {
+  public:
+    //! Basic constructor for applying operator \f$A^{-1}M\f$ [default] or \f$AM\f$.
+    /*! If \c isAInverse is true this operator will apply \f$A^{-1}M\f$, else
+      it will apply \f$AM\f$.
+    */
+    EpetraOpMVGenOp(const Teuchos::RCP<Epetra_Operator> &AOp,
+                const Teuchos::RCP<Epetra_Operator> &MOp,
+                bool isAInverse = true )
+      : Epetra_AOP( AOp ), Epetra_MOP( MOp ), isAInverse_( isAInverse )
+    {
+    }
+
+    //! Destructor
+    ~EpetraOpMVGenOp() {};
+
+    //! Apply method 
+    /*! This method will apply \f$A\f$ or \f$A^T\f$ to \c X, returning \c Y.
+     */
+    void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const;
+
+  private:
+ 
+//use pragmas to disable some false-positive warnings for windows 
+// sharedlibs export
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4251)
+#endif
+    Teuchos::RCP<const Epetra_Operator> Epetra_AOP;
+    Teuchos::RCP<const Epetra_Operator> Epetra_MOP;
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+    bool isAInverse_;
+  };
+
+ 
 } // end of Anasazi namespace 
 
 #endif 
