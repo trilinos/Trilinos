@@ -94,6 +94,9 @@ namespace MueLu {
     // Note: It's OK to use rcpFromRef here, because data will only be kept by the FactoryManager
     //       and the FactoryManager is deleted at the end of this function.
 
+
+    //TODO:FIXME
+
     FactoryManager manager(rcpFromRef(PFact), rcpFromRef(RFact), rcpFromRef(AcFact));
     manager.SetFactory("CoarseSolver", Teuchos::null);
     manager.SetFactory("Smoother", rcpFromRef(SmooFact));
@@ -234,8 +237,8 @@ namespace MueLu {
     RCP<const FactoryManager> rcpManager = rcpFromRef(manager);
 
 // // //     TopRAPFactory<SC, LO, GO, NO>      rapFactory           (rcpManager); //TODO: remove SC, LO, GO, NO
-    TopSmootherFactory<SC, LO, GO, NO> smootherFactory      (rcpManager, "Smoother");
-    TopSmootherFactory<SC, LO, GO, NO> coarsestSolverFactory(rcpManager, "CoarseSolver");
+//     TopSmootherFactory<SC, LO, GO, NO> smootherFactory      (rcpManager, "Smoother");
+//     TopSmootherFactory<SC, LO, GO, NO> coarsestSolverFactory(rcpManager, "CoarseSolver");
 
     Monitor h(*this, "Setup");
     //TODO Xpetra::global_size_t sumCoarseNnz = 0;

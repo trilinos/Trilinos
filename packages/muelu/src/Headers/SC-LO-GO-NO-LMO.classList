@@ -1,5 +1,7 @@
 Hierarchy
-HierarchyFactory
+HierarchyManager
+ParameterListInterpreter
+FactoryFactory
 SaPFactory
 PgPFactory
 GenericRFactory

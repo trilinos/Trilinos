@@ -6,8 +6,16 @@
 typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Hierarchy;
 #endif
 
-#ifdef MUELU_HIERARCHYFACTORY_SHORT
-typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> HierarchyFactory;
+#ifdef MUELU_HIERARCHYMANAGER_SHORT
+typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> HierarchyManager;
+#endif
+
+#ifdef MUELU_PARAMETERLISTINTERPRETER_SHORT
+typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ParameterListInterpreter;
+#endif
+
+#ifdef MUELU_FACTORYFACTORY_SHORT
+typedef MueLu::FactoryFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> FactoryFactory;
 #endif
 
 #ifdef MUELU_SAPFACTORY_SHORT

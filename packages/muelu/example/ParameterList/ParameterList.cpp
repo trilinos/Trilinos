@@ -2,7 +2,7 @@
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
-#include <MueLu_HierarchyFactory.hpp> // TODO: move into MueLu.hpp
+#include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>  
@@ -48,15 +48,15 @@ int main(int argc, char *argv[]) {
   //
 
   // Multigrid Hierarchy
-  HierarchyFactory mueLuFactory(xmlFileName);
+  ParameterListInterpreter mueLuFactory(xmlFileName);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
   H->GetLevel(0)->Set("A", A);
-  mueLuFactory.SetupHierarchy(*H);
+
+  // mueLuFactory.SetupHierarchy(*H);
 
   //TODO: move this into ParameterList  H->setVerbLevel(Teuchos::VERB_HIGH);
 
-  // Multigrid setup phase (using default parameters)
-  H->Setup();
+  return EXIT_SUCCESS;
 
   //
   // Solve Ax = b
