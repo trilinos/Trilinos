@@ -180,7 +180,7 @@ namespace MueLu {
     }
 
     if (verbLevel & Debug) {
-      out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
+      out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
     }
   }
 
