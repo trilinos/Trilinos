@@ -18,6 +18,8 @@ namespace MueLu {
      @brief Factory for generating nullspace
 
      @todo TODO This factory can only generate the constant vector at the moment.
+
+     @ingroup MueLuTransferClasses
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?

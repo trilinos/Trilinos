@@ -28,6 +28,8 @@ namespace MueLu {
     Factory for creating tentative prolongator.   Nullspace vectors are split across aggregates so that they
     have local support.  The vectors with local support are factored via LAPACK QR.  The Q becomes the
     tentative prolongator, and the R becomes the coarse nullspace. 
+
+    @ingroup MueLuTransferClasses
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
