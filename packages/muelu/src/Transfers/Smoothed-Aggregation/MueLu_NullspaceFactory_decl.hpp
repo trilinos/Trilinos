@@ -13,6 +13,13 @@
 
 namespace MueLu {
 
+  /*!
+     @class NullspaceFactory class.
+     @brief Factory for generating nullspace
+
+     @todo TODO This factory can only generate the constant vector at the moment.
+  */
+
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class NullspaceFactory : public SingleLevelFactoryBase {
 #undef MUELU_NULLSPACEFACTORY_SHORT
@@ -31,18 +38,29 @@ namespace MueLu {
 
     //@}
 
-    //! Input
+    //! @name Input
     //@{
+    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+
+        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+        will fall back to the settings in FactoryManager.
+    */
 
     void DeclareInput(Level &currentLevel) const;
 
     //@}
 
-    void Build(Level &currentLevel) const; // Build
+    //! @name Build methods.
+    //@{
+
+    //! Build an object with this factory.
+    void Build(Level &currentLevel) const;
+
+    //@}
 
   private:
 
-    //! A Factory
+    //! Factory for generating matrix A.
     RCP<const FactoryBase> AFact_;
 
   }; //class NullspaceFactory
