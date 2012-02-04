@@ -28,6 +28,8 @@
 
 #include "Xpetra_Operator.hpp"
 
+#define sumAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
 
 /** \file Xpetra_Operator.hpp
 
@@ -162,12 +164,14 @@ public:
     {
       for (size_t c=0; c<Cols(); ++c)
       {
-        getMatrix(r,c)->fillComplete(getDomainMap(c),getRangeMap(r),os);
+	if(getMatrix(r,c)->isFillComplete() == false)
+	  getMatrix(r,c)->fillComplete(getDomainMap(c),getRangeMap(r),os);
       }
     }
 
     // get full row map
-    fullrowmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), rangemaps_->getFullMap()->getNodeNumElements(), rangemaps_->getFullMap()->getNodeElementList(), rangemaps_->getFullMap()->getIndexBase(), rangemaps_->getFullMap()->getComm());//rangemaps_->FullMap(); //->Clone();
+    //fullrowmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), rangemaps_->getFullMap()->getNodeNumElements(), rangemaps_->getFullMap()->getNodeElementList(), rangemaps_->getFullMap()->getIndexBase(), rangemaps_->getFullMap()->getComm());//rangemaps_->FullMap(); //->Clone();
+    fullrowmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), rangemaps_->getFullMap()->getGlobalNumElements(), rangemaps_->getFullMap()->getNodeElementList(), rangemaps_->getFullMap()->getIndexBase(), rangemaps_->getFullMap()->getComm());//rangemaps_->FullMap(); //->Clone();
 
     // TODO: check me, clean up, use only ArrayView instead of std::vector
     // build full col map
@@ -179,17 +183,28 @@ public:
         std::set<GlobalOrdinal> colset;
         for (size_t r=0; r<Rows(); ++r)
         {
-          Teuchos::RCP<const MapClass> colmap = getMatrix(r,c)->getColMap();
-          copy(colmap->getNodeElementList().getRawPtr(),
-               colmap->getNodeElementList().getRawPtr()+colmap->getNodeNumElements(),
-               inserter(colset,colset.begin()));
+	  if(getMatrix(r,c) != Teuchos::null) {
+	    Teuchos::RCP<const MapClass> colmap = getMatrix(r,c)->getColMap();
+	    copy(colmap->getNodeElementList().getRawPtr(),
+		colmap->getNodeElementList().getRawPtr()+colmap->getNodeNumElements(),
+		inserter(colset,colset.begin()));
+	  }
         }
         colmapentries.reserve(colmapentries.size()+colset.size());
         copy(colset.begin(), colset.end(), back_inserter(colmapentries));
+        sort(colmapentries.begin(), colmapentries.end());
+	typename std::vector<GlobalOrdinal>::iterator gendLocation;
+	gendLocation = std::unique(colmapentries.begin(), colmapentries.end());
+	colmapentries.erase(gendLocation,colmapentries.end());
       }
 
+      // sum up number of local elements
+      size_t numGlobalElements = 0;
+      sumAll(rangemaps_->getFullMap()->getComm(), colmapentries.size(), numGlobalElements) 
+
       const Teuchos::ArrayView<const GlobalOrdinal> aView = Teuchos::ArrayView<const GlobalOrdinal>(colmapentries);
-      fullcolmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullrowmap_->lib(), colmapentries.size(), aView, 0, fullrowmap_->getComm());
+      fullcolmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), numGlobalElements, aView, 0,rangemaps_->getFullMap()->getComm());
+      //fullcolmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), domainmaps_->getFullMap()->getGlobalNumElements(), aView, 0,domainmaps_->getFullMap()->getComm());
     }
 
 
