@@ -85,9 +85,8 @@ namespace MueLuTests {
 
     } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
 
-
     mtx->fillComplete(map,map);
-
+    
     return mtx;
   }
 
@@ -108,8 +107,10 @@ namespace MueLuTests {
     GO numElements1 = 400;
     GO numElements2 = 100;
 
-    map1   = MapFactory::Build(Xpetra::UseEpetra, numElements1, 0, comm);
-    map2   = MapFactory::Build(Xpetra::UseEpetra, numElements2, numElements1, comm);
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    
+    map1   = MapFactory::Build(lib, numElements1, 0, comm);
+    map2   = MapFactory::Build(lib, numElements2, numElements1, comm);
 
     std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
     Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
@@ -117,7 +118,7 @@ namespace MueLuTests {
     Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
     localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
     Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
-    bigMap = MapFactory::Build(Xpetra::UseEpetra, numElements, eleList, 0, comm); // create full big map (concatenation of map1 and map2)
+    bigMap = MapFactory::Build(lib, numElements, eleList, 0, comm); // create full big map (concatenation of map1 and map2)
 
     std::vector<Teuchos::RCP<const Map> > maps;
     maps.push_back(map1); maps.push_back(map2);
@@ -126,7 +127,7 @@ namespace MueLuTests {
 
     RCP<CrsOperator> Op11 = GenerateProblemMatrix(map1,2,-1,-1);
     RCP<CrsOperator> Op22 = GenerateProblemMatrix(map2,3,-2,-1);
-
+    
     // build blocked operator
     Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO,Node,LocalMatOps> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO,Node,LocalMatOps>(mapExtractor,mapExtractor,10));
 
