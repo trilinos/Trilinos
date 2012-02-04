@@ -7,12 +7,20 @@
 
 namespace MueLu {
 
-  //! Base class for MueLu classes
+  /*!
+     @class BaseClass class.
+     @brief Base class for MueLu classes
+
+     @ingroup MueLuBaseClasses
+  */
   class BaseClass
     : public VerboseObject, public Describable
   {
     
   public:
+
+    //! @name Constructors/Destructors
+    //@{
     
     //! Destructor.
     virtual ~BaseClass() {}

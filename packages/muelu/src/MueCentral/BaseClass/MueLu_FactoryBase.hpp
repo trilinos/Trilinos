@@ -14,7 +14,11 @@ namespace MueLu {
     return i;
   }
   
-  //! Base class for factories (e.g., R, P, and A_coarse).
+  /*! 
+    @class FactoryBase
+    @brief Base class for factories (e.g., R, P, and A_coarse).
+    @ingroup MueLuBaseClasses
+  */
   class FactoryBase : public BaseClass {
 
   public:

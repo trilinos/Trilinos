@@ -31,6 +31,8 @@ namespace MueLu {
      -# interface without fancyOSstream but std::stream
      -# add 'const' and mutable
 
+    @ingroup MueLuBaseClasses
+
   */
   class VerboseObject
     : public Teuchos::VerboseObject<VerboseObject>

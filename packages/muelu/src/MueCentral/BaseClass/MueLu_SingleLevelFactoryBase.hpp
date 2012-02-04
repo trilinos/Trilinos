@@ -9,13 +9,16 @@
 namespace MueLu {
 
   /*!
-    @class Base class for factories (e.g., Aggregation, Smoothers).
-    @brief Base class for factories that use one levels (currentLevel).
+    @class SingleLevelFactoryBase
+    @brief Base class for factories that use one level (currentLevel).
+
+    @ingroup MueLuBaseClasses
   */
   class SingleLevelFactoryBase : public FactoryBase {
 
   public:
-    //@{ Constructors/Destructors.
+    //! @name Constructors/Destructors.
+    //@{
 
     //! Constructor.
     SingleLevelFactoryBase() {}
@@ -24,15 +27,20 @@ namespace MueLu {
     virtual ~SingleLevelFactoryBase() {}
     //@}
 
-    //! Input
+    //! @name Input
     //@{
 
+    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+
+        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+        will fall back to the settings in FactoryManager.
+    */
     virtual void DeclareInput(Level &currentLevel) const = 0;
 
     //@}
 
-    //@{
     //! @name Build methods.
+    //@{
 
     //! Build an object with this factory.
     virtual void Build(Level & currentLevel) const = 0;
@@ -46,7 +54,8 @@ namespace MueLu {
     virtual void CallDeclareInput(Level & requestedLevel) const {
       DeclareInput(requestedLevel);
     }
- //@}
+
+    //@}
 
   }; //class SingleLevelFactoryBase
 

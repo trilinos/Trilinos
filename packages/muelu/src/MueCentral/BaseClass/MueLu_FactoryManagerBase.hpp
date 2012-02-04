@@ -10,7 +10,11 @@
 
 namespace MueLu {
 
-  //! Class that provides default factories within Needs class.
+  /*!
+     @class FactoryManagerBase
+     @brief Class that provides default factories within Needs class.
+     @ingroup MueLuBaseClasses
+  */
   class FactoryManagerBase : public BaseClass {
 
   public:

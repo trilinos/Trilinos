@@ -8,7 +8,12 @@
 
 namespace MueLu {
 
-  //! Base class for MueLu classes
+  /*!
+     @class Describable
+     @brief Base class for MueLu classes
+
+     @ingroup MueLuBaseClasses
+  */
   class Describable
     : public Teuchos::Describable
   {

@@ -8,15 +8,21 @@
 namespace MueLu {
 
   /*!
-    @class Base class for factories (e.g., R, P, and A_coarse).
+    @class TwoLevelFactoryBase class.
     @brief Base class for factories that use two levels (fineLevel and coarseLevel).
+
+    Examples of such factories are R, P, and A_coarse.
+
+    @ingroup MueLuBaseClasses
   */
+
 
   class TwoLevelFactoryBase : public FactoryBase {
 
   public:
 
-    //@{ Constructors/Destructors.
+    //! @name Constructors/Destructors.
+    //@{
 
     //! Constructor.
     TwoLevelFactoryBase() {}
@@ -29,6 +35,11 @@ namespace MueLu {
     //! Input
     //@{
 
+    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+
+        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+        will fall back to the settings in FactoryManager.
+    */
     virtual void DeclareInput(Level &fineLevel, Level &coarseLevel) const = 0;
 
     //!
@@ -39,9 +50,9 @@ namespace MueLu {
 
     //@}
 
+    //! @name Build methods.
     //@{
 
-    //! @name Build methods.
 
     //! Build an object with this factory.
     virtual void Build(Level & fineLevel, Level & coarseLevel) const = 0;
@@ -55,6 +66,7 @@ namespace MueLu {
     //@}
 
   }; //class TwoLevelFactoryBase
+
 
 } //namespace MueLu
 
