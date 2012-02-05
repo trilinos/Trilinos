@@ -1,4 +1,5 @@
 #ifndef __Panzer_SGUtilities_hpp__
+#define __Panzer_SGUtilities_hpp__
 
 #include "Panzer_config.hpp"
 

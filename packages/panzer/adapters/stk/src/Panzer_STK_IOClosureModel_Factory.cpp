@@ -2,6 +2,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_STK_IOClosureModel_Factory.hpp"
 #include "Panzer_STK_ScatterCellAvgQuantity.hpp"
+#include "Panzer_STK_ScatterCellQuantity.hpp"
 
 template< >
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 

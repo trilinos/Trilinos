@@ -85,6 +85,7 @@ namespace panzer_stk {
       // pl->sublist("Output").disableRecursiveValidation();
       pl->sublist("Output").set("File Name","panzer.exo"); 
       pl->sublist("Output").sublist("Cell Average Quantities").disableRecursiveValidation();
+      pl->sublist("Output").sublist("Cell Quantities").disableRecursiveValidation();
  
       // Assembly sublist
       {
@@ -205,8 +206,22 @@ namespace panzer_stk {
        for(std::size_t i=0;i<tokens.size();i++) 
           mesh->addCellField(tokens[i],blockId);
     }
-     
 
+    // register cell quantities
+    Teuchos::ParameterList & cellQuants = output_list.sublist("Cell Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=cellQuants.begin();
+        itr!=cellQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+ 
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++) 
+          mesh->addCellField(tokens[i],blockId);
+    }
+     
     // finish building mesh, set required field variables and mesh bulk data
     ////////////////////////////////////////////////////////////////////////
     try {
