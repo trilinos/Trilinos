@@ -43,6 +43,12 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, ValueTy
     m_high_end_itr(high_end_itr)
   {}
 
+  TwoLevelIterator() :
+    m_high_itr(),
+    m_low_itr(),
+    m_high_end_itr()
+  {}
+
   bool operator==(const self& rhs) const
   {
     return (m_high_itr == rhs.m_high_itr && m_low_itr == rhs.m_low_itr);
@@ -160,6 +166,12 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag, B
   SelectedBucketIterator(BucketIteratorType bucket_end_itr) :
     m_bucket_itr(bucket_end_itr),
     m_bucket_end_itr(bucket_end_itr),
+    m_selector()
+  {}
+
+  SelectedBucketIterator() :
+    m_bucket_itr(),
+    m_bucket_end_itr(),
     m_selector()
   {}
 

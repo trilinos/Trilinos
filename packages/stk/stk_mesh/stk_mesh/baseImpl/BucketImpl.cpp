@@ -50,13 +50,13 @@ void BucketImpl::update_state()
     if ( 1 < num_state && tmp->m_size ) {
       unsigned offset[ MaximumFieldStates ] ;
 
-      for ( unsigned j = 0 ; j < num_state ; ++j ) {
-        offset[j] = tmp[j].m_base ;
+      offset[0] = tmp[num_state-1].m_base;
+      for ( unsigned j = 1 ; j < num_state ; ++j ) {
+        offset[j] = tmp[j-1].m_base ;
       }
 
       for ( unsigned j = 0 ; j < num_state ; ++j ) {
-        const unsigned j_new = ( j + num_state - 1 ) % num_state ;
-        tmp[j_new].m_base = offset[j] ;
+        tmp[j].m_base = offset[j] ;
       }
     }
   }
