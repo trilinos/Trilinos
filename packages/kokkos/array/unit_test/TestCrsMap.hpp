@@ -66,8 +66,6 @@ public:
   typedef KOKKOS_MACRO_DEVICE device ;
   typedef Kokkos::Host        host ;
 
-  typedef Kokkos::CrsMap< device > dView ;
-  typedef Kokkos::CrsMap< device >::HostMirror hView ;
 
   TestCrsMap()
   {
@@ -77,6 +75,9 @@ public:
 
   void run_test()
   {
+    typedef Kokkos::CrsMap< device > dView ;
+    typedef dView::HostMirror hView ;
+
     enum { LENGTH = 1000 };
     dView dx , dy , dz ;
     hView hx , hy , hz ;
@@ -109,22 +110,22 @@ public:
 
     ASSERT_EQ( dx.row_count() , LENGTH );
     ASSERT_EQ( dy.row_count() , LENGTH );
-    ASSERT_EQ( dx.row_range_count() , (device::size_type) x_count );
-    ASSERT_EQ( dy.row_range_count() , (device::size_type) y_count );
+    ASSERT_EQ( dx.entry_count() , (device::size_type) x_count );
+    ASSERT_EQ( dy.entry_count() , (device::size_type) y_count );
 
     hx = Kokkos::create_mirror( dx );
     hy = Kokkos::create_mirror( dy );
 
     ASSERT_EQ( hx.row_count() , LENGTH );
     ASSERT_EQ( hy.row_count() , LENGTH );
-    ASSERT_EQ( hx.row_range_count() , (device::size_type) x_count );
-    ASSERT_EQ( hy.row_range_count() , (device::size_type) y_count );
+    ASSERT_EQ( hx.entry_count() , (device::size_type) x_count );
+    ASSERT_EQ( hy.entry_count() , (device::size_type) y_count );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      const size_t x_range_begin = hx.row_range_begin(i);
-      const size_t x_range_end   = hx.row_range_end(i);
-      const size_t y_range_begin = hy.row_range_begin(i);
-      const size_t y_range_end   = hy.row_range_end(i);
+      const size_t x_range_begin = hx.row_entry_begin(i);
+      const size_t x_range_end   = hx.row_entry_end(i);
+      const size_t y_range_begin = hy.row_entry_begin(i);
+      const size_t y_range_end   = hy.row_entry_end(i);
       ASSERT_EQ( (int) ( x_range_end - x_range_begin ) , x_row_size[i] );
       ASSERT_EQ( (size_t) ( y_range_end - y_range_begin ) , y_row_size[i] );
     }
@@ -148,6 +149,9 @@ public:
 
   void run_test_graph()
   {
+    typedef Kokkos::CrsMap< device , Kokkos::CrsColumnMap > dView ;
+    typedef dView::HostMirror hView ;
+
     enum { LENGTH = 1000 };
     dView dx ;
     hView hx ;
@@ -167,8 +171,8 @@ public:
     ASSERT_EQ( hx.row_count() , LENGTH );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      const size_t begin = hx.row_range_begin(i);
-      const size_t n = hx.row_range_end(i) - begin ;
+      const size_t begin = hx.row_entry_begin(i);
+      const size_t n = hx.row_entry_end(i) - begin ;
       ASSERT_EQ( n , graph[i].size() );
       for ( size_t j = 0 ; j < n ; ++j ) {
         ASSERT_EQ( (int) hx.column( j + begin ) , graph[i][j] );

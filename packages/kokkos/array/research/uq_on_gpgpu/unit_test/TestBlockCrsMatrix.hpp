@@ -78,7 +78,7 @@ void generate_matrix(
   Kokkos::BlockCrsMatrix<Kokkos::SymmetricDiagonalSpec<Device>,long,Device> & matrix )
 {
   typedef Kokkos::MultiVector< long , Device > values_type ;
-  typedef Kokkos::CrsMap< Device >             graph_type ;
+  typedef Kokkos::CrsMap< Device , Kokkos::CrsColumnMap >  graph_type ;
 
   typedef typename values_type::HostMirror host_values_type ;
   typedef typename graph_type ::HostMirror host_graph_type ;
@@ -115,8 +115,8 @@ void generate_matrix(
   host_values_type h_values = Kokkos::create_mirror( matrix.values );
 
   for ( size_t outer_row = 0 ; outer_row < N*N*N ; ++outer_row ) {
-    const size_t outer_entry_begin = h_graph.row_range_begin( outer_row );
-    const size_t outer_entry_end   = h_graph.row_range_end( outer_row );
+    const size_t outer_entry_begin = h_graph.row_entry_begin( outer_row );
+    const size_t outer_entry_end   = h_graph.row_entry_end( outer_row );
 
     for ( size_t outer_entry = outer_entry_begin ;
                  outer_entry < outer_entry_end ; ++outer_entry ) {
@@ -145,7 +145,7 @@ void test_block_crs_matrix( const size_t M , const size_t N )
 
   typedef long value_type ; // to avoid comparison round-off differences
 
-  typedef Kokkos::CrsMap< Device >        graph_type ;
+  typedef Kokkos::CrsMap< Device , Kokkos::CrsColumnMap >  graph_type ;
   typedef typename graph_type::HostMirror host_graph_type ;
   typedef Kokkos::SymmetricDiagonalSpec< Device > block_spec ;
 
@@ -176,8 +176,8 @@ void test_block_crs_matrix( const size_t M , const size_t N )
   host_graph_type h_graph  = Kokkos::create_mirror( matrix.graph );
 
   for ( size_t outer_row = 0 ; outer_row < length ; ++outer_row ) {
-    const size_t outer_entry_begin = h_graph.row_range_begin( outer_row );
-    const size_t outer_entry_end   = h_graph.row_range_end( outer_row );
+    const size_t outer_entry_begin = h_graph.row_entry_begin( outer_row );
+    const size_t outer_entry_end   = h_graph.row_entry_end( outer_row );
 
     for ( size_t inner_row = 0 ; inner_row < M ; ++inner_row ) {
 

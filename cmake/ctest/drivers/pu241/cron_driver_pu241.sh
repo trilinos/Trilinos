@@ -4,9 +4,9 @@ echo
 echo "Starting nightly Trilinos testing on pu241: `date`"
 echo
 
-BASEDIR=/home/casl-vri-admin/NightlyDashboards
+BASEDIR=/home/casl-vri-admin/TrilinosNightlyDashboards
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/pu241
-TRILINOS_REPOSITORY_LOCATION="cgbaker@software.sandia.gov:/space/git/Trilinos"
+TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
 
 
 # Allow override of dev env
@@ -23,7 +23,7 @@ export TDD_CTEST_TEST_TYPE=Nightly
 
 # Submit the outer TDD tests to casl-dev always since these are CASL machines
 export TDD_CTEST_DROP_SITE=casl-dev.ornl.gov
-export TDD_CTEST_DROP_LOCATION="/CDash/submit.php?project=TrilinosDriver"
+export TDD_CTEST_DROP_LOCATION="/cdash/submit.php?project=TrilinosDriver"
 
 time env python ../cron_driver.py
 
@@ -31,4 +31,4 @@ echo
 echo "Ending nightly Trilinos testing on pu241: `date`"
 echo
 
-echo "Finished nightly Trilinos CMake tests pu241: http://casl-dev.ornl.gov/CDash/index.php?project=Trilinos" | mailx -s "Nightly CTest: pu241" casl-vri-admin@localhost
+echo "Finished nightly Trilinos CMake tests pu241: http://casl-dev.ornl.gov/cdash/index.php?project=Trilinos" | mailx -s "Nightly CTest: pu241" casl-vri-admin@localhost
