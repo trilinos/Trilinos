@@ -29,9 +29,9 @@ namespace MueLu {
     SetFactoryManager SFM2(fineLevel,   factoryManagerFine_);
     SetFactoryManager SFM1(coarseLevel, factoryManagerCoarse_);
 
-    if (PFact_  != Teuchos::null) coarseLevel.DeclareInput("P", PFact_.get());
-    if (RFact_  != Teuchos::null) coarseLevel.DeclareInput("R", RFact_.get());
-    if (AcFact_ != Teuchos::null) coarseLevel.DeclareInput("A", AcFact_.get());
+    if (PFact_  != Teuchos::null)                                       coarseLevel.DeclareInput("P", PFact_.get());
+    if (RFact_  != Teuchos::null)                                       coarseLevel.DeclareInput("R", RFact_.get());
+    if ((AcFact_ != Teuchos::null) && (AcFact_ != NoFactory::getRCP())) coarseLevel.DeclareInput("A", AcFact_.get());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -53,7 +53,7 @@ namespace MueLu {
       coarseLevel.RemoveKeepFlag("R", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
 
-    if (AcFact_ != Teuchos::null) {
+    if ((AcFact_ != Teuchos::null) && (AcFact_ != NoFactory::getRCP())) {
       RCP<Operator> Ac = coarseLevel.Get<RCP<Operator> >("A", AcFact_.get());
       coarseLevel.Set("A", Ac, NoFactory::get());
       coarseLevel.AddKeepFlag("A", NoFactory::get(), MueLu::Final);

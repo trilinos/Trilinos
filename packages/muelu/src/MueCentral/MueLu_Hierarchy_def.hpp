@@ -368,7 +368,7 @@ namespace MueLu {
     manager.SetFactory("CoarseSolver", Teuchos::null);
     manager.SetFactory("P", Teuchos::null);
     manager.SetFactory("R", Teuchos::null);
-    manager.SetFactory("A", Teuchos::null);
+    manager.SetFactory("A", NoFactory::getRCP());
 
     lastLevel++; // hack: nothing will be done on the last level in Setup() because coarse solver of manager == Teuchos::null. TODO: print() of Setup() will be confusing
     numDesiredLevels = lastLevel - startLevel + 1;
