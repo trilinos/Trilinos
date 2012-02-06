@@ -31,7 +31,7 @@ namespace MueLu {
     //! Destructor.
     virtual ~SetFactoryManager() {
       // restore previous factory manager
-      level_.SetFactoryManager(prevFactoryManager_);
+      //FIXME      level_.SetFactoryManager(prevFactoryManager_);
     }
 
     //@}
