@@ -231,10 +231,10 @@ namespace MueLu {
     bool IsKey(const std::string & ename, const FactoryBase* factory = NoFactory::get()) const;
 
     //! Test whether a need's value has been saved.
-    bool IsAvailable(const std::string & ename, const FactoryBase* factory = NoFactory::get());
+    bool IsAvailable(const std::string & ename, const FactoryBase* factory = NoFactory::get()) const;
 
     //! Test whether a need has been requested.  Note: this tells nothing about whether the need's value exists.
-    bool IsRequested(const std::string & ename, const FactoryBase* factory = NoFactory::get());
+    bool IsRequested(const std::string & ename, const FactoryBase* factory = NoFactory::get()) const;
 
     //@}
 
