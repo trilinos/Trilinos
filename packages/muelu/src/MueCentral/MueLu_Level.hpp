@@ -117,6 +117,7 @@ namespace MueLu {
       const FactoryBase* fac = GetFactory(ename, factory);
 
       if (!IsAvailable(ename, fac)) {
+
         TEUCHOS_TEST_FOR_EXCEPTION(needs_.NumRequests(ename, fac) < 1 && needs_.GetKeepFlag(ename, fac) == 0, Exceptions::RuntimeError, 
                                    "MueLu::Level::Get(): " << ename << " has not been requested (counter = " << needs_.NumRequests(ename, fac) << ", KeepFlag = " << needs_.GetKeepFlag(ename, fac) << "). " << std::endl << "Generating factory:" << *fac << " NoFactory="<<NoFactory::get());
         
@@ -258,6 +259,25 @@ namespace MueLu {
     // explicit Level(const Level& source);
 
     //! If input factory == NULL, returns the default factory. Else, return input factory.
+    //
+    //  If factory == NULL, the default factory is defined as follow:
+    // - If user data is available, it is considered as the default and the factory manager is ignored.
+    //   => The default factory is then NoFactory.
+    // - Else, the factory manager is used to get the default factory.
+    //    
+    // This strategy allows to use the same factory manager on the fine and coarse level without any trouble.
+    //     Example :
+    //   
+    //     FineLevel:
+    //     ----------
+    //     A          -> User provided
+    //     Nullspace  -> User provided
+    //
+    //     CoarseLevel:
+    //     ------------
+    //     A         -> RAPFactory
+    //     NullSpace -> NullspaceFactory
+    //
     const FactoryBase* GetFactory(const std::string& varname, const FactoryBase* factory) const;
 
     enum   RequestMode { REQUEST, RELEASE, UNDEF }; //EI TODO

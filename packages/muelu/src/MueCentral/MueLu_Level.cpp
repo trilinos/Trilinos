@@ -260,11 +260,18 @@ namespace MueLu {
   Level::Level(const Level& source) { }
 
   const FactoryBase* Level::GetFactory(const std::string& varname, const FactoryBase* factory) const {
+
     if (factory == NULL) {
-      TEUCHOS_TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level::GetFactory(): no FactoryManager");
-      const FactoryBase* fac = factoryManager_->GetFactory(varname).get();
-      TEUCHOS_TEST_FOR_EXCEPTION(fac == NULL, Exceptions::RuntimeError, "MueLu::Level::GetFactory(): Default factory cannot be NULL");
-      return fac;
+
+      if (IsAvailable(varname, NoFactory::get()) && IsKept(varname, NoFactory::get(), MueLu::UserData)) {
+        return NoFactory::get();
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level("<< levelID_ << ")::GetFactory(" << varname << ", " << factory << "): No FactoryManager");
+        const FactoryBase* fac = factoryManager_->GetFactory(varname).get();
+        TEUCHOS_TEST_FOR_EXCEPTION(fac == NULL, Exceptions::RuntimeError, "MueLu::Level("<< levelID_ << ")::GetFactory(" << varname << ", " << factory << "): Default factory returned by FactoryManager cannot be NULL");
+        return fac;
+      }
+
     } else {
       return factory;
     }
