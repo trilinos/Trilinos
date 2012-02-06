@@ -13,12 +13,12 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager)
-    : factoryManagerFine_(rcp( new InternalFactoryManager(parentFactoryManager))), factoryManagerCoarse_(rcp( new InternalFactoryManager(parentFactoryManager))), PFact_(parentFactoryManager->GetFactory("P")), RFact_(parentFactoryManager->GetFactory("R")), AcFact_(parentFactoryManager->GetFactory("A"))
+    : factoryManagerFine_(parentFactoryManager), factoryManagerCoarse_(parentFactoryManager), PFact_(parentFactoryManager->GetFactory("P")), RFact_(parentFactoryManager->GetFactory("R")), AcFact_(parentFactoryManager->GetFactory("A"))
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManagerFine, RCP<const FactoryManagerBase> parentFactoryManagerCoarse)
-    :  factoryManagerFine_(rcp( new InternalFactoryManager(parentFactoryManagerFine))), factoryManagerCoarse_(rcp( new InternalFactoryManager(parentFactoryManagerCoarse))), PFact_(parentFactoryManagerCoarse->GetFactory("P")), RFact_(parentFactoryManagerCoarse->GetFactory("R")), AcFact_(parentFactoryManagerCoarse->GetFactory("A"))
+    :  factoryManagerFine_(parentFactoryManagerFine), factoryManagerCoarse_(parentFactoryManagerCoarse), PFact_(parentFactoryManagerCoarse->GetFactory("P")), RFact_(parentFactoryManagerCoarse->GetFactory("R")), AcFact_(parentFactoryManagerCoarse->GetFactory("A"))
   { }
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -67,7 +67,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string & varName)
-  : factoryManager_(rcp( new InternalFactoryManager(parentFactoryManager))), smootherFact_(parentFactoryManager->GetFactory(varName))
+  : factoryManager_(parentFactoryManager), smootherFact_(parentFactoryManager->GetFactory(varName))
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
