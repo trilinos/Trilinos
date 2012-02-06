@@ -127,7 +127,6 @@ public:
                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                         const Teuchos::ParameterList& closure_models,
-                        const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
                         const Teuchos::ParameterList& user_data,
                         const bool write_graphviz_file=false,
                         const std::string& graphviz_file_prefix="");

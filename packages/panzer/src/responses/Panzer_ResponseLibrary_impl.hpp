@@ -186,7 +186,6 @@ buildVolumeFieldManagersFromResponses(
                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                         const Teuchos::ParameterList& closure_models,
-                        const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
                         const Teuchos::ParameterList& user_data,
                         const bool write_graphviz_file,
                         const std::string& graphviz_file_prefix)
@@ -217,7 +216,7 @@ buildVolumeFieldManagersFromResponses(
   
       // use the physics block to register evaluators
       pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
-      pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory, tmp_user_data);
+      pb->buildAndRegisterGatherScatterEvaluators(*fm,*linObjFactory_, tmp_user_data);
       pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models, user_data);
       if(closure_models.isSublist(response_model_name))
          pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, response_model_name, closure_models, user_data);

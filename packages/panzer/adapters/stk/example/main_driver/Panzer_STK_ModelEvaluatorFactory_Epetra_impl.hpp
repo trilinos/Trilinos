@@ -313,7 +313,6 @@ namespace panzer_stk {
        m_response_library->buildVolumeFieldManagersFromResponses(physicsBlocks,
   					                         user_cm_factory,
                                                                  p.sublist("Closure Models"),
-  					                         *linObjFactory,
   					                         user_data,write_dot_files,prefix);
     }
 
