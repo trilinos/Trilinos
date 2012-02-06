@@ -50,36 +50,42 @@
 
 namespace Kokkos {
 
+template< class Device , typename SizeType > class CrsColumnMap ;
+template< class Device , typename SizeType > class CrsColumnIdentity ;
+
 //----------------------------------------------------------------------------
 /** \brief  Compressed row storage map.
  *
  *  Define a range of entries for each row:
- *    range(row).first <= entry <= range(row).second
- *    where range(row).second == range(row+1).first
+ *    row_entry_begin(row) <= entry < row_entry_end(row)
+ *    row_entry_end(row-1) == row_entry_begin(row)
  *
- *  Optionally include a map of entry -> column defining
+ *  Optionally include a map of entry -> column defining the existence of
  *    ( row , column(entry) )
  */
 template< class DeviceType ,
+          template< class , typename > class Column = CrsColumnIdentity ,
           typename SizeType = typename DeviceType::size_type >
 class CrsMap {
 public:
   typedef DeviceType  device_type ;
   typedef SizeType    size_type ;
-  typedef CrsMap< size_type , void /* Host */ > HostMirror ;
+  typedef CrsMap< size_type , Column , void /* Host */ > HostMirror ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Number of rows */
   size_type row_count() const ;
 
-  /** \brief  End of row map */
-  size_type row_range_count() const ;
+  /** \brief  Number of entries / end of row map */
+  size_type entry_count() const ;
 
-  typedef std::pair<size_type,size_type> range_type ;
-
-  /** \brief  Range of entries for a given row. */
+  /** \brief  Begining of entries for a given row */
   template< typename iType >
-  range_type row_range( const iType & row ) const ;
+  size_type row_entry_begin( const iType & row ) const ;
+
+  /** \brief  End of entries for a given row */
+  template< typename iType >
+  size_type row_entry_end(   const iType & row ) const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Has column mapping : entry -> column */
@@ -138,11 +144,13 @@ create_labeled_crsmap( const std::string & label , const InputType & input )
              ::create( label , input );
 }
 
-template< class DeviceType , typename SizeType >
-typename CrsMap< DeviceType , SizeType >::HostMirror
-create_mirror( const CrsMap< DeviceType , SizeType > & input )
+template< class DeviceType ,
+          template< class , typename > class ColumnType ,
+          typename SizeType >
+typename CrsMap< DeviceType , ColumnType , SizeType >::HostMirror
+create_mirror( const CrsMap< DeviceType , ColumnType , SizeType > & input )
 {
-  typedef CrsMap< DeviceType , SizeType >     view_type ;
+  typedef CrsMap< DeviceType , ColumnType , SizeType >  view_type ;
   typedef typename view_type::HostMirror      host_view ;
   typedef typename host_view::device_type     host_device ;
   typedef typename host_device::memory_space  host_memory ;

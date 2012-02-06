@@ -90,8 +90,8 @@ public:
     // on the local thread, but cannot dynamically allocate
     VectorValue * const y = & m_y(0,iBlockRow);
 
-    const size_type iEntryBegin = m_A.graph.row_range_begin(iBlockRow);
-    const size_type iEntryEnd   = m_A.graph.row_range_end(iBlockRow);
+    const size_type iEntryBegin = m_A.graph.row_entry_begin(iBlockRow);
+    const size_type iEntryEnd   = m_A.graph.row_entry_end(iBlockRow);
 
     // Leading dimension guaranteed contiguous for MultiVector
     for ( size_type j = 0 ; j < m_A.block.dimension() ; ++j ) { y[j] = 0 ; }

@@ -65,7 +65,7 @@ public:
   typedef BlockSpec  block_spec ;
 
   MultiVector< value_type, device_type >  values ;
-  CrsMap< device_type >                   graph ;
+  CrsMap< device_type , CrsColumnMap >    graph ;
   block_spec                              block ;
 };
 

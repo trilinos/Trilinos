@@ -275,8 +275,8 @@ public:
 
       VectorScalar y_sum = 0 ;
 
-      const size_type iBlockEntryEnd = m_A.graph.row_range_end(iBlockRow);
-            size_type iBlockEntry    = m_A.graph.row_range_begin(iBlockRow);
+      const size_type iBlockEntryEnd = m_A.graph.row_entry_end(iBlockRow);
+            size_type iBlockEntry    = m_A.graph.row_entry_begin(iBlockRow);
 
       for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
 

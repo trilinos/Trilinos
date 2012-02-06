@@ -90,8 +90,8 @@ public:
                     iBlock < blockCount ; iBlock += gridDim.x ) {
       VectorValue y = 0 ;
 
-      const size_type iEntryEnd = m_A.graph.row_range_end(iBlock);
-            size_type iEntry    = m_A.graph.row_range_begin(iBlock);
+      const size_type iEntryEnd = m_A.graph.row_entry_end(iBlock);
+            size_type iEntry    = m_A.graph.row_entry_begin(iBlock);
 
       for ( ; iEntry < iEntryEnd ; ++iEntry ) {
         const VectorValue * const x = & m_x( 0 , m_A.graph.column(iEntry) );

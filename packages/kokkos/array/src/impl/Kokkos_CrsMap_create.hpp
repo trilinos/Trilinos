@@ -54,10 +54,12 @@ template< class , class > class CreateCrsMap ;
 
 //----------------------------------------------------------------------------
 
-template< class Device , typename SizeType >
-class CreateMirror< CrsMap< Device , SizeType > , true > {
+template< class Device ,
+          template< class , typename > class ColumnType ,
+          typename SizeType >
+class CreateMirror< CrsMap< Device , ColumnType , SizeType > , true > {
 public:
-  typedef CrsMap< Device , SizeType >     view_type ;
+  typedef CrsMap< Device , ColumnType , SizeType >     view_type ;
   typedef typename view_type::HostMirror  mirror_type ;
 
   static
@@ -66,11 +68,11 @@ public:
 };
 
 template< class DeviceSrc , typename SizeType >
-class CreateCrsMap< CrsMap<Host,SizeType> ,
-                    CrsMap<DeviceSrc,SizeType> > {
+class CreateCrsMap< CrsMap<Host,CrsColumnMap,SizeType> ,
+                    CrsMap<DeviceSrc,CrsColumnMap,SizeType> > {
 public:
-  typedef CrsMap< Host , SizeType >       type ;
-  typedef CrsMap< DeviceSrc , SizeType >  input_type ;
+  typedef CrsMap< Host , CrsColumnMap , SizeType >       type ;
+  typedef CrsMap< DeviceSrc , CrsColumnMap , SizeType >  input_type ;
 
   static
   type create( const input_type & input )
@@ -79,27 +81,55 @@ public:
     typedef          MemoryView< SizeType , memory_space >  memory_type ;
     typedef typename memory_type::HostMirror                mirror_type ;
 
-    const size_t offset_count = input.m_row_count + 1 +
-                                ( input.m_column ? input.m_entry_count : 0 );
+    const size_t offset_count = input.m_row_count + 1 + input.m_entry_count ;
     
     type crs ;
     crs.m_memory.allocate( offset_count , std::string() );
-    crs.m_column      = input.m_column
-                      ? crs.m_memory.ptr_on_device() + input.m_row_count + 1
-                      : 0 ;
-    crs.m_row_count   = input.m_row_count ;
-    crs.m_entry_count = input.m_entry_count ;
+    crs.m_column.m_map = crs.m_memory.ptr_on_device() + input.m_row_count + 1 ;
+    crs.m_row_count    = input.m_row_count ;
+    crs.m_entry_count  = input.m_entry_count ;
 
-    DeepCopy< mirror_type , memory_type >::run( crs.m_memory, input.m_memory , offset_count );
+    DeepCopy< mirror_type , memory_type >
+      ::run( crs.m_memory, input.m_memory , offset_count );
 
     return crs ;
   }
 };
 
-template< class Device , typename SizeType >
-class CreateMirror< CrsMap< Device , SizeType > , false > {
+template< class DeviceSrc , typename SizeType >
+class CreateCrsMap< CrsMap<Host,CrsColumnIdentity,SizeType> ,
+                    CrsMap<DeviceSrc,CrsColumnIdentity,SizeType> > {
 public:
-  typedef CrsMap< Device , SizeType >     view_type ;
+  typedef CrsMap< Host , CrsColumnIdentity , SizeType >       type ;
+  typedef CrsMap< DeviceSrc , CrsColumnIdentity , SizeType >  input_type ;
+
+  static
+  type create( const input_type & input )
+  {
+    typedef typename DeviceSrc::memory_space                memory_space ;
+    typedef          MemoryView< SizeType , memory_space >  memory_type ;
+    typedef typename memory_type::HostMirror                mirror_type ;
+
+    const size_t offset_count = input.m_row_count + 1 ;
+    
+    type crs ;
+    crs.m_memory.allocate( offset_count , std::string() );
+    crs.m_row_count   = input.m_row_count ;
+    crs.m_entry_count = input.m_entry_count ;
+
+    DeepCopy< mirror_type , memory_type >
+      ::run( crs.m_memory, input.m_memory , offset_count );
+
+    return crs ;
+  }
+};
+
+template< class Device ,
+          template< class , typename > class ColumnType ,
+          typename SizeType >
+class CreateMirror< CrsMap< Device , ColumnType , SizeType > , false > {
+public:
+  typedef CrsMap< Device , ColumnType , SizeType >     view_type ;
   typedef typename view_type::HostMirror  mirror_type ;
 
   static
@@ -113,7 +143,7 @@ template< class Device , typename SizeType >
 class CreateCrsMap< Device , std::vector< SizeType > > {
 public:
 
-  typedef CrsMap< Device > type ;
+  typedef CrsMap< Device , CrsColumnIdentity > type ;
 
   static
   type create( const std::string & label ,
@@ -133,9 +163,8 @@ public:
     type crs ;
 
     crs.m_memory.allocate( row_count + 1 , label );
-    crs.m_column      = 0 ;
-    crs.m_row_count   = row_count ;
-    crs.m_entry_count = 0 ;
+    crs.m_row_count    = row_count ;
+    crs.m_entry_count  = 0 ;
 
     // If same memory space then a view:
     mirror_type tmp = create_mirror::create( crs.m_memory , row_count + 1 );
@@ -157,7 +186,7 @@ template< class Device , typename SizeType >
 class CreateCrsMap< Device , std::vector< std::vector< SizeType > > > {
 public:
 
-  typedef CrsMap< Device > type ;
+  typedef CrsMap< Device , CrsColumnMap > type ;
 
   static
   type create( const std::string & label ,
@@ -183,9 +212,9 @@ public:
     type crs ;
 
     crs.m_memory.allocate( offset_count , label );
-    crs.m_column      = crs.m_memory.ptr_on_device() + row_count + 1 ;
-    crs.m_row_count   = row_count ;
-    crs.m_entry_count = total_count ;
+    crs.m_column.m_map = crs.m_memory.ptr_on_device() + row_count + 1 ;
+    crs.m_row_count    = row_count ;
+    crs.m_entry_count  = total_count ;
 
     // If same memory space then a view:
     mirror_type tmp = create_mirror::create( crs.m_memory , offset_count );

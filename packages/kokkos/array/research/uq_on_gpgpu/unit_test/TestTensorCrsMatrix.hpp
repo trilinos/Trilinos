@@ -95,7 +95,7 @@ void generate_matrix(
   Kokkos::BlockCrsMatrix<Kokkos::SparseProductTensor<3,ScalarType,Device>,ScalarType,Device> & matrix )
 {
   typedef Kokkos::MultiVector< ScalarType , Device > values_type ;
-  typedef Kokkos::CrsMap< Device >                   graph_type ;
+  typedef Kokkos::CrsMap< Device , Kokkos::CrsColumnMap >  graph_type ;
   typedef Kokkos::SparseProductTensor<3,ScalarType,Device> tensor_type ;
   typedef Kokkos::ProductTensorIndex<3,Device>             index_type ;
 
@@ -138,8 +138,8 @@ void generate_matrix(
   host_values_type h_values = Kokkos::create_mirror( matrix.values );
 
   for ( size_t outer_row = 0 ; outer_row < N*N*N ; ++outer_row ) {
-    const size_t outer_entry_begin = h_graph.row_range_begin( outer_row );
-    const size_t outer_entry_end   = h_graph.row_range_end( outer_row );
+    const size_t outer_entry_begin = h_graph.row_entry_begin( outer_row );
+    const size_t outer_entry_end   = h_graph.row_entry_end( outer_row );
 
     for ( size_t outer_entry = outer_entry_begin ;
                  outer_entry < outer_entry_end ; ++outer_entry ) {
@@ -163,8 +163,8 @@ void test_tensor_crs_matrix( const size_t M , const size_t N , const bool print 
 
   typedef IntType value_type ; // to avoid comparison round-off differences
 
-  typedef Kokkos::CrsMap< Device >        graph_type ;
-  typedef typename graph_type::HostMirror host_graph_type ;
+  typedef Kokkos::CrsMap< Device , Kokkos::CrsColumnMap >  graph_type ;
+  typedef typename graph_type::HostMirror          host_graph_type ;
   typedef Kokkos::SparseProductTensor< 3 , IntType , Device > block_spec ;
   typedef Kokkos::ProductTensorIndex<3,Device>             index_type ;
 
@@ -199,8 +199,8 @@ void test_tensor_crs_matrix( const size_t M , const size_t N , const bool print 
   generate_tensor( M , tensor_input );
 
   for ( size_t outer_row = 0 ; outer_row < length ; ++outer_row ) {
-    const size_t outer_entry_begin = h_graph.row_range_begin( outer_row );
-    const size_t outer_entry_end   = h_graph.row_range_end( outer_row );
+    const size_t outer_entry_begin = h_graph.row_entry_begin( outer_row );
+    const size_t outer_entry_end   = h_graph.row_entry_end( outer_row );
 
     for ( size_t inner_row = 0 ; inner_row < M ; ++inner_row ) {
 
