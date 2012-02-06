@@ -32,7 +32,6 @@ namespace MueLu {
     virtual ~SetFactoryManager() {
       // restore previous factory manager
       level_.SetFactoryManager(prevFactoryManager_);
-      //level_.SetFactoryManager(Teuchos::null);
     }
 
     //@}

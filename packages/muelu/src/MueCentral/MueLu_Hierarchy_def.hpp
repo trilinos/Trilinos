@@ -173,8 +173,10 @@ namespace MueLu {
 
       GetOStream(Debug, 0) << "Debug: Level: " << nextLevelID << " + R/S/C" << std::endl;
       Levels_[nextLevelID]->Request(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+      RCP<SetFactoryManager> SFM1 = rcp( new SetFactoryManager(*Levels_[coarseLevelID],  rcpcoarseLevelManager)); // FIX: needed for Release() when Level have not been used. TODO: code refactorization
       Levels_[nextLevelID]->Request(TopSmootherFactory(rcpnextLevelManager, "Smoother")); // TODO: skip this line if we know that it is the lastLevel
       Levels_[nextLevelID]->Request(TopSmootherFactory(rcpnextLevelManager, "CoarseSolver"));
+      SFM1 = Teuchos::null;
     }
 
     //
@@ -206,8 +208,12 @@ namespace MueLu {
         if (isLastLevel == false) {
           GetOStream(Debug, 0) << "Debug: Level: " << nextLevelID << " - R/S/C" << std::endl;
           Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+
+          RCP<SetFactoryManager> SFM1 = rcp( new SetFactoryManager(*Levels_[coarseLevelID], rcpcoarseLevelManager)); // FIX: needed for Release() when Level have not been used. TODO: code refactorization
           Levels_[nextLevelID]->Release(TopSmootherFactory(rcpnextLevelManager, "Smoother"));
           Levels_[nextLevelID]->Release(TopSmootherFactory(rcpnextLevelManager, "CoarseSolver"));
+          SFM1 = Teuchos::null;
+
           Levels_.pop_back();
         }
 
@@ -216,6 +222,11 @@ namespace MueLu {
     }
 
     // Build coarse level smoother
+    RCP<SetFactoryManager> SFM1;
+    if (!isFinestLevel) {
+      SFM1 = rcp( new SetFactoryManager(*level.GetPreviousLevel(), rcpfineLevelManager)); // FIX: needed for Release() when Level have not been used. TODO: code refactorization
+    }
+
     TopSmootherFactory smootherFact (rcpcoarseLevelManager, "Smoother");
     TopSmootherFactory coarsestSolverFact(rcpcoarseLevelManager, "CoarseSolver");
 
@@ -228,6 +239,8 @@ namespace MueLu {
     GetOStream(Debug, 0) << "Debug: Level: " << coarseLevelID << " - S/C" << std::endl;
     level.Release(smootherFact);
     level.Release(coarsestSolverFact);
+
+    SFM1 = Teuchos::null;
 
     return isLastLevel;
   }
