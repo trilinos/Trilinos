@@ -2811,6 +2811,7 @@ namespace Tpetra {
         // Convenient abbreviations.
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
+	typedef node_type NT;
 
         // Make the output stream write floating-point numbers in
         // scientific notation.  It will politely put the output
@@ -2818,85 +2819,80 @@ namespace Tpetra {
         // terminates.
         details::SetScientific<scalar_type> sci (out);
 
-        RCP<const Comm<int> > pComm = X->getMap()->getComm();
-        const int myRank = Teuchos::rank (*pComm);
-        RCP<const map_type> pMap = X->getMap();
-        const global_size_t numRows = pMap->getGlobalNumElements();
+        RCP<const Comm<int> > comm = X->getMap()->getComm();
+        const int myRank = comm->getRank ();
+        RCP<const map_type> map = X->getMap();
+        const global_size_t numRows = map->getGlobalNumElements();
 	// Promote to global_size_t.
         const global_size_t numCols = X->getNumVectors(); 
 
         // Make the "gather" map, where Proc 0 owns all rows of X, and
         // the other procs own no rows.
         const size_t localNumRows = (myRank == 0) ? numRows : 0;
-        RCP<node_type> pNode = pMap->getNode();
-        RCP<const map_type> pGatherMap = 
-	  createContigMapWithNode<LO, GO, node_type> (numRows, localNumRows, 
-						      pComm, pNode);
+        RCP<NT> node = map->getNode();
+        RCP<const map_type> gatherMap = 
+	  createContigMapWithNode<LO, GO, NT> (numRows, localNumRows, comm, node);
         // Create an Import object to import X's data into a
         // multivector Y owned entirely by Proc 0.  In the Import
         // constructor, X's map is the source map, and the "gather
         // map" is the target map.
-        Import<LO, GO, node_type> importer (pMap, pGatherMap);
+        Import<LO, GO, NT> importer (map, gatherMap);
 
         // Create a new multivector Y to hold the result of the import.
         RCP<multivector_type> Y = 
-	  createMultiVector<scalar_type, LO, GO, node_type> (pGatherMap, 
-							     numCols);
+	  createMultiVector<scalar_type, LO, GO, NT> (gatherMap, numCols);
+
         // Import the multivector onto Proc 0.
         Y->doImport (*X, importer, INSERT);
 
         //
         // Print the matrix in Matrix Market format on Rank 0.
         //
-        if (myRank == 0)
-	  {
-	    // Print the Matrix Market banner line.  MultiVector
-	    // stores data nonsymmetrically.
-	    out << "%%MatrixMarket matrix array " 
-		<< (STS::isComplex ? "complex" : "real") 
-		<< " general" << endl;
+        if (myRank == 0) {
+	  // Print the Matrix Market banner line.  MultiVector
+	  // stores data nonsymmetrically, hence "general".
+	  out << "%%MatrixMarket matrix array " 
+	      << (STS::isComplex ? "complex" : "real") 
+	      << " general" << endl;
 
-	    // Print comments (the matrix name and / or description).
-	    if (matrixName != "")
-	      printAsComment (out, matrixName);
-	    if (matrixDescription != "")
-	      printAsComment (out, matrixDescription);
-
-	    // Print the Matrix Market dimensions header for dense matrices.
-	    out << numRows << " " << numCols << endl;
-
-	    //
-	    // Get a read-only view of the entries of Y.  
-	    // Rank 0 owns all of the entries of Y.
-	    //
-	    // Y must have constant stride, since multivectors have
-	    // constant stride if created with a map and number of
-	    // vectors.  This should be the case even if X does not
-	    // have constant stride.  However, we check Y, just to
-	    // make sure.
-	    //
-	    TEUCHOS_TEST_FOR_EXCEPTION(! Y->isConstantStride (),
-			       std::logic_error,
-			       "The multivector Y imported onto Rank 0 does not"
-			       " have constant stride.  Please report this bug "
-			       "to the Tpetra developers.");
-	    ArrayRCP<const scalar_type> Y_view = Y->get1dView();
-	    //
-	    // Print the entries of the matrix, in column-major order.
-	    //
-	    const global_size_t stride = Y->getStride ();
-	    for (global_size_t j = 0; j < numCols; ++j) {
-	      for (global_size_t i = 0; i < numRows; ++i) {
-		const scalar_type Y_ij = Y_view[i + j*stride];
-		if (STS::isComplex) {
-		  out << STS::real(Y_ij) << " " << STS::imag(Y_ij) << endl;
-		}
-		else {
-		  out << Y_ij << endl;
-		}
+	  // Print comments (the matrix name and / or description).
+	  if (matrixName != "") {
+	    printAsComment (out, matrixName);
+	  }
+	  if (matrixDescription != "") {
+	    printAsComment (out, matrixDescription);
+	  }
+	  // Print the Matrix Market dimensions header for dense matrices.
+	  out << numRows << " " << numCols << endl;
+	  //
+	  // Get a read-only view of the entries of Y.  
+	  // Rank 0 owns all of the entries of Y.
+	  //
+	  // Y must have constant stride, since multivectors have
+	  // constant stride if created with a map and number of
+	  // vectors.  This should be the case even if X does not
+	  // have constant stride.  However, we check Y, just to
+	  // make sure.
+	  TEUCHOS_TEST_FOR_EXCEPTION(! Y->isConstantStride (), std::logic_error,
+            "The multivector Y imported onto Rank 0 does not have constant "
+            "stride.  Please report this bug to the Tpetra developers.");
+	  ArrayRCP<const scalar_type> Y_view = Y->get1dView();
+	  //
+	  // Print the entries of the matrix, in column-major order.
+	  //
+	  const global_size_t stride = Y->getStride ();
+	  for (global_size_t j = 0; j < numCols; ++j) {
+	    for (global_size_t i = 0; i < numRows; ++i) {
+	      const scalar_type Y_ij = Y_view[i + j*stride];
+	      if (STS::isComplex) {
+		out << STS::real(Y_ij) << " " << STS::imag(Y_ij) << endl;
+	      }
+	      else {
+		out << Y_ij << endl;
 	      }
 	    }
-	  } // if (myRank == 0)
+	  }
+	} // if (myRank == 0)
       }
 
       /// \brief Print the multivector in Matrix Market format.
@@ -2955,18 +2951,18 @@ namespace Tpetra {
 	std::istringstream istream (str);
 	std::string line;
 
-	while (getline (istream, line))
-	  {
-	    if (! line.empty())
-	      {
-		// Note that getline() doesn't store '\n', so we have
-		// to append the endline ourselves.
-		if (line[0] == '%') // Line starts with a comment character.
-		  out << line << endl; 
-		else // Line doesn't start with a comment character.
-		  out << "%% " << line << endl;
-	      }
+	while (getline (istream, line)) {
+	  if (! line.empty()) {
+	    // Note that getline() doesn't store '\n', so we have to
+	    // append the endline ourselves.
+	    if (line[0] == '%') { // Line starts with a comment character.
+	      out << line << endl; 
+	    }
+	    else { // Line doesn't start with a comment character.
+	      out << "%% " << line << endl;
+	    }
 	  }
+	}
       }
     }; // class Writer
     
