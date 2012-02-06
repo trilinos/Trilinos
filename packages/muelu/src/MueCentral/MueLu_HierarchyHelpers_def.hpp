@@ -13,12 +13,12 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager)
-    : factoryManagerFine_(parentFactoryManager), factoryManagerCoarse_(parentFactoryManager), PFact_(parentFactoryManager->GetFactory("P")), RFact_(parentFactoryManager->GetFactory("R")), AcFact_(parentFactoryManager->GetFactory("A"))
+    : PFact_(parentFactoryManager->GetFactory("P")), RFact_(parentFactoryManager->GetFactory("R")), AcFact_(parentFactoryManager->GetFactory("A"))
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManagerFine, RCP<const FactoryManagerBase> parentFactoryManagerCoarse)
-    :  factoryManagerFine_(parentFactoryManagerFine), factoryManagerCoarse_(parentFactoryManagerCoarse), PFact_(parentFactoryManagerCoarse->GetFactory("P")), RFact_(parentFactoryManagerCoarse->GetFactory("R")), AcFact_(parentFactoryManagerCoarse->GetFactory("A"))
+    : PFact_(parentFactoryManagerCoarse->GetFactory("P")), RFact_(parentFactoryManagerCoarse->GetFactory("R")), AcFact_(parentFactoryManagerCoarse->GetFactory("A"))
   { }
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -26,9 +26,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-    SetFactoryManager SFM2(fineLevel,   factoryManagerFine_);
-    SetFactoryManager SFM1(coarseLevel, factoryManagerCoarse_);
-
     if (PFact_  != Teuchos::null)                                       coarseLevel.DeclareInput("P", PFact_.get());
     if (RFact_  != Teuchos::null)                                       coarseLevel.DeclareInput("R", RFact_.get());
     if ((AcFact_ != Teuchos::null) && (AcFact_ != NoFactory::getRCP())) coarseLevel.DeclareInput("A", AcFact_.get());
@@ -36,9 +33,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
-    SetFactoryManager SFM1(fineLevel,   factoryManagerFine_);
-    SetFactoryManager SFM2(coarseLevel, factoryManagerCoarse_);
-
     if (PFact_ != Teuchos::null) {
       RCP<Operator> P = coarseLevel.Get<RCP<Operator> >("P", PFact_.get());
       coarseLevel.Set("P", P, NoFactory::get());
@@ -67,7 +61,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string & varName)
-  : factoryManager_(parentFactoryManager), smootherFact_(parentFactoryManager->GetFactory(varName))
+  : smootherFact_(parentFactoryManager->GetFactory(varName))
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -75,8 +69,6 @@ namespace MueLu {
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & level) const {
-    SetFactoryManager SFM(level, factoryManager_);
-
     if (smootherFact_ != Teuchos::null) {
       level.DeclareInput("PreSmoother",  smootherFact_.get());
       level.DeclareInput("PostSmoother", smootherFact_.get());
@@ -87,8 +79,6 @@ namespace MueLu {
   void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & level) const {
     typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherBase2; //TODO
  
-    SetFactoryManager SFM(level, factoryManager_);
-
     // Teuchos::null == skip
     if (smootherFact_ != Teuchos::null) {
 
@@ -117,8 +107,6 @@ namespace MueLu {
   }
 
 } // namespace MueLu
-
-// TODO: remove 'RCP' for TopRAPFactory::factoryManager_ and TopSmootherFactory::factoryManager_?
 
 #define MUELU_HIERARCHY_HELPERS_SHORT
 #endif // MUELU_HIERARCHYHELPERS_DEF_HPP

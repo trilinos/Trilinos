@@ -38,7 +38,7 @@ namespace MueLu {
 
   private:
     Level & level_;
-    const RCP<const FactoryManagerBase> prevFactoryManager_; // save & restore previous factoryManager instead of reset to Teuchos::null.
+    const RCP<const FactoryManagerBase> prevFactoryManager_; // save & restore previous factoryManager
   };
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
@@ -57,8 +57,6 @@ namespace MueLu {
     void Build(Level & fineLevel, Level & coarseLevel) const;
 
   private:
-    RCP<const FactoryManagerBase> factoryManagerFine_;
-    RCP<const FactoryManagerBase> factoryManagerCoarse_;
     RCP<const FactoryBase> PFact_;
     RCP<const FactoryBase> RFact_;
     RCP<const FactoryBase> AcFact_;
@@ -79,7 +77,6 @@ namespace MueLu {
     void Build(Level & level) const;
 
   private:
-    RCP<const FactoryManagerBase> factoryManager_;
     RCP<const FactoryBase> smootherFact_;
   };
 
