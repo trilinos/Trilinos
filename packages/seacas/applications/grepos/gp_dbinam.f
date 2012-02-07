@@ -196,7 +196,6 @@ C ... Read the element block variable truth table
         call mddel('ITMP')
       END IF
 
- 160  CONTINUE
       RETURN
 
  180  CONTINUE

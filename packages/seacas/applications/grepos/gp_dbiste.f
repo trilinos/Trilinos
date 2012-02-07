@@ -137,11 +137,6 @@ C     --Read sideset variables
 
       RETURN
 
- 160  CONTINUE
-      WRITE (ERRMSG, '(A, I8)', IOSTAT=IDUM)
-     &     'TIME for TIME STEP', ISTEP
-      GOTO 240
-
  180  CONTINUE
       WRITE (ERRMSG, '(A, I8)', IOSTAT=IDUM)
      &     'GLOBAL VARIABLES for TIME STEP', ISTEP

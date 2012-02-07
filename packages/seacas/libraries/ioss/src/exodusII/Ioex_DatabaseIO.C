@@ -83,6 +83,10 @@
 #include "Ioss_VariableType.h"
 #include "exodusII_ext.h"
 
+#ifdef HAVE_MPI    
+#include "Ioss_FileInfo.h"
+#endif
+
 namespace Ioex {
   // ========================================================================
   // Internal typedefs/structs/classes used in some algorithms.

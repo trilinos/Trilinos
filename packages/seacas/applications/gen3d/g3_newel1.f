@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: newel1.f,v 1.6 2001/01/03 14:36:38 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE NEWEL1 (BLKTYP, NUMELB, NELB3, NRSTRT, NREND,
      &   NUMLNK, NUMLN3, NUMATR, NATRDM, NUMNP, NUMNP3,
@@ -128,7 +127,6 @@ C ... Bars to shells
                         LINK3(3,JEL) = JNP2 + NR - 1
                         LINK3(4,JEL) = JNP2 
                      END IF
- 15               CONTINUE
                ELSE
                   DO 20 J = 1, NUMLNK
                      INP = LINK(J,IEL)
