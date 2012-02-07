@@ -31,4 +31,3 @@ echo
 echo "Ending nightly Trilinos testing on pu241: `date`"
 echo
 
-echo "Finished nightly Trilinos CMake tests pu241: http://casl-dev.ornl.gov/cdash/index.php?project=Trilinos" | mailx -s "Nightly CTest: pu241" casl-vri-admin@localhost
