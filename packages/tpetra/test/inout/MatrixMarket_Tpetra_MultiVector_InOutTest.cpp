@@ -572,7 +572,8 @@ main (int argc, char *argv[])
     // as X's Map.  This Map may or may not necessarily be the same as
     // (in the sense of isSameAs()) or even compatible with X's Map.
     ++testNum;
-    if (testContiguousInputMap || (testToRun != 0 && testToRun == testNum)) {
+    if ((testToRun == 0 && testContiguousInputMap) || 
+	(testToRun != 0 && testToRun == testNum)) {
       if (verbose && myRank == 0) {
 	cout << "Test " << testNum << ": Nonnull contiguous Map (same index "
 	  "base) on input to readDenseFile()" << endl;
@@ -618,7 +619,8 @@ main (int argc, char *argv[])
     // index base plus a small number (3).  For sufficiently long
     // vectors, this tests the case where the GID sets overlap.
     ++testNum;
-    if ((testContiguousInputMap && testDifferentIndexBase) || (testToRun != 0 && testToRun == testNum)) {
+    if ((testToRun == 0 && testContiguousInputMap && testDifferentIndexBase) || 
+	(testToRun != 0 && testToRun == testNum)) {
       if (verbose && myRank == 0) {
 	cout << "Test " << testNum << ": Nonnull contiguous Map (different "
 	  "index base) on input to readDenseFile()" << endl;
@@ -677,7 +679,8 @@ main (int argc, char *argv[])
     // so that the new GID set does not overlap with X's Map's GID
     // set.
     ++testNum;
-    if ((testContiguousInputMap && testDifferentIndexBase) || (testToRun != 0 && testToRun == testNum)) {
+    if ((testToRun == 0 && testContiguousInputMap && testDifferentIndexBase) || 
+	(testToRun != 0 && testToRun == testNum)) {
       if (verbose && myRank == 0) {
 	cout << "Test " << testNum << ": Nonnull contiguous Map (different "
 	  "index base) on input to readDenseFile()" << endl;
@@ -735,7 +738,8 @@ main (int argc, char *argv[])
     }
 
     ++testNum;
-    if (testNoncontiguousInputMap || (testToRun != 0 && testToRun == testNum)) {
+    if ((testToRun == 0 && testNoncontiguousInputMap) || 
+	(testToRun != 0 && testToRun == testNum)) {
       // Test 5: nonnull input Map with the same index base as X's
       // Map, and a "noncontiguous" distribution (in the sense that
       // the Map is constructed using the constructor that takes an
@@ -826,7 +830,8 @@ main (int argc, char *argv[])
     } // if test noncontiguous input Map
 
     ++testNum;
-    if (testNoncontiguousInputMap && testDifferentIndexBase) {
+    if ((testToRun == 0 && testNoncontiguousInputMap && testDifferentIndexBase) ||
+	(testToRun != 0 && testToRun == testNum)) {
       // Test 6: nonnull input Map with a different index base than
       // X's Map, and a "noncontiguous" distribution (in the sense
       // that the Map is constructed using the constructor that takes
