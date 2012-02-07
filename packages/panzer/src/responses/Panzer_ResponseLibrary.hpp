@@ -50,6 +50,8 @@ public:
                    const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
                    const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof); 
 
+   ResponseLibrary(const ResponseLibrary & rl);
+
    /** Asks, does this string correspond to a response type
      * in this library?
      */

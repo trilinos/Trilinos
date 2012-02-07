@@ -125,6 +125,12 @@ public:
    virtual void setLinearObjFactory(const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
    { linObjFactory_ = lof; }
 
+   Teuchos::RCP<UniqueGlobalIndexer<int,int> > getGlobalIndexer() const
+   { return globalIndexer_; }
+
+   Teuchos::RCP<LinearObjFactory<TraitsT> > getLinearObjFactory() const
+   { return linObjFactory_; }
+
 private:
    Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;

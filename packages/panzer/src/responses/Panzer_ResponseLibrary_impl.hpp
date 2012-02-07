@@ -16,6 +16,15 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> &
 }
 
 template <typename TraitsT>
+ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
+   : respAggManager_(rl.globalIndexer_,rl.linObjFactory_), wkstContainer_(rl.wkstContainer_)
+   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_)
+{
+   // build dynamic dispatch objects
+   dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
+}
+
+template <typename TraitsT>
 template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock)
