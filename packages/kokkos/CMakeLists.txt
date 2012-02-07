@@ -202,6 +202,7 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 TRIBITS_EXCLUDE_FILES(
   doc
   DistTSQR/doc
+  array/research
   )
 
 #
