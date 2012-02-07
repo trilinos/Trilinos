@@ -153,10 +153,10 @@ namespace MueLu {
     if(nextLevelManager == Teuchos::null) isLastLevel = true;
 
     // Attach FactoryManager to coarse and fine level
-    SetFactoryManager SFMCoarse(*Levels_[coarseLevelID], rcpcoarseLevelManager);
+    SetFactoryManager SFMCoarse(Levels_[coarseLevelID], rcpcoarseLevelManager);
     RCP<SetFactoryManager> SFMFine, SFMNext;
     if (!isFinestLevel)
-      SFMFine = rcp(new SetFactoryManager(*Levels_[coarseLevelID-1], rcpfineLevelManager));
+      SFMFine = rcp(new SetFactoryManager(Levels_[coarseLevelID-1], rcpfineLevelManager));
 
     //
     // Requests for finest level
@@ -178,7 +178,7 @@ namespace MueLu {
     if (!isLastLevel) {
       if (nextLevelID > LastLevelID()) { AddNewLevel(); }
       CheckLevel(*Levels_[nextLevelID], nextLevelID);
-      SFMNext = rcp(new SetFactoryManager(*Levels_[coarseLevelID+1], rcpnextLevelManager)); // Attach FactoryManager
+      SFMNext = rcp(new SetFactoryManager(Levels_[coarseLevelID+1], rcpnextLevelManager)); // Attach FactoryManager
 
       GetOStream(Debug, 0) << "Debug: Level: " << nextLevelID << " + R/S/C" << std::endl;
       Levels_[nextLevelID]->Request(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
@@ -314,7 +314,7 @@ namespace MueLu {
     manager->SetFactory("Smoother",     Teuchos::null); //? TODO remove
     manager->SetFactory("CoarseSolver", Teuchos::null);
 
-    SetFactoryManager SFM(level, manager);
+    SetFactoryManager SFM(Levels_[LastLevelID()], manager);
 
     level.Request("PreSmoother", &smooFact);
     level.Request("PostSmoother", &smooFact);

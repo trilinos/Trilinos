@@ -21,24 +21,26 @@ namespace MueLu {
     //@{
 
     //!
-    SetFactoryManager(Level & level, const RCP<const FactoryManagerBase> & factoryManager)
-      : level_(level), prevFactoryManager_(level.GetFactoryManager())
+    SetFactoryManager(const RCP<Level> & level, const RCP<const FactoryManagerBase> & factoryManager)
+      : level_(level), prevFactoryManager_(level->GetFactoryManager())
     {
       // set new factory manager
-      level.SetFactoryManager(factoryManager);
+      level->SetFactoryManager(factoryManager);
     }
 
     //! Destructor.
     virtual ~SetFactoryManager() {
       // restore previous factory manager
-      //FIXME      level_.SetFactoryManager(prevFactoryManager_);
+      if (prevFactoryManager_ != Teuchos::null) //FIXME: remove this test. factory manager have to be reset to Teuchos::null in Setup()
+        level_->SetFactoryManager(prevFactoryManager_);
     }
 
     //@}
 
   private:
-    Level & level_;
-    const RCP<const FactoryManagerBase> prevFactoryManager_; // save & restore previous factoryManager
+     // needed to save & restore previous factoryManager
+    const RCP<Level> level_;
+    const RCP<const FactoryManagerBase> prevFactoryManager_;
   };
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>

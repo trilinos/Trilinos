@@ -49,7 +49,7 @@ namespace MueLu {
     // loop over all factory managers for the subblocks of blocked operator A
     std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
     for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
-      SetFactoryManager currentSFM  (currentLevel,   *it);
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel),   *it);
 
       // request "Smoother" for current subblock row.
       currentLevel.DeclareInput("PreSmoother",(*it)->GetFactory("Smoother").get()); // TODO check me: what about postsmoother?
@@ -86,7 +86,7 @@ namespace MueLu {
     //std::map<size_t,size_t> bgsOrderingIndex2blockRowIndex;
     std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
     for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
-      SetFactoryManager currentSFM  (currentLevel,   *it);
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel),   *it);
 
       // extract Smoother for current block row (BGS ordering)
       RCP<const SmootherBase> Smoo = currentLevel.Get< RCP<SmootherBase> >("PreSmoother",(*it)->GetFactory("Smoother").get());

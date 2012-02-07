@@ -62,8 +62,8 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::De
 
   std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
   for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
-    SetFactoryManager fineSFM  (fineLevel,   *it);
-    SetFactoryManager coarseSFM(coarseLevel, *it);
+    SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
+    SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
 
     if (!restrictionMode_)
       coarseLevel.DeclareInput("P",(*it)->GetFactory("P").get(), this);
@@ -112,8 +112,8 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   // to use the maps from blocked A
   std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
   for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
-    SetFactoryManager fineSFM  (fineLevel,   *it);
-    SetFactoryManager coarseSFM(coarseLevel, *it);
+    SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
+    SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
     if(!restrictionMode_)
       subBlockP.push_back(coarseLevel.Get<RCP<Operator> >("P", (*it)->GetFactory("P").get())); // create and return block P operator
     else

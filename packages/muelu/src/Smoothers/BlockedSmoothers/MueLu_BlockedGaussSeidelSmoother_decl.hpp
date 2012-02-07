@@ -28,7 +28,7 @@ namespace MueLu {
     @class BlockedGaussSeidelSmoother
     @brief block Gauss-Seidel method for blocked matrices
 
-    Implmentation of a block Gauss-Seidel methods for blocked matrices
+    Implementation of a block Gauss-Seidel methods for blocked matrices
     @param LocalOrdinal sweeps = 1: number of BGS sweeps
     @param Scalar omega = 1.0: damping parameter
     @param RCP<FactoryBase> AFact = Teuchos::null: factory for blocked "A" operator
