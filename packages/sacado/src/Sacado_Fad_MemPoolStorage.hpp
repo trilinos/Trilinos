@@ -205,6 +205,9 @@ namespace Sacado {
       int size() const { return sz_;}
 
       //! Resize the derivative array to sz
+      /*!
+       * Note:  This does not necessarily preserve derivative components.
+       */
       void resize(int sz) { 
 	if (sz > len_) {
 	   if (len_ != 0)
@@ -214,6 +217,25 @@ namespace Sacado {
 	  len_ = sz;
 	}
 	sz_ = sz;
+      }
+
+      //! Expand derivative array to size sz
+      /*!
+       * This method preserves any existing derivative components and
+       * sets any that are added to zero.
+       */
+      void expand(int sz) {
+        if (sz > len_) {
+          T* dx_new = mp_array<T>::get_and_fill(sz, myPool_);
+          mp_array<T>::copy(dx_, dx_new, sz_);
+          if (len_ > 0)
+            mp_array<T>::destroy_and_release(dx_, len_, myPool_);
+          dx_ = dx_new;
+          len_ = sz;
+        }
+        else if (sz > sz_) 
+          mp_array<T>::zero(dx_+sz_, sz-sz_);
+        sz_ = sz;
       }
 
       //! Zero out derivative array

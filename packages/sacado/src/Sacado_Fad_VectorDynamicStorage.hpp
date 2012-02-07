@@ -112,6 +112,9 @@ namespace Sacado {
       int length() const { return len_; }
 
       //! Resize the derivative array to sz
+      /*!
+       * Note:  This does not necessarily preserve derivative components.
+       */
       void resize(int sz) { 
 	if (sz > len_) {
 	  if (!owns_mem)
@@ -122,6 +125,27 @@ namespace Sacado {
 	  dx_ = ds_array<S>::get_and_fill(len_);
 	}
 	sz_ = sz;
+      }
+
+      //! Expand derivative array to size sz
+      /*!
+       * This method preserves any existing derivative components and
+       * sets any that are added to zero.
+       */
+      void expand(int sz) {
+        if (sz > len_) {
+          if (!owns_mem)
+	      throw "Can\'t resize beyond original size when memory isn't owned!";
+          S* dx_new = ds_array<S>::get_and_fill(sz);
+          ds_array<S>::copy(dx_, dx_new, sz_);
+          if (len_ > 0)
+            ds_array<S>::destroy_and_release(dx_, len_);
+          dx_ = dx_new;
+          len_ = sz;
+        }
+        else if (sz > sz_) 
+          ds_array<S>::strided_zero(dx_+stride_*sz_, stride_, sz-sz_);
+        sz_ = sz;
       }
 
       //! Zero out derivative array

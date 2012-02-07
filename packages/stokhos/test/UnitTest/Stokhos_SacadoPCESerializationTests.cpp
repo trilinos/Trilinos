@@ -78,7 +78,7 @@ struct UnitTestSetup {
       rcp(new PCESerializerT(
 	    exp,
 	    rcp(new Teuchos::ValueTypeSerializer<int,double>())));
-    fad_pce_serializer = rcp(new FadPCESerializerT(pce_serializer));
+    fad_pce_serializer = rcp(new FadPCESerializerT(pce_serializer, 8));
 
     sz = basis->size();
   }
@@ -134,7 +134,7 @@ bool testSerialization(const Teuchos::Array<PCEType>& x,
 }
 
 template <typename PCEType, typename Serializer>
-bool testSerialization(const Teuchos::Array<PCEType>& x, 
+bool testSerialization(Teuchos::Array<PCEType>& x, 
 		       const Serializer& serializer,
 		       const std::string& tag,
 		       Teuchos::FancyOStream& out) {
@@ -146,6 +146,68 @@ bool testSerialization(const Teuchos::Array<PCEType>& x,
   Ordinal bytes = serializer.fromCountToIndirectBytes(count, &x[0]);
   char *charBuffer = new char[bytes];
   serializer.serialize(count, &x[0], bytes, charBuffer);
+
+  // Reset x to given expansion
+  for (Ordinal i=0; i<count; i++)
+    x[i].reset(serializer.getSerializerExpansion());
+  
+  // Deserialize
+  Ordinal count2 = serializer.fromIndirectBytesToCount(bytes, charBuffer);
+  Teuchos::Array<PCEType> x2(count2);
+  serializer.deserialize(bytes, charBuffer, count2, &x2[0]);
+
+  delete [] charBuffer;
+  
+  // Check counts match
+  bool success = (count == count2);
+  out << tag << " serialize/deserialize count test";
+  if (success)
+    out << " passed";
+  else
+    out << " failed";
+  out << ":  \n\tExpected:  " << count << ", \n\tGot:       " << count2 << "." 
+      << std::endl;
+  
+  // Check coefficients match
+  for (Ordinal i=0; i<count; i++) {
+    bool success2 = Sacado::IsEqual<PCEType>::eval(x[i], x2[i]);
+    out << tag << " serialize/deserialize pce test " << i;
+    if (success2)
+      out << " passed";
+    else
+	out << " failed";
+    out << ":  \n\tExpected:  " << x[i] << ", \n\tGot:       " << x2[i] 
+	<< "." << std::endl;
+    success = success && success2;
+  }
+
+  return success;
+}
+
+template <typename PCEType, typename Serializer>
+bool testNestedSerialization(Teuchos::Array<PCEType>& x, 
+			     const Serializer& serializer,
+			     const std::string& tag,
+			     Teuchos::FancyOStream& out) {
+  
+  typedef int Ordinal;
+  
+  // Serialize
+  Ordinal count = x.size();
+  Ordinal bytes = serializer.fromCountToIndirectBytes(count, &x[0]);
+  char *charBuffer = new char[bytes];
+  serializer.serialize(count, &x[0], bytes, charBuffer);
+
+  // Reset x to given expansion
+  Ordinal sz = serializer.getSerializerSize();
+  typedef typename Serializer::value_serializer_type VST;
+  RCP<const VST> vs = serializer.getValueSerializer();
+  for (Ordinal i=0; i<count; i++) {
+    x[i].expand(sz);
+    for (Ordinal j=0; j<sz; j++)
+      x[i].fastAccessDx(j).reset(vs->getSerializerExpansion());
+    x[i].val().reset(vs->getSerializerExpansion());
+  }
   
   // Deserialize
   Ordinal count2 = serializer.fromIndirectBytesToCount(bytes, charBuffer);
@@ -181,38 +243,6 @@ bool testSerialization(const Teuchos::Array<PCEType>& x,
 }
 
 #define PCE_SERIALIZATION_TESTS(PCEType, FadType, PCE)			\
-  TEUCHOS_UNIT_TEST( PCE##_SerializationTraits, Uniform ) {		\
-    int n = 7;								\
-    Teuchos::Array<PCEType> x(n);					\
-    for (int i=0; i<n; i++) {						\
-      x[i] = PCEType(setup.exp);					\
-      for (int j=0; j<setup.sz; j++)					\
-	x[i].fastAccessCoeff(j) = rnd.number();				\
-    }									\
-    success = testSerialization(x, std::string(#PCE) + " Uniform", out); \
-  }									\
-									\
-  TEUCHOS_UNIT_TEST( PCE##_SerializationTraits, Empty ) {		\
-    int n = 7;								\
-    Teuchos::Array<PCEType> x(n);					\
-    for (int i=0; i<n; i++) {						\
-      x[i] = rnd.number();						\
-    }									\
-    success = testSerialization(x, std::string(#PCE) + " Empty", out);	\
-  }									\
-									\
-  TEUCHOS_UNIT_TEST( PCE##_SerializationTraits, Mixed ) {		\
-    int n = 6;								\
-    int p[] = { 5, 0, 8, 8, 3, 0 };					\
-    Teuchos::Array<PCEType> x(n);					\
-    for (int i=0; i<n; i++) {						\
-      x[i] = PCEType(setup.exp, p[i]);					\
-      for (int j=0; j<p[i]; j++)					\
-	x[i].fastAccessCoeff(j) = rnd.number();				\
-    }									\
-    success = testSerialization(x, std::string(#PCE) + " Mixed", out);	\
-  }									\
-									\
   TEUCHOS_UNIT_TEST( PCE##_Serialization, Uniform ) {			\
     int n = 7;								\
     Teuchos::Array<PCEType> x(n);					\
@@ -221,19 +251,24 @@ bool testSerialization(const Teuchos::Array<PCEType>& x,
       for (int j=0; j<setup.sz; j++)					\
 	x[i].fastAccessCoeff(j) = rnd.number();				\
     }									\
-    success = testSerialization(x, *setup.pce_serializer,		\
-				std::string(#PCE) + " Uniform", out);	\
+    bool success1 = testSerialization(					\
+      x, std::string(#PCE) + " Uniform", out);				\
+    bool success2 = testSerialization(					\
+      x, *setup.pce_serializer, std::string(#PCE) + " Uniform PTS", out); \
+    success = success1 && success2;					\
   }									\
 									\
   TEUCHOS_UNIT_TEST( PCE##_Serialization, Empty ) {			\
     int n = 7;								\
     Teuchos::Array<PCEType> x(n);					\
     for (int i=0; i<n; i++) {						\
-      x[i] = PCEType(setup.exp, 1);					\
-      x[i].val() = rnd.number();					\
+      x[i] = rnd.number();						\
     }									\
-    success = testSerialization(x, *setup.pce_serializer,		\
-				std::string(#PCE) + " Empty", out);	\
+    bool success1 = testSerialization(					\
+      x, std::string(#PCE) + " Empty", out);				\
+    bool success2 = testSerialization(					\
+      x, *setup.pce_serializer, std::string(#PCE) + " Empty PTS", out);	\
+    success = success1 && success2;					\
   }									\
 									\
   TEUCHOS_UNIT_TEST( PCE##_Serialization, Mixed ) {			\
@@ -245,9 +280,13 @@ bool testSerialization(const Teuchos::Array<PCEType>& x,
       for (int j=0; j<p[i]; j++)					\
 	x[i].fastAccessCoeff(j) = rnd.number();				\
     }									\
-    success = testSerialization(x, *setup.pce_serializer,		\
-				std::string(#PCE) + " Mixed", out);	\
-  } 									\
+    bool success1 = testSerialization(					\
+      x, std::string(#PCE) + " Mixed", out);				\
+    bool success2 = testSerialization(					\
+      x, *setup.pce_serializer, std::string(#PCE) + " Mixed PTS", out);	\
+    success = success1 && success2;					\
+  }									\
+									\
   TEUCHOS_UNIT_TEST( PCE##_Serialization, FadPCEUniform ) {		\
     typedef Sacado::mpl::apply<FadType,PCEType>::type FadPCEType;	\
     int n = 7;								\
@@ -266,7 +305,7 @@ bool testSerialization(const Teuchos::Array<PCEType>& x,
       }									\
     }									\
     success =								\
-      testSerialization(x, *setup.fad_pce_serializer,			\
+      testNestedSerialization(x, *setup.fad_pce_serializer,		\
 			std::string(#PCE) + " Nested Uniform", out);	\
   }									\
   TEUCHOS_UNIT_TEST( PCE##_Serialization, FadPCEEmptyInner ) {		\
@@ -283,7 +322,7 @@ bool testSerialization(const Teuchos::Array<PCEType>& x,
 	x[i].fastAccessDx(j) =  rnd.number();				\
     }									\
     success =								\
-      testSerialization(						\
+      testNestedSerialization(						\
 	x, *setup.fad_pce_serializer,					\
 	std::string(#PCE) + " Nested Empty Inner", out);		\
   }									\
@@ -298,7 +337,7 @@ bool testSerialization(const Teuchos::Array<PCEType>& x,
       x[i] = FadPCEType(f);						\
     }									\
     success =								\
-      testSerialization(						\
+      testNestedSerialization(						\
 	x, *setup.fad_pce_serializer,					\
 	std::string(#PCE) + " Nested Empty Outer", out);		\
   }									\
@@ -310,7 +349,7 @@ bool testSerialization(const Teuchos::Array<PCEType>& x,
       x[i] = rnd.number();						\
     }									\
     success =								\
-      testSerialization(						\
+      testNestedSerialization(						\
 	x, *setup.fad_pce_serializer,					\
 	std::string(#PCE) + " Nested Empty All", out);			\
   }

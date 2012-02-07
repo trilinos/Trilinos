@@ -82,10 +82,22 @@ namespace Sacado {
 
       //! Copy constructor
       CacheTaylorImplementation(const CacheTaylorImplementation& x) : 
-	coeff_(x.coeff_) {}
+        coeff_(&(x.coeff_[0]), x.coeff_.size()) {}
 
       //! Destructor
       ~CacheTaylorImplementation() {}
+
+       //! Resize polynomial to degree d
+      /*!
+       * Coefficients are preserved if \c keep_coeffs is \c true, otherwise 
+       * all coefficients are reset to zero.
+       */
+      void resize(unsigned int d, bool keep_coeffs) {
+	if (keep_coeffs)
+	  resizeCoeffs(d);
+	else
+	  coeff_.resize(d+1, T(0.));
+      }
 
       /*!
        * @name Value accessor methods
@@ -149,9 +161,16 @@ namespace Sacado {
       //! Resize coefficient array to new size
       void resizeCoeffs(unsigned int dnew) {
 	std::valarray<T> tmp = coeff_;
-	std::slice s(0,coeff_.size(),1);
+	unsigned int sz = coeff_.size();
 	coeff_.resize(dnew+1,T(0.));
-	coeff_[s] = tmp;
+	if (sz > dnew+1) {
+	  std::slice s(0,dnew+1,1);
+	  coeff_ = tmp[s];
+	}
+	else {
+	  std::slice s(0,sz,1);
+	  coeff_[s] = tmp;
+	}
       }
 
     protected:
