@@ -193,6 +193,7 @@ namespace {
 
   private:
     typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     Teuchos::RCP<node_type> node_;
@@ -240,7 +241,6 @@ namespace {
       typedef local_ordinal_type LO;
       typedef global_ordinal_type GO;
       typedef node_type NT;
-      typedef Tpetra::Map<LO, GO, NT> map_type;
 
       // For a square matrix, we only need a Map for the range of the matrix.
       RCP<const map_type> pRangeMap = 
@@ -286,7 +286,6 @@ namespace {
       typedef typename SparseMatrixType::local_ordinal_type LO;
       typedef typename SparseMatrixType::global_ordinal_type GO;
       typedef typename SparseMatrixType::node_type NT;
-      typedef Tpetra::Map<LO, GO, NT> map_type;
 
       // For a square matrix, we only need a Map for the range of the matrix.
       RCP<const map_type> pRangeMap = 
@@ -399,8 +398,9 @@ namespace {
 	// from a file too.
 	err << "Reading B from Matrix Market file...";
 	typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
+	RCP<const map_type> map = A->getRangeMap();
 	B = reader_type::readDenseFile (inRhsFilename, comm_, A->getNode(), 
-					A->getRangeMap(), tolerant_, debug_);
+					map, tolerant_, debug_);
 	err << "...done." << endl;
       } else {
 	// Our choice of exact solution and right-hand side depend on
