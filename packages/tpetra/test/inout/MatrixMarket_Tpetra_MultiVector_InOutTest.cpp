@@ -423,8 +423,13 @@ main (int argc, char *argv[])
   using Teuchos::Comm;
   using Teuchos::CommandLineProcessor;
   using Teuchos::ParameterList;
+  using Teuchos::ptr;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::REDUCE_MAX;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using std::cerr;
   using std::cout;
   using std::endl;
 
@@ -500,6 +505,11 @@ main (int argc, char *argv[])
   // Get a Kokkos Node instance for the particular Node type.
   RCP<node_type> node = getNode<node_type>();
 
+  // List of numbers of failed tests.
+  std::vector<int> failedTests;
+  // Current test number.  Increment before starting each test.
+  int testNum = 0;
+
   // Run all the tests.  If no input filename was specified, we don't
   // invoke the test and we report a "TEST PASSED" message.
   if (inputFilename != "") {
@@ -516,78 +526,211 @@ main (int argc, char *argv[])
     std::string outFilename = testWrite ? outputFilename : "";
 
     // Test 1: null input Map.
-    RCP<MV> X = testReadDenseFile<MV> (inputFilename, outFilename, comm,
-				       node, tolerant, verbose, debug);
-    if (outFilename != "") {
-      testWriteDenseFile<MV> (outFilename, X, echo, verbose, debug);
+    ++testNum;
+    if (verbose && myRank == 0) {
+      cout << "Test " << testNum << ": Null Map on input to readDenseFile()" << endl;
+    }
+    RCP<MV> X;
+    try {
+      X = testReadDenseFile<MV> (inputFilename, outFilename, comm,
+				 node, tolerant, verbose, debug);
+      if (outFilename != "") {
+	testWriteDenseFile<MV> (outFilename, X, echo, verbose, debug);
+      }
+    } catch (std::exception& e) {
+      failedTests.push_back (testNum);
+      // If Test 1 fails, the other tests shouldn't even run, since
+      // they depend on the result of Test 1 (the multivector X).
+      throw e;
     }
 
-    // Test 2: nonnull contiguous input Map.  In order to recycle the
-    // same input filename, we create an input map with the same
-    // number of global rows as X, but with a different indexBase.
+    // Test 2: nonnull contiguous input Map with the same index base
+    // as X's Map.  This Map may or may not necessarily be the same as
+    // (in the sense of isSameAs()) or even compatible with X's Map.
     if (testContiguousInputMap) {
+      ++testNum;
+      if (verbose && myRank == 0) {
+	cout << "Test " << testNum << ": Nonnull contiguous Map (same index "
+	  "base) on input to readDenseFile()" << endl;
+      }
       const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
-      // Choose the Map's index base so that the global ordinal sets
-      // of X->getMap() and map don't overlap.  This will ensure that
-      // we test something nontrivial.
-      const GO indexBase = X->getMap()->getMaxGlobalIndex() + 1;
+      const GO indexBase = X->getMap()->getIndexBase();
       // Create the Map.
       RCP<const MT> map = 
 	rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm, 
 					  Tpetra::GloballyDistributed, node));
-      RCP<MV> X2 = 
-	testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
-					   map, tolerant, verbose, debug);
-      if (outFilename != "") {
-	testWriteDenseFile<MV> (outFilename, X2, echo, verbose, debug);
+      try {
+	RCP<MV> X2 = 
+	  testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+					     map, tolerant, verbose, debug);
+	if (outFilename != "") {
+	  testWriteDenseFile<MV> (outFilename, X2, echo, verbose, debug);
+	}
+      } catch (std::exception& e) {
+	failedTests.push_back (testNum);
+	if (myRank == 0) {
+	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
+	}
+      }
+    }
+
+    // Test 3: nonnull contiguous input Map, with a different index
+    // base than X's Map.
+    if (testContiguousInputMap) {
+      ++testNum;
+      if (verbose && myRank == 0) {
+	cout << "Test " << testNum << ": Nonnull contiguous Map (different "
+	  "index base) on input to readDenseFile()" << endl;
+      }
+      const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
+      // Choose the Map's index base so that the global ordinal sets
+      // of X->getMap() and map don't overlap.  This will ensure that
+      // we test something nontrivial.
+      const GO indexBase = X->getMap()->getMaxAllGlobalIndex() + 1;
+
+      // Make sure that the index base is the same on all processes.
+      // It definitely should be, since the Map's getMaxAllGlobalIndex()
+      // method should return the same value on all processes.
+      GO minIndexBase = indexBase;
+      reduceAll (*comm, REDUCE_MIN, indexBase, ptr (&minIndexBase));
+      GO maxIndexBase = indexBase;
+      reduceAll (*comm, REDUCE_MAX, indexBase, ptr (&maxIndexBase));
+      TEUCHOS_TEST_FOR_EXCEPTION(minIndexBase != maxIndexBase || minIndexBase != indexBase,
+        std::logic_error, "Index base values do not match on all processes.  "
+        "Min value is " << minIndexBase << " and max value is " << maxIndexBase 
+        << ".");
+
+      // Create the Map.
+      RCP<const MT> map = 
+	rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm, 
+					  Tpetra::GloballyDistributed, node));
+      try {
+	RCP<MV> X3 = 
+	  testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+					     map, tolerant, verbose, debug);
+	if (outFilename != "") {
+	  testWriteDenseFile<MV> (outFilename, X3, echo, verbose, debug);
+	}
+      } catch (std::exception& e) {
+	failedTests.push_back (testNum);
+	if (myRank == 0) {
+	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
+	}
       }
     }
 
     if (testNoncontiguousInputMap) {
-      // Test 2: nonnull input Map.  In order to recycle the same input
-      // filename, we create an input map with the same number of global
-      // rows as X, but with a different distribution.
-      RCP<const MT> map;
-      {
-	// Make sure that the global ordinal sets of X->getMap() and map
-	// don't overlap.
-	GO indexBase = X->getMap()->getMaxGlobalIndex() + 1;
-	const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
-
-	// Compute number of GIDs owned by each process.  We're
-	// replicating Tpetra functionality here because we want to
-	// trick Tpetra into thinking we have a noncontiguous
-	// distribution.  This is the most general case and the most
-	// likely to uncover bugs.
-	const size_t quotient = globalNumRows / numProcs;
-	const size_t remainder = globalNumRows - quotient * numProcs;
-	const size_t localNumRows = (as<size_t> (myRank) < remainder) ? 
-	  (quotient + 1) : quotient;
-
-	// Build the list of GIDs owned by this process.
-	Array<GO> elementList (localNumRows);
-	GO myStartGID;
-	if (as<size_t> (myRank) < remainder) {
-	  myStartGID = indexBase + as<GO> (myRank) * as<GO> (quotient + 1);
-	} 
-	else {
-	  // This branch does _not_ assume that GO is a signed type.
-	  myStartGID = indexBase + as<GO> (remainder) * as<GO> (quotient + 1) +
-	    (as<GO> (remainder) - as<GO> (myRank)) * as<GO> (quotient);
-	}
-	for (GO i = 0; i < as<GO> (localNumRows); ++i) {
-	  elementList[i] = myStartGID + i;
-	}
-
-	// Create the Map.
-	using Tpetra::createNonContigMapWithNode;
-	map = createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
+      // Test 4: nonnull input Map with the same index base as X's
+      // Map, and a "noncontiguous" distribution (in the sense that
+      // the Map is constructed using the constructor that takes an
+      // arbitrary list of GIDs; that doesn't necessarily mean that
+      // the GIDs themselves are noncontiguous).
+      ++testNum;
+      if (verbose && myRank == 0) {
+	cout << "Test " << testNum << ": Nonnull noncontiguous Map (same index "
+	  "base) on input to readDenseFile()" << endl;
       }
-      {
-	RCP<MV> X3 = testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+      GO indexBase = X->getMap()->getIndexBase();
+      const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
+
+      // Compute number of GIDs owned by each process.  We're
+      // replicating Tpetra functionality here because we want to
+      // trick Tpetra into thinking we have a noncontiguous
+      // distribution.  This is the most general case and the most
+      // likely to uncover bugs.
+      const size_t quotient = globalNumRows / numProcs;
+      const size_t remainder = globalNumRows - quotient * numProcs;
+      const size_t localNumRows = (as<size_t> (myRank) < remainder) ? 
+	(quotient + 1) : quotient;
+
+      // Build the list of GIDs owned by this process.
+      Array<GO> elementList (localNumRows);
+      GO myStartGID;
+      if (as<size_t> (myRank) < remainder) {
+	myStartGID = indexBase + as<GO> (myRank) * as<GO> (quotient + 1);
+      } 
+      else {
+	// This branch does _not_ assume that GO is a signed type.
+	myStartGID = indexBase + as<GO> (remainder) * as<GO> (quotient + 1) +
+	  (as<GO> (remainder) - as<GO> (myRank)) * as<GO> (quotient);
+      }
+      for (GO i = 0; i < as<GO> (localNumRows); ++i) {
+	elementList[i] = myStartGID + i;
+      }
+
+      // Create the Map.
+      using Tpetra::createNonContigMapWithNode;
+      RCP<const MT> map = 
+	createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
+      try {
+	RCP<MV> X4 = testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
 							map, tolerant, verbose, debug);
 	if (outFilename != "") {
-	  testWriteDenseFile<MV> (outFilename, X3, echo, verbose, debug);
+	  testWriteDenseFile<MV> (outFilename, X4, echo, verbose, debug);
+	}
+      } catch (std::exception& e) {
+	failedTests.push_back (testNum);
+	if (myRank == 0) {
+	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
+	}
+      }
+    } // if test noncontiguous input Map
+
+    if (testNoncontiguousInputMap) {
+      // Test 5: nonnull input Map with a different index base than
+      // X's Map, and a "noncontiguous" distribution (in the sense
+      // that the Map is constructed using the constructor that takes
+      // an arbitrary list of GIDs; that doesn't necessarily mean that
+      // the GIDs themselves are noncontiguous).
+      ++testNum;
+      if (verbose && myRank == 0) {
+	cout << "Test " << testNum << ": Nonnull noncontiguous Map (different "
+	  "index base) on input to readDenseFile()" << endl;
+      }
+      // Make sure that the global ordinal sets of X->getMap() and
+      // map don't overlap.
+      GO indexBase = X->getMap()->getMaxAllGlobalIndex() + 1;
+      const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
+
+      // Compute number of GIDs owned by each process.  We're
+      // replicating Tpetra functionality here because we want to
+      // trick Tpetra into thinking we have a noncontiguous
+      // distribution.  This is the most general case and the most
+      // likely to uncover bugs.
+      const size_t quotient = globalNumRows / numProcs;
+      const size_t remainder = globalNumRows - quotient * numProcs;
+      const size_t localNumRows = (as<size_t> (myRank) < remainder) ? 
+	(quotient + 1) : quotient;
+
+      // Build the list of GIDs owned by this process.
+      Array<GO> elementList (localNumRows);
+      GO myStartGID;
+      if (as<size_t> (myRank) < remainder) {
+	myStartGID = indexBase + as<GO> (myRank) * as<GO> (quotient + 1);
+      } 
+      else {
+	// This branch does _not_ assume that GO is a signed type.
+	myStartGID = indexBase + as<GO> (remainder) * as<GO> (quotient + 1) +
+	  (as<GO> (remainder) - as<GO> (myRank)) * as<GO> (quotient);
+      }
+      for (GO i = 0; i < as<GO> (localNumRows); ++i) {
+	elementList[i] = myStartGID + i;
+      }
+
+      // Create the Map.
+      using Tpetra::createNonContigMapWithNode;
+      RCP<const MT> map = 
+	createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
+      try {
+	RCP<MV> X5 = testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+							map, tolerant, verbose, debug);
+	if (outFilename != "") {
+	  testWriteDenseFile<MV> (outFilename, X5, echo, verbose, debug);
+	}
+      } catch (std::exception& e) {
+	failedTests.push_back (testNum);
+	if (myRank == 0) {
+	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
 	}
       }
     } // if test noncontiguous input Map
@@ -595,7 +738,12 @@ main (int argc, char *argv[])
 
   // Only Rank 0 gets to write to cout.
   if (myRank == 0) {
-    cout << "End Result: TEST PASSED" << endl;
+    if (failedTests.size() > 0) {
+      cout << "End Result: TEST FAILED" << endl;
+    }
+    else {
+      cout << "End Result: TEST PASSED" << endl;
+    }
   }
   return EXIT_SUCCESS;
 }
