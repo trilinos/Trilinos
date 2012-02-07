@@ -73,7 +73,7 @@ get_ritzvals (
 	    if (ql_flag != 0) {
 	        bail("Aborting debugging procedure in get_ritzvals().\n",1);
 	    } 
-	    shell_sort(j, ritz_sav);
+	    shell_sort(j, &ritz_sav[1]);
         }
 
 	bisect_flag = bisect(alpha, beta, j, Anorm, workj, ritz, nvals_left, 
@@ -87,7 +87,7 @@ get_ritzvals (
         cpvec(ritz, 1, j, alpha);
         cpvec(workj, 0, j, beta);
 	ql_flag = ql(ritz, workj, j);
-	shell_sort(j, ritz);
+	shell_sort(j, &ritz[1]);
     }
 
     if (bisect_flag != 0 && ql_flag == 0) {
@@ -103,7 +103,7 @@ get_ritzvals (
         cpvec(ritz, 1, j, alpha);
         cpvec(workj, 0, j, beta);
 	ql_flag = ql(ritz, workj, j);
-	shell_sort(j, ritz);
+	shell_sort(j, &ritz[1]);
     } 
 
     if (ql_flag != 0 && bisect_flag == 0) {
