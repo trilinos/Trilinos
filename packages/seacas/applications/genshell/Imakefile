@@ -35,12 +35,11 @@ XCOMM $Id: Imakefile,v 1.9 1999/02/17 15:26:50 gdsjaar Exp $
 
 CODE = genshell
 
-SRCS = \
-comand.f dbmir1.f dbmirr.f genshell.f getspl.f \
-mirss.f  newess.f newid.f  newini.f   newxyz.f \
-rotxyz.f show.f   shwint.f spline.f   splxyz.f trnxyz.f \
-usids.f  wress.f  wrnps.f  wrpxyz.f   dbielb.f dbieb1.f \
-dboelb.f dboqa.f  dbpini.f 
+SRCS = genshell.f gs_dbielb.f gs_dboelb.f gs_getspl.f gs_newid.f gs_rotxyz.f \
+	    gs_spline.f gs_usids.f gs_wrpxyz.f gs_comand.f gs_dbmir1.f gs_dboqa.f \
+	    gs_mirss.f gs_newini.f gs_show.f gs_splxyz.f gs_wress.f gs_dbieb1.f \
+	    gs_dbmirr.f gs_dbpini.f gs_newess.f gs_newxyz.f gs_shwint.f \
+	    gs_trnxyz.f gs_wrnps.f
 
 OBJS = ${SRCS:.f=.o}
 

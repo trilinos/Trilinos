@@ -99,10 +99,10 @@ int main (int argc, char **argv)
 
 /* initialize file with parameters */
 
-   num_dim = 3;
+   num_dim = 1;
    num_nodes = 0;
    num_elem = 0;
-   num_elem_blk = 7;
+   num_elem_blk = 0;
    num_node_sets = 0;
    num_side_sets = 0;
 
@@ -116,178 +116,10 @@ int main (int argc, char **argv)
      exit(-1);
    }
 
-/* write nodal varcoordinates values and names to database */
-
-/* Quad #1 */
-   x[0] = 0.0; y[0] = 0.0; z[0] = 0.0;
-   x[1] = 1.0; y[1] = 0.0; z[1] = 0.0;
-   x[2] = 1.0; y[2] = 1.0; z[2] = 0.0;
-   x[3] = 0.0; y[3] = 1.0; z[3] = 0.0;
-
-/* Quad #2 */
-   x[4]  =  1.0; y[4]  =  0.0; z[4]  =  0.0;
-   x[5]  =  2.0; y[5]  =  0.0; z[5]  =  0.0;
-   x[6]  =  2.0; y[6]  =  1.0; z[6]  =  0.0;
-   x[7]  =  1.0; y[7]  =  1.0; z[7]  =  0.0;
-
-/* Hex #1 */
-   x[8]  =  0.0; y[8]  =  0.0; z[8]  =  0.0;
-   x[9]  = 10.0; y[9]  =  0.0; z[9]  =  0.0;
-   x[10] = 10.0; y[10] =  0.0; z[10] =-10.0;
-   x[11] =  1.0; y[11] =  0.0; z[11] =-10.0;
-   x[12] =  1.0; y[12] = 10.0; z[12] =  0.0;
-   x[13] = 10.0; y[13] = 10.0; z[13] =  0.0;
-   x[14] = 10.0; y[14] = 10.0; z[14] =-10.0;
-   x[15] =  1.0; y[15] = 10.0; z[15] =-10.0;
-
-/* Tetra #1 */
-   x[16] =  0.0; y[16] =  0.0; z[16] =  0.0;
-   x[17] =  1.0; y[17] =  0.0; z[17] =  5.0;
-   x[18] = 10.0; y[18] =  0.0; z[18] =  2.0;
-   x[19] =  7.0; y[19] =  5.0; z[19] =  3.0;
-
-/* Wedge #1 */
-   x[20] =  3.0; y[20] =  0.0; z[20] =  6.0;
-   x[21] =  6.0; y[21] =  0.0; z[21] =  0.0;
-   x[22] =  0.0; y[22] =  0.0; z[22] =  0.0;
-   x[23] =  3.0; y[23] =  2.0; z[23] =  6.0;
-   x[24] =  6.0; y[24] =  2.0; z[24] =  2.0;
-   x[25] =  0.0; y[25] =  2.0; z[25] =  0.0;
-
-/* Tetra #2 */
-   x[26] =  2.7; y[26] =  1.7; z[26] =  2.7;
-   x[27] =  6.0; y[27] =  1.7; z[27] =  3.3;
-   x[28] =  5.7; y[28] =  1.7; z[28] =  1.7;
-   x[29] =  3.7; y[29] =  0.0; z[29] =  2.3;
-
-/* 3d Tri */
-   x[30] =  0.0; y[30] =  0.0; z[30] =  0.0;
-   x[31] = 10.0; y[31] =  0.0; z[31] =  0.0;
-   x[32] = 10.0; y[32] = 10.0; z[32] = 10.0;
-
-   /*   error = ex_put_coord (exoid, x, y, z); */
-   printf ("after ex_put_coord, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
    coord_names[0] = "xcoor";
-   coord_names[1] = "ycoor";
-   coord_names[2] = "zcoor";
 
    error = ex_put_coord_names (exoid, coord_names);
    printf ("after ex_put_coord_names, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-/* write element order map */
-
-   elem_map = (int *) calloc(num_elem, sizeof(int));
-
-   for (i=1; i<=num_elem; i++)
-   {
-      elem_map[i-1] = i;
-   }
-
-   error = ex_put_map (exoid, elem_map);
-   printf ("after ex_put_map, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   free (elem_map);
-
-
-/* write element block parameters */
-
-   num_elem_in_block[0] = 0;
-   num_elem_in_block[1] = 0;
-   num_elem_in_block[2] = 0;
-   num_elem_in_block[3] = 0;
-   num_elem_in_block[4] = 0;
-   num_elem_in_block[5] = 0;
-   num_elem_in_block[6] = 0;
-
-   num_nodes_per_elem[0] = 4; /* elements in block #1 are 4-node quads  */
-   num_nodes_per_elem[1] = 4; /* elements in block #2 are 4-node quads  */
-   num_nodes_per_elem[2] = 8; /* elements in block #3 are 8-node hexes  */
-   num_nodes_per_elem[3] = 4; /* elements in block #4 are 4-node tetras */
-   num_nodes_per_elem[4] = 6; /* elements in block #5 are 6-node wedges */
-   num_nodes_per_elem[5] = 8; /* elements in block #6 are 8-node tetras */
-   num_nodes_per_elem[6] = 3; /* elements in block #7 are 3-node tris   */
-
-   ebids[0] = 10;
-   ebids[1] = 11;
-   ebids[2] = 12;
-   ebids[3] = 13;
-   ebids[4] = 14;
-   ebids[5] = 15;
-   ebids[6] = 16;
-
-   error = ex_put_elem_block (exoid, ebids[0], "quad", num_elem_in_block[0],
-                              num_nodes_per_elem[0], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[1], "quad", num_elem_in_block[1],
-                               num_nodes_per_elem[1], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[2], "hex", num_elem_in_block[2],
-                               num_nodes_per_elem[2], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[3], "tetra", num_elem_in_block[3],
-                               num_nodes_per_elem[3], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[4], "wedge", num_elem_in_block[4],
-                               num_nodes_per_elem[4], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[5], "tetra", num_elem_in_block[5],
-                               num_nodes_per_elem[5], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[6], "tri", num_elem_in_block[6],
-                               num_nodes_per_elem[6], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
 
    if (error) {
      ex_close (exoid);
@@ -368,8 +200,6 @@ int main (int argc, char **argv)
    num_time_steps = 10;
 
    glob_var_vals = (float *) calloc (num_glo_vars, CPU_word_size);
-   nodal_var_vals = (float *) calloc (num_nodes, CPU_word_size);
-   elem_var_vals = (float *) calloc (4, CPU_word_size);
 
    for (i=0; i<num_time_steps; i++)
    {
@@ -414,8 +244,6 @@ int main (int argc, char **argv)
      }
    }
    free(glob_var_vals);
-   free(nodal_var_vals);
-   free(elem_var_vals);
 
 
 /* close the EXODUS files

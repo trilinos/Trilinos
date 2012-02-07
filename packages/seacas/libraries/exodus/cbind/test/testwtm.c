@@ -493,8 +493,8 @@ int main (int argc, char **argv)
    error = ex_put_node_set_param (exoid, 20, 5, 5);
    printf ("after ex_put_node_set_param, error = %d\n", error);
 
-   node_list[0] = 100; node_list[1] = 101; node_list[2] = 102; 
-   node_list[3] = 103; node_list[4] = 104; 
+   node_list[0] = 10; node_list[1] = 11; node_list[2] = 12; 
+   node_list[3] = 13; node_list[4] = 14; 
 
    dist_fact[0] = 1.0; dist_fact[1] = 2.0; dist_fact[2] = 3.0;
    dist_fact[3] = 4.0; dist_fact[4] = 5.0;
@@ -507,7 +507,7 @@ int main (int argc, char **argv)
    error = ex_put_node_set_param (exoid, 21, 3, 3);
    printf ("after ex_put_node_set_param, error = %d\n", error);
 
-   node_list[0] = 200; node_list[1] = 201; node_list[2] = 202; 
+   node_list[0] = 20; node_list[1] = 21; node_list[2] = 22; 
 
    dist_fact[0] = 1.1; dist_fact[1] = 2.1; dist_fact[2] = 3.1;
 
@@ -534,8 +534,8 @@ int main (int argc, char **argv)
      error = ex_put_node_set_param (exoidm[n], 20, 5, 5);
      printf ("after ex_put_node_set_param (%d), error = %d\n", n, error);
 
-     node_list2[0] = 100; node_list2[1] = 101; node_list2[2] = 102; 
-     node_list2[3] = 103; node_list2[4] = 104; 
+     node_list2[0] = 10; node_list2[1] = 11; node_list2[2] = 12; 
+     node_list2[3] = 13; node_list2[4] = 14; 
 
      dist_fact2[0] = 1.0; dist_fact2[1] = 2.0; dist_fact2[2] = 3.0;
      dist_fact2[3] = 4.0; dist_fact2[4] = 5.0;
@@ -548,7 +548,7 @@ int main (int argc, char **argv)
      error = ex_put_node_set_param (exoidm[n], 21, 3, 3);
      printf ("after ex_put_node_set_param (%d), error = %d\n", n, error);
 
-     node_list2[0] = 200; node_list2[1] = 201; node_list2[2] = 202; 
+     node_list2[0] = 20; node_list2[1] = 21; node_list2[2] = 22; 
 
      dist_fact2[0] = 1.1; dist_fact2[1] = 2.1; dist_fact2[2] = 3.1;
 
@@ -581,9 +581,9 @@ int main (int argc, char **argv)
 
    node_ind[0] = 0; node_ind[1] = 5;
 
-   node_list[0] = 100; node_list[1] = 101; node_list[2] = 102; 
-   node_list[3] = 103; node_list[4] = 104; 
-   node_list[5] = 200; node_list[6] = 201; node_list[7] = 202;
+   node_list[0] = 10; node_list[1] = 11; node_list[2] = 12; 
+   node_list[3] = 13; node_list[4] = 14; 
+   node_list[5] = 20; node_list[6] = 21; node_list[7] = 22;
 
    num_df_per_set[0] = 5; num_df_per_set[1] = 3;
 
@@ -614,9 +614,9 @@ int main (int argc, char **argv)
 
    node_ind2[0] = 0; node_ind2[1] = 5;
 
-   node_list2[0] = 100; node_list2[1] = 101; node_list2[2] = 102;
-   node_list2[3] = 103; node_list2[4] = 104;
-   node_list2[5] = 200; node_list2[6] = 201; node_list2[7] = 202;
+   node_list2[0] = 10; node_list2[1] = 11; node_list2[2] = 12;
+   node_list2[3] = 13; node_list2[4] = 14;
+   node_list2[5] = 20; node_list2[6] = 21; node_list2[7] = 22;
 
    num_df_per_set2[0] = 5; num_df_per_set2[1] = 3;
 

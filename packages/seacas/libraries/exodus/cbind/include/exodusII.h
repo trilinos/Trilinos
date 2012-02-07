@@ -275,8 +275,7 @@ extern "C" {
 				     int   elem_blk_id, 
 				     int   num_elem_this_blk,
 				     void *elem_var_vals);
-  EXODUS_EXPORT int ex_get_elem_varid (int  exoid,
-				       int *varid);
+
   EXODUS_EXPORT int ex_get_elem_var_time (int   exoid,
 					  int   elem_var_index,
 					  int   elem_number,
@@ -358,9 +357,6 @@ extern "C" {
 				     int   num_node_this_nset,
 				     void *nset_var_vals);
 
-  EXODUS_EXPORT int ex_get_nset_varid (int  exoid,
-				       int *varid);
-
   EXODUS_EXPORT int ex_get_nodal_var (int   exoid,
 				      int   time_step,
 				      int   nodal_var_index,
@@ -374,20 +370,11 @@ extern "C" {
 					int   num_nodes, 
 					void *nodal_var_vals);
 
-  EXODUS_EXPORT int ex_get_nodal_varid(int exoid, int *varid);
-
   EXODUS_EXPORT int ex_get_nodal_var_time (int   exoid,
 					   int   nodal_var_index,
 					   int   node_number,
 					   int   beg_time_step, 
 					   int   end_time_step,
-					   void *nodal_var_vals);
-
-  EXODUS_EXPORT int ex_get_nodal_varid_var(int   exoid,
-					   int   time_step,
-					   int   nodal_var_index,
-					   int   num_nodes, 
-					   int   varid,
 					   void *nodal_var_vals);
 
   EXODUS_EXPORT int ex_get_one_elem_attr (int   exoid,
@@ -454,8 +441,7 @@ extern "C" {
 					 int  num_sidesets,
 					 int  num_sset_var,
 					 int *sset_var_tab);
-  EXODUS_EXPORT int ex_get_sset_varid (int  exoid,
-				       int *varid);
+
   EXODUS_EXPORT int ex_get_time (int   exoid,
 				 int   time_step,
 				 void *time_value);
@@ -467,8 +453,7 @@ extern "C" {
 				      const char *var_type,
 				      int   num_vars,
 				      char *var_names[]);
-  EXODUS_EXPORT int ex_get_varid (int  exoid, ex_entity_type obj_type,
-				  int *varid_arr);
+
   EXODUS_EXPORT int ex_get_variable_name (int   exoid,
 					  ex_entity_type obj_type,
 					  int   var_num,
@@ -655,13 +640,6 @@ extern "C" {
 					int   num_nodes, 
 					const void *nodal_var_vals);
 
-  EXODUS_EXPORT int ex_put_nodal_varid_var(int   exoid,
-					   int   time_step,
-					   int   nodal_var_index,
-					   int   num_nodes, 
-					   int   varid,
-					   const void *nodal_var_vals);
-
   EXODUS_EXPORT int ex_put_node_map (int exoid,
 				     int map_id,
 				     const int *node_map);
@@ -756,11 +734,6 @@ extern "C" {
   EXODUS_EXPORT int ex_put_time (int   exoid,
 				 int   time_step,
 				 const void *time_value);
-  EXODUS_EXPORT int ex_put_varid_var(int   exoid,
-				     int   time_step,
-				     int   varid,
-				     int   num_entity,
-				     const void *var_vals);
 
   EXODUS_EXPORT int ex_put_var_names (int   exoid,
 				      const char *var_type,
@@ -816,12 +789,6 @@ extern "C" {
    */
   EXODUS_EXPORT int ex_set_max_name_length(int exoid, int length);
 
-  EXODUS_EXPORT int ex_get_varid_var(int   exoid,
-				     int   time_step,
-				     int   varid,
-				     int   num_entity,
-				     void *var_vals);
-  
   /* ERROR CODE DEFINITIONS AND STORAGE                                       */
   extern int exerrval;     /**< shared error return value                */
   extern int exoptval;     /**< error reporting flag (default is quiet)  */

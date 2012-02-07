@@ -31,7 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_FileInfo.h>
-
+#include <stddef.h>
+#include <sys/select.h>
+#include <sys/unistd.h>
 #include <string>
 
 #if defined(__PUMAGON__)
@@ -40,11 +42,9 @@
 #define NPOS std::string::npos
 #endif
 
-#include <cstdio>
-#include <iostream>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <cstdio>
 
 namespace {
   bool internal_access(const std::string &name, int mode);

@@ -320,6 +320,7 @@ int main (int argc, char **argv)
 	  printf("\n");
 	  nnodes += nnpe[j];
 	}
+	free(nnpe);
       } else {
 	connect = (int *) calloc((num_nodes_per_elem[i] * num_elem_in_block[i]), 
 				 sizeof(int));
@@ -337,28 +338,26 @@ int main (int argc, char **argv)
   }
 
   /* read element block attributes */
-  if (num_attr[i] > 0) {
-    for (i=0; i<num_elem_blk; i++) {
-      if (num_elem_in_block[i] > 0) {
-	for (j=0; j<num_attr[i]; j++)
-	  attrib_names[j] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
-	
-	attrib = (float *) calloc(num_attr[i]*num_elem_in_block[i],sizeof(float));
-	error = ex_get_elem_attr (exoid, ids[i], attrib);
-	printf ("\n after ex_get_elem_attr, error = %d\n", error);
+  for (i=0; i<num_elem_blk; i++) {
+    if (num_attr[i] > 0) {
+      for (j=0; j<num_attr[i]; j++)
+	attrib_names[j] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
+      
+      attrib = (float *) calloc(num_attr[i]*num_elem_in_block[i],sizeof(float));
+      error = ex_get_elem_attr (exoid, ids[i], attrib);
+      printf ("\n after ex_get_elem_attr, error = %d\n", error);
+      
+      if (error == 0) {
+	error = ex_get_elem_attr_names (exoid, ids[i], attrib_names);
+	printf (" after ex_get_elem_attr_names, error = %d\n", error);
 	
 	if (error == 0) {
-	  error = ex_get_elem_attr_names (exoid, ids[i], attrib_names);
-	  printf (" after ex_get_elem_attr_names, error = %d\n", error);
-	  
-	  if (error == 0) {
-	    printf ("element block %d attribute '%s' = %6.4f\n", ids[i], attrib_names[0], *attrib);
-	  }
+	  printf ("element block %d attribute '%s' = %6.4f\n", ids[i], attrib_names[0], *attrib);
 	}
-	free (attrib);
-	for (j=0; j<num_attr[i]; j++)
-	  free (attrib_names[j]);
       }
+      free (attrib);
+      for (j=0; j<num_attr[i]; j++)
+	free (attrib_names[j]);
     }
   }
   
@@ -1138,6 +1137,10 @@ int main (int argc, char **argv)
   }
   if (num_node_sets > 0)
     free (num_nodes_per_set);
+
+  for (i=0; i<num_elem_blk; i++) {
+    free(elem_type[i]);
+  }
 
   error = ex_close (exoid);
   printf ("\nafter ex_close, error = %3d\n", error);

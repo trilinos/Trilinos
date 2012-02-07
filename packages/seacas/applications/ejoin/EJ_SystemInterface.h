@@ -104,7 +104,7 @@ class SystemInterface
   */
   void parse_step_option(const char *token);
 
-  GetLongOpt options_; //!< Options parsing
+  GetLongOption options_; //!< Options parsing
   
 
   int debugLevel_;

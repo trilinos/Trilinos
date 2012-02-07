@@ -32,8 +32,10 @@
 
 #include <Ioss_Bar3.h>
 #include <Ioss_ElementVariableType.h>
-#include <string>
 #include <assert.h>
+#include <stddef.h>
+
+#include "Ioss_ElementTopology.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
