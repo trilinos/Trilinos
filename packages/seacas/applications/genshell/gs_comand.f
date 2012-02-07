@@ -657,5 +657,4 @@ C ... ATTRIBUTE {id} {which } {value}
       IF (ITRANT .EQ. 0) ITRANT = 1
 
       RETURN
-  250 FORMAT (5X, 5A)
       END

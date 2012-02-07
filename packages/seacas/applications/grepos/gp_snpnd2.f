@@ -42,6 +42,9 @@ C=======================================================================
       REAL SAVEIT(2)
       LOGICAL FOUND 
 
+      saveit(1) = 0.0
+      saveit(2) = 0.0
+      
       glotol = 0.0
       notmat = 0
       matin  = 0
@@ -123,7 +126,6 @@ C     for this face/node combination. Save the minimum for all face/node comb
                 pmin = min(S, pmin)
               end if
             end if
- 100        continue
  110      continue
           if (found) then
             x(inod) = saveit(1)

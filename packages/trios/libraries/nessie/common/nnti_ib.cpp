@@ -1857,12 +1857,17 @@ static NNTI_result_t setup_request_channel(const uint32_t cqe_count)
         log_error(nnti_debug_level, "ibv_create_cq failed");
         return NNTI_EIO;
     }
-    struct ibv_srq_init_attr attr = {
-            .attr = {
-                    .max_wr  = cqe_count,
-                    .max_sge = 1
-            }
-    };
+
+//    struct ibv_srq_init_attr attr = {
+//            .attr = {
+//                    .max_wr  = cqe_count,
+//                    .max_sge = 1
+//            }
+//    };
+    struct ibv_srq_init_attr attr;
+    attr.attr.max_wr = cqe_count;
+    attr.attr.max_sge = 1;
+
 
     transport_global_data.req_srq = ibv_create_srq(transport_global_data.pd, &attr);
     if (!transport_global_data.req_srq)  {
@@ -1919,12 +1924,15 @@ static NNTI_result_t setup_data_channel(const uint32_t cqe_count)
         log_error(nnti_debug_level, "ibv_create_cq failed");
         return NNTI_EIO;
     }
-    struct ibv_srq_init_attr attr = {
-            .attr = {
-                    .max_wr  = cqe_count,
-                    .max_sge = 1
-            }
-    };
+//    struct ibv_srq_init_attr attr = {
+//            .attr = {
+//                    .max_wr  = cqe_count,
+//                    .max_sge = 1
+//            }
+//    };
+    struct ibv_srq_init_attr attr;
+    attr.attr.max_wr  = cqe_count;
+    attr.attr.max_sge = 1;
 
     transport_global_data.data_srq = ibv_create_srq(transport_global_data.pd, &attr);
     if (!transport_global_data.data_srq)  {

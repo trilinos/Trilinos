@@ -92,7 +92,6 @@ C     7 values per element.
           call expeat(ndb, idelb, atrib, ierr)
         end if
       end if
- 100  CONTINUE
 
       RETURN
       END
