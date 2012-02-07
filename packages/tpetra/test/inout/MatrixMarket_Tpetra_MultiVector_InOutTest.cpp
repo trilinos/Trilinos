@@ -77,6 +77,7 @@ namespace {
   assertMultiVectorsEqual (const Teuchos::RCP<const MV>& X, 
 			   const Teuchos::RCP<const MV>& Y)
   {
+    using Teuchos::as;
     using Teuchos::RCP;
     using std::cerr;
     using std::cout;
@@ -97,19 +98,21 @@ namespace {
       std::logic_error, "Y has a different number of rows than X.");
     TEUCHOS_TEST_FOR_EXCEPTION(X->getNumVectors() != Y->getNumVectors(),
       std::logic_error, "Y has a different number of columns than X.");
-      
+
+    Tpetra::global_size_t numRows = X->getGlobalLength();
     const size_t numVecs = X->getNumVectors();
     Teuchos::Array<magnitude_type> X_norm2 (numVecs);
     Teuchos::Array<magnitude_type> Y_norm2 (numVecs);
     X->norm2 (X_norm2 ());
     Y->norm2 (Y_norm2 ());
 
-    // What tolerance should I pick?  I'm using the typical heuristic
-    // of the square root of the number of floating-point numbers
-    // involved in computing the norm for one column.  Our output
-    // routine is careful to use enough digits, so the input matrix
-    // shouldn't be that much different.
-    const magnitude_type tol = STS::squareroot (STS::magnitude (STS::eps ()) * Teuchos::as<magnitude_type> (X->getGlobalLength ()));
+    // For the relative tolerance, I'm using the typical heuristic: a
+    // (fudge factor) times (machine epsilon) times (the number of
+    // floating-point numbers involved in computing the norm for one
+    // column).  Our output routine is careful to use enough digits,
+    // so the input matrix shouldn't be that much different.
+    const magnitude_type tol = as<magnitude_type> (10) * 
+      STS::magnitude (STS::eps ()) * as<magnitude_type> (numRows);
     std::vector<size_t> badColumns;
     for (size_t j = 0; j < numVecs; ++j) {
       // If the norm of the current column of X is zero, use the
@@ -446,16 +449,26 @@ main (int argc, char *argv[])
 
   std::string inputFilename;  // Matrix Market file to read
   std::string outputFilename; // Matrix Market file to write (if applicable)
+  // Number of a specific test to run.  If nonzero, only run that
+  // test.  We always run Test #1 since its result is needed for
+  // subsequent tests.
+  int testToRun = 0;
+  // FIXME (mfh 07 Feb 2012) Currently, all tests with a different
+  // index base FAIL.  Reading in the multivector appears to be
+  // correct, but writing it results in a multivector of all zeros (on
+  // _all_ processes).
+  bool testDifferentIndexBase = false;
   bool testContiguousInputMap = true;
-  // FIXME (mfh 07 Feb 2012) This test FAILS; reading in the
-  // multivector appears to be correct, but writing it results in a
-  // multivector of all zeros.
   bool testNoncontiguousInputMap = false; 
   bool testWrite = true; // Test Matrix Market output?
   bool tolerant = false; // Parse the file tolerantly?
   bool echo = false;     // Echo the read-in matrix back?
   bool verbose = false;  // Verbosity of output
   bool debug = false;    // Print debugging info?
+  // If true, stop after a single test failure.  Intended for
+  // interactive use, so that you can examine a test's output file.
+  // Not intended for batch or ctest use.
+  bool stopAfterFailure = false; 
 
   CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("inputFilename", &inputFilename,
@@ -465,14 +478,20 @@ main (int argc, char *argv[])
 		  "this file in Matrix Market format on (MPI) Proc 0.  "
 		  "Otherwise, this argument is ignored.  Note that the output "
 		  "file may not be identical to the input file.");
+  cmdp.setOption ("testToRun", &testToRun, "Number of a specific test to run.  "
+		  "If nonzero, only run that test.  We always run Test #1 since"
+		  " its result is needed for subsequent tests.");
+  cmdp.setOption ("testDifferentIndexBase", "dontTestDifferentIndexBase",
+		  &testDifferentIndexBase, "Whether to test input and output "
+		  "for Maps with different index bases.");
   cmdp.setOption ("testContiguousInputMap", "dontTestContiguousInputMap",
 		  &testContiguousInputMap,
-		  "Whether to test input and output for a nonnull contiguous "
-		  "input Map.");
+		  "Whether to test input and output for nonnull contiguous "
+		  "input Maps.");
   cmdp.setOption ("testNoncontiguousInputMap", "dontTestNoncontiguousInputMap",
 		  &testNoncontiguousInputMap,
-		  "Whether to test input and output for a nonnull noncontiguous "
-		  "input Map.");
+		  "Whether to test input and output for nonnull noncontiguous "
+		  "input Maps.");
   cmdp.setOption ("testWrite", "noTestWrite", &testWrite,
 		  "Whether to test Matrix Market file output.  Ignored if no "
 		  "--outputFilename value is given.");
@@ -484,6 +503,8 @@ main (int argc, char *argv[])
 		  "not be identical to the input file.");
   cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
   cmdp.setOption ("debug", "nodebug", &debug, "Print debugging information.");
+  cmdp.setOption ("stopAfterFailure", "dontStopAfterFailure", &stopAfterFailure, 
+		  "Whether to stop after a single test failure.");
 
   // Parse the command-line arguments.
   {
@@ -507,7 +528,10 @@ main (int argc, char *argv[])
 
   // List of numbers of failed tests.
   std::vector<int> failedTests;
-  // Current test number.  Increment before starting each test.
+  // Current test number.  Increment before starting each test.  If a
+  // test is only run conditionally, increment before evaluating the
+  // condition.  This ensures that each test has the same number each
+  // time, whether or not a particular test is run.
   int testNum = 0;
 
   // Run all the tests.  If no input filename was specified, we don't
@@ -547,8 +571,8 @@ main (int argc, char *argv[])
     // Test 2: nonnull contiguous input Map with the same index base
     // as X's Map.  This Map may or may not necessarily be the same as
     // (in the sense of isSameAs()) or even compatible with X's Map.
-    if (testContiguousInputMap) {
-      ++testNum;
+    ++testNum;
+    if (testContiguousInputMap || (testToRun != 0 && testToRun == testNum)) {
       if (verbose && myRank == 0) {
 	cout << "Test " << testNum << ": Nonnull contiguous Map (same index "
 	  "base) on input to readDenseFile()" << endl;
@@ -571,13 +595,89 @@ main (int argc, char *argv[])
 	if (myRank == 0) {
 	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
 	}
+
+	if (stopAfterFailure) {
+	  if (failedTests.size() > 0) {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST FAILED" << endl;
+	    }
+	    return EXIT_FAILURE;
+	  }
+	  else {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST PASSED" << endl;
+	    }
+	    return EXIT_SUCCESS;
+	  }
+	} // if stop after failure
       }
     }
 
     // Test 3: nonnull contiguous input Map, with a different index
-    // base than X's Map.
-    if (testContiguousInputMap) {
-      ++testNum;
+    // base than X's Map.  In this case, the index base is X's Map's
+    // index base plus a small number (3).  For sufficiently long
+    // vectors, this tests the case where the GID sets overlap.
+    ++testNum;
+    if ((testContiguousInputMap && testDifferentIndexBase) || (testToRun != 0 && testToRun == testNum)) {
+      if (verbose && myRank == 0) {
+	cout << "Test " << testNum << ": Nonnull contiguous Map (different "
+	  "index base) on input to readDenseFile()" << endl;
+      }
+      const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
+      const GO indexBase = X->getMap()->getIndexBase() + as<GO> (3);
+
+      // Make sure that the index base is the same on all processes.
+      // It definitely should be, since the Map's getMaxAllGlobalIndex()
+      // method should return the same value on all processes.
+      GO minIndexBase = indexBase;
+      reduceAll (*comm, REDUCE_MIN, indexBase, ptr (&minIndexBase));
+      GO maxIndexBase = indexBase;
+      reduceAll (*comm, REDUCE_MAX, indexBase, ptr (&maxIndexBase));
+      TEUCHOS_TEST_FOR_EXCEPTION(minIndexBase != maxIndexBase || minIndexBase != indexBase,
+        std::logic_error, "Index base values do not match on all processes.  "
+        "Min value is " << minIndexBase << " and max value is " << maxIndexBase 
+        << ".");
+
+      // Create the Map.
+      RCP<const MT> map = 
+	rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm, 
+					  Tpetra::GloballyDistributed, node));
+      try {
+	RCP<MV> X3 = 
+	  testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+					     map, tolerant, verbose, debug);
+	if (outFilename != "") {
+	  testWriteDenseFile<MV> (outFilename, X3, echo, verbose, debug);
+	}
+      } catch (std::exception& e) {
+	failedTests.push_back (testNum);
+	if (myRank == 0) {
+	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
+	}
+
+	if (stopAfterFailure) {
+	  if (failedTests.size() > 0) {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST FAILED" << endl;
+	    }
+	    return EXIT_FAILURE;
+	  }
+	  else {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST PASSED" << endl;
+	    }
+	    return EXIT_SUCCESS;
+	  }
+	} // if stop after failure
+      }
+    }
+
+    // Test 4: nonnull contiguous input Map, with a different index
+    // base than X's Map.  In this case, the new index base is chosen
+    // so that the new GID set does not overlap with X's Map's GID
+    // set.
+    ++testNum;
+    if ((testContiguousInputMap && testDifferentIndexBase) || (testToRun != 0 && testToRun == testNum)) {
       if (verbose && myRank == 0) {
 	cout << "Test " << testNum << ": Nonnull contiguous Map (different "
 	  "index base) on input to readDenseFile()" << endl;
@@ -616,21 +716,36 @@ main (int argc, char *argv[])
 	if (myRank == 0) {
 	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
 	}
+
+	if (stopAfterFailure) {
+	  if (failedTests.size() > 0) {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST FAILED" << endl;
+	    }
+	    return EXIT_FAILURE;
+	  }
+	  else {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST PASSED" << endl;
+	    }
+	    return EXIT_SUCCESS;
+	  }
+	} // if stop after failure
       }
     }
 
-    if (testNoncontiguousInputMap) {
-      // Test 4: nonnull input Map with the same index base as X's
+    ++testNum;
+    if (testNoncontiguousInputMap || (testToRun != 0 && testToRun == testNum)) {
+      // Test 5: nonnull input Map with the same index base as X's
       // Map, and a "noncontiguous" distribution (in the sense that
       // the Map is constructed using the constructor that takes an
       // arbitrary list of GIDs; that doesn't necessarily mean that
       // the GIDs themselves are noncontiguous).
-      ++testNum;
       if (verbose && myRank == 0) {
 	cout << "Test " << testNum << ": Nonnull noncontiguous Map (same index "
 	  "base) on input to readDenseFile()" << endl;
       }
-      GO indexBase = X->getMap()->getIndexBase();
+      const GO indexBase = X->getMap()->getIndexBase();
       const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
 
       // Compute number of GIDs owned by each process.  We're
@@ -652,10 +767,29 @@ main (int argc, char *argv[])
       else {
 	// This branch does _not_ assume that GO is a signed type.
 	myStartGID = indexBase + as<GO> (remainder) * as<GO> (quotient + 1) +
-	  (as<GO> (remainder) - as<GO> (myRank)) * as<GO> (quotient);
+	  (as<GO> (myRank) - as<GO> (remainder)) * as<GO> (quotient);
       }
       for (GO i = 0; i < as<GO> (localNumRows); ++i) {
 	elementList[i] = myStartGID + i;
+      }
+
+      if (debug) {
+	for (int p = 0; p < numProcs; ++p) {
+	  if (p == myRank) {
+	    if (elementList.size() > 0) {
+	      const GO minGID = *std::min_element (elementList.begin(), elementList.end());
+	      const GO maxGID = *std::max_element (elementList.begin(), elementList.end());
+	      cerr << "On Proc " << p << ": min,max GID = " << minGID << "," << maxGID << endl;
+	    }
+	    else {
+	      cerr << "On Proc " << p << ": elementList is empty" << endl;
+	    }
+	    cerr << std::flush;
+	  } 
+	  comm->barrier ();
+	  comm->barrier ();
+	  comm->barrier ();
+	}
       }
 
       // Create the Map.
@@ -673,16 +807,31 @@ main (int argc, char *argv[])
 	if (myRank == 0) {
 	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
 	}
+
+	if (stopAfterFailure) {
+	  if (failedTests.size() > 0) {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST FAILED" << endl;
+	    }
+	    return EXIT_FAILURE;
+	  }
+	  else {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST PASSED" << endl;
+	    }
+	    return EXIT_SUCCESS;
+	  }
+	} // if stop after failure
       }
     } // if test noncontiguous input Map
 
-    if (testNoncontiguousInputMap) {
-      // Test 5: nonnull input Map with a different index base than
+    ++testNum;
+    if (testNoncontiguousInputMap && testDifferentIndexBase) {
+      // Test 6: nonnull input Map with a different index base than
       // X's Map, and a "noncontiguous" distribution (in the sense
       // that the Map is constructed using the constructor that takes
       // an arbitrary list of GIDs; that doesn't necessarily mean that
       // the GIDs themselves are noncontiguous).
-      ++testNum;
       if (verbose && myRank == 0) {
 	cout << "Test " << testNum << ": Nonnull noncontiguous Map (different "
 	  "index base) on input to readDenseFile()" << endl;
@@ -732,20 +881,37 @@ main (int argc, char *argv[])
 	if (myRank == 0) {
 	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
 	}
+
+	if (stopAfterFailure) {
+	  if (failedTests.size() > 0) {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST FAILED" << endl;
+	    }
+	    return EXIT_FAILURE;
+	  }
+	  else {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST PASSED" << endl;
+	    }
+	    return EXIT_SUCCESS;
+	  }
+	} // if stop after failure
       }
     } // if test noncontiguous input Map
   }
 
-  // Only Rank 0 gets to write to cout.
-  if (myRank == 0) {
-    if (failedTests.size() > 0) {
+  if (failedTests.size() > 0) {
+    if (myRank == 0) {
       cout << "End Result: TEST FAILED" << endl;
     }
-    else {
+    return EXIT_FAILURE;
+  }
+  else {
+    if (myRank == 0) {
       cout << "End Result: TEST PASSED" << endl;
     }
+    return EXIT_SUCCESS;
   }
-  return EXIT_SUCCESS;
 }
 
 
