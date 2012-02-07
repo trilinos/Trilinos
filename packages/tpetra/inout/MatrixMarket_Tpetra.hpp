@@ -1707,34 +1707,12 @@ namespace Tpetra {
       /// and distribute it to all processors.  Return the resulting
       /// distributed MultiVector.
       ///
-      /// Unlike \c readSparse(), this method allows callers to supply
-      /// a Map over which to distribute the resulting MultiVector.
-      /// The Map argument is optional; if null, we construct our own
-      /// reasonable Map.  We let users supply their own Map, because
-      /// a common case in Tpetra is to read in or construct a sparse
-      /// matrix first, and then create vectors that are compatible
-      /// with the sparse matrix, using the sparse matrix's domain or
-      /// range Map.
+      /// See documentation of \c readDense() for details.
       ///
-      /// \note This is a collective operation.  Only Rank 0 opens the
-      ///   file and reads data from it, but all ranks participate and
-      ///   wait for the final result.
-      /// 
-      /// \note "Tolerant" parsing mode means something different for
-      ///   dense matrices than it does for sparse matrices.  Since
-      ///   Matrix Market dense matrix files don't store indices with
-      ///   each value, unlike sparse matrices, we can't determine the
-      ///   matrix dimensions from the data alone.  Thus, we require
-      ///   the metadata to include a valid number of rows and
-      ///   columns.  "Tolerant" in the dense case refers to the data;
-      ///   in tolerant mode, the number of stored matrix entries may
-      ///   be more or less than the number reported by the metadata
-      ///   (number of rows times number of columns).  If more, the
-      ///   extra data are ignored; if less, the remainder is filled
-      ///   in with zeros.
-      /// 
-      /// \param filename [in] Name of the Matrix Market file.
-      /// \param pComm [in] Communicator containing all processor(s)
+      /// \param filename [in] Name of the Matrix Market file from
+      ///   which to read.  Both the filename and the file itself are
+      ///   only accessed on Rank 0 of the given communicator.
+      /// \param pComm [in] Communicator containing all process(es)
       ///   over which the dense matrix will be distributed.
       /// \param pNode [in] Kokkos Node object.
       /// \param pMap [in/out] On input: if nonnull, the map
@@ -1782,9 +1760,9 @@ namespace Tpetra {
       /// a Map over which to distribute the resulting MultiVector.
       /// The Map argument is optional; if null, we construct our own
       /// reasonable Map.  We let users supply their own Map, because
-      /// a common case in Tpetra is to read in or construct a matrix
-      /// first, and then create vectors using the matrix's domain or
-      /// range Map.
+      /// a common case in Tpetra is to read in or construct a sparse
+      /// matrix first, and then create dense (multi)vectors
+      /// distributed with the sparse matrix's domain or range Map.
       ///
       /// \note This is a collective operation.  Only Rank 0 opens the
       ///   file and reads data from it, but all ranks participate and
@@ -1802,9 +1780,23 @@ namespace Tpetra {
       ///   (number of rows times number of columns).  If more, the
       ///   extra data are ignored; if less, the remainder is filled
       ///   in with zeros.
-      /// 
-      /// \param in [in] The input stream from which to read.
-      /// \param pComm [in] Communicator containing all processor(s)
+      ///
+      /// \note On Map compatibility: Suppose that you write a
+      ///   multivector X to a file.  Then, you read it back in as a
+      ///   different multivector Y distributed over the same
+      ///   communicator, but with a Map constructed by the input
+      ///   routine (i.e., a null Map on input to \c readDenseFile()
+      ///   or \c readDense()).  In that case, the only properties
+      ///   shared by the maps of X and Y are that they have the same
+      ///   communicator and the same number of GIDs.  The Maps need
+      ///   not necessarily be compatible (in the sense of \c
+      ///   isCompatible()), and they certainly need not necessarily
+      ///   be the same Map (in the sense of \c isSameAs()).
+      ///
+      /// \param in [in] The input stream from which to read.  The
+      ///   stream is only accessed on Rank 0 of the given
+      ///   communicator.
+      /// \param pComm [in] Communicator containing all process(es)
       ///   over which the dense matrix will be distributed.
       /// \param pNode [in] Kokkos Node object.
       /// \param pMap [in/out] On input: if nonnull, the map
@@ -1815,7 +1807,7 @@ namespace Tpetra {
       ///   given communicator) map describing the distribution of the
       ///   output multivector.
       /// \param tolerant [in] Whether to read the data tolerantly
-      ///   from the file.
+      ///   from the stream.
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
