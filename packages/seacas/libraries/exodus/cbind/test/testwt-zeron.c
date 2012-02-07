@@ -65,18 +65,15 @@
 int main (int argc, char **argv)
 {
    int exoid, num_dim, num_nodes, num_elem, num_elem_blk;
-   int num_elem_in_block[10], num_nodes_per_elem[10];
    int num_node_sets, num_side_sets, error;
-   int i, j, *elem_map;
-   int ebids[10];
+   int i, j;
    int  num_qa_rec, num_info;
    int num_glo_vars;
    int whole_time_step, num_time_steps;
    int CPU_word_size,IO_word_size;
 
-   float *glob_var_vals, *nodal_var_vals, *elem_var_vals;
+   float *glob_var_vals;
    float time_value;
-   float x[100], y[100], z[100];
    char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
 
    ex_opts (EX_VERBOSE | EX_ABORT );

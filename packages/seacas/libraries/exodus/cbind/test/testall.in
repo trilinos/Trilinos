@@ -38,7 +38,7 @@
 
 #set PREFIX = "valgrind --tool=memcheck"
 set PREFIX = ""
-set SUFFIX = ""
+set SUFFIX = ".exe"
 set BINDIR = @CMAKE_CURRENT_BINARY_DIR@
 set SRCDIR = @CMAKE_CURRENT_SOURCE_DIR@
 set NCDUMP = @Netcdf_LIBRARY_DIRS@/../bin/ncdump
