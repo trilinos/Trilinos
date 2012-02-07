@@ -88,11 +88,37 @@ Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Ma
     numNonlocalIDs_(0),
     numNonlocalIDsAlloc_(0),
     nonlocalCoefs_(NULL),
+    numNonlocalCoefs_(0),
     numNonlocalCoefsAlloc_(0),
     nonlocalMap_(NULL),
     exporter_(NULL),
     nonlocalVector_(NULL),
-    ignoreNonLocalEntries_(ignoreNonLocalEntries_)
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
+{
+  myFirstID_ = Map.MinMyGID();
+  myNumIDs_ = Map.NumMyElements();
+  nonlocalCoefs_ = new double*[NumVectors];
+  for(int i=0; i<NumVectors; ++i) nonlocalCoefs_[i] = NULL;
+}
+
+//----------------------------------------------------------------------------
+Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
+                                 double **ArrayOfPointers, int NumVectors,
+                                 bool ignoreNonLocalEntries)
+ : Epetra_MultiVector(CV, Map, ArrayOfPointers, NumVectors),
+    myFirstID_(0),
+    myNumIDs_(0),
+    nonlocalIDs_(NULL),
+    nonlocalElementSize_(NULL),
+    numNonlocalIDs_(0),
+    numNonlocalIDsAlloc_(0),
+    nonlocalCoefs_(NULL),
+    numNonlocalCoefs_(0),
+    numNonlocalCoefsAlloc_(0),
+    nonlocalMap_(NULL),
+    exporter_(NULL),
+    nonlocalVector_(NULL),
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
   myFirstID_ = Map.MinMyGID();
   myNumIDs_ = Map.NumMyElements();
@@ -110,6 +136,7 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector& source)
     numNonlocalIDs_(0),
     numNonlocalIDsAlloc_(0),
     nonlocalCoefs_(NULL),
+    numNonlocalCoefs_(0),
     numNonlocalCoefsAlloc_(0),
     nonlocalMap_(NULL),
     exporter_(NULL),
