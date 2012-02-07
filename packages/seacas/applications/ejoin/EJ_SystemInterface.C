@@ -62,17 +62,17 @@ void SystemInterface::enroll_options()
 {
   options_.usage("[options] list_of_files_to_join");
 
-  options_.enroll("help", GetLongOpt::NoValue,
+  options_.enroll("help", GetLongOption::NoValue,
 		  "Print this summary and exit", 0);
 
-  options_.enroll("version", GetLongOpt::NoValue,
+  options_.enroll("version", GetLongOption::NoValue,
 		  "Print version and exit", NULL);
 
-  options_.enroll("output", GetLongOpt::MandatoryValue,
+  options_.enroll("output", GetLongOption::MandatoryValue,
 		  "Name of output file to create",
 		  "ejoin-out.e");
   
-  options_.enroll("omit_blocks", GetLongOpt::MandatoryValue,
+  options_.enroll("omit_blocks", GetLongOption::MandatoryValue,
 		  "Omit the specified part/block pairs. The specification is\n"
 		  "\t\tp#:block_id1:block_id2,p#:block_id1. For example, to\n"
 		  "\t\tOmit block id 1,3,4 from part 1; block 2 3 4 from part 2;\n"
@@ -80,100 +80,100 @@ void SystemInterface::enroll_options()
 		  "\t\t\t '-omit_blocks p1:1:3:4,p2:2:3:4,p5:8'",
 		  NULL);
 
-  options_.enroll("omit_nodesets", GetLongOpt::OptionalValue,
+  options_.enroll("omit_nodesets", GetLongOption::OptionalValue,
 		  "If no value, then don't transfer any nodesets to output file.\n"
 		  "\t\tIf just p#,p#,... specified, then omit sets on specified parts\n"
 		  "\t\tIf p#:id1:id2,p#:id2,id4... then omit the sets with the specified\n"
 		  "\t\tid in the specified parts.",
-		  0);
+		  0, "ALL");
 
-  options_.enroll("omit_sidesets", GetLongOpt::OptionalValue,
+  options_.enroll("omit_sidesets", GetLongOption::OptionalValue,
 		  "If no value, then don't transfer any sidesets to output file.\n"
 		  "\t\tIf just p#,p#,... specified, then omit sets on specified parts\n"
 		  "\t\tIf p#:id1:id2,p#:id2,id4... then omit the sets with the specified\n"
 		  "\t\tid in the specified parts.",
-		  0);
+		  0, "ALL");
 
-  options_.enroll("convert_nodal_to_nodesets", GetLongOpt::MandatoryValue,
+  options_.enroll("convert_nodal_to_nodesets", GetLongOption::MandatoryValue,
 		  "For each part listed (or ALL),\n"
 		  "\t\tcreate a nodeset containing the nodes of that part\n"
 		  "\t\tand output the nodal fields as nodeset fields instead of nodal fields.\n"
 		  "\t\tFormat is comma-separated list of parts (1-based), or ALL",
 		  0);
 
-  options_.enroll("match_node_ids", GetLongOpt::NoValue,
+  options_.enroll("match_node_ids", GetLongOption::NoValue,
 		  "Combine nodes if their global ids match.",
 		  NULL);
 		  
-  options_.enroll("match_node_coordinates", GetLongOpt::NoValue,
+  options_.enroll("match_node_coordinates", GetLongOption::NoValue,
 		  "Combine nodes if they are within tolerance distance of each other.",
 		  NULL);
 		  
 #if 0
-  options_.enroll("match_elem_ids", GetLongOpt::NoValue,
+  options_.enroll("match_elem_ids", GetLongOption::NoValue,
 		  "Combine elements if their global ids match and they are compatible.\n"
 		  "\t\tCompatible = same element type, nodes of the two elements match",
 		  NULL);
 		  
-  options_.enroll("match_element_coordinates", GetLongOpt::NoValue,
+  options_.enroll("match_element_coordinates", GetLongOption::NoValue,
 		  "Combine elements if their centroids are within tolerance distance\n"
 		  "\t\tand they are compatible (same element type, nodes match).",
 		  NULL);
 #endif
   
-  options_.enroll("tolerance", GetLongOpt::MandatoryValue,
+  options_.enroll("tolerance", GetLongOption::MandatoryValue,
                   "Maximum distance between two nodes to be considered colocated.",
                   0);
 
-  options_.enroll("offset", GetLongOpt::MandatoryValue,
+  options_.enroll("offset", GetLongOption::MandatoryValue,
 		  "Comma-separated x,y,z offset for coordinates of second mesh.",
 		  0);
   
-  options_.enroll("steps", GetLongOpt::MandatoryValue,
+  options_.enroll("steps", GetLongOption::MandatoryValue,
                   "Specify subset of timesteps to transfer to output file.\n"
                   "\t\tFormat is beg:end:step. 1:10:2 --> 1,3,5,7,9\n"
 		  "\t\tTo only transfer last step, use '-steps LAST'",
                   "1:");
 
-  options_.enroll("gvar", GetLongOpt::MandatoryValue,
+  options_.enroll("gvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of global variables to be joined or ALL or NONE.",
 		  0);
 
-  options_.enroll("evar", GetLongOpt::MandatoryValue,
+  options_.enroll("evar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of element variables to be joined or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain blocks by appending a\n"
 		  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
 		  0);
 
-  options_.enroll("nvar", GetLongOpt::MandatoryValue,
+  options_.enroll("nvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of nodal variables to be joined or ALL or NONE.",
 		  0);
 
-  options_.enroll("nsetvar", GetLongOpt::MandatoryValue,
+  options_.enroll("nsetvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of nodeset variables to be joined or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain sets by appending a\n"
 		  "\t\tcolon followed by the nodeset id.  E.g. -nsetvar sigxx:10:20",
 		  0);
 
-  options_.enroll("ssetvar", GetLongOpt::MandatoryValue,
+  options_.enroll("ssetvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of sideset variables to be joined or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain sidesets by appending a\n"
 		  "\t\tcolon followed by the sideset id.  E.g. -ssetvar sigxx:10:20",
 		  0);
 
-  options_.enroll("info_records", GetLongOpt::OptionalValue,
+  options_.enroll("info_records", GetLongOption::OptionalValue,
 		  "If no value specified or not present,\n"
 		  "\t\tthen don't transfer any information records to output file.\n"
 		  "\t\tIf 'p#,p#,...' specified, then only transfer information records on specified parts\n"
 		  "\t\tIf 'all' specified, then transfer all information records",
-		  0);
+		  0, "NONE");
 
-  options_.enroll("disable_field_recognition", GetLongOpt::NoValue,
+  options_.enroll("disable_field_recognition", GetLongOption::NoValue,
 		  "Do not try to combine scalar fields into higher-order fields such as\n"
 		  "\t\tvectors or tensors based on the field suffix",
 		  NULL);
   
-  options_.enroll("copyright", GetLongOpt::NoValue,
+  options_.enroll("copyright", GetLongOption::NoValue,
 		  "Show copyright and license data.",
 		  NULL);
 }

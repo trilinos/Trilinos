@@ -31,12 +31,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_ElementTopology.h>
-#include <Ioss_Utils.h>
 #include <Ioss_Super.h>
-
+#include <Ioss_Utils.h>
+#include <assert.h>
 #include <algorithm>
 #include <cstring>
-#include <assert.h>
+#include <map>
+#include <ostream>
+#include <string>
+#include <utility>
+#include <vector>
 
 
 namespace {

@@ -36,25 +36,22 @@
 
 #include <iostream>
 #include <iomanip>
-#include <iterator>
 #include <set>
 #include <vector>
 #include <algorithm>
 #include <numeric>
-#include <map>
 #include <string>
 #include <exception>
 #include <stdexcept>
+#include <utility>
 
-#include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <float.h>
 #include <math.h>
 
 #include <string.h>
 #include <time.h>
-#include <sys/times.h>
 #include <ctype.h>
 #include "smart_assert.h"
 #include <sys/utsname.h>
@@ -75,6 +72,7 @@ typedef GlobalMap::iterator GMapIter;
 #include "EP_ObjectType.h"
 
 #include <exodusII.h>
+#include <exodusII_ext.h>
 
 #if EX_API_VERS_NODOT <= 467
 #error "Requires exodusII version 4.68 or later"

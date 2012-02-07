@@ -30,16 +30,43 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <Ioss_CodeTypes.h>
+#include <Ioss_Utils.h>
+#include <assert.h>
 #include <heartbeat/Iohb_DatabaseIO.h>
 #include <heartbeat/Iohb_Layout.h>
-
-#include <Ioss_CodeTypes.h>
-#include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
-#include <string>
-
-#include <fstream>
+#include <stddef.h>
+#include <sys/select.h>
 #include <time.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_EntityType.h"
+#include "Ioss_Field.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_State.h"
+#include "Ioss_VariableType.h"
+
+namespace Ioss {
+class CommSet;
+class EdgeBlock;
+class EdgeSet;
+class ElementBlock;
+class ElementSet;
+class FaceBlock;
+class FaceSet;
+class NodeBlock;
+class NodeSet;
+class SideBlock;
+class SideSet;
+}  // namespace Ioss
 
 namespace {
   std::string time_stamp(const std::string &format)

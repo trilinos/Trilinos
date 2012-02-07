@@ -30,13 +30,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_EdgeSet.h>
-
 #include <Ioss_DatabaseIO.h>
-#include <Ioss_Property.h>
+#include <Ioss_EdgeSet.h>
 #include <Ioss_Field.h>
-#include <Ioss_Utils.h>
+#include <Ioss_Property.h>
+#include <stddef.h>
 #include <string>
+#include <vector>
+
+#include "Ioss_EntitySet.h"
+#include "Ioss_FieldManager.h"
+#include "Ioss_GroupingEntity.h"
 
 Ioss::EdgeSet::EdgeSet()
   : Ioss::EntitySet(NULL, "invalid", 0)

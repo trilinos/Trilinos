@@ -110,7 +110,7 @@ namespace Excn {
       */
       void parse_step_option(const char *token);
 
-      GetLongOpt options_; //!< Options parsing
+      GetLongOption options_; //!< Options parsing
   
       std::string inExtension_;
       std::string outExtension_;

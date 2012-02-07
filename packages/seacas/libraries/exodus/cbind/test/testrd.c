@@ -156,7 +156,11 @@ int main (int argc, char **argv)
   /* read nodal coordinates values and names from database */
 
   x = (float *) calloc(num_nodes, sizeof(float));
-  y = (float *) calloc(num_nodes, sizeof(float));
+  if (num_dim >= 2)
+    y = (float *) calloc(num_nodes, sizeof(float));
+  else
+    y = 0;
+  
   if (num_dim >= 3)
     z = (float *) calloc(num_nodes, sizeof(float));
   else
@@ -171,12 +175,13 @@ int main (int argc, char **argv)
       printf ("%5.1f\n", x[i]);
     }
 
-  printf ("y coords = \n");
-  for (i=0; i<num_nodes; i++)
-    {
-      printf ("%5.1f\n", y[i]);
-    }
-
+  if (num_dim >= 2) {
+    printf ("y coords = \n");
+    for (i=0; i<num_nodes; i++)
+      {
+	printf ("%5.1f\n", y[i]);
+      }
+  }
   if (num_dim >= 3)
     {
       printf ("z coords = \n");
@@ -197,7 +202,8 @@ int main (int argc, char **argv)
     printf ("%f \n", y[0]);
   */
   free (x);
-  free (y);
+  if (num_dim >= 2)
+    free (y);
   if (num_dim >= 3)
     free (z);
 
@@ -210,7 +216,8 @@ int main (int argc, char **argv)
   error = ex_get_coord_names (exoid, coord_names);
   printf ("\nafter ex_get_coord_names, error = %3d\n", error);
   printf ("x coord name = '%s'\n", coord_names[0]);
-  printf ("y coord name = '%s'\n", coord_names[1]);
+  if (num_dim >1)
+    printf ("y coord name = '%s'\n", coord_names[1]);
   if (num_dim >2)
     printf ("z coord name = '%s'\n", coord_names[2]);
 

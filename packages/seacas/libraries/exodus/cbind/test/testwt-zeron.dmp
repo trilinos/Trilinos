@@ -5,17 +5,12 @@ dimensions:
 	four = 4 ;
 	time_step = UNLIMITED ; // (10 currently)
 	len_name = 33 ;
-	num_dim = 3 ;
-	num_el_blk = 7 ;
+	num_dim = 1 ;
 	num_qa_rec = 2 ;
 	num_info = 3 ;
 	num_glo_var = 1 ;
 variables:
 	float time_whole(time_step) ;
-	int eb_status(num_el_blk) ;
-	int eb_prop1(num_el_blk) ;
-		eb_prop1:name = "ID" ;
-	char eb_names(num_el_blk, len_name) ;
 	char coor_names(num_dim, len_name) ;
 	char qa_records(num_qa_rec, four, len_string) ;
 	char info_records(num_info, len_line) ;
@@ -31,23 +26,8 @@ data:
 
  time_whole = 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ;
 
- eb_status = 0, 0, 0, 0, 0, 0, 0 ;
-
- eb_prop1 = 10, 11, 12, 13, 14, 15, 16 ;
-
- eb_names =
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "" ;
-
  coor_names =
-  "xcoor",
-  "ycoor",
-  "zcoor" ;
+  "xcoor" ;
 
  qa_records =
   "TESTWT",
