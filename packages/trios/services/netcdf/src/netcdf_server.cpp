@@ -2025,11 +2025,13 @@ static void generate_contact_info(char *myid)
     NNTI_url *all_urls=NULL;
     int rank, np;
     char contact_path[1024];
+    log_level debug_level = netcdf_debug_level;
+    debug_level = LOG_ALL;
 
-    log_debug(netcdf_debug_level, "enter");
+    log_debug(debug_level, "enter");
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    log_debug(netcdf_debug_level, "rank (%d)", rank);
+    log_debug(debug_level, "rank (%d)", rank);
 
     if (rank==0) {
         MPI_Comm_size(MPI_COMM_WORLD, &np);
@@ -2041,13 +2043,13 @@ static void generate_contact_info(char *myid)
     if (rank==0) {
         char *contact_file=getenv("NETCDF_CONTACT_INFO");
         if (contact_file==NULL) {
-            log_error(LOG_ERROR, "NETCDF_CONTACT_INFO env var is undefined.");
+            log_error(debug_level, "NETCDF_CONTACT_INFO env var is undefined.");
             free(all_urls);
             return;
         }
 //        sprintf(contact_path, "%s.%04d", contact_file, rank);
         sprintf(contact_path, "%s.tmp", contact_file);
-        log_debug(netcdf_debug_level, "creating contact file (%s)", contact_path);
+        log_debug(debug_level, "creating contact file (%s)", contact_path);
         FILE *f=fopen(contact_path, "w");
         if (f==NULL) {
             perror("fopen");
@@ -2063,7 +2065,7 @@ static void generate_contact_info(char *myid)
         rename(contact_path, contact_file);
         free(all_urls);
     }
-    log_debug(netcdf_debug_level, "exit");
+    log_debug(debug_level, "exit");
 }
 
 
