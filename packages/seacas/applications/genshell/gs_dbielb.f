@@ -118,6 +118,8 @@ C ... Get element block ids
         
       IELNK = IESAV
       IEATR = IASAV 
+      ISATR = 0
+      ISLNK = 0
       DO 100 NELB = NELBS, NELBE
          IELB = NELB-NELBS+1
          call exgelb(ndb, idelb(ielb), namelb(ielb), nel, nlnk,

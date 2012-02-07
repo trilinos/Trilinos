@@ -53,6 +53,10 @@ C   --   ROTMAT - IN/OUT - the rotation matrix
 
       REAL BY(3,3), RES(3,3)
 
+      n1 = 0
+      n2 = 0
+      n3 = 0
+      
       IF (XYZ .EQ. 'X') THEN
          N1 = 2
          N2 = 3

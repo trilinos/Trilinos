@@ -1030,6 +1030,7 @@ C=======================================================================
       ELSE IF (VERB .EQ. 'NAME') THEN
         CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
 
+        itype = ' '
         IF (MATSTR(WORD, 'BLOCK', 2)) THEN
           itype = 'B'
         ELSE IF (MATSTR(WORD,'SIDESETS',3) .OR.
