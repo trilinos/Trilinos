@@ -1144,13 +1144,13 @@ void test_gram_schmidt(){
 
 		//	copy information into device memory
 			for(int a = 0; a < i; a++){
-				err = cudaMemcpy(Q_D[a], Q[a], Q_vector_size, cudaMemcpyHostToDevice);
+				err = cudaMemcpy(Q_D[a], Q[a], Q_vector_size, cudaMemcpyDefault);
 				CheckCudaError(err);
-				err = cudaMemcpy(R_D[a], R[a], R_vector_size, cudaMemcpyHostToDevice);
+				err = cudaMemcpy(R_D[a], R[a], R_vector_size, cudaMemcpyDefault);
 				CheckCudaError(err);
 			}
 
-			err = cudaMemcpy(scratch, zeroes, S_vector_size, cudaMemcpyHostToDevice);
+			err = cudaMemcpy(scratch, zeroes, S_vector_size, cudaMemcpyDefault);
 			CheckCudaError(err);
 
 
@@ -1242,7 +1242,7 @@ void test_hex_grad(){
 		CheckCudaError(err);
 
 	//	copy dummy variables to the device
-		err = cudaMemcpy(fD, f, data_size, cudaMemcpyHostToDevice);
+		err = cudaMemcpy(fD, f, data_size, cudaMemcpyDefault);
 		CheckCudaError(err);
 
 		gettimeofday(&start, NULL);
@@ -1259,7 +1259,7 @@ void test_hex_grad(){
 		timersub(&stop, &start, &result);
 		double time = (result.tv_sec + result.tv_usec/1000000.0);
 
-		err = cudaMemcpy(f, fD, data_size, cudaMemcpyDeviceToHost);
+		err = cudaMemcpy(f, fD, data_size, cudaMemcpyDefault);
 		CheckCudaError(err);
 
 	//	display work size, time, and time/work information

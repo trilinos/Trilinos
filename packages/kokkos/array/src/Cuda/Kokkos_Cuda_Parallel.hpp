@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -56,7 +56,6 @@ struct CudaTraits {
   enum { SharedMemoryBanks_13 = 16 /* Compute device 1.3 */ };
   enum { SharedMemoryBanks_20 = 32 /* Compute device 2.0 */ };
   enum { UpperBoundGridCount = 65535 /* Hard upper bound */ };
- 
   enum { ConstantMemoryCapacity = 0x010000 /* 64k bytes */ };
   enum { ConstantMemoryCache    = 0x002000 /*  8k bytes */ };
 
@@ -208,7 +207,7 @@ public:
   CudaParallelCopy( Type * dst , const Type * src , Cuda::size_type count )
   {
     CUDA_SAFE_CALL( cudaMemcpy( dst , src , count * sizeof(Type) ,
-                                cudaMemcpyDeviceToDevice ) );
+                                cudaMemcpyDefault ) );
   }
 };
 

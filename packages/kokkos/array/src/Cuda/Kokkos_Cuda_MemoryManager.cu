@@ -151,14 +151,14 @@ void MemoryManager< Cuda >::copy_to_host_from_device(
   void * dst_host , const void * src_device , size_t count )
 {
   CUDA_SAFE_CALL( cudaMemcpy( dst_host , src_device , count ,
-                              cudaMemcpyDeviceToHost ) );
+                              cudaMemcpyDefault ) );
 }
 
 void MemoryManager< Cuda >::copy_to_device_from_host(
   void * dst_device , const void * src_host , size_t count )
 {
   CUDA_SAFE_CALL( cudaMemcpy( dst_device , src_host , count ,
-                              cudaMemcpyHostToDevice ) );
+                              cudaMemcpyDefault ) );
   CUDA_SAFE_CALL( cudaThreadSynchronize() );
 }
 
@@ -166,7 +166,7 @@ void MemoryManager< Cuda >::copy_to_device_from_device(
   void * dst_device , const void * src_device , size_t count )
 {
   CUDA_SAFE_CALL( cudaMemcpy( dst_device , src_device , count ,
-                              cudaMemcpyDeviceToDevice ) );
+                              cudaMemcpyDefault ) );
 }
 
 /*--------------------------------------------------------------------------*/
