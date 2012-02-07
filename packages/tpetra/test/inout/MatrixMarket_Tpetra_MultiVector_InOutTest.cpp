@@ -68,46 +68,109 @@ namespace {
     return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
   }
 
-  // Test Tpetra::MatrixMarket::Reader::readSparseFile()
-  //
-  // \param inputFilename [in] Name of the Matrix Market format
-  //   dense matrix file to read (on MPI Rank 0 only).
-  // \param outputFilename [in] Name of the Matrix Market format
-  //   dense matrix file to write (on MPI Rank 0 only).  Ignored
-  //   if testWrite==false.
-  // \param comm [in] Communicator, over whose MPI ranks to
-  //   distribute the returned Tpetra::MultiVector.
-  // \param echo [in] Whether or not to echo the resulting 
-  //   matrix to cout in Matrix Market format.
-  // \param tolerant [in] Whether or not to parse the file 
-  //   tolerantly.
-  // \param verbose [in] Whether to print verbose output.
-  // \param debug [in] Whether to print debugging output.
-  template<class ScalarType, class LO, class GO, class NodeType>
+  // Ensure that X and Y have the same dimensions, and that the
+  // corresponding columns of X and Y have 2-norms that differ by no
+  // more than a prespecified tolerance (that accounts for rounding
+  // errors in computing the 2-norm).
+  template<class MV>
   void
-  testReadAndWriteSparseFile (const std::string& inputFilename, 
-			      const std::string& outputFilename, 
-			      const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-			      const Teuchos::RCP<NodeType>& node,
-			      const bool testWrite,
-			      const bool echo,
-			      const bool tolerant, 
-			      const bool verbose,
-			      const bool debug)
+  assertMultiVectorsEqual (const Teuchos::RCP<const MV>& X, 
+			   const Teuchos::RCP<const MV>& Y)
   {
     using Teuchos::RCP;
     using std::cerr;
     using std::cout;
     using std::endl;
 
-    typedef ScalarType scalar_type;
-    typedef LO local_ordinal_type;
-    typedef GO global_ordinal_type;
-    typedef NodeType node_type;
+    typedef typename MV::scalar_type scalar_type;
+    typedef typename MV::local_ordinal_type local_ordinal_type;
+    typedef typename MV::global_ordinal_type global_ordinal_type;
+    typedef typename MV::node_type node_type;
+
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef typename STS::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
     typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> 
       map_type;
-    typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, 
-      global_ordinal_type, node_type> multivector_type;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(X->getGlobalLength() != Y->getGlobalLength(),
+      std::logic_error, "Y has a different number of rows than X.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X->getNumVectors() != Y->getNumVectors(),
+      std::logic_error, "Y has a different number of columns than X.");
+      
+    const size_t numVecs = X->getNumVectors();
+    Teuchos::Array<magnitude_type> X_norm2 (numVecs);
+    Teuchos::Array<magnitude_type> Y_norm2 (numVecs);
+    X->norm2 (X_norm2 ());
+    Y->norm2 (Y_norm2 ());
+
+    // What tolerance should I pick?  I'm using the typical heuristic
+    // of the square root of the number of floating-point numbers
+    // involved in computing the norm for one column.  Our output
+    // routine is careful to use enough digits, so the input matrix
+    // shouldn't be that much different.
+    const magnitude_type tol = STS::squareroot (STS::magnitude (STS::eps ()) * Teuchos::as<magnitude_type> (X->getGlobalLength ()));
+    std::vector<size_t> badColumns;
+    for (size_t j = 0; j < numVecs; ++j) {
+      // If the norm of the current column of X is zero, use the
+      // absolute difference; otherwise use the relative difference.
+      if ((X_norm2[j] == STM::zero() && STS::magnitude (Y_norm2[j]) > tol) ||
+	  STS::magnitude (X_norm2[j] - Y_norm2[j]) > tol) {
+	badColumns.push_back (j);
+      }
+    }
+    
+    if (badColumns.size() > 0) {
+      const size_t numBad = badColumns.size();
+      std::ostringstream os;
+      std::copy (badColumns.begin(), badColumns.end(), 
+		 std::ostream_iterator<size_t> (os, " "));
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Column" 
+        << (numBad != 1 ? "s" : "") << " [" << os.str() << "] of X and Y have "
+	"norms that differ relatively by more than " << tol << ".");
+    }
+  }
+
+  // Test Tpetra::MatrixMarket::Reader::readDenseFile()
+  //
+  // \tparam MV Tpetra::MultiVector specialization
+  //
+  // \param inputFilename [in] Name of the Matrix Market format dense
+  //   matrix file to read (on Proc 0 of comm only).
+  // \param outputFilename [in] Filename to which we can validly write
+  //   (on Proc 0 of comm only); used as a sanity test.  If empty
+  //   (""), the file is not written.
+  // \param comm [in] Communicator, over whose process(es) to
+  //   distribute the returned Tpetra::MultiVector.
+  // \param node [in] Kokkos node instance (needed for creating the
+  //   Tpetra::MultiVector to return).
+  // \param tolerant [in] Whether or not to parse the file tolerantly.
+  // \param verbose [in] Whether to print verbose output.
+  // \param debug [in] Whether to print debugging output.
+  template<class MV>
+  Teuchos::RCP<MV>
+  testReadDenseFile (const std::string& inputFilename, 
+		     const std::string& outputFilename,
+		     const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+		     const Teuchos::RCP<typename MV::node_type>& node,
+		     const bool tolerant, 
+		     const bool verbose,
+		     const bool debug)
+  {
+    using Teuchos::RCP;
+    using std::cerr;
+    using std::cout;
+    using std::endl;
+
+    typedef typename MV::scalar_type scalar_type;
+    typedef typename MV::local_ordinal_type local_ordinal_type;
+    typedef typename MV::global_ordinal_type global_ordinal_type;
+    typedef typename MV::node_type node_type;
+
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef typename STS::magnitudeType magnitude_type;
+    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> 
+      map_type;
 
     // The reader and writer classes are templated on the
     // Tpetra::CrsMatrix specialization, from which the
@@ -116,39 +179,131 @@ namespace {
       global_ordinal_type, node_type> sparse_matrix_type;
 
     const int myRank = comm->getRank ();
-
     if (verbose && myRank == 0) {
-      cout << "About to read Matrix Market dense file \"" << inputFilename 
-	   << "\":" << endl;
+      cout << "testReadDenseFile: reading Matrix Market file \"" 
+	   << inputFilename << "\":" << endl;
     }
 
     // Map describing multivector distribution; starts out null and is
     // an output argument of readDenseFile().
-    RCP<map_type> map; 
+    RCP<const map_type> map = Teuchos::null; 
 
     // Read the dense matrix from the given Matrix Market file.
     // This routine acts like an MPI barrier.
     typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
-    RCP<multivector_type> X =
-      reader_type::readDenseFile (inputFilename, comm, node, map, tolerant, debug);
-
+    RCP<MV> X = reader_type::readDenseFile (inputFilename, comm, node,
+					    map, tolerant, debug);
     TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::runtime_error,
       "The Tpetra::MultiVector returned from readDenseFile() is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
+      "The Tpetra::Map returned from readDenseFile() is null.");
     if (! X.is_null() && verbose && myRank == 0) {
-      cout << "Successfully read Matrix Market file \"" << inputFilename 
-	   << "\"." << endl;
+      cout << "Finished reading file." << endl;
     }
 
+    // Sanity check: write the multivector X to a file, read it back
+    // in as a different multivector Y, then make sure it has the same
+    // column norms as X.  This assumes that writing a multivector
+    // works.  Only do this if the caller supplied a nonempty output
+    // file name.
+    if (outputFilename != "") {
+      typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
+      writer_type::writeDenseFile (outputFilename, X);
+      // For the sanity test, we also check that reading in the
+      // multivector produces a Map which is the same as X's Map.
+      // We're not testing here the functionality of readDenseFile()
+      // to reuse an existing Map.
+      RCP<const map_type> testMap;
+      RCP<MV> Y = reader_type::readDenseFile (inputFilename, comm, node, 
+					      testMap, tolerant, debug);
+      TEUCHOS_TEST_FOR_EXCEPTION(! map->isSameAs (*testMap), std::logic_error,
+        "Writing the read-in Tpetra::MultiVector X to a file and reading it "
+        "back in resulted in a multivector Y with a different Map.  Please "
+        "report this bug to the Tpetra developers.");
+      assertMultiVectorsEqual<MV> (X, Y);
+    }
+    return X;
+  }
+
+  // Test Tpetra::MatrixMarket::Reader::writeDenseFile()
+  //
+  // \tparam MV Tpetra::MultiVector specialization
+  //
+  // \param outputFilename [in] Name of the Matrix Market format dense
+  //   matrix file to write (on Proc 0 in X's communicator only).
+  // \param X [in] The nonnull Tpetra::MultiVector instance to write
+  //   to the given file.
+  // \param echo [in] Whether or not to echo the output to stdout (on
+  //   Proc 0 in X's communicator only).
+  // \param verbose [in] Whether to print verbose output.
+  // \param debug [in] Whether to print debugging output.
+  template<class MV>
+  void
+  testWriteDenseFile (const std::string& outputFilename,
+		      const Teuchos::RCP<const MV>& X,
+		      const bool echo,
+		      const bool verbose,
+		      const bool debug)
+  {
+    using Teuchos::RCP;
+    using std::cerr;
+    using std::cout;
+    using std::endl;
+
+    typedef typename MV::scalar_type scalar_type;
+    typedef typename MV::local_ordinal_type local_ordinal_type;
+    typedef typename MV::global_ordinal_type global_ordinal_type;
+    typedef typename MV::node_type node_type;
+
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef typename STS::magnitudeType magnitude_type;
+    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> 
+      map_type;
+
+    // The reader and writer classes are templated on the
+    // Tpetra::CrsMatrix specialization, from which the
+    // Tpetra::MultiVector specialization is derived.
+    typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
+      global_ordinal_type, node_type> sparse_matrix_type;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
+      "testWriteDenseFile: The input Tpetra::MultiVector instance X is null.");
+
+    RCP<const map_type> map = X->getMap();
+    RCP<const Teuchos::Comm<int> > comm = map->getComm();
+    const int myRank = comm->getRank ();
+
+    if (verbose && myRank == 0) {
+      cout << "testWriteDenseFile: writing Tpetra::MultiVector instance to "
+	"file \"" << outputFilename << "\"" << endl;
+    }
     // If specified, write the read-in sparse matrix to a file and/or
     // echo it to stdout.
     typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
-    if (testWrite && outputFilename != "") {
-      writer_type::writeSparseFile (outputFilename, X, debug);
+    if (outputFilename != "") {
+      writer_type::writeDenseFile (outputFilename, X);
+    }
+    if (verbose && myRank == 0) {
+      cout << "Finished writing file." << endl;
     }
     if (echo) {
-      writer_type::writeSparse (cout, X, debug);
+      if (verbose && myRank == 0) {
+	cout << "Echoing output to stdout." << endl;
+      }
+      writer_type::writeDense (cout, X);
     }
+
+    // Sanity check: read in the multivector again, and make sure that
+    // it has the same column norms as the input multivector.  This
+    // assumes that reading a multivector works.
+    typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+    RCP<node_type> node = map->getNode();
+    const bool tolerant = false; // Our own output shouldn't need tolerant mode.
+    RCP<MV> Y = reader_type::readDenseFile (outputFilename, comm, node, 
+					    map, tolerant, debug);
+    assertMultiVectorsEqual<MV> (X, Y);
   }
+
 } // namespace (anonymous)
 
 
@@ -171,10 +326,11 @@ main (int argc, char *argv[])
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
   RCP<const Comm<int> > comm = 
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  const int myRank = comm->getRank();
 
   std::string inputFilename;  // Matrix Market file to read
   std::string outputFilename; // Matrix Market file to write (if applicable)
-  bool testWrite = false; // Test Matrix Market output?
+  bool testWrite = true; // Test Matrix Market output?
   bool tolerant = false; // Parse the file tolerantly?
   bool echo = false;     // Echo the read-in matrix back?
   bool verbose = false;  // Verbosity of output
@@ -185,11 +341,12 @@ main (int argc, char *argv[])
 		  "Name of the Matrix Market dense matrix file to read.");
   cmdp.setOption ("outputFilename", &outputFilename,
 		  "If --testWrite is true, then write the read-in matrix to "
-		  "the given file in Matrix Market format on (MPI) Proc 0.  "
+		  "this file in Matrix Market format on (MPI) Proc 0.  "
 		  "Otherwise, this argument is ignored.  Note that the output "
 		  "file may not be identical to the input file.");
   cmdp.setOption ("testWrite", "noTestWrite", &testWrite,
-		  "Whether to test Matrix Market file output.");
+		  "Whether to test Matrix Market file output.  Ignored if no "
+		  "--outputFilename value is given.");
   cmdp.setOption ("tolerant", "strict", &tolerant, 
 		  "Whether to parse the input Matrix Market file tolerantly.");
   cmdp.setOption ("echo", "noecho", &echo,
@@ -207,7 +364,7 @@ main (int argc, char *argv[])
     // explicitly say to run the benchmark, we let this "test" pass
     // trivially.
     if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
-      if (Teuchos::rank(*pComm) == 0) {
+      if (myRank == 0) {
 	cout << "End Result: TEST PASSED" << endl;
       }
       return EXIT_SUCCESS;
@@ -223,12 +380,25 @@ main (int argc, char *argv[])
   // filename is specified, we don't invoke the test and report a
   // "TEST PASSED" message.
   if (inputFilename != "") {
-    using Tpetra::MatrixMarket::Test::testReadAndWriteDenseFile;
-    testReadAndWriteDenseFile<double, int, int, node_type> (inputFilename, outputFilename, comm, node, testWrite, echo, tolerant, verbose, debug);
+    // Convenient abbreviations
+    typedef scalar_type ST;
+    typedef local_ordinal_type LO;
+    typedef global_ordinal_type GO;
+    typedef node_type NT;
+    typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
+
+    // If not testing writes, don't do the sanity check that tests
+    // input by comparing against output.
+    std::string outFilename = testWrite ? outputFilename : "";
+    RCP<MV> X = testReadDenseFile<MV> (inputFilename, outFilename, comm,
+				       node, tolerant, verbose, debug);
+    if (outFilename != "") {
+      testWriteDenseFile<MV> (outFilename, X, echo, verbose, debug);
+    }
   }
 
   // Only Rank 0 gets to write to cout.
-  if (comm->getRank() == 0) {
+  if (myRank == 0) {
     cout << "End Result: TEST PASSED" << endl;
   }
   return EXIT_SUCCESS;
