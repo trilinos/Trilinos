@@ -3,6 +3,8 @@
 
 #include "Panzer_DOFManager.hpp"
 
+#include <stk_mesh/base/FieldData.hpp>
+
 namespace panzer_stk {
 
 static void gather_in_block(const std::string & blockId, const panzer::DOFManager<int,int> & dofMngr,
@@ -16,6 +18,29 @@ void scatter_to_vector(const std::string & blockId, const panzer::DOFManager<int
 
 static void build_local_ids(const panzer_stk::STK_Interface & mesh,
                             std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds);
+
+void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> & data,const std::string & fieldName)
+{
+   std::vector<std::string> blocks;
+   mesh.getElementBlockNames(blocks);
+
+   // loop over element blocks
+   for(std::size_t eb=0;eb<blocks.size();eb++) {
+      const std::string & blockId = blocks[eb];
+      panzer_stk::STK_Interface::SolutionFieldType * field = mesh.getCellField(fieldName,blockId);
+
+      std::vector<stk::mesh::Entity*> elements;
+      mesh.getMyElements(blockId,elements);
+
+      // loop over elements in this block
+      for(std::size_t el=0;el<elements.size();el++) {
+         std::size_t localId = mesh.elementLocalId(elements[el]);
+         double * solnData = stk::mesh::field_data(*field,*elements[el]);
+         TEUCHOS_ASSERT(solnData!=0); // sanity check
+         solnData[0] = data[localId];
+      }
+   }
+}
 
 void write_solution_data(const panzer::DOFManager<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
 {
