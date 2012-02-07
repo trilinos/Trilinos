@@ -1888,34 +1888,10 @@ namespace Tpetra {
             "not make sense for a dense matrix, yet the file reports the matrix "
             "as dense.  The only valid data types for a dense matrix are "
             "\"real\", \"complex\", and \"integer\".");
-	  // Encode the data type reported by the Banner in the third
-	  // element of the dimensions Tuple: "real" == 0, "complex"
-	  // == 1, "integer" == 0 (same as "real").  "pattern" == 2.
-	  // "pattern" isn't valid here, but we include it anyway for
-	  // completeness.
-	  if (pBanner->dataType() == "real" || pBanner->dataType() == "integer") {
-	    dims[2] = 0;
-	  }
-	  else if (pBanner->dataType() == "complex") {
-	    dims[2] = 1;
-	  }
-	  else if (pBanner->dataType() == "pattern") {
-	    dims[2] = 2;
-	  }
-	  else {
-	    // We should never get here; Banner validates the reported
-	    // data type and ensures it is one of the accepted values.
-	    // We repeat the full test to make the exception message
-	    // more informative.
-	    TEUCHOS_TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
-				       pBanner->dataType() != "complex" && 
-				       pBanner->dataType() != "integer" &&
-				       pBanner->dataType() != "pattern",
-				       std::logic_error, 
-				       "Unrecognized Matrix Market data type \"" 
-				       << pBanner->dataType() << "\".");
-	  }
-	  
+	  // Encode the data type reported by the Banner as the third
+	  // element of the dimensions Tuple.
+	  dims[2] = encodeDataType (pBanner->dataType());
+
           if (debug && myRank == 0) {
 	    cerr << "-- Reading dimensions line (dense)" << endl;
 	  }
@@ -2239,6 +2215,39 @@ namespace Tpetra {
 
         // Y is distributed over all process(es) in the communicator.
         return Y;
+      }
+
+    private:
+      
+      /// \brief Encode the Matrix Market data type as an int.
+      ///
+      /// We assume that the Banner has already validated the data
+      /// type string, so the string is one of four canonical values.
+      /// We encode these values as follows: "real" as 0, "complex" as
+      /// 1, "integer" as 0 (same as "real", since the way we
+      /// implement reading integer values is the same as the way we
+      /// implement reading real values), and "pattern" as 2.
+      ///
+      /// We use this encoding for communicating the data type.
+      static int
+      encodeDataType (const std::string& dataType)
+      {
+	if (dataType == "real" || dataType == "integer") {
+	  return 0;
+	}
+	else if (dataType == "complex") {
+	  return 1;
+	}
+	else if (dataType == "pattern") {
+	  return 2;
+	}
+	else {
+	  // We should never get here, since Banner validates the
+	  // reported data type and ensures it is one of the accepted
+	  // values.
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+            "Unrecognized Matrix Market data type \"" << dataType << "\".");
+	}
       }
     };
 
