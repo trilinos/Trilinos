@@ -45,8 +45,129 @@ namespace stk {
 
   namespace adapt {
 
-    static void memory_dump(int dump_level, const stk::ParallelMachine& comm, stk::mesh::BulkData& bulkData, NodeRegistry* node_reg, std::string msg)
+    static double MegaByte(int x) { return  ((double)x/1024.0/1024.0); }
+
+    struct MemoryMultipliers
     {
+      size_t num_hex8;
+      size_t num_tet4;
+      size_t num_nodes;
+
+      typedef unsigned MemMultType;
+      MemMultType mult_hex8;
+      MemMultType mult_tet4;
+      MemMultType mult_nodes;
+      
+      MemoryMultipliers(MemMultType mult_hex8=343, MemMultType mult_tet4=300, MemMultType mult_nodes=343):
+        num_hex8(0),
+        num_tet4(0),
+        num_nodes(0),
+        mult_hex8(mult_hex8), 
+        mult_tet4(mult_tet4), 
+        mult_nodes(mult_nodes)
+      {
+      }
+
+      void read_simple(std::string file_name)
+      {
+        std::ifstream file(file_name.c_str());
+        //std::string line1;
+        //file >> line1;
+        file >> mult_hex8 >> mult_tet4 >> mult_nodes;
+        std::cout << "mult_hex8= " << mult_hex8 << " mult_tet4= " << mult_tet4 << " mult_nodes=" << mult_nodes << std::endl;
+      }
+
+      unsigned estimate_memory()
+      {
+        return mult_nodes*num_nodes + mult_hex8*num_hex8 + mult_tet4*num_tet4;
+      }
+
+      unsigned estimate_memory(std::vector<RefinementInfoByType>& refInfo)
+      {
+        num_hex8=0;
+        num_tet4=0;
+        num_nodes=0;
+
+        for (unsigned i = 0; i < refInfo.size(); i++)
+          {
+            num_nodes= refInfo[0].m_numNewNodes;
+            std::cout << "irank, rank, m_numNewNodes= " << i << " " << refInfo[i].m_rank << " " << refInfo[i].m_numNewNodes << std::endl;
+            
+//             if (refInfo[i].m_rank == 0)
+//               {
+//                 num_nodes += refInfo[i].m_numNewNodes;
+//               }
+//             else
+              {
+                switch(refInfo[i].m_topology.getKey())
+                  {
+                  case shards::Hexahedron<8>::key:
+                    num_hex8 += refInfo[i].m_numNewElems;
+                    break;
+                  case shards::Tetrahedron<4>::key:
+                    num_tet4 += refInfo[i].m_numNewElems;
+                    break;
+                  default:
+                    break;
+                  }
+              }
+          }
+
+        return estimate_memory();
+      }
+      
+      static void process_estimate(size_t tot_mem, PerceptMesh& eMesh, std::vector<RefinementInfoByType>& refInfo, std::string memory_multipliers_file)
+      {
+        //const stk::ParallelMachine& comm = eMesh.getBulkData()->parallel();
+
+        // this is a data gather pass
+        if (tot_mem)
+          {
+            /*
+              mesh::Selector sel_locally_owned(eMesh.getFEM_meta_data()->locally_owned_part());
+              mesh::Selector sel_globally_shared(eMesh.getFEM_meta_data()->globally_shared_part());
+              mesh::Selector sel_universal(eMesh.getFEM_meta_data()->universal_part());
+          
+              std::vector<unsigned> count ;
+              stk::mesh::count_entities( sel_universal, *eMesh.getBulkData(), count );
+      
+              unsigned nnodes = count[0];
+
+              stk::ParallelMachine pm = eMesh.getBulkData()->parallel();
+              stk::all_reduce( pm, stk::ReduceSum<1>( &nnodes ) );
+            */
+            MemoryMultipliers memMults;
+            // FIXME, here's where we would read in some values for memMults from memory_multipliers_file
+            memMults.read_simple("memory-multipliers.dat");
+            RefinementInfoByType::countCurrentNodes(eMesh, refInfo);
+            unsigned estMem = memMults.estimate_memory(refInfo);
+            //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
+            std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
+                      << " estMem[MB]= " << MegaByte(estMem) 
+                      << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
+
+          }
+        else
+          {
+            // this is an estimate multipliers pass (computes memory using current multipliers)
+            MemoryMultipliers memMults;
+            // FIXME, here's where we would read in some values for memMults from memory_multipliers_file
+            memMults.read_simple("memory-multipliers.dat");
+            RefinementInfoByType::countCurrentNodes(eMesh, refInfo);
+            unsigned estMem = memMults.estimate_memory(refInfo);
+            //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
+            std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
+                      << " estMem[MB]= " << MegaByte(estMem) 
+                      << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
+
+          }
+      }
+    };
+
+
+    static size_t memory_dump(int dump_level, const stk::ParallelMachine& comm, stk::mesh::BulkData& bulkData, NodeRegistry* node_reg, std::string msg)
+    {
+      size_t returned_total_memory;
       size_t malloc_used_0 = malloc_used();
       size_t malloc_footprint_0 = malloc_footprint();
       size_t malloc_max_footprint_0 = malloc_max_footprint();
@@ -74,7 +195,7 @@ namespace stk {
       if (bulkData.parallel_rank() == 0)
         {
 #if !defined(SIERRA_PTMALLOC3_ALLOCATOR) && !defined(SIERRA_PTMALLOC2_ALLOCATOR)
-          std::cout << "WARNING: ptmalloc2|3 not compiled in so malloc_used info unavailable.  Recompile with e.g. 'bake allocator=ptmalloc2'.  Printing zeros..." << std::endl;
+          std::cout << "WARNING: ptmalloc2|3 not compiled in so malloc_used info unavailable.  Recompile with e.g. 'bake allocator=ptmalloc2 (or 3)'.  Printing zeros..." << std::endl;
 #endif
 
           if (dump_level > 1)
@@ -93,7 +214,7 @@ namespace stk {
             }
           
           {
-            std::cout << "AdaptMain::memory_dump summary for " << msg << " : stk_mesh [sum/max], NodeRegistry [sum/max], ptmalloc[sum/max] [MB] "
+            std::cout << "AdaptMain::memory_dump summary for " << msg << " : stk_mesh [sum], NodeRegistry [sum], ptmalloc[sum] [MB] "
                       << ((double)mem_total_bytes_sum)/MB << " , " 
                       << ((double)node_reg_mem_sum)/MB << " , " 
                       << ((double)malloc_used_0)/MB 
@@ -101,6 +222,12 @@ namespace stk {
           }
 
         }
+      if (malloc_used_0)
+        returned_total_memory = malloc_used_0;
+      else
+        returned_total_memory = mem_total_bytes_sum+node_reg_mem_sum;
+
+      return returned_total_memory;
     }
 
     //extern void test_memory(int, int);
@@ -122,7 +249,7 @@ namespace stk {
       int num_prints = 100;
       int print_mod = n_elements/num_prints;
       int i_node = 0;
-      int n_node_per_element = 4; 
+      int n_node_per_element = 8; 
       for (int i_element = 0; i_element < n_elements; i_element++)
         {
           if (!i_element || (i_element % print_mod == 0))
@@ -349,6 +476,9 @@ namespace stk {
       int smooth_geometry = 0;
       int delete_parents = 1;
       int print_memory_usage = 0;
+      // a list of comma-separated names like Entity, Relation, Field, etc.
+      std::string memory_multipliers_file="";
+      int estimate_memory_usage=0;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc = 
@@ -400,6 +530,11 @@ namespace stk {
       //run_environment.clp.setOption("exclude"                  , &block_name_exc           , block_name_desc_exc.c_str());
       run_environment.clp.setOption("print_info"               , &print_info               , ">= 0  (higher values print more info)");
       run_environment.clp.setOption("load_balance"             , &load_balance             , " load balance (slice/spread) input mesh file");
+
+      run_environment.clp.setOption("memory_multipliers_file"  , &memory_multipliers_file  ,
+                                    " filename with a comma-separated string of class names and memory multipliers, one per line, \n  eg Node,80\nField,10\nHexahedron<8>,90");
+      run_environment.clp.setOption("estimate_memory_usage"    , &estimate_memory_usage    ,
+                                    " if query_only=1, use multipliers from memory_multipliers_file to estimate memory to be used in refinements.\n  If query_only=0, gather memory data and write to the file.");
 
 #if ALLOW_MEM_TEST
       run_environment.clp.setOption("test_memory_elements"     , &test_memory_elements     , " give a number of elements");
@@ -516,6 +651,32 @@ namespace stk {
         if (test_memory_nodes && test_memory_elements)
           {
             test_memory(eMesh, test_memory_elements, test_memory_nodes);
+
+            if (print_memory_usage)
+              memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), 0, "after test memory");
+
+            if (estimate_memory_usage && !query_only)
+              {
+                size_t tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), 0, "after test memory");
+
+                //std::cout << "MemEst: num_nodes= " << test_memory_nodes << " num_tet4=0 hum_hex8= " << test_memory_elements << " memory= " << MegaByte(tot_mem) << std::endl;
+                //MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
+                MemoryMultipliers memMults;
+                memMults.read_simple("memory-multipliers.dat");
+                memMults.num_hex8=test_memory_elements;
+                memMults.num_nodes=test_memory_nodes;
+                unsigned estMem = memMults.estimate_memory();
+//                 std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory= " << MegaByte(tot_mem) 
+//                           << " estMem= " << MegaByte(estMem) << std::endl;
+                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
+                          << " estMem[MB]= " << MegaByte(estMem) 
+                          << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
+              }
+            if (estimate_memory_usage && query_only)
+              {
+                //MemoryMultipliers::process_estimate(0, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
+              }
+
             return 0;
           }
 
@@ -581,8 +742,23 @@ namespace stk {
                     std::cout << std::endl;
                   }
                 if (print_memory_usage)
-                  memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
-                              std::string("after refine pass: ")+toString(iBreak));
+                  {
+                    memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
+                                std::string("after refine pass: ")+toString(iBreak));
+                  }
+
+                if (estimate_memory_usage && !query_only)
+                  {
+                    size_t tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
+                                                 std::string("after refine pass: ")+toString(iBreak));
+                    std::cout << "tmp srk tot_mem= " << MegaByte(tot_mem) << std::endl;
+                    MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
+                  }
+                if (estimate_memory_usage && query_only)
+                  {
+                    MemoryMultipliers::process_estimate(0, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
+                  }
+
               }
             if (delete_parents)
               breaker.deleteParentElements();

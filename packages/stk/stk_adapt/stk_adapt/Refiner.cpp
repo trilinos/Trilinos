@@ -705,6 +705,7 @@ namespace stk {
                 }
               unsigned n_ele = count[ ranks[irank] ];
 
+              m_refinementInfoByType[irank].m_rank = ranks[irank];
               m_refinementInfoByType[irank].m_numOrigElems = n_ele;
 
               m_refinementInfoByType[irank].m_numNewElems = n_ele * m_breakPattern[irank]->getNumNewElemPerElem();

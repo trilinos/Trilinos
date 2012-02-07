@@ -25,6 +25,7 @@ namespace stk {
       //typedef uint64_t RefinementInfoCount ;
       typedef unsigned RefinementInfoCount ;
 
+      unsigned m_rank;
       RefinementInfoCount m_numOrigElems;
       RefinementInfoCount m_numNewElems;
       shards::CellTopology m_topology;

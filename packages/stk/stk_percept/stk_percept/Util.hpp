@@ -231,6 +231,8 @@ namespace stk {
     template<class T> 
     std::string toString(T t) { return boost::lexical_cast<std::string>(t); }
 
+    inline int toInt(std::string t) { return boost::lexical_cast<int>(t); }
+
     //========================================================================================================================
 
 #define QUOTE(A) #A
