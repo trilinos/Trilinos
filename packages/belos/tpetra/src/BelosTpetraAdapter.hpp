@@ -551,7 +551,10 @@ namespace Belos {
     { mv.putScalar(alpha); }
 
     static void MvPrint( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
-    { mv.print(os); }
+    { 
+      Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
+      mv.describe(fos,Teuchos::VERB_EXTREME);
+    }
 
 #ifdef HAVE_BELOS_TSQR
     /// \typedef tsqr_adaptor_type
