@@ -107,12 +107,13 @@ namespace {
     Y->norm2 (Y_norm2 ());
 
     // For the relative tolerance, I'm using the typical heuristic: a
-    // (fudge factor) times (machine epsilon) times (the number of
+    // (fudge factor) times (machine epsilon) times sqrt(the number of
     // floating-point numbers involved in computing the norm for one
     // column).  Our output routine is careful to use enough digits,
     // so the input matrix shouldn't be that much different.
     const magnitude_type tol = as<magnitude_type> (10) * 
-      STS::magnitude (STS::eps ()) * as<magnitude_type> (numRows);
+      STS::magnitude (STS::eps ()) * 
+      STM::squareroot (as<magnitude_type> (numRows));
     std::vector<size_t> badColumns;
     for (size_t j = 0; j < numVecs; ++j) {
       // If the norm of the current column of X is zero, use the
