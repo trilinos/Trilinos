@@ -168,8 +168,8 @@ namespace MueLu {
          - have been allocated
          - requests already posted.
     */
-    bool Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManager> fineLevelManager, const Teuchos::Ptr<const FactoryManager> coarseLevelManager,
-               const Teuchos::Ptr<const FactoryManager> nextLevelManager /*should be optional*/);
+    bool Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManager> fineLevelManager /* = Teuchos::null */, const Teuchos::Ptr<const FactoryManager> coarseLevelManager,
+               const Teuchos::Ptr<const FactoryManager> nextLevelManager = Teuchos::null);
 
     //! 
     Teuchos::ParameterList Setup(const FactoryManager & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
