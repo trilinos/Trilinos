@@ -1,3 +1,7 @@
+Release notes for Isorropia in Trilinos 10.10 (Feb. 2012):
+------------------------------------------------------------
+ - Changed license to BSD.
+
 Release notes for Isorropia in Trilinos 10.8 (Sept. 2011):
 ------------------------------------------------------------
  - New class Isorropia::Epetra::Matcher solves the
