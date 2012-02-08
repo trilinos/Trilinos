@@ -1,5 +1,36 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 10.10 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 10.10 general release contains 50 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
+Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards, STK,
+Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra, Tpetra,
+TriKota, TrilinosCouplings, Triutils, Zoltan.
+
+Package Release Notes:
+
+-------------------------------------------------------------------------------
+Teuchos
+   - Deprecated the non-namespaced family of TEST_FOR_EXCEPTION(...) macros
+     in the file Teuchos_TestForException.hpp: There are now namespaced
+     versions prefixed with TEUCHOS_.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 10.8 Release Notes                                         #
 #                                                                             #
 ###############################################################################
