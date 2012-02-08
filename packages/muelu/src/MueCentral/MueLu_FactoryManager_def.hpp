@@ -81,8 +81,6 @@ namespace MueLu {
 
       if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()))));
 
-      //TO BE FIX: cannot use TrilinosSmoother here, because need to know the lin alg. lib.
-
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
     }
       

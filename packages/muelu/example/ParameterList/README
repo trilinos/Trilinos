@@ -7,12 +7,7 @@ Use --help to list available options.
 
 Example:
 
-- MLParameterList  - Run MueLu using a parameter list formatted for ML
-
-   Usage:
-    ./MueLu_MLParameterList.exe                            : use hard-coded parameter list
-    ./MueLu_MLParameterList.exe --xml=ml_ParameterList.xml : use xml configuration file
-    ./MueLu_MLParameterList.exe --muelu=0 --ml=1           : use ml instead of muelu
+- MueLu ParameterList
 
 - Stratimikos     - Call MueLu via the stratimikos interface
 
@@ -21,3 +16,12 @@ Example:
 
    Note:
     The source code is not MueLu specific and can be used with any Stratimikos strategy.
+
+- MLParameterList  - Run MueLu using a parameter list formatted for ML
+                     Can also run ML for comparison purposes
+#TODO: change name
+
+   Usage:
+    ./MueLu_MLParameterList.exe                            : use hard-coded parameter list
+    ./MueLu_MLParameterList.exe --xml=ml_ParameterList.xml : use xml configuration file
+    ./MueLu_MLParameterList.exe --muelu=0 --ml=1           : use ml instead of muelu

@@ -37,7 +37,7 @@ namespace MueLu {
       RCP<Operator> P = coarseLevel.Get<RCP<Operator> >("P", PFact_.get());
       coarseLevel.Set("P", P, NoFactory::get());
       coarseLevel.AddKeepFlag("P", NoFactory::get(), MueLu::Final);       // FIXME2: Order of Remove/Add matter (data removed otherwise). Should do something about this
-      coarseLevel.RemoveKeepFlag("P", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack, I should change behavior of Level::Set() instead.
+      coarseLevel.RemoveKeepFlag("P", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack, I should change behavior of Level::Set() instead. FIXME3: Should not be removed if flag was there already
     }
 
     if (RFact_ != Teuchos::null) {
