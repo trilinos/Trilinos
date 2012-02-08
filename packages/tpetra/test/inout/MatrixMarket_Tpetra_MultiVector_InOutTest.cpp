@@ -904,6 +904,97 @@ main (int argc, char *argv[])
 	} // if stop after failure
       }
     } // if test noncontiguous input Map
+
+    ++testNum;
+    if ((testToRun == 0 && testNoncontiguousInputMap) || 
+	(testToRun != 0 && testToRun == testNum)) {
+      // Test 7: nonnull input Map with the same index base as X's
+      // Map, and a "noncontiguous" distribution with GIDs that start
+      // at 3.  This lets us easily observe any missing entries after
+      // writing X and reading it back in again.
+      if (verbose && myRank == 0) {
+	cout << "Test " << testNum << ": Nonnull noncontiguous Map (same index "
+	  "base, GIDs not in 0 .. N-1) on input to readDenseFile()" << endl;
+      }
+      const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
+      const GO globalStartGID = as<GO> (3);
+
+      // Compute number of GIDs owned by each process.  We're
+      // replicating Tpetra functionality here because we want to
+      // trick Tpetra into thinking we have a noncontiguous
+      // distribution.  This is the most general case and the most
+      // likely to uncover bugs.
+      const size_t quotient = globalNumRows / numProcs;
+      const size_t remainder = globalNumRows - quotient * numProcs;
+      const size_t localNumRows = (as<size_t> (myRank) < remainder) ? 
+	(quotient + 1) : quotient;
+
+      // Build the list of GIDs owned by this process.
+      Array<GO> elementList (localNumRows);
+      GO myStartGID;
+      if (as<size_t> (myRank) < remainder) {
+	myStartGID = globalStartGID + as<GO> (myRank) * as<GO> (quotient + 1);
+      } 
+      else {
+	// This branch does _not_ assume that GO is a signed type.
+	myStartGID = globalStartGID + as<GO> (remainder) * as<GO> (quotient + 1) +
+	  (as<GO> (myRank) - as<GO> (remainder)) * as<GO> (quotient);
+      }
+      for (GO i = 0; i < as<GO> (localNumRows); ++i) {
+	elementList[i] = myStartGID + i;
+      }
+
+      if (debug) {
+	for (int p = 0; p < numProcs; ++p) {
+	  if (p == myRank) {
+	    if (elementList.size() > 0) {
+	      const GO minGID = *std::min_element (elementList.begin(), elementList.end());
+	      const GO maxGID = *std::max_element (elementList.begin(), elementList.end());
+	      cerr << "On Proc " << p << ": min,max GID = " << minGID << "," << maxGID << endl;
+	    }
+	    else {
+	      cerr << "On Proc " << p << ": elementList is empty" << endl;
+	    }
+	    cerr << std::flush;
+	  } 
+	  comm->barrier ();
+	  comm->barrier ();
+	  comm->barrier ();
+	}
+      }
+
+      // Create the Map.
+      using Tpetra::createNonContigMapWithNode;
+      RCP<const MT> map = 
+	createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
+      try {
+	RCP<MV> X7 = testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+							map, tolerant, verbose, debug);
+	if (outFilename != "") {
+	  testWriteDenseFile<MV> (outFilename, X7, echo, verbose, debug);
+	}
+      } catch (std::exception& e) {
+	failedTests.push_back (testNum);
+	if (myRank == 0) {
+	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
+	}
+
+	if (stopAfterFailure) {
+	  if (failedTests.size() > 0) {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST FAILED" << endl;
+	    }
+	    return EXIT_FAILURE;
+	  }
+	  else {
+	    if (myRank == 0) {
+	      cout << "End Result: TEST PASSED" << endl;
+	    }
+	    return EXIT_SUCCESS;
+	  }
+	} // if stop after failure
+      }
+    } // if test noncontiguous input Map
   }
 
   if (failedTests.size() > 0) {

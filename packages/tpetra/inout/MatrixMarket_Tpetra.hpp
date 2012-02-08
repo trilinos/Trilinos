@@ -2820,7 +2820,7 @@ namespace Tpetra {
 	// If true, when making the "gather" Map, use the same index
 	// base as X's Map.  Otherwise, just use the default index
 	// base for the gather Map.
-	const bool keepTheSameIndexBase = true;
+	const bool keepTheSameIndexBase = false;
 
         // Make the output stream write floating-point numbers in
         // scientific notation.  It will politely put the output
