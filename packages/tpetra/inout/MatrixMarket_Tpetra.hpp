@@ -2803,6 +2803,8 @@ namespace Tpetra {
 		  const std::string& matrixName,
 		  const std::string& matrixDescription)
       {
+	using Teuchos::rcp;
+	using Teuchos::rcp_const_cast;
         using std::endl;
 
         typedef typename Teuchos::ScalarTraits<scalar_type> STS;
@@ -2814,6 +2816,11 @@ namespace Tpetra {
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
 	typedef node_type NT;
+
+	// If true, when making the "gather" Map, use the same index
+	// base as X's Map.  Otherwise, just use the default index
+	// base for the gather Map.
+	const bool keepTheSameIndexBase = true;
 
         // Make the output stream write floating-point numbers in
         // scientific notation.  It will politely put the output
@@ -2832,8 +2839,10 @@ namespace Tpetra {
         // the other procs own no rows.
         const size_t localNumRows = (myRank == 0) ? numRows : 0;
         RCP<NT> node = map->getNode();
-        RCP<const map_type> gatherMap = 
+        RCP<const map_type> gatherMap = keepTheSameIndexBase ? 
+	  rcp_const_cast<const map_type> (rcp (new map_type (numRows, localNumRows, map->getIndexBase(), comm, node))) :
 	  createContigMapWithNode<LO, GO, NT> (numRows, localNumRows, comm, node);
+
         // Create an Import object to import X's data into a
         // multivector Y owned entirely by Proc 0.  In the Import
         // constructor, X's map is the source map, and the "gather
