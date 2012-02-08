@@ -83,6 +83,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   RCP<BasisValues<double,FieldArray> > basisValues = rcp(new BasisValues<double,FieldArray>);
   basisValues->setupArrays(basisLayout);
   basisValues->evaluateValues(quadValues->cub_points,
+                              quadValues->jac,
+                              quadValues->jac_det,
                               quadValues->jac_inv,
                               quadValues->weighted_measure,
                               quadValues->node_coordinates);
@@ -202,6 +204,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   RCP<BasisValues<double,FieldArray> > basisValues = rcp(new BasisValues<double,FieldArray>);
   basisValues->setupArrays(basisLayout);
   basisValues->evaluateValues(quadValues->cub_points,
+                              quadValues->jac,
+                              quadValues->jac_det,
                               quadValues->jac_inv,
                               quadValues->weighted_measure,
                               quadValues->node_coordinates);

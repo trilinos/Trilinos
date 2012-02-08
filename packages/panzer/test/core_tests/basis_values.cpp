@@ -75,6 +75,8 @@ namespace panzer {
     basis_values.setupArrays(basis);
     
     basis_values.evaluateValues(int_values.cub_points,
+				int_values.jac,
+				int_values.jac_det,
 				int_values.jac_inv,
 				int_values.weighted_measure,
 				node_coordinates);
@@ -171,6 +173,8 @@ namespace panzer {
     basis_values.setupArrays(basis);
     
     basis_values.evaluateValues(int_values.cub_points,
+				int_values.jac,
+				int_values.jac_det,
 				int_values.jac_inv,
 				int_values.weighted_measure,
 				node_coordinates);
