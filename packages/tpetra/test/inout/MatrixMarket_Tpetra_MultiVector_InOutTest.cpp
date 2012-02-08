@@ -449,11 +449,14 @@ main (int argc, char *argv[])
   const int numProcs = comm->getSize();
 
   std::string inputFilename;  // Matrix Market file to read
+  std::string temporaryFilename; // Matrix Market file to write (if applicable)
   std::string outputFilename; // Matrix Market file to write (if applicable)
+
   // Number of a specific test to run.  If nonzero, only run that
   // test.  We always run Test #1 since its result is needed for
   // subsequent tests.
   int testToRun = 0;
+
   // FIXME (mfh 07 Feb 2012) Currently, all tests with a different
   // index base FAIL.  Reading in the multivector appears to be
   // correct, but writing it results in a multivector of all zeros (on
@@ -461,6 +464,7 @@ main (int argc, char *argv[])
   bool testDifferentIndexBase = false;
   bool testContiguousInputMap = true;
   bool testNoncontiguousInputMap = false; 
+
   bool testWrite = true; // Test Matrix Market output?
   bool tolerant = false; // Parse the file tolerantly?
   bool echo = false;     // Echo the read-in matrix back?
@@ -474,6 +478,10 @@ main (int argc, char *argv[])
   CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("inputFilename", &inputFilename,
 		  "Name of the Matrix Market dense matrix file to read.");
+  cmdp.setOption ("temporaryFilename", &temporaryFilename,
+		  "If --testWrite is true, then use this file as temporary "
+		  "storage on (MPI) Proc 0.  Otherwise, this argument is "
+		  "ignored.");
   cmdp.setOption ("outputFilename", &outputFilename,
 		  "If --testWrite is true, then write the read-in matrix to "
 		  "this file in Matrix Market format on (MPI) Proc 0.  "
@@ -549,6 +557,7 @@ main (int argc, char *argv[])
     // If not testing writes, don't do the sanity check that tests
     // input by comparing against output.
     std::string outFilename = testWrite ? outputFilename : "";
+    std::string tmpFilename = testWrite ? temporaryFilename : "";
 
     // Test 1: null input Map.
     ++testNum;
@@ -557,7 +566,7 @@ main (int argc, char *argv[])
     }
     RCP<MV> X;
     try {
-      X = testReadDenseFile<MV> (inputFilename, outFilename, comm,
+      X = testReadDenseFile<MV> (inputFilename, tmpFilename, comm,
 				 node, tolerant, verbose, debug);
       if (outFilename != "") {
 	testWriteDenseFile<MV> (outFilename, X, echo, verbose, debug);
@@ -587,7 +596,7 @@ main (int argc, char *argv[])
 					  Tpetra::GloballyDistributed, node));
       try {
 	RCP<MV> X2 = 
-	  testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+	  testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
 					     map, tolerant, verbose, debug);
 	if (outFilename != "") {
 	  testWriteDenseFile<MV> (outFilename, X2, echo, verbose, debug);
@@ -647,7 +656,7 @@ main (int argc, char *argv[])
 					  Tpetra::GloballyDistributed, node));
       try {
 	RCP<MV> X3 = 
-	  testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+	  testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
 					     map, tolerant, verbose, debug);
 	if (outFilename != "") {
 	  testWriteDenseFile<MV> (outFilename, X3, echo, verbose, debug);
@@ -710,7 +719,7 @@ main (int argc, char *argv[])
 					  Tpetra::GloballyDistributed, node));
       try {
 	RCP<MV> X3 = 
-	  testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+	  testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
 					     map, tolerant, verbose, debug);
 	if (outFilename != "") {
 	  testWriteDenseFile<MV> (outFilename, X3, echo, verbose, debug);
@@ -802,7 +811,7 @@ main (int argc, char *argv[])
       RCP<const MT> map = 
 	createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
       try {
-	RCP<MV> X4 = testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+	RCP<MV> X4 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
 							map, tolerant, verbose, debug);
 	if (outFilename != "") {
 	  testWriteDenseFile<MV> (outFilename, X4, echo, verbose, debug);
@@ -877,7 +886,7 @@ main (int argc, char *argv[])
       RCP<const MT> map = 
 	createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
       try {
-	RCP<MV> X5 = testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+	RCP<MV> X5 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
 							map, tolerant, verbose, debug);
 	if (outFilename != "") {
 	  testWriteDenseFile<MV> (outFilename, X5, echo, verbose, debug);
@@ -968,7 +977,7 @@ main (int argc, char *argv[])
       RCP<const MT> map = 
 	createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
       try {
-	RCP<MV> X7 = testReadDenseFileWithInputMap<MV> (inputFilename, outFilename,
+	RCP<MV> X7 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
 							map, tolerant, verbose, debug);
 	if (outFilename != "") {
 	  testWriteDenseFile<MV> (outFilename, X7, echo, verbose, debug);
