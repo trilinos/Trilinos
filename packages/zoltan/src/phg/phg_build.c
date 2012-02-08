@@ -1804,7 +1804,7 @@ MPI_Datatype zoltan_gno_mpi_type;
     goPinGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * nremove_size);
     goPinProc = (int *)ZOLTAN_MALLOC(sizeof(int) * nremove_size);
 
-    if (!goEdgeGNO || !goEdgeSize || !goPinGNO || !goPinProc){
+    if ((nremove && !goEdgeGNO) || (nremove && !goEdgeSize) || (nremove_size && !goPinGNO) || (nremove_size && !goPinProc)){
       MEMORY_ERROR;
     }
 
