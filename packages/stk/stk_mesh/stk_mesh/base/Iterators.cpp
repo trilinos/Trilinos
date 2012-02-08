@@ -59,6 +59,12 @@ AllSelectedBucketsRange get_selected_bucket_range(const AllBucketsRange& bucket_
                         AllSelectedBucketsIterator(selector, bucket_range.second, bucket_range.second));
 }
 
+SelectedBucketVectorIteratorRange get_selected_bucket_range(const std::vector<Bucket*>& buckets, const Selector& selector)
+{
+  return std::make_pair(SelectedBucketVectorIterator(selector, buckets.begin(), buckets.end()),
+                        SelectedBucketVectorIterator(buckets.end()));
+}
+
 #if 0
 //this code is broken
 // \TODO fix

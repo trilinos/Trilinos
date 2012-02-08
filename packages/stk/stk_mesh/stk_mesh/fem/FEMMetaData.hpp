@@ -163,6 +163,10 @@ class FEMMetaData {
   }
   //  void check_topo_db();
 
+  /**
+   * Return true if rank is valid.
+   */
+  bool check_rank(EntityRank rank) const;
 
   /** \brief This function is used to register new cell topologies and their associated ranks with FEMMetaData.
    * Currently, several shards Cell Topologies are registered with appropriate ranks at initialization time.
@@ -533,6 +537,11 @@ inline CellTopology get_cell_topology(const Entity &entity) {
   return get_cell_topology(entity.bucket());
 }
 
+inline
+bool FEMMetaData::check_rank(EntityRank rank) const
+{
+  return m_meta_data.check_rank(rank);
+}
 
 
 std::vector<std::string> entity_rank_names(size_t spatial_dimension);

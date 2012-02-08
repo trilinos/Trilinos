@@ -18,6 +18,12 @@
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
+namespace sierra {
+namespace Fmwk {
+unsigned get_derived_type(const stk::mesh::Entity&);
+}
+}
+
 namespace stk {
 namespace mesh {
 
@@ -46,7 +52,7 @@ Relation::Relation() :
   m_raw_relation(),
   m_attribute(),
   m_target_entity(NULL)
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef SIERRA_MIGRATION
   ,
   m_meshObj(NULL),
   m_relationType(0)
@@ -56,7 +62,7 @@ Relation::Relation() :
 Relation::Relation( Entity & entity , RelationIdentifier identifier )
   : m_raw_relation( Relation::raw_relation_id( entity.entity_rank() , identifier ) ),
     m_target_entity( & entity )
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef SIERRA_MIGRATION
   ,
     m_meshObj(NULL),
     m_relationType(0)
@@ -67,7 +73,7 @@ bool Relation::operator < ( const Relation & rhs ) const
 {
   bool result = false;
 
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef SIERRA_MIGRATION
   if (m_target_entity != NULL && rhs.m_target_entity != NULL) {
 #endif
     // STK_Mesh version of relation comparison
@@ -80,7 +86,7 @@ bool Relation::operator < ( const Relation & rhs ) const
       result = lhs_key < rhs_key ;
     }
     return result ;
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef SIERRA_MIGRATION
   }
   else if (m_meshObj != NULL && rhs.m_meshObj != NULL) {
     // Fmwk version of relation comparison
@@ -103,6 +109,21 @@ bool Relation::operator < ( const Relation & rhs ) const
 }
 
 //----------------------------------------------------------------------
+
+#ifdef SIERRA_MIGRATION
+
+Relation::Relation(Entity *obj, const unsigned relation_type, const unsigned ordinal, const unsigned Orient)
+  :
+  m_raw_relation( Relation::raw_relation_id( sierra::Fmwk::get_derived_type(*obj) , ordinal )), // makes this m_raw_relation forever incomparable with Relations constructed STK-style
+  m_attribute(Orient),
+  m_target_entity( NULL ),
+  m_meshObj(obj),
+  m_relationType(relation_type),
+  m_derivedType( sierra::Fmwk::get_derived_type(*obj)) // Needs to be maintained seperately from the rank within m_raw_relation because it may be different!!
+{}
+
+
+#endif
 
 namespace {
 

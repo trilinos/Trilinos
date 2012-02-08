@@ -29,6 +29,19 @@
 
 //----------------------------------------------------------------------
 
+#ifdef SIERRA_MIGRATION
+
+namespace sierra {
+namespace Fmwk {
+
+class MeshBulkData;
+
+}
+}
+
+
+#endif
+
 namespace stk {
 namespace mesh {
 
@@ -80,10 +93,14 @@ bool has_superset( const Bucket & , const PartVector & );
  */
 class Bucket {
 private:
-  friend class impl::BucketRepository ;
-  friend class impl::BucketImpl ;
+  friend class impl::BucketRepository;
+  friend class impl::BucketImpl;
 
-  impl::BucketImpl       m_bucketImpl ;
+  impl::BucketImpl       m_bucketImpl;
+
+#ifdef SIERRA_MIGRATION
+  const void*            m_fmwk_mesh_bulk_data;
+#endif
 
 public:
 
@@ -171,6 +188,20 @@ public:
 
   /** \brief  A method to assist in unit testing - accesses private data as necessary. */
   bool assert_correct() const;
+
+#ifdef SIERRA_MIGRATION
+  typedef std::pair<iterator, iterator> EntityRange;
+
+  bool is_empty() const { return size() == 0; }
+
+  const sierra::Fmwk::MeshBulkData* get_bulk_data() const
+  {
+    return static_cast<const sierra::Fmwk::MeshBulkData*>(m_fmwk_mesh_bulk_data);
+  }
+
+  template <class T>
+  void set_bulk_data(const T* bulk_ptr) { m_fmwk_mesh_bulk_data = bulk_ptr; }
+#endif
 
 private:
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"

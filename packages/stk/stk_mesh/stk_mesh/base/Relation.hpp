@@ -15,11 +15,10 @@
 
 #include <stk_mesh/base/EntityKey.hpp>
 
-#ifdef STK_BUILT_IN_SIERRA
-namespace sierra {
-namespace Fmwk {
-class MeshObj;
-unsigned get_derived_type(const MeshObj*);
+#ifdef SIERRA_MIGRATION
+namespace stk {
+namespace mesh {
+class Entity;
 }
 }
 #endif
@@ -148,7 +147,7 @@ private:
 // Solution: Have framework and STK_Mesh use the same type as its relation_descriptor.
 // The code below is designed to make this class compatible with the fmwk
 // Relation class.
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef SIERRA_MIGRATION
  public:
     /**
    * Predefined identifiers for mesh object relationship types.
@@ -186,23 +185,13 @@ private:
   //  2) Constructed on stk side. Indicated by having NULL m_meshObj
   //  3) Constructed on stk side, but with fmwk data (like m_meshObj) added on. Indicated by having non-null m_target_entity and m_meshObj.
   //  NOTE: (2) relations are NOT comparable with (1) relations!
-  template <class MeshObj>
-  Relation(MeshObj *obj, const unsigned relation_type, const unsigned ordinal, const unsigned Orient = 0)
-    :
-    m_raw_relation( Relation::raw_relation_id( get_derived_type(obj) , ordinal )), // makes this m_raw_relation forever incomparable with Relations constructed STK-style
-    m_attribute(Orient),
-    m_target_entity( NULL ),
+  Relation(Entity *obj, const unsigned relation_type, const unsigned ordinal, const unsigned Orient = 0);
 
-    m_meshObj(obj),
-    m_relationType(relation_type),
-    m_derivedType(get_derived_type(obj)) // Needs to be maintained seperately from the rank within m_raw_relation because it may be different!!
-  {}
-
-  sierra::Fmwk::MeshObj *getMeshObj() const {
-    return reinterpret_cast<sierra::Fmwk::MeshObj*>(m_meshObj);
+  Entity *getMeshObj() const {
+    return m_meshObj;
   }
 
-  void setMeshObj(sierra::Fmwk::MeshObj *object) {
+  void setMeshObj(Entity *object) {
     m_meshObj = object;
   }
 
@@ -258,10 +247,10 @@ private:
   }
 
 private:
-  void * m_meshObj;                     ///< A pointer to the related mesh object.
+  Entity * m_meshObj;                   ///< A pointer to the related mesh object.
   unsigned char m_relationType;         ///< Identification of the type of relationship, e.g. USES or USED_BY.
   unsigned char m_derivedType;          ///< Derived type of related mesh object in a Fmwk-based rank
-#endif // STK_BUILT_IN_SIERRA
+#endif // SIERRA_MIGRATION
 };
 
 //----------------------------------------------------------------------
@@ -362,7 +351,7 @@ std::ostream & operator << ( std::ostream & , const Relation & );
 
 inline
 bool Relation::operator == ( const Relation & rhs ) const
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef SIERRA_MIGRATION
 {
   if (m_target_entity != NULL && rhs.m_target_entity != NULL) {
     return m_raw_relation.value == rhs.m_raw_relation.value && m_target_entity == rhs.m_target_entity;
