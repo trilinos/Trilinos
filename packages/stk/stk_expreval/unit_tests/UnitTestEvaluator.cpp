@@ -253,6 +253,8 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(fail_syntax("()"));
   STKUNIT_EXPECT_TRUE(syntax("rand()"));
   STKUNIT_EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
+  STKUNIT_EXPECT_TRUE(syntax("random()"));
+  STKUNIT_EXPECT_TRUE(syntax("srandom(x)"));
 
 #define EXPREVAL_TEST(name) test(name##_expr, name)
 

@@ -16,6 +16,8 @@ extern "C" {
   typedef double (*CExtern2)(double, double);
 }
 
+static int sRandomRangeHighValue = 3191613;
+static int sRandomRangeLowValue  = 1739623;
 
 template <>
 class CFunction<CExtern0> : public CFunctionBase
@@ -116,14 +118,29 @@ extern "C" {
     return (double) std::rand() / ((double)(RAND_MAX) + 1.0);
   }
 
-  static double real_srand(double x)  {
-    std::srand((int) x);
+  static double real_srand(double x) {
+    std::srand(static_cast<int>(x));
     return 0.0;
   }
 
   static double randomize()  {
     std::srand(::time(NULL));
     return 0.0;
+  }
+
+  static double real_srandom(double x) {
+    int y = static_cast<int>(x);
+    sRandomRangeHighValue =  y;
+    sRandomRangeLowValue  = ~y;
+    return 0.0;
+  }
+
+  static double real_random() {
+    sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
+    sRandomRangeHighValue += sRandomRangeLowValue;
+    sRandomRangeLowValue += sRandomRangeHighValue;
+    int val = std::abs(sRandomRangeHighValue);
+    return double(val) / double(RAND_MAX);
   }
 
   static double deg(double a)  {
@@ -179,9 +196,11 @@ extern "C" {
 
 CFunctionMap::CFunctionMap() 
 {
-  (*this)["rand"] = new CFunction0(real_rand);
-  (*this)["srand"] = new CFunction1(real_srand);
+  (*this)["rand"]      = new CFunction0(real_rand);
+  (*this)["srand"]     = new CFunction1(real_srand);
   (*this)["randomize"] = new CFunction0(randomize);
+  (*this)["random"]    = new CFunction0(real_random);
+  (*this)["srandom"]   = new CFunction1(real_srandom);
 
   (*this)["exp"] = new CFunction1(std::exp);
   (*this)["ln"] = new CFunction1(std::log);
