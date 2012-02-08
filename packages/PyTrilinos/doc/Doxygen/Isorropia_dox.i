@@ -139,7 +139,7 @@ Destructor ";
 %feature("docstring") Isorropia::Exception "
 
 A simple extension of std::exception with constructors that accept a
-message in the form of a 'const char*' or a 'stdstring'.
+message in the form of a 'const char*' or a 'std::string'.
 
 C++ includes: Isorropia_Exception.hpp ";
 
@@ -737,8 +737,8 @@ between two returned values. ";
 // File: Isorropia__Version_8hpp.xml
 
 
-// File: dir_c705b74b31d8ba556986ebaf028813d3.xml
+// File: dir_e29a5969b86fa5e07f3b365cf322aaae.xml
 
 
-// File: dir_400f949df9dcdcdf586638eea2faf104.xml
+// File: dir_f54bfea2cde9b2df7ca6a80135075fac.xml
 
