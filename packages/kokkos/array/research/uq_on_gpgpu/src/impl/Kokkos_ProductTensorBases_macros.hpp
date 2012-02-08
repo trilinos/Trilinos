@@ -107,11 +107,15 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type variable_count() const { return m_variable ; }
+  size_type dimension() const { return m_dimension ; }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension() const { return m_dimension ; }
+  size_type size() const { return m_dimension ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type variable_count() const { return m_variable ; }
 
   template< typename iType >
   inline
@@ -148,12 +152,12 @@ public:
                  const VectorValue * const x ,
                        VectorValue * const y ) const
   {
-    const size_type nEntry = m_value.length();
+    const size_type nEntry = m_dimension ;
     for ( size_type iEntry = 0 ; iEntry < nEntry ; ++iEntry ) {
       const size_type i = m_coord(iEntry,0);
       const size_type j = m_coord(iEntry,1);
       const size_type k = m_coord(iEntry,2);
-      const size_type v = m_value(iEntry);
+      const size_type v = m_value[iEntry];
 
       const bool neq_ij = i != j ;
       const bool neq_jk = j != k ;
