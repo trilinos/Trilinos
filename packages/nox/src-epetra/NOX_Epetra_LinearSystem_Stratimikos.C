@@ -93,6 +93,10 @@
 #include "Teuchos_ParameterList.hpp"
 #endif
 
+#ifdef HAVE_NOX_TEKO
+#include "Teko_StratimikosFactory.hpp"
+#endif
+
 #include "Teuchos_TimeMonitor.hpp"
 
 #include <typeinfo>
@@ -191,6 +195,10 @@ void NOX::Epetra::LinearSystemStratimikos::
 initializeStratimikos(Teuchos::ParameterList& stratParams)
 {
   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+
+#ifdef HAVE_NOX_TEKO
+  Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
+#endif
 
   linearSolverBuilder.setParameterList(Teuchos::rcp(&stratParams, false));
 
