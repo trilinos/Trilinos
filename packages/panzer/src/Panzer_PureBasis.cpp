@@ -12,9 +12,6 @@ PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const s
   field_basis_name_D1("Grad Basis: " + basis_type),
   field_basis_name_D2("D2 Basis: " + basis_type)
 {
-  using Teuchos::rcp;
-  using PHX::MDALayout;
-
   dimension = cellTopo->getDimension();
 
   intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, dimension, cellTopo);
@@ -22,20 +19,10 @@ PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const s
   cardinality = intrepid_basis->getCardinality();
   num_cells = numCells;
 
-  functional = rcp(new MDALayout<Cell,BASIS>(num_cells, cardinality));
+  // is this a HGRAD, HCURL, etc basis
+  initializeIntrospection(basis_type);
 
-  functional_grad = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
-						      cardinality,
-						      dimension));
-
-  coordinates = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
-		   			          cardinality,
-						  dimension));
-
-  functional_D2 = rcp(new MDALayout<Cell,BASIS,Dim,Dim>(num_cells,
-							cardinality,
-							dimension,
-							dimension));
+  initializeDataLayouts();
 }
 
 panzer::PureBasis::
@@ -45,9 +32,6 @@ PureBasis(const std::string & basis_type,const CellData & cell_data) :
   field_basis_name_D1("Grad Basis: " + basis_type),
   field_basis_name_D2("D2 Basis: " + basis_type)
 {
-  using Teuchos::rcp;
-  using PHX::MDALayout;
-
   dimension = cell_data.baseCellDimension();
 
   intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, dimension, cell_data.getCellTopology());
@@ -55,20 +39,10 @@ PureBasis(const std::string & basis_type,const CellData & cell_data) :
   cardinality = intrepid_basis->getCardinality();
   num_cells = cell_data.numCells();
 
-  functional = rcp(new MDALayout<Cell,BASIS>(num_cells, cardinality));
+  // is this a HGRAD, HCURL, etc basis
+  initializeIntrospection(basis_type);
 
-  functional_grad = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
-						      cardinality,
-						      dimension));
-
-  coordinates = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
-		   			          cardinality,
-						  dimension));
-
-  functional_D2 = rcp(new MDALayout<Cell,BASIS,Dim,Dim>(num_cells,
-							cardinality,
-							dimension,
-							dimension));
+  initializeDataLayouts();
 }
 
 int panzer::PureBasis::getCardinality() const
@@ -110,4 +84,53 @@ Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > >
 panzer::PureBasis::getIntrepidBasis() const
 {
    return intrepid_basis;
+}
+
+void panzer::PureBasis::initializeIntrospection(const std::string & name)
+{
+   if(  name=="Q1" || name=="Q2"
+     || name=="T1" || name=="T2")
+      elementSpace = HGRAD;
+   else if(name=="TEdge1")
+      elementSpace = HCURL;
+   else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                                     "PureBasis::initializeIntrospection - Invalid basis name \"" 
+                                     << name << "\""); }
+
+  switch(getElementSpace()) {
+  case HGRAD:
+     basisRank = 0;
+     break;
+  case HCURL:
+     basisRank = 1;
+     break;
+  case HDIV:
+     basisRank = 1;
+     break;
+  default:
+     TEUCHOS_ASSERT(false);
+     break;
+  };
+
+}
+
+void panzer::PureBasis::initializeDataLayouts()
+{
+  using Teuchos::rcp;
+  using PHX::MDALayout;
+
+  functional = rcp(new MDALayout<Cell,BASIS>(num_cells, cardinality));
+
+  functional_grad = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
+						      cardinality,
+						      dimension));
+
+  coordinates = rcp(new MDALayout<Cell,BASIS,Dim>(num_cells,
+		   			          cardinality,
+						  dimension));
+
+  functional_D2 = rcp(new MDALayout<Cell,BASIS,Dim,Dim>(num_cells,
+							cardinality,
+							dimension,
+							dimension));
 }

@@ -11,18 +11,6 @@ panzer::IntegrationRule::
 IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data) :
   side(-1)
 {
-  /*
-  int dim = cell_data.baseCellDimension();
-
-  Teuchos::RCP<shards::CellTopology> baseTopo;
-  if (dim == 3)
-    baseTopo = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
-  else if (dim == 2)
-    baseTopo = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-  else if (dim == 1)
-    baseTopo = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Line<2> >()));
-  */
-
   setup(in_cubature_degree,cell_data);
 }
 

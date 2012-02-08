@@ -21,6 +21,7 @@
 #include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid_HGRAD_LINE_C1_FEM.hpp"
+#include <Intrepid_HCURL_TRI_I1_FEM.hpp>
 
 namespace panzer {
 
@@ -49,6 +50,8 @@ namespace panzer {
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TRI_C1_FEM<ScalarT,ArrayT> );
       else if (type == "T2")
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TRI_C2_FEM<ScalarT,ArrayT> );
+      else if (type == "TEdge1") 
+	basis = Teuchos::rcp( new Intrepid::Basis_HCURL_TRI_I1_FEM<ScalarT,ArrayT> );
     }
     else if (cell_dimension == 1) {
       if (type == "Q1")

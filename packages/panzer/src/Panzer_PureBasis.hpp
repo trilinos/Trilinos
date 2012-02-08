@@ -17,6 +17,7 @@ namespace panzer {
   class PureBasis { 
 
   public:
+    typedef enum { HGRAD=0, HCURL=1, HDIV=2 } EElementSpace;
     
     PureBasis(const std::string & basis_type,const CellData & cell_data);
     PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const shards::CellTopology> & cellTopo);
@@ -38,17 +39,30 @@ namespace panzer {
     Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > 
     getIntrepidBasis() const;
 
+    EElementSpace getElementSpace() const
+    { return elementSpace; }
+
+    int getBasisRank() const
+    { return basisRank; }
+
   public:
-    //! <Cell,Basis>
+    //! <Cell,Basis> or <Cell,Basis>
     Teuchos::RCP<PHX::DataLayout> functional;
     //! <Cell,Basis,Dim>
     Teuchos::RCP<PHX::DataLayout> functional_grad;
-    //! <Cell,Basis,Dim,Dim>
+    //! <Cell,Basis,Dim>
     Teuchos::RCP<PHX::DataLayout> functional_D2;
     //! <Cell,Basis,Dim>
     Teuchos::RCP<PHX::DataLayout> coordinates;
 
   private:
+
+    //! Initialize all introspection data for this basis type: Intrepid does not provide this
+    void initializeIntrospection(const std::string & name);
+
+    //! Initialize data layouts for this basis: uses num_cells, cardinality, dimension
+    void initializeDataLayouts();
+
     Teuchos::RCP<const shards::CellTopology> topology;
     Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepid_basis;
 
@@ -60,6 +74,9 @@ namespace panzer {
     int cardinality;
     int num_cells;
     int dimension;
+
+    EElementSpace elementSpace;
+    int basisRank;
   };
 
   typedef std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > StrPureBasisPair;

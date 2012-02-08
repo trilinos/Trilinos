@@ -64,6 +64,7 @@ namespace panzer {
     Teuchos::RCP<PHX::DataLayout> basis_D2_ref;
     //! <Cell,BASIS,IP,Dim,Dim>
     Teuchos::RCP<PHX::DataLayout> basis_D2;
+
     //! <Cell,Basis>
     Teuchos::RCP<PHX::DataLayout> functional;
     //! <Cell,Basis,Dim>

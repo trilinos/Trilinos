@@ -240,6 +240,8 @@ panzer::buildWorksets(const std::string& block_id,
 				basis_to_int_order[basis_names[i]]));
 
       worksets[wkst].bases[i]->evaluateValues(worksets[wkst].int_rules[int_degree_index]->cub_points,
+					      worksets[wkst].int_rules[int_degree_index]->jac,
+					      worksets[wkst].int_rules[int_degree_index]->jac_det,
 					      worksets[wkst].int_rules[int_degree_index]->jac_inv,
 					      worksets[wkst].int_rules[int_degree_index]->weighted_measure,
 					      worksets[wkst].cell_vertex_coordinates);
@@ -393,6 +395,8 @@ panzer::buildBCWorkset(const panzer::BC& bc,
       wkst->second.bases[i]->setupArrays(cb);
 
       wkst->second.bases[i]->evaluateValues(wkst->second.int_rules[int_degree_index]->cub_points,
+					    wkst->second.int_rules[int_degree_index]->jac,
+					    wkst->second.int_rules[int_degree_index]->jac_det,
 					    wkst->second.int_rules[int_degree_index]->jac_inv,
 					    wkst->second.int_rules[int_degree_index]->weighted_measure,
 					    wkst->second.cell_vertex_coordinates);
