@@ -82,7 +82,7 @@ namespace Sacado {
 
       //! Copy constructor
       CacheTaylorImplementation(const CacheTaylorImplementation& x) : 
-        coeff_(&(x.coeff_[0]), x.coeff_.size()) {}
+        coeff_(x.coeff_) {}
 
       //! Destructor
       ~CacheTaylorImplementation() {}
