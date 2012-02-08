@@ -96,7 +96,7 @@ namespace MueLuTests {
     Teuchos::ParameterList list;
     list.set("nx",nx);
     list.set("ny",ny);
-    RCP<MultiVector> XYZ = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map>("2D",rowMap,list);
+    RCP<MultiVector> XYZ = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",rowMap,list);
     level.Set("coordinates",XYZ);
 
     LO numPartitions = comm->getSize();
