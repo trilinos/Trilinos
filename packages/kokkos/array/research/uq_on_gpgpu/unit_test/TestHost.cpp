@@ -41,10 +41,14 @@
 //@HEADER
 */
 
-#include <Kokkos_ProductTensor.hpp>
+#include <iostream>
 
+#include <Kokkos_ProductTensor.hpp>
 #include <Kokkos_SymmetricDiagonalSpec.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
+#include <Kokkos_LegendrePolynomial.hpp>
+#include <Kokkos_ProductTensorBases.hpp>
+
 
 //
 
@@ -54,12 +58,15 @@
 #include <impl/Kokkos_ProductTensor_macros.hpp>
 #include <impl/Kokkos_SymmetricDiagonalSpec_macros.hpp>
 #include <impl/Kokkos_BlockCrsMatrix_macros.hpp>
+#include <impl/Kokkos_LegendrePolynomial_macros.hpp>
+#include <impl/Kokkos_ProductTensorBases_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
 
 //
 
 #include <TestBlockCrsMatrix.hpp>
 #include <TestTensorCrsMatrix.hpp>
+#include <TestLegendreBases.hpp>
 
 int mainHost()
 {
@@ -68,6 +75,27 @@ int mainHost()
 //  unit_test::test_dense<Kokkos::Host>();
 //  unit_test::test_diagonal<Kokkos::Host>();
 //  unit_test::test_other<Kokkos::Host>();
+
+
+
+  Test::test_integration<1>();
+  Test::test_integration<2>();
+  Test::test_integration<3>();
+  Test::test_integration<4>();
+  Test::test_integration<5>();
+  Test::test_integration<6>();
+  Test::test_integration<7>();
+  Test::test_integration<8>();
+  Test::test_integration<9>();
+  Test::test_integration<10>();
+  Test::test_inner_product_legengre_polynomial<10,Kokkos::Host>();
+  Test::test_triple_product_legendre_polynomial<4,Kokkos::Host>();
+
+  Test::test_product_tensor<Kokkos::Host>( std::vector<int>( 2 , 1 ) );
+  Test::test_product_tensor<Kokkos::Host>( std::vector<int>( 3 , 2 ) );
+  Test::test_product_tensor<Kokkos::Host>( std::vector<int>( 5 , 1 ) );
+
+  std::cout << "Test block crs matrix" << std::endl ;
 
   unit_test::test_block_crs_matrix<Kokkos::Host>( 1 , 2 );
   unit_test::test_block_crs_matrix<Kokkos::Host>( 1 , 5 );
@@ -79,6 +107,8 @@ int mainHost()
   unit_test::test_block_crs_matrix<Kokkos::Host>( 12 , 10 );
   unit_test::test_block_crs_matrix<Kokkos::Host>( 13 , 10 );
 
+  std::cout << "Test tensor crs matrix" << std::endl ;
+
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 1 , 2 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 1 , 5 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 2 , 1 );
@@ -89,4 +119,6 @@ int mainHost()
 
   return 0 ;
 }
+
+
 
