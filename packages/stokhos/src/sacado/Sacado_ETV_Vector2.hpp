@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_ETV_VECTOR_HPP
-#define SACADO_ETV_VECTOR_HPP
+#ifndef SACADO_ETV_VECTOR2_HPP
+#define SACADO_ETV_VECTOR2_HPP
 
 #include "Stokhos_ConfigDefs.h"
 
@@ -72,6 +72,7 @@ namespace Sacado {
     }
 #endif
     
+    /*
     template <int k, typename T> KERNEL_PREFIX T& 
     get(T* a) { return a[k]; }
     template <int k, typename T> KERNEL_PREFIX const T& 
@@ -81,17 +82,18 @@ namespace Sacado {
     get(T a[N]) { return a[k]; }
     template <int k, int N, typename T> KERNEL_PREFIX const T& 
     get(const T a[N]) { return a[k]; }
+    */
 
     //! Wrapper for a generic expression template
     /*!
      * This template class serves as a wrapper for all expression
      * template classes.
      */
-    template <typename ExprT> class Expr {};
+    //template <typename ExprT> class Expr {};
 
     //! Vectorized evaluation class
     template <typename T, typename Storage > 
-    class VectorImpl {
+    class Vector2Impl {
     public:
 
       //! Typename of values
@@ -116,47 +118,47 @@ namespace Sacado {
       /*!
        * Sets size to 1 and first coefficient to 0 (represents a constant).
        */
-      VectorImpl();
+      Vector2Impl();
 
       //! Constructor with supplied value \c x
       /*!
        * Sets size to 1 and first coefficient to x (represents a constant).
        */
-      VectorImpl(const value_type& x);
+      Vector2Impl(const value_type& x);
 
       //! Constructor with specified size \c sz
       /*!
        * Creates array of size \c sz and initializes coeffiencts to 0.
        */
-      explicit VectorImpl(ordinal_type sz);
+      explicit Vector2Impl(ordinal_type sz);
 
       //! Copy constructor
-      VectorImpl(const VectorImpl& x);
+      Vector2Impl(const Vector2Impl& x);
 
       //! Copy constructor from any Expression object
-      template <typename S> VectorImpl(const Expr<S>& x);
+      template <typename S> Vector2Impl(const Expr<S>& x);
 
       //! Destructor
-      ~VectorImpl() {}
+      ~Vector2Impl() {}
 
       //! Initialize coefficients to value
-      void init(const T& v) { th_->init(v); }
+      void init(const T& v) { s.init(v); }
 
       //! Initialize coefficients to an array of values
-      void init(const T* v) { th_->init(v); }
+      void init(const T* v) { s.init(v); }
 
-      //! Initialize coefficients from an VectorImpl with different storage
+      //! Initialize coefficients from an Vector2Impl with different storage
       template <typename S>
-      void init(const VectorImpl<T,S>& v) { 
-	th_->init(v.th_->coeff(), v.th_->size()); 
+      void init(const Vector2Impl<T,S>& v) { 
+	s.init(v.s.coeff(), v.s.size()); 
       }
 
       //! Load coefficients to an array of values
-      void load(T* v) { th_->load(v); }
+      void load(T* v) { s.load(v); }
 
-      //! Load coefficients into an VectorImpl with different storage
+      //! Load coefficients into an Vector2Impl with different storage
       template <typename S>
-      void load(VectorImpl<T,S>& v) { th_->load(v.th_->coeff()); }
+      void load(Vector2Impl<T,S>& v) { s.load(v.s.coeff()); }
 
       //! Reset size
       /*!
@@ -174,7 +176,7 @@ namespace Sacado {
        * shared and this method is not called, any changes to the coefficients
        * by coeff() or fastAccessCoeff() may change other vector objects.
        */
-      void copyForWrite() { th_.makeOwnCopy(); }
+      void copyForWrite() {  }
 
       //! Returns whether two ETV objects have the same values
       template <typename S>
@@ -193,14 +195,14 @@ namespace Sacado {
       //@{
 
       //! Assignment operator with constant right-hand-side
-      VectorImpl& operator=(const value_type& val);
+      Vector2Impl& operator=(const value_type& val);
 
-      //! Assignment with VectorImpl right-hand-side
-      VectorImpl& operator=(const VectorImpl& x);
+      //! Assignment with Vector2Impl right-hand-side
+      Vector2Impl& operator=(const Vector2Impl& x);
 
       //! Assignment with any expression right-hand-side
       template <typename S> 
-      VectorImpl& operator=(const Expr<S>& x);
+      Vector2Impl& operator=(const Expr<S>& x);
 
       //@}
 
@@ -214,10 +216,10 @@ namespace Sacado {
       //@{
 
       //! Returns value
-      const_reference val() const { return (*th_)[0]; }
+      const_reference val() const { return s[0]; }
 
       //! Returns value
-      reference val() { return (*th_)[0]; }
+      reference val() { return s[0]; }
 
       //@}
 
@@ -227,26 +229,26 @@ namespace Sacado {
       //@{
 
       //! Returns size of polynomial
-      ordinal_type size() const { return th_->size();}
+      ordinal_type size() const { return s.size();}
 
       //! Returns true if polynomial has size >= sz
-      bool hasFastAccess(ordinal_type sz) const { return th_->size()>=sz;}
+      bool hasFastAccess(ordinal_type sz) const { return s.size()>=sz;}
 
       //! Returns Hermite coefficient array
-      const_pointer coeff() const { return th_->coeff();}
+      const_pointer coeff() const { return s.coeff();}
 
       //! Returns Hermite coefficient array
-      pointer coeff() { return th_->coeff();}
+      pointer coeff() { return s.coeff();}
 
       //! Returns degree \c i term with bounds checking
       value_type coeff(ordinal_type i) const { 
-	return i<th_->size() ? (*th_)[i] : (*th_)[0]; }
+	return i<s.size() ? s[i] : s[0]; }
     
       //! Returns degree \c i term without bounds checking
-      reference fastAccessCoeff(ordinal_type i) { return (*th_)[i];}
+      reference fastAccessCoeff(ordinal_type i) { return s[i];}
 
       //! Returns degree \c i term without bounds checking
-      value_type fastAccessCoeff(ordinal_type i) const { return (*th_)[i];}
+      value_type fastAccessCoeff(ordinal_type i) const { return s[i];}
     
       //@}
 
@@ -256,84 +258,83 @@ namespace Sacado {
       //@{
 
       //! Addition-assignment operator with constant right-hand-side
-      VectorImpl& operator += (const value_type& x);
+      Vector2Impl& operator += (const value_type& x);
 
       //! Subtraction-assignment operator with constant right-hand-side
-      VectorImpl& operator -= (const value_type& x);
+      Vector2Impl& operator -= (const value_type& x);
 
       //! Multiplication-assignment operator with constant right-hand-side
-      VectorImpl& operator *= (const value_type& x);
+      Vector2Impl& operator *= (const value_type& x);
 
       //! Division-assignment operator with constant right-hand-side
-      VectorImpl& operator /= (const value_type& x);
+      Vector2Impl& operator /= (const value_type& x);
 
       //@}
 
     protected:
 
-      //! Handle to underlying vector
-      Sacado::Handle<storage_type> th_;
+      Storage s;
 
-    }; // class VectorImpl
+    }; // class Vector2Impl
 
-    //! VectorImpl expression template specialization
+    //! Vector2Impl expression template specialization
     /*!
-     * This template class represents a simple VectorImpl expression and
-     * mixes-in the VectorImpl interface and the expression template
+     * This template class represents a simple Vector2Impl expression and
+     * mixes-in the Vector2Impl interface and the expression template
      * interface.
      */
     template <typename T, typename Storage> 
-    class Expr< VectorImpl<T,Storage> > : 
-	public VectorImpl<T,Storage> {
+    class Expr< Vector2Impl<T,Storage> > : 
+	public Vector2Impl<T,Storage> {
 
     public:
 
       //! Typename of values
-      typedef typename VectorImpl<T,Storage>::value_type value_type;
-      typedef typename VectorImpl<T,Storage>::scalar_type scalar_type;
-      typedef typename VectorImpl<T,Storage>::storage_type storage_type;
-      typedef typename VectorImpl<T,Storage>::const_reference const_reference;
+      typedef typename Vector2Impl<T,Storage>::value_type value_type;
+      typedef typename Vector2Impl<T,Storage>::scalar_type scalar_type;
+      typedef typename Vector2Impl<T,Storage>::storage_type storage_type;
+      typedef typename Vector2Impl<T,Storage>::const_reference const_reference;
 
       //! Number of arguments
       static const int num_args = 1;
 
       //! Default constructor
       Expr() : 
-	VectorImpl<T,Storage>() {}
+	Vector2Impl<T,Storage>() {}
       
       //! Constructor with supplied value \c x
       Expr(const T & x) : 
-	VectorImpl<T,Storage>(x) {}
+	Vector2Impl<T,Storage>(x) {}
       
       //! Constructor with specified size \c sz
-      explicit Expr(typename VectorImpl<T,Storage>::ordinal_type sz) : 
-	VectorImpl<T,Storage>(sz) {}
+      explicit Expr(typename Vector2Impl<T,Storage>::ordinal_type sz) : 
+	Vector2Impl<T,Storage>(sz) {}
       
       //! Copy constructor
       Expr(const Expr& x) : 
-	VectorImpl<T,Storage>(static_cast<const VectorImpl<T,Storage>&>(x)) {}
+	Vector2Impl<T,Storage>(static_cast<const Vector2Impl<T,Storage>&>(x)) {}
 
       //! Copy constructor
-      Expr(const VectorImpl<T,Storage>& x) :
-	VectorImpl<T,Storage>(x) {}
+      Expr(const Vector2Impl<T,Storage>& x) :
+	Vector2Impl<T,Storage>(x) {}
 
       //! Copy constructor from any Expression object
       template <typename S> Expr(const Expr<S>& x) :
-	VectorImpl<T,Storage>(x) {}
+	Vector2Impl<T,Storage>(x) {}
 
       //! Destructor
       ~Expr() {}
 
       std::string name() const { return "x"; }
 
-    }; // class Expr<VectorImpl>
+    }; // class Expr<Vector2Impl>
 
   } // namespace ETV
 
 } // namespace Sacado
 
-#include "Sacado_ETV_VectorTraits.hpp"
-#include "Sacado_ETV_VectorImp.hpp"
+#include "Sacado_ETV_Vector2Traits.hpp"
+#include "Sacado_ETV_Vector2Imp.hpp"
 #include "Sacado_ETV_VectorOps.hpp"
 
 namespace Sacado {
@@ -342,184 +343,184 @@ namespace Sacado {
 
     //! Generalized polynomial chaos expansion class
     template <typename T, typename Storage> 
-    class Vector : public Expr< VectorImpl<T,Storage> > {
+    class Vector2 : public Expr< Vector2Impl<T,Storage> > {
     public:
 
       //! Typename of values
-      typedef typename VectorImpl<T,Storage>::value_type value_type;
+      typedef typename Vector2Impl<T,Storage>::value_type value_type;
 
       //! Typename of scalars
-      typedef typename VectorImpl<T,Storage>::scalar_type scalar_type;
+      typedef typename Vector2Impl<T,Storage>::scalar_type scalar_type;
 
       //! Typename of ordinals
-      typedef typename VectorImpl<T,Storage>::ordinal_type ordinal_type;
+      typedef typename Vector2Impl<T,Storage>::ordinal_type ordinal_type;
 
       //! Typename of storage class
-      typedef typename VectorImpl<T,Storage>::storage_type storage_type;
+      typedef typename Vector2Impl<T,Storage>::storage_type storage_type;
 
-      typedef typename VectorImpl<T,Storage>::pointer pointer;
-      typedef typename VectorImpl<T,Storage>::const_pointer const_pointer;
-      typedef typename VectorImpl<T,Storage>::reference reference;
-      typedef typename VectorImpl<T,Storage>::const_reference const_reference;
+      typedef typename Vector2Impl<T,Storage>::pointer pointer;
+      typedef typename Vector2Impl<T,Storage>::const_pointer const_pointer;
+      typedef typename Vector2Impl<T,Storage>::reference reference;
+      typedef typename Vector2Impl<T,Storage>::const_reference const_reference;
 
-      //! Turn Vector into a meta-function class usable with mpl::apply
+      //! Turn Vector2 into a meta-function class usable with mpl::apply
       template <typename S> 
       struct apply {
 	typedef typename Sacado::mpl::apply<Storage,ordinal_type,S>::type storage_type;
-	typedef Vector<S,storage_type> type;
+	typedef Vector2<S,storage_type> type;
       };
 
       //! Default constructor
       /*!
        * Sets size to 1 and first coefficient to 0 (represents a constant).
        */
-      Vector() : 
-	Expr< VectorImpl<T,Storage> >() {}
+      Vector2() : 
+	Expr< Vector2Impl<T,Storage> >() {}
 
       //! Constructor with supplied value \c x
       /*!
        * Sets size to 1 and first coefficient to x (represents a constant).
        */
-      Vector(const value_type& x) : 
-	Expr< VectorImpl<T,Storage> >(x) {}
+      Vector2(const value_type& x) : 
+	Expr< Vector2Impl<T,Storage> >(x) {}
 
       //! Constructor with supplied value \c x
       /*!
        * Sets size to 1 and first coefficient to x (represents a constant).
        */
-      Vector(const typename dummy<value_type,scalar_type>::type& x) : 
-	Expr< VectorImpl<T,Storage> >(value_type(x)) {}
+      Vector2(const typename dummy<value_type,scalar_type>::type& x) : 
+	Expr< Vector2Impl<T,Storage> >(value_type(x)) {}
 
       //! Constructor with specified size \c sz
       /*!
        * Creates array of size \c sz and initializes coeffiencts to 0.
        */
-      explicit Vector(ordinal_type sz) :
-	Expr< VectorImpl<T,Storage> >(sz) {}
+      explicit Vector2(ordinal_type sz) :
+	Expr< Vector2Impl<T,Storage> >(sz) {}
 
       //! Copy constructor
-      Vector(const Vector& x) :
-	Expr< VectorImpl<T,Storage> >(x) {}
+      Vector2(const Vector2& x) :
+	Expr< Vector2Impl<T,Storage> >(x) {}
 
       //! Copy constructor from any Expression object
-      template <typename S> Vector(const Expr<S>& x) :
-	Expr< VectorImpl<T,Storage> >(x) {}
+      template <typename S> Vector2(const Expr<S>& x) :
+	Expr< Vector2Impl<T,Storage> >(x) {}
 
       //! Destructor
-      ~Vector() {}
+      ~Vector2() {}
 
       //! Assignment operator with constant right-hand-side
-      Vector& operator=(const value_type& val) {
-	VectorImpl<T,Storage>::operator=(val);
+      Vector2& operator=(const value_type& val) {
+	Vector2Impl<T,Storage>::operator=(val);
 	return *this;
       }
 
       //! Assignment operator with constant right-hand-side
-      Vector& operator=(const typename dummy<value_type,scalar_type>::type& val) {
-	VectorImpl<T,Storage>::operator=(value_type(val));
+      Vector2& operator=(const typename dummy<value_type,scalar_type>::type& val) {
+	Vector2Impl<T,Storage>::operator=(value_type(val));
 	return *this;
       }
 
-      //! Assignment with Vector right-hand-side
-      Vector& operator=(const Vector& x) {
-	VectorImpl<T,Storage>::operator=(static_cast<const VectorImpl<T,Storage>&>(x));
+      //! Assignment with Vector2 right-hand-side
+      Vector2& operator=(const Vector2& x) {
+	Vector2Impl<T,Storage>::operator=(static_cast<const Vector2Impl<T,Storage>&>(x));
 	return *this;
       }
 
-      //! Assignment with Expr< VectorImpl > right-hand-side
-      Vector& operator=(const Expr< VectorImpl<T,Storage> >& x) {
-	VectorImpl<T,Storage>::operator=(static_cast<const VectorImpl<T,Storage>&>(x));
+      //! Assignment with Expr< Vector2Impl > right-hand-side
+      Vector2& operator=(const Expr< Vector2Impl<T,Storage> >& x) {
+	Vector2Impl<T,Storage>::operator=(static_cast<const Vector2Impl<T,Storage>&>(x));
 	return *this;
       }
 
       //! Assignment with any expression right-hand-side
       template <typename S> 
-      Vector& operator=(const Expr<S>& x) {
-	VectorImpl<T,Storage>::operator=(x);
+      Vector2& operator=(const Expr<S>& x) {
+	Vector2Impl<T,Storage>::operator=(x);
 	return *this;
       }
 
       //@{
 
       //! Addition-assignment operator with constant right-hand-side
-      Vector& operator += (const value_type& x) {
-	VectorImpl<T,Storage>::operator+=(x);
+      Vector2& operator += (const value_type& x) {
+	Vector2Impl<T,Storage>::operator+=(x);
 	return *this;
       }
 
       //! Subtraction-assignment operator with constant right-hand-side
-      Vector& operator -= (const value_type& x) {
-	VectorImpl<T,Storage>::operator-=(x);
+      Vector2& operator -= (const value_type& x) {
+	Vector2Impl<T,Storage>::operator-=(x);
 	return *this;
       }
 
       //! Multiplication-assignment operator with constant right-hand-side
-      Vector& operator *= (const value_type& x) {
-	VectorImpl<T,Storage>::operator*=(x);
+      Vector2& operator *= (const value_type& x) {
+	Vector2Impl<T,Storage>::operator*=(x);
 	return *this;
       }
 
       //! Division-assignment operator with constant right-hand-side
-      Vector& operator /= (const value_type& x) {
-	VectorImpl<T,Storage>::operator/=(x);
+      Vector2& operator /= (const value_type& x) {
+	Vector2Impl<T,Storage>::operator/=(x);
 	return *this;
       }
 
       //! Division-assignment operator with constant right-hand-side
-      Vector& operator /= (const typename dummy<value_type,scalar_type>::type& x) {
-	VectorImpl<T,Storage>::operator/=(value_type(x));
+      Vector2& operator /= (const typename dummy<value_type,scalar_type>::type& x) {
+	Vector2Impl<T,Storage>::operator/=(value_type(x));
 	return *this;
       }
 
       //! Addition-assignment operator with constant right-hand-side
-      Vector& operator += (const typename dummy<value_type,scalar_type>::type& x) {
-	VectorImpl<T,Storage>::operator+=(value_type(x));
+      Vector2& operator += (const typename dummy<value_type,scalar_type>::type& x) {
+	Vector2Impl<T,Storage>::operator+=(value_type(x));
 	return *this;
       }
 
       //! Subtraction-assignment operator with constant right-hand-side
-      Vector& operator -= (const typename dummy<value_type,scalar_type>::type& x) {
-	VectorImpl<T,Storage>::operator-=(value_type(x));
+      Vector2& operator -= (const typename dummy<value_type,scalar_type>::type& x) {
+	Vector2Impl<T,Storage>::operator-=(value_type(x));
 	return *this;
       }
 
       //! Multiplication-assignment operator with constant right-hand-side
-      Vector& operator *= (const typename dummy<value_type,scalar_type>::type& x) {
-	VectorImpl<T,Storage>::operator*=(value_type(x));
+      Vector2& operator *= (const typename dummy<value_type,scalar_type>::type& x) {
+	Vector2Impl<T,Storage>::operator*=(value_type(x));
 	return *this;
       }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S> 
-      Vector& operator += (const Expr<S>& x) {
+      Vector2& operator += (const Expr<S>& x) {
 	*this = *this + x;
 	return *this;
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S> 
-      Vector& operator -= (const Expr<S>& x) {
+      Vector2& operator -= (const Expr<S>& x) {
 	*this = *this - x;
 	return *this;
       }
   
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S> 
-      Vector& operator *= (const Expr<S>& x) {
+      Vector2& operator *= (const Expr<S>& x) {
 	*this = *this * x;
 	return *this;
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S> 
-      Vector& operator /= (const Expr<S>& x) {
+      Vector2& operator /= (const Expr<S>& x) {
 	*this = *this / x;
 	return *this;
       }
 
       //@}
 
-    }; // class Vector
+    }; // class Vector2
 
   } // namespace ETV
 

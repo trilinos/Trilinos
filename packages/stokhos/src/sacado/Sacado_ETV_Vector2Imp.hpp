@@ -26,159 +26,147 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Stokhos_Version.hpp"
-
 namespace Sacado {
 namespace ETV {
 
 template <typename T, typename Storage> 
-VectorImpl<T,Storage>::
-VectorImpl() :
-  th_(new storage_type(1))
+Vector2Impl<T,Storage>::
+Vector2Impl() :
+  s(1)
 {
 }
 
 template <typename T, typename Storage> 
-VectorImpl<T,Storage>::
-VectorImpl(const typename VectorImpl<T,Storage>::value_type& x) :
-  th_(new storage_type(1))
+Vector2Impl<T,Storage>::
+Vector2Impl(const typename Vector2Impl<T,Storage>::value_type& x) :
+  s(1)
 {
-  th_->init(x);
+  s.init(x);
 }
 
 template <typename T, typename Storage> 
-VectorImpl<T,Storage>::
-VectorImpl(ordinal_type sz) :
-  th_(new storage_type(sz))
+Vector2Impl<T,Storage>::
+Vector2Impl(ordinal_type sz) :
+  s(sz)
 {
 }
 
 template <typename T, typename Storage> 
-VectorImpl<T,Storage>::
-VectorImpl(const VectorImpl<T,Storage>& x) :
-  th_(x.th_)
+Vector2Impl<T,Storage>::
+Vector2Impl(const Vector2Impl<T,Storage>& x) :
+  s(x.s)
 {
 }
 
 template <typename T, typename Storage> 
 template <typename S>
-VectorImpl<T,Storage>::
-VectorImpl(const Expr<S>& x) :
-  th_(new storage_type(x.size()))
+Vector2Impl<T,Storage>::
+Vector2Impl(const Expr<S>& x) :
+  s(x.size())
 {
-  int sz = x.size();
-  if (x.hasFastAccess(sz)) {
-    for (int i=0; i<sz; i++)
-      (*th_)[i] = x.fastAccessCoeff(i);
+  if (x.hasFastAccess(s.size())) {
+    for (int i=0; i<s.size(); i++)
+      s[i] = x.fastAccessCoeff(i);
   }
   else {
-    Stokhos_Version();
-    for (int i=0; i<sz; i++)
-      (*th_)[i] = x.coeff(i);
+    for (int i=0; i<s.size(); i++)
+      s[i] = x.coeff(i);
   }
 }
 
 template <typename T, typename Storage> 
 void
-VectorImpl<T,Storage>::
+Vector2Impl<T,Storage>::
 reset(ordinal_type sz_new)
 {
   int sz = this->size();
-  th_->resize(sz_new);
+  s.resize(sz_new);
   if (sz == 1 && sz_new > sz)
     for (int i=1; i<sz_new; i++)
-      (*th_)[i] = (*th_)[0];
+      s[i] = s[0];
 }
 
 template <typename T, typename Storage> 
-VectorImpl<T,Storage>& 
-VectorImpl<T,Storage>::
-operator=(const typename VectorImpl<T,Storage>::value_type& v) 
+Vector2Impl<T,Storage>& 
+Vector2Impl<T,Storage>::
+operator=(const typename Vector2Impl<T,Storage>::value_type& v) 
 {
-  th_.makeOwnCopy();
-  th_->init(v);
+  s.init(v);
   return *this;
 }
 
 template <typename T, typename Storage> 
-VectorImpl<T,Storage>& 
-VectorImpl<T,Storage>::
-operator=(const VectorImpl<T,Storage>& x) 
+Vector2Impl<T,Storage>& 
+Vector2Impl<T,Storage>::
+operator=(const Vector2Impl<T,Storage>& x) 
 {
-  th_ = x.th_;
+  s = x.s;
   return *this;
 }
 
 template <typename T, typename Storage> 
 template <typename S> 
-VectorImpl<T,Storage>& 
-VectorImpl<T,Storage>::
+Vector2Impl<T,Storage>& 
+Vector2Impl<T,Storage>::
 operator=(const Expr<S>& x) 
 {
-  th_.makeOwnCopy();
-  int sz = x.size();
-  this->reset(sz);
-  if (x.hasFastAccess(sz)) {
-    for (int i=0; i<sz; i++)
-      (*th_)[i] = x.fastAccessCoeff(i);
+  this->reset(x.size());
+  if (x.hasFastAccess(s.size())) {
+    for (int i=0; i<s.size(); i++)
+      s[i] = x.fastAccessCoeff(i);
   }
   else {
-    Stokhos_Version();
-    for (int i=0; i<sz; i++)
-      (*th_)[i] = x.coeff(i);
+    for (int i=0; i<s.size(); i++)
+      s[i] = x.coeff(i);
   }
   return *this;
 }
 
 template <typename T, typename Storage> 
-VectorImpl<T,Storage>& 
-VectorImpl<T,Storage>::
-operator+=(const typename VectorImpl<T,Storage>::value_type& v)
+Vector2Impl<T,Storage>& 
+Vector2Impl<T,Storage>::
+operator+=(const typename Vector2Impl<T,Storage>::value_type& v)
 {
-  th_.makeOwnCopy();
-  for (int i=0; i<th_->size(); i++)
-    (*th_)[i] += v;
+  for (int i=0; i<s.size(); i++)
+    s[i] += v;
   return *this;
 }
 
 template <typename T, typename Storage> 
-VectorImpl<T,Storage>& 
-VectorImpl<T,Storage>::
-operator-=(const typename VectorImpl<T,Storage>::value_type& v)
+Vector2Impl<T,Storage>& 
+Vector2Impl<T,Storage>::
+operator-=(const typename Vector2Impl<T,Storage>::value_type& v)
 {
-  th_.makeOwnCopy();
-  for (int i=0; i<th_->size(); i++)
-    (*th_)[i] -= v;
+  for (int i=0; i<s.size(); i++)
+    s[i] -= v;
   return *this;
 }
 
 template <typename T, typename Storage> 
-VectorImpl<T,Storage>& 
-VectorImpl<T,Storage>::
-operator*=(const typename VectorImpl<T,Storage>::value_type& v)
+Vector2Impl<T,Storage>& 
+Vector2Impl<T,Storage>::
+operator*=(const typename Vector2Impl<T,Storage>::value_type& v)
 {
-  th_.makeOwnCopy();
-  for (int i=0; i<th_->size(); i++)
-    (*th_)[i] *= v;
+  for (int i=0; i<s.size(); i++)
+    s[i] *= v;
   return *this;
 }
 
 template <typename T, typename Storage> 
-VectorImpl<T,Storage>& 
-VectorImpl<T,Storage>::
-operator/=(const typename VectorImpl<T,Storage>::value_type& v)
+Vector2Impl<T,Storage>& 
+Vector2Impl<T,Storage>::
+operator/=(const typename Vector2Impl<T,Storage>::value_type& v)
 {
-  th_.makeOwnCopy();
-  for (int i=0; i<th_->size(); i++)
-    (*th_)[i] /= v;
+  for (int i=0; i<s.size(); i++)
+    s[i] /= v;
   return *this;
 }
 
 template <typename T, typename Storage>
 std::ostream& 
-operator << (std::ostream& os, const Vector<T,Storage>& a)
+operator << (std::ostream& os, const Vector2<T,Storage>& a)
 {
-  typedef typename Vector<T,Storage>::ordinal_type ordinal_type;
+  typedef typename Vector2<T,Storage>::ordinal_type ordinal_type;
 
   os << "[ ";
       

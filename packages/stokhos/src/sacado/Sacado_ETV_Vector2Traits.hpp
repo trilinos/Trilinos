@@ -26,15 +26,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_ETV_VECTORTRAITS_HPP
-#define SACADO_ETV_VECTORTRAITS_HPP
+#ifndef SACADO_ETV_VECTOR2TRAITS_HPP
+#define SACADO_ETV_VECTOR2TRAITS_HPP
 
 #include "Sacado_Traits.hpp"
 
 // Forward declarations
 namespace Sacado {
   namespace ETV {
-    template <typename T, typename S> class Vector;
+    template <typename T, typename S> class Vector2;
   }
 }
 
@@ -42,90 +42,90 @@ namespace Sacado {
 
   //! Specialization of %Promote to Taylor types
   template <typename T, typename S>
-  class Promote< ETV::Vector<T,S>, ETV::Vector<T,S> > {
+  class Promote< ETV::Vector2<T,S>, ETV::Vector2<T,S> > {
   public:
 
-    typedef ETV::Vector<T,S> type;
+    typedef ETV::Vector2<T,S> type;
   };
 
-  //! Specialization of %Promote to Vector types
+  //! Specialization of %Promote to Vector2 types
   template <typename L, typename R, typename S>
-  class Promote< ETV::Vector<L,S>, R > {
+  class Promote< ETV::Vector2<L,S>, R > {
   public:
 
-    typedef typename ValueType< ETV::Vector<L,S> >::type value_type_l;
+    typedef typename ValueType< ETV::Vector2<L,S> >::type value_type_l;
     typedef typename ValueType<R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef ETV::Vector<value_type,S> type;
+    typedef ETV::Vector2<value_type,S> type;
   };
 
-  //! Specialization of %Promote to Vector types
+  //! Specialization of %Promote to Vector2 types
   template <typename L, typename R, typename S>
-  class Promote< L, ETV::Vector<R,S> > {
+  class Promote< L, ETV::Vector2<R,S> > {
   public:
 
     typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< ETV::Vector<R,S> >::type value_type_r;
+    typedef typename ValueType< ETV::Vector2<R,S> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef ETV::Vector<value_type,S> type;
+    typedef ETV::Vector2<value_type,S> type;
   };
 
-  //! Specialization of %ScalarType to Vector types
+  //! Specialization of %ScalarType to Vector2 types
   template <typename T, typename S>
-  struct ScalarType< ETV::Vector<T,S> > {
-    typedef typename ScalarType<typename ETV::Vector<T,S>::value_type>::type type;
+  struct ScalarType< ETV::Vector2<T,S> > {
+    typedef typename ScalarType<typename ETV::Vector2<T,S>::value_type>::type type;
   };
 
-  //! Specialization of %ValueType to Vector types
+  //! Specialization of %ValueType to Vector2 types
   template <typename T, typename S>
-  struct ValueType< ETV::Vector<T,S> > {
-    typedef typename ETV::Vector<T,S>::value_type type;
+  struct ValueType< ETV::Vector2<T,S> > {
+    typedef typename ETV::Vector2<T,S>::value_type type;
   };
 
-  //! Specialization of %IsADType to Vector types
+  //! Specialization of %IsADType to Vector2 types
   template <typename T, typename S>
-  struct IsADType< ETV::Vector<T,S> > {
+  struct IsADType< ETV::Vector2<T,S> > {
     static const bool value = true;
   };
 
-  //! Specialization of %IsADType to Vector types
+  //! Specialization of %IsADType to Vector2 types
   template <typename T, typename S>
-  struct IsScalarType< ETV::Vector<T,S> > {
+  struct IsScalarType< ETV::Vector2<T,S> > {
     static const bool value = false;
   };
 
-  //! Specialization of %Value to Vector types
+  //! Specialization of %Value to Vector2 types
   template <typename T, typename S>
-  struct Value< ETV::Vector<T,S> > {
-    typedef typename ValueType< ETV::Vector<T,S> >::type value_type;
-    static const value_type& eval(const ETV::Vector<T,S>& x) { 
+  struct Value< ETV::Vector2<T,S> > {
+    typedef typename ValueType< ETV::Vector2<T,S> >::type value_type;
+    static const value_type& eval(const ETV::Vector2<T,S>& x) { 
       return x.val(); }
   };
 
-  //! Specialization of %ScalarValue to Vector types
+  //! Specialization of %ScalarValue to Vector2 types
   template <typename T, typename S>
-  struct ScalarValue< ETV::Vector<T,S> > {
-    typedef typename ValueType< ETV::Vector<T,S> >::type value_type;
-    typedef typename ScalarType< ETV::Vector<T,S> >::type scalar_type;
-    static const scalar_type& eval(const ETV::Vector<T,S>& x) { 
+  struct ScalarValue< ETV::Vector2<T,S> > {
+    typedef typename ValueType< ETV::Vector2<T,S> >::type value_type;
+    typedef typename ScalarType< ETV::Vector2<T,S> >::type scalar_type;
+    static const scalar_type& eval(const ETV::Vector2<T,S>& x) { 
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
-  //! Specialization of %StringName to Vector types
+  //! Specialization of %StringName to Vector2 types
   template <typename T, typename S>
-  struct StringName< ETV::Vector<T,S> > {
+  struct StringName< ETV::Vector2<T,S> > {
     static std::string eval() { 
-      return std::string("Sacado::ETV::Vector< ") + 
+      return std::string("Sacado::ETV::Vector2< ") + 
 	StringName<T>::eval() + " >"; }
   };
 
-  //! Specialization of IsEqual to Vector types
+  //! Specialization of IsEqual to Vector2 types
   template <typename T, typename S>
-  struct IsEqual< ETV::Vector<T,S> > {
-    static bool eval(const ETV::Vector<T,S>& x, 
-		     const ETV::Vector<T,S>& y) {
+  struct IsEqual< ETV::Vector2<T,S> > {
+    static bool eval(const ETV::Vector2<T,S>& x, 
+		     const ETV::Vector2<T,S>& y) {
       return x.isEqualTo(y);
     }
   };
@@ -145,32 +145,32 @@ namespace Teuchos {
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename T, typename S>
-  struct PromotionTraits< Sacado::ETV::Vector<T,S>, 
-			  Sacado::ETV::Vector<T,S> > {
-    typedef typename Sacado::Promote< Sacado::ETV::Vector<T,S>,
-				      Sacado::ETV::Vector<T,S> >::type
+  struct PromotionTraits< Sacado::ETV::Vector2<T,S>, 
+			  Sacado::ETV::Vector2<T,S> > {
+    typedef typename Sacado::Promote< Sacado::ETV::Vector2<T,S>,
+				      Sacado::ETV::Vector2<T,S> >::type
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename T, typename S, typename R>
-  struct PromotionTraits< Sacado::ETV::Vector<T,S>, R > {
-    typedef typename Sacado::Promote< Sacado::ETV::Vector<T,S>, R >::type 
+  struct PromotionTraits< Sacado::ETV::Vector2<T,S>, R > {
+    typedef typename Sacado::Promote< Sacado::ETV::Vector2<T,S>, R >::type 
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename L, typename T, typename S>
-  struct PromotionTraits< L, Sacado::ETV::Vector<T,S> > {
+  struct PromotionTraits< L, Sacado::ETV::Vector2<T,S> > {
   public:
-    typedef typename Sacado::Promote< L, Sacado::ETV::Vector<T,S> >::type 
+    typedef typename Sacado::Promote< L, Sacado::ETV::Vector2<T,S> >::type 
     promote;
   };
 
   //! Specializtion of Teuchos::ScalarTraits
   template <typename T, typename S>
-  struct ScalarTraits< Sacado::ETV::Vector<T,S> > {
-    typedef Sacado::ETV::Vector<T,S> ScalarType;
+  struct ScalarTraits< Sacado::ETV::Vector2<T,S> > {
+    typedef Sacado::ETV::Vector2<T,S> ScalarType;
     typedef typename Sacado::ValueType<ScalarType>::type ValueT;
     
     typedef typename Sacado::mpl::apply<ScalarType,typename Teuchos::ScalarTraits<ValueT>::magnitudeType>::type magnitudeType;
@@ -278,20 +278,20 @@ namespace Teuchos {
       return std::pow(x,y); 
     }
 
-  }; // class ScalarTraits< Sacado::ETV::Vector<T,S> >
+  }; // class ScalarTraits< Sacado::ETV::Vector2<T,S> >
 }
 
 namespace Sacado {
   namespace ETV {
 
-   //! Serialization implementation for all Vector types
+   //! Serialization implementation for all Vector2 types
     template <typename Ordinal, typename T, typename S, typename Serializer>
-    struct SerializationImp {
+    struct SerializationImp2 {
 
     private:
 
-      //! VectorType
-      typedef Sacado::ETV::Vector<T,S> VecType;
+      //! Vector2Type
+      typedef Sacado::ETV::Vector2<T,S> VecType;
       
       //! How to serialize ints
       typedef Teuchos::SerializationTraits<Ordinal,int> iSerT;
@@ -310,31 +310,15 @@ namespace Sacado {
       /** \brief Return the number of bytes for <tt>count</tt> objects. */
       static Ordinal fromCountToIndirectBytes(const Serializer& vs,
 					      const Ordinal count, 
-					      const VecType buffer[],
-					      const Ordinal sz = 0) { 
+					      const VecType buffer[]) { 
 	Ordinal bytes = 0;
-	VecType *x = NULL;
-        const VecType *cx;
 	for (Ordinal i=0; i<count; i++) {
-	  int my_sz = buffer[i].size();
-	  int tot_sz = sz;
-	  if (sz == 0) tot_sz = my_sz;
-	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &tot_sz);
-	  if (tot_sz != my_sz) {
-            if (x == NULL)
-              x = new VecType;
-	    *x = buffer[i];
-            x->reset(tot_sz);
-            cx = x;
-	  }
-          else 
-            cx = &(buffer[i]);
-	  Ordinal b2 = vs.fromCountToIndirectBytes(tot_sz, cx->coeff());
+	  int sz = buffer[i].size();
+	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &sz);
+	  Ordinal b2 = vs.fromCountToIndirectBytes(sz, buffer[i].coeff());
 	  Ordinal b3 = oSerT::fromCountToIndirectBytes(1, &b2);
 	  bytes += b1+b2+b3;
 	}
-	if (x != NULL)
-          delete x;
 	return bytes;
       }
 
@@ -343,45 +327,28 @@ namespace Sacado {
 			     const Ordinal count, 
 			     const VecType buffer[], 
 			     const Ordinal bytes, 
-			     char charBuffer[],
-			     const Ordinal sz = 0) { 
-	VecType *x = NULL;
-        const VecType *cx;
+			     char charBuffer[]) { 
 	for (Ordinal i=0; i<count; i++) {
 	  // First serialize size
-	  int my_sz = buffer[i].size();
-	  int tot_sz = sz;
-	  if (sz == 0) tot_sz = my_sz;
-	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &tot_sz);
-	  iSerT::serialize(1, &tot_sz, b1, charBuffer);
+	  int sz = buffer[i].size();
+	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &sz);
+	  iSerT::serialize(1, &sz, b1, charBuffer);
 	  charBuffer += b1;
 	
 	  // Next serialize vector coefficients
-	  if (tot_sz != my_sz) {
-            if (x == NULL)
-              x = new VecType;
-	    *x = buffer[i];
-            x->reset(tot_sz);
-            cx = x;
-	  }
-          else 
-            cx = &(buffer[i]);
-	  Ordinal b2 = vs.fromCountToIndirectBytes(tot_sz, cx->coeff());
+	  Ordinal b2 = vs.fromCountToIndirectBytes(sz, buffer[i].coeff());
 	  Ordinal b3 = oSerT::fromCountToIndirectBytes(1, &b2);
 	  oSerT::serialize(1, &b2, b3, charBuffer); 
 	  charBuffer += b3;
-	  vs.serialize(tot_sz, cx->coeff(), b2, charBuffer);
+	  vs.serialize(sz, buffer[i].coeff(), b2, charBuffer);
 	  charBuffer += b2;
 	}
-	if (x != NULL)
-          delete x;
       }
 
       /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
       static Ordinal fromIndirectBytesToCount(const Serializer& vs,
 					      const Ordinal bytes, 
-					      const char charBuffer[],
-					      const Ordinal sz = 0) {
+					      const char charBuffer[]) {
 	Ordinal count = 0;
 	Ordinal bytes_used = 0;
 	while (bytes_used < bytes) {
@@ -409,29 +376,27 @@ namespace Sacado {
 			       const Ordinal bytes, 
 			       const char charBuffer[], 
 			       const Ordinal count, 
-			       VecType buffer[],
-			       const Ordinal sz = 0) { 
+			       VecType buffer[]) { 
 	for (Ordinal i=0; i<count; i++) {
 	
 	  // Deserialize size
 	  Ordinal b1 = iSerT::fromCountToDirectBytes(1);
-	  const int *my_sz = iSerT::convertFromCharPtr(charBuffer);
+	  const int *sz = iSerT::convertFromCharPtr(charBuffer);
 	  charBuffer += b1;
 	
-	  // Create empty Vector object of given size
-	  int tot_sz = sz;
-	  if (sz == 0) tot_sz = *my_sz;
-	  buffer[i] = VecType(tot_sz);
+	  // Create empty Vector2 object of given size
+	  buffer[i] = VecType(*sz);
 	
 	  // Deserialize vector coefficients
 	  Ordinal b3 = oSerT::fromCountToDirectBytes(1);
 	  const Ordinal *b2 = oSerT::convertFromCharPtr(charBuffer);
 	  charBuffer += b3;
-	  vs.deserialize(*b2, charBuffer, *my_sz, buffer[i].coeff());
+	  vs.deserialize(*b2, charBuffer, *sz, buffer[i].coeff());
 	  charBuffer += *b2;
 	}
       
       }
+  
       //@}
       
     };
@@ -444,14 +409,14 @@ namespace Teuchos {
 
   //! Specialization of %Teuchos::SerializationTraits
   template <typename Ordinal, typename T, typename S>
-  struct SerializationTraits<Ordinal, Sacado::ETV::Vector<T,S> > {
+  struct SerializationTraits<Ordinal, Sacado::ETV::Vector2<T,S> > {
 
   private:
 
-    //! VectorType
-    typedef Sacado::ETV::Vector<T,S> VecType;
+    //! Vector2Type
+    typedef Sacado::ETV::Vector2<T,S> VecType;
 
-    //! Value type of Vector type
+    //! Value type of Vector2 type
     typedef typename Sacado::ValueType<VecType>::type ValueT;
     
     //! Default serializer for values
@@ -461,7 +426,7 @@ namespace Teuchos {
     typedef typename DS::DefaultSerializerType ValueSerializer;
 
     //! Implementation
-    typedef Sacado::ETV::SerializationImp<Ordinal,T,S,ValueSerializer> Imp;
+    typedef Sacado::ETV::SerializationImp2<Ordinal,T,S,ValueSerializer> Imp;
 
     public:
 
@@ -510,48 +475,34 @@ namespace Teuchos {
 
   //! Specialization of %Teuchos::ValueTypeSerializer
   template <typename Ordinal, typename T, typename S>
-  class ValueTypeSerializer<Ordinal, Sacado::ETV::Vector<T,S> > {
+  class ValueTypeSerializer<Ordinal, Sacado::ETV::Vector2<T,S> > {
 
   private:
 
-    //! VectorType
-    typedef Sacado::ETV::Vector<T,S> VecType;
+    //! Vector2Type
+    typedef Sacado::ETV::Vector2<T,S> VecType;
 
-    //! Value type of Vector type
+    //! Value type of Vector2 type
     typedef typename Sacado::ValueType<VecType>::type ValueT;
 
     //! Serializer for values
     typedef ValueTypeSerializer<Ordinal,ValueT> ValueSerializer;
 
     //! Implementation
-    typedef Sacado::ETV::SerializationImp<Ordinal,T,S,ValueSerializer> Imp;
+    typedef Sacado::ETV::SerializationImp2<Ordinal,T,S,ValueSerializer> Imp;
     
     //! Serializer for value types
     Teuchos::RCP<const ValueSerializer> vs;
-
-    //! Specified number of vector components;
-    Ordinal sz;
     
   public:
-
-    //! Typename of value serializer
-    typedef ValueSerializer value_serializer_type;
     
     /// \brief Whether we support direct serialization.
     static const bool supportsDirectSerialization = 
       Imp::supportsDirectSerialization;
     
     //! Constructor
-    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs_,
-			Ordinal sz_ = 0) :
-      vs(vs_), sz(sz_) {}
-
-    //! Return specified serializer size
-    Ordinal getSerializerSize() const { return sz; }
-      
-    //! Get nested value serializer
-    Teuchos::RCP<const value_serializer_type> getValueSerializer() const { 
-      return vs; }
+    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs_) :
+      vs(vs_) {}
     
     //! @name Indirect serialization functions (always defined and supported) 
     //@{
@@ -559,7 +510,7 @@ namespace Teuchos {
     /** \brief Return the number of bytes for <tt>count</tt> objects. */
     Ordinal fromCountToIndirectBytes(const Ordinal count, 
 				     const VecType buffer[]) const { 
-      return Imp::fromCountToIndirectBytes(*vs, count, buffer, sz);
+      return Imp::fromCountToIndirectBytes(*vs, count, buffer);
     }
     
     /** \brief Serialize to an indirect <tt>char[]</tt> buffer. */
@@ -567,13 +518,13 @@ namespace Teuchos {
 		    const VecType buffer[], 
 		    const Ordinal bytes, 
 		    char charBuffer[]) const { 
-      Imp::serialize(*vs, count, buffer, bytes, charBuffer, sz);
+      Imp::serialize(*vs, count, buffer, bytes, charBuffer);
     }
     
     /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
     Ordinal fromIndirectBytesToCount(const Ordinal bytes, 
 				     const char charBuffer[]) const {
-      return Imp::fromIndirectBytesToCount(*vs, bytes, charBuffer, sz);
+      return Imp::fromIndirectBytesToCount(*vs, bytes, charBuffer);
     }
     
     /** \brief Deserialize from an indirect <tt>char[]</tt> buffer. */
@@ -581,7 +532,7 @@ namespace Teuchos {
 		      const char charBuffer[], 
 		      const Ordinal count, 
 		      VecType buffer[]) const { 
-      return Imp::deserialize(*vs, bytes, charBuffer, count, buffer, sz);
+      return Imp::deserialize(*vs, bytes, charBuffer, count, buffer);
     }
     
     //@}
