@@ -721,7 +721,7 @@ namespace stk {
               }
             breaker.setRemoveOldElements(remove_original_elements);
             breaker.setQueryPassOnly(query_only == 1);
-            breaker.setDoProgressMeter(progress_meter == 1);
+            breaker.setDoProgressMeter(progress_meter == 1 && 0 == p_rank);
             //breaker.setIgnoreSideSets(true);
 
             for (int iBreak = 0; iBreak < number_refines; iBreak++)

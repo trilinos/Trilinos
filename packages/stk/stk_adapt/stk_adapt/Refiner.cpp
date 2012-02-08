@@ -822,7 +822,8 @@ namespace stk {
                 bool count_only = false;
                 bool doAllElements = true;
 
-                unsigned num_elem_not_ghost_0_incr = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks,
+                unsigned num_elem_not_ghost_0_incr = doForAllElements(irank, "Register New Nodes",
+                                                                      ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks,
                                                                       count_only, doAllElements);
 
                 num_elem_not_ghost_0 += num_elem_not_ghost_0_incr;
@@ -874,7 +875,7 @@ namespace stk {
 
                 bool count_only = false;
                 bool doAllElements = false;  // only do ghost elements
-                num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
+                num_elem = doForAllElements(irank, "Check For Comm", ranks[irank], &NodeRegistry::checkForRemote, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
               }
             }
           m_nodeRegistry->endCheckForRemote();                /**/   TRACE_PRINT("Refiner: endCheckForRemote (top-level rank)... ");
@@ -920,7 +921,7 @@ namespace stk {
 
                 bool count_only = false;
                 bool doAllElements = false;   // ghost elements only
-                num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks,  count_only, doAllElements);
+                num_elem = doForAllElements(irank, "Get From Remote", ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks,  count_only, doAllElements);
               }
             }
 
@@ -983,7 +984,7 @@ namespace stk {
             bool count_only = true;
             bool doAllElements = true;
             /**/                                                TRACE_PRINT("Refiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... ");
-            unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
+            unsigned num_elem_not_ghost = doForAllElements(irank, "Register New Nodes", ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
             /**/                                                TRACE_PRINT("Refiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... done ");
 
             unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
@@ -1013,7 +1014,7 @@ namespace stk {
           /**/                                                TRACE_PRINT("Refiner: createElementsAndNodesAndConnectLocal... ");
           /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL);
 
-          createElementsAndNodesAndConnectLocal(ranks[irank], m_breakPattern[irank], elementColors, needed_entity_ranks, new_elements);
+          createElementsAndNodesAndConnectLocal(irank, ranks[irank], m_breakPattern[irank], elementColors, needed_entity_ranks, new_elements);
 
           /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL);
           /**/                                                TRACE_PRINT("Refiner: createElementsAndNodesAndConnectLocal...done ");
@@ -1076,34 +1077,17 @@ namespace stk {
           //           m_eMesh.adapt_parent_to_child_relations().clear();
           /***********************/                           TRACE_PRINT("Refiner: fixElementSides1...done ");
 
-          if (m_doProgress)
-            {
-              ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "removeOldElements");
-              notifyObservers(&pd);
-            }
-
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
-              if (m_doProgress)
-                {
-                  ProgressMeterData pd(ProgressMeterData::RUNNING, 100.0*((double)irank)/((double)ranks.size()), "removeOldElements" );
-                  notifyObservers(&pd);
-                }
 
 #if PERCEPT_USE_FAMILY_TREE
               if (irank == 0)
                 removeFamilyTrees();
 #endif
-              removeOldElements(ranks[irank], m_breakPattern[irank]);
+              removeOldElements(irank, ranks[irank], m_breakPattern[irank]);
               renameNewParts(ranks[irank], m_breakPattern[irank]);
               fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
             }
-          if (m_doProgress)
-            {
-              ProgressMeterData pd(ProgressMeterData::FINI, 0.0, "removeOldElements");
-              notifyObservers(&pd);
-            }
-
         }
 
       // remove any elements that are empty (these can exist when doing local refinement)
@@ -1794,7 +1778,8 @@ namespace stk {
 #endif
 
     unsigned Refiner::
-    doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
+    doForAllElements(unsigned irank, std::string function_info,
+                     stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
                      vector< ColorerSetType >& elementColors, unsigned elementType,
                      vector<NeededEntityType>& needed_entity_ranks,
                      bool only_count, bool doAllElements)
@@ -1807,9 +1792,10 @@ namespace stk {
       if (m_doProgress)
         {
           m_doProgress = false;
-          progress_meter_num_total = doForAllElements(rank, function, elementColors, elementType, needed_entity_ranks,  true, doAllElements);
+          progress_meter_num_total = doForAllElements(irank, function_info, rank, function, elementColors, elementType, needed_entity_ranks,  true, doAllElements);
           m_doProgress = true;
-          ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "NodeRegistry passes");
+          std::ostringstream oss; oss << function_info <<" [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+          ProgressMeterData pd(ProgressMeterData::INIT, 0.0, oss.str());
           notifyObservers(&pd);
         }
       int progress_meter_when_to_post = progress_meter_num_total / m_progress_meter_frequency;
@@ -1855,8 +1841,9 @@ namespace stk {
 
               if (m_doProgress && (num_elem % progress_meter_when_to_post == 0) )
                 {
-                  double progress_meter_percent = 100.0*((double)num_elem)/d_progress_meter_num_total;
-                  ProgressMeterData pd(ProgressMeterData::RUNNING, progress_meter_percent, "NodeRegistry passes");
+                  double progress_meter_percent = 100.0*((double)num_elem)/std::max(d_progress_meter_num_total,1.0);
+                  std::ostringstream oss; oss << function_info << " [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+                  ProgressMeterData pd(ProgressMeterData::RUNNING, progress_meter_percent, oss.str());
                   notifyObservers(&pd);
                   if (0) std::cout << "progress_meter_percent = " << progress_meter_percent << std::endl;
                 }
@@ -1866,7 +1853,8 @@ namespace stk {
 
       if (m_doProgress)
         {
-          ProgressMeterData pd(ProgressMeterData::FINI, 0.0, "NodeRegistry passes");
+          std::ostringstream oss; oss << function_info << " [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+          ProgressMeterData pd(ProgressMeterData::FINI, 0.0, oss.str());
           notifyObservers(&pd);
         }
 
@@ -1874,7 +1862,7 @@ namespace stk {
     }
 
     void Refiner::
-    createElementsAndNodesAndConnectLocal(stk::mesh::EntityRank rank, UniformRefinerPatternBase *breakPattern,
+    createElementsAndNodesAndConnectLocal(unsigned irank, stk::mesh::EntityRank rank, UniformRefinerPatternBase *breakPattern,
                                           vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,
                                           vector<stk::mesh::Entity *>& new_elements_pool)
     {
@@ -1908,7 +1896,8 @@ namespace stk {
         }
       if (m_doProgress)
         {
-          ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "createElementsAndNodesAndConnectLocal");
+          std::ostringstream oss; oss << "Create Elements pass [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+          ProgressMeterData pd(ProgressMeterData::INIT, 0.0, oss.str());
           notifyObservers(&pd);
         }
 
@@ -1944,7 +1933,8 @@ namespace stk {
                 }
               if (m_doProgress && (jele % printEvery == 0))
                 {
-                  ProgressMeterData pd(ProgressMeterData::RUNNING, 100.0*((double)jele)/((double)nele), "createElementsAndNodesAndConnectLocal RUN" );
+                  std::ostringstream oss; oss << "Create Elements pass [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+                  ProgressMeterData pd(ProgressMeterData::RUNNING, 100.0*((double)jele)/((double)std::max(nele,1)), oss.str());
                   notifyObservers(&pd);
                 }
 
@@ -2002,7 +1992,8 @@ namespace stk {
 
       if (m_doProgress)
         {
-          ProgressMeterData pd(ProgressMeterData::FINI, 0.0, "createElementsAndNodesAndConnectLocal");
+          std::ostringstream oss; oss << "Create Elements pass [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+          ProgressMeterData pd(ProgressMeterData::FINI, 0.0, oss.str());
           notifyObservers(&pd);
         }
 
@@ -2793,7 +2784,7 @@ namespace stk {
 
       int spatialDim = m_eMesh.getSpatialDim();
 
-      std::cout << "tmp fix_side_sets_2 side_rank= " << side_rank << " element_rank= " << element_rank << std::endl;
+      //std::cout << "tmp fix_side_sets_2 side_rank= " << side_rank << " element_rank= " << element_rank << std::endl;
 
       // loop over all sides that are leaves (not parent or have no family tree), 
       //   loop over their nodes and their associated elements,
@@ -3129,7 +3120,7 @@ namespace stk {
     }
 
     void Refiner::
-    removeOldElements(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
+    removeOldElements(unsigned irank, stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
     {
       EXCEPTWATCH;
 
@@ -3206,17 +3197,40 @@ namespace stk {
                 }
             }
         }
-      removeElements(elements_to_be_destroyed);
+      removeElements(elements_to_be_destroyed, irank);
 
     }
 
-    void Refiner::removeElements(elements_to_be_destroyed_type& elements_to_be_destroyed)
+    void Refiner::removeElements(elements_to_be_destroyed_type& elements_to_be_destroyed, unsigned irank)
     {
       elements_to_be_destroyed_type elements_to_be_destroyed_pass2;
+
+      if (m_doProgress)
+        {
+          std::ostringstream oss; oss << "Delete Original Elements pass [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+          ProgressMeterData pd(ProgressMeterData::INIT, 0.0, oss.str());
+          notifyObservers(&pd);
+        }
+      unsigned num_elem = 0;
+      int progress_meter_num_total = elements_to_be_destroyed.size();
+      int progress_meter_when_to_post = progress_meter_num_total / m_progress_meter_frequency;
+      if (0 == progress_meter_when_to_post)
+        progress_meter_when_to_post = 1;
+      double d_progress_meter_num_total = progress_meter_num_total;
 
       for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed.begin(); itbd != elements_to_be_destroyed.end();  ++itbd)
         {
           stk::mesh::Entity *element_p = *itbd;
+
+          if (m_doProgress && (num_elem % progress_meter_when_to_post == 0) )
+            {
+              double progress_meter_percent = 100.0*((double)num_elem)/std::max(d_progress_meter_num_total,1.0);
+              std::ostringstream oss; oss << "Delete Original Elements pass [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+              ProgressMeterData pd(ProgressMeterData::RUNNING, progress_meter_percent, oss.str());
+              notifyObservers(&pd);
+            }
+
+          ++num_elem;
 
           if (0)
             {
@@ -3234,6 +3248,13 @@ namespace stk {
               //throw std::logic_error("Refiner::removeElements couldn't remove element");
 
             }
+        }
+
+      if (m_doProgress)
+        {
+          std::ostringstream oss; oss << "Delete Original Elements pass [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+          ProgressMeterData pd(ProgressMeterData::FINI, 0.0, oss.str());
+          notifyObservers(&pd);
         }
 
       //std::cout << "tmp Refiner::removeElements pass2 size = " << elements_to_be_destroyed_pass2.size() << std::endl;
@@ -3421,7 +3442,7 @@ namespace stk {
                 }
             }
 
-          std::cout << "tmp Refiner::set_active_part: child_entities= " << child_entities.size() << " parent_entities= " << parent_entities.size() << std::endl;
+          //std::cout << "tmp Refiner::set_active_part: child_entities= " << child_entities.size() << " parent_entities= " << parent_entities.size() << std::endl;
           for (unsigned iv=0; iv < child_entities.size(); iv++)
             {
               m_eMesh.getBulkData()->change_entity_parts( *child_entities[iv],   child_parts, parent_parts );

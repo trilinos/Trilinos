@@ -234,7 +234,8 @@ namespace stk {
        */
 
       virtual unsigned
-      doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
+      doForAllElements(unsigned irank, std::string function_info,
+                       stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
                        vector< ColorerSetType >& elementColors, unsigned elementType,
                        vector<NeededEntityType>& needed_entity_ranks,  
                        bool only_count=false, bool doAllElements=true) ;
@@ -256,7 +257,7 @@ namespace stk {
        *  A sample implementation is shown in @see UniformRefiner
        */
       virtual void
-      createElementsAndNodesAndConnectLocal(unsigned irank,  UniformRefinerPatternBase* breakPattern,
+      createElementsAndNodesAndConnectLocal(unsigned irank,  stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern,
                                             vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,
                                             vector<stk::mesh::Entity *>& new_elements_pool) ;
 
@@ -281,10 +282,10 @@ namespace stk {
       removeFamilyTrees();
 
       void
-      removeOldElements(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern );
+      removeOldElements(unsigned irank, stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern );
 
       void
-      removeElements( elements_to_be_destroyed_type& elements_to_be_destroyed);
+      removeElements( elements_to_be_destroyed_type& elements_to_be_destroyed, unsigned irank=0);
 
       void
       removeEmptyElements();
