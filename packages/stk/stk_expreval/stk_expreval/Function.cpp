@@ -146,6 +146,17 @@ extern "C" {
     return std::sqrt((x * x) + (y * y));
   }
 
+  static double cosine_ramp(double t, double rampTime) {
+    if( t < rampTime ) 
+    {
+      return (1.0 - std::cos(t*s_pi/rampTime))/2.0;
+    }
+    else 
+    {
+      return 1.0;
+    }
+  }
+
   static double recttopola(double x, double y) {
     double tmp = std::atan2(y, x);
 
@@ -208,6 +219,8 @@ CFunctionMap::CFunctionMap()
   (*this)["rad"] = new CFunction1(rad);
   (*this)["recttopola"] = new CFunction2(recttopola);
   (*this)["recttopolr"] = new CFunction2(recttopolr);
+
+  (*this)["cosine_ramp"] = new CFunction2(cosine_ramp);
 }
 
 

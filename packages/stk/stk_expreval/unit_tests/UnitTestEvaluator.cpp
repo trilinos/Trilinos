@@ -153,7 +153,7 @@ const char *name##_expr = #expr1
 
 #define EXPREVAL_DEFINE_TEST1(name,expr) EXPREVAL_DEFINE_TEST(name,expr,expr)
 
-  // Hiearchy tests
+// Hierarchy tests
 EXPREVAL_DEFINE_TEST1(h1, x*1.0/2.0*3.0);
 EXPREVAL_DEFINE_TEST1(h2, x*1.0/2.0*3.0);
 EXPREVAL_DEFINE_TEST1(h3, x*(4.0+5.0)/6.0);
@@ -175,9 +175,9 @@ EXPREVAL_DEFINE_TEST1(h18, x - -7);
 EXPREVAL_DEFINE_TEST1(h19, x - -x);
 EXPREVAL_DEFINE_TEST1(h20, x - - - 7);
 
-  // Function tests
+// Function tests
 EXPREVAL_DEFINE_TEST(f1, abs(x), fabs(x));
-EXPREVAL_DEFINE_TEST(f2, mod(x,10.0),fmod(x,10.0));
+EXPREVAL_DEFINE_TEST(f2, mod(x,10.0), fmod(x,10.0));
 EXPREVAL_DEFINE_TEST1(f3, fabs(x));
 EXPREVAL_DEFINE_TEST1(f4, fmod(x,10.0));
 EXPREVAL_DEFINE_TEST1(f5, acos(x));
@@ -207,6 +207,7 @@ EXPREVAL_DEFINE_TEST(f28, recttopola(x,1.0),atan2(1.0, x));
 EXPREVAL_DEFINE_TEST(f29, poltorectx(x,PI/4.0),x*cos(stk::expreval::s_pi/4.0));
 EXPREVAL_DEFINE_TEST(f30, poltorecty(x,PI/4.0),x*sin(stk::expreval::s_pi/4.0));
 EXPREVAL_DEFINE_TEST1(f31, 0.4209+4.5e-4*x);
+EXPREVAL_DEFINE_TEST1(f32, cosine_ramp(x, 1.0), (1.0-cos(x*stk::expreval::s_pi/1.0)/2);
 
 // EXPREVAL_DEFINE_TEST2(f1, fpart(x),modf(x,&y));
 // EXPREVAL_DEFINE_TEST2(f1, rand(x),rand());
