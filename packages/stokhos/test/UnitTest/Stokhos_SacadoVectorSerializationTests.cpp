@@ -333,13 +333,58 @@ bool testNestedSerialization(Teuchos::Array<VecType>& x,
 	std::string(#Vec) + " Nested Empty All", out);			\
   }
 
-typedef Stokhos::StandardStorage<int,double> storage_type;
-typedef Sacado::Fad::DFad<double> fad_type;
 namespace VecTest {
   Sacado::Random<double> rnd;
+  typedef Stokhos::StandardStorage<int,double> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::ETV::Vector<double,storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_SERIALIZATION_TESTS(vec_type, fad_type, Vector)
+}
+
+namespace StaticVecTest {
+  Sacado::Random<double> rnd;
+  typedef Stokhos::StaticStandardStorage<int,double,100> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::ETV::Vector<double,storage_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_SERIALIZATION_TESTS(vec_type, fad_type, StaticVector)
+}
+
+namespace StaticFixedVecTest {
+  Sacado::Random<double> rnd;
+  typedef Stokhos::StaticFixedStandardStorage<int,double,100> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::ETV::Vector<double,storage_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_SERIALIZATION_TESTS(vec_type, fad_type, StaticFixedVector)
+}
+
+namespace VecTest2 {
+  Sacado::Random<double> rnd;
+  typedef Stokhos::StandardStorage<int,double> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::ETV::Vector2<double,storage_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_SERIALIZATION_TESTS(vec_type, fad_type, Vector2)
+}
+
+namespace StaticVecTest2 {
+  Sacado::Random<double> rnd;
+  typedef Stokhos::StaticStandardStorage<int,double,100> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::ETV::Vector2<double,storage_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_SERIALIZATION_TESTS(vec_type, fad_type, StaticVector2)
+}
+
+namespace StaticFixedVecTest2 {
+  Sacado::Random<double> rnd;
+  typedef Stokhos::StaticFixedStandardStorage<int,double,100> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::ETV::Vector2<double,storage_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_SERIALIZATION_TESTS(vec_type, fad_type, StaticFixedVector2)
 }
 
 int main( int argc, char* argv[] ) {

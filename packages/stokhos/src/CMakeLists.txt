@@ -244,6 +244,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_ETV_Vector.hpp
     sacado/Sacado_ETV_VectorImp.hpp
     sacado/Sacado_ETV_VectorOps.hpp
+    sacado/Sacado_ETV_ScalarTraitsImp.hpp
     sacado/Sacado_ETV_VectorTraits.hpp
     sacado/Sacado_ETV_Vector2.hpp
     sacado/Sacado_ETV_Vector2Imp.hpp

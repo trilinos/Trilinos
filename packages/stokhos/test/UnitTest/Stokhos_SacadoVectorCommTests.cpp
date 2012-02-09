@@ -224,7 +224,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_MinAll ) {				\
 									\
   Teuchos::Array<VecType> x(n), mins(n), mins2(n);			\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz, 0.0);						\
+    x[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
   }									\
@@ -249,7 +249,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_ScanSum ) {				\
 									\
   Teuchos::Array<VecType> x(n), sums(n), sums2(n);			\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz, 0.0);						\
+    x[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = 2.0*(i+1);				\
   }									\
@@ -274,7 +274,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_ScanMax ) {				\
 									\
   Teuchos::Array<VecType> x(n), maxs(n), maxs2(n);			\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz, 0.0);						\
+    x[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
   }									\
@@ -299,7 +299,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_ScanMin ) {				\
 									\
   Teuchos::Array<VecType> x(n), mins(n), mins2(n);			\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz, 0.0);						\
+    x[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
   }									\
@@ -325,7 +325,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_SendReceive ) {			\
     int n = 7;								\
     Teuchos::Array<VecType> x(n), x2(n);				\
     for (int i=0; i<n; i++) {						\
-      x[i] = VecType(setup.sz, 0.0);						\
+      x[i] = VecType(setup.sz, 0.0);					\
       for (int j=0; j<setup.sz; j++)					\
 	x[i].fastAccessCoeff(j) = 2.0*(i+1)*(j+1);			\
     }									\
@@ -653,14 +653,64 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_SendReceive ) {			\
     success = true;							\
 }
 
-typedef int Ordinal;
-typedef Stokhos::StandardStorage<int,double> storage_type;
-typedef Sacado::Fad::DFad<double> fad_type;
 namespace VecTest {
   Sacado::Random<double> rnd;
+  typedef int Ordinal;
+  typedef Stokhos::StandardStorage<int,double> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::ETV::Vector<double,storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
-  VEC_COMM_TESTS(vec_type, fad_type, OrthogPoly, DFad)
+  VEC_COMM_TESTS(vec_type, fad_type, Vector, DFad)
+}
+
+namespace StaticVecTest {
+  Sacado::Random<double> rnd;
+  typedef int Ordinal;
+  typedef Stokhos::StaticStandardStorage<int,double,100> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::ETV::Vector<double,storage_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_COMM_TESTS(vec_type, fad_type, StaticVector, DFad)
+}
+
+namespace StaticFixedVecTest {
+  Sacado::Random<double> rnd;
+  typedef int Ordinal;
+  typedef Stokhos::StaticFixedStandardStorage<int,double,100> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::ETV::Vector<double,storage_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_COMM_TESTS(vec_type, fad_type, StaticFixedVector, DFad)
+}
+
+namespace VecTest2 {
+  Sacado::Random<double> rnd;
+  typedef int Ordinal;
+  typedef Stokhos::StandardStorage<int,double> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::ETV::Vector2<double,storage_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_COMM_TESTS(vec_type, fad_type, Vector2, DFad)
+}
+
+namespace StaticVecTest2 {
+  Sacado::Random<double> rnd;
+  typedef int Ordinal;
+  typedef Stokhos::StaticStandardStorage<int,double,100> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::ETV::Vector2<double,storage_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_COMM_TESTS(vec_type, fad_type, StaticVector2, DFad)
+}
+
+namespace StaticFixedVecTest2 {
+  Sacado::Random<double> rnd;
+  typedef int Ordinal;
+  typedef Stokhos::StaticFixedStandardStorage<int,double,100> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::ETV::Vector2<double,storage_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_COMM_TESTS(vec_type, fad_type, StaticFixedVector2, DFad)
 }
 
 int main( int argc, char* argv[] ) {

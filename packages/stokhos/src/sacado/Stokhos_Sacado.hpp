@@ -37,8 +37,12 @@
 #include "Stokhos.hpp"
 
 // Sacado overloaded operators for Stokhos
+#include "Stokhos_StandardStorage.hpp"
+#include "Stokhos_StaticStandardStorage.hpp"
+#include "Stokhos_StaticFixedStandardStorage.hpp"
 #include "Sacado_PCE_OrthogPoly.hpp"
 #include "Sacado_ETPCE_OrthogPoly.hpp"
 #include "Sacado_ETV_Vector.hpp"
+#include "Sacado_ETV_Vector2.hpp"
 
 #endif // STOKHOS_SACADO_HPP 

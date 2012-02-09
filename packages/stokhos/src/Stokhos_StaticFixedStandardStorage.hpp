@@ -56,14 +56,12 @@ namespace Stokhos {
     //! Constructor
     StaticFixedStandardStorage(const ordinal_type& sz,
 			       const value_type& x = value_type(0.0)) { 
-      //ss::zero(coeff_, Num); 
       std::fill(coeff_, coeff_+Num, x); 
     }
 
     //! Copy constructor
     StaticFixedStandardStorage(const StaticFixedStandardStorage& s) {
-      //ss::copy(s.coeff_, coeff_, Num);
-      std::copy(s.coeff_, s.coeff_+Num, coeff_);
+      ss::copy(s.coeff_, coeff_, Num);
     }
 
     //! Destructor
@@ -71,31 +69,26 @@ namespace Stokhos {
 
     //! Assignment operator
     StaticFixedStandardStorage& operator=(const StaticFixedStandardStorage& s) {
-      //ss::copy(s.coeff_, coeff_, Num);
-      std::copy(s.coeff_, s.coeff_+Num, coeff_);
+      ss::copy(s.coeff_, coeff_, Num);
       return *this;
     }
 
     //! Initialize values to a constant value
-    void init(const_reference v) { std::fill(coeff_, coeff_+Num, v); }
+    void init(const_reference v) { 
+      std::fill(coeff_, coeff_+Num, v); 
+    }
 
     //! Initialize values to an array of values
     void init(const_pointer v, const ordinal_type& sz_ = 0) {
-      // if (sz_ == 0)
-      // 	ss::copy(v, coeff_, Num);
-      // else
-      // 	ss::copy(v, coeff_, sz_);
-
       if (sz_ == 0)
-	std::copy(v, v+Num, coeff_);
+      	ss::copy(v, coeff_, Num);
       else
-	std::copy(v, v+sz_, coeff_);
+      	ss::copy(v, coeff_, sz_);
     }
 
     //! Load values to an array of values
     void load(pointer v) { 
-      //ss::copy(coeff_, v, Num); 
-      std::copy(coeff_, coeff_+Num, v);
+      ss::copy(coeff_, v, Num); 
     }
 
     //! Resize to new size (values are preserved)
