@@ -174,6 +174,12 @@ extern "C" {
     }
   }
 
+  ///Returns -1,0, or 1 depending on whether x is negative, zero, or positive.
+  static double sign(double a)  {
+    if(a==0.0) return 0.0;
+    return (a > 0.0 ) ? 1.0 : -1.0;
+  }
+
   static double recttopola(double x, double y) {
     double tmp = std::atan2(y, x);
 
@@ -240,6 +246,7 @@ CFunctionMap::CFunctionMap()
   (*this)["recttopolr"] = new CFunction2(recttopolr);
 
   (*this)["cosine_ramp"] = new CFunction2(cosine_ramp);
+  (*this)["sign"] = new CFunction1(sign);
 }
 
 
