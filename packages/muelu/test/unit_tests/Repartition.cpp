@@ -14,6 +14,7 @@
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_ExportFactory.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -58,7 +59,7 @@ namespace MueLuTests {
     GO numGlobalElements = nx*ny; //24
 
     // Describes the initial layout of matrix rows across processors.
-    size_t numMyElements;
+    size_t numMyElements=0;
     switch(mypid) {
        case 0:
          numMyElements = 6;
@@ -149,7 +150,7 @@ namespace MueLuTests {
     // This test uses a made up partitioning  that is given via Level to Repartition.  It must be
     // associated with an instance of the ZoltanInterface so that it can be found inside
     // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
-    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(3));
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     level.Request("partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
@@ -191,7 +192,7 @@ namespace MueLuTests {
     GO numGlobalElements = nx*ny; //24
 
     // Describes the initial layout of matrix rows across processors.
-    size_t numMyElements;
+    size_t numMyElements=0;
     switch(mypid) {
        case 0:
          numMyElements = 6;
@@ -281,7 +282,7 @@ namespace MueLuTests {
     // This test uses a made up partitioning  that is given via Level to Repartition.  It must be
     // associated with an instance of the ZoltanInterface so that it can be found inside
     // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
-    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(3));
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     level.Request("partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
@@ -324,7 +325,7 @@ namespace MueLuTests {
     GO numGlobalElements = nx*ny; //15
 
     // Describes the initial layout of matrix rows across processors.
-    size_t numMyElements;
+    size_t numMyElements=0;
     switch(mypid) {
        case 0:
          numMyElements = 8;
@@ -405,7 +406,7 @@ namespace MueLuTests {
     // This test uses a made up partitioning  that is given via Level to Repartition.  It must be
     // associated with an instance of the ZoltanInterface so that it can be found inside
     // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
-    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(3));
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     level.Request("partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
@@ -448,7 +449,7 @@ namespace MueLuTests {
     GO numGlobalElements = nx*ny; //15
 
     // Describes the initial layout of matrix rows across processors.
-    size_t numMyElements;
+    size_t numMyElements=0;
     switch(mypid) {
        case 0:
          numMyElements = 3;
@@ -529,7 +530,8 @@ namespace MueLuTests {
     // This test uses a made up partitioning  that given via Level to Repartition.  It must be
     // associated with an instance of the ZoltanInterface so that it can be found inside
     // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
-    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(3));
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
+    level.Set<GO>("number of partitions",3);
     level.Request("partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
@@ -572,7 +574,7 @@ namespace MueLuTests {
     GO numGlobalElements = nx*ny; //15
 
     // Describes the initial layout of unknowns across processors. Note that PID 2 initially has 0 unknowns.
-    size_t numMyElements;
+    size_t numMyElements=0;
     switch(mypid) {
        case 0:
          numMyElements = 6;
@@ -653,7 +655,8 @@ namespace MueLuTests {
     // This test uses a made up partitioning  that is given via Level to Repartition.  It must be
     // associated with an instance of the ZoltanInterface so that it can be found inside
     // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
-    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(3));
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
+    level.Set<GO>("number of partitions",3);
     level.Request("partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
@@ -706,5 +709,162 @@ namespace MueLuTests {
     TEST_EQUALITY(whichPidFailed,-1);
 
   } //Build
+
+  TEUCHOS_UNIT_TEST(Repartition, Correctness)
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Tests application of the permutation matrix to matrix A." << std::endl;
+    out << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    int mypid = comm->getRank();
+
+    if (comm->getSize() != 4) {
+      std::cout << std::endl;
+      std::cout << "This test must be run on 4 processors!" << std::endl << std::endl;
+      return;
+    }
+
+    Level level;
+    RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+    level.SetFactoryManager(factoryHandler);
+    int nx=3;
+    int ny=5;
+    GO numGlobalElements = nx*ny; //15
+
+    // Describes the initial layout of unknowns across processors. Note that PID 2 initially has 0 unknowns.
+    size_t numMyElements=0;
+    switch(mypid) {
+       case 0:
+         numMyElements = 6;
+         break;
+       case 1:
+         numMyElements = 5;
+         break;
+       case 2:
+         numMyElements = 0;
+         break;
+       case 3:
+         numMyElements = 4;
+         break;
+    } //switch
+    GO indexBase = 0;
+    RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
+    
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx",nx);
+    matrixList.set("ny",ny);
+    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    level.Set<RCP<Operator> >("A",Op);
+
+    Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
+    if (decomposition->getLocalLength() > 0)
+      partitionThisDofBelongsTo = decomposition->getDataNonConst(0);
+
+    // Indicate the number of partitions that there should be.
+    level.Set<GO>("number of partitions",3);
+
+    /* Assign the partition that each unknown belongs to.  In this case,
+
+       partition 0 has 6 unknowns 
+       partition 1 has 4 unknowns 
+       partition 2 has 5 unknowns 
+       there is no partition 3
+    */
+
+    switch (mypid)  {
+      case 0:
+        partitionThisDofBelongsTo[0] = 0;
+        partitionThisDofBelongsTo[1] = 1;
+        partitionThisDofBelongsTo[2] = 2;
+        partitionThisDofBelongsTo[3] = 0;
+        partitionThisDofBelongsTo[4] = 2;
+        partitionThisDofBelongsTo[5] = 2;
+        break;
+      case 1:
+        partitionThisDofBelongsTo[0] = 0;
+        partitionThisDofBelongsTo[1] = 1;
+        partitionThisDofBelongsTo[2] = 0;
+        partitionThisDofBelongsTo[3] = 2;
+        partitionThisDofBelongsTo[4] = 1;
+        break;
+      case 2:
+        break;
+      case 3:
+        partitionThisDofBelongsTo[0] = 2;
+        partitionThisDofBelongsTo[1] = 0;
+        partitionThisDofBelongsTo[2] = 0;
+        partitionThisDofBelongsTo[3] = 1;
+        break;
+      default:
+        break;
+    } //switch
+
+    RCP<Vector> decompositionAsScalar = VectorFactory::Build(map,false);
+    Teuchos::ArrayRCP<SC> das;
+    if (decompositionAsScalar->getLocalLength() > 0)
+      das = decompositionAsScalar->getDataNonConst(0);
+    for (int i=0; i<das.size(); ++i)
+      das[i] = partitionThisDofBelongsTo[i];
+    das = Teuchos::null;
+
+    partitionThisDofBelongsTo = Teuchos::null;
+
+    // This test uses a made up partitioning  that is given via Level to Repartition.  It must be
+    // associated with an instance of the ZoltanInterface so that it can be found inside
+    // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
+    level.Set<GO>("number of partitions",3);
+    level.Request("partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
+    RCP<Repartition> repart = rcp(new Repartition(zoltan));
+    level.Request("Permutation",repart.get());  // request permutation matrix
+
+    repart->Build(level);
+
+    RCP<Operator> permMat;
+    level.Get("Permutation",permMat,repart.get());
+    RCP<Operator> PermTimesA = Utils::TwoMatrixMultiply(permMat,false,Op,false);
+
+RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+fos->setOutputToRootOnly(-1);
+
+    // Calculate vectors y1=Perm*(A*v) and y2 = (Perm*A)*v for random vector v. They should be identical.
+    RCP<Vector> randomVec = VectorFactory::Build(Op->getDomainMap(),false);
+    randomVec->randomize();
+    RCP<Vector> workVec = VectorFactory::Build(Op->getRangeMap(),false);
+    RCP<Vector> P_Av = VectorFactory::Build(PermTimesA->getRangeMap(),false);
+    RCP<Vector> PA_v = VectorFactory::Build(PermTimesA->getRangeMap(),false);
+    PermTimesA->apply(*randomVec,*PA_v,Teuchos::NO_TRANS,1,0);
+    Op->apply(*randomVec,*workVec,Teuchos::NO_TRANS,1,0);
+    permMat->apply(*workVec,*P_Av,Teuchos::NO_TRANS,1,0);
+
+    sleep(1); comm->barrier();
+    if (mypid==0) std::cout << "========\n  P_Av\n========\n" << std::endl;
+    P_Av->describe(*fos,Teuchos::VERB_EXTREME);
+    sleep(1); comm->barrier();
+    if (mypid==0) std::cout << "========\n  PA_v\n========\n" << std::endl;
+    PA_v->describe(*fos,Teuchos::VERB_EXTREME);
+    sleep(1); comm->barrier();
+
+    RCP<MultiVector> diff = VectorFactory::Build(PermTimesA->getRangeMap());
+    //diff = P_Av + (-1.0)*(PA_v) + 0*diff
+    diff->update(1.0,*P_Av,-1.0,*PA_v,0.0);
+
+    diff->describe(*fos,Teuchos::VERB_EXTREME);
+
+    sleep(1); comm->barrier();
+
+    Teuchos::Array<ST::magnitudeType> norms(1);
+    diff->norm2(norms);
+    out << "||diff|| = " << norms[0] << std::endl;
+    TEST_EQUALITY(norms[0]<1e-15, true);
+
+  } //Correctness
 
 }//namespace MueLuTests
