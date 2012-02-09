@@ -20,6 +20,23 @@ Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards, STK,
 Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra, Tpetra,
 TriKota, TrilinosCouplings, Triutils, Zoltan.
 
+Framework Release Notes:
+
+  - The following packages have been switched to BSD-compatible licenses:
+    FEI, Globipack, Isorropia, Kokkos, LOCA, MOOCHO, NOX,
+    Optika, Optipack, Piro, Tpetra.
+    This brings the total number of packages with BSD-compatible licenses to 30
+    (out of 50). Please see http://Trilinos.sandia.gov/license.html for more
+    information about the licenses in Trilinos.
+
+  - Force CMake to use only static third-party libraries
+    Starting with Trilinos 10.8, the option TPL_FIND_SHARED_LIBS can be
+    used to force the TPL system to use only static libraries.  By default,
+    shared libraries can be used.  To use only static libraries, set the
+    option to "OFF".
+
+===============================================================================
+
 Package Release Notes:
 
 -------------------------------------------------------------------------------
