@@ -230,7 +230,7 @@ class EpetraImportTestCase(unittest.TestCase):
         self.importer.Print(f)
         f.close()
         s = open(filename,"r").readlines()
-        lines = 42 + 2*self.myN*self.myN*self.numProc
+        lines = 47 + 2*self.myN*self.myN*self.numProc
         if self.myPID == 0: lines += 14
         if self.numProc == 1: lines -= 10
         self.assertEquals(len(s),lines)
@@ -241,7 +241,7 @@ class EpetraImportTestCase(unittest.TestCase):
         if not isinstance(self.comm, Epetra.SerialComm): return
         s = str(self.importer)
         s = s.splitlines()
-        lines = 42 + 2*self.myN*self.myN*self.numProc
+        lines = 47 + 2*self.myN*self.myN*self.numProc
         if self.myPID == 0: lines += 14
         if self.numProc == 1: lines -= 10
         self.assertEquals(len(s),lines)
@@ -426,7 +426,7 @@ class EpetraExportTestCase(unittest.TestCase):
         self.exporter.Print(f)
         f.close()
         s = open(filename,"r").readlines()
-        lines = 41 + 2*self.myN*self.myN*self.numProc
+        lines = 47 + 2*self.myN*self.myN*self.numProc
         if self.myPID == 0: lines += 14
         if self.numProc == 1: lines -= 10
         self.assertEquals(len(s),lines)
@@ -437,7 +437,7 @@ class EpetraExportTestCase(unittest.TestCase):
         if not isinstance(self.comm, Epetra.SerialComm): return
         s = str(self.exporter)
         s = s.splitlines()
-        lines = 41 + 2*self.myN*self.myN*self.numProc
+        lines = 47 + 2*self.myN*self.myN*self.numProc
         if self.myPID == 0: lines += 14
         if self.numProc == 1: lines -= 10
         self.assertEquals(len(s),lines)
