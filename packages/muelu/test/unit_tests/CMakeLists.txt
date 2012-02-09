@@ -39,6 +39,7 @@ APPEND_SET(SOURCES
   Utilities
   VariableContainer.cpp
   SubBlockAFactory.cpp
+  ParameterList/FactoryFactory.cpp
 )
 
 ### Tests that require other Trilinos packages
@@ -132,3 +133,5 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     )
 
 ENDIF()
+
+ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
