@@ -49,39 +49,45 @@ namespace MueLu {
     //       ...
     //     </ParameterList>
     //
-    RCP<FactoryBase> BuildFactory(const Teuchos::ParameterEntry & param, const FactoryMap & factoryMapIn) const {
+    RCP<const FactoryBase> BuildFactory(const Teuchos::ParameterEntry & param, const FactoryMap & factoryMapIn) const {
 
       // Find factory
-      std::string type;
+      std::string factoryName;
       Teuchos::ParameterList paramList;
       if (!param.isList()) {
-        type = Teuchos::getValue<std::string>(param);
+        factoryName = Teuchos::getValue<std::string>(param);
       } else {
         paramList = Teuchos::getValue<Teuchos::ParameterList>(param);
-        type = paramList.get<std::string>("factory");
+        factoryName = paramList.get<std::string>("factory");
       } 
-    
+
       // TODO: see how Teko handles this.
-      if (type == "TentativePFactory") {
+      if (factoryName == "TentativePFactory") {
         return BuildTentativePFactory(paramList);
       }
-      if (type == "SaPFactory") {
+      if (factoryName == "SaPFactory") {
         return BuildSaPFactory(paramList);
       }
-      if (type == "RAPFactory") {
+      if (factoryName == "RAPFactory") {
         return BuildRAPFactory(paramList);
       }
-      if (type == "UCAggregationFactory") {
+      if (factoryName == "UCAggregationFactory") {
         return BuildUCAggregationFactory(paramList);
       }
-      if (type == "TrilinosSmoother") {
+      if (factoryName == "TrilinosSmoother") {
         return BuildTrilinosSmoother(paramList);
       }
-      if (type == "DirectSolver") {
+      if (factoryName == "DirectSolver") {
         return BuildDirectSolver(paramList);
       }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:: unkown factory name : " << type);
+      // Use a user defined factories (in <Factories> node)
+      if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
+        TEUCHOS_TEST_FOR_EXCEPTION(paramList.begin() != paramList.end(), Exceptions::RuntimeError, "MueLu::FactoryFactory:: parameters of factories defined in <Factories> node cannot be redefined.");
+        return factoryMapIn.find(factoryName)->second;
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:: unkown factory name : " << factoryName);
 
       return Teuchos::null;
     }

@@ -112,6 +112,8 @@ namespace MueLu {
       const std::string             & paramName  = paramList.name(param);
       const Teuchos::ParameterEntry & paramValue = paramList.entry(param);
       
+      //TODO: do not allow name of existing MueLu classes (can be tested using FactoryFactory)
+
       factoryMapOut[paramName] = FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>().BuildFactory(paramValue, factoryMapIn);
     }
   }
