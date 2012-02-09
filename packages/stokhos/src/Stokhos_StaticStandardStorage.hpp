@@ -54,9 +54,10 @@ namespace Stokhos {
     };
 
     //! Constructor
-    StaticStandardStorage(const ordinal_type& sz_) : sz(sz_) { 
+    StaticStandardStorage(const ordinal_type& sz_,
+			  const value_type& x = value_type(0.0)) : sz(sz_) { 
       //ss::zero(coeff_, sz); 
-      std::fill(coeff_, coeff_+sz, value_type(0.0)); 
+      std::fill(coeff_, coeff_+sz, x); 
     }
 
     //! Copy constructor

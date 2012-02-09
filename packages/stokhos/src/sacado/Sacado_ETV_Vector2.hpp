@@ -130,7 +130,7 @@ namespace Sacado {
       /*!
        * Creates array of size \c sz and initializes coeffiencts to 0.
        */
-      explicit Vector2Impl(ordinal_type sz);
+      Vector2Impl(ordinal_type sz, const value_type& x);
 
       //! Copy constructor
       Vector2Impl(const Vector2Impl& x);
@@ -307,8 +307,8 @@ namespace Sacado {
 	Vector2Impl<T,Storage>(x) {}
       
       //! Constructor with specified size \c sz
-      explicit Expr(typename Vector2Impl<T,Storage>::ordinal_type sz) : 
-	Vector2Impl<T,Storage>(sz) {}
+      Expr(typename Vector2Impl<T,Storage>::ordinal_type sz, const T& x) : 
+	Vector2Impl<T,Storage>(sz,x) {}
       
       //! Copy constructor
       Expr(const Expr& x) : 
@@ -395,8 +395,8 @@ namespace Sacado {
       /*!
        * Creates array of size \c sz and initializes coeffiencts to 0.
        */
-      explicit Vector2(ordinal_type sz) :
-	Expr< Vector2Impl<T,Storage> >(sz) {}
+      explicit Vector2(ordinal_type sz, const value_type& x) :
+	Expr< Vector2Impl<T,Storage> >(sz,x) {}
 
       //! Copy constructor
       Vector2(const Vector2& x) :

@@ -46,8 +46,8 @@ Vector2Impl(const typename Vector2Impl<T,Storage>::value_type& x) :
 
 template <typename T, typename Storage> 
 Vector2Impl<T,Storage>::
-Vector2Impl(ordinal_type sz) :
-  s(sz)
+Vector2Impl(ordinal_type sz, const value_type& x) :
+  s(sz,x)
 {
 }
 

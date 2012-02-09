@@ -52,8 +52,9 @@ namespace Stokhos {
     };
 
     //! Constructor
-    StandardStorage(const ordinal_type& sz) : 
-      coeff_(sz, value_type(0.0)) {}
+    StandardStorage(const ordinal_type& sz,
+		    const value_type& x = value_type(0.0)) : 
+      coeff_(sz, x) {}
 
     //! Destructor
     ~StandardStorage() {}

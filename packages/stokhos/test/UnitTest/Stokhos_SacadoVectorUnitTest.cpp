@@ -122,7 +122,7 @@ namespace SacadoUnitUnitTest {
 #define UNARY_UNIT_TEST(OP, OPNAME)					\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME) {				\
     UTS::vec_type u = OP(setup.x);					\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = OP(setup.x.fastAccessCoeff(i));		\
     success = Stokhos::compareVecs(u, "u",v, "v",			\
@@ -130,7 +130,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_const) {			\
     UTS::vec_type u = OP(setup.cx);					\
-    UTS::vec_type v(1);							\
+    UTS::vec_type v(1, 0.0);						\
     v.fastAccessCoeff(0) = OP(setup.cx.fastAccessCoeff(0));		\
     success = Stokhos::compareVecs(u, "u",v, "v",			\
 				   setup.rtol, setup.atol, out);	\
@@ -138,7 +138,7 @@ namespace SacadoUnitUnitTest {
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_resize) {			\
     UTS::vec_type u;							\
     u = OP(setup.x);							\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = OP(setup.x.fastAccessCoeff(i));		\
     success = Stokhos::compareVecs(u, "u",v, "v",			\
@@ -169,7 +169,7 @@ namespace SacadoUnitUnitTest {
 #define BINARY_UNIT_TEST(OP, OPNAME)					\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME) {				\
     UTS::vec_type u = setup.x OP setup.y;				\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = setup.x.fastAccessCoeff(i) OP		\
 	setup.y.fastAccessCoeff(i);					\
@@ -178,7 +178,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_left_const) {		\
     UTS::vec_type u = setup.a OP setup.y;				\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = setup.a OP	setup.y.fastAccessCoeff(i);	\
     success = Stokhos::compareVecs(u, "u",v, "v",			\
@@ -186,7 +186,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_right_const) {		\
     UTS::vec_type u = setup.x OP setup.a ;				\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = setup.x.fastAccessCoeff(i) OP		\
 	setup.a;							\
@@ -195,7 +195,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_both_const) {		\
     UTS::vec_type u = setup.cx OP setup.cx;				\
-    UTS::vec_type v(1);							\
+    UTS::vec_type v(1, 0.0);						\
     v.fastAccessCoeff(0) = setup.cx.fastAccessCoeff(0) OP		\
       setup.cx.fastAccessCoeff(0);					\
     success = Stokhos::compareVecs(u, "u",v, "v",			\
@@ -203,7 +203,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_left_const2) {		\
     UTS::vec_type u = setup.cx OP setup.x;				\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = setup.cx.fastAccessCoeff(0) OP		\
 	setup.x.fastAccessCoeff(i);					\
@@ -212,7 +212,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_right_const2) {		\
     UTS::vec_type u = setup.x OP setup.cx;				\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = setup.x.fastAccessCoeff(i) OP		\
 	setup.cx.fastAccessCoeff(0);					\
@@ -222,7 +222,7 @@ namespace SacadoUnitUnitTest {
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_resize) {			\
     UTS::vec_type u;							\
     u = setup.x OP setup.y;						\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = setup.x.fastAccessCoeff(i) OP		\
 	setup.y.fastAccessCoeff(i);					\
@@ -232,7 +232,7 @@ namespace SacadoUnitUnitTest {
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_left_const_resize) {		\
     UTS::vec_type u;							\
     u = setup.a OP setup.y;						\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = setup.a OP					\
 	setup.y.fastAccessCoeff(i);					\
@@ -242,7 +242,7 @@ namespace SacadoUnitUnitTest {
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_right_const_resize) {	\
     UTS::vec_type u;							\
     u = setup.x OP setup.a;						\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = setup.x.fastAccessCoeff(i) OP		\
 	setup.a;							\
@@ -260,7 +260,7 @@ namespace SacadoUnitUnitTest {
 #define BINARY_UNIT_TEST(OP, SOP, OPNAME)				\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME) {				\
     UTS::vec_type u = OP(setup.x,setup.y);				\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = SOP(setup.x.fastAccessCoeff(i),		\
 				setup.y.fastAccessCoeff(i));		\
@@ -269,7 +269,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_left_const) {		\
     UTS::vec_type u = OP(setup.a,setup.y);				\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = SOP(setup.a,				\
 				setup.y.fastAccessCoeff(i));		\
@@ -278,7 +278,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_right_const) {		\
     UTS::vec_type u = OP(setup.x,setup.a);				\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = SOP(setup.x.fastAccessCoeff(i),		\
 				setup.a);				\
@@ -287,7 +287,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_both_const) {		\
     UTS::vec_type u = OP(setup.cx,setup.cx);				\
-    UTS::vec_type v(1);							\
+    UTS::vec_type v(1, 0.0);						\
     v.fastAccessCoeff(0) = SOP(setup.cx.fastAccessCoeff(0),		\
 			      setup.cx.fastAccessCoeff(0));		\
     success = Stokhos::compareVecs(u, "u",v, "v",			\
@@ -295,7 +295,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_left_const2) {		\
     UTS::vec_type u = OP(setup.cx,setup.x);				\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = SOP(setup.cx.fastAccessCoeff(0),		\
 				setup.x.fastAccessCoeff(i));		\
@@ -304,7 +304,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_right_const2) {		\
     UTS::vec_type u = OP(setup.x,setup.cx);				\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = SOP(setup.x.fastAccessCoeff(i),		\
 				setup.cx.fastAccessCoeff(0));		\
@@ -314,7 +314,7 @@ namespace SacadoUnitUnitTest {
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_resize) {			\
     UTS::vec_type u;							\
     u = OP(setup.x,setup.y);						\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = SOP(setup.x.fastAccessCoeff(i),		\
 				setup.y.fastAccessCoeff(i));		\
@@ -324,7 +324,7 @@ namespace SacadoUnitUnitTest {
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_left_const_resize) {		\
     UTS::vec_type u;							\
     u = OP(setup.a,setup.y);						\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = SOP(setup.a,				\
 				setup.y.fastAccessCoeff(i));		\
@@ -334,7 +334,7 @@ namespace SacadoUnitUnitTest {
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_right_const_resize) {	\
     UTS::vec_type u;							\
     u = OP(setup.x,setup.a);						\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     for (int i=0; i<setup.sz; i++)					\
       v.fastAccessCoeff(i) = SOP(setup.x.fastAccessCoeff(i),		\
 				setup.a);				\
@@ -377,7 +377,7 @@ namespace SacadoUnitUnitTest {
   }									\
   TEUCHOS_UNIT_TEST( Stokhos_ETV, OPNAME##_resize) {			\
     UTS::vec_type u = setup.a;						\
-    UTS::vec_type v(setup.sz);						\
+    UTS::vec_type v(setup.sz, 0.0);					\
     u OP setup.x;							\
     for (int i=0; i<setup.sz; i++) {					\
       v.fastAccessCoeff(i) = setup.a;					\
@@ -404,7 +404,7 @@ namespace SacadoUnitUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_ETV, saxpy_resize) {
     UTS::vec_type u = setup.cx;
-    UTS::vec_type v(setup.sz);
+    UTS::vec_type v(setup.sz, 0.0);
     u += setup.x*setup.y;
     for (int i=0; i<setup.sz; i++)
       v.fastAccessCoeff(i) = setup.cx.fastAccessCoeff(0) +

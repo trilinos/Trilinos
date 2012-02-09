@@ -126,7 +126,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_Broadcast ) {			\
   int n = 7;								\
   Teuchos::Array<VecType> x(n), x2(n);					\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz);						\
+    x[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = rnd.number();				\
   }									\
@@ -147,13 +147,13 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_GatherAll ) {			\
   int N = n*size;							\
   Teuchos::Array<VecType> x(n), x2(N), x3(N);				\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz);						\
+    x[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = (rank+1)*(i+1)*(j+1);			\
   }									\
   for (int j=0; j<size; j++) {						\
     for (int i=0; i<n; i++) {						\
-      x3[n*j+i] = VecType(setup.sz);					\
+      x3[n*j+i] = VecType(setup.sz, 0.0);				\
       for (int k=0; k<setup.sz; k++)					\
 	x3[n*j+i].fastAccessCoeff(k) = (j+1)*(i+1)*(k+1);		\
     }									\
@@ -173,12 +173,12 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_SumAll ) {				\
 									\
   Teuchos::Array<VecType> x(n), sums(n), sums2(n);			\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz);						\
+    x[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = 2.0*(i+1);				\
   }									\
   for (int i=0; i<n; i++) {						\
-    sums[i] = VecType(setup.sz);					\
+    sums[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       sums[i].fastAccessCoeff(j) = 2.0*(i+1)*num_proc;			\
   }									\
@@ -199,12 +199,12 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_MaxAll ) {				\
 									\
   Teuchos::Array<VecType> x(n), maxs(n), maxs2(n);			\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz);						\
+    x[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
   }									\
   for (int i=0; i<n; i++) {						\
-    maxs[i] = VecType(setup.sz);					\
+    maxs[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       maxs[i].fastAccessCoeff(j) = 2.0*(i+1)*num_proc;			\
   }									\
@@ -224,12 +224,12 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_MinAll ) {				\
 									\
   Teuchos::Array<VecType> x(n), mins(n), mins2(n);			\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz);						\
+    x[i] = VecType(setup.sz, 0.0);						\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
   }									\
   for (int i=0; i<n; i++) {						\
-    mins[i] = VecType(setup.sz);					\
+    mins[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       mins[i].fastAccessCoeff(j) = 2.0*(i+1);				\
   }									\
@@ -249,12 +249,12 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_ScanSum ) {				\
 									\
   Teuchos::Array<VecType> x(n), sums(n), sums2(n);			\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz);						\
+    x[i] = VecType(setup.sz, 0.0);						\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = 2.0*(i+1);				\
   }									\
   for (int i=0; i<n; i++) {						\
-    sums[i] = VecType(setup.sz);					\
+    sums[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       sums[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
   }									\
@@ -274,12 +274,12 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_ScanMax ) {				\
 									\
   Teuchos::Array<VecType> x(n), maxs(n), maxs2(n);			\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz);						\
+    x[i] = VecType(setup.sz, 0.0);						\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
   }									\
   for (int i=0; i<n; i++) {						\
-    maxs[i] = VecType(setup.sz);					\
+    maxs[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       maxs[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
   }									\
@@ -299,12 +299,12 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_ScanMin ) {				\
 									\
   Teuchos::Array<VecType> x(n), mins(n), mins2(n);			\
   for (int i=0; i<n; i++) {						\
-    x[i] = VecType(setup.sz);						\
+    x[i] = VecType(setup.sz, 0.0);						\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
   }									\
   for (int i=0; i<n; i++) {						\
-    mins[i] = VecType(setup.sz);					\
+    mins[i] = VecType(setup.sz, 0.0);					\
     for (int j=0; j<setup.sz; j++)					\
       mins[i].fastAccessCoeff(j) = 2.0*(i+1);				\
   }									\
@@ -325,7 +325,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, Vec_SendReceive ) {			\
     int n = 7;								\
     Teuchos::Array<VecType> x(n), x2(n);				\
     for (int i=0; i<n; i++) {						\
-      x[i] = VecType(setup.sz);						\
+      x[i] = VecType(setup.sz, 0.0);						\
       for (int j=0; j<setup.sz; j++)					\
 	x[i].fastAccessCoeff(j) = 2.0*(i+1)*(j+1);			\
     }									\
@@ -352,12 +352,12 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_Broadcast ) {			\
   int p = 5;								\
   Teuchos::Array<FadVecType> x(n), x2(n);				\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = rnd.number();				\
     x[i] = FadVecType(p, f);						\
     for (int j=0; j<p; j++) {						\
-      VecType g(setup.sz);						\
+      VecType g(setup.sz, 0.0);						\
       for (int k=0; k<setup.sz; k++)					\
 	g.fastAccessCoeff(k) = rnd.number();				\
       x[i].fastAccessDx(j) = g;						\
@@ -383,7 +383,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_GatherAll ) {			\
   int N = n*size;							\
   Teuchos::Array<FadVecType> x(n), x2(N), x3(N);			\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = (rank+1)*(i+1)*(k+1);			\
     x[i] = FadVecType(p, f);						\
@@ -393,7 +393,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_GatherAll ) {			\
   }									\
   for (int j=0; j<size; j++) {						\
     for (int i=0; i<n; i++) {						\
-      VecType f(setup.sz);						\
+      VecType f(setup.sz, 0.0);						\
       for (int k=0; k<setup.sz; k++)					\
 	f.fastAccessCoeff(k) = (j+1)*(i+1)*(k+1);			\
       x3[n*j+i] = FadVecType(p, f);					\
@@ -419,24 +419,24 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_SumAll ) {			\
 									\
   Teuchos::Array<FadVecType> x(n), sums(n), sums2(n);			\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1);					\
     x[i] = FadVecType(p, f);						\
     for (int j=0; j<p; j++) {						\
-      VecType g(setup.sz);						\
+      VecType g(setup.sz, 0.0);						\
       for (int k=0; k<setup.sz; k++)					\
 	g.fastAccessCoeff(k) = 2.0*(i+1);				\
       x[i].fastAccessDx(j) = g;						\
     }									\
   }									\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1)*num_proc;			\
     sums[i] = FadVecType(p, f);						\
     for (int j=0; j<p; j++) {						\
-      VecType g(setup.sz);						\
+      VecType g(setup.sz, 0.0);						\
       for (int k=0; k<setup.sz; k++)					\
 	g.fastAccessCoeff(k) = 2.0*(i+1)*num_proc;			\
       sums[i].fastAccessDx(j) = g;					\
@@ -461,7 +461,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_MaxAll ) {			\
 									\
   Teuchos::Array<FadVecType> x(n), maxs(n), maxs2(n);			\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1)*(rank+1);			\
     x[i] = FadVecType(p, f);						\
@@ -470,7 +470,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_MaxAll ) {			\
     }									\
   }									\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1)*num_proc;			\
     maxs[i] = FadVecType(p, f);						\
@@ -495,7 +495,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_MinAll ) {			\
 									\
   Teuchos::Array<FadVecType> x(n), mins(n), mins2(n);			\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1)*(rank+1);			\
     x[i] = FadVecType(p, f);						\
@@ -504,7 +504,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_MinAll ) {			\
     }									\
   }									\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1);					\
     mins[i] = FadVecType(p, f);						\
@@ -529,7 +529,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_ScanSum ) {			\
 									\
   Teuchos::Array<FadVecType> x(n), sums(n), sums2(n);			\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1);					\
     x[i] = FadVecType(p, f);						\
@@ -538,7 +538,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_ScanSum ) {			\
     }									\
   }									\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1)*(rank+1);			\
     sums[i] = FadVecType(p, f);						\
@@ -563,7 +563,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_ScanMax ) {			\
 									\
   Teuchos::Array<FadVecType> x(n), maxs(n), maxs2(n);			\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1)*(rank+1);			\
     x[i] = FadVecType(p, f);						\
@@ -572,7 +572,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_ScanMax ) {			\
     }									\
   }									\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1)*(rank+1);			\
     maxs[i] = FadVecType(p, f);						\
@@ -597,7 +597,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_ScanMin ) {			\
 									\
   Teuchos::Array<FadVecType> x(n), mins(n), mins2(n);			\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1)*(rank+1);			\
     x[i] = FadVecType(p, f);						\
@@ -606,7 +606,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_ScanMin ) {			\
     }									\
   }									\
   for (int i=0; i<n; i++) {						\
-    VecType f(setup.sz);						\
+    VecType f(setup.sz, 0.0);						\
     for (int k=0; k<setup.sz; k++)					\
       f.fastAccessCoeff(k) = 2.0*(i+1);					\
     mins[i] = FadVecType(p, f);						\
@@ -632,7 +632,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_SendReceive ) {			\
     int p = 5;								\
     Teuchos::Array<FadVecType> x(n), x2(n);				\
     for (int i=0; i<n; i++) {						\
-      VecType f(setup.sz);						\
+      VecType f(setup.sz, 0.0);						\
       for (int k=0; k<setup.sz; k++)					\
 	f.fastAccessCoeff(k) = 2.0*(i+1)*(k+1);				\
       x[i] = FadVecType(p, f);						\

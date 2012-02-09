@@ -225,7 +225,7 @@ bool testNestedSerialization(Teuchos::Array<VecType>& x,
     int n = 7;								\
     Teuchos::Array<VecType> x(n);					\
     for (int i=0; i<n; i++) {						\
-      x[i] = VecType(setup.sz);						\
+      x[i] = VecType(setup.sz, 0.0);					\
       for (int j=0; j<setup.sz; j++)					\
 	x[i].fastAccessCoeff(j) = rnd.number();				\
     }									\
@@ -240,7 +240,7 @@ bool testNestedSerialization(Teuchos::Array<VecType>& x,
     int n = 7;								\
     Teuchos::Array<VecType> x(n);					\
     for (int i=0; i<n; i++) {						\
-      x[i] = VecType(1);						\
+      x[i] = VecType(1, 0.0);						\
       x[i].val() = rnd.number();					\
     }									\
     bool success1 = testSerialization(					\
@@ -255,7 +255,7 @@ bool testNestedSerialization(Teuchos::Array<VecType>& x,
     int p[] = { 5, 0, 8, 8, 3, 0 };					\
     Teuchos::Array<VecType> x(n);					\
     for (int i=0; i<n; i++) {						\
-      x[i] = VecType(p[i]);						\
+      x[i] = VecType(p[i], 0.0);					\
       for (int j=0; j<p[i]; j++)					\
 	x[i].fastAccessCoeff(j) = rnd.number();				\
     }									\
@@ -272,12 +272,12 @@ bool testNestedSerialization(Teuchos::Array<VecType>& x,
     int p = 3;								\
     Teuchos::Array<FadVecType> x(n);					\
     for (int i=0; i<n; i++) {						\
-      VecType f(setup.sz);						\
+      VecType f(setup.sz, 0.0);						\
       for (int k=0; k<setup.sz; k++)					\
 	f.fastAccessCoeff(k) = rnd.number();				\
       x[i] = FadVecType(p, f);						\
       for (int j=0; j<p; j++) {						\
-	VecType g(setup.sz);						\
+	VecType g(setup.sz, 0.0);					\
 	for (int k=0; k<setup.sz; k++)					\
 	  g.fastAccessCoeff(k) = rnd.number();				\
 	x[i].fastAccessDx(j) = g;					\
@@ -293,7 +293,7 @@ bool testNestedSerialization(Teuchos::Array<VecType>& x,
     int p = 3;								\
     Teuchos::Array<FadVecType> x(n);					\
     for (int i=0; i<n; i++) {						\
-      VecType f(setup.sz);						\
+      VecType f(setup.sz, 0.0);						\
       for (int k=0; k<setup.sz; k++)					\
 	f.fastAccessCoeff(k) = rnd.number();				\
       x[i] = FadVecType(p, f);						\
@@ -310,7 +310,7 @@ bool testNestedSerialization(Teuchos::Array<VecType>& x,
     int n = 7;								\
     Teuchos::Array<FadVecType> x(n);					\
     for (int i=0; i<n; i++) {						\
-      VecType f(setup.sz);						\
+      VecType f(setup.sz, 0.0);						\
       for (int k=0; k<setup.sz; k++)					\
 	f.fastAccessCoeff(k) = rnd.number();				\
       x[i] = FadVecType(f);						\

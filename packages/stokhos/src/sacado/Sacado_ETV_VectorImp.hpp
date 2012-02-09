@@ -48,7 +48,8 @@ VectorImpl(const typename VectorImpl<T,Storage>::value_type& x) :
 
 template <typename T, typename Storage> 
 VectorImpl<T,Storage>::
-VectorImpl(ordinal_type sz) :
+VectorImpl(ordinal_type sz, 
+	   const typename VectorImpl<T,Storage>::value_type& x) :
   th_(new storage_type(sz))
 {
 }

@@ -226,7 +226,7 @@ namespace Teuchos {
     // Conjugate is only defined for real derivative components
     static ScalarType conjugate(const ScalarType& x) {
       int sz = x.size();
-      ScalarType y(sz);
+      ScalarType y(sz, ValueT(0.0));
       for (int i=0; i<sz; i++)
 	y.fastAccessCoeff(i) = 
 	  Teuchos::ScalarTraits<ValueT>::conjugate(x.fastAccessCoeff(i));
@@ -236,7 +236,7 @@ namespace Teuchos {
     // Real part is only defined for real derivative components
     static ScalarType real(const ScalarType& x) { 
       int sz = x.size();
-      ScalarType y(sz);
+      ScalarType y(sz, ValueT(0.0));
       for (int i=0; i<sz; i++)
 	y.fastAccessCoeff(i) = 
 	  Teuchos::ScalarTraits<ValueT>::real(x.fastAccessCoeff(i));
@@ -246,7 +246,7 @@ namespace Teuchos {
     // Imaginary part is only defined for real derivative components
     static ScalarType imag(const ScalarType& x) { 
      int sz = x.size();
-      ScalarType y(sz);
+     ScalarType y(sz, ValueT(0.0));
       for (int i=0; i<sz; i++)
 	y.fastAccessCoeff(i) = 
 	  Teuchos::ScalarTraits<ValueT>::imag(x.fastAccessCoeff(i));
@@ -292,6 +292,9 @@ namespace Sacado {
 
       //! VectorType
       typedef Sacado::ETV::Vector<T,S> VecType;
+
+      //! Value type
+      typedef typename Sacado::ValueType<VecType>::type ValueT;
       
       //! How to serialize ints
       typedef Teuchos::SerializationTraits<Ordinal,int> iSerT;
@@ -421,7 +424,7 @@ namespace Sacado {
 	  // Create empty Vector object of given size
 	  int tot_sz = sz;
 	  if (sz == 0) tot_sz = *my_sz;
-	  buffer[i] = VecType(tot_sz);
+	  buffer[i] = VecType(tot_sz, ValueT(0.0));
 	
 	  // Deserialize vector coefficients
 	  Ordinal b3 = oSerT::fromCountToDirectBytes(1);
