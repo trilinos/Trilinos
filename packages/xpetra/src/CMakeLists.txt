@@ -110,8 +110,7 @@ APPEND_GLOB(HEADERS Platform/*.hpp)
 APPEND_GLOB(HEADERS RowGraph/*.hpp)
 APPEND_GLOB(HEADERS Utils/*.hpp)
 APPEND_GLOB(HEADERS Vector/*.hpp)
-
-APPEND_GLOB(HEADERS ../ForwardDeclaration/*.hpp)
+APPEND_GLOB(HEADERS Utils/ForwardDeclaration/*.hpp)
 
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
