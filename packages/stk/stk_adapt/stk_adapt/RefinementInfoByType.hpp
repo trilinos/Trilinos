@@ -22,16 +22,21 @@ namespace stk {
 
     struct RefinementInfoByType
     {
+      RefinementInfoByType() : m_rank(0) {}
       //typedef uint64_t RefinementInfoCount ;
       typedef unsigned RefinementInfoCount ;
 
-      unsigned m_rank;
       RefinementInfoCount m_numOrigElems;
       RefinementInfoCount m_numNewElems;
       shards::CellTopology m_topology;
       RefinementInfoCount m_numOrigNodes;
       RefinementInfoCount m_numNewNodes;
 
+      RefinementInfoCount m_numOrigElemsLast;
+      RefinementInfoCount m_numNewElemsLast;
+      unsigned m_rank;
+
+      static void estimateNew(std::vector< RefinementInfoByType >& refinementInfoByType, int iRefinePass);
       static void printTable(std::ostream& os, std::vector< RefinementInfoByType >& refinementInfoByType, int iRefinePass, bool printAll = false);
       static void countCurrentNodes(stk::percept::PerceptMesh& eMesh, std::vector< RefinementInfoByType >& refinementInfoByType);
 

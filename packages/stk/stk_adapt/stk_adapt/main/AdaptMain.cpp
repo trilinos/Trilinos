@@ -91,7 +91,9 @@ namespace stk {
         for (unsigned i = 0; i < refInfo.size(); i++)
           {
             num_nodes= refInfo[0].m_numNewNodes;
-            std::cout << "irank, rank, m_numNewNodes= " << i << " " << refInfo[i].m_rank << " " << refInfo[i].m_numNewNodes << std::endl;
+            std::cout << "irank, rank, m_numNewNodes, m_numNewElems= " << i << " " << refInfo[i].m_rank << " " << refInfo[i].m_numNewNodes 
+                      << " " << refInfo[i].m_numNewElemsLast
+                      << std::endl;
             
 //             if (refInfo[i].m_rank == 0)
 //               {
@@ -102,10 +104,10 @@ namespace stk {
                 switch(refInfo[i].m_topology.getKey())
                   {
                   case shards::Hexahedron<8>::key:
-                    num_hex8 += refInfo[i].m_numNewElems;
+                    num_hex8 += refInfo[i].m_numNewElemsLast;
                     break;
                   case shards::Tetrahedron<4>::key:
-                    num_tet4 += refInfo[i].m_numNewElems;
+                    num_tet4 += refInfo[i].m_numNewElemsLast;
                     break;
                   default:
                     break;
@@ -532,7 +534,8 @@ namespace stk {
       run_environment.clp.setOption("load_balance"             , &load_balance             , " load balance (slice/spread) input mesh file");
 
       run_environment.clp.setOption("memory_multipliers_file"  , &memory_multipliers_file  ,
-                                    " filename with a comma-separated string of class names and memory multipliers, one per line, \n  eg Node,80\nField,10\nHexahedron<8>,90");
+                                    "  filename with 3 space-separated entries, with estimate for bytes-per-hex8 tet4 and nodes, e.g. 300 280 200");
+                                    //" filename with a comma-separated string of class names and memory multipliers, one per line, \n  eg Node,80\nField,10\nHexahedron<8>,90");
       run_environment.clp.setOption("estimate_memory_usage"    , &estimate_memory_usage    ,
                                     " if query_only=1, use multipliers from memory_multipliers_file to estimate memory to be used in refinements.\n  If query_only=0, gather memory data and write to the file.");
 
@@ -756,6 +759,7 @@ namespace stk {
                   }
                 if (estimate_memory_usage && query_only)
                   {
+                    RefinementInfoByType::estimateNew(breaker.getRefinementInfoByType(), iBreak);
                     MemoryMultipliers::process_estimate(0, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
                   }
 
