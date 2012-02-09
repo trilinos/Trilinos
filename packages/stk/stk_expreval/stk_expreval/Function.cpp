@@ -6,9 +6,23 @@
 #include <stk_expreval/Function.hpp>
 #include <stk_expreval/Constants.hpp>
 
+#include <boost/math/distributions.hpp>
 
 namespace stk {
 namespace expreval {
+
+  namespace bmth = boost::math;
+  namespace bmp  = bmth::policies;
+
+typedef boost::math::
+  weibull_distribution< double,
+                       boost::math::policies::policy< bmp::overflow_error<bmp::ignore_error> > >
+  weibull_dist;
+
+typedef bmth::
+  normal_distribution< double,
+                       bmp::policy< bmp::overflow_error<bmp::ignore_error> > >
+  normal_dist;
 
 extern "C" {
   typedef double (*CExtern0)();
@@ -214,6 +228,41 @@ extern "C" {
     }
   }
 
+  /// Weibull distribution probability distribution function.
+  double weibull_pdf(double x, double alpha, double beta)
+  {
+    weibull_dist weibull1(alpha, beta);
+    return bmth::pdf(weibull1, x);
+  }
+
+  /// Normal (Gaussian) distribution probability distribution function.
+  double normal_pdf(double x, double mean, double standard_deviation)
+  {
+    normal_dist normal1(mean, standard_deviation);
+    return bmth::pdf(normal1, x);
+  }
+
+  /// Uniform distribution probability distribution function.
+  double uniform_pdf(double lower_range, double upper_range)
+  {
+    // Note, no error checking here...
+    return 1.0/(upper_range - lower_range);
+  }
+  
+  /// Exponential Uniform distribution probability distribution function
+  inline double exponential_pdf(double x, double beta)
+  { return std::exp(-x/beta)/beta; }
+
+  /// Log Uniform distribution probability distribution function
+  inline double log_uniform_pdf(double x, double lower_range, double upper_range)
+  { return 1.0/(std::log(upper_range) - std::log(lower_range))/x; }
+
+  /// set distribution type and parameters for a weibull distribution
+  //double weibull_distribution(double alpha, double beta)
+  //{
+  //  return weibull_dist(alpha, beta);
+  //}
+
   /// Returns -1,0, or 1 depending on whether x is negative, zero, or positive.
   static double sign(double a)  {
     if(a==0.0) return 0.0;
@@ -302,6 +351,12 @@ CFunctionMap::CFunctionMap()
   (*this)["cosine_ramp"]  = new CFunction2(cosine_ramp);
   (*this)["sign"]         = new CFunction1(sign);
   (*this)["unit_step"]    = new CFunction2(unit_step);
+
+  (*this)["weibull_pdf"]  = new CFunction3(weibull_pdf);
+  (*this)["normal_pdf"]   = new CFunction3(normal_pdf);
+  (*this)["uniform_pdf"]  = new CFunction2(uniform_pdf);
+  (*this)["exponential_pdf"] = new CFunction2(exponential_pdf);
+  (*this)["log_uniform_pdf"] = new CFunction3(log_uniform_pdf);
 }
 
 

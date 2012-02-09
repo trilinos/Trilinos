@@ -95,52 +95,50 @@ test_one_value(const char *expression, double gold_value)
   std::string by_expr = std::string("by=") + expression + ";";
   stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
   expr_eval.parse();
-
-  double x, y, by, result = 0.0;
-  double v[2];
-  expr_eval.bindVariable("x", x);
-  expr_eval.bindVariable("by", by);
-  expr_eval.bindVariable("v", *v);
-  for (int i = 1; i < 2; ++i) {
-    x = v[1] = i*0.01;
-    y = gold_value;
-    try {
-      result = expr_eval.evaluate();
-    }
-    catch (std::runtime_error &exc) {
-      std::cout << expression << " at "
-		<< std::setprecision(20) << x << " is "
-		<< std::setprecision(20) << result
-		<< " should be " << y
-		<< "(" << std::setprecision(20) << by
-		<< ") threw exception " << exc.what()
-		<< std::endl;
-      failed = true;
-    }
-    std::cout << "expression= " << expression << "= " << result << std::endl;
-    double absolute_error = fabs(result - y);
-    if (absolute_error > fabs(1.0e-14*result)) {
-      std::cout << expression << " at "
-		<< std::setprecision(2) << x << " is "
-		<< std::setprecision(20) << result
-		<< " should be " << y
-		<< " error is " << absolute_error
-		<< std::endl;
-      failed = true;
-    }
-    else if (by != result) {
-      std::cout << expression << " at "
-		<< std::setprecision(2) << x << " is "
-		<< std::setprecision(20) << result
-		<< " does not match bound value "
-		<< std::setprecision(20) << by
-		<< std::endl;
-      failed = true;
-    }
+  double result = expr_eval.evaluate();
+  double absolute_error = fabs(result - gold_value);
+  if (absolute_error > fabs(1.0e-14*result)) 
+  {
+    std::cout << expression << " = " << std::setprecision(20) << result
+      << " should be " << gold_value 
+      << " error is " << absolute_error
+      << std::endl;
+    failed = true;
+  } else {
+    std::cout << "Expression= " << expression << " == " << result << "\n";
   }
-
   std::cout << (failed ? "fail" : "pass") << std::endl;
   return !failed;
+}
+
+bool
+evaluate_range(
+  const char *	expr,
+  double range
+  )
+{
+  //
+  // KHP: Modify this to dump CSV file to txt file to plot in gnuplot, matlab or mathematica.
+  //
+  std::cout << "Evaluate " << expr << " from " << -range << " to " << range << " { \n";
+
+  std::string by_expr = std::string("by=") + expr + ";";
+  stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
+  expr_eval.parse();
+
+  double x, y;
+  expr_eval.bindVariable("x", x);
+
+  double start_x = -range;
+  const int NumPoints = 100;
+  double delta_x = (2.0*range)/NumPoints;
+  for (int i = 0; i <= NumPoints; ++i) {
+    x = start_x + i*delta_x;
+    y = expr_eval.evaluate();
+    std::cout << x << ", " << y << "\n";
+  }
+  std::cout << "}\n";
+  return true;
 }
 
 typedef double (TestFunc)(double);
@@ -354,6 +352,19 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(test_one_value("3^2",9.));
   STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3)^2",36.));
   STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3+4)^(1+1)",100.));
+
+  double weibull_gold_value = 3.6787944117144233402;
+  STKUNIT_EXPECT_TRUE(test_one_value("weibull_pdf(1.0, 10.0, 1.0)", weibull_gold_value));
+
+  // These 2 tests just print a range of values of the input expressions.
+  STKUNIT_EXPECT_TRUE(evaluate_range("normal_pdf(x, 0.0, 0.5)", 4));
+  STKUNIT_EXPECT_TRUE(evaluate_range("exponential_pdf(x, 1.0)", 4));
+
+  // Need a better test for distributions, perhaps something that computes the
+  // mean and standard deviation of the distribution.
+  double normal_gold_value  = 0.79788456080286540573;
+  STKUNIT_EXPECT_TRUE(test_one_value("normal_pdf(0.0, 0.0, 0.5)", normal_gold_value));
+
   STKUNIT_EXPECT_TRUE(syntax("2*2"));
   STKUNIT_EXPECT_TRUE(syntax(""));
   STKUNIT_EXPECT_TRUE(syntax(""));
@@ -383,6 +394,8 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
   STKUNIT_EXPECT_TRUE(syntax("random()"));
   STKUNIT_EXPECT_TRUE(syntax("srandom(x)"));
+  STKUNIT_EXPECT_TRUE(syntax("weibull_pdf(x, alpha, beta)"));
+  STKUNIT_EXPECT_TRUE(syntax("normal_pdf(x, alpha, beta)"));
 
 #define EXPREVAL_TEST(name) test(name##_expr, name)
 
