@@ -155,6 +155,9 @@ MACRO(TRIBITS_PROCESS_EXTRAREPOS_LISTS)
       OR EXTRAREPO_REPOTYPE STREQUAL SVN
       )
       # Okay
+    ELSEIF(EXTRAREPO_REPOTYPE STREQUAL HG)
+      # not quite okay
+      MESSAGE(WARNING "Warning: the repo ${EXTRAREPO_NAME} is a Mercurial repo: these are tolerated, but not fully supported.")
     ELSE()
       MESSAGE(SEND_ERROR "Error, the repo type of '${EXTRAREPO_REPOTYPE}' for"
         " extra repo ${EXTRAREPO_NAME} is *not* valid.  Valid choices are 'GIT' and 'SVN'!")

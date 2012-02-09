@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stokhos_Version.hpp"
+
 namespace Sacado {
 namespace ETV {
 
@@ -70,6 +72,7 @@ VectorImpl(const Expr<S>& x) :
       (*th_)[i] = x.fastAccessCoeff(i);
   }
   else {
+    Stokhos_Version();
     for (int i=0; i<sz; i++)
       (*th_)[i] = x.coeff(i);
   }
@@ -78,9 +81,13 @@ VectorImpl(const Expr<S>& x) :
 template <typename T, typename Storage> 
 void
 VectorImpl<T,Storage>::
-reset(ordinal_type sz)
+reset(ordinal_type sz_new)
 {
-  th_->resize(sz);
+  int sz = this->size();
+  th_->resize(sz_new);
+  if (sz == 1 && sz_new > sz)
+    for (int i=1; i<sz_new; i++)
+      (*th_)[i] = (*th_)[0];
 }
 
 template <typename T, typename Storage> 
@@ -110,12 +117,13 @@ operator=(const Expr<S>& x)
 {
   th_.makeOwnCopy();
   int sz = x.size();
-  th_->resize(sz);
+  this->reset(sz);
   if (x.hasFastAccess(sz)) {
     for (int i=0; i<sz; i++)
       (*th_)[i] = x.fastAccessCoeff(i);
   }
   else {
+    Stokhos_Version();
     for (int i=0; i<sz; i++)
       (*th_)[i] = x.coeff(i);
   }

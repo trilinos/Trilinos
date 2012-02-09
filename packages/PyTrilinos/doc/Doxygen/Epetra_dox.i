@@ -6864,6 +6864,59 @@ Under certain special circumstances it is desirable to have non-local
 contributions ignored rather than saving them for the GlobalAssemble
 step. ";
 
+%feature("docstring")  Epetra_FEVector::Epetra_FEVector "Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const
+Epetra_BlockMap &Map, double *A, int MyLDA, int NumVectors, bool
+ignoreNonLocalEntries=false)
+
+Set multi-vector values from two-dimensional array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  A - Pointer to an array of double precision numbers. The first
+vector starts at A. The second vector starts at A+MyLDA, the third at
+A+2*MyLDA, and so on.
+
+In:  MyLDA - The \"Leading Dimension\", or stride between vectors in
+memory.
+
+WARNING:  This value refers to the stride on the calling processor.
+Thus it is a local quantity, not a global quantity.
+
+Parameters:
+-----------
+
+In:  NumVectors - Number of vectors in multi-vector.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_FEVector::Epetra_FEVector "Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const
+Epetra_BlockMap &Map, double **ArrayOfPointers, int NumVectors, bool
+ignoreNonLocalEntries=false)
+
+Set multi-vector values from array of pointers.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  ArrayOfPointers - An array of pointers such that
+ArrayOfPointers[i] points to the memory location containing ith vector
+to be copied.
+
+In:  NumVectors - Number of vectors in multi-vector.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
 %feature("docstring")  Epetra_FEVector::Epetra_FEVector "Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector &source)
 
 Copy constructor. ";

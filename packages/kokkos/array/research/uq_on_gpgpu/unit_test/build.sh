@@ -36,12 +36,23 @@ done
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
+
+if [ ! -n "${CXX}" ]
+then
+  CXX="g++"
+  CXXFLAGS="-Wall"
+fi
+
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 # Paths and sources
 
+WORK_PATH="../src"
 SRC_PATH="../../../src"
-INC_PATH="-I. -I../src -I${SRC_PATH}"
+INC_PATH="-I. -I${WORK_PATH} -I${SRC_PATH}"
 
 CXX_SOURCES="main.cpp TestHost.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${WORK_PATH}/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/Kokkos_Host_Impl.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/Kokkos_Host_MemoryManager.cpp"

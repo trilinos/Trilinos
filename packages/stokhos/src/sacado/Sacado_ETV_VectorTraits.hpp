@@ -171,7 +171,7 @@ namespace Teuchos {
   template <typename T, typename S>
   struct ScalarTraits< Sacado::ETV::Vector<T,S> > {
     typedef Sacado::ETV::Vector<T,S> ScalarType;
-    typedef typename Sacado::ValueType<T>::type ValueT;
+    typedef typename Sacado::ValueType<ScalarType>::type ValueT;
     
     typedef typename Sacado::mpl::apply<ScalarType,typename Teuchos::ScalarTraits<ValueT>::magnitudeType>::type magnitudeType;
     typedef typename Sacado::mpl::apply<ScalarType,typename Teuchos::ScalarTraits<ValueT>::halfPrecision>::type halfPrecision;
@@ -310,15 +310,31 @@ namespace Sacado {
       /** \brief Return the number of bytes for <tt>count</tt> objects. */
       static Ordinal fromCountToIndirectBytes(const Serializer& vs,
 					      const Ordinal count, 
-					      const VecType buffer[]) { 
+					      const VecType buffer[],
+					      const Ordinal sz = 0) { 
 	Ordinal bytes = 0;
+	VecType *x = NULL;
+        const VecType *cx;
 	for (Ordinal i=0; i<count; i++) {
-	  int sz = buffer[i].size();
-	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &sz);
-	  Ordinal b2 = vs.fromCountToIndirectBytes(sz, buffer[i].coeff());
+	  int my_sz = buffer[i].size();
+	  int tot_sz = sz;
+	  if (sz == 0) tot_sz = my_sz;
+	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &tot_sz);
+	  if (tot_sz != my_sz) {
+            if (x == NULL)
+              x = new VecType;
+	    *x = buffer[i];
+            x->reset(tot_sz);
+            cx = x;
+	  }
+          else 
+            cx = &(buffer[i]);
+	  Ordinal b2 = vs.fromCountToIndirectBytes(tot_sz, cx->coeff());
 	  Ordinal b3 = oSerT::fromCountToIndirectBytes(1, &b2);
 	  bytes += b1+b2+b3;
 	}
+	if (x != NULL)
+          delete x;
 	return bytes;
       }
 
@@ -327,28 +343,45 @@ namespace Sacado {
 			     const Ordinal count, 
 			     const VecType buffer[], 
 			     const Ordinal bytes, 
-			     char charBuffer[]) { 
+			     char charBuffer[],
+			     const Ordinal sz = 0) { 
+	VecType *x = NULL;
+        const VecType *cx;
 	for (Ordinal i=0; i<count; i++) {
 	  // First serialize size
-	  int sz = buffer[i].size();
-	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &sz);
-	  iSerT::serialize(1, &sz, b1, charBuffer);
+	  int my_sz = buffer[i].size();
+	  int tot_sz = sz;
+	  if (sz == 0) tot_sz = my_sz;
+	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &tot_sz);
+	  iSerT::serialize(1, &tot_sz, b1, charBuffer);
 	  charBuffer += b1;
 	
 	  // Next serialize vector coefficients
-	  Ordinal b2 = vs.fromCountToIndirectBytes(sz, buffer[i].coeff());
+	  if (tot_sz != my_sz) {
+            if (x == NULL)
+              x = new VecType;
+	    *x = buffer[i];
+            x->reset(tot_sz);
+            cx = x;
+	  }
+          else 
+            cx = &(buffer[i]);
+	  Ordinal b2 = vs.fromCountToIndirectBytes(tot_sz, cx->coeff());
 	  Ordinal b3 = oSerT::fromCountToIndirectBytes(1, &b2);
 	  oSerT::serialize(1, &b2, b3, charBuffer); 
 	  charBuffer += b3;
-	  vs.serialize(sz, buffer[i].coeff(), b2, charBuffer);
+	  vs.serialize(tot_sz, cx->coeff(), b2, charBuffer);
 	  charBuffer += b2;
 	}
+	if (x != NULL)
+          delete x;
       }
 
       /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
       static Ordinal fromIndirectBytesToCount(const Serializer& vs,
 					      const Ordinal bytes, 
-					      const char charBuffer[]) {
+					      const char charBuffer[],
+					      const Ordinal sz = 0) {
 	Ordinal count = 0;
 	Ordinal bytes_used = 0;
 	while (bytes_used < bytes) {
@@ -376,27 +409,29 @@ namespace Sacado {
 			       const Ordinal bytes, 
 			       const char charBuffer[], 
 			       const Ordinal count, 
-			       VecType buffer[]) { 
+			       VecType buffer[],
+			       const Ordinal sz = 0) { 
 	for (Ordinal i=0; i<count; i++) {
 	
 	  // Deserialize size
 	  Ordinal b1 = iSerT::fromCountToDirectBytes(1);
-	  const int *sz = iSerT::convertFromCharPtr(charBuffer);
+	  const int *my_sz = iSerT::convertFromCharPtr(charBuffer);
 	  charBuffer += b1;
 	
 	  // Create empty Vector object of given size
-	  buffer[i] = VecType(*sz);
+	  int tot_sz = sz;
+	  if (sz == 0) tot_sz = *my_sz;
+	  buffer[i] = VecType(tot_sz);
 	
 	  // Deserialize vector coefficients
 	  Ordinal b3 = oSerT::fromCountToDirectBytes(1);
 	  const Ordinal *b2 = oSerT::convertFromCharPtr(charBuffer);
 	  charBuffer += b3;
-	  vs.deserialize(*b2, charBuffer, *sz, buffer[i].coeff());
+	  vs.deserialize(*b2, charBuffer, *my_sz, buffer[i].coeff());
 	  charBuffer += *b2;
 	}
       
       }
-  
       //@}
       
     };
@@ -493,16 +528,30 @@ namespace Teuchos {
     
     //! Serializer for value types
     Teuchos::RCP<const ValueSerializer> vs;
+
+    //! Specified number of vector components;
+    Ordinal sz;
     
   public:
+
+    //! Typename of value serializer
+    typedef ValueSerializer value_serializer_type;
     
     /// \brief Whether we support direct serialization.
     static const bool supportsDirectSerialization = 
       Imp::supportsDirectSerialization;
     
     //! Constructor
-    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs_) :
-      vs(vs_) {}
+    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs_,
+			Ordinal sz_ = 0) :
+      vs(vs_), sz(sz_) {}
+
+    //! Return specified serializer size
+    Ordinal getSerializerSize() const { return sz; }
+      
+    //! Get nested value serializer
+    Teuchos::RCP<const value_serializer_type> getValueSerializer() const { 
+      return vs; }
     
     //! @name Indirect serialization functions (always defined and supported) 
     //@{
@@ -510,7 +559,7 @@ namespace Teuchos {
     /** \brief Return the number of bytes for <tt>count</tt> objects. */
     Ordinal fromCountToIndirectBytes(const Ordinal count, 
 				     const VecType buffer[]) const { 
-      return Imp::fromCountToIndirectBytes(*vs, count, buffer);
+      return Imp::fromCountToIndirectBytes(*vs, count, buffer, sz);
     }
     
     /** \brief Serialize to an indirect <tt>char[]</tt> buffer. */
@@ -518,13 +567,13 @@ namespace Teuchos {
 		    const VecType buffer[], 
 		    const Ordinal bytes, 
 		    char charBuffer[]) const { 
-      Imp::serialize(*vs, count, buffer, bytes, charBuffer);
+      Imp::serialize(*vs, count, buffer, bytes, charBuffer, sz);
     }
     
     /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
     Ordinal fromIndirectBytesToCount(const Ordinal bytes, 
 				     const char charBuffer[]) const {
-      return Imp::fromIndirectBytesToCount(*vs, bytes, charBuffer);
+      return Imp::fromIndirectBytesToCount(*vs, bytes, charBuffer, sz);
     }
     
     /** \brief Deserialize from an indirect <tt>char[]</tt> buffer. */
@@ -532,7 +581,7 @@ namespace Teuchos {
 		      const char charBuffer[], 
 		      const Ordinal count, 
 		      VecType buffer[]) const { 
-      return Imp::deserialize(*vs, bytes, charBuffer, count, buffer);
+      return Imp::deserialize(*vs, bytes, charBuffer, count, buffer, sz);
     }
     
     //@}

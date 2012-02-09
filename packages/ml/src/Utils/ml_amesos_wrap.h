@@ -77,7 +77,7 @@ extern "C" {
     \param Amesos_Handle (Out) : it will contain a pointer to the Amesos object (casted
     to void *).
 
-    If the required solver is not avaiable, ML_Amesos_Gen will create 
+    If the required solver is not available, ML_Amesos_Gen will create 
     a KLU solver. KLU is distributed with Amesos, and is enabled by default.
     
   */

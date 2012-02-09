@@ -379,9 +379,10 @@ namespace SacadoUnitUnitTest {
     UTS::vec_type u = setup.a;						\
     UTS::vec_type v(setup.sz);						\
     u OP setup.x;							\
-    v.fastAccessCoeff(0) = setup.a;					\
-    for (int i=0; i<setup.sz; i++)					\
+    for (int i=0; i<setup.sz; i++) {					\
+      v.fastAccessCoeff(i) = setup.a;					\
       v.fastAccessCoeff(i) OP setup.x.fastAccessCoeff(i);		\
+    }									\
     success = Stokhos::compareVecs(u, "u",v, "v",			\
 				   setup.rtol, setup.atol, out);	\
   }
@@ -405,9 +406,8 @@ namespace SacadoUnitUnitTest {
     UTS::vec_type u = setup.cx;
     UTS::vec_type v(setup.sz);
     u += setup.x*setup.y;
-    v.fastAccessCoeff(0) = setup.cx.fastAccessCoeff(0);
     for (int i=0; i<setup.sz; i++)
-      v.fastAccessCoeff(i) += 
+      v.fastAccessCoeff(i) = setup.cx.fastAccessCoeff(0) +
 	setup.x.fastAccessCoeff(i)*setup.y.fastAccessCoeff(i);
     success = Stokhos::compareVecs(u, "u",v, "v",
 				   setup.rtol, setup.atol, out);

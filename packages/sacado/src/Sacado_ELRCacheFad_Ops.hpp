@@ -56,6 +56,8 @@
 
 #include "Sacado_ELRCacheFad_Expression.hpp"
 #include "Sacado_cmath.hpp"
+#include "Sacado_mpl_disable_if.hpp"
+#include "Sacado_mpl_is_same.hpp"
 #include <ostream>	// for std::ostream
 
 namespace Sacado {
@@ -73,6 +75,7 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
 
       typedef typename ExprT::base_expr_type base_expr_type;
 
@@ -155,6 +158,7 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
 
       typedef typename ExprT::base_expr_type base_expr_type;
 
@@ -238,6 +242,7 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
 
       typedef typename ExprT::base_expr_type base_expr_type;
 
@@ -289,11 +294,13 @@ namespace Sacado {
       }
 
       const value_type dx(int i) const {
-        return v_pos ? expr.dx(i) : -expr.dx(i);
+        if (v_pos) return expr.dx(i); 
+	else return -expr.dx(i);
       }
  
       const value_type fastAccessDx(int i) const {
-        return v_pos ? expr.fastAccessDx(i) : -expr.fastAccessDx(i);
+        if (v_pos) return expr.fastAccessDx(i);
+	else return -expr.fastAccessDx(i);
       }
 
       const base_expr_type& getArg(int j) const {
@@ -328,6 +335,7 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
 
       typedef typename ExprT::base_expr_type base_expr_type;
 
@@ -379,11 +387,13 @@ namespace Sacado {
       }
 
       const value_type dx(int i) const {
-        return v_pos ? expr.dx(i) : -expr.dx(i);
+        if (v_pos) return expr.dx(i);
+	else return -expr.dx(i);
       }
  
       const value_type fastAccessDx(int i) const {
-        return v_pos ? expr.fastAccessDx(i) : -expr.fastAccessDx(i);
+        if (v_pos) return expr.fastAccessDx(i);
+	else return -expr.fastAccessDx(i);
       }
 
       const base_expr_type& getArg(int j) const {
@@ -421,6 +431,7 @@ namespace Sacado {							\
     public:								\
 									\
       typedef typename ExprT::value_type value_type;			\
+      typedef typename ExprT::scalar_type scalar_type;			\
 									\
       typedef typename ExprT::base_expr_type base_expr_type;		\
 									\
@@ -504,15 +515,15 @@ FAD_UNARYOP_MACRO(exp,
 		  a)
 FAD_UNARYOP_MACRO(log,
 		  LogOp, 
-		  a=value_type(1)/v,
+		  a=scalar_type(1.0)/v,
 		  std::log(v))
 FAD_UNARYOP_MACRO(log10,
 		  Log10Op, 
-		  a = value_type(1)/(std::log(value_type(10))*v),
+		  a = scalar_type(1.0)/(std::log(scalar_type(10.0))*v),
 		  std::log10(v))
 FAD_UNARYOP_MACRO(sqrt,
 		  SqrtOp, 
-		  a = value_type(1)/(value_type(2)*std::sqrt(v)),
+		  a = scalar_type(1.0)/(scalar_type(2.0)*std::sqrt(v)),
 		  std::sqrt(v))
 FAD_UNARYOP_MACRO(cos,
 		  CosOp, 
@@ -524,19 +535,19 @@ FAD_UNARYOP_MACRO(sin,
 		  std::sin(v))
 FAD_UNARYOP_MACRO(tan,
 		  TanOp, 
-		  a = value_type(1)+std::tan(v)*std::tan(v),
+		  a = scalar_type(1.0)+std::tan(v)*std::tan(v),
 		  std::tan(v))
 FAD_UNARYOP_MACRO(acos,
 		  ACosOp, 
-		  a = value_type(-1)/std::sqrt(value_type(1)-v*v),
+		  a = scalar_type(-1.0)/std::sqrt(scalar_type(1.0)-v*v),
 		  std::acos(v))
 FAD_UNARYOP_MACRO(asin,
 		  ASinOp, 
-		  a = value_type(1)/std::sqrt(value_type(1)-v*v),
+		  a = scalar_type(1.0)/std::sqrt(scalar_type(1.0)-v*v),
 		  std::asin(v))
 FAD_UNARYOP_MACRO(atan,
 		  ATanOp, 
-		  a = value_type(1)/(value_type(1)+v*v),
+		  a = scalar_type(1.0)/(scalar_type(1.0)+v*v),
 		  std::atan(v))
 FAD_UNARYOP_MACRO(cosh,
 		  CoshOp, 
@@ -548,19 +559,19 @@ FAD_UNARYOP_MACRO(sinh,
 		  std::sinh(v))
 FAD_UNARYOP_MACRO(tanh,
 		  TanhOp, 
-		  a = value_type(1)/(std::cosh(v)*std::cosh(v)),
+		  a = scalar_type(1.0)/(std::cosh(v)*std::cosh(v)),
 		  std::tanh(v))
 FAD_UNARYOP_MACRO(acosh,
 		  ACoshOp, 
-		  a = value_type(1)/std::sqrt((v-value_type(1))*(v+value_type(1))),
+		  a = scalar_type(1.0)/std::sqrt((v-scalar_type(1.0))*(v+scalar_type(1.0))),
 		  std::acosh(v))
 FAD_UNARYOP_MACRO(asinh,
 		  ASinhOp, 
-		  a = value_type(1)/std::sqrt(value_type(1)+v*v),
+		  a = scalar_type(1.0)/std::sqrt(scalar_type(1.0)+v*v),
 		  std::asinh(v))
 FAD_UNARYOP_MACRO(atanh,
 		  ATanhOp, 
-		  a = value_type(1)/(value_type(1)-v*v),
+		  a = scalar_type(1.0)/(scalar_type(1.0)-v*v),
 		  std::atanh(v))
 
 #undef FAD_UNARYOP_MACRO
@@ -587,6 +598,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -687,6 +702,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -770,6 +789,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -859,6 +882,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -959,6 +986,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -1042,6 +1073,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -1131,6 +1166,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -1240,6 +1279,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -1323,6 +1366,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -1412,6 +1459,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -1448,7 +1499,7 @@ namespace Sacado {
 	expr2.cache();
         const value_type_1 v1 = expr1.val();
 	const value_type_2 v2 = expr2.val();
-	a = value_type(1)/v2;
+	a = scalar_type(1.0)/v2;
 	v = v1*a;
 	b = -v/v2;
       }
@@ -1525,6 +1576,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -1553,7 +1608,7 @@ namespace Sacado {
       void cache() const {
 	expr1.cache();
 	const value_type_1 v1 = expr1.val();
-	a = value_type(1)/expr2.val();
+	a = scalar_type(1.0)/expr2.val();
 	v = v1*a;
       }
 
@@ -1613,6 +1668,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -1707,6 +1766,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -1743,7 +1806,7 @@ namespace Sacado {
 	expr2.cache();
         const value_type_1 v1 = expr1.val();
 	const value_type_2 v2 = expr2.val();
-	a = value_type(1)/(v1*v1 + v2*v2);
+	a = scalar_type(1.0)/(v1*v1 + v2*v2);
 	b = -v1*a;
 	a = v2*a;
 	v = std::atan2(v1,v2);
@@ -1821,6 +1884,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -1910,6 +1977,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -2005,6 +2076,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -2042,9 +2117,9 @@ namespace Sacado {
         const value_type_1 v1 = expr1.val();
 	const value_type_2 v2 = expr2.val();
 	v = std::pow(v1,v2);
-	if (v1 == value_type(0)) {
-	  a = value_type(0);
-	  b = value_type(0);
+	if (v1 == scalar_type(0.0)) {
+	  a = scalar_type(0.0);
+	  b = scalar_type(0.0);
 	}
 	else {
 	  a = v*v2/v1;
@@ -2124,6 +2199,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -2154,8 +2233,8 @@ namespace Sacado {
 	const value_type_1 v1 = expr1.val();
 	const value_type_2 v2 = expr2.val();
 	v = std::pow(v1,v2);
-	if (v1 == value_type(0)) {
-	  a = value_type(0);
+	if (v1 == scalar_type(0.0)) {
+	  a = scalar_type(0.0);
 	}
 	else {
 	  a = v*v2/v1;
@@ -2218,6 +2297,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -2248,8 +2331,8 @@ namespace Sacado {
 	const value_type_1 v1 = expr1.val();
 	const value_type_2 v2 = expr2.val();
 	v = std::pow(v1,v2);
-	if (v1 == value_type(0)) {
-	  b = value_type(0);
+	if (v1 == scalar_type(0.0)) {
+	  b = scalar_type(0.0);
 	}
 	else {
 	  b = v*std::log(v1);
@@ -2318,6 +2401,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -2368,11 +2455,11 @@ namespace Sacado {
 	  if (max_v1)
 	    expr1.computePartials(bar, partials);
 	  else
-	    expr1.computePartials(value_type(0), partials);
+	    expr1.computePartials(value_type(0.0), partials);
 	}
 	if (num_args2 > 0) {
 	  if (max_v1)
-	    expr2.computePartials(value_type(0), partials+num_args1);
+	    expr2.computePartials(value_type(0.0), partials+num_args1);
 	  else
 	    expr2.computePartials(bar, partials+num_args1);
 	}
@@ -2432,6 +2519,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -2474,7 +2565,7 @@ namespace Sacado {
 	if (max_v1)
 	  expr1.computePartials(bar, partials);
 	else
-	  expr1.computePartials(value_type(0), partials);
+	  expr1.computePartials(value_type(0.0), partials);
       }
 
       void getTangents(int i, value_type dots[]) const {
@@ -2494,11 +2585,11 @@ namespace Sacado {
       }
 
       const value_type dx(int i) const {
-        return max_v1 ? expr1.dx(i) : value_type(0);
+        return max_v1 ? expr1.dx(i) : value_type(0.0);
       }
 
       const value_type fastAccessDx(int i) const {
-        return max_v1 ? expr1.fastAccessDx(i) : value_type(0);
+        return max_v1 ? expr1.fastAccessDx(i) : value_type(0.0);
       }
 
       const base_expr_type& getArg(int j) const {
@@ -2524,6 +2615,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -2564,7 +2659,7 @@ namespace Sacado {
       void computePartials(const value_type& bar,
 			   value_type partials[]) const {
 	if (max_v1)
-	  expr2.computePartials(value_type(0), partials);
+	  expr2.computePartials(value_type(0.0), partials);
 	else
 	  expr2.computePartials(bar, partials);
       }
@@ -2586,11 +2681,11 @@ namespace Sacado {
       }
 
       const value_type dx(int i) const {
-        return max_v1 ? value_type(0) : expr2.dx(i);
+        return max_v1 ? value_type(0.0) : expr2.dx(i);
       }
 
       const value_type fastAccessDx(int i) const {
-        return max_v1 ? value_type(0) : expr2.fastAccessDx(i);
+        return max_v1 ? value_type(0.0) : expr2.fastAccessDx(i);
       }
 
       const base_expr_type& getArg(int j) const {
@@ -2622,6 +2717,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -2672,11 +2771,11 @@ namespace Sacado {
 	  if (min_v1)
 	    expr1.computePartials(bar, partials);
 	  else
-	    expr1.computePartials(value_type(0), partials);
+	    expr1.computePartials(value_type(0.0), partials);
 	}
 	if (num_args2 > 0) {
 	  if (min_v1)
-	    expr2.computePartials(value_type(0), partials+num_args1);
+	    expr2.computePartials(value_type(0.0), partials+num_args1);
 	  else
 	    expr2.computePartials(bar, partials+num_args1);
 	}
@@ -2736,6 +2835,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -2778,7 +2881,7 @@ namespace Sacado {
 	if (min_v1)
 	  expr1.computePartials(bar, partials);
 	else
-	  expr1.computePartials(value_type(0), partials);
+	  expr1.computePartials(value_type(0.0), partials);
       }
 
       void getTangents(int i, value_type dots[]) const {
@@ -2798,11 +2901,11 @@ namespace Sacado {
       }
 
       const value_type dx(int i) const {
-        return min_v1 ? expr1.dx(i) : value_type(0);
+        return min_v1 ? expr1.dx(i) : value_type(0.0);
       }
 
       const value_type fastAccessDx(int i) const {
-        return min_v1 ? expr1.fastAccessDx(i) : value_type(0);
+        return min_v1 ? expr1.fastAccessDx(i) : value_type(0.0);
       }
       
       const base_expr_type& getArg(int j) const {
@@ -2828,6 +2931,10 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+				       scalar_type_2>::type scalar_type;
 
       typedef typename ExprT1::base_expr_type base_expr_type_1;
       typedef typename ExprT2::base_expr_type base_expr_type_2;
@@ -2868,7 +2975,7 @@ namespace Sacado {
       void computePartials(const value_type& bar,
 			   value_type partials[]) const {
 	if (min_v1)
-	  expr2.computePartials(value_type(0), partials);
+	  expr2.computePartials(value_type(0.0), partials);
 	else
 	  expr2.computePartials(bar, partials);
       }
@@ -2890,11 +2997,11 @@ namespace Sacado {
       }
 
       const value_type dx(int i) const {
-        return min_v1 ? value_type(0) : expr2.dx(i);
+        return min_v1 ? value_type(0.0) : expr2.dx(i);
       }
 
       const value_type fastAccessDx(int i) const {
-        return min_v1 ? value_type(0) : expr2.fastAccessDx(i);
+        return min_v1 ? value_type(0.0) : expr2.fastAccessDx(i);
       }
 
       const base_expr_type& getArg(int j) const {
@@ -2955,6 +3062,38 @@ namespace Sacado {							\
 	    const typename Expr<T>::value_type& c)			\
     {									\
       typedef ConstExpr<typename Expr<T>::value_type> ConstT;		\
+      typedef OP< Expr<T>, ConstT > expr_t;				\
+									\
+      return Expr<expr_t>(expr, ConstT(c));				\
+    }									\
+									\
+    template <typename T>						\
+    inline typename							\
+    mpl::disable_if<mpl::is_same<typename Expr<T>::value_type,		\
+				 typename Expr<T>::scalar_type>,	\
+		    Expr< OP< ConstExpr<typename Expr<T>::scalar_type>, \
+			      Expr<T> > >				\
+		    >::type						\
+    OPNAME (const typename Expr<T>::scalar_type& c,			\
+	    const Expr<T>& expr)					\
+    {									\
+      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;		\
+      typedef OP< ConstT, Expr<T> > expr_t;				\
+									\
+      return Expr<expr_t>(ConstT(c), expr);				\
+    }									\
+									\
+    template <typename T>						\
+    inline typename							\
+    mpl::disable_if<mpl::is_same<typename Expr<T>::value_type,		\
+				 typename Expr<T>::scalar_type>,	\
+		    Expr< OP< Expr<T>,					\
+			      ConstExpr<typename Expr<T>::scalar_type> > > \
+		    >::type						\
+    OPNAME (const Expr<T>& expr,					\
+	    const typename Expr<T>::scalar_type& c)			\
+    {									\
+      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;		\
       typedef OP< Expr<T>, ConstT > expr_t;				\
 									\
       return Expr<expr_t>(expr, ConstT(c));				\

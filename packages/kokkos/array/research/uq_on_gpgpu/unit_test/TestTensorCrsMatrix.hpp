@@ -50,17 +50,9 @@
 #include <Kokkos_ProductTensor.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
 
-namespace unit_test_tensor {
+#include <TestGenerateGraph.hpp>
 
-template< typename IntType >
-inline
-IntType map_coord( const IntType & N ,
-                   const IntType & i ,
-                   const IntType & j ,
-                   const IntType & k )
-{
-  return k + N * ( j + N * i );
-}
+namespace unit_test_tensor {
 
 // Some arbitrary values for testing.
 template< typename IntType >
@@ -102,29 +94,9 @@ void generate_matrix(
   typedef typename values_type::HostMirror host_values_type ;
   typedef typename graph_type ::HostMirror host_graph_type ;
 
-  std::vector< std::vector<size_t> > graph( N * N * N );
+  std::vector< std::vector<size_t> > graph ;
 
-  size_t total = 0 ;
-
-  for ( int i = 0 ; i < (int) N ; ++i ) {
-  for ( int j = 0 ; j < (int) N ; ++j ) {
-  for ( int k = 0 ; k < (int) N ; ++k ) {
-    const size_t row = map_coord((int)N,i,j,k);
-    graph[row].reserve(27);
-
-    for ( int ii = -1 ; ii < 2 ; ++ii ) {
-    for ( int jj = -1 ; jj < 2 ; ++jj ) {
-    for ( int kk = -1 ; kk < 2 ; ++kk ) {
-      if ( 0 <= i + ii && i + ii < (int) N &&
-           0 <= j + jj && j + jj < (int) N &&
-           0 <= k + kk && k + kk < (int) N ) {
-        size_t col = map_coord((int)N,i+ii,j+jj,k+kk);
-
-        graph[row].push_back(col); 
-      }
-    }}}
-    total += graph[row].size();
-  }}}
+  const size_t total = unit_test::generate_fem_graph( N , graph );
 
   std::map< index_type , ScalarType > tensor_input ;
 
