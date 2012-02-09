@@ -5,10 +5,11 @@ Set up email notification hooks
 1) Set up hook scripts and default configuration
 
   $ cd GIT_REPO_BASE
-  $ THIS_DIR/full_repo_setup.sh defaultemail@something.com Something
+  $ THIS_DIR/full_repo_setup.sh defaultemail@something.com SOME_REPO_NAME
 
   NOTE: The above will completely configure the repo to set out emails
-  on pushes to the default email show above
+  on pushes to the default email show above with [SOME_REPO_NAME]
+  shown in the subject of the emails.
 
 2) Customize the dirs_to_emails file and fill out with mapping [Optional]
 
@@ -45,7 +46,9 @@ change the mappings.
 4) Set group ownership
 
   $ cd GIT_REPO_BASE_DIR
-  $ THIS_DIR/setup-shared-repo.sh GROUP_NAME
+  $ THIS_DIR/setup-shared-repo.sh GROUP_NAME [OWNER_NAME]
 
-  NOTE: The above setup-shared-repo.sh will make sure that anyone can modify
-  the repo in the given group.
+  NOTE: The above setup-shared-repo.sh will make sure that anyone can
+  modify the repo in the given group.  Also, if OWNER_NAME is given,
+  then the owner of the directory and all of the files will be
+  changed.
