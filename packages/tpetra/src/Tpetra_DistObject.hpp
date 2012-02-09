@@ -250,9 +250,10 @@ namespace Tpetra {
     virtual void createViewsNonConst(Kokkos::ReadWriteOption rwo) {}
     virtual void releaseViews() const {}
 
-  private:
     //! The Map over which this object is distributed.
     Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_;
+
+  private:
     // buffers into which packed data is imported
     Teuchos::Array<Packet> imports_;
     Teuchos::Array<size_t> numImportPacketsPerLID_;

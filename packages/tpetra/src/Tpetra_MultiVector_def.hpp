@@ -723,6 +723,15 @@ namespace Tpetra {
   }
 
 
+  //! Replace the underlying Map with a compatible one.
+  //! This method does not perform a redistribution of data, just an implicit permutation.
+  //! The new map must have the same number of GIDs on each process as the old map, although this method does not explicitly check this property.
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) {
+   TEUCHOS_TEST_FOR_EXCEPTION(!this->getMap()->isCompatible(*map), std::invalid_argument, "Tpetra::MultiVector::replaceMap(): New map not compatible with existing map.");
+   this->map_ = map;
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scale(const Scalar &alpha) {
     // NOTE: can't substitute putScalar(0.0) for scale(0.0), because 
