@@ -181,6 +181,17 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
   }
 }
 
+unsigned get_spatial_dimension(const Entity& entity);
+
+/* The Fmwk uses an enum to identify nodes, edges, faces and elements. The
+   toolkit is similar, but the the toolkit rank depends on the spatial
+   dimension. For 3D parts they are identical. With 2D, the element rank is
+   2 (not 3). etc.
+*/
+
+unsigned convert_fmwk_rank_to_stk(unsigned fmwk_rank, unsigned spatial_dim);
+unsigned convert_stk_rank_to_fmwk(unsigned stk_rank,  unsigned spatial_dim);
+
 /** \} */
 
 } //namespace fem

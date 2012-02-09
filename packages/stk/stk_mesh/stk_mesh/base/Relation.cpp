@@ -18,14 +18,26 @@
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
-namespace sierra {
-namespace Fmwk {
-unsigned get_derived_type(const stk::mesh::Entity&);
-}
-}
-
 namespace stk {
 namespace mesh {
+
+#ifdef SIERRA_MIGRATION
+
+namespace fem {
+unsigned get_spatial_dimension(const Entity& entity);
+unsigned convert_stk_rank_to_fmwk(unsigned stk_rank,  unsigned spatial_dim);
+}
+
+namespace {
+
+unsigned get_derived_type(const Entity& entity)
+{
+  return fem::convert_stk_rank_to_fmwk(entity.entity_rank(), fem::get_spatial_dimension(entity));
+}
+
+}
+
+#endif
 
 //----------------------------------------------------------------------
 
@@ -54,8 +66,8 @@ Relation::Relation() :
   m_target_entity(NULL)
 #ifdef SIERRA_MIGRATION
   ,
-  m_meshObj(NULL),
-  m_relationType(0)
+  m_relationType(-1),
+  m_derivedType(-1)
 #endif
 {}
 
@@ -63,9 +75,9 @@ Relation::Relation( Entity & entity , RelationIdentifier identifier )
   : m_raw_relation( Relation::raw_relation_id( entity.entity_rank() , identifier ) ),
     m_target_entity( & entity )
 #ifdef SIERRA_MIGRATION
-  ,
-    m_meshObj(NULL),
-    m_relationType(0)
+    ,
+    m_relationType(-1),
+    m_derivedType(-1)
 #endif
 {}
 
@@ -73,39 +85,16 @@ bool Relation::operator < ( const Relation & rhs ) const
 {
   bool result = false;
 
-#ifdef SIERRA_MIGRATION
-  if (m_target_entity != NULL && rhs.m_target_entity != NULL) {
-#endif
-    // STK_Mesh version of relation comparison
-    if ( m_raw_relation.value != rhs.m_raw_relation.value ) {
-      result = m_raw_relation.value < rhs.m_raw_relation.value ;
-    }
-    else {
-      const EntityKey lhs_key = m_target_entity   ? m_target_entity->key()   : EntityKey() ;
-      const EntityKey rhs_key = rhs.m_target_entity ? rhs.m_target_entity->key() : EntityKey() ;
-      result = lhs_key < rhs_key ;
-    }
-    return result ;
-#ifdef SIERRA_MIGRATION
-  }
-  else if (m_meshObj != NULL && rhs.m_meshObj != NULL) {
-    // Fmwk version of relation comparison
-    if ( getDerivedType() < rhs.getDerivedType()) return true;
-    if ( rhs.getDerivedType() < getDerivedType()) return false;
-
-    if ( getRelationType() < rhs.getRelationType() ) return true;
-    if ( rhs.getRelationType() < getRelationType() ) return false;
-
-    return getOrdinal() < rhs.getOrdinal();
+  // STK_Mesh version of relation comparison
+  if ( m_raw_relation.value != rhs.m_raw_relation.value ) {
+    result = m_raw_relation.value < rhs.m_raw_relation.value ;
   }
   else {
-    // Semantically, these comparisons are the same, but it is still not safe to
-    // compare fmwk and stk relations because the entity-ranks between the two
-    // meshes are not necessarily the same.
-    ThrowRequireMsg(false, "Should not be comparing relations from fmwk and stk sides");
-    return false;
+    const EntityKey lhs_key = m_target_entity     ? m_target_entity->key()     : EntityKey();
+    const EntityKey rhs_key = rhs.m_target_entity ? rhs.m_target_entity->key() : EntityKey();
+    result = lhs_key < rhs_key ;
   }
-#endif
+  return result ;
 }
 
 //----------------------------------------------------------------------
@@ -114,14 +103,24 @@ bool Relation::operator < ( const Relation & rhs ) const
 
 Relation::Relation(Entity *obj, const unsigned relation_type, const unsigned ordinal, const unsigned Orient)
   :
-  m_raw_relation( Relation::raw_relation_id( sierra::Fmwk::get_derived_type(*obj) , ordinal )), // makes this m_raw_relation forever incomparable with Relations constructed STK-style
+  m_raw_relation( Relation::raw_relation_id( obj->entity_rank(), ordinal )),
   m_attribute(Orient),
-  m_target_entity( NULL ),
-  m_meshObj(obj),
+  m_target_entity(obj),
   m_relationType(relation_type),
-  m_derivedType( sierra::Fmwk::get_derived_type(*obj)) // Needs to be maintained seperately from the rank within m_raw_relation because it may be different!!
+  m_derivedType(static_cast<char>(get_derived_type(*obj)))
 {}
 
+void Relation::setMeshObj(Entity *object, int fall_back_derived_type)
+{
+  m_target_entity = object;
+  if (object != NULL) {
+    m_derivedType   = static_cast<char>(get_derived_type(*object));
+    m_raw_relation = Relation::raw_relation_id( object->entity_rank(), identifier() );
+  }
+  else if (fall_back_derived_type != -1) {
+    m_derivedType   = static_cast<char>(fall_back_derived_type);
+  }
+}
 
 #endif
 

@@ -178,24 +178,18 @@ private:
   }
 
   /**
-   * Construct filled-out relation.
+   * Construct filled-out relation, fmwk-style
    */
-  // Possible states for the entity to be in:
-  //  1) Constructed on the fmwk side. Indicated by having NULL m_target_entity
-  //  2) Constructed on stk side. Indicated by having NULL m_meshObj
-  //  3) Constructed on stk side, but with fmwk data (like m_meshObj) added on. Indicated by having non-null m_target_entity and m_meshObj.
-  //  NOTE: (2) relations are NOT comparable with (1) relations!
   Relation(Entity *obj, const unsigned relation_type, const unsigned ordinal, const unsigned Orient = 0);
 
   Entity *getMeshObj() const {
-    return m_meshObj;
+    return entity();
   }
 
-  void setMeshObj(Entity *object) {
-    m_meshObj = object;
-  }
+  void setMeshObj(Entity *object, int fall_back_derived_type = -1);
 
   RelationType getRelationType() const {
+    ThrowAssert(m_relationType != -1);
     return (RelationType) m_relationType;
   }
 
@@ -208,8 +202,7 @@ private:
   }
 
   void setOrdinal(RelationIdentifier ordinal) {
-    ThrowAssertMsg(m_target_entity == NULL, "Cannot call setOrdinal on a relation created on the STK side");
-    m_raw_relation = Relation::raw_relation_id( getDerivedType(), ordinal );
+    m_raw_relation = Relation::raw_relation_id( entity_rank(), ordinal );
   }
 
   attribute_type getOrientation() const {
@@ -221,11 +214,8 @@ private:
   }
 
   unsigned getDerivedType() const {
+    ThrowAssert(m_derivedType != -1);
     return m_derivedType;
-  }
-
-  void setDerivedType(unsigned derived_type) {
-    m_derivedType = (unsigned char) derived_type;
   }
 
   /**
@@ -247,9 +237,15 @@ private:
   }
 
 private:
-  Entity * m_meshObj;                   ///< A pointer to the related mesh object.
-  unsigned char m_relationType;         ///< Identification of the type of relationship, e.g. USES or USED_BY.
-  unsigned char m_derivedType;          ///< Derived type of related mesh object in a Fmwk-based rank
+  bool has_fmwk_state() const { return m_relationType != -1; }
+
+  // Identification of the type of relationship, e.g. USES or USED_BY. We keep this signed
+  // so that -1 can be used to indicate a STK relation.
+  char m_relationType;
+
+  // Can't inline the call to get_derived_type from the Entity, so we'll store it as
+  // a char.
+  char m_derivedType;
 #endif // SIERRA_MIGRATION
 };
 
@@ -351,25 +347,15 @@ std::ostream & operator << ( std::ostream & , const Relation & );
 
 inline
 bool Relation::operator == ( const Relation & rhs ) const
-#ifdef SIERRA_MIGRATION
+
 {
-  if (m_target_entity != NULL && rhs.m_target_entity != NULL) {
-    return m_raw_relation.value == rhs.m_raw_relation.value && m_target_entity == rhs.m_target_entity;
-  }
-  else if (m_meshObj != NULL && rhs.m_meshObj != NULL) {
-    return getMeshObj()      == rhs.getMeshObj() &&
-           getRelationType() == rhs.getRelationType() &&
-           getOrdinal()      == rhs.getOrdinal() &&
-           getOrientation()  == rhs.getOrientation();
-  }
-  else {
-    ThrowRequireMsg(false, "Should not be comparing relations from fmwk and stk sides");
-    return false;
-  }
-}
-#else
-{ return m_raw_relation.value == rhs.m_raw_relation.value && m_target_entity == rhs.m_target_entity ; }
+  return m_raw_relation.value == rhs.m_raw_relation.value && m_target_entity == rhs.m_target_entity
+#ifdef SIERRA_MIGRATION
+    // if both sides have fmwk state, compare that too
+    && (  (!has_fmwk_state() || !rhs.has_fmwk_state()) || (getRelationType() == rhs.getRelationType() && getOrientation() == rhs.getOrientation()) )
 #endif
+    ;
+}
 
 } // namespace mesh
 } // namespace stk
