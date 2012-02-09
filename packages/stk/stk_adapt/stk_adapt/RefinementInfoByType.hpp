@@ -22,7 +22,17 @@ namespace stk {
 
     struct RefinementInfoByType
     {
-      RefinementInfoByType() : m_rank(0) {}
+      RefinementInfoByType() : 
+        m_numOrigElems(0),
+        m_numNewElems(0),
+        m_numOrigNodes(0),
+        m_numNewNodes(0),
+
+        m_numOrigElemsLast(0),
+        m_numNewElemsLast(0),
+        m_rank(0)
+      {}
+
       //typedef uint64_t RefinementInfoCount ;
       typedef unsigned RefinementInfoCount ;
 

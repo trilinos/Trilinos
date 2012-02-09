@@ -71,10 +71,11 @@ namespace stk {
       void read_simple(std::string file_name)
       {
         std::ifstream file(file_name.c_str());
+        if (file.good())
+          file >> mult_hex8 >> mult_tet4 >> mult_nodes;
         //std::string line1;
         //file >> line1;
-        file >> mult_hex8 >> mult_tet4 >> mult_nodes;
-        std::cout << "mult_hex8= " << mult_hex8 << " mult_tet4= " << mult_tet4 << " mult_nodes=" << mult_nodes << std::endl;
+        //std::cout << "mult_hex8= " << mult_hex8 << " mult_tet4= " << mult_tet4 << " mult_nodes=" << mult_nodes << std::endl;
       }
 
       unsigned estimate_memory()
@@ -91,9 +92,9 @@ namespace stk {
         for (unsigned i = 0; i < refInfo.size(); i++)
           {
             num_nodes= refInfo[0].m_numNewNodes;
-            std::cout << "irank, rank, m_numNewNodes, m_numNewElems= " << i << " " << refInfo[i].m_rank << " " << refInfo[i].m_numNewNodes 
-                      << " " << refInfo[i].m_numNewElemsLast
-                      << std::endl;
+            //std::cout << "irank, rank, m_numNewNodes, m_numNewElems= " << i << " " << refInfo[i].m_rank << " " << refInfo[i].m_numNewNodes 
+            //<< " " << refInfo[i].m_numNewElemsLast
+            //<< std::endl;
             
 //             if (refInfo[i].m_rank == 0)
 //               {
@@ -140,7 +141,8 @@ namespace stk {
             */
             MemoryMultipliers memMults;
             // FIXME, here's where we would read in some values for memMults from memory_multipliers_file
-            memMults.read_simple("memory-multipliers.dat");
+            if (memory_multipliers_file.size())
+              memMults.read_simple(memory_multipliers_file);
             RefinementInfoByType::countCurrentNodes(eMesh, refInfo);
             unsigned estMem = memMults.estimate_memory(refInfo);
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
@@ -154,7 +156,8 @@ namespace stk {
             // this is an estimate multipliers pass (computes memory using current multipliers)
             MemoryMultipliers memMults;
             // FIXME, here's where we would read in some values for memMults from memory_multipliers_file
-            memMults.read_simple("memory-multipliers.dat");
+            if (memory_multipliers_file.size())
+              memMults.read_simple(memory_multipliers_file);
             RefinementInfoByType::countCurrentNodes(eMesh, refInfo);
             unsigned estMem = memMults.estimate_memory(refInfo);
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
@@ -665,7 +668,8 @@ namespace stk {
                 //std::cout << "MemEst: num_nodes= " << test_memory_nodes << " num_tet4=0 hum_hex8= " << test_memory_elements << " memory= " << MegaByte(tot_mem) << std::endl;
                 //MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
                 MemoryMultipliers memMults;
-                memMults.read_simple("memory-multipliers.dat");
+                if (memory_multipliers_file.size())
+                  memMults.read_simple(memory_multipliers_file);
                 memMults.num_hex8=test_memory_elements;
                 memMults.num_nodes=test_memory_nodes;
                 unsigned estMem = memMults.estimate_memory();
