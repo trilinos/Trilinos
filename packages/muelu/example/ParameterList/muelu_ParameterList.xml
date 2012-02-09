@@ -9,11 +9,11 @@
         <Parameter name="startLevel" type="int" value="0"/>
         
         <ParameterList name="P">
-          <Parameter name="type" type="string" value="TentativePFactory"/>
+          <Parameter name="factory" type="string" value="TentativePFactory"/>
         </ParameterList>
 
         <ParameterList name="Smoother">
-          <Parameter name="type" type="string" value="TrilinosSmoother"/>
+          <Parameter name="factory" type="string" value="TrilinosSmoother"/>
 
           <ParameterList name="ParameterList">
             <Parameter name="type"                       type="string" value="RELAXATION"/>    
@@ -29,7 +29,7 @@
       
       <ParameterList name="CoarsestLevel">
         <Parameter name="startLevel" type="int" value="-1"/>
-        <Parameter name="type" type="string" value="DirectSolver"/>
+        <Parameter name="Smoother" type="string" value="DirectSolver"/>
       </ParameterList>
   </ParameterList>
       

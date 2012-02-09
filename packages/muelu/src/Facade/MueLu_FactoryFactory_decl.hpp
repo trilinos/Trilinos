@@ -24,6 +24,7 @@
 #include "MueLu_SmootherFactory.hpp" //TMP
 #include "MueLu_TentativePFactory.hpp" //TMP
 #include "MueLu_UCAggregationFactory.hpp" //TMP
+#include "MueLu_DirectSolver.hpp" //TMP
 #include "MueLu_Exceptions.hpp" //TMP
 
 namespace MueLu {
@@ -44,19 +45,20 @@ namespace MueLu {
     // or:
     //
     //     <ParameterList name="smootherFact1">
-    //       <Parameter name="class" type="string" value="TrilinosSmoother"/>
+    //       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
     //       ...
     //     </ParameterList>
     //
     RCP<FactoryBase> BuildFactory(const Teuchos::ParameterEntry & param, const FactoryMap & factoryMapIn) const {
+
       // Find factory
       std::string type;
-      Teuchos::ParameterList paramList;    
+      Teuchos::ParameterList paramList;
       if (!param.isList()) {
         type = Teuchos::getValue<std::string>(param);
       } else {
         paramList = Teuchos::getValue<Teuchos::ParameterList>(param);
-        type = paramList.get<std::string>("class");
+        type = paramList.get<std::string>("factory");
       } 
     
       // TODO: see how Teko handles this.
@@ -75,8 +77,11 @@ namespace MueLu {
       if (type == "TrilinosSmoother") {
         return BuildTrilinosSmoother(paramList);
       }
+      if (type == "DirectSolver") {
+        return BuildDirectSolver(paramList);
+      }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::HierarchyFactory:: unkown factory name.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:: unkown factory name : " << type);
 
       return Teuchos::null;
     }
@@ -101,7 +106,7 @@ namespace MueLu {
       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
         return rcp(new SaPFactory());
 
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("class") != "SaPFactory", Exceptions::RuntimeError, "");      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "SaPFactory", Exceptions::RuntimeError, "");      
 
       RCP<SaPFactory> f = rcp(new SaPFactory());
       if (paramList.isParameter("DampingFactory")) f->SetDampingFactor(paramList.get<Scalar>("DampingFactory"));
@@ -114,7 +119,7 @@ namespace MueLu {
       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
         return rcp(new RAPFactory());
 
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("class") != "RAPFactory", Exceptions::RuntimeError, "");      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RAPFactory", Exceptions::RuntimeError, "");      
 
       return rcp(new RAPFactory());
     }
@@ -124,7 +129,7 @@ namespace MueLu {
       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
         return rcp(new UCAggregationFactory());
 
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("class") != "UCAggregationFactory", Exceptions::RuntimeError, "");      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "UCAggregationFactory", Exceptions::RuntimeError, "");      
 
       RCP<UCAggregationFactory> f = rcp(new UCAggregationFactory());
 
@@ -160,9 +165,9 @@ namespace MueLu {
     //! TrilinosSmoother
     // Parameter List Parsing:
     //     <ParameterList name="smootherFact1">
-    //       <Parameter name="class" type="string" value="TrilinosSmoother"/>
+    //       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
     //       <Parameter name="verbose" type="string" value="Warnings"/>
-    //       <Parameter name="precond" type="string" value="RELAXATION"/>
+    //       <Parameter name="type" type="string" value="RELAXATION"/>
     //       <ParameterList name="ParameterList">
     //       ...
     //       </ParameterList>
@@ -171,15 +176,28 @@ namespace MueLu {
       if (paramList.begin() == paramList.end())
         return rcp(new SmootherFactory(rcp(new TrilinosSmoother())));
 
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("class") != "TrilinosSmoother", Exceptions::RuntimeError, "");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "TrilinosSmoother", Exceptions::RuntimeError, "");
 
-      std::string precond;           if(paramList.isParameter("precond"))       precond = paramList.get<std::string>("precond");
-      std::string verbose;           if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
+      std::string type;               if(paramList.isParameter("type"))         type = paramList.get<std::string>("type");
+      // std::string verbose;         if(paramList.isParameter("verbose"))      verbose = paramList.get<std::string>("verbose");
       Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
-      return rcp(new SmootherFactory(rcp(new TrilinosSmoother(precond, params))));
+      return rcp(new SmootherFactory(rcp(new TrilinosSmoother(type, params))));
     }
     
+    RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList & paramList) const {
+      if (paramList.begin() == paramList.end())
+        return rcp(new SmootherFactory(rcp(new DirectSolver())));
+      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "DirectSolver", Exceptions::RuntimeError, "");
+
+      std::string type;              if(paramList.isParameter("type"))          type = paramList.get<std::string>("type");
+      // std::string verbose;        if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
+      Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
+      
+      return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));
+    }
+
   }; // class
 
 } // namespace MueLu

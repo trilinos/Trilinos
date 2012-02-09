@@ -51,10 +51,11 @@ namespace MueLu {
     //     </ParameterList>
     //    </ParameterList>
     //   </ParameterList>
-    Teuchos::ParameterList hieraList = paramList.sublist("Hierarchy");
+    Teuchos::ParameterList hieraList = paramList.sublist("Hierarchy"); // copy because list temporally modified (remove 'id')
 
     // Get hierarchy options
-    this->numDesiredLevel_ = 10; if(hieraList.isParameter("numDesiredLevel")) this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel");
+    this->numDesiredLevel_ = 10; /*should use instead the default provided by Hierarchy*/; 
+    if(hieraList.isParameter("numDesiredLevel")) { this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel"); hieraList.remove("numDesiredLevel"); }
 
     // Get level configuration
     for (Teuchos::ParameterList::ConstIterator param = hieraList.begin(); param != hieraList.end(); ++param) {
@@ -87,7 +88,7 @@ namespace MueLu {
         } else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid level id");
         }
-      }
+      } /* TODO: else { } */
 
     }
   }
@@ -104,6 +105,7 @@ namespace MueLu {
   //     </ParameterList>
   //    </ParameterList>
   //
+  //TODO: static?
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildFactoryMap(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, FactoryMap & factoryMapOut) const {
     for (Teuchos::ParameterList::ConstIterator param = paramList.begin(); param != paramList.end(); ++param) {

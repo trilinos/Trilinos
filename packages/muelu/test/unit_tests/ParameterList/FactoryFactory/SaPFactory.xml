@@ -3,11 +3,11 @@
   <Parameter name="P0" type="string" value="SaPFactory"/>
 
   <ParameterList name="P1">
-    <Parameter name="class" type="string" value="SaPFactory"/>
+    <Parameter name="factory" type="string" value="SaPFactory"/>
   </ParameterList>
 
   <ParameterList name="P2">
-    <Parameter name="class"         type="string" value="SaPFactory"/>
+    <Parameter name="factory"       type="string" value="SaPFactory"/>
     <Parameter name="DampingFactor" type="double" value="4./3"/>
   </ParameterList>
 

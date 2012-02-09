@@ -3,7 +3,7 @@
   <Parameter name="A0" type="string" value="RAPFactory"/>
 
   <ParameterList name="A1">
-    <Parameter name="class" type="string" value="RAPFactory"/>
+    <Parameter name="factory" type="string" value="RAPFactory"/>
   </ParameterList>
 
 </ParameterList>
