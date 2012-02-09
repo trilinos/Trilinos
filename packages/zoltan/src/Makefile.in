@@ -113,17 +113,17 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/matrix/matrix_distribute.c \
 	$(srcdir)/matrix/matrix_operations.c \
 	$(srcdir)/matrix/matrix_sym.c $(srcdir)/matrix/matrix_utils.c \
-	$(srcdir)/matrix/common_sort.c $(srcdir)/oct/costs.c \
-	$(srcdir)/oct/dfs.c $(srcdir)/oct/migoct.c \
-	$(srcdir)/oct/migreg.c $(srcdir)/oct/migtags.c \
-	$(srcdir)/oct/msg.c $(srcdir)/oct/octant.c \
-	$(srcdir)/oct/oct_plot.c $(srcdir)/oct/octree.c \
-	$(srcdir)/oct/octupdate.c $(srcdir)/oct/oct_util.c \
-	$(srcdir)/oct/output.c $(srcdir)/oct/rootlist.c \
-	$(srcdir)/order/order.c $(srcdir)/order/order_struct.c \
-	$(srcdir)/order/order_tools.c $(srcdir)/order/hsfcOrder.c \
-	$(srcdir)/order/perm.c $(srcdir)/par/par_average.c \
-	$(srcdir)/par/par_bisect.c $(srcdir)/par/par_median.c \
+	$(srcdir)/oct/costs.c $(srcdir)/oct/dfs.c \
+	$(srcdir)/oct/migoct.c $(srcdir)/oct/migreg.c \
+	$(srcdir)/oct/migtags.c $(srcdir)/oct/msg.c \
+	$(srcdir)/oct/octant.c $(srcdir)/oct/oct_plot.c \
+	$(srcdir)/oct/octree.c $(srcdir)/oct/octupdate.c \
+	$(srcdir)/oct/oct_util.c $(srcdir)/oct/output.c \
+	$(srcdir)/oct/rootlist.c $(srcdir)/order/order.c \
+	$(srcdir)/order/order_struct.c $(srcdir)/order/order_tools.c \
+	$(srcdir)/order/hsfcOrder.c $(srcdir)/order/perm.c \
+	$(srcdir)/par/par_average.c $(srcdir)/par/par_bisect.c \
+	$(srcdir)/par/par_median.c \
 	$(srcdir)/par/par_median_randomized.c \
 	$(srcdir)/par/par_stats.c $(srcdir)/par/par_sync.c \
 	$(srcdir)/par/par_tflops_special.c \
@@ -134,7 +134,6 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/tpls/build_graph.c $(srcdir)/tpls/postprocessing.c \
 	$(srcdir)/tpls/preprocessing.c $(srcdir)/tpls/scatter_graph.c \
 	$(srcdir)/tpls/third_library.c $(srcdir)/tpls/verify_graph.c \
-	$(srcdir)/ccolamd/ccolamd.c \
 	$(srcdir)/tpls/parmetis_interface.c $(srcdir)/phg/phg_build.c \
 	$(srcdir)/phg/phg_build_calls.c $(srcdir)/phg/phg.c \
 	$(srcdir)/phg/phg_lookup.c $(srcdir)/phg/phg_verbose.c \
@@ -212,7 +211,7 @@ am__objects_7 = lb_balance.$(OBJEXT) lb_box_assign.$(OBJEXT) \
 	lb_set_part_sizes.$(OBJEXT)
 am__objects_8 = matrix_build.$(OBJEXT) matrix_distribute.$(OBJEXT) \
 	matrix_operations.$(OBJEXT) matrix_sym.$(OBJEXT) \
-	matrix_utils.$(OBJEXT) common_sort.$(OBJEXT)
+	matrix_utils.$(OBJEXT)
 am__objects_9 = costs.$(OBJEXT) dfs.$(OBJEXT) migoct.$(OBJEXT) \
 	migreg.$(OBJEXT) migtags.$(OBJEXT) msg.$(OBJEXT) \
 	octant.$(OBJEXT) oct_plot.$(OBJEXT) octree.$(OBJEXT) \
@@ -232,10 +231,9 @@ am__objects_13 = assign_param_vals.$(OBJEXT) bind_param.$(OBJEXT) \
 am__objects_14 = build_graph.$(OBJEXT) postprocessing.$(OBJEXT) \
 	preprocessing.$(OBJEXT) scatter_graph.$(OBJEXT) \
 	third_library.$(OBJEXT) verify_graph.$(OBJEXT)
-am__objects_15 = ccolamd.$(OBJEXT)
-am__objects_16 = parmetis_interface.$(OBJEXT)
-@BUILD_PARMETIS_TRUE@am__objects_17 = $(am__objects_16)
-am__objects_18 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
+am__objects_15 = parmetis_interface.$(OBJEXT)
+@BUILD_PARMETIS_TRUE@am__objects_16 = $(am__objects_15)
+am__objects_17 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
 	phg.$(OBJEXT) phg_lookup.$(OBJEXT) phg_verbose.$(OBJEXT) \
 	phg_coarse.$(OBJEXT) phg_comm.$(OBJEXT) phg_distrib.$(OBJEXT) \
 	phg_gather.$(OBJEXT) phg_hypergraph.$(OBJEXT) \
@@ -244,18 +242,18 @@ am__objects_18 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
 	phg_refinement.$(OBJEXT) phg_scale.$(OBJEXT) \
 	phg_serialpartition.$(OBJEXT) phg_util.$(OBJEXT) \
 	phg_tree.$(OBJEXT) phg_Vcycle.$(OBJEXT)
-am__objects_19 = box_assign.$(OBJEXT) create_proc_list.$(OBJEXT) \
+am__objects_18 = box_assign.$(OBJEXT) create_proc_list.$(OBJEXT) \
 	inertial1d.$(OBJEXT) inertial2d.$(OBJEXT) inertial3d.$(OBJEXT) \
 	point_assign.$(OBJEXT) rcb_box.$(OBJEXT) rcb.$(OBJEXT) \
 	rcb_util.$(OBJEXT) rib.$(OBJEXT) rib_util.$(OBJEXT) \
 	shared.$(OBJEXT)
-am__objects_20 = reftree_build.$(OBJEXT) reftree_coarse_path.$(OBJEXT) \
+am__objects_19 = reftree_build.$(OBJEXT) reftree_coarse_path.$(OBJEXT) \
 	reftree_hash.$(OBJEXT) reftree_part.$(OBJEXT)
-am__objects_21 = scotch_interface.$(OBJEXT)
-@BUILD_SCOTCH_TRUE@am__objects_22 = $(am__objects_21)
-am__objects_23 = block.$(OBJEXT) cyclic.$(OBJEXT) random.$(OBJEXT)
-am__objects_24 = timer_params.$(OBJEXT)
-am__objects_25 = comm_exchange_sizes.$(OBJEXT) \
+am__objects_20 = scotch_interface.$(OBJEXT)
+@BUILD_SCOTCH_TRUE@am__objects_21 = $(am__objects_20)
+am__objects_22 = block.$(OBJEXT) cyclic.$(OBJEXT) random.$(OBJEXT)
+am__objects_23 = timer_params.$(OBJEXT)
+am__objects_24 = comm_exchange_sizes.$(OBJEXT) \
 	comm_invert_map.$(OBJEXT) comm_do.$(OBJEXT) \
 	comm_do_reverse.$(OBJEXT) comm_info.$(OBJEXT) \
 	comm_create.$(OBJEXT) comm_resize.$(OBJEXT) \
@@ -268,24 +266,23 @@ am__objects_25 = comm_exchange_sizes.$(OBJEXT) \
 	DD_Set_Neighbor_Hash_Fn2.$(OBJEXT) DD_Set_Hash_Fn.$(OBJEXT) \
 	DD_Set_Neighbor_Hash_Fn1.$(OBJEXT) mem.$(OBJEXT) \
 	zoltan_align.$(OBJEXT) zoltan_id.$(OBJEXT)
-am__objects_26 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
+am__objects_25 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
 	zz_hash.$(OBJEXT) murmur3.$(OBJEXT) zz_map.$(OBJEXT) \
 	zz_heap.$(OBJEXT) zz_init.$(OBJEXT) zz_obj_list.$(OBJEXT) \
 	zz_rand.$(OBJEXT) zz_set_fn.$(OBJEXT) zz_sort.$(OBJEXT) \
 	zz_struct.$(OBJEXT) zz_back_trace.$(OBJEXT) zz_util.$(OBJEXT)
-am__objects_27 = ztypes.$(OBJEXT) cwrap.$(OBJEXT) \
+am__objects_26 = ztypes.$(OBJEXT) cwrap.$(OBJEXT) \
 	zoltan_user_data.$(OBJEXT) lb_user_const.$(OBJEXT) \
 	fwrap.$(OBJEXT)
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@am__objects_28 = $(am__objects_27)
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@am__objects_27 = $(am__objects_26)
 am_libzoltan_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
 	$(am__objects_10) $(am__objects_11) $(am__objects_12) \
-	$(am__objects_13) $(am__objects_14) $(am__objects_15) \
+	$(am__objects_13) $(am__objects_14) $(am__objects_16) \
 	$(am__objects_17) $(am__objects_18) $(am__objects_19) \
-	$(am__objects_20) $(am__objects_22) $(am__objects_23) \
-	$(am__objects_24) $(am__objects_25) $(am__objects_26) \
-	$(am__objects_28)
+	$(am__objects_21) $(am__objects_22) $(am__objects_23) \
+	$(am__objects_24) $(am__objects_25) $(am__objects_27)
 libzoltan_a_OBJECTS = $(am_libzoltan_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/include@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -536,8 +533,7 @@ MATRIX = \
 	$(srcdir)/matrix/matrix_distribute.c \
 	$(srcdir)/matrix/matrix_operations.c \
 	$(srcdir)/matrix/matrix_sym.c \
-	$(srcdir)/matrix/matrix_utils.c \
-	$(srcdir)/matrix/common_sort.c
+	$(srcdir)/matrix/matrix_utils.c 
 
 EXTRA_OCT_H = \
 	$(srcdir)/oct/costs_const.h \
@@ -629,12 +625,6 @@ TPLS = \
 	$(srcdir)/tpls/scatter_graph.c \
 	$(srcdir)/tpls/third_library.c \
 	$(srcdir)/tpls/verify_graph.c
-
-CCOLAMD_H = \
-	$(srcdir)/ccolamd/zoltan_ccolamd.h
-
-CCOLAMD = \
-	$(srcdir)/ccolamd/ccolamd.c
 
 EXTRA_PARMETIS_INTERFACE_H = \
 	$(srcdir)/tpls/parmetis_interface.h
@@ -979,7 +969,6 @@ ZOLTAN_H = \
 	$(PAR_H) \
 	$(PARAMS_H) \
 	$(TPLS_H) \
-	$(CCOLAMD_H) \
 	$(PARMETIS_INTERFACE_H) \
 	$(PHG_H) \
 	$(RCB_H) \
@@ -1005,7 +994,6 @@ libzoltan_a_SOURCES = \
 	$(PAR) \
 	$(PARAMS) \
 	$(TPLS) \
-	$(CCOLAMD) \
 	$(PARMETIS_INTERFACE) \
 	$(PHG) \
 	$(RCB) \
@@ -1289,7 +1277,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/box_assign.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bucket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_graph.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccolamd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_param.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/color_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coloring.Po@am__quote@
@@ -1303,7 +1290,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_invert_plan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_resize.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_sort_ints.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common_sort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/costs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/create_proc_list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cwrap.Po@am__quote@
@@ -1936,20 +1922,6 @@ matrix_utils.obj: $(srcdir)/matrix/matrix_utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o matrix_utils.obj `if test -f '$(srcdir)/matrix/matrix_utils.c'; then $(CYGPATH_W) '$(srcdir)/matrix/matrix_utils.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matrix/matrix_utils.c'; fi`
 
-common_sort.o: $(srcdir)/matrix/common_sort.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT common_sort.o -MD -MP -MF $(DEPDIR)/common_sort.Tpo -c -o common_sort.o `test -f '$(srcdir)/matrix/common_sort.c' || echo '$(srcdir)/'`$(srcdir)/matrix/common_sort.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/common_sort.Tpo $(DEPDIR)/common_sort.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/matrix/common_sort.c' object='common_sort.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o common_sort.o `test -f '$(srcdir)/matrix/common_sort.c' || echo '$(srcdir)/'`$(srcdir)/matrix/common_sort.c
-
-common_sort.obj: $(srcdir)/matrix/common_sort.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT common_sort.obj -MD -MP -MF $(DEPDIR)/common_sort.Tpo -c -o common_sort.obj `if test -f '$(srcdir)/matrix/common_sort.c'; then $(CYGPATH_W) '$(srcdir)/matrix/common_sort.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matrix/common_sort.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/common_sort.Tpo $(DEPDIR)/common_sort.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/matrix/common_sort.c' object='common_sort.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o common_sort.obj `if test -f '$(srcdir)/matrix/common_sort.c'; then $(CYGPATH_W) '$(srcdir)/matrix/common_sort.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matrix/common_sort.c'; fi`
-
 costs.o: $(srcdir)/oct/costs.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT costs.o -MD -MP -MF $(DEPDIR)/costs.Tpo -c -o costs.o `test -f '$(srcdir)/oct/costs.c' || echo '$(srcdir)/'`$(srcdir)/oct/costs.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/costs.Tpo $(DEPDIR)/costs.Po
@@ -2481,20 +2453,6 @@ verify_graph.obj: $(srcdir)/tpls/verify_graph.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/verify_graph.c' object='verify_graph.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o verify_graph.obj `if test -f '$(srcdir)/tpls/verify_graph.c'; then $(CYGPATH_W) '$(srcdir)/tpls/verify_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/verify_graph.c'; fi`
-
-ccolamd.o: $(srcdir)/ccolamd/ccolamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd.o -MD -MP -MF $(DEPDIR)/ccolamd.Tpo -c -o ccolamd.o `test -f '$(srcdir)/ccolamd/ccolamd.c' || echo '$(srcdir)/'`$(srcdir)/ccolamd/ccolamd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd.Tpo $(DEPDIR)/ccolamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ccolamd/ccolamd.c' object='ccolamd.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd.o `test -f '$(srcdir)/ccolamd/ccolamd.c' || echo '$(srcdir)/'`$(srcdir)/ccolamd/ccolamd.c
-
-ccolamd.obj: $(srcdir)/ccolamd/ccolamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd.obj -MD -MP -MF $(DEPDIR)/ccolamd.Tpo -c -o ccolamd.obj `if test -f '$(srcdir)/ccolamd/ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/ccolamd/ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ccolamd/ccolamd.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd.Tpo $(DEPDIR)/ccolamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ccolamd/ccolamd.c' object='ccolamd.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd.obj `if test -f '$(srcdir)/ccolamd/ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/ccolamd/ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ccolamd/ccolamd.c'; fi`
 
 parmetis_interface.o: $(srcdir)/tpls/parmetis_interface.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.o -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.o `test -f '$(srcdir)/tpls/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/tpls/parmetis_interface.c
