@@ -136,6 +136,6 @@
  *
  * NOTE: This string is to be used for outputting, not for comparison logic.
  */
-#define TRILINOS_VERSION_STRING "10.10"
+#define TRILINOS_VERSION_STRING "10.10.0"
 
 #endif /* TRILINOS_VERSION_H */
