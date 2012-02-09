@@ -44,6 +44,8 @@
 #ifndef KOKKOS_PRODUCTTENSORBASES_HPP
 #define KOKKOS_PRODUCTTENSORBASES_HPP
 
+#include <Kokkos_ProductTensor.hpp>
+
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
@@ -109,16 +111,9 @@ public:
   template< typename iType >
   const value_type & tensor_value( const iType & iEntry ) const ;
 
-  /** \brief  Multiply 'y = A x' where y, A, and x are
-   *          arrays of basis function coefficients.
-   */
-  template< typename MatrixValueType , typename VectorValueType >
-  void multiply( const MatrixValueType * A ,
-                 const VectorValueType * x ,
-                       VectorValueType * y ) const ;
-
   /** \brief  Storage size for block coefficients. */
   size_type size() const ;
+
   ~ProductTensorFromBases();
   ProductTensorFromBases();
   ProductTensorFromBases( const ProductTensorFromBases & );
@@ -128,23 +123,8 @@ private:
 
   template< class T , class I >
   friend
-  class CreateProductTensorFromBases ;
+  class CreateSparseProductTensor ;
 };
-
-//----------------------------------------------------------------------------
-
-namespace Impl {
-
-template< class Tensor , class Input >
-class CreateProductTensorFromBases ;
-
-}
-
-template< class Tensor , class Input >
-Tensor
-create_product_tensor( const Input & input )
-{ return Impl::CreateProductTensorFromBases<Tensor,Input>::create( input ); }
-
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

@@ -51,12 +51,6 @@
 
 namespace Kokkos {
 
-template< unsigned Rank , class Device >
-class ProductTensorIndex ;
-
-template< unsigned Rank , typename ValueType , class Device >
-class SparseProductTensor ;
-
 //----------------------------------------------------------------------------
 /** \brief  Use symmetry to compress the product tensor index space.
  *
@@ -108,23 +102,13 @@ public:
   typedef typename device_type::size_type  size_type ;
   typedef ValueType                        value_type ;
 
-  /** \brief  Dimension of the vector block (and tensor). */
-  size_type dimension() const ;
-
-  /** \brief  Storage size for block coefficients. */
-  size_type size() const ;
-
-  template< typename MatrixValueType , typename VectorValueType >
-  void multiply( const MatrixValueType * A ,
-                 const VectorValueType * x ,
-                       VectorValueType * y ) const ;
-
   ~SparseProductTensor();
   SparseProductTensor();
   SparseProductTensor( const SparseProductTensor & );
   SparseProductTensor & operator = ( const SparseProductTensor & );
 
-  /* Type specific members: */
+  /** \brief  Dimension of the tensor. */
+  size_type dimension() const ;
 
   /** \brief  Number of sparse entries. */
   size_type entry_count() const ;
@@ -137,24 +121,38 @@ public:
 
 private:
 
-  template< unsigned R , typename V , class D , class I >
-  friend
-  class CreateSparseProductTensor ;
+  template< class Tensor , class Input >
+  friend class CreateSparseProductTensor ;
 };
 
+// Specialization for Multiply action of a tensor:
+//
+// Multiply< SparseProductTensor<R,V,D> >
+//   ::apply( const SparseProductTensor<R,V,D> & block ,
+//            const MatrixValue       * A ,
+//            const InputVectorValue  * x ,
+//                  OutputVectorValue * y );
+// Where:
+//
+//  A[ Multiply< SparseProductTensor<R,V,D> >::matrix_size( block ) ]
+//  x[ Multiply< SparseProductTensor<R,V,> >::vector_size( block ) ]
+//  y[ Multiply< SparseProductTensor<R,V,> >::vector_size( block ) ]
 //----------------------------------------------------------------------------
 
 namespace Impl {
 
-template< unsigned Rank , typename ValueType , class Device , class Input >
+template< class Tensor , class Input >
 class CreateSparseProductTensor ;
 
 }
 
-template< unsigned Rank , typename ValueType , class Device , class Input >
-SparseProductTensor<Rank,ValueType,Device>
-create_sparse_product_tensor( const Input & input )
-{ return Impl::CreateSparseProductTensor<Rank,ValueType,Device,Input>::create( input ); }
+template< class Tensor , class Input >
+typename Impl::CreateSparseProductTensor<Tensor,Input>::type
+create_product_tensor( const Input & input )
+{
+  typedef typename Impl::CreateSparseProductTensor<Tensor,Input> factory ;
+  return factory::create( input );
+}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

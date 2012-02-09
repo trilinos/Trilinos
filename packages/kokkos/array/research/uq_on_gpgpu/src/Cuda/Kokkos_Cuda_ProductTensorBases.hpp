@@ -41,83 +41,74 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_PRODUCTTENSOR_CREATE_HPP
-#define KOKKOS_PRODUCTTENSOR_CREATE_HPP
+#ifndef KOKKOS_CUDA_PRODUCTTENSORBASES_HPP
+#define KOKKOS_CUDA_PRODUCTTENSORBASES_HPP
 
-#include <map>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_MDArray.hpp>
-#include <Kokkos_CrsMap.hpp>
+#include <utility>
+#include <sstream>
+#include <stdexcept>
+#include <Cuda/Kokkos_Cuda_Parallel.hpp>
+#include <Cuda/Kokkos_Cuda_ProductTensor.hpp>
 
 namespace Kokkos {
 namespace Impl {
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-/** \brief  Create a sparse product tensor on the device
- *          from a map of tensor indices to values.
- *
- *  The std::map input guarantees uniqueness and proper sorting of
- *  the product tensor's symmetric entries.
- */
-template< unsigned Rank , typename ValueType , class Device , class D >
-class CreateSparseProductTensor<
-  SparseProductTensor< Rank , ValueType , Device > ,
-  std::map< ProductTensorIndex<Rank,D> , ValueType > >
+
+template< typename TensorScalar , class PolynomialType >
+class Multiply<
+  ProductTensorFromBases< TensorScalar , PolynomialType , Cuda > , void , void >
 {
 public:
-  typedef SparseProductTensor<Rank,ValueType,Device> type ;
-  typedef std::map< ProductTensorIndex< Rank , D > , ValueType > input_type ;
+  typedef Cuda::size_type size_type ;
+  typedef ProductTensorFromBases< TensorScalar , PolynomialType , Cuda > tensor_type ;
 
-  static
-  type create( const input_type & input )
+  static size_type matrix_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+  
+  static size_type vector_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+};
+
+template< typename TensorScalar ,
+          class PolynomialType ,
+          typename MatrixScalar ,
+          typename VectorScalar >
+class Multiply<
+  BlockCrsMatrix< ProductTensorFromBases< TensorScalar, PolynomialType, Cuda >,
+                  MatrixScalar , Cuda > ,
+  MultiVector< VectorScalar , Cuda > ,
+  MultiVector< VectorScalar , Cuda > >
+{
+public:
+
+  typedef Cuda                    device_type ;
+  typedef device_type::size_type  size_type ;
+
+  typedef ProductTensorFromBases< TensorScalar , PolynomialType , Cuda > tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
+  typedef MultiVector< VectorScalar , device_type>                 vector_type ;
+
+
+  static void apply( const matrix_type & A ,
+                     const vector_type & x ,
+                     const vector_type & y )
   {
-    typedef ValueType                   value_type ;
-    typedef Device                      device_type ;
-    typedef typename Device::size_type  size_type ;
+    typedef BlockCrsMatrix< SparseProductTensor< 3 , TensorScalar, Cuda >,
+                            MatrixScalar , Cuda > base_matrix_type ;
 
-    typedef MDArray< size_type, device_type>  coord_array_type ;
-    typedef MultiVector< value_type, device_type> value_array_type ;
+    typedef Multiply< base_matrix_type ,
+                      MultiVector< VectorScalar , Cuda > ,
+                      MultiVector< VectorScalar , Cuda > > base_multiply_type ;
 
-    enum { is_host_memory =
-             SameType< typename device_type::memory_space , Host >::value };
+    base_matrix_type base_matrix ;
 
-    type tensor ;
+    base_matrix.values = A.values ;
+    base_matrix.graph  = A.graph ;
+    base_matrix.block  = A.block.tensor();
 
-    tensor.m_coord = create_mdarray< size_type , device_type >( input.size(), 3 );
-    tensor.m_value = create_multivector< value_type, device_type >( input.size() );
-
-    // Create mirror, is a view if is host memory
-
-    typename coord_array_type::HostMirror
-      host_coord = Kokkos::Impl::CreateMirror< coord_array_type , is_host_memory >::create( tensor.m_coord );
-
-    typename value_array_type::HostMirror
-      host_value = Kokkos::Impl::CreateMirror< value_array_type , is_host_memory >::create( tensor.m_value );
-
-    size_type n = 0 ;
-
-    tensor.m_dimen = 0 ;
-
-    for ( typename input_type::const_iterator
-          iter = input.begin() ; iter != input.end() ; ++iter , ++n ) {
-
-      host_value(n) = (*iter).second ;
-
-      for ( size_type c = 0 ; c < Rank ; ++c ) {
-
-        const size_type i = (*iter).first.coord(c);
-
-        host_coord(n,c) = i ;
-
-        tensor.m_dimen = std::max( tensor.m_dimen , i + 1 );
-      }
-    }
-
-    Kokkos::deep_copy( tensor.m_coord , host_coord );
-    Kokkos::deep_copy( tensor.m_value , host_value );
-
-    return tensor ;
+    base_multiply_type::apply( base_matrix , x , y );
   }
 };
 
@@ -127,6 +118,5 @@ public:
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* #ifndef KOKKOS_PRODUCTTENSOR_CREATE_HPP */
-
+#endif /* #ifndef KOKKOS_CUDA_PRODUCTTENSORBASES_HPP */
 

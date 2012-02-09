@@ -80,7 +80,7 @@ void multiply( const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
   typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device> matrix_type ;
   typedef MultiVector<VectorValueType,Device>              vector_type ;
 
-  Impl::Multiply<matrix_type,vector_type,vector_type>::execute( A , x , y );
+  Impl::Multiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
 }
 
 //----------------------------------------------------------------------------

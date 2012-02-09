@@ -53,7 +53,52 @@ namespace Kokkos {
 namespace Impl {
 
 //----------------------------------------------------------------------------
+
+template< typename ValueType >
+inline
+__device__
+void atomic_add( ValueType & update , const ValueType input )
+{
+  atomicAdd( & update , input );
+}
+
+inline
+__device__
+void atomic_add( double & update , const double input )
+{
+  typedef unsigned long long int anonType ;
+
+  union {
+    double d ;
+    anonType i ;
+  } val_old , val_update ;
+
+  anonType * const address = reinterpret_cast<anonType*>( & update );
+  anonType old = *address ;
+
+  do {
+    val_old.i    = old ;
+    val_update.d = val_old.d + input ; // new value
+    old = atomicCAS( address , old , val_update.i );
+  } while ( val_old.i != old );
+}
+
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+template< typename TensorScalar >
+class Multiply< SparseProductTensor< 3 , TensorScalar , Cuda > , void , void >
+{
+public:
+  typedef Cuda::size_type size_type ;
+  typedef SparseProductTensor< 3 , TensorScalar , Cuda > tensor_type ;
+
+  static size_type matrix_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+  
+  static size_type vector_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+};
 
 template< typename TensorScalar ,
           typename MatrixScalar ,
@@ -93,9 +138,9 @@ public:
   { const size_type tmp = i ; i = j ; j = tmp ; }
 
 
-  static void execute( const matrix_type & A ,
-                       const vector_type & x ,
-                       const vector_type & y )
+  static void apply( const matrix_type & A ,
+                     const vector_type & x ,
+                     const vector_type & y )
   {
     // Six warps required for the six uses of a product tensor value
     // 'N' warps required for reading a block of values.
@@ -108,6 +153,9 @@ public:
     const size_type shared_size =
       std::max( size_type( WARP_SIZE * ( 3 * sizeof(size_type) + sizeof(VectorScalar) ) ),
                 size_type( CudaTraits::warp_align( A.block.dimension() ) * 2 * sizeof(VectorScalar) ) );
+
+    //------------------------------------------------------------------------
+    // Sizing error conditions
 
     if ( nWarp  > Impl::cuda_internal_maximum_warp_count() ||
          nGridX > Impl::CudaTraits::UpperBoundGridCount ||
@@ -132,6 +180,8 @@ public:
       }
       throw std::runtime_error( msg.str() );
     }
+
+    //------------------------------------------------------------------------
 
     const size_type nGridY =
        std::min( A.graph.row_count() ,
@@ -298,7 +348,7 @@ public:
       }
 
       if ( have_tensor ) {
-        atomicAdd( & m_y( kY , iBlockRow ) , y_sum );
+        atomic_add( m_y( kY , iBlockRow ) , y_sum );
       }
     }
   }

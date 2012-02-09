@@ -56,11 +56,13 @@
 #include <impl/Kokkos_ProductTensor_macros.hpp>
 #include <impl/Kokkos_LegendrePolynomial_macros.hpp>
 #include <impl/Kokkos_ProductTensorBases_macros.hpp>
+#include <impl/Kokkos_SymmetricDiagonalSpec_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
 
 
 #include <Cuda/Kokkos_Cuda_SymmetricDiagonalSpec.hpp>
 #include <Cuda/Kokkos_Cuda_ProductTensor.hpp>
+#include <Cuda/Kokkos_Cuda_ProductTensorBases.hpp>
 #include <Cuda/Kokkos_Cuda_BlockCrsMatrix.hpp>
 
 //
@@ -72,6 +74,8 @@
 
 int mainCuda()
 {
+  typedef unsigned long long int IntType ;
+
   Kokkos::Cuda::initialize();
 
 //  unit_test::test_dense<Kokkos::Cuda>();
@@ -82,26 +86,28 @@ int mainCuda()
 //  unit_test::test_triple_product_legendre_polynomial<4,Kokkos::Cuda>();
 
   unit_test::test_product_tensor<Kokkos::Cuda>( std::vector<int>( 2 , 1 ) );
-//  unit_test::test_product_tensor<Kokkos::Cuda>( std::vector<int>( 3 , 2 ) );
-//  unit_test::test_product_tensor<Kokkos::Cuda>( std::vector<int>( 5 , 1 ) );
-
+  unit_test::test_product_tensor<Kokkos::Cuda>( std::vector<int>( 3 , 2 ) );
+  unit_test::test_product_tensor<Kokkos::Cuda>( std::vector<int>( 5 , 1 ) );
 
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 1 , 2 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 1 , 5 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 2 , 1 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 3 , 1 );
 
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 2 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 5 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 2 , 1 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 1 );
+
+  unit_test::test_product_tensor_matrix<double,Kokkos::Cuda>( std::vector<int>( 3 , 2 ) , 3 );
+
+  std::cout << "Stress tests:" << std::endl ;
+
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 10 , 8 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 11 , 8 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 12 , 10 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 13 , 10 );
 
-  typedef unsigned long long int IntType ;
-
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 2 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 5 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 2 , 1 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 1 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 100 , 10 );
 
   Kokkos::Cuda::finalize();

@@ -62,56 +62,41 @@ public:
   typedef KOKKOS_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
   typedef ValueType               value_type ;
-
-private:
-
-  typedef Kokkos::MDArray<     size_type, device_type>  map_type ;
-  typedef Kokkos::MultiVector< value_type,device_type>  vec_type ;
-
-public:
+  typedef SparseProductTensor< 3 , value_type , device_type > tensor_type ;
 
   inline
   ~ProductTensorFromBases() {}
 
   inline
   ProductTensorFromBases()
-    : m_degree_map()
-    , m_coord()
-    , m_value()
+    : m_tensor()
+    , m_degree_map()
     , m_variable(0)
-    , m_dimension(0)
-    , m_tensor_count(0)
     {}
 
   inline
   ProductTensorFromBases( const ProductTensorFromBases & rhs )
-    : m_degree_map(   rhs.m_degree_map )
-    , m_coord(        rhs.m_coord )
-    , m_value(        rhs.m_value )
+    : m_tensor(       rhs.m_tensor )
+    , m_degree_map(   rhs.m_degree_map )
     , m_variable(     rhs.m_variable )
-    , m_dimension(    rhs.m_dimension )
-    , m_tensor_count( rhs.m_tensor_count )
     {}
 
   inline
   ProductTensorFromBases & operator = ( const ProductTensorFromBases & rhs )
   {
+    m_tensor       = rhs.m_tensor ;
     m_degree_map   = rhs.m_degree_map ;
-    m_coord        = rhs.m_coord ;
-    m_value        = rhs.m_value ;
     m_variable     = rhs.m_variable ;
-    m_dimension    = rhs.m_dimension ;
-    m_tensor_count = rhs.m_tensor_count ;
     return *this ;
   }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension() const { return m_dimension ; }
+  const tensor_type & tensor() const { return m_tensor ; }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type size() const { return m_dimension ; }
+  size_type dimension() const { return m_tensor.dimension(); }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -131,67 +116,31 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type tensor_count() const
-  { return m_tensor_count ; }
+  size_type entry_count() const
+  { return m_tensor.entry_count() ; }
 
   template< typename iType , typename jType >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  size_type tensor_coord( const iType & iEntry , const jType & c ) const
-  { return m_coord( iEntry , c ); }
+  size_type coord( const iType & iEntry , const jType & c ) const
+  { return m_tensor.coord( iEntry , c ); }
 
   template< typename iType >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  const value_type & tensor_value( const iType & entry ) const
-  { return m_value[ entry ]; }
-
-  template< typename MatrixValue , typename VectorValue >
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void multiply( const MatrixValue *       a ,
-                 const VectorValue * const x ,
-                       VectorValue * const y ) const
-  {
-    const size_type nEntry = m_dimension ;
-    for ( size_type iEntry = 0 ; iEntry < nEntry ; ++iEntry ) {
-      const size_type i = m_coord(iEntry,0);
-      const size_type j = m_coord(iEntry,1);
-      const size_type k = m_coord(iEntry,2);
-      const size_type v = m_value[iEntry];
-
-      const bool neq_ij = i != j ;
-      const bool neq_jk = j != k ;
-      const bool neq_ki = k != i ;
-
-      y[k] += neq_ij ? v * ( a[i] * x[j] + x[i] * a[j] )
-                     : v * ( a[i] * x[i] );
-
-      if ( neq_jk ) {
-        y[j] += neq_ki ? v * ( a[i] * x[k] + x[i] * a[k] )
-                       : v * ( a[i] * x[i] );
-      }
-
-      if ( neq_ki && neq_ij ) {
-        y[i] += neq_jk ? v * ( a[k] * x[j] + x[k] * a[j] )
-                       : v * ( a[j] * x[j] );
-      }
-    }
-  }
+  const value_type & value( const iType & entry ) const
+  { return m_tensor.value( entry ); }
 
 private:
 
-  Kokkos::MDArray< size_type , device_type >            m_degree_map ;
-  Kokkos::MDArray< size_type , device_type >            m_coord ;
-  Kokkos::Impl::MemoryView< value_type , device_type >  m_value ;
-  size_type                                             m_variable ;
-  size_type                                             m_dimension ;
-  size_type                                             m_tensor_count ;
+  tensor_type                                 m_tensor ;
+  Kokkos::MDArray< size_type , device_type >  m_degree_map ;
+  size_type                                   m_variable ;
 
   template< class T , class I >
-  friend class Impl::CreateProductTensorFromBases ;
+  friend class Impl::CreateSparseProductTensor ;
 };
 
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 } // namespace Kokkos

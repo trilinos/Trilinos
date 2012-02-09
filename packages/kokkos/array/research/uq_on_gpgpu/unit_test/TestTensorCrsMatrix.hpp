@@ -91,20 +91,24 @@ void generate_matrix(
   typedef Kokkos::SparseProductTensor<3,ScalarType,Device> tensor_type ;
   typedef Kokkos::ProductTensorIndex<3,Device>             index_type ;
 
+  typedef Kokkos::Impl::Multiply< tensor_type > tensor_multiply ;
+
   typedef typename values_type::HostMirror host_values_type ;
   typedef typename graph_type ::HostMirror host_graph_type ;
 
   std::vector< std::vector<size_t> > graph ;
 
-  const size_t total = unit_test::generate_fem_graph( N , graph );
-
   std::map< index_type , ScalarType > tensor_input ;
 
   generate_tensor( M , tensor_input );
 
-  matrix.block  = Kokkos::create_sparse_product_tensor<3,ScalarType,Device>( tensor_input );
+  matrix.block = Kokkos::create_product_tensor<tensor_type>( tensor_input );
+
+  const size_t total      = unit_test::generate_fem_graph( N , graph );
+  const size_t block_size = tensor_multiply::matrix_size( matrix.block );
+
   matrix.graph  = Kokkos::create_labeled_crsmap<Device>( std::string("test crs graph") , graph );
-  matrix.values = Kokkos::create_multivector<ScalarType,Device>( matrix.block.size() , total );
+  matrix.values = Kokkos::create_multivector<ScalarType,Device>( block_size , total );
 
   host_graph_type  h_graph  = Kokkos::create_mirror( matrix.graph );
   host_values_type h_values = Kokkos::create_mirror( matrix.values );

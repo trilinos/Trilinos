@@ -57,10 +57,15 @@
 #include <Kokkos_Host_macros.hpp>
 #include <impl/Kokkos_ProductTensor_macros.hpp>
 #include <impl/Kokkos_SymmetricDiagonalSpec_macros.hpp>
-#include <impl/Kokkos_BlockCrsMatrix_macros.hpp>
+// #include <impl/Kokkos_BlockCrsMatrix_macros.hpp>
 #include <impl/Kokkos_LegendrePolynomial_macros.hpp>
 #include <impl/Kokkos_ProductTensorBases_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
+
+#include <Host/Kokkos_Host_ProductTensor.hpp>
+#include <Host/Kokkos_Host_ProductTensorBases.hpp>
+#include <Host/Kokkos_Host_SymmetricDiagonalSpec.hpp>
+#include <Host/Kokkos_Host_BlockCrsMatrix.hpp>
 
 //
 

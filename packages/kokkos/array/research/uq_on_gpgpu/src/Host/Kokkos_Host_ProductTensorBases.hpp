@@ -41,55 +41,34 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_SYMMETRICDIAGONALSPEC_HPP
-#define KOKKOS_SYMMETRICDIAGONALSPEC_HPP
-
-#include <Kokkos_CrsMap.hpp>
-#include <Kokkos_MultiVector.hpp>
+#ifndef KOKKOS_HOST_PRODUCTTENSORBASES_HPP
+#define KOKKOS_HOST_PRODUCTTENSORBASES_HPP
 
 namespace Kokkos {
+namespace Impl {
 
-/** \brief  Symmetric diagonal storage for a dense matrix.
- *
- *  Block storage size = dimension * ( dimension + 1 ) / 2
- *
- *  Given block_dim then total_diagonal_count = 1 + dimension / 2
- *
- *  If dimension is even then the last diagonal is only half length.
- *
- *  { a11 , a22 , a33 , a44 , a55 , ... }
- *  { a12 , a23 , a34 , a45 , a56 , ... }
- *  { a13 , a24 , a35 , a46 , a57 , ... }
- *
- */
-template< class Device >
-class SymmetricDiagonalSpec {
+template< typename ValueType , class PolynomialType >
+class Multiply< ProductTensorFromBases< ValueType, PolynomialType, Host > , void , void >
+{
 public:
-  typedef typename Device::size_type size_type ;
+  typedef Host                    device_type ;
+  typedef device_type::size_type  size_type ;
+  typedef ProductTensorFromBases< ValueType, PolynomialType, device_type > block_type ;
 
-  /** \brief  Dimension of vector block */
-  size_type dimension() const ;
+  template< typename MatrixValue , typename VectorValue >
+  static void apply( const block_type  & block ,
+                     const MatrixValue *       a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    typedef Multiply< typename block_type::tensor_type > tensor_multiply ;
 
-  /** \brief  Storage size for block coefficients */
-  size_type size() const ;
-
-  ~SymmetricDiagonalSpec();
-  SymmetricDiagonalSpec();
-  SymmetricDiagonalSpec( const SymmetricDiagonalSpec & );
-  SymmetricDiagonalSpec & operator = ( const SymmetricDiagonalSpec & );
-
-  /* Type specific members: */
-
-  explicit SymmetricDiagonalSpec( const size_type dim );
-
-  /** \brief  Storage location for the (row,column) entry */
-  size_type offset( const size_type row , const size_type column ) const ;
+    tensor_multiply::apply( block.tensor() , a , x , y );
+  }
 };
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
+} // namespace Impl
 } // namespace Kokkos
 
-#endif /* #ifndef KOKKOS_SYMMETRICDIAGONALSPEC_HPP */
+#endif /* #ifndef KOKKOS_HOST_PRODUCTTENSORBASES_HPP */
 

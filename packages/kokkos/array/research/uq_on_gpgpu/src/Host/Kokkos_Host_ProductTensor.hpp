@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//                         Kokkos Array
+//              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,79 +35,72 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact H. Carter Edwards (hcedwar@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
 */
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
-
-#error "Including <impl/Kokkos_SymmetricDiagonalSpec_macros.hpp> without macros defined"
-
-#else
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+#ifndef KOKKOS_HOST_SPARSEPRODUCTTENSOR_HPP
+#define KOKKOS_HOST_SPARSEPRODUCTTENSOR_HPP
 
 namespace Kokkos {
+namespace Impl {
 
-template<>
-class SymmetricDiagonalSpec< KOKKOS_MACRO_DEVICE > {
+//----------------------------------------------------------------------------
+
+template< typename ValueType >
+class Multiply< SparseProductTensor< 3 , ValueType , Host > , void , void >
+{
 public:
-  typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
 
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension() const { return m_dimension ; }
+  typedef Host::size_type size_type ;
+  typedef SparseProductTensor< 3 , ValueType , Host > tensor_type ;
 
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type matrix_offset( const size_type row , const size_type column ) const
-    {
-      const int diag_count = 1 + ( m_dimension >> 1 );
-      const int diag = (int) column - (int) row ;
+  template< typename MatrixValue , typename VectorValue >
+  static void apply( const tensor_type & tensor ,
+                     const MatrixValue * const a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    const size_type nEntry = tensor.entry_count();
 
-      size_type offset = 0 ;
+    for ( size_type iEntry = 0 ; iEntry < nEntry ; ++iEntry ) {
+      const size_type i = tensor.coord(iEntry,0);
+      const size_type j = tensor.coord(iEntry,1);
+      const size_type k = tensor.coord(iEntry,2);
+      const size_type v = tensor.value(iEntry);
 
-      if ( ( 0 <= diag && diag < diag_count ) || ( diag <= - diag_count ) ) {
-        offset = row + m_dimension * ( ( m_dimension + diag ) % m_dimension );
+      const bool neq_ij = i != j ;
+      const bool neq_jk = j != k ;
+      const bool neq_ki = k != i ;
+
+      y[k] += neq_ij ? v * ( a[i] * x[j] + x[i] * a[j] )
+                     : v * ( a[i] * x[i] );
+
+      if ( neq_jk ) {
+        y[j] += neq_ki ? v * ( a[i] * x[k] + x[i] * a[k] )
+                       : v * ( a[i] * x[i] );
       }
-      else {
-        offset = column + m_dimension * ( ( m_dimension - diag ) % m_dimension );
-      }
 
-      return offset ;
+      if ( neq_ki && neq_ij ) {
+        y[i] += neq_jk ? v * ( a[k] * x[j] + x[k] * a[j] )
+                       : v * ( a[j] * x[j] );
+      }
     }
+  }
 
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type matrix_size() const
-    { return ( m_dimension * ( m_dimension + 1 ) ) >> 1 ; }
+  static size_type matrix_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
 
-  SymmetricDiagonalSpec()
-    : m_dimension( 0 ) {}
-
-  SymmetricDiagonalSpec( const SymmetricDiagonalSpec & rhs )
-    : m_dimension( rhs.m_dimension ) {}
-
-  SymmetricDiagonalSpec & operator =
-    ( const SymmetricDiagonalSpec & rhs )
-      { m_dimension = rhs.m_dimension ; return *this ; }
-
-  explicit
-  SymmetricDiagonalSpec( const size_type dim )
-    : m_dimension( dim ) {}
-
-private:
-  size_type m_dimension ;
+  static size_type vector_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
 };
 
 //----------------------------------------------------------------------------
 
-} /* namespace Kokkos */
+} // namespace Impl
+} // namespace Kokkos
 
-//----------------------------------------------------------------------------
-
-#endif
+#endif /* #ifndef KOKKOS_HOST_SPARSEPRODUCTTENSOR_HPP */
 
