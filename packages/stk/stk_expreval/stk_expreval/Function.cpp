@@ -180,6 +180,11 @@ extern "C" {
     return (a > 0.0 ) ? 1.0 : -1.0;
   }
 
+  /// Returns 1.0 if the input value is greater than the step time t.
+  static double unit_step(double a, double t)  {
+    return (a > t) ? 0.0 : -1.0;
+  }
+
   static double recttopola(double x, double y) {
     double tmp = std::atan2(y, x);
 
@@ -202,51 +207,52 @@ extern "C" {
 
 CFunctionMap::CFunctionMap() 
 {
-  (*this)["rand"]      = new CFunction0(real_rand);
-  (*this)["srand"]     = new CFunction1(real_srand);
-  (*this)["randomize"] = new CFunction0(randomize);
-  (*this)["random"]    = new CFunction0(real_random);
-  (*this)["srandom"]   = new CFunction1(real_srandom);
+  (*this)["rand"]        = new CFunction0(real_rand);
+  (*this)["srand"]       = new CFunction1(real_srand);
+  (*this)["randomize"]   = new CFunction0(randomize);
+  (*this)["random"]      = new CFunction0(real_random);
+  (*this)["srandom"]     = new CFunction1(real_srandom);
 
-  (*this)["exp"] = new CFunction1(std::exp);
-  (*this)["ln"] = new CFunction1(std::log);
-  (*this)["log"] = new CFunction1(std::log);
-  (*this)["log10"] = new CFunction1(std::log10);
-  (*this)["pow"] = new CFunction2(std::pow);
-  (*this)["sqrt"] = new CFunction1(std::sqrt);
-  (*this)["erfc"] = new CFunction1(erfc);
-  (*this)["erf"] = new CFunction1(erf);
+  (*this)["exp"]         = new CFunction1(std::exp);
+  (*this)["ln"]          = new CFunction1(std::log);
+  (*this)["log"]         = new CFunction1(std::log);
+  (*this)["log10"]       = new CFunction1(std::log10);
+  (*this)["pow"]         = new CFunction2(std::pow);
+  (*this)["sqrt"]        = new CFunction1(std::sqrt);
+  (*this)["erfc"]        = new CFunction1(erfc);
+  (*this)["erf"]         = new CFunction1(erf);
 
-  (*this)["acos"] = new CFunction1(std::acos);
-  (*this)["asin"] = new CFunction1(std::asin);
-  (*this)["atan"] = new CFunction1(std::atan);
-  (*this)["atan2"] = new CFunction2(std::atan2);
-  (*this)["ceil"] = new CFunction1(std::ceil);
-  (*this)["cos"] = new CFunction1(std::cos);
-  (*this)["cosh"] = new CFunction1(std::cosh);
-  (*this)["floor"] = new CFunction1(std::floor);
-  (*this)["sin"] = new CFunction1(std::sin);
-  (*this)["sinh"] = new CFunction1(std::sinh);
-  (*this)["tan"] = new CFunction1(std::tan);
-  (*this)["tanh"] = new CFunction1(std::tanh);
+  (*this)["acos"]        = new CFunction1(std::acos);
+  (*this)["asin"]        = new CFunction1(std::asin);
+  (*this)["atan"]        = new CFunction1(std::atan);
+  (*this)["atan2"]       = new CFunction2(std::atan2);
+  (*this)["ceil"]        = new CFunction1(std::ceil);
+  (*this)["cos"]         = new CFunction1(std::cos);
+  (*this)["cosh"]        = new CFunction1(std::cosh);
+  (*this)["floor"]       = new CFunction1(std::floor);
+  (*this)["sin"]         = new CFunction1(std::sin);
+  (*this)["sinh"]        = new CFunction1(std::sinh);
+  (*this)["tan"]         = new CFunction1(std::tan);
+  (*this)["tanh"]        = new CFunction1(std::tanh);
 
-  (*this)["abs"] = new CFunction1(std::fabs);
-  (*this)["fabs"] = new CFunction1(std::fabs);
-  (*this)["deg"] = new CFunction1(deg);
-  (*this)["mod"] = new CFunction2(std::fmod);
-  (*this)["fmod"] = new CFunction2(std::fmod);
-  (*this)["ipart"] = new CFunction1(ipart);
-  (*this)["fpart"] = new CFunction1(fpart);
-  (*this)["max"] = new CFunction2(max);
-  (*this)["min"] = new CFunction2(min);
-  (*this)["poltorectx"] = new CFunction2(poltorectx);
-  (*this)["poltorecty"] = new CFunction2(poltorecty);
-  (*this)["rad"] = new CFunction1(rad);
-  (*this)["recttopola"] = new CFunction2(recttopola);
-  (*this)["recttopolr"] = new CFunction2(recttopolr);
+  (*this)["abs"]         = new CFunction1(std::fabs);
+  (*this)["fabs"]        = new CFunction1(std::fabs);
+  (*this)["deg"]         = new CFunction1(deg);
+  (*this)["mod"]         = new CFunction2(std::fmod);
+  (*this)["fmod"]        = new CFunction2(std::fmod);
+  (*this)["ipart"]       = new CFunction1(ipart);
+  (*this)["fpart"]       = new CFunction1(fpart);
+  (*this)["max"]         = new CFunction2(max);
+  (*this)["min"]         = new CFunction2(min);
+  (*this)["poltorectx"]  = new CFunction2(poltorectx);
+  (*this)["poltorecty"]  = new CFunction2(poltorecty);
+  (*this)["rad"]         = new CFunction1(rad);
+  (*this)["recttopola"]  = new CFunction2(recttopola);
+  (*this)["recttopolr"]  = new CFunction2(recttopolr);
 
-  (*this)["cosine_ramp"] = new CFunction2(cosine_ramp);
-  (*this)["sign"] = new CFunction1(sign);
+  (*this)["cosine_ramp"]  = new CFunction2(cosine_ramp);
+  (*this)["sign"]         = new CFunction1(sign);
+  (*this)["unit_step"]    = new CFunction2(unit_step);
 }
 
 

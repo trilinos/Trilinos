@@ -256,6 +256,7 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(syntax("random()"));
   STKUNIT_EXPECT_TRUE(syntax("srandom(x)"));
   STKUNIT_EXPECT_TRUE(syntax("sign(x)"));
+  STKUNIT_EXPECT_TRUE(syntax("unit_step(x,t)"));
   STKUNIT_EXPECT_TRUE(syntax("x <= 1.0 ? sin((pi/2.0)*x) : 1.0;"));
 #define EXPREVAL_TEST(name) test(name##_expr, name)
 
