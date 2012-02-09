@@ -15,8 +15,8 @@ namespace MueLuTests {
   // This is not a real unit test, because output of BuildFactory is not verified. But anyway, it still useful.
   TEUCHOS_UNIT_TEST(FactoryFactory, BuildFactory)
   {
-    std::string  factoryConfigurationFiles[] = {"RAPFactory.xml", "SaPFactory.xml", "TentativePFactory.xml", "TrilinosSmoother.xml", "UCAggregationFactory.xml"};
-    int         nFactoryConfigurationFiles = 5;
+    std::string  factoryConfigurationFiles[] = {"RAPFactory.xml", "SaPFactory.xml", "TentativePFactory.xml", "TrilinosSmoother.xml", "UCAggregationFactory.xml", "DirectSolver.xml"};
+    int         nFactoryConfigurationFiles = 6;
 
     for(int i=0; i< nFactoryConfigurationFiles; i++) {
       out << "Processing file: " << factoryConfigurationFiles[i] << std::endl;

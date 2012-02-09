@@ -14,8 +14,8 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(ParameterListInterpreter, SetParameterList)
   {
-    std::string  hierarchyConfigurationFiles[] = {"Smoothed-Aggregation.xml"};
-    int         nHierarchyConfigurationFiles = 1;
+    std::string  hierarchyConfigurationFiles[] = {"Smoothed-Aggregation.xml", "Smoothed-Aggregation2.xml", "Smoothed-Aggregation3.xml"};
+    int         nHierarchyConfigurationFiles = 3;
 
     for(int i=0; i< nHierarchyConfigurationFiles; i++) {
       out << "Processing file: " << hierarchyConfigurationFiles[i] << std::endl;
