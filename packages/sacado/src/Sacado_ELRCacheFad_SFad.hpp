@@ -82,6 +82,9 @@ namespace Sacado {
       //! Typename of values
       typedef T value_type;
 
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<T>::type scalar_type;
+
       //! Typename of base-expressions
       typedef Expr< SFadExprTag<T,Num> > base_expr_type;
 
