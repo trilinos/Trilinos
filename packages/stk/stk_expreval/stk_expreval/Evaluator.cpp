@@ -66,6 +66,7 @@ enum Opcode {
   OPCODE_LOGICAL_AND,
   OPCODE_LOGICAL_OR,
 
+  OPCODE_EXPONENIATION,
   OPCODE_ASSIGN
 };
 
@@ -141,6 +142,9 @@ Node::eval() const
 
   case OPCODE_MULTIPLY:
     return m_left->eval()*m_right->eval();
+
+  case OPCODE_EXPONENIATION:
+    return std::pow(m_left->eval(),m_right->eval());
 
   case OPCODE_DIVIDE:
     return m_left->eval()/m_right->eval();
@@ -349,6 +353,7 @@ parseExpression(
 	colon_it = it;
       break;
 
+    case TOKEN_EXPONENTIATION:
     case TOKEN_MULTIPLY:
     case TOKEN_DIVIDE:
     case TOKEN_PERCENT:
@@ -526,7 +531,7 @@ parseFactor(
   LexemVector::const_iterator	factor_it,
   LexemVector::const_iterator	to)
 {
-  Node *factor = eval.newNode((*factor_it).getToken() == TOKEN_MULTIPLY ? OPCODE_MULTIPLY : ((*factor_it).getToken() == TOKEN_DIVIDE ? OPCODE_DIVIDE : OPCODE_MODULUS));
+  Node *factor = eval.newNode((*factor_it).getToken() == TOKEN_MULTIPLY ? OPCODE_MULTIPLY : ((*factor_it).getToken() == TOKEN_DIVIDE ? OPCODE_DIVIDE : (*factor_it).getToken() == TOKEN_EXPONENTIATION ? OPCODE_EXPONENIATION : OPCODE_MODULUS));
 
   factor->m_left = parseExpression(eval, from, factor_it);
   factor->m_right = parseExpression(eval, factor_it + 1, to);

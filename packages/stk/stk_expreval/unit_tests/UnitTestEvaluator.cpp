@@ -87,6 +87,62 @@ vectest(
   return false;
 }
 
+bool
+test_one_value(const char *expression, double gold_value)
+{
+  bool failed = false;
+  std::cout << "Evaluate " << expression << " ... ";
+  std::string by_expr = std::string("by=") + expression + ";";
+  stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
+  expr_eval.parse();
+
+  double x, y, by, result = 0.0;
+  double v[2];
+  expr_eval.bindVariable("x", x);
+  expr_eval.bindVariable("by", by);
+  expr_eval.bindVariable("v", *v);
+  for (int i = 1; i < 2; ++i) {
+    x = v[1] = i*0.01;
+    y = gold_value;
+    try {
+      result = expr_eval.evaluate();
+    }
+    catch (std::runtime_error &exc) {
+      std::cout << expression << " at "
+		<< std::setprecision(20) << x << " is "
+		<< std::setprecision(20) << result
+		<< " should be " << y
+		<< "(" << std::setprecision(20) << by
+		<< ") threw exception " << exc.what()
+		<< std::endl;
+      failed = true;
+    }
+    std::cout << "expression= " << expression << "= " << result << std::endl;
+    double absolute_error = fabs(result - y);
+    if (absolute_error > fabs(1.0e-14*result)) {
+      std::cout << expression << " at "
+		<< std::setprecision(2) << x << " is "
+		<< std::setprecision(20) << result
+		<< " should be " << y
+		<< " error is " << absolute_error
+		<< std::endl;
+      failed = true;
+    }
+    else if (by != result) {
+      std::cout << expression << " at "
+		<< std::setprecision(2) << x << " is "
+		<< std::setprecision(20) << result
+		<< " does not match bound value "
+		<< std::setprecision(20) << by
+		<< std::endl;
+      failed = true;
+    }
+  }
+
+  std::cout << (failed ? "fail" : "pass") << std::endl;
+  return !failed;
+}
+
 typedef double (TestFunc)(double);
 
 bool
@@ -147,6 +203,75 @@ test(
   return !failed;
 }
 
+bool
+test(
+  const char *	expr1,
+  const char *  expr2)
+{
+  bool failed = false;
+  std::cout << "Evaluate " << expr1 << " vs " << expr2;
+
+  std::string by_expr1 = std::string("by=") + expr1 + ";";
+  stk::expreval::Eval expr_eval1(stk::expreval::VariableMap::getDefaultResolver(), by_expr1.c_str());
+  expr_eval1.parse();
+
+  std::string by_expr2 = std::string("by=") + expr2 + ";";
+  stk::expreval::Eval expr_eval2(stk::expreval::VariableMap::getDefaultResolver(), by_expr2.c_str());
+  expr_eval2.parse();
+
+  double x, y, by, result = 0.0;
+  double v[2];
+
+  // Set up both expressions.
+  expr_eval1.bindVariable("x", x);
+  expr_eval1.bindVariable("by", by);
+  expr_eval1.bindVariable("v", *v);
+
+  expr_eval2.bindVariable("x", x);
+  expr_eval2.bindVariable("by", by);
+  expr_eval2.bindVariable("v", *v);
+
+  for (int i = 1; i < 100; ++i) {
+    x = v[1] = i*0.01;
+    try {
+      result = expr_eval1.evaluate();
+      y      = expr_eval2.evaluate();
+    }
+    catch (std::runtime_error &exc) {
+      std::cout << expr1 << " at "
+		<< std::setprecision(20) << x << " is "
+		<< std::setprecision(20) << result
+		<< " should be " << y
+		<< "(" << std::setprecision(20) << by
+		<< ") threw exception " << exc.what()
+		<< std::endl;
+      failed = true;
+    }
+    double absolute_error = fabs(result - y);
+    if (absolute_error > fabs(1.0e-14*result)) {
+      std::cout << expr1 << " at "
+		<< std::setprecision(2) << x << " is "
+		<< std::setprecision(20) << result
+		<< " should be " << y
+		<< " error is " << absolute_error
+		<< std::endl;
+      failed = true;
+    }
+    else if (by != result) {
+      std::cout << expr1 << " at "
+		<< std::setprecision(2) << x << " is "
+		<< std::setprecision(20) << result
+		<< " does not match bound value "
+		<< std::setprecision(20) << by
+		<< std::endl;
+      failed = true;
+    }
+  }
+
+  std::cout << (failed ? "fail" : "pass") << std::endl;
+  return !failed;
+}
+
 #define EXPREVAL_DEFINE_TEST(name,expr1,expr2)			\
 double name(double x) {return expr2;}			        \
 const char *name##_expr = #expr1
@@ -190,7 +315,8 @@ EXPREVAL_DEFINE_TEST1(f11, exp(x));
 EXPREVAL_DEFINE_TEST1(f12, floor(x));
 EXPREVAL_DEFINE_TEST1(f13, log(x));
 EXPREVAL_DEFINE_TEST1(f14, pow(x, 10.0));
-// EXPREVAL_DEFINE_TEST(f15, pow10(x),pow(x,10.0));
+EXPREVAL_DEFINE_TEST(f15, x^2, pow(x, 2.0));
+
 EXPREVAL_DEFINE_TEST1(f16, sin(x));
 EXPREVAL_DEFINE_TEST1(f17, sinh(x));
 EXPREVAL_DEFINE_TEST1(f18, sqrt(x));
@@ -207,18 +333,15 @@ EXPREVAL_DEFINE_TEST(f28, recttopola(x,1.0),atan2(1.0, x));
 EXPREVAL_DEFINE_TEST(f29, poltorectx(x,PI/4.0),x*cos(stk::expreval::s_pi/4.0));
 EXPREVAL_DEFINE_TEST(f30, poltorecty(x,PI/4.0),x*sin(stk::expreval::s_pi/4.0));
 EXPREVAL_DEFINE_TEST1(f31, 0.4209+4.5e-4*x);
-//EXPREVAL_DEFINE_TEST(f32, cosine_ramp(x, 1.0), (1.0-cos(x*stk::expreval::s_pi/1.0)/2));
-
-// EXPREVAL_DEFINE_TEST2(f1, fpart(x),modf(x,&y));
-// EXPREVAL_DEFINE_TEST2(f1, rand(x),rand());
-// EXPREVAL_DEFINE_TEST2(f1, random(x), random());
-// EXPREVAL_DEFINE_TEST1(f1, randomize(x));
-// EXPREVAL_DEFINE_TEST1(f1, srand(x));
 
 // Bova tests
 EXPREVAL_DEFINE_TEST1(b1, sin(x*.5));
 EXPREVAL_DEFINE_TEST1(b2, .5*.2*sin(.5*x));
 EXPREVAL_DEFINE_TEST1(b3, .5*sin(x));
+
+// Pierson tests
+EXPREVAL_DEFINE_TEST(k1, x^2, x*x);
+EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x, 1.0), (1.0-cos(x*stk::expreval::s_pi/1.0))/2);
 
 #undef EXPREVAL_DEFINE_TEST1
 
@@ -227,6 +350,11 @@ EXPREVAL_DEFINE_TEST1(b3, .5*sin(x));
 void
 UnitTestEvaluator::testEvaluator()
 {
+  STKUNIT_EXPECT_TRUE(syntax("3^2"));
+  STKUNIT_EXPECT_TRUE(test_one_value("3^2",9.));
+  STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3)^2",36.));
+  STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3+4)^(1+1)",100.));
+  STKUNIT_EXPECT_TRUE(syntax("2*2"));
   STKUNIT_EXPECT_TRUE(syntax(""));
   STKUNIT_EXPECT_TRUE(syntax(""));
   STKUNIT_EXPECT_TRUE(syntax(";"));
@@ -255,9 +383,7 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
   STKUNIT_EXPECT_TRUE(syntax("random()"));
   STKUNIT_EXPECT_TRUE(syntax("srandom(x)"));
-  STKUNIT_EXPECT_TRUE(syntax("sign(x)"));
-  STKUNIT_EXPECT_TRUE(syntax("unit_step(x,t)"));
-  STKUNIT_EXPECT_TRUE(syntax("x <= 1.0 ? sin((pi/2.0)*x) : 1.0;"));
+
 #define EXPREVAL_TEST(name) test(name##_expr, name)
 
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h1));
@@ -295,7 +421,7 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f12));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f13));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f14));
-//  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f15));
+  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f15));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f16));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f17));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f18));
@@ -317,6 +443,9 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b1));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b2));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b3));
+
+  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(k1));
+  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(k2));
 
 #undef EXPREVAL_TEST
 }

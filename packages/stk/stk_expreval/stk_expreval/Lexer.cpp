@@ -43,6 +43,7 @@ is_operator(Token token) {
     || token == TOKEN_MULTIPLY
     || token == TOKEN_DIVIDE
     || token == TOKEN_PERCENT
+    || token == TOKEN_EXPONENTIATION
     || token == TOKEN_QUESTION
     || token == TOKEN_COLON
     || token == TOKEN_SEMI
@@ -80,6 +81,7 @@ tokenize(
     {'*', TOKEN_MULTIPLY},
     {'/', TOKEN_DIVIDE},
     {'%', TOKEN_PERCENT},
+    {'^', TOKEN_EXPONENTIATION},
     {'?', TOKEN_QUESTION},
     {',', TOKEN_COMMA},
     {':', TOKEN_COLON},
