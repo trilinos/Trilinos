@@ -25,7 +25,7 @@ namespace MueLu {
     //! @name Constructors/Destructors.
     //@{
 
-    RAPFactory(RCP<FactoryBase> PFact = Teuchos::null, RCP<FactoryBase> RFact = Teuchos::null, RCP<FactoryBase> AFact = Teuchos::null);
+    RAPFactory(RCP<const FactoryBase> PFact = Teuchos::null, RCP<const FactoryBase> RFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
 
     virtual ~RAPFactory();
     //@}
@@ -76,13 +76,13 @@ namespace MueLu {
     //@}
 
     //! P Factory
-    RCP<FactoryBase> PFact_;
+    RCP<const FactoryBase> PFact_;
 
     //! R Factory
-    RCP<FactoryBase> RFact_;
+    RCP<const FactoryBase> RFact_;
   
     //! A Factory
-    RCP<FactoryBase> AFact_;
+    RCP<const FactoryBase> AFact_;
 
     //! list of user-defined transfer Factories
     std::vector<RCP<FactoryBase> > TransferFacts_;

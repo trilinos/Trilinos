@@ -15,7 +15,7 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SaPFactory(RCP<PFactory> InitialPFact, RCP<SingleLevelFactoryBase> AFact)
+  SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SaPFactory(RCP<const FactoryBase> InitialPFact, RCP<const FactoryBase> AFact)
     : initialPFact_(InitialPFact), AFact_(AFact),
       dampingFactor_(4./3), diagonalView_("current") {
     if(initialPFact_ == Teuchos::null)

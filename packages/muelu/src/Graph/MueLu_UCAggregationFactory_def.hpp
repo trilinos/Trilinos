@@ -11,7 +11,7 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  UCAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UCAggregationFactory(RCP<FactoryBase> graphFact)
+  UCAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UCAggregationFactory(RCP<const FactoryBase> graphFact)
     : graphFact_(graphFact)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, "");

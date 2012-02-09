@@ -33,7 +33,7 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    SaPFactory(RCP<PFactory> InitialPFact = Teuchos::null, RCP<SingleLevelFactoryBase> AFact = Teuchos::null);
+    SaPFactory(RCP<const FactoryBase> InitialPFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
   
     //! Destructor.
     virtual ~SaPFactory();
@@ -93,8 +93,8 @@ namespace MueLu {
   private:
 
     //! Input factories
-    RCP<PFactory> initialPFact_; //! Ptentative Factory
-    RCP<FactoryBase> AFact_;     //! A Factory
+    RCP<const FactoryBase> initialPFact_; //! Ptentative Factory
+    RCP<const FactoryBase> AFact_;        //! A Factory
     
     //! Factory parameters
     Scalar dampingFactor_;

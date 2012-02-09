@@ -42,7 +42,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    UCAggregationFactory(RCP<FactoryBase> graphFact = Teuchos::null);
+    UCAggregationFactory(RCP<const FactoryBase> graphFact = Teuchos::null);
 
     //! Destructor.
     virtual ~UCAggregationFactory() { }
@@ -86,7 +86,7 @@ namespace MueLu {
   private:
 
     //! Graph Factory
-    RCP<FactoryBase> graphFact_;
+    RCP<const FactoryBase> graphFact_;
  
     //! Algorithms
     LocalAggregationAlgorithm algo1_;
