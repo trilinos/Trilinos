@@ -62,46 +62,7 @@ namespace stk {
       virtual ~PMMLaplaceSmoother1() {}
       Mesquite::LaplacianSmoother& get_smoother() { return m_smoother; }
 
-      void run(Mesquite::Mesh &mesh, Mesquite::MeshDomain &domain, bool always_smooth=true, int debug=0)
-      {
-        if (debug)
-          {
-            Mesquite::MsqDebug::enable(1);
-            if (debug > 1) Mesquite::MsqDebug::enable(2);
-            if (debug > 2) Mesquite::MsqDebug::enable(3);
-          }
-
-        Mesquite::MsqError mErr;
-
-        int num_invalid = 0;
-        bool check_quality=true;
-        if (check_quality)
-          {
-            num_invalid = PMMShapeImprover::count_invalid_elements(mesh, domain);
-            std::cout << "tmp srk PMMLaplaceSmoother1 num_invalid before= " << num_invalid 
-                      << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : " ")
-                      << std::endl;
-          }
-
-        if (num_invalid || always_smooth)
-          {
-            Mesquite::ParallelMesh *pmesh = dynamic_cast<Mesquite::ParallelMesh *>(&mesh);
-            std::cout << "tmp srk PMMLaplaceSmoother1 running laplace smoother..." << std::endl;
-            if (pmesh)
-              this->run_instructions(pmesh, &domain, mErr);
-            else
-              this->run_instructions(&mesh, &domain, mErr);
-            std::cout << "tmp srk PMMLaplaceSmoother1 running laplace smoother...done" << std::endl;
-            if (check_quality)
-              {
-                num_invalid = PMMShapeImprover::count_invalid_elements(mesh, domain);
-                std::cout << "tmp srk PMMLaplaceSmoother1 num_invalid after= " << num_invalid << " " 
-                          << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 
-                              " SUCCESS: smoothed and removed invalid elements ")
-                          << std::endl;
-              }
-          }
-      }
+      void run(Mesquite::Mesh &mesh, Mesquite::MeshDomain &domain, bool always_smooth=true, int debug=0);
       
     protected:
 
