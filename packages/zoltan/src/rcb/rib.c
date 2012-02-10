@@ -57,7 +57,7 @@ static int compute_rib_direction(ZZ *, int, int, double *, double *,
   MPI_Comm, int, int, int);
 static int serial_rib(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   int, double, int, int, int *, int *, int, int, int, int, int, int, int,
-  struct rib_tree *, double *, double *, float *);
+  struct rib_tree *, double *, double *, float *, double *);
 
 /*---------------------------------------------------------------------------*/
 
@@ -378,7 +378,7 @@ static int rib_fn(
                                            import_procs, import_to_part);
     if (ierr < 0) {
        ZOLTAN_PRINT_ERROR(proc,yo,
-                          "Error returned from Zoltan_RB_Return_Arguments.");
+                        "Error returned from Zoltan_RB_Candidates_Copy_Input.");
        goto End;
     }
   }
@@ -466,6 +466,9 @@ static int rib_fn(
 
   while ((num_parts > 1 && num_procs > 1) || 
          (zz->Tflops_Special && tfs[0] > 1 && tfs[1] > 1)) {
+
+    if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+      time1 = Zoltan_Time(zz->Timer);
 
     ierr = Zoltan_Divide_Machine(zz, zz->Obj_Weight_Dim, part_sizes, 
                                  proc, local_comm, &set, 
@@ -628,6 +631,9 @@ static int rib_fn(
      most notably when a processor has zero parts on it, but still has
      some dots after the parallel partitioning. */
 
+  if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+    time1 = Zoltan_Time(zz->Timer);
+
   ierr = Zoltan_RB_Send_To_Part(zz, &(rib->Global_IDs), &(rib->Local_IDs),
                                &(rib->Dots), &dotmark, &dottop,
                                &dotnum, &dotmax, &allocflag, overalloc,
@@ -638,6 +644,10 @@ static int rib_fn(
                        "Error returned from Zoltan_RB_Send_To_Part");
     goto End;
   }
+
+  if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+    timers[3] += (Zoltan_Time(zz->Timer) - time1);
+  
 
   /* All dots are now on the processors they will end up on; now generate
    * more parts if needed. */
@@ -667,7 +677,7 @@ static int rib_fn(
                       &(dindx[0]), &(tmpdindx[0]), partlower,
                       proc, wgtflag, stats, gen_tree,
                       rectilinear_blocks, average_cuts,
-                      treept, value, wgts, part_sizes);
+                      treept, value, wgts, part_sizes, timers);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from serial_rib");
       goto End;
@@ -1034,9 +1044,10 @@ static int serial_rib(
   struct rib_tree *treept,   /* tree of RCB cuts */
   double *value,             /* temp array for median_find */
   double *wgts,              /* temp array for serial_rib */
-  float *part_sizes          /* Array of size zz->LB.Num_Global_Parts
+  float *part_sizes,         /* Array of size zz->LB.Num_Global_Parts
                                 containing the percentage of work to be
                                 assigned to each part.               */
+  double timers[]            /* as in rib_fn */
 )
 {
 char *yo = "serial_rib";
@@ -1052,12 +1063,17 @@ double cm[3];                 /* Center of mass of objects */
 double evec[3];               /* Eigenvector defining direction */
 int set0, set1;
 int i;
+double start_time, end_time;
 
   if (num_parts == 1) {
     for (i = 0; i < dotnum; i++)
       dotpt->Part[dindx[i]] = partlower;
   }
   else {
+
+    if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+      start_time = Zoltan_Time(zz->Timer);
+
     ierr = Zoltan_Divide_Parts(zz, zz->Obj_Weight_Dim, part_sizes, num_parts,
                                &partlower, &partmid, fractionlo);
 
@@ -1078,6 +1094,11 @@ int i;
           *w++ = dotpt->Weight[dindx[i] * dotpt->nWeights + j];
         }
       }
+    }
+    if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
+      end_time = Zoltan_Time(zz->Timer);
+      timers[1] += end_time - start_time;
+      start_time = end_time;
     }
 
     if (!Zoltan_RB_find_median(0, value, wgts, dotpt->uniformWeight, dotmark, dotnum, proc, 
@@ -1114,6 +1135,10 @@ int i;
         tmpdindx[--set1] = dindx[i];
     }
     memcpy(dindx, tmpdindx, dotnum * sizeof(int));
+    if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
+      end_time = Zoltan_Time(zz->Timer);
+      timers[2] += (end_time - start_time);
+    }
 
     /* If set 0 has at least one part and at least one dot,
      * call serial_rib for set 0 */
@@ -1124,7 +1149,7 @@ int i;
                         &(dindx[0]), &(tmpdindx[0]), partlower,
                         proc, wgtflag, stats, gen_tree, 
                         rectilinear_blocks, average_cuts,
-                        treept, value, wgts, part_sizes);
+                        treept, value, wgts, part_sizes, timers);
       if (ierr < 0) {
         goto End;
       }
@@ -1139,7 +1164,7 @@ int i;
                         &(dindx[set1]), &(tmpdindx[set1]), partmid,
                         proc, wgtflag, stats, gen_tree,
                         rectilinear_blocks, average_cuts,
-                        treept, value, wgts, part_sizes);
+                        treept, value, wgts, part_sizes, timers);
       if (ierr < 0) {
         goto End;
       }
