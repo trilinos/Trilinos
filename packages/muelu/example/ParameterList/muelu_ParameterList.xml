@@ -1,4 +1,17 @@
 <ParameterList name="MueLu">
+
+  <ParameterList name="Factories">
+    <ParameterList name="SymGaussSeidel">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      
+      <ParameterList name="ParameterList">
+        <Parameter name="type"                       type="string" value="RELAXATION"/>    
+        <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor" type="int"    value="1"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
    
   <ParameterList name="Hierarchy">
     
@@ -6,41 +19,17 @@
     
     <ParameterList name="FineLevel">
       <Parameter name="startLevel" type="int" value="0"/>
-      
-      <ParameterList name="Smoother">
-        <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-        
-        <ParameterList name="ParameterList">
-          <Parameter name="type"                       type="string" value="RELAXATION"/>    
-          <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
-          <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
-          <Parameter name="relaxation: damping factor" type="int"    value="1"/>
-        </ParameterList>
-      </ParameterList>
-      
+      <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
     </ParameterList>
 
     <ParameterList name="OtherLevels">
       <Parameter name="startLevel" type="int" value="1"/>
-      
-      <Parameter name="P" type="string" value="SaPFactory"/>
-      
-      <ParameterList name="Smoother">
-        <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-        
-        <ParameterList name="ParameterList">
-          <Parameter name="type"                       type="string" value="RELAXATION"/>    
-            <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
-            <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
-            <Parameter name="relaxation: damping factor" type="int"    value="1"/>
-        </ParameterList>
-        
-      </ParameterList>
+      <Parameter name="P"          type="string" value="SaPFactory"/>
+      <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
     </ParameterList>
     
     <ParameterList name="CoarsestLevel">
-      <Parameter name="startLevel" type="int" value="-1"/>
-      
+      <Parameter name="startLevel"   type="int" value="-1"/>
       <Parameter name="CoarseSolver" type="string" value="DirectSolver"/>
     </ParameterList>
     
