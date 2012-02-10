@@ -175,6 +175,7 @@ namespace MueLu {
     //
 
     int nextLevelID = coarseLevelID + 1;
+
     if (!isLastLevel) {
       if (nextLevelID > LastLevelID()) { AddNewLevel(); }
       CheckLevel(*Levels_[nextLevelID], nextLevelID);
