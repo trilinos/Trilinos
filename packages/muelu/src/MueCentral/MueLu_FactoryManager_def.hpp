@@ -55,8 +55,8 @@ namespace MueLu {
         
     } else {
           
-      if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
-      if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
+      if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
+      if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new SaPFactory(rcp(new TentativePFactory()))));
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 
       if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
