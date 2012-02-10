@@ -147,7 +147,9 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typenam
 // Incrementing this iterator will take us to the next *selected* bucket, skipping past
 // unselected buckets, until the end.
 //
-// As long as we're using a pointer as a 
+// As long as we're using a pointer as the value type, we need to
+// specify the reference type to be the value_type in order for this
+// class to work with boost
 template <typename BucketIteratorType>
 class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
                                                     typename BucketIteratorType::value_type,
