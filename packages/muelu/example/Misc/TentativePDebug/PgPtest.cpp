@@ -73,11 +73,11 @@ int main(int argc, char *argv[]) {
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 100); // manage parameters of the test case
+  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
-  LO maxLevels = 3;
+  LO maxLevels = 5;
   LO its=10;
   std::string coarseSolver="ifpack2";
   int pauseForDebugger=0;
@@ -260,13 +260,15 @@ int main(int argc, char *argv[]) {
       std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   }
 
-  // test some basic multigrid data
-  RCP<Teuchos::FancyOStream> fos = getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  Finest->print(*fos);
-  RCP<Level> coarseLevel = H->GetLevel(1);
-  coarseLevel->print(*fos);
-  RCP<Level> coarseLevel2 = H->GetLevel(2);
-  coarseLevel2->print(*fos);
+  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  out->setOutputToRootOnly(0);
+
+  for (int i=0; i<H->GetNumLevels(); i++) {
+    RCP<Level> l = H->GetLevel(i);
+    *out << std::endl << "Level " << i << std::endl;
+    l->print(*out);
+  }
+
 
   return EXIT_SUCCESS;
 

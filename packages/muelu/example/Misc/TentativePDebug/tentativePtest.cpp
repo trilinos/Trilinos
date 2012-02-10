@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
-  LO maxLevels = 3;
+  LO maxLevels = 5;
   LO its=10;
   std::string coarseSolver="ifpack2";
   int pauseForDebugger=0;
@@ -255,6 +255,15 @@ int main(int argc, char *argv[]) {
     X->norm2(norms);
     if (comm->getRank() == 0)
       std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+  }
+
+  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  out->setOutputToRootOnly(0);
+
+  for (int i=0; i<H->GetNumLevels(); i++) {
+    RCP<Level> l = H->GetLevel(i);
+    *out << std::endl << "Level " << i << std::endl;
+    l->print(*out);
   }
 
   return EXIT_SUCCESS;
