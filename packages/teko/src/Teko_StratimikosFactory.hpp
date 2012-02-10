@@ -105,6 +105,10 @@ public:
   Teuchos::RCP<Teko::RequestHandler> getRequestHandler() const 
   { return reqHandler_; }
 
+  //! Get the decomposition vector in use by this factory
+  const std::vector<int> & getDecomposition() const
+  { return decomp_; }
+
 private:
 
   /** Build the segragated jacobian operator according to

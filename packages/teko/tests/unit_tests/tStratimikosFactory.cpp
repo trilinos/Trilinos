@@ -347,3 +347,74 @@ TEUCHOS_UNIT_TEST(tStratimikosFactory, test_RelatedFunctions)
       TEST_EQUALITY(precFactory->getRequestHandler(),rh);
    }
 }
+
+TEUCHOS_UNIT_TEST(tStratimikosFactory, test_multi_use) 
+{
+   using Teuchos::RCP;
+   using Teuchos::ParameterList;
+
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Epetra_MpiComm comm(MPI_COMM_WORLD);
+   #else
+      Epetra_SerialComm comm;
+   #endif
+
+   // build epetra operator
+   RCP<Epetra_Operator> eA = buildSystem(comm,5);
+   RCP<Thyra::LinearOpBase<double> > tA = Thyra::nonconstEpetraLinearOp(eA);
+
+   // build stratimikos factory, adding Teko's version
+   Stratimikos::DefaultLinearSolverBuilder stratFactory;
+   stratFactory.setPreconditioningStrategyFactory(
+         Teuchos::abstractFactoryStd<Thyra::PreconditionerFactoryBase<double>,Teko::StratimikosFactory>(),
+         "Teko");
+   RCP<const ParameterList> validParams = stratFactory.getValidParameters();
+   stratFactory.setParameterList(Teuchos::rcp(new Teuchos::ParameterList(*validParams)));
+
+   // print out Teko's parameter list and fail if it doesn't exist!
+   TEST_NOTHROW(validParams->sublist("Preconditioner Types").sublist("Teko").print(out,
+         ParameterList::PrintOptions().showDoc(true).indent(2).showTypes(true)));
+
+   // build teko preconditioner factory
+   RCP<Thyra::PreconditionerFactoryBase<double> > precFactory
+         = stratFactory.createPreconditioningStrategy("Teko");
+
+   // make sure factory is built
+   TEST_ASSERT(precFactory!=Teuchos::null);
+
+   // try using a different preconditioner each time
+   RCP<Thyra::PreconditionerBase<double> > prec;
+   for(int i=0;i<2;i++) {
+      prec = precFactory->createPrec();
+      
+      RCP<const Thyra::LinearOpSourceBase<double> > losb 
+         = rcp(new Thyra::DefaultLinearOpSource<double>(tA));
+
+      precFactory->initializePrec(losb,prec.get());
+
+      RCP<Teko::StratimikosFactory> stratFact =
+              rcp_dynamic_cast<Teko::StratimikosFactory>(precFactory);
+      const std::vector<int> & decomp = stratFact->getDecomposition();
+
+      TEST_EQUALITY(decomp.size(),1);
+      TEST_EQUALITY(decomp[0],1);
+   }
+
+   // try using a single preconditioner multiple times
+   prec = precFactory->createPrec();
+   for(int i=0;i<2;i++) {
+      RCP<const Thyra::LinearOpSourceBase<double> > losb 
+         = rcp(new Thyra::DefaultLinearOpSource<double>(tA));
+
+      precFactory->initializePrec(losb,prec.get());
+
+      RCP<Teko::StratimikosFactory> stratFact =
+              rcp_dynamic_cast<Teko::StratimikosFactory>(precFactory);
+      const std::vector<int> & decomp = stratFact->getDecomposition();
+
+      TEST_EQUALITY(decomp.size(),1);
+      TEST_EQUALITY(decomp[0],1);
+   }
+
+}
