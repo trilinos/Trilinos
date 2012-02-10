@@ -17,6 +17,11 @@ namespace MueLu {
      @class NullspaceFactory class.
      @brief Factory for generating nullspace
 
+      The NullspaceFactory is meant to generate a default approximation for
+      the fine level nullspace (Level 0 only). For all other levels it is used
+      only to act as "generating factory" for the "Nullspace", which is actually
+      handled by the TentativePFactory.
+
      @todo TODO This factory can only generate the constant vector at the moment.
 
      @ingroup MueLuTransferClasses

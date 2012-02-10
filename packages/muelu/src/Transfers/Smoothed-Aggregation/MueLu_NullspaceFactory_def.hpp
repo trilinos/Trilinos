@@ -21,7 +21,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    //GetOStream(Warnings1, 0) << "NullspaceFactory::DeclareInput: GetA by fac: " << AFact_.get() << std::endl;
+
+    // only request "A" in DeclareInput if
+    // 1)there is not "Nullspace" is available in Level AND
+    // 2) it is the finest level (i.e. LevelID == 0)
     if (currentLevel.IsAvailable("Nullspace") == false && currentLevel.GetLevelID() == 0)
       currentLevel.DeclareInput("A", AFact_.get(),this);
   }
