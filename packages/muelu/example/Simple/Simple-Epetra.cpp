@@ -14,8 +14,6 @@
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 
-#include "MueLu_RAPFactory.hpp" //TMP
-
 #include <MueLu_TrilinosSmoother.hpp> //TODO: remove
 
 // Header files defining default types for template parameters.
@@ -105,10 +103,7 @@ int main(int argc, char *argv[]) {
   H->setVerbLevel(Teuchos::VERB_HIGH);
 
   // Multigrid setup phase (using default parameters)
-  FactoryManager M;                         // -
-  M.SetFactory("A", rcp(new RAPFactory())); // TODO: to be remove, but will require some work
-
-  H->Setup(M); //Should be instead: H->Setup();
+  H->Setup();
 
   //
   // Define RHS / LHS

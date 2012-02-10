@@ -70,9 +70,7 @@ namespace MueLu {
     
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy & H) const {
-      FactoryManager M;                         // -
-      M.SetFactory("A", rcp(new RAPFactory())); // TODO: to be remove, but will require some work
-      H.Setup(M);                               // -
+      H.Setup();
     }
 
     //@}

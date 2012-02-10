@@ -55,10 +55,7 @@ namespace MueLu {
         
     } else {
           
-      //if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory())); will need some work
-      if (varName == "A")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
-      //if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp (new NoFactoryOr("A", rcp(new RAPFactory()))));
-
+      if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
       if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 

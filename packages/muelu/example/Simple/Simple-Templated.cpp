@@ -4,8 +4,6 @@
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 
-#include <MueLu_RAPFactory.hpp> //TMP
-
 // Define default template types
 //typedef std::complex<double> Scalar;
 typedef double Scalar;
@@ -82,10 +80,7 @@ int main(int argc, char *argv[]) {
   H.setVerbLevel(Teuchos::VERB_HIGH);
 
   // Multigrid setup phase (using default parameters)
-  MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal> M;                         // -
-  M.SetFactory("A", rcp(new MueLu::RAPFactory<Scalar, GlobalOrdinal, LocalOrdinal>())); // TODO: to be remove, but will require some work
-  H.Setup(M);                                                                           // -
-  // Should be instead: H.Setup();
+  H.Setup();
 
   //
   // Solve Ax = b

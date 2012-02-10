@@ -9,7 +9,6 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
-#include "MueLu_RAPFactory.hpp"
 
 // Define template parameters
 #include "MueLu_UseDefaultTypes.hpp"
@@ -93,7 +92,6 @@ int main(int argc, char *argv[]) {
 
   // 
   FactoryManager M;
-  M.SetFactory("A",            rcp(new RAPFactory())); //TODO: to be remove, but will require some work
   M.SetFactory("P",            pFact);
   M.SetFactory("Aggregates",   aggregationFact);
   M.SetFactory("Smoother",     smootherFact);
