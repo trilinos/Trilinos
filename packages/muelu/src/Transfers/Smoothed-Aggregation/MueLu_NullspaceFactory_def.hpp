@@ -21,14 +21,18 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get(),this);
+    //GetOStream(Warnings1, 0) << "NullspaceFactory::DeclareInput: GetA by fac: " << AFact_.get() << std::endl;
+    if (currentLevel.IsAvailable("Nullspace") == false && currentLevel.GetLevelID() == 0)
+      currentLevel.DeclareInput("A", AFact_.get(),this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     RCP<MultiVector> nullspace;
-      
+
     Monitor m(*this, "Nullspace factory");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.GetLevelID() != 0, Exceptions::RuntimeError, "MueLu::NullspaceFactory::Build(): NullspaceFactory can be used for finest level (LevelID == 0) only.");
 
     if (currentLevel.IsAvailable("Nullspace")) {
       // When a fine nullspace have already been defined by user using Set("Nullspace", ...), we use it.
@@ -37,7 +41,7 @@ namespace MueLu {
 
     } else {
         
-      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
+      RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get()); // no request since given by user
 
       //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
 
@@ -45,9 +49,6 @@ namespace MueLu {
       nullspace->putScalar(1.0);
       GetOStream(Runtime1, 0) << "Calculate nullspace: nullspace dimension=" << nullspace->getNumVectors() << std::endl;
     }
-
-    if(currentLevel.GetLevelID() != 0)
-      GetOStream(Warnings0, 0) << "NullspaceFactory::Build called for Level " << currentLevel.GetLevelID() << "! Check me!" << std::endl;
 
     currentLevel.Set("Nullspace", nullspace, this);
 

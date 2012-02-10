@@ -145,6 +145,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Level, KeepAndBuildFactory)
   {
     Level l;
+    l.SetLevelID(0); // level 0 necessary because of Nullspace factory
 
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
@@ -174,6 +175,16 @@ namespace MueLuTests {
     TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), true);
     TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);
 
+    l.Release(*aggFact); // release dependencies only
+
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.GetKeepFlag("Aggregates", aggFact.get()),   MueLu::Keep);
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);
+
     l.Release("Aggregates", aggFact.get());
 
     TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
@@ -183,6 +194,75 @@ namespace MueLuTests {
     TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
     TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
     TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);
+
+    l.RemoveKeepFlag("Aggregates", aggFact.get(), MueLu::Keep);
+
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);
+
+  }
+
+  TEUCHOS_UNIT_TEST(Level, KeepAndBuildFactory2)
+  {
+    Level l;
+    l.SetLevelID(0); // level 0 necessary because of Nullspace factory
+
+    RCP<FactoryManager> facManager = rcp(new FactoryManager());
+    l.SetFactoryManager(facManager);
+
+    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
+    l.Set("A", A);
+
+    RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
+    RCP<UCAggregationFactory> aggFact   = rcp(new UCAggregationFactory(graphFact));
+
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+
+    l.Request("Aggregates", aggFact.get());
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+
+    aggFact->Build(l);
+
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   true);
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), true);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), true);
+    TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);
+
+    l.Release(*aggFact);
+
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   true);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   true);
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);
+
+    l.Release("Aggregates", aggFact.get());
+
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);
+
+    /*l.RemoveKeepFlag("Aggregates", aggFact.get(), MueLu::Keep);
+
+    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
+    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+
+    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+    TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);*/
+
   }
 
 

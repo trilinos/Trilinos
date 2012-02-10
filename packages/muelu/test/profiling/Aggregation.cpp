@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   Level Finest;
+  Finest.SetLevelID(0);  // must be level 0 for NullspaceFactory
   Finest.Set("A", A);
   
   Finest.SetFactoryManager( rcp( new FactoryManager() ));
