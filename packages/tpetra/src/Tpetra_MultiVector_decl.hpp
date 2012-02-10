@@ -145,11 +145,14 @@ namespace Tpetra {
     ///   redistribution.  If you need to move data around, use \c
     ///   Import or \c Export.
     ///
-    /// \note This method checks for compatibility of the two Maps.
-    ///   That check requires a constant number of reductions over all
-    ///   the processes in the multivector's current Map's
-    ///   communicator.  Thus, this method must be called as a
-    ///   collective operation.
+    /// \note This method must always be called as a collective
+    ///   operation on all processes over which the multivector is
+    ///   distributed.  This is because the method reserves the right
+    ///   to check for compatibility of the two Maps.  It will do this
+    ///   at least in Tpetra debug mode (Boolean configure-time option
+    ///   Tpetra_ENABLE_DEBUG set), if not always.  That check
+    ///   requires a constant number of reductions over all the
+    ///   processes in the multivector's current Map's communicator.
     void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
     //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
