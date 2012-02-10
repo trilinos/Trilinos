@@ -126,8 +126,10 @@ evaluate_range(
   stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
   expr_eval.parse();
 
-  double x, y;
+  double x, y, by, v[2];
   expr_eval.bindVariable("x", x);
+  expr_eval.bindVariable("by", by);
+  expr_eval.bindVariable("v", *v);
 
   double start_x = -range;
   const int NumPoints = 100;
@@ -339,7 +341,9 @@ EXPREVAL_DEFINE_TEST1(b3, .5*sin(x));
 
 // Pierson tests
 EXPREVAL_DEFINE_TEST(k1, x^2, x*x);
-EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x, 1.0), (1.0-cos(x*stk::expreval::s_pi/1.0))/2);
+EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x),           (1.0-cos(x*stk::expreval::s_pi))/2);
+EXPREVAL_DEFINE_TEST(k3, cosine_ramp(x, 1.0),      (1.0-cos(x*stk::expreval::s_pi/1.0))/2);
+EXPREVAL_DEFINE_TEST(k4, cosine_ramp(x, 0.0, 1.0), (1.0-cos(x*stk::expreval::s_pi/1.0))/2);
 
 #undef EXPREVAL_DEFINE_TEST1
 
@@ -349,21 +353,30 @@ void
 UnitTestEvaluator::testEvaluator()
 {
   STKUNIT_EXPECT_TRUE(syntax("3^2"));
+
+  STKUNIT_EXPECT_TRUE(test_one_value("max(1,2)",2));
+  STKUNIT_EXPECT_TRUE(test_one_value("max(1,2,3)",3));
+  STKUNIT_EXPECT_TRUE(test_one_value("max(1,2,3,4)",4));
+
+  STKUNIT_EXPECT_TRUE(test_one_value("min(4,3)",3));
+  STKUNIT_EXPECT_TRUE(test_one_value("min(4,3,2)",2));
+  STKUNIT_EXPECT_TRUE(test_one_value("min(4,3,2,1)",1));
+
   STKUNIT_EXPECT_TRUE(test_one_value("3^2",9.));
   STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3)^2",36.));
   STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3+4)^(1+1)",100.));
 
   double weibull_gold_value = 3.6787944117144233402;
-  STKUNIT_EXPECT_TRUE(test_one_value("weibull_pdf(1.0, 10.0, 1.0)", weibull_gold_value));
-
-  // These 2 tests just print a range of values of the input expressions.
-  STKUNIT_EXPECT_TRUE(evaluate_range("normal_pdf(x, 0.0, 0.5)", 4));
-  STKUNIT_EXPECT_TRUE(evaluate_range("exponential_pdf(x, 1.0)", 4));
+  STKUNIT_EXPECT_TRUE(test_one_value("weibull_pdf(1.0,10.0,1.0)", weibull_gold_value));
 
   // Need a better test for distributions, perhaps something that computes the
   // mean and standard deviation of the distribution.
   double normal_gold_value  = 0.79788456080286540573;
-  STKUNIT_EXPECT_TRUE(test_one_value("normal_pdf(0.0, 0.0, 0.5)", normal_gold_value));
+  STKUNIT_EXPECT_TRUE(test_one_value("normal_pdf(0.0,0.0,0.5)", normal_gold_value));
+
+  // These 2 tests just print a range of values of the input expressions.
+  STKUNIT_EXPECT_TRUE(evaluate_range("normal_pdf(x,0.0,0.5)", 4));
+  //STKUNIT_EXPECT_TRUE(evaluate_range("exponential_pdf(x, 1.0)", 4));
 
   STKUNIT_EXPECT_TRUE(syntax("2*2"));
   STKUNIT_EXPECT_TRUE(syntax(""));
@@ -459,6 +472,8 @@ UnitTestEvaluator::testEvaluator()
 
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(k1));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(k2));
+  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(k3));
+  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(k4));
 
 #undef EXPREVAL_TEST
 }

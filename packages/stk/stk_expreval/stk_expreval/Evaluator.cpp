@@ -73,7 +73,15 @@ enum Opcode {
 
 class Node
 {
+  //
+  // 0,1,2,3,4 argument overloads allowed. Increase this
+  // value when 5 argument functions are added. Probably
+  // some way to automate this given that it's related to
+  // the number of CFunction classes defined.
+  //
 public:
+  enum { MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES = 5 };
+
   explicit Node(Opcode opcode)
     : m_opcode(opcode),
       m_left(0),
@@ -107,7 +115,7 @@ public:
 
     struct _function
     {
-      CFunctionBase *	function;
+      CFunctionBase* function[MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES];
     } function;
   } m_data;
 
@@ -210,9 +218,17 @@ Node::eval() const
 
       int argc = 0;
       for (Node *arg = m_right; arg; arg = arg->m_right)
+      {
 	argv[argc++] = arg->m_left->eval();
+      }
 
-      return (*m_data.function.function)(argc, argv);
+      for(unsigned int i=0; i<Node::MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES; ++i)
+      {
+        // Linear search to match the function name and number of arguments.
+        if( m_data.function.function[i]->getArgCount() == argc) {
+          return (*m_data.function.function[i])(argc, argv);
+        }
+      }
     }
 
   default: // Unknown opcode
@@ -664,19 +680,46 @@ parseFunction(
 
   CFunctionBase *c_function = NULL;
   CFunctionMap::iterator it = getCFunctionMap().find(function_name);
-  if (it != getCFunctionMap().end())
-    c_function = (*it).second;
-
-//   if (!c_function)
-//     throw std::runtime_error(std::string("Undefined function ") + function_name);
-
   Node *function = eval.newNode(OPCODE_FUNCTION);
-  function->m_data.function.function = c_function;
+  // only 1 function found with that function name.
+  if ( getCFunctionMap().count(function_name) == 1 ) {
+    if (it != getCFunctionMap().end()) {
+      c_function = (*it).second;
+    }
+    function->m_data.function.function[0] = c_function;
 
-  if (!c_function)
-    eval.getUndefinedFunctionSet().insert(function_name);
+    if (!c_function)
+      eval.getUndefinedFunctionSet().insert(function_name);
 
+  } else {
+    std::pair<CFunctionMap::iterator, CFunctionMap::iterator> ppp;
+    ppp = getCFunctionMap().equal_range(function_name);
+
+    using std::cout;
+    using std::endl;
+    //cout << endl << "Range of \"function_name\" elements:" << endl;
+    int iCount=0;
+    for (CFunctionMap::iterator it2 = ppp.first;
+        it2 != ppp.second;
+        ++it2,
+        ++iCount)
+    {
+      //cout << "  [" << (*it2).first << ", " << (*it2).second->getArgCount() << "]" << endl;
+      c_function = (*it2).second;
+      function->m_data.function.function[iCount] = c_function;
+
+      if (!c_function)
+        eval.getUndefinedFunctionSet().insert(function_name);
+    }
+    if( iCount == Node::MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES) {
+      //cout << "Found multiple functions with the same name" << endl;
+      throw std::runtime_error(std::string("Exceeded maximum number of overloaded function names for function named= ") + function_name);
+    }
+  }
   function->m_right = parseFunctionArg(eval, lparen + 1, rparen);
+
+  //   if (!c_function)
+  //     throw std::runtime_error(std::string("Undefined function ") + function_name);
 
   return function;
 }
