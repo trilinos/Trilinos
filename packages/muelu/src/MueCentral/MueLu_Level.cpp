@@ -91,6 +91,13 @@ namespace MueLu {
     requestMode_ = prev;
   }
 
+  void Level::Release(const SmootherPrototypeBase& proto) {
+    RequestMode prev = requestMode_;
+    requestMode_ = RELEASE;
+    proto.DeclareInput(*this);
+    requestMode_ = prev;
+  }
+
   void Level::DeclareInput(const std::string& ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
     if (requestMode_ == REQUEST) {
       Request(ename, factory, requestedBy);
@@ -132,7 +139,9 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(needs_.IsRequestedFactory(fac) != true, Exceptions::RuntimeError, "Level::Request(ename, factory): internal logic error.");
 
     // Call Request for factory dependencies
-    if (test) { Request(*fac); }
+    if (test) {
+      Request(*fac);
+    }
   }
 
   //TODO: finish this
@@ -144,17 +153,18 @@ namespace MueLu {
   void Level::Release(const std::string& ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
     const FactoryBase* fac = GetFactory(ename, factory);
 
-    //FIXME FIXME FIXME FIXME
-    //TMP    TEUCHOS_TEST_FOR_EXCEPTION(IsRequested(ename,fac) == false, Exceptions::RuntimeError, "MueLu::Level[" << levelID_ << "]::Release(): This method cannot be called on non requested data. Called on " << ename << ", " << fac << std::endl << "Generating factory:" << *fac << " NoFactory="<<NoFactory::get() ); //TODO: add print() of variable info to complete the error msg
-
+    // Only a factory which has requested (fac,ename) is allowed to release it again.
+    // Do not release data if it has not been requested by the factory "requestedBy"
+    // Note: when data is released (fac,ename) depends on it often happened that some
+    //       of this data has (recursively) been released too often
     if(needs_.IsRequestedBy(fac, ename, requestedBy)) {
-      
-      // data has been requested but never built
-      // can we release the dependencies of fac safely?
-      int cnt = needs_.CountRequestedFactory(fac);
-      if(/*fac != requestedBy &&*/ cnt == 1) {
-        // factory is only generating factory of current variable (ename,factory)
-        // Release(fac) can be called safely
+      if(needs_.CountRequestedFactory(fac) == 1 &&     // check if factory fac is not requested by another factory
+         needs_.IsAvailableFactory(fac) == false ) {   // check if Build function of factory fac has been called
+        // In general all data (fac,ename) depends on is released with the Get calls in the Build
+        // function of the generating factory fac.
+        // Here we have to release the dependencies of some data that has been requested (by factory "requestedBy")
+        // but the corresponding Build function of factory "fac" has never been called. Therefore the dependencies
+        // have never been released. Do it now.
         Release(*fac);
       }
       needs_.Release(ename,fac,requestedBy);

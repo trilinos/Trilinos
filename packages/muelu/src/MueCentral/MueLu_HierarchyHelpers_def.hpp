@@ -69,6 +69,7 @@ namespace MueLu {
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & level) const {
+
     if (smootherFact_ != Teuchos::null) {
       level.DeclareInput("PreSmoother",  smootherFact_.get());
       level.DeclareInput("PostSmoother", smootherFact_.get());

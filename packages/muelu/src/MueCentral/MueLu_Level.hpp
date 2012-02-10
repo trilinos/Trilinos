@@ -9,6 +9,8 @@
 
 #include "MueLu_FactoryManagerBase_fwd.hpp"
 
+#include "MueLu_SmootherPrototypeBase.hpp"
+
 namespace MueLu {
 
   /*!
@@ -30,7 +32,6 @@ namespace MueLu {
   class Level : public BaseClass {
 
   public:
-
     //@{
 
     //! @name Constructors / Destructors
@@ -210,6 +211,10 @@ namespace MueLu {
 
     //! Decrement the storage counter for all the inputs of a factory
     void Release(const FactoryBase& factory);
+
+    //! Decrement the storage counter for all the inputs of a SmootherPrototype
+    //! @brief: this is a special function for the SmootherFactory class and not to be used elsewhere
+    void Release(const MueLu::SmootherPrototypeBase& proto);
 
     //! Callback from FactoryBase::CallDeclareInput() and FactoryBase::DeclareInput()
     void DeclareInput(const std::string& ename, const FactoryBase* factory, const FactoryBase* requestedBy = NoFactory::get() );

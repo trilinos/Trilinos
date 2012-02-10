@@ -31,8 +31,7 @@ namespace MueLu {
     //! Destructor.
     virtual ~SetFactoryManager() {
       // restore previous factory manager
-      if (prevFactoryManager_ != Teuchos::null) //FIXME: remove this test. factory manager have to be reset to Teuchos::null in Setup()
-        level_->SetFactoryManager(prevFactoryManager_);
+      level_->SetFactoryManager(prevFactoryManager_);
     }
 
     //@}

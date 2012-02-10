@@ -75,6 +75,7 @@ namespace MueLu {
       //TODO if outputlevel high enough
       //TODO preSmoother.Print();
       preSmoother->Setup(currentLevel);
+      currentLevel.Release(*preSmoother);
         
       // Level Set
       currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
@@ -86,7 +87,7 @@ namespace MueLu {
               
           // Very simple reuse. TODO: should be done in MueMat too
           postSmoother = preSmoother;
-              
+
           //            }  else if (preOrPost == BOTH &&
           //                        preSmootherPrototype_ != Teuchos::null &&
           //                        preSmootherPrototype_->GetType() == postSmootherPrototype_->GetType()) {
@@ -116,7 +117,7 @@ namespace MueLu {
           // Copy the prototype and run the setup phase.
           postSmoother = postSmootherPrototype_->Copy();
           postSmoother->Setup(currentLevel);
-              
+          currentLevel.Release(*postSmoother);
         }
             
         // Level Set
