@@ -307,6 +307,10 @@ namespace MueLu {
 
   } // Setup()
 
+  // Note: SetCoarsestSolver and SetSmoothers are "fragile" because they suppose that everything that is needed to build the smoother is available in the level.
+  // Specific "keep" requests have not been posted for the smoother during the setup phase.
+  // If some data is needed but not available, they might be recomputed automatically or the methods can failed (because factoryManager_ == null on upper level)
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop) {
 
@@ -314,8 +318,10 @@ namespace MueLu {
     RCP<FactoryManager> manager = rcp(new FactoryManager());
     manager->SetFactory("Smoother",     Teuchos::null); //? TODO remove
     manager->SetFactory("CoarseSolver", Teuchos::null);
+    manager->SetFactory("A", NoFactory::getRCP()); // SetCoarsestSolver() is called after the hierarchy build. So we use "Final" data instead of rebuilding everything.
 
     SetFactoryManager SFM(Levels_[LastLevelID()], manager);
+    
 
     level.Request("PreSmoother", &smooFact);
     level.Request("PostSmoother", &smooFact);
