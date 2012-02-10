@@ -456,16 +456,19 @@ public:
   //@{
 
   //! An iterator pointing to the first entry
-  ConstIterator begin() const ;
+  inline ConstIterator begin() const;
 
   //! An iterator pointing beyond the last entry
-  ConstIterator end() const ;
+  inline ConstIterator end() const;
 
-  //! Access to ParameterEntry (i.e., returns i->second)
-  const ParameterEntry& entry(ConstIterator i) const;
+  //! Find a parameter with a given name
+  inline ConstIterator find(const std::string& name) const;
   
   //! Access to name (i.e., returns i->first)
-  const std::string& name(ConstIterator i) const;
+  inline const std::string& name(ConstIterator i) const;
+
+  //! Access to ParameterEntry (i.e., returns i->second)
+  inline const ParameterEntry& entry(ConstIterator i) const;
 
   //@}
 
@@ -569,12 +572,16 @@ public:
   
 private: // Functions
  
+  //! Get a paramter given its name
+  inline ParameterEntry& getRaw(const std::string &name);
   //! An iterator pointing to the first entry
-  Iterator nonconstBegin();
+  inline Iterator nonconstBegin();
   //! An iterator pointing beyond the last entry
-  Iterator nonconstEnd();
+  inline Iterator nonconstEnd();
+  //! Find a parameter with a given name
+  inline Iterator nonconstFind(const std::string& name);
   //! Access to ParameterEntry (i.e., returns i->second)
-  ParameterEntry& entry(Iterator i);
+  inline ParameterEntry& entry(Iterator i);
   //! Validate that a parameter exists
   void validateEntryExists( const std::string &funcName, const std::string &name, const ParameterEntry *entry ) const;
   //! Validate that a type is the same
@@ -719,7 +726,7 @@ ParameterList& ParameterList::set(
   RCP<const ParameterEntryValidator> const& validator_in
   )
 {
-  ParameterEntry &foundEntry = params_[name_in]; // Will add the entry if not exists
+  ParameterEntry &foundEntry = getRaw(name_in); // Will add the entry if not exists
   foundEntry.setValue(value_in,false,docString_in,validator_in);
   // Validate the value *after* you set it.  It is important to use
   // entry.validator() instead of validator since validator might be null!
@@ -754,7 +761,7 @@ ParameterList& ParameterList::set(
 inline
 ParameterList& ParameterList::setEntry(std::string const& name_in, ParameterEntry const& entry_in)
 {
-  params_[name_in] = entry_in;
+  getRaw(name_in) = entry_in;
   return *this;
 }
 
@@ -763,12 +770,12 @@ ParameterList& ParameterList::setEntry(std::string const& name_in, ParameterEntr
 template<typename T>
 T& ParameterList::get(const std::string& name_in, T def_value)
 {
-  ConstIterator i = params_.find(name_in);
+  ConstIterator i = this->find(name_in);
     
   // The parameter was not found, add it to the list
-  if (i == params_.end()) {
-    params_[name_in].setValue(def_value, true);
-    i = params_.find(name_in);
+  if (i == this->nonconstEnd()) {
+    getRaw(name_in).setValue(def_value, true);
+    i = this->nonconstFind(name_in);
   } else {
     // The parameter was found, make sure it is the same type as T.
     this->template validateEntryType<T>("get", name_in, entry(i));
@@ -808,8 +815,8 @@ template<typename T>
 inline
 T* ParameterList::getPtr(const std::string& name_in) 
 {
-  ConstIterator i = params_.find(name_in);
-  if ( i == params_.end() || entry(i).getAny().type() != typeid(T) )
+  ConstIterator i = this->nonconstFind(name_in);
+  if ( i == this->nonconstEnd() || entry(i).getAny().type() != typeid(T) )
     return NULL;
   return &getValue<T>(entry(i));
 }
@@ -818,8 +825,8 @@ template<typename T>
 inline
 const T* ParameterList::getPtr(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name_in);
-  if ( i == params_.end() || entry(i).getAny().type() != typeid(T) )
+  ConstIterator i = this->find(name_in);
+  if ( i == this->end() || entry(i).getAny().type() != typeid(T) )
     return NULL;
   return &getValue<T>(entry(i));
 }
@@ -844,8 +851,8 @@ inline
 ParameterEntry*
 ParameterList::getEntryPtr(const std::string& name_in)
 {
-  Map::iterator i = params_.find(name_in);
-  if ( i == params_.end() )
+  Map::iterator i = this->nonconstFind(name_in);
+  if ( i == this->nonconstEnd() )
     return NULL;
   return &entry(i);
 }
@@ -854,8 +861,8 @@ inline
 const ParameterEntry*
 ParameterList::getEntryPtr(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name_in);
-  if ( i == params_.end() )
+  ConstIterator i = this->find(name_in);
+  if ( i == this->end() )
     return NULL;
   return &entry(i);
 }
@@ -863,8 +870,8 @@ ParameterList::getEntryPtr(const std::string& name_in) const
 inline RCP<ParameterEntry>
 ParameterList::getEntryRCP(const std::string& name_in)
 {
-  Iterator i = params_.find(name_in);
-  if ( i == params_.end() )
+  Iterator i = this->nonconstFind(name_in);
+  if ( i == this->nonconstEnd() )
     return null;
   return rcpFromRef(entry(i));
 }
@@ -872,44 +879,111 @@ ParameterList::getEntryRCP(const std::string& name_in)
 inline RCP<const ParameterEntry>
 ParameterList::getEntryRCP(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name_in);
-  if ( i == params_.end() )
+  ConstIterator i = this->find(name_in);
+  if ( i == this->end() )
     return null;
   return rcpFromRef(entry(i));
 }
 
+
 // Attribute Functions
+
 
 inline
 const std::string& ParameterList::name() const
 {
   return name_;
 }
+
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 template<typename T>
 bool ParameterList::isType(const std::string& name_in, T* /*ptr*/) const
 {
-  ConstIterator i = params_.find(name_in);
+  ConstIterator i = this->find(name_in);
   // If parameter doesn't exist, return false.
-  if (i == params_.end()) 
+  if (i == this->end()) 
     return false;
   return entry(i).getAny().type() == typeid(T);
 }
 #endif
+
   
 template<typename T>
 bool ParameterList::isType(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name_in);
+  ConstIterator i = this->find(name_in);
   // If parameter doesn't exist, return false.
-  if (i == params_.end()) 
+  if (i == this->end()) 
     return false;
   return entry(i).getAny().type() == typeid(T);
 }
 
 
+// Read-only access to the iterator
+
+
+inline ParameterList::ConstIterator ParameterList::begin() const
+{
+  return params_.begin();
+}
+
+
+inline ParameterList::ConstIterator ParameterList::end() const
+{
+  return params_.end();
+}
+
+
+inline ParameterList::ConstIterator ParameterList::find(const std::string& name_in) const
+{
+  return params_.find(name_in);
+}
+
+
+inline const std::string& ParameterList::name(ConstIterator i) const
+{
+  return (i->first);
+}
+
+
+inline const ParameterEntry& ParameterList::entry(ConstIterator i) const
+{
+  return (i->second);
+}
+
+
 // private
+
+
+inline ParameterEntry& ParameterList::getRaw(const std::string &name_in)
+{
+  return params_[name_in];
+}
+
+
+inline ParameterList::Iterator ParameterList::nonconstBegin()
+{
+  return params_.begin();
+}
+
+
+inline ParameterList::Iterator ParameterList::nonconstEnd()
+{
+  return params_.end();
+}
+
+
+inline ParameterList::Iterator ParameterList::nonconstFind(const std::string& name_in)
+{
+  return params_.find(name_in);
+}
+
+
+inline ParameterEntry& ParameterList::entry(Iterator i)
+{
+  return (i->second);
+}
 
 
 template<typename T>
@@ -1193,5 +1267,3 @@ inline std::ostream& operator<<(std::ostream& os, const ParameterList& l)
 } // end of Teuchos namespace
 
 #endif
-
-
