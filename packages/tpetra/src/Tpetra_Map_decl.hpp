@@ -264,6 +264,30 @@ namespace Tpetra {
     /// X and Y have the same number of columns, and if their Maps are
     /// compatible, then it is legal to assign X to Y or to assign Y
     /// to X.
+    ///
+    /// Notes for Tpetra developers:
+    ///
+    /// If the input Map and this Map have different communicators,
+    /// the behavior of this method is currently undefined.  In
+    /// general, Tpetra currently assumes that if users instigate
+    /// interactions between Tpetra objects, then those Tpetra objects
+    /// have the same communicator.  Also, defining semantics of
+    /// interaction between Tpetra objects with different
+    /// communicators may be tricky.  It seems like two Maps could be
+    /// compatible even if they had different communicators, as long
+    /// as their communicators have the same number of processes.
+    /// Could two Maps with different communicators be the same (in
+    /// the sense of \c isSameAs())?  It's not clear.
+    /// 
+    /// Checking whether two communicators are the same would require
+    /// extending Teuchos::Comm to provide a comparison operator.
+    /// This could be implemented for MPI communicators by returning
+    /// \c true if \c MPI_Comm_compare() returns \c MPI_IDENT, and \c
+    /// false otherwise.  (Presumably, \c MPI_Comm_compare() works
+    /// even if the two communicators have different process counts;
+    /// the MPI 2.2 standard doesn't say otherwise.)  All serial
+    /// communicators have the same context and contain the same
+    /// number of processes, so all serial communicators are equal.
     bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     /// \brief True if and only if \c map is identical to this Map.
@@ -281,16 +305,22 @@ namespace Tpetra {
     /// Thus, "identical" includes, but is stronger than,
     /// "compatible."  
     ///
-    /// A Map corresponds to a "two-dimensional" or block permutation
-    /// over process ranks and global element indices.  Two Maps with
-    /// different numbers of processes in their communicators cannot
-    /// be compatible, let alone identical.  Two identical Maps
-    /// correspond to the same permutation.
+    /// A Map corresponds to a block permutation over process ranks
+    /// and global element indices.  Two Maps with different numbers
+    /// of processes in their communicators cannot be compatible, let
+    /// alone identical.  Two identical Maps correspond to the same
+    /// permutation.
+    ///
+    /// Notes for Tpetra developers:
+    ///
+    /// If the input Map and this Map have different communicators,
+    /// the behavior of this method is currently undefined.  See
+    /// further notes on \c isCompatible().
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //@}
 
-    //@{ Misc. 
+    //@{ Accessors for the \c Teuchos::Comm and Kokkos Node objects.
 
     //! Get the Comm object for this Map
     const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
@@ -300,12 +330,12 @@ namespace Tpetra {
 
     //@}
 
-    //@{ Implements Teuchos::Describable 
+    //@{ Implementation of \c Teuchos::Describable 
 
-    //! \brief Return a simple one-line description of this object.
+    //! Return a simple one-line description of this object.
     std::string description() const;
 
-    //! Print the object with some verbosity level to a \c FancyOStream object.
+    //! Print this object with the given verbosity level to the given \c FancyOStream object.
     void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
     //@}
@@ -407,7 +437,7 @@ namespace Tpetra {
 
   }; // Map class
 
-  /** \brief Non-member function to create a locally replicated Map with the default node.
+  /** \brief Non-member constructor for a locally replicated Map with the default Kokkos Node.
 
       This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
 
@@ -419,7 +449,7 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
   createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
-  /** \brief Non-member function to create a locally replicated Map with a specified node.
+  /** \brief Non-member constructor for a locally replicated Map with a specified Kokkos Node.
 
       The Map is configured to use zero-based indexing.
 
@@ -429,7 +459,7 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
 
-  /** \brief Non-member function to create a uniform, contiguous Map with the default node.
+  /** \brief Non-member constructor for a uniformly distributed, contiguous Map with the default Kokkos Node.
 
       This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
 
@@ -441,7 +471,7 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
   createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
-  /** \brief Non-member function to create a uniform, contiguous Map with a user-specified node.
+  /** \brief Non-member constructor for a uniformly distributed, contiguous Map with a user-specified Kokkos Node.
 
       The Map is configured to use zero-based indexing.
 
@@ -453,7 +483,7 @@ namespace Tpetra {
                                  const Teuchos::RCP< const Teuchos::Comm< int > > &comm, 
 				 const Teuchos::RCP< Node > &node);
 
-  /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
+  /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
 
       This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
 
@@ -467,7 +497,7 @@ namespace Tpetra {
 		   size_t localNumElements, 
 		   const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
-  /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
+  /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with a user-specified Kokkos Node.
 
       The Map is configured to use zero-based indexing.
 
@@ -480,7 +510,7 @@ namespace Tpetra {
 			   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
 			   const Teuchos::RCP<Node> &node);
 
-  /** \brief Non-member function to create a non-contiguous Map with the default node.
+  /** \brief Non-member constructor for a non-contiguous Map with the default Kokkos Node.
 
       This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
 
@@ -493,7 +523,7 @@ namespace Tpetra {
   createNonContigMap (const ArrayView<const GlobalOrdinal> &elementList,
 		      const RCP<const Teuchos::Comm<int> > &comm);
 
-  /** \brief Non-member function to create a non-contiguous Map with a user-specified node.
+  /** \brief Non-member constructor for a non-contiguous Map with a user-specified Kokkos Node.
 
       The Map is configured to use zero-based indexing.
 
@@ -505,7 +535,7 @@ namespace Tpetra {
 			      const RCP<const Teuchos::Comm<int> > &comm, 
 			      const RCP<Node> &node);
 
-  /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
+  /** \brief Non-member constructor for a contiguous Map with user-defined weights and a user-specified Kokkos Node.
 
       The Map is configured to use zero-based indexing.
 
