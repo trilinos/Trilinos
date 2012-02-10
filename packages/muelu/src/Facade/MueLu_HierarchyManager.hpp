@@ -70,7 +70,22 @@ namespace MueLu {
     
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy & H) const {
-      H.Setup();
+
+      // TODO: coarsestLevelManager
+
+      int  levelID     = 0;
+      int  lastLevelID = numDesiredLevel_ - 1;
+      bool isLastLevel = false;
+
+      while(!isLastLevel) {
+        bool r = H.Setup(levelID, 
+                         LvlMngr(levelID-1), 
+                         LvlMngr(levelID), 
+                         LvlMngr(levelID+1)); 
+
+        isLastLevel = r || (levelID == lastLevelID);
+        levelID++;
+      }
     }
 
     //@}
@@ -86,6 +101,15 @@ namespace MueLu {
     // Levels
     Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level.
     RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager
+
+    // Used in SetupHierarchy() to access levelManagers_
+    // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
+    Teuchos::Ptr<FactoryManagerBase> LvlMngr(int i) const { 
+      if (i == -1)                    return Teuchos::null;
+      if (i == levelManagers_.size()) return Teuchos::null;
+      
+      return levelManagers_[i](); // throw exception if out of bound.
+    }
 
   }; // class HierarchyManager
 

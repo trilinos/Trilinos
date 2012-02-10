@@ -183,21 +183,23 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > M
     vecManager[i]->SetFactory("Nullspace", nspFact);              // use same nullspace factory throughout all multigrid levels
   }
 
+  //TODO: code factorization with HierarchyManager
+
   // use new Hierarchy::Setup routine
   if(maxLevels == 1) {
-	  bIsLastLevel = hierarchy->Setup(0, Teuchos::null, vecManager[0].ptr(), Teuchos::null);
+    bIsLastLevel = hierarchy->Setup(0, Teuchos::null, vecManager[0](), Teuchos::null);
   }
   else
-  {
-	  bIsLastLevel = hierarchy->Setup(0, Teuchos::null, vecManager[0].ptr(), vecManager[1].ptr()); // true, false because first level
-	  for(int i=1; i < maxLevels-1; i++) {
-		if(bIsLastLevel == true) break;
-		bIsLastLevel = hierarchy->Setup(i, vecManager[i-1].ptr(), vecManager[i].ptr(), vecManager[i+1].ptr());
-	  }
-	  if(bIsLastLevel == false) {
-		bIsLastLevel = hierarchy->Setup(maxLevels-1, vecManager[maxLevels-2].ptr(), vecManager[maxLevels-1].ptr(), Teuchos::null);
-	  }
-  }
+    {
+      bIsLastLevel = hierarchy->Setup(0, Teuchos::null, vecManager[0](), vecManager[1]()); // true, false because first level
+      for(int i=1; i < maxLevels-1; i++) {
+        if(bIsLastLevel == true) break;
+        bIsLastLevel = hierarchy->Setup(i, vecManager[i-1](), vecManager[i](), vecManager[i+1]());
+      }
+      if(bIsLastLevel == false) {
+        bIsLastLevel = hierarchy->Setup(maxLevels-1, vecManager[maxLevels-2](), vecManager[maxLevels-1](), Teuchos::null);
+      }
+    }
   //*out << *hierarchy << std::endl;
 
 

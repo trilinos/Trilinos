@@ -126,8 +126,8 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManager> fineLevelManager, const Teuchos::Ptr<const FactoryManager> coarseLevelManager,
-               const Teuchos::Ptr<const FactoryManager> nextLevelManager) {
+  bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager, const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
+               const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager) {
 
     TEUCHOS_TEST_FOR_EXCEPTION(coarseLevelManager == Teuchos::null, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): argument coarseLevelManager cannot be null"); //So, it should not be passed as a pointer but as a reference
 
@@ -139,9 +139,9 @@ namespace MueLu {
     // Init
     //
 
-    RCP<const FactoryManager> rcpfineLevelManager  = rcpFromPtr(fineLevelManager);
-    RCP<const FactoryManager> rcpcoarseLevelManager= rcpFromPtr(coarseLevelManager);
-    RCP<const FactoryManager> rcpnextLevelManager  = rcpFromPtr(nextLevelManager);
+    RCP<const FactoryManagerBase> rcpfineLevelManager  = rcpFromPtr(fineLevelManager);
+    RCP<const FactoryManagerBase> rcpcoarseLevelManager= rcpFromPtr(coarseLevelManager);
+    RCP<const FactoryManagerBase> rcpnextLevelManager  = rcpFromPtr(nextLevelManager);
 
     //    int coarseLevelID = LastLevelID() - 1; // Level built by this function
     TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError, "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) must be build before calling this function.");
@@ -243,8 +243,8 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const FactoryManager & manager, const int &startLevel, const int &numDesiredLevels) {
-    RCP<const FactoryManager> rcpManager = rcpFromRef(manager);
+  Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const FactoryManagerBase & manager, const int &startLevel, const int &numDesiredLevels) {
+    RCP<const FactoryManagerBase> rcpManager = rcpFromRef(manager);
 
 // // //     TopRAPFactory<SC, LO, GO, NO>      rapFactory           (rcpManager); //TODO: remove SC, LO, GO, NO
 //     TopSmootherFactory<SC, LO, GO, NO> smootherFactory      (rcpManager, "Smoother");
@@ -275,7 +275,7 @@ namespace MueLu {
     GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
 
     // set multigrid levels
-    Teuchos::Ptr<const FactoryManager> ptrmanager = Teuchos::ptrInArg(manager);
+    Teuchos::Ptr<const FactoryManagerBase> ptrmanager = Teuchos::ptrInArg(manager);
     bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager); // setup finest level (=level0)
     if(bIsLastLevel == false) {
       for(iLevel=startLevel + 1; iLevel < lastLevel; iLevel++) {                    // setup intermediate levels

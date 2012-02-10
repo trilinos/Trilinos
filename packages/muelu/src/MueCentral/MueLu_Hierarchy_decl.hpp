@@ -168,11 +168,11 @@ namespace MueLu {
          - have been allocated
          - requests already posted.
     */
-    bool Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManager> fineLevelManager /* = Teuchos::null */, const Teuchos::Ptr<const FactoryManager> coarseLevelManager,
-               const Teuchos::Ptr<const FactoryManager> nextLevelManager = Teuchos::null);
+    bool Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager /* = Teuchos::null */, const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
+               const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager = Teuchos::null);
 
     //! 
-    Teuchos::ParameterList Setup(const FactoryManager & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
+    Teuchos::ParameterList Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
 
     /*! @brief Set solve method for coarsest level.
 
