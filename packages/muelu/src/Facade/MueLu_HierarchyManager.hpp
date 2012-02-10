@@ -39,7 +39,7 @@ namespace MueLu {
     // }
 
     //!
-    void AddFactoryManager(int startLevel, int numDesiredLevel, RCP<FactoryManagerBase>& manager) {
+    void AddFactoryManager(int startLevel, int numDesiredLevel, RCP<FactoryManagerBase> manager) {
       const int lastLevel = startLevel + numDesiredLevel - 1;
       if (levelManagers_.size() < lastLevel + 1) levelManagers_.resize(lastLevel + 1);
       
@@ -68,6 +68,8 @@ namespace MueLu {
     
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy & H) const {
+      H.SetDefaultVerbLevel(verbLevel_);
+      H.SetMaxCoarseSize(maxCoarseSize_);
 
       // TODO: coarsestLevelManager
 
@@ -93,7 +95,9 @@ namespace MueLu {
   protected: //TODO: access function
 
     // Hierarchy parameters
-    int numDesiredLevel_; 
+    VerbLevel             verbLevel_;
+    int                   numDesiredLevel_; 
+    Xpetra::global_size_t maxCoarseSize_;
 
   private:
     // Levels

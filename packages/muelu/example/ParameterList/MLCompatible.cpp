@@ -10,6 +10,7 @@
 #endif
 
 #include <MueLu.hpp>
+#include <MueLu_Level.hpp>
 #include <MueLu_MLInterpreter.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
@@ -95,10 +96,12 @@ int main(int argc, char *argv[]) {
     //
     
     // Multigrid Hierarchy
-    RCP<Hierarchy> H = MLInterpreter::Setup(*params, A); //TODO: interface wrong. A should not be an argument.
+    MLInterpreter mueLuFactory(*params);
+    RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+    H->GetLevel(0)->Set("A", A);
     
-    H->setVerbLevel(Teuchos::VERB_HIGH);
-    
+    mueLuFactory.SetupHierarchy(*H);
+
     //
     // Solve Ax = b
     //
