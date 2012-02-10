@@ -482,6 +482,10 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
       }
       else if (dfdp_layout == OP) {
 	Teuchos::RCP<Epetra_Operator> dfdp_op = model->create_DfDp_op(i);
+	TEUCHOS_TEST_FOR_EXCEPTION(
+	  dfdp_op == Teuchos::null, std::logic_error, 
+	  std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
+	  "Needed df/dp operator (" << i << ") is null!" << std::endl);
 	model_outargs.set_DfDp(i,dfdp_op);
       }
     }
@@ -558,6 +562,10 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 
       if (dgdx_layout == OP) {
 	Teuchos::RCP<Epetra_Operator> dgdx_op = model->create_DgDx_op(j);
+	TEUCHOS_TEST_FOR_EXCEPTION(
+	  dgdx_op == Teuchos::null, std::logic_error, 
+	  std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
+	  "Needed dg/dx operator (" << j << ") is null!" << std::endl);
 	model_outargs.set_DgDx(j,dgdx_op);
       }
       else if (dgdx_layout == ROW) {
@@ -590,6 +598,11 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	    if (ds.supports(DERIV_LINEAR_OP)) {
 	      Teuchos::RCP<Epetra_Operator> dgdp_op = 
 		model->create_DgDp_op(j,i);
+	      TEUCHOS_TEST_FOR_EXCEPTION(
+		dgdp_op == Teuchos::null, std::logic_error, 
+		std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
+		"Needed dg/dp operator (" << j << "," << i << ") is null!" << 
+		std::endl);
 	      model_outargs.set_DgDp(j,i,dgdp_op);
 	    }
 	    else if (ds.supports(DERIV_MV_BY_COL) && !p_dist) {

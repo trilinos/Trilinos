@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(Prec);
   solver.Iterate(1550, 1e-9);
 
-  // visualization using MEDIT -- a VTK module is avaiable as well
+  // visualization using MEDIT -- a VTK module is available as well
   Galeri::viz::MEDIT::write(domain, "sol", LHS);
 
   // now compute the norm of the solution

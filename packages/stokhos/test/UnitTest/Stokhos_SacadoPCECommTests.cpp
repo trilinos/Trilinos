@@ -82,7 +82,7 @@ struct UnitTestSetup {
       rcp(new PCESerializerT(
 	    exp,
 	    rcp(new Teuchos::ValueTypeSerializer<int,double>())));
-    fad_pce_serializer = rcp(new FadPCESerializerT(pce_serializer));
+    fad_pce_serializer = rcp(new FadPCESerializerT(pce_serializer, 5));
 
     sz = basis->size();
   }
@@ -96,7 +96,7 @@ bool checkPCEArrays(const Teuchos::Array<PCEType>& x,
 
   // Check sizes match
   bool success = (x.size() == x2.size());
-  out << tag << " Fad array size test";
+  out << tag << " PCE array size test";
   if (success)
     out << " passed";
   else
@@ -152,9 +152,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, PCE_Broadcast ) {			\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = rnd.number();				\
   }									\
-  for (int i=0; i<n; i++) {						\
-    x2[i] = PCEType(setup.exp);						\
-  }									\
   if (comm->getRank() == 0)						\
     x2 = x;								\
   Teuchos::broadcast(*comm, *setup.pce_serializer, 0, n, &x2[0]);	\
@@ -175,9 +172,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, PCE_GatherAll ) {			\
     x[i] = PCEType(setup.exp);						\
     for (int j=0; j<setup.sz; j++)					\
       x[i].fastAccessCoeff(j) = (rank+1)*(i+1)*(j+1);			\
-  }									\
-  for (int i=0; i<N; i++) {						\
-    x2[i] = PCEType(setup.exp);						\
   }									\
   for (int j=0; j<size; j++) {						\
     for (int i=0; i<n; i++) {						\
@@ -210,9 +204,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, PCE_SumAll ) {				\
     for (int j=0; j<setup.sz; j++)					\
       sums[i].fastAccessCoeff(j) = 2.0*(i+1)*num_proc;			\
   }									\
-  for (int i=0; i<n; i++) {						\
-    sums2[i] = PCEType(setup.exp);					\
-  }									\
   Teuchos::reduceAll(*comm, *setup.pce_serializer,			\
 		     Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);		\
   success = checkPCEArrays(sums, sums2,					\
@@ -239,9 +230,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, PCE_MaxAll ) {				\
     for (int j=0; j<setup.sz; j++)					\
       maxs[i].fastAccessCoeff(j) = 2.0*(i+1)*num_proc;			\
   }									\
-  for (int i=0; i<n; i++) {						\
-    maxs2[i] = PCEType(setup.exp);					\
-  }									\
   Teuchos::reduceAll(*comm, *setup.pce_serializer,			\
 		     Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);		\
   success = checkPCEArrays(maxs, maxs2,					\
@@ -266,9 +254,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, PCE_MinAll ) {				\
     mins[i] = PCEType(setup.exp);					\
     for (int j=0; j<setup.sz; j++)					\
       mins[i].fastAccessCoeff(j) = 2.0*(i+1);				\
-  }									\
-  for (int i=0; i<n; i++) {						\
-    mins2[i] = PCEType(setup.exp);					\
   }									\
   Teuchos::reduceAll(*comm, *setup.pce_serializer,			\
 		     Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);		\
@@ -295,9 +280,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, PCE_ScanSum ) {				\
     for (int j=0; j<setup.sz; j++)					\
       sums[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
   }									\
-  for (int i=0; i<n; i++) {						\
-    sums2[i] = PCEType(setup.exp);					\
-  }									\
   Teuchos::scan(*comm, *setup.pce_serializer,				\
 		Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);		\
   success = checkPCEArrays(sums, sums2,					\
@@ -322,9 +304,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, PCE_ScanMax ) {				\
     maxs[i] = PCEType(setup.exp);					\
     for (int j=0; j<setup.sz; j++)					\
       maxs[i].fastAccessCoeff(j) = 2.0*(i+1)*(rank+1);			\
-  }									\
-  for (int i=0; i<n; i++) {						\
-    maxs2[i] = PCEType(setup.exp);					\
   }									\
   Teuchos::scan(*comm, *setup.pce_serializer,				\
 		Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);		\
@@ -351,9 +330,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, PCE_ScanMin ) {				\
     for (int j=0; j<setup.sz; j++)					\
       mins[i].fastAccessCoeff(j) = 2.0*(i+1);				\
   }									\
-  for (int i=0; i<n; i++) {						\
-    mins2[i] = PCEType(setup.exp);					\
-  }									\
   Teuchos::scan(*comm, *setup.pce_serializer,				\
 		Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);		\
   success = checkPCEArrays(mins, mins2,					\
@@ -374,9 +350,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, PCE_SendReceive ) {			\
       x[i] = PCEType(setup.exp);					\
       for (int j=0; j<setup.sz; j++)					\
 	x[i].fastAccessCoeff(j) = 2.0*(i+1)*(j+1);			\
-    }									\
-    for (int i=0; i<n; i++) {						\
-      x2[i] = PCEType(setup.exp);					\
     }									\
     if (rank != 1)							\
       x2 = x;								\
@@ -412,11 +385,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, FadPCE_Broadcast ) {			\
       x[i].fastAccessDx(j) = g;						\
     }									\
   }									\
-  for (int i=0; i<n; i++) {						\
-    x2[i] = FadPCEType(p, PCEType(setup.exp));				\
-    for (int j=0; j<p; j++)						\
-      x2[i].fastAccessDx(j) = PCEType(setup.exp);			\
-  }									\
   if (comm->getRank() == 0)						\
     x2 = x;								\
   Teuchos::broadcast(*comm, *setup.fad_pce_serializer, 0, n, &x2[0]);	\
@@ -444,11 +412,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, FadPCE_GatherAll ) {			\
     for (int j=0; j<p; j++) {						\
       x[i].fastAccessDx(j) = f;						\
     }									\
-  }									\
-  for (int i=0; i<N; i++) {						\
-    x2[i] = FadPCEType(p, PCEType(setup.exp));				\
-    for (int j=0; j<p; j++)						\
-      x2[i].fastAccessDx(j) = PCEType(setup.exp);			\
   }									\
   for (int j=0; j<size; j++) {						\
     for (int i=0; i<n; i++) {						\
@@ -501,11 +464,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, FadPCE_SumAll ) {			\
       sums[i].fastAccessDx(j) = g;					\
     }									\
   }									\
-  for (int i=0; i<n; i++) {						\
-    sums2[i] = FadPCEType(p, PCEType(setup.exp));			\
-    for (int j=0; j<p; j++)						\
-      sums2[i].fastAccessDx(j) = PCEType(setup.exp);			\
-  }									\
   Teuchos::reduceAll(*comm, *setup.fad_pce_serializer,			\
 		     Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);		\
   success = checkPCEArrays(sums, sums2,					\
@@ -541,11 +499,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, FadPCE_MaxAll ) {			\
     for (int j=0; j<p; j++)						\
       maxs[i].fastAccessDx(j) = f;					\
   }									\
-  for (int i=0; i<n; i++) {						\
-    maxs2[i] = FadPCEType(p, PCEType(setup.exp));			\
-    for (int j=0; j<p; j++)						\
-      maxs2[i].fastAccessDx(j) = PCEType(setup.exp);			\
-  }									\
   Teuchos::reduceAll(*comm, *setup.fad_pce_serializer,			\
 		     Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);		\
   success = checkPCEArrays(maxs, maxs2,					\
@@ -579,11 +532,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, FadPCE_MinAll ) {			\
     mins[i] = FadPCEType(p, f);						\
     for (int j=0; j<p; j++)						\
       mins[i].fastAccessDx(j) = f;					\
-  }									\
-  for (int i=0; i<n; i++) {						\
-    mins2[i] = FadPCEType(p, PCEType(setup.exp));			\
-    for (int j=0; j<p; j++)						\
-      mins2[i].fastAccessDx(j) = PCEType(setup.exp);			\
   }									\
   Teuchos::reduceAll(*comm, *setup.fad_pce_serializer,			\
 		     Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);		\
@@ -619,11 +567,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, FadPCE_ScanSum ) {			\
     for (int j=0; j<p; j++)						\
       sums[i].fastAccessDx(j) = f;					\
   }									\
-  for (int i=0; i<n; i++) {						\
-    sums2[i] = FadPCEType(p, PCEType(setup.exp));			\
-    for (int j=0; j<p; j++)						\
-      sums2[i].fastAccessDx(j) = PCEType(setup.exp);			\
-  }									\
   Teuchos::scan(*comm, *setup.fad_pce_serializer,			\
 		Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);		\
   success = checkPCEArrays(sums, sums2,					\
@@ -657,11 +600,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, FadPCE_ScanMax ) {			\
     maxs[i] = FadPCEType(p, f);						\
     for (int j=0; j<p; j++)						\
       maxs[i].fastAccessDx(j) = f;					\
-  }									\
-  for (int i=0; i<n; i++) {						\
-    maxs2[i] = FadPCEType(p, PCEType(setup.exp));			\
-    for (int j=0; j<p; j++)						\
-      maxs2[i].fastAccessDx(j) = PCEType(setup.exp);			\
   }									\
   Teuchos::scan(*comm, *setup.fad_pce_serializer,			\
 		Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);		\
@@ -697,11 +635,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, FadPCE_ScanMin ) {			\
     for (int j=0; j<p; j++)						\
       mins[i].fastAccessDx(j) = f;					\
   }									\
-  for (int i=0; i<n; i++) {						\
-    mins2[i] = FadPCEType(p, PCEType(setup.exp));			\
-    for (int j=0; j<p; j++)						\
-      mins2[i].fastAccessDx(j) = PCEType(setup.exp);			\
-  }									\
   Teuchos::scan(*comm, *setup.fad_pce_serializer,			\
 		Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);		\
   success = checkPCEArrays(mins, mins2,					\
@@ -727,11 +660,6 @@ TEUCHOS_UNIT_TEST( PCE##_Comm, FadPCE_SendReceive ) {			\
       x[i] = FadPCEType(p, f);						\
       for (int j=0; j<p; j++)						\
 	x[i].fastAccessDx(j) = f;					\
-    }									\
-    for (int i=0; i<n; i++) {						\
-      x2[i] = FadPCEType(p, PCEType(setup.exp));			\
-      for (int j=0; j<p; j++)						\
-	x2[i].fastAccessDx(j) = PCEType(setup.exp);			\
     }									\
     if (rank != 1)							\
       x2 = x;								\

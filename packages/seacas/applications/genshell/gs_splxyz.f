@@ -216,7 +216,7 @@ C         FIXR  = SIGN(0.5, RAD) + SIGN(0.5, -RAD)
          B  = (RNEWA-RSA(KLOA)) / H
          
          ZT = A * ZSA(KLOA) + B * ZSA(KLOA+1) +
-     *        ((A**3-A) * ZS2A(KLOA)+(B**3-B) * ZS2A(KLOA+1)) * (H**2)/6.
+     *     ((A**3-A) * ZS2A(KLOA)+(B**3-B) * ZS2A(KLOA+1)) * (H**2)/6.
          
          IF (RDTHET) THEN
             RSAV  = RNEWA

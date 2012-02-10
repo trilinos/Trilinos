@@ -35,6 +35,10 @@
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_Random.hpp"
 
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::ValueTypeSerializer;
+
 template <typename FadType>
 bool checkFadArrays(const Teuchos::Array<FadType>& x, 
 		    const Teuchos::Array<FadType>& x2, 
@@ -94,7 +98,10 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_Broadcast ) {			\
 									\
   int n = 7;								\
   int p = 5;								\
-  Teuchos::Array<FadType> x(n), x2(n);					\
+  ValueTypeSerializer<int,FadType> fts(					\
+    rcp(new ValueTypeSerializer<int,double>), p);			\
+									\
+  Teuchos::Array<FadType> x(n), x2(n), x3(n);				\
   for (int i=0; i<n; i++) {						\
     x[i] = FadType(p, rnd.number());					\
     for (int j=0; j<p; j++)						\
@@ -103,11 +110,22 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_Broadcast ) {			\
   for (int i=0; i<n; i++) {						\
     x2[i] = FadType(p, 0.0);						\
   }									\
-  if (comm->getRank() == 0)						\
+  if (comm->getRank() == 0) {						\
     x2 = x;								\
+    x3 = x;                                                             \
+  }									\
+									\
   Teuchos::broadcast(*comm, 0, n, &x2[0]);				\
-  success = checkFadArrays(x, x2, std::string(#FAD)+" Broadcast", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    x, x2, std::string(#FAD)+" Broadcast", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+                                                                        \
+  Teuchos::broadcast(*comm, fts, 0, n, &x3[0]);				\
+  bool success2 = checkFadArrays(					\
+    x, x3, std::string(#FAD)+" Broadcast FTS", out);			\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_GatherAll ) {			\
@@ -119,7 +137,10 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_GatherAll ) {			\
   int size = comm->getSize();						\
   int rank = comm->getRank();						\
   int N = n*size;							\
-  Teuchos::Array<FadType> x(n), x2(N), x3(N);				\
+  ValueTypeSerializer<int,FadType> fts(					\
+    rcp(new ValueTypeSerializer<int,double>), p);			\
+									\
+   Teuchos::Array<FadType> x(n), x2(N), x3(N), x4(N);			\
   for (int i=0; i<n; i++) {						\
     x[i] = FadType(p, (rank+1)*(i+1));					\
     for (int j=0; j<p; j++)						\
@@ -135,9 +156,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_GatherAll ) {			\
 	x3[n*j+i].fastAccessDx(k) = (j+1)*(i+1)*(k+1);			\
     }									\
   }									\
+									\
   Teuchos::gatherAll(*comm, n, &x[0], N, &x2[0]);			\
-  success = checkFadArrays(x3, x2, std::string(#FAD)+" Gather All", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    x3, x2, std::string(#FAD)+" Gather All", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::gatherAll(*comm, fts, n, &x[0], N, &x4[0]);			\
+  bool success2 = checkFadArrays(					\
+    x3, x4, std::string(#FAD)+" Gather All FTS", out);			\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_SumAll ) {				\
@@ -147,8 +177,10 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_SumAll ) {				\
   int n = 7;								\
   int p = 5;								\
   int num_proc = comm->getSize();					\
+  ValueTypeSerializer<int,FadType> fts(					\
+    rcp(new ValueTypeSerializer<int,double>), p);			\
 									\
-  Teuchos::Array<FadType> x(n), sums(n), sums2(n);			\
+  Teuchos::Array<FadType> x(n), sums(n), sums2(n), sums3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = FadType(p, 1.0*(i+1));					\
     for (int j=0; j<p; j++)						\
@@ -162,10 +194,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_SumAll ) {				\
   for (int i=0; i<n; i++) {						\
     sums2[i] = FadType(p, 0.0);						\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);	\
-  success = checkFadArrays(sums, sums2,					\
-			   std::string(#FAD)+" Sum All", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    sums, sums2, std::string(#FAD)+" Sum All", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_SUM, n, &x[0], &sums3[0]); \
+  bool success2 = checkFadArrays(					\
+    sums, sums3, std::string(#FAD)+" Sum All FTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_MaxAll ) {				\
@@ -176,8 +216,10 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_MaxAll ) {				\
   int p = 5;								\
   int rank = comm->getRank();						\
   int num_proc = comm->getSize();					\
+  ValueTypeSerializer<int,FadType> fts(					\
+    rcp(new ValueTypeSerializer<int,double>), p);			\
 									\
-  Teuchos::Array<FadType> x(n), maxs(n), maxs2(n);			\
+  Teuchos::Array<FadType> x(n), maxs(n), maxs2(n), maxs3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = FadType(p, 1.0*(i+1)*(rank+1));				\
     for (int j=0; j<p; j++)						\
@@ -191,10 +233,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_MaxAll ) {				\
   for (int i=0; i<n; i++) {						\
     maxs2[i] = FadType(p, 0.0);						\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);	\
-  success = checkFadArrays(maxs, maxs2,					\
-			   std::string(#FAD)+" Max All", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    maxs, maxs2, std::string(#FAD)+" Max All", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MAX, n, &x[0], &maxs3[0]); \
+  bool success2 = checkFadArrays(					\
+    maxs, maxs3, std::string(#FAD)+" Max All FTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_MinAll ) {				\
@@ -204,8 +254,10 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_MinAll ) {				\
   int n = 7;								\
   int p = 5;								\
   int rank = comm->getRank();						\
+  ValueTypeSerializer<int,FadType> fts(					\
+    rcp(new ValueTypeSerializer<int,double>), p);			\
 									\
-  Teuchos::Array<FadType> x(n), mins(n), mins2(n);			\
+  Teuchos::Array<FadType> x(n), mins(n), mins2(n), mins3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = FadType(p, 1.0*(i+1)*(rank+1));				\
     for (int j=0; j<p; j++)						\
@@ -219,10 +271,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_MinAll ) {				\
   for (int i=0; i<n; i++) {						\
     mins2[i] = FadType(p, 0.0);						\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);	\
-  success = checkFadArrays(mins, mins2,					\
-			   std::string(#FAD)+" Min All", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    mins, mins2, std::string(#FAD)+" Min All", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MIN, n, &x[0], &mins3[0]); \
+  bool success2 = checkFadArrays(					\
+    mins, mins3, std::string(#FAD)+" Min All FTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_ScanSum ) {				\
@@ -232,8 +292,10 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_ScanSum ) {				\
   int n = 7;								\
   int p = 5;								\
   int rank = comm->getRank();						\
+  ValueTypeSerializer<int,FadType> fts(					\
+    rcp(new ValueTypeSerializer<int,double>), p);			\
 									\
-  Teuchos::Array<FadType> x(n), sums(n), sums2(n);			\
+  Teuchos::Array<FadType> x(n), sums(n), sums2(n), sums3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = FadType(p, 1.0*(i+1));					\
     for (int j=0; j<p; j++)						\
@@ -247,10 +309,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_ScanSum ) {				\
   for (int i=0; i<n; i++) {						\
     sums2[i] = FadType(p, 0.0);						\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);	\
-  success = checkFadArrays(sums, sums2,					\
-			   std::string(#FAD)+" Scan Sum", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    sums, sums2, std::string(#FAD)+" Scan Sum", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, fts, Teuchos::REDUCE_SUM, n, &x[0], &sums3[0]);	\
+  bool success2 = checkFadArrays(					\
+    sums, sums3, std::string(#FAD)+" Scan Sum FTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+  									\
+  success = success1 && success2;					\
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_ScanMax ) {				\
@@ -260,8 +330,10 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_ScanMax ) {				\
   int n = 7;								\
   int p = 5;								\
   int rank = comm->getRank();						\
+  ValueTypeSerializer<int,FadType> fts(					\
+    rcp(new ValueTypeSerializer<int,double>), p);			\
 									\
-  Teuchos::Array<FadType> x(n), maxs(n), maxs2(n);			\
+  Teuchos::Array<FadType> x(n), maxs(n), maxs2(n), maxs3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = FadType(p, 1.0*(i+1)*(rank+1));				\
     for (int j=0; j<p; j++)						\
@@ -275,10 +347,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_ScanMax ) {				\
   for (int i=0; i<n; i++) {						\
     maxs2[i] = FadType(p, 0.0);						\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);	\
-  success = checkFadArrays(maxs, maxs2,					\
-			   std::string(#FAD)+" Scan Max", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    maxs, maxs2, std::string(#FAD)+" Scan Max", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, fts, Teuchos::REDUCE_MAX, n, &x[0], &maxs3[0]);	\
+  bool success2 = checkFadArrays(					\
+    maxs, maxs3, std::string(#FAD)+" Scan Max FTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_ScanMin ) {				\
@@ -288,8 +368,10 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_ScanMin ) {				\
   int n = 7;								\
   int p = 5;								\
   int rank = comm->getRank();						\
+  ValueTypeSerializer<int,FadType> fts(					\
+    rcp(new ValueTypeSerializer<int,double>), p);			\
 									\
-  Teuchos::Array<FadType> x(n), mins(n), mins2(n);			\
+  Teuchos::Array<FadType> x(n), mins(n), mins2(n), mins3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = FadType(p, 1.0*(i+1)*(rank+1));				\
     for (int j=0; j<p; j++)						\
@@ -303,10 +385,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_ScanMin ) {				\
   for (int i=0; i<n; i++) {						\
     mins2[i] = FadType(p, 0.0);						\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);	\
-  success = checkFadArrays(mins, mins2,					\
-			   std::string(#FAD)+" Scan Min", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    mins, mins2, std::string(#FAD)+" Scan Min", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, fts, Teuchos::REDUCE_MIN, n, &x[0], &mins3[0]);	\
+  bool success2 = checkFadArrays(					\
+    mins, mins3, std::string(#FAD)+" Scan Min FTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_SendReceive ) {			\
@@ -318,7 +408,10 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_SendReceive ) {			\
     int rank = comm->getRank();						\
     int n = 7;								\
     int p = 5;								\
-    Teuchos::Array<FadType> x(n), x2(n);				\
+    ValueTypeSerializer<int,FadType> fts(				\
+      rcp(new ValueTypeSerializer<int,double>), p);			\
+									\
+    Teuchos::Array<FadType> x(n), x2(n), x3(n);				\
     for (int i=0; i<n; i++) {						\
       x[i] = FadType(p, 1.0*(i+1));					\
       for (int j=0; j<p; j++)						\
@@ -327,13 +420,24 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, Fad_SendReceive ) {			\
     for (int i=0; i<n; i++) {						\
       x2[i] = FadType(p, 0.0);						\
     }									\
-    if (rank != 1)							\
+    if (rank != 1) {							\
       x2 = x;								\
+      x3 = x;								\
+    }									\
+									\
     if (rank == 0) Teuchos::send(*comm, n, &x[0], 1);			\
     if (rank == 1) Teuchos::receive(*comm, 0, n, &x2[0]);		\
-    success = checkFadArrays(x, x2,					\
-			     std::string(#FAD)+" Send/Receive", out);	\
-    success = checkResultOnAllProcs(*comm, out, success);		\
+    bool success1 = checkFadArrays(					\
+      x, x2, std::string(#FAD)+" Send/Receive", out);			\
+    success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+    if (rank == 0) Teuchos::send(*comm, fts, n, &x[0], 1);		\
+    if (rank == 1) Teuchos::receive(*comm, fts, 0, n, &x3[0]);		\
+    bool success2 = checkFadArrays(					\
+      x, x3, std::string(#FAD)+" Send/Receive FTS", out);		\
+    success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+    success = success1 && success2;					\
   }									\
   else									\
     success = true;							\
@@ -347,7 +451,12 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_Broadcast ) {			\
   int n = 7;								\
   int p1 = 5;								\
   int p2 = 5;								\
-  Teuchos::Array<FadFadType> x(n), x2(n);				\
+  RCP< ValueTypeSerializer<int,FadType> > fts =				\
+    rcp(new ValueTypeSerializer<int,FadType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1));		\
+  ValueTypeSerializer<int,FadFadType> ffts(fts, p2);			\
+									\
+  Teuchos::Array<FadFadType> x(n), x2(n), x3(n);			\
   for (int i=0; i<n; i++) {						\
     FadType f(p1, rnd.number());					\
     for (int k=0; k<p1; k++)						\
@@ -365,12 +474,22 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_Broadcast ) {			\
     for (int j=0; j<p2; j++)						\
       x2[i].fastAccessDx(j) = FadType(p1, 0.0);				\
   }									\
-  if (comm->getRank() == 0)						\
+  if (comm->getRank() == 0) {						\
     x2 = x;								\
+    x3 = x;								\
+  }									\
+									\
   Teuchos::broadcast(*comm, 0, n, &x2[0]);				\
-  success = checkFadArrays(x, x2,					\
-			   std::string(#FAD)+"<"+#FAD+"> Broadcast", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    x, x2, std::string(#FAD)+"<"+#FAD+"> Broadcast", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::broadcast(*comm, ffts, 0, n, &x3[0]);			\
+  bool success2 = checkFadArrays(					\
+    x, x3, std::string(#FAD)+"<"+#FAD+"> Broadcast FTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_GatherAll ) {			\
@@ -384,7 +503,12 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_GatherAll ) {			\
   int size = comm->getSize();						\
   int rank = comm->getRank();						\
   int N = n*size;							\
-  Teuchos::Array<FadFadType> x(n), x2(N), x3(N);			\
+  RCP< ValueTypeSerializer<int,FadType> > fts =				\
+    rcp(new ValueTypeSerializer<int,FadType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1));		\
+  ValueTypeSerializer<int,FadFadType> ffts(fts, p2);			\
+									\
+  Teuchos::Array<FadFadType> x(n), x2(N), x3(N), x4(N);			\
   for (int i=0; i<n; i++) {						\
     FadType f(p1, (rank+1)*(i+1));					\
     for (int k=0; k<p1; k++)						\
@@ -409,10 +533,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_GatherAll ) {			\
 	x3[n*j+i].fastAccessDx(k) = f;					\
     }									\
   }									\
+									\
   Teuchos::gatherAll(*comm, n, &x[0], N, &x2[0]);			\
-  success = checkFadArrays(x3, x2,					\
-			   std::string(#FAD)+"<"+#FAD+">  Gather All", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    x3, x2, std::string(#FAD)+"<"+#FAD+">  Gather All", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::gatherAll(*comm, ffts, n, &x[0], N, &x4[0]);			\
+  bool success2 = checkFadArrays(					\
+    x3, x4, std::string(#FAD)+"<"+#FAD+">  Gather All FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_SumAll ) {			\
@@ -424,8 +556,12 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_SumAll ) {			\
   int p1 = 5;								\
   int p2 = 5;								\
   int num_proc = comm->getSize();					\
+  RCP< ValueTypeSerializer<int,FadType> > fts =				\
+    rcp(new ValueTypeSerializer<int,FadType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1));		\
+  ValueTypeSerializer<int,FadFadType> ffts(fts, p2);			\
 									\
-  Teuchos::Array<FadFadType> x(n), sums(n), sums2(n);			\
+  Teuchos::Array<FadFadType> x(n), sums(n), sums2(n), sums3(n);		\
   for (int i=0; i<n; i++) {						\
     FadType f(p1, 1.0*(i+1));						\
     for (int k=0; k<p1; k++)						\
@@ -448,10 +584,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_SumAll ) {			\
     for (int j=0; j<p2; j++)						\
       sums2[i].fastAccessDx(j) = FadType(p1, 0.0);			\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);	\
-  success = checkFadArrays(sums, sums2,					\
-			   std::string(#FAD)+"<"+#FAD+"> Sum All", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    sums, sums2, std::string(#FAD)+"<"+#FAD+"> Sum All", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, ffts, Teuchos::REDUCE_SUM, n, &x[0], &sums3[0]); \
+  bool success2 = checkFadArrays(					\
+    sums, sums3, std::string(#FAD)+"<"+#FAD+"> Sum All", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_MaxAll ) {			\
@@ -464,8 +608,12 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_MaxAll ) {			\
   int p2 = 5;								\
   int rank = comm->getRank();						\
   int num_proc = comm->getSize();					\
+  RCP< ValueTypeSerializer<int,FadType> > fts =				\
+    rcp(new ValueTypeSerializer<int,FadType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1));		\
+  ValueTypeSerializer<int,FadFadType> ffts(fts, p2);			\
 									\
-  Teuchos::Array<FadFadType> x(n), maxs(n), maxs2(n);			\
+  Teuchos::Array<FadFadType> x(n), maxs(n), maxs2(n), maxs3(n);		\
   for (int i=0; i<n; i++) {						\
     FadType f(p1, 1.0*(i+1)*(rank+1));					\
     for (int k=0; k<p1; k++)						\
@@ -488,10 +636,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_MaxAll ) {			\
     for (int j=0; j<p2; j++)						\
       maxs2[i].fastAccessDx(j) = FadType(p1, 0.0);			\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);	\
-  success = checkFadArrays(maxs, maxs2,					\
-			   std::string(#FAD)+"<"+#FAD+"> Max All", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    maxs, maxs2, std::string(#FAD)+"<"+#FAD+"> Max All", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, ffts, Teuchos::REDUCE_MAX, n, &x[0], &maxs3[0]); \
+  bool success2 = checkFadArrays(					\
+    maxs, maxs3, std::string(#FAD)+"<"+#FAD+"> Max All FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_MinAll ) {			\
@@ -503,8 +659,12 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_MinAll ) {			\
   int p1 = 5;								\
   int p2 = 5;								\
   int rank = comm->getRank();						\
+  RCP< ValueTypeSerializer<int,FadType> > fts =				\
+    rcp(new ValueTypeSerializer<int,FadType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1));		\
+  ValueTypeSerializer<int,FadFadType> ffts(fts, p2);			\
 									\
-  Teuchos::Array<FadFadType> x(n), mins(n), mins2(n);			\
+  Teuchos::Array<FadFadType> x(n), mins(n), mins2(n), mins3(n);		\
   for (int i=0; i<n; i++) {						\
     FadType f(p1, 1.0*(i+1)*(rank+1));					\
     for (int k=0; k<p1; k++)						\
@@ -527,10 +687,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_MinAll ) {			\
     for (int j=0; j<p2; j++)						\
       mins2[i].fastAccessDx(j) = FadType(p1, 0.0);			\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);	\
-  success = checkFadArrays(mins, mins2,					\
-			   std::string(#FAD)+"<"+#FAD+"> Min All", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    mins, mins2, std::string(#FAD)+"<"+#FAD+"> Min All", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, ffts, Teuchos::REDUCE_MIN, n, &x[0], &mins3[0]); \
+  bool success2 = checkFadArrays(					\
+    mins, mins3, std::string(#FAD)+"<"+#FAD+"> Min All FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_ScanSum ) {			\
@@ -542,8 +710,12 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_ScanSum ) {			\
   int p1 = 5;								\
   int p2 = 5;								\
   int rank = comm->getRank();						\
+  RCP< ValueTypeSerializer<int,FadType> > fts =				\
+    rcp(new ValueTypeSerializer<int,FadType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1));		\
+  ValueTypeSerializer<int,FadFadType> ffts(fts, p2);			\
 									\
-  Teuchos::Array<FadFadType> x(n), sums(n), sums2(n);			\
+  Teuchos::Array<FadFadType> x(n), sums(n), sums2(n), sums3(n);		\
   for (int i=0; i<n; i++) {						\
     FadType f(p1, 1.0*(i+1));						\
     for (int k=0; k<p1; k++)						\
@@ -566,10 +738,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_ScanSum ) {			\
     for (int j=0; j<p2; j++)						\
       sums2[i].fastAccessDx(j) = FadType(p1, 0.0);			\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);	\
-  success = checkFadArrays(sums, sums2,					\
-			   std::string(#FAD)+"<"+#FAD+"> Scan Sum", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    sums, sums2, std::string(#FAD)+"<"+#FAD+"> Scan Sum", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, ffts, Teuchos::REDUCE_SUM, n, &x[0], &sums3[0]);	\
+  bool success2 = checkFadArrays(					\
+    sums, sums3, std::string(#FAD)+"<"+#FAD+"> Scan Sum FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_ScanMax ) {			\
@@ -581,8 +761,12 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_ScanMax ) {			\
   int p1 = 5;								\
   int p2 = 5;								\
   int rank = comm->getRank();						\
+  RCP< ValueTypeSerializer<int,FadType> > fts =				\
+    rcp(new ValueTypeSerializer<int,FadType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1));		\
+  ValueTypeSerializer<int,FadFadType> ffts(fts, p2);			\
 									\
-  Teuchos::Array<FadFadType> x(n), maxs(n), maxs2(n);			\
+  Teuchos::Array<FadFadType> x(n), maxs(n), maxs2(n), maxs3(n);		\
   for (int i=0; i<n; i++) {						\
     FadType f(p1, 1.0*(i+1)*(rank+1));					\
     for (int k=0; k<p1; k++)						\
@@ -605,10 +789,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_ScanMax ) {			\
     for (int j=0; j<p2; j++)						\
       maxs2[i].fastAccessDx(j) = FadType(p1, 0.0);			\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);	\
-  success = checkFadArrays(maxs, maxs2,					\
-			   std::string(#FAD)+"<"+#FAD+"> Scan Max", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    maxs, maxs2, std::string(#FAD)+"<"+#FAD+"> Scan Max", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, ffts, Teuchos::REDUCE_MAX, n, &x[0], &maxs3[0]);	\
+  bool success2 = checkFadArrays(					\
+    maxs, maxs3, std::string(#FAD)+"<"+#FAD+"> Scan Max FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_ScanMin ) {			\
@@ -620,8 +812,12 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_ScanMin ) {			\
   int p1 = 5;								\
   int p2 = 5;								\
   int rank = comm->getRank();						\
+  RCP< ValueTypeSerializer<int,FadType> > fts =				\
+    rcp(new ValueTypeSerializer<int,FadType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1));		\
+  ValueTypeSerializer<int,FadFadType> ffts(fts, p2);			\
 									\
-  Teuchos::Array<FadFadType> x(n), mins(n), mins2(n);			\
+  Teuchos::Array<FadFadType> x(n), mins(n), mins2(n), mins3(n);		\
   for (int i=0; i<n; i++) {						\
     FadType f(p1, 1.0*(i+1)*(rank+1));					\
     for (int k=0; k<p1; k++)						\
@@ -644,10 +840,18 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_ScanMin ) {			\
     for (int j=0; j<p2; j++)						\
       mins2[i].fastAccessDx(j) = FadType(p1, 0.0);			\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);	\
-  success = checkFadArrays(mins, mins2,					\
-			   std::string(#FAD)+"<"+#FAD+"> Scan Min", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    mins, mins2, std::string(#FAD)+"<"+#FAD+"> Scan Min", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, ffts, Teuchos::REDUCE_MIN, n, &x[0], &mins3[0]);	\
+  bool success2 = checkFadArrays(					\
+    mins, mins3, std::string(#FAD)+"<"+#FAD+"> Scan Min FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_SendReceive ) {			\
@@ -661,7 +865,12 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_SendReceive ) {			\
     int n = 7;								\
     int p1 = 5;								\
     int p2 = 5;								\
-    Teuchos::Array<FadFadType> x(n), x2(n);				\
+    RCP< ValueTypeSerializer<int,FadType> > fts =			\
+      rcp(new ValueTypeSerializer<int,FadType>(				\
+	    rcp(new ValueTypeSerializer<int,double>), p1));		\
+    ValueTypeSerializer<int,FadFadType> ffts(fts, p2);			\
+									\
+    Teuchos::Array<FadFadType> x(n), x2(n), x3(n);			\
     for (int i=0; i<n; i++) {						\
       FadType f(p1, 1.0*(i+1));						\
       for (int k=0; k<p1; k++)						\
@@ -675,13 +884,24 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_SendReceive ) {			\
       for (int j=0; j<p2; j++)						\
 	x2[i].fastAccessDx(j) = FadType(p1, 0.0);			\
     }									\
-    if (rank != 1)							\
+    if (rank != 1) {							\
       x2 = x;								\
+      x3 = x;								\
+    }									\
+									\
     if (rank == 0) Teuchos::send(*comm, n, &x[0], 1);			\
     if (rank == 1) Teuchos::receive(*comm, 0, n, &x2[0]);		\
-    success = checkFadArrays(x, x2,					\
-			     std::string(#FAD)+"<"+#FAD+"> Send/Receive", out);	\
-    success = checkResultOnAllProcs(*comm, out, success);		\
+    bool success1 = checkFadArrays(					\
+      x, x2, std::string(#FAD)+"<"+#FAD+"> Send/Receive", out);		\
+    success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+    if (rank == 0) Teuchos::send(*comm, ffts, n, &x[0], 1);		\
+    if (rank == 1) Teuchos::receive(*comm, ffts, 0, n, &x3[0]);		\
+    bool success2 = checkFadArrays(					\
+      x, x3, std::string(#FAD)+"<"+#FAD+"> Send/Receive FTS", out);	\
+    success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+    success = success1 && success2;					\
   }									\
   else									\
     success = true;							\

@@ -108,7 +108,8 @@ Stokhos::buildMultiComm(const Epetra_Comm& globalComm,
 #ifdef HAVE_MPI
   if (num_spatial_procs == -1) {
     // By default, use all procs for spatial parallelism
-    MPI_Comm_size(MPI_COMM_WORLD, &num_spatial_procs);
+    //MPI_Comm_size(MPI_COMM_WORLD, &num_spatial_procs);
+    num_spatial_procs = globalComm.NumProc();
   }
   const Epetra_MpiComm& globalMpiComm = 
     dynamic_cast<const Epetra_MpiComm&>(globalComm);

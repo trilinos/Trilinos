@@ -100,6 +100,22 @@ namespace Sacado {
 	sz_ = sz; 
       }
 
+      //! Expand derivative array to size sz
+      /*!
+       * This method preserves any existing derivative components and
+       * sets any that are added to zero.
+       */
+      void expand(int sz) {
+#ifdef SACADO_DEBUG
+	if (sz > Num)
+	  throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
+#endif
+        if (sz > sz_) 
+          ss_array<T>::zero(dx_+sz_, sz-sz_);
+        sz_ = sz;
+      }
+
+
       //! Zero out derivative array
       void zero() { ss_array<T>::zero(dx_, sz_); }
 

@@ -95,6 +95,12 @@ protected:
   //! evaluate the batch of jobs contained in prp_queue
   void derived_synch(Dakota::PRPQueue& prp_queue);
 
+  void derived_synch_nowait(Dakota::PRPQueue& prp_queue) { 
+    derived_synch(prp_queue); 
+  }
+
+  void check_configuration(int max_iterator_concurrency) {}
+
 private:
 
   // Data

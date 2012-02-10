@@ -279,7 +279,15 @@ def main(package_enable_disable_list, options):
     print "execption while removing " + options.installDir
     print sys.exc_info()[1]
 
-  print "done trying to remove old install dir"
+  #removing configure directory first so that subsequent installs aren't polluted by old tarballs or configuration issues
+  print "attempting to remove the old configure dir"
+  try:
+    shutil.rmtree(options.configurePath, True)
+  except:
+    print "execption while removing " + options.configurePath
+    print sys.exc_info()[1]
+
+  print "done trying to remove old install and configure directories"
 
   gitBranchError = 0
   #clone repo

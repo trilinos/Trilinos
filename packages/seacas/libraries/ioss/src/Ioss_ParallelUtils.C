@@ -40,6 +40,9 @@
 
 #include "Ioss_CodeTypes.h"
 #ifdef HAVE_MPI
+#include <assert.h>
+#include <cstring>
+#include <Ioss_SerializeIO.h>
 #include <mpi.h>
 #endif
 

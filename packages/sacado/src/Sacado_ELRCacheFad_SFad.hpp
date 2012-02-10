@@ -82,6 +82,9 @@ namespace Sacado {
       //! Typename of values
       typedef T value_type;
 
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<T>::type scalar_type;
+
       //! Typename of base-expressions
       typedef Expr< SFadExprTag<T,Num> > base_expr_type;
 
@@ -148,6 +151,13 @@ namespace Sacado {
        * throws an error if compiled with SACADO_DEBUG defined.
        */
       void resize(int sz);
+
+      //! Expand derivative array to size sz
+      /*!
+       * Since the derivative array length is not dynamic, this method
+       * throws an error if compiled with SACADO_DEBUG defined.
+       */
+      void expand(int sz) { resize(sz); }
 
       //! Zero out the derivative array
       void zero() { ss_array<T>::zero(dx_, Num); }
