@@ -102,7 +102,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
   }
 
-
+  if(fixedBlkSize_ == false)  currentLevel.Set("DofsPerNode", -1, this); // no constant block size -> store -1
+  else currentLevel.Set("DofsPerNode", blksize_, this);
   currentLevel.Set("Graph", graph, this);
 
   // post-dropping?
