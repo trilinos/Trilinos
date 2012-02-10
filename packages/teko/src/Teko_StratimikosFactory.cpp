@@ -168,6 +168,10 @@ void StratimikosFactory::initializePrec(
   // Permform initialization if needed
   const bool startingOver = (teko_precOp == Teuchos::null);
   if(startingOver) {
+    // start over
+    invLib_ = Teuchos::null;
+    invFactory_ = Teuchos::null;
+    decomp_.clear();
 
     if(mediumVerbosity)
       *out << "\nCreating the initial Teko::Epetra::InverseFactoryOperator object...\n";

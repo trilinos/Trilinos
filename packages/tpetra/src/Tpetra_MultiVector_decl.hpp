@@ -130,7 +130,29 @@ namespace Tpetra {
     //! Set multi-vector values to random numbers.
     void randomize();
 
-    //! Replace the underlying Map with a compatible one.
+    /// \brief Replace the underlying Map with a compatible one.
+    ///
+    /// This method relabels the rows of the multivector using the
+    /// global IDs in the input Map.  Thus, it implicitly applies a
+    /// permutation, without actually moving data.  This only works if
+    /// the input Map is compatible (in the sense of \c
+    /// Map::isCompatible()) with the multivector's current Map, so
+    /// that the number of rows per process does not change.  If the
+    /// input Map is <i>not</i> compatible, then this method throws \c
+    /// std::invalid_argument.
+    ///
+    /// \note This method is <i>not</i> for arbitrary data
+    ///   redistribution.  If you need to move data around, use \c
+    ///   Import or \c Export.
+    ///
+    /// \note This method must always be called as a collective
+    ///   operation on all processes over which the multivector is
+    ///   distributed.  This is because the method reserves the right
+    ///   to check for compatibility of the two Maps.  It will do this
+    ///   at least in Tpetra debug mode (Boolean configure-time option
+    ///   Tpetra_ENABLE_DEBUG set), if not always.  That check
+    ///   requires a constant number of reductions over all the
+    ///   processes in the multivector's current Map's communicator.
     void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
     //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
