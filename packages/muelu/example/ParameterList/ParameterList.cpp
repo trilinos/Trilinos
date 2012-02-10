@@ -52,11 +52,7 @@ int main(int argc, char *argv[]) {
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
   H->GetLevel(0)->Set("A", A);
 
-  // mueLuFactory.SetupHierarchy(*H);
-
-  //TODO: move this into ParameterList  H->setVerbLevel(Teuchos::VERB_HIGH);
-
-  return EXIT_SUCCESS;
+  mueLuFactory.SetupHierarchy(*H);
 
   //
   // Solve Ax = b
