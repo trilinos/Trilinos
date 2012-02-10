@@ -531,7 +531,8 @@ namespace MueLu {
     if (verbLevel & Statistics1) {
       Teuchos::OSTab tab2(out);
       for(int i = 0; i < GetNumLevels(); i++) {
-        Levels_[i]->print(out, verbLevel);
+        Levels_[i]->print(out0, verbLevel);
+        out0 << std::endl;
       }
     }
   }

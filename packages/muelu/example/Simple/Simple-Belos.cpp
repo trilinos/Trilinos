@@ -173,15 +173,6 @@ int main(int argc, char *argv[]) {
   }
   std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out->setOutputToRootOnly(0);
-
-  for (int i=0; i<H->GetNumLevels(); i++) {
-    RCP<Level> l = H->GetLevel(i);
-    *out << std::endl << "Level " << i << std::endl;
-    l->print(*out);
-  }
-
   return EXIT_SUCCESS;
 }
 
