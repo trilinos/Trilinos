@@ -12,8 +12,6 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_Exceptions.hpp"
 
-#include "MueLu_RAPFactory.hpp" //TMP
-
 namespace MueLu {
 
   // This class stores the configuration of a Hierarchy.
@@ -79,9 +77,9 @@ namespace MueLu {
 
       while(!isLastLevel) {
         bool r = H.Setup(levelID, 
-                         LvlMngr(levelID-1), 
-                         LvlMngr(levelID), 
-                         LvlMngr(levelID+1)); 
+                         LvlMngr(levelID-1, lastLevelID), 
+                         LvlMngr(levelID,   lastLevelID), 
+                         LvlMngr(levelID+1, lastLevelID)); 
 
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
@@ -99,16 +97,18 @@ namespace MueLu {
 
   private:
     // Levels
-    Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level.
+    Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level. The last levelManager is used for all the remaining levels.
     RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager
 
     // Used in SetupHierarchy() to access levelManagers_
     // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
-    Teuchos::Ptr<FactoryManagerBase> LvlMngr(int i) const { 
-      if (i == -1)                    return Teuchos::null;
-      if (i == levelManagers_.size()) return Teuchos::null;
+    Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const { 
+      if (levelID == -1)                    return Teuchos::null; // when this routine is called with levelID == '-1', it means that we are processing the finest Level (there is no finer level)
+      if (levelID == lastLevelID+1)         return Teuchos::null; // when this routine is called with levelID == 'lastLevelID+1', it means that we are processing the last level (ie: there is no nextLevel...)
+
+      if (levelID >= levelManagers_.size()) return levelManagers_[levelManagers_.size()-1]; // last levelManager is used for all the remaining levels.
       
-      return levelManagers_[i](); // throw exception if out of bound.
+      return levelManagers_[levelID](); // throw exception if out of bound.
     }
 
   }; // class HierarchyManager
