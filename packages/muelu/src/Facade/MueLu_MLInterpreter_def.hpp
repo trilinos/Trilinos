@@ -144,9 +144,11 @@ namespace MueLu {
       if(paramList.isParameter("null space: dimension")) dimns = paramList.get<int>("null space: dimension");
       TEUCHOS_TEST_FOR_EXCEPTION(dimns == -1, Exceptions::RuntimeError, "MueLu::Interpreter: no valid nullspace (nullspace dim = -1). error.");
 
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("null space: add default vectors"), Exceptions::RuntimeError, "MueLu::Interpreter: The parameter \'null space: add default vectors\' is not supported by MueLu::MLInterpreter (yet)");
+
       double* nsdata = NULL;
       if(paramList.isParameter("null space: vectors")) nsdata = paramList.get<double*>("null space: vectors");
-      TEUCHOS_TEST_FOR_EXCEPTION(nsdata == NULL, Exceptions::RuntimeError, "MueLu::Interpreter: no valid nullspace (nsdata = NULL). error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(nsdata == NULL, Exceptions::RuntimeError, "MueLu::Interpreter: no valid nullspace (nsdata = NULL). You have to provide a valid fine-level nullspace in \'null space: vectors\'");
 
       nullspaceDim_ = dimns;
       nullspace_    = nsdata;

@@ -88,9 +88,6 @@ void FillMLParameterList(Teuchos::ParameterList & params) {
   params.set("coarse: type", "Amesos-KLU");
 #endif
   params.set("max levels", 7);
-//   params.set("null space: add default vectors", 0);
-//   params.set("null space: dimension", 3);
-//   params.set("null space: type", "pre-computed");
   params.set("prec type","MGV");
   Teuchos::ParameterList & l0 = params.sublist("smoother: list (level 0)");
   Teuchos::ParameterList & l1 = params.sublist("smoother: list (level 1)");
