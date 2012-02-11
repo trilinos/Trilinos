@@ -136,6 +136,10 @@ public:
   unsigned char * field_data_location( const FieldBase & field, const Entity & entity ) const
   { return m_bucketImpl.field_data_location(field,entity); }
 
+  /** \brief  Query the location of this field data specified by FieldBase and Entity-bucket-ordinal */
+  unsigned char * field_data_location( const FieldBase & field, unsigned ordinal ) const
+  { return m_bucketImpl.field_data_location(field, ordinal); }
+
   /** \brief  Query the location of this field data specified by FieldBase */
   unsigned char * field_data_location( const FieldBase & field ) const
   { return m_bucketImpl.field_data_location(field); }

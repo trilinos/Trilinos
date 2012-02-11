@@ -67,6 +67,10 @@ class BucketImpl {
   {
     return field_data_location_impl( field.mesh_meta_data_ordinal(), entity.bucket_ordinal() );
   }
+  unsigned char * field_data_location( const FieldBase & field, unsigned ordinal ) const
+  {
+    return field_data_location_impl( field.mesh_meta_data_ordinal(), ordinal );
+  }
   unsigned char * field_data_location( const FieldBase & field ) const
   {
     unsigned int zero_ordinal = 0;
