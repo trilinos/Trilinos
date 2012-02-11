@@ -26,6 +26,8 @@ namespace MueLu {
     if (PFact  != Teuchos::null) SetFactory("P", PFact);
     if (RFact  != Teuchos::null) SetFactory("R", RFact);
     if (AcFact != Teuchos::null) SetFactory("A", AcFact);
+
+    SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)
   }
     
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
