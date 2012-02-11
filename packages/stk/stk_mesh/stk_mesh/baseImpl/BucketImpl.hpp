@@ -134,7 +134,7 @@ class BucketImpl {
     const DataMap & data_map = m_field_map[ field_ordinal ];
     unsigned char * ptr = NULL;
     if ( data_map.m_size ) {
-      ptr = (const_cast<unsigned char*>(&m_field_data[0]) + data_map.m_base + data_map.m_size * entity_ordinal );
+      ptr = (const_cast<unsigned char*>(&m_field_data[data_map.m_base + data_map.m_size * entity_ordinal]));
     }
     return ptr ;
   }
