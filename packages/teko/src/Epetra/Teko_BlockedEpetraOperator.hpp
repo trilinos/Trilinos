@@ -78,7 +78,7 @@ public:
      * \param[in] label Label for name the operator
      */
    BlockedEpetraOperator(const std::vector<std::vector<int> > & vars,
-                         const Teuchos::RCP<Epetra_Operator> & content,
+                         const Teuchos::RCP<const Epetra_Operator> & content,
                          const std::string & label="<ANYM>");
 
    /** Build a blocked operator based on a vector of vector
@@ -90,7 +90,7 @@ public:
      * \param[in] content Operator to be blocked
      */
    virtual void SetContent(const std::vector<std::vector<int> > & vars,
-                           const Teuchos::RCP<Epetra_Operator> & content);
+                           const Teuchos::RCP<const Epetra_Operator> & content);
 
    /** Force a rebuild of the blocked operator from the stored
      * content operator.
@@ -101,7 +101,7 @@ public:
    virtual const Teuchos::RCP<const Epetra_Operator> GetContent() const
    { return fullContent_; }
 
-   virtual const Teuchos::RCP<Epetra_Operator> GetContent()
+   virtual const Teuchos::RCP<const Epetra_Operator> GetContent()
    { return fullContent_; }
 
    const Teuchos::RCP<const Epetra_Operator> GetBlock(int i,int j) const;
@@ -141,9 +141,14 @@ public:
    virtual bool HasNormInf() const { return false; }
    virtual const Epetra_Comm & Comm() const { return fullContent_->Comm(); }
 
+   #ifndef Teko_DEBUG_OFF
+   //! Helps perform sanity checks
+   bool testAgainstFullOperator(int count,double tol) const;
+   #endif
+
 protected:
    // gooey center of this shell
-   Teuchos::RCP<Epetra_Operator> fullContent_;
+   Teuchos::RCP<const Epetra_Operator> fullContent_;
    Teuchos::RCP<BlockedMappingStrategy> blockedMapping_;
    Teuchos::RCP<Thyra::LinearOpBase<double> > blockedOperator_;
    Teuchos::RCP<const BlockReorderManager> reorderManager_;
