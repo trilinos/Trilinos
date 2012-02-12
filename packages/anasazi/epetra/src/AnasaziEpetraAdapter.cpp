@@ -271,8 +271,8 @@ namespace Anasazi {
     // This standard operator computes Y = A*X
     //
     MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
-    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
-    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
+    Epetra_MultiVector* vec_X = dynamic_cast<EpetraMultiVecAccessor*>(&temp_X)->GetEpetraMultiVec();
+    Epetra_MultiVector* vec_Y = dynamic_cast<EpetraMultiVecAccessor*>(&Y)->GetEpetraMultiVec();
     
     TEUCHOS_TEST_FOR_EXCEPTION( vec_X==NULL, std::invalid_argument, "Anasazi::EpetraOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
     TEUCHOS_TEST_FOR_EXCEPTION( vec_Y==NULL, std::invalid_argument, "Anasazi::EpetraOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
@@ -312,8 +312,8 @@ namespace Anasazi {
     //
     int info=0;
     MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
-    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
-    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
+    Epetra_MultiVector* vec_X = dynamic_cast<EpetraMultiVecAccessor*>(&temp_X)->GetEpetraMultiVec();
+    Epetra_MultiVector* vec_Y = dynamic_cast<EpetraMultiVecAccessor*>(&Y)->GetEpetraMultiVec();
     Epetra_MultiVector temp_Y(*vec_Y); 
     
     TEUCHOS_TEST_FOR_EXCEPTION( vec_X==NULL, std::invalid_argument, "Anasazi::EpetraGenOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
@@ -405,8 +405,8 @@ namespace Anasazi {
   {
     int info=0;
     MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
-    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
-    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
+    Epetra_MultiVector* vec_X = dynamic_cast<EpetraMultiVecAccessor*>(&temp_X)->GetEpetraMultiVec();
+    Epetra_MultiVector* vec_Y = dynamic_cast<EpetraMultiVecAccessor*>(&Y)->GetEpetraMultiVec();
     Epetra_MultiVector* temp_vec = new Epetra_MultiVector( 
         (isTrans_) ? Epetra_Op->OperatorDomainMap() 
         : Epetra_Op->OperatorRangeMap(), 
@@ -549,8 +549,8 @@ namespace Anasazi {
   {
     int info=0;
     MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
-    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
-    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
+    Epetra_MultiVector* vec_X = dynamic_cast<EpetraMultiVecAccessor*>(&temp_X)->GetEpetraMultiVec();
+    Epetra_MultiVector* vec_Y = dynamic_cast<EpetraMultiVecAccessor*>(&Y)->GetEpetraMultiVec();
     
     if (isTrans_) {
       
@@ -607,8 +607,8 @@ namespace Anasazi {
   {
     int info=0;
     MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
-    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
-    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
+    Epetra_MultiVector* vec_X = dynamic_cast<EpetraMultiVecAccessor*>(&temp_X)->GetEpetraMultiVec();
+    Epetra_MultiVector* vec_Y = dynamic_cast<EpetraMultiVecAccessor*>(&Y)->GetEpetraMultiVec();
     
     Epetra_MultiVector temp_vec( *MV_blockmap, temp_X.GetNumberVecs() );
       
@@ -648,8 +648,8 @@ namespace Anasazi {
   {
     int info=0;
     MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
-    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
-    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
+    Epetra_MultiVector* vec_X = dynamic_cast<EpetraMultiVecAccessor*>(&temp_X)->GetEpetraMultiVec();
+    Epetra_MultiVector* vec_Y = dynamic_cast<EpetraMultiVecAccessor*>(&Y)->GetEpetraMultiVec();
     
     Epetra_MultiVector temp_vec( *MV_blockmap, temp_X.GetNumberVecs() );
       
