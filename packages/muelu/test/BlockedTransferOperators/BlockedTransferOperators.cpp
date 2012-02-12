@@ -16,7 +16,7 @@
 #include <Teuchos_DefaultComm.hpp>
 
 // Xpetra
-#include <Xpetra_EpetraMap.hpp>
+#include <Xpetra_Map.hpp>
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -158,6 +158,30 @@ int main(int argc, char *argv[]) {
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
+  /**********************************************************************************/
+  /* SET TEST PARAMETERS                                                            */
+  /**********************************************************************************/
+  // Note: use --help to list available options.
+  Teuchos::CommandLineProcessor clp(false);
+
+  Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
+
+  switch (clp.parse(argc,argv)) {
+  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
+
+  //RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
+
+  xpetraParameters.check();
+
+  Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+
+  if (comm->getRank() == 0) {
+    std::cout << xpetraParameters;
+    // TODO: print custom parameters // Or use paramList::print()!
+  }
 
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
@@ -170,8 +194,8 @@ int main(int argc, char *argv[]) {
   GO numElements2 = 100;
 
   //bigMap = MapFactory::Build(Xpetra::UseEpetra, numElements,  0, comm); // ok this is the problem :-)
-  map1   = MapFactory::Build(Xpetra::UseEpetra, numElements1, 0, comm);
-  map2   = MapFactory::Build(Xpetra::UseEpetra, numElements2, numElements1, comm);
+  map1   = MapFactory::Build(lib, numElements1, 0, comm);
+  map2   = MapFactory::Build(lib, numElements2, numElements1, comm);
 
   std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
   Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
@@ -179,7 +203,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
   localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
   Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
-  bigMap = MapFactory::Build(Xpetra::UseEpetra, numElements, eleList, 0, comm); // create full big map (concatenation of map1 and map2)
+  bigMap = MapFactory::Build(lib, numElements, eleList, 0, comm); // create full big map (concatenation of map1 and map2)
 
   std::vector<Teuchos::RCP<const Map> > maps;
   maps.push_back(map1); maps.push_back(map2);
@@ -222,7 +246,7 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: sweeps", (LO) 5);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   ifpackType = "RELAXATION";
-  ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
+  ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
   RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, A11Fact) );
   RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, A22Fact) );
 
