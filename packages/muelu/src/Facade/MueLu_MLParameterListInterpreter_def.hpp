@@ -1,5 +1,5 @@
-#ifndef MUELU_MLINTERPRETER_DEF_HPP
-#define MUELU_MLINTERPRETER_DEF_HPP
+#ifndef MUELU_MLPARAMETERLISTINTERPRETER_DEF_HPP
+#define MUELU_MLPARAMETERLISTINTERPRETER_DEF_HPP
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
@@ -7,7 +7,7 @@
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
-#include "MueLu_MLInterpreter_decl.hpp"
+#include "MueLu_MLParameterListInterpreter_decl.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy.hpp"
@@ -34,18 +34,18 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLInterpreter(Teuchos::ParameterList & paramList) : nullspace_(NULL) {
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(Teuchos::ParameterList & paramList) : nullspace_(NULL) {
     SetParameterList(paramList);
   }
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLInterpreter(const std::string & xmlFileName) : nullspace_(NULL) {
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(const std::string & xmlFileName) : nullspace_(NULL) {
     Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
     SetParameterList(*paramList);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList & paramList) {
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList & paramList) {
 
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); // TODO: use internal out (GetOStream())
 
@@ -81,7 +81,7 @@ namespace MueLu {
     if(verbosityLevel >  7 ) eVerbLevel = Teuchos::VERB_HIGH;
     if(verbosityLevel >  9 ) eVerbLevel = Teuchos::VERB_EXTREME;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::MLInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' aggregation is supported.");
+    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' aggregation is supported.");
 
     // Create MueLu factories
     RCP<NullspaceFactory>     nspFact = rcp(new NullspaceFactory());
@@ -144,10 +144,10 @@ namespace MueLu {
       if(paramList.isParameter("null space: dimension")) dimns = paramList.get<int>("null space: dimension");
       TEUCHOS_TEST_FOR_EXCEPTION(dimns == -1, Exceptions::RuntimeError, "MueLu::Interpreter: no valid nullspace (nullspace dim = -1). error.");
 
-      //TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("null space: add default vectors"), Exceptions::RuntimeError, "MueLu::Interpreter: The parameter \'null space: add default vectors\' is not supported by MueLu::MLInterpreter (yet)");
+      //TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("null space: add default vectors"), Exceptions::RuntimeError, "MueLu::Interpreter: The parameter \'null space: add default vectors\' is not supported by MueLu::MLParameterListInterpreter (yet)");
       // TODO throw a warning
       //if(paramList.isParameter("null space: add default vectors"))
-      // GetOStream(Warnings0,0) << "MueLu::Interpreter: The parameter \'null space: add default vectors\' is not supported by MueLu::MLInterpreter (yet)" << std::endl;
+      // GetOStream(Warnings0,0) << "MueLu::Interpreter: The parameter \'null space: add default vectors\' is not supported by MueLu::MLParameterListInterpreter (yet)" << std::endl;
 
       double* nsdata = NULL;
       if(paramList.isParameter("null space: vectors")) nsdata = paramList.get<double*>("null space: vectors");
@@ -184,7 +184,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupHierarchy(Hierarchy & H) const {
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupHierarchy(Hierarchy & H) const {
 
     if (nullspace_ != NULL) {
       
@@ -208,7 +208,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetCoarsestSolverFactory(const Teuchos::ParameterList & paramList) {
+  RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetCoarsestSolverFactory(const Teuchos::ParameterList & paramList) {
 
 #if (defined(HAVE_MUELU_EPETRA) && defined( HAVE_MUELU_AMESOS)) || (defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)) // FIXME: test is wrong (ex: compiled with Epetra&&Tpetra&&Amesos2 but without Amesos => error running Epetra problem)
     std::string type = ""; // use default defined by AmesosSmoother or Amesos2Smoother
@@ -304,7 +304,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherFactory(const Teuchos::ParameterList & paramList, int level) {
+  RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherFactory(const Teuchos::ParameterList & paramList, int level) {
 
     char levelchar[11];
     sprintf(levelchar,"(level %d)",level);
@@ -396,7 +396,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FillMLParameterList(Teuchos::ParameterList & paramList) {
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FillMLParameterList(Teuchos::ParameterList & paramList) {
 
     paramList.set("PDE equations",2);
     paramList.set("aggregation: damping factor", 1.33);
@@ -447,5 +447,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_MLINTERPRETER_SHORT
-#endif /* MUELU_INTERPRETER_DEF_HPP */
+#define MUELU_MLPARAMETERLISTINTERPRETER_SHORT
+#endif /* MUELU_MLPARAMETERLISTINTERPRETER_DEF_HPP */

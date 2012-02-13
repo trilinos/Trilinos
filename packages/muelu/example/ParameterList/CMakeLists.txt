@@ -32,27 +32,27 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   
 ENDIF()
 
-# MLCompatible
+# MLParameterList
 IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR 
     (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos))
   
   TRIBITS_ADD_EXECUTABLE(
-    MLCompatible
-    SOURCES MLCompatible.cpp
+    MLParameterList
+    SOURCES MLParameterList.cpp
     DEPLIBS muelu muelu-xpetra
     COMM serial mpi
     )
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(MLCompatible_cp
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(MLParameterList_cp
     SOURCE_FILES ml_ParameterList.xml
     )
   
 #   IF (${PACKAGE_NAME}_ENABLE_Amesos2)
-#     XPETRA_ADD_TEST_TPETRA(MLCompatible "serial mpi" 1-4)
+#     XPETRA_ADD_TEST_TPETRA(MLParameterList "serial mpi" 1-4)
 #   ENDIF()
   
 #   IF (${PACKAGE_NAME}_ENABLE_Amesos)
-#     XPETRA_ADD_TEST_EPETRA(MLCompatible "serial mpi" 1-4)
+#     XPETRA_ADD_TEST_EPETRA(MLParameterList "serial mpi" 1-4)
 #   ENDIF()
   
 ENDIF()

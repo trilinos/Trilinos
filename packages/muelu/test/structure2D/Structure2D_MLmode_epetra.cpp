@@ -55,7 +55,7 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 
-#include <MueLu_MLInterpreter.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList mlParams;
   FillMLParameterList(mlParams); // fill ML parameter list (without nullspace)
 
-  MLInterpreter mueLuFactory(mlParams);
+  MLParameterListInterpreter mueLuFactory(mlParams);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
   H->GetLevel(0)->Set("A", Op);
   H->GetLevel(0)->Set("Nullspace", xNS);

@@ -126,8 +126,8 @@ typedef MueLu::SegregationATransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Nod
 typedef MueLu::Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Repartition;
 #endif
 
-#ifdef MUELU_MLINTERPRETER_SHORT
-typedef MueLu::MLInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MLInterpreter;
+#ifdef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
+typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MLParameterListInterpreter;
 #endif
 
 #ifdef MUELU_BLOCKEDPFACTORY_SHORT
