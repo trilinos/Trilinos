@@ -19,6 +19,7 @@
 
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
+#include "MueLu_Level.hpp"
 
 namespace {
 
@@ -183,7 +184,7 @@ void MueLuPreconditionerFactory::initializePrec(
 //        );
   }
 
-  ParameterListInterpreter mueLuFactory(paramList_);
+  MueLu::ParameterListInterpreter<double, int, int, NO, LMO> mueLuFactory(*paramList_);
 
   //
   // Perform initialization if needed
@@ -203,7 +204,7 @@ void MueLuPreconditionerFactory::initializePrec(
     RCP<Xpetra::Operator <double, int, int, NO, LMO> > mueluA  = rcp(new Xpetra::CrsOperator<double, int, int, NO, LMO>(mueluAcrs));
 
     const RCP<MueLu::Hierarchy<double,int, int, NO, LMO > > muelu_hierarchy = mueLuFactory.CreateHierarchy();
-    H->GetLevel(0)->Set("A", mueluA);
+    muelu_hierarchy->GetLevel(0)->Set("A", mueluA);
     muelu_precOp = rcp(new MueLu::EpetraOperator(muelu_hierarchy));
     
     timer.stop();
