@@ -269,7 +269,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
   }
 
   { // be verbose
-    GlobalOrdinal zero_all;
+    LocalOrdinal zero_all;
     Scalar min_all;
     Scalar max_all;
     sumAll(A->getRowMap()->getComm(),zero_local,zero_all);
