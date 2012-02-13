@@ -47,11 +47,12 @@ module unload PrgEnv-intel
 
 module load PrgEnv-${TARGET_COMPILER}
 
+module unload xt-libsci
 
 if [ -z $VALGRIND_BUILD ]; then
   # These specific module versions are required (defaults don't work)
   echo "Loading fftw"
-  module load fftw/3.2.2.1
+  module load fftw
   module load xt-papi
 else
   echo "Unloading libsci and fftw"
@@ -64,7 +65,6 @@ fi
 # If you need to something special for your compiler.  Do it here.
 case ${TARGET_COMPILER} in
   pgi)
-    module swap pgi/10.9.0
     ;;
   gnu)
     ;;
