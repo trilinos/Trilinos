@@ -27,7 +27,9 @@ namespace MueLu {
   public:
 
     //!
-    HierarchyManager() { }
+    HierarchyManager() : verbLevel_(VerboseObject::GetVerbLevel()), // By default, built hierarchy inherit the current global verb level
+                         numDesiredLevel_(10), maxCoarseSize_(50)   // TODO: default values should be query from Hierarchy class to avoid duplication
+    { }
 
     //!
     virtual ~HierarchyManager() { }
@@ -71,6 +73,12 @@ namespace MueLu {
       H.SetDefaultVerbLevel(verbLevel_);
       H.SetMaxCoarseSize(maxCoarseSize_);
 
+      // When no configuration, use defaults of the class MueLu::Hierarchy
+      if (levelManagers_.size() == 0) {
+        H.Setup(); 
+        return;
+      }
+
       // TODO: coarsestLevelManager
 
       int  levelID     = 0;
@@ -107,6 +115,8 @@ namespace MueLu {
     // Used in SetupHierarchy() to access levelManagers_
     // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
     Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const { 
+      TEUCHOS_TEST_FOR_EXCEPT(levelManagers_.size() == 0);
+
       if (levelID == -1)                    return Teuchos::null; // when this routine is called with levelID == '-1', it means that we are processing the finest Level (there is no finer level)
       if (levelID == lastLevelID+1)         return Teuchos::null; // when this routine is called with levelID == 'lastLevelID+1', it means that we are processing the last level (ie: there is no nextLevel...)
 
