@@ -43,7 +43,7 @@ namespace MueLu {
     bool IgnoreUserData() const { return bIgnoreUserData_; }
 
     //! set IgnoreUserData flag
-    void SetIgnoreUserData(bool IgnoreUserData = false) { bIgnoreUserData_ = IgnoreUserData; }
+    void SetIgnoreUserData(bool bIgnoreUserData = false) { bIgnoreUserData_ = bIgnoreUserData; }
 
   private:
     //! boolean flag that controls behaviour of Level::GetFactory
