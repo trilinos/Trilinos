@@ -69,8 +69,8 @@ IF((${PACKAGE_NAME}_ENABLE_Stratimikos) AND
     COMM serial mpi
     )
 
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(Stratimikos_cp
-    SOURCE_FILES stratimikos_ParameterList.xml
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Stratimikos_cp
+    SOURCE_FILES stratimikos_ParameterList.xml stratimikos_ParameterList2.xml
     )
-
+  
 ENDIF()

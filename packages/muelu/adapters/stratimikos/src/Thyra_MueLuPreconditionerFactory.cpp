@@ -184,7 +184,7 @@ void MueLuPreconditionerFactory::initializePrec(
 //        );
   }
 
-  MueLu::ParameterListInterpreter<double, int, int, NO, LMO> mueLuFactory(*paramList_);
+  MueLu::ParameterListInterpreter<double, int, int, NO, LMO> mueluFactory(*paramList_);
 
   //
   // Perform initialization if needed
@@ -203,7 +203,7 @@ void MueLuPreconditionerFactory::initializePrec(
     RCP<Xpetra::CrsMatrix<double, int, int, NO, LMO> > mueluAcrs = rcp(new Xpetra::EpetraCrsMatrix(epetraFwdCrsMatNonConst)); //TODO: should not be needed
     RCP<Xpetra::Operator <double, int, int, NO, LMO> > mueluA  = rcp(new Xpetra::CrsOperator<double, int, int, NO, LMO>(mueluAcrs));
 
-    const RCP<MueLu::Hierarchy<double,int, int, NO, LMO > > muelu_hierarchy = mueLuFactory.CreateHierarchy();
+    const RCP<MueLu::Hierarchy<double,int, int, NO, LMO > > muelu_hierarchy = mueluFactory.CreateHierarchy();
     muelu_hierarchy->GetLevel(0)->Set("A", mueluA);
     muelu_precOp = rcp(new MueLu::EpetraOperator(muelu_hierarchy));
     
@@ -230,7 +230,7 @@ void MueLuPreconditionerFactory::initializePrec(
     *out << "\nComputing the preconditioner ...\n";
   timer.start(true);
 
-  mueLuFactory.SetupHierarchy(*muelu_precOp->GetHierarchy());
+  mueluFactory.SetupHierarchy(*muelu_precOp->GetHierarchy());
   
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
