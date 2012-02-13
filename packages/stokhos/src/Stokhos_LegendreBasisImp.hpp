@@ -36,7 +36,7 @@ LegendreBasis(ordinal_type p, bool normalize) :
   this->setup();
 
 #ifdef HAVE_STOKHOS_DAKOTA
-  this->setSparseGridRule(Pecos::GAUSS_LEGENDRE);
+  this->setSparseGridGrowthRule(webbur::level_to_order_linear_wn);
 #endif
 }
 

@@ -40,7 +40,7 @@ JacobiBasis(ordinal_type p,
   this->setup();
 
 #ifdef HAVE_STOKHOS_DAKOTA
-  this->setSparseGridRule(Pecos::GAUSS_JACOBI);
+  this->setSparseGridGrowthRule(webbur::level_to_order_linear_wn);
 #endif
 }
 
