@@ -50,6 +50,9 @@ public:
     return PairIterRelation( i , e );
   }
 
+  std::vector<Relation>::const_iterator node_relation(unsigned ordinal) const
+  { return m_relation.begin() + ordinal; }
+
   PairIterEntityComm comm() const { return PairIterEntityComm( m_comm ); }
   PairIterEntityComm sharing() const ;
   PairIterEntityComm comm( const Ghosting & sub ) const ;

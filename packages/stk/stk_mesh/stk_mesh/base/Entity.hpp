@@ -137,6 +137,8 @@ public:
   PairIterRelation relations( EntityRank type ) const { return m_entityImpl.relations(type); }
   PairIterRelation node_relations() const { return m_entityImpl.node_relations(); }
 
+  RelationIterator node_relation(unsigned ordinal) const { return m_entityImpl.node_relation(ordinal); }
+
   //------------------------------------
   /** \brief  Parallel processor rank of the processor which owns this entity */
   unsigned owner_rank() const { return m_entityImpl.owner_rank(); }
