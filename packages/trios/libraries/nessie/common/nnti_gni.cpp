@@ -3913,7 +3913,7 @@ static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
     log_level debug_level = nnti_debug_level;
 
     nthread_lock(&nnti_buf_bufhash_lock);
-    if (buffers_by_bufhash.find(bufhash) != buffers_by_bufhash.end()) {
+    if (buffers_by_bufhash.find(h) != buffers_by_bufhash.end()) {
         buf = buffers_by_bufhash[h];
     }
     nthread_unlock(&nnti_buf_bufhash_lock);
