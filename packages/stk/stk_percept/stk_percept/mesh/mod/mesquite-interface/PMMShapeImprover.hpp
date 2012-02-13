@@ -53,11 +53,7 @@ namespace stk {
 
     class PMMShapeImprover
     {
-      int innerIter;
     public:
-
-      PMMShapeImprover(int inner_iterations=100) : innerIter(inner_iterations) {}
-
       class PMMShapeImprovementWrapper : public Wrapper {
      
       public:  
@@ -66,7 +62,7 @@ namespace stk {
         PMMShapeImprovementWrapper(int inner_iterations = 100,
                                    double cpu_time = 0.0, 
                                    double grad_norm =1.e-8,
-                                   int parallel_iterations = 10)
+                                   int parallel_iterations = 20)
           : innerIter(inner_iterations),
             maxTime(cpu_time), 
             gradNorm(grad_norm),
@@ -100,9 +96,36 @@ namespace stk {
 
       };
 
-      static int count_invalid_elements(Mesh &mesh, MeshDomain &domain);
+    private:
+      int innerIter;
+      double gradNorm;
+      int parallelIterations;
+    public:
+
+      PMMShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
+        innerIter(innerIter), gradNorm(gradNorm), parallelIterations(parallelIterations)
+      {}
+
+      static int count_invalid_elements(Mesh &mesh, ParallelMesh* pmesh, MeshDomain &domain);
 
       void run(Mesquite::Mesh &mesh, Mesquite::MeshDomain &domain, bool always_smooth=true, int debug=0);
+
+      static void save_or_restore_debug_state(bool save)
+      {
+        static bool debug[3] = {false,false,false};
+        if (save) 
+          {
+            debug[0] = MsqDebug::get(1);
+            debug[1] = MsqDebug::get(2);
+            debug[2] = MsqDebug::get(3);
+          }
+        else
+          {
+            if (debug[0]) MsqDebug::enable(1);
+            if (debug[1]) MsqDebug::enable(2);
+            if (debug[2]) MsqDebug::enable(3);
+          }
+      }
 
     };
 

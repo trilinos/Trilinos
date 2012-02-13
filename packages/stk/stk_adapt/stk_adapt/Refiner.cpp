@@ -1408,6 +1408,8 @@ namespace stk {
 #if ALWAYS_PMM_PARALLEL
           PerceptMesquiteMesh pmm0(&m_eMesh, &pmd);
           PerceptMesquiteMesh::PMMParallelMesh pmm(&pmm0);
+          Mesquite::MsqError err;
+          //pmm.helper.set_communication_model(Mesquite::ParallelHelperImpl::Blocking, err);
 #else
           PerceptMesquiteMesh pmm(&m_eMesh, &pmd);
 #endif
@@ -1419,7 +1421,9 @@ namespace stk {
             }
           else
             {
-              PMMShapeImprover si;
+              //PMMShapeImprover(int innerIter=100, double gradNorm = 1.e-8, int parallelIterations=20) : 
+              PMMShapeImprover si(100, 1.e-8, 20);
+              //PMMShapeImprover si(5, 1.e-8, 20);
               //const double max_vertex_movement_term_crit=10;
               //PMMShapeSizeOrientImprover si(10);
               si.run(pmm, pmd, always_smooth, msq_debug);

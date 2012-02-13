@@ -53,6 +53,8 @@ namespace stk {
 
     void PMMLaplaceSmoother1::run(Mesquite::Mesh &mesh, Mesquite::MeshDomain &domain, bool always_smooth, int debug)
     {
+      Mesquite::ParallelMesh *pmesh = dynamic_cast<Mesquite::ParallelMesh *>(&mesh);
+
       if (debug)
         {
           Mesquite::MsqDebug::enable(1);
@@ -66,7 +68,7 @@ namespace stk {
       bool check_quality=true;
       if (check_quality)
         {
-          num_invalid = PMMShapeImprover::count_invalid_elements(mesh, domain);
+          num_invalid = PMMShapeImprover::count_invalid_elements(mesh, pmesh, domain);
           std::cout << "tmp srk PMMLaplaceSmoother1 num_invalid before= " << num_invalid 
                     << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : " ")
                     << std::endl;
@@ -83,7 +85,7 @@ namespace stk {
           std::cout << "tmp srk PMMLaplaceSmoother1 running laplace smoother...done" << std::endl;
           if (check_quality)
             {
-              num_invalid = PMMShapeImprover::count_invalid_elements(mesh, domain);
+              num_invalid = PMMShapeImprover::count_invalid_elements(mesh, pmesh, domain);
               std::cout << "tmp srk PMMLaplaceSmoother1 num_invalid after= " << num_invalid << " " 
                         << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 
                             " SUCCESS: smoothed and removed invalid elements ")

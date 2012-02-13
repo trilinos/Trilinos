@@ -69,8 +69,8 @@ namespace stk {
       
       class PMMParallelMesh : public Mesquite::ParallelMeshImpl
       {
-        Mesquite::ParallelHelperImpl& helper;
       public:
+        Mesquite::ParallelHelperImpl& helper;
         
         PMMParallelMesh(Mesquite::Mesh *mesh) : Mesquite::ParallelMeshImpl(mesh, PMM_global_id_name.c_str(), PMM_proc_id_name.c_str()),
                                                 helper(* new Mesquite::ParallelHelperImpl)

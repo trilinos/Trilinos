@@ -7,7 +7,7 @@
 
 namespace MESQUITE_NS {
 
-extern int get_parallel_rank();
+  extern int get_parallel_rank();
 }
 
 namespace stk {
@@ -21,23 +21,25 @@ namespace stk {
                                                                     QualityAssessor* qa,
                                                                     MsqError& err )
     {
+      std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprovementWrapper innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
+
       // Define an untangler
       //UntangleBetaQualityMetric untangle_metric( untBeta );
       UntangleBetaQualityMetric untangle_metric( 1.e-6 );
 
       bool check_untangle = true;
       if (check_untangle)
-      {
-        MPI_Barrier( MPI_COMM_WORLD );
-        std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric before... " << std::endl;
-        InstructionQueue q1;
-        QualityAssessor qa_untangle(&untangle_metric);
-        q1.add_quality_assessor(&qa_untangle, err); MSQ_ERRRTN(err);
-        q1.run_common( mesh, pmesh, domain, settings, err ); 
-        std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric... before... done " << std::endl;
-        MPI_Barrier( MPI_COMM_WORLD );
-        //return;
-      }
+        {
+          MPI_Barrier( MPI_COMM_WORLD );
+          if (!get_parallel_rank()) std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric before... " << std::endl;
+          InstructionQueue q1;
+          QualityAssessor qa_untangle(&untangle_metric);
+          q1.add_quality_assessor(&qa_untangle, err); MSQ_ERRRTN(err);
+          q1.run_common( mesh, pmesh, domain, settings, err ); 
+          if (!get_parallel_rank()) std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric... before... done " << std::endl;
+          MPI_Barrier( MPI_COMM_WORLD );
+          //return;
+        }
 
 
       LPtoPTemplate untangle_func( 2, &untangle_metric );
@@ -100,13 +102,26 @@ namespace stk {
       Timer totalTimer;
 
       // Run untangler
-      std::cout << "\ntmp srk PMMShapeImprovementWrapper: running untangler...\n " << std::endl;
+      if (!get_parallel_rank()) std::cout << "\ntmp srk PMMShapeImprovementWrapper: running untangler...\n " << std::endl;
       bool use_untangle_wrapper = false;
       if (use_untangle_wrapper)
         {
+          PMMShapeImprover::save_or_restore_debug_state(true);
+          //MsqDebug::disable_all();
           UntangleWrapper uw;
-          //uw.set_untangle_metric(UntangleWrapper::BETA);
-          uw.run_instructions(mesh, domain, err);
+          uw.set_untangle_metric(UntangleWrapper::BETA);
+          //uw.set_metric_constant( -1.e-6 );
+
+          //void UntangleWrapper::set_metric_constant( double value )
+          //void UntangleWrapper::set_cpu_time_limit( double seconds )
+          //void UntangleWrapper::set_vertex_movement_limit_factor( double f )
+          //uw.set_vertex_movement_limit_factor( 1.e-4 );
+
+          if (pmesh)
+            uw.run_instructions(pmesh, domain, err);
+          else
+            uw.run_instructions(mesh, domain, err);
+          PMMShapeImprover::save_or_restore_debug_state(false);
         }
       else
         {
@@ -122,29 +137,30 @@ namespace stk {
 #endif
           q1.run_common( mesh, pmesh, domain, settings, err ); 
         }
-      std::cout << "\ntmp srk PMMShapeImprovementWrapper: running untangler... done\n " << std::endl;
-      std::cout << "\ntmp srk PMMShapeImprovementWrapper: MsqError after untangler: " << err << std::endl;
+      if (!get_parallel_rank()) std::cout << "\ntmp srk PMMShapeImprovementWrapper: running untangler... done\n " << std::endl;
+      if (!get_parallel_rank()) std::cout << "\ntmp srk PMMShapeImprovementWrapper: MsqError after untangler: " << err << std::endl;
 
       bool check_quality_after_untangler = true;
       if (check_quality_after_untangler)
         {
-          int num_invalid = count_invalid_elements(*mesh, *domain);
-          std::cout << "\ntmp srk PMMShapeImprover num_invalid after untangler= " << num_invalid << " " 
-                    << (num_invalid ? " ERROR still have invalid elements after Mesquite untangle" : 
-                        " SUCCESS: untangled invalid elements ")
-                    << std::endl;
+          int num_invalid = count_invalid_elements(*mesh, pmesh, *domain);
+          if (!get_parallel_rank()) 
+            std::cout << "\ntmp srk PMMShapeImprover num_invalid after untangler= " << num_invalid << " " 
+                      << (num_invalid ? " ERROR still have invalid elements after Mesquite untangle" : 
+                          " SUCCESS: untangled invalid elements ")
+                      << std::endl;
 
           if (check_untangle)
-          {
-            MPI_Barrier( MPI_COMM_WORLD );
-            std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric " << std::endl;
-            InstructionQueue q1;
-            QualityAssessor qa_untangle(&untangle_metric);
-            q1.add_quality_assessor(&qa_untangle, err); MSQ_ERRRTN(err);
-            q1.run_common( mesh, pmesh, domain, settings, err ); 
-            std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric... done " << std::endl;
-            MPI_Barrier( MPI_COMM_WORLD );
-          }
+            {
+              MPI_Barrier( MPI_COMM_WORLD );
+              if (!get_parallel_rank()) std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric " << std::endl;
+              InstructionQueue q1;
+              QualityAssessor qa_untangle(&untangle_metric);
+              q1.add_quality_assessor(&qa_untangle, err); MSQ_ERRRTN(err);
+              q1.run_common( mesh, pmesh, domain, settings, err ); 
+              if (!get_parallel_rank()) std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover.... running QA with untangle_metric... done " << std::endl;
+              MPI_Barrier( MPI_COMM_WORLD );
+            }
 
           if (num_invalid) return;
         }
@@ -164,17 +180,17 @@ namespace stk {
   
       // Run shape improver
       InstructionQueue q2;
-      std::cout << "\ntmp srk PMMShapeImprovementWrapper: running shape improver... \n" << std::endl;
+      if (!get_parallel_rank()) std::cout << "\ntmp srk PMMShapeImprovementWrapper: running shape improver... \n" << std::endl;
       q2.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
       q2.set_master_quality_improver( &shape_solver, err ); MSQ_ERRRTN(err);
       q2.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
       q2.run_common( mesh, pmesh, domain, settings, err ); 
-      std::cout << "\ntmp srk PMMShapeImprovementWrapper: running shape improver... done \n" << std::endl;
+      if (!get_parallel_rank()) std::cout << "\ntmp srk PMMShapeImprovementWrapper: running shape improver... done \n" << std::endl;
       MSQ_ERRRTN(err);
     }
 
 
-    int PMMShapeImprover::count_invalid_elements(Mesh &mesh, MeshDomain &domain)
+    int PMMShapeImprover::count_invalid_elements(Mesh &mesh, ParallelMesh *pmesh, MeshDomain &domain)
     {
       MsqError err;
       InstructionQueue q;
@@ -194,7 +210,7 @@ namespace stk {
       //inv_check.disable_printing_results();
       q.add_quality_assessor( &inv_check, err );  MSQ_ERRZERO(err);
       Settings settings;
-      q.run_common( &mesh, 0, &domain, &settings, err ); MSQ_ERRZERO(err);
+      q.run_common( &mesh, pmesh, &domain, &settings, err ); MSQ_ERRZERO(err);
       //q.remove_quality_assessor( 0, err ); MSQ_ERRZERO(err);
       const QualityAssessor::Assessor* inv_b = inv_check.get_results( &metric );
       int num_invalid = inv_b->get_invalid_element_count();
@@ -215,18 +231,19 @@ namespace stk {
           }
 
       Mesquite::ParallelMesh *pmesh = dynamic_cast<Mesquite::ParallelMesh *>(&mesh);
-      std::cout << "tmp srk PMMShapeImprover::run: pmesh= " << pmesh << std::endl;
+      if (!get_parallel_rank()) std::cout << "tmp srk PMMShapeImprover::run: pmesh= " << pmesh << std::endl;
 
       Mesquite::MsqError mErr;
       int num_invalid = 0;
       bool check_quality=true;
       if (check_quality)
         {
-          num_invalid = count_invalid_elements(mesh, domain);
-          std::cout << "\ntmp srk PMMShapeImprover num_invalid before= " << num_invalid 
-                    << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : 
-                        (!always_smooth ? "WARNING: no smoothing requested since always_smooth=false" : " "))
-                    << std::endl;
+          num_invalid = count_invalid_elements(mesh, pmesh, domain);
+          if (!get_parallel_rank()) 
+            std::cout << "\ntmp srk PMMShapeImprover num_invalid before= " << num_invalid 
+                      << (num_invalid ? " WARNING: invalid elements exist before Mesquite smoothing" : 
+                          (!always_smooth ? "WARNING: no smoothing requested since always_smooth=false" : " "))
+                      << std::endl;
         }
 
       if (num_invalid || always_smooth)
@@ -257,7 +274,8 @@ namespace stk {
                 }
 
               bool do_untangle_only = false;
-              PMMShapeImprover::PMMShapeImprovementWrapper siw(innerIter);
+              std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
+              PMMShapeImprover::PMMShapeImprovementWrapper siw(innerIter, 0.0, gradNorm, parallelIterations);
               siw.m_do_untangle_only = do_untangle_only;
               if (pmesh)
                 siw.run_instructions(pmesh, &domain, mErr);
@@ -265,15 +283,16 @@ namespace stk {
                 siw.run_instructions(&mesh, &domain, mErr);
             }
 
-          std::cout << "\ntmp srk PMMShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;
+          if (!get_parallel_rank()) std::cout << "\ntmp srk PMMShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;
 
           if (check_quality)
             {
-              num_invalid = count_invalid_elements(mesh, domain);
-              std::cout << "\ntmp srk PMMShapeImprover num_invalid after= " << num_invalid << " " 
-                        << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 
-                            " SUCCESS: smoothed and removed invalid elements ")
-                        << std::endl;
+              num_invalid = count_invalid_elements(mesh, pmesh, domain);
+              //if (!get_parallel_rank()) 
+              std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk PMMShapeImprover num_invalid after= " << num_invalid << " " 
+                          << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 
+                              " SUCCESS: smoothed and removed invalid elements ")
+                          << std::endl;
             }
 
           MSQ_ERRRTN(mErr);

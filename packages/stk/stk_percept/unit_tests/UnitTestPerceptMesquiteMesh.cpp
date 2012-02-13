@@ -824,7 +824,7 @@ namespace stk
             //Mesquite::MsqDebug::enable(2);
             //Mesquite::MsqDebug::enable(3);
 
-            int  msq_debug             = 0; // 1,2,3 for more debug info
+            int  msq_debug             = 2; // 1,2,3 for more debug info
             bool always_smooth         = true;
             int innerIter = 100;
 
@@ -850,7 +850,7 @@ namespace stk
       }
 
 
-#define MSQ_TEST 1
+#define MSQ_TEST 0
 #if MSQ_TEST
 
       //=============================================================================
@@ -960,8 +960,6 @@ namespace stk
         if (err) {cerr << err << endl;  STKUNIT_EXPECT_TRUE(false);}
 
         print_timing_diagnostics(cout);
-
-        exit(123);
 
       }
 #endif      
