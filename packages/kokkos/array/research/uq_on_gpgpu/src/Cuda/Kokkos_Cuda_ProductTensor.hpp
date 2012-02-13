@@ -54,38 +54,6 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType >
-inline
-__device__
-void atomic_add( ValueType & update , const ValueType input )
-{
-  atomicAdd( & update , input );
-}
-
-inline
-__device__
-void atomic_add( double & update , const double input )
-{
-  typedef unsigned long long int anonType ;
-
-  union {
-    double d ;
-    anonType i ;
-  } val_old , val_update ;
-
-  anonType * const address = reinterpret_cast<anonType*>( & update );
-  anonType old = *address ;
-
-  do {
-    val_old.i    = old ;
-    val_update.d = val_old.d + input ; // new value
-    old = atomicCAS( address , old , val_update.i );
-  } while ( val_old.i != old );
-}
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 template< typename TensorScalar >
 class Multiply< SparseProductTensor< 3 , TensorScalar , Cuda > , void , void >
 {
@@ -348,7 +316,7 @@ public:
       }
 
       if ( have_tensor ) {
-        atomic_add( m_y( kY , iBlockRow ) , y_sum );
+        cuda_internal_atomic_add( m_y( kY , iBlockRow ) , y_sum );
       }
     }
   }

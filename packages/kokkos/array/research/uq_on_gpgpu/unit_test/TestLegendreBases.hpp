@@ -123,7 +123,7 @@ template< class Device >
 void test_product_tensor( const std::vector<int> & var_degree )
 {
   typedef Kokkos::NormalizedLegendrePolynomialBases<4,Device> polynomial ;
-  typedef Kokkos::ProductTensorFromBases< double , polynomial , Device > bases_type ;
+  typedef Kokkos::StochasticProductTensor< double , polynomial , Device > bases_type ;
 
   bases_type bases = Kokkos::create_product_tensor< bases_type >( var_degree );
 
@@ -141,7 +141,7 @@ void test_product_tensor_matrix(
 
   typedef Kokkos::NormalizedLegendrePolynomialBases<4,Device> polynomial ;
 
-  typedef Kokkos::ProductTensorFromBases< value_type , polynomial , Device > bases_type ;
+  typedef Kokkos::StochasticProductTensor< value_type , polynomial , Device > bases_type ;
 
   typedef Kokkos::BlockCrsMatrix< bases_type , value_type , Device > matrix_type ;
 

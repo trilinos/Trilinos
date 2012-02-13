@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_PRODUCTTENSORBASES_HPP
-#define KOKKOS_PRODUCTTENSORBASES_HPP
+#ifndef KOKKOS_STOCHASTICPRODUCTTENSOR_HPP
+#define KOKKOS_STOCHASTICPRODUCTTENSOR_HPP
 
 #include <Kokkos_ProductTensor.hpp>
 
@@ -72,7 +72,7 @@ namespace Kokkos {
  *  expansion.
  */
 template< typename ValueType , class BasesType , class Device >
-class ProductTensorFromBases {
+class StochasticProductTensor {
 public:
   typedef Device                           device_type ;
   typedef typename device_type::size_type  size_type ;
@@ -114,10 +114,10 @@ public:
   /** \brief  Storage size for block coefficients. */
   size_type size() const ;
 
-  ~ProductTensorFromBases();
-  ProductTensorFromBases();
-  ProductTensorFromBases( const ProductTensorFromBases & );
-  ProductTensorFromBases & operator = ( const ProductTensorFromBases & );
+  ~StochasticProductTensor();
+  StochasticProductTensor();
+  StochasticProductTensor( const StochasticProductTensor & );
+  StochasticProductTensor & operator = ( const StochasticProductTensor & );
 
 private:
 
@@ -131,8 +131,8 @@ private:
 
 } // namespace Kokkos
 
-#include <impl/Kokkos_ProductTensorBases_create.hpp>
+#include <impl/Kokkos_StochasticProductTensor_create.hpp>
 
-#endif /* #ifndef KOKKOS_PRODUCTTENSORBASES_HPP */
+#endif /* #ifndef KOKKOS_STOCHASTICPRODUCTTENSOR_HPP */
 
 

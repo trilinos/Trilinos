@@ -41,34 +41,67 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_PRODUCTTENSORBASES_HPP
-#define KOKKOS_HOST_PRODUCTTENSORBASES_HPP
+#ifndef KOKKOS_CUDA_STOCHASTICPRODUCTTENSOR_HPP
+#define KOKKOS_CUDA_STOCHASTICPRODUCTTENSOR_HPP
+
+#include <utility>
+#include <sstream>
+#include <stdexcept>
+#include <Cuda/Kokkos_Cuda_Parallel.hpp>
+#include <Cuda/Kokkos_Cuda_ProductTensor.hpp>
 
 namespace Kokkos {
 namespace Impl {
 
-template< typename ValueType , class PolynomialType >
-class Multiply< ProductTensorFromBases< ValueType, PolynomialType, Host > , void , void >
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+template< typename TensorScalar ,
+          class PolynomialType ,
+          typename MatrixScalar ,
+          typename VectorScalar >
+class Multiply<
+  BlockCrsMatrix< StochasticProductTensor< TensorScalar, PolynomialType, Cuda >,
+                  MatrixScalar , Cuda > ,
+  MultiVector< VectorScalar , Cuda > ,
+  MultiVector< VectorScalar , Cuda > >
 {
 public:
-  typedef Host                    device_type ;
+
+  typedef Cuda                    device_type ;
   typedef device_type::size_type  size_type ;
-  typedef ProductTensorFromBases< ValueType, PolynomialType, device_type > block_type ;
 
-  template< typename MatrixValue , typename VectorValue >
-  static void apply( const block_type  & block ,
-                     const MatrixValue *       a ,
-                     const VectorValue * const x ,
-                           VectorValue * const y )
+  typedef StochasticProductTensor< TensorScalar , PolynomialType , Cuda > tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
+  typedef MultiVector< VectorScalar , device_type>                 vector_type ;
+
+
+  static void apply( const matrix_type & A ,
+                     const vector_type & x ,
+                     const vector_type & y )
   {
-    typedef Multiply< typename block_type::tensor_type > tensor_multiply ;
+    typedef BlockCrsMatrix< SparseProductTensor< 3 , TensorScalar, Cuda >,
+                            MatrixScalar , Cuda > base_matrix_type ;
 
-    tensor_multiply::apply( block.tensor() , a , x , y );
+    typedef Multiply< base_matrix_type ,
+                      MultiVector< VectorScalar , Cuda > ,
+                      MultiVector< VectorScalar , Cuda > > base_multiply_type ;
+
+    base_matrix_type base_matrix ;
+
+    base_matrix.values = A.values ;
+    base_matrix.graph  = A.graph ;
+    base_matrix.block  = A.block.tensor();
+
+    base_multiply_type::apply( base_matrix , x , y );
   }
 };
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* #ifndef KOKKOS_HOST_PRODUCTTENSORBASES_HPP */
+#endif /* #ifndef KOKKOS_CUDA_STOCHASTICPRODUCTTENSOR_HPP */
 

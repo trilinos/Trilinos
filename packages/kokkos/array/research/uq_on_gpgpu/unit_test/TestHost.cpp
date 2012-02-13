@@ -47,7 +47,7 @@
 #include <Kokkos_SymmetricDiagonalSpec.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
 #include <Kokkos_LegendrePolynomial.hpp>
-#include <Kokkos_ProductTensorBases.hpp>
+#include <Kokkos_StochasticProductTensor.hpp>
 
 
 //
@@ -57,13 +57,12 @@
 #include <Kokkos_Host_macros.hpp>
 #include <impl/Kokkos_ProductTensor_macros.hpp>
 #include <impl/Kokkos_SymmetricDiagonalSpec_macros.hpp>
-// #include <impl/Kokkos_BlockCrsMatrix_macros.hpp>
 #include <impl/Kokkos_LegendrePolynomial_macros.hpp>
-#include <impl/Kokkos_ProductTensorBases_macros.hpp>
+#include <impl/Kokkos_StochasticProductTensor_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
 
 #include <Host/Kokkos_Host_ProductTensor.hpp>
-#include <Host/Kokkos_Host_ProductTensorBases.hpp>
+#include <Host/Kokkos_Host_StochasticProductTensor.hpp>
 #include <Host/Kokkos_Host_SymmetricDiagonalSpec.hpp>
 #include <Host/Kokkos_Host_BlockCrsMatrix.hpp>
 

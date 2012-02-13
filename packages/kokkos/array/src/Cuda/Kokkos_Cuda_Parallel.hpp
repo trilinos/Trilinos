@@ -104,6 +104,31 @@ cudaStream_t &  cuda_internal_stream( Cuda::size_type );
 Cuda::size_type * cuda_internal_reduce_multiblock_scratch_space();
 Cuda::size_type * cuda_internal_reduce_multiblock_scratch_flag();
 
+template< typename ValueType >
+inline
+__device__
+void cuda_internal_atomic_add( ValueType & update , ValueType input )
+{ atomicAdd( & update , input ); }
+
+inline
+__device__
+void cuda_internal_atomic_add( double & update , double input )
+{
+  typedef unsigned long long int UInt64 ;
+
+  UInt64 * const address = reinterpret_cast<UInt64*>( & update );
+  UInt64 test ;
+  union UType { double d ; UInt64 i ; } value ;
+
+  value.i = *address ; // Read existing value
+
+  do {
+    test = value.i ;
+    value.d += input ;
+    value.i = atomicCAS( address , test , value.i );
+  } while ( value.i != test );
+}
+
 } // namespace Impl
 } // namespace Kokkos
 

@@ -54,14 +54,14 @@ namespace Impl {
 
 template< typename ValueType , class PolynomialType , class Device , typename IntType >
 class CreateSparseProductTensor<
-  ProductTensorFromBases< ValueType , PolynomialType , Device > ,
+  StochasticProductTensor< ValueType , PolynomialType , Device > ,
   std::vector< IntType > >
 {
 public:
 
   typedef Device device_type ;
   typedef typename device_type::size_type size_type ;
-  typedef ProductTensorFromBases< ValueType ,
+  typedef StochasticProductTensor< ValueType ,
                                   PolynomialType ,
                                   device_type > type ;
 
@@ -70,6 +70,7 @@ public:
 private:
 
   typedef ProductTensorIndex< 3 , device_type > product_tensor_index_type ;
+  typedef typename type::tensor_type tensor_type ;
   typedef std::map< product_tensor_index_type , ValueType >  tensor_map_type ;
 
   PolynomialType      m_poly ;
@@ -218,7 +219,7 @@ private:
   {
     std::cout.precision(8);
 
-    std::cout << "Kokkos::Impl::CreateProductTensorFromBases(" ;
+    std::cout << "Kokkos::Impl::CreateProductTensor(" ;
     for ( int i = 0 ; i < m_variable_count ; ++i ) {
       std::cout << " " << m_variable_degree[i] ;
     }
@@ -323,7 +324,8 @@ public:
       deep_copy( tmp.m_degree_map , degree_map );
     }
 
-    tmp.m_tensor = CreateSparseProductTensor< typename type::tensor_type , tensor_map_type >::create( work.m_tensor_map );
+    tmp.m_tensor = CreateSparseProductTensor< tensor_type , tensor_map_type >
+                     ::create( work.m_tensor_map );
 
     return tmp ;
   }

@@ -55,7 +55,7 @@ namespace Kokkos {
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class PolynomialType >
-class ProductTensorFromBases< ValueType, PolynomialType, KOKKOS_MACRO_DEVICE >
+class StochasticProductTensor< ValueType, PolynomialType, KOKKOS_MACRO_DEVICE >
 {
 public:
 
@@ -65,24 +65,24 @@ public:
   typedef SparseProductTensor< 3 , value_type , device_type > tensor_type ;
 
   inline
-  ~ProductTensorFromBases() {}
+  ~StochasticProductTensor() {}
 
   inline
-  ProductTensorFromBases()
+  StochasticProductTensor()
     : m_tensor()
     , m_degree_map()
     , m_variable(0)
     {}
 
   inline
-  ProductTensorFromBases( const ProductTensorFromBases & rhs )
+  StochasticProductTensor( const StochasticProductTensor & rhs )
     : m_tensor(       rhs.m_tensor )
     , m_degree_map(   rhs.m_degree_map )
     , m_variable(     rhs.m_variable )
     {}
 
   inline
-  ProductTensorFromBases & operator = ( const ProductTensorFromBases & rhs )
+  StochasticProductTensor & operator = ( const StochasticProductTensor & rhs )
   {
     m_tensor       = rhs.m_tensor ;
     m_degree_map   = rhs.m_degree_map ;
