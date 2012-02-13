@@ -18,7 +18,7 @@
 #include "Xpetra_CrsOperator.hpp"
 
 #include "MueLu_EpetraOperator.hpp"
-#include "MueLu_FactoryManager.hpp" //TMP
+#include "MueLu_ParameterListInterpreter.hpp"
 
 namespace {
 
@@ -182,6 +182,9 @@ void MueLuPreconditionerFactory::initializePrec(
 //        ,"MueLu requires Epetra_RowMatrix to be the same for each initialization of the preconditioner"
 //        );
   }
+
+  ParameterListInterpreter mueLuFactory(paramList_);
+
   //
   // Perform initialization if needed
   //
@@ -196,10 +199,11 @@ void MueLuPreconditionerFactory::initializePrec(
     // Turns a Epetra_CrsMatrix into a MueLu::Operator
     RCP<Epetra_CrsMatrix> epetraFwdCrsMatNonConst = rcp_const_cast<Epetra_CrsMatrix>(epetraFwdCrsMat); // !! TODO: MueLu interface should accept const matrix as input.
 
-    RCP<Xpetra::CrsMatrix<double, int, int, NO, LMO> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(epetraFwdCrsMatNonConst)); //TODO: should not be needed
-    RCP<Xpetra::Operator <double, int, int, NO, LMO> > mueluA  = rcp(new Xpetra::CrsOperator<double, int, int, NO, LMO>(mueluA_));
+    RCP<Xpetra::CrsMatrix<double, int, int, NO, LMO> > mueluAcrs = rcp(new Xpetra::EpetraCrsMatrix(epetraFwdCrsMatNonConst)); //TODO: should not be needed
+    RCP<Xpetra::Operator <double, int, int, NO, LMO> > mueluA  = rcp(new Xpetra::CrsOperator<double, int, int, NO, LMO>(mueluAcrs));
 
-    const RCP<MueLu::Hierarchy<double,int, int, NO, LMO > > muelu_hierarchy = rcp(new MueLu::Hierarchy<double,int, int, NO, LMO >(mueluA));
+    const RCP<MueLu::Hierarchy<double,int, int, NO, LMO > > muelu_hierarchy = mueLuFactory.CreateHierarchy();
+    H->GetLevel(0)->Set("A", mueluA);
     muelu_precOp = rcp(new MueLu::EpetraOperator(muelu_hierarchy));
     
     timer.stop();
@@ -225,8 +229,8 @@ void MueLuPreconditionerFactory::initializePrec(
     *out << "\nComputing the preconditioner ...\n";
   timer.start(true);
 
-  muelu_precOp->GetHierarchy()->Setup();
-
+  mueLuFactory.SetupHierarchy(*muelu_precOp->GetHierarchy());
+  
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     OSTab(out).o() <<"=> Setup time = "<<timer.totalElapsedTime()<<" sec\n";

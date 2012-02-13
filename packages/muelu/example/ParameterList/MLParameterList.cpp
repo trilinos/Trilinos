@@ -11,7 +11,7 @@
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
-#include <MueLu_MLInterpreter.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     //
     
     // Multigrid Hierarchy
-    MLInterpreter mueLuFactory(*params);
+    MLParameterListInterpreter mueLuFactory(*params);
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
     H->GetLevel(0)->Set("A", A);
     
