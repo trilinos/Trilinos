@@ -15,6 +15,10 @@
 // * Specialization for Intrepid::FieldContainer<double>
 
 namespace panzer {
+
+  //! Used for default parameters
+  template <typename Scalar,typename Array>
+  const Array BasisValues<Scalar,Array>::dummyArray;    
   
   template<>
   inline
@@ -30,11 +34,18 @@ namespace panzer {
     int card     = basisDesc->getCardinality();
     int numcells = basisDesc->getNumCells();
     panzer::PureBasis::EElementSpace elmtspace = basisDesc->getElementSpace();
+    Teuchos::RCP<const shards::CellTopology> cellTopo = basisDesc->getCellTopology();
     
     intrepid_basis = basisDesc->getIntrepidBasis();
     
     // allocate field containers
     // field sizes defined by http://trilinos.sandia.gov/packages/docs/dev/packages/intrepid/doc/html/basis_page.html#basis_md_array_sec
+
+    // make sure edge orientations are included
+    if(elmtspace==panzer::PureBasis::HCURL) {
+       // allocate orientations
+       subcell_orientation = Intrepid::FieldContainer<double>(numcells,cellTopo->getEdgeCount());
+    }
   
     // compute basis fields
     if(elmtspace==panzer::PureBasis::HGRAD) {
@@ -104,13 +115,26 @@ namespace panzer {
  	 	 const Array& jac_det,
 		 const Array& jac_inv,
 		 const Array& weighted_measure,
-		 const Array& node_coordinates)
+		 const Array& node_coordinates,
+                 const Array& orientation)
   {    
     // first grab basis descriptor
     PureBasis::EElementSpace elmtspace = getElementSpace();
 
     intrepid_basis->getValues(basis_ref, cub_points, 
 			      Intrepid::OPERATOR_VALUE);
+
+    // make sure edge orientations are included for HCURL bases
+    if(elmtspace==panzer::PureBasis::HCURL) {
+       TEUCHOS_TEST_FOR_EXCEPTION(&orientation==&dummyArray,std::invalid_argument,
+                                  "BasisValues::evaluateValues using HCURL bases requires edge orientations");
+       TEUCHOS_TEST_FOR_EXCEPTION(subcell_orientation.size()==orientation.size(),std::invalid_argument,
+                                  "BasisValues::evaluateValues oreintation is the wrong size for HCURL bases.");
+
+       // simply copy orientations
+       for(int i=0;i<subcell_orientation.size();i++)
+          subcell_orientation[i] = orientation[i];
+    }
     
     if(elmtspace==PureBasis::HGRAD) {
        intrepid_basis->getValues(grad_basis_ref, cub_points, 
@@ -182,6 +206,50 @@ namespace panzer {
   template<typename Scalar, typename Array>
   PureBasis::EElementSpace BasisValues<Scalar,Array>::getElementSpace() const
   { return basis_layout->getBasis()->getElementSpace(); }
+
+  template<typename Scalar, typename Array>
+  void BasisValues<Scalar,Array>::
+  extendOrientationToBasis(panzer::PureBasis::EElementSpace space,
+                           const Intrepid::Basis<double,Array> & intrBasis,
+                           const Array & inOrientation,
+                           Array & outOrientation) const
+  {
+     TEUCHOS_ASSERT(space==panzer::PureBasis::HCURL || space==panzer::PureBasis::HDIV);
+
+     shards::CellTopology cellTopo = intrepid_basis = intrBasis.getBasisCellTopology();
+
+     TEUCHOS_TEST_FOR_EXCEPTION(inOrientation.dimension(0)!=outOrientation.dimension(0),std::invalid_argument,
+                                "BasisValues::extendOrientationToBasis workset size for in/out orientations do not match");
+     TEUCHOS_TEST_FOR_EXCEPTION(outOrientation.dimension(1)!=intrBasis.getCardinality(),std::invalid_argument,
+                                "BasisValues::extendOrientationToBasis dimension(1) of output array is incorrect");
+     TEUCHOS_TEST_FOR_EXCEPTION(inOrientation.dimension(1)!=cellTopo.getEdgeCount(),std::invalid_argument,
+                                "BasisValues::extendOrientationToBasis dimension(1) of input array is incorrect");
+
+    
+     int numcells = inOrientation.dimension(0);
+     unsigned dim = cellTopo.getDimension();
+     unsigned subcellInd = panzer::PureBasis::HCURL ? 1 : dim-1; // HCURL lives on edges, HDIV lives on dim-1 (edges in 2D, faces in 3D)
+ 
+     const std::vector<std::vector<int> > & ordinalData = intrBasis.getDofOrdinalData()[subcellInd];
+     TEUCHOS_TEST_FOR_EXCEPTION(ordinalData.size()!=cellTopo.getSubcellCount(subcellInd),std::logic_error,
+                                "BasisValues::extendOrientationToBasis ordinal data size does not match subcell count");
+
+     // initialize with all ones
+     for(int i=0;i<outOrientation.size();i++)
+        outOrientation[i] = 1.0;
+
+     // loop over subcells of appropriate dimension
+     for(std::size_t d=0;ordinalData.size();d++) {
+        // basis on sub cell index
+        for(std::size_t b=0;ordinalData[d].size();b++) {
+           int fieldIndex = ordinalData[d][b];
+
+           // loop over cells
+           for(int c=0;c<numcells;c++) 
+              outOrientation(c,fieldIndex) = inOrientation(c,d); 
+        } // end for b
+     } // end for d
+  }
 
 }
 

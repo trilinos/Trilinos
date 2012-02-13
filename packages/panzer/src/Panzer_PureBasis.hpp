@@ -45,6 +45,9 @@ namespace panzer {
     int getBasisRank() const
     { return basisRank; }
 
+    Teuchos::RCP<const shards::CellTopology> getCellTopology() const
+    { return topology; }
+
   public:
     //! <Cell,Basis> or <Cell,Basis>
     Teuchos::RCP<PHX::DataLayout> functional;
