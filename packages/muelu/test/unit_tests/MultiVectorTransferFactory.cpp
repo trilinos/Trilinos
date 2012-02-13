@@ -10,6 +10,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_TransPFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 
@@ -26,8 +27,8 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<TentativePFactory>    Ptentfact = rcp(new TentativePFactory());
-    RCP<MultiVectorTransferFactory> mvtf = rcp(new MultiVectorTransferFactory("Coordinates","P",Ptentfact));
+    RCP<TentativePFactory>    PtentFact = rcp(new TentativePFactory());
+    RCP<MultiVectorTransferFactory> mvtf = rcp(new MultiVectorTransferFactory("Coordinates","P",PtentFact));
     TEST_EQUALITY(mvtf != Teuchos::null, true);
   } // Constructor test
   
@@ -35,31 +36,38 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
+    out << "Tests the action of the transfer factory on a vector.  In this case, the transfer is the tentative" << std::endl;
+    out << "prolongator, and the vector is all ones.  So the norm of the resulting coarse grid vector should be" << std::endl;
+    out << "equal to the number of fine degrees of freedom." << std::endl;
+
     Level fineLevel, coarseLevel;
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     GO nx = 199;
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
     fineLevel.Set("A",A);
 
-    //build coordinates
-    Teuchos::ParameterList list;
-    list.set("nx",nx);
-    RCP<MultiVector> coordVector = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",A->getRowMap(),list);
-    fineLevel.Set("Coordinates",coordVector);
+    RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
+    fineOnes->putScalar(1.0);
+    fineLevel.Set("onesVector",fineOnes);
 
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-    RCP<TentativePFactory>    Ptentfact = rcp(new TentativePFactory(UCAggFact));
+    RCP<TentativePFactory>    PtentFact = rcp(new TentativePFactory(UCAggFact));
+    RCP<TransPFactory>        RFact = rcp(new TransPFactory(PtentFact));
 
-    RCP<MultiVectorTransferFactory> mvtf = rcp(new MultiVectorTransferFactory("Coordinates","P",Ptentfact));
+    RCP<MultiVectorTransferFactory> mvtf = rcp(new MultiVectorTransferFactory("onesVector","R",RFact));
 
-    coarseLevel.Request("Coordinates",mvtf.get()); 
-    coarseLevel.Request("P",Ptentfact.get());
+    coarseLevel.Request("onesVector",mvtf.get()); 
+    coarseLevel.Request("R",RFact.get());
+    coarseLevel.Request("P",PtentFact.get());
 
     mvtf->Build(fineLevel,coarseLevel);
 
-    RCP<MultiVector> coarseCoords = coarseLevel.Get<RCP<MultiVector> >("Coordinates",mvtf.get());
-    TEST_EQUALITY(coarseCoords != Teuchos::null, true);
+    RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector",mvtf.get());
+    Teuchos::Array<ST::magnitudeType> vn(1);
+    coarseOnes->norm2(vn);
+
+    TEST_FLOATING_EQUALITY(vn[0]*vn[0],((SC)fineOnes->getGlobalLength()),1e-12);
   } // Constructor test
 
 } // namespace MueLuTests
