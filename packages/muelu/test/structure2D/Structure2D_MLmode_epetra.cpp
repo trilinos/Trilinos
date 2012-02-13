@@ -88,9 +88,6 @@ void FillMLParameterList(Teuchos::ParameterList & params) {
   params.set("coarse: type", "Amesos-KLU");
 #endif
   params.set("max levels", 7);
-  params.set("null space: add default vectors", 0);
-  params.set("null space: dimension", 3);
-  params.set("null space: type", "pre-computed");
   params.set("prec type","MGV");
   Teuchos::ParameterList & l0 = params.sublist("smoother: list (level 0)");
   Teuchos::ParameterList & l1 = params.sublist("smoother: list (level 1)");
@@ -201,9 +198,14 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList mlParams;
   FillMLParameterList(mlParams); // fill ML parameter list (without nullspace)
-  RCP<Hierarchy> H = MLInterpreter::Setup(mlParams,Op,xNS);
-  H->SetVerbLevel(MueLu::High);
 
+  MLInterpreter mueLuFactory(mlParams);
+  RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+  H->GetLevel(0)->Set("A", Op);
+  H->GetLevel(0)->Set("Nullspace", xNS);
+  mueLuFactory.SetupHierarchy(*H);
+
+  H->SetVerbLevel(MueLu::High);
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);
 

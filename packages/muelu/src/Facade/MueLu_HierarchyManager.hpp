@@ -12,8 +12,6 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_Exceptions.hpp"
 
-#include "MueLu_RAPFactory.hpp" //TMP
-
 namespace MueLu {
 
   // This class stores the configuration of a Hierarchy.
@@ -41,7 +39,7 @@ namespace MueLu {
     // }
 
     //!
-    void AddFactoryManager(int startLevel, int numDesiredLevel, RCP<FactoryManagerBase>& manager) {
+    void AddFactoryManager(int startLevel, int numDesiredLevel, RCP<FactoryManagerBase> manager) {
       const int lastLevel = startLevel + numDesiredLevel - 1;
       if (levelManagers_.size() < lastLevel + 1) levelManagers_.resize(lastLevel + 1);
       
@@ -70,9 +68,24 @@ namespace MueLu {
     
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy & H) const {
-      FactoryManager M;                         // -
-      M.SetFactory("A", rcp(new RAPFactory())); // TODO: to be remove, but will require some work
-      H.Setup(M);                               // -
+      H.SetDefaultVerbLevel(verbLevel_);
+      H.SetMaxCoarseSize(maxCoarseSize_);
+
+      // TODO: coarsestLevelManager
+
+      int  levelID     = 0;
+      int  lastLevelID = numDesiredLevel_ - 1;
+      bool isLastLevel = false;
+
+      while(!isLastLevel) {
+        bool r = H.Setup(levelID, 
+                         LvlMngr(levelID-1, lastLevelID), 
+                         LvlMngr(levelID,   lastLevelID), 
+                         LvlMngr(levelID+1, lastLevelID)); 
+
+        isLastLevel = r || (levelID == lastLevelID);
+        levelID++;
+      }
     }
 
     //@}
@@ -82,12 +95,25 @@ namespace MueLu {
   protected: //TODO: access function
 
     // Hierarchy parameters
-    int numDesiredLevel_; 
+    VerbLevel             verbLevel_;
+    int                   numDesiredLevel_; 
+    Xpetra::global_size_t maxCoarseSize_;
 
   private:
     // Levels
-    Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level.
+    Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level. The last levelManager is used for all the remaining levels.
     RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager
+
+    // Used in SetupHierarchy() to access levelManagers_
+    // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
+    Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const { 
+      if (levelID == -1)                    return Teuchos::null; // when this routine is called with levelID == '-1', it means that we are processing the finest Level (there is no finer level)
+      if (levelID == lastLevelID+1)         return Teuchos::null; // when this routine is called with levelID == 'lastLevelID+1', it means that we are processing the last level (ie: there is no nextLevel...)
+
+      if (levelID >= levelManagers_.size()) return levelManagers_[levelManagers_.size()-1]; // last levelManager is used for all the remaining levels.
+      
+      return levelManagers_[levelID](); // throw exception if out of bound.
+    }
 
   }; // class HierarchyManager
 

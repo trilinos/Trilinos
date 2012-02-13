@@ -3,8 +3,6 @@
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 
-#include "MueLu_RAPFactory.hpp" //TMP
-
 // Header files defining default types for template parameters.
 // These headers must be included after other MueLu/Xpetra headers.
 #include <MueLu_UseDefaultTypes.hpp>  // => Scalar=double, LocalOrdinal=int, GlobalOrdinal=int
@@ -80,10 +78,7 @@ int main(int argc, char *argv[]) {
   H.setVerbLevel(Teuchos::VERB_HIGH);
 
   // Multigrid setup phase (using default parameters)
-  FactoryManager M;                         // -
-  M.SetFactory("A", rcp(new RAPFactory())); // TODO: to be remove, but will require some work
-  H.Setup(M);                               // -
-  // Should be instead: H.Setup();
+  H.Setup();
 
   //
   // Solve Ax = b
@@ -104,15 +99,6 @@ int main(int argc, char *argv[]) {
   ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
   if (comm->getRank() == 0)
     std::cout << "||Residual|| = " << residualNorms << std::endl;
-
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out->setOutputToRootOnly(0);
-
-  for (int i=0; i<H.GetNumLevels(); i++) {
-    RCP<Level> l = H.GetLevel(i);
-    *out << std::endl << "Level " << i << std::endl;
-    l->print(*out);
-  }
 
   return EXIT_SUCCESS;
 }

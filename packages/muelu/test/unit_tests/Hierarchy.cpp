@@ -532,12 +532,12 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
   l1->print(*stdout,Teuchos::VERB_EXTREME);*/
 
   TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
   TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
 
   TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
   TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l0->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+  //TEST_EQUALITY(l0->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final); // direct solve
 
   RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
   RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);
@@ -589,7 +589,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
   TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l1->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
   TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l1->IsAvailable("R",            MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
@@ -603,7 +603,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
   TEST_EQUALITY(l1->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(l1->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(l1->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l1->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+  // TEST_EQUALITY(l1->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final); // direct solve
 
   RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
   RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);
@@ -660,7 +660,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   TEST_EQUALITY(l2->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l2->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
   TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l2->IsAvailable("P",            MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l1->IsAvailable("R",            MueLu::NoFactory::get()), true);
@@ -683,7 +683,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   TEST_EQUALITY(l2->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(l2->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(l2->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l2->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+  // TEST_EQUALITY(l2->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final); // direct solve
 
   RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
   RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);
@@ -758,7 +758,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   TEST_EQUALITY(l2->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false);
   TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l2->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
   TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l2->IsAvailable("P",            MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l1->IsAvailable("R",            MueLu::NoFactory::get()), true);
@@ -779,7 +779,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   TEST_EQUALITY(l2->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(l2->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(l2->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l2->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+  // TEST_EQUALITY(l2->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final); // direct solve
 
   RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
   RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);
@@ -819,14 +819,14 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
 
   RCP<Level> l0 = H.GetLevel(0);
   TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve 
   TEST_EQUALITY(l0->IsAvailable("P",            MueLu::NoFactory::get()), false);
   TEST_EQUALITY(l0->IsAvailable("R",            MueLu::NoFactory::get()), false);
   TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
 
   TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
   TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l0->GetKeepFlag("PostSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+  // TEST_EQUALITY(l0->GetKeepFlag("PostSmoother",  MueLu::NoFactory::get()), MueLu::Final); //direct solve
 
   RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
   RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);

@@ -48,7 +48,7 @@ namespace MueLu {
 #else
       Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External,
 #endif
-      Default = Low,
+      Default = High, // This is the default of print() methods. For VerboseObject, another default is set by VerboseObject::globalVerbLevel_
 
       NotSpecified = -1
     };

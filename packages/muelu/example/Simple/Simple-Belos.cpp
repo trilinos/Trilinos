@@ -10,7 +10,6 @@
 #include <MueLu.hpp>
 
 #include <MueLu_TrilinosSmoother.hpp> //TODO: remove
-#include <MueLu_RAPFactory.hpp> //TMP
 
 // Header files defining default types for template parameters.
 // These headers must be included after other MueLu/Xpetra headers.
@@ -94,10 +93,7 @@ int main(int argc, char *argv[]) {
   H->setVerbLevel(Teuchos::VERB_HIGH);
 
   // Multigrid setup phase (using default parameters)
-  FactoryManager M;                         // -
-  M.SetFactory("A", rcp(new RAPFactory())); // TODO: to be remove, but will require some work
-
-  H->Setup(M); //Should be instead: H->Setup();
+  H->Setup();
 
   //
   // Solve Ax = b using AMG as a preconditioner in Belos
@@ -172,15 +168,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out->setOutputToRootOnly(0);
-
-  for (int i=0; i<H->GetNumLevels(); i++) {
-    RCP<Level> l = H->GetLevel(i);
-    *out << std::endl << "Level " << i << std::endl;
-    l->print(*out);
-  }
 
   return EXIT_SUCCESS;
 }

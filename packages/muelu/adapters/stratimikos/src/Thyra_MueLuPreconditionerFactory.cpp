@@ -19,7 +19,6 @@
 
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_FactoryManager.hpp" //TMP
-#include "MueLu_RAPFactory.hpp" //TMP
 
 namespace {
 
@@ -226,10 +225,7 @@ void MueLuPreconditionerFactory::initializePrec(
     *out << "\nComputing the preconditioner ...\n";
   timer.start(true);
 
-  MueLu::FactoryManager<double, int, int, NO, LMO> M;                         // -
-  M.SetFactory("A", rcp(new MueLu::RAPFactory<double, int, int, NO, LMO>())); // TODO: to be remove, but will require some work
-  muelu_precOp->GetHierarchy()->Setup(M);                                     // - 
-  // Should be instead: muelu_precOp->GetHierarchy()->Setup();
+  muelu_precOp->GetHierarchy()->Setup();
 
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))

@@ -26,6 +26,8 @@ namespace MueLu {
     if (PFact  != Teuchos::null) SetFactory("P", PFact);
     if (RFact  != Teuchos::null) SetFactory("R", RFact);
     if (AcFact != Teuchos::null) SetFactory("A", AcFact);
+
+    SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)
   }
     
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -55,11 +57,8 @@ namespace MueLu {
         
     } else {
           
-      //if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory())); will need some work
-      if (varName == "A")             return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
-      //if (varName == "A")           return SetAndReturnDefaultFactory(varName, rcp (new NoFactoryOr("A", rcp(new RAPFactory()))));
-
-      if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
+      if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
+      if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new SaPFactory(rcp(new TentativePFactory()))));
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 
       if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
@@ -79,7 +78,7 @@ namespace MueLu {
         return SetAndReturnDefaultFactory(varName, rcp( new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", smootherParamList)))));
       }
 
-      if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()))));
+      if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()),Teuchos::null)));
 
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
     }
