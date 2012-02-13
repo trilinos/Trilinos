@@ -31,13 +31,17 @@ ELSE()
 ENDIF()
 #TODO: It is actually possible to build and test ScalingTest-Int also when LONG_LONG_INT=ON
 
-#TODO: missing IF()
-TRIBITS_ADD_EXECUTABLE(
-  ${MueLu_ScalingTestName}
-  SOURCES ScalingTest.cpp
-  COMM serial mpi
-  DEPLIBS muelu muelu-xpetra muelu-adapters
-  )
+IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR 
+    (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos))
+  
+  TRIBITS_ADD_EXECUTABLE(
+    ${MueLu_ScalingTestName}
+    SOURCES ScalingTest.cpp
+    COMM serial mpi
+    DEPLIBS muelu muelu-xpetra muelu-adapters
+    )
+  
+ENDIF()
 
 #
 # Tests
@@ -46,15 +50,9 @@ TRIBITS_ADD_EXECUTABLE(
 INCLUDE(XpetraAddTest)
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
-
-  XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} "mpi"        4)
-  XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} "serial mpi" 1)
-
+  XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} 4)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos2)
-  
-  XPETRA_ADD_TEST_TPETRA(${MueLu_ScalingTestName} "mpi"        4)
-  XPETRA_ADD_TEST_TPETRA(${MueLu_ScalingTestName} "serial mpi" 1)
-
+  XPETRA_ADD_TEST_TPETRA(${MueLu_ScalingTestName} 4)
 ENDIF()
