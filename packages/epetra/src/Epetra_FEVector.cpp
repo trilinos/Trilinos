@@ -488,6 +488,13 @@ void Epetra_FEVector::destroyNonlocalMapAndExporter()
 //----------------------------------------------------------------------------
 Epetra_FEVector& Epetra_FEVector::operator=(const Epetra_FEVector& source)
 {
+  if (this == &source) {
+    // Don't allow self-assignment, since the allocations and
+    // deallocations in the code below assume that source is a
+    // different object than *this.
+    return *this; 
+  }
+
   Epetra_MultiVector::Assign(source);
 
   destroyNonlocalData();
