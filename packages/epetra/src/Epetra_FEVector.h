@@ -55,14 +55,14 @@ class Epetra_SerialDenseVector;
 
   The added functionality provided by Epetra_FEVector is the ability to
   perform finite-element style vector assembly. It accepts sub-vector
-  contributions, such as those that would come from element-load vectors, etc.,
-  and these sub-vectors need not be owned by the local processor. In other
+  contributions, such as those that would come from element-load vectors, etc.
+  These sub-vectors need not be owned by the local processor. In other
   words, the user can assemble overlapping data (e.g., corresponding to shared
   finite-element nodes). When the user is finished assembling their vector
   data, they then call the method Epetra_FEVector::GlobalAssemble() which
   gathers the overlapping data (all non-local data that was input on each
-  processor) into the data-distribution specified by the map that the
-  Epetra_FEVector is constructed with.
+  processor) into the data-distribution specified by the map with which the
+  Epetra_FEVector was constructed.
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
@@ -70,17 +70,17 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
    /** Constructor that requires a map specifying a non-overlapping
       data layout.
       @param Map Map describing a non-overlapping distribution for the
-         underlying Epetra_MultiVector that this Epetra_FEVector will
-         be funnelling data into.
+        underlying Epetra_MultiVector into which this Epetra_FEVector will
+        funnel data.
 
       @param numVectors Optional argument, default value is 1. (See the
-           documentation for Epetra_MultiVector for the meaning of this
-          argument.
+        documentation for Epetra_MultiVector for the meaning of this
+        argument.
 
-      @param ignoreNonLocalEntries Optional argument, default value is false.
-             Under certain special circumstances it is desirable to have
-             non-local contributions ignored rather than saving them for
-             the GlobalAssemble step.
+      @param ignoreNonLocalEntries Optional argument, default value is
+        false.  Under certain special circumstances it is desirable to
+        have non-local contributions ignored rather than saving them
+        for the GlobalAssemble step.
    */
    Epetra_FEVector(const Epetra_BlockMap& Map,
                    int numVectors=1,
@@ -232,11 +232,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   int inputNonlocalValues(int GID, int numValues, const double* values,
 			  bool suminto, int vectorIndex);
 
+  //! Allocate the Map, Export object, and MultiVector for nonlocal data.
   void createNonlocalMapAndExporter();
 
+  //! Deallocate the Map, Export object, and MultiVector for nonlocal data.
   void destroyNonlocalMapAndExporter();
 
+  //! Make all the nonlocal multivector entries zero.
   void zeroNonlocalData();
+
+  /// \brief Deallocate storage for nonlocal data.
+  ///
+  /// This does not include whatever \c destroyNonlocalMapAndExporter() 
+  /// deallocates.
   void destroyNonlocalData();
 
   int myFirstID_;
@@ -246,11 +254,30 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   int* nonlocalElementSize_;
   int numNonlocalIDs_;
   int numNonlocalIDsAlloc_;
+
+  /// \brief Array of arrays (one per column) of nonlocal coefficients.
+  ///
+  /// Entry j in this array is an array of nonlocal coefficients for
+  /// column j of the multivector.  \c nonlocalCoefs_[j] in turn
+  /// contains the data for all the nonlocal block entries.  Entries
+  /// within a block are stored in column-major order (Fortran style),
+  /// in contiguous chunks of \c Map().MaxElementSize() entries.
+  ///
+  /// In summary: for k = 0 to numNonlocalIDs_ - 1,
+  /// nonlocalCoefs_[j][j*M + i] contains the entries of nonlocal
+  /// block entry k, for i = 0 to nonlocalElementSize_[k] - 1.
   double** nonlocalCoefs_;
+
   int numNonlocalCoefs_;
   int numNonlocalCoefsAlloc_;
+
+  //! Map describing distribution of nonlocal data.
   Epetra_BlockMap* nonlocalMap_;
+
+  //! Export object that sums nonlocal data into a nonoverlapping distribution.
   Epetra_Export* exporter_;
+
+  //! Multivector that holds nonlocal data; source for the Export operation.
   Epetra_MultiVector* nonlocalVector_;
 
   bool ignoreNonLocalEntries_;
