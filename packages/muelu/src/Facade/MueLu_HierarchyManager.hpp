@@ -120,7 +120,7 @@ namespace MueLu {
       if (levelID == -1)                    return Teuchos::null; // when this routine is called with levelID == '-1', it means that we are processing the finest Level (there is no finer level)
       if (levelID == lastLevelID+1)         return Teuchos::null; // when this routine is called with levelID == 'lastLevelID+1', it means that we are processing the last level (ie: there is no nextLevel...)
 
-      if (levelID >= levelManagers_.size()) return levelManagers_[levelManagers_.size()-1]; // last levelManager is used for all the remaining levels.
+      if (levelID >= levelManagers_.size()) return levelManagers_[levelManagers_.size()-1](); // last levelManager is used for all the remaining levels.
       
       return levelManagers_[levelID](); // throw exception if out of bound.
     }
