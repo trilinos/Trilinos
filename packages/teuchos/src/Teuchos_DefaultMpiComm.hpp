@@ -428,6 +428,7 @@ void MpiComm<Ordinal>::reduceAll(
     const_cast<char*>(sendBuffer),globalReducts,1,char_block,op.mpi_op()
     ,*rawMpiComm_
     );
+  MPI_Type_free(&char_block);
 }
 
 
