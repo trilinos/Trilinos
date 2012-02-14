@@ -115,17 +115,31 @@ test_one_value(const char *expression, double gold_value)
 bool
 evaluate_range(
   const char *	expr,
-  double range,
+  double rmin,
+  double rmax,
   int numPoints=100,
   bool write_csv = false)
 {
-  std::string expression_csv_name = expr + std::string(".csv");
   std::ofstream expression_csv; 
+  std::ofstream expression_gnu; 
+
   if(write_csv) {
+    std::string expression_csv_name = expr + std::string(".csv");
     expression_csv.open(expression_csv_name.c_str());
-    expression_csv << "### Evaluate " << expr << " from " << -range << " to " << range<< " with " << numPoints << "\n";
+    expression_csv << "### Evaluate " << expr << " from " << -rmin << " to " << rmax<< " with " << numPoints << "\n";
+    // also write a gnuplot input file corresponding to the csv file
+    std::string expression_gnu_name = expr + std::string(".gnu");
+    expression_gnu.open(expression_gnu_name.c_str());
+    expression_gnu << "set terminal postscript color" << "\n";
+    expression_gnu << "set output \"" << expr << ".ps\"" << "\n";
+    expression_gnu << "set grid" << "\n";
+    expression_gnu << "set autoscale" << "\n";
+    expression_gnu << "set yrange [-0.1:1.1]" << "\n";
+    expression_gnu << "set key off" << "\n";
+    expression_gnu << "set title " << "\"" << expr << "\"" << "\n";
+    expression_gnu << "plot " << "\"" << expression_csv_name << "\"" << " using 1:2 with lines lw 4\n";
   }
-  std::cout << "Evaluate " << expr << " from " << -range << " to " << range << " with " << numPoints << "\n";
+  std::cout << "Evaluate " << expr << " from " << -rmin << " to " << rmax << " with " << numPoints << "\n";
 
   std::string by_expr = std::string("by=") + expr + ";";
   stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
@@ -136,8 +150,9 @@ evaluate_range(
   expr_eval.bindVariable("by", by);
   expr_eval.bindVariable("v", *v);
 
-  double start_x = -range;
-  double delta_x = (2.0*range)/numPoints;
+  double start_x = -rmin;
+  double range = (rmax - rmin);
+  double delta_x = range/numPoints;
   for (int i = 0; i <= numPoints; ++i) {
     x = start_x + i*delta_x;
     y = expr_eval.evaluate();
@@ -147,6 +162,7 @@ evaluate_range(
       std::cout << std::setprecision(14) << x << ", " << std::setprecision(14) << y << "\n";
     }
   }
+
   return true;
 }
 
@@ -381,15 +397,14 @@ UnitTestEvaluator::testEvaluator()
   double normal_gold_value  = 0.79788456080286540573;
   STKUNIT_EXPECT_TRUE(test_one_value("normal_pdf(0.0,0.0,0.5)", normal_gold_value));
 
-  // These 2 tests just print a range of values of the input expressions.
-  STKUNIT_EXPECT_TRUE(evaluate_range("normal_pdf(x,0.0,0.5)", 4));
-  STKUNIT_EXPECT_TRUE(evaluate_range("unit_step(x,0.1,0.2)", .3, 1000));
-
-  bool write_csv = false;
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)", 3.0, 3000, write_csv));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,0,1)", 2.0, 2000, write_csv));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1)"  , 2.0, 2000, write_csv));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x)"    , 2.0, 2000, write_csv));
+  // These tests just print a range of values of the input expressions.
+  // and optionally output to a CSV file along with an associated GNUPLOT input file.
+  STKUNIT_EXPECT_TRUE(evaluate_range("normal_pdf(x,0.0,0.5)",  -4,   4, 3000, false));
+  STKUNIT_EXPECT_TRUE(evaluate_range("unit_step(x,0.1,0.2)" ,   0,  .3, 3000, false));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)"   , 0.0, 3.0, 3000, false));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,0,1)"   , 0.0, 2.0, 2000, false));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1)"     , 0.0, 2.0, 2000, false));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x)"       , 0.0, 2.0, 2000, false));
 
   //STKUNIT_EXPECT_TRUE(evaluate_range("exponential_pdf(x, 1.0)", 4));
 

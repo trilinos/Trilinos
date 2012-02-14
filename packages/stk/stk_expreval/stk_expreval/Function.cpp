@@ -348,10 +348,9 @@ extern "C" {
     return phi((x-mean)/std_dev)/(Phi_ums - Phi_lms)/std_dev;
   }
 
-  /// Returns -1,0, or 1 depending on whether x is negative, zero, or positive.
+  /// Returns -1 or 1 depending on whether x is negative or positive.
   static double sign(double a)  {
-    if(a==0.0) return 0.0;
-    return (a > 0.0 ) ? 1.0 : -1.0;
+    return (a >= 0.0 ) ? 1.0 : -1.0;
   }
 
   /// Returns 1.0 if the input value t is greater than tstart and less than tstop.
@@ -436,6 +435,9 @@ CFunctionMap::CFunctionMap()
   (*this).insert(std::make_pair("recttopola",      new CFunction2(recttopola)));
   (*this).insert(std::make_pair("recttopolr",      new CFunction2(recttopolr)));
 
+  (*this).insert(std::make_pair("cos_ramp",        new CFunction1(cosine_ramp1)));
+  (*this).insert(std::make_pair("cos_ramp",        new CFunction2(cosine_ramp2)));
+  (*this).insert(std::make_pair("cos_ramp",        new CFunction3(cosine_ramp3)));
   (*this).insert(std::make_pair("cosine_ramp",     new CFunction1(cosine_ramp1)));
   (*this).insert(std::make_pair("cosine_ramp",     new CFunction2(cosine_ramp2)));
   (*this).insert(std::make_pair("cosine_ramp",     new CFunction3(cosine_ramp3)));
@@ -451,13 +453,11 @@ CFunctionMap::CFunctionMap()
   (*this).insert(std::make_pair("log_uniform_pdf", new CFunction3(log_uniform_pdf)));
 }
 
-
 CFunctionMap::~CFunctionMap()
 {
   for (CFunctionMap::iterator it = begin(); it != end(); ++it)
     delete (*it).second;
 }
-
 
 CFunctionMap &
 getCFunctionMap()
