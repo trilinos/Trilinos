@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <iomanip>
 #include <math.h>
 
@@ -115,31 +116,20 @@ test_one_value(const char *expression, double gold_value)
 bool
 evaluate_range(
   const char *	expr,
-  double rmin,
-  double rmax,
-  int numPoints=100,
+  double xmin,
+  double xmax,
+  int numPoints  = 100,
   bool write_csv = false)
 {
   std::ofstream expression_csv; 
   std::ofstream expression_gnu; 
 
+  std::string expression_csv_name = expr + std::string(".csv");
   if(write_csv) {
-    std::string expression_csv_name = expr + std::string(".csv");
     expression_csv.open(expression_csv_name.c_str());
-    expression_csv << "### Evaluate " << expr << " from " << -rmin << " to " << rmax<< " with " << numPoints << "\n";
-    // also write a gnuplot input file corresponding to the csv file
-    std::string expression_gnu_name = expr + std::string(".gnu");
-    expression_gnu.open(expression_gnu_name.c_str());
-    expression_gnu << "set terminal postscript color" << "\n";
-    expression_gnu << "set output \"" << expr << ".ps\"" << "\n";
-    expression_gnu << "set grid" << "\n";
-    expression_gnu << "set autoscale" << "\n";
-    expression_gnu << "set yrange [-0.1:1.1]" << "\n";
-    expression_gnu << "set key off" << "\n";
-    expression_gnu << "set title " << "\"" << expr << "\"" << "\n";
-    expression_gnu << "plot " << "\"" << expression_csv_name << "\"" << " using 1:2 with lines lw 4\n";
+    expression_csv << "### Evaluate " << expr << " from " << xmin << " to " << xmax<< " with " << numPoints << "\n";
   }
-  std::cout << "Evaluate " << expr << " from " << -rmin << " to " << rmax << " with " << numPoints << "\n";
+  std::cout << "Evaluate " << expr << " from " << xmin << " to " << xmax << " with " << numPoints << "\n";
 
   std::string by_expr = std::string("by=") + expr + ";";
   stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
@@ -150,12 +140,17 @@ evaluate_range(
   expr_eval.bindVariable("by", by);
   expr_eval.bindVariable("v", *v);
 
-  double start_x = -rmin;
-  double range = (rmax - rmin);
+  double ymin = std::numeric_limits<double>::max();
+  double ymax = std::numeric_limits<double>::min();
+
+  double start_x = xmin;
+  double range = (xmax - xmin);
   double delta_x = range/numPoints;
   for (int i = 0; i <= numPoints; ++i) {
     x = start_x + i*delta_x;
     y = expr_eval.evaluate();
+    ymin = std::min(y, ymin);
+    ymax = std::max(y, ymax);
     if(write_csv) {
       expression_csv << std::setprecision(14) << x << ", " << std::setprecision(14) << y << "\n";
     } else {
@@ -163,6 +158,20 @@ evaluate_range(
     }
   }
 
+  //std::cout << "KHP: ymin=  " << ymin << ", ymax= " << ymax << "\n";
+  if(write_csv) {
+    // write a gnuplot input file corresponding to the csv file
+    std::string expression_gnu_name = expr + std::string(".gnu");
+    expression_gnu.open(expression_gnu_name.c_str());
+    expression_gnu << "set terminal postscript color" << "\n";
+    expression_gnu << "set output \"" << expr << ".ps\"" << "\n";
+    expression_gnu << "set grid" << "\n";
+    //expression_gnu << "set autoscale" << "\n";
+    expression_gnu << "set yrange [" << 1.1*ymin << ":" << 1.1*ymax << "]" << "\n";
+    expression_gnu << "set key off" << "\n";
+    expression_gnu << "set title " << "\"" << expr << "\"" << "\n";
+    expression_gnu << "plot " << "\"" << expression_csv_name << "\"" << " using 1:2 with lines lw 4\n";
+  }
   return true;
 }
 
@@ -376,6 +385,10 @@ void
 UnitTestEvaluator::testEvaluator()
 {
   STKUNIT_EXPECT_TRUE(syntax("3^2"));
+  STKUNIT_EXPECT_TRUE(test_one_value("a=1;b=2;a+b",3));
+  STKUNIT_EXPECT_TRUE(test_one_value("9%3" ,0));
+  STKUNIT_EXPECT_TRUE(test_one_value("9 % 4" ,1));
+  STKUNIT_EXPECT_TRUE(test_one_value("15%(1+1+1)",0));
 
   STKUNIT_EXPECT_TRUE(test_one_value("max(1,2)",2));
   STKUNIT_EXPECT_TRUE(test_one_value("max(1,2,3)",3));
@@ -385,31 +398,36 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(test_one_value("min(4,3,2)",2));
   STKUNIT_EXPECT_TRUE(test_one_value("min(4,3,2,1)",1));
 
-  STKUNIT_EXPECT_TRUE(test_one_value("3^2",9.));
+  STKUNIT_EXPECT_TRUE(test_one_value("a=3;a^2",9.));
   STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3)^2",36.));
   STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3+4)^(1+1)",100.));
 
   double weibull_gold_value = 3.6787944117144233402;
-  STKUNIT_EXPECT_TRUE(test_one_value("weibull_pdf(1.0,10.0,1.0)", weibull_gold_value));
+  STKUNIT_EXPECT_TRUE(test_one_value("shape=10;scale=1;weibull_pdf(1.0,shape,scale)", weibull_gold_value));
 
   // Need a better test for distributions, perhaps something that computes the
   // mean and standard deviation of the distribution.
-  double normal_gold_value  = 0.79788456080286540573;
-  STKUNIT_EXPECT_TRUE(test_one_value("normal_pdf(0.0,0.0,0.5)", normal_gold_value));
+  double normal_gold_value = 0.79788456080286540573;
+  STKUNIT_EXPECT_TRUE(test_one_value("mean=0;standard_deviation=0.5;normal_pdf(0.0,mean,standard_deviation)", normal_gold_value));
 
   // These tests just print a range of values of the input expressions.
   // and optionally output to a CSV file along with an associated GNUPLOT input file.
-  STKUNIT_EXPECT_TRUE(evaluate_range("normal_pdf(x,0.0,0.5)",  -4,   4, 3000, false));
-  STKUNIT_EXPECT_TRUE(evaluate_range("unit_step(x,0.1,0.2)" ,   0,  .3, 3000, false));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)"   , 0.0, 3.0, 3000, false));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,0,1)"   , 0.0, 2.0, 2000, false));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1)"     , 0.0, 2.0, 2000, false));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x)"       , 0.0, 2.0, 2000, false));
-
+  //                                                              XMIN  XMAX    Pts  Output
+  STKUNIT_EXPECT_TRUE(evaluate_range("normal_pdf(x,1,.2)"       ,    0,    2,  3000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("weibull_pdf(x,3,1)"       ,    0,    3,  3000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("gamma_pdf(x,10,1.0)"      ,    0,    4,  3000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("exponential_pdf(x,2)"     ,    0,    6,  3000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("log_uniform_pdf(x,10,1.0)",    0,    4,  3000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("unit_step(x,0.1,0.2)"     ,    0,   .3,  3000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)"       ,  0.0,  3.0,  3000, true ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,0,1)"       ,  0.0,  2.0,  2000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1)"         ,  0.0,  2.0,  2000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x)"           ,  0.0,  2.0,  2000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("random()"                 , -1.0,  1.0,  2000, false ));
+  STKUNIT_EXPECT_TRUE(evaluate_range("sign(sin(x))"             ,    0,   12, 12000, false )); // square wave
   //STKUNIT_EXPECT_TRUE(evaluate_range("exponential_pdf(x, 1.0)", 4));
 
   STKUNIT_EXPECT_TRUE(syntax("2*2"));
-  STKUNIT_EXPECT_TRUE(syntax(""));
   STKUNIT_EXPECT_TRUE(syntax(""));
   STKUNIT_EXPECT_TRUE(syntax(";"));
   STKUNIT_EXPECT_TRUE(syntax(";;"));
@@ -436,7 +454,9 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(syntax("rand()"));
   STKUNIT_EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
   STKUNIT_EXPECT_TRUE(syntax("random()"));
-  STKUNIT_EXPECT_TRUE(syntax("srandom(x)"));
+  STKUNIT_EXPECT_TRUE(syntax("random(1)"));
+  STKUNIT_EXPECT_TRUE(syntax("time()"));
+  STKUNIT_EXPECT_TRUE(syntax("random(time())"));
   STKUNIT_EXPECT_TRUE(syntax("weibull_pdf(x, alpha, beta)"));
   STKUNIT_EXPECT_TRUE(syntax("normal_pdf(x, alpha, beta)"));
 
@@ -494,7 +514,6 @@ UnitTestEvaluator::testEvaluator()
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f29));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f30));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f31));
-  //STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f32));
 
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b1));
   STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b2));

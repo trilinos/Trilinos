@@ -96,7 +96,7 @@ private:
 public:
   ~Node()
   {}
-  
+
   double eval() const;
 
   const Opcode	m_opcode;
@@ -128,7 +128,6 @@ public:
 double
 Node::eval() const
 {
-  /* %TRACE[NONE]% */  /* %TRACE% */
   switch (m_opcode) {
   case OPCODE_STATEMENT:
     {
@@ -547,7 +546,16 @@ parseFactor(
   LexemVector::const_iterator	factor_it,
   LexemVector::const_iterator	to)
 {
-  Node *factor = eval.newNode((*factor_it).getToken() == TOKEN_MULTIPLY ? OPCODE_MULTIPLY : ((*factor_it).getToken() == TOKEN_DIVIDE ? OPCODE_DIVIDE : (*factor_it).getToken() == TOKEN_EXPONENTIATION ? OPCODE_EXPONENIATION : OPCODE_MODULUS));
+  Node *factor = eval.newNode
+    (
+     (*factor_it).getToken() == TOKEN_MULTIPLY ? OPCODE_MULTIPLY : 
+     (
+      (*factor_it).getToken() == TOKEN_DIVIDE ? OPCODE_DIVIDE : 
+      (
+       (*factor_it).getToken() == TOKEN_EXPONENTIATION ? OPCODE_EXPONENIATION : OPCODE_MODULUS
+      )
+     )
+    );
 
   factor->m_left = parseExpression(eval, from, factor_it);
   factor->m_right = parseExpression(eval, factor_it + 1, to);

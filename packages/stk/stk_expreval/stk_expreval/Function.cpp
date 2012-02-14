@@ -201,6 +201,11 @@ extern "C" {
     return 0.0;
   }
 
+  /// Return the current time
+  static double time() {
+    return static_cast<double>(::time(NULL));
+  }
+
   /// Sets the current time as the "seed" to randomize the next call to real_rand.
   static double randomize() {
     std::srand(::time(NULL));
@@ -216,7 +221,17 @@ extern "C" {
   }
 
   /// Non-platform specific (pseudo) random number generator.
-  static double random() {
+  static double random0() {
+    sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
+    sRandomRangeHighValue += sRandomRangeLowValue;
+    sRandomRangeLowValue += sRandomRangeHighValue;
+    int val = std::abs(sRandomRangeHighValue);
+    return double(val) / double(RAND_MAX);
+  }
+
+  /// Non-platform specific (pseudo) random number generator.
+  static double random1(double seed) {
+    random_seed(seed);
     sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
     sRandomRangeHighValue += sRandomRangeLowValue;
     sRandomRangeLowValue += sRandomRangeHighValue;
@@ -391,8 +406,9 @@ CFunctionMap::CFunctionMap()
 
   /// These random number functions support a non-platform
   /// specific random number function.
-  (*this).insert(std::make_pair("random",          new CFunction0(random)));
-  (*this).insert(std::make_pair("srandom",         new CFunction1(random_seed)));
+  (*this).insert(std::make_pair("time",            new CFunction0(time)));
+  (*this).insert(std::make_pair("random",          new CFunction0(random0)));
+  (*this).insert(std::make_pair("random",          new CFunction1(random1)));
 
   (*this).insert(std::make_pair("exp",             new CFunction1(std::exp)));
   (*this).insert(std::make_pair("ln",              new CFunction1(std::log)));
@@ -448,15 +464,16 @@ CFunctionMap::CFunctionMap()
   (*this).insert(std::make_pair("weibull_pdf",     new CFunction3(weibull_pdf)));
   (*this).insert(std::make_pair("normal_pdf",      new CFunction3(normal_pdf)));
   (*this).insert(std::make_pair("gamma_pdf",       new CFunction3(gamma_pdf)));
+  (*this).insert(std::make_pair("log_uniform_pdf", new CFunction3(log_uniform_pdf)));
   (*this).insert(std::make_pair("uniform_pdf",     new CFunction2(uniform_pdf)));
   (*this).insert(std::make_pair("exponential_pdf", new CFunction2(exponential_pdf)));
-  (*this).insert(std::make_pair("log_uniform_pdf", new CFunction3(log_uniform_pdf)));
 }
 
 CFunctionMap::~CFunctionMap()
 {
-  for (CFunctionMap::iterator it = begin(); it != end(); ++it)
+  for (CFunctionMap::iterator it = begin(); it != end(); ++it) {
     delete (*it).second;
+  }
 }
 
 CFunctionMap &
