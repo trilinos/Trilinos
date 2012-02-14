@@ -39,7 +39,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_test_copyfiles
-SOURCE_FILES stru2d_A.txt stru2d_b.txt stru2d_ns.txt
+SOURCE_FILES stru2d_A.txt stru2d_b.txt stru2d_ns.txt nodes0.txt MueLu_Agg2VTK.py
 )
   
 ENDIF()
