@@ -14,17 +14,19 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(ParameterListInterpreter, SetParameterList)
   {
+    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
+
     std::string  hierarchyConfigurationFiles[] = {"Smoothed-Aggregation.xml", "Smoothed-Aggregation2.xml", "Smoothed-Aggregation3.xml"};
     int         nHierarchyConfigurationFiles = 3;
 
     for(int i=0; i< nHierarchyConfigurationFiles; i++) {
       out << "Processing file: " << hierarchyConfigurationFiles[i] << std::endl;
-      ParameterListInterpreter f("ParameterList/ParameterListInterpreter/" + hierarchyConfigurationFiles[i]);
+      ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + hierarchyConfigurationFiles[i]);
 
-      RCP<Hierarchy> h = f.CreateHierarchy();
-
-      //       h->GetLevel(0).Set<Operator>
-      //       f.SetupHierarchy(*h);
+      RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
+      H->GetLevel(0)->Set<RCP<Operator> >("A", A);
+     
+      mueluFactory.SetupHierarchy(*H);
 
       //TODO: check results of Iterate()
     }

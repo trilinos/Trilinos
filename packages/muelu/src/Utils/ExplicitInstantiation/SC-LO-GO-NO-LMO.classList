@@ -10,7 +10,7 @@ ParameterListInterpreter
 FactoryFactory
 #HierarchyHelpers
 #Ifpack2Smoother
-MLInterpreter
+MLParameterListInterpreter
 MergedSmoother
 NullspaceFactory
 PgPFactory

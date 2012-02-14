@@ -51,45 +51,48 @@ namespace MueLu {
     //     </ParameterList>
     //    </ParameterList>
     //   </ParameterList>
-    Teuchos::ParameterList hieraList = paramList.sublist("Hierarchy"); // copy because list temporally modified (remove 'id')
-
-    // Get hierarchy options
-    this->numDesiredLevel_ = 10; /*should use instead the default provided by Hierarchy*/; 
-    if(hieraList.isParameter("numDesiredLevel")) { this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel"); hieraList.remove("numDesiredLevel"); }
-
-    // Get level configuration
-    for (Teuchos::ParameterList::ConstIterator param = hieraList.begin(); param != hieraList.end(); ++param) {
-      const std::string & paramName  = hieraList.name(param);
-
-      if (hieraList.isSublist(paramName)) {
-        Teuchos::ParameterList levelList = hieraList.sublist(paramName); // copy because list temporally modified (remove 'id')
-
-        int startLevel = 0;       if(levelList.isParameter("startLevel"))      { startLevel      = levelList.get<int>("startLevel");      levelList.remove("startLevel"); }
-        int numDesiredLevel = 1;  if(levelList.isParameter("numDesiredLevel")) { numDesiredLevel = levelList.get<int>("numDesiredLevel"); levelList.remove("numDesiredLevel"); }
+    if (paramList.isSublist("Hierarchy")) {
+      
+      Teuchos::ParameterList hieraList = paramList.sublist("Hierarchy"); // copy because list temporally modified (remove 'id')
+      
+      // Get hierarchy options
+      this->numDesiredLevel_ = 10; /*should use instead the default provided by Hierarchy*/; 
+      if(hieraList.isParameter("numDesiredLevel")) { this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel"); hieraList.remove("numDesiredLevel"); }
+      
+      // Get level configuration
+      for (Teuchos::ParameterList::ConstIterator param = hieraList.begin(); param != hieraList.end(); ++param) {
+        const std::string & paramName  = hieraList.name(param);
         
-        // Parameter List Parsing:
-        // ---------
-        //   <ParameterList name="firstLevel">
-        //      <Parameter name="startLevel"       type="int" value="0"/>
-        //      <Parameter name="numDesiredLevel"  type="int" value="1"/>
-        //      <Parameter name="verbose"          type="string" value="Warnings"/>
-        //
-        //      [] <== call BuildFactoryMap() on the rest of the parameter list
-        //
-        //  </ParameterList>
-        FactoryMap levelFactoryMap;
-        BuildFactoryMap(levelList, factoryMap, levelFactoryMap);
-        RCP<FactoryManagerBase> m = rcp(new FactoryManager(levelFactoryMap));
-
-        if (startLevel >= 0) {
-          this->AddFactoryManager(startLevel, numDesiredLevel, m);
-        } else if (startLevel == -1) { // -1 == coarsest level
-          this->SetFactoryManagerCoarsestLevel(m);
-        } else {
-          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid level id");
-        }
-      } /* TODO: else { } */
-
+        if (hieraList.isSublist(paramName)) {
+          Teuchos::ParameterList levelList = hieraList.sublist(paramName); // copy because list temporally modified (remove 'id')
+          
+          int startLevel = 0;       if(levelList.isParameter("startLevel"))      { startLevel      = levelList.get<int>("startLevel");      levelList.remove("startLevel"); }
+          int numDesiredLevel = 1;  if(levelList.isParameter("numDesiredLevel")) { numDesiredLevel = levelList.get<int>("numDesiredLevel"); levelList.remove("numDesiredLevel"); }
+          
+          // Parameter List Parsing:
+          // ---------
+          //   <ParameterList name="firstLevel">
+          //      <Parameter name="startLevel"       type="int" value="0"/>
+          //      <Parameter name="numDesiredLevel"  type="int" value="1"/>
+          //      <Parameter name="verbose"          type="string" value="Warnings"/>
+          //
+          //      [] <== call BuildFactoryMap() on the rest of the parameter list
+          //
+          //  </ParameterList>
+          FactoryMap levelFactoryMap;
+          BuildFactoryMap(levelList, factoryMap, levelFactoryMap);
+          RCP<FactoryManagerBase> m = rcp(new FactoryManager(levelFactoryMap));
+          
+          if (startLevel >= 0) {
+            this->AddFactoryManager(startLevel, numDesiredLevel, m);
+          } else if (startLevel == -1) { // -1 == coarsest level
+            this->SetFactoryManagerCoarsestLevel(m);
+          } else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid level id");
+          }
+        } /* TODO: else { } */
+        
+      }
     }
   }
 

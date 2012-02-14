@@ -5,8 +5,8 @@
  *      Author: wiesner
  */
 
-#ifndef MUELU_MLINTERPRETER_DECL_HPP
-#define MUELU_MLINTERPRETER_DECL_HPP
+#ifndef MUELU_MLPARAMETERLISTINTERPRETER_DECL_HPP
+#define MUELU_MLPARAMETERLISTINTERPRETER_DECL_HPP
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -15,7 +15,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyManager.hpp"
-#include "MueLu_MLInterpreter_fwd.hpp"
+#include "MueLu_MLParameterListInterpreter_fwd.hpp"
 
 #include "MueLu_Hierarchy_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
@@ -39,13 +39,13 @@
 namespace MueLu {
 
   /*!
-    @class MLInterpreter class.
+    @class MLParameterListInterpreter class.
     @brief Class that accepts ML-style parameters and builds a MueLu preconditioner.
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class MLInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> { 
-#undef MUELU_MLINTERPRETER_SHORT
+  class MLParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> { 
+#undef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -53,16 +53,16 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    MLInterpreter() : nullspace_(NULL) { }
+    MLParameterListInterpreter() : nullspace_(NULL) { }
 
     //! Constructor.
-    MLInterpreter(Teuchos::ParameterList & paramList);
+    MLParameterListInterpreter(Teuchos::ParameterList & paramList);
 
     //! Constructor.
-    MLInterpreter(const std::string & xmlFileName);
+    MLParameterListInterpreter(const std::string & xmlFileName);
     
     //! Destructor.
-    virtual ~MLInterpreter() { }
+    virtual ~MLParameterListInterpreter() { }
 
     //@}
 
@@ -104,9 +104,9 @@ namespace MueLu {
     int     nullspaceDim_;
     double* nullspace_; //TODO: replace by Teuchos::ArrayRCP<>
 
-  }; // class MLInterpreter
+  }; // class MLParameterListInterpreter
 
 } // namespace MueLu
 
-#define MUELU_MLINTERPRETER_SHORT
-#endif /* MUELU_MLINTERPRETER_DECL_HPP */
+#define MUELU_MLPARAMETERLISTINTERPRETER_SHORT
+#endif /* MUELU_MLPARAMETERLISTINTERPRETER_DECL_HPP */
