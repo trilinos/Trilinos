@@ -56,10 +56,10 @@ namespace MueLu {
     MLParameterListInterpreter() : nullspace_(NULL) { }
 
     //! Constructor.
-    MLParameterListInterpreter(Teuchos::ParameterList & paramList);
+    MLParameterListInterpreter(Teuchos::ParameterList & paramList,bool bExportAggregates = false);
 
     //! Constructor.
-    MLParameterListInterpreter(const std::string & xmlFileName);
+    MLParameterListInterpreter(const std::string & xmlFileName,bool bExportAggregates = false);
     
     //! Destructor.
     virtual ~MLParameterListInterpreter() { }
@@ -84,8 +84,6 @@ namespace MueLu {
 
     //! Build an example of valid ML parameter list
     //static void FillMLParameterList(Teuchos::ParameterList & params);
-
-    void ExportAggregates(bool bExportAggregates = true);
 
     //@{
 
