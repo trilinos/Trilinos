@@ -122,12 +122,6 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector* ptrNS = 0;
 
   std::cout << "Reading matrix market file" << std::endl;
-  /*EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
-  /*EpetraExt::MatrixMarketFileToCrsMatrix("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q12012/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q12012/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q12012/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
   EpetraExt::MatrixMarketFileToCrsMatrix("stru2d_A.txt",emap,emap,emap,ptrA);
   EpetraExt::MatrixMarketFileToVector("stru2d_b.txt",emap,ptrf);
   EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
@@ -158,16 +152,10 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   Finest->Set("Nullspace",xNS);
 
-  /* RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
-  Finest->Keep("Nullspace",nspFact.get());*/
-
-  RCP<PreDropFunctionConstVal> preDropFunc = rcp(new PreDropFunctionConstVal(1.0));
-
-  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(/*Teuchos::null,nspFact*/));
+  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetVerbLevel(MueLu::Extreme);
   //dropFact->SetFixedBlockSize(nDofsPerNode);
   dropFact->SetVariableBlockSize();
-  dropFact->SetPreDropFunction(preDropFunc);
 
   // setup "variable" block size information
   RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > globalrowid2globalamalblockid_vector = Xpetra::VectorFactory<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op->getRowMap());
@@ -178,10 +166,6 @@ int main(int argc, char *argv[]) {
     (vectordata)[i] = globalblockid;
   }
   Finest->Set("VariableBlockSizeInfo", globalrowid2globalamalblockid_vector);
-
-  //globalrowid2globalamalblockid_vector->describe(GetOStream(Runtime0, 0), Teuchos::VERB_EXTREME);
-
-
 
   //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
   //dropFact->SetPreDropFunction(predrop);
@@ -209,7 +193,7 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
   //RCP<RFactory> Rfact  = rcp( new GenericRFactory(Pfact));
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
@@ -217,17 +201,14 @@ int main(int argc, char *argv[]) {
   RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  //Finest->Keep("Aggregates",UCAggFact.get());
-  //Finest->Keep("Nullspace",nspFact.get());
-
   // build level smoothers
   RCP<SmootherPrototype> smooProto;
   std::string ifpackType;
   Teuchos::ParameterList ifpackList;
   ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 0.9); // 0.7
+  ifpackList.set("relaxation: damping factor", (SC) 1.0); // 0.7
   ifpackType = "RELAXATION";
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
+  ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
 
   smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
   RCP<SmootherFactory> SmooFact;
