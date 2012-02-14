@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
 #endif
 
 
-  int globalNumDofs = 3402;
+  int globalNumDofs = 7020; //3402;
   int nProcs = comm->getSize();
   int nDofsPerNode = 2;
 
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
-
+  
   // Epetra_CrsMatrix -> Xpetra::Operator
   RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
   RCP<CrsOperator> crsOp = Teuchos::rcp(new CrsOperator(exA));
@@ -219,6 +219,14 @@ int main(int argc, char *argv[]) {
   }
 
   *out << mlParams << std::endl;
+
+
+  for(int i=0; i<H->GetNumLevels(); i++) {
+    RCP<Level> l = H->GetLevel(i);
+    *out << std::endl << "Level " << i << std::endl;
+    l->print(*out);
+  }
+
 
   return EXIT_SUCCESS;
 }
