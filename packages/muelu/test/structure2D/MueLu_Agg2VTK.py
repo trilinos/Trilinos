@@ -280,10 +280,7 @@ def read_aggregates_from_file(filename,procid):
 		# handle node ids for aggregate
 		aggnodeids = line[1]
 		aggnodeids = aggnodeids.split(" ")
-		
-		#for i in range(len(aggnodeids)):
-		#  aggnodeids[i] = int(aggnodeids[i]) - 1 # adapt nodeid since it starts counting from 1 instead of zero TODO fix me in AggregationExportFactory
-		
+			
 		# fill in data variables
 		aggid2nodes[aggid] = aggnodeids
 		aggid2procs[aggid] = [int(procid)]
@@ -335,6 +332,10 @@ def get_agg_coords(nodes,aggid2nodes,aggid):
 # note: we calculate the "midpoint" of each aggregate
 # TODO extend me for 3d!
 def get_rootnodes(aggid2nodes,nodes):
+	dim = 2
+	if len(nodes[0]) == 3:
+		dim = 3
+		
 	rootnodes = []
 	for i in range(0,len(aggid2nodes.keys())):
 		rootnodes.append((0,0))
@@ -344,14 +345,23 @@ def get_rootnodes(aggid2nodes,nodes):
 
 		x = 0.0
 		y = 0.0
+		z = 0.0
 		for m in nodecoords:
 	
 			x = x + m[0]
 			y = y + m[1]
+			if dim==3:
+				z = z + m[2]
 		x = x/len(aggid2nodes[k])
 		y = y/len(aggid2nodes[k])
+		if dim == 3:
+			z = z/len(aggid2nodes[k])
 		
-		rootnodes[int(k)] = (x,y)
+		if dim == 2:
+			rootnodes[int(k)] = (x,y)
+		elif dim == 3:
+			rootnodes[int(k)] = (x,y,z)
+		else: print "error: dim must be 2 or 3 but it is " + str(dim)
 	
 	return rootnodes
 
@@ -376,7 +386,7 @@ def write_nodes_file(filename,aggid2nodes,nodes,dimension):
     f.write(str(rootnode[1]))
     if len(rootnode)==3:
       f.write(" ")
-      f.write(rootnode[2])
+      f.write(str(rootnode[2]))
     f.write("\r\n")
   f.close() 
   print "node file " + filename + " generated: OK"
