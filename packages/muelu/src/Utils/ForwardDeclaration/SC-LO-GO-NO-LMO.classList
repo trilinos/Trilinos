@@ -30,3 +30,4 @@ Repartition
 BlockedPFactory
 SubBlockAFactory
 BlockedGaussSeidelSmoother
+AggregationExportFactory
