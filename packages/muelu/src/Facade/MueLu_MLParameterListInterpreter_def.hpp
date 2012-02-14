@@ -206,9 +206,8 @@ namespace MueLu {
         }
       }
 
-      fineLevel->Set("Nullspace", nullspace_);
+      fineLevel->Set("Nullspace", nullspace);
     }
-    
     HierarchyManager::SetupHierarchy(H);
   }
 
