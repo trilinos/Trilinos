@@ -83,7 +83,9 @@ namespace MueLu {
     //TODO: should not be part of this class
 
     //! Build an example of valid ML parameter list
-    static void FillMLParameterList(Teuchos::ParameterList & params);
+    //static void FillMLParameterList(Teuchos::ParameterList & params);
+
+    void ExportAggregates(bool bExportAggregates = true);
 
   private:
 
@@ -103,6 +105,9 @@ namespace MueLu {
     //! nullspace can be embedded in the ML parameter list
     int     nullspaceDim_;
     double* nullspace_; //TODO: replace by Teuchos::ArrayRCP<>
+
+    //! export aggregates
+    bool    bExportAggregates_; //!< if set to true an AggregationExportFactory is used to export aggregation information (default = false)
 
   }; // class MLParameterListInterpreter
 

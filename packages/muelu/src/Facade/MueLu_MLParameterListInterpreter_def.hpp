@@ -29,17 +29,17 @@
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 
-// #include "MueLu_Monitor.hpp"
+#include "MueLu_AggregationExportFactory.hpp"
 
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(Teuchos::ParameterList & paramList) : nullspace_(NULL) {
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(Teuchos::ParameterList & paramList) : nullspace_(NULL), bExportAggregates_(false) {
     SetParameterList(paramList);
   }
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(const std::string & xmlFileName) : nullspace_(NULL) {
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(const std::string & xmlFileName) : nullspace_(NULL), bExportAggregates_(false) {
     Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
     SetParameterList(*paramList);
   }
@@ -124,7 +124,12 @@ namespace MueLu {
     }
 
     RCP<RAPFactory> AcFact = rcp( new RAPFactory(PFact, RFact) );
-    //AcFact->setVerbLevel(eVerbLevel); //(toMueLuVerbLevel(eVerbLevel)); TODO: check me
+
+    if(bExportAggregates_) {
+      // register aggregation export factory in RAPFactory
+      RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out", UCAggFact.get(), dropFact.get(), NULL));
+      AcFact->AddTransferFactory(aggExpFact);
+    }
 
     RCP<SmootherFactory> coarsestSmooFact;
     coarsestSmooFact = GetCoarsestSolverFactory(paramList);
@@ -396,53 +401,8 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FillMLParameterList(Teuchos::ParameterList & paramList) {
-
-    paramList.set("PDE equations",2);
-    paramList.set("aggregation: damping factor", 1.33);
-    paramList.set("aggregation: nodes per aggregate", 27);
-    paramList.set("aggregation: threshold", 0);
-    paramList.set("aggregation: type", "Uncoupled");
-    paramList.set("coarse: max size", 50);
-    paramList.set("coarse: pre or post", "post");
-    paramList.set("coarse: sweeps", 1);
-    paramList.set("coarse: type", "Amesos-Superludist");
-    paramList.set("max levels", 7);
-//     paramList.set("null space: add default vectors", 0);
-//     paramList.set("null space: dimension", 3);
-//     paramList.set("null space: type", "pre-computed");
-    paramList.set("prec type","MGV");
-
-    Teuchos::ParameterList & l0 = paramList.sublist("smoother: list (level 0)");
-    Teuchos::ParameterList & l1 = paramList.sublist("smoother: list (level 1)");
-    Teuchos::ParameterList & l2 = paramList.sublist("smoother: list (level 2)");
-    Teuchos::ParameterList & l3 = paramList.sublist("smoother: list (level 3)");
-    Teuchos::ParameterList & l4 = paramList.sublist("smoother: list (level 4)");
-    Teuchos::ParameterList & l5 = paramList.sublist("smoother: list (level 5)");
-    Teuchos::ParameterList & l6 = paramList.sublist("smoother: list (level 6)");
-
-    l0.set("smoother: damping factor", 0.9);
-    l0.set("smoother: sweeps", 1);
-    l0.set("smoother: type", "symmetric Gauss-Seidel");
-    l1.set("smoother: damping factor", 0.9);
-    l1.set("smoother: sweeps", 1);
-    l1.set("smoother: type", "symmetric Gauss-Seidel");
-    l2.set("smoother: damping factor", 0.9);
-    l2.set("smoother: sweeps", 1);
-    l2.set("smoother: type", "symmetric Gauss-Seidel");
-    l3.set("smoother: damping factor", 0.9);
-    l3.set("smoother: sweeps", 1);
-    l3.set("smoother: type", "symmetric Gauss-Seidel");
-    l4.set("smoother: damping factor", 0.89);
-    l4.set("smoother: sweeps", 1);
-    l4.set("smoother: type", "Jacobi");
-    l5.set("smoother: damping factor", 0.89);
-    l5.set("smoother: sweeps", 12);
-    l5.set("smoother: type", "Jacobi");
-    l6.set("smoother: damping factor", 0.89);
-    l6.set("smoother: sweeps", 14);
-    l6.set("smoother: type", "Jacobi");
-
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ExportAggregates(bool bExportAggregates) {
+    bExportAggregates_ = bExportAggregates;
   }
 
 } // namespace MueLu
