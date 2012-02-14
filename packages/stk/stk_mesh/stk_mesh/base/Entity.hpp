@@ -407,12 +407,12 @@ verify_relation_ordering(Iterator begin, Iterator end)
     Iterator prev = itr;
     ++itr; if (itr != end) {
 
-      if (itr->getDerivedType() < prev->getDerivedType()) {
-        ThrowAssert(itr->getDerivedType() >= prev->getDerivedType());
+      if (itr->entity_rank() < prev->entity_rank()) {
+        ThrowAssert(itr->entity_rank() >= prev->entity_rank());
         return false ;
       }
 
-      if (itr->getDerivedType() == prev->getDerivedType()) {
+      if (itr->entity_rank() == prev->entity_rank()) {
 
         if (itr->getRelationType() < prev->getRelationType()) {
           ThrowAssert(itr->getRelationType() >= prev->getRelationType());

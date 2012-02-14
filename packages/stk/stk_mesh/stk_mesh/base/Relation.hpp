@@ -15,7 +15,10 @@
 
 #include <stk_mesh/base/EntityKey.hpp>
 
+#include <boost/static_assert.hpp>
+
 #ifdef SIERRA_MIGRATION
+
 namespace stk {
 namespace mesh {
 class Entity;
@@ -97,12 +100,19 @@ public:
 
 private:
 
-  enum { entity_rank_ok = 1 / (!!(EntityKey::rank_digits == 8)) };
   enum {
     rank_digits = 8  ,
     id_digits   = 24 ,
     id_mask     = ~(0u) >> rank_digits
+#ifdef SIERRA_MIGRATION
+    ,
+    fwmk_relation_type_digits = 8,
+    fmwk_orientation_digits   = 24,
+    fmwk_orientation_mask     = ~(0u) >> fwmk_relation_type_digits
+#endif
   };
+
+  BOOST_STATIC_ASSERT(( static_cast<unsigned>(EntityKey::rank_digits) == static_cast<unsigned>(rank_digits) ));
 
   union RawRelationType {
   public:
@@ -159,7 +169,8 @@ private:
     PARENT	= 3 ,
     EMBEDDED	= 0x00ff , // 4
     CONTACT	= 0x00ff , // 5
-    AUXILIARY   = 0x00ff
+    AUXILIARY   = 0x00ff ,
+    INVALID     = 10
   };
 
   enum {
@@ -180,21 +191,20 @@ private:
   /**
    * Construct filled-out relation, fmwk-style
    */
-  Relation(Entity *obj, const unsigned relation_type, const unsigned ordinal, const unsigned Orient = 0);
+  Relation(Entity *obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient = 0);
 
   Entity *getMeshObj() const {
     return entity();
   }
 
-  void setMeshObj(Entity *object, int fall_back_derived_type = -1);
+  void setMeshObj(Entity *object);
 
   RelationType getRelationType() const {
-    ThrowAssert(m_relationType != -1);
-    return (RelationType) m_relationType;
+    return static_cast<RelationType>(attribute() >> fmwk_orientation_digits);
   }
 
   void setRelationType(RelationType relation_type) {
-    m_relationType = (unsigned char) relation_type;
+    set_attribute( (relation_type << fmwk_orientation_digits) | getOrientation() );
   }
 
   RelationIdentifier getOrdinal() const {
@@ -206,16 +216,11 @@ private:
   }
 
   attribute_type getOrientation() const {
-    return attribute();
+    return attribute() & fmwk_orientation_mask;
   }
 
   void setOrientation(attribute_type orientation) {
-    set_attribute(orientation);
-  }
-
-  unsigned getDerivedType() const {
-    ThrowAssert(m_derivedType != -1);
-    return m_derivedType;
+    set_attribute( (getRelationType() << fmwk_orientation_digits) | orientation );
   }
 
   /**
@@ -237,15 +242,7 @@ private:
   }
 
 private:
-  bool has_fmwk_state() const { return m_relationType != -1; }
-
-  // Identification of the type of relationship, e.g. USES or USED_BY. We keep this signed
-  // so that -1 can be used to indicate a STK relation.
-  char m_relationType;
-
-  // Can't inline the call to get_derived_type from the Entity, so we'll store it as
-  // a char.
-  char m_derivedType;
+  bool has_fmwk_state() const { return getRelationType() != INVALID; }
 #endif // SIERRA_MIGRATION
 };
 

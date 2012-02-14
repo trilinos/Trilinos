@@ -115,8 +115,8 @@ struct relation_compare
     }
     else {
       // Fmwk version of relation comparison
-      if ( lhs.getDerivedType() < rhs.getDerivedType()) return true;
-      if ( rhs.getDerivedType() < lhs.getDerivedType()) return false;
+      if ( lhs.entity_rank() < rhs.entity_rank()) return true;
+      if ( rhs.entity_rank() < lhs.entity_rank()) return false;
 
       if ( lhs.getRelationType() < rhs.getRelationType() ) return true;
       if ( rhs.getRelationType() < lhs.getRelationType() ) return false;
@@ -152,7 +152,7 @@ RelationIterator Entity::find_relation(const Relation& relation) const
                                           relation_compare(internal_is_handled_generically(relation_type)));
 
   while (rel != internal_end_relation(relation_type) &&
-         rel->getDerivedType()  == relation.getDerivedType() &&
+         rel->entity_rank()     == relation.entity_rank() &&
          rel->getRelationType() == relation.getRelationType() &&
          rel->getOrdinal()      == relation.getOrdinal() &&
          rel->getMeshObj()      != relation.getMeshObj())

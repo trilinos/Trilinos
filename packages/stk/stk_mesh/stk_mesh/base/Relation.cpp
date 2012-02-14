@@ -21,24 +21,6 @@
 namespace stk {
 namespace mesh {
 
-#ifdef SIERRA_MIGRATION
-
-namespace fem {
-unsigned get_spatial_dimension(const Entity& entity);
-unsigned convert_stk_rank_to_fmwk(unsigned stk_rank,  unsigned spatial_dim);
-}
-
-namespace {
-
-unsigned get_derived_type(const Entity& entity)
-{
-  return fem::convert_stk_rank_to_fmwk(entity.entity_rank(), fem::get_spatial_dimension(entity));
-}
-
-}
-
-#endif
-
 //----------------------------------------------------------------------
 
 std::ostream &
@@ -64,22 +46,20 @@ Relation::Relation() :
   m_raw_relation(),
   m_attribute(),
   m_target_entity(NULL)
+{
 #ifdef SIERRA_MIGRATION
-  ,
-  m_relationType(-1),
-  m_derivedType(-1)
+  setRelationType(INVALID);
 #endif
-{}
+}
 
 Relation::Relation( Entity & entity , RelationIdentifier identifier )
   : m_raw_relation( Relation::raw_relation_id( entity.entity_rank() , identifier ) ),
     m_target_entity( & entity )
+{
 #ifdef SIERRA_MIGRATION
-    ,
-    m_relationType(-1),
-    m_derivedType(-1)
+  setRelationType(INVALID);
 #endif
-{}
+}
 
 bool Relation::operator < ( const Relation & rhs ) const
 {
@@ -101,25 +81,22 @@ bool Relation::operator < ( const Relation & rhs ) const
 
 #ifdef SIERRA_MIGRATION
 
-Relation::Relation(Entity *obj, const unsigned relation_type, const unsigned ordinal, const unsigned Orient)
+Relation::Relation(Entity *obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient)
   :
   m_raw_relation( Relation::raw_relation_id( obj->entity_rank(), ordinal )),
-  m_attribute(Orient),
-  m_target_entity(obj),
-  m_relationType(relation_type),
-  m_derivedType(static_cast<char>(get_derived_type(*obj)))
-{}
-
-void Relation::setMeshObj(Entity *object, int fall_back_derived_type)
+  m_attribute( (relation_type << fmwk_orientation_digits) | orient ),
+  m_target_entity(obj)
 {
-  m_target_entity = object;
+  ThrowAssertMsg( orient <= fmwk_orientation_mask,
+                  "orientation " << orient << " exceeds maximum allowed value");
+}
+
+void Relation::setMeshObj(Entity *object)
+{
   if (object != NULL) {
-    m_derivedType   = static_cast<char>(get_derived_type(*object));
     m_raw_relation = Relation::raw_relation_id( object->entity_rank(), identifier() );
   }
-  else if (fall_back_derived_type != -1) {
-    m_derivedType   = static_cast<char>(fall_back_derived_type);
-  }
+  m_target_entity = object;
 }
 
 #endif
