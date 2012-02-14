@@ -87,11 +87,10 @@ namespace MueLu {
 
     void ExportAggregates(bool bExportAggregates = true);
 
-  private:
-
     //@{
 
-    //! @name Helper functions translating parameter list to factories
+    //! @name static helper functions translating parameter list to factories
+    //! @brief static helper functions that also can be used from outside for translating ML parameters into MueLu objects
     //@{
 
     //! Read coarse solver options and build the corresponding smoother factory
@@ -101,6 +100,8 @@ namespace MueLu {
     static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & params, int level);
 
     //@}
+
+  private:
 
     //! nullspace can be embedded in the ML parameter list
     int     nullspaceDim_;
