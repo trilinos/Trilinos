@@ -6,6 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <math.h>
@@ -114,13 +115,17 @@ test_one_value(const char *expression, double gold_value)
 bool
 evaluate_range(
   const char *	expr,
-  double range
-  )
+  double range,
+  int numPoints=100,
+  bool write_csv = false)
 {
-  //
-  // KHP: Modify this to dump CSV file to txt file to plot in gnuplot, matlab or mathematica.
-  //
-  std::cout << "Evaluate " << expr << " from " << -range << " to " << range << " { \n";
+  std::string expression_csv_name = expr + std::string(".csv");
+  std::ofstream expression_csv; 
+  if(write_csv) {
+    expression_csv.open(expression_csv_name.c_str());
+    expression_csv << "### Evaluate " << expr << " from " << -range << " to " << range<< " with " << numPoints << "\n";
+  }
+  std::cout << "Evaluate " << expr << " from " << -range << " to " << range << " with " << numPoints << "\n";
 
   std::string by_expr = std::string("by=") + expr + ";";
   stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
@@ -132,14 +137,16 @@ evaluate_range(
   expr_eval.bindVariable("v", *v);
 
   double start_x = -range;
-  const int NumPoints = 100;
-  double delta_x = (2.0*range)/NumPoints;
-  for (int i = 0; i <= NumPoints; ++i) {
+  double delta_x = (2.0*range)/numPoints;
+  for (int i = 0; i <= numPoints; ++i) {
     x = start_x + i*delta_x;
     y = expr_eval.evaluate();
-    std::cout << x << ", " << y << "\n";
+    if(write_csv) {
+      expression_csv << std::setprecision(14) << x << ", " << std::setprecision(14) << y << "\n";
+    } else {
+      std::cout << std::setprecision(14) << x << ", " << std::setprecision(14) << y << "\n";
+    }
   }
-  std::cout << "}\n";
   return true;
 }
 
@@ -376,6 +383,14 @@ UnitTestEvaluator::testEvaluator()
 
   // These 2 tests just print a range of values of the input expressions.
   STKUNIT_EXPECT_TRUE(evaluate_range("normal_pdf(x,0.0,0.5)", 4));
+  STKUNIT_EXPECT_TRUE(evaluate_range("unit_step(x,0.1,0.2)", .3, 1000));
+
+  bool write_csv = false;
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)", 3.0, 3000, write_csv));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,0,1)", 2.0, 2000, write_csv));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1)"  , 2.0, 2000, write_csv));
+  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x)"    , 2.0, 2000, write_csv));
+
   //STKUNIT_EXPECT_TRUE(evaluate_range("exponential_pdf(x, 1.0)", 4));
 
   STKUNIT_EXPECT_TRUE(syntax("2*2"));

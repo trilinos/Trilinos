@@ -18,7 +18,6 @@ namespace expreval {
 /**
  * @brief Typedef <b>ConstantMap</b> maps a constant name to a double constant.
  * The mapping is case insensitive.
- *
  */
 typedef std::map<std::string, double, LessCase> ConstantMap;
 

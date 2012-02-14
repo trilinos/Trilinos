@@ -276,7 +276,7 @@ extern "C" {
     }
     else if( t < rampEndTime )
     {
-      return (1.0 - std::cos(t*s_pi/(rampEndTime-rampStartTime)))/2.0;
+      return (1.0 - std::cos((t-rampStartTime)*s_pi/(rampEndTime-rampStartTime)))/2.0;
     }
     else 
     {
@@ -354,9 +354,9 @@ extern "C" {
     return (a > 0.0 ) ? 1.0 : -1.0;
   }
 
-  /// Returns 1.0 if the input value is greater than the step time t.
-  static double unit_step(double a, double t)  {
-    return (a > t) ? 0.0 : -1.0;
+  /// Returns 1.0 if the input value t is greater than tstart and less than tstop.
+  static double unit_step3(double t, double tstart, double tstop)  {
+    return (t < tstart || t > tstop) ? 0.0 : 1.0;
   }
 
   /// Convert rectangular coordinates into polar angle.
@@ -441,7 +441,7 @@ CFunctionMap::CFunctionMap()
   (*this).insert(std::make_pair("cosine_ramp",     new CFunction3(cosine_ramp3)));
 
   (*this).insert(std::make_pair("sign",            new CFunction1(sign)));
-  (*this).insert(std::make_pair("unit_step",       new CFunction2(unit_step)));
+  (*this).insert(std::make_pair("unit_step",       new CFunction3(unit_step3)));
 
   (*this).insert(std::make_pair("weibull_pdf",     new CFunction3(weibull_pdf)));
   (*this).insert(std::make_pair("normal_pdf",      new CFunction3(normal_pdf)));
