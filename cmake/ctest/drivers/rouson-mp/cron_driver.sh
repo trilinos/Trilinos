@@ -30,7 +30,7 @@ export CTEST_TEST_TYPE=Experimental
 export TDD_FORCE_CMAKE_INSTALL=0 
 export TDD_FORCE_INNER_CMAKE_INSTALL=0 
 export CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE 
-#${TRILINOS_SRC}/cmake/ctest/drivers/rouson-mp/cron_driver_release_rouson-mp.sh
+${TRILINOS_SRC}/cmake/ctest/drivers/rouson-mp/cron_driver_release_rouson-mp.sh
 
 # Machine specific environment:
 #
