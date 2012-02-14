@@ -132,7 +132,7 @@ namespace stk {
       static void 
       doSierraLoadBalance(stk::ParallelMachine comm, std::string meshFileName);
 
-      static void 
+      static void
       doLoadBalance(stk::ParallelMachine comm, std::string meshFileName);
 
       std::string
@@ -167,7 +167,7 @@ namespace stk {
 
     private:
 
-      static void setFileNames(std::string& fullmesh, std::string& meshFileName);
+      static int setFileNames(std::string& fullmesh, std::string& meshFileName, std::string& errString);
 
       bool                          m_need_to_finalize;
       bool                          m_debug;
