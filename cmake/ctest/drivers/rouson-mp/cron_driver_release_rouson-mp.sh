@@ -5,8 +5,8 @@ DATE=`date "+%m-%d-%Y"`
 
 CTEST_EXE=/usr/bin/ctest
 GIT_EXE=/usr/local/git/bin/git
-BASEDIR=/Users/Shared/NightlyTestingTrilinos/
-DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/rouson-mp
+BASEDIR=/Users/knmorri/NightlyTestingTrilinos/Trilinos
+DRIVER_SCRIPT_DIR=$BASEDIR/cmake/ctest/drivers/rouson-mp
 BRANCH="trilinos-release-10-10-branch"
 #BRANCH="master"
 TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
