@@ -18,7 +18,7 @@ export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
 #export CTEST_DO_SUBMIT=ON
 #export TDD_DO_SUBMIT=ON
 #export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE
-
+export TRILINOS_SRC=/Users/knmorri/NightlyTestingTrilinos/Trilinos
 export Trilinos_PACKAGES=ForTrilinos 
 export CTEST_DO_UPDATES=TRUE 
 export CTEST_DO_SUBMIT=FALSE 
