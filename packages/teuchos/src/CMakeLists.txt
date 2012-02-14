@@ -148,6 +148,7 @@ APPEND_SET(HEADERS
   Teuchos_StandardMemberCompositionMacros.hpp
   Teuchos_StandardParameterEntryValidators.hpp
   Teuchos_StaticSetupMacro.hpp
+  Teuchos_StringIndexedOrderedValueObjectContainer.hpp
   Teuchos_StringToIntMap.hpp
   Teuchos_TableColumn.hpp
   Teuchos_TableEntry.hpp
