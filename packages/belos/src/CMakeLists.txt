@@ -88,6 +88,7 @@ APPEND_SET(HEADERS
 
 # UTIL
 APPEND_SET(SOURCES
+  BelosTypes.cpp
   BelosVersion.cpp
   )
 

@@ -140,6 +140,14 @@ namespace Sacado {
 	StringName<ScalarT>::eval() + " >"; }
   };
 
+  // Need specialization for IsEqual
+
+  //! Specialization of %IsStaticallySized to ScalarFlopCounter types
+  template <typename ScalarT>
+  struct IsStaticallySized< FlopCounterPack::ScalarFlopCounter<ScalarT> > {
+    static const bool value = true;
+  };
+
 } // namespace Sacado
 
 #endif // SACADO_SCALARFLOPCOUNTERTRAITS_HPP

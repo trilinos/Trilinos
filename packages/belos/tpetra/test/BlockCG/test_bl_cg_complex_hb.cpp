@@ -61,18 +61,13 @@
 #include <Kokkos_DefaultNode.hpp>
 
 using namespace Teuchos;
-using Tpetra::DefaultPlatform;
-using Tpetra::Platform;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
-using Tpetra::Map;
 using std::endl;
 using std::cout;
 using std::vector;
 using Teuchos::tuple;
-
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
 int main(int argc, char *argv[]) {
 
@@ -83,18 +78,21 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::MultiVector<ST,int>      MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
+  typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
   GlobalMPISession mpisess(&argc,&argv,&cout);
 
   const ST one  = SCT::one();
   const ST zero = SCT::zero();	
 
-  int info = 0;
   int MyPID = 0;
 
-  RCP<const Platform<int> > platform = DefaultPlatform<int>::getPlatform();
-  RCP<const Comm<int> > comm = platform->getComm();
-  RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType           Platform;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+
+  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  RCP<const Comm<int> > comm = platform.getComm();
+  RCP<Node>             node = platform.getNode();
 
   //
   // Get test parameters from command-line processor
@@ -136,66 +134,9 @@ int main(int argc, char *argv[]) {
   //
   // Get the data from the HB file and build the Map,Matrix
   //
-  Teuchos::RCP< Tpetra::CrsMatrix<float,int,int,Node> > A;
-  Tpetra::readMatrixMarketFile(filename,comm,node,A);
-
-  //
-  // Get the data from the HB file and build the Map,Matrix
-  //
-  int dim,dim2,nnz;
-  int rnnzmax;
-  double *dvals;
-  int *colptr,*rowind;
-  nnz = -1;
-  if (MyPID == 0) {
-    info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
-    // find maximum NNZ over all rows
-    vector<int> rnnz(dim,0);
-    for (int *ri=rowind; ri<rowind+nnz; ++ri) {
-      ++rnnz[*ri-1];
-    }
-    rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
-  }
-  else {
-    // address uninitialized data warnings
-    dvals = NULL;
-    colptr = NULL;
-    rowind = NULL;
-  }
-  broadcast(*comm,0,&info);
-  broadcast(*comm,0,&nnz);
-  broadcast(*comm,0,&dim);
-  broadcast(*comm,0,&rnnzmax);
-  if (info == 0 || nnz < 0) {
-    if (MyPID == 0) {
-      cout << "Error reading '" << filename << "'" << endl
-           << "End Result: TEST FAILED" << endl;
-    }
-    return -1;
-  }
-  // create map
-  Map<int> map(dim,0,comm);
-  RCP<CrsMatrix<ST,int> > A = rcp(new CrsMatrix<ST,int>(map,rnnzmax));
-  if (MyPID == 0) {
-    // Convert interleaved doubles to complex values
-    // HB format is compressed column. CrsMatrix is compressed row.
-    const double *dptr = dvals;
-    const int *rptr = rowind;
-    for (int c=0; c<dim; ++c) {
-      for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        A->insertGlobalValues(*rptr++ - 1,tuple(c),tuple(ST(dptr[0],dptr[1])));
-        dptr += 2;
-      }
-    }
-  }
-  if (MyPID == 0) {
-    // Clean up.
-    free( dvals );
-    free( colptr );
-    free( rowind );
-  }
-  // distribute matrix data to other nodes
-  A->fillComplete();
+  RCP<CrsMatrix<ST,int> > A;
+  Tpetra::Utils::readHBMatrix(filename,comm,node,A);
+  RCP<const Tpetra::Map<int> > map = A->getDomainMap();
 
   // Create initial vectors
   RCP<MultiVector<ST,int> > B, X;
@@ -209,7 +150,7 @@ int main(int argc, char *argv[]) {
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
   //
-  const int NumGlobalElements = B->globalLength();
+  const int NumGlobalElements = B->getGlobalLength();
   if (maxiters == -1) {
     maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   }

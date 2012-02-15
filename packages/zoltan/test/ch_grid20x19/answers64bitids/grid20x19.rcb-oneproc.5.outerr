@@ -1,0 +1,160 @@
+
+
+Reading the command file, zdrive.inp.rcb-oneproc
+Input values:
+  Zoltan version 3.601
+  zdrive version 1.0
+  Total number of Processors = 5
+
+  Performing load balance using rcb.
+	Parameters:
+		debug_level 3
+		timer cpu
+
+  Distribute input objects to only 1 processes initially.
+
+  Initially distribute input objects in linear fashion (first n/p to process 0, etc).
+##########################################################
+ZOLTAN Load balancing method = 3 (RCB)
+Starting iteration 1
+
+BEFORE load balancing
+DRIVER EVAL:  load:  max 380.000000  min 0.000000  sum 380.000000
+DRIVER EVAL:  objs:  max 380  min 0  sum 380
+DRIVER EVAL:  cuts:  max 0  min 0  sum 0
+
+Zoltan_LB_Eval_Balance  Part count: 5 requested, 1 actual , 1 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 1 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :       380      380      380     5.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 5 requested, 1 actual, 1 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 1 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :       380      380      380        5
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 1 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :         0        0        0        0
+Zoltan_LB_Eval_Graph  Number of cut edges       :         0        0        0        0
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         0        0        0        0
+
+
+
+Zoltan_LB_Eval_HG  Part count: 5 requested, 1 actual, 1 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 1 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :       380      380      380   5.000
+Zoltan_LB_Eval_HG  Object weight     :       380      380      380   5.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):    0.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )):    0.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):          0.000
+
+
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 3
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 2 (cpu)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = IMPORT AND EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = -1
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 1
+ZOLTAN Parameter SEED = 1220988223 (1220988223)
+ZOLTAN Parameter LB_APPROACH = repartition
+ZOLTAN Parameter RCB_OVERALLOC = 1.200000
+ZOLTAN Parameter RCB_REUSE = 0
+ZOLTAN Parameter CHECK_GEOM = 1
+ZOLTAN Parameter RCB_OUTPUT_LEVEL = 0
+ZOLTAN Parameter KEEP_CUTS = 0
+ZOLTAN Parameter RCB_LOCK_DIRECTIONS = 0
+ZOLTAN Parameter RCB_SET_DIRECTIONS = 0
+ZOLTAN Parameter RCB_RECTILINEAR_BLOCKS = 0
+ZOLTAN Parameter OBJ_WEIGHTS_COMPARABLE = 0
+ZOLTAN Parameter RCB_MULTICRITERIA_NORM = 1
+ZOLTAN Parameter RCB_MAX_ASPECT_RATIO = 10.000000
+ZOLTAN Parameter AVERAGE_CUTS = 0
+ZOLTAN Parameter RANDOM_PIVOTS = 0
+ZOLTAN Parameter RCB_RECOMPUTE_BOX = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 0.000000
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter KEEP_CUTS = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 10.000000
+Partitioning total time: 0.01 (secs)
+ Start-up time %: ave = 0, min = 0, max = 0
+ Pre-median time %: ave = 0, min = 0, max = 0
+ Median time %: ave = 0, min = 0, max = 0
+ Comm time %: ave = 0, min = 0, max = 0
+ZOLTAN RCB Times:  
+ZOLTAN     Build:       : Max: 0, Sum: 0, Imbal.: N.A.
+ZOLTAN     RCB:         : Max: 0, Sum: 0, Imbal.: N.A.
+ZOLTAN Times:  
+ZOLTAN     Partition:     : Max: 0.01, Sum: 0.01, Imbal.: 5
+
+DRIVER:  Zoltan_LB_Partition time = 0.0116451
+DRIVER:  new_decomp 1 Min/Max Import: 0 76
+DRIVER:  new_decomp 1 Min/Max Export: 0 304
+DRIVER:  Total migration time = 0.00103188
+
+AFTER loaProc 4: Calls to malloc = 642,  Calls to free = 642
+Proc 1: Calls to malloc = 624,  Calls to free = 624
+Proc 3: Calls to malloc = 637,  Calls to free = 637
+Proc 2: Calls to malloc = 628,  Calls to free = 628
+Proc 0: Calls to malloc = 720,  Calls to free = 720
+d balancing
+DRIVER EVAL:  load:  max 76.000000  min 76.000000  sum 380.000000
+DRIVER EVAL:  objs:  max 76  min 76  sum 380
+DRIVER EVAL:  cuts:  max 32  min 18  sum 108
+
+Zoltan_LB_Eval_Balance  Part count: 5 requested, 5 actual , 5 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :        76       76      380     1.000
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 5 requested, 5 actual, 5 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :        76       76      380        1
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :        16       28     19.2       96
+Zoltan_LB_Eval_Graph  Number of cut edges       :        18       32     21.6      108
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         2        4      2.8       14
+
+
+
+Zoltan_LB_Eval_HG  Part count: 5 requested, 5 actual, 5 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :        76       76      380   1.000
+Zoltan_LB_Eval_HG  Object weight     :        76       76      380   1.000
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):   96.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )):  102.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):         30.000
+
+
+FILE zdrive.inp.rcb-oneproc:  Total:    1.164508e-02 seconds in Partitioning
+FILE zdrive.inp.rcb-oneproc:  Average:  1.164508e-02 seconds per Iteration

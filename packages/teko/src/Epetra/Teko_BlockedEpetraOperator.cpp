@@ -71,7 +71,7 @@ using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 
 BlockedEpetraOperator::BlockedEpetraOperator(const std::vector<std::vector<int> > & vars,
-                                             const Teuchos::RCP<Epetra_Operator> & content,
+                                             const Teuchos::RCP<const Epetra_Operator> & content,
                                              const std::string & label) 
       : Teko::Epetra::EpetraOperatorWrapper(), label_(label)
 {
@@ -79,7 +79,7 @@ BlockedEpetraOperator::BlockedEpetraOperator(const std::vector<std::vector<int> 
 }
 
 void BlockedEpetraOperator::SetContent(const std::vector<std::vector<int> > & vars,
-                                       const Teuchos::RCP<Epetra_Operator> & content)
+                                       const Teuchos::RCP<const Epetra_Operator> & content)
 { 
    fullContent_ = content;
    blockedMapping_ = rcp(new BlockedMappingStrategy(vars,Teuchos::rcpFromRef(fullContent_->OperatorDomainMap()),
@@ -176,6 +176,38 @@ void BlockedEpetraOperator::WriteBlocks(const std::string & prefix) const
       }
    }
 }
+
+#ifndef Teko_DEBUG_OFF
+bool BlockedEpetraOperator::testAgainstFullOperator(int count,double tol) const
+{
+   Epetra_Vector xf(OperatorRangeMap());
+   Epetra_Vector xs(OperatorRangeMap());
+   Epetra_Vector y(OperatorDomainMap());
+
+   // test operator many times
+   bool result = true;
+   double diffNorm=0.0,trueNorm=0.0;
+   for(int i=0;i<count;i++) {
+      xf.PutScalar(0.0);
+      xs.PutScalar(0.0);
+      y.Random();
+
+      // apply operator
+      Apply(y,xs); // xs = A*y
+      fullContent_->Apply(y,xf); // xf = A*y
+
+      // compute norms
+      xs.Update(-1.0,xf,1.0);
+      xs.Norm2(&diffNorm);
+      xf.Norm2(&trueNorm);
+
+      // check result
+      result &= (diffNorm/trueNorm < tol);
+   }
+
+   return result;
+}
+#endif
 
 } // end namespace Epetra
 } // end namespace Teko

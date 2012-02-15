@@ -33,8 +33,10 @@
 
 #ifdef HAVE_STOKHOS_SACADO
 
+#include "Sacado_Traits.hpp"
 #include "Sacado_Handle.hpp"
 #include "Sacado_mpl_apply.hpp"
+#include "Sacado_dummy_arg.hpp"
 
 #include <ostream>	// for std::ostream
 
@@ -95,6 +97,9 @@ namespace Sacado {
       //! Typename of values
       typedef T value_type;
 
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<T>::type scalar_type;
+
       //! Typename of ordinals
       typedef int ordinal_type;
 
@@ -123,7 +128,7 @@ namespace Sacado {
       /*!
        * Creates array of size \c sz and initializes coeffiencts to 0.
        */
-      VectorImpl(ordinal_type sz);
+      VectorImpl(ordinal_type sz, const value_type& x);
 
       //! Copy constructor
       VectorImpl(const VectorImpl& x);
@@ -170,6 +175,17 @@ namespace Sacado {
        * by coeff() or fastAccessCoeff() may change other vector objects.
        */
       void copyForWrite() { th_.makeOwnCopy(); }
+
+      //! Returns whether two ETV objects have the same values
+      template <typename S>
+      bool isEqualTo(const Expr<S>& x) const {
+	typedef IsEqual<value_type> IE;
+	if (x.size() != this->size()) return false;
+	bool eq = true;
+	for (int i=0; i<this->size(); i++)
+	  eq = eq && IE::eval(x.coeff(i), this->coeff(i));
+	return eq;
+      }
 
       /*!
        * @name Assignment operators
@@ -274,6 +290,7 @@ namespace Sacado {
 
       //! Typename of values
       typedef typename VectorImpl<T,Storage>::value_type value_type;
+      typedef typename VectorImpl<T,Storage>::scalar_type scalar_type;
       typedef typename VectorImpl<T,Storage>::storage_type storage_type;
       typedef typename VectorImpl<T,Storage>::const_reference const_reference;
 
@@ -289,8 +306,8 @@ namespace Sacado {
 	VectorImpl<T,Storage>(x) {}
       
       //! Constructor with specified size \c sz
-      Expr(typename VectorImpl<T,Storage>::ordinal_type sz) : 
-	VectorImpl<T,Storage>(sz) {}
+      Expr(typename VectorImpl<T,Storage>::ordinal_type sz, const T& x) : 
+	VectorImpl<T,Storage>(sz,x) {}
       
       //! Copy constructor
       Expr(const Expr& x) : 
@@ -331,6 +348,9 @@ namespace Sacado {
       //! Typename of values
       typedef typename VectorImpl<T,Storage>::value_type value_type;
 
+      //! Typename of scalars
+      typedef typename VectorImpl<T,Storage>::scalar_type scalar_type;
+
       //! Typename of ordinals
       typedef typename VectorImpl<T,Storage>::ordinal_type ordinal_type;
 
@@ -363,12 +383,19 @@ namespace Sacado {
       Vector(const value_type& x) : 
 	Expr< VectorImpl<T,Storage> >(x) {}
 
+      //! Constructor with supplied value \c x
+      /*!
+       * Sets size to 1 and first coefficient to x (represents a constant).
+       */
+      Vector(const typename dummy<value_type,scalar_type>::type& x) : 
+	Expr< VectorImpl<T,Storage> >(value_type(x)) {}
+
       //! Constructor with specified size \c sz
       /*!
        * Creates array of size \c sz and initializes coeffiencts to 0.
        */
-      Vector(ordinal_type sz) :
-	Expr< VectorImpl<T,Storage> >(sz) {}
+      Vector(ordinal_type sz, const value_type& x) :
+	Expr< VectorImpl<T,Storage> >(sz,x) {}
 
       //! Copy constructor
       Vector(const Vector& x) :
@@ -384,6 +411,12 @@ namespace Sacado {
       //! Assignment operator with constant right-hand-side
       Vector& operator=(const value_type& val) {
 	VectorImpl<T,Storage>::operator=(val);
+	return *this;
+      }
+
+      //! Assignment operator with constant right-hand-side
+      Vector& operator=(const typename dummy<value_type,scalar_type>::type& val) {
+	VectorImpl<T,Storage>::operator=(value_type(val));
 	return *this;
       }
 
@@ -429,6 +462,30 @@ namespace Sacado {
       //! Division-assignment operator with constant right-hand-side
       Vector& operator /= (const value_type& x) {
 	VectorImpl<T,Storage>::operator/=(x);
+	return *this;
+      }
+
+      //! Division-assignment operator with constant right-hand-side
+      Vector& operator /= (const typename dummy<value_type,scalar_type>::type& x) {
+	VectorImpl<T,Storage>::operator/=(value_type(x));
+	return *this;
+      }
+
+      //! Addition-assignment operator with constant right-hand-side
+      Vector& operator += (const typename dummy<value_type,scalar_type>::type& x) {
+	VectorImpl<T,Storage>::operator+=(value_type(x));
+	return *this;
+      }
+
+      //! Subtraction-assignment operator with constant right-hand-side
+      Vector& operator -= (const typename dummy<value_type,scalar_type>::type& x) {
+	VectorImpl<T,Storage>::operator-=(value_type(x));
+	return *this;
+      }
+
+      //! Multiplication-assignment operator with constant right-hand-side
+      Vector& operator *= (const typename dummy<value_type,scalar_type>::type& x) {
+	VectorImpl<T,Storage>::operator*=(value_type(x));
 	return *this;
       }
 

@@ -38,12 +38,14 @@ int Zoltan_DD_Update (
  char *user,               /* Incoming list of user data (optional)    */
  int *partition,           /* Optional, grouping of GIDs to partitions */
  int count)                /* Number of GIDs in update list            */
-   {
+{
    int             *procs = NULL;   /* list of processors to contact   */
    DD_Update_Msg   *ptr   = NULL;
    ZOLTAN_COMM_OBJ *plan  = NULL;   /* for efficient MPI communication */
    char            *sbuff = NULL;   /* send buffer                     */
+   char            *sbufftmp = NULL;/* pointer into send buffer        */
    char            *rbuff = NULL;   /* receive buffer                  */
+   char            *rbufftmp = NULL;/* pointer into receive buffer     */
    DD_Node         *ddptr = NULL;
    int              nrec;           /* number of receives to expect    */
    int              i;
@@ -96,9 +98,12 @@ int Zoltan_DD_Update (
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After mallocs");
 
    /* for each GID given, fill in contact list and then message structure */
+   sbufftmp = sbuff;
    for (i = 0; i < count; i++)  {
-      procs[i] = dd->hash(gid + i*dd->gid_length, dd->gid_length, dd->nproc, dd->hashdata, dd->hashfn);
-      ptr      = (DD_Update_Msg*) (sbuff + i * dd->update_msg_size);
+      procs[i] = dd->hash(gid + i*dd->gid_length, dd->gid_length, dd->nproc,
+                          dd->hashdata, dd->hashfn);
+      ptr      = (DD_Update_Msg*) sbufftmp;
+      sbufftmp += dd->update_msg_size;
 
       ptr->lid_flag       = (lid)  ? 1 : 0;
       ptr->user_flag      = (user) ? 1 : 0;
@@ -115,10 +120,12 @@ int Zoltan_DD_Update (
          memset(ptr->gid + dd->gid_length, 0, dd->lid_length);
       }
       if (user) {
-         memcpy(ptr->gid + (dd->gid_length + dd->lid_length), user + i * dd->user_data_length, dd->user_data_length);
+         memcpy(ptr->gid + (dd->gid_length + dd->lid_length),
+                user + (size_t)i * (size_t)(dd->user_data_length),
+                dd->user_data_length);
       }
       else {
-         memset(ptr->gid + (dd->gid_length + dd->lid_length), 0, 
+         memset(ptr->gid + (dd->gid_length + dd->lid_length), 0,
                 dd->user_data_length);
       }
    }
@@ -139,7 +146,7 @@ int Zoltan_DD_Update (
 
    /* allocate receive buffer for nrec DD_Update_Msg structures */
    if (nrec)  {
-      rbuff = (char*) ZOLTAN_MALLOC (nrec * dd->update_msg_size);
+      rbuff = (char*)ZOLTAN_MALLOC((size_t)nrec*(size_t)(dd->update_msg_size));
       if (rbuff == NULL)  {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Receive buffer malloc failed");
          err = ZOLTAN_MEMERR;
@@ -160,12 +167,14 @@ int Zoltan_DD_Update (
 
    /* for each message rec'd, update local directory information */
    errcount = 0;
+   rbufftmp = rbuff;
    for (i = 0; i < nrec; i++)  {
-      ptr = (DD_Update_Msg *) (rbuff + i * dd->update_msg_size);
+      ptr = (DD_Update_Msg *) rbufftmp;
+      rbufftmp += dd->update_msg_size;
 
       err = DD_Update_Local (dd, ptr->gid,
-       (ptr->lid_flag)  ? (ptr->gid + dd->gid_length)                   :NULL,
-       (char *)((ptr->user_flag) ? (ptr->gid + (dd->gid_length + dd->lid_length)):NULL),
+       (ptr->lid_flag)  ? (ptr->gid + dd->gid_length) : NULL,
+       (char*)((ptr->user_flag)?(ptr->gid+(dd->gid_length+dd->lid_length)):NULL),
        (ptr->partition_flag) ? (ptr->partition) : -1,  /* illegal partition */
        ptr->owner);
 
@@ -194,7 +203,7 @@ fini:
    if (dd->debug_level > 4)
       ZOLTAN_TRACE_OUT(dd->my_proc, yo, NULL);
    return err;
-   }
+}
 
 
 
@@ -214,7 +223,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
  char *user,                /* gid's user data (in), NULL if not needed  */
  int partition,             /* gid's partition (in), -1 if not used      */
  int owner)                 /* gid's current owner (proc number) (in)    */
-   {
+{
    DD_Node **ptr;
    int index;
    char *yo = "DD_Update_Local";
@@ -230,7 +239,8 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
       ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL);
 
    /* compute offset into hash table to find head of linked list */
-   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length, dd->hashdata, NULL);
+   index = Zoltan_DD_Hash2 (gid, dd->gid_length, dd->table_length,
+                            dd->hashdata, NULL);
 
    /* walk linked list until end looking for matching gid */
    for (ptr = dd->table+index; *ptr != NULL; ptr = &((*ptr)->next))
@@ -239,7 +249,8 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
           if (lid)
              ZOLTAN_SET_ID (dd->lid_length,(*ptr)->gid + dd->gid_length, lid);
           if (user)
-             memcpy((*ptr)->gid + (dd->gid_length + dd->lid_length), user, dd->user_data_length);
+             memcpy((*ptr)->gid + (dd->gid_length + dd->lid_length), user,
+                    dd->user_data_length);
 
           (*ptr)->owner = owner;
           if (partition != -1)
@@ -277,10 +288,12 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
              dd->lid_length*sizeof(ZOLTAN_ID_TYPE));
    }
    if (user) {
-      memcpy((*ptr)->gid + (dd->gid_length + dd->lid_length), user, dd->user_data_length);
+      memcpy((*ptr)->gid + (dd->gid_length + dd->lid_length), user,
+              dd->user_data_length);
    }
    else {
-      memset((*ptr)->gid + (dd->gid_length+dd->lid_length), 0, dd->user_data_length);
+      memset((*ptr)->gid + (dd->gid_length+dd->lid_length), 0,
+              dd->user_data_length);
    }
    (*ptr)->partition = partition ;
 
@@ -294,7 +307,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
       ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL);
 
    return ZOLTAN_OK;
-   }
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

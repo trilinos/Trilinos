@@ -240,7 +240,7 @@ namespace Tpetra {
 	  typedef Teuchos::ScalarTraits<value_type> STS;
 	  const value_type Aji = skew_ ? 
 	    -(conjugate_ ? STS::conjugate(Aij) : Aij) : 
-	    +(conjugate_ ? STS::conjugate(Aij) : Aij);
+	    (conjugate_ ? STS::conjugate(Aij) : Aij);
 	  theAdder (j, i, Aji);
 	}
       }

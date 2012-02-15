@@ -81,20 +81,6 @@ APPEND_SET(SOURCES
   )
 
 #
-# src/ccolamd
-#
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ccolamd)
-
-APPEND_SET(NOINSTALLHEADERS
-  ccolamd/zoltan_ccolamd.h
-  )
-
-APPEND_SET(SOURCES
-  ccolamd/ccolamd.c
-  )
-
-#
 # src/coloring
 #
 
@@ -227,7 +213,6 @@ APPEND_SET(SOURCES
   matrix/matrix_operations.c
   matrix/matrix_sym.c
   matrix/matrix_utils.c
-  matrix/common_sort.c
   )
 
 
@@ -357,7 +342,6 @@ APPEND_SET(NOINSTALLHEADERS
   tpls/third_library.h
   tpls/third_library_tools.h
   tpls/graph_util.h
-  tpls/ccolamd_interface.h
   )
 
 APPEND_SET(SOURCES
@@ -367,7 +351,6 @@ APPEND_SET(SOURCES
   tpls/scatter_graph.c
   tpls/third_library.c
   tpls/verify_graph.c
-  tpls/ccolamd_interface.c
   )
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS OR ${PACKAGE_NAME}_ENABLE_METIS)
@@ -577,6 +560,7 @@ APPEND_SET(NOINSTALLHEADERS
   zz/zz_rand.h
   zz/zz_sort.h
   zz/zz_util_const.h
+  zz/murmur3.h
   )
 
 APPEND_SET(SOURCES
@@ -593,6 +577,7 @@ APPEND_SET(SOURCES
   zz/zz_struct.c
   zz/zz_back_trace.c
   zz/zz_util.c
+  zz/murmur3.c
   )
 
 

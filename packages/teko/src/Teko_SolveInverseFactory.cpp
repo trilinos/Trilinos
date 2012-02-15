@@ -147,7 +147,7 @@ void SolveInverseFactory::rebuildInverse(const LinearOp & source,InverseLinearOp
    RCP<Thyra::LinearOpWithSolveBase<double> > lows = invDest->getNonconstLows();
 
    // This stems from confusion of if the linear op with solve initializeAndResuseOp actually rebuilds
-   // the precondtioner. It seems not to and thus we have a fairly substantial problem.
+   // the preconditioner. It seems not to and thus we have a fairly substantial problem.
    // lowsFactory_->initializeAndReuseOp(Thyra::defaultLinearOpSource(source),&*lows);
    lowsFactory_->initializeOp(Thyra::defaultLinearOpSource(source),&*lows);
 }

@@ -30,17 +30,23 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_SideSet.h>
-
-#include <Ioss_SideBlock.h>
 #include <Ioss_DatabaseIO.h>
-#include <Ioss_Region.h>
-#include <Ioss_Property.h>
-#include <Ioss_Field.h>
 #include <Ioss_ElementTopology.h>
-
-#include <string>
+#include <Ioss_Property.h>
+#include <Ioss_Region.h>
+#include <Ioss_SideBlock.h>
+#include <Ioss_SideSet.h>
+#include <stddef.h>
 #include <algorithm>
+#include <string>
+#include <vector>
+
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_PropertyManager.h"
+
+namespace Ioss {
+class Field;
+}  // namespace Ioss
 
 static const std::string SCALAR("scalar");
 

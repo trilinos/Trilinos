@@ -1,0 +1,178 @@
+
+
+Reading the command file, zdrive.inp.phg
+Input values:
+  Zoltan version 3.601
+  zdrive version 1.0
+  Total number of Processors = 5
+
+  Performing load balance using hypergraph.
+	Parameters:
+		lb_approach partition
+		obj_weight_dim 1
+		edge_weight_dim 1
+		final_output 1
+
+  Initially distribute input objects in linear fashion (first n/p to process 0, etc).
+##########################################################
+ZOLTAN Load balancing method = 11 (HYPERGRAPH)
+Starting iteration 1
+
+BEFORE load balancing
+DRIVER EVAL:  load:  max 143563.000000  min 100877.000000  sum 626639.000000
+DRIVER EVAL:  objs:  max 12527  min 12526  sum 62631
+DRIVER EVAL:  cuts:  max 54917  min 40070  sum 238550
+
+Zoltan_LB_Eval_Balance  Part count: 5 requested, 5 actual , 5 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :  1.25e+04 1.25e+04 6.26e+04     1.000
+Zoltan_LB_Eval_Balance  Object weight      :  1.01e+05 1.44e+05 6.27e+05     1.145
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 5 requested, 5 actual, 5 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :  1.25e+04 1.25e+04 6.26e+04        1
+Zoltan_LB_Eval_Graph  Object weight      :  1.01e+05 1.44e+05 6.27e+05     1.145
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :  8.35e+03 1.24e+04 1.04e+04 5.22e+04
+Zoltan_LB_Eval_Graph  Number of cut edges       :  4.01e+04 5.49e+04 4.77e+04 2.39e+05
+Zoltan_LB_Eval_Graph  Weight of cut edges (CUTE):  4.01e+04 5.49e+04 4.77e+04 2.39e+05
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         4        4        4       20
+
+
+
+Zoltan_LB_Eval_HG  Part count: 5 requested, 5 actual, 5 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :  1.25e+04 1.25e+04 6.26e+04   1.000
+Zoltan_LB_Eval_HG  Object weight     :  1.01e+05 1.44e+05 6.27e+05   1.145
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )): 52241.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): 72340.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):       18201.000
+
+
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 1
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 1
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = IMPORT AND EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = -1
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 1
+ZOLTAN Parameter SEED = 1220988223 (1220988223)
+ZOLTAN Parameter LB_APPROACH = PARTITION
+ZOLTAN Parameter HYPERGRAPH_PACKAGE = phg
+ZOLTAN Parameter PHG_MULTILEVEL = 1
+ZOLTAN Parameter PHG_CUT_OBJECTIVE = connectivity
+ZOLTAN Parameter PHG_OUTPUT_LEVEL = 0
+ZOLTAN Parameter FINAL_OUTPUT = 1
+ZOLTAN Parameter CHECK_GRAPH = 0
+ZOLTAN Parameter CHECK_HYPERGRAPH = 0
+ZOLTAN Parameter PHG_NPROC_VERTEX = -1
+ZOLTAN Parameter PHG_NPROC_EDGE = -1
+ZOLTAN Parameter PHG_COARSENING_LIMIT = 100
+ZOLTAN Parameter PHG_COARSENING_NCANDIDATE = 100
+ZOLTAN Parameter PHG_COARSENING_METHOD = agg
+ZOLTAN Parameter PHG_COARSENING_METHOD_FAST = l-ipm
+ZOLTAN Parameter PHG_VERTEX_VISIT_ORDER = 0
+ZOLTAN Parameter PHG_EDGE_SCALING = 0
+ZOLTAN Parameter PHG_VERTEX_SCALING = 0
+ZOLTAN Parameter PHG_COARSEPARTITION_METHOD = auto
+ZOLTAN Parameter PHG_REFINEMENT_METHOD = fm2
+ZOLTAN Parameter PHG_DIRECT_KWAY = 0
+ZOLTAN Parameter PHG_REFINEMENT_LOOP_LIMIT = 10
+ZOLTAN Parameter PHG_REFINEMENT_MAX_NEG_MOVE = 250
+ZOLTAN Parameter PHG_REFINEMENT_QUALITY = 1.000000
+ZOLTAN Parameter PHG_USE_TIMERS = 0
+ZOLTAN Parameter USE_TIMERS = 0
+ZOLTAN Parameter PHG_EDGE_SIZE_THRESHOLD = 0.250000
+ZOLTAN Parameter PHG_MATCH_EDGE_SIZE_THRESHOLD = 500
+ZOLTAN Parameter PHG_BAL_TOL_ADJUSTMENT = 0.700000
+ZOLTAN Parameter PHG_EDGE_WEIGHT_OPERATION = max
+ZOLTAN Parameter PARKWAY_SERPART = patoh
+ZOLTAN Parameter ADD_OBJ_WEIGHT = none
+ZOLTAN Parameter PHG_RANDOMIZE_INPUT = 0
+ZOLTAN Parameter PHG_PROCESSOR_REDUCTION_LIMIT = 0.000000
+ZOLTAN Parameter PHG_REPART_MULTIPLIER = 100.000000
+ZOLTAN Parameter HYBRID_REDUCTION_FACTOR = 0.100000
+ZOLTAN Parameter HYBRID_REDUCTION_LEVELS = 2147483647
+ZOLTAN Parameter PATOH_ALLOC_POOL0 = 0
+ZOLTAN Parameter PATOH_ALLOC_POOL1 = 0
+| 0/ 5|: ( 0, 0)/[ 1, 5] ->STATS Runs 1  bal  CURRENT 1.059446  MAX 1.059446  MIN 1.059446  AVG 1.059446
+| 0/ 5|: ( 0, 0)/[ 1, 5] ->STATS Runs 1  cutl CURRENT 2978.000000  MAX 2978.000000  MIN 2978.000000  AVG 2978.000000
+| 0/ 5|: ( 0, 0)/[ 1, 5] ->STATS Runs 1  cutn CURRENT 2978.000000  MAX 2978.000000  MIN 2978.000000  AVG 2978.000000
+| 0/ 5|: ( 0, 0)/[ 1, 5] ->STATS Runs 1  moveVol CURRENT 13380872.000000  MAX 13380872.000000  MIN 13380872.000000  AVG 13380872.000000
+| 0/ 5|: ( 0, 0)/[ 1, 5] ->STATS Runs 1  repart CURRENT 13678672.000000  MAX 13678672.000000  MIN 13678672.000000  AVG 13678672.000000
+Proc 4: Calls to malloc = 56150,  Calls to free = 56150
+Proc 1: Calls to malloc = 67722,  Calls to free = 67722
+Proc 3: Calls to malloc = 59118,  Calls to free = 59118
+Proc 2: Calls to malloc = 68009,  Calls to free = 68009
+Proc 0: Calls to malloc = 83153,  Calls to free = 83153
+
+DRIVER:  Zoltan_LB_Partition time = 2.33251
+DRIVER:  new_decomp 1 Min/Max Import: 3265 11645
+DRIVER:  new_decomp 1 Min/Max Export: 6327 8454
+DRIVER:  Total migration time = 0.0741091
+
+AFTER load balancing
+DRIVER EVAL:  load:  max 132778.000000  min 117601.000000  sum 626639.000000
+DRIVER EVAL:  objs:  max 17038  min 8270  sum 62631
+DRIVER EVAL:  cuts:  max 2903  min 1137  sum 9920
+
+Zoltan_LB_Eval_Balance  Part count: 5 requested, 5 actual , 5 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :  8.27e+03  1.7e+04 6.26e+04     1.360
+Zoltan_LB_Eval_Balance  Object weight      :  1.18e+05 1.33e+05 6.27e+05     1.059
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 5 requested, 5 actual, 5 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :  8.27e+03  1.7e+04 6.26e+04     1.36
+Zoltan_LB_Eval_Graph  Object weight      :  1.18e+05 1.33e+05 6.27e+05     1.059
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :       351      869      596 2.98e+03
+Zoltan_LB_Eval_Graph  Number of cut edges       :  1.14e+03  2.9e+03 1.98e+03 9.92e+03
+Zoltan_LB_Eval_Graph  Weight of cut edges (CUTE):  1.14e+03  2.9e+03 1.98e+03 9.92e+03
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         1        3        2       10
+
+
+
+Zoltan_LB_Eval_HG  Part count: 5 requested, 5 actual, 5 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 5 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :  8.27e+03  1.7e+04 6.26e+04   1.360
+Zoltan_LB_Eval_HG  Object weight     :  1.18e+05 1.33e+05 6.27e+05   1.059
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )): 2978.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): 2978.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):        869.000
+
+
+FILE zdrive.inp.phg:  Total:    2.332508e+00 seconds in Partitioning
+FILE zdrive.inp.phg:  Average:  2.332508e+00 seconds per Iteration

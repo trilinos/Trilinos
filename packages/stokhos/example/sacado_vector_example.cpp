@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 
     // Polynomial expansions
     const int sz = 10;
-    vec_type u(sz);
+    vec_type u(sz, 0.0);
     for (int i=0; i<sz; i++) {
       u.fastAccessCoeff(i) = 0.1 * i;
     }

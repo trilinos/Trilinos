@@ -36,6 +36,7 @@
 #include <cmath>
 #include <algorithm>	// for std::min and std::max
 #include <ostream>	// for std::ostream
+#include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
@@ -60,6 +61,9 @@ namespace Sacado {
       //! Typename of values
       typedef T value_type;
 
+      //! Typename of scalar's (which may be different from value_type)
+      typedef typename ScalarType<value_type>::type scalar_type;
+
       //! Default constructor
       Taylor();
 
@@ -68,6 +72,13 @@ namespace Sacado {
        * Sets the first coefficient to x
        */
       Taylor(const T& x);
+
+      //! Constructor with supplied value \c x
+      /*!
+       * Sets the first coefficient to x.
+       * Creates a dummy overload when ValueT and ScalarT are the same type.
+       */
+      Taylor(const typename dummy<value_type,scalar_type>::type& x);
 
       //! Constructor with degree d and value \c x
       /*!
@@ -112,6 +123,16 @@ namespace Sacado {
        */
       void copyForWrite() { th.makeOwnCopy(); }
 
+      //! Returns whether two Taylor objects have the same values
+      bool isEqualTo(const Taylor& x) const {
+	typedef IsEqual<value_type> IE;
+	if (x.degree() != this->degree()) return false;
+	bool eq = true;
+	for (unsigned int i=0; i<=this->degree(); i++)
+	  eq = eq && IE::eval(x.coeff(i), this->coeff(i));
+	return eq;
+      }
+
       /*!
        * @name Assignment operators
        */
@@ -119,6 +140,13 @@ namespace Sacado {
 
       //! Assignment operator with constant right-hand-side
       Taylor<T>& operator=(const T& val);
+
+      //! Assignment operator with constant right-hand-side
+      /*!
+       * Creates a dummy overload when value_type and scalar_type are 
+       * the same type.
+       */
+      Taylor<T>& operator=(const typename dummy<value_type,scalar_type>::type& val);
 
       //! Assignment with Taylor right-hand-side
       Taylor<T>& operator=(const Taylor<T>& x);
@@ -163,7 +191,7 @@ namespace Sacado {
       T& fastAccessCoeff(unsigned int i) { return th->coeff_[i];}
 
       //! Returns degree \c i term without bounds checking
-      T fastAccessCoeff(unsigned int i) const { return th->coeff_[i];}
+      const T& fastAccessCoeff(unsigned int i) const { return th->coeff_[i];}
     
       //@}
 

@@ -1,3 +1,38 @@
+/*
+ * Copyright(C) 2011 Sandia Corporation.  Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+ * certain rights in this software
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ * * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *           
+ * * Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *                         
+ * * Neither the name of Sandia Corporation nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *                                                 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
+
 #include "EML_SystemInterface.h"
 
 #include <iostream>
@@ -39,52 +74,52 @@ void SystemInterface::enroll_options()
 		 "\t\tIf output name not specified, then output file will be the\n"
 		 "\t\tbasename of the input file with suffix '.m'");
 
-  options_.enroll("help", GetLongOpt::NoValue,
+  options_.enroll("help", GetLongOption::NoValue,
 		  "Print this summary and exit", 0);
 
-  options_.enroll("version", GetLongOpt::NoValue,
+  options_.enroll("version", GetLongOption::NoValue,
 		  "Print version and exit", NULL);
 
-  options_.enroll("field_suffix", GetLongOpt::MandatoryValue,
+  options_.enroll("field_suffix", GetLongOption::MandatoryValue,
 		  "Character used to separate a field component suffix from the field name.\n"
 		  "\t\tEnter 'none' for no separator (fieldx, fieldy fieldz).\n"
 		  "\t\tDefault = '_' (field_x, field_y, field_z)", "_");
   
-  options_.enroll("minimum_time", GetLongOpt::MandatoryValue,
+  options_.enroll("minimum_time", GetLongOption::MandatoryValue,
 		  "Minimum timestep for which to transfer data to matlab file.", 0);
   
-  options_.enroll("maximum_time", GetLongOpt::MandatoryValue,
+  options_.enroll("maximum_time", GetLongOption::MandatoryValue,
 		  "Maximum timestep for which to transfer data to matlab file.", 0);
   
-  options_.enroll("list", GetLongOpt::MandatoryValue,
+  options_.enroll("list", GetLongOption::MandatoryValue,
 		  "List global, nodal, element, nodeset, or sideset variables.\n\t\tEnter 'all' to list all types.\n"
 		  "\t\tCode exits after listing variable names.", NULL);
   
-  options_.enroll("gvar", GetLongOpt::MandatoryValue,
+  options_.enroll("gvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of global variables to be output or ALL or NONE.",
 		  0);
 
-  options_.enroll("evar", GetLongOpt::MandatoryValue,
+  options_.enroll("evar", GetLongOption::MandatoryValue,
 		  "(NI) Comma-separated list of element variables to be output or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain blocks by appending a\n"
 		  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
 		  0);
 
-  options_.enroll("nvar", GetLongOpt::MandatoryValue,
+  options_.enroll("nvar", GetLongOption::MandatoryValue,
 		  "(NI) Comma-separated list of nodal variables to be output or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain nodes by appending a\n"
 		  "\t\tcolon followed by the node id.  E.g. -nvar disp:10:20",
 		  0);
 
-  options_.enroll("nsetvar", GetLongOpt::MandatoryValue,
+  options_.enroll("nsetvar", GetLongOption::MandatoryValue,
 		  "(NI) Comma-separated list of nodeset variables to be output or ALL or NONE.",
 		  0);
 
-  options_.enroll("ssetvar", GetLongOpt::MandatoryValue,
+  options_.enroll("ssetvar", GetLongOption::MandatoryValue,
 		  "(NI) Comma-separated list of sideset variables to be output or ALL or NONE.",
 		  0);
 
-  options_.enroll("copyright", GetLongOpt::NoValue,
+  options_.enroll("copyright", GetLongOption::NoValue,
 		  "Show copyright and license data.",
 		  NULL);
 }
@@ -173,8 +208,38 @@ bool SystemInterface::parse_options(int argc, char **argv)
   
   if (options_.retrieve("copyright")) {
     std::cerr << "\n"
-	      << "Copyright(C) 2010 Sandia Corporation.\n"
-	      << "***not yet submitted through the copyright process***\n\n";
+	      << "Copyright(C) 2011 Sandia Corporation.  Under the terms of Contract\n"
+	      << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"
+	      << "certain rights in this software\n"
+	      << "\n"
+	      << "Redistribution and use in source and binary forms, with or without\n"
+	      << "modification, are permitted provided that the following conditions are\n"
+	      << "met:\n"
+	      << "\n"
+	      << "* Redistributions of source code must retain the above copyright\n"
+	      << "   notice, this list of conditions and the following disclaimer.\n"
+	      << "          \n"
+	      << "* Redistributions in binary form must reproduce the above\n"
+	      << "  copyright notice, this list of conditions and the following\n"
+	      << "  disclaimer in the documentation and/or other materials provided\n"
+	      << "  with the distribution.\n"
+	      << "                        \n"
+	      << "* Neither the name of Sandia Corporation nor the names of its\n"
+	      << "  contributors may be used to endorse or promote products derived\n"
+	      << "  from this software without specific prior written permission.\n"
+	      << "                                                \n"
+	      << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+	      << "\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+	      << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+	      << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
+	      << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
+	      << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
+	      << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+	      << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+	      << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+	      << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+	      << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+	      << "\n";
     exit(EXIT_SUCCESS);
   }  
   

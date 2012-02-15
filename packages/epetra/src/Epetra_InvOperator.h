@@ -75,7 +75,7 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
   virtual ~Epetra_InvOperator(){}
   //@}
   
-  //! @name Atribute set methods
+  //! @name Attribute set methods
   //@{ 
 
     //! If set true, transpose of this operator will be applied.
@@ -124,7 +124,7 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
   */ 
   double NormInf() const {return(operator_->NormInf());}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 
   //! Returns a character string describing the operator

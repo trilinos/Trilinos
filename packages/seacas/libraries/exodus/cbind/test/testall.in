@@ -41,7 +41,7 @@ set PREFIX = ""
 set SUFFIX = ".exe"
 set BINDIR = @CMAKE_CURRENT_BINARY_DIR@
 set SRCDIR = @CMAKE_CURRENT_SOURCE_DIR@
-set NCDUMP = @SEACASExodus_Netcdf_EXECUTABLE_NCDUMP@
+set NCDUMP = @Netcdf_LIBRARY_DIRS@/../bin/ncdump
 echo "************************************************************************"
 echo "************************************************************************"
 rm -f test.output
@@ -55,11 +55,6 @@ echo "testrd - single precision read test..."
 echo "begin testrd" >> test.output
 ${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | diff - ${SRCDIR}/testrd.dmp | tee testrd.res
 echo "end testrd" >> test.output
-
-echo "testrdv - single precision read test with varid..."
-echo "begin testrdv" >> test.output
-${PREFIX} ${BINDIR}/testrdv${SUFFIX} | grep -v version | diff - ${SRCDIR}/testrdv.dmp | tee testrdv.res
-echo "end testrdv" >> test.output
 
 echo "testcp_ss - single-to-single precision copy test..."
 echo "begin testcp_ss" >> test.output

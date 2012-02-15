@@ -41,12 +41,13 @@ GRAPH = \
 
 HA_H = \
 	$(srcdir)/ha/ha_const.h \
+	$(srcdir)/ha/ha_ovis.h \
 	$(srcdir)/ha/ha_drum.h
 
 HA = \
-	$(srcdir)/ha/build_machine_desc.c \
 	$(srcdir)/ha/divide_machine.c \
 	$(srcdir)/ha/get_processor_name.c \
+	$(srcdir)/ha/ha_ovis.c \
 	$(srcdir)/ha/ha_drum.c
 
 HIER_H = \
@@ -112,8 +113,7 @@ MATRIX = \
 	$(srcdir)/matrix/matrix_distribute.c \
 	$(srcdir)/matrix/matrix_operations.c \
 	$(srcdir)/matrix/matrix_sym.c \
-	$(srcdir)/matrix/matrix_utils.c \
-	$(srcdir)/matrix/common_sort.c
+	$(srcdir)/matrix/matrix_utils.c 
 
 EXTRA_OCT_H = \
 	$(srcdir)/oct/costs_const.h \
@@ -215,12 +215,6 @@ TPLS = \
 	$(srcdir)/tpls/scatter_graph.c \
 	$(srcdir)/tpls/third_library.c \
 	$(srcdir)/tpls/verify_graph.c
-
-CCOLAMD_H = \
-	$(srcdir)/ccolamd/zoltan_ccolamd.h
-
-CCOLAMD = \
-	$(srcdir)/ccolamd/ccolamd.c
 
 EXTRA_PARMETIS_INTERFACE_H = \
 	$(srcdir)/tpls/parmetis_interface.h
@@ -390,12 +384,14 @@ ZZ_H = \
 	$(srcdir)/zz/zz_id_const.h \
 	$(srcdir)/zz/zz_rand.h \
 	$(srcdir)/zz/zz_sort.h \
+	$(srcdir)/zz/murmur3.h \
 	$(srcdir)/zz/zz_util_const.h
 
 ZZ = \
 	$(srcdir)/zz/zz_coord.c \
 	$(srcdir)/zz/zz_gen_files.c \
 	$(srcdir)/zz/zz_hash.c \
+	$(srcdir)/zz/murmur3.c \
 	$(srcdir)/zz/zz_map.c \
 	$(srcdir)/zz/zz_heap.c \
 	$(srcdir)/zz/zz_init.c \
@@ -587,7 +583,6 @@ ZOLTAN_H = \
 	$(PAR_H) \
 	$(PARAMS_H) \
 	$(TPLS_H) \
-	$(CCOLAMD_H) \
 	$(PARMETIS_INTERFACE_H) \
 	$(PHG_H) \
 	$(RCB_H) \
@@ -613,7 +608,6 @@ libzoltan_a_SOURCES = \
 	$(PAR) \
 	$(PARAMS) \
 	$(TPLS) \
-	$(CCOLAMD) \
 	$(PARMETIS_INTERFACE) \
 	$(PHG) \
 	$(RCB) \

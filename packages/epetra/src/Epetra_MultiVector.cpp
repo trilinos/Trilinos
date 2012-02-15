@@ -453,7 +453,7 @@ int Epetra_MultiVector::Random() {
    const int myLength = MyLength_;
 	for(int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
 #pragma omp parallel for default(none)
 #endif
 		for(int j = 0; j < myLength; j++)
@@ -778,8 +778,11 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       && CombineMode != Insert
       && CombineMode != InsertAdd
       && CombineMode != Average
+      && CombineMode != Max
+      && CombineMode != Min
+      && CombineMode != AbsMin
       && CombineMode != AbsMax )
-    EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
+	    EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
 
   if (NumImportIDs<=0) return(0);
 
@@ -805,6 +808,17 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   if (MaxElementSize==1) {
       
     if (numVectors==1) {
+      if (CombineMode==InsertAdd) for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = 0.0; // Zero out first
+      if (CombineMode==Add || CombineMode==InsertAdd) for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] += *ptr++; // Add to existing value
+      else if(CombineMode==Insert) for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = *ptr++;
+      else if(CombineMode==AbsMax) for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] = EPETRA_MAX( To[0][ImportLIDs[j]],std::abs(*ptr)); ptr++;}
+      else if(CombineMode==AbsMin) for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] = EPETRA_MIN( To[0][ImportLIDs[j]],std::abs(*ptr)); ptr++;}
+      else if(CombineMode==Max) for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] = EPETRA_MAX( To[0][ImportLIDs[j]],*ptr); ptr++;}
+      else if(CombineMode==Min) for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] = EPETRA_MIN( To[0][ImportLIDs[j]],*ptr); ptr++;}
+      else if(CombineMode==Average) for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] += *ptr++; To[0][ImportLIDs[j]] *= 0.5;} // Not a true avg if >2 occurance of an ID
+      // Note:  The following form of averaging is not a true average if more that one value is combined.
+      //        This might be an issue in the future, but we leave this way for now.
+/*
       if (CombineMode==Add)
 	for (int j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] += *ptr++; // Add to existing value
       else if(CombineMode==Insert)
@@ -822,10 +836,25 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       //        This might be an issue in the future, but we leave this way for now.
       else if(CombineMode==Average)
 	for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] += *ptr++; To[0][ImportLIDs[j]] *= 0.5;}
+*/
     }
 
     else {  // numVectors>1
 
+      for (int j=0; j<NumImportIDs; j++) {
+        jj = ImportLIDs[j];
+        for (int i=0; i<numVectors; i++) {
+        if (CombineMode==InsertAdd) To[i][jj] = 0.0; // Zero out if needed
+        if (CombineMode==Add || CombineMode==InsertAdd) To[i][jj] += *ptr++; // Add to existing value
+        else if (CombineMode==Insert) To[i][jj] = *ptr++; // Insert values
+        else if (CombineMode==AbsMax) {To[i][jj] = EPETRA_MAX( To[i][jj], std::abs(*ptr)); ptr++; } // max of absolutes
+        else if (CombineMode==AbsMin) {To[i][jj] = EPETRA_MIN( To[i][jj], std::abs(*ptr)); ptr++; } // max of absolutes
+        else if (CombineMode==Max)    {To[i][jj] = EPETRA_MAX( To[i][jj], *ptr); ptr++; } // simple max 
+        else if (CombineMode==Min)    {To[i][jj] = EPETRA_MIN( To[i][jj], *ptr); ptr++; } // simple min 
+        else if (CombineMode==Average){To[i][jj] += *ptr++; To[i][jj] *= 0.5;}} // Not a true avg if >2 occurance of an ID
+
+      }
+/*
       if (CombineMode==Add) {
 	for (int j=0; j<NumImportIDs; j++) {
 	  jj = ImportLIDs[j];
@@ -870,13 +899,28 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	    { To[i][jj] += *ptr++;  To[i][jj] *= 0.5;}
 	}
       }
+*/
     }
   }
 
   // constant element size case
 
   else if (ConstantElementSize) {
-   
+
+    for (int j=0; j<NumImportIDs; j++) {
+      jj = MaxElementSize*ImportLIDs[j];
+      for (int i=0; i<numVectors; i++) {
+        if (CombineMode==InsertAdd) for (k=0; k<MaxElementSize; k++) To[i][jj+k] = 0.0; // Zero out if needed
+        if (CombineMode==Add || CombineMode==InsertAdd) for (k=0; k<MaxElementSize; k++) To[i][jj+k] += *ptr++; // Add to existing value
+        else if (CombineMode==Insert) for (k=0; k<MaxElementSize; k++) To[i][jj+k] = *ptr++; // Insert values
+        else if (CombineMode==AbsMax) {for (k=0; k<MaxElementSize; k++) { To[i][jj+k] = EPETRA_MAX( To[i][jj+k], std::abs(*ptr)); ptr++; }} // max of absolutes
+        else if (CombineMode==AbsMin) {for (k=0; k<MaxElementSize; k++) { To[i][jj+k] = EPETRA_MIN( To[i][jj+k], std::abs(*ptr)); ptr++; }} // max of absolutes
+        else if (CombineMode==Max) {for (k=0; k<MaxElementSize; k++) { To[i][jj+k] = EPETRA_MAX( To[i][jj+k], *ptr); ptr++; }} // simple max 
+        else if (CombineMode==Min) {for (k=0; k<MaxElementSize; k++) { To[i][jj+k] = EPETRA_MIN( To[i][jj+k], *ptr); ptr++; }} // simple min 
+        else if (CombineMode==Average) {for (k=0; k<MaxElementSize; k++) { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}} // Not a true avg if >2 occurance of an ID
+     }
+   }
+/*   
     if (CombineMode==Add) {
       for (int j=0; j<NumImportIDs; j++) {
 	jj = MaxElementSize*ImportLIDs[j];
@@ -927,6 +971,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	    { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}
       }
     }
+*/
   }
     
   // variable element size case
@@ -934,6 +979,21 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   else {
     int thisSizeOfPacket = numVectors*MaxElementSize;
 
+    for (int j=0; j<NumImportIDs; j++) {
+      ptr = (double *) Imports + j*thisSizeOfPacket;
+      jj = ToFirstPointInElementList[ImportLIDs[j]];
+      int ElementSize = ToElementSizeList[ImportLIDs[j]];
+      for (int i=0; i<numVectors; i++) {
+        if (CombineMode==InsertAdd) for (k=0; k<ElementSize; k++) To[i][jj+k] = 0.0; // Zero out if needed
+        if (CombineMode==Add || CombineMode==InsertAdd) for (k=0; k<ElementSize; k++) To[i][jj+k] += *ptr++; // Add to existing value
+        else if (CombineMode==Insert) for (k=0; k<ElementSize; k++) To[i][jj+k] = *ptr++; // Insert values
+        else if (CombineMode==AbsMax) {for (k=0; k<ElementSize; k++) { To[i][jj+k] = EPETRA_MAX( To[i][jj+k], std::abs(*ptr)); ptr++; }} // max of absolutes
+        else if (CombineMode==Max) {for (k=0; k<ElementSize; k++) { To[i][jj+k] = EPETRA_MAX( To[i][jj+k], *ptr); ptr++; }} // simple max 
+        else if (CombineMode==Min) {for (k=0; k<ElementSize; k++) { To[i][jj+k] = EPETRA_MIN( To[i][jj+k], *ptr); ptr++; }} // simple min 
+        else if (CombineMode==Average) {for (k=0; k<ElementSize; k++) { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}} // Not a true avg if >2 occurance of an ID
+     }
+   }
+/*
     if (CombineMode==Add) {
       for (int j=0; j<NumImportIDs; j++) {
 	ptr = (double *) Imports + j*thisSizeOfPacket;
@@ -996,6 +1056,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	    { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}
       }
     }
+*/
   }
 
   return(0);
@@ -1013,7 +1074,7 @@ int Epetra_MultiVector::Dot(const Epetra_MultiVector& A, double *Result) const {
     
   double **A_Pointers = A.Pointers();
 
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
   for (int i=0; i < NumVectors_; i++) 
     {
       const double * const from = Pointers_[i];
@@ -1395,7 +1456,7 @@ int  Epetra_MultiVector::Norm1 (double* Result) const {
 
   const int myLength = MyLength_;
   UpdateDoubleTemp();
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
   for (int i=0; i < NumVectors_; i++) 
     {
       const double * const from = Pointers_[i];
@@ -1440,7 +1501,7 @@ int  Epetra_MultiVector::Norm2 (double* Result) const {
     {
       const double * const from = Pointers_[i];
       double sum = 0.0;
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
 #pragma omp parallel for reduction (+:sum) default(none)
 #endif
       for (int j=0; j < myLength; j++) sum += from[j] * from[j];
@@ -1526,7 +1587,7 @@ int  Epetra_MultiVector::NormWeighted (const Epetra_MultiVector& Weights, double
       if (!OneW) W = W_Pointers[i]; // If Weights has the same number of vectors as this, use each weight vector
       double sum = 0.0;
       const double * const from = Pointers_[i];
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
 #pragma omp parallel for reduction (+:sum) default(none) shared(W)
 #endif
       for (int j=0; j < myLength; j++) {
@@ -1795,7 +1856,7 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
     {
       double sum = 0.0;
       const double * const from = Pointers_[i];
-#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
 #pragma omp parallel for reduction (+:sum) default(none)
 #endif
       for (int j=0; j < myLength; j++) sum += from[j];

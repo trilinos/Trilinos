@@ -49,7 +49,7 @@ SOREV = 5
 DEFINES = $(PICFLAGS)
 
 SRCS =  exclos.c   exggvt.c   exgpa.c    exgvp.c    expfrm.c   expqa.c	 \
-	excn2s.c   exgids.c   exgp.c     exgvv.c    expinf.c   expset.c	 \
+	excn2s.c   exgids.c   exgp.c     expinf.c   expset.c	 \
 	ex_conv.c  exginf.c   exgpem.c   exinq.c    expini.c   expsetd.c \
 	excopy.c   exgini.c   exgpn.c    exopen.c   expinix.c  expsetp.c \
 	excre.c    exginix.c  exgqa.c    exopts.c   expmap.c   expssv.c  \
@@ -60,24 +60,24 @@ SRCS =  exclos.c   exggvt.c   exgpa.c    exgvp.c    expfrm.c   expqa.c	 \
 	exgattp.c  exgnmap.c  exgssc.c   expcab.c   expnnm.c   expvnm.c  \
 	exgblk.c   exgnnm.c   exgssn.c   expclb.c   expnsv.c   expvpax.c \
 	exgcon.c   exgnsv.c   exgssv.c   expcon.c   expnv.c    expvp.c   \
-	exgconn.c  exgnv.c    exgtim.c   expconn.c  expnvv.c   expvv.c   \
-	exgcor.c   exgnvid.c  exgtt.c    expcor.c   expoatt.c  exupda.c  \
+	exgconn.c  exgnv.c    exgtim.c   expconn.c  \
+	exgcor.c   exgtt.c    expcor.c   expoatt.c  exupda.c  \
 	exgcset.c  exgnvt.c   exgvan.c   expcset.c  exppa.c    expidm.c	 \
-	exgenm.c   exgnvv.c   exgvar.c   expelc.c   expp.c     exgfrm.c  \
+	exgenm.c   exgvar.c   expelc.c   expp.c     exgfrm.c  \
 	exgoatt.c  exgvart.c  expenm.c   exppem.c   exggv.c    exgotv.c  \
 	exgvnm.c   expev.c    exppn.c    exppsetd.c exgidm.c   ex_utils.c 		 \
 	exgvarnam.c  expvarnam.c exgvarnams.c  expvarnams.c \
 	exgvartab.c  expvartab.c exgvarparam.c expvarparam.c \
 	exgcns.c   exgnstt.c   expem.c   exgnconn.c \
-	exgcss.c   exgnsvid.c  expgv.c   \
+	exgcss.c   expgv.c   \
 	exgean.c   exgoea.c    expnm.c   \
 	exgeat.c   exgsp.c     expnp.c   \
 	exgebi.c   exgss.c     expns.c   \
 	exgelb.c   exgssd.c    expnsd.c  \
 	exgelc.c   exgssi.c    expnstt.c \
 	exgem.c    exgsstt.c   expoea.c  \
-	exgev.c    exgssvid.c  expsp.c   \
-	exgevid.c  exgvid.c    expss.c   \
+	exgev.c    expsp.c   \
+	expss.c   \
 	exgevt.c   exgvtt.c    expssd.c  \
 	exgnm.c    expcns.c    expsstt.c \
 	exgnp.c    expcss.c    expvpa.c  \

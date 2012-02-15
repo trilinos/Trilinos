@@ -298,10 +298,11 @@ MACRO(TRIBITS_PROJECT_IMPL)
 
   # Loop through the Repositories and run their callback functions.
   FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("Processing packaging call-backs for ${REPO}")
+      MESSAGE("Processing packaging call-backs for ${REPO_NAME}")
     ENDIF()
-    TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO})
+    TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO_NAME})
   ENDFOREACH()
   
   

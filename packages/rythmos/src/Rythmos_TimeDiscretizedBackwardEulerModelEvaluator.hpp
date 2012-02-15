@@ -157,7 +157,7 @@ TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::TimeDiscretizedBackwardEuler
   :finalTime_(-1.0),
    numTimeSteps_(-1),
    initTime_(0.0),
-   delta_t_(-1.0) // Flag for uninitailized!
+   delta_t_(-1.0) // Flag for uninitialized!
 {}
 
 

@@ -58,7 +58,7 @@ public:
    * <tt>BelosLinearOpWithSolveFactory::unitializeOp()</tt>.
    *
    * \param prec [in] The preconditioner object that was used to get the
-   * precondtioners set in <tt>*lp</tt> This object is not used here, it is
+   * preconditioners set in <tt>*lp</tt> This object is not used here, it is
    * just being "remembered" so that it can be extracted by
    * <tt>BelosLinearOpWithSolveFactory::unitializeOp()</tt>.
    *

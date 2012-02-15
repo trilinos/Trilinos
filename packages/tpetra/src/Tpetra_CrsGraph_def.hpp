@@ -2306,7 +2306,7 @@ namespace Tpetra {
             << "Common cause: for a rectangular matrix, the domain map must be passed to fillComplete().");
       }
       // Sort External column indices so that all columns coming from a given remote processor are contiguous
-      // This obliviates the need for the Distributor associated with the Import from having to reorder data.
+      // This obviates the need for the Distributor associated with the Import from having to reorder data.
       sort2(RemoteImageIDs.begin(), RemoteImageIDs.end(), RemoteColGIDs.begin());
 
       // Copy the Local GIDs into myColumns. Two cases:

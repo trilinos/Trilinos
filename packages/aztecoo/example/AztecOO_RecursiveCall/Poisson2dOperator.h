@@ -74,7 +74,7 @@ class Poisson2dOperator: public virtual Epetra_Operator {
   ~Poisson2dOperator();
   //@}
   
-  //@{ \name Atribute set methods.
+  //@{ \name Attribute set methods.
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -125,7 +125,7 @@ class Poisson2dOperator: public virtual Epetra_Operator {
   double NormInf() const {return(8.0);};
   //@}
   
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
   //! Returns a character string describing the operator
   char * Label() const{return(Label_);};

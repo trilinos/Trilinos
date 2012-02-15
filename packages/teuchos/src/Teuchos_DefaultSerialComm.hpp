@@ -138,7 +138,8 @@ public:
   /** \brief . */
   virtual RCP< Comm<Ordinal> > split(const int color, const int key) const;
   /** brief . */
-  virtual RCP< Comm<Ordinal> > createSubcommunicator(const std::vector<int> & ranks) const;
+  virtual RCP< Comm<Ordinal> > createSubcommunicator(
+    const ArrayView<const int> & ranks) const;
 
   //@}
 
@@ -374,7 +375,7 @@ SerialComm<Ordinal>::split(const int color, const int /*key*/) const
 
 template<typename Ordinal>
 RCP< Comm<Ordinal> >
-SerialComm<Ordinal>::createSubcommunicator(const std::vector<int> &ranks) const
+SerialComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
 {
   if ((ranks.size()) == 1 && (ranks[0] == 0)) {
     return rcp(new SerialComm<Ordinal>(*this));

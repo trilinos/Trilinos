@@ -281,7 +281,7 @@ int main(int argc, char **argv)
   }
 
   // return ok because I don't want to break the tests
-  // if the solver is not avaiable
+  // if the solver is not available
 #ifndef HAVE_AMESOS_KLU
   if (SparseSolver == KLU) {
     std::cerr << "KLU is not installed..." << std::endl;

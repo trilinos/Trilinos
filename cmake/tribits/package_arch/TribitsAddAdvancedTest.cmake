@@ -61,6 +61,8 @@ INCLUDE(PrintVar)
 
 
 #
+# TRIBITS_ADD_ADVANCED_TEST(...)
+# 
 # Function that creates an advanced test defined using one or more executable
 # commands that is run as a separate CMake script.
 #
@@ -276,6 +278,13 @@ INCLUDE(PrintVar)
 #     If specified, the test will be assumed to fail if the output matches
 #     <regex>.  Otherwise, it will be assumed to fail.
 #
+# NOTES:
+#
+# 1) The test can be disabled by setting the variable
+# ${PACKAGE_NAME}_<testName>_DISABLE=ON (perhaps in the cache).  This allows
+# tests to be disable on a case-by-case basis.  This is the name that shows up
+# in 'ctest -N' when running the test.
+#
 
 FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
@@ -328,6 +337,11 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   SET(ADD_THE_TEST FALSE)
   TRIBITS_ADD_TEST_PROCESS_HOST_HOSTTYPE(ADD_THE_TEST)
   IF (NOT ADD_THE_TEST)
+    RETURN()
+  ENDIF()
+
+  TRIBITS_ADD_TEST_QUERY_DISABLE(DISABLE_THIS_TEST ${TEST_NAME})
+  IF (DISABLE_THIS_TEST)
     RETURN()
   ENDIF()
 
@@ -592,23 +606,26 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   # F) Set the CTest test to run the new script
   #
 
-  IF (ADD_THE_TEST AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT_ADD_TEST)
+  IF (ADD_THE_TEST
+    AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT
+    AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT_ADD_TEST
+    )
 
     # Tell CTest to run our script for this test.  Pass the test-time
     # configuration name to the script in the TEST_CONFIG variable.
     ADD_TEST( ${TEST_NAME}
       ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}" -P "${TEST_SCRIPT_FILE}"
       )
-
+  
     TRIBITS_PRIVATE_ADD_TEST_ADD_LABEL_AND_KEYWORDS(${TEST_NAME})
-
+  
     #This if clause will set the number of PROCESSORS to reserve during testing
     #to the number requested for the test.
     IF(NUM_PROCS_USED)
       SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
         PROCESSORS "${NUM_PROCS_USED}")
     ENDIF()
-
+  
     IF (PARSE_FINAL_PASS_REGULAR_EXPRESSION)
       SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         PASS_REGULAR_EXPRESSION "${PARSE_FINAL_PASS_REGULAR_EXPRESSION}" )
@@ -619,7 +636,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         PASS_REGULAR_EXPRESSION "OVERALL FINAL RESULT: TEST PASSED" )
     ENDIF()
-
+  
     IF (PARSE_TIMEOUT)
       SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES TIMEOUT ${PARSE_TIMEOUT})
     ENDIF()

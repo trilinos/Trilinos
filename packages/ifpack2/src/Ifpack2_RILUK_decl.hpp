@@ -317,7 +317,7 @@ Not currently supported.
     return A_;
   }
 
-  // Atribute access functions
+  // Attribute access functions
   
   //! Get RILU(k) relaxation parameter
   magnitudeType GetRelaxValue() const {return RelaxValue_;}

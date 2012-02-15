@@ -853,6 +853,20 @@ long long Inline_Mesh_Desc::Check_Block_BC_Sets()
 }
 
 /****************************************************************************/
+long long Inline_Mesh_Desc::Check_Blocks()
+/****************************************************************************/
+{
+  if(inline_bx == 0 || inline_by == 0 || inline_bz == 0){
+    error_stream << "Terminating from Inline_Mesh_Desc::Check_Blocks, zero value found,";
+    error_stream << " inline_bx " << inline_bx;
+    error_stream << " inline_by " << inline_by;
+    error_stream << " inline_bz " << inline_bz;
+    return 1;
+  }
+  return 0;
+}
+
+/****************************************************************************/
 void Inline_Mesh_Desc::Size_BC_Sets(long long nnx, 
 				 long long nny, 
 				 long long nnz)
@@ -1101,8 +1115,8 @@ void Inline_Mesh_Desc::ZeroSet()
   inline_geometry_type = UNKNOWN;
   inline_decomposition_type = BISECTION;
   trisection_blocks = 0;
-  inline_bx = 1;
-  inline_by = 1;
+  inline_bx = 0;
+  inline_by = 0;
   inline_bz = 1;
   inline_nx = 1;
   inline_ny = 1;
@@ -1937,6 +1951,7 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
     std::list < long long > tnodes_vector;
     std::list < long long > tglobal_nodes_vector;
 
+    std::set < long long > global_nodes_set;
 
     for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
       tglobal_nodes_vector.push_back(global_node_vector[the_nct]);
@@ -1944,13 +1959,16 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
 
     tglobal_nodes_vector.sort();
     tglobal_nodes_vector.unique();
+    global_nodes_set.insert(tglobal_nodes_vector.begin(),tglobal_nodes_vector.end());
+   
 
     if(dimension == 3){
       for ( long long _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
 	for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	  for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++){ 
 	    long long global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	    tnodes_vector.push_back(global_node_id);
+	    if(global_nodes_set.find(global_node_id) != global_nodes_set.end())
+	       nodeset_vectors[nsct].push_back(global_node_id);
 	  }
 	}
       }
@@ -1960,29 +1978,17 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
       for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
  	for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++){ 
 	  long long global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	  tnodes_vector.push_back(global_node_id);
+	  if(global_nodes_set.find(global_node_id) != global_nodes_set.end())
+	     nodeset_vectors[nsct].push_back(global_node_id);
 	}
       }
     }
 
-    tnodes_vector.sort();
-    tnodes_vector.unique();
+    std::vector < long long > :: iterator vit;
+          std::sort  (nodeset_vectors[nsct].begin(),nodeset_vectors[nsct].end());
+    vit = std::unique(nodeset_vectors[nsct].begin(),nodeset_vectors[nsct].end());
+    nodeset_vectors[nsct].resize(vit-nodeset_vectors[nsct].begin());
 
-    std::set_intersection(tnodes_vector.begin(),
-		     tnodes_vector.end(),
-		     tglobal_nodes_vector.begin(),
-		     tglobal_nodes_vector.end(),
-		     front_inserter(nodes_vector));
-
-    nodes_vector.sort();
-    nodes_vector.unique();
-
-    std::list < long long > :: iterator nit;
-    for(nit = nodes_vector.begin(); nit != nodes_vector.end(); nit ++){
-      for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
-        if((*nit) == global_node_vector[the_nct])nodeset_vectors[nsct].push_back((*nit));
-      }
-    }
   }
   // END OF NODESETS
 

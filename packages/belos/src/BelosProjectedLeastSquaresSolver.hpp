@@ -149,12 +149,19 @@ namespace Belos {
     } // namespace (anonymous)
 
     /// \class ProjectedLeastSquaresProblem
-    /// \brief "Container" for the data representing the projected least-squares problem.
+    /// \brief "Container" for the GMRES projected least-squares problem.
     /// \author Mark Hoemmen
+    /// 
+    /// See the documentation of \c ProjectedLeastSquaresSolver to
+    /// learn how to use this class in a GMRES-type iterative solver.
     template<class Scalar>
     class ProjectedLeastSquaresProblem {
     public:
+      /// \typedef scalar_type
+      /// \brief The type of the entries in the projected least-squares problem.
       typedef Scalar scalar_type;
+      /// \typedef magnitude_type
+      /// \brief The type of the magnitude of \c scalar_type values.
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
       /// \brief The upper Hessenberg matrix from GMRES.  
@@ -195,7 +202,7 @@ namespace Belos {
       ///
       /// The vector (one-column matrix) z has the same number of rows
       /// as H.  It stores the current right-hand side of the
-      /// projected least-squares problem.  The z_ vector may be
+      /// projected least-squares problem.  The z vector may be
       /// updated either progressively (if a Givens rotation method is
       /// used) or all at once (if an LAPACK factorization method is
       /// used).
@@ -205,6 +212,11 @@ namespace Belos {
       ///
       /// This array is only filled in if a Givens rotation method is
       /// used for updating the least-squares problem.
+      ///
+      /// In the complex-arithmetic case, it is possible to compute
+      /// entirely real-valued cosines.  However, we choose to
+      /// represent them as the original scalar type, rather than the
+      /// magnitude type.
       Teuchos::Array<Scalar> theCosines;
 
       /// \brief Array of sines from the computed Givens rotations.
@@ -232,14 +244,19 @@ namespace Belos {
 
       /// \brief Reset the projected least-squares problem.
       /// 
-      /// "Reset" means that the right-hand side is restored to
-      /// \f$\beta e_1\f$.  None of the matrices or vectors are
-      /// reallocated or resized.  The application is responsible for
-      /// doing everything else.  Since this class keeps the original
-      /// upper Hessenberg matrix, the application can recompute its
-      /// QR factorization up to the desired point and apply the
-      /// resulting Givens rotations to the right-hand size z
-      /// resulting from this reset operation.
+      /// "Reset" means that the right-hand side of the projected
+      /// least-squares problem is restored to \f$\beta e_1\f$.  The
+      /// value \f$\beta\f$ is typically the norm of the initial or
+      /// restarted residual vector.
+      ///
+      /// This method does not reallocate or resize any of the
+      /// matrices or vectors.  Since this class keeps the original
+      /// upper Hessenberg matrix, the application may choose to
+      /// recompute its QR factorization up to the desired point and
+      /// apply the resulting Givens rotations to the right-hand size
+      /// z resulting from this reset operation.  Alternately, the
+      /// application may simply overwrite the upper Hessenberg
+      /// matrix's entries with new data.
       ///
       /// \param beta [in] The initial residual norm of the
       ///   (non-projected) linear system \f$Ax=b\f$.

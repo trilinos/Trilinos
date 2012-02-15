@@ -45,6 +45,7 @@
 #include "EpetraExt_ConfigDefs.h"
 #ifdef HAVE_EPETRAEXT_HDF5
 
+#include <string>
 #include "hdf5.h"
 class Epetra_Map;
 class Epetra_BlockMap;
@@ -341,10 +342,10 @@ class HDF5
     // @{ \name Basic operations
     
     //! Create a new file.
-    void Create(const string FileName);
+    void Create(const std::string FileName);
 
     //! Open specified file with given access type.
-    void Open(const string FileName, int AccessType = H5F_ACC_RDWR);
+    void Open(const std::string FileName, int AccessType = H5F_ACC_RDWR);
 
     //! Close the file.
     void Close()
@@ -366,53 +367,53 @@ class HDF5
     }
 
     //! Create group \c GroupName.
-    void CreateGroup(const string& GroupName)
+    void CreateGroup(const std::string& GroupName)
     {
       hid_t group_id = H5Gcreate(file_id_, GroupName.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Gclose(group_id);
     }
 
     //! Return \c true if \c Name is contained in the database.
-    bool IsContained(const string Name);
+    bool IsContained(const std::string Name);
 
     // @}
     // @{ \name basic non-distributed data types
     
     //! Write an integer in group \c GroupName using the given \c DataSetName.
-    void Write(const string& GroupName, const string& DataSetName, int data);
+    void Write(const std::string& GroupName, const std::string& DataSetName, int data);
 
     //! Read an integer from group \c /GroupName/DataSetName
-    void Read(const string& GroupName, const string& DataSetName, int& data);
+    void Read(const std::string& GroupName, const std::string& DataSetName, int& data);
 
     //! Write a double in group \c GroupName using the given \c DataSetName.
-    void Write(const string& GroupName, const string& DataSetName, double data);
+    void Write(const std::string& GroupName, const std::string& DataSetName, double data);
 
     //! Read a double from group \c /GroupName/DataSetName
-    void Read(const string& GroupName, const string& DataSetName, double& data);
+    void Read(const std::string& GroupName, const std::string& DataSetName, double& data);
 
     //! Write a string in group \c GroupName using the given \c DataSetName.
-    void Write(const string& GroupName, const string& DataSetName, const string& data);
+    void Write(const std::string& GroupName, const std::string& DataSetName, const std::string& data);
 
     //! Read a string from group \c /GroupName/DataSetName
-    void Read(const string& GroupName, const string& DataSetName, string& data);
+    void Read(const std::string& GroupName, const std::string& DataSetName, std::string& data);
 
     //! Read the serial array \c data, of type \c type, from group \c GroupName, using the dataset name \c DataSetName.
-    void Read(const string& GroupName, const string& DataSetName,
+    void Read(const std::string& GroupName, const std::string& DataSetName,
               const int type, const int Length, void* data);
 
     //! Write the serial array \c data, of type \c type, to group \c GroupName, using the dataset name \c DataSetName
-    void Write(const string& GroupName, const string& DataSetName,
+    void Write(const std::string& GroupName, const std::string& DataSetName,
                          const int type, const int Length, 
                          void* data);
 
     //! Associate string \c Comment with group \c GroupName.
-    void WriteComment(const string& GroupName, string Comment)
+    void WriteComment(const std::string& GroupName, std::string Comment)
     {
       H5Gset_comment(file_id_, GroupName.c_str(), Comment.c_str());
     }
 
     //! Read the string associated with group \c GroupName.
-    void ReadComment(const string& GroupName, string& Comment)
+    void ReadComment(const std::string& GroupName, std::string& Comment)
     {
       char comment[128];
       H5Gget_comment(file_id_, GroupName.c_str(), 128, comment);
@@ -423,10 +424,10 @@ class HDF5
     // @{ \name Distributed arrays
     
     //! Write the distributed array \c data, of type \c type, to group \c GroupName, using dataset name \c DataSetName
-    void Write(const string& GroupName, const string& DataSetName, int MySize, int GlobalSize, int type, const void* data);
+    void Write(const std::string& GroupName, const std::string& DataSetName, int MySize, int GlobalSize, int type, const void* data);
 
     //! Read the distributed array \c data, of type \c type, from group \c GroupName, using dataset name \c DataSetName
-    void Read(const string& GroupName, const string& DataSetName,
+    void Read(const std::string& GroupName, const std::string& DataSetName,
               int MySize, int GlobalSize,
               const int type, void* data);
 
@@ -434,25 +435,25 @@ class HDF5
     // @{ \name Epetra_Map/Epetra_BlockMap
 
     //! Write a Map to group \c GroupName.
-    void Write(const string& GroupName, const Epetra_Map& Map);
+    void Write(const std::string& GroupName, const Epetra_Map& Map);
 
     //! Read a map from \c GroupName.
-    void Read(const string& GroupName, Epetra_Map*& Map);
+    void Read(const std::string& GroupName, Epetra_Map*& Map);
 
     //! Read basic properties of specified Epetra_Map.
-    void ReadMapProperties(const string& GroupName, 
+    void ReadMapProperties(const std::string& GroupName, 
                            int& NumGlobalElements,
                            int& IndexBase,
                            int& NumProc);
 
     //! Read a block map from \c GroupName.
-    void Read(const string& GroupName, Epetra_BlockMap*& Map);
+    void Read(const std::string& GroupName, Epetra_BlockMap*& Map);
 
     //! Write a block map to group \c GroupName.
-    void Write(const string& GroupName, const Epetra_BlockMap& Map);
+    void Write(const std::string& GroupName, const Epetra_BlockMap& Map);
 
     //! Read basic properties of specified Epetra_BlockMap.
-    void ReadBlockMapProperties(const string& GroupName, 
+    void ReadBlockMapProperties(const std::string& GroupName, 
                                 int& NumGlobalElements,
                                 int& NumGlobalPoints,
                                 int& IndexBase,
@@ -462,17 +463,17 @@ class HDF5
     // @{ \name Epetra_CrsGraph
 
     //! Read a vector from group \c GroupName, assuming linear distribution.
-    void Read(const string& GroupName, Epetra_CrsGraph*& Graph);
+    void Read(const std::string& GroupName, Epetra_CrsGraph*& Graph);
 
     //! Read a vector from group \c GroupName using the given map.
-    void Read(const string& GroupName, const Epetra_Map& DomainMap, 
+    void Read(const std::string& GroupName, const Epetra_Map& DomainMap, 
               const Epetra_Map& RangeMap, Epetra_CrsGraph*& Graph);
 
     //! Write a distributed vector to group \c GroupName.
-    void Write(const string& GroupName, const Epetra_CrsGraph& Graph);
+    void Write(const std::string& GroupName, const Epetra_CrsGraph& Graph);
 
     //! Read basic properties of specified Epetra_CrsGraph.
-    void ReadCrsGraphProperties(const string& GroupName, 
+    void ReadCrsGraphProperties(const std::string& GroupName, 
                                 int& NumGlobalRows,
                                 int& NumGlobalCols,
                                 int& NumGlobalNonzeros,
@@ -483,16 +484,16 @@ class HDF5
     // @{ \name Epetra_IntVector
 
     //! Write a distributed vector to group \c GroupName.
-    void Write(const string& GroupName, const Epetra_IntVector& x);
+    void Write(const std::string& GroupName, const Epetra_IntVector& x);
 
     //! Read a vector from group \c GroupName, assuming linear distribution.
-    void Read(const string& GroupName, Epetra_IntVector*& X);
+    void Read(const std::string& GroupName, Epetra_IntVector*& X);
 
     //! Read a vector from group \c GroupName using the given map.
-    void Read(const string& GroupName, const Epetra_Map& Map, Epetra_IntVector*& X);
+    void Read(const std::string& GroupName, const Epetra_Map& Map, Epetra_IntVector*& X);
 
     //! Read basic properties of specified Epetra_IntVector.
-    void ReadIntVectorProperties(const string& GroupName, int& GlobalLength);
+    void ReadIntVectorProperties(const std::string& GroupName, int& GlobalLength);
 
     // @}
     // @{ \name Epetra_MultiVector
@@ -500,23 +501,23 @@ class HDF5
     /// \brief Write a distributed vector (or its transpose) to group \c GroupName.  
     ///
     /// Write the transpose if writeTranspose is true.
-    void Write(const string& GroupName, const Epetra_MultiVector& x, bool writeTranspose = false);
+    void Write(const std::string& GroupName, const Epetra_MultiVector& x, bool writeTranspose = false);
 
     /// \brief Read a vector (or its transpose) from group \c GroupName.
     /// 
     /// This method assumes a linear distribution.  Read the transpose
     /// if writeTranspose is true.
-    void Read(const string& GroupName, Epetra_MultiVector*& X,
+    void Read(const std::string& GroupName, Epetra_MultiVector*& X,
               bool writeTranspose = false, const int& indexBase = 0);
 
     /// \brief Read a vector from group \c GroupName using the given map. 
     ///
     /// Read the transpose if writeTranspose is true.
-    void Read(const string& GroupName, const Epetra_Map& Map, Epetra_MultiVector*& X,
+    void Read(const std::string& GroupName, const Epetra_Map& Map, Epetra_MultiVector*& X,
               bool writeTranspose = false);
 
     //! Read basic properties of specified Epetra_MultiVector.
-    void ReadMultiVectorProperties(const string& GroupName, 
+    void ReadMultiVectorProperties(const std::string& GroupName, 
                                    int& GlobalLength,
                                    int& NumVectors);
 
@@ -524,19 +525,19 @@ class HDF5
     // @{ \name Epetra_RowMatrix/Epetra_CrsMatrix
 
     //! Write a distributed RowMatrix to group \c GroupName.
-    void Write(const string& GroupName, const Epetra_RowMatrix& Matrix);
+    void Write(const std::string& GroupName, const Epetra_RowMatrix& Matrix);
 
     //! Read a square matrix from group \c GroupName, assuming linear distribution.
-    void Read(const string& GroupName, Epetra_CrsMatrix*& A);
+    void Read(const std::string& GroupName, Epetra_CrsMatrix*& A);
 
     //! Read a matrix from group \c GroupName with given range and domain maps.
-    void Read(const string& GroupName, 
+    void Read(const std::string& GroupName, 
               const Epetra_Map& DomainMap, 
               const Epetra_Map& RangeMap, 
               Epetra_CrsMatrix*& A);
 
     //! Read basic properties of specified Epetra_CrsMatrix.
-    void ReadCrsMatrixProperties(const string& GroupName, 
+    void ReadCrsMatrixProperties(const std::string& GroupName, 
                                  int& NumGlobalRows,
                                  int& NumGlobalCols,
                                  int& NumNonzeros,
@@ -549,25 +550,25 @@ class HDF5
     // @{ \name Teuchos::ParameterList
 
     //! Write a parameter list to group \c GroupName.
-    void Write(const string& GroupName, const Teuchos::ParameterList& List);
+    void Write(const std::string& GroupName, const Teuchos::ParameterList& List);
 
     //! Read a parameter list from group \c GroupName.
-    void Read(const string& GroupName, Teuchos::ParameterList& List);
+    void Read(const std::string& GroupName, Teuchos::ParameterList& List);
 
     // @}
     // @{ \name EpetraExt::DistArray<int>
 
     //! Write an EpetraExt::DistArray<int> to group \c GroupName.
-    void Write(const string& GroupName, const DistArray<int>& array);
+    void Write(const std::string& GroupName, const DistArray<int>& array);
 
     //! Read an EpetraExt::DistArray<int> from group \c GroupName.
-    void Read(const string& GroupName, DistArray<int>*& array);
+    void Read(const std::string& GroupName, DistArray<int>*& array);
 
     //! Read an EpetraExt::DistArray<int> from group \c GroupName.
-    void Read(const string& GroupName, const Epetra_Map& Map, DistArray<int>*& array);
+    void Read(const std::string& GroupName, const Epetra_Map& Map, DistArray<int>*& array);
 
     //! Read the global number of elements and type for a generic handle object
-    void ReadIntDistArrayProperties(const string& GroupName, 
+    void ReadIntDistArrayProperties(const std::string& GroupName, 
                                     int& GlobalLength,
                                     int& RowSize);
 
@@ -575,16 +576,16 @@ class HDF5
     // @{ \name EpetraExt::DistArray<double>
 
     //! Write an EpetraExt::DistArray<int> to group \c GroupName.
-    void Write(const string& GroupName, const DistArray<double>& array);
+    void Write(const std::string& GroupName, const DistArray<double>& array);
 
     //! Read an EpetraExt::DistArray<int> from group \c GroupName.
-    void Read(const string& GroupName, DistArray<double>*& array);
+    void Read(const std::string& GroupName, DistArray<double>*& array);
 
     //! Read an EpetraExt::DistArray<int> from group \c GroupName.
-    void Read(const string& GroupName, const Epetra_Map& Map, DistArray<double>*& array);
+    void Read(const std::string& GroupName, const Epetra_Map& Map, DistArray<double>*& array);
 
     //! Read the global number of elements and type for a generic handle object
-    void ReadDoubleDistArrayProperties(const string& GroupName, 
+    void ReadDoubleDistArrayProperties(const std::string& GroupName, 
                                        int& GlobalLength,
                                        int& RowSize);
     // @}
@@ -592,14 +593,14 @@ class HDF5
     // @{ \name Generic distributed object
 
     //! Write an Epetra_DistObject to group \c GroupName.
-    void Write(const string& GroupName, const Handle& List);
+    void Write(const std::string& GroupName, const Handle& List);
 
     //! Read an Epetra_DistObject from group \c GroupName.
-    void Read(const string& GroupName, Handle& List);
+    void Read(const std::string& GroupName, Handle& List);
 
     //! Read the global number of elements and type for a generic handle object
-    void ReadHandleProperties(const string& GroupName, 
-                              string& Type,
+    void ReadHandleProperties(const std::string& GroupName, 
+                              std::string& Type,
                               int& NumGlobalElements);
 
     // @}
@@ -615,7 +616,7 @@ class HDF5
     //! This object's communicator.
     const Epetra_Comm& Comm_; 
     //! FileName currently open.
-    string FileName_;
+    std::string FileName_;
     //! If \c true, a file is currently open.
     bool IsOpen_;
 

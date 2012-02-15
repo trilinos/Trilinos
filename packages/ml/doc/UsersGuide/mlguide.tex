@@ -3797,9 +3797,11 @@ to the cmake configure line.  Trilinos does not play nicely with
 MATLAB's default LAPACK and BLAS on 64-bit machines, so be sure to
 specify your own with something like:
 \begin{verbatim}
--D LAPACK_LIBRARY_DIRS:STRING="<path to my lapack>" \
--D BLAS_LIBRARY_DIRS:STRING="<path to my blas>" \
+-D LAPACK_LIBRARY_DIRS:STRING="<path to my lapack.a>" \
+-D BLAS_LIBRARY_DIRS:STRING="<path to my blas.a>" \
 \end{verbatim}
+Using static linking for LAPACK and BLAS prevents MATLAB's default libraries to take precedence.
+%
 If MLMEX randomly crashes when you turn 'PDE equations' above one,
 chances are MLMEX is finding the wrong BLAS/LAPACK libraries.  Be sure
 cmake is finding the right copy. MLMEX has only been tested with cmake on MATLAB 7.9 (R2009b) on a

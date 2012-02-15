@@ -167,6 +167,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     Sacado_Fad_BLAS.hpp
     Sacado_Fad_BLASImp.hpp
     Sacado_Fad_ScalarTraitsImp.hpp
+    Sacado_Tay_ScalarTraitsImp.hpp
     )
 
   # TEMPLATE

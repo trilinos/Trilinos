@@ -130,13 +130,33 @@ namespace Sacado {
     
     //! Specialization of %ExprPromote to GeneralFad types
     template <typename T, typename S>
-    struct ExprPromote< GeneralFad<T,S>, T > {
+    struct ExprPromote< GeneralFad<T,S>, 
+			typename GeneralFad<T,S>::value_type > {
       typedef GeneralFad<T,S> type;
     };
     
     //! Specialization of %ExprPromote to GeneralFad types
     template <typename T, typename S>
-    struct ExprPromote< T, GeneralFad<T,S> > {
+    struct ExprPromote< typename GeneralFad<T,S>::value_type, 
+			GeneralFad<T,S> > {
+      typedef GeneralFad<T,S> type;
+    };
+
+    //! Specialization of %ExprPromote to GeneralFad types
+    template <typename T, typename S>
+    struct ExprPromote< GeneralFad<T,S>, 
+			typename dummy<typename GeneralFad<T,S>::value_type,
+				       typename GeneralFad<T,S>::scalar_type
+				       >::type > {
+      typedef GeneralFad<T,S> type;
+    };
+    
+    //! Specialization of %ExprPromote to GeneralFad types
+    template <typename T, typename S>
+    struct ExprPromote< typename dummy<typename GeneralFad<T,S>::value_type,
+				       typename GeneralFad<T,S>::scalar_type
+				       >::type, 
+			GeneralFad<T,S> > {
       typedef GeneralFad<T,S> type;
     };
 

@@ -30,13 +30,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_Node.h>
-#include <string>
-#include <assert.h>
-
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 #include <Ioss_ElementVariableType.h>
+#include <Ioss_Node.h>
+#include <assert.h>
+#include <stddef.h>
+
+#include "Ioss_ElementTopology.h"
+
 namespace Ioss {
   class St_Node : public ElementVariableType
   {

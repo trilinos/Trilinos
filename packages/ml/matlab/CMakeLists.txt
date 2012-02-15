@@ -42,24 +42,15 @@ if(TPL_ENABLE_MATLAB)
   SET(MLMEX_OPTS1 "-pthread;-shared;-Wl,--version-script,${MATLAB_ROOT}/extern/lib/${MATLAB_ARCH}/mexFunction.map;-Wl,--no-undefined")
   
   SET(MLMEX_OPTS2 "-Wl,-rpath-link,${MATLAB_ROOT}/bin/${MATLAB_ARCH}")
-  
-  
+    
   # Use TARGET_LINK_LIBRARIES and the C++ compiler to link the mlmex.cpp file to the rest of Trilinos & the mex libs.
   # This code is extremely fragile and probably won't work on any system but GNU/Linux with gcc.
   # This is because Cmake will not allow me to *just call the mex linker*, and so I have to do this the hard way.
   #
   LINK_DIRECTORIES(${MATLAB_LIBRARY_DIRS})
   ADD_EXECUTABLE(mlmex.${MEX_EXTENSION} mlmex.cpp)
+  SET_TARGET_PROPERTIES(mlmex.${MEX_EXTENSION} PROPERTIES SUFFIX "") # remove .exe extension
   TARGET_LINK_LIBRARIES(mlmex.${MEX_EXTENSION} ${MLMEX_OPTS1} ${LINK_LIBS} ${MLMEX_OPTS2})
-  
-  # Rename the mex binary to the right name.  
-  # NTS: Not portable
-  ADD_CUSTOM_TARGET(mlmex_copy_target ALL
-    )
-  ADD_CUSTOM_COMMAND(TARGET mlmex_copy_target POST_BUILD
-    DEPENDS mlmex.${MEX_EXTENSION}
-    COMMAND mv mlmex.${MEX_EXTENSION}.exe mlmex.${MEX_EXTENSION}
-    )
 
   # Copy over the ml.m file from src
   CONFIGURE_FILE("ml.m" "ml.m" COPYONLY)  

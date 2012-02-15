@@ -52,22 +52,26 @@
 
 namespace Tpetra {
 
-  //! \brief The Tpetra gather/scatter setup class.
-  /*! The Distributor class is an interface that encapsulates the general
-        information and services needed for other Tpetra classes to perform gather/scatter
-        operations on a parallel computer.
-  */
-
+  /// \class Distributor
+  /// \brief Class that sets up gathers and scatters for Tpetra communication.
+  ///
+  /// This class encapsulates the general information and services
+  /// needed for other Tpetra classes to perform gather/scatter
+  /// operations on a parallel computer.
   class Distributor : public Teuchos::Describable {
   public:
 
     //! @name Constructor/Destructor
     //@{ 
 
-    //! Construct the Distributor using the specified communicator.
+    /// \brief Construct the Distributor using the specified communicator.
+    ///
+    /// This doesn't actually set up the distribution pattern.  You
+    /// need to call one of the "gather / scatter 'constructors'" to
+    /// do that.
     explicit Distributor(const RCP<const Comm<int> > & comm);
 
-    //! Copy Constructor
+    //! Copy constructor.
     Distributor(const Distributor &distributor);
 
     //! Destructor.
@@ -76,50 +80,60 @@ namespace Tpetra {
     //@}
 
 
-    //! @name Gather/Scatter Constructors
+    //! \name Gather/Scatter Constructors
     //@{ 
 
-    //! \brief Create a Distributor object using list of node IDs to send to
-    /*! Take a list of node IDs and construct a plan for efficiently scattering to those nodes.
-        Return the number of IDs being sent to me.
+    /// \brief Set up Distributor using list of node IDs to which this node will send.
+    ///
+    /// Take a list of node IDs and construct a plan for efficiently
+    /// scattering to those nodes.  Return the number of nodes which
+    /// will send me data.
+    ///
+    /// \param exportNodeIDs [in] List of nodes that will get the
+    ///   exported data.  A node ID greater than or equal to the
+    ///   number of nodes will result in a \c std::runtime_error on
+    ///   all nodes.  Node IDs less than zero are ignored; their
+    ///   placement corresponds to null sends in any future
+    ///   exports. That is, if <tt>exportNodeIDs[0] == -1</tt>, then
+    ///   the corresponding position in the export array is ignored
+    ///   during a call to doPosts() or doPostsAndWaits().  For this
+    ///   reason, a negative entry is sufficient to break contiguity.
+    ///
+    /// \return Number of imports this node will be receiving.
+    size_t createFromSends (const ArrayView<const int>& exportNodeIDs);
 
-      \param exportNodeIDs [in]
-             List of nodes that will get the exported data. 
-             A node ID greater than or equal to the number of nodes will 
-             result in a \c std::runtime_error on all nodes.
-             Node IDs less than zero
-             are ignored; their placement corresponds to null sends in any
-             future exports. That is, if <tt>exportNodeIDs[0] == -1</tt>, then 
-             the corresponding position in the export array is ignored during a call to
-             doPosts() or doPostsAndWaits() is skipped.
-             For this reason, a negative entry is sufficient to break contiguity.
-
-      \return Number of imports this node will be receiving.
-
-    */
-    size_t createFromSends(const ArrayView<const int> &exportNodeIDs);
-
-    //! \brief Create Distributor object using list of node IDs to receive from
-    /*! Take a list of node IDs and construct a plan for efficiently scattering to those nodes.
-        Return the number and list of IDs being sent by me.
-
-      \param remoteIDs [in]
-             List of remote IDs wanted. 
-
-      \param remoteNodeIDs [in]
-             List of nodes that will send the corresponding remote IDs. Node IDs less than zero
-             are ignored; their placement corresponds to null sends in any
-             future exports. A node ID greater than or equal to the number of nodes will 
-             result in a \c std::runtime_error on all nodes.
-
-      \param exportIDs [out]
-             List of IDs that need to be sent from this node.
-
-      \param exportNodeIDs [out]
-             List of nodes that will get the exported IDs.
-
-      \note \c exportGIDs and \c exportNodeIDs are allocated by the Distributor, but they are reference counted and will be automatically deallocated.
-    */
+    /// \brief Set up Distributor using list of node IDs from which to receive.
+    ///
+    /// Take a list of node IDs and construct a plan for efficiently
+    /// scattering to those nodes.  Return the number and list of IDs
+    /// being sent by me.
+    ///
+    /// \c Import invokes this method in order to creating a \c
+    /// Distributor from a list of receive neighbors and IDs.  A
+    /// common use case for this process is setting up sends and
+    /// receives for the remote entries of the source vector in a
+    /// distributed sparse matrix-vector multiply.  The Mantevo HPCCG
+    /// miniapp shows an annotated and simplified version of this
+    /// process for that special case.
+    ///
+    /// \param remoteIDs [in] List of remote IDs wanted. 
+    ///
+    /// \param remoteNodeIDs [in] List of the nodes that will send the
+    ///   remote IDs listed in \remoteIDs. Node IDs less than zero are
+    ///   ignored; their placement corresponds to null sends in any
+    ///   future exports. A node ID greater than or equal to the
+    ///   number of nodes will result in an \c std::runtime_error on
+    ///   all nodes.
+    ///
+    /// \param exportIDs [out] List of IDs that need to be sent from
+    ///   this node.
+    ///
+    /// \param exportNodeIDs [out] List of nodes that will get the
+    ///   exported IDs in \c exportIDs.
+    ///
+    /// The \c exportGIDs and \c exportNodeIDs arrays are allocated by
+    /// the Distributor, which is why they are passed in a nonconst
+    /// reference to an ArrayRCP.  They may be null on entry.
     template <class Ordinal>
     void createFromRecvs(const ArrayView<const Ordinal> &remoteIDs, 
                          const ArrayView<const int> &remoteNodeIDs, 
@@ -170,7 +184,7 @@ namespace Tpetra {
     /*! This method creates the reverse Distributor the first time the function
         is called.
     */
-    const RCP<Distributor> & getReverse() const;
+    const RCP<Distributor>& getReverse() const;
 
     //@}
 
@@ -337,29 +351,70 @@ namespace Tpetra {
     //@}
 
   private:
-
-    // private data members
+    //! The communicator over which to perform distributions.
     RCP<const Comm<int> > comm_;
 
+    /// \brief The number of export process IDs on input to \c createFromSends().
+    ///
+    /// This may differ from the number of sends.  We always want to
+    /// send either zero or one messages to any process.  However, the
+    /// user may have specified a process ID twice in \c
+    /// createFromSends()'s input array of process IDs (\c
+    /// exportNodeIDs).  This is allowed, but may affect whether sends
+    /// require a buffer.
     size_t numExports_;
-    // selfMessage_ is whether I have a send for myself
+
+    //! Whether I am supposed to send a message to myself.
     bool selfMessage_;
-    // numSends_ is number of sends to other nodes; is less than or equal to the number of nodes
+
+    /// \brief The number of sends to other nodes.
+    ///
+    /// This is always less than or equal to the number of nodes.
+    /// It does <i>not</i> count self receives.
+    ///
+    /// This value is computed by the \c createFromSends() method.
+    /// That method first includes self receives in the count, but at
+    /// the end subtracts one if selfMessage_ is true.
     size_t numSends_;
+
     // imagesTo_, startsTo_ and lengthsTo_ each have size 
     //   numSends_ + selfMessage_
     Array<int> imagesTo_;
-    /* Given an export buffer that contains all of the item being sent by this node,
-       the block of values for node i will start at position startsTo_[i]  */
+
+    /// \brief Starting index of the block of values to send to each process.
+    ///
+    /// Given an export buffer that contains all of the data being
+    /// sent by this process, the block of values to send to process i
+    /// will start at position startsTo_[i].
+    ///
+    /// This array has length numSends_ + selfMessage_ (that is, it
+    /// includes the self message, if there is one).
     Array<size_t> startsTo_;
+
+    /// \brief Length of my process' send to each process.
+    ///
+    /// lengthsTo_[i] is the length of my process' send to process i.
+    /// This array has length numSends_ + selfMessage_ (that is, it
+    /// includes the self message, if there is one).
     Array<size_t> lengthsTo_;
-    // maxSendLength_ is the maximum send to another node: 
-    //   max(lengthsTo_[i]) for i != me
+
+    /// \brief The maximum send length to another node.
+    ///
+    /// maxSendLength_ = max(lengthsTo_[i]) for i != my process ID.
     size_t maxSendLength_;
     Array<size_t> indicesTo_;
-    // numReceives_ is the number of receives by me from other procs, not
-    // counting self receives
+    
+    /// \brief The number of messages received by my process from other processes.
+    ///
+    /// This does <i>not</i> count self receives.  If selfMessage_ is
+    /// true, the actual number of receives is one more (we assume
+    /// that we only receive zero or one messages from ourself).
+    ///
+    /// This value is computed by the \c computeReceives() method.
+    /// That method first includes self receives in the count, but at
+    /// the end subtracts one if selfMessage_ is true.
     size_t numReceives_;
+
     // totalReceiveLength_ is the total number of Packet received, used to 
     // allocate the receive buffer
     size_t totalReceiveLength_;
@@ -370,23 +425,26 @@ namespace Tpetra {
     Array<size_t> startsFrom_;
     Array<size_t> indicesFrom_;
 
-    // requests associated with non-blocking receives
+    //! Communication requests associated with nonblocking receives.
     Array<RCP<Teuchos::CommRequest> > requests_;
 
+    /// \brief The reverse distributor.
+    ///
+    /// This is created on demand in \c getReverse() and cached for
+    /// later reuse.  This is why it is declared "mutable".
     mutable RCP<Distributor> reverseDistributor_;
 
-    // compute receive info from sends
+    //! Compute receive info from sends.
     void computeReceives();
 
-    // compute send info from receives
+    //! Compute send info from receives.
     template <class Ordinal>
-    void computeSends(const ArrayView<const Ordinal> &importIDs,
-                      const ArrayView<const int> &importNodeIDs,
-                            ArrayRCP<Ordinal> &exportIDs,
-                            ArrayRCP<int> &exportNodeIDs);
+    void computeSends (const ArrayView<const Ordinal> &importIDs,
+		       const ArrayView<const int> &importNodeIDs,
+		       ArrayRCP<Ordinal> &exportIDs,
+		       ArrayRCP<int> &exportNodeIDs);
 
-    // create a distributor for the reverse communciation pattern (pretty much
-    // swap all send and receive info)
+    //! Create a distributor for the reverse communciation pattern.
     void createReverseDistributor() const;
 
   }; // class Distributor

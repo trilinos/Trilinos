@@ -36,8 +36,7 @@ PecosOneDOrthogPolyBasis(
   pecosPoly(pecosPoly_),
   name(name_),
   p(p_),
-  sparse_grid_rule(Pecos::GOLUB_WELSCH),
-  sparse_grid_growth_rule(Pecos::DEFAULT_GROWTH),
+  sparse_grid_growth_rule(webbur::level_to_order_linear_wn),
   norms(p+1, value_type(0.0))
 {
   for (ordinal_type i=0; i<=p; i++)
@@ -51,7 +50,6 @@ PecosOneDOrthogPolyBasis(
   pecosPoly(basis.pecosPoly),
   name(basis.name),
   p(p_),
-  sparse_grid_rule(basis.sparse_grid_rule),
   sparse_grid_growth_rule(basis.sparse_grid_growth_rule),
   norms(p+1, value_type(0.0))
 {

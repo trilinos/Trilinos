@@ -120,6 +120,18 @@
 
 namespace Teuchos {
 
+/// \typedef stat_map_type
+/// \brief Global statistics collected from timer data.
+///
+/// Key: name of the timer.
+///
+/// Value: each entry in the vector is a timing and call count for
+///   that timer, corresponding to a particular statistic (e.g.,
+///   minimum, arithmetic mean, or maximum).  What statistic that is
+///   depends on an auxillary array "statNames" which has the same
+///   ordering as the entries in this vector.  See the documentation
+///   of \c TimeMonitor::computeGlobalTimerStatistics().
+typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map_type;
 
 /// \class TimeMonitor
 /// \brief A scope-safe timer wrapper class.
@@ -186,48 +198,167 @@ public:
   /// </ul>
   static void zeroOutTimers();
 
-  /// \brief Print summary statistics for all timers on the given communicator.
+  /// \brief Compute global timer statistics for all timers on the given communicator.
   ///
-  /// The typical use case for timers is that all MPI processes on a
-  /// communicator create the same set of timers, and then want to
-  /// report summary statistics.  This method's default behavior
-  /// (writeGlobalStats=true) is to report the mininum, arithmetic
-  /// mean, and maximum for each timer.  Duplicate timers get merged
-  /// additively.
+  /// The typical use case for \c Time and \c TimeMonitor is that all
+  /// processes in a communicator create the same set of timers, and
+  /// then want to report summary statistics.  This method supports
+  /// that typical use case.  For each timer in the set, this method
+  /// computes a list of global statistics.  "Global" means "for all
+  /// processes in the communicator."  "Statistic" means the result of
+  /// a reduction over the timing and call count values.  Thus, each
+  /// statistic includes both a timing and a call count.  The current
+  /// list of computed statistics includes the minimum and maximum
+  /// timing (and the corresponding call count for each) and the
+  /// arithmetic mean (timing and call count).  This list may expand
+  /// in the future.
   ///
-  /// Note that different MPI processes may have different sets of
-  /// timers.  If writeGlobalStats is true, we have to reconcile the
-  /// different sets of timers somehow.  This method gives you two
-  /// options: if setOp is Intersection, it computes the intersection
-  /// (the common subset) of timers on all MPI processes in the
-  /// communicator.  Otherwise, if setOp is Union, this method
-  /// computes the union of timers on all MPI processes in the
-  /// communicator.  Intersection is the default, since it means that
-  /// all reported timers exist on all participating processes.
+  /// Different processes may have different sets of timers.  This
+  /// method gives you two options for reconciling the sets.  If setOp
+  /// is Intersection, it computes the intersection (the common
+  /// subset) of timers on all processes in the communicator.
+  /// Otherwise, if setOp is Union, this method computes the union of
+  /// timers on all processes in the communicator.  Intersection is
+  /// the default, since it means that all reported timers exist on
+  /// all participating processes.  For setOp=Union, timers that do
+  /// not exist on some processes will be given a zero timing and call
+  /// count, so that statistics make sense.
   ///
-  /// Suppose there are \f$P\f$ MPI processes in the communicator and
+  /// Suppose there are \f$P\f$ processes in the communicator and
   /// \f$N\f$ unique timers in the global union.  This method requires
   /// \f$O(\log P)\f$ messages (\f$O(1)\f$ "reductions" and exactly 1
   /// "broadcast") and \f$O(N)\f$ per-processor storage (in the worst
   /// case) when computing either the intersection or the union of
   /// timers (the algorithm is similar in either case).  The whole
   /// algorithm takes at worst \f$O(N (\log N) (\log P))\f$ time along
-  /// the critical path (i.e., on the "slowest MPI process").
+  /// the critical path (i.e., on the "slowest process" in the
+  /// communicator).
+  ///
+  /// The "Min" and "Max" timings are cumulative: the reported timing
+  /// is for all calls.  Along with the "Min" resp. "Max" timing comes
+  /// the call count of the process who had the min resp. max.  (If
+  /// more than one process had the min resp. max timing, then the
+  /// call count on the process with the smallest rank is reported.)
+  ///
+  /// The "Mean" is an arithmetic mean of all timings.  It is
+  /// <i>not</i> cumulative over call counts; it reports an average
+  /// timing for a single invocation over all calls on all processes,
+  /// not weighting any one process more than the others.  Thus, the
+  /// mean is <i>not</i> comparable with the min or max.  To make it
+  /// comparable, multiply the mean timing by the mean call count, and
+  /// divide by the number of processes in the communicator.  This
+  /// makes the mean cumulative.
+  ///
+  /// The mean for each timer equals the sum of the cumulative timing
+  /// over all processes, divided by the sum of the call counts over
+  /// all processes for that timing.  (We compute it a bit differently
+  /// to help prevent overflow.)  Along with the mean timing comes the
+  /// aritmetic mean of the call counts.  This may be fractional,
+  /// which is one reason why we report call counts as \c double
+  /// rather than \c int.  It has no particular connection to the mean
+  /// timing.
+  ///
+  /// All output arguments are returned redundantly on all processes
+  /// in the communicator.  That makes this method an all-reduce.
+  ///
+  /// \param statData [out] On output: Global timer statistics, stored
+  ///   as a map with key timer name, and with value the ordered list
+  ///   of statistics for that timer.  The \c statNames output has the
+  ///   same order as the ordered list of statistics for each timer.
+  ///   Each entry of the statistics list is a (timing, call count)
+  ///   pair, the meaning of which depends on the particular statistic
+  ///   (see above).
+  ///
+  /// \param statNames [out] On output: Each value in the statData map
+  ///   is a vector.  That vector v has the same number of entries as
+  ///   statNames.  statNames[k] is the name of the statistic (e.g.,
+  ///   "Min", "Mean", or "Max") stored as v[k].  Always refer to
+  ///   statNames for the number and names of statistics.
   ///
   /// \param comm [in] Communicator whose process(es) will participate
-  ///   in the gathering of timer statistics.  This is a Ptr and not
-  ///   an RCP, because RCP would suggest that TimeMonitor were
-  ///   keeping the communicator around after return of this method.
-  ///   Ptr suggests instead that TimeMonitor will only reference the
-  ///   communicator during this method.  If you have an RCP, you can
-  ///   turn it into a Ptr by calling its \c ptr() method:
+  ///   in the gathering of timer statistics.  This is a \c Ptr and
+  ///   not an \c RCP, because \c RCP would suggest that \c
+  ///   TimeMonitor were keeping the communicator around after return
+  ///   of this method.  \c Ptr suggests instead that \c TimeMonitor
+  ///   will only reference the communicator during this method.  If
+  ///   you have an \c RCP, you can turn it into a \c Ptr by calling
+  ///   its \c ptr() method:
+  ///   \code
+  ///   RCP<const Comm<int> > myComm = ...;
+  ///   TimeMonitor::computeGlobalTimerStatistics (statData, statNames, myComm.ptr());
+  ///   \endcode
+  ///
+  /// \param setOp [in] If \c Intersection, compute statistics for the
+  ///   intersection of all created timers over all processes in the
+  ///   communicator.  If \c Union, compute statistics for the union
+  ///   of all created timers over all processes in the communicator.
+  ///
+  /// \note This method must called as a collective by all processes
+  ///   in the communicator.
+  static void
+  computeGlobalTimerStatistics (stat_map_type& statData,
+				std::vector<std::string>& statNames,
+				Ptr<const Comm<int> > comm,
+				const ECounterSetOp setOp=Intersection);
+
+  /// \brief Compute global timer statistics for all timers on all (MPI) processes.
+  ///
+  /// This is an overload of the above \c
+  /// computeGlobalTimerStatistics() method for when the caller does
+  /// not want to provide a communicator explicitly.  This method
+  /// "does the right thing" in that case.  Specifically:
+  /// - If Trilinos was not built with MPI support, this method
+  ///   assumes a serial "communicator" containing one process.  
+  /// - If Trilinos was built with MPI support and MPI has been
+  ///   initialized (via \c MPI_Init() or one of the wrappers in
+  ///   Epetra or Teuchos), this method uses MPI_COMM_WORLD as the
+  ///   communicator.  This is the most common case.
+  /// - If Trilinos was built with MPI support and MPI has <i>not</i>
+  ///   been initialized, this method will use a "serial" communicator
+  ///   (that does not actually use MPI).  This may produce output on
+  ///   all the MPI processes if you are running with Trilinos as an
+  ///   MPI job with more than one process.  Thus, if you intend to
+  ///   use this method in parallel, you should first initialize MPI.
+  ///   (We cannot initialize MPI for you, because we have no way to
+  ///   know whether you intend to run an MPI-enabled build serially.)
+  ///
+  /// \warning If you call this method when MPI is running, you
+  ///   <i>must</i> call it on all processes in \c MPI_COMM_WORLD.
+  ///   Otherwise, the method will never finish, since it will be
+  ///   waiting forever for the non-participating processes.  If you
+  ///   want to use \c computeGlobalTimerStatistics() on a
+  ///   subcommunicator, please use the overloaded version above that
+  ///   takes a communicator as an input argument.
+  static void
+  computeGlobalTimerStatistics (stat_map_type& statData,
+				std::vector<std::string>& statNames,
+				const ECounterSetOp setOp=Intersection);
+
+  /// \brief Print summary statistics for all timers on the given communicator.
+  ///
+  /// If writeGlobalStatus=true, this method computes the same
+  /// statistics as \c computeGlobalTimerStatistics(), using the same
+  /// collective algorithm.  (\c writeGlobalStatus=false means that
+  /// only the process with rank 0 in the communicator reports its
+  /// timers' data.)  It then reports the results to the given output
+  /// stream on the process with rank 0 in the given communicator.
+  /// Output follows a human-readable tabular form.
+  ///
+  /// \param comm [in] Communicator whose process(es) will participate
+  ///   in the gathering of timer statistics.  This is a \c Ptr and
+  ///   not an \c RCP, because \c RCP would suggest that \c
+  ///   TimeMonitor were keeping the communicator around after return
+  ///   of this method.  \c Ptr suggests instead that \c TimeMonitor
+  ///   will only reference the communicator during this method.  If
+  ///   you have an \c RCP, you can turn it into a \c Ptr by calling
+  ///   its \c ptr() method:
   ///   \code
   ///   RCP<const Comm<int> > myComm = ...;
   ///   TimeMonitor::summarize (myComm.ptr());
   ///   \endcode
   ///
   /// \param out [out] Output stream to which to write.  This will
-  ///   only be used on the process with Rank 0 in the communicator.
+  ///   only be used on the process with rank 0 in the communicator.
   ///
   /// \param alwaysWriteLocal [in] If true, the process with Rank 0 in
   ///   the communicator will write its local timings to the given
@@ -248,16 +379,19 @@ public:
   ///
   /// \param writeZeroTimers [in] If false, do not display results for
   ///   timers that have never been called (numCalls() == 0).  If
-  ///   true, display results for all timers.
+  ///   true, display results for all timers, regardless of their call
+  ///   count.  Note that \c setOp and \c writeGlobalStats might
+  ///   reintroduce timers with zero call counts.
   ///
-  /// \param setOp [in] If Intersection, compute and display the
+  /// \param setOp [in] If \c Intersection, compute and display the
   ///   intersection of all created timers over all processes in the
-  ///   communicator.  If Union, compute and display the union of all
-  ///   created timers over all processes in the communicator.
+  ///   communicator.  If \c Union, compute and display the union of
+  ///   all created timers over all processes in the communicator.
   ///
-  /// \note If writeGlobalStats is true, this method <i>must</i> be
-  ///   called by all processes in the communicator.  This method will
-  ///   <i>only</i> perform communication if writeGlobalStats is true.
+  /// \note If \c writeGlobalStats is true, this method <i>must</i> be
+  ///   called as a collective by all processes in the communicator.
+  ///   This method will <i>only</i> perform communication if \c
+  ///   writeGlobalStats is true.
   static void 
   summarize (Ptr<const Comm<int> > comm,
              std::ostream &out=std::cout, 
@@ -270,24 +404,13 @@ public:
   ///
   /// This is an overload of the above \c summarize() method for when
   /// the caller does not want to provide a communicator explicitly.
-  /// This method "does the right thing" in that case.  Specifically:
-  /// - If Trilinos was not built with MPI support, this method
-  ///   assumes a serial "communicator" containing one process.  
-  /// - If Trilinos was built with MPI support and MPI has been
-  ///   initialized (via \c MPI_Init() or one of the wrappers in
-  ///   Epetra or Teuchos), this method uses MPI_COMM_WORLD as the
-  ///   communicator.  This is the most common case.
-  /// - If Trilinos was built with MPI support and MPI has <i>not</i>
-  ///   been initialized, this method will use a "serial" communicator
-  ///   (that does not actually use MPI).  This may produce output on
-  ///   all the MPI processes if you are running with Trilinos as an
-  ///   MPI job with more than one process.  Thus, if you intend to
-  ///   use this method in parallel, you should first initialize MPI.
-  ///   (We cannot initialize MPI for you, because we have no way to
-  ///   know whether you intend to run an MPI-enabled build serially.)
+  /// This method "does the right thing" in that case.  For an
+  /// explanation of what that means, see the documentation of the
+  /// overload of \c computeGlobalTimerStatistics() that does not
+  /// require a communicator argument.
   ///
   /// \warning If you call this method when MPI is running, you
-  ///   <i>must</i> call it on all processes in MPI_COMM_WORLD.
+  ///   <i>must</i> call it on all processes in \c MPI_COMM_WORLD.
   ///   Otherwise, the method will never finish, since it will be
   ///   waiting forever for the non-participating processes.  If you
   ///   want to use \c summarize() on a subcommunicator, please use

@@ -1,5 +1,5 @@
 <!-- This parameters file produces no output for the linear solves themselves.
-However, the precondtioner creation does produce output. -->
+However, the preconditioner creation does produce output. -->
 <ParameterList>
 
   <ParameterList name="M11 Solver">

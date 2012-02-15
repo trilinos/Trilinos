@@ -280,14 +280,14 @@ C     ******************************************************************
 C
 C open all disk files
 C
-      call init
+      call initbd
 
 C disable netcdf warning messages
 C
       CALL EXOPTS(0,IERR)
 C
-      call debug('OPNFIL')
-      CALL OPNFIL
+      call debug('MVOPNFIL')
+      CALL MVOPNFIL
 C
 C get info for QA records
 C

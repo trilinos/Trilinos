@@ -161,7 +161,7 @@ public:
   }
   //@}
 
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
   virtual const char * Label() const
   {

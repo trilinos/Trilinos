@@ -126,7 +126,7 @@ NOTE: Users can still invoke AZ_solve() in the old Aztec way. AZ_solve
   proc_config:     Machine configuration.  proc_config[AZ_node] is the node
                    number.  proc_config[AZ_N_procs] is the number of processors.
 
-  precond:         Structure used to represent the preconditionner
+  precond:         Structure used to represent the preconditioner
                    (see az_aztec.h ad Aztec User's Guide).
 
   scaling:         Structure used to represent the  scaling
@@ -431,7 +431,7 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
   Amat:            Structure used to represent the matrix (see az_aztec.h
                    and Aztec User's Guide).
 
-  precond:         Structure used to represent the preconditionner
+  precond:         Structure used to represent the preconditioner
                    (see az_aztec.h ad Aztec User's Guide).
 
   scaling:         Structure used to represent the  scaling
@@ -1523,7 +1523,7 @@ int AZ_oldsolve_setup(double x[], double b[], int options[], double params[],
   Amat:            Structure used to represent the matrix (see az_aztec.h
                    and Aztec User's Guide).
 
-  precond:         Structure used to represent the preconditionner
+  precond:         Structure used to represent the preconditioner
                    (see az_aztec.h ad Aztec User's Guide).
 
   scaling:         Structure used to represent the  scaling
@@ -1755,7 +1755,7 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
   proc_config:     Machine configuration.  proc_config[AZ_node] is the node
                    number.  proc_config[AZ_N_procs] is the number of processors.
 
-  precond:         Structure used to represent the preconditionner
+  precond:         Structure used to represent the preconditioner
                    (see az_aztec.h ad Aztec User's Guide).
 
   scaling:         Structure used to represent the  scaling

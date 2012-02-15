@@ -64,6 +64,7 @@ APPEND_SET(HEADERS
   Teuchos_ConfigDefs.hpp
   Teuchos_ConstNonconstObjectContainer.hpp
   Teuchos_ConstTypeTraits.hpp
+  Teuchos_CWrapperSupport_Cpp.hpp
   Teuchos_DataAccess.hpp
   Teuchos_DebugDefaultAsserts.hpp
   Teuchos_DefaultComm.hpp
@@ -194,6 +195,7 @@ APPEND_SET(SOURCES
   Teuchos_CTimeMonitor.cpp
   Teuchos_CommandLineProcessor.cpp
   Teuchos_CompObject.cpp
+  Teuchos_CWrapperSupport.cpp
   Teuchos_Describable.cpp
   Teuchos_Dependency.cpp
   Teuchos_DependencySheet.cpp

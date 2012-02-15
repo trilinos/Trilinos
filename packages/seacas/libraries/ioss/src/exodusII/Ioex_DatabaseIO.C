@@ -31,33 +31,61 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_CodeTypes.h>
-#include <exodusII/Ioex_DatabaseIO.h>
-#include <exodusII/Ioex_Internals.h>
-#include <tokenize.h>
-
-#include <string>
-#include <cstring>
-#include <cctype>
-#include <cstdlib>
-#include <algorithm>
-#include <vector>
-#include <map>
-#include <set>
-#include <iterator>
-#include <time.h>
-#include <float.h>
-
-#include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
+#include <Ioss_ElementTopology.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SerializeIO.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_FileInfo.h>
 #include <Ioss_SurfaceSplit.h>
-
-#include <exodusII.h>
-#include <ne_nemesisI.h>
+#include <Ioss_Utils.h>
 #include <assert.h>
+#include <exodusII.h>
+#include <exodusII/Ioex_DatabaseIO.h>
+#include <exodusII/Ioex_Internals.h>
+#include <float.h>
+#include <ne_nemesisI.h>
+#include <stddef.h>
+#include <sys/select.h>
+#include <time.h>
+#include <tokenize.h>
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <cstring>
+#include <functional>
+#include <iostream>
+#include <map>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "Ioss_CommSet.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_EdgeBlock.h"
+#include "Ioss_EdgeSet.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementSet.h"
+#include "Ioss_EntityBlock.h"
+#include "Ioss_EntitySet.h"
+#include "Ioss_EntityType.h"
+#include "Ioss_FaceBlock.h"
+#include "Ioss_FaceSet.h"
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_Map.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_State.h"
+#include "Ioss_VariableType.h"
+#include "exodusII_ext.h"
+
+#ifdef HAVE_MPI    
+#include "Ioss_FileInfo.h"
+#endif
 
 namespace Ioex {
   // ========================================================================

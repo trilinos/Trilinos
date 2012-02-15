@@ -220,12 +220,14 @@ public:
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->get() != NULL</tt>
    * <li><tt>0 <= offset && offset + size <= this->size()</tt>
-   * <li><tt>0 < size</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
+   *
+   * NOTE: A <tt>size==0</tt> view of even a null ArrayView is allowed and
+   * returns a <tt>null</tt> view.
    */
 	ArrayView<T> view( size_type offset, size_type size ) const;
 

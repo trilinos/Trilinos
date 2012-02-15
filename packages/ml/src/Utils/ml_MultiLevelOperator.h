@@ -74,7 +74,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
   //@}
 
   
-  //@{ \name Atribute set methods.
+  //@{ \name Attribute set methods.
 
     //! If set true, the multigrid hierarchy is destroyed when the Operator is destroyed.
     /*! This flag determines the ownership of the multigrid
@@ -92,7 +92,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
   //@}
 
   
-  //@{ \name Atribute set methods.
+  //@{ \name Attribute set methods.
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used
@@ -106,7 +106,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
 
     \warning - This method has no effect and returns -1 as error code.
   */
-  int SetUseTranspose(bool UseTranspose){ ML_avoid_unused_param((void *) UseTranspose); 
+  int SetUseTranspose(bool UseTrans){ ML_avoid_unused_param((void *) UseTrans); 
     return(-1);}
   //@}
   
@@ -154,7 +154,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
   double NormInf() const {return(0.0);};
   //@}
   
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
   //! Returns a character string describing the operator
   const char * Label() const{return(Label_);};
@@ -180,7 +180,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
   //! Pointer to the ML_Structure.
   ML * solver_;
   //! Label for this object.
-  char * Label_;
+  const char * Label_;
 
  private:
   //! Copy constructor (NOT DEFINED)

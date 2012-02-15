@@ -202,7 +202,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
     virtual int RightScale(const Epetra_Vector& x) = 0;
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.

@@ -31,14 +31,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_EntitySet.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_VariableType.h>
-#include <Ioss_Property.h>
 #include <Ioss_Field.h>
-
+#include <Ioss_Property.h>
+#include <stddef.h>
 #include <string>
-#include <assert.h>
+
+#include "Ioss_FieldManager.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_PropertyManager.h"
+
+namespace Ioss {
+class DatabaseIO;
+}  // namespace Ioss
 
 Ioss::EntitySet::EntitySet(Ioss::DatabaseIO *io_database,
 			   const std::string& my_name,

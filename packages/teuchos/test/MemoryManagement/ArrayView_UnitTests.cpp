@@ -172,23 +172,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, arrayView, T )
 }
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, view_size_zero, T )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, null_zero_ArrayView_operator, T )
 {
-  Array<T> a = generateArray<T>(n);
-  const ArrayView<T> av = a();
-  TEST_THROW(const ArrayView<T> av_zero1 = av(0,0), Teuchos::RangeError);
-  TEST_THROW(const ArrayView<T> av_zero2 = av(1,0), Teuchos::RangeError);
-  TEST_THROW(const ArrayView<T> av_zero2 = av(n-1,0), Teuchos::RangeError);
-  try {
-    const ArrayView<T> av_zero1 = av(0,0);
-    TEST_ASSERT(0); // If you get here you failed!
-  }
-  catch(const Teuchos::RangeError& except) {
-    const std::string exceptMsg = except.what(); 
-    out << "Exception message: " << exceptMsg << "\n";
-    const size_t found_substr_i = exceptMsg.find("Error, size=0 is not allowed");
-    TEST_INEQUALITY(found_substr_i, std::string::npos);
-  }
+  const ArrayView<T> av_0;
+  const ArrayView<T> av = av_0(0, 0);
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, null_zero_ArrayView_func, T )
+{
+  const ArrayView<T> av_0;
+  const ArrayView<T> av = av_0.view(0, 0);
+  TEST_ASSERT(is_null(av));
 }
 
 
@@ -279,8 +275,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_rcp_std_vector, T )
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
-#  define DEBUG_UNIT_TEST_GROUP( T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, view_size_zero, T )
+#  define DEBUG_UNIT_TEST_GROUP( T )
 
 #else // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
@@ -292,6 +287,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_rcp_std_vector, T )
 #define UNIT_TEST_GROUP( T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, arrayView_construct_zero_size, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, arrayView, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, null_zero_ArrayView_operator, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, null_zero_ArrayView_func, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, assignmentOperator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, iterators, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, danglingView_std_vector, T ) \

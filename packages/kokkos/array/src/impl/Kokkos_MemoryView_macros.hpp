@@ -58,6 +58,7 @@ public:
   typedef ValueType                          value_type ;
   typedef KOKKOS_MACRO_DEVICE::memory_space  memory_space ;
   typedef KOKKOS_MACRO_DEVICE::size_type     size_type ;
+  typedef MemoryView< ValueType , Host >     HostMirror ;
 
 private:
 

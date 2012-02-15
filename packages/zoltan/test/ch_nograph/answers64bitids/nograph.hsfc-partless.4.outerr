@@ -1,0 +1,911 @@
+
+
+Reading the command file, zdrive.inp.hsfc-partless
+Input values:
+  Zoltan version 3.601
+  zdrive version 1.0
+  Total number of Processors = 4
+
+  Performing load balance using hsfc.
+	Parameters:
+		remap 0
+		num_global_parts 2
+		debug_level 10
+
+  Initially distribute input objects in linear fashion (first n/p to process 0, etc).
+##########################################################
+ZOLTAN Load balancing method = 9 (HSFC)
+Starting iteration 1
+
+BEFORE load balancing
+DRIVER EVAL:  load:  max 7.000000  min 6.000000  sum 25.000000
+DRIVER EVAL:  objs:  max 7  min 6  sum 25
+DRIVER EVAL:  cuts:  max 0  min 0  sum 0
+ZOLTAN (Processor 0) Entering Zoltan_LB_Eval_Balance   
+[0] Debug: LB.PartDist = 0 2 4 ZOLTAN (Processor 0) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Get_Part_Sizes   
+[0] Debug: num_global_parts = 2
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 0) Entering object_metrics   
+ZOLTAN (Processor 0) Entering objects_by_part   
+ZOLTAN (Processor 0) Exiting objects_by_part   
+ZOLTAN (Processor 0) Exiting object_metrics   
+
+Zoltan_LB_Eval_Balance  Part count: 2 requested, 4 actual , 4 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :         6        7       25     ----
+
+
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 0) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering Graph_Queries   
+ZOLTAN (Processor 0) Exiting Graph_Queries   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Get_Part_Sizes   
+[0] Debug: num_global_parts = 2
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 0) Entering object_metrics   
+ZOLTAN (Processor 0) Entering objects_by_part   
+ZOLTAN (Processor 0) Exiting objects_by_part   
+ZOLTAN (Processor 0) Exiting object_metrics   
+ZOLTAN (Processor 0) Entering get_nbor_parts   
+ZOLTAN (Processor 0) Exiting get_nbor_parts   
+
+Zoltan_LB_Eval_Graph  Part count: 2 requested, 4 actual, 4 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :         6        7       25    ----
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :         0        0        0        0
+Zoltan_LB_Eval_Graph  Number of cut edges       :         0        0        0        0
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         0        0        0        0
+
+
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Get_Part_Sizes   
+[0] Debug: num_global_parts = 2
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 0) Entering Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 0) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 0) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 0) Entering Graph_Queries   
+ZOLTAN (Processor 0) Exiting Graph_Queries   
+ZOLTAN (Processor 0) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 0) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 0) Exiting Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 0) Entering object_metrics   
+ZOLTAN (Processor 0) Entering objects_by_part   
+ZOLTAN (Processor 0) Exiting objects_by_part   
+ZOLTAN (Processor 0) Exiting object_metrics   
+ZOLTAN (Processor 0) Entering Zoltan_PHG_Cuts   
+ZOLTAN (Processor 0) Exiting Zoltan_PHG_Cuts   
+
+Zoltan_LB_Eval_HG  Part count: 2 requested, 4 actual, 4 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  ImbalanZOLTAN (Processor 1) Entering Zoltan_LB_Eval_Balance   
+[1] Debug: LB.PartDist = 0 2 4 ZOLTAN (Processor 1) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Get_Part_Sizes   
+[1] Debug: num_global_parts = 2
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 1) Entering object_metrics   
+ZOLTAN (Processor 1) Entering objects_by_part   
+ZOLTAN (Processor 1) Exiting objects_by_part   
+ZOLTAN (Processor 1) Exiting object_metrics   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 1) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering Graph_Queries   
+ZOLTAN (Processor 1) Exiting Graph_Queries   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Get_Part_Sizes   
+[1] Debug: num_global_parts = 2
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 1) Entering object_metrics   
+ZOLTAN (Processor 1) Entering objects_by_part   
+ZOLTAN (Processor 1) Exiting objects_by_part   
+ZOLTAN (Processor 1) Exiting object_metrics   
+ZOLTAN (Processor 1) Entering get_nbor_parts   
+ZOLTAN (Processor 1) Exiting get_nbor_parts   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Get_Part_Sizes   
+[1] Debug: num_global_parts = 2
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 1) Entering Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 1) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 1) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 1) Entering Graph_Queries   
+ZOLTAN (Processor 1) Exiting Graph_Queries   
+ZOLTAN (Processor 1) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 1) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 1) Exiting Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 1) Entering object_metrics   
+ZOLTAN (Processor 1) Entering objects_by_part   
+ZOLTAN (Processor 1) Exiting objects_by_part   
+ZOLTAN (Processor 1) Exiting object_metrics   
+ZOLTAN (Processor 1) Entering Zoltan_PHG_Cuts   
+ZOLTAN (Processor 1) Exiting Zoltan_PHG_Cuts   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Partition   
+ZOLTAN (Processor 1) Entering Zoltan_LB   
+[1] Debug: LB.PartDist = 0 2 4 1 LB.ProcDist: 0 0 1 1 2 
+1 Proc_To_Part Proc 0 NParts 1 FPart 0
+1 Proc_To_Part Proc 1 NParts 1 FPart 0
+1 Proc_To_Part Proc 2 NParts 1 FPart 1
+1 Proc_To_Part Proc 3 NParts 1 FPart 1
+ZOLTAN (Processor 1) Entering Zoltan_LB_Get_Part_Sizes   
+[1] Debug: num_global_parts = 2
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 1) Entering Zoltan_HSFC   
+ZOLTAN (Processor 1) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering Zoltan_Get_Coordinates   
+ZOLTAN (Processor 1) Exiting Zoltan_Get_Coordinates   
+ZOLTAN (Processor 1) Zoltan_HSFC: Obtained dot information
+ZOLTAN (Processor 1) Zoltan_HSFC: Determined problem bounding box
+ZOLTAN (Processor 1) Zoltan_HSFC: About to enter main loop
+
+ZOLTAN (Processor 1) Zoltan_HSFC: Complete main loop MPI_Allreduce
+ZOLTAN (Processor 1) Zoltan_HSFC: Complete main loop MPI_Allreduce
+ZOLTAN (Processor 1) Zoltan_HSFC: Exited main loop
+ZOLTAN (Processor 1) Zoltan_HSFC: Determined final partition
+ZOLTAN (Processor 1) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN ce
+Zoltan_LB_Eval_HG  Number of objects :         6        7       25   ----
+Zoltan_LB_Eval_HG  Object weight     :         6        7       25   ----
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):    0.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )):    0.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):          0.000
+
+
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Partition   
+ZOLTAN (Processor 0) Entering Zoltan_LB   
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 0
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 10
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = IMPORT AND EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = 2
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 0
+ZOLTAN Parameter SEED = 1220988223 (1220988223)
+ZOLTAN Parameter LB_APPROACH = repartition
+[0] Debug: LB.PartDist = 0 2 4 0 LB.ProcDist: 0 0 1 1 2 
+0 Proc_To_Part Proc 0 NParts 1 FPart 0
+0 Proc_To_Part Proc 1 NParts 1 FPart 0
+0 Proc_To_Part Proc 2 NParts 1 FPart 1
+0 Proc_To_Part Proc 3 NParts 1 FPart 1
+ZOLTAN (Processor 0) Entering Zoltan_LB_Get_Part_Sizes   
+[0] Debug: num_global_parts = 2
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 0) Entering Zoltan_HSFC   
+ZOLTAN Parameter KEEP_CUTS = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 0.000000
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN (Processor 0) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering Zoltan_Get_Coordinates   
+ZOLTAN Parameter KEEP_CUTS = 0
+ZOLTAN Parameter REDUCE_DIMENSIONS = 0
+ZOLTAN Parameter DEGENERATE_RATIO = 10.000000
+ZOLTAN (Processor 0) Exiting Zoltan_Get_Coordinates   
+ZOLTAN (Processor 0) Zoltan_HSFC: Obtained dot information
+ZOLTAN (Processor 0) Zoltan_HSFC: Determined problem bounding box
+ZOLTAN (Processor 0) Zoltan_HSFC: About to enter main loop
+
+ZOLTAN (Processor 0) Zoltan_HSFC: Complete main loop MPI_Allreduce
+
+
+Target 12.50, loop 0
+Grand Partition   0,  weight   3, left = 0.000000,   right= 0.111111,  delta =    0.08333333333332
+Grand Partition   1,  weight   4, left = 0.111111,   right= 0.222222,  delta =    0.06249999999998
+Grand Partition   2,  weight   3, left = 0.222222,   right= 0.333333,  delta =    0.08333333333332
+Grand Partition   3,  weight   4, left = 0.333333,   right= 0.444444,  delta =    0.10416666666664
+Grand Partition   4,  weight   2, left = 0.444444,   right= 0.555556,  delta =    0.08333333333332
+Grand Partition   5,  weight   2, left = 0.555556,   right= 0.666667,  delta =    0.06249999999996
+Grand Partition   6,  weight   3, left = 0.666667,   right= 0.777778,  delta =    0.08333333333332
+Grand Partition   7,  weight   2, left = 0.777778,   right= 0.888889,  delta =    0.06249999999998
+Grand Partition   8,  weight   2, left = 0.888889,   right= 1.000000,  delta =    0.06250000000002
+ZOLTAN (Processor 0) Zoltan_HSFC: Complete main loop MPI_Allreduce
+
+
+Target 12.50, loop 1
+Grand Partition   0,  weight  10, left = 0.000000,   right= 0.333333,  delta =    0.31249999999994
+Grand Partition   1,  weight   1, left = 0.333333,   right= 0.349206,  delta =    0.00000000000000
+Grand Partition   2,  weight   0, left = 0.349206,   right= 0.365079,  delta =   -4.00000000000000
+Grand Partition   3,  weight   0, left = 0.365079,   right= 0.3809ZOLTAN (Processor 3) Entering Zoltan_LB_Eval_Balance   
+[3] Debug: LB.PartDist = 0 2 4 ZOLTAN (Processor 3) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Get_Part_Sizes   
+[3] Debug: num_global_parts = 2
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 3) Entering object_metrics   
+ZOLTAN (Processor 3) Entering objects_by_part   
+ZOLTAN (Processor 3) Exiting objects_by_part   
+ZOLTAN (Processor 3) Exiting object_metrics   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 3) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering Graph_Queries   
+ZOLTAN (Processor 3) Exiting Graph_Queries   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Get_Part_Sizes   
+[3] Debug: num_global_parts = 2
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 3) Entering object_metrics   
+ZOLTAN (Processor 3) Entering objects_by_part   
+ZOLTAN (Processor 3) Exiting objects_by_part   
+ZOLTAN (Processor 3) Exiting object_metrics   
+ZOLTAN (Processor 3) Entering get_nbor_parts   
+ZOLTAN (Processor 3) Exiting get_nbor_parts   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Get_Part_Sizes   
+[3] Debug: num_global_parts = 2
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 3) Entering Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 3) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 3) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 3) Entering Graph_Queries   
+ZOLTAN (Processor 3) Exiting Graph_Queries   
+ZOLTAN (Processor 3) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 3) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 3) Exiting Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 3) Entering object_metrics   
+ZOLTAN (Processor 3) Entering objects_by_part   
+ZOLTAN (Processor 3) Exiting objects_by_part   
+ZOLTAN (Processor 3) Exiting object_metrics   
+ZOLTAN (Processor 3) Entering Zoltan_PHG_Cuts   
+ZOLTAN (Processor 3) Exiting Zoltan_PHG_Cuts   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Partition   
+ZOLTAN (Processor 3) Entering Zoltan_LB   
+[3] Debug: LB.PartDist = 0 2 4 3 LB.ProcDist: 0 0 1 1 2 
+3 Proc_To_Part Proc 0 NParts 1 FPart 0
+3 Proc_To_Part Proc 1 NParts 1 FPart 0
+3 Proc_To_Part Proc 2 NParts 1 FPart 1
+3 Proc_To_Part Proc 3 NParts 1 FPart 1
+ZOLTAN (Processor 3) Entering Zoltan_LB_Get_Part_Sizes   
+[3] Debug: num_global_parts = 2
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 3) Entering Zoltan_HSFC   
+ZOLTAN (Processor 3) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering Zoltan_Get_Coordinates   
+ZOLTAN (Processor 3) Exiting Zoltan_Get_Coordinates   
+ZOLTAN (Processor 3) Zoltan_HSFC: Obtained dot information
+ZOLTAN (Processor 3) Zoltan_HSFC: Determined problem bounding box
+ZOLTAN (Processor 3) Zoltan_HSFC: About to enter main loop
+
+ZOLTAN (Processor 3) Zoltan_HSFC: Complete main loop MPI_Allreduce
+ZOLTAN (Processor 3) Zoltan_HSFC: Complete main loop MPI_Allreduce
+ZOLTAN (Processor 3) Zoltan_HSFC: Exited main loop
+ZOLTAN (Processor 3) Zoltan_HSFC: Determined final partition
+ZOLTAN (Processor 3) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN ZOLTAN (Processor 2) Entering Zoltan_LB_Eval_Balance   
+[2] Debug: LB.PartDist = 0 2 4 ZOLTAN (Processor 2) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Get_Part_Sizes   
+[2] Debug: num_global_parts = 2
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 2) Entering object_metrics   
+ZOLTAN (Processor 2) Entering objects_by_part   
+ZOLTAN (Processor 2) Exiting objects_by_part   
+ZOLTAN (Processor 2) Exiting object_metrics   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 2) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering Graph_Queries   
+ZOLTAN (Processor 2) Exiting Graph_Queries   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Get_Part_Sizes   
+[2] Debug: num_global_parts = 2
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 2) Entering object_metrics   
+ZOLTAN (Processor 2) Entering objects_by_part   
+ZOLTAN (Processor 2) Exiting objects_by_part   
+ZOLTAN (Processor 2) Exiting object_metrics   
+ZOLTAN (Processor 2) Entering get_nbor_parts   
+ZOLTAN (Processor 2) Exiting get_nbor_parts   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Get_Part_Sizes   
+[2] Debug: num_global_parts = 2
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 2) Entering Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 2) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 2) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 2) Entering Graph_Queries   
+ZOLTAN (Processor 2) Exiting Graph_Queries   
+ZOLTAN (Processor 2) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 2) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 2) Exiting Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 2) Entering object_metrics   
+ZOLTAN (Processor 2) Entering objects_by_part   
+ZOLTAN (Processor 2) Exiting objects_by_part   
+ZOLTAN (Processor 2) Exiting object_metrics   
+ZOLTAN (Processor 2) Entering Zoltan_PHG_Cuts   
+ZOLTAN (Processor 2) Exiting Zoltan_PHG_Cuts   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Partition   
+ZOLTAN (Processor 2) Entering Zoltan_LB   
+[2] Debug: LB.PartDist = 0 2 4 2 LB.ProcDist: 0 0 1 1 2 
+2 Proc_To_Part Proc 0 NParts 1 FPart 0
+2 Proc_To_Part Proc 1 NParts 1 FPart 0
+2 Proc_To_Part Proc 2 NParts 1 FPart 1
+2 Proc_To_Part Proc 3 NParts 1 FPart 1
+ZOLTAN (Processor 2) Entering Zoltan_LB_Get_Part_Sizes   
+[2] Debug: num_global_parts = 2
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 2) Entering Zoltan_HSFC   
+ZOLTAN (Processor 2) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering Zoltan_Get_Coordinates   
+ZOLTAN (Processor 2) Exiting Zoltan_Get_Coordinates   
+ZOLTAN (Processor 2) Zoltan_HSFC: Obtained dot information
+ZOLTAN (Processor 2) Zoltan_HSFC: Determined problem bounding box
+ZOLTAN (Processor 2) Zoltan_HSFC: About to enter main loop
+
+ZOLTAN (Processor 2) Zoltan_HSFC: Complete main loop MPI_Allreduce
+ZOLTAN (Processor 2) Zoltan_HSFC: Complete main loop MPI_Allreduce
+ZOLTAN (Processor 2) Zoltan_HSFC: Exited main loop
+ZOLTAN (Processor 2) Zoltan_HSFC: Determined final partition
+ZOLTAN (Processor 2) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN 52,  delta =   -4.00000000000000
+Grand Partition   4,  weight   1, left = 0.380952,   right= 0.396825,  delta =    0.00000000000000
+Grand Partition   5,  weight   0, left = 0.396825,   right= 0.412698,  delta =   -4.00000000000000
+Grand Partition   6,  weight   1, left = 0.412698,   right= 0.428571,  delta =    0.00000000000000
+Grand Partition   7,  weight   1, left = 0.428571,   right= 0.444444,  delta =    0.00000000000000
+Grand Partition   8,  weight  11, left = 0.444444,   right= 1.000000,  delta =    0.54166666666663
+ZOLTAN (Processor 0) Zoltan_HSFC: Exited main loop
+ZOLTAN (Processor 0) Zoltan_HSFC: Determined final partition
+ZOLTAN (Processor 0) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 0) Zoltan_HSFC: Filled in export information
+<0> Number of loops = 2
+<0> export count 0, ndots 6
+<0> GID: (1 )   LID: (0 )   Part: 0  Weight 1.0  HSFC  0.000000
+PROC 0 DOT 1
+<0> GID: (2 )   LID: (1 )   Part: 0  Weight 1.0  HSFC  0.229167
+PROC 0 DOT 2
+<0> GID: (3 )   LID: (2 )   Part: 0  Weight 1.0  HSFC  0.250000
+PROC 0 DOT 3
+<0> GID: (4 )   LID: (3 )   Part: 0  Weight 1.0  HSFC  0.312500
+PROC 0 DOT 4
+<0> GID: (5 )   LID: (4 )   Part: 0  Weight 1.0  HSFC  0.333333
+PROC 0 DOT 5
+<0> GID: (6 )   LID: (5 )   Part: 0  Weight 1.0  HSFC  0.062500
+PROC 0 DOT 6
+HSFC Processing Time is 0.000996 seconds
+ZOLTAN (Processor 0) Exiting Zoltan_HSFC   
+ZOLTAN (Processor 0) Zoltan_LB: Done partitioning
+ZOLTAN (Processor 0) Entering Zoltan_Invert_Lists   
+ZOLTAN (Processor 0) Zoltan_Invert_Lists: Done comm create
+ZOLTAN (Processor 0) Zoltan_Invert_Lists: Done comm_do
+ZOLTAN (Processor 0) Exiting Zoltan_Invert_Lists   
+ZOLTAN (Processor 0) Zoltan_LB: Done building return arguments
+
+##################################### PRINT_SYNC_START #########################
+ZOLTAN: Objects to be imported to Proc 0
+
+ZOLTAN: Objects to be exported from Proc 0
+(Processor 1) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 1) Zoltan_HSFC: Filled in export information
+<1> GID: (7 )   LID: (0 )   Part: 0  Weight 1.0  HSFC  0.125000
+PROC 0 DOT 7
+<1> GID: (8 )   LID: (1 )   Part: 0  Weight 1.0  HSFC  0.187500
+PROC 0 DOT 8
+<1> GID: (9 )   LID: (2 )   Part: 1  Weight 1.0  HSFC  0.458333
+PROC 0 DOT 9
+<1> GID: (10 )   LID: (3 )   Part: 0  Weight 1.0  HSFC  0.395833
+PROC 0 DOT 10
+<1> GID: (11 )   LID: (4 )   Part: 0  Weight 1.0  HSFC  0.083333
+PROC 0 DOT 11
+<1> GID: (12 )   LID: (5 )   Part: 0  Weight 1.0  HSFC  0.145833
+PROC 0 DOT 12
+ZOLTAN (Processor 1) Exiting Zoltan_HSFC   
+ZOLTAN (Processor 1) Zoltan_LB: Done partitioning
+ZOLTAN (Processor 1) Entering Zoltan_Invert_Lists   
+ZOLTAN (Processor 1) Zoltan_Invert_Lists: Done comm create
+ZOLTAN (Processor 1) Zoltan_Invert_Lists: Done comm_do
+ZOLTAN (Processor 1) Exiting Zoltan_Invert_Lists   
+ZOLTAN (Processor 1) Zoltan_LB: Done building return arguments
+ZOLTAN: Objects to be imported to Proc 1
+    Obj: (7 )   To part:    0  From processor:    1
+    Obj: (8 )   To part:    0  From processor:    1
+    Obj: (10 )   To part:    0  From processor:    1
+    Obj: (11 )   To part:    0  From processor:    1
+    Obj: (12 )   To part:    0  From processor:    1
+    Obj: (13 )   To part:    0  From processor:    2
+
+ZOLTAN: Objects to be exported from Proc 1
+    Obj: (7 )   To part:    0  To processor:    1
+    Obj: (8 )   To part:    0  To processor:    1
+    Obj: (9 )   To part:    1  To processor:    3
+    Obj: (10 )   To part:    0  To processor:    1
+    Obj: (11 )   To part:    0  To processor:    1
+    Obj: (12 )   To part:    0  To processor:    1
+(Processor 2) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 2) Zoltan_HSFC: Filled in export information
+<2> GID: (13 )   LID: (0 )   Part: 0  Weight 1.0  HSFC  0.166667
+PROC 1 DOT 13
+<2> GID: (14 )   LID: (1 )   Part: 1  Weight 1.0  HSFC  0.437500
+PROC 1 DOT 14
+<2> GID: (15 )   LID: (2 )   Part: 1  Weight 1.0  HSFC  0.416667
+PROC 1 DOT 15
+<2> GID: (16 )   LID: (3 )   Part: 1  Weight 1.0  HSFC  0.937500
+PROC 1 DOT 16
+<2> GID: (17 )   LID: (4 )   Part: 1  Weight 1.0  HSFC  0.875000
+PROC 1 DOT 17
+<2> GID: (18 )   LID: (5 )   Part: 1  Weight 1.0  HSFC  0.812500
+PROC 1 DOT 18
+ZOLTAN (Processor 2) Exiting Zoltan_HSFC   
+ZOLTAN (Processor 2) Zoltan_LB: Done partitioning
+ZOLTAN (Processor 2) Entering Zoltan_Invert_Lists   
+ZOLTAN (Processor 2) Zoltan_Invert_Lists: Done comm create
+ZOLTAN (Processor 2) Zoltan_Invert_Lists: Done comm_do
+ZOLTAN (Processor 2) Exiting Zoltan_Invert_Lists   
+ZOLTAN (Processor 2) Zoltan_LB: Done building return arguments
+ZOLTAN: Objects to be imported to Proc 2
+    Obj: (14 )   To part:    1  From processor:    2
+    Obj: (15 )   To part:    1  From processor:    2
+    Obj: (16 )   To part:    1  From processor:    2
+    Obj: (17 )   To part:    1  From processor:    2
+    Obj: (18 )   To part:    1  From processor:    2
+
+ZOLTAN: Objects to be exported from Proc 2
+    Obj: (13 )   To part:    0  To processor:    1
+    Obj: (14 )   To part:    1  To processor:    2
+    Obj: (15 )   To part:    1  To processor:    2
+    Obj: (16 )   To part:    1  To processor:    2
+    Obj: (17 )   To part:    1  To processor:    2
+    Obj: (18 )   To part:    1  To processor:    2
+(Processor 3) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Part_To_Proc   
+ZOLTAN (Processor 3) Zoltan_HSFC: Filled in export information
+<3> GID: (19 )   LID: (0 )   Part: 1  Weight 1.0  HSFC  0.541667
+PROC 1 DOT 19
+<3> GID: (20 )   LID: (1 )   Part: 1  Weight 1.0  HSFC  0.604167
+PROC 1 DOT 20
+<3> GID: (21 )   LID: (2 )   Part: 1  Weight 1.0  HSFC  1.000000
+PROC 1 DOT 21
+<3> GID: (22 )   LID: (3 )   Part: 1  Weight 1.0  HSFC  0.770833
+PROC 1 DOT 22
+<3> GID: (23 )   LID: (4 )   Part: 1  Weight 1.0  HSFC  0.750000
+PROC 1 DOT 23
+<3> GID: (24 )   LID: (5 )   Part: 1  Weight 1.0  HSFC  0.687500
+PROC 1 DOT 24
+<3> GID: (25 )   LID: (6 )   Part: 1  Weight 1.0  HSFC  0.666667
+PROC 1 DOT 25
+ZOLTAN (Processor 3) Exiting Zoltan_HSFC   
+ZOLTAN (Processor 3) Zoltan_LB: Done partitioning
+ZOLTAN (Processor 3) Entering Zoltan_Invert_Lists   
+ZOLTAN (Processor 3) Zoltan_Invert_Lists: Done comm create
+ZOLTAN (Processor 3) Zoltan_Invert_Lists: Done comm_do
+ZOLTAN (Processor 3) Exiting Zoltan_Invert_Lists   
+ZOLTAN (Processor 3) Zoltan_LB: Done building return arguments
+ZOLTAN: Objects to be imported to Proc 3
+    Obj: (9 )   To part:    1  From processor:    1
+    Obj: (19 )   To part:    1  From processor:    3
+    Obj: (20 )   To part:    1  From processor:    3
+    Obj: (21 )   To part:    1  From processor:    3
+    Obj: (22 )   To part:    1  From processor:    3
+    Obj: (23 )   To part:    1  From processor:    3
+    Obj: (24 )   To part:    1  From processor:    3
+    Obj: (25 )   To part:    1  From processor:    3
+
+ZOLTAN: Objects to be exported from Proc 3
+    Obj: (19 )   To part:    1  To processor:    3
+    Obj: (20 )   To part:    1  To processor:    3
+    Obj: (21 )   To part:    1  To processor:    3
+    Obj: (22 )   To part:    1  To processor:    3
+    Obj: (23 )   To part:    1  To processor:    3
+    Obj: (24 )   To part:    1  To processor:    3
+    Obj: (25 )   To part:    1  To processor:    3
+ZOLTAN Times:  
+ZOLTAN     Partition:     : Max: 0.00209284, Sum: 0.0083096, Imbal.: 1.00743
+ZOLTAN (Processor 0) Exiting Zoltan_LB   
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Partition   
+
+DRIVER:  Zoltan_LB_Partition time = 0.00233793
+DRIVER:  new_decomp 1 Min/Max Import: 0 8
+DRIVER:  new_decomp 1 Min/Max Export: 0 7
+ZOLTAN (Processor 0) Entering Zoltan_Migrate   
+ZOLTAN (Processor 0) Zoltan_Migrate: Done pre-migration processing
+ZOLTAN (Processor 0) Zoltan_Migrate: Done packing objects
+ZOLTAN (Processor 0) Zoltan_Migrate: Done communication
+ZOLTAN (Processor 0) Zoltan_Migrate: Done unpacking objects
+ZOLTAN (Processor 0) Exiting Zoltan_Migrate   
+DRIVER:  Total migration time = 0.000478029
+
+AFTER load balancing
+DRIVER EVAL:  load:  max 8.000000  min 5.000000  sum 25.000000
+DRIVER EVAL:  objs:  max 8  min 5  sum 25
+DRIVER EVAL:  cuts:  max 0  min 0  sum 0
+ZOLTAN (Processor 0) Entering Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 0) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Get_Part_Sizes   
+[0] Debug: num_global_parts = 2
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 0) Entering object_metrics   
+ZOLTAN (Processor 0) Entering objects_by_part   
+ZOLTAN (Processor 0) Exiting objects_by_part   
+ZOLTAN (Processor 0) Exiting object_metrics   
+
+Zoltan_LB_Eval_Balance  Part count: 2 requested, 2 actual , 2 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 2 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :        12       13       25     1.040
+
+
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 0) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering Graph_Queries   
+ZOLTAN (Processor 0) Exiting Graph_Queries   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Get_Part_Sizes   
+[0] Debug: num_global_parts = 2
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 0) Entering object_metrics   
+ZOLTAN (Processor 0) Entering objects_by_part   
+ZOLTAN (Processor 0) Exiting objects_by_part   
+ZOLTAN (Processor 0) Exiting object_metrics   
+ZOLTAN (Processor 0) Entering get_nbor_parts   
+ZOLTAN (Processor 0) Exiting get_nbor_parts   
+
+Zoltan_LB_Eval_Graph  Part count: 2 requested, 2 actual, 2 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 2 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :        12       13       25     1.04
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 2 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :         0        0        0        0
+Zoltan_LB_Eval_Graph  Number of cut edges       :         0        0        0        0
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         0        0        0        0
+
+
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 0) Entering Zoltan_LB_Get_Part_Sizes   
+[0] Debug: num_global_parts = 2
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 0) Entering Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 0) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 0) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 0) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 0) Entering Graph_Queries   
+ZOLTAN (Processor 0) Exiting Graph_Queries   
+ZOLTAN (ProcessProc 2: Calls to malloc = 404,  Calls to free = 404
+Proc 1: Calls to malloc = 420,  Calls to free = 420
+Proc 0: Calls to malloc = 376,  Calls to free = 376
+Proc 3: Calls to malloc = 395,  Calls to free = 395
+ZOLTAN (Processor 1) Exiting Zoltan_LB   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Partition   
+ZOLTAN (Processor 1) Entering Zoltan_Migrate   
+ZOLTAN (Processor 1) Zoltan_Migrate: Done pre-migration processing
+[1] DEBUG in Zoltan_Migrate: Packing object with gid (9 ) size = 216 bytes
+ZOLTAN (Processor 1) Zoltan_Migrate: Done packing objects
+ZOLTAN (Processor 1) Zoltan_Migrate: Done communication
+[1] DEBUG in Zoltan_Migrate: Unpacking object with gid (13 ) size = 216 bytes
+ZOLTAN (Processor 1) Zoltan_Migrate: Done unpacking objects
+ZOLTAN (Processor 1) Exiting Zoltan_Migrate   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 1) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Get_Part_Sizes   
+[1] Debug: num_global_parts = 2
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 1) Entering object_metrics   
+ZOLTAN (Processor 1) Entering objects_by_part   
+ZOLTAN (Processor 1) Exiting objects_by_part   
+ZOLTAN (Processor 1) Exiting object_metrics   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 1) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering Graph_Queries   
+ZOLTAN (Processor 1) Exiting Graph_Queries   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Get_Part_Sizes   
+[1] Debug: num_global_parts = 2
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 1) Entering object_metrics   
+ZOLTAN (Processor 1) Entering objects_by_part   
+ZOLTAN (Processor 1) Exiting objects_by_part   
+ZOLTAN (Processor 1) Exiting object_metrics   
+ZOLTAN (Processor 1) Entering get_nbor_parts   
+ZOLTAN (Processor 1) Exiting get_nbor_parts   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 1) Entering Zoltan_LB_Get_Part_Sizes   
+[1] Debug: num_global_parts = 2
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 1) Entering Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 1) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 1) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 1) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 1) Entering Graph_Queries   
+ZOLTAN (Processor 1) Exiting Graph_Queries   
+ZOLTAN (Processor 1) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 1) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 1) Exiting Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 1) Entering object_metrics   
+ZOLTAN (Processor 1) Entering objects_by_part   
+ZOLTAN (Processor 1) Exiting objects_by_part   
+ZOLTAN (Processor 1) Exiting object_metrics   
+ZOLTAN (Processor 1) Entering Zoltan_PHG_Cuts   
+ZOLTAN (Processor 1) Exiting Zoltan_PHG_Cuts   
+ZOLTAN (Processor 1) Exiting Zoltan_LB_Eval_HG   
+or 0) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 0) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 0) Exiting Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 0) Entering object_metrics   
+ZOLTAN (Processor 0) Entering objects_by_part   
+ZOLTAN (Processor 0) Exiting objects_by_part   
+ZOLTAN (Processor 0) Exiting object_metrics   
+ZOLTAN (Processor 0) Entering Zoltan_PHG_Cuts   
+ZOLTAN (Processor 0) Exiting Zoltan_PHG_Cuts   
+
+Zoltan_LB_Eval_HG  Part count: 2 requested, 2 actual, 2 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 2 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :        12       13       25   1.040
+Zoltan_LB_Eval_HG  Object weight     :        12       13       25   1.040
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):    0.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )):    0.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):          0.000
+
+
+ZOLTAN (Processor 0) Exiting Zoltan_LB_Eval_HG   
+FILE zdrive.inp.hsfc-partless:  Total:    2.337933e-03 seconds in Partitioning
+FILE zdrive.inp.hsfc-partless:  Average:  2.337933e-03 seconds per Iteration
+ZOLTAN (Processor 2) Exiting Zoltan_LB   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Partition   
+ZOLTAN (Processor 2) Entering Zoltan_Migrate   
+ZOLTAN (Processor 2) Zoltan_Migrate: Done pre-migration processing
+[2] DEBUG in Zoltan_Migrate: Packing object with gid (13 ) size = 216 bytes
+ZOLTAN (Processor 2) Zoltan_Migrate: Done packing objects
+ZOLTAN (Processor 2) Zoltan_Migrate: Done communication
+ZOLTAN (Processor 2) Zoltan_Migrate: Done unpacking objects
+ZOLTAN (Processor 2) Exiting Zoltan_Migrate   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 2) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Get_Part_Sizes   
+[2] Debug: num_global_parts = 2
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 2) Entering object_metrics   
+ZOLTAN (Processor 2) Entering objects_by_part   
+ZOLTAN (Processor 2) Exiting objects_by_part   
+ZOLTAN (Processor 2) Exiting object_metrics   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 2) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering Graph_Queries   
+ZOLTAN (Processor 2) Exiting Graph_Queries   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Get_Part_Sizes   
+[2] Debug: num_global_parts = 2
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 2) Entering object_metrics   
+ZOLTAN (Processor 2) Entering objects_by_part   
+ZOLTAN (Processor 2) Exiting objects_by_part   
+ZOLTAN (Processor 2) Exiting object_metrics   
+ZOLTAN (Processor 2) Entering get_nbor_parts   
+ZOLTAN (Processor 2) Exiting get_nbor_parts   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 2) Entering Zoltan_LB_Get_Part_Sizes   
+[2] Debug: num_global_parts = 2
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 2) Entering Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 2) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 2) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 2) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 2) Entering Graph_Queries   
+ZOLTAN (Processor 2) Exiting Graph_Queries   
+ZOLTAN (Processor 2) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 2) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 2) Exiting Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 2) Entering object_metrics   
+ZOLTAN (Processor 2) Entering objects_by_part   
+ZOLTAN (Processor 2) Exiting objects_by_part   
+ZOLTAN (Processor 2) Exiting object_metrics   
+ZOLTAN (Processor 2) Entering Zoltan_PHG_Cuts   
+ZOLTAN (Processor 2) Exiting Zoltan_PHG_Cuts   
+ZOLTAN (Processor 2) Exiting Zoltan_LB_Eval_HG   
+
+##################################### PRINT_SYNC_END__ #########################
+
+ZOLTAN (Processor 3) Exiting Zoltan_LB   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Partition   
+ZOLTAN (Processor 3) Entering Zoltan_Migrate   
+ZOLTAN (Processor 3) Zoltan_Migrate: Done pre-migration processing
+ZOLTAN (Processor 3) Zoltan_Migrate: Done packing objects
+ZOLTAN (Processor 3) Zoltan_Migrate: Done communication
+[3] DEBUG in Zoltan_Migrate: Unpacking object with gid (9 ) size = 216 bytes
+ZOLTAN (Processor 3) Zoltan_Migrate: Done unpacking objects
+ZOLTAN (Processor 3) Exiting Zoltan_Migrate   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 3) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Get_Part_Sizes   
+[3] Debug: num_global_parts = 2
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 3) Entering object_metrics   
+ZOLTAN (Processor 3) Entering objects_by_part   
+ZOLTAN (Processor 3) Exiting objects_by_part   
+ZOLTAN (Processor 3) Exiting object_metrics   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Eval_Balance   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 3) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering Graph_Queries   
+ZOLTAN (Processor 3) Exiting Graph_Queries   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Get_Part_Sizes   
+[3] Debug: num_global_parts = 2
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 3) Entering object_metrics   
+ZOLTAN (Processor 3) Entering objects_by_part   
+ZOLTAN (Processor 3) Exiting objects_by_part   
+ZOLTAN (Processor 3) Exiting object_metrics   
+ZOLTAN (Processor 3) Entering get_nbor_parts   
+ZOLTAN (Processor 3) Exiting get_nbor_parts   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Eval_Graph   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Eval_HG   
+ZOLTAN (Processor 3) Entering Zoltan_LB_Get_Part_Sizes   
+[3] Debug: num_global_parts = 2
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Get_Part_Sizes   
+ZOLTAN (Processor 3) Entering Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 3) Entering Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting _Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Exiting Zoltan_Get_Obj_List   
+ZOLTAN (Processor 3) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 3) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 3) Entering Graph_Queries   
+ZOLTAN (Processor 3) Exiting Graph_Queries   
+ZOLTAN (Processor 3) Entering Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 3) Exiting Zoltan_PHG_GIDs_to_global_number   
+ZOLTAN (Processor 3) Exiting Zoltan_Get_Hypergraph_From_Queries   
+ZOLTAN (Processor 3) Entering object_metrics   
+ZOLTAN (Processor 3) Entering objects_by_part   
+ZOLTAN (Processor 3) Exiting objects_by_part   
+ZOLTAN (Processor 3) Exiting object_metrics   
+ZOLTAN (Processor 3) Entering Zoltan_PHG_Cuts   
+ZOLTAN (Processor 3) Exiting Zoltan_PHG_Cuts   
+ZOLTAN (Processor 3) Exiting Zoltan_LB_Eval_HG   

@@ -408,7 +408,7 @@ VerboseObject<ObjectType>::setOverridingVerbLevel(
 template<class ObjectType>
 EVerbosityLevel VerboseObject<ObjectType>::getVerbLevel() const
 {
-  if (VERB_DEFAULT != thisOverridingVerbLevel_) //Bug??
+  if (VERB_DEFAULT != thisOverridingVerbLevel_)
     return thisOverridingVerbLevel_;
   if (VERB_DEFAULT == thisVerbLevel_)
     return getDefaultVerbLevel();

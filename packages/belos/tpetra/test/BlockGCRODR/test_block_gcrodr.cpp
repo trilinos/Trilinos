@@ -47,10 +47,12 @@
 // 
 #include <BelosConfigDefs.hpp>
 #include <BelosTpetraAdapter.hpp>
+#include <BelosTpetraTestFramework.hpp>
 #include <BelosBlockGCRODRSolMgr.hpp>
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 
@@ -58,55 +60,135 @@ int
 main (int argc, char *argv[]) 
 {
   using Teuchos::Comm;
+  using Teuchos::FancyOStream;
+  using Teuchos::getFancyOStream;
+  using Teuchos::oblackholestream;
+  using Teuchos::OSTab;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
+  using Teuchos::rcpFromRef;
   using std::cout;
   using std::endl;
+  //
+  // Typedefs for Tpetra template arguments.
+  //
   typedef double scalar_type;
+  typedef long int global_ordinal_type;
+  typedef int local_ordinal_type;
+  typedef Kokkos::DefaultNode::DefaultNodeType node_type;
+  //
+  // Tpetra objects which are the MV and OP template parameters of the
+  // Belos specialization which we are testing.
+  //
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+  typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
+  // 
+  // Other typedefs.
+  // 
   typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef Tpetra::Operator<scalar_type, int> OP;
-  typedef Tpetra::MultiVector<scalar_type, int> MV;
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
   RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  Teuchos::oblackholestream blackHole;
+  RCP<node_type> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
+  RCP<oblackholestream> blackHole (new oblackholestream);
   const int myRank = comm->getRank();
-  std::ostream& out = (myRank == 0) ? cout : blackHole;
+
+  // Output stream that prints only on Rank 0.
+  RCP<FancyOStream> out;
+  if (myRank == 0) {
+    out = Teuchos::getFancyOStream (rcpFromRef (cout));
+  } else {
+    out = Teuchos::getFancyOStream (blackHole);
+  }
 
   //
-  // Get test parameters from command-line processor
+  // Get test parameters from command-line processor.
   //  
-  // bool verbose = false;
-  //bool debug = false;
+  // CommandLineProcessor always understands int, but may not
+  // understand global_ordinal_type.  We convert to the latter below.
+  int numRows = comm->getSize() * 100;
+  bool tolerant = false;
+  bool verbose = false;
+  bool debug = false;
   Teuchos::CommandLineProcessor cmdp (false, true);
-  //cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  //cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
-
+  cmdp.setOption("numRows", &numRows,
+		 "Global number of rows (and columns) in the sparse matrix to generate.");
+  cmdp.setOption("tolerant", "intolerant", &tolerant,
+		 "Whether to parse files tolerantly.");
+  cmdp.setOption("verbose", "quiet", &verbose, 
+		 "Print messages and results.");
+  cmdp.setOption("debug", "release", &debug, 
+		 "Run debugging checks and print copious debugging output.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    out << "\nEnd Result: TEST FAILED" << endl;
+    *out << "\nEnd Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
+  // Output stream for verbose output.
+  RCP<FancyOStream> verbOut = verbose ? out : getFancyOStream (blackHole);
 
   const bool success = true;
 
   // Test whether it's possible to instantiate the solver.
   // This is a minimal compilation test.
+  *verbOut << "Instantiating Block GCRODR solver" << endl;
   Belos::BlockGCRODRSolMgr<scalar_type, MV, OP> solver;
   //
   // Test setting solver parameters.  For now, we just use an empty
   // (but non-null) parameter list, which the solver should fill in
   // with defaults.
   //
-  RCP<ParameterList> params = parameterList ();
-  solver.setParameters (params);
+  *verbOut << "Setting solver parameters" << endl;
+  RCP<ParameterList> solverParams = parameterList ();
+  solver.setParameters (solverParams);
+  //
+  // Create a linear system to solve.
+  //
+  *verbOut << "Creating linear system" << endl;
+  RCP<sparse_matrix_type> A;
+  RCP<MV> X_guess, X_exact, B;
+  {
+    typedef Belos::Tpetra::ProblemMaker<sparse_matrix_type> factory_type;
+    factory_type factory (comm, node, out, tolerant, debug);
+    
+    RCP<ParameterList> problemParams = parameterList ();
+    problemParams->set ("Global number of rows", 
+			static_cast<global_ordinal_type> (numRows));
+    problemParams->set ("Problem type", std::string ("Nonsymmetric"));
+    factory.makeProblem (A, X_guess, X_exact, B, problemParams);
+  }
+  // Approximate solution vector is a copy of the guess vector.
+  RCP<MV> X (new MV (*X_guess));
 
+  TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::logic_error,
+			     "The sparse matrix is null!");
+  TEUCHOS_TEST_FOR_EXCEPTION(X_guess.is_null(), std::logic_error,
+			     "The initial guess X_guess is null!");
+  TEUCHOS_TEST_FOR_EXCEPTION(X_exact.is_null(), std::logic_error,
+			     "The exact solution X_exact is null!");
+  TEUCHOS_TEST_FOR_EXCEPTION(B.is_null(), std::logic_error,
+			     "The right-hand side B is null!");
+  TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::logic_error,
+			     "The approximate solution vector X is null!");
+
+  typedef Belos::LinearProblem<scalar_type, MV, OP> problem_type;
+  RCP<problem_type> problem (new problem_type (A, X, B));
+  problem->setProblem ();
+  solver.setProblem (problem);
+
+  *verbOut << "Solving linear system" << endl;
+  Belos::ReturnType result = solver.solve ();
+
+  *verbOut << "Result of solve: " 
+	   << Belos::convertReturnTypeToString (result) 
+	   << endl;
   if (success) {
-    out << "\nEnd Result: TEST PASSED" << endl;
+    *out << "\nEnd Result: TEST PASSED" << endl;
     return EXIT_SUCCESS;
   } 
   else {
-    out << "\nEnd Result: TEST FAILED" << endl;
+    *out << "\nEnd Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
 }

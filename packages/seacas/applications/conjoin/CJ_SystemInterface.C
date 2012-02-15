@@ -37,21 +37,21 @@ void Excn::SystemInterface::enroll_options()
 {
   options_.usage("[options] list_of_files_to_join");
 
-  options_.enroll("help", GetLongOpt::NoValue,
+  options_.enroll("help", GetLongOption::NoValue,
 		  "Print this summary and exit", 0);
 
-  options_.enroll("version", GetLongOpt::NoValue,
+  options_.enroll("version", GetLongOption::NoValue,
 		  "Print version and exit", NULL);
 
-  options_.enroll("output", GetLongOpt::MandatoryValue,
+  options_.enroll("output", GetLongOption::MandatoryValue,
 		  "Name of output file to create",
 		  "conjoin-out.e");
   
-  options_.enroll("alive_value", GetLongOpt::MandatoryValue,
+  options_.enroll("alive_value", GetLongOption::MandatoryValue,
 		  "Value (1 or 0) to indicate that an element is alive, default = 0",
 		  "0");
   
-  options_.enroll("combine_status_variables", GetLongOpt::MandatoryValue,
+  options_.enroll("combine_status_variables", GetLongOption::MandatoryValue,
 		  "The conjoin elem_status variable will be combined\n"
 		  "\t\twith the specified status variable ($val) existing on the mesh.\n"
 		  "\t\tBoth variables must have the same value (1 or 0) for 'alive'.\n"
@@ -59,48 +59,48 @@ void Excn::SystemInterface::enroll_options()
 		  "\t\t\tIf 0 is alive, then the combined variable is the max of the two values.\n"
 		  "\t\tUse the 'alive_value' option to set conjoin's alive value",
 		  "");
-  options_.enroll("element_status_variable", GetLongOpt::MandatoryValue,
+  options_.enroll("element_status_variable", GetLongOption::MandatoryValue,
 		  "Name to use as element existance status variable;\n"
                   "\t\tmust not exist on input files. If NONE, then not created.\n"
 		  "\t\tDefault = elem_status",
 		  "elem_status");
   
-  options_.enroll("nodal_status_variable", GetLongOpt::MandatoryValue,
+  options_.enroll("nodal_status_variable", GetLongOption::MandatoryValue,
 		  "Name to use as nodal status variable;\n\t\tmust not exist on input files.\n"
 		  "\t\tIf NONE, then not created. Default = node_status",
 		  "node_status");
   
-  options_.enroll("omit_nodesets", GetLongOpt::NoValue,
+  options_.enroll("omit_nodesets", GetLongOption::NoValue,
 		  "Don't transfer nodesets to output file.",
 		  NULL);
 
-  options_.enroll("omit_sidesets", GetLongOpt::NoValue,
+  options_.enroll("omit_sidesets", GetLongOption::NoValue,
 		  "Don't transfer sidesets to output file.",
 		  NULL);
 
-  options_.enroll("gvar", GetLongOpt::MandatoryValue,
+  options_.enroll("gvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of global variables to be joined or ALL or NONE.",
 		  0);
 
-  options_.enroll("evar", GetLongOpt::MandatoryValue,
+  options_.enroll("evar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of element variables to be joined or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain blocks by appending a\n"
 		  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
 		  0);
 
-  options_.enroll("nvar", GetLongOpt::MandatoryValue,
+  options_.enroll("nvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of nodal variables to be joined or ALL or NONE.",
 		  0);
 
-  options_.enroll("nsetvar", GetLongOpt::MandatoryValue,
+  options_.enroll("nsetvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of nodeset variables to be joined or ALL or NONE.",
 		  0);
 
-  options_.enroll("ssetvar", GetLongOpt::MandatoryValue,
+  options_.enroll("ssetvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of sideset variables to be joined or ALL or NONE.",
 		  0);
 
-  options_.enroll("debug", GetLongOpt::MandatoryValue,
+  options_.enroll("debug", GetLongOption::MandatoryValue,
 		  "debug level (values are or'd)\n"
 		  "\t\t  1 = timing information.\n"
 		  "\t\t  4 = Verbose Element block information.\n"
@@ -111,11 +111,11 @@ void Excn::SystemInterface::enroll_options()
 		  "\t\t128 = Check consistent global field values between parts.",
 		  "0");
 
-  options_.enroll("width", GetLongOpt::MandatoryValue,
+  options_.enroll("width", GetLongOption::MandatoryValue,
 		  "Width of output screen, default = 80",
 		  "80");
   
-  options_.enroll("copyright", GetLongOpt::NoValue,
+  options_.enroll("copyright", GetLongOption::NoValue,
 		  "Show copyright and license data.",
 		  NULL);
 }

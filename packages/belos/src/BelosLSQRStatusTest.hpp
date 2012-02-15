@@ -278,40 +278,32 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
   LSQRIter<ScalarType,MV,OP>* solver = dynamic_cast< LSQRIter<ScalarType,MV,OP>* > (iSolver);
   LSQRIterationState< ScalarType, MV > state = solver->getState();
   //
-  // LSQR solves a least-squares problem.  A converged preconditioned
-  // residual norm suffices for convergence, but is not necessary.
-  // LSQR sometimes returns a larger relative residual norm than what
-  // would have been returned by a linear solver.  This method
-  // evaluates three stopping criteria.  In the Solver Manager, this
-  // test is combined with a generic number of iteration test.
-  //
-  // If the linear system includes a preconditioner, then the
-  // least-squares problem is solved for the preconditioned linear
-  // system.  Preconditioning changes the least squares problem (in
-  // the sense of changing the norms), and the solution depends on the
-  // preconditioner in this sense.
-  //
-  // In the context of linear least-squares problems,
-  // "preconditioning" refers to the regularization matrix.  Here the
-  // regularization matrix is always a scalar multiple of the identity
-  // (standard form least squares).
-  //
-  // The "loss of accuracy" concept is not yet implemented here,
-  // becuase it is unclear what this means for linear least squares.
-  // LSQR solves an inconsistent system in a least-squares sense.
-  // "Loss of accuracy" would correspond to the difference between the
-  // preconditioned residual and the unpreconditioned residual.
+  //   LSQR solves a least squares problem.  A converged preconditioned residual norm
+  // suffices for convergence, but is not necessary.  LSQR sometimes returns a larger
+  // relative residual norm than what would have been returned by a linear solver.
+  // This section evaluates three stopping criteria.  In the Solver Manager, this test
+  // is combined with a generic number of iteration test.
+  //   If the linear system includes a preconditioner, then the least squares problem
+  // is solved for the preconditioned linear system.  Preconditioning changes the least
+  // squares problem (in the sense of changing the norms), and the solution depends
+  // on the preconditioner in this sense.
+  //   In the context of Linear Least Squares problems, preconditioning refers
+  // to the regularization matrix.  Here the regularization matrix is always a scalar
+  // multiple of the identity (standard form least squres).
+  //   The "loss of accuracy" concept is not yet implemented here, becuase it is unclear
+  // what this means for linear least squares.  LSQR solves an inconsistent system
+  // in a least-squares sense.  "Loss of accuracy" would correspond to
+  // the difference between the preconditioned residual and the unpreconditioned residual.
   //
 
-/*
-  std::cout << "  b-AX " << state.resid_norm 
+  std::cout << " X " << state.sol_norm 
+            << "  b-AX " << state.resid_norm 
             << "  Atr  " << state.mat_resid_norm 
             << "  A " << state.frob_mat_norm 
             << "  cond  " << state.mat_cond_num
             << "  relResNorm " << state.resid_norm/state.bnorm
             << "  LS " << state.mat_resid_norm /( state.resid_norm * state.frob_mat_norm )
             << std::endl;
-*/
 
   const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
   const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -337,8 +329,8 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
        }
     }
   ScalarType stop_crit_3 = one / state.mat_cond_num;
-  ScalarType resid_tol = rel_rhs_err_ + rel_mat_err_ * state.mat_resid_norm * state.sol_norm / state.bnorm;
-  ScalarType resid_tol_mach = Teuchos::ScalarTraits< MagnitudeType >::eps() + Teuchos::ScalarTraits< MagnitudeType >::eps() * state.mat_resid_norm * state.sol_norm / state.bnorm;
+  ScalarType resid_tol = rel_rhs_err_ + rel_mat_err_ * state.frob_mat_norm * state.sol_norm / state.bnorm;
+  ScalarType resid_tol_mach = Teuchos::ScalarTraits< MagnitudeType >::eps() + Teuchos::ScalarTraits< MagnitudeType >::eps() * state.frob_mat_norm * state.sol_norm / state.bnorm;
 
   // The expected use case for our users is that the linear system will almost
   // always be compatible, but occasionally may not be.  However, some users
@@ -357,6 +349,24 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
   // Have we met any of the stopping criteria?
   if (stop_crit_1 <= resid_tol || stop_crit_2 <= rel_mat_err_ || stop_crit_3 <= rcondMin_ || stop_crit_1 <= resid_tol_mach || stop_crit_2 <= Teuchos::ScalarTraits< MagnitudeType >::eps() || stop_crit_3 <= Teuchos::ScalarTraits< MagnitudeType >::eps()) {
     termIterFlag = true;
+
+    if (stop_crit_1 <= resid_tol )
+      std::cout << "Conv: stop_crit_1  " << stop_crit_1  << " resid_tol " << resid_tol << std::endl;
+
+    if (stop_crit_1 <=  resid_tol_mach )
+      std::cout << "Conv: stop_crit_1  " << stop_crit_1  << " resid_tol_mach " << resid_tol_mach << std::endl;
+
+    if (stop_crit_2 <= rel_mat_err_ )
+      std::cout << "Conv: stop_crit_2  " << stop_crit_2  << " rel_mat_err " << rel_mat_err_ << std::endl;
+
+    if (stop_crit_2 <=   Teuchos::ScalarTraits< MagnitudeType >::eps() )
+      std::cout << "Conv: stop_crit_2  " << stop_crit_2  << " eps " <<   Teuchos::ScalarTraits< MagnitudeType >::eps()   << std::endl;
+
+    if (stop_crit_3 <= rcondMin_ )
+      std::cout << "Conv: stop_crit_3  " << stop_crit_3  << " rcondMin_ " << rcondMin_ << std::endl;
+
+    if (stop_crit_3 <=   Teuchos::ScalarTraits< MagnitudeType >::eps() )
+      std::cout << "Conv: stop_crit_3  " << stop_crit_3  << " eps " <<   Teuchos::ScalarTraits< MagnitudeType >::eps()   << std::endl;
   }
 
   // update number of consecutive successful iterations

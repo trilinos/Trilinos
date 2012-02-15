@@ -56,7 +56,7 @@
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward dec
+  // Forward declaration of Directory.
   template <class LO, class GO, class N> class Directory;
 #endif
 
@@ -131,74 +131,117 @@ namespace Tpetra {
     //! @name Map Attribute Methods
     //@{ 
 
-    //! Returns the number of elements in this Map.
+    //! The number of elements in this Map.
     inline global_size_t getGlobalNumElements() const { return numGlobalElements_; }
 
-    //! Returns the number of elements belonging to the calling node.
+    //! The number of elements belonging to the calling node.
     inline size_t getNodeNumElements() const { return numLocalElements_; }
 
-    //! Returns the index base for this Map.
+    //! The index base for this Map.
     inline GlobalOrdinal getIndexBase() const { return indexBase_; }
 
-    //! Returns minimum local index
+    //! The minimum local index.
     inline LocalOrdinal getMinLocalIndex() const { return Teuchos::OrdinalTraits<LocalOrdinal>::zero(); }
 
-    //! Returns maximum local index
+    //! The maximum local index.
     inline LocalOrdinal getMaxLocalIndex() const { return Teuchos::as<LocalOrdinal>(numLocalElements_-1); }
 
-    //! Returns minimum global index owned by this node
+    //! The minimum global index owned by this node.
     inline GlobalOrdinal getMinGlobalIndex() const { return minMyGID_; }
 
-    //! Returns maximum global index owned by this node
+    //! The maximum global index owned by this node
     inline GlobalOrdinal getMaxGlobalIndex() const { return maxMyGID_; }
 
-    //! Return the minimum global index over all nodes
+    //! The minimum global index over all nodes.
     inline GlobalOrdinal getMinAllGlobalIndex() const { return minAllGID_; }
 
-    //! Return the maximum global index over all nodes
+    //! The maximum global index over all nodes.
     inline GlobalOrdinal getMaxAllGlobalIndex() const { return maxAllGID_; }
 
-    //! \brief Return the local index for a given global index
-    /** If the global index is not owned by this node, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid(). */
+    /// \brief The local index corresponding to the given global index.  
+    ///
+    /// If the given global index is not owned by this node, return
+    /// <tt>Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>.
     LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
 
-    //! Return the global index for a given local index
-    /** If the local index is not valid for this node, returns Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(). */
+    /// \brief The global index corresponding to the given local index.
+    ///
+    /// If the given local index is not valid for this node, return
+    /// <tt>Teuchos::OrdinalTraits<GlobalOrdinal>::invalid()</tt>.
     GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
 
-    //! Returns the node IDs and corresponding local indices for a given list of global indices.
-    /** 
-      \pre nodeIDList.size() == GIDList.size()
-      \pre LIDList.size() == GIDList.size()
-      \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
-               Otherwise, returns AllIDsPresent.
-     */
+    /// \brief Return the node IDs and corresponding local IDs for a given list of global IDs.
+    ///
+    /// \pre nodeIDList.size() == GIDList.size()
+    /// \pre LIDList.size() == GIDList.size()
+    ///
+    /// \return IDNotPresent indicates that at least one global ID was
+    ///   not present in the directory.  Otherwise, return
+    ///   AllIDsPresent.
+    ///
+    /// \note For a distributed noncontiguous Map, this operation
+    ///   requires communication.  This is crucial technology used in
+    ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                                     const Teuchos::ArrayView<                int> & nodeIDList, 
                                     const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const;
 
-    //! Returns the node IDs for a given list of global indices.
-    /** 
-      \pre nodeIDList.size() == GIDList.size()
-      \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
-               Otherwise, returns AllIDsPresent.
-     */
+    /// \brief Return the node IDs for a given list of global IDs.
+    ///
+    /// \pre nodeIDList.size() == GIDList.size()
+    /// \pre nodeIDList.size() == GIDList.size()
+    ///
+    /// \return IDNotPresent indicates that at least one global ID was
+    ///   not present in the directory.  Otherwise, return
+    ///   AllIDsPresent.
+    ///
+    /// \note For a distributed noncontiguous Map, this operation
+    ///   requires communication.  This is crucial technology used in
+    ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                                     const Teuchos::ArrayView<                int> & nodeIDList) const;
 
-    //! Return a list of the global indices owned by this node.
+    //! Return a view of the global indices owned by this node.
     Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const;
 
-    //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
+    //! True if the local index is valid for this Map on this node, else false.
     bool isNodeLocalElement(LocalOrdinal localIndex) const;
 
-    //! Returns true if the global index is found in this Map on this node; returns false if it isn't.
+    //! True if the global index is found in this Map on this node, else false.
     bool isNodeGlobalElement(GlobalOrdinal globalIndex) const;
 
-    //! True if this Map is distributed contiguously, else false.
+    /// \brief True if this Map is distributed contiguously, else false.
+    ///
+    /// Currently, creating this Map using the constructor for a
+    /// user-defined arbitrary distribution (that takes a list of
+    /// global elements owned on each process) means that this method
+    /// always returns false.  We currently make no effort to test
+    /// whether the user-provided global indices are actually
+    /// contiguous on all the processes.  Many operations may be
+    /// faster for contiguous Maps.  Thus, if you know the indices are
+    /// contiguous on all processes, you should consider using one of
+    /// the constructors for contiguous elements.
     bool isContiguous() const;
 
-    //! True if this Map is distributed across more than one node, else false.
+    /// \brief Whether this Map is globally distributed or locally replicated.
+    ///
+    /// \return True if this Map is globally distributed, else false.
+    ///
+    /// "Globally distributed" means that <i>all</i> of the following
+    /// are true:
+    ///
+    /// 1. The map's communicator has more than one process.
+    ///
+    /// 2. There is at least one process in the map's communicator,
+    ///    whose local number of elements does not equal the number of
+    ///    global elements.  (That is, not all the elements are
+    ///    replicated over all the processes.)
+    ///
+    /// If at least one of the above are not true, then the map is
+    /// "locally replicated."  (The two are mutually exclusive.)
+    ///
+    /// Calling this method requires no communication or computation,
+    /// because the result is precomputed in Map's constructors.
     bool isDistributed() const;
 
     //@}
@@ -212,15 +255,39 @@ namespace Tpetra {
     /// 1. They have the same global number of elements.
     /// 2. They have the same number of local elements on each process.
     ///
-    /// Determining #2 requires a reduction.  The reduction uses this
-    /// Map's communicator.  (We assume that the input Map is valid on
-    /// all processes in this Map's communicator.)
+    /// Determining #2 requires communication (a reduction over this
+    /// Map's communicator).  This method assumes that the input Map
+    /// is valid on all processes in this Map's communicator.
     ///
     /// Compatibility is useful for determining correctness of certain
     /// operations, like assigning one MultiVector X to another Y.  If
     /// X and Y have the same number of columns, and if their Maps are
     /// compatible, then it is legal to assign X to Y or to assign Y
     /// to X.
+    ///
+    /// Notes for Tpetra developers:
+    ///
+    /// If the input Map and this Map have different communicators,
+    /// the behavior of this method is currently undefined.  In
+    /// general, Tpetra currently assumes that if users instigate
+    /// interactions between Tpetra objects, then those Tpetra objects
+    /// have the same communicator.  Also, defining semantics of
+    /// interaction between Tpetra objects with different
+    /// communicators may be tricky.  It seems like two Maps could be
+    /// compatible even if they had different communicators, as long
+    /// as their communicators have the same number of processes.
+    /// Could two Maps with different communicators be the same (in
+    /// the sense of \c isSameAs())?  It's not clear.
+    /// 
+    /// Checking whether two communicators are the same would require
+    /// extending Teuchos::Comm to provide a comparison operator.
+    /// This could be implemented for MPI communicators by returning
+    /// \c true if \c MPI_Comm_compare() returns \c MPI_IDENT, and \c
+    /// false otherwise.  (Presumably, \c MPI_Comm_compare() works
+    /// even if the two communicators have different process counts;
+    /// the MPI 2.2 standard doesn't say otherwise.)  All serial
+    /// communicators have the same context and contain the same
+    /// number of processes, so all serial communicators are equal.
     bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     /// \brief True if and only if \c map is identical to this Map.
@@ -238,16 +305,22 @@ namespace Tpetra {
     /// Thus, "identical" includes, but is stronger than,
     /// "compatible."  
     ///
-    /// A Map corresponds to a "two-dimensional" or block permutation
-    /// over process ranks and global element indices.  Two Maps with
-    /// different numbers of processes in their communicators cannot
-    /// be compatible, let alone identical.  Two identical Maps
-    /// correspond to the same permutation.
+    /// A Map corresponds to a block permutation over process ranks
+    /// and global element indices.  Two Maps with different numbers
+    /// of processes in their communicators cannot be compatible, let
+    /// alone identical.  Two identical Maps correspond to the same
+    /// permutation.
+    ///
+    /// Notes for Tpetra developers:
+    ///
+    /// If the input Map and this Map have different communicators,
+    /// the behavior of this method is currently undefined.  See
+    /// further notes on \c isCompatible().
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //@}
 
-    //@{ Misc. 
+    //@{ Accessors for the \c Teuchos::Comm and Kokkos Node objects.
 
     //! Get the Comm object for this Map
     const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
@@ -257,12 +330,12 @@ namespace Tpetra {
 
     //@}
 
-    //@{ Implements Teuchos::Describable 
+    //@{ Implementation of \c Teuchos::Describable 
 
-    //! \brief Return a simple one-line description of this object.
+    //! Return a simple one-line description of this object.
     std::string description() const;
 
-    //! Print the object with some verbosity level to a \c FancyOStream object.
+    //! Print this object with the given verbosity level to the given \c FancyOStream object.
     void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
     //@}
@@ -270,26 +343,40 @@ namespace Tpetra {
 
   private:
 
-    //! Setup the associated Directory.
+    //! Create this Map's Directory, if it hasn't been created already.
     void setupDirectory();
 
-    //! Perform communication to determine whether this is globally distributed or locally replicated.
+    /// \brief Determine whether this map is globally distributed or locally replicated.
+    /// 
+    /// \return True if the map is globally distributed, else false.
+    ///
+    /// This operation requires communication (a single all-reduce).
+    /// See the documentation of \c isDistributed() for definitions
+    /// of "globally distributed" and "locally replicated."
+    ///
+    /// Map invokes this method in its constructors if necessary, to
+    /// set the \c distributed_ flag (and thus the return value of \c
+    /// isDistributed()).  Map doesn't need to call \c checkIsDist()
+    /// when using the uniform contiguous constructor with
+    /// lg=GloballyDistributed, since then checking the number of
+    /// processes in the communicator suffices.
     bool checkIsDist() const;
 
-    //! Declared but not defined; do not use.
+    //! Copy constructor (declared but not defined; do not use).
     Map(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
-    //! Declared but not defined; do not use.
+    //! Assignment operator (declared but not defined; do not use).
     Map<LocalOrdinal,GlobalOrdinal,Node>& operator=(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
-    // some of the following are globally coherent: that is, they have been guaranteed to 
-    // match across all images, and may be assumed to do so
+    //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
-    // Map doesn't need node yet, but it likely will later. In the
-    // meantime, passing a Node to Map means that we don't have to
-    // pass a Node to downstream classes such as MultiVector, Vector,
-    // CrsGraph and CrsMatrix.
+    /// \brief The Kokkos Node instance (for shared-memory parallelism).
+    ///
+    /// Map doesn't need node yet, but it likely will later. In the
+    /// meantime, passing a Node to Map means that we don't have to
+    /// pass a Node to downstream classes such as MultiVector, Vector,
+    /// CrsGraph and CrsMatrix.
     Teuchos::RCP<Node> node_;
 
     //! The index base for global IDs in this Map.
@@ -306,20 +393,51 @@ namespace Tpetra {
     bool contiguous_;
     //! Whether this map's global indices are non-identically distributed among different nodes.
     bool distributed_;
-    //! A direct mapping from local IDs to global IDs.
+
+    /// \brief A mapping from local IDs to global IDs.
+    ///
+    /// By definition, this mapping is local; it only contains global
+    /// IDs owned by this process.  This mapping is created in two
+    /// cases:
+    ///
+    /// 1. It is always created for a noncontiguous Map, in the
+    ///    noncontiguous version of the Map constructor.
+    ///
+    /// 2. In \c getNodeElementList(), on demand (if it wasn't created
+    ///    before).  
+    ///
+    /// The potential for on-demand creation is why this member datum
+    /// is declared "mutable".  Note that other methods, such as \c
+    /// describe(), may invoke \c getNodeElementList().  
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
-    //! A mapping from global IDs to local IDs.
+
+    /// \brief A mapping from global IDs to local IDs.
+    ///
+    /// This is a local mapping.  \c Directory implements the global
+    /// mapping for all global IDs (both remote and locally owned).
+    /// This object corresponds roughly to Epetra_BlockMapData's
+    /// LIDHash_ hash table (which also maps from global IDs to local
+    /// IDs).
+    ///
+    /// This mapping is built only for a noncontiguous map, by the
+    /// noncontiguous map constructor.  For noncontiguous maps, the \c
+    /// getLocalElement() and \c isNodeGlobalElement() methods use
+    /// this mapping.
     std::map<GlobalOrdinal, LocalOrdinal> glMap_;
+
     /// \brief A Directory for looking up nodes for this Map. 
     ///
-    /// This directory is a non-owning RCP and is therefore not
-    /// allowed to persist beyond the lifetime of this Map. Do not
-    /// under any circumstance pass this outside of the Map.
+    /// This directory is a nonowning RCP and is therefore not allowed
+    /// to persist beyond the lifetime of this Map.  Never allow this
+    /// pointer to escape the Map.  It must be a nonowning RCP since
+    /// the directory in turn must hold an RCP to this Map; making
+    /// this an owning RCP would cause a circular dependency which
+    /// would break reference counting.
     Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
 
-  /** \brief Non-member function to create a locally replicated Map with the default node.
+  /** \brief Non-member constructor for a locally replicated Map with the default Kokkos Node.
 
       This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
 
@@ -331,7 +449,7 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
   createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
-  /** \brief Non-member function to create a locally replicated Map with a specified node.
+  /** \brief Non-member constructor for a locally replicated Map with a specified Kokkos Node.
 
       The Map is configured to use zero-based indexing.
 
@@ -341,7 +459,7 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
 
-  /** \brief Non-member function to create a uniform, contiguous Map with the default node.
+  /** \brief Non-member constructor for a uniformly distributed, contiguous Map with the default Kokkos Node.
 
       This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
 
@@ -353,7 +471,7 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
   createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
-  /** \brief Non-member function to create a uniform, contiguous Map with a user-specified node.
+  /** \brief Non-member constructor for a uniformly distributed, contiguous Map with a user-specified Kokkos Node.
 
       The Map is configured to use zero-based indexing.
 
@@ -365,7 +483,7 @@ namespace Tpetra {
                                  const Teuchos::RCP< const Teuchos::Comm< int > > &comm, 
 				 const Teuchos::RCP< Node > &node);
 
-  /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
+  /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
 
       This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
 
@@ -379,7 +497,7 @@ namespace Tpetra {
 		   size_t localNumElements, 
 		   const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
-  /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
+  /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with a user-specified Kokkos Node.
 
       The Map is configured to use zero-based indexing.
 
@@ -392,7 +510,7 @@ namespace Tpetra {
 			   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
 			   const Teuchos::RCP<Node> &node);
 
-  /** \brief Non-member function to create a non-contiguous Map with the default node.
+  /** \brief Non-member constructor for a non-contiguous Map with the default Kokkos Node.
 
       This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
 
@@ -405,7 +523,7 @@ namespace Tpetra {
   createNonContigMap (const ArrayView<const GlobalOrdinal> &elementList,
 		      const RCP<const Teuchos::Comm<int> > &comm);
 
-  /** \brief Non-member function to create a non-contiguous Map with a user-specified node.
+  /** \brief Non-member constructor for a non-contiguous Map with a user-specified Kokkos Node.
 
       The Map is configured to use zero-based indexing.
 
@@ -417,7 +535,7 @@ namespace Tpetra {
 			      const RCP<const Teuchos::Comm<int> > &comm, 
 			      const RCP<Node> &node);
 
-  /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
+  /** \brief Non-member constructor for a contiguous Map with user-defined weights and a user-specified Kokkos Node.
 
       The Map is configured to use zero-based indexing.
 

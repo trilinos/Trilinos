@@ -30,13 +30,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_PropertyManager.h>
-
-#include <assert.h>
-
 #include <Ioss_Property.h>
+#include <Ioss_PropertyManager.h>
 #include <Ioss_Utils.h>
+#include <stddef.h>
+#include <map>
+#include <ostream>
 #include <string>
+#include <utility>
 
 Ioss::PropertyManager::PropertyManager() {}
 

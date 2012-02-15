@@ -156,7 +156,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     linearOpTester.show_all_tests(showAllTests);
     linearOpTester.dump_all(dumpAll);
     Thyra::seed_randomize<double>(0);
-    result = linearOpTester.check(*nsA,out.get());
+    result = linearOpTester.check(*nsA,out());
     if(!result) success = false;
 
     if(out.get()) *out << "\nE) Testing the LinearOpWithSolveBase interface of nsA ...\n";
@@ -186,7 +186,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     result = linearOpWithSolveTester.check(*nsA,out.get());
     if(!result) success = false;
 
-    if(out.get()) *out << "\nF) Uninitialize nsA, create precondtioner for diagonal scaled by 0.99 and then reinitialize nsA reusing the old preconditioner ...\n";
+    if(out.get()) *out << "\nF) Uninitialize nsA, create preconditioner for diagonal scaled by 0.99 and then reinitialize nsA reusing the old preconditioner ...\n";
 
     // Scale the diagonal of the matrix and then create the preconditioner for it
     Thyra::uninitializeOp<double>(*lowsFactory, nsA.ptr());
@@ -374,7 +374,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     
       result = linearOpTester.compare(
         *transpose(Teuchos::rcp_implicit_cast<const LinearOpBase<double> >(nsA)),*nsA2
-        ,out.get()
+        ,out()
         );
       if(!result) success = false;
       

@@ -136,17 +136,18 @@ C            "SUPES", FOR DETAILS OF THE MEMORY MANAGER.
 C
 C     ******************************************************************
 C
-      call init
+      call initbd
       
-C open all disk files
-C
-      call debug('OPNFIL')
 C
 C disable netcdf warning messages
 C
       CALL EXOPTS(EXVRBS,IERR)
 C
-      CALL OPNFIL
+
+C open all disk files
+C
+      call debug('MVOPNFIL')
+      CALL MVOPNFIL
 C
 C get info for QA records
 C

@@ -52,7 +52,7 @@ namespace Thyra {
 /** \brief Default implementation of a <tt>PreconditionerBase</tt> that just
  * accepts precreated preconditioner linear operators.
  *
- * Here is how to construct a precondtioner for the four different types of preconditioners:
+ * Here is how to construct a preconditioner for the four different types of preconditioners:
  * <ul>
  * <li>Single preconditioner linear operator designed or targeted to be applied on the left:
  *   <ul>

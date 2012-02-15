@@ -54,11 +54,6 @@ echo "begin testrd" >> test.output
 ${PREFIX} ${SRCDIR}/testrd | grep -v version | diff - ${SRCDIR}/testrd.dmp | tee testrd.res
 echo "end testrd" >> test.output
 
-echo "testrdv - single precision read test with varid..."
-echo "begin testrdv" >> test.output
-${PREFIX} ${SRCDIR}/testrdv | grep -v version | diff - ${SRCDIR}/testrdv.dmp | tee testrdv.res
-echo "end testrdv" >> test.output
-
 echo "testcp_ss - single-to-single precision copy test..."
 echo "begin testcp_ss" >> test.output
 ${PREFIX} ${SRCDIR}/testcp >> test.output

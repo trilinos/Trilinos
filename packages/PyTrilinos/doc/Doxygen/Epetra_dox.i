@@ -14,7 +14,7 @@ For Epetra_BlockMap objects, a Epetra_Directory object must be created
 to allow referencing of non-local elements. The Epetra_BasicDirectory
 produces and contains a uniform linear Epetra_BlockMap and a ProcList_
 allowing blocks of non-local elements to be accessed by dereferencing
-throught the Epetra_BasicDirectory.
+through the Epetra_BasicDirectory.
 
 This class currently has one constructor, taking a Epetra_BlockMap
 object.
@@ -445,7 +445,7 @@ returns false. ";
 If matrix is upper triangular, this query returns true, otherwise it
 returns false. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_BasicRowMatrix::NormInf "virtual double
 Epetra_BasicRowMatrix::NormInf() const
@@ -1213,7 +1213,7 @@ and returns the local index (in LIDList) of the GID on that processor.
 
 If a GID is present on more than one processor, the lowest rank
 processor ID is used, as is the LID for that processor. If a GID is
-not present on any processor, the correspoding PID will return as -1.
+not present on any processor, the corresponding PID will return as -1.
 ";
 
 %feature("docstring")  Epetra_BlockMap::RemoteIDList "int
@@ -2786,7 +2786,7 @@ construction, or b) the MakeColMap function has been called. (Calling
 either of the FillComplete functions will result in MakeColMap being
 called.) ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_CrsGraph::NumMyRows "int
 Epetra_CrsGraph::NumMyRows() const
@@ -3020,9 +3020,12 @@ RowMap().PointSameAs(newmap)==true ";
 Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap &newmap)
 
 Replaces the current ColMap with the user-specified map object, but
-only if currentmap->PointSameAs(newmap) is true. This is a collective
+only if no entries have been inserted into the graph yet (both
+IndicesAreLocal() and IndicesAreGlobal() are false) or
+currentmap->PointSameAs(newmap) is true. This is a collective
 function. Returns 0 if map is replaced, -1 if not.
 
+( IndicesAreLocal()==false && IndicesAreGlobal()==false) ||
 ColMap().PointSameAs(newmap)==true ";
 
 %feature("docstring")  Epetra_CrsGraph::ColMap "const
@@ -4378,7 +4381,7 @@ Epetra_CrsMatrix::NoDiagonal() const
 If matrix has no diagonal entries in global index space, this query
 returns true, otherwise it returns false. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_CrsMatrix::NormInf "double
 Epetra_CrsMatrix::NormInf() const
@@ -4536,9 +4539,12 @@ Epetra_CrsMatrix::ReplaceColMap(const Epetra_BlockMap &newmap)
 Replaces the current ColMap with the user-specified map object.
 
 Replaces the current ColMap with the user-specified map object, but
-only if currentmap->PointSameAs(newmap) is true. This is a collective
+only if no entries have been inserted into the matrix (both
+IndicesAreLocal() and IndicesAreGlobal() are false) or
+currentmap->PointSameAs(newmap) is true. This is a collective
 function. Returns 0 if map is replaced, -1 if not.
 
+( IndicesAreLocal()==false && IndicesAreGlobal()==false) ||
 ColMap().PointSameAs(newmap)==true ";
 
 %feature("docstring")  Epetra_CrsMatrix::ColMap "const Epetra_Map&
@@ -6858,6 +6864,59 @@ Under certain special circumstances it is desirable to have non-local
 contributions ignored rather than saving them for the GlobalAssemble
 step. ";
 
+%feature("docstring")  Epetra_FEVector::Epetra_FEVector "Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const
+Epetra_BlockMap &Map, double *A, int MyLDA, int NumVectors, bool
+ignoreNonLocalEntries=false)
+
+Set multi-vector values from two-dimensional array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  A - Pointer to an array of double precision numbers. The first
+vector starts at A. The second vector starts at A+MyLDA, the third at
+A+2*MyLDA, and so on.
+
+In:  MyLDA - The \"Leading Dimension\", or stride between vectors in
+memory.
+
+WARNING:  This value refers to the stride on the calling processor.
+Thus it is a local quantity, not a global quantity.
+
+Parameters:
+-----------
+
+In:  NumVectors - Number of vectors in multi-vector.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_FEVector::Epetra_FEVector "Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const
+Epetra_BlockMap &Map, double **ArrayOfPointers, int NumVectors, bool
+ignoreNonLocalEntries=false)
+
+Set multi-vector values from array of pointers.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  ArrayOfPointers - An array of pointers such that
+ArrayOfPointers[i] points to the memory location containing ith vector
+to be copied.
+
+In:  NumVectors - Number of vectors in multi-vector.
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
 %feature("docstring")  Epetra_FEVector::Epetra_FEVector "Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector &source)
 
 Copy constructor. ";
@@ -7949,7 +8008,7 @@ In:  - A fully-constructed Epetra_Operator object. ";
 
 Destructor. ";
 
-/*  Atribute set methods  */
+/*  Attribute set methods  */
 
 %feature("docstring")  Epetra_InvOperator::SetUseTranspose "int
 Epetra_InvOperator::SetUseTranspose(bool UseTranspose_in)
@@ -8011,7 +8070,7 @@ Epetra_InvOperator::NormInf() const
 
 Returns the infinity norm of the global matrix. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_InvOperator::Label "const char*
 Epetra_InvOperator::Label() const
@@ -10592,6 +10651,54 @@ int *&sizes, int &len_import_objs, char *&import_objs)
 Do reverse post of buffer of export objects (can do other local work
 before executing Waits) ";
 
+/*  Attribute Accessor Methods  */
+
+%feature("docstring")  Epetra_MpiDistributor::NumReceives "int
+Epetra_MpiDistributor::NumReceives() const
+
+The number of procs from which we will receive data. ";
+
+%feature("docstring")  Epetra_MpiDistributor::NumSends "int
+Epetra_MpiDistributor::NumSends() const
+
+The number of procs to which we will send data. ";
+
+%feature("docstring")  Epetra_MpiDistributor::MaxSendLength "int
+Epetra_MpiDistributor::MaxSendLength() const
+
+Maximum number of values that this proc is sending to another single
+proc. ";
+
+%feature("docstring")  Epetra_MpiDistributor::TotalReceiveLength "int
+Epetra_MpiDistributor::TotalReceiveLength() const
+
+Total number of values that this proc is receiving from other procs.
+";
+
+%feature("docstring")  Epetra_MpiDistributor::ProcsFrom "const int*
+Epetra_MpiDistributor::ProcsFrom() const
+
+A list of procs sending values to this proc. ";
+
+%feature("docstring")  Epetra_MpiDistributor::ProcsTo "const int*
+Epetra_MpiDistributor::ProcsTo() const
+
+A list of procs to which this proc is sending values. ";
+
+%feature("docstring")  Epetra_MpiDistributor::LengthsFrom "const int*
+Epetra_MpiDistributor::LengthsFrom() const
+
+Number of values we're receiving from each proc.
+
+We will receive LengthsFrom[i] values from proc ProcsFrom[i]. ";
+
+%feature("docstring")  Epetra_MpiDistributor::LengthsTo "const int*
+Epetra_MpiDistributor::LengthsTo() const
+
+Number of values we're sending to each proc.
+
+We will send LengthsTo[i] values to procs ProcsTo[i]. ";
+
 /*  Print object to an output stream  */
 
 %feature("docstring")  Epetra_MpiDistributor::Print "void
@@ -12434,7 +12541,7 @@ Epetra_Operator::~Epetra_Operator()
 
 Destructor. ";
 
-/*  Atribute set methods  */
+/*  Attribute set methods  */
 
 %feature("docstring")  Epetra_Operator::SetUseTranspose "virtual int
 Epetra_Operator::SetUseTranspose(bool UseTranspose)=0
@@ -12500,7 +12607,7 @@ Epetra_Operator::NormInf() const =0
 
 Returns the infinity norm of the global matrix. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_Operator::Label "virtual const char*
 Epetra_Operator::Label() const =0
@@ -14212,7 +14319,7 @@ In:  x -The Epetra_Vector used for scaling this.
 
 Integer error code, set to 0 if successful. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_RowMatrix::Filled "virtual bool
 Epetra_RowMatrix::Filled() const =0
@@ -15354,7 +15461,7 @@ Epetra_SerialDenseOperator::~Epetra_SerialDenseOperator()
 
 Destructor. ";
 
-/*  Atribute set methods  */
+/*  Attribute set methods  */
 
 %feature("docstring")  Epetra_SerialDenseOperator::SetUseTranspose "virtual int Epetra_SerialDenseOperator::SetUseTranspose(bool
 UseTranspose)=0
@@ -15413,7 +15520,7 @@ double Epetra_SerialDenseOperator::NormInf() const =0
 
 Returns the infinity norm of the global matrix. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_SerialDenseOperator::Label "virtual
 const char* Epetra_SerialDenseOperator::Label() const =0
@@ -18350,7 +18457,7 @@ Epetra_VbrMatrix::NoDiagonal() const
 If matrix has no diagonal entries based on global row/column index
 comparisons, this query returns true, otherwise it returns false. ";
 
-/*  Atribute access functions  */
+/*  Attribute access functions  */
 
 %feature("docstring")  Epetra_VbrMatrix::NormInf "double
 Epetra_VbrMatrix::NormInf() const

@@ -21,7 +21,7 @@ IF(Kokkos_ENABLE_DeviceCuda)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  PerfTest
+  ArrayPerfTest
   SOURCES ${SOURCES}
   COMM serial mpi
   NUM_MPI_PROCS 1

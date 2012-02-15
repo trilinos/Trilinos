@@ -21,6 +21,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  Epetra_BKS_specialized
+  SOURCES cxx_main_specialized.cpp
+  COMM serial mpi
+  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Epetra_BKS_norestart_test
   SOURCES cxx_main_norestart.cpp

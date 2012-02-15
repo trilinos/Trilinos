@@ -819,7 +819,7 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 	
   //! Returns the infinity norm of the global matrix.
@@ -937,10 +937,12 @@ or if the number of entries in this row exceed the Length parameter.
 
   //! Replaces the current ColMap with the user-specified map object.
   /** Replaces the current ColMap with the user-specified map object, but only
-      if currentmap->PointSameAs(newmap) is true. This is a collective function.
+      if no entries have been inserted into the matrix (both IndicesAreLocal() 
+      and IndicesAreGlobal() are false) or currentmap->PointSameAs(newmap) is true. 
+      This is a collective function.
       Returns 0 if map is replaced, -1 if not.
       
-      \pre ColMap().PointSameAs(newmap)==true
+      \pre (IndicesAreLocal()==false && IndicesAreGlobal()==false) || ColMap().PointSameAs(newmap)==true
   */
   int ReplaceColMap(const Epetra_BlockMap& newmap);
 

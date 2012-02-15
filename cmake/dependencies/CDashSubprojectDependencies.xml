@@ -479,6 +479,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="TO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -488,6 +489,7 @@
     <Dependency name="Belos" type="LO"/>
     <Dependency name="Stratimikos" type="LO"/>
     <Dependency name="Anasazi" type="LO"/>
+    <Dependency name="Teko" type="LO"/>
     <EmailAddresses>
       <Email address="nox-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -523,7 +525,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Thyra" type="ITO"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -554,6 +556,7 @@
     <Dependency name="Triutils" type="ITO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="TO"/>
+    <Dependency name="Thyra" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="ITO"/>
     <Dependency name="Galeri" type="ITO"/>
@@ -563,6 +566,7 @@
     <Dependency name="Belos" type="TO"/>
     <Dependency name="Stratimikos" type="TO"/>
     <Dependency name="Anasazi" type="ITO"/>
+    <Dependency name="Teko" type="ITO"/>
     <Dependency name="NOX" type="TO"/>
     <EmailAddresses>
       <Email address="rythmos-regression@software.sandia.gov"/>
@@ -635,6 +639,7 @@
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Stratimikos" type="TO"/>
     <Dependency name="Anasazi" type="LO"/>
+    <Dependency name="Teko" type="ILO"/>
     <Dependency name="TriKota" type="LO"/>
     <Dependency name="NOX" type="LO"/>
     <EmailAddresses>
@@ -664,6 +669,7 @@
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="Teko" type="ILO"/>
     <Dependency name="TriKota" type="LO"/>
     <Dependency name="NOX" type="LO"/>
     <Dependency name="Rythmos" type="LO"/>
@@ -695,6 +701,7 @@
     <Dependency name="Belos" type="LR"/>
     <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="LR"/>
+    <Dependency name="Teko" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Intrepid" type="LR"/>
     <Dependency name="NOX" type="LR"/>
@@ -744,6 +751,7 @@
     <Dependency name="Triutils" type="LO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="LO"/>
     <Dependency name="Pliris" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
@@ -755,6 +763,7 @@
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="LO"/>
+    <Dependency name="Teko" type="ILO"/>
     <Dependency name="NOX" type="LO"/>
     <EmailAddresses>
       <Email address="pytrilinos-regression@software.sandia.gov"/>
@@ -770,6 +779,7 @@
     <Dependency name="Triutils" type="ILR"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="Pliris" type="ILO"/>
     <Dependency name="AztecOO" type="LR"/>
@@ -781,6 +791,7 @@
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="Teko" type="ILO"/>
     <Dependency name="NOX" type="ILO"/>
     <Dependency name="PyTrilinos" type="LR"/>
     <EmailAddresses>
@@ -797,6 +808,7 @@
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="TO"/>
     <Dependency name="EpetraExt" type="TO"/>
+    <Dependency name="Thyra" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="TO"/>
     <Dependency name="Galeri" type="TO"/>
@@ -806,6 +818,7 @@
     <Dependency name="Belos" type="TO"/>
     <Dependency name="Stratimikos" type="ITO"/>
     <Dependency name="Anasazi" type="TO"/>
+    <Dependency name="Teko" type="ITO"/>
     <Dependency name="NOX" type="TO"/>
     <EmailAddresses>
       <Email address="didasko-regression@software.sandia.gov"/>
@@ -852,6 +865,7 @@
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="Teko" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="NOX" type="LR"/>
     <Dependency name="Rythmos" type="ILO"/>

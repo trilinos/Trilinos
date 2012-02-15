@@ -52,7 +52,7 @@
 namespace Thyra {
 
 
-/** \brief Factory interface for creating precondtioner objects from
+/** \brief Factory interface for creating preconditioner objects from
  * <tt>LinearOpBase</tt> objects.
  *
  * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp

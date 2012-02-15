@@ -84,7 +84,6 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
     testrd_nc
     testwt-zeroe
     testwt-zeron
-    testrdv
     testwt-long-name
     testrd-long-name
     testwt-one-attrib

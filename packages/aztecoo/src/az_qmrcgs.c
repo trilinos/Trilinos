@@ -119,7 +119,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
   Amat:            Structure used to represent the matrix (see az_aztec.h
                    and Aztec User's Guide).
-  Oprecond:         Structure used to represent the preconditionner
+  Oprecond:         Structure used to represent the preconditioner
                    (see file az_aztec.h and Aztec User's Guide).
 
 *******************************************************************************/

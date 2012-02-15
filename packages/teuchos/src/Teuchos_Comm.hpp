@@ -45,12 +45,13 @@
 #include "Teuchos_ReductionOp.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
+
 namespace Teuchos {
 
 
 /** \brief . */
 class CommRequest : public Teuchos::Describable {};
-
+ 
 
 /** \brief Abstract interface class for a basic communication channel between
  * one or more processes.
@@ -411,12 +412,13 @@ public:
    *
    * \return A new communicator.
    */
-  virtual RCP< Comm > createSubcommunicator(const std::vector<int>& ranks) const = 0;
+  virtual RCP<Comm> createSubcommunicator(
+    const ArrayView<const int>& ranks) const = 0;
 
   //@}
-	
+  
 }; // class Comm
-
+  
 } // namespace Teuchos
 
 #endif // TEUCHOS_COMM_HPP

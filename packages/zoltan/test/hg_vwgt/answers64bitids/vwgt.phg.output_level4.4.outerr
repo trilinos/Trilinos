@@ -1,0 +1,1225 @@
+
+
+Reading the command file, zdrive.inp.phg.output_level4
+Input values:
+  Zoltan version 3.601
+  zdrive version 1.0
+  Total number of Processors = 4
+
+  Performing load balance using hypergraph.
+	Parameters:
+		hypergraph_package phg
+		add_obj_weight none
+		phg_output_level 4
+		phg_coarsening_limit 1
+		lb_approach partition
+		obj_weight_dim 1
+
+  Initially distribute input objects in linear fashion (first n/p to process 0, etc).
+
+  Distribute pins so each process gets full rows.
+##########################################################
+ZOLTAN Load balancing method = 11 (HYPERGRAPH)
+Starting iteration 1
+
+BEFORE load balancing
+DRIVER EVAL:  load:  max 15.000000  min 10.000000  sum 45.000000
+DRIVER EVAL:  objs:  max 7  min 6  sum 25
+DRIVER EVAL:  cuts:  max 0  min 0  sum 0
+
+Zoltan_LB_Eval_Balance  Part count: 4 requested, 4 actual , 4 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :         6        7       25     1.120
+Zoltan_LB_Eval_Balance  Object weight      :        10       15       45     1.333
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 4 requested, 4 actual, 4 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :         6        7       25     1.12
+Zoltan_LB_Eval_Graph  Object weight      :        10       15       45     1.333
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :         0        0        0        0
+Zoltan_LB_Eval_Graph  Number of cut edges       :         0        0        0        0
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         0        0        0        0
+
+
+
+Zoltan_LB_Eval_HG  Part count: 4 requested, 4 actual, 4 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :         6        7       25   1.120
+Zoltan_LB_Eval_HG  Object weight     :        10       15       45   1.333
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):   22.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )):   30.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):         10.000
+
+
+Build configuration:
+
+  ZOLTAN_ID_TYPE: unsigned long (8 bytes)
+  ZOLTAN_GNO_TYPE: ssize_t, (8 bytes)
+  MPI_Datatype for ZOLTAN_ID_TYPE: MPI_UNSIGNED_LONG
+  MPI_Datatype for ZOLTAN_GNO_TYPE: MPI_LONG
+  Third party library: ParMetis version 3.1
+  Third party library: PTScotch   Third party library: Scotch 
+ZOLTAN Parameter IMBALANCE_TOL[0] = 1.100000
+ZOLTAN Parameter AUTO_MIGRATE = FALSE
+ZOLTAN Parameter MIGRATE_ONLY_PROC_CHANGES = 1
+ZOLTAN Parameter OBJ_WEIGHT_DIM = 1
+ZOLTAN Parameter EDGE_WEIGHT_DIM = 0
+ZOLTAN Parameter DEBUG_LEVEL = 1
+ZOLTAN Parameter DEBUG_PROCESSOR = 0
+ZOLTAN Parameter DETERMINISTIC = TRUE
+ZOLTAN Parameter TIMER = 1 (wall)
+ZOLTAN Parameter NUM_GID_ENTRIES = 1
+ZOLTAN Parameter NUM_LID_ENTRIES = 1
+ZOLTAN Parameter RETURN_LISTS = IMPORT AND EXPORT
+ZOLTAN Parameter NUM_GLOBAL_PARTS = -1
+ZOLTAN Parameter NUM_LOCAL_PARTS = -1
+ZOLTAN Parameter REMAP = 1
+ZOLTAN Parameter SEED = 1220988223 (1220988223)
+ZOLTAN Parameter LB_APPROACH = PARTITION
+ZOLTAN Parameter HYPERGRAPH_PACKAGE = PHG
+ZOLTAN Parameter PHG_MULTILEVEL = 1
+ZOLTAN Parameter PHG_CUT_OBJECTIVE = connectivity
+ZOLTAN Parameter PHG_OUTPUT_LEVEL = 4
+ZOLTAN Parameter FINAL_OUTPUT = 0
+ZOLTAN Parameter CHECK_GRAPH = 0
+ZOLTAN Parameter CHECK_HYPERGRAPH = 0
+ZOLTAN Parameter PHG_NPROC_VERTEX = -1
+ZOLTAN Parameter PHG_NPROC_EDGE = -1
+ZOLTAN Parameter PHG_COARSENING_LIMIT = 1
+ZOLTAN Parameter PHG_COARSENING_NCANDIDATE = 100
+ZOLTAN Parameter PHG_COARSENING_METHOD = agg
+ZOLTAN Parameter PHG_COARSENING_METHOD_FAST = l-ipm
+ZOLTAN Parameter PHG_VERTEX_VISIT_ORDER = 0
+ZOLTAN Parameter PHG_EDGE_SCALING = 0
+ZOLTAN Parameter PHG_VERTEX_SCALING = 0
+ZOLTAN Parameter PHG_COARSEPARTITION_METHOD = auto
+ZOLTAN Parameter PHG_REFINEMENT_METHOD = fm2
+ZOLTAN Parameter PHG_DIRECT_KWAY = 0
+ZOLTAN Parameter PHG_REFINEMENT_LOOP_LIMIT = 10
+ZOLTAN Parameter PHG_REFINEMENT_MAX_NEG_MOVE = 250
+ZOLTAN Parameter PHG_REFINEMENT_QUALITY = 1.000000
+ZOLTAN Parameter PHG_USE_TIMERS = 0
+ZOLTAN Parameter USE_TIMERS = 0
+ZOLTAN Parameter PHG_EDGE_SIZE_THRESHOLD = 0.250000
+ZOLTAN Parameter PHG_MATCH_EDGE_SIZE_THRESHOLD = 500
+ZOLTAN Parameter PHG_BAL_TOL_ADJUSTMENT = 0.700000
+ZOLTAN Parameter PHG_EDGE_WEIGHT_OPERATION = max
+ZOLTAN Parameter PARKWAY_SERPART = patoh
+ZOLTAN Parameter ADD_OBJ_WEIGHT = NONE
+ZOLTAN Parameter PHG_RANDOMIZE_INPUT = 0
+ZOLTAN Parameter PHG_PROCESSOR_REDUCTION_LIMIT = 0.000000
+ZOLTAN Parameter PHG_REPART_MULTIPLIER = 100.000000
+ZOLTAN Parameter HYBRID_REDUCTION_FACTOR = 0.100000
+ZOLTAN Parameter HYBRID_REDUCTION_LEVELS = 2147483647
+ZOLTAN Parameter PATOH_ALLOC_POOL0 = 0
+ZOLTAN Parameter PATOH_ALLOC_POOL1 = 0
+Zoltan_HG_HGraph_Print Proc 0
+Vertices (GID, LID, index)
+((0 ) , (0 ) , 0)
+((1 ) , (1 ) , 1)
+((2 ) , (2 ) , 2)
+((3 ) , (3 ) , 3)
+((4 ) , (4 ) , 4)
+((5 ) , (5 ) , 5)
+((6 ) , (6 ) , 6)
+Build nVtx=12 nEdge=12 nPins=30 vWgt=1 eWgt=0
+Build Vertices:  (edges)
+0 (0) in part 0:  (8 10 11 )
+1 (1) in part 0:  (2 3 8 10 )
+2 (2) in part 0:  (2 10 )
+3 (3) in part 0:  (2 9 )
+4 (4) in part 0:  ()
+5 (5) in part 0:  (3 8 11 )
+6 (6) in part 0:  (3 5 10 11 )
+7 (7) in part 1:  (0 2 3 9 )
+8 (8) in part 1:  (9 )
+9 (9) in part 1:  (4 9 )
+10 (10) in part 1:  (5 11 )
+11 (11) in part 1:  (0 3 5 )
+Build Vertices: [weights])
+0 (0):  [5.000000 ])
+1 (1):  [1.000000 ])
+2 (2):  [1.000000 ])
+3 (3):  [1.000000 ])
+4 (4):  [1.000000 ])
+5 (5):  [5.000000 ])
+6 (6):  [1.000000 ])
+7 (7):  [1.000000 ])
+8 (8):  [1.000000 ])
+9 (9):  [1.000000 ])
+10 (10):  [5.000000 ])
+11 (11):  [1.000000 ])
+Total vertex weight = [24.000000  ]
+Build Hyperedges:  (vertices)
+0 (0):  (11 7 )
+1 (1):  ()
+2 (2):  (2 1 7 3 )
+3 (3):  (6 5 1 7 11 )
+4 (4):  (9 )
+5 (5):  (11 10 6 )
+6 (6):  ()
+7 (7):  ()
+8 (8):  (0 1 5 )
+9 (9):  (8 7 3 9 )
+10 (10):  (1 0 2 6 )
+11 (11):  (5 0 6 10 )
+Zoltan_HG_HGraph_Print Proc 1
+Vertices (GID, LID, index)
+((7 ) , (0 ) , 0)
+((8 ) , (1 ) , 1)
+((9 ) , (2 ) , 2)
+((10 ) , (3 ) , 3)
+((11 ) , (4 ) , 4)
+((12 ) , (5 ) , 5)
+Build nVtx=13 nEdge=12 nPins=20 vWgt=1 eWgt=0
+Build Vertices:  (edges)
+0 (12) in part 1:  (0 5 )
+1 (13) in part 2:  (0 4 9 )
+2 (14) in part 2:  (4 6 )
+3 (15) in part 2:  (1 )
+4 (16) in part 2:  (5 )
+5 (17) in part 2:  (0 )
+6 (18) in part 2:  (6 7 )
+7 (19) in part 3:  (4 6 )
+8 (20) in part 3:  (1 )
+9 (21) in part 3:  (1 )
+10 (22) in part 3:  (7 )
+11 (23) in part 3:  (7 )
+12 (24) in part 3:  (6 7 )
+Build Vertices: [weights])
+0 (12):  [1.000000 ])
+1 (13):  [1.000000 ])
+2 (14):  [1.000000 ])
+3 (15):  [5.000000 ])
+4 (16):  [1.000000 ])
+5 (17):  [1.000000 ])
+6 (18):  [1.000000 ])
+7 (19):  [1.000000 ])
+8 (20):  [5.000000 ])
+9 (21):  [1.000000 ])
+10 (22):  [1.000000 ])
+11 (23):  [1.000000 ])
+12 (24):  [1.000000 ])
+Total vertex weight = [21.000000  ]
+Build Hyperedges:  (vertices)
+0 (0):  (0 1 5 )
+1 (1):  (8 3 9 )
+2 (2):  ()
+3 (3):  ()
+4 (4):  (2 1 7 )
+5 (5):  (0 4 )
+6 (6):  (7 6 2 12 )
+7 (7):  (11 10 6 12 )
+8 (8):  ()
+9 (9):  (1 )
+10 (10):  ()
+11 (11):  ()
+Zoltan_HG_HGraph_Print Proc 2
+Vertices (GID, LID, index)
+((13 ) , (0 ) , 0)
+((14 ) , (1 ) , 1)
+((15 ) , (2 ) , 2)
+((16 ) , (3 ) , 3)
+((17 ) , (4 ) , 4)
+((18 ) , (5 ) , 5)
+Build nVtx=12 nEdge=13 nPins=20 vWgt=1 eWgt=0
+Build Vertices:  (edges)
+0 (0) in part 0:  ()
+1 (1) in part 0:  ()
+2 (2) in part 0:  (5 11 )
+3 (3) in part 0:  (6 11 )
+4 (4) in part 0:  (6 9 11 )
+5 (5) in part 0:  (4 )
+6 (6) in part 0:  (5 )
+7 (7) in part 1:  (5 )
+8 (8) in part 1:  (0 5 9 11 )
+9 (9) in part 1:  (6 9 )
+10 (10) in part 1:  (4 12 )
+11 (11) in part 1:  (4 7 )
+Build Vertices: [weights])
+0 (0):  [5.000000 ])
+1 (1):  [1.000000 ])
+2 (2):  [1.000000 ])
+3 (3):  [1.000000 ])
+4 (4):  [1.000000 ])
+5 (5):  [5.000000 ])
+6 (6):  [1.000000 ])
+7 (7):  [1.000000 ])
+8 (8):  [1.000000 ])
+9 (9):  [1.000000 ])
+10 (10):  [5.000000 ])
+11 (11):  [1.000000 ])
+Total vertex weight = [24.000000  ]
+Build Hyperedges:  (vertices)
+0 (12):  (8 )
+1 (13):  ()
+2 (14):  ()
+3 (15):  ()
+4 (16):  (10 5 11 )
+5 (17):  (7 6 2 8 )
+6 (18):  (4 3 9 )
+7 (19):  (11 )
+8 (20):  ()
+9 (21):  (9 8 4 )
+10 (22):  ()
+11 (23):  (3 2 8 4 )
+12 (24):  (10 )
+Zoltan_HG_HGraph_Print Proc 3
+Vertices (GID, LID, index)
+((19 ) , (0 ) , 0)
+((20 ) , (1 ) , 1)
+((21 ) , (2 ) , 2)
+((22 ) , (3 ) , 3)
+((23 ) , (4 ) , 4)
+((24 ) , (5 ) , 5)
+Build nVtx=13 nEdge=13 nPins=35 vWgt=1 eWgt=0
+Build Vertices:  (edges)
+0 (12) in part 1:  (0 3 5 )
+1 (13) in part 2:  (0 1 )
+2 (14) in part 2:  (0 9 )
+3 (15) in part 2:  (4 7 12 )
+4 (16) in part 2:  (3 7 10 12 )
+5 (17) in part 2:  (1 2 3 7 )
+6 (18) in part 2:  (0 1 3 )
+7 (19) in part 3:  (1 8 )
+8 (20) in part 3:  (10 12 )
+9 (21) in part 3:  (2 7 10 )
+10 (22) in part 3:  (2 3 10 )
+11 (23) in part 3:  (1 2 8 )
+12 (24) in part 3:  (8 )
+Build Vertices: [weights])
+0 (12):  [1.000000 ])
+1 (13):  [1.000000 ])
+2 (14):  [1.000000 ])
+3 (15):  [5.000000 ])
+4 (16):  [1.000000 ])
+5 (17):  [1.000000 ])
+6 (18):  [1.000000 ])
+7 (19):  [1.000000 ])
+8 (20):  [5.000000 ])
+9 (21):  [1.000000 ])
+10 (22):  [1.000000 ])
+11 (23):  [1.000000 ])
+12 (24):  [1.000000 ])
+Total vertex weight = [21.000000  ]
+Build Hyperedges:  (vertices)
+0 (12):  (1 0 2 6 )
+1 (13):  (6 5 1 7 11 )
+2 (14):  (10 9 5 11 )
+3 (15):  (5 4 0 6 10 )
+4 (16):  (3 )
+5 (17):  (0 )
+6 (18):  ()
+7 (19):  (4 3 5 9 )
+8 (20):  (12 11 7 )
+9 (21):  (2 )
+10 (22):  (9 8 4 10 )
+11 (23):  ()
+12 (24):  (3 4 8 )
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->START   0 |V|=    12 |E|=    13 #pins=    20 1/agg/auto/fm2 p=2...
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->START   0 |V|=    12 |E|=    12 #pins=    30 1/agg/auto/fm2 p=2...
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->START   0 |V|=    13 |E|=    12 #pins=    20 1/agg/auto/fm2 p=2...
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->START   0 |V|=    13 |E|=    13 #pins=    35 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:0 |V|=12 |E|=12 |P|=30 
+Vertex weights   :         1.00      2.00      5.00        24.00
+Vertex Stats: stdev 1.81,   Coef of Var 0.90
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+Edge sizes       :         0         2.50      5           30
+Edge Stats: stdev 1.83,   Coef of Var 0.73
+Vertex sizes     :         0         2.50      4           30
+Vertex Stats: stdev 1.24,  Coef of Var 0.50
+-----------------------------------------------------------------
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->START   1 |V|=     3 |E|=    11 #pins=    12 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:0 |V|=13 |E|=12 |P|=20 
+Vertex weights   :         1.00      1.62      5.00        21.00
+Vertex Stats: stdev 1.50,   Coef of Var 0.93
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+Edge sizes       :         0         1.67      4           20
+Edge Stats: stdev 1.67,   Coef of Var 1.00
+Vertex sizes     :         1         1.54      3           20
+Vertex Stats: stdev 0.66,  Coef of Var 0.43
+-----------------------------------------------------------------
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->START   1 |V|=     5 |E|=    11 #pins=    17 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:0 |V|=12 |E|=13 |P|=20 
+Vertex weights   :         1.00      2.00      5.00        24.00
+Vertex Stats: stdev 1.81,   Coef of Var 0.90
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+Edge sizes       :         0         1.54      4           20
+Edge Stats: stdev 1.61,   Coef of Var 1.05
+Vertex sizes     :         0         1.67      4           20
+Vertex Stats: stdev 1.15,  Coef of Var 0.69
+-----------------------------------------------------------------
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->START   1 |V|=     3 |E|=     8 #pins=     7 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:0 |V|=13 |E|=13 |P|=35 
+Vertex weights   :         1.00      1.62      5.00        21.00
+Vertex Stats: stdev 1.50,   Coef of Var 0.93
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+Edge sizes       :         0         2.69      5           35
+Edge Stats: stdev 1.84,   Coef of Var 0.68
+Vertex sizes     :         1         2.69      4           35
+Vertex Stats: stdev 0.85,  Coef of Var 0.32
+-----------------------------------------------------------------
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->START   1 |V|=     5 |E|=     8 #pins=    17 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:1 |V|=3 |E|=11 |P|=12 
+Vertex weights   :         5.00      7.67      9.00        23.00
+Vertex Stats: stdev 2.31,   Coef of Var 0.30
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.36      3.00        15.00
+HEdge Stats: STDV 0.67,   Coef of Var 0.49
+Edge sizes       :         0         1.09      2           12
+Edge Stats: stdev 0.94,   Coef of Var 0.87
+Vertex sizes     :         1         4.00      6           12
+Vertex Stats: stdev 2.65,  Coef of Var 0.66
+-----------------------------------------------------------------
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:1 |V|=5 |E|=11 |P|=17 
+Vertex weights   :         2.00      4.40      8.00        22.00
+Vertex Stats: stdev 2.61,   Coef of Var 0.59
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.36      3.00        15.00
+HEdge Stats: STDV 0.67,   Coef of Var 0.49
+Edge sizes       :         0         1.55      3           17
+Edge Stats: stdev 0.82,   Coef of Var 0.53
+Vertex sizes     :         2         3.40      5           17
+Vertex Stats: stdev 1.14,  Coef of Var 0.34
+-----------------------------------------------------------------
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->START   2 |V|=     4 |E|=     7 #pins=    16 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:1 |V|=5 |E|=8 |P|=17 
+Vertex weights   :         2.00      4.40      8.00        22.00
+Vertex Stats: stdev 2.61,   Coef of Var 0.59
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.25      2.00        10.00
+HEdge Stats: STDV 0.46,   Coef of Var 0.37
+Edge sizes       :         0         2.12      4           17
+Edge Stats: stdev 1.46,   Coef of Var 0.69
+Vertex sizes     :         0         3.40      6           17
+Vertex Stats: stdev 2.19,  Coef of Var 0.64
+-----------------------------------------------------------------
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->START   2 |V|=     4 |E|=     8 #pins=    14 1/agg/auto/fm2 p=2...
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->START   2 |V|=     2 |E|=     7 #pins=     4 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:1 |V|=3 |E|=8 |P|=7 
+Vertex weights   :         5.00      7.67      9.00        23.00
+Vertex Stats: stdev 2.31,   Coef of Var 0.30
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.25      2.00        10.00
+HEdge Stats: STDV 0.46,   Coef of Var 0.37
+Edge sizes       :         0         0.88      3            7
+Edge Stats: stdev 1.13,   Coef of Var 1.29
+Vertex sizes     :         2         2.33      3            7
+Vertex Stats: stdev 0.58,  Coef of Var 0.25
+-----------------------------------------------------------------
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->START   2 |V|=     2 |E|=     8 #pins=     4 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:2 |V|=2 |E|=7 |P|=4 
+Vertex weights   :         5.00      7.00      9.00        14.00
+Vertex Stats: stdev 2.83,   Coef of Var 0.40
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.57      3.00        11.00
+HEdge Stats: STDV 0.79,   Coef of Var 0.50
+Edge sizes       :         0         0.57      2            4
+Edge Stats: stdev 0.79,   Coef of Var 1.38
+Vertex sizes     :         2         2.00      2            4
+Vertex Stats: stdev 0.00,  Coef of Var 0.00
+-----------------------------------------------------------------
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:2 |V|=4 |E|=7 |P|=16 
+Vertex weights   :         4.00      7.75     11.00        31.00
+Vertex Stats: stdev 2.87,   Coef of Var 0.37
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.57      3.00        11.00
+HEdge Stats: STDV 0.79,   Coef of Var 0.50
+Edge sizes       :         1         2.29      4           16
+Edge Stats: stdev 0.95,   Coef of Var 0.42
+Vertex sizes     :         2         4.00      6           16
+Vertex Stats: stdev 1.63,  Coef of Var 0.41
+-----------------------------------------------------------------
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->START   3 |V|=     2 |E|=     9 #pins=     4 1/agg/auto/fm2 p=2...
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->START   3 |V|=     4 |E|=     9 #pins=    20 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:2 |V|=2 |E|=8 |P|=4 
+Vertex weights   :         5.00      7.00      9.00        14.00
+Vertex Stats: stdev 2.83,   Coef of Var 0.40
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.75      4.00        14.00
+HEdge Stats: STDV 1.16,   Coef of Var 0.67
+Edge sizes       :         0         0.50      2            4
+Edge Stats: stdev 0.76,   Coef of Var 1.51
+Vertex sizes     :         1         2.00      3            4
+Vertex Stats: stdev 1.41,  Coef of Var 0.71
+-----------------------------------------------------------------
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:2 |V|=4 |E|=8 |P|=14 
+Vertex weights   :         4.00      7.75     11.00        31.00
+Vertex Stats: stdev 2.87,   Coef of Var 0.37
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.75      4.00        14.00
+HEdge Stats: STDV 1.16,   Coef of Var 0.67
+Edge sizes       :         0         1.75      3           14
+Edge Stats: stdev 1.04,   Coef of Var 0.59
+Vertex sizes     :         3         3.50      4           14
+Vertex Stats: stdev 0.58,  Coef of Var 0.16
+-----------------------------------------------------------------
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->START   3 |V|=     2 |E|=     6 #pins=     4 1/agg/auto/fm2 p=2...
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->START   3 |V|=     4 |E|=     6 #pins=    10 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:3 |V|=4 |E|=9 |P|=20 
+Vertex weights   :         4.00      7.75     11.00        31.00
+Vertex Stats: stdev 2.87,   Coef of Var 0.37
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.89      4.00        17.00
+HEdge Stats: STDV 1.17,   Coef of Var 0.62
+Edge sizes       :         1         2.22      4           20
+Edge Stats: stdev 0.97,   Coef of Var 0.44
+Vertex sizes     :         4         5.00      6           20
+Vertex Stats: stdev 0.82,  Coef of Var 0.16
+-----------------------------------------------------------------
+COARSE_PART i= 0, part[ 1] =  0, part_sum=5.000000, cutoff=22.500000
+COARSE_PART i= 1, part[ 2] =  0, part_sum=16.000000, cutoff=22.500000
+COARSE_PART i= 2, part[ 4] =  0, part_sum=20.000000, cutoff=22.500000
+COARSE_PART i= 3, part[ 0] =  1, part_sum=9.000000, cutoff=25.000000
+COARSE_PART i= 4, part[ 3] =  1, part_sum=17.000000, cutoff=25.000000
+COARSE_PART i= 5, part[ 5] =  1, part_sum=25.000000, cutoff=25.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      0  1-> 0    4.92 -10.000000 11.000000
+   2      4  0-> 1    0.92 -9.000000 12.000000
+   3      2  0-> 1    6.92 -11.000000 10.000000
+   4      5  1-> 0   -1.08 -2.000000 19.000000
+   5      1  0-> 1    3.92 -2.000000 19.000000
+   6      3  1-> 0    0.92 0.000000 21.000000
+COARSE_PART i= 0, part[ 3] =  0, part_sum=8.000000, cutoff=22.500000
+COARSE_PART i= 1, part[ 4] =  0, part_sum=12.000000, cutoff=22.500000
+COARSE_PART i= 2, part[ 1] =  0, part_sum=17.000000, cutoff=22.500000
+COARSE_PART i= 3, part[ 0] =  0, part_sum=0.000000, cutoff=19.000000
+COARSE_PART i= 4, part[ 5] =  1, part_sum=8.000000, cutoff=19.000000
+COARSE_PART i= 5, part[ 2] =  1, part_sum=19.000000, cutoff=19.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      3  0-> 1    2.92 -7.000000 15.000000
+   2      2  1-> 0    4.92 -11.000000 11.000000
+   3      4  0-> 1    0.92 -10.000000 12.000000
+   4      1  0-> 1    0.92 -7.000000 15.000000
+   5      5  1-> 0    3.92 -2.000000 20.000000
+   6      0  0-> 1    1.92 0.000000 22.000000
+COARSE_PART i= 0, part[ 4] =  0, part_sum=4.000000, cutoff=22.500000
+COARSE_PART i= 1, part[ 3] =  0, part_sum=12.000000, cutoff=22.500000
+COARSE_PART i= 2, part[ 1] =  0, part_sum=17.000000, cutoff=22.500000
+COARSE_PART i= 3, part[ 0] =  0, part_sum=0.000000, cutoff=19.000000
+COARSE_PART i= 4, part[ 2] =  1, part_sum=11.000000, cutoff=19.000000
+COARSE_PART i= 5, part[ 5] =  1, part_sum=19.000000, cutoff=19.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      3  0-> 1    2.92 -7.000000 15.000000
+   2      2  1-> 0    4.92 -11.000000 11.000000
+   3      4  0-> 1    0.92 -10.000000 12.000000
+   4      1  0-> 1    0.92 -7.000000 15.000000
+   5      5  1-> 0    3.92 -2.000000 20.000000
+   6      0  0-> 1    1.92 0.000000 22.000000
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->Local Ratio Cut= 13.50   Global Ratio Cut= 13.50
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:3 |V|=2 |E|=6 |P|=4 
+Vertex weights   :         5.00      7.00      9.00        14.00
+Vertex Stats: stdev 2.83,   Coef of Var 0.40
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.33      2.00         8.00
+HEdge Stats: STDV 0.52,   Coef of Var 0.39
+Edge sizes       :         0         0.67      2            4
+Edge Stats: stdev 1.03,   Coef of Var 1.55
+Vertex sizes     :         2         2.00      2            4
+Vertex Stats: stdev 0.00,  Coef of Var 0.00
+-----------------------------------------------------------------
+COARSE_PART i= 0, part[ 1] =  0, part_sum=5.000000, cutoff=22.500000
+COARSE_PART i= 1, part[ 2] =  0, part_sum=16.000000, cutoff=22.500000
+COARSE_PART i= 2, part[ 3] =  0, part_sum=0.000000, cutoff=21.000000
+COARSE_PART i= 3, part[ 4] =  1, part_sum=4.000000, cutoff=21.000000
+COARSE_PART i= 4, part[ 5] =  1, part_sum=12.000000, cutoff=21.000000
+COARSE_PART i= 5, part[ 0] =  1, part_sum=21.000000, cutoff=21.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      0  1-> 0    8.92 -6.000000 14.000000
+   2      3  0-> 1    0.92 -8.000000 12.000000
+   3      2  0-> 1    6.92 -10.000000 10.000000
+   4      4  1-> 0    2.92 -5.000000 15.000000
+   5      5  1-> 0    1.92 0.000000 20.000000
+   6      1  0-> 1   -0.08 0.000000 20.000000
+COARSE_PART i= 0, part[ 2] =  0, part_sum=11.000000, cutoff=22.500000
+COARSE_PART i= 1, part[ 3] =  0, part_sum=19.000000, cutoff=22.500000
+COARSE_PART i= 2, part[ 4] =  0, part_sum=0.000000, cutoff=22.000000
+COARSE_PART i= 3, part[ 5] =  1, part_sum=8.000000, cutoff=22.000000
+COARSE_PART i= 4, part[ 0] =  1, part_sum=17.000000, cutoff=22.000000
+COARSE_PART i= 5, part[ 1] =  1, part_sum=22.000000, cutoff=22.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      5  1-> 0    6.92 -9.000000 10.000000
+   2      2  0-> 1    0.92 -7.000000 12.000000
+   3      1  1-> 0    0.92 -4.000000 15.000000
+   4      4  0-> 1   -0.08 -5.000000 14.000000
+   5      3  0-> 1    7.92 -6.000000 13.000000
+   6      0  1-> 0   -1.08 0.000000 19.000000
+COARSE_PART i= 0, part[ 3] =  0, part_sum=8.000000, cutoff=22.500000
+COARSE_PART i= 1, part[ 4] =  0, part_sum=12.000000, cutoff=22.500000
+COARSE_PART i= 2, part[ 5] =  0, part_sum=20.000000, cutoff=22.500000
+COARSE_PART i= 3, part[ 0] =  1, part_sum=9.000000, cutoff=25.000000
+COARSE_PART i= 4, part[ 1] =  1, part_sum=14.000000, cutoff=25.000000
+COARSE_PART i= 5, part[ 2] =  1, part_sum=25.000000, cutoff=25.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      2  1-> 0    6.92 -2.000000 10.000000
+   2      4  0-> 1    2.92 3.000000 15.000000
+   3      5  0-> 1    1.92 8.000000 20.000000
+   4      0  1-> 0    3.92 6.000000 18.000000
+   5      3  0-> 1    0.92 3.000000 15.000000
+   6      1  1-> 0    0.92 0.000000 12.000000
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->Local Ratio Cut= 13.50   Global Ratio Cut= 13.50
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:3 |V|=4 |E|=6 |P|=10 
+Vertex weights   :         4.00      7.75     11.00        31.00
+Vertex Stats: stdev 2.87,   Coef of Var 0.37
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.33      2.00         8.00
+HEdge Stats: STDV 0.52,   Coef of Var 0.39
+Edge sizes       :         0         1.67      3           10
+Edge Stats: stdev 1.03,   Coef of Var 0.62
+Vertex sizes     :         1         2.50      3           10
+Vertex Stats: stdev 1.00,  Coef of Var 0.40
+-----------------------------------------------------------------
+Debug: Starting new greedy growing at vertex 4, part= 2
+COARSE_PART vtx= 4, part[ 4]= 1, part_sum=4.000000
+COARSE_PART vtx= 1, part[ 1]= 1, part_sum=9.000000
+COARSE_PART vtx= 0, part[ 0]= 1, part_sum=18.000000
+COARSE_PART vtx= 2, part[ 2]= 1, part_sum=29.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      4  1-> 0    0.92 1.000000 12.000000
+   2      2  1-> 0    6.92 -1.000000 10.000000
+   3      5  0-> 1   -1.08 8.000000 19.000000
+   4      0  1-> 0    7.92 2.000000 13.000000
+   5      3  0-> 1   -0.08 3.000000 14.000000
+   6      1  1-> 0    4.92 0.000000 11.000000
+Debug: Starting new greedy growing at vertex 1, part= 2
+COARSE_PART vtx= 1, part[ 1]= 1, part_sum=5.000000
+COARSE_PART vtx= 0, part[ 0]= 1, part_sum=14.000000
+COARSE_PART vtx= 2, part[ 2]= 1, part_sum=25.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      2  1-> 0    6.92 -2.000000 10.000000
+   2      4  0-> 1    2.92 3.000000 15.000000
+   3      5  0-> 1    1.92 8.000000 20.000000
+   4      0  1-> 0    3.92 6.000000 18.000000
+   5      3  0-> 1    0.92 3.000000 15.000000
+   6      1  1-> 0    0.92 0.000000 12.000000
+Debug: Starting new greedy growing at vertex 0, part= 2
+COARSE_PART vtx= 0, part[ 0]= 1, part_sum=9.000000
+COARSE_PART vtx= 1, part[ 1]= 1, part_sum=14.000000
+COARSE_PART vtx= 2, part[ 2]= 1, part_sum=25.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      2  1-> 0    6.92 -2.000000 10.000000
+   2      4  0-> 1    2.92 3.000000 15.000000
+   3      5  0-> 1    1.92 8.000000 20.000000
+   4      0  1-> 0    3.92 6.000000 18.000000
+   5      3  0-> 1    0.92 3.000000 15.000000
+   6      1  1-> 0    0.92 0.000000 12.000000
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->Local Ratio Cut= 13.50   Global Ratio Cut= 13.50
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:3 |V|=2 |E|=9 |P|=4 
+Vertex weights   :         5.00      7.00      9.00        14.00
+Vertex Stats: stdev 2.83,   Coef of Var 0.40
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.89      4.00        17.00
+HEdge Stats: STDV 1.17,   Coef of Var 0.62
+Edge sizes       :         0         0.44      1            4
+Edge Stats: stdev 0.53,   Coef of Var 1.19
+Vertex sizes     :         1         2.00      3            4
+Vertex Stats: stdev 1.41,  Coef of Var 0.71
+-----------------------------------------------------------------
+Debug: Starting new greedy growing at vertex 2, part= 2
+COARSE_PART vtx= 2, part[ 2]= 1, part_sum=11.000000
+COARSE_PART vtx= 0, part[ 0]= 1, part_sum=20.000000
+COARSE_PART vtx= 1, part[ 1]= 1, part_sum=25.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      2  1-> 0    6.92 -2.000000 10.000000
+   2      4  0-> 1    2.92 3.000000 15.000000
+   3      5  0-> 1    1.92 8.000000 20.000000
+   4      0  1-> 0    3.92 6.000000 18.000000
+   5      3  0-> 1    0.92 3.000000 15.000000
+   6      1  1-> 0    0.92 0.000000 12.000000
+Debug: Starting new greedy growing at vertex 1, part= 2
+COARSE_PART vtx= 1, part[ 1]= 1, part_sum=5.000000
+COARSE_PART vtx= 0, part[ 0]= 1, part_sum=14.000000
+COARSE_PART vtx= 2, part[ 2]= 1, part_sum=25.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      2  1-> 0    6.92 -2.000000 10.000000
+   2      4  0-> 1    2.92 3.000000 15.000000
+   3      5  0-> 1    1.92 8.000000 20.000000
+   4      0  1-> 0    3.92 6.000000 18.000000
+   5      3  0-> 1    0.92 3.000000 15.000000
+   6      1  1-> 0    0.92 0.000000 12.000000
+Debug: Starting new greedy growing at vertex 3, part= 2
+COARSE_PART vtx= 3, part[ 3]= 1, part_sum=8.000000
+COARSE_PART vtx= 5, part[ 5]= 1, part_sum=16.000000
+COARSE_PART vtx= 4, part[ 4]= 1, part_sum=20.000000
+COARSE_PART vtx= 2, part[ 2]= 1, part_sum=31.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      2  1-> 0    0.92 2.000000 12.000000
+   2      1  0-> 1    0.92 5.000000 15.000000
+   3      4  1-> 0   -0.08 4.000000 14.000000
+   4      3  1-> 0    7.92 3.000000 13.000000
+   5      0  0-> 1   -1.08 9.000000 19.000000
+   6      5  1-> 0    6.92 0.000000 10.000000
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->Local Ratio Cut= 13.50   Global Ratio Cut= 13.50
+| 0/ 4|: ( 0, 0)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    14] LI= 0.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    14] LI= 0.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->FINAL   3 |V|=     2 |E|=     9 #pins=     4 1/agg/auto/fm2 p=2 bal=1.11 cutl=12.00
+| 1/ 4|: ( 1, 0)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,    11] LI= 0.11
+| 1/ 4|: ( 1, 0)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,    11] LI= 0.11
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->FINAL   3 |V|=     4 |E|=     9 #pins=    20 1/agg/auto/fm2 p=2 bal=1.11 cutl=12.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    14] LI= 0.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    14] LI= 0.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->FINAL   3 |V|=     2 |E|=     6 #pins=     4 1/agg/auto/fm2 p=2 bal=1.11 cutl=12.00
+| 3/ 4|: ( 1, 1)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,    11] LI= 0.11
+| 3/ 4|: ( 1, 1)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,    11] LI= 0.11
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->FINAL   3 |V|=     4 |E|=     6 #pins=    10 1/agg/auto/fm2 p=2 bal=1.11 cutl=12.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    14] LI= 0.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    14] LI= 0.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->FINAL   2 |V|=     2 |E|=     7 #pins=     4 1/agg/auto/fm2 p=2 bal=1.11 cutl=12.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    14] LI= 0.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    14] LI= 0.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->FINAL   2 |V|=     2 |E|=     8 #pins=     4 1/agg/auto/fm2 p=2 bal=1.11 cutl=12.00
+| 1/ 4|: ( 1, 0)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,    11] LI= 0.11
+| 1/ 4|: ( 1, 0)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,    11] LI= 0.11
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->FINAL   2 |V|=     4 |E|=     7 #pins=    16 1/agg/auto/fm2 p=2 bal=1.11 cutl=12.00
+| 3/ 4|: ( 1, 1)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,    11] LI= 0.11
+| 3/ 4|: ( 1, 1)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,    11] LI= 0.11
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->FINAL   2 |V|=     4 |E|=     8 #pins=    14 1/agg/auto/fm2 p=2 bal=1.11 cutl=12.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    23] LI= 0.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    23] LI= 0.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] -> FM Pass 2 (0->1) Cut=10.00 W[   22,    23] I= 0.02 LW[    0,    23] LI= 0.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] -> FM Pass 3 (1->0) Cut=10.00 W[   22,    23] I= 0.02 LW[    0,    23] LI= 0.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->FINAL   1 |V|=     3 |E|=    11 #pins=    12 1/agg/auto/fm2 p=2 bal=1.02 cutl=10.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    23] LI= 0.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[    0,    23] LI= 0.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] -> FM Pass 2 (0->1) Cut=10.00 W[   22,    23] I= 0.02 LW[    0,    23] LI= 0.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] -> FM Pass 3 (1->0) Cut=10.00 W[   22,    23] I= 0.02 LW[    0,    23] LI= 0.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->FINAL   1 |V|=     3 |E|=     8 #pins=     7 1/agg/auto/fm2 p=2 bal=1.02 cutl=10.00
+| 1/ 4|: ( 1, 0)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,     2] LI= 0.11
+| 1/ 4|: ( 1, 0)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,     2] LI= 0.11
+| 1/ 4|: ( 1, 0)/[ 2, 2] -> FM Pass 2 (0->1) Cut=10.00 W[   22,    23] I= 0.02 LW[   22,     0] LI= 0.02
+| 1/ 4|: ( 1, 0)/[ 2, 2] -> FM Pass 3 (1->0) Cut=10.00 W[   22,    23] I= 0.02 LW[   22,     0] LI= 0.02
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->FINAL   1 |V|=     5 |E|=    11 #pins=    17 1/agg/auto/fm2 p=2 bal=1.02 cutl=10.00
+| 3/ 4|: ( 1, 1)/[ 2, 2] -> FM Pass 0 (0->1) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,     2] LI= 0.11
+| 3/ 4|: ( 1, 1)/[ 2, 2] -> FM Pass 1 (1->0) Cut=12.00 W[   20,    25] I= 0.11 LW[   20,     2] LI= 0.11
+| 3/ 4|: ( 1, 1)/[ 2, 2] -> FM Pass 2 (0->1) Cut=10.00 W[   22,    23] I= 0.02 LW[   22,     0] LI= 0.02
+| 3/ 4|: ( 1, 1)/[ 2, 2] -> FM Pass 3 (1->0) Cut=10.00 W[   22,    23] I= 0.02 LW[   22,     0] LI= 0.02
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->FINAL   1 |V|=     5 |E|=     8 #pins=    17 1/agg/auto/fm2 p=2 bal=1.02 cutl=10.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] -> FM Pass 0 (0->1) Cut=10.00 W[   22,    23] I= 0.02 LW[    1,    23] LI= 0.02
+| 0/ 4|: ( 0, 0)/[ 2, 2] -> FM Pass 1 (1->0) Cut=10.00 W[   22,    23] I= 0.02 LW[    1,    23] LI= 0.02
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->FINAL   0 |V|=    12 |E|=    12 #pins=    30 1/agg/auto/fm2 p=2 bal=1.02 cutl=10.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] -> FM Pass 0 (0->1) Cut=10.00 W[   22,    23] I= 0.02 LW[    1,    23] LI= 0.02
+| 2/ 4|: ( 0, 1)/[ 2, 2] -> FM Pass 1 (1->0) Cut=10.00 W[   22,    23] I= 0.02 LW[    1,    23] LI= 0.02
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->FINAL   0 |V|=    12 |E|=    13 #pins=    20 1/agg/auto/fm2 p=2 bal=1.02 cutl=10.00
+| 1/ 4|: ( 1, 0)/[ 2, 2] -> FM Pass 0 (0->1) Cut=10.00 W[   22,    23] I= 0.02 LW[   21,     0] LI= 0.02
+| 1/ 4|: ( 1, 0)/[ 2, 2] -> FM Pass 1 (1->0) Cut=10.00 W[   22,    23] I= 0.02 LW[   21,     0] LI= 0.02
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->FINAL   0 |V|=    13 |E|=    12 #pins=    20 1/agg/auto/fm2 p=2 bal=1.02 cutl=10.00
+| 3/ 4|: ( 1, 1)/[ 2, 2] -> FM Pass 0 (0->1) Cut=10.00 W[   22,    23] I= 0.02 LW[   21,     0] LI= 0.02
+| 3/ 4|: ( 1, 1)/[ 2, 2] -> FM Pass 1 (1->0) Cut=10.00 W[   22,    23] I= 0.02 LW[   21,     0] LI= 0.02
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->FINAL   0 |V|=    13 |E|=    13 #pins=    35 1/agg/auto/fm2 p=2 bal=1.02 cutl=10.00
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->Rdivide(0, 3): 10.0
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->Rdivide(0, 3): 10.0
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->Rdivide(0, 3): 10.0
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->Rdivide(0, 3): 10.0
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->Left: H(13, 9, 33) ----> H(0, 0, 0) Weights=(22.00, 23.00)
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->Left: H(1, 7, 2) ----> H(14, 9, 34) Weights=(22.00, 23.00)
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->Left: H(1, 9, 1) ----> H(0, 0, 0) Weights=(22.00, 23.00)
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->Left: H(13, 7, 20) ----> H(14, 7, 22) Weights=(22.00, 23.00)
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->Right: H(0, 8, 0) ----> H(0, 0, 0) Weights=(22.00, 23.00)
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->Left: H(14, 7, 22) OldI: 1.10 NewI: 1.12
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->Right: H(11, 8, 28) ----> H(0, 0, 0) Weights=(22.00, 23.00)
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->Left: H(14, 9, 34) OldI: 1.10 NewI: 1.12
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->Right: H(11, 5, 15) ----> H(11, 7, 23) Weights=(22.00, 23.00)
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->Right: H(0, 5, 0) ----> H(11, 6, 20) Weights=(22.00, 23.00)
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->Right: H(11, 7, 23) OldI: 1.10 NewI: 1.08
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->Right: H(11, 6, 20) OldI: 1.10 NewI: 1.08
+| 0/ 4|: ( 0, 0)/[ 1, 2] ->START   0 |V|=    14 |E|=     9 #pins=    34 1/agg/auto/fm2 p=2...
+| 2/ 4|: ( 0, 0)/[ 1, 2] ->START   0 |V|=    11 |E|=     7 #pins=    23 1/agg/auto/fm2 p=2...
+| 1/ 4|: ( 0, 1)/[ 1, 2] ->START   0 |V|=    14 |E|=     7 #pins=    22 1/agg/auto/fm2 p=2...
+| 3/ 4|: ( 0, 1)/[ 1, 2] ->START   0 |V|=    11 |E|=     6 #pins=    20 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:0 |V|=11 |E|=7 |P|=23 
+Vertex weights   :         1.00      2.09      5.00        23.00
+Vertex Stats: stdev 1.87,   Coef of Var 0.89
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+Edge sizes       :         2         3.29      5           23
+Edge Stats: stdev 1.11,   Coef of Var 0.34
+Vertex sizes     :         0         2.09      4           23
+Vertex Stats: stdev 1.22,  Coef of Var 0.58
+-----------------------------------------------------------------
+| 2/ 4|: ( 0, 0)/[ 1, 2] ->START   1 |V|=     6 |E|=     4 #pins=    13 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:0 |V|=11 |E|=6 |P|=20 
+Vertex weights   :         1.00      2.09      5.00        23.00
+Vertex Stats: stdev 1.87,   Coef of Var 0.89
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+Edge sizes       :         2         3.33      4           20
+Edge Stats: stdev 0.82,   Coef of Var 0.24
+Vertex sizes     :         0         1.82      3           20
+Vertex Stats: stdev 0.87,  Coef of Var 0.48
+-----------------------------------------------------------------
+| 3/ 4|: ( 0, 1)/[ 1, 2] ->START   1 |V|=     6 |E|=     4 #pins=    11 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:0 |V|=14 |E|=9 |P|=34 
+Vertex weights   :         1.00      1.57      5.00        22.00
+Vertex Stats: stdev 1.45,   Coef of Var 0.92
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+Edge sizes       :         2         3.78      5           34
+Edge Stats: stdev 0.97,   Coef of Var 0.26
+Vertex sizes     :         0         2.43      5           34
+Vertex Stats: stdev 1.34,  Coef of Var 0.55
+-----------------------------------------------------------------
+| 0/ 4|: ( 0, 0)/[ 1, 2] ->START   1 |V|=     7 |E|=     4 #pins=    12 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:0 |V|=14 |E|=7 |P|=22 
+Vertex weights   :         1.00      1.57      5.00        22.00
+Vertex Stats: stdev 1.45,   Coef of Var 0.92
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+Edge sizes       :         2         3.14      4           22
+Edge Stats: stdev 0.90,   Coef of Var 0.29
+Vertex sizes     :         0         1.57      3           22
+Vertex Stats: stdev 0.85,  Coef of Var 0.54
+-----------------------------------------------------------------
+| 1/ 4|: ( 0, 1)/[ 1, 2] ->START   1 |V|=     7 |E|=     9 #pins=    23 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:1 |V|=6 |E|=4 |P|=13 
+Vertex weights   :         2.00      3.83      5.00        23.00
+Vertex Stats: stdev 1.47,   Coef of Var 0.38
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.25      2.00         5.00
+HEdge Stats: STDV 0.50,   Coef of Var 0.40
+Edge sizes       :         3         3.25      4           13
+Edge Stats: stdev 0.50,   Coef of Var 0.15
+Vertex sizes     :         1         2.17      4           13
+Vertex Stats: stdev 0.98,  Coef of Var 0.45
+-----------------------------------------------------------------
+| 2/ 4|: ( 0, 0)/[ 1, 2] ->START   2 |V|=     5 |E|=     2 #pins=     5 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:1 |V|=6 |E|=4 |P|=11 
+Vertex weights   :         2.00      3.83      5.00        23.00
+Vertex Stats: stdev 1.47,   Coef of Var 0.38
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.00      1.00         4.00
+HEdge Stats: STDV 0.00,   Coef of Var 0.00
+Edge sizes       :         2         2.75      3           11
+Edge Stats: stdev 0.50,   Coef of Var 0.18
+Vertex sizes     :         1         1.83      3           11
+Vertex Stats: stdev 0.98,  Coef of Var 0.54
+-----------------------------------------------------------------
+| 3/ 4|: ( 0, 1)/[ 1, 2] ->START   2 |V|=     5 |E|=     5 #pins=    14 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:1 |V|=7 |E|=4 |P|=12 
+Vertex weights   :         2.00      3.14      5.00        22.00
+Vertex Stats: stdev 1.35,   Coef of Var 0.43
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.00      1.00         4.00
+HEdge Stats: STDV 0.00,   Coef of Var 0.00
+Edge sizes       :         2         3.00      4           12
+Edge Stats: stdev 0.82,   Coef of Var 0.27
+Vertex sizes     :         0         1.71      3           12
+Vertex Stats: stdev 0.95,  Coef of Var 0.55
+-----------------------------------------------------------------
+| 0/ 4|: ( 0, 0)/[ 1, 2] ->START   2 |V|=     6 |E|=     4 #pins=    11 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:1 |V|=7 |E|=9 |P|=23 
+Vertex weights   :         2.00      3.14      5.00        22.00
+Vertex Stats: stdev 1.35,   Coef of Var 0.43
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.22      2.00        11.00
+HEdge Stats: STDV 0.44,   Coef of Var 0.36
+Edge sizes       :         2         2.56      4           23
+Edge Stats: stdev 0.73,   Coef of Var 0.28
+Vertex sizes     :         1         3.29      5           23
+Vertex Stats: stdev 1.38,  Coef of Var 0.42
+-----------------------------------------------------------------
+| 1/ 4|: ( 0, 1)/[ 1, 2] ->START   2 |V|=     6 |E|=     5 #pins=    12 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:2 |V|=5 |E|=2 |P|=5 
+Vertex weights   :         4.00      4.60      5.00        23.00
+Vertex Stats: stdev 0.55,   Coef of Var 0.12
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      2.00      3.00         4.00
+HEdge Stats: STDV 1.41,   Coef of Var 0.71
+Edge sizes       :         2         2.50      3            5
+Edge Stats: stdev 0.71,   Coef of Var 0.28
+Vertex sizes     :         0         1.00      2            5
+Vertex Stats: stdev 1.00,  Coef of Var 1.00
+-----------------------------------------------------------------
+Debug: Starting new greedy growing at vertex 4, part= 2
+COARSE_PART vtx= 4, part[ 4]= 1, part_sum=5.000000
+COARSE_PART vtx= 0, part[ 0]= 1, part_sum=10.000000
+COARSE_PART vtx= 2, part[ 2]= 1, part_sum=15.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      0  1-> 0    0.62 -1.000000 5.000000
+   2      3  0-> 1    1.62 0.000000 6.000000
+   3      2  1-> 0    1.62 2.000000 8.000000
+   4      1  0-> 1    0.62 -1.000000 5.000000
+   5      4  1-> 0    2.62 0.000000 6.000000
+Debug: Starting new greedy growing at vertex 3, part= 2
+COARSE_PART vtx= 3, part[ 3]= 1, part_sum=4.000000
+COARSE_PART vtx= 1, part[ 1]= 1, part_sum=8.000000
+COARSE_PART vtx= 4, part[ 4]= 1, part_sum=13.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      4  1-> 0    2.62 1.000000 6.000000
+   2      2  0-> 1    0.62 0.000000 5.000000
+   3      3  1-> 0    1.62 3.000000 8.000000
+   4      0  0-> 1    1.62 3.000000 8.000000
+   5      1  1-> 0    0.62 0.000000 5.000000
+Debug: Starting new greedy growing at vertex 1, part= 2
+COARSE_PART vtx= 1, part[ 1]= 1, part_sum=4.000000
+COARSE_PART vtx= 0, part[ 0]= 1, part_sum=9.000000
+COARSE_PART vtx= 3, part[ 3]= 1, part_sum=13.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      0  1-> 0    2.62 1.000000 6.000000
+   2      2  0-> 1    0.62 0.000000 5.000000
+   3      3  1-> 0    1.62 3.000000 8.000000
+   4      4  0-> 1    1.62 4.000000 9.000000
+   5      1  1-> 0    0.62 0.000000 5.000000
+| 2/ 4|: ( 0, 0)/[ 1, 2] ->Local Ratio Cut= 5.75   Global Ratio Cut= 5.75
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:2 |V|=5 |E|=5 |P|=14 
+Vertex weights   :         4.00      4.60      5.00        23.00
+Vertex Stats: stdev 0.55,   Coef of Var 0.12
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.00      1.00         5.00
+HEdge Stats: STDV 0.00,   Coef of Var 0.00
+Edge sizes       :         2         2.80      4           14
+Edge Stats: stdev 0.84,   Coef of Var 0.30
+Vertex sizes     :         0         2.80      5           14
+Vertex Stats: stdev 1.92,  Coef of Var 0.69
+-----------------------------------------------------------------
+COARSE_PART i= 0, part[ 2] =  0, part_sum=5.000000, cutoff=11.500000
+COARSE_PART i= 1, part[ 4] =  0, part_sum=10.000000, cutoff=11.500000
+COARSE_PART i= 2, part[ 1] =  1, part_sum=4.000000, cutoff=13.000000
+COARSE_PART i= 3, part[ 0] =  1, part_sum=9.000000, cutoff=13.000000
+COARSE_PART i= 4, part[ 3] =  1, part_sum=13.000000, cutoff=13.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      0  1-> 0    2.62 1.000000 6.000000
+   2      2  0-> 1    0.62 0.000000 5.000000
+   3      3  1-> 0    1.62 3.000000 8.000000
+   4      4  0-> 1    1.62 4.000000 9.000000
+   5      1  1-> 0    0.62 0.000000 5.000000
+COARSE_PART i= 0, part[ 1] =  0, part_sum=4.000000, cutoff=11.500000
+COARSE_PART i= 1, part[ 3] =  0, part_sum=8.000000, cutoff=11.500000
+COARSE_PART i= 2, part[ 4] =  0, part_sum=0.000000, cutoff=10.000000
+COARSE_PART i= 3, part[ 0] =  1, part_sum=5.000000, cutoff=10.000000
+COARSE_PART i= 4, part[ 2] =  1, part_sum=10.000000, cutoff=10.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      4  0-> 1    2.62 1.000000 6.000000
+   2      2  1-> 0    0.62 0.000000 5.000000
+   3      3  0-> 1    1.62 3.000000 8.000000
+   4      0  1-> 0    1.62 3.000000 8.000000
+   5      1  0-> 1    0.62 0.000000 5.000000
+COARSE_PART i= 0, part[ 3] =  0, part_sum=4.000000, cutoff=11.500000
+COARSE_PART i= 1, part[ 1] =  0, part_sum=8.000000, cutoff=11.500000
+COARSE_PART i= 2, part[ 4] =  0, part_sum=0.000000, cutoff=10.000000
+COARSE_PART i= 3, part[ 2] =  1, part_sum=5.000000, cutoff=10.000000
+COARSE_PART i= 4, part[ 0] =  1, part_sum=10.000000, cutoff=10.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      4  0-> 1    2.62 1.000000 6.000000
+   2      2  1-> 0    0.62 0.000000 5.000000
+   3      3  0-> 1    1.62 3.000000 8.000000
+   4      0  1-> 0    1.62 3.000000 8.000000
+   5      1  0-> 1    0.62 0.000000 5.000000
+| 3/ 4|: ( 0, 1)/[ 1, 2] ->Local Ratio Cut= 5.75   Global Ratio Cut= 5.75
+| 2/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 0 (0->1) Cut=5.00 W[   10,    13] I= 0.13 LW[   10,    13] LI= 0.13
+| 2/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 1 (1->0) Cut=5.00 W[   10,    13] I= 0.13 LW[   10,    13] LI= 0.13
+| 2/ 4|: ( 0, 0)/[ 1, 2] ->FINAL   2 |V|=     5 |E|=     2 #pins=     5 1/agg/auto/fm2 p=2 bal=1.13 cutl=5.00
+| 3/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 0 (0->1) Cut=5.00 W[   10,    13] I= 0.13 LW[   10,    13] LI= 0.13
+| 3/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 1 (1->0) Cut=5.00 W[   10,    13] I= 0.13 LW[   10,    13] LI= 0.13
+| 3/ 4|: ( 0, 1)/[ 1, 2] ->FINAL   2 |V|=     5 |E|=     5 #pins=    14 1/agg/auto/fm2 p=2 bal=1.13 cutl=5.00
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:2 |V|=6 |E|=4 |P|=11 
+Vertex weights   :         2.00      3.67      5.00        22.00
+Vertex Stats: stdev 1.21,   Coef of Var 0.33
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.25      2.00         5.00
+HEdge Stats: STDV 0.50,   Coef of Var 0.40
+Edge sizes       :         2         2.75      3           11
+Edge Stats: stdev 0.50,   Coef of Var 0.18
+Vertex sizes     :         0         1.83      4           11
+Vertex Stats: stdev 1.33,  Coef of Var 0.72
+-----------------------------------------------------------------
+| 0/ 4|: ( 0, 0)/[ 1, 2] ->START   3 |V|=     6 |E|=     4 #pins=    11 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:2 |V|=6 |E|=5 |P|=12 
+Vertex weights   :         2.00      3.67      5.00        22.00
+Vertex Stats: stdev 1.21,   Coef of Var 0.33
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      2.00      4.00        10.00
+HEdge Stats: STDV 1.22,   Coef of Var 0.61
+Edge sizes       :         2         2.40      3           12
+Edge Stats: stdev 0.55,   Coef of Var 0.23
+Vertex sizes     :         0         2.00      4           12
+Vertex Stats: stdev 1.41,  Coef of Var 0.71
+-----------------------------------------------------------------
+| 1/ 4|: ( 0, 1)/[ 1, 2] ->START   3 |V|=     6 |E|=     5 #pins=    12 1/agg/auto/fm2 p=2...
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:3 |V|=6 |E|=4 |P|=11 
+Vertex weights   :         2.00      3.67      5.00        22.00
+Vertex Stats: stdev 1.21,   Coef of Var 0.33
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      1.25      2.00         5.00
+HEdge Stats: STDV 0.50,   Coef of Var 0.40
+Edge sizes       :         2         2.75      3           11
+Edge Stats: stdev 0.50,   Coef of Var 0.18
+Vertex sizes     :         0         1.83      4           11
+Vertex Stats: stdev 1.33,  Coef of Var 0.72
+-----------------------------------------------------------------
+Debug: Starting new greedy growing at vertex 1, part= 2
+COARSE_PART vtx= 1, part[ 1]= 1, part_sum=5.000000
+COARSE_PART vtx= 4, part[ 4]= 1, part_sum=10.000000
+COARSE_PART vtx= 5, part[ 5]= 1, part_sum=12.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      5  1-> 0   -0.38 -1.000000 4.000000
+   2      1  1-> 0    4.62 -2.000000 3.000000
+   3      0  0-> 1    1.62 4.000000 9.000000
+   4      3  0-> 1   -0.38 4.000000 9.000000
+   5      4  1-> 0    2.62 1.000000 6.000000
+   6      2  0-> 1   -0.38 0.000000 5.000000
+Debug: Starting new greedy growing at vertex 1, part= 2
+COARSE_PART vtx= 1, part[ 1]= 1, part_sum=5.000000
+COARSE_PART vtx= 4, part[ 4]= 1, part_sum=10.000000
+COARSE_PART vtx= 5, part[ 5]= 1, part_sum=12.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      5  1-> 0   -0.38 -1.000000 4.000000
+   2      1  1-> 0    4.62 -2.000000 3.000000
+   3      0  0-> 1    1.62 4.000000 9.000000
+   4      3  0-> 1   -0.38 4.000000 9.000000
+   5      4  1-> 0    2.62 1.000000 6.000000
+   6      2  0-> 1   -0.38 0.000000 5.000000
+Debug: Starting new greedy growing at vertex 3, part= 2
+COARSE_PART vtx= 3, part[ 3]= 1, part_sum=4.000000
+COARSE_PART vtx= 0, part[ 0]= 1, part_sum=7.000000
+COARSE_PART vtx= 2, part[ 2]= 1, part_sum=10.000000
+COARSE_PART vtx= 5, part[ 5]= 1, part_sum=12.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      1  0-> 1    4.62 -1.000000 3.000000
+   2      5  1-> 0    2.62 3.000000 7.000000
+   3      2  1-> 0   -0.38 5.000000 9.000000
+   4      3  1-> 0    1.62 5.000000 9.000000
+   5      4  0-> 1    0.62 6.000000 10.000000
+   6      0  1-> 0   -0.38 0.000000 4.000000
+| 0/ 4|: ( 0, 0)/[ 1, 2] ->Local Ratio Cut= 4.40   Global Ratio Cut= 4.40
+--------- HGraph Information (min/ave/max/tot) ------------------
+INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD 
+info:3 |V|=6 |E|=5 |P|=12 
+Vertex weights   :         2.00      3.67      5.00        22.00
+Vertex Stats: stdev 1.21,   Coef of Var 0.33
+Vertex >3sigma: count 0, rel count x10000 0.0, rel weight x100 0.0
+HEdge weights    :         1.00      2.00      4.00        10.00
+HEdge Stats: STDV 1.22,   Coef of Var 0.61
+Edge sizes       :         2         2.40      3           12
+Edge Stats: stdev 0.55,   Coef of Var 0.23
+Vertex sizes     :         0         2.00      4           12
+Vertex Stats: stdev 1.41,  Coef of Var 0.71
+-----------------------------------------------------------------
+COARSE_PART i= 0, part[ 3] =  0, part_sum=4.000000, cutoff=11.000000
+COARSE_PART i= 1, part[ 0] =  0, part_sum=7.000000, cutoff=11.000000
+COARSE_PART i= 2, part[ 4] =  0, part_sum=0.000000, cutoff=10.000000
+COARSE_PART i= 3, part[ 2] =  1, part_sum=3.000000, cutoff=10.000000
+COARSE_PART i= 4, part[ 5] =  1, part_sum=5.000000, cutoff=10.000000
+COARSE_PART i= 5, part[ 1] =  1, part_sum=10.000000, cutoff=10.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      4  0-> 1    2.62 -3.000000 6.000000
+   2      2  1-> 0   -0.38 -4.000000 5.000000
+   3      5  1-> 0   -0.38 -5.000000 4.000000
+   4      1  1-> 0    4.62 -6.000000 3.000000
+   5      0  0-> 1    1.62 0.000000 9.000000
+   6      3  0-> 1   -0.38 0.000000 9.000000
+COARSE_PART i= 0, part[ 5] =  0, part_sum=2.000000, cutoff=11.000000
+COARSE_PART i= 1, part[ 3] =  0, part_sum=6.000000, cutoff=11.000000
+COARSE_PART i= 2, part[ 2] =  0, part_sum=9.000000, cutoff=11.000000
+COARSE_PART i= 3, part[ 1] =  1, part_sum=5.000000, cutoff=13.000000
+COARSE_PART i= 4, part[ 0] =  1, part_sum=8.000000, cutoff=13.000000
+COARSE_PART i= 5, part[ 4] =  1, part_sum=13.000000, cutoff=13.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      0  1-> 0   -0.38 -6.000000 4.000000
+   2      4  1-> 0    4.62 -7.000000 3.000000
+   3      5  0-> 1    2.62 -3.000000 7.000000
+   4      2  0-> 1   -0.38 -1.000000 9.000000
+   5      3  0-> 1    1.62 -1.000000 9.000000
+   6      1  1-> 0    0.62 0.000000 10.000000
+COARSE_PART i= 0, part[ 3] =  0, part_sum=4.000000, cutoff=11.000000
+COARSE_PART i= 1, part[ 2] =  0, part_sum=7.000000, cutoff=11.000000
+COARSE_PART i= 2, part[ 1] =  0, part_sum=0.000000, cutoff=10.000000
+COARSE_PART i= 3, part[ 4] =  1, part_sum=5.000000, cutoff=10.000000
+COARSE_PART i= 4, part[ 0] =  1, part_sum=8.000000, cutoff=10.000000
+COARSE_PART i= 5, part[ 5] =  1, part_sum=10.000000, cutoff=10.000000
+ROUND 1:
+STEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE
+   1      0  1-> 0    2.62 -6.000000 7.000000
+   2      1  0-> 1   -0.38 -8.000000 5.000000
+   3      5  1-> 0   -0.38 -9.000000 4.000000
+   4      4  1-> 0    4.62 -10.000000 3.000000
+   5      2  0-> 1    1.62 -3.000000 10.000000
+   6      3  0-> 1   -0.38 0.000000 13.000000
+| 1/ 4|: ( 0, 1)/[ 1, 2] ->Local Ratio Cut= 4.40   Global Ratio Cut= 4.40
+| 0/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 0 (0->1) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 0/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 1 (1->0) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 0/ 4|: ( 0, 0)/[ 1, 2] ->FINAL   3 |V|=     6 |E|=     4 #pins=    11 1/agg/auto/fm2 p=2 bal=1.09 cutl=4.00
+| 1/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 0 (0->1) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 1/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 1 (1->0) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 1/ 4|: ( 0, 1)/[ 1, 2] ->FINAL   3 |V|=     6 |E|=     5 #pins=    12 1/agg/auto/fm2 p=2 bal=1.09 cutl=4.00
+| 3/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 0 (0->1) Cut=5.00 W[   10,    13] I= 0.13 LW[   10,    13] LI= 0.13
+| 3/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 1 (1->0) Cut=5.00 W[   10,    13] I= 0.13 LW[   10,    13] LI= 0.13
+| 3/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 2 (0->1) Cut=7.00 W[   12,    11] I= 0.04 LW[   12,    11] LI= 0.04
+| 3/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 3 (1->0) Cut=7.00 W[   12,    11] I= 0.04 LW[   12,    11] LI= 0.04
+| 3/ 4|: ( 0, 1)/[ 1, 2] ->FINAL   1 |V|=     6 |E|=     4 #pins=    11 1/agg/auto/fm2 p=2 bal=1.04 cutl=7.00
+| 2/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 0 (0->1) Cut=5.00 W[   10,    13] I= 0.13 LW[   10,    13] LI= 0.13
+| 2/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 1 (1->0) Cut=5.00 W[   10,    13] I= 0.13 LW[   10,    13] LI= 0.13
+| 2/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 2 (0->1) Cut=7.00 W[   12,    11] I= 0.04 LW[   12,    11] LI= 0.04
+| 2/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 3 (1->0) Cut=7.00 W[   12,    11] I= 0.04 LW[   12,    11] LI= 0.04
+| 2/ 4|: ( 0, 0)/[ 1, 2] ->FINAL   1 |V|=     6 |E|=     4 #pins=    13 1/agg/auto/fm2 p=2 bal=1.04 cutl=7.00
+| 0/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 0 (0->1) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 0/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 1 (1->0) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 0/ 4|: ( 0, 0)/[ 1, 2] ->FINAL   2 |V|=     6 |E|=     4 #pins=    11 1/agg/auto/fm2 p=2 bal=1.09 cutl=4.00
+| 1/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 0 (0->1) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 1/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 1 (1->0) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 1/ 4|: ( 0, 1)/[ 1, 2] ->FINAL   2 |V|=     6 |E|=     5 #pins=    12 1/agg/auto/fm2 p=2 bal=1.09 cutl=4.00
+| 3/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 0 (0->1) Cut=7.00 W[   12,    11] I= 0.04 LW[   12,    11] LI= 0.04
+| 3/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 1 (1->0) Cut=5.00 W[   11,    12] I= 0.04 LW[   11,    12] LI= 0.04
+| 3/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 2 (0->1) Cut=5.00 W[   11,    12] I= 0.04 LW[   11,    12] LI= 0.04
+| 3/ 4|: ( 0, 1)/[ 1, 2] ->FINAL   0 |V|=    11 |E|=     6 #pins=    20 1/agg/auto/fm2 p=2 bal=1.04 cutl=5.00
+| 2/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 0 (0->1) Cut=7.00 W[   12,    11] I= 0.04 LW[   12,    11] LI= 0.04
+| 2/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 1 (1->0) Cut=5.00 W[   11,    12] I= 0.04 LW[   11,    12] LI= 0.04
+| 2/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 2 (0->1) Cut=5.00 W[   11,    12] I= 0.04 LW[   11,    12] LI= 0.04
+| 2/ 4|: ( 0, 0)/[ 1, 2] ->FINAL   0 |V|=    11 |E|=     7 #pins=    23 1/agg/auto/fm2 p=2 bal=1.04 cutl=5.00
+| 0/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 0 (0->1) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 0/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 1 (1->0) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 0/ 4|: ( 0, 0)/[ 1, 2] ->FINAL   1 |V|=     7 |E|=     4 #pins=    12 1/agg/auto/fm2 p=2 bal=1.09 cutl=4.00
+| 1/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 0 (0->1) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 1/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 1 (1->0) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 1/ 4|: ( 0, 1)/[ 1, 2] ->FINAL   1 |V|=     7 |E|=     9 #pins=    23 1/agg/auto/fm2 p=2 bal=1.09 cutl=4.00
+| 3/ 4|: ( 0, 1)/[ 1, 2] ->Rdivide(2, 3): 5.0
+| 2/ 4|: ( 0, 0)/[ 1, 2] ->Rdivide(2, 3): 5.0
+| 0/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 0 (0->1) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 0/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 1 (1->0) Cut=4.00 W[   11,    11] I= 0.00 LW[   11,    11] LI= 0.00
+| 0/ 4|: ( 0, 0)/[ 1, 2] -> FM Pass 2 (0->1) Cut=4.00 W[   11,    11] I= 0.00 LW[   11,    11] LI= 0.00
+| 0/ 4|: ( 0, 0)/[ 1, 2] ->FINAL   0 |V|=    14 |E|=     9 #pins=    34 1/agg/auto/fm2 p=2 bal=1.00 cutl=4.00
+| 1/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 0 (0->1) Cut=4.00 W[   12,    10] I= 0.09 LW[   12,    10] LI= 0.09
+| 1/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 1 (1->0) Cut=4.00 W[   11,    11] I= 0.00 LW[   11,    11] LI= 0.00
+| 1/ 4|: ( 0, 1)/[ 1, 2] -> FM Pass 2 (0->1) Cut=4.00 W[   11,    11] I= 0.00 LW[   11,    11] LI= 0.00
+| 1/ 4|: ( 0, 1)/[ 1, 2] ->FINAL   0 |V|=    14 |E|=     7 #pins=    22 1/agg/auto/fm2 p=2 bal=1.00 cutl=4.00
+| 0/ 4|: ( 0, 0)/[ 1, 2] ->Rdivide(0, 1): 4.0
+| 1/ 4|: ( 0, 1)/[ 1, 2] ->Rdivide(0, 1): 4.0
+| 0/ 4|: ( 0, 0)/[ 2, 2] ->FINAL   0 |V|=    12 |E|=    12 #pins=    30 agg/auto/fm2 p=4 bal=1.07 cutl=19.00
+| 1/ 4|: ( 1, 0)/[ 2, 2] ->FINAL   0 |V|=    13 |E|=    12 #pins=    20 agg/auto/fm2 p=4 bal=1.07 cutl=19.00
+| 2/ 4|: ( 0, 1)/[ 2, 2] ->FINAL   0 |V|=    12 |E|=    13 #pins=    20 agg/auto/fm2 p=4 bal=1.07 cutl=19.00
+| 3/ 4|: ( 1, 1)/[ 2, 2] ->FINAL   0 |V|=    13 |E|=    13 #pins=    35 agg/auto/fm2 p=4 bal=1.07 cutl=19.00
+Proc 1: Calls to malloc = 2549,  Calls to free = 2549
+Proc 2: Calls to malloc = 2252,  Calls to free = 2252
+Proc 0: Calls to malloc = 2718,  Calls to free = 2718
+Proc 3: Calls to malloc = 2159,  Calls to free = 2159
+
+DRIVER:  Zoltan_LB_Partition time = 0.51454
+DRIVER:  new_decomp 1 Min/Max Import: 0 6
+DRIVER:  new_decomp 1 Min/Max Export: 1 4
+DRIVER:  Total migration time = 0.00121284
+
+AFTER load balancing
+DRIVER EVAL:  load:  max 12.000000  min 11.000000  sum 45.000000
+DRIVER EVAL:  objs:  max 11  min 3  sum 25
+DRIVER EVAL:  cuts:  max 0  min 0  sum 0
+
+Zoltan_LB_Eval_Balance  Part count: 4 requested, 4 actual , 4 non-empty
+Zoltan_LB_Eval_Balance  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_Balance                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Balance  Number of objects  :         3       11       25     1.760
+Zoltan_LB_Eval_Balance  Object weight      :        11       12       45     1.067
+
+
+
+Zoltan_LB_Eval_Graph  Part count: 4 requested, 4 actual, 4 non-empty
+Zoltan_LB_Eval_Graph  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_Graph                             Min      Max      Sum  Imbalance
+Zoltan_LB_Eval_Graph  Number of objects  :         3       11       25     1.76
+Zoltan_LB_Eval_Graph  Object weight      :        11       12       45     1.067
+
+Zoltan_LB_Eval_Graph  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_Graph                                    Min      Max    Average    Sum
+Zoltan_LB_Eval_Graph  Num boundary objects      :         0        0        0        0
+Zoltan_LB_Eval_Graph  Number of cut edges       :         0        0        0        0
+Zoltan_LB_Eval_Graph  Num Nbor Parts            :         0        0        0        0
+
+
+
+Zoltan_LB_Eval_HG  Part count: 4 requested, 4 actual, 4 non-empty
+Zoltan_LB_Eval_HG  Statistics with respect to 4 parts: 
+Zoltan_LB_Eval_HG                            Min      Max     Sum  Imbalance
+Zoltan_LB_Eval_HG  Number of objects :         3       11       25   1.760
+Zoltan_LB_Eval_HG  Object weight     :        11       12       45   1.067
+
+Zoltan_LB_Eval_HG  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )):   16.000
+Zoltan_LB_Eval_HG  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )):   19.000
+Zoltan_LB_Eval_HG  CUTL-MAX (Max_parts( comm. volume ):          7.000
+
+
+FILE zdrive.inp.phg.output_level4:  Total:    5.145400e-01 seconds in Partitioning
+FILE zdrive.inp.phg.output_level4:  Average:  5.145400e-01 seconds per Iteration

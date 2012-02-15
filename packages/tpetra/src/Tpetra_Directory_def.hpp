@@ -360,6 +360,8 @@ namespace Tpetra {
     {// begin scoping block
       typename Teuchos::Array<GlobalOrdinal>::iterator ptr = importElements.begin();
       for (size_t i = 0; i < numReceives; ++i) {
+	// Each "packet" (contiguous chunk of importElements) contains
+	// a triple: (GID, imageID, LID).
         LocalOrdinal currLID = directoryMap_->getLocalElement(*ptr++); // Convert incoming GID to Directory LID
         TEUCHOS_TEST_FOR_EXCEPTION(currLID == LINVALID, std::logic_error,
             Teuchos::typeName(*this) << "::generateDirectory(): logic error. Please notify the Tpetra team.");

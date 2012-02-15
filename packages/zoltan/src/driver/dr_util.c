@@ -413,169 +413,60 @@ void safe_free(void **ptr) {
     *ptr = NULL;
   }
 }
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-void sort2_index(int n, ZOLTAN_ID_TYPE ra[], ZOLTAN_ID_TYPE sa[], int indx[])
-
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array
-*
-*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
-*       heapsort algorithm.  Use array sa as secondary sort key; that is,
-*       if (ra[i] == ra[j]), then compare sa[i], sa[j] to determine order.
-*       Array ra is not reorganized.  An index array indx is built that
-*       gives the new order.
-*
-*/
-
+/* Sorting pointers in increasing order. Sort key is ZOLTAN_ID_TYPE. Sub key is
+ZOLTAN_ID_TYPE. */
+static void quickpart_pointer_inc_id_id (
+  int *sorted, ZOLTAN_ID_TYPE *val1, ZOLTAN_ID_TYPE *val2,
+  int start, int end, int *equal, int *larger)
 {
-  int   l, j, ir, i, irra;
-  ZOLTAN_ID_TYPE   rra;
-  ZOLTAN_ID_TYPE   ssa;
+int i, next; 
+ZOLTAN_ID_TYPE key1, key1_next, key2, key2_next;
 
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (n <= 1) return;
+  i = (end + start) / 2;
+  key1 = val1 ? val1[sorted[i]] : 1;
+  key2 = val2 ? val2[sorted[i]] : 1;
 
-  l=n >> 1;
-  ir=n-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[indx[--l]];
-      ssa=sa[indx[l]];
-      irra = indx[l];
-    }
-    else {
-      rra=ra[indx[ir]];
-      ssa=sa[indx[ir]];
-      irra=indx[ir];
-     
-      indx[ir]=indx[0];
-      if (--ir == 0) {
-        indx[0]=irra;
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && 
-          ((ra[indx[j]] <  ra[indx[j+1]]) || 
-           (ra[indx[j]] == ra[indx[j+1]] && sa[indx[j]] < sa[indx[j+1]])))
-        ++j;
-      if ((rra <  ra[indx[j]]) ||
-          (rra == ra[indx[j]] && ssa < sa[indx[j]])) {
-        indx[i] = indx[j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    indx[i]=irra;
-  }
-}
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void sort_index(int n, int ra[], int indx[])
-
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array
-*
-*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
-*       heapsort algorithm. 
-*       Array ra is not reorganized.  An index array indx is built that
-*       gives the new order.
-*
-*/
-
-{
-  int   l, j, ir, i;
-  int   rra, irra;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (n <= 1) return;
-
-  l=n >> 1;
-  ir=n-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[indx[--l]];
-      irra = indx[l];
-    }
-    else {
-      rra=ra[indx[ir]];
-      irra=indx[ir];
-     
-      indx[ir]=indx[0];
-      if (--ir == 0) {
-        indx[0]=irra;
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && 
-          (ra[indx[j]] <  ra[indx[j+1]]))
-        ++j;
-      if (rra <  ra[indx[j]]) {
-        indx[i] = indx[j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    indx[i]=irra;
+  *equal = *larger = start;
+  for (i = start; i <= end; i++) {
+     next = sorted[i];
+     key1_next = val1 ? val1[next] : 1;
+     key2_next = val2 ? val2[next] : 1;
+     if (key1_next < key1 || (key1_next == key1 && key2_next < key2)) {
+        sorted[i]           = sorted[*larger];
+        sorted[(*larger)++] = sorted[*equal];
+        sorted[(*equal)++]  = next;
+     }
+     else if (key1_next == key1  &&  key2_next == key2) {
+        sorted[i]           = sorted[*larger];
+        sorted[(*larger)++] = next;
+     }
   }
 }
 
-void sort_id_type_index(int n, ZOLTAN_ID_TYPE ra[], ZOLTAN_ID_TYPE indx[])
+
+/* Sorts in increasing order with primary key val1 and secondary key val2.
+   The arrays val1 and val2 are not rearranged; rather the index array
+   sorted is rearranged based on values in val1 and val2. */
+void quicksort_pointer_inc_id_id(
+  int *sorted,   /* index array that is rearranged; should be initialized
+                    so that sorted[i] == i. */
+  ZOLTAN_ID_TYPE * val1,     /* array of primary key values. */
+  ZOLTAN_ID_TYPE  *val2,     /* array of secondary key values. */
+  int start,     /* first array position to be considered for sorting. */
+  int end        /* last array position to be considered for sorting. */
+)
 {
-  ZOLTAN_ID_TYPE   l, j, ir, i;
-  ZOLTAN_ID_TYPE   irra;
-  ZOLTAN_ID_TYPE  rra;
+int  equal, larger;
 
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (n <= 1) return;
-
-  l=n >> 1;
-  ir=n-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[indx[--l]];
-      irra = indx[l];
-    }
-    else {
-      rra=ra[indx[ir]];
-      irra=indx[ir];
-     
-      indx[ir]=indx[0];
-      if (--ir == 0) {
-        indx[0]=irra;
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && 
-          (ra[indx[j]] <  ra[indx[j+1]]))
-        ++j;
-      if (rra <  ra[indx[j]]) {
-        indx[i] = indx[j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    indx[i]=irra;
+  if (start < end) {
+     quickpart_pointer_inc_id_id (sorted,val1,val2,start,end,&equal,&larger);
+     quicksort_pointer_inc_id_id (sorted, val1, val2, start, equal-1);
+     quicksort_pointer_inc_id_id (sorted, val1, val2, larger, end);
   }
 }
 

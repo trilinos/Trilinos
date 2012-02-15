@@ -180,7 +180,7 @@ class Ifpack_IC: public Ifpack_Preconditioner {
     return(Condest_);
   }
 
-  // Atribute access functions
+  // Attribute access functions
   
   //! Get absolute threshold value
   double GetAbsoluteThreshold() {return Athresh_;}

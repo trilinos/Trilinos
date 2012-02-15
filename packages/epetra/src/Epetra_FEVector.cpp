@@ -77,6 +77,56 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& map,
 }
 
 //----------------------------------------------------------------------------
+Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
+                                 double *A, int MyLDA, int NumVectors,
+                                 bool ignoreNonLocalEntries)
+ : Epetra_MultiVector(CV, Map, A, MyLDA, NumVectors),
+    myFirstID_(0),
+    myNumIDs_(0),
+    nonlocalIDs_(NULL),
+    nonlocalElementSize_(NULL),
+    numNonlocalIDs_(0),
+    numNonlocalIDsAlloc_(0),
+    nonlocalCoefs_(NULL),
+    numNonlocalCoefs_(0),
+    numNonlocalCoefsAlloc_(0),
+    nonlocalMap_(NULL),
+    exporter_(NULL),
+    nonlocalVector_(NULL),
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
+{
+  myFirstID_ = Map.MinMyGID();
+  myNumIDs_ = Map.NumMyElements();
+  nonlocalCoefs_ = new double*[NumVectors];
+  for(int i=0; i<NumVectors; ++i) nonlocalCoefs_[i] = NULL;
+}
+
+//----------------------------------------------------------------------------
+Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
+                                 double **ArrayOfPointers, int NumVectors,
+                                 bool ignoreNonLocalEntries)
+ : Epetra_MultiVector(CV, Map, ArrayOfPointers, NumVectors),
+    myFirstID_(0),
+    myNumIDs_(0),
+    nonlocalIDs_(NULL),
+    nonlocalElementSize_(NULL),
+    numNonlocalIDs_(0),
+    numNonlocalIDsAlloc_(0),
+    nonlocalCoefs_(NULL),
+    numNonlocalCoefs_(0),
+    numNonlocalCoefsAlloc_(0),
+    nonlocalMap_(NULL),
+    exporter_(NULL),
+    nonlocalVector_(NULL),
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
+{
+  myFirstID_ = Map.MinMyGID();
+  myNumIDs_ = Map.NumMyElements();
+  nonlocalCoefs_ = new double*[NumVectors];
+  for(int i=0; i<NumVectors; ++i) nonlocalCoefs_[i] = NULL;
+}
+
+//----------------------------------------------------------------------------
 Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector& source)
   : Epetra_MultiVector(source),
     myFirstID_(0),
@@ -86,6 +136,7 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector& source)
     numNonlocalIDs_(0),
     numNonlocalIDsAlloc_(0),
     nonlocalCoefs_(NULL),
+    numNonlocalCoefs_(0),
     numNonlocalCoefsAlloc_(0),
     nonlocalMap_(NULL),
     exporter_(NULL),
@@ -404,9 +455,9 @@ int Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode,
   EPETRA_CHK_ERR( Export(nonlocalVector, *exporter_, mode) );
 
   zeroNonlocalData();
-  //set the number-of-IDs and number-of-coefs counters back to 0.
-  //We're not actually destroying these arrays here, because it is
-  //expensive to re-alloc them.
+  // Set the number-of-IDs and number-of-coefs counters back to 0.
+  // We're not actually destroying these arrays here, because it is
+  // expensive to re-alloc them.
   numNonlocalIDs_ = 0;
   numNonlocalCoefs_ = 0;
 
@@ -416,32 +467,62 @@ int Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode,
 //----------------------------------------------------------------------------
 void Epetra_FEVector::createNonlocalMapAndExporter()
 {
-  delete nonlocalMap_;
-  nonlocalMap_ = new Epetra_BlockMap(-1, numNonlocalIDs_, nonlocalIDs_,
-                               nonlocalElementSize_, Map().IndexBase(), Map().Comm());
-  delete exporter_;
-  exporter_ = new Epetra_Export(*nonlocalMap_, Map());
+  if (nonlocalMap_ != NULL) {
+    delete nonlocalMap_;
+  }
+  nonlocalMap_ = new Epetra_BlockMap (-1, numNonlocalIDs_, nonlocalIDs_, 
+				      nonlocalElementSize_, Map().IndexBase(), 
+				      Map().Comm());
+  if (exporter_ != NULL) {
+    delete exporter_;
+  }
+  exporter_ = new Epetra_Export (*nonlocalMap_, Map());
 
-  delete nonlocalVector_;
-  nonlocalVector_ = new Epetra_MultiVector(*nonlocalMap_, NumVectors());
+  if (nonlocalVector_ = NULL) {
+    delete nonlocalVector_;
+  }
+  nonlocalVector_ = new Epetra_MultiVector (*nonlocalMap_, NumVectors());
 }
 
 //----------------------------------------------------------------------------
 void Epetra_FEVector::destroyNonlocalMapAndExporter()
 {
-  delete nonlocalMap_;
-  delete exporter_;
-  delete nonlocalVector_;
+  if (nonlocalMap_ != NULL) {
+    delete nonlocalMap_;
+    nonlocalMap_ = NULL;
+  }
+  if (exporter_ != NULL) {
+    delete exporter_;
+    exporter_ = NULL;
+  }
+  if (nonlocalVector_ = NULL) {
+    delete nonlocalVector_;
+    nonlocalVector_ = NULL;
+  }
 }
 
 //----------------------------------------------------------------------------
 Epetra_FEVector& Epetra_FEVector::operator=(const Epetra_FEVector& source)
 {
+  if (this == &source) {
+    // Don't allow self-assignment, since the allocations and
+    // deallocations in the code below assume that source is a
+    // different object than *this.
+    return *this; 
+  }
+  // This redundantly checks for self-assignment, but the check is
+  // inexpensive (just a pointer comparison).
   Epetra_MultiVector::Assign(source);
-
+  // Deallocate storage for nonlocal data (nonlocalIDs_ and
+  // nonlocalElementSize_) and set lengths (num*) to zero.  This
+  // doesn't actually deallocate the nonlocalCoefs_ array of arrays,
+  // just its contents.
   destroyNonlocalData();
 
-  delete [] nonlocalCoefs_;
+  if (nonlocalCoefs_ != NULL) {
+    delete [] nonlocalCoefs_;
+    nonlocalCoefs_ = NULL;
+  }
 
   if (source.numNonlocalIDsAlloc_ > 0) {
     numNonlocalIDsAlloc_ = source.numNonlocalIDsAlloc_;

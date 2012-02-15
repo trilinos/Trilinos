@@ -261,7 +261,10 @@ char *recv_data)		/* array of data I'll own after comm */
 		   a bug with PGI v9 */
 		/* I use memmove because I'm not sure that the pointer are not
 		   overlapped. */
-		memmove(plan->recv_buff+self_recv_address, send_data+plan->starts_to[self_num] * nbytes, plan->lengths_to[self_num]*nbytes);
+		memmove(
+                  plan->recv_buff+self_recv_address,
+                  send_data+(size_t)(plan->starts_to[self_num])*(size_t)nbytes,
+                  (size_t) (plan->lengths_to[self_num]) * (size_t) nbytes);
 	    }
 	}
 

@@ -198,7 +198,7 @@ bool tLSCHIntegrationTest::test_hScaling(int verbosity,std::ostream & os)
    const bool result = tester.compare( *prec, *exact, &fos );
    TEST_ASSERT(result,
           std::endl << "   tLSCHIntegration::test_hScaling "
-                    << ": Comparing precondtioner to exactly computed version");
+                    << ": Comparing preconditioner to exactly computed version");
 
    const bool result2 = tester.compare( *H, *strategy->getHScaling(bA,*bps), &fos );
    TEST_ASSERT(result2,

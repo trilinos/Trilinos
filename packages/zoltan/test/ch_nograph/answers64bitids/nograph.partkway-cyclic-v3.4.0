@@ -1,0 +1,16 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= remap=0
+Zoltan Parameters	= parmetis_method=partkway
+Zoltan Parameters       = debug_level=10
+File Type		= Chaco, initial distribution = cyclic
+File Name		= nograph
+Parallel Disk Info	= number=0
+zdrive debug level      = 4
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+1	0	-1	-1
+5	0	-1	-1
+6	0	-1	-1
+8	0	-1	-1
+11	0	-1	-1
+23	0	-1	-1

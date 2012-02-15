@@ -61,7 +61,8 @@ public:
   //! Constructor that takes the Model Evaluator to wrap
 
    DirectApplicInterface(Dakota::ProblemDescDB& problem_db_,
-                         const Teuchos::RCP<EpetraExt::ModelEvaluator> App_);
+                         const Teuchos::RCP<EpetraExt::ModelEvaluator> App_,
+			 int p_index = 0, int g_index = 0);
 
   ~DirectApplicInterface() {};
 
@@ -79,6 +80,8 @@ private:
 
   // Data
     Teuchos::RCP<EpetraExt::ModelEvaluator> App;
+    int p_index;
+    int g_index;
     Teuchos::RCP<Epetra_Vector> model_p;
     Teuchos::RCP<Epetra_Vector> model_g;
     Teuchos::RCP<Epetra_MultiVector> model_dgdp;
