@@ -1255,7 +1255,7 @@ std::ostream& Teuchos::operator<<( std::ostream& out, const ArrayRCP<T>& p )
 {
   out
     << TypeNameTraits<ArrayRCP<T> >::name() << "{"
-    << "ptr="<<(const void*)(p.get()) // I can't find any alternative to this C cast :-(
+    << "ptr="<<(const void*)(p.access_private_ptr())
     <<",lowerOffset="<<p.lowerOffset()
     <<",upperOffset="<<p.upperOffset()
     <<",size="<<p.size()
@@ -1263,6 +1263,10 @@ std::ostream& Teuchos::operator<<( std::ostream& out, const ArrayRCP<T>& p )
     <<",count="<<p.count()
     <<"}";
   return out;
+  // NOTES:
+  // * I can't find any alternative to this C cast (problems with char data)
+  // * Don't range check the pointer since this code does not dereference it.
+  //   This is needed to allow printing the end() or past end() for debugging.
 }
 
 
