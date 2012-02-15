@@ -443,7 +443,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
     /* ML_CommInfoOP_GenUsingGIDExternals().                                */
 
     if (subB_Nnz > 0) nearbyIndex = Bcols[0];
-    else              nearbyIndex = 0;
+    else              nearbyIndex = -1;
 
     tcols = 0;
     hash_used = 0;
@@ -731,7 +731,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       }
       /* if entire row is zero, store one entry to avoid empty row */
 
-      if (Ncols == 0) {
+      if ((Ncols == 0) && (nearbyIndex != -1)) {
 	    Cbindx[next_nz] = nearbyIndex;
 	    Cindx[next_nz] = next_value;
 	    next_nz++;
@@ -1257,7 +1257,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    /* ML_CommInfoOP_GenUsingGIDExternals().                                */
 
    if (subB_Nnz > 0) nearbyIndex = Bcols[0];
-   else              nearbyIndex = 0;
+   else              nearbyIndex = -1;
 
    if (hashTableIsPowerOfTwo)
    {
@@ -1422,7 +1422,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
       /* empty row. Let's put a zero in a nearby column. */
 
-      if (Ncols == 0) {
+      if ((Ncols == 0) && (nearbyIndex != -1)) {
          accum_col[Ncols] = nearbyIndex;
          accum_val[Ncols++] = 0.0;
       }
