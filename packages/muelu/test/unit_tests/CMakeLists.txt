@@ -40,7 +40,7 @@ APPEND_SET(SOURCES
   VariableContainer.cpp
   SubBlockAFactory.cpp
   ParameterList/FactoryFactory.cpp
-  ParameterList/ParameterListInterpreter.cpp
+#  ParameterList/ParameterListInterpreter.cpp
 )
 
 ### Tests that require other Trilinos packages
