@@ -62,14 +62,6 @@ std::string print_entity_key(const Entity* entity)
 
 #ifdef SIERRA_MIGRATION
 
-void Entity::internal_verify_initialization_invariant()
-{
-  // If this MeshObj has a proper ID (fully initialized), then the id should match
-  // the id in the entity-key; otherwise they should not match.
-  ThrowRequire( !(m_global_id < 0 && key().id() == static_cast<uint64_t>(m_global_id)) &&
-                !(m_global_id > 0 && key().id() != static_cast<uint64_t>(m_global_id)) );
-}
-
 // ---------------------------------------------------------------------
 
 void Entity::internal_swap_in_real_entity(const int globalId)
@@ -81,7 +73,9 @@ void Entity::internal_swap_in_real_entity(const int globalId)
 
   internal_verify_initialization_invariant();
 
+#ifndef NDEBUG
   internal_verify_meshobj_invariant();
+#endif
 }
 
 // ---------------------------------------------------------------------

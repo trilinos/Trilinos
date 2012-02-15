@@ -210,6 +210,8 @@ private:
     const int         parallel_rank,
     const int         parallel_size)
   {
+    ThrowAssertMsg(m_relations.capacity(), "Leftover memory found in relation vector");
+
     m_global_id     = id;
     m_local_id      = sierra::Fmwk::INVALID_LOCAL_ID;
     m_sharedAttr    = attr;
@@ -342,7 +344,13 @@ private:
 
   void internal_swap_in_real_entity(const int globalId);
 
-  void internal_verify_initialization_invariant();
+  void internal_verify_initialization_invariant() {
+    // If this MeshObj has a proper ID (fully initialized), then the id should match
+    // the id in the entity-key; otherwise they should not match.
+    ThrowAssert( !(m_global_id < 0 && key().id() == static_cast<uint64_t>(m_global_id)) &&
+                 !(m_global_id > 0 && key().id() != static_cast<uint64_t>(m_global_id)) );
+
+  }
 
   unsigned stk_entity_rank() const { return key().rank(); }
 
