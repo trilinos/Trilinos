@@ -31,12 +31,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS muelu muelu-xpetra
 )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Structure2D_visualization
-  SOURCES Structure2D_visualization.cpp
-  COMM serial mpi
-  DEPLIBS muelu muelu-xpetra
-)
+IF(Trilinos_ENABLE_AztecOO) 
+	# build only if AztecOO available, too
+	TRIBITS_ADD_EXECUTABLE_AND_TEST(
+	  Structure2D_visualization
+	  SOURCES Structure2D_visualization.cpp
+	  COMM serial mpi
+	  DEPLIBS muelu muelu-xpetra
+	)
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_test_copyfiles
 SOURCE_FILES stru2d_A.txt stru2d_b.txt stru2d_ns.txt nodes0.txt MueLu_Agg2VTK.py
