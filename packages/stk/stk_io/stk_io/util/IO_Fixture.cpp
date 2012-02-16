@@ -154,7 +154,7 @@ void IO_Fixture::initialize_meta_data( const std::string & base_filename, const 
 			     );
 
   // TODO: Restore this once m_mesh_data is fixed
-  //m_ioss_input_region = Teuchos::rcp( m_mesh_data.m_region );
+  m_ioss_input_region = Teuchos::rcp( m_mesh_data.m_input_region );
 }
 
 void IO_Fixture::initialize_bulk_data()
