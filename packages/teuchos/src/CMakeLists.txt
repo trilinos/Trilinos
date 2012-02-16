@@ -80,6 +80,7 @@ APPEND_SET(HEADERS
   Teuchos_ExplicitInstantiationHelpers.hpp
   Teuchos_F77_wrappers.h
   Teuchos_FancyOStream.hpp
+  Teuchos_FilteredIterator.hpp
   Teuchos_Flops.hpp
   Teuchos_FunctionObject.hpp
   Teuchos_GlobalMPISession.hpp
