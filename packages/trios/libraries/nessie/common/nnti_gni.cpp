@@ -55,7 +55,7 @@
 #define USE_RDMA_EVENTS
 
 #undef USE_RDMA_FENCE
-#define USE_RDMA_FENCE
+//#define USE_RDMA_FENCE
 
 //#define USE_FMA
 //#define USE_BTE
@@ -1388,9 +1388,9 @@ NNTI_result_t NNTI_gni_put (
 #if defined(USE_BTE) || defined(USE_MIXED)
     gni_mem_hdl->post_desc.type                  =GNI_POST_RDMA_PUT;
 #if defined(USE_RDMA_EVENTS)
-    gni_mem_hdl->post_desc.cq_mode               =GNI_CQMODE_LOCAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
+    gni_mem_hdl->post_desc.cq_mode               =GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
 #else
-    gni_mem_hdl->post_desc.cq_mode               =GNI_CQMODE_LOCAL_EVENT;
+    gni_mem_hdl->post_desc.cq_mode               =GNI_CQMODE_GLOBAL_EVENT;
 #endif
 #elif defined(USE_FMA)
     gni_mem_hdl->post_desc.type                  =GNI_POST_FMA_PUT;
@@ -1444,7 +1444,7 @@ NNTI_result_t NNTI_gni_put (
     rc=GNI_PostRdma(gni_mem_hdl->ep_hdl, &gni_mem_hdl->post_desc);
     trios_stop_timer("PostRdma put", call_time);
     if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "failed to post RDMA: %s", strerror(errno));
+        log_error(nnti_debug_level, "failed to post RDMA (rc=%d): %s", rc, strerror(errno));
         rc=NNTI_EIO;
     }
 #elif defined(USE_FMA)
@@ -1456,7 +1456,7 @@ NNTI_result_t NNTI_gni_put (
     rc=GNI_PostFma(gni_mem_hdl->ep_hdl, &gni_mem_hdl->post_desc);
     trios_stop_timer("PostFma put", call_time);
     if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "failed to post FMA: %s", strerror(errno));
+        log_error(nnti_debug_level, "failed to post FMA (rc=%d): %s", rc, strerror(errno));
         rc=NNTI_EIO;
     }
 #else
@@ -1507,9 +1507,9 @@ NNTI_result_t NNTI_gni_get (
 #if defined(USE_BTE) || defined(USE_MIXED)
     gni_mem_hdl->post_desc.type                  =GNI_POST_RDMA_GET;
 #if defined(USE_RDMA_EVENTS)
-    gni_mem_hdl->post_desc.cq_mode               =GNI_CQMODE_LOCAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
+    gni_mem_hdl->post_desc.cq_mode               =GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
 #else
-    gni_mem_hdl->post_desc.cq_mode               =GNI_CQMODE_LOCAL_EVENT;
+    gni_mem_hdl->post_desc.cq_mode               =GNI_CQMODE_GLOBAL_EVENT;
 #endif
 #elif defined(USE_FMA)
     gni_mem_hdl->post_desc.type                  =GNI_POST_FMA_GET;
@@ -1560,7 +1560,7 @@ NNTI_result_t NNTI_gni_get (
     rc=GNI_PostRdma(gni_mem_hdl->ep_hdl, &gni_mem_hdl->post_desc);
     trios_stop_timer("PostRdma get", call_time);
     if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "failed to post RDMA: %s", strerror(errno));
+        log_error(nnti_debug_level, "failed to post RDMA (rc=%d): %s", rc, strerror(errno));
         rc=NNTI_EIO;
     }
 #elif defined(USE_FMA)
@@ -1572,7 +1572,7 @@ NNTI_result_t NNTI_gni_get (
     rc=GNI_PostFma(gni_mem_hdl->ep_hdl, &gni_mem_hdl->post_desc);
     trios_stop_timer("PostFma get", call_time);
     if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "failed to post FMA: %s", strerror(errno));
+        log_error(nnti_debug_level, "failed to post FMA (rc=%d): %s", rc, strerror(errno));
         rc=NNTI_EIO;
     }
 #else
@@ -2373,7 +2373,7 @@ static void send_rdma_wc (
     gni_mem_hdl->wc_post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
 #elif defined(USE_BTE)
     gni_mem_hdl->wc_post_desc.type           =GNI_POST_RDMA_PUT;
-    gni_mem_hdl->wc_post_desc.cq_mode        =GNI_CQMODE_LOCAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
+    gni_mem_hdl->wc_post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
 #else
 #error Must define an RDMA method - USE_FMA or USE_BTE or USE_MIXED
 #endif
@@ -2398,8 +2398,8 @@ static void send_rdma_wc (
     trios_stop_timer("PostFma ack", call_time);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostFma(fma wc) failed: %d", rc);
 #elif defined(USE_BTE)
-    log_debug(nnti_debug_level, "calling PostRdma(rdma wc wc_ep_hdl(%llu) wc_cq_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
-            gni_mem_hdl->wc_ep_hdl, gni_mem_hdl->wc_cq_hdl, gni_mem_hdl->wc_post_desc.local_addr, gni_mem_hdl->wc_post_desc.remote_addr);
+    log_debug(nnti_debug_level, "calling PostRdma(rdma wc wc_ep_hdl(%llu) transport_global_data.cq_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
+            gni_mem_hdl->wc_ep_hdl, transport_global_data.ep_cq_hdl, gni_mem_hdl->wc_post_desc.local_addr, gni_mem_hdl->wc_post_desc.remote_addr);
     trios_start_timer(call_time);
     rc=GNI_PostRdma(gni_mem_hdl->wc_ep_hdl, &gni_mem_hdl->wc_post_desc);
     trios_stop_timer("PostRdma ack", call_time);
@@ -4680,7 +4680,7 @@ static int send_req(
     gni_mem_hdl->post_desc.cq_mode              =GNI_CQMODE_GLOBAL_EVENT;
 #elif defined(USE_BTE)
     gni_mem_hdl->post_desc.type                 =GNI_POST_RDMA_PUT;
-    gni_mem_hdl->post_desc.cq_mode              =GNI_CQMODE_LOCAL_EVENT;
+    gni_mem_hdl->post_desc.cq_mode              =GNI_CQMODE_GLOBAL_EVENT;
 #else
 #error Must define an RDMA method - USE_FMA or USE_BTE or USE_MIXED
 #endif
@@ -4746,7 +4746,7 @@ static int send_req_wc(
     gni_mem_hdl->wc_post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
 #elif defined(USE_BTE)
     gni_mem_hdl->wc_post_desc.type           =GNI_POST_RDMA_PUT;
-    gni_mem_hdl->wc_post_desc.cq_mode        =GNI_CQMODE_LOCAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
+    gni_mem_hdl->wc_post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
 #else
 #error Must define an RDMA method - USE_FMA or USE_BTE or USE_MIXED
 #endif
