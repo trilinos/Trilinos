@@ -337,8 +337,8 @@ ENDIF()
   # directories using the installed config file. This is to deal with
   # installers that allow relocation of the install tree at *install*
   # time.
-  SET(LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../lib")
-  SET(INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../include")
+  SET(LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../${${PROJECT_NAME}_INSTALL_LIB_DIR}")
+  SET(INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
 
   # Custom code in configuration file.
   SET(PACKAGE_CONFIG_CODE "")
@@ -547,8 +547,8 @@ ENDIF()
   # directories using the installed config file. This is to deal with
   # installers that allow relocation of the install tree at *install*
   # time.
-  SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../include")
-  SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../lib")
+  SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
+  SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../${${PROJECT_NAME}_INSTALL_LIB_DIR}")
 
   # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries. 
   IF(BUILD_SHARED_LIBS)
