@@ -1288,6 +1288,8 @@ NNTI_result_t NNTI_gni_unregister_memory (
 
     del_buf_bufhash(reg_buf);
 
+    if (gni_mem_hdl) free(gni_mem_hdl);
+
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
     GNI_SET_MATCH_ANY(&reg_buf->buffer_owner);
     reg_buf->ops               = (NNTI_buf_ops_t)0;
