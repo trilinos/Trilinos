@@ -202,7 +202,7 @@ extern "C" {
   }
 
   /// Return the current time
-  static double time() {
+  static double current_time() {
     return static_cast<double>(::time(NULL));
   }
 
@@ -406,7 +406,7 @@ CFunctionMap::CFunctionMap()
 
   /// These random number functions support a non-platform
   /// specific random number function.
-  (*this).insert(std::make_pair("time",            new CFunction0(time)));
+  (*this).insert(std::make_pair("time",            new CFunction0(current_time)));
   (*this).insert(std::make_pair("random",          new CFunction0(random0)));
   (*this).insert(std::make_pair("random",          new CFunction1(random1)));
 
