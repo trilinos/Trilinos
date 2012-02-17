@@ -131,6 +131,25 @@ void get_entities_through_relations(
   }
 }
 
+inline
+void insert_part_and_supersets(PartVector& induced_parts, 
+                               Part& part,
+                               bool include_supersets)
+{
+  insert( induced_parts , part );
+
+  // In order to preserve superset/subset consistency we should add supersets of
+  // induced parts to the induced part lists. Unfortunately, this opens up an ambiguity
+  // where, when a relation is removed, we cannot know if an unranked superset
+  // part should be removed.
+  if (include_supersets) {
+    const PartVector & supersets = part.supersets();
+    for (PartVector::const_iterator itr = supersets.begin(), end = supersets.end(); itr != end; ++itr) {
+      insert( induced_parts, **itr );
+    }
+  }
+}
+
 }
 
 void get_entities_through_relations(
@@ -192,14 +211,15 @@ void induced_part_membership( Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
                               RelationIdentifier relation_identifier ,
-                              PartVector & induced_parts )
+                              PartVector & induced_parts,
+                              bool include_supersets)
 {
   if ( entity_rank_to < entity_rank_from &&
-       part.primary_entity_rank() != InvalidEntityRank ) {
+       part.primary_entity_rank() == entity_rank_from ) {
 
     // Direct relationship:
 
-    insert( induced_parts , part );
+    insert_part_and_supersets( induced_parts , part, include_supersets );
 
     // Stencil relationship where 'part' is the root:
     // The 'target' should not have subsets or supersets.
@@ -212,7 +232,7 @@ void induced_part_membership( Part & part ,
       if ( & part == j->m_root &&
            0 <= (* j->m_function)( entity_rank_from , entity_rank_to ,
                                    relation_identifier ) ) {
-        insert( induced_parts , * j->m_target );
+        insert_part_and_supersets( induced_parts , * j->m_target, include_supersets );
       }
     }
   }
@@ -227,7 +247,8 @@ void induced_part_membership( const Entity           & entity_from ,
                               const PartVector       & omit ,
                                     unsigned           entity_rank_to ,
                                     RelationIdentifier relation_identifier ,
-                                    PartVector       & induced_parts )
+                                    PartVector       & induced_parts,
+                                    bool include_supersets)
 {
   const Bucket   & bucket_from    = entity_from.bucket();
   const BulkData & mesh           = BulkData::get(bucket_from);
@@ -250,13 +271,14 @@ void induced_part_membership( const Entity           & entity_from ,
       ThrowAssertMsg( *i < all_parts.size(), "Index " << *i << " out of bounds" );
       Part & part = * all_parts[*i] ;
 
-      if ( part.primary_entity_rank() != InvalidEntityRank &&
+      if ( part.primary_entity_rank() == entity_rank_from &&
            ! contain( omit , part )) {
         induced_part_membership( part,
                                  entity_rank_from ,
                                  entity_rank_to ,
                                  relation_identifier ,
-                                 induced_parts );
+                                 induced_parts,
+                                 include_supersets);
       }
     }
   }
@@ -266,7 +288,8 @@ void induced_part_membership( const Entity           & entity_from ,
 
 void induced_part_membership( const Entity     & entity ,
                               const PartVector & omit ,
-                                    PartVector & induced_parts )
+                                    PartVector & induced_parts,
+                                    bool include_supersets)
 {
   for ( PairIterRelation
         rel = entity.relations() ; ! rel.empty() ; ++rel ) {
@@ -274,7 +297,8 @@ void induced_part_membership( const Entity     & entity ,
     induced_part_membership( * rel->entity() , omit ,
                              entity.entity_rank() ,
                              rel->identifier() ,
-                             induced_parts );
+                             induced_parts,
+                             include_supersets);
   }
 }
 

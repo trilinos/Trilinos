@@ -29,6 +29,8 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
+#include <boost/foreach.hpp>
+
 namespace stk {
 namespace mesh {
 
@@ -61,6 +63,24 @@ convert_entity_keys_to_spans( const MetaData & meta )
   }
 
   return spans ;
+}
+
+void ensure_part_superset_consistency( const Entity& entity )
+{
+  std::ostringstream errs;
+  PartVector parts;
+  Bucket& bucket = entity.bucket();
+  bucket.supersets(parts);
+  BOOST_FOREACH(Part* part, parts) {
+    const PartVector& supersets = part->supersets();
+    BOOST_FOREACH(Part* superset, supersets) {
+      if (!bucket.member(*superset)) {
+        errs << "  Due to being a member part " << part->name() << ", should have been a member of " << superset->name() << std::endl;
+      }
+    }
+  }
+  ThrowRequireMsg( errs.tellp() == 0,
+                   "Entity " << print_entity_key(entity) << " has bad part list:\n" << errs.str());
 }
 
 }
@@ -456,6 +476,10 @@ void BulkData::internal_change_entity_parts(
   // Propagate part changes through the entity's relations.
 
   internal_propagate_part_changes( entity , parts_removed );
+
+#ifndef NDEBUG
+  ensure_part_superset_consistency( entity );
+#endif
 }
 
 //----------------------------------------------------------------------

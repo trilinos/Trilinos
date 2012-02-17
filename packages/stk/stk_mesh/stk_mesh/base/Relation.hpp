@@ -305,7 +305,8 @@ void induced_part_membership( Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
                               RelationIdentifier relation_identifier ,
-                              PartVector & induced_parts );
+                              PartVector & induced_parts,
+                              bool include_supersets=true);
 
 /** \brief  Induce entities' part membership based upon relationships
  *          between entities.  Do not include and parts in the 'omit' list.
@@ -314,14 +315,16 @@ void induced_part_membership( const Entity           & entity_from ,
                               const PartVector       & omit ,
                                     unsigned           entity_rank_to ,
                                     RelationIdentifier relation_identifier ,
-                                    PartVector       & induced_parts );
+                                    PartVector       & induced_parts,
+                                    bool include_supersets=true);
 
 /** \brief  Induce an entity's part membership based upon relationships
  *          from other entities.  Do not include and parts in the 'omit' list.
  */
 void induced_part_membership( const Entity     & entity ,
                               const PartVector & omit ,
-                                    PartVector & induced_parts );
+                                    PartVector & induced_parts,
+                                    bool include_supersets=true);
 
 
 //----------------------------------------------------------------------

@@ -229,7 +229,8 @@ bool BulkData::destroy_relation( Entity & e_from ,
       if (e_to.entity_rank() < i->entity_rank()) { // Need to look at back rels only
         if ( !( i->entity() == & e_from && i->identifier() == local_id ) ) {
           induced_part_membership( * i->entity(), empty, e_to.entity_rank(),
-                                   i->identifier(), keep );
+                                   i->identifier(), keep,
+                                   false /*Do not look at supersets*/);
         }
       }
     }
@@ -239,7 +240,8 @@ bool BulkData::destroy_relation( Entity & e_from ,
     for ( PairIterRelation i = e_from.relations() ; !i.empty() ; ++i ) {
       if ( i->entity() == & e_to && i->identifier() == local_id ) {
         induced_part_membership( e_from, keep, e_to.entity_rank(),
-                                 i->identifier(), del );
+                                 i->identifier(), del,
+                                 false /*Do not look at supersets*/);
         clear_field_relations( e_from , e_to.entity_rank() ,
                                i->identifier() );
         break; // at most 1 relation can match our specification
