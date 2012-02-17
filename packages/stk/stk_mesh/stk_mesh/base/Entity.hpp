@@ -59,19 +59,20 @@ extern const unsigned int INVALID_LOCAL_ID;
 extern const stk::mesh::RelationIterator INVALID_RELATION_ITR;
 
 namespace detail {
-bool set_attributes( stk::mesh::Entity & mesh_obj, const int global_id, const MeshObjSharedAttr * attr, const int owner, const bool skip_imprint );
-bool set_attributes( stk::mesh::Entity & mesh_obj, const MeshObjSharedAttr * attr, const int owner, const bool skip_imprint );
-void unset_shared_attr(stk::mesh::Entity & mesh_obj);
+bool set_attributes( stk::mesh::Entity & , const int , const MeshObjSharedAttr*, const int);
+bool set_attributes( stk::mesh::Entity & , const MeshObjSharedAttr*, const int);
+void unset_shared_attr(stk::mesh::Entity& );
 }
 
 namespace roster_only {
-void destroy_meshobj(stk::mesh::Entity* dying_meshobj);
+void destroy_meshobj(stk::mesh::Entity*);
+void set_shared_attr(stk::mesh::Entity&, const MeshObjSharedAttr*);
 }
 
-const MeshObjSharedAttr * get_shared_attr(const stk::mesh::Entity & mesh_obj);
-bool insert_relation( stk::mesh::Entity * const meshObj_from, const stk::mesh::Relation::RelationType relType, stk::mesh::Entity * const meshObj_to, const unsigned ordinal, const unsigned orientation, const bool back_rel_flag, MeshBulkData & bulk);
-bool remove_relation(stk::mesh::Entity & meshObj_from, const stk::mesh::RelationIterator ir, MeshBulkData & bulk); 
-bool verify_relations(const stk::mesh::Entity & meshObj);
+const MeshObjSharedAttr * get_shared_attr(const stk::mesh::Entity&);
+bool insert_relation( stk::mesh::Entity * const, const stk::mesh::Relation::RelationType, stk::mesh::Entity * const, const unsigned, const unsigned, const bool, MeshBulkData &);
+bool remove_relation(stk::mesh::Entity &, const stk::mesh::RelationIterator, MeshBulkData &);
+bool verify_relations(const stk::mesh::Entity &);
 }
 }
 #endif
@@ -204,15 +205,16 @@ private:
  public:
   friend class sierra::Fmwk::MeshObjRoster;
   // These are free functions to facilitate the stk migration:
-  friend const sierra::Fmwk::MeshObjSharedAttr * sierra::Fmwk::get_shared_attr(const Entity & mesh_obj);
-  friend bool sierra::Fmwk::detail::set_attributes( Entity & mesh_obj, const int global_id, const sierra::Fmwk::MeshObjSharedAttr * attr, const int owner, const bool skip_imprint );
-  friend bool sierra::Fmwk::detail::set_attributes( Entity & mesh_obj, const sierra::Fmwk::MeshObjSharedAttr * attr, const int owner, const bool skip_imprint );
-  friend void sierra::Fmwk::detail::unset_shared_attr(Entity & mesh_obj);
-  friend bool sierra::Fmwk::insert_relation( Entity * const meshObj_from, const stk::mesh::Relation::RelationType relType, Entity * const meshObj_to, const unsigned ordinal, const unsigned orientation, const bool back_rel_flag, MeshBulkData & bulk);
-  friend bool sierra::Fmwk::remove_relation(Entity & meshObj_from, const stk::mesh::RelationIterator ir, sierra::Fmwk::MeshBulkData & bulk); 
-  friend bool sierra::Fmwk::verify_relations(const Entity & meshObj);
-  friend void sierra::Fmwk::roster_only::destroy_meshobj(stk::mesh::Entity* dying_meshobj);
-  
+  friend const sierra::Fmwk::MeshObjSharedAttr * sierra::Fmwk::get_shared_attr(const Entity &);
+  friend bool sierra::Fmwk::detail::set_attributes( Entity &, const int, const sierra::Fmwk::MeshObjSharedAttr *, const int);
+  friend bool sierra::Fmwk::detail::set_attributes( Entity &, const sierra::Fmwk::MeshObjSharedAttr *, const int);
+  friend void sierra::Fmwk::detail::unset_shared_attr(Entity &);
+  friend bool sierra::Fmwk::insert_relation( Entity * const, const stk::mesh::Relation::RelationType, Entity * const, const unsigned, const unsigned, const bool, MeshBulkData &);
+  friend bool sierra::Fmwk::remove_relation(Entity &, const stk::mesh::RelationIterator, sierra::Fmwk::MeshBulkData &);
+  friend bool sierra::Fmwk::verify_relations(const Entity &);
+  friend void sierra::Fmwk::roster_only::destroy_meshobj(stk::mesh::Entity*);
+  friend void sierra::Fmwk::roster_only::set_shared_attr(stk::mesh::Entity&, const MeshObjSharedAttr*);
+
   typedef unsigned DerivedType; ///< Derived type identifier, the admissible values may be extended
 
   /**
@@ -232,6 +234,8 @@ private:
     const int         parallel_size)
   {
     m_fmwk_attrs = fmwk_attrs;
+    ThrowAssertMsg(aux_relations().capacity() == 0, "Leftover memory found in relation vector");
+
     m_fmwk_attrs->global_id     = id;
     m_fmwk_attrs->local_id = sierra::Fmwk::INVALID_LOCAL_ID;
     m_fmwk_attrs->shared_attr = attr;
@@ -362,7 +366,7 @@ private:
   RelationIterator find_relation(const Relation& relation) const;
 
   void erase_and_clear_if_empty(RelationIterator rel_itr);
-  
+
   void internal_verify_meshobj_invariant() const;
 
   void internal_swap_in_real_entity(const int globalId);

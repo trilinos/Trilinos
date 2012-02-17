@@ -174,49 +174,45 @@ bool Entity::update_relation(
 {
   const Relation::RelationType relType = ir->getRelationType();
   ThrowAssert(verify_relation_ordering(internal_begin_relation(relType), internal_end_relation(relType)));
+  ThrowAssertMsg(!internal_is_handled_generically(relType),
+                 "update_relation should not be called for STK-managed relations");
 
-  if (!internal_is_handled_generically(relType)) {
-    Entity & meshObj = *ir->getMeshObj() ;
+  Entity & meshObj = *ir->getMeshObj() ;
 
-    const bool real_back_rel_flag = back_rel_flag || (relType == Relation::USES || relType == Relation::USED_BY);
+  const Relation::RelationType backRelType = back_relation_type(relType);
 
-    const Relation::RelationType backRelType = back_relation_type(relType);
+  ThrowAssert(verify_relation_ordering(meshObj.internal_begin_relation(backRelType), meshObj.internal_end_relation(backRelType)));
 
-    ThrowAssert(verify_relation_ordering(meshObj.internal_begin_relation(backRelType), meshObj.internal_end_relation(backRelType)));
+  // Create the corresponding back relation to ir
+  Relation backRel_obj(const_cast<Entity*>(this), backRelType, ir->getOrdinal(), ir->getOrientation());
+  RelationIterator backRel_itr = meshObj.find_relation(backRel_obj);
 
-    // Create the corresponding back relation to ir
-    Relation backRel_obj(const_cast<Entity*>(this), backRelType, ir->getOrdinal(), ir->getOrientation());
-    RelationIterator backRel_itr = meshObj.find_relation(backRel_obj);
+  const bool exists = backRel_itr != meshObj.internal_end_relation(backRelType) && *backRel_itr == backRel_obj;
 
-    const bool exists = backRel_itr != meshObj.internal_end_relation(backRelType) && *backRel_itr == backRel_obj;
+  if (exists && !back_rel_flag) {
+    // Remove back relation and increment the counter
 
-    if (exists && !real_back_rel_flag) {
-      // Remove back relation and increment the counter
+    meshObj.erase_and_clear_if_empty(backRel_itr);
 
-      meshObj.erase_and_clear_if_empty(backRel_itr);
+    //ThrowAssert(sierra::Fmwk::get_derived_type(meshObj) != Entity::ELEMENT);
 
-      //ThrowAssert(sierra::Fmwk::get_derived_type(meshObj) != Entity::ELEMENT);
-
-      meshObj.inc_connection();
-    }
-    else if (!exists && real_back_rel_flag) {
-      // Insert back relation
-
-      const unsigned k = backRel_itr - meshObj.internal_begin_relation(backRelType) ;
-
-      // 'relations' may change
-
-      meshObj.reserve_relation(meshObj.aux_relations().size() + 1);
-
-      meshObj.aux_relations().insert(meshObj.aux_relations().begin() + k, backRel_obj);
-
-      //ThrowAssert(sierra::Fmwk::get_derived_type(meshObj) != Entity::ELEMENT);
-
-      meshObj.dec_connection();
-    }
-
-    ThrowAssert(verify_relation_ordering(meshObj.internal_begin_relation(relType), meshObj.internal_end_relation(relType)));
+    meshObj.inc_connection();
   }
+  else if (!exists && back_rel_flag) {
+    // Insert back relation
+
+    const unsigned k = backRel_itr - meshObj.internal_begin_relation(backRelType) ;
+
+    meshObj.reserve_relation(meshObj.aux_relations().size() + 1);
+
+    meshObj.aux_relations().insert(meshObj.aux_relations().begin() + k, backRel_obj);
+
+    //ThrowAssert(sierra::Fmwk::get_derived_type(meshObj) != Entity::ELEMENT);
+
+    meshObj.dec_connection();
+  }
+
+  ThrowAssert(verify_relation_ordering(meshObj.internal_begin_relation(relType), meshObj.internal_end_relation(relType)));
 
   return true;
 }
