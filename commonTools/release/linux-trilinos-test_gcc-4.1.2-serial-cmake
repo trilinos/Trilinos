@@ -40,4 +40,4 @@ cmake \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 $EXTRA_ARGS \
-../trilinos-10.8.4-Source
+../trilinos-10.10-Source
