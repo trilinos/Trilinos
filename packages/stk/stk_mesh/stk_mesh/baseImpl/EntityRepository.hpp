@@ -26,6 +26,8 @@
 
 #include <stk_mesh/base/Entity.hpp>
 
+#include <boost/pool/pool_alloc.hpp>
+
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -111,6 +113,7 @@ class EntityRepository {
     void internal_expunge_entity( EntityMap::iterator i);
 
     EntityMap m_entities;
+    boost::fast_pool_allocator<Entity> m_entity_alloc;
 
     //disabel copy constructor and assignment operator
     EntityRepository(const EntityRepository &);

@@ -27,6 +27,24 @@ namespace mesh {
 typedef std::vector<Relation>::const_iterator   RelationIterator;
 typedef boost::iterator_range<RelationIterator> RelationRange;
 class Entity;
+
+//On a *strictly temporary* basis, we need to stick the following
+//fmwk stuff on an entity, just to help us through the sierra migration.
+//Move along folks, there's nothing to see here.
+struct fmwk_attributes {
+  std::vector<Relation> aux_relations;
+  const void*           shared_attr;
+
+  // Cannot just use the id embedded in the entity-key because of negative global-ids
+  // for temporaries.
+  int                   global_id;
+  unsigned              local_id;
+  int                   owner;
+
+  // Not a supported STK_Mesh concept
+  unsigned short        connect_count;
+};
+
 }
 }
 
@@ -92,6 +110,7 @@ class BucketRepository;
  */
 class Entity {
 public:
+  ~Entity();
 
   /** \brief  Query the current state of the entity log */
   EntityModificationLog log_query() const { return m_entityImpl.log_query(); }
@@ -111,6 +130,7 @@ public:
 
   /** \brief  The bucket which holds this mesh entity's field data */
   Bucket & bucket() const { return m_entityImpl.bucket(); }
+  Bucket * bucket_ptr() const { return m_entityImpl.bucket_ptr(); }
 
   /** \brief  The ordinal for this entity within its bucket. */
   unsigned bucket_ordinal() const { return m_entityImpl.bucket_ordinal(); }
@@ -152,15 +172,15 @@ public:
   /** \brief  Subset communicaiton list for this entity */
   PairIterEntityComm comm( const Ghosting & sub ) const { return m_entityImpl.comm( sub ); }
 
+  void set_key(const EntityKey& arg_key) { m_entityImpl.set_key(arg_key); }
+
 private:
 
   impl::EntityImpl m_entityImpl;
 
-  ~Entity();
   explicit Entity( const EntityKey & arg_key );
 
-  Entity(); ///< Default constructor not allowed
-  Entity( const Entity & ); ///< Copy constructor not allowed
+  Entity();
   Entity & operator = ( const Entity & ); ///< Assignment operator not allowed
 
 #ifndef DOXYGEN_COMPILE
@@ -206,21 +226,21 @@ private:
   void init_fmwk(
     const int         id,
     const SharedAttr* attr,
+    stk::mesh::fmwk_attributes* fmwk_attrs,
     const int         owner,
     const int         parallel_rank,
     const int         parallel_size)
   {
-    ThrowAssertMsg(m_relations.capacity(), "Leftover memory found in relation vector");
+    m_fmwk_attrs = fmwk_attrs;
+    m_fmwk_attrs->global_id     = id;
+    m_fmwk_attrs->local_id = sierra::Fmwk::INVALID_LOCAL_ID;
+    m_fmwk_attrs->shared_attr = attr;
+    m_fmwk_attrs->owner = owner;
+    m_fmwk_attrs->connect_count = 0;
 
-    m_global_id     = id;
-    m_local_id      = sierra::Fmwk::INVALID_LOCAL_ID;
-    m_sharedAttr    = attr;
-    m_owner         = owner;
-    m_connect_count = 0;
-
-    if (attr->locally_owned() && m_owner == -1) {
-      m_owner = parallel_rank;
-      ThrowAssert(m_owner < parallel_size);
+    if (attr->locally_owned() && owner_processor_rank() == -1) {
+      m_fmwk_attrs->owner = parallel_rank;
+      ThrowAssert(owner_processor_rank() < parallel_size);
     }
 
     internal_verify_initialization_invariant();
@@ -230,7 +250,7 @@ private:
    * Get global identifier
    */
   int global_id() const {
-    return m_global_id;
+    return m_fmwk_attrs->global_id;
   }
 
   /**
@@ -246,13 +266,10 @@ private:
      then meshobjA.global_id() < meshobjB.global_id() if meshobjA and meshobjB have
      the same derived-type.
   */
-  unsigned local_id() const {
-    return m_local_id;
-  }
+  unsigned local_id() const { return m_fmwk_attrs->local_id; }
 
-  int owner_processor_rank() const {
-    return m_owner;
-  }
+  int owner_processor_rank() const { return m_fmwk_attrs->owner; }
+  void set_owner_processor_rank(int owner) { m_fmwk_attrs->owner = owner; }
 
   /**
    * Number of connections to this mesh object.
@@ -261,26 +278,31 @@ private:
    * corresponding relationship owned by this mesh object.
    */
   unsigned size_connection() const {
-    return m_connect_count;
+    return m_fmwk_attrs->connect_count;
   }
 
   /**
    * Increment the connection count.
    */
   unsigned inc_connection() {
-    ++m_connect_count;
-    ThrowAssert(m_connect_count /* Did not roll over */);
-    return m_connect_count;
+    ++m_fmwk_attrs->connect_count;
+    ThrowAssert(m_fmwk_attrs->connect_count /* Did not roll over */);
+    return m_fmwk_attrs->connect_count;
   }
 
   /**
    * Decrement the connection count.
    */
   unsigned dec_connection() {
-    ThrowAssert(m_connect_count /* Will not roll-under */);
-    --m_connect_count;
-    return m_connect_count;
+    ThrowAssert(m_fmwk_attrs->connect_count /* Will not roll-under */);
+    --m_fmwk_attrs->connect_count;
+    return m_fmwk_attrs->connect_count;
   }
+
+  RelationIterator aux_relation_begin() const { return m_fmwk_attrs->aux_relations.begin(); }
+  RelationIterator aux_relation_end() const { return m_fmwk_attrs->aux_relations.end(); }
+
+  std::vector<Relation>& aux_relations() { return m_fmwk_attrs->aux_relations; }
 
   /**
    * iterator to first relationship within the collection that mananges
@@ -291,7 +313,7 @@ private:
       return relations().first;
     }
     else {
-      return m_relations.begin();
+      return aux_relation_begin();
     }
   }
 
@@ -304,13 +326,14 @@ private:
       return relations().second;
     }
     else {
-      return m_relations.end();
+      return aux_relation_end();
     }
   }
 
-  void set_local_id(unsigned int l_id) {
-    m_local_id = l_id;
-  }
+  void set_local_id(unsigned int l_id) { m_fmwk_attrs->local_id = l_id; }
+
+  void set_shared_attr(const void* attr) { m_fmwk_attrs->shared_attr = attr; }
+  const void* get_shared_attr() const { return m_fmwk_attrs->shared_attr; }
 
   // TODO: Refactor clients so that this method is no longer needed
   void set_relation_orientation(RelationIterator rel, unsigned orientation);
@@ -347,8 +370,8 @@ private:
   void internal_verify_initialization_invariant() {
     // If this MeshObj has a proper ID (fully initialized), then the id should match
     // the id in the entity-key; otherwise they should not match.
-    ThrowAssert( !(m_global_id < 0 && key().id() == static_cast<uint64_t>(m_global_id)) &&
-                 !(m_global_id > 0 && key().id() != static_cast<uint64_t>(m_global_id)) );
+    ThrowAssert( !(m_fmwk_attrs->global_id < 0 && key().id() == static_cast<uint64_t>(m_fmwk_attrs->global_id)) &&
+                 !(m_fmwk_attrs->global_id > 0 && key().id() != static_cast<uint64_t>(m_fmwk_attrs->global_id)) );
 
   }
 
@@ -363,25 +386,7 @@ private:
   // Members needed to support Fmwk_MeshObj API
   //
 
-  // Cannot just use the id embedded in the entity-key because of negative global-ids
-  // for temporaries.
-  int                     m_global_id;
-
-  // Not a supported STK_Mesh concept
-  unsigned                m_local_id;
-
-  // Relations of this mesh object that can't be managed by STK such as PARENT/CHILD
-  std::vector<Relation>   m_relations;
-
-  // Not a supported STK_Mesh concept
-  const void*             m_sharedAttr;
-
-  // Can't use STK_Mesh's notion of this entity's owner because STK_Mesh is being used
-  // in serial mode and therefore every process will thinks it owns everything.
-  int                     m_owner;
-
-  // Not a supported STK_Mesh concept
-  unsigned short          m_connect_count;
+  fmwk_attributes* m_fmwk_attrs;
 #endif
 };
 

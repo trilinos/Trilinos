@@ -34,12 +34,23 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
+Entity::Entity()
+  : m_entityImpl()
+#ifdef SIERRA_MIGRATION
+   , m_fmwk_attrs(NULL)
+#endif
+{}
+
 Entity::Entity( const EntityKey & arg_key )
   : m_entityImpl( arg_key )
+#ifdef SIERRA_MIGRATION
+   , m_fmwk_attrs(NULL)
+#endif
 {}
 
 Entity::~Entity()
-{}
+{
+}
 
 std::string print_entity_key(const Entity& entity)
 {
@@ -67,7 +78,7 @@ std::string print_entity_key(const Entity* entity)
 void Entity::internal_swap_in_real_entity(const int globalId)
 {
   ThrowRequire(globalId > 0);
-  m_global_id  = globalId;
+  m_fmwk_attrs->global_id  = globalId;
 
   BulkData::get(*this).change_entity_id(globalId, *this);
 
@@ -82,12 +93,12 @@ void Entity::internal_swap_in_real_entity(const int globalId)
 
 void Entity::reserve_relation(const unsigned num)
 {
-  if (num == 0 && m_relations.empty()) {
+  if (num == 0 && aux_relations().empty()) {
     std::vector<Relation> tmp;
-    m_relations.swap(tmp); // clear memory of m_relations.
+    aux_relations().swap(tmp); // clear memory of m_relations.
   }
   else {
-    m_relations.reserve(num);
+    aux_relations().reserve(num);
   }
 }
 
@@ -195,9 +206,9 @@ bool Entity::update_relation(
 
       // 'relations' may change
 
-      meshObj.reserve_relation(meshObj.m_relations.size() + 1);
+      meshObj.reserve_relation(meshObj.aux_relations().size() + 1);
 
-      meshObj.m_relations.insert(meshObj.m_relations.begin() + k, backRel_obj);
+      meshObj.aux_relations().insert(meshObj.aux_relations().begin() + k, backRel_obj);
 
       //ThrowAssert(sierra::Fmwk::get_derived_type(meshObj) != Entity::ELEMENT);
 
@@ -216,9 +227,10 @@ void Entity::erase_and_clear_if_empty(RelationIterator rel_itr)
 {
   ThrowRequire(!internal_is_handled_generically(rel_itr->getRelationType()));
 
-  m_relations.erase(m_relations.begin() + (rel_itr - m_relations.begin())); // Need to convert to non-const iterator
+  std::vector<Relation>& aux_relations = m_fmwk_attrs->aux_relations;
+  aux_relations.erase(aux_relations.begin() + (rel_itr - aux_relations.begin())); // Need to convert to non-const iterator
 
-  if (m_relations.empty()) {
+  if (aux_relations.empty()) {
     reserve_relation(0);
   }
 }
@@ -232,7 +244,8 @@ void Entity::internal_verify_meshobj_invariant() const
     ThrowRequireMsg(stk_relations->getMeshObj() != NULL, "Problem with: " << *stk_relations);
   }
 
-  for (std::vector<Relation>::const_iterator itr = m_relations.begin(), end = m_relations.end(); itr != end; ++itr) {
+  std::vector<Relation>& aux_relations = m_fmwk_attrs->aux_relations;
+  for (std::vector<Relation>::const_iterator itr = aux_relations.begin(), end = aux_relations.end(); itr != end; ++itr) {
     ThrowRequireMsg(itr->getMeshObj() != NULL, "Problem with: " << *itr);
   }
 }

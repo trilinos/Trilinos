@@ -67,6 +67,14 @@ class BucketImpl {
   {
     return field_data_location_impl( field.mesh_meta_data_ordinal(), entity.bucket_ordinal() );
   }
+
+  /** Experimental method that skips the if-test for field existence on the bucket.
+    This method should only be called if the caller is sure that the field exists on the bucket.
+  */
+  unsigned char * fast_field_data_location( const FieldBase & field, unsigned ordinal ) const
+  {
+    return fast_field_data_location_impl( field.mesh_meta_data_ordinal(), ordinal );
+  }
   unsigned char * field_data_location( const FieldBase & field, unsigned ordinal ) const
   {
     return field_data_location_impl( field.mesh_meta_data_ordinal(), ordinal );
@@ -137,6 +145,13 @@ class BucketImpl {
       ptr = (const_cast<unsigned char*>(&m_field_data[data_map.m_base + data_map.m_size * entity_ordinal]));
     }
     return ptr ;
+  }
+  unsigned char * fast_field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
+  {
+    typedef unsigned char * byte_p ;
+    const DataMap & data_map = m_field_map[ field_ordinal ];
+    ThrowAssertMsg(data_map.m_size>0,"Field doesn't exist on bucket.");
+    return const_cast<unsigned char*>(&m_field_data[data_map.m_base + data_map.m_size * entity_ordinal]);
   }
   Bucket * last_bucket_in_family_impl() const;
 };

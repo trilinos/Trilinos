@@ -39,7 +39,8 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
     "Key " << print_entity_key(MetaData::get( *i->second ), i->first) <<
     " != " << print_entity_key(i->second));
 
-  delete i->second ;
+  m_entity_alloc.destroy(i->second);
+  m_entity_alloc.deallocate(i->second,1);
   i->second = NULL ;
   m_entities.erase( i );
 }
@@ -58,7 +59,11 @@ EntityRepository::internal_create_entity( const EntityKey & key )
     result( insert_result.first->second , insert_result.second );
 
   if ( insert_result.second )  { // A new entity
-    insert_result.first->second = result.first = new Entity( key );
+    static Entity tmp_entity;
+    Entity* new_entity = m_entity_alloc.allocate();
+    m_entity_alloc.construct(new_entity, tmp_entity);
+    new_entity->set_key(key);
+    insert_result.first->second = result.first = new_entity;
   }
   else if ( EntityLogDeleted == result.first->log_query() ) {
     // resurrection
@@ -247,7 +252,11 @@ void EntityRepository::update_entity_key(EntityKey key, Entity & entity)
 
     entity.m_entityImpl.update_key(key);
 
-    old_itr->second = new Entity(old_key);
+    static Entity tmp_entity;
+    Entity* new_entity = m_entity_alloc.allocate();
+    m_entity_alloc.construct(new_entity, tmp_entity);
+    new_entity->set_key(old_key);
+    old_itr->second = new_entity;
 
     old_itr->second->m_entityImpl.log_deleted();
   }

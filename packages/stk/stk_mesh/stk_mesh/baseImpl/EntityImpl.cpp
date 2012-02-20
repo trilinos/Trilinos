@@ -38,6 +38,18 @@ EntityImpl::EntityImpl( const EntityKey & arg_key )
   TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
 }
 
+EntityImpl::EntityImpl()
+  : m_key(),
+    m_relation(),
+    m_comm(),
+    m_bucket( NULL ),
+    m_bucket_ord(0),
+    m_owner_rank(0),
+    m_sync_count(0),
+    m_mod_log( EntityLogCreated )
+{
+}
+
 PairIterRelation EntityImpl::relations( unsigned rank ) const
 {
   std::vector<Relation>::const_iterator i = m_relation.begin();
@@ -314,6 +326,11 @@ bool EntityImpl::declare_relation( Entity & e_to,
   else {
     return false;
   }
+}
+
+void EntityImpl::set_key(EntityKey key)
+{
+  m_key = key;
 }
 
 void EntityImpl::update_key(EntityKey key)

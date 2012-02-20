@@ -32,6 +32,7 @@ public:
 
   ~EntityImpl();
   EntityImpl( const EntityKey & arg_key );
+  EntityImpl();
 
   // Exposed in external interface:
   EntityRank entity_rank() const { return stk::mesh::entity_rank( m_key ); }
@@ -153,6 +154,11 @@ public:
 
   bool marked_for_destruction() const;
 
+  //set_key is only to be used for setting a key on a newly-constructed entity.
+  void set_key(EntityKey key);
+
+  //update_key is used to change the key for an entity that has been in use with
+  //a different key.
   void update_key(EntityKey key);
 
  private:
@@ -166,8 +172,7 @@ public:
   size_t                  m_sync_count ; ///< Last membership change
   EntityModificationLog   m_mod_log ;
 
-  EntityImpl();
-  EntityImpl( const EntityImpl & ); ///< Copy constructor not allowed
+//  EntityImpl( const EntityImpl & ); ///< Copy constructor not allowed
   EntityImpl & operator = ( const EntityImpl & ); ///< Assignment operator not allowed
 };
 
