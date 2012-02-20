@@ -172,6 +172,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    int InsertGlobalValues(int GlobalRow, int NumEntries,
                            const double* Values, const int* Indices);
 
+   /** override base-class Epetra_CrsMatrix::InsertGlobalValues method */
+   int InsertGlobalValues(int GlobalRow, int NumEntries,
+                           double* Values, int* Indices);
+
    /** override base-class Epetra_CrsMatrix::ReplaceGlobalValues method */
    int ReplaceGlobalValues(int GlobalRow, int NumEntries,
                            const double* Values, const int* Indices);
