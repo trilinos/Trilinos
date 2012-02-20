@@ -474,6 +474,15 @@ int Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
 }
 
 //----------------------------------------------------------------------------
+int Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
+                                            double* values, int* Indices)
+{
+  return(InputGlobalValues(1, &GlobalRow,
+                           NumEntries, Indices, values,
+                           Epetra_FECrsMatrix::ROW_MAJOR, INSERT));
+}
+
+//----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
                                             const double* values, const int* Indices)
 {
