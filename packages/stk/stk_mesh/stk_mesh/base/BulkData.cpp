@@ -79,7 +79,7 @@ void ensure_part_superset_consistency( const Entity& entity )
       }
     }
   }
-  ThrowRequireMsg( errs.tellp() == 0,
+  ThrowRequireMsg( (int)errs.tellp() == 0,
                    "Entity " << print_entity_key(entity) << " has bad part list:\n" << errs.str());
 }
 
