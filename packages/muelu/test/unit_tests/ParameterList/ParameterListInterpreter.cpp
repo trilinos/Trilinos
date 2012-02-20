@@ -25,6 +25,8 @@ namespace MueLuTests {
 
       RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
       H->GetLevel(0)->Set<RCP<Operator> >("A", A);
+
+      out << H << std::endl;
      
       mueluFactory.SetupHierarchy(*H);
 
