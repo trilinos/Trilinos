@@ -59,6 +59,7 @@ namespace MueLu {
     //! Constructor used by HierarchyFactory (temporary, will be removed)
     FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable) {
       factoryTable_ = factoryTable;
+      SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)
     }
 
     //! Destructor.
