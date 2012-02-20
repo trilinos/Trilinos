@@ -113,11 +113,11 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityDifferentLengths )
   A.set("A","a");
   A.set("B","b");
   A.set("C","c");
-  A.print();
+  A.print(out);
 
   B.set("A","a");
   B.set("B","b");
-  B.print();
+  B.print(out);
 
   TEST_ASSERT( A != B );
 
