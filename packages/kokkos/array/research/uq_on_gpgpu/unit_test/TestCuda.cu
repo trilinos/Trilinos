@@ -69,7 +69,7 @@
 
 #include <TestBlockCrsMatrix.hpp>
 #include <TestTensorCrsMatrix.hpp>
-#include <TestLegendreBases.hpp>
+#include <TestStochastic.hpp>
 
 
 int mainCuda()

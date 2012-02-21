@@ -70,7 +70,7 @@
 
 #include <TestBlockCrsMatrix.hpp>
 #include <TestTensorCrsMatrix.hpp>
-#include <TestLegendreBases.hpp>
+#include <TestStochastic.hpp>
 
 int mainHost()
 {
@@ -110,6 +110,7 @@ int mainHost()
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 5 , 1 );
 
   unit_test::test_product_tensor_matrix<double,Kokkos::Host>( std::vector<int>( 3 , 2 ) , 3 );
+  unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Host>( std::vector<int>( 3 , 2 ) , 3 );
 
   std::cout << "Stress tests:" << std::endl ;
 
