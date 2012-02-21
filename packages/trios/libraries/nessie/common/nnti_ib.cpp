@@ -100,8 +100,8 @@ typedef enum {
     RDMA_COMPLETE
 } ib_op_state_t;
 
-#define SRQ_WQ_DEPTH 2048
-#define CQ_WQ_DEPTH 2048
+#define SRQ_WQ_DEPTH 4096
+#define CQ_WQ_DEPTH 4096
 
 typedef struct {
     struct ibv_qp           *qp;
