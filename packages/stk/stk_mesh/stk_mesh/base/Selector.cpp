@@ -53,13 +53,25 @@ Selector & Selector::complement()
   return *this;
 }
 
+bool Selector::operator()( const Bucket & candidate ) const
+{ return apply( m_op.begin() , m_op.end() , candidate.superset_part_ordinals() ); }
+
+bool Selector::operator()( const Bucket * candidate ) const{
+  return operator()(*candidate);
+}
+
+bool Selector::operator()( const Entity & candidate ) const
+{
+  const Bucket & b = candidate.bucket();
+  return this->operator()(b);
+}
 
 Selector & Selector::operator &= ( const Selector & B )
 {
   if (m_mesh_meta_data == 0) {
     m_mesh_meta_data = B.m_mesh_meta_data;
   }
-  verify_compatible( B );
+
   m_op.insert( m_op.end() , B.m_op.begin() , B.m_op.end() );
   return *this;
 }
@@ -70,7 +82,6 @@ Selector & Selector::operator |= ( const Selector & B )
   if (m_mesh_meta_data == 0) {
     m_mesh_meta_data = B.m_mesh_meta_data;
   }
-  verify_compatible( B );
 
   Selector notB = B; notB.complement();
 
@@ -118,26 +129,6 @@ Selector & Selector::operator |= ( const Selector & B )
   return *this;
 }
 
-
-void Selector::verify_compatible( const Selector & B ) const
-{
-  ThrowErrorMsgIf( B.m_mesh_meta_data != m_mesh_meta_data,
-      "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data <<
-      "\nSelector = " << B << " has mesh meta data pointer = " << B.m_mesh_meta_data <<
-      "\nThese selectors contain incompatible mesh meta data pointers!" );
-}
-
-
-void Selector::verify_compatible( const Bucket & B ) const
-{
-  const MetaData * B_mesh_meta_data = & MetaData::get(B);
-  ThrowErrorMsgIf( B_mesh_meta_data != m_mesh_meta_data,
-      "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data <<
-      "\nBucket has mesh meta data pointer = " << B_mesh_meta_data <<
-      "\nThis selector is incompatible with this bucket!" );
-}
-
-
 bool Selector::part_is_present(
     unsigned part_ord,
     const std::pair<const unsigned*, const unsigned*>& part_ords
@@ -166,26 +157,6 @@ bool Selector::apply(
     }
   }
   return result ;
-}
-
-
-bool Selector::operator()( const Bucket & candidate ) const
-{
-  if (m_mesh_meta_data != NULL) {
-    verify_compatible(candidate);
-  }
-  return apply( m_op.begin() , m_op.end() , candidate.superset_part_ordinals() );
-}
-
-bool Selector::operator()( const Entity & candidate ) const
-{
-  const Bucket & b = candidate.bucket();
-  return this->operator()(b);
-}
-
-bool Selector::apply(const std::pair<const unsigned*,const unsigned*>& part_ords) const
-{
-  return apply(m_op.begin(), m_op.end(), part_ords);
 }
 
 Selector operator & ( const Part & A , const Part & B )

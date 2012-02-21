@@ -31,6 +31,9 @@
 namespace stk {
 namespace mesh {
 
+namespace fem {
+class FEMMetaData;
+}
 
 /** \addtogroup stk_mesh_module
  *  \{
@@ -318,6 +321,9 @@ public:
   /** \brief  Put a property on the given part */
   void put_property( PropertyBase & property, Part & part);
 
+  /** get the spatial-dimension, which can only be set by using FEMMetaData. */
+  unsigned get_spatial_dimension() const { return m_spatial_dimension; }
+
   /** \brief  Commit the part and field declarations so that the
    *          meta data manager can be used to create
    *          \ref stk::mesh::BulkData "mesh bulk data".
@@ -386,6 +392,9 @@ private:
   std::vector< FieldRelation > m_field_relations ;
   std::vector< PropertyBase* > m_properties ;
   std::vector< std::string >   m_entity_rank_names ;
+
+  unsigned m_spatial_dimension;
+  friend class fem::FEMMetaData;
 
   /** \name  Invariants/preconditions for MetaData.
    * \{

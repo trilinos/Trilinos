@@ -118,7 +118,8 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
     m_field_repo(),
     m_field_relations( ),
     m_properties( ),
-    m_entity_rank_names( entity_rank_names )
+    m_entity_rank_names( entity_rank_names ),
+    m_spatial_dimension( 0 /*invalid spatial dimension*/)
 {
   ThrowErrorMsgIf( entity_rank_names.empty(), "entity ranks empty" );
 
@@ -139,7 +140,8 @@ MetaData::MetaData()
     m_field_repo(),
     m_field_relations( ),
     m_properties( ),
-    m_entity_rank_names( )
+    m_entity_rank_names( ),
+    m_spatial_dimension( 0 /*invalid spatial dimension*/)
 {
   // Declare the predefined parts
 

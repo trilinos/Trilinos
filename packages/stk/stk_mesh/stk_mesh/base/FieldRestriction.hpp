@@ -68,10 +68,15 @@ class FieldRestriction {
   {
   }
 
+  void set_entity_rank(EntityRank ent_rank) { m_entityrank_partordinal.first = ent_rank; }
+
   EntityRank entity_rank() const
   {
     return m_entityrank_partordinal.first;
   }
+
+  void set_part_ordinal(PartOrdinal ord) { m_entityrank_partordinal.second = ord; }
+
   PartOrdinal part_ordinal() const
   {
     return m_entityrank_partordinal.second;

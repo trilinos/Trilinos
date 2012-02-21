@@ -185,7 +185,7 @@ inline
 unsigned get_spatial_dimension(const Entity& entity)
 {
   // expose some dot-chain to ensure everything inlined
-  return FEMMetaData::get(entity.bucket().mesh().mesh_meta_data()).spatial_dimension();
+  return entity.bucket().mesh().mesh_meta_data().get_spatial_dimension();
 }
 
 /* The Fmwk uses an enum to identify nodes, edges, faces and elements. The

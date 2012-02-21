@@ -407,11 +407,15 @@ FieldBaseImpl::restriction( unsigned entity_rank , const Part & part ) const
         PartVector::const_iterator ip  = part.supersets().begin() ;
 
   // Start with this part:
-  FieldRestriction restr( entity_rank , part.mesh_meta_data_ordinal() );
+  //(putting static here helps performance significantly but is NOT THREAD SAFE !!!)
+  static FieldRestriction restr;
+  restr.set_entity_rank( entity_rank );
+  restr.set_part_ordinal( part.mesh_meta_data_ordinal() );
 
   while ( ie == ( i = find( rMap , restr ) ) && ipe != ip ) {
     // Not found try another superset part:
-    restr = FieldRestriction( entity_rank , (*ip)->mesh_meta_data_ordinal() );
+    restr.set_entity_rank( entity_rank );
+    restr.set_part_ordinal( (*ip)->mesh_meta_data_ordinal() );
     ++ip ;
   }
 

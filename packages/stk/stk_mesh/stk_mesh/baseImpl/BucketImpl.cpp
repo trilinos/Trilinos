@@ -195,6 +195,7 @@ inline unsigned align( size_t nb )
 
 const FieldBase::Restriction & empty_field_restriction()
 {
+  //NOT THREAD SAFE
   static const FieldBase::Restriction empty ;
   return empty ;
 }
@@ -211,9 +212,13 @@ const FieldBase::Restriction & find_restriction( const FieldBase & field ,
   const std::vector<FieldBase::Restriction>::const_iterator iend = restr_vec.end();
         std::vector<FieldBase::Restriction>::const_iterator ibeg = restr_vec.begin();
 
+  //NOT THREAD SAFE
+  static FieldRestriction restr;
+
   for ( PartOrdinal i = 0 ; i < num_part_ord && iend != ibeg ; ++i ) {
 
-    const FieldRestriction restr(erank,part_ord[i]);
+    restr.set_entity_rank(erank);
+    restr.set_part_ordinal(part_ord[i]);
 
     //lower_bound returns an iterator to either the insertion point for the
     //'restr' argument, or to a matching restriction.

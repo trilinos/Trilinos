@@ -103,24 +103,23 @@ public:
   /** \brief  Is this bucket a subset of the
    *          set defined by the selector expression.
    */
-  bool operator()( const Bucket & candidate ) const ;
+  bool operator()( const Bucket & candidate ) const;
 
   /** \brief  Is this bucket a subset of the
    *          set defined by the selector expression.
    */
-  bool operator()( const Bucket * candidate ) const{
-    return operator()(*candidate);
-  }
+  bool operator()( const Bucket * candidate ) const;
 
   /** \brief  Is this entity a member of the
    *          set defined by the selector expression.
    */
-  bool operator()( const Entity & candidate ) const ;
+  bool operator()( const Entity & candidate ) const;
 
   /** \brief Is the intersection of the 'part_ords' parts a member
    * of the set defined by the selector expression.
    */
-  bool apply(const std::pair<const unsigned*,const unsigned*>& part_ords) const;
+  bool apply(const std::pair<const unsigned*,const unsigned*>& part_ords) const
+  { return apply(m_op.begin(), m_op.end(), part_ords); }
 
   /** \brief  Pretty print the set-expression with part names */
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
@@ -128,10 +127,10 @@ public:
   const std::vector<OpType>& get_ops() const { return m_op; }
   void set_ops(const std::vector<OpType>& ops) { m_op = ops; }
 
-private:
+  /** \brief Turn the entire expression into a compound */
+  void compoundAll();
 
-  /** \brief . */
-//  friend class std::vector<OpType> ;
+private:
 
   /** \brief . */
   const MetaData * m_mesh_meta_data ;
@@ -157,9 +156,6 @@ private:
       std::vector<OpType>::const_iterator finish,
       const std::pair<const unsigned*,const unsigned*>& part_ords
       ) const;
-
-  /** \brief Turn the entire expression into a compound */
-  void compoundAll();
 
   /** \brief Pretty print the expression */
   std::string printExpression(
