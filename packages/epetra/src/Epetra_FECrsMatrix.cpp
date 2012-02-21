@@ -58,12 +58,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    numNonlocalRows_(0),
-    nonlocalRows_(NULL),
-    nonlocalRowLengths_(NULL),
-    nonlocalRowAllocLengths_(NULL),
-    nonlocalCols_(NULL),
-    nonlocalCoefs_(NULL),
+    nonlocalRows_(),
+    nonlocalCols_(),
+    nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
@@ -81,12 +78,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    numNonlocalRows_(0),
-    nonlocalRows_(NULL),
-    nonlocalRowLengths_(NULL),
-    nonlocalRowAllocLengths_(NULL),
-    nonlocalCols_(NULL),
-    nonlocalCoefs_(NULL),
+    nonlocalRows_(),
+    nonlocalCols_(),
+    nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
@@ -105,12 +99,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    numNonlocalRows_(0),
-    nonlocalRows_(NULL),
-    nonlocalRowLengths_(NULL),
-    nonlocalRowAllocLengths_(NULL),
-    nonlocalCols_(NULL),
-    nonlocalCoefs_(NULL),
+    nonlocalRows_(),
+    nonlocalCols_(),
+    nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
@@ -129,12 +120,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    numNonlocalRows_(0),
-    nonlocalRows_(NULL),
-    nonlocalRowLengths_(NULL),
-    nonlocalRowAllocLengths_(NULL),
-    nonlocalCols_(NULL),
-    nonlocalCoefs_(NULL),
+    nonlocalRows_(),
+    nonlocalCols_(),
+    nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
@@ -151,12 +139,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    numNonlocalRows_(0),
-    nonlocalRows_(NULL),
-    nonlocalRowLengths_(NULL),
-    nonlocalRowAllocLengths_(NULL),
-    nonlocalCols_(NULL),
-    nonlocalCoefs_(NULL),
+    nonlocalRows_(),
+    nonlocalCols_(),
+    nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
@@ -173,12 +158,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    numNonlocalRows_(0),
-    nonlocalRows_(NULL),
-    nonlocalRowLengths_(NULL),
-    nonlocalRowAllocLengths_(NULL),
-    nonlocalCols_(NULL),
-    nonlocalCoefs_(NULL),
+    nonlocalRows_(),
+    nonlocalCols_(),
+    nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (graph.UseNonlocalGraph() && graph.nonlocalGraph_ != 0),
     nonlocalMatrix_ (useNonlocalMatrix_ ? 
@@ -194,12 +176,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src)
    myFirstRow_(0),
    myNumRows_(0),
    ignoreNonLocalEntries_(false),
-   numNonlocalRows_(0),
-   nonlocalRows_(NULL),
-   nonlocalRowLengths_(NULL),
-   nonlocalRowAllocLengths_(NULL),
-   nonlocalCols_(NULL),
-   nonlocalCoefs_(NULL),
+   nonlocalRows_(),
+   nonlocalCols_(),
+   nonlocalCoefs_(),
    workData_(128),
    nonlocalMatrix_ (NULL)
 {
@@ -222,9 +201,8 @@ Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
   myFirstRow_ = src.myFirstRow_;
   myNumRows_ = src.myNumRows_;
   ignoreNonLocalEntries_ = src.ignoreNonLocalEntries_;
-  numNonlocalRows_ = src.numNonlocalRows_;
 
-  if (numNonlocalRows_ < 1) {
+  if (nonlocalRows_.size() < 1) {
     return( *this );
   }
 
@@ -233,25 +211,9 @@ Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
     return( *this );
   }
 
-  nonlocalRows_ = new int[numNonlocalRows_];
-  nonlocalRowLengths_ = new int[numNonlocalRows_];
-  nonlocalRowAllocLengths_ = new int[numNonlocalRows_];
-  nonlocalCols_ = new int*[numNonlocalRows_];
-  nonlocalCoefs_= new double*[numNonlocalRows_];
-
-  for(int i=0; i<numNonlocalRows_; ++i) {
-    nonlocalRows_[i] = src.nonlocalRows_[i];
-    nonlocalRowLengths_[i] = src.nonlocalRowLengths_[i];
-    nonlocalRowAllocLengths_[i] = src.nonlocalRowAllocLengths_[i];
-
-    nonlocalCols_[i] = new int[nonlocalRowAllocLengths_[i]];
-    nonlocalCoefs_[i] = new double[nonlocalRowAllocLengths_[i]];
-
-    for(int j=0; j<nonlocalRowLengths_[i]; ++j) {
-      nonlocalCols_[i][j] = src.nonlocalCols_[i][j];
-      nonlocalCoefs_[i][j] = src.nonlocalCoefs_[i][j];
-    }
-  }
+  nonlocalRows_ = src.nonlocalRows_;
+  nonlocalCols_ = src.nonlocalCols_;
+  nonlocalCoefs_= src.nonlocalCoefs_;
 
   return( *this );
 }
@@ -265,18 +227,9 @@ Epetra_FECrsMatrix::~Epetra_FECrsMatrix()
 //----------------------------------------------------------------------------
 void Epetra_FECrsMatrix::DeleteMemory()
 {
-  if (numNonlocalRows_ > 0) {
-    for(int i=0; i<numNonlocalRows_; ++i) {
-      delete [] nonlocalCols_[i];
-      delete [] nonlocalCoefs_[i];
-    }
-    delete [] nonlocalCols_;
-    delete [] nonlocalCoefs_;
-    delete [] nonlocalRows_;
-    delete [] nonlocalRowLengths_;
-    delete [] nonlocalRowAllocLengths_;
-    numNonlocalRows_ = 0;
-  }
+  nonlocalRows_.clear();
+  nonlocalCols_.clear();
+  nonlocalCoefs_.clear();
 
   if (nonlocalMatrix_ != 0)
     delete nonlocalMatrix_;
@@ -565,7 +518,8 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     //First build a map that describes our nonlocal data.
     //We'll use the arbitrary distribution constructor of Map.
 
-    Epetra_Map* sourceMap = new Epetra_Map(-1, numNonlocalRows_, nonlocalRows_,
+    int* nlr_ptr = nonlocalRows_.size() > 0 ? &nonlocalRows_[0] : 0;
+    Epetra_Map* sourceMap = new Epetra_Map(-1, nonlocalRows_.size(), nlr_ptr,
             Map().IndexBase(), Map().Comm());
 
     //If sourceMap has global size 0, then no nonlocal data exists and we can
@@ -582,40 +536,40 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     //nonlocal data. To do that, create a list of all column-indices that
     //occur in our nonlocal rows.
 
-    int numCols = 0, allocLen = 0;
-    int* cols = NULL;
-    int insertPoint = -1;
+    std::vector<int> cols;
 
-    for(int i=0; i<numNonlocalRows_; ++i) {
-      for(int j=0; j<nonlocalRowLengths_[i]; ++j) {
+    for(size_t i=0; i<nonlocalRows_.size(); ++i) {
+      for(size_t j=0; j<nonlocalCols_[i].size(); ++j) {
         int col = nonlocalCols_[i][j];
-        int offset = Epetra_Util_binary_search(col, cols, numCols, insertPoint);
-        if (offset < 0) {
-          EPETRA_CHK_ERR( Epetra_Util_insert(col, insertPoint, cols,
-                numCols, allocLen) );
+        std::vector<int>::iterator it =
+           std::lower_bound(cols.begin(), cols.end(), col);
+        if (it == cols.end() || *it != col) {
+          cols.insert(it, col);
         }
       }
     }
 
-    Epetra_Map* colMap = new Epetra_Map(-1, numCols, cols,
+    int* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
+    Epetra_Map* colMap = new Epetra_Map(-1, cols.size(), cols_ptr,
          Map().IndexBase(), Map().Comm());
-
-    delete [] cols;
-    numCols = 0;
-    allocLen = 0;
 
     //now we need to create a matrix with sourceMap and colMap, and fill it with
     //our nonlocal data so we can then export it to the correct owning processors.
 
+    std::vector<int> nonlocalRowLengths(nonlocalRows_.size());
+    for(size_t i=0; i<nonlocalRows_.size(); ++i) {
+      nonlocalRowLengths[i] = nonlocalCols_[i].size();
+    }
+
     tempMat = new Epetra_CrsMatrix(Copy, *sourceMap, *colMap,
-          nonlocalRowLengths_);
+          &nonlocalRowLengths[0]);
 
 
-    for(int i=0; i<numNonlocalRows_; ++i) {
+    for(size_t i=0; i<nonlocalRows_.size(); ++i) {
       EPETRA_CHK_ERR( tempMat->InsertGlobalValues(nonlocalRows_[i],
-             nonlocalRowLengths_[i],
-             nonlocalCoefs_[i],
-             nonlocalCols_[i]) );
+             nonlocalCols_[i].size(),
+             &nonlocalCoefs_[i][0],
+             &nonlocalCols_[i][0]) );
     }
 
     delete sourceMap;
@@ -645,12 +599,11 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
 
   //now reset the values in our nonlocal data
   if (!useNonlocalMatrix_) {
-    for(int i=0; i<numNonlocalRows_; ++i) {
-      for(int j=0; j<nonlocalRowLengths_[i]; ++j) {
+    for(size_t i=0; i<nonlocalRows_.size(); ++i) {
+      for(size_t j=0; j<nonlocalCols_[i].size(); ++j) {
         nonlocalCols_[i][j] = 0;
         nonlocalCoefs_[i][j] = 0.0;
       }
-      nonlocalRowLengths_[i] = 0;
     }
 
     delete tempMat;
@@ -820,70 +773,31 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int row,
     return (returncode);
   }
 
-  int insertPoint = -1;
-
   //find offset of this row in our list of nonlocal rows.
-  int rowoffset = Epetra_Util_binary_search(row, nonlocalRows_,
-             numNonlocalRows_, insertPoint);
+  std::vector<int>::iterator it =
+      std::lower_bound(nonlocalRows_.begin(), nonlocalRows_.end(), row);
 
-  if (rowoffset < 0) {
-    EPETRA_CHK_ERR( InsertNonlocalRow(row, insertPoint) );
-    rowoffset = insertPoint;
+  int rowoffset = it - nonlocalRows_.begin();
+  if (it == nonlocalRows_.end() || *it != row) {
+    EPETRA_CHK_ERR( InsertNonlocalRow(row, it) );
   }
 
   for(int i=0; i<numCols; ++i) {
-    EPETRA_CHK_ERR( InputNonlocalValue(rowoffset, cols[i], values[i],
-				       mode) );
+    EPETRA_CHK_ERR( InputNonlocalValue(rowoffset, cols[i], values[i], mode) );
   }
 
   return(0);
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FECrsMatrix::InsertNonlocalRow(int row, int offset)
+int Epetra_FECrsMatrix::InsertNonlocalRow(int row, std::vector<int>::iterator iter)
 {
-  int alloc_len = numNonlocalRows_;
-  EPETRA_CHK_ERR( Epetra_Util_insert(row, offset, nonlocalRows_,
-                                     numNonlocalRows_, alloc_len, 1) );
-
-  int tmp1 = numNonlocalRows_-1;
-  int tmp2 = alloc_len-1;
-
-  EPETRA_CHK_ERR( Epetra_Util_insert(0, offset, nonlocalRowLengths_,
-				     tmp1, tmp2, 1) );
-
-  --tmp1;
-  --tmp2;
-  int initialAllocLen = 16;
-  EPETRA_CHK_ERR( Epetra_Util_insert(initialAllocLen, offset,
-				     nonlocalRowAllocLengths_,
-				     tmp1, tmp2, 1) );
-
-  int** newCols = new int*[numNonlocalRows_];
-  double** newCoefs = new double*[numNonlocalRows_];
-
-  if (newCols == NULL || newCoefs == NULL) {
-    return(-1);
-  }
-
-  newCols[offset] = new int[initialAllocLen];
-  newCoefs[offset] = new double[initialAllocLen];
-
-  int index = 0;
-  for(int i=0; i<numNonlocalRows_-1; ++i) {
-    if (i == offset) {
-      ++index;
-    }
-
-    newCols[index] = nonlocalCols_[i];
-    newCoefs[index++] = nonlocalCoefs_[i];
-  }
-
-  delete [] nonlocalCols_;
-  delete [] nonlocalCoefs_;
-
-  nonlocalCols_ = newCols;
-  nonlocalCoefs_ = newCoefs;
+  int offset = iter - nonlocalRows_.begin();
+  nonlocalRows_.insert(iter, row);
+  std::vector<std::vector<int> >::iterator cols_iter = nonlocalCols_.begin() + offset;
+  nonlocalCols_.insert(cols_iter, std::vector<int>());
+  std::vector<std::vector<double> >::iterator coefs_iter = nonlocalCoefs_.begin() + offset;
+  nonlocalCoefs_.insert(coefs_iter, std::vector<double>());
 
   return(0);
 }
@@ -893,33 +807,26 @@ int Epetra_FECrsMatrix::InputNonlocalValue(int rowoffset,
 					   int col, double value,
 					   int mode)
 {
-  int*& colIndices = nonlocalCols_[rowoffset];
-  double*& coefs = nonlocalCoefs_[rowoffset];
-  int len = nonlocalRowLengths_[rowoffset];
+  std::vector<int>& colIndices = nonlocalCols_[rowoffset];
+  std::vector<double>& coefs = nonlocalCoefs_[rowoffset];
 
-  int insertPoint = -1;
-  int coloffset = Epetra_Util_binary_search(col, colIndices,
-					    len, insertPoint);
+  std::vector<int>::iterator it =
+     std::lower_bound(colIndices.begin(), colIndices.end(), col);
 
-  if (coloffset >= 0) {
-    if (mode == SUMINTO || mode == INSERT) {
-      coefs[coloffset] += value;
-    }
-    else {
-      coefs[coloffset] = value;
-    }
+  if (it == colIndices.end() || *it != col) {
+    int offset = it - colIndices.begin();
+    colIndices.insert(it, col);
+    std::vector<double>::iterator dit = coefs.begin()+offset;
+    coefs.insert(dit, value);
+    return 0;
+  }
+
+  int coloffset = it - colIndices.begin();
+  if (mode == SUMINTO || mode == INSERT) {
+    coefs[coloffset] += value;
   }
   else {
-    //else
-    //  insert col in colIndices
-    //  insert value in coefs
-
-    int tmp1 = nonlocalRowLengths_[rowoffset];
-    int tmp2 = nonlocalRowAllocLengths_[rowoffset];
-    EPETRA_CHK_ERR( Epetra_Util_insert(col, insertPoint, colIndices, tmp1, tmp2));
-    EPETRA_CHK_ERR( Epetra_Util_insert(value, insertPoint, coefs,
-				       nonlocalRowLengths_[rowoffset],
-				       nonlocalRowAllocLengths_[rowoffset]));
+    coefs[coloffset] = value;
   }
 
   return(0);
