@@ -76,7 +76,6 @@ namespace stk {
 
       if (num_invalid || always_smooth)
         {
-          Mesquite::ParallelMesh *pmesh = dynamic_cast<Mesquite::ParallelMesh *>(&mesh);
           std::cout << "tmp srk PMMLaplaceSmoother1 running laplace smoother..." << std::endl;
           if (pmesh)
             this->run_instructions(pmesh, &domain, mErr);
