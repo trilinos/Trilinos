@@ -84,7 +84,9 @@ void generate_matrix(
   typedef typename values_type::HostMirror host_values_type ;
   typedef typename graph_type ::HostMirror host_graph_type ;
 
-  std::vector< std::vector<size_t> > graph( N * N * N );
+  const size_t outer_length = N * N * N ;
+
+  std::vector< std::vector<size_t> > graph( outer_length );
 
   size_t total = 0 ;
 
@@ -118,7 +120,7 @@ void generate_matrix(
   host_graph_type  h_graph  = Kokkos::create_mirror( matrix.graph );
   host_values_type h_values = Kokkos::create_mirror( matrix.values );
 
-  for ( size_t outer_row = 0 ; outer_row < N*N*N ; ++outer_row ) {
+  for ( size_t outer_row = 0 ; outer_row < outer_length ; ++outer_row ) {
     const size_t outer_entry_begin = h_graph.row_entry_begin( outer_row );
     const size_t outer_entry_end   = h_graph.row_entry_end( outer_row );
 
@@ -145,7 +147,7 @@ void generate_matrix(
 template< class Device >
 void test_block_crs_matrix( const size_t M , const size_t N )
 {
-  const size_t length = N * N * N ;
+  const size_t outer_length = N * N * N ;
 
   typedef long value_type ; // to avoid comparison round-off differences
 
@@ -157,13 +159,13 @@ void test_block_crs_matrix( const size_t M , const size_t N )
 
   generate_matrix( M , N , matrix );
 
-  Kokkos::MultiVector<value_type,Device> x = Kokkos::create_multivector<value_type,Device>( M , length );
-  Kokkos::MultiVector<value_type,Device> y = Kokkos::create_multivector<value_type,Device>( M , length );
+  Kokkos::MultiVector<value_type,Device> x = Kokkos::create_multivector<value_type,Device>( M , outer_length );
+  Kokkos::MultiVector<value_type,Device> y = Kokkos::create_multivector<value_type,Device>( M , outer_length );
 
   typename Kokkos::MultiVector<value_type,Device>::HostMirror hx = Kokkos::create_mirror( x );
   typename Kokkos::MultiVector<value_type,Device>::HostMirror hy = Kokkos::create_mirror( y );
 
-  for ( size_t i = 0 ; i < length ; ++i ) {
+  for ( size_t i = 0 ; i < outer_length ; ++i ) {
     for ( size_t j = 0 ; j < M ; ++j ) {
       hx(j,i) = 1 + j + 10 * i ;
     }
@@ -179,7 +181,7 @@ void test_block_crs_matrix( const size_t M , const size_t N )
 
   host_graph_type h_graph  = Kokkos::create_mirror( matrix.graph );
 
-  for ( size_t outer_row = 0 ; outer_row < length ; ++outer_row ) {
+  for ( size_t outer_row = 0 ; outer_row < outer_length ; ++outer_row ) {
     const size_t outer_entry_begin = h_graph.row_entry_begin( outer_row );
     const size_t outer_entry_end   = h_graph.row_entry_end( outer_row );
 
