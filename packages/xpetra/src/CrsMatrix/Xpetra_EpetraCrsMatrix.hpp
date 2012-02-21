@@ -144,7 +144,7 @@ namespace Xpetra {
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { mtx_->ExtractDiagonalCopy(toEpetra(diag)); }
 
     //! Get Frobenius norm of the matrix
-    typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const { return mtx_->NormFrobenius(); }
+    ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const { return mtx_->NormFrobenius(); }
 
     //@}
 
