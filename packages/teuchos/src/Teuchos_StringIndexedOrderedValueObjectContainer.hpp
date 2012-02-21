@@ -278,10 +278,10 @@ public:
   inline Iterator nonconstEnd();
 
   /** \brief . */
-  inline ConstIterator begin();
+  inline ConstIterator begin() const;
 
   /** \brief . */
-  inline ConstIterator end();
+  inline ConstIterator end() const;
 
   //@}
 
@@ -404,7 +404,7 @@ StringIndexedOrderedValueObjectContainer<ObjType>::nonconstEnd()
 template<class ObjType>
 inline
 typename StringIndexedOrderedValueObjectContainer<ObjType>::ConstIterator
-StringIndexedOrderedValueObjectContainer<ObjType>::begin()
+StringIndexedOrderedValueObjectContainer<ObjType>::begin() const
 {
   return ConstIterator(key_and_obj_array_.begin(), key_and_obj_array_.begin(),
     key_and_obj_array_.end());
@@ -414,7 +414,7 @@ StringIndexedOrderedValueObjectContainer<ObjType>::begin()
 template<class ObjType>
 inline
 typename StringIndexedOrderedValueObjectContainer<ObjType>::ConstIterator
-StringIndexedOrderedValueObjectContainer<ObjType>::end()
+StringIndexedOrderedValueObjectContainer<ObjType>::end() const
 {
   return ConstIterator(key_and_obj_array_.end(), key_and_obj_array_.begin(),
     key_and_obj_array_.end());
