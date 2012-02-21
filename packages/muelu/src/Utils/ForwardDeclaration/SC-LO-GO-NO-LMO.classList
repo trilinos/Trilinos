@@ -31,3 +31,4 @@ BlockedPFactory
 SubBlockAFactory
 BlockedGaussSeidelSmoother
 AggregationExportFactory
+VariableInformationFactory
