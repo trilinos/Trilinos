@@ -135,7 +135,8 @@ void test_product_tensor( const std::vector<int> & var_degree )
 template< typename ScalarType , class Device >
 void test_product_tensor_matrix(
   const std::vector<int> & var_degree ,
-  const int nGraph )
+  const int nGraph ,
+  const bool print_flag = false )
 {
   typedef ScalarType value_type ;
 
@@ -179,6 +180,18 @@ void test_product_tensor_matrix(
   Kokkos::multiply( matrix , x , y );
   
   Kokkos::deep_copy( hy , y );
+
+  if ( print_flag ) {
+    std::cout << std::endl << "test_product_tensor_matrix" << std::endl ;
+    for ( size_t i = 0 ; i < outer_length ; ++i ) {
+      std::cout << "hy(:," << i << ") =" ;
+      for ( size_t j = 0 ; j < inner_length ; ++j ) {
+        std::cout << " " << hy(j,i);
+      }
+      std::cout << std::endl ;
+    }
+  }
+
 }
 
 //----------------------------------------------------------------------------
@@ -186,7 +199,8 @@ void test_product_tensor_matrix(
 template< typename ScalarType , class Device >
 void test_product_tensor_diagonal_matrix(
   const std::vector<int> & var_degree ,
-  const int nGraph )
+  const int nGraph ,
+  const bool print_flag = false )
 {
   typedef ScalarType value_type ;
 
@@ -240,6 +254,18 @@ void test_product_tensor_diagonal_matrix(
   Kokkos::multiply( matrix , x , y );
 
   Kokkos::deep_copy( hy , y );
+
+  if ( print_flag ) {
+    std::cout << std::endl << "test_product_tensor_diagonal_matrix"
+              << std::endl ;
+    for ( size_t i = 0 ; i < outer_length ; ++i ) {
+      std::cout << "hy(:," << i << ") =" ;
+      for ( size_t j = 0 ; j < inner_length ; ++j ) {
+        std::cout << " " << hy(j,i);
+      }
+      std::cout << std::endl ;
+    }
+  }
 }
 
 //----------------------------------------------------------------------------

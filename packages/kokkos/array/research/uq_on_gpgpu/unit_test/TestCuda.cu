@@ -52,6 +52,15 @@
 #include <Kokkos_Host.hpp>
 #include <Kokkos_Cuda.hpp>
 
+#include <Kokkos_Host_macros.hpp>
+#include <impl/Kokkos_ProductTensor_macros.hpp>
+#include <impl/Kokkos_LegendrePolynomial_macros.hpp>
+#include <impl/Kokkos_StochasticProductTensor_macros.hpp>
+#include <impl/Kokkos_SymmetricDiagonalSpec_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
+#include <Host/Kokkos_Host_ProductTensor.hpp>
+
 #include <Kokkos_Cuda_macros.hpp>
 #include <impl/Kokkos_ProductTensor_macros.hpp>
 #include <impl/Kokkos_LegendrePolynomial_macros.hpp>
@@ -100,6 +109,7 @@ int mainCuda()
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 1 );
 
   unit_test::test_product_tensor_matrix<double,Kokkos::Cuda>( std::vector<int>( 3 , 2 ) , 3 );
+  unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Cuda>( std::vector<int>( 3 , 2 ) , 3 );
 
   std::cout << "Stress tests:" << std::endl ;
 
