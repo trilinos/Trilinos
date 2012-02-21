@@ -141,6 +141,9 @@ namespace Xpetra {
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const { mtx_->getLocalRowView(LocalRow, indices, values); }
 
+    //! Get Frobenius norm of the matrix
+    typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const { return mtx_->getFrobeniusNorm(); }
+
     //@}
 
     //! @name Methods implementing Operator

@@ -109,6 +109,9 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const = 0;
 
+    //! Get Frobenius norm of the matrix
+    virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const = 0;
+
     //@}
 
     //! @name Methods implementing Operator

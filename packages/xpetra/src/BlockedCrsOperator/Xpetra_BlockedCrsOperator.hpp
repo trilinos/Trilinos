@@ -423,6 +423,13 @@ public:
         "getLocalDiagCopy not supported by BlockedCrsOperator!" );
   }
 
+  //! Get Frobenius norm of the matrix
+  virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+        "getFrobeniusNorm() not supported by BlockedCrsOperator, yet!" );
+  }
+
   //@}
 
   //! @name Advanced Matrix-vector multiplication and solve methods

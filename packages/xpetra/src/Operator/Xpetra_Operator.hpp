@@ -254,6 +254,9 @@ namespace Xpetra {
       the zero and non-zero diagonals owned by this node. */
     virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const =0;
 
+    //! Get Frobenius norm of the matrix
+    virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const = 0;
+
     //@}
 
     //! @name Advanced Matrix-vector multiplication and solve methods

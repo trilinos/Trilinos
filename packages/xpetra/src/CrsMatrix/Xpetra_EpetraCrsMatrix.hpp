@@ -143,6 +143,9 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { mtx_->ExtractDiagonalCopy(toEpetra(diag)); }
 
+    //! Get Frobenius norm of the matrix
+    typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const { return mtx_->NormFrobenius(); }
+
     //@}
 
     //! @name Methods implementing Operator

@@ -277,6 +277,11 @@ public:
     matrixData_->getLocalDiagCopy(diag);
   }
 
+  //! Get Frobenius norm of the matrix
+  typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const {
+    return matrixData_->getFrobeniusNorm();
+  }
+
   //@}
 
   //! @name Advanced Matrix-vector multiplication and solve methods
