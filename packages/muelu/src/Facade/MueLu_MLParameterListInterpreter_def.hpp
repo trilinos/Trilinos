@@ -29,17 +29,15 @@
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 
-#include "MueLu_AggregationExportFactory.hpp"
-
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(Teuchos::ParameterList & paramList, bool bExportAggregates) : nullspace_(NULL), bExportAggregates_(bExportAggregates) {
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(Teuchos::ParameterList & paramList,std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList) {
     SetParameterList(paramList);
   }
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(const std::string & xmlFileName, bool bExportAggregates) : nullspace_(NULL), bExportAggregates_(bExportAggregates) {
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(const std::string & xmlFileName,std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList) {
     Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
     SetParameterList(*paramList);
   }
@@ -124,11 +122,8 @@ namespace MueLu {
     }
 
     RCP<RAPFactory> AcFact = rcp( new RAPFactory(PFact, RFact) );
-
-    if(bExportAggregates_) {
-      // register aggregation export factory in RAPFactory
-      RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out", UCAggFact.get(), dropFact.get(), NULL));
-      AcFact->AddTransferFactory(aggExpFact);
+    for (size_t i = 0; i<TransferFacts_.size(); i++) {
+      AcFact->AddTransferFactory(TransferFacts_[i]);
     }
 
     RCP<SmootherFactory> coarsestSmooFact;
@@ -397,6 +392,18 @@ namespace MueLu {
     //
 
     return SmooFact;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddTransferFactory(const RCP<FactoryBase>& factory) {
+    // check if it's a TwoLevelFactoryBase based transfer factory
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<TwoLevelFactoryBase>(factory) == Teuchos::null,Exceptions::BadCast, "Transfer factory is not derived from TwoLevelFactoryBase. Since transfer factories will be handled by the RAPFactory they have to be derived from TwoLevelFactoryBase!");
+    TransferFacts_.push_back(factory);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  size_t MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NumTransferFactories() const {
+    return TransferFacts_.size();
   }
 
 } // namespace MueLu

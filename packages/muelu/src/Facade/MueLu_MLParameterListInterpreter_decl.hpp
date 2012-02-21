@@ -35,6 +35,7 @@
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_UCAggregationFactory_fwd.hpp"
 #include "MueLu_NullspaceFactory_fwd.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
 
 namespace MueLu {
 
@@ -56,10 +57,22 @@ namespace MueLu {
     MLParameterListInterpreter() : nullspace_(NULL) { }
 
     //! Constructor.
-    MLParameterListInterpreter(Teuchos::ParameterList & paramList,bool bExportAggregates = false);
+    //! @param paramList: parameter list with ML parameters
+    //! @param factoryList: vector with RCP of FactoryBase objects
+    //!
+    //! The factories in factoryList allow the user to add user-specific factories to the MueLu Hierarchy.
+    //! The idea is to be able to add some factories that write out some debug information etc. which are not handled by the ML
+    //! Parameter List itself. See information about the RAPFactory::AddTransferFactory method, too!
+    MLParameterListInterpreter(Teuchos::ParameterList & paramList,std::vector<RCP<FactoryBase> > factoryList = std::vector<RCP<FactoryBase> >(0));
 
     //! Constructor.
-    MLParameterListInterpreter(const std::string & xmlFileName,bool bExportAggregates = false);
+    //! @param xmlFileName: file name for XML file with ML parameters
+    //! @param factoryList: vector with RCP of FactoryBase objects
+    //!
+    //! The factories in factoryList allow the user to add user-specific factories to the MueLu Hierarchy.
+    //! The idea is to be able to add some factories that write out some debug information etc. which are not handled by the ML
+    //! Parameter List itself. See information about the RAPFactory::AddTransferFactory method, too!
+    MLParameterListInterpreter(const std::string & xmlFileName,std::vector<RCP<FactoryBase> > factoryList = std::vector<RCP<FactoryBase> >(0));
     
     //! Destructor.
     virtual ~MLParameterListInterpreter() { }
@@ -79,12 +92,6 @@ namespace MueLu {
 
     //@}
 
-    //! @name Example
-    //TODO: should not be part of this class
-
-    //! Build an example of valid ML parameter list
-    //static void FillMLParameterList(Teuchos::ParameterList & params);
-
     //@{
 
     //! @name static helper functions translating parameter list to factories
@@ -99,6 +106,21 @@ namespace MueLu {
 
     //@}
 
+
+    //! @name Handling of additional user-specific transfer factories
+    //@{
+    /*! @brief Add transfer factory in the end of list of transfer factories for RAPFactory.
+
+    This allows the user to add user-specific factories to the MueLu Hierarchy. The idea is to be able
+    to add some factories that write out some debug information etc. which are not handled by the ML
+    Parameter List itself. See information about the RAPFactory::AddTransferFactory method, too!
+    */
+    void AddTransferFactory(const RCP<FactoryBase>& factory);
+
+    //! Returns number of transfer factories.
+    size_t NumTransferFactories() const;
+    //@}
+
   private:
 
     //! nullspace can be embedded in the ML parameter list
@@ -107,6 +129,12 @@ namespace MueLu {
 
     //! export aggregates
     bool    bExportAggregates_; //!< if set to true an AggregationExportFactory is used to export aggregation information (default = false)
+
+    //! list of user-defined transfer Factories
+    //! We use this vector to add some special user-given factories to the Hierarchy (RAPFactory)
+    //! This way the user can extend the standard functionality of the MLParameterListInterpreter beyond the
+    //! capabibilities of ML.
+    std::vector<RCP<FactoryBase> > TransferFacts_;
 
   }; // class MLParameterListInterpreter
 
