@@ -174,20 +174,20 @@ public:
     A_[0] = FineMatrix_;
 
     double LambdaMax;
-    Operator A;
+    Operator Aop;
     Operator C;
-    Operator R;
-    Operator P;
+    Operator Rop;
+    Operator Pop;
     Operator Ptent;
     Operator IminusA;
-    InverseOperator S;
+    InverseOperator Sop;
 
     int level;
 
     for (level = 0 ; level < MaxLevels - 1 ; ++level) {
 
       // only an alias
-      A = A_[level];
+      Aop = A_[level];
 
       if (level)
         List_.set("PDE equations", ThisNS.GetNumVectors());
@@ -195,8 +195,8 @@ public:
       if (GetPrintLevel()) {
         ML_print_line("-", 80);
         cout << "current working level   = " << level << endl;
-        cout << "number of global rows   = " << A.GetNumGlobalRows() << endl;
-        cout << "number of global nnz    = " << A.GetNumGlobalNonzeros() << endl;
+        cout << "number of global rows   = " << Aop.GetNumGlobalRows() << endl;
+        cout << "number of global nnz    = " << Aop.GetNumGlobalNonzeros() << endl;
         cout << "threshold               = " << List_.get("aggregation: threshold", 0.0) << endl;
         cout << "number of PDE equations = " << NumPDEEqns << endl;
         cout << "null space dimension    = " << ThisNS.GetNumVectors() << endl;
@@ -205,35 +205,35 @@ public:
       // load current level into database
       List_.set("workspace: current level", level);
 
-      GetPtent(A, List_, ThisNS, Ptent, NextNS);
+      GetPtent(Aop, List_, ThisNS, Ptent, NextNS);
       ThisNS = NextNS;
       
       if (Damping) {
 
         if (EigenAnalysis == "Anorm")
-          LambdaMax = MaxEigAnorm(A,true);
+          LambdaMax = MaxEigAnorm(Aop,true);
         else if (EigenAnalysis == "cg")
-          LambdaMax = MaxEigCG(A,true);
+          LambdaMax = MaxEigCG(Aop,true);
         else if (EigenAnalysis == "power-method")
-          LambdaMax = MaxEigPowerMethod(A,true);
+          LambdaMax = MaxEigPowerMethod(Aop,true);
         else
           ML_THROW("incorrect parameter (" + EigenAnalysis + ")", -1);
 
 #if 0
-        MultiVector Diag = GetDiagonal(A);
+        MultiVector Diag = GetDiagonal(Aop);
         Diag.Reciprocal();
         Diag.Scale(Damping / LambdaMax);
         Operator Dinv = GetDiagonal(Diag);
-        Operator DinvA = Dinv * A;
-        Operator I = GetIdentity(A.GetDomainSpace(),A.GetRangeSpace());
+        Operator DinvA = Dinv * Aop;
+        Operator I = GetIdentity(Aop.GetDomainSpace(),Aop.GetRangeSpace());
         Operator IminusA = I - DinvA;
 #else
-        IminusA = GetJacobiIterationOperator(A,Damping / LambdaMax);
+        IminusA = GetJacobiIterationOperator(Aop,Damping / LambdaMax);
 #endif
-        P = IminusA * Ptent;
+        Pop = IminusA * Ptent;
       }
       else {
-        P = Ptent;
+        Pop = Ptent;
         LambdaMax = -1.0;
       }
 
@@ -248,16 +248,16 @@ public:
         cout << "smoother damping        = " << List_.get("smoother: damping factor", 0.67) << endl;
       }
 
-      R = GetTranspose(P);
-      C = GetRAP(R,A,P);
+      Rop = GetTranspose(Pop);
+      C = GetRAP(Rop,Aop,Pop);
       // build smoothers
-      S.Reshape(A, SmootherType, List_);
+      Sop.Reshape(Aop, SmootherType, List_);
 
       // put operators and inverse in hierarchy
-      R_[level    ] = R;
-      P_[level    ] = P;
+      R_[level    ] = Rop;
+      P_[level    ] = Pop;
       A_[level + 1] = C;
-      S_[level    ] = S;
+      S_[level    ] = Sop;
 
       // break if coarse matrix is below specified tolerance
       if (C.GetNumGlobalRows() <= MaxCoarseSize) {
@@ -267,8 +267,8 @@ public:
     }
 
     // set coarse solver
-    S.Reshape(A_[level], CoarseType, List_);
-    S_[level] = S;
+    Sop.Reshape(A_[level], CoarseType, List_);
+    S_[level] = Sop;
     MaxLevels_ = level + 1;
 
     // set the label
