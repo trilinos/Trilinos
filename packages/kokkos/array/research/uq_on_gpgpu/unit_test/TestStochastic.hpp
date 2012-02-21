@@ -148,17 +148,18 @@ void test_product_tensor_matrix(
 
   std::vector< std::vector<size_t> > graph ;
 
-  const size_t outer_length = unit_test::generate_fem_graph( nGraph , graph );
+  const size_t outer_length = nGraph * nGraph * nGraph ;
+  const size_t graph_length = unit_test::generate_fem_graph( nGraph , graph );
 
   matrix_type matrix ;
 
   matrix.block = Kokkos::create_product_tensor< bases_type >( var_degree );
   matrix.graph = Kokkos::create_labeled_crsmap<Device>( std::string("test crs graph") , graph );
 
-  const size_t inner_length = matrix.block.dimension();
+  const size_t inner_length      = matrix.block.dimension();
   const size_t inner_matrix_size = matrix.block.dimension();
 
-  matrix.values = Kokkos::create_multivector<value_type,Device>( inner_matrix_size , outer_length );
+  matrix.values = Kokkos::create_multivector<value_type,Device>( inner_matrix_size , graph_length );
 
   Kokkos::MultiVector<value_type,Device> x = Kokkos::create_multivector<value_type,Device>( inner_length , outer_length );
   Kokkos::MultiVector<value_type,Device> y = Kokkos::create_multivector<value_type,Device>( inner_length , outer_length );
@@ -169,8 +170,13 @@ void test_product_tensor_matrix(
 
   for ( size_t i = 0 ; i < outer_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hM(j,i) = 1 + i ;
       hx(j,i) = 1 + j + 10 * i ;
+    }
+  }
+  
+  for ( size_t i = 0 ; i < graph_length ; ++i ) {
+    for ( size_t j = 0 ; j < inner_length ; ++j ) {
+      hM(j,i) = 1 + i ;
     }
   }
   
@@ -222,14 +228,15 @@ void test_product_tensor_diagonal_matrix(
 
   std::vector< std::vector<size_t> > graph ;
 
-  const size_t outer_length = unit_test::generate_fem_graph( nGraph , graph );
+  const size_t outer_length = nGraph * nGraph * nGraph ;
+  const size_t graph_length = unit_test::generate_fem_graph( nGraph , graph );
   const size_t inner_length = bases.dimension();
 
   matrix_type matrix ;
 
   matrix.block  = Kokkos::SymmetricDiagonalSpec< Device >( inner_length );
   matrix.graph  = Kokkos::create_labeled_crsmap<Device>( std::string("test product tensor graph") , graph );
-  matrix.values = Kokkos::create_multivector<value_type,Device>( matrix.block.matrix_size() , outer_length );
+  matrix.values = Kokkos::create_multivector<value_type,Device>( matrix.block.matrix_size() , graph_length );
 
   Kokkos::MultiVector<value_type,Device> x = Kokkos::create_multivector<value_type,Device>( inner_length , outer_length );
   Kokkos::MultiVector<value_type,Device> y = Kokkos::create_multivector<value_type,Device>( inner_length , outer_length );
@@ -238,14 +245,21 @@ void test_product_tensor_diagonal_matrix(
   typename Kokkos::MultiVector< value_type , Device >::HostMirror hx = Kokkos::create_mirror( x );
   typename Kokkos::MultiVector< value_type , Device >::HostMirror hy = Kokkos::create_mirror( y );
 
-  std::vector< value_type > a( bases.dimension() );
-
   for ( size_t i = 0 ; i < outer_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      a[j]    = 1 + j + 10 * i ;
       hx(j,i) = 1 + j + 10 * i ;
     }
-    multiply_type::apply( bases.tensor() , & a[0] , & hM(0,i) );
+  }
+
+  {
+    std::vector< value_type > a( inner_length );
+
+    for ( size_t i = 0 ; i < graph_length ; ++i ) {
+      for ( size_t j = 0 ; j < inner_length ; ++j ) {
+        a[j] = 1 + j + 10 * i ;
+      }
+      multiply_type::apply( bases.tensor() , & a[0] , & hM(0,i) );
+    }
   }
 
   Kokkos::deep_copy( x , hx );
