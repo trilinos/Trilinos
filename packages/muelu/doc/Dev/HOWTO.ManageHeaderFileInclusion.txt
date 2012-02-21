@@ -1,0 +1,68 @@
+How to manage header inclusion
+---------------------------------
+
+Basic rules:
+- Always include headers of classes that you are using, never rely on an 
+  include of include. Refactoring can easily change the inclusion pattern and 
+  break your class.
+- Never include files that are unused.
+- Use forward declaration instead of full class declaration as much as possible.
+  MueLu and Xpetra provide _fwd.hpp files to help with this.
+- Sort headers per library, including last libraries with the most dependencies.
+
+Testing:
+- Compiling with explicit instantiation is more likely to trigger header inclusion problems.
+
+UseShortNames mechanism:
+- The class you are using in the _def header file must be declared in the _decl
+  (because UseShortName headers are included in the _decl).
+  But forward declarations are enough. So you can use the _fwd.hpp headers.
+
+Muelu header file include pattern:
+---------------------------------
+
+Organize your includes in the following order:
+
+//
+// In the MueLu_MyClass_decl.hpp:
+//
+
+#include of other lib (STL, Teuchos, Xpetra...) for classes used in _decl
+=> But use forward declaration instead of #include when it is sufficient.
+   Most of the time, fwd declarations are enough, as we are using pointer to type.
+=> Remember that Xpetra also provides _fwd headers.
+=> Lib order should respect dependency order (STL, then Teuchos, then Epetra/Tpetra, then Xpetra)
+
+#include fwd declaration of Xpetra classes used only in _def
+=> This is needed for useshortnames.
+
+#include "MueLu_ConfigDefs.hpp"
+=> Must be done before any use of #ifdef macro
+=> If your are using #ifdef to conditionally include headers of other Trilinos packages, put this header on top.
+
+#include "MueLu_MyClass_fwd.hpp"
+=> It will check if forward declaration of MyClass matches the class definition
+
+#include "Base class header.hpp"
+=> Complete declaration of the base class is needed.
+
+#include complete declaration of classes that are used directly in the _decl
+=> ex: inline functions or templated member functions
+
+#include fwd declaration of MueLu classes that are used in the _decl file
+=> Most of the time, fwd declarations are enough, as we are using pointer to type.
+
+#include fwd declaration of MueLu classes used only in _def
+=> This is needed for useshortnames.
+
+//
+// In the MueLu_MyClass_def.hpp:
+//
+
+#include of other lib (STL, Teuchos, Xpetra...) for classes used only in _def
+
+#include "MueLu_Myclass_decl.hpp"
+
+#include complete declaration of MueLu classes that are needed in the _def
+=> list of include should match _fwd.hpp files included in _def
+=> Sometimes, complete declaration might not even be needed in the _def file!
