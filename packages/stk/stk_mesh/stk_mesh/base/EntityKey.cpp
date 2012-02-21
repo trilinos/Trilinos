@@ -27,10 +27,10 @@ EntityKey::EntityKey( EntityRank entity_rank ,
                             sizeof(EntityKey::raw_key_type) >::OK };
 
   ThrowAssertMsg( rank() == entity_rank,
-                  "entity_rank " << entity_rank << " out of range");
+                  "entity_rank out of range, entity_rank= " << entity_rank << " rank() = " << rank() << " entity_id= " << entity_id << " id() = " << id() );
 
   ThrowAssertMsg( id() == entity_id,
-                  "entity_id " << entity_id << " out of range");
+                  "entity_id out of range, entity_rank= " << entity_rank << " rank() = " << rank() << " entity_id= " << entity_id << " id() = " << id() );
 }
 
 
