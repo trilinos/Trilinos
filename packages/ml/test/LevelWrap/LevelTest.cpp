@@ -27,7 +27,9 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 
+#ifdef HAVE_ML_EPETRAEXT
 #include "EpetraExt_MultiVectorOut.h"
+#endif
 
 using namespace Teuchos;
 using namespace Galeri;
@@ -132,7 +134,9 @@ int TestLevelWrapPreconditioner(char ProblemType[],
   solver.SetAztecOption(AZ_output, 10);
   //  solver.SetAztecOption(AZ_kspace, 160);
   
+#ifdef HAVE_ML_EPETRAEXT
   EpetraExt::MultiVectorToMatrixMarketFile("rhs.dat",(*rhs));
+#endif
 
   solver.Iterate(100, 1e-12);
   
