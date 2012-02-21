@@ -47,18 +47,19 @@ ENDIF()
 #
 
 IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-#  XPETRA_ADD_TEST_TPETRA(ParameterList   1-4)
+  XPETRA_ADD_TEST_TPETRA(ParameterList   1-4)
   XPETRA_ADD_TEST_TPETRA(MLParameterList 1-4)
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)
-#  XPETRA_ADD_TEST_EPETRA(ParameterList   1-4)
+  XPETRA_ADD_TEST_EPETRA(ParameterList   1-4)
   XPETRA_ADD_TEST_EPETRA(MLParameterList 1-4)
 ENDIF()
 
 #
 # Stratimikos
 #
+
 IF((${PACKAGE_NAME}_ENABLE_Stratimikos) AND
     (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos))
   
@@ -73,19 +74,19 @@ IF((${PACKAGE_NAME}_ENABLE_Stratimikos) AND
     SOURCE_FILES stratimikos_ParameterList.xml stratimikos_ParameterList2.xml
     )
 
-#   TRIBITS_ADD_TEST(
-#     Stratimikos
-#     NAME Stratimikos
-#     NUM_MPI_PROCS 4
-#     COMM serial mpi
-#     )
+  TRIBITS_ADD_TEST(
+    Stratimikos
+    NAME Stratimikos
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
   
-#   TRIBITS_ADD_TEST(
-#     Stratimikos
-#     NAME Stratimikos2
-#     ARGS "--xml=stratimikos_ParameterList2.xml"
-#     NUM_MPI_PROCS 4
-#     COMM serial mpi
-#     )
+  TRIBITS_ADD_TEST(
+    Stratimikos
+    NAME Stratimikos2
+    ARGS "--xml=stratimikos_ParameterList2.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
   
 ENDIF()
