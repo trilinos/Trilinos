@@ -59,9 +59,30 @@ def run_qconvex_with_input(inputfile,local_nodeidx2global_nodeidx):
   f.close()
   outlines = qconvex_stdout.splitlines()
 
-  #print qconvex_stdout
+  # print qconvex_stdout
   if "ERRONEOUS FACET:" in qconvex_stdout:
     print "Error in qhull"
+    lfacets = []
+    lfacetslength = 0
+    globalnodeidx_for_polygon = []
+    return lfacets, lfacetslength, globalnodeidx_for_polygon
+
+  if "qhull input error: not enough points" in qconvex_stdout:
+    print "Error in qhull: not enough input points"
+    lfacets = []
+    lfacetslength = 0
+    globalnodeidx_for_polygon = []
+    return lfacets, lfacetslength, globalnodeidx_for_polygon
+  
+  if "qhull input error: input is less than 3-dimensional" in qconvex_stdout:
+    print "Error in qhull: input is less than 3-dimensional"
+    lfacets = []
+    lfacetslength = 0
+    globalnodeidx_for_polygon = []
+    return lfacets, lfacetslength, globalnodeidx_for_polygon
+  
+  if "qhull input error: dimension 1 (first number) should be at least 2" in qconvex_stdout:
+    print "Error in qhull: dimension is 1"
     lfacets = []
     lfacetslength = 0
     globalnodeidx_for_polygon = []
