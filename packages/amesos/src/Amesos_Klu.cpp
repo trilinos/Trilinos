@@ -757,8 +757,8 @@ int Amesos_Klu::Solve()
       else 
          SerialB_ = vecB_rcp;
 #else
-      SerialB_ = vecB;
-      SerialX_ = vecX;
+      SerialB_ = Teuchos::rcp(vecB,false);
+      SerialX_ = Teuchos::rcp(vecX,false);
 #endif
       NumVectors_ = Problem_->GetRHS()->NumVectors() ; 
     } else {
