@@ -9,7 +9,6 @@
 #include <string.h>
 #include <iostream>
 #include <complex>
-#include <stdint.h>
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
@@ -943,33 +942,7 @@ namespace stk {
       entities.resize(count);
 
       for(size_t i=0; i<count; ++i) {
-        stk::mesh::EntityId uid1 = static_cast<stk::mesh::EntityId>(ids[i]);
-
-#define ALLOW_INT_ID_SAVE 1
-
-        //srk: in some cases we can avert a crash by checking if the value stored in the ids[i]
-        //  is between 2^31 and 2^32, in which case we can flip the sign bit and recover the
-        //  actual (unsigned) EntityId, stored in ids[] array by callers of this function.
-        if (ids[i] <= 0)
-          {
-#if ALLOW_INT_ID_SAVE
-            int64_t id2 = ids[i];
-            id2 = -id2;
-            uid1 = static_cast<stk::mesh::EntityId>(id2);
-#else
-            uid1 = 0ul;
-#endif
-            //  If ids[i] is == 0, this probably means we have ID's larger than 2^32 and there's
-            //  no hope of salvaging the value.
-            if (uid1 == 0ul)
-              {
-                std::ostringstream msg ;
-                msg << "IossBridge:: INTERNAL_ERROR: id is <= 0 in get_entity_list, id= " << ids[i];
-                throw std::runtime_error( msg.str() );
-              }
-          }
-        //entities[i] = bulk.get_entity( part_type, ids[i] );
-        entities[i] = bulk.get_entity( part_type, uid1 );
+	entities[i] = bulk.get_entity( part_type, ids[i] );
       }
     }
 
@@ -1374,22 +1347,8 @@ namespace stk {
 	  }
 
 	  side_ids[i] = side.identifier();
-    if (!ALLOW_INT_ID_SAVE && side_ids[i] <= 0)
-      {
-        std::ostringstream msg ;
-        msg << "IossBridge:: INTERNAL_ERROR: id is <= 0 in write_side_data_to_ioss, id= " << side_ids[i] << " side.id= " << side.identifier();
-        throw std::runtime_error( msg.str() );
-      }
 
 	  elem_side_ids[i*2]   = rel->entity()->identifier();
-
-    if (!ALLOW_INT_ID_SAVE && elem_side_ids[i*2] <= 0)
-      {
-        std::ostringstream msg ;
-        msg << "IossBridge:: INTERNAL_ERROR: id is <= 0 in write_side_data_to_ioss, id= " << elem_side_ids[i*2] << " elem_side.id= " << rel->entity()->identifier();
-        throw std::runtime_error( msg.str() );
-      }
-
 	  elem_side_ids[i*2+1] = rel->identifier() + 1; // Ioss is 1-based, mesh is 0-based.
 	}
 
@@ -1435,13 +1394,6 @@ namespace stk {
 	for(size_t i=0; i<num_nodes; ++i) {
 	  const mesh::Entity & node = * nodes[i] ;
 	  node_ids[i] = node.identifier();
-    //srk: a place to error out if we don't want to handle (with sign-bit-flip trick) values 2^31..2^32
-    if (!ALLOW_INT_ID_SAVE && node_ids[i] <= 0)
-      {
-        std::ostringstream msg ;
-        msg << "IossBridge:: INTERNAL_ERROR: id is <= 0 in output_node_block, id= " << node_ids[i] << " node.id= " << node.identifier();
-        throw std::runtime_error( msg.str() );
-      }
 	}
 
 	size_t num_ids_written = nb.put_field_data("ids", node_ids);
@@ -1494,24 +1446,11 @@ namespace stk {
 	for (size_t i = 0; i < num_elems; ++i) {
 
 	  elem_ids[i] = elements[i]->identifier();
-    //srk: a place to error out if we don't want to handle (with sign-bit-flip trick) values 2^31..2^32
-    if (!ALLOW_INT_ID_SAVE && elem_ids[i] <= 0)
-      {
-        std::ostringstream msg ;
-        msg << "IossBridge:: INTERNAL_ERROR: id is <= 0 in output_element_block, id= " << elem_ids[i] << " elem.id= " << elements[i]->identifier();
-        throw std::runtime_error( msg.str() );
-      }
 
 	  const mesh::PairIterRelation elem_nodes = elements[i]->relations(no_rank);
 
 	  for (int j = 0; j < nodes_per_elem; ++j) {
 	    connectivity[i * nodes_per_elem+j] = elem_nodes[j].entity()->identifier();
-      if (!ALLOW_INT_ID_SAVE && connectivity[i * nodes_per_elem+j] <= 0)
-        {
-          std::ostringstream msg ;
-          msg << "IossBridge:: INTERNAL_ERROR: id is <= 0 in output_element_block_block, id= " << connectivity[i * nodes_per_elem+j] << " elem_node.id= " << elem_nodes[j].entity()->identifier();
-          throw std::runtime_error( msg.str() );
-        }
 	  }
 	}
 
@@ -1558,13 +1497,6 @@ namespace stk {
 	for(size_t i=0; i<num_nodes; ++i) {
 	  const stk::mesh::Entity & node = * nodes[i] ;
 	  node_ids[i] = node.identifier();
-    //srk: a place to error out if we don't want to handle (with sign-bit-flip trick) values 2^31..2^32
-    if (!ALLOW_INT_ID_SAVE && node_ids[i] <= 0)
-      {
-        std::ostringstream msg ;
-        msg << "IossBridge:: INTERNAL_ERROR: id is <= 0 in output_node_set, id= " << node_ids[i] << " node.id= " << node.identifier();
-        throw std::runtime_error( msg.str() );
-      }
 	}
 	size_t num_ids_written = ns->put_field_data("ids", node_ids);
 	if ( num_nodes != num_ids_written ) {
