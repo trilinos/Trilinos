@@ -8,9 +8,10 @@
 #ifndef MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
 #define MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
 
+#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_CrsOperator_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-//#include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
@@ -26,7 +27,7 @@ namespace MueLu {
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class AggregationExportFactory : public TwoLevelFactoryBase { //public SingleLevelFactoryBase {
+  class AggregationExportFactory : public TwoLevelFactoryBase {
 #undef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 

@@ -36,13 +36,13 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
-#include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
-    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OOperator; //TODO
-    typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOOperator; //TODO
+    //typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorClass;
+    //typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperatorClass;
+    //typedef MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> AggregatesClass;
 
-    Teuchos::RCP<OOperator> A =           fineLevel.Get< Teuchos::RCP<OOperator> >("A", AFact_);
+    Teuchos::RCP<Operator> A =            fineLevel.Get< Teuchos::RCP<Operator> >("A", AFact_);
     Teuchos::RCP<Aggregates> aggregates = fineLevel.Get< Teuchos::RCP<Aggregates> >("Aggregates",AggFact_);
-    LocalOrdinal DofsPerNode =            fineLevel.Get< LocalOrdinal > ("DofsPerNode", CoalesceDropFact_);
+    LocalOrdinal DofsPerNode =                 fineLevel.Get< LocalOrdinal > ("DofsPerNode", CoalesceDropFact_);
 
     Monitor m(*this, "AggregationExportFactory");
 
@@ -53,16 +53,17 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void  AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ExportAggregates(const Teuchos::RCP<Level>& level, const Teuchos::RCP<Aggregates>& aggregates, const Teuchos::RCP<Operator>& Op, LocalOrdinal DofsPerNode) const {
-#include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
+    //typedef Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVectorClass;
+    //typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorClass;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Op->getRowMap()->getComm();
 
-    Teuchos::RCP<LOVector>vertex2AggId_vector = aggregates->GetVertex2AggId();
-    Teuchos::RCP<LOVector>procWinner_vector = aggregates->GetProcWinner();
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> procWinner = aggregates->GetProcWinner()->getDataNonConst(0);
+    Teuchos::RCP<LocalOrdinalVector>vertex2AggId_vector = aggregates->GetVertex2AggId();
+    Teuchos::RCP<LocalOrdinalVector>procWinner_vector = aggregates->GetProcWinner();
+    Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LocalOrdinal> procWinner = aggregates->GetProcWinner()->getDataNonConst(0);
 
-    // 1.) prepare for calculating global aggregate ids
+    // prepare for calculating global aggregate ids
     std::vector<GlobalOrdinal> numAggsGlobal(comm->getSize(),0);
     std::vector<GlobalOrdinal> numAggsLocal(comm->getSize(),0);
     std::vector<GlobalOrdinal> minGlobalAggId(comm->getSize(),0);
@@ -77,7 +78,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > aggToRowMap(aggSizes.size());
     aggregates->ComputeAggregateToRowMap(aggToRowMap);
 
-    // 4.) write to file
+    // write to file
     std::string outFile = outputFileName_;
     std::stringstream streamLevel; streamLevel << level->GetLevelID();
     outFile = replaceAll(outFile,"%LEVELID", streamLevel.str());
@@ -89,9 +90,9 @@ namespace MueLu {
       Teuchos::RCP<const Map> colMap = Op->getColMap();
       std::vector<GlobalOrdinal> nodeIds;
       for (int i=0; i< aggToRowMap.size(); ++i) {
-        fout << "Agg " << minGlobalAggId[comm->getRank()] + i /*+ 1*/ << " Proc " << comm->getRank() << ":";
+        fout << "Agg " << minGlobalAggId[comm->getRank()] + i << " Proc " << comm->getRank() << ":";
         for (int k=0; k< aggToRowMap[i].size(); ++k) {
-          nodeIds.push_back(/*1+*/colMap()->getGlobalElement(aggToRowMap[i][k])/DofsPerNode);
+          nodeIds.push_back(colMap()->getGlobalElement(aggToRowMap[i][k])/DofsPerNode);
         }
 
         // remove duplicate entries from nodeids
@@ -101,7 +102,7 @@ namespace MueLu {
 
         // print out nodeids
         for(typename std::vector<GlobalOrdinal>::iterator printIt = nodeIds.begin(); printIt!=nodeIds.end(); printIt++) {
-    fout << " " << *printIt;
+          fout << " " << *printIt;
         }
         nodeIds.clear();
         fout << std::endl;
