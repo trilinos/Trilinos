@@ -116,6 +116,8 @@
 
 // Tpetra includes
 #include "Tpetra_MultiVector.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include <iterator>
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -168,10 +170,8 @@ namespace {
     /// to set the number of columns in the output multivector.
     /// Otherwise, the two-argument version of \c
     /// sumIntoGlobalValues() won't actually do anything.
-    MultiVectorFillerData (const size_t numColumns) : 
-      numCols_ (numColumns),
-      sourceIndices_ (numColumns),
-      sourceValues_ (numColumns)
+    MultiVectorFillerData () : 
+      numCols_ (0)
     {}
 
     /// \brief Constructor.
@@ -247,8 +247,8 @@ namespace {
       for (size_t j = 0; j < numColumns; ++j) {
 	GoIter rowIterNext = rowIter + numColumns;
 	StIter valIterNext = valIter + numColumns;
-	std::copy (rowIter, rowIterNext, std::back_inserter (sourceIndices_[column]));
-	std::copy (valIter, valIterNext, std::back_inserter (sourceValues_[column]));
+	std::copy (rowIter, rowIterNext, std::back_inserter (sourceIndices_[j]));
+	std::copy (valIter, valIterNext, std::back_inserter (sourceValues_[j]));
 	rowIter = rowIterNext;
 	valIter = valIterNext;
       }
@@ -264,6 +264,8 @@ namespace {
       typedef local_ordinal_type LO;
       typedef global_ordinal_type GO;
       typedef scalar_type ST;
+      typedef node_type NT;
+      typedef Tpetra::Map<LO, GO, NT> map_type;
 
       RCP<const map_type> map = X->getMap();
       Array<LO> localIndices;
@@ -283,7 +285,7 @@ namespace {
 	  localIndices[i] = map->getLocalElement (globalIndicesView[i]);
 	}
 
-	ArrayRCP<ST> X_j = MV.getDataNonConst (j);
+	ArrayRCP<ST> X_j = X->getDataNonConst (j);
 	ArrayView<const ST> localValues = sourceValues_[j].view (0, numIndices);
 	for (typename ArrayView<const GO>::size_type i = 0; i < numIndices; ++i) {
 	  X_j[localIndices[i]] = localValues[i];
@@ -483,9 +485,9 @@ namespace {
     /// \return (the nonlocal Map, whether we had to compute the Map).
     static std::pair<Teuchos::RCP<const map_type>, bool> 
     computeMap (const global_ordinal_type indexBase,
-		const RCP<const Teuchos::Comm<int> >& comm, 
+		const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
 		const Teuchos::RCP<node_type>& node,
-		const RCP<const map_type>& initialMap, 
+		const Teuchos::RCP<const map_type>& initialMap, 
 		Teuchos::ArrayView<const global_ordinal_type> sourceIndices,
 		const bool forceReuseMap);
 
@@ -538,8 +540,10 @@ namespace {
 
   template<class MV>
   Teuchos::Array<typename MultiVectorFiller<MV>::global_ordinal_type>
-  MultiVectorFillter<MV>::getSortedUniqueSourceIndices() 
+  MultiVectorFiller<MV>::getSortedUniqueSourceIndices() 
   {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
     typedef global_ordinal_type GO;
 
     // We've chosen for now to decouple sourceIndices from the
@@ -553,9 +557,9 @@ namespace {
     ArrayView<const GO> sourceIndices = getSourceIndices();
     Array<GO> src (sourceIndices.size());
     std::copy (sourceIndices.begin(), sourceIndices.end(), src.begin());
-    if (! std::is_sorted (src.begin(), src.end())) {
-      std::sort (src.begin(), src.end());
-    }
+    //if (! std::is_sorted (src.begin(), src.end())) {
+    std::sort (src.begin(), src.end());
+    //}
     typename Array<GO>::const_iterator it = std::unique (src.begin(), src.end());
     const size_t newSize = Teuchos::as<size_t> (it - sourceIndices.begin());
     src.resize (newSize);
@@ -567,9 +571,9 @@ namespace {
   std::pair<Teuchos::RCP<const typename MultiVectorFiller<MV>::map_type>, bool> 
   MultiVectorFiller<MV>::
   computeMap (const global_ordinal_type indexBase,
-	      const RCP<const Teuchos::Comm<int> >& comm, 
+	      const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
 	      const Teuchos::RCP<node_type>& node,
-	      const RCP<const map_type>& initialMap, 
+	      const Teuchos::RCP<const map_type>& initialMap, 
 	      Teuchos::ArrayView<const global_ordinal_type> sourceIndices,
 	      const bool forceReuseMap)
   {
@@ -626,6 +630,8 @@ namespace {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef global_ordinal_type GO;
+
+    const size_t numVecs = X_out.getNumVectors();
 
     if (numVecs == 0) {
       // Nothing to do!  Of course, this does not check for whether
@@ -729,6 +735,155 @@ namespace {
     const Tpetra::CombineMode combineMode = Tpetra::ADD;
     X_in->doExport (X_out, exporter_, combineMode);
   }
+
+  /// \class MultiVectorFillerTester
+  /// \brief Tests for \c MultiVectorFiller
+  /// \author Mark Hoemmen
+  ///
+  /// \tparam MV A specialization of \c Tpetra::MultiVector.
+  template<class MV>
+  class MultiVectorFillerTester {
+  public:
+    typedef typename MV::scalar_type scalar_type;
+    typedef typename MV::local_ordinal_type local_ordinal_type;
+    typedef typename MV::global_ordinal_type global_ordinal_type;
+    typedef typename MV::node_type node_type;
+    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+
+    /// \brief Test global assembly when constructor Map = target Map.
+    ///
+    /// Constructor Map = target Map is a common case for finite
+    /// element assembly.  This method current only tests the version
+    /// of \c sumIntoGlobalValues() that works on one column at a
+    /// time.
+    ///
+    /// If any test fails, this method throws an exception.
+    static void 
+    testSameMap (const Teuchos::RCP<const map_type>& targetMap, 
+		 const global_ordinal_type eltSize, // Must be odd
+		 const size_t numCols)
+    {
+      using Teuchos::Array;
+      using Teuchos::ArrayRCP;
+      using Teuchos::ArrayView;
+      using Teuchos::as;
+      using Teuchos::Comm;
+      using Teuchos::ptr;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::REDUCE_SUM;
+      using Teuchos::reduceAll;
+      using std::cerr;
+      using std::endl;
+
+      typedef local_ordinal_type LO;
+      typedef global_ordinal_type GO;
+      typedef scalar_type ST;
+      typedef Teuchos::ScalarTraits<ST> STS;
+
+      TEUCHOS_TEST_FOR_EXCEPTION(eltSize % 2 == 0, std::invalid_argument,
+        "Element size (eltSize) argument must be odd.");
+      TEUCHOS_TEST_FOR_EXCEPTION(numCols == 0, std::invalid_argument,
+        "Number of columns (numCols) argument must be nonzero.");
+
+      //RCP<MV> X = rcp (new MV (targetMap, numCols));
+
+      Array<GO> rows (eltSize);
+      Array<ST> values (eltSize);
+      std::fill (values.begin(), values.end(), STS::one());
+
+      // Make this a pointer so we can free its contents, in case
+      // those contents depend on the input to globalAssemble().
+      RCP<MultiVectorFiller<MV> > filler = 
+	rcp (new MultiVectorFiller<MV> (targetMap, numCols));
+
+      const GO minGlobalIndex = targetMap->getMinGlobalIndex();
+      const GO maxGlobalIndex = targetMap->getMaxGlobalIndex();
+      const GO minAllGlobalIndex = targetMap->getMinAllGlobalIndex();
+      const GO maxAllGlobalIndex = targetMap->getMaxAllGlobalIndex();
+      for (size_t j = 0; j < numCols; ++j) {
+	for (GO i = minGlobalIndex; i <= maxGlobalIndex; ++i) {
+	  // Overlap over processes, without running out of bounds.
+	  const GO start = std::max (i - eltSize/2, minAllGlobalIndex);
+	  const GO end = std::min (i + eltSize/2, maxAllGlobalIndex);
+	  const GO len = end - start + 1;
+
+	  ArrayView<GO> rowsView = rows.view (start, len);
+	  for (GO k = 0; k < len; ++k) {
+	    rowsView[k] = start + k;
+	  }
+	  ArrayView<const ST> valuesView = values.view (start, len);
+	  // Convert rowsView to const view.
+	  filler->sumIntoGlobalValues (rowsView.view(), j, valuesView);
+	}
+      }
+
+      MV X_out (targetMap, numCols);
+      filler->globalAssemble (X_out);
+      filler = Teuchos::null;
+
+      const GO indexBase = targetMap->getIndexBase();
+      Array<GO> errorLocations;
+      for (size_t j = 0; j < numCols; ++j) {
+	ArrayRCP<const ST> X_j = X_out.getData (j);
+
+	// Each entry of the column should have the value eltSize,
+	// except for the first and last few entries in the whole
+	// column (globally, not locally).
+	for (GO i = minGlobalIndex; i <= maxGlobalIndex; ++i) {
+	  const LO localIndex = targetMap->getLocalElement (i);
+	  TEUCHOS_TEST_FOR_EXCEPTION(i == Teuchos::OrdinalTraits<LO>::invalid(),
+            std::logic_error, "Global index " << i << " is not in the multi"
+            "vector's Map.");
+
+	  if (i <= minAllGlobalIndex + eltSize/2) {
+	    if (X_j[localIndex] != STS::one() + as<ST>(i) - as<ST>(indexBase)) {
+	      errorLocations.push_back (i);
+	    }
+	  } 
+	  else if (i >= maxAllGlobalIndex - eltSize/2) {
+	    if (X_j[localIndex] != STS::one() + as<ST>(maxAllGlobalIndex) - as<ST>(i)) {
+	      errorLocations.push_back (i);
+	    }
+	  }
+	  else {
+	    if (X_j[localIndex] != as<ST>(eltSize)) {
+	      errorLocations.push_back (i);
+	    }
+	  }
+	} // for each global index which my process owns
+
+	const typename Array<GO>::size_type localNumErrors = errorLocations.size();
+	typename Array<GO>::size_type globalNumErrors = 0;
+	RCP<Comm<int> > comm = targetMap->getComm();
+	reduceAll (*comm, REDUCE_SUM, localNumErrors, ptr (&globalNumErrors));
+
+	if (globalNumErrors != 0) {
+	  std::ostringstream os;
+	  os << "Proc " << comm->getRank() << ": " << localNumErrors 
+	     << " incorrect value" << (localNumErrors != 1 ? "s" : "") 
+	     << ".  Error locations: [ ";
+	  std::copy (errorLocations.begin(), errorLocations.end(),
+		     std::ostream_iterator<GO> (os, " "));
+	  os << "].";
+	  // Iterate through all processes in the communicator,
+	  // printing out each process' local errors.
+	  for (int p = 0; p < comm->getSize(); ++p) {
+	    if (p = comm->getRank()) {
+	      cerr << os.str() << endl;
+	    }
+	    // Barriers to let output finish.
+	    comm->barrier();
+	    comm->barrier();
+	    comm->barrier();
+	  }
+	  TEUCHOS_TEST_FOR_EXCEPTION(globalNumErrors != 0, std::logic_error, 
+            "Over all procs: " << globalNumErrors << " total error" 
+            << (globalNumErrors != 1 ? "s" : "") << ".");
+	} // if there were any errors in column j
+      } // for each column j
+    }
+  };
 
 } // namespace (anonymous)
 
