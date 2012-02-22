@@ -23,7 +23,7 @@ namespace MueLu {
   DeclareInput(Level & level) const
   {
     level.DeclareInput("A", AFact_.get());
-    level.DeclareInput("coordinates", TransferFact_.get());
+    level.DeclareInput("Coordinates", TransferFact_.get());
   } //DeclareInput()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
@@ -54,9 +54,9 @@ namespace MueLu {
     ss << numPartitions_;
     zoltanObj_->Set_Param("num_global_partitions",ss.str());
 
-    if (level.IsAvailable("coordinates",TransferFact_.get()) == false)
+    if (level.IsAvailable("Coordinates",TransferFact_.get()) == false)
       throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
-    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("coordinates",TransferFact_.get());
+    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates",TransferFact_.get());
     size_t problemDimension_ = XYZ->getNumVectors();
 
     zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,(void *) &*A);
@@ -101,7 +101,7 @@ namespace MueLu {
       //Running on one processor, so decomposition is the trivial one, all zeros.
       decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,true);
     }
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition,this);
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition,this);
 
     zoltanObj_->LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_to_part);
     zoltanObj_->LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_to_part);

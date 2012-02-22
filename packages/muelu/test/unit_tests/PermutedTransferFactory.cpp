@@ -52,7 +52,7 @@ namespace MueLuTests {
     Teuchos::ParameterList list;
     list.set("nx",nx);
     RCP<MultiVector> coordVector = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",A->getRowMap(),list);
-    fineLevel.Set("coordinates",coordVector);
+    fineLevel.Set("Coordinates",coordVector);
 
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
@@ -62,7 +62,7 @@ namespace MueLuTests {
     RCP<RAPFactory>           Acfact = rcp( new RAPFactory() );
     RCP<RFactory>             Rtentfact = rcp( new TransPFactory(Ptentfact) );
 
-    RCP<MultiVectorTransferFactory> mvTransFact = rcp(new MultiVectorTransferFactory("coordinates","R",Rtentfact));
+    RCP<MultiVectorTransferFactory> mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates","R",Rtentfact));
     Acfact->AddTransferFactory(mvTransFact);
     RCP<ZoltanInterface>      zoltan = rcp(new ZoltanInterface(Acfact,mvTransFact));
     RCP<RepartitionFactory> RepartitionFact = rcp(new RepartitionFactory(zoltan,Acfact));
@@ -71,7 +71,7 @@ namespace MueLuTests {
     coarseLevel.Request("Permutation",RepartitionFact.get());  // request permutation matrix
     //coarseLevel.Request("P",Pfact.get());
     coarseLevel.Request("R",Rtentfact.get());
-    coarseLevel.Request("coordinates",mvTransFact.get());
+    coarseLevel.Request("Coordinates",mvTransFact.get());
 
     RCP<PermutedTransferFactory> ptFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, Pfact, MueLu::INTERPOLATION) );
     coarseLevel.Request("P",ptFactory.get());

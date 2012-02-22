@@ -46,7 +46,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("partition",loadBalancer_.get(),this);
+    currentLevel.DeclareInput("Partition",loadBalancer_.get(),this);
   }
 
   //----------------------------------------------------------------------
@@ -140,7 +140,7 @@ namespace MueLu {
     // ======================================================================================================
     // Length of vector "decomposition" is local number of DOFs.  Its entries are partition numbers each DOF belongs to.
 
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition", loadBalancer_.get());
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition", loadBalancer_.get());
 
     // Use a hashtable to record how many local rows belong to each partition.
     RCP<Teuchos::Hashtable<GO,GO> > hashTable;
@@ -474,7 +474,7 @@ namespace MueLu {
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A",AFact_.get());
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     GO numPartitions = currentLevel.Get<GO>("number of partitions");
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition", loadBalancer_.get());
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition", loadBalancer_.get());
     // Figure out how many nnz there are per row.
     RCP<Xpetra::Vector<GO,LO,GO,NO> > nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);
     ArrayRCP<GO> nnzPerRow;

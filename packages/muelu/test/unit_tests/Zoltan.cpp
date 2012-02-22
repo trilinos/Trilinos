@@ -96,17 +96,17 @@ namespace MueLuTests {
     list.set("nx",nx);
     list.set("ny",ny);
     RCP<MultiVector> XYZ = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",rowMap,list);
-    level.Set("coordinates",XYZ);
+    level.Set("Coordinates",XYZ);
 
     LO numPartitions = comm->getSize();
     level.Set("number of partitions",numPartitions);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     //zoltan->SetNumberOfPartitions(numPartitions);
     //zoltan->SetOutputLevel(0); //options are 0=none, 1=summary, 2=every pid prints
-    level.Request("partition",zoltan.get());
+    level.Request("Partition",zoltan.get());
     zoltan->Build(level);
 
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = level.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",zoltan.get());
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = level.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",zoltan.get());
     /* //TODO temporary code to have the trivial decomposition (no change)
     ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
     for (ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)

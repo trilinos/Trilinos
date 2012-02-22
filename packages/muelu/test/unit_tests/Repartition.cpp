@@ -152,10 +152,10 @@ namespace MueLuTests {
     // RepartitionFactory.  Furthermore, that same instance must be supplied to MueLu::RepartitionFactory.
     // Coordinates must be provided, even though they are not used, as the Zoltan interface checks for them.
     RCP<MultiVector> coords = MultiVectorFactory::Build(map,2);
-    level.Set<RCP<MultiVector> >("coordinates",coords);
+    level.Set<RCP<MultiVector> >("Coordinates",coords);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
-    level.Request("partition",zoltan.get());
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.Request("Partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan));
 
@@ -287,10 +287,10 @@ namespace MueLuTests {
     // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
     // Coordinates must be provided, even though they are not used, as the Zoltan interface checks for them.
     RCP<MultiVector> coords = MultiVectorFactory::Build(map,2);
-    level.Set<RCP<MultiVector> >("coordinates",coords);
+    level.Set<RCP<MultiVector> >("Coordinates",coords);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
-    level.Request("partition",zoltan.get());
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.Request("Partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan));
 
@@ -414,10 +414,10 @@ namespace MueLuTests {
     // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
     // Coordinates must be provided, even though they are not used, as the Zoltan interface checks for them.
     RCP<MultiVector> coords = MultiVectorFactory::Build(map,2);
-    level.Set<RCP<MultiVector> >("coordinates",coords);
+    level.Set<RCP<MultiVector> >("Coordinates",coords);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
-    level.Request("partition",zoltan.get());
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.Request("Partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan));
 
@@ -541,11 +541,11 @@ namespace MueLuTests {
     // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
     // Coordinates must be provided, even though they are not used, as the Zoltan interface checks for them.
     RCP<MultiVector> coords = MultiVectorFactory::Build(map,2);
-    level.Set<RCP<MultiVector> >("coordinates",coords);
+    level.Set<RCP<MultiVector> >("Coordinates",coords);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     level.Set<GO>("number of partitions",3);
-    level.Request("partition",zoltan.get());
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.Request("Partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan));
 
@@ -669,11 +669,11 @@ namespace MueLuTests {
     // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
     // Coordinates must be provided, even though they are not used, as the Zoltan interface checks for them.
     RCP<MultiVector> coords = MultiVectorFactory::Build(map,2);
-    level.Set<RCP<MultiVector> >("coordinates",coords);
+    level.Set<RCP<MultiVector> >("Coordinates",coords);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     level.Set<GO>("number of partitions",3);
-    level.Request("partition",zoltan.get());
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.Request("Partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan));
     level.Request("Permutation",repart.get());  // request permutation matrix
@@ -834,11 +834,11 @@ namespace MueLuTests {
     // Repartition.  Furthermore, that same instance must be supplied to MueLu::Repartition.
     // Coordinates must be provided, even though they are not used, as the Zoltan interface checks for them.
     RCP<MultiVector> coords = MultiVectorFactory::Build(map,2);
-    level.Set<RCP<MultiVector> >("coordinates",coords);
+    level.Set<RCP<MultiVector> >("Coordinates",coords);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     level.Set<GO>("number of partitions",3);
-    level.Request("partition",zoltan.get());
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition, zoltan.get());
+    level.Request("Partition",zoltan.get());
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan));
     level.Request("Permutation",repart.get());  // request permutation matrix
