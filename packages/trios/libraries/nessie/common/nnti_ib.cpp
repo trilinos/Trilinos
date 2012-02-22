@@ -1032,6 +1032,8 @@ NNTI_result_t NNTI_ib_unregister_memory (
 #endif
     destroy_mr_sge_wr(ib_mem_hdl);
 
+    if (ib_mem_hdl) free(ib_mem_hdl);
+
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
     IB_SET_MATCH_ANY(&reg_buf->buffer_owner);
     reg_buf->ops               = (NNTI_buf_ops_t)0;

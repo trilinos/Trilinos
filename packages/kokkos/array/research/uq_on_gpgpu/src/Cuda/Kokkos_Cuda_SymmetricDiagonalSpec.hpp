@@ -47,65 +47,45 @@
 #include <Cuda/Kokkos_Cuda_Parallel.hpp>
 
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
 namespace Kokkos {
+namespace Impl {
 
 template<>
-class SymmetricDiagonalSpec< Cuda > {
+class Multiply< SymmetricDiagonalSpec< Cuda > , void , void >
+{
 public:
   typedef Cuda                    device_type ;
   typedef device_type::size_type  size_type ;
-
-  inline
-  __device__ __host__
-  size_type dimension() const { return m_dimension ; }
-
-  inline
-  __device__ __host__
-  size_type size() const
-    { return ( m_dimension * ( m_dimension + 1 ) ) >> 1 ; }
-
-  __device__ __host__
-  size_type offset( const size_type row , const size_type column ) const
-    {
-      const int diag_count = 1 + ( m_dimension >> 1 );
-      const int diag = (int) column - (int) row ;
-
-      size_type offset = 0 ;
-
-      if ( ( 0 <= diag && diag < diag_count ) || ( diag <= - diag_count ) ) {
-        offset = row + m_dimension * ( ( m_dimension + diag ) % m_dimension );
-      }
-      else {
-        offset = column + m_dimension * ( ( m_dimension - diag ) % m_dimension );
-      }
-
-      return offset ;
-    }
-
-  //--------------------------------------------------------------------------
+  typedef SymmetricDiagonalSpec< Cuda > block_type ;
 
   template< typename VectorValue >
   __host__
-  size_type shmem_size() const
-    { return 2 * sizeof(VectorValue) * Impl::CudaTraits::warp_align( m_dimension ); }
-  
+  static size_type shmem_size( const block_type & block )
+  {
+    return 2 * sizeof(VectorValue) *
+           Impl::CudaTraits::warp_align( block.dimension() );
+  }
 
-  // Required: m_dimension == blockDim.x
+  __host__
+  static size_type matrix_size( const block_type & block )
+    { return block.matrix_size(); }
+
+  // Required: block.dimension() == blockDim.x
   template< typename MatrixValue , typename VectorValue >
   __device__
-  void multiply( const MatrixValue *       a ,
-                 const VectorValue * const x ,
-                       VectorValue & y ) const
+  static void apply( const block_type  & block ,
+                     const MatrixValue *       a ,
+                     const VectorValue * const x ,
+                           VectorValue & y )
   {
     VectorValue * const sh = kokkos_impl_cuda_shared_memory<VectorValue>();
-
-    const size_type shared_offset = Impl::CudaTraits::warp_align( m_dimension );
+    const size_type dimension     = block.dimension();
+    const size_type shared_offset = Impl::CudaTraits::warp_align( dimension );
 
     // Number of full diagonals
     // If even number of diagonals then the last diagonal is half length
-    const size_type dim_half = ( m_dimension + 1 ) >> 1 ;
+    const size_type dim_half = ( dimension + 1 ) >> 1 ;
 
     // Coalesced memory load of input vector
     sh[ threadIdx.x ] = x[ threadIdx.x ];
@@ -119,13 +99,13 @@ public:
 
     for ( size_type d = 1 ; d < dim_half ; ++d ) {
 
-      a += m_dimension ; // next diagonal
+      a += dimension ; // next diagonal
 
       sh[ threadIdx.x + shared_offset ] = a[ threadIdx.x ];
 
       ++kx ;
-      if ( m_dimension == kx ) kx = 0 ;
-      if ( 0 == kxr ) kxr = m_dimension ;
+      if ( dimension == kx ) kx = 0 ;
+      if ( 0 == kxr ) kxr = dimension ;
       --kxr ;
 
       __syncthreads(); // Wait for matrix diagonal to load
@@ -135,12 +115,12 @@ public:
     }
 
     // If even number of diagonals then the last diagonal is half-length
-    if ( ! ( m_dimension & 01 ) ) {
+    if ( ! ( dimension & 01 ) ) {
 
-      a += m_dimension ; // next diagonal
+      a += dimension ; // next diagonal
 
       ++kx ;
-      if ( m_dimension == kx ) kx = 0 ;
+      if ( dimension == kx ) kx = 0 ;
 
       if ( threadIdx.x < dim_half ) {
         sh[ threadIdx.x + shared_offset ] = a[ threadIdx.x ];
@@ -155,27 +135,9 @@ public:
       y += sh[ kxr + shared_offset ] * sh[ kx ];
     }
   }
-
-  //--------------------------------------------------------------------------
-
-  SymmetricDiagonalSpec()
-    : m_dimension( 0 ) {}
-
-  SymmetricDiagonalSpec( const SymmetricDiagonalSpec & rhs )
-    : m_dimension( rhs.m_dimension ) {}
-
-  SymmetricDiagonalSpec & operator =
-    ( const SymmetricDiagonalSpec & rhs )
-      { m_dimension = rhs.m_dimension ; return *this ; }
-
-  explicit
-  SymmetricDiagonalSpec( const size_type dim )
-    : m_dimension( dim ) {}
-
-private:
-  size_type m_dimension ;
 };
 
+} /* namespace Impl */
 } /* namespace Kokkos */
 
 //----------------------------------------------------------------------------

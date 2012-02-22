@@ -782,7 +782,6 @@ int NNTI_ptl_unregister_memory (
 
 cleanup:
 
-    //  This was caught by valgrind. Allocated in NNTI_ptl_register_memory
     if (ptls_mem_hdl) free (ptls_mem_hdl);
 
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;

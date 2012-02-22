@@ -117,7 +117,7 @@
     <Dependency name="Zoltan" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="LO"/>
-    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="EpetraExt" type="LR"/>
     <EmailAddresses>
       <Email address="isorropia-regression@software.sandia.gov"/>
     </EmailAddresses>

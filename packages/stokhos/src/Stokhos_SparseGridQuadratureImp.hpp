@@ -29,9 +29,8 @@
 // @HEADER
 
 #include "TriKota_ConfigDefs.hpp"
-#include "sandia_sgmg.H"
-#include "sandia_rules.H"
-#include "pecos_global_defs.hpp"
+#include "sandia_sgmg.hpp"
+#include "sandia_rules.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 template <typename ordinal_type, typename value_type>
@@ -39,7 +38,8 @@ Stokhos::SparseGridQuadrature<ordinal_type, value_type>::
 SparseGridQuadrature(
   const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis,
   ordinal_type sparse_grid_level,
-  value_type duplicate_tol) :
+  value_type duplicate_tol,
+  ordinal_type growth_rate) :
   coordinate_bases(product_basis->getCoordinateBases())
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
@@ -61,15 +61,14 @@ SparseGridQuadrature(
   //std::cout << "Sparse grid level = " << level << std::endl;
 
   // Compute quad points, weights, values
-  Teuchos::Array<int> rules(d), growthRules(d);
+  Teuchos::Array<typename OneDOrthogPolyBasis<ordinal_type,value_type>::LevelToOrderFnPtr> growth_rules(d);
   
   Teuchos::Array< void (*) ( int order, int dim, double x[] ) > compute1DPoints(d);
   Teuchos::Array< void (*) ( int order, int dim, double w[] ) > compute1DWeights(d);
   for (ordinal_type i=0; i<d; i++) {
     compute1DPoints[i] = &(getMyPoints);
     compute1DWeights[i] = &(getMyWeights);
-    rules[i] = coordinate_bases[i]->getSparseGridRule();
-    growthRules[i] = coordinate_bases[i]->getSparseGridGrowthRule();
+    growth_rules[i] = coordinate_bases[i]->getSparseGridGrowthRule();
   }
 
   // Set the static sparse grid quadrature pointer to this
@@ -79,10 +78,10 @@ SparseGridQuadrature(
   sgq = this;
 
   int num_total_pts  =
-    webbur::sgmg_size_total(d, level, &rules[0], &growthRules[0]);
+    webbur::sgmg_size_total(d, level, growth_rate, &growth_rules[0]);
   ordinal_type ntot =
-    webbur::sgmg_size(d, level, &rules[0], &compute1DPoints[0], 1e-15,
-		      &growthRules[0]);
+    webbur::sgmg_size(d, level, &compute1DPoints[0], duplicate_tol, 
+                      growth_rate, &growth_rules[0]);
   Teuchos::Array<int> sparse_order(ntot*d);
   Teuchos::Array<int> sparse_index(ntot*d);
   Teuchos::Array<int> sparse_unique_index(num_total_pts);
@@ -91,23 +90,23 @@ SparseGridQuadrature(
   quad_values.resize(ntot);
   Teuchos::Array<value_type> gp(ntot*d);
 
-  webbur::sgmg_unique_index(d, level, &rules[0], &compute1DPoints[0],
+  webbur::sgmg_unique_index(d, level, &compute1DPoints[0],
 			    duplicate_tol, ntot, num_total_pts, 
-			    &growthRules[0],
+			    growth_rate, &growth_rules[0],
 			    &sparse_unique_index[0]);
-  webbur::sgmg_index(d, level, &rules[0], ntot, num_total_pts, 
-		     &sparse_unique_index[0],
-		     &growthRules[0], 
+  webbur::sgmg_index(d, level, ntot, num_total_pts, 
+		     &sparse_unique_index[0], growth_rate, 
+		     &growth_rules[0], 
 		     &sparse_order[0], &sparse_index[0]);
-  webbur::sgmg_weight(d, level, &rules[0], &compute1DWeights[0],
+  webbur::sgmg_weight(d, level, &compute1DWeights[0],
 		      ntot, num_total_pts, 
-		      &sparse_unique_index[0], 
-		      &growthRules[0],
+		      &sparse_unique_index[0], growth_rate,
+		      &growth_rules[0],
 		      &quad_weights[0]);
-  webbur::sgmg_point(d, level, &rules[0], &compute1DPoints[0],
+  webbur::sgmg_point(d, level, &compute1DPoints[0],
 		     ntot, &sparse_order[0], 
-		     &sparse_index[0], 
-		     &growthRules[0], 
+		     &sparse_index[0], growth_rate,
+		     &growth_rules[0], 
 		     &gp[0]);
   
   for (ordinal_type i=0; i<ntot; i++) {
@@ -150,28 +149,13 @@ void
 Stokhos::SparseGridQuadrature<ordinal_type,value_type>::
 getMyPoints( int order, int dim, double x[] )
 {
-  if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
-      Pecos::CLENSHAW_CURTIS)
-    webbur::clenshaw_curtis_compute_points(order, x);
-  else if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
-	   Pecos::GAUSS_PATTERSON)
-    webbur::patterson_lookup_points(order, x);
-  else if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
-	   Pecos::GENZ_KEISTER) {
-    webbur::hermite_genz_keister_lookup_points(order, x);
-    double factor = 1.0/std::sqrt(2.0);
-    for (int i=0; i<order; i++)
-      x[i] *= factor;
-  }
-  else {
-    Teuchos::Array<double> quad_points;
-    Teuchos::Array<double> quad_weights;
-    Teuchos::Array< Teuchos::Array<double> > quad_values;
-    sgq->coordinate_bases[dim]->getQuadPoints(2*order-1, quad_points, 
-					      quad_weights, quad_values);
-    for (int i = 0; i<quad_points.size(); i++) {
-      x[i] = quad_points[i];
-    }
+  Teuchos::Array<double> quad_points;
+  Teuchos::Array<double> quad_weights;
+  Teuchos::Array< Teuchos::Array<double> > quad_values;
+  sgq->coordinate_bases[dim]->getQuadPoints(2*order-1, quad_points, 
+                                            quad_weights, quad_values);
+  for (int i = 0; i<quad_points.size(); i++) {
+    x[i] = quad_points[i];
   }
 }
 
@@ -180,35 +164,13 @@ void
 Stokhos::SparseGridQuadrature<ordinal_type,value_type>::
 getMyWeights( int order, int dim, double w[] )
 {
-  if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
-      Pecos::CLENSHAW_CURTIS) {
-    webbur::clenshaw_curtis_compute_weights(order, w);
-    for (int i=0; i<order; i++)
-      w[i] *= 0.5;
-  }
-  else if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
-	   Pecos::GAUSS_PATTERSON) {
-    webbur::patterson_lookup_weights(order, w);
-    for (int i=0; i<order; i++)
-      w[i] *= 0.5;
-  }
-  else if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
-	   Pecos::GENZ_KEISTER) {
-    webbur::hermite_genz_keister_lookup_weights(order, w);
-    double pi = 4.0*std::atan(1.0);
-    double factor = 1.0/std::sqrt(pi);
-    for (int i=0; i<order; i++)
-      w[i] *= factor;
-  }
-  else {
-    Teuchos::Array<double> quad_points;
-    Teuchos::Array<double> quad_weights;
-    Teuchos::Array< Teuchos::Array<double> > quad_values;
-    sgq->coordinate_bases[dim]->getQuadPoints(2*order-1, quad_points, 
-					      quad_weights, quad_values);
-    for (int i = 0; i<quad_points.size(); i++) {
-      w[i] = quad_weights[i];
-    }
+  Teuchos::Array<double> quad_points;
+  Teuchos::Array<double> quad_weights;
+  Teuchos::Array< Teuchos::Array<double> > quad_values;
+  sgq->coordinate_bases[dim]->getQuadPoints(2*order-1, quad_points, 
+                                            quad_weights, quad_values);
+  for (int i = 0; i<quad_points.size(); i++) {
+    w[i] = quad_weights[i];
   }
 }
 

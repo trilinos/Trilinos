@@ -39,11 +39,9 @@ RecurrenceBasis(const std::string& name_, ordinal_type p_, bool normalize_) :
   normalize(normalize_),
   quad_zero_tol(1.0e-14),
 #ifdef HAVE_STOKHOS_DAKOTA
-  sparse_grid_rule(Pecos::GOLUB_WELSCH),
-  sparse_grid_growth_rule(Pecos::DEFAULT_GROWTH),
+  sparse_grid_growth_rule(webbur::level_to_order_linear_nn),
 #else
-  sparse_grid_rule(-1),
-  sparse_grid_growth_rule(-1),
+  sparse_grid_growth_rule(NULL),
 #endif
   alpha(p+1, value_type(0.0)),
   beta(p+1, value_type(0.0)),
@@ -60,7 +58,6 @@ RecurrenceBasis(ordinal_type p_, const RecurrenceBasis& basis) :
   p(p_),
   normalize(basis.normalize),
   quad_zero_tol(basis.quad_zero_tol),
-  sparse_grid_rule(basis.sparse_grid_rule),
   sparse_grid_growth_rule(basis.sparse_grid_growth_rule),
   alpha(p+1, value_type(0.0)),
   beta(p+1, value_type(0.0)),

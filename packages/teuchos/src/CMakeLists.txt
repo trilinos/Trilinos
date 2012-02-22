@@ -80,6 +80,7 @@ APPEND_SET(HEADERS
   Teuchos_ExplicitInstantiationHelpers.hpp
   Teuchos_F77_wrappers.h
   Teuchos_FancyOStream.hpp
+  Teuchos_FilteredIterator.hpp
   Teuchos_Flops.hpp
   Teuchos_FunctionObject.hpp
   Teuchos_GlobalMPISession.hpp
@@ -147,6 +148,7 @@ APPEND_SET(HEADERS
   Teuchos_StandardMemberCompositionMacros.hpp
   Teuchos_StandardParameterEntryValidators.hpp
   Teuchos_StaticSetupMacro.hpp
+  Teuchos_StringIndexedOrderedValueObjectContainer.hpp
   Teuchos_StringToIntMap.hpp
   Teuchos_TableColumn.hpp
   Teuchos_TableEntry.hpp

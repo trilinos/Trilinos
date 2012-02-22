@@ -147,6 +147,24 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentSublistNames )
   TEST_ASSERT( !haveSameValues(A,B) ); // sublist names matter
 }
 
+/*
+TEUCHOS_UNIT_TEST( Teuchos_ParameterList, orderedParams )
+{
+  typedef ParameterList::ConstIterator ConstIter;
+  ParameterList pl;
+  pl.set("b", 1);
+  pl.set("a", 2);
+  ConstIter pl_itr = pl.begin();
+  TEST_EQUALITY_CONST(pl_itr->first, "b");
+  ECHO(++pl_itr);
+  TEST_EQUALITY_CONST(pl_itr->first, "a");
+}
+*/
+
+// TEUCHOS_UNIT_TEST( Teuchos_ParameterList, orderedParamsAndSublists )
+
+// TEUCHOS_UNIT_TEST( Teuchos_ParameterList, indexedSetGet )
+
 
 } // namespace Teuchos
 

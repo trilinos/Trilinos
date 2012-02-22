@@ -33,6 +33,7 @@
 #include "AnasaziTypes.hpp"
 
 #include "AnasaziSpecializedEpetraAdapter.hpp"
+#include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 
@@ -122,7 +123,7 @@ int main(int argc, char *argv[])
   
   RCP<BlockPCGSolver> opStiffness = rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
   opStiffness->setPreconditioner( 0 );
-  RCP<const Anasazi::EpetraOpMVGenOp> InverseOp = rcp( new Anasazi::EpetraOpMVGenOp( opStiffness, K ) );
+  RCP<const Anasazi::EpetraGenOp> InverseOp = rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
 
   // Create the initial vectors
   int blockSize = 3;
@@ -240,8 +241,8 @@ int main(int argc, char *argv[])
       T(i,i) = evals[i].realpart;
     }
 
-    RCP<OP> KOp = rcp( new Anasazi::EpetraOpMVOp( K ));    
-    RCP<OP> MOp = rcp( new Anasazi::EpetraOpMVOp( M ));    
+    RCP<OP> KOp = rcp( new Anasazi::EpetraOp( K ));    
+    RCP<OP> MOp = rcp( new Anasazi::EpetraOp( M ));    
     RCP<MV> Mvecs = MVT::Clone( *evecs, numev ),
                     Kvecs = MVT::Clone( *evecs, numev );
     OPT::Apply( *KOp, *evecs, *Kvecs );

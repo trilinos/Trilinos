@@ -311,43 +311,7 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type size() const { return m_dimen ; }
-
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension() const { return m_dimen ; }
-
-  template< typename MatrixValue , typename VectorValue >
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void multiply( const MatrixValue *       a ,
-                 const VectorValue * const x ,
-                       VectorValue * const y ) const
-  {
-    const size_type nEntry = m_value.length();
-    for ( size_type iEntry = 0 ; iEntry < nEntry ; ++iEntry ) {
-      const size_type i = m_coord(iEntry,0);
-      const size_type j = m_coord(iEntry,1);
-      const size_type k = m_coord(iEntry,2);
-      const size_type v = m_value(iEntry);
-
-      const bool neq_ij = i != j ;
-      const bool neq_jk = j != k ;
-      const bool neq_ki = k != i ;
-
-      y[k] += neq_ij ? v * ( a[i] * x[j] + x[i] * a[j] )
-                     : v * ( a[i] * x[i] );
-
-      if ( neq_jk ) {
-        y[j] += neq_ki ? v * ( a[i] * x[k] + x[i] * a[k] )
-                       : v * ( a[i] * x[i] );
-      }
-
-      if ( neq_ki && neq_ij ) {
-        y[i] += neq_jk ? v * ( a[k] * x[j] + x[k] * a[j] )
-                       : v * ( a[j] * x[j] );
-      }
-    }
-  }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -370,9 +334,8 @@ private:
   Kokkos::MultiVector< value_type , device_type >  m_value ;
   size_type                                        m_dimen ;
 
-  template< unsigned R , typename V , class D , class I >
-  friend
-  class Impl::CreateSparseProductTensor ;
+  template< class T , class I >
+  friend class Impl::CreateSparseProductTensor ;
 };
 
 //----------------------------------------------------------------------------

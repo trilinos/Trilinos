@@ -121,6 +121,14 @@
   TEUCHOS_TEST_ITER_EQUALITY( iter1, iter2, out, success )
 
 
+/** \brief Assert that two iterators are NOT equal.
+ *
+ * \ingroup Teuchos_UnitTestAssertMacros_grp
+ */
+#define TEST_ITER_INEQUALITY( iter1, iter2 ) \
+  TEUCHOS_TEST_ITER_INEQUALITY( iter1, iter2, out, success )
+
+
 /** \brief Assert that a[i] == val.
  *
  * \ingroup Teuchos_UnitTestAssertMacros_grp

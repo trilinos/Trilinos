@@ -73,12 +73,6 @@ public:
   /** \brief  Storage size for block coefficients */
   size_type size() const ;
 
-  /** \brief  Matrix-vector multiply */
-  template< typename MatrixValueType , typename VectorValueType >
-  void multiply( const MatrixValueType * A ,
-                 const VectorValueType * x ,
-                       VectorValueType * y ) const ;
-
   ~SymmetricDiagonalSpec();
   SymmetricDiagonalSpec();
   SymmetricDiagonalSpec( const SymmetricDiagonalSpec & );

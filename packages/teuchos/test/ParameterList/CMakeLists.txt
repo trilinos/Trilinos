@@ -3,6 +3,15 @@ INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  StringIndexedOrderedValueObjectContainer_UnitTests
+  SOURCES
+    StringIndexedOrderedValueObjectContainer_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
 TRIBITS_ADD_LIBRARY(
   teuchos_xml_pl_test_helpers
   HEADERS Teuchos_XMLParameterListTestHelpers.hpp

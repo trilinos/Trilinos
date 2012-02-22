@@ -57,7 +57,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
       cout << PrintMsg_ << "Null space type      = default (constants)" << endl;
   } //"default vectors"
 
-  else if (option == "from coordinates")
+  else if (option == "elasticity from coordinates")
   {
     //TODO could add an option to provide center of rotations
 //int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double rbm[], int Ndof)
@@ -66,26 +66,27 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     double *in_z_coord = List_.get("z-coordinates", (double *)0);
 
     //NullSpaceDim = List_.get("null space: dimension", NumPDEEqns_);
-    if (in_z_coord == 0) NullSpaceDim = 3;
-    else                 NullSpaceDim = 6;
+    if      (in_y_coord == 0) NullSpaceDim = 1;
+    else if (in_z_coord == 0) NullSpaceDim = 3;
+    else                      NullSpaceDim = 6;
 
-    if (in_x_coord == 0 || in_y_coord == 0) {
+    if (in_x_coord == 0) {
       if (Comm().MyPID() == 0) 
         cerr << ErrorMsg_ << "You asked for the near null-space from coordinates," << endl
-             << ErrorMsg_ << "but either x- or y-coordinate vector is NULL!" << endl;
+             << ErrorMsg_ << "but x-coordinate vector is NULL!" << endl;
       ML_EXIT(EXIT_FAILURE);
     }
 
     NullSpacePtr = new double[NullSpaceDim*NumMyRows()];
     ML_Coord2RBM(NumMyRows()/NumPDEEqns_, in_x_coord, in_y_coord, in_z_coord, NullSpacePtr,
-                 NumPDEEqns_, NullSpaceDim);
+                 NumPDEEqns_);
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr, RowMatrix_->NumMyRows());
     if (verbose_) {
-      cout << PrintMsg_ << "Null space type      = computed from coordinates" << endl;
+      cout << PrintMsg_ << "Null space type      = elasticity from coordinates" << endl;
       cout << PrintMsg_ << "  (This option ignores any user-specified nullspace dimension.)" << endl;
     }
 
-  } //"from coordinates" 
+  } //"elasticity from coordinates" 
 
   else if (option == "pre-computed") 
   {
@@ -276,7 +277,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     cerr << ErrorMsg_ << "Option `null space: type' not recognized ("
 	 << option << ")" << endl
 	 << ErrorMsg_ << "It should be:" << endl
-	 << ErrorMsg_ << "<default vectors> / <pre-computed> / <from coordinates> / <enriched>" << endl;
+	 << ErrorMsg_ << "<default vectors> / <pre-computed> / <elasticity from coordinates> / <enriched>" << endl;
     exit(EXIT_FAILURE);
   }
   

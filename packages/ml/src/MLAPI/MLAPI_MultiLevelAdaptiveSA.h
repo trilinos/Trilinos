@@ -506,10 +506,10 @@ public:
         break;
       }
 
-      MultiVector F(A(level + 1).GetDomainSpace());
-      F = 0.0;
+      MultiVector locF(A(level + 1).GetDomainSpace());
+      locF = 0.0;
       MyEnergyBefore = sqrt((A(level + 1) * NS) * NS);
-      S(level + 1).Apply(F, NS);
+      S(level + 1).Apply(locF, NS);
       MyEnergyAfter = sqrt((A(level + 1) * NS) * NS);
       if (GetPrintLevel() == 0) {
         cout << "Energy before smoothing = " << MyEnergyBefore << endl;
@@ -527,8 +527,8 @@ public:
 
     // interpolate candidate back to fine level
     int MaxLevels = level;
-    for (int level = MaxLevels ; level > 0 ; --level) {
-      NS = P(level - 1) * NS;
+    for (int j = MaxLevels ; j > 0 ; --j) {
+      NS = P(j - 1) * NS;
     }
 
     F.Reshape(A(0).GetDomainSpace());
@@ -851,8 +851,8 @@ public:
 private:
 
   //! Returns the smoothed prolongator operator.
-  void GetSmoothedP(Operator A, Teuchos::ParameterList& List, MultiVector& NS,
-                    Operator& P, MultiVector& NewNS)
+  void GetSmoothedP(Operator Aop, Teuchos::ParameterList& List, MultiVector& NS,
+                    Operator& Pop, MultiVector& NewNS)
   {
     double LambdaMax;
     Operator IminusA;
@@ -861,14 +861,14 @@ private:
 
     Operator Ptent;
 
-    GetPtent(A, List, NS, Ptent, NewNS);
+    GetPtent(Aop, List, NS, Ptent, NewNS);
 
     if (EigenAnalysis == "Anorm")
-      LambdaMax = MaxEigAnorm(A,true);
+      LambdaMax = MaxEigAnorm(Aop,true);
     else if (EigenAnalysis == "cg")
-      LambdaMax = MaxEigCG(A,true);
+      LambdaMax = MaxEigCG(Aop,true);
     else if (EigenAnalysis == "power-method")
-      LambdaMax = MaxEigPowerMethod(A,true);
+      LambdaMax = MaxEigPowerMethod(Aop,true);
     else
       ML_THROW("incorrect parameter (" + EigenAnalysis + ")", -1);
 
@@ -879,15 +879,15 @@ private:
     }
 
     if (Damping != 0.0) {
-      IminusA = GetJacobiIterationOperator(A, Damping / LambdaMax);
-      P = IminusA * Ptent;
+      IminusA = GetJacobiIterationOperator(Aop, Damping / LambdaMax);
+      Pop = IminusA * Ptent;
     }
     else
-      P = Ptent;
+      Pop = Ptent;
 
-    // fix the number of equations in P, so that GetRAP() will
+    // fix the number of equations in Pop, so that GetRAP() will
     // get the correct number for C= RAP
-    P.GetML_Operator()->num_PDEs = Ptent.GetML_Operator()->num_PDEs;
+    Pop.GetML_Operator()->num_PDEs = Ptent.GetML_Operator()->num_PDEs;
 
     return;
   }

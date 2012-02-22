@@ -340,6 +340,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    double t0;
    t0 =  GetClock();
 #endif
+   widget.Adiag = NULL;
 
    Amat = &(ml->Amat[level]);
    numSmSweeps = ML_Aggregate_Get_DampingSweeps(ag,level);
@@ -361,6 +362,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    widget.near_bdry = NULL;
    Amat->num_PDEs = ag->num_PDE_eqns;
    prev_P_tentatives = ag->P_tentative;
+#ifdef USE_MOREACCURATE
+if (Amat->diagonal == NULL) ML_Operator_Getrow_Diag(Amat, &(widget.Adiag));
+else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
+#endif
+
 
    /*
    widget.near_bdry = (char *) ML_allocate(sizeof(char)*Amat->outvec_leng);
@@ -488,6 +494,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
          if (ml->symmetrize_matrix ==ML_TRUE) ML_Krylov_Set_Amatrix(kdata, t3);
          else ML_Krylov_Set_Amatrix(kdata, Amat);
          ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+         /* This is a bit screwy in that max_eigen corresponds to Dinv A. */
+         /* This is good for Cheby smoothers but bad for smoothed agg     */
+         /* if we actually filter A (significantly) as we should compute  */
+         /* the eigenvalue of Dinv Afilt.                                 */
          max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
 
          Amat->lambda_max = max_eigen; 
@@ -607,7 +617,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
                                    widget.Amat->matvec->Nrows, NULL, 0);
      ML_Operator_Set_Getrow(AGGsmoother, 
                             widget.Amat->getrow->Nrows, 
+#ifdef USE_MOREACCURATE
+                            ML_AGG_JacobiMoreAccurate_Getrows);
+#else
                             ML_AGG_JacobiSmoother_Getrows);
+#endif
      ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
                            widget.Amat->getrow->pre_comm);
 
@@ -910,6 +924,180 @@ int ML_AGG_JacobiSmoother_Getrows(ML_Operator *data, int N_requested_rows,
    for (i = 0; i < row_lengths[0]; i++) 
       values[i] *= -widget->omega;
    values[diag] += 1.;
+#endif
+#endif
+
+   return(1);
+}
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* getrow function I - w Dinv A. This one is more accurate than the standard */
+/* ML one as it uses the same style of dropping as was done for the          */
+/* aggregation. Additionally, the Dinv is that of filtered A.                */
+/* ------------------------------------------------------------------------- */
+
+int ML_AGG_JacobiMoreAccurate_Getrows(ML_Operator *data, int N_requested_rows, 
+   int requested_rows[], int allocated_space, int columns[], 
+   double values[], int row_lengths[])
+{
+   struct ML_AGG_Matrix_Context *widget;
+   ML_GetrowFunc  *getrow_obj;
+   int            info, diag = -1, i, j /*, *aggr_info */;
+   double         diag_val = 1.0, dropped, threshold = 0.0, *thediag;
+   ML_Operator    *mat_in;
+
+   mat_in = (ML_Operator *) data;
+   widget = (struct ML_AGG_Matrix_Context *) ML_Get_MyGetrowData(mat_in);
+   if (widget->near_bdry != NULL) {
+     if (widget->near_bdry[requested_rows[0]] == 'T') {
+       if (allocated_space < 1) return(0);
+       columns[0] = requested_rows[0];
+       values[0]  = 1.0;
+       row_lengths[0] = 1;
+       return(1);
+     }
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* error checking                                                    */
+   /* ----------------------------------------------------------------- */
+
+   getrow_obj = widget->Amat->getrow;
+   if (N_requested_rows > 1) 
+   {
+      printf("Too bad. This routine only works with 1 row at a time\n");
+      exit(1);
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* if omega = 0, just return identity                                */
+   /* ----------------------------------------------------------------- */
+
+   if ( widget->omega == 0.0 )
+   {
+      row_lengths[0] = 1;
+      values[0] = 1.0;
+      columns[0] = requested_rows[0];
+      return 1;
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* fetch row                                                         */
+   /* ----------------------------------------------------------------- */
+
+   info = getrow_obj->func_ptr(widget->Amat, N_requested_rows,
+			    requested_rows, allocated_space, columns,
+			    values, row_lengths);
+   if (info == 0) return(0);
+
+   /* ----------------------------------------------------------------- */
+   /* compute threshold for dropping                                    */
+   /* ----------------------------------------------------------------- */
+
+thediag = widget->Adiag;
+   if ( widget->drop_tol > 0.0 )
+   {
+      for (i = 0; i < -row_lengths[0]; i++) 
+      {
+         if (columns[i] == requested_rows[0]) 
+         {
+            threshold = ML_dabs(values[i])*widget->drop_tol;
+            break;
+         }
+      }
+
+threshold = sqrt(ML_dabs(thediag[requested_rows[0]]))*widget->drop_tol;
+      j = 0;
+      dropped = 0.0;
+      for (i = 0; i < row_lengths[0]; i++) 
+      {
+         if ( ML_dabs(values[i]) >= threshold*sqrt(ML_dabs(thediag[columns[i]])))
+         {
+            columns[j] = columns[i];
+            values[j]  = values[i];
+            if (columns[j] == requested_rows[0]) { diag = j; }
+            j++;
+         }
+         else dropped += values[i];
+      }
+      row_lengths[0] = j;
+   }
+   else
+   {
+      dropped = 0.0;
+      for (i = 0; i < row_lengths[0]; i++) 
+         if (columns[i] == requested_rows[0]) { diag = i; break;}
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* if diagonal is not found, append one                              */
+   /* ----------------------------------------------------------------- */
+
+   if (diag == -1) 
+   {
+      if (row_lengths[0] >= allocated_space) return(0);
+      columns[row_lengths[0]] = requested_rows[0];
+      values[row_lengths[0]]  = 0.0;
+      diag = row_lengths[0];
+      row_lengths[0]++;
+   }
+   else diag_val = values[diag];
+
+   values[diag] += dropped;
+diag_val += dropped;  /* rst new */
+
+   /* ----------------------------------------------------------------- */
+   /* The following segment is for filtering (aggregate - not used)     */
+   /* ----------------------------------------------------------------- */
+
+/*
+   aggr_info = widget->aggr_info;
+   N = widget->Amat->outvec_leng;
+   for (i = 0; i < row_lengths[0]; i++) 
+   {
+      if (columns[i] < N &&
+          aggr_info[columns[i]] != aggr_info[requested_rows[0]])
+      {
+         values[diag] += values[i];
+         values[i] = 0.0;
+      }
+   }
+   N = 0;
+   for (i = 0; i < row_lengths[0]; i++)
+   {
+      if ( values[i] != 0.0 ) 
+      {
+         values[N] = values[i]; 
+         columns[N++] = columns[i];}
+      }
+   }
+   row_lengths[0] = N;
+   diag_val = values[diag];
+*/
+
+   /* ----------------------------------------------------------------- */
+   /* compute I - omega D^{-1} A                                        */
+   /* ----------------------------------------------------------------- */
+#ifdef RST_MODIF
+   if (diag_val == 0.) { row_lengths[0] = 0; return 1; }
+   for (i = 0; i < row_lengths[0]; i++) 
+      values[i] *= -widget->omega/diag_val;
+   values[diag] += 1.;
+
+#else
+#ifndef MB_MODIF
+   if (ML_dabs(diag_val) > 0.0)
+   {
+      for (i = 0; i < row_lengths[0]; i++) 
+         values[i] *= (-widget->omega)/diag_val;
+      values[diag] += 1.;
+
+   }
+#else
+   for (i = 0; i < row_lengths[0]; i++) 
+      values[i] *= -widget->omega;
+   values[diag] += 1.;
+
 #endif
 #endif
 

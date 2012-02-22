@@ -128,6 +128,18 @@ private:
                                                      const Teuchos::RCP<Epetra_Operator> & wrapInput,
                                                      std::ostream & out) const;
 
+  /** Build strided vectors using the operator range map and
+    * the decomposition vectors.
+    *
+    * \param[in] Jac Epetra_CrsMatrix (assumed) to be decomposed.
+    * \param[in] decomp Decomposition vector.
+    * \param[in,out] vars Vector of vectors of global ids specifying
+    *                     how the operator is to be blocked.
+    */
+  void buildStridedVectors(const Epetra_Operator & Jac,
+                           const std::vector<int> & decomp,
+                           std::vector<std::vector<int> > & vars) const;
+
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
   mutable Teuchos::RCP<Teko::InverseLibrary> invLib_;

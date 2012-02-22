@@ -891,6 +891,12 @@ public:
   }
   // @}
 
+  friend std::ostream& operator<<(std::ostream& os, MultiVector const &mv)
+  {
+    mv.Print(os);
+    return os;
+  }
+
   bool IsAlias(const MultiVector& rhs) const
   {
     if (rhs.GetValues(0) == GetValues(0))

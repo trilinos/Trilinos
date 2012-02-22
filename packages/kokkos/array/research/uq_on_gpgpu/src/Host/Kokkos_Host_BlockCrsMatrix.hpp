@@ -41,25 +41,20 @@
 //@HEADER
 */
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
-
-#error "Including <impl/Kokkos_BlockCrsMatrix_macros.hpp> without macros defined"
-
-#else
+#ifndef KOKKOS_HOST_BLOCKCRSMATRIX_HPP
+#define KOKKOS_HOST_BLOCKCRSMATRIX_HPP
 
 namespace Kokkos {
 namespace Impl {
 
 template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
-  BlockCrsMatrix< BlockSpec , MatrixValue , KOKKOS_MACRO_DEVICE > ,
-  Kokkos::MultiVector< VectorValue , KOKKOS_MACRO_DEVICE > ,
-  Kokkos::MultiVector< VectorValue , KOKKOS_MACRO_DEVICE > >
+  BlockCrsMatrix< BlockSpec , MatrixValue , Host > ,
+  Kokkos::MultiVector< VectorValue , Host > ,
+  Kokkos::MultiVector< VectorValue , Host > >
 {
 public:
-  typedef KOKKOS_MACRO_DEVICE                       device_type ;
+  typedef Host                                      device_type ;
   typedef device_type::size_type                    size_type ;
   typedef MultiVector< VectorValue , device_type >  vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
@@ -83,7 +78,6 @@ public:
   //
 
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( const size_type iBlockRow ) const
   {
     // Prefer that y[ m_A.block.dimension() ] be scratch space
@@ -100,13 +94,13 @@ public:
       const VectorValue * const x = & m_x( 0 , m_A.graph.column(iEntry) );
       const MatrixValue * const a = & m_A.values( 0 , iEntry );
 
-      m_A.block.multiply( a , x , y );
+      Multiply< BlockSpec , void , void >::apply( m_A.block , a , x , y );
     }
   }
 
-  static void execute( const matrix_type & A ,
-                       const vector_type & x ,
-                       const vector_type & y )
+  static void apply( const matrix_type & A ,
+                     const vector_type & x ,
+                     const vector_type & y )
   {
     parallel_for( A.graph.row_count() , Multiply(A,x,y) );
   }
@@ -117,5 +111,5 @@ public:
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* #ifndef KOKKOS_CUDA_BLOCKCRSMATRIX_HPP */
+#endif /* #ifndef KOKKOS_HOST_BLOCKCRSMATRIX_HPP */
 

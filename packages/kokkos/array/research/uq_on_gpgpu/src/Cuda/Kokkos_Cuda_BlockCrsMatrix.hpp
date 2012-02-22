@@ -62,6 +62,7 @@ public:
   typedef device_type::size_type                    size_type ;
   typedef MultiVector< VectorValue , device_type >  vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
+  typedef Impl::Multiply< BlockSpec , void , void > block_matrix_type ;
 
   const matrix_type  m_A ;
   const vector_type  m_x ;
@@ -97,16 +98,16 @@ public:
         const VectorValue * const x = & m_x( 0 , m_A.graph.column(iEntry) );
         const MatrixValue * const a = & m_A.values( 0 , iEntry );
 
-        m_A.block.multiply( a , x , y );
+        Multiply< BlockSpec >::apply( m_A.block , a , x , y );
       }
 
       m_y(threadIdx.x,iBlock) = y ;
     }
   }
 
-  static void execute( const matrix_type & A ,
-                       const vector_type & x ,
-                       const vector_type & y )
+  static void apply( const matrix_type & A ,
+                     const vector_type & x ,
+                     const vector_type & y )
   {
     const size_type thread_max =
       cuda_internal_maximum_warp_count() * Impl::CudaTraits::WarpSize ;
@@ -114,7 +115,7 @@ public:
     const size_type blockCount =
       std::max( A.graph.row_count() , cuda_internal_maximum_grid_count() );
     const size_type threadCount = A.block.dimension();
-    const size_type shmem       = A.block.template shmem_size<VectorValue>();
+    const size_type shmem       = Multiply<BlockSpec>::template shmem_size<vector_type>( A.block );
 
     if ( thread_max < threadCount ) {
       std::ostringstream msg ;

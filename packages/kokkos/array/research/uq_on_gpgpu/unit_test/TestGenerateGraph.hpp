@@ -14,6 +14,7 @@ IntType map_fem_graph_coord( const IntType & N ,
   return k + N * ( j + N * i );
 } 
 
+inline
 size_t generate_fem_graph( size_t N , 
   std::vector< std::vector<size_t> > & graph )
 {
