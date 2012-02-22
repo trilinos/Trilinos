@@ -14,6 +14,7 @@
 #include <sstream>
 #include <cmath>
 #include <utility>
+#include <stdint.h>
 
 #if defined( STK_HAS_MPI )
 #include <mpi.h>
@@ -35,6 +36,7 @@
 #include <stk_adapt/UniformRefiner.hpp>
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/static_assert.hpp>
 
 #define ALLOW_MEM_TEST 1
 
@@ -45,23 +47,28 @@ namespace stk {
 
   namespace adapt {
 
-    static double MegaByte(int x) { return  ((double)x/1024.0/1024.0); }
+    typedef uint64_t MemorySizeType;
+
+    BOOST_STATIC_ASSERT(sizeof(uint64_t) == sizeof(size_t));
+
+    static double MegaByte(MemorySizeType x) { return  ((double)x/1024.0/1024.0); }
+
 
     struct MemoryMultipliers
     {
-      size_t num_hex8;
-      size_t num_tet4;
-      size_t num_nodes;
+      MemorySizeType num_hex8;
+      MemorySizeType num_tet4;
+      MemorySizeType num_nodes;
 
-      typedef unsigned MemMultType;
+      typedef MemorySizeType MemMultType;
       MemMultType mult_hex8;
       MemMultType mult_tet4;
       MemMultType mult_nodes;
       
-      MemoryMultipliers(MemMultType mult_hex8=343, MemMultType mult_tet4=300, MemMultType mult_nodes=343):
-        num_hex8(0),
-        num_tet4(0),
-        num_nodes(0),
+      MemoryMultipliers(MemMultType mult_hex8=1490, MemMultType mult_tet4=702, MemMultType mult_nodes=0):
+        num_hex8(0ul),
+        num_tet4(0ul),
+        num_nodes(0ul),
         mult_hex8(mult_hex8), 
         mult_tet4(mult_tet4), 
         mult_nodes(mult_nodes)
@@ -78,16 +85,16 @@ namespace stk {
         //std::cout << "mult_hex8= " << mult_hex8 << " mult_tet4= " << mult_tet4 << " mult_nodes=" << mult_nodes << std::endl;
       }
 
-      unsigned estimate_memory()
+      MemorySizeType estimate_memory()
       {
         return mult_nodes*num_nodes + mult_hex8*num_hex8 + mult_tet4*num_tet4;
       }
 
-      unsigned estimate_memory(std::vector<RefinementInfoByType>& refInfo)
+      MemorySizeType estimate_memory(std::vector<RefinementInfoByType>& refInfo)
       {
-        num_hex8=0;
-        num_tet4=0;
-        num_nodes=0;
+        num_hex8=0ul;
+        num_tet4=0ul;
+        num_nodes=0ul;
 
         for (unsigned i = 0; i < refInfo.size(); i++)
           {
@@ -96,11 +103,11 @@ namespace stk {
             //<< " " << refInfo[i].m_numNewElemsLast
             //<< std::endl;
             
-//             if (refInfo[i].m_rank == 0)
-//               {
-//                 num_nodes += refInfo[i].m_numNewNodes;
-//               }
-//             else
+            //             if (refInfo[i].m_rank == 0)
+            //               {
+            //                 num_nodes += refInfo[i].m_numNewNodes;
+            //               }
+            //             else
               {
                 switch(refInfo[i].m_topology.getKey())
                   {
@@ -119,7 +126,7 @@ namespace stk {
         return estimate_memory();
       }
       
-      static void process_estimate(size_t tot_mem, PerceptMesh& eMesh, std::vector<RefinementInfoByType>& refInfo, std::string memory_multipliers_file)
+      static void process_estimate(MemorySizeType tot_mem, PerceptMesh& eMesh, std::vector<RefinementInfoByType>& refInfo, std::string memory_multipliers_file)
       {
         //const stk::ParallelMachine& comm = eMesh.getBulkData()->parallel();
 
@@ -144,11 +151,14 @@ namespace stk {
             if (memory_multipliers_file.size())
               memMults.read_simple(memory_multipliers_file);
             RefinementInfoByType::countCurrentNodes(eMesh, refInfo);
-            unsigned estMem = memMults.estimate_memory(refInfo);
+            MemorySizeType estMem = memMults.estimate_memory(refInfo);
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
             std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
                       << " estMem[MB]= " << MegaByte(estMem) 
                       << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
+
+            std::cout << "(*MemEstMM:*) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem) 
+                      << ", " << MegaByte(estMem) << "}" << std::endl;
 
           }
         else
@@ -159,24 +169,27 @@ namespace stk {
             if (memory_multipliers_file.size())
               memMults.read_simple(memory_multipliers_file);
             RefinementInfoByType::countCurrentNodes(eMesh, refInfo);
-            unsigned estMem = memMults.estimate_memory(refInfo);
+            MemorySizeType estMem = memMults.estimate_memory(refInfo);
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
             std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
                       << " estMem[MB]= " << MegaByte(estMem) 
                       << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
+
+            std::cout << "(*MemEstMM:*) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem) 
+                      << ", " << MegaByte(estMem) << "}" << std::endl;
 
           }
       }
     };
 
 
-    static size_t memory_dump(int dump_level, const stk::ParallelMachine& comm, stk::mesh::BulkData& bulkData, NodeRegistry* node_reg, std::string msg)
+    static MemorySizeType memory_dump(int dump_level, const stk::ParallelMachine& comm, stk::mesh::BulkData& bulkData, NodeRegistry* node_reg, std::string msg)
     {
-      size_t returned_total_memory;
-      size_t malloc_used_0 = malloc_used();
-      size_t malloc_footprint_0 = malloc_footprint();
-      size_t malloc_max_footprint_0 = malloc_max_footprint();
-      size_t MB = 1024*1024;
+      MemorySizeType returned_total_memory;
+      MemorySizeType malloc_used_0 = malloc_used();
+      MemorySizeType malloc_footprint_0 = malloc_footprint();
+      MemorySizeType malloc_max_footprint_0 = malloc_max_footprint();
+      MemorySizeType MB = 1024*1024;
 
       stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_used_0 ) );
       stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_footprint_0 ) );
@@ -185,16 +198,16 @@ namespace stk {
       stk::mesh::MemoryUsage mem_usage;
       stk::mesh::compute_memory_usage(bulkData, mem_usage);
 
-      unsigned node_reg_mem = 0;
+      MemorySizeType node_reg_mem = 0;
       if (node_reg) 
         node_reg_mem = node_reg->get_memory_usage();
-      unsigned node_reg_mem_sum = node_reg_mem;
-      unsigned node_reg_mem_max = node_reg_mem;
+      MemorySizeType node_reg_mem_sum = node_reg_mem;
+      MemorySizeType node_reg_mem_max = node_reg_mem;
       stk::all_reduce( comm, stk::ReduceSum<1>( &node_reg_mem_sum ) );
       stk::all_reduce( comm, stk::ReduceMax<1>( &node_reg_mem_max ) );
 
-      size_t mem_total_bytes_sum = mem_usage.total_bytes;
-      size_t mem_total_bytes_max = mem_usage.total_bytes;
+      MemorySizeType mem_total_bytes_sum = mem_usage.total_bytes;
+      MemorySizeType mem_total_bytes_max = mem_usage.total_bytes;
       stk::all_reduce( comm, stk::ReduceSum<1>( &mem_total_bytes_sum ) );
       stk::all_reduce( comm, stk::ReduceMax<1>( &mem_total_bytes_max ) );
       if (bulkData.parallel_rank() == 0)
@@ -236,7 +249,7 @@ namespace stk {
     }
 
     //extern void test_memory(int, int);
-    void test_memory(percept::PerceptMesh& eMesh, int n_elements, int n_nodes)
+    void test_memory(percept::PerceptMesh& eMesh, MemorySizeType n_elements, MemorySizeType n_nodes)
     {
       vector<stk::mesh::Entity *> new_elements;
       vector<stk::mesh::Entity *> new_nodes;
@@ -251,11 +264,11 @@ namespace stk {
       eMesh.createEntities( stk::mesh::fem::FEMMetaData::NODE_RANK, n_nodes, new_nodes);
       std::cout << "... done creating " << n_nodes << " nodes" << std::endl;
 
-      int num_prints = 100;
-      int print_mod = n_elements/num_prints;
-      int i_node = 0;
+      MemorySizeType num_prints = std::min(100ul, n_elements);
+      MemorySizeType print_mod = n_elements/num_prints;
+      MemorySizeType i_node = 0;
       int n_node_per_element = 8; 
-      for (int i_element = 0; i_element < n_elements; i_element++)
+      for (MemorySizeType i_element = 0; i_element < n_elements; i_element++)
         {
           if (!i_element || (i_element % print_mod == 0))
             {
@@ -656,6 +669,8 @@ namespace stk {
 
         if (test_memory_nodes && test_memory_elements)
           {
+            std::cout << "test_memory_elements and nodes are nonzero, will not refine exodus files." << std::endl;
+
             test_memory(eMesh, test_memory_elements, test_memory_nodes);
 
             if (print_memory_usage)
@@ -663,7 +678,7 @@ namespace stk {
 
             if (estimate_memory_usage && !query_only)
               {
-                size_t tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), 0, "after test memory");
+                MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), 0, "after test memory");
 
                 //std::cout << "MemEst: num_nodes= " << test_memory_nodes << " num_tet4=0 hum_hex8= " << test_memory_elements << " memory= " << MegaByte(tot_mem) << std::endl;
                 //MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
@@ -672,12 +687,15 @@ namespace stk {
                   memMults.read_simple(memory_multipliers_file);
                 memMults.num_hex8=test_memory_elements;
                 memMults.num_nodes=test_memory_nodes;
-                unsigned estMem = memMults.estimate_memory();
-//                 std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory= " << MegaByte(tot_mem) 
-//                           << " estMem= " << MegaByte(estMem) << std::endl;
+                MemorySizeType estMem = memMults.estimate_memory();
+                //                 std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory= " << MegaByte(tot_mem) 
+                //                           << " estMem= " << MegaByte(estMem) << std::endl;
                 std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
                           << " estMem[MB]= " << MegaByte(estMem) 
                           << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
+                std::cout << "(*MemEstMM:*) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem) 
+                          << ", " << MegaByte(estMem) << "}" << std::endl;
+
               }
             if (estimate_memory_usage && query_only)
               {
@@ -756,7 +774,7 @@ namespace stk {
 
                 if (estimate_memory_usage && !query_only)
                   {
-                    size_t tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
+                    MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
                                                  std::string("after refine pass: ")+toString(iBreak));
                     std::cout << "tmp srk tot_mem= " << MegaByte(tot_mem) << std::endl;
                     MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
