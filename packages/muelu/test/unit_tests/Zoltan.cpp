@@ -22,8 +22,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    GO numPartitions=99;
-    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(numPartitions));
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     TEST_EQUALITY(zoltan != Teuchos::null, true);
 
   } //Constructor
@@ -100,12 +99,14 @@ namespace MueLuTests {
     level.Set("coordinates",XYZ);
 
     LO numPartitions = comm->getSize();
-    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface(numPartitions));
+    level.Set("number of partitions",numPartitions);
+    RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     //zoltan->SetNumberOfPartitions(numPartitions);
     //zoltan->SetOutputLevel(0); //options are 0=none, 1=summary, 2=every pid prints
+    level.Request("partition",zoltan.get());
     zoltan->Build(level);
 
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = level.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition");
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = level.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",zoltan.get());
     /* //TODO temporary code to have the trivial decomposition (no change)
     ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
     for (ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
