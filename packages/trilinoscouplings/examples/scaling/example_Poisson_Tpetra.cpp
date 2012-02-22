@@ -236,16 +236,17 @@ namespace {
     sumIntoGlobalValues (Teuchos::ArrayView<const global_ordinal_type> rows, 
 			 Teuchos::ArrayView<const scalar_type> values)
     {
-      using Teuchos::ArrayView;
       typedef global_ordinal_type GO;
       typedef scalar_type ST;
+      typedef typename Teuchos::ArrayView<const GO>::const_iterator GoIter;
+      typedef typename Teuchos::ArrayView<const ST>::const_iterator StIter;
 
       const size_t numColumns = getNumColumns();
-      ArrayView<const GO>::const_iterator rowIter = rows.begin();
-      ArrayView<const ST>::const_iterator valIter = values.begin();
+      GoIter rowIter = rows.begin();
+      StIter valIter = values.begin();
       for (size_t j = 0; j < numColumns; ++j) {
-	ArrayView<const GO>::const_iterator rowIterNext = rowIter + numColumns;
-	ArrayView<const ST>::const_iterator valIterNext = valIter + numColumns;
+	GoIter rowIterNext = rowIter + numColumns;
+	StIter valIterNext = valIter + numColumns;
 	std::copy (rowIter, rowIterNext, std::back_inserter (sourceIndices_[column]));
 	std::copy (valIter, valIterNext, std::back_inserter (sourceValues_[column]));
 	rowIter = rowIterNext;
@@ -262,12 +263,13 @@ namespace {
       using Teuchos::RCP;
       typedef local_ordinal_type LO;
       typedef global_ordinal_type GO;
+      typedef scalar_type ST;
 
       RCP<const map_type> map = X->getMap();
       Array<LO> localIndices;
       const size_t numColumns = getNumColumns();
       for (size_t j = 0; j < numColumns; ++j) {
-	const Array<const GO>::size_type numIndices = sourceIndices_[j].size();
+	const typename Array<const GO>::size_type numIndices = sourceIndices_[j].size();
 	// Precompute all the local indices before saving to the
 	// vector.  Hopefully this gives us a little bit of locality
 	// in the global->local conversion, at the expense of a little
@@ -277,13 +279,13 @@ namespace {
 	}
 	ArrayView<LO> localIndicesView = localIndices.view (0, numIndices);
 	ArrayView<const GO> globalIndicesView = sourceIndices_[j].view (0, numIndices);
-	for (ArrayView<const GO>::size_type i = 0; i < numIndices; ++i) {
+	for (typename ArrayView<const GO>::size_type i = 0; i < numIndices; ++i) {
 	  localIndices[i] = map->getLocalElement (globalIndicesView[i]);
 	}
 
-	ArrayRCP<scalar_type> X_j = MV.getDataNonConst (j);
-	ArrayView<const scalar_type> localValues = sourceValues_[j].view (0, numIndices);
-	for (ArrayView<const GO>::size_type i = 0; i < numIndices; ++i) {
+	ArrayRCP<ST> X_j = MV.getDataNonConst (j);
+	ArrayView<const ST> localValues = sourceValues_[j].view (0, numIndices);
+	for (typename ArrayView<const GO>::size_type i = 0; i < numIndices; ++i) {
 	  X_j[localIndices[i]] = localValues[i];
 	}
       }
@@ -554,8 +556,7 @@ namespace {
     if (! std::is_sorted (src.begin(), src.end())) {
       std::sort (src.begin(), src.end());
     }
-    Array<GO>::const_iterator it = 
-      std::unique (src.begin(), src.end());
+    typename Array<GO>::const_iterator it = std::unique (src.begin(), src.end());
     const size_t newSize = Teuchos::as<size_t> (it - sourceIndices.begin());
     src.resize (newSize);
     return src;
