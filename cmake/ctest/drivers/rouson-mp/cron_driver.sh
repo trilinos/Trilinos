@@ -42,8 +42,8 @@ export PYTHONPATH=/usr/bin/python
 
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py
-${TRILINOS_SRC}/cmake/ctest/drivers/rouson-mp/cron_driver_release_rouson-mp.sh
-${TRILINOS_SRC}/cmake/ctest/drivers/rouson-mp/cron_driver_rouson-mp.sh
+#${TRILINOS_SRC}/cmake/ctest/drivers/rouson-mp/cron_driver_release_rouson-mp.sh
+#${TRILINOS_SRC}/cmake/ctest/drivers/rouson-mp/cron_driver_rouson-mp.sh
 
 echo
 echo "Ending nightly Trilinos development testing on rouson-mp: `date`"
