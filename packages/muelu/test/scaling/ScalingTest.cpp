@@ -20,6 +20,7 @@
 #define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
+#include <MueLu_GalleryUtils.hpp>
 
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
@@ -63,6 +64,7 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; using Teuchos::rcp;
   using Teuchos::TimeMonitor;
+  //using MueLu::GalleryUtils::CreateCartesianCoordinates;
   
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -147,16 +149,29 @@ int main(int argc, char *argv[]) {
     // TODO: print custom parameters // Or use paramList::print()!
   }
 
+
+
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
   RCP<const Map> map;
   RCP<Operator> Op;
+  RCP<MultiVector> Coordinates;
   {
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build"));
    
     map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
     Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+
+    if (matrixParameters.GetMatrixType() == "Laplace1D") {
+      Coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",map,matrixParameters.GetParameterList());
+    }
+    else if (matrixParameters.GetMatrixType() == "Laplace2D") {
+      Coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixParameters.GetParameterList());
+    }
+    else if (matrixParameters.GetMatrixType() == "Laplace3D") {
+      Coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D",map,matrixParameters.GetParameterList());
+    }
   }
   /**********************************************************************************/
   /*                                                                                */
@@ -187,6 +202,7 @@ int main(int argc, char *argv[]) {
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A",Op);
     Finest->Set("Nullspace",nullSpace);
+    Finest->Set("coordinates",Coordinates);
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     *out << "========================= Aggregate option summary  =========================" << std::endl;
