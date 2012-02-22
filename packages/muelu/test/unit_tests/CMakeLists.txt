@@ -41,6 +41,8 @@ APPEND_SET(SOURCES
   SubBlockAFactory.cpp
   ParameterList/FactoryFactory.cpp
   ParameterList/ParameterListInterpreter.cpp
+  PermutedTransferFactory.cpp
+  MultiVectorTransferFactory.cpp
 )
 
 ### Tests that require other Trilinos packages

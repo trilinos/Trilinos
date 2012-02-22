@@ -25,9 +25,11 @@ TransPFactory
 TrilinosSmoother
 #Utilities
 #AggregationExportFactory
-Repartition
+RepartitionFactory
 BlockedPFactory
 SubBlockAFactory
 BlockedGaussSeidelSmoother
 AggregationExportFactory
 VariableInformationFactory
+PermutedTransferFactory
+MultiVectorTransferFactory

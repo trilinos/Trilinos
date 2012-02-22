@@ -26,9 +26,11 @@ TrilinosSmoother
 DemoFactory
 MLParameterListInterpreter
 #AggregationExportFactory
-Repartition
+RepartitionFactory
 BlockedPFactory
 SubBlockAFactory
 BlockedGaussSeidelSmoother
 AggregationExportFactory
 VariableInformationFactory
+PermutedTransferFactory
+MultiVectorTransferFactory
