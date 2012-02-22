@@ -28,7 +28,7 @@ namespace MueLu {
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class AggregationExportFactory : public TwoLevelFactoryBase { //public SingleLevelFactoryBase {
 #undef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
-    #include "MueLu_UseShortNames.hpp"
+#include "MueLu_UseShortNames.hpp"
 
   public:
     //! @name Constructors/Destructors.

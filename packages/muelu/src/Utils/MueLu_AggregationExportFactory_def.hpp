@@ -36,7 +36,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
-  #include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
+#include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
     typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OOperator; //TODO
     typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOOperator; //TODO
 
@@ -53,7 +53,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void  AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ExportAggregates(const Teuchos::RCP<Level>& level, const Teuchos::RCP<Aggregates>& aggregates, const Teuchos::RCP<Operator>& Op, LocalOrdinal DofsPerNode) const {
-  #include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
+#include "MueLu_UseShortNames.hpp" // needed because some classes are not forward declared in _decl.hpp
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Op->getRowMap()->getComm();
 
