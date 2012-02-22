@@ -173,6 +173,8 @@ namespace MueLu {
       if(SmooFactFine != Teuchos::null)
     	manager->SetFactory("Smoother" ,  SmooFactFine);    // Hierarchy.Setup uses TOPSmootherFactory, that only needs "Smoother"
       manager->SetFactory("CoarseSolver", coarsestSmooFact);
+      manager->SetFactory("Graph", dropFact);
+      manager->SetFactory("DofsPerNode", dropFact);
       manager->SetFactory("A", AcFact);                     // same RAP factory
       manager->SetFactory("P", PFact);                      // same prolongator and restrictor factories
       manager->SetFactory("R", RFact);                      // same prolongator and restrictor factories
