@@ -33,7 +33,7 @@ namespace MueLu {
   class ZoltanInterface : public SingleLevelFactoryBase {
 
     typedef double Scalar; // FIXME
-#undef MUELU_ZOLTAN_SHORT
+#undef MUELU_ZOLTANINTERFACE_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -42,7 +42,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    ZoltanInterface(GO numPartitions, RCP<const FactoryBase> AFact = Teuchos::null);
+    ZoltanInterface(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> TransferFact = Teuchos::null);
 
     //! Destructor
     virtual ~ZoltanInterface() { }
@@ -51,12 +51,6 @@ namespace MueLu {
     //! @name Input
     //@{
     void DeclareInput(Level & level) const;
-    //@}
-
-    //! @name Set / Get methods.
-    //@{
-    //! Set the number of partitions over which the data should be divided.
-    void SetNumberOfPartitions(GO const numPartitions);
     //@}
 
     //! @name Build methods.
@@ -111,8 +105,8 @@ namespace MueLu {
 
   private:
 
-    GO numPartitions_;
     RCP<const FactoryBase> AFact_;
+    RCP<const FactoryBase> TransferFact_;
 
   };  //class ZoltanInterface
 

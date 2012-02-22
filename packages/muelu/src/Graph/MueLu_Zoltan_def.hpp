@@ -1,12 +1,11 @@
 #ifndef MUELU_ZOLTAN_DEF_HPP
 #define MUELU_ZOLTAN_DEF_HPP
 
-#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Zoltan_decl.hpp"
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
 #include <Teuchos_Utils.hpp>
 
-#include "MueLu_Zoltan_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
 
@@ -15,22 +14,17 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  ZoltanInterface(GO numPartitions, RCP<const FactoryBase> AFact) : numPartitions_(numPartitions), AFact_(AFact)
+  ZoltanInterface(RCP<const FactoryBase> AFact, RCP<const FactoryBase> TransferFact)
+    : AFact_(AFact), TransferFact_(TransferFact)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   DeclareInput(Level & level) const
   {
-    level.DeclareInput("A", AFact_.get()); // use DeclareInput instead of Request!!!
+    level.DeclareInput("A", AFact_.get());
+    level.DeclareInput("coordinates", TransferFact_.get());
   } //DeclareInput()
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  SetNumberOfPartitions(GO const numPartitions)
-  {
-    numPartitions_ = numPartitions;
-  } //SetNumberOfPartitions()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
@@ -55,11 +49,14 @@ namespace MueLu {
     if ( (rv=zoltanObj_->Set_Param("obj_weight_dim", "1") ) != ZOLTAN_OK )
       throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'obj_weight_dim' returned error code " + Teuchos::toString(rv)));
 
+    GO numPartitions_ = level.Get<GO>("number of partitions");
     std::stringstream ss;
     ss << numPartitions_;
     zoltanObj_->Set_Param("num_global_partitions",ss.str());
 
-    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("coordinates",MueLu::NoFactory::get());
+    if (level.IsAvailable("coordinates",TransferFact_.get()) == false)
+      throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
+    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("coordinates",TransferFact_.get());
     size_t problemDimension_ = XYZ->getNumVectors();
 
     zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,(void *) &*A);
@@ -104,8 +101,7 @@ namespace MueLu {
       //Running on one processor, so decomposition is the trivial one, all zeros.
       decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,true);
     }
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition);
-    level.Set<GO>("number of partitions",numPartitions_);
+    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("partition",decomposition,this);
 
     zoltanObj_->LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_to_part);
     zoltanObj_->LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_to_part);
