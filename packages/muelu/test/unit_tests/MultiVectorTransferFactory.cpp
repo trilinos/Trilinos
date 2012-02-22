@@ -36,7 +36,7 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    out << "Tests the action of the transfer factory on a vector.  In this case, the transfer is the tentative" << std::endl;
+    out << "Tests the action of the transfer factory on a vector.  In this test, the transfer is the tentative" << std::endl;
     out << "prolongator, and the vector is all ones.  So the norm of the resulting coarse grid vector should be" << std::endl;
     out << "equal to the number of fine degrees of freedom." << std::endl;
 
