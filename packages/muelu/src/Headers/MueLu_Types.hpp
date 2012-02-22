@@ -14,6 +14,11 @@ namespace MueLu {
     POST,
     BOTH
   };
+
+  enum TransferType {
+    INTERPOLATION,
+    RESTRICTION
+  };
 }
 
 #endif //ifndef MUELU_TYPES_HPP

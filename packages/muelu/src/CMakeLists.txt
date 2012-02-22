@@ -32,6 +32,7 @@ INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
 INCLUDE_DIRECTORIES(${DIR}/../utils) # how to add this one automatically?
 
+#The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 SET(HEADERS "")
 APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
 APPEND_GLOB(HEADERS ${DIR}/Headers/${PACKAGE_NAME}_ConfigDefs.hpp)
@@ -41,7 +42,7 @@ APPEND_GLOB(HEADERS */*/*.hpp)
 SET(SOURCES "")
 APPEND_GLOB(SOURCES */*.cpp)
 
-#APPEND_GLOB(SOURCES */*/*.cpp) -> ExplicitInstantiation files must be included only is explicit instantiation is enabled
+#APPEND_GLOB(SOURCES */*/*.cpp) -> ExplicitInstantiation files must be included only if explicit instantiation is enabled
 APPEND_GLOB(SOURCES MueCentral/BaseClass/*.cpp)
 APPEND_GLOB(SOURCES MueCentral/Level/*.cpp)
 APPEND_GLOB(SOURCES Smoothers/BlockedSmoothers/*.cpp)

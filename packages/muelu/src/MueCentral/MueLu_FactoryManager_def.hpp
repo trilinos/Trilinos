@@ -18,6 +18,9 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_Zoltan.hpp"
+#include "MueLu_MultiVectorTransferFactory.hpp"
  
 namespace MueLu {
 
@@ -60,6 +63,16 @@ namespace MueLu {
       if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
       if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new SaPFactory(rcp(new TentativePFactory()))));
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
+      //if (varName == "partition")     return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface())); //FIXME Change to partition to uppercase for consistency
+      if (varName == "partition")     {
+        return SetAndReturnDefaultFactory(varName, rcp(new MueLu::ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>())); //FIXME Change to partition to uppercase for consistency
+      }
+      if (varName == "Permutation") {
+        return SetAndReturnDefaultFactory(varName, rcp(new RepartitionFactory()));
+      }
+      if (varName == "coordinates") {
+        return SetAndReturnDefaultFactory(varName, rcp(new MueLu::MultiVectorTransferFactory<SC,LO,GO,NO,LMO>(varName,"R")));
+      }
 
       if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
       if (varName == "Graph")         return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
@@ -92,9 +105,9 @@ namespace MueLu {
   const RCP<const FactoryBase> & FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(factory == Teuchos::null, Exceptions::RuntimeError, "");
 
-    GetOStream(Warnings0,  0) << "Warning: No factory have been specified for building '" << varName << "'." << std::endl;
-    GetOStream(Warnings00, 0) << "         using default factory: ";
-    { Teuchos::OSTab tab(getOStream(), 7); factory->describe(GetOStream(Warnings00), GetVerbLevel()); }
+    GetOStream(Warnings0,  0) << "Warning: No factory has been specified for building '" << varName << "'." << std::endl;
+    GetOStream(Warnings00, 0) << "         Using default factory ";
+    { Teuchos::OSTab tab(getOStream(), 7); factory->describe(GetOStream(Warnings00), GetVerbLevel());}
 
     defaultFactoryTable_[varName] = factory;
 

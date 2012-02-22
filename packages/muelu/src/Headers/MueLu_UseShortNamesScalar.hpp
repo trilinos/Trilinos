@@ -122,8 +122,8 @@ typedef MueLu::SegregationAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,
 typedef MueLu::SegregationATransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SegregationATransferFactory;
 #endif
 
-#ifdef MUELU_REPARTITION_SHORT
-typedef MueLu::Repartition<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Repartition;
+#ifdef MUELU_REPARTITIONFACTORY_SHORT
+typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RepartitionFactory;
 #endif
 
 #ifdef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
@@ -153,4 +153,12 @@ typedef MueLu::VariableInformationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
+#endif
+
+#ifdef MUELU_PERMUTEDTRANSFER_FACTORY_SHORT
+typedef MueLu::PermutedTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PermutedTransferFactory;
+#endif
+
+#ifdef MUELU_MULTIVECTORTRANSFER_FACTORY_SHORT
+typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MultiVectorTransferFactory;
 #endif
