@@ -281,7 +281,7 @@ public:
     // Manufactor all required data
     const CreateSparseProductTensor work( variable_polynomial_degree );
 
-    work.print();
+    // work.print();
 
     type tmp ;
 

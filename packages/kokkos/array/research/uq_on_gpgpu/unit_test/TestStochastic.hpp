@@ -136,6 +136,7 @@ template< typename ScalarType , class Device >
 void test_product_tensor_matrix(
   const std::vector<int> & var_degree ,
   const int nGraph ,
+  const int iterCount ,
   const bool print_flag = false )
 {
   typedef ScalarType value_type ;
@@ -183,7 +184,9 @@ void test_product_tensor_matrix(
   Kokkos::deep_copy( x , hx );
   Kokkos::deep_copy( matrix.values , hM );
   
-  Kokkos::multiply( matrix , x , y );
+  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
+    Kokkos::multiply( matrix , x , y );
+  }
   
   Kokkos::deep_copy( hy , y );
 
@@ -206,6 +209,7 @@ template< typename ScalarType , class Device >
 void test_product_tensor_diagonal_matrix(
   const std::vector<int> & var_degree ,
   const int nGraph ,
+  const int iterCount ,
   const bool print_flag = false )
 {
   typedef ScalarType value_type ;
@@ -265,7 +269,9 @@ void test_product_tensor_diagonal_matrix(
   Kokkos::deep_copy( x , hx );
   Kokkos::deep_copy( matrix.values , hM );
 
-  Kokkos::multiply( matrix , x , y );
+  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
+    Kokkos::multiply( matrix , x , y );
+  }
 
   Kokkos::deep_copy( hy , y );
 
