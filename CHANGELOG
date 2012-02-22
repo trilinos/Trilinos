@@ -1,0 +1,32 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 10.10 Changelog                                            #
+#                                                                             #
+###############################################################################
+
+Release update 10.10.1 February 22, 2012
+
+1. Epetra          - Removed references to Epetra_MpiSmpComm.h from
+                     EpetraExt_HDF5.cpp. This file is not distributed and was
+                     causing build failures.
+
+2. Epetra          - Fixed two assignements to NULL that were supposed to be
+                     comparisons against NULL in Epetra_FEVector.
+
+3. Epetra          - Add missing over-ride of InsertGlobalValues to FECrsMatrix.
+
+4. Epetra          - Improve performance of non-local data insertion in
+                     FECrsMatrix.
+
+4. Framework Level - Fixed an issue where the installed cmake export files
+                     referenced the wrong directory for include files when
+                     Trilinos_INSTALL_INCLUDE_DIR was specified manually. The
+                     issue stemmed from a change to support installers that can
+                     change the install directory at install time instead of
+                     relying on the configure time settings. The fix allows both
+                     an installer to change the installation path and manually
+                     setting the variable Trilinos_INSTALL_INCLUDE_DIR provided
+                     that it is relative to CMAKE_INSTALL_PREFIX. This relative
+                     restriction has actually been silently assumed in the
+                     makefile export files for some time it is now a stated
+                     restriction to the entire export system.
