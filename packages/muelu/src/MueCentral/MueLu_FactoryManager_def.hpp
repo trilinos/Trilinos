@@ -64,7 +64,7 @@ namespace MueLu {
       if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new SaPFactory(rcp(new TentativePFactory()))));
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
       //if (varName == "partition")     return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface())); //FIXME Change to partition to uppercase for consistency
-#ifdef HAVE_MPI
+#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       if (varName == "Partition")     {
         return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface())); //FIXME Change to partition to uppercase for consistency
       }
