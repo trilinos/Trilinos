@@ -309,7 +309,7 @@ class Ifpack_CrsRick: public Epetra_Object, public Epetra_CompObject, public vir
     the infinity-norm estimate of the condition number of the inverse of LDU.
   */
   int Condest(bool Trans, double & ConditionNumberEstimate) const;
-  // Atribute access functions
+  // Attribute access functions
   
     
   //! Get RILU(k) relaxation parameter

@@ -77,7 +77,7 @@ namespace Excn {
       bool decompose_filename(const std::string &cs);
       void parse_exclude(const char *list);
 
-      GetLongOpt options_; //!< Options parsing
+      GetLongOption options_; //!< Options parsing
   
 
       int debugLevel_;

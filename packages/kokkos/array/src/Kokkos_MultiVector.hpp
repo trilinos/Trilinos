@@ -47,6 +47,7 @@
 #include <cstddef>
 #include <string>
 #include <impl/Kokkos_forward.hpp>
+#include <impl/Kokkos_MemoryView.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 #include <impl/Kokkos_ArrayBounds.hpp>
 
@@ -170,7 +171,14 @@ MultiVector< ValueType , DeviceType >
 create_labeled_multivector( const std::string & label ,
                             size_t length , size_t count )
 {
-  return MultiVector< ValueType , DeviceType >( label , length , count );
+  typedef typename DeviceType::memory_space   memory_space ;
+  typedef Impl::MemoryManager< memory_space > memory_manager ;
+
+  const size_t stride =
+    1 < count ? memory_manager::template preferred_alignment<ValueType>(length)
+              : length ;
+
+  return MultiVector< ValueType , DeviceType >( label, length, count, stride );
 }
 
 //----------------------------------------------------------------------------
@@ -218,8 +226,8 @@ template< typename ValueType , class Device >
 class CreateMirror< MultiVector< ValueType , Device > , true /* view */ >
 {
 public:
-  typedef  MultiVector< ValueType , Device >            View ;
-  typedef  typename MultiVector< ValueType , Device >::HostMirror  HostMirror ;
+  typedef  MultiVector< ValueType , Device >  View ;
+  typedef  typename View::HostMirror          HostMirror ;
 
   static
   HostMirror create( const View & v ) { return HostMirror( v ); }
@@ -229,17 +237,12 @@ template< typename ValueType , class Device >
 class CreateMirror< MultiVector< ValueType , Device > , false /* copy */ >
 {
 public:
-  typedef  MultiVector< ValueType , Device >            View ;
-  typedef  typename MultiVector< ValueType , Device >::HostMirror  HostMirror ;
-  typedef  typename HostMirror::device_type  HostDevice ;
+  typedef  MultiVector< ValueType , Device >  View ;
+  typedef  typename View::HostMirror          HostMirror ;
 
   static
   HostMirror create( const View & v )
-    {
-      const size_t length = v.length();
-      const size_t count  = v.count();
-      return create_labeled_multivector< ValueType , HostDevice  >( std::string() , length , count );
-    }
+    { return HostMirror( std::string(), v.m_length, v.m_count, v.m_stride ); }
 };
 
 }
@@ -252,7 +255,7 @@ typename MultiVector< ValueType , DeviceType >::HostMirror
 create_mirror( const MultiVector< ValueType , DeviceType > & v )
 {
   typedef MultiVector< ValueType , DeviceType >  view_type ;
-  typedef typename view_type::HostMirror           host_view ;
+  typedef typename view_type::HostMirror         host_view ;
   typedef typename host_view::device_type        host_device ;
   typedef typename host_device::memory_space     host_memory ;
   typedef typename DeviceType::memory_space      memory ;
@@ -265,8 +268,7 @@ create_mirror( const MultiVector< ValueType , DeviceType > & v )
 #endif
        };
 
-  return Impl::CreateMirror< MultiVector< ValueType , DeviceType > , optimize >
-    ::create( v );
+  return Impl::CreateMirror< view_type , optimize >::create( v );
 }
 
 //----------------------------------------------------------------------------

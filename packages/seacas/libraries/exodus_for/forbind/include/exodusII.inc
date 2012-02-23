@@ -1,4 +1,4 @@
-! -*- mode: fortran -*-
+                                ! -*- mode: fortran -*-
 !
 ! Copyright 1994 Sandia Corporation. Under the terms of Contract
 ! DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
@@ -16,36 +16,36 @@
 !
 !       Define Exodus functions that return values
 !
-        integer excre,exopen,exlgmd
-        external excre, exopen, exlgmd
+      integer excre,exopen,exlgmd
+      external excre, exopen, exlgmd
 !
 !       Define access modes
 !
-        integer EXNOCL,EXCLOB,EXREAD,EXWRIT,EXWRT,EXNORM,EXLARG
-        integer EXNET4, EXNOSH, EXSHAR
+      integer EXNOCL,EXCLOB,EXREAD,EXWRIT,EXWRT,EXNORM,EXLARG
+      integer EXNET4, EXNOSH, EXSHAR
 
-        parameter (EXNOCL = 0)   !       EXNOCL - File create with no overwrite (no clobber), default
-        parameter (EXCLOB = 1)   !       EXCLOB - File create with overwrite (clobber)
-        parameter (EXNORM = 2)   !       EXNORM - Disable large model modifications
-        parameter (EXLARG = 4)   !       EXLARG - Large model modifications
-        parameter (EXNET4 = 8)   !       EXNET4 - use the hdf5-based netcdf4 output
-        parameter (EXNOSH = 16)  !       EXNOSH - Do not open netcdf file in "share" mode
-        parameter (EXSHAR = 32)  !       EXSHAR - Do open netcdf file in "share" mode
+      parameter (EXNOCL = 0)   !       EXNOCL - File create with no overwrite (no clobber), default
+      parameter (EXCLOB = 1)   !       EXCLOB - File create with overwrite (clobber)
+      parameter (EXNORM = 2)   !       EXNORM - Disable large model modifications
+      parameter (EXLARG = 4)   !       EXLARG - Large model modifications
+      parameter (EXNET4 = 8)   !       EXNET4 - use the hdf5-based netcdf4 output
+      parameter (EXNOSH = 16)  !       EXNOSH - Do not open netcdf file in "share" mode
+      parameter (EXSHAR = 32)  !       EXSHAR - Do open netcdf file in "share" mode
 
-        parameter (EXREAD = 0)   !       EXREAD - File open for read
-        parameter (EXWRIT = 1)   !       EXWRIT - File open for write
-        parameter (EXWRT  = 1)   !       EXWRT  - File open for write (alternate to EXWRIT)
+      parameter (EXREAD = 0)   !       EXREAD - File open for read
+      parameter (EXWRIT = 1)   !       EXWRIT - File open for write
+      parameter (EXWRT  = 1)   !       EXWRT  - File open for write (alternate to EXWRIT)
 !
 !  --INQUIRE FLAGS
-      integer EXTYPE, EXVERS, EXDBVR, EXTITL, EXDIM, EXNODE,            &
-     &        EXELEM, EXELBL, EXNODS, EXSIDS, EXQA,  EXINFO,            &
-     &        EXTIMS, EXSSNL, EXSSEL, EXNSNL, EXNEBP, EXNNSP,           &
-     &        EXNSSP, EXNSDF, EXSSDF, EXLBVR, EXNEMP, EXNNMP,           &
-     &        EXNEM,  EXNNM,  EXNEDG, EXNEDB, EXNEDS, EXESL ,           &
-     &        EXESDL, EXEDBP, EXEDSP, EXNFAC, EXNFB , EXNFS ,           &
-     &        EXFSL , EXFSDL, EXFABP, EXFASP, EXNELS, EXELSL,           &
-     &        EXELSD, EXELSP, EXNEDM, EXNFAM, EXNCF,  EXDBMXALNM,       &
-     &        EXDBMXUSNM, EXMXRDNM
+      integer EXTYPE, EXVERS, EXDBVR, EXTITL, EXDIM, EXNODE
+      integer  EXELEM, EXELBL, EXNODS, EXSIDS, EXQA,  EXINFO
+      integer  EXTIMS, EXSSNL, EXSSEL, EXNSNL, EXNEBP, EXNNSP
+      integer  EXNSSP, EXNSDF, EXSSDF, EXLBVR, EXNEMP, EXNNMP
+      integer  EXNEM,  EXNNM,  EXNEDG, EXNEDB, EXNEDS, EXESL
+      integer  EXESDL, EXEDBP, EXEDSP, EXNFAC, EXNFB , EXNFS
+      integer  EXFSL , EXFSDL, EXFABP, EXFASP, EXNELS, EXELSL
+      integer  EXELSD, EXELSP, EXNEDM, EXNFAM, EXNCF,  EXDBMXALNM
+      integer  EXDBMXUSNM, EXMXRDNM
 
 !
       parameter (EXTYPE = 1)     ! --  inquire EXODUS II file type
@@ -101,59 +101,59 @@
 !
 !         Define limits
 !
-        integer MXSTLN, MXLNLN, MXNAME
-!       MXSTLN - Maximum string length: used for store strings
-        parameter (MXSTLN = 32)
-!       MXLNLN - Maximum line string length
-        parameter (MXLNLN = 80)
-!       MXNAME - Maximum possible length of a name (due to netcdf NC_MAX_NAME)
-        parameter (MXNAME = 256)
+      integer MXSTLN, MXLNLN, MXNAME
+!     MXSTLN - Maximum string length: used for store strings
+      parameter (MXSTLN = 32)
+!     MXLNLN - Maximum line string length
+      parameter (MXLNLN = 80)
+!     MXNAME - Maximum possible length of a name (due to netcdf NC_MAX_NAME)
+      parameter (MXNAME = 256)
 !
-!       properties
+!     properties
 !
-        integer EXEBLK, EXNSET, EXSSET, EXEMAP, EXNMAP
+      integer EXEBLK, EXNSET, EXSSET, EXEMAP, EXNMAP
 
-        parameter (EXEBLK = 1)   ! EXEBLK - element block property code
-        parameter (EXNSET = 2)   ! EXNSPR - node set property code
-        parameter (EXSSET = 3)   ! EXSSPR - side set property code
-        parameter (EXEMAP = 4)   ! EXEMAP - element map property code
-        parameter (EXNMAP = 5)   ! EXNMAP - node map property code
+      parameter (EXEBLK = 1)   ! EXEBLK - element block property code
+      parameter (EXNSET = 2)   ! EXNSPR - node set property code
+      parameter (EXSSET = 3)   ! EXSSPR - side set property code
+      parameter (EXEMAP = 4)   ! EXEMAP - element map property code
+      parameter (EXNMAP = 5)   ! EXNMAP - node map property code
 !
-!       Define options codes
+!     Define options codes
 !
-        integer EXVRBS, EXDEBG, EXABRT
+      integer EXVRBS, EXDEBG, EXABRT
 
-        parameter (EXVRBS = 1)   ! EXVRBS - verbose mode message flag
-        parameter (EXDEBG = 2)   ! EXDEBG - debug mode message flag
-        parameter (EXABRT = 4)   ! EXABRT - abort mode flag
+      parameter (EXVRBS = 1)   ! EXVRBS - verbose mode message flag
+      parameter (EXDEBG = 2)   ! EXDEBG - debug mode message flag
+      parameter (EXABRT = 4)   ! EXABRT - abort mode flag
 !
-!       Define coordinate frames
+!     Define coordinate frames
 !
-        integer EXCFREC, EXCFCYL, EXCFSPH
+      integer EXCFREC, EXCFCYL, EXCFSPH
 
-        parameter (EXCFREC = 1)     ! Rectangular
-        parameter (EXCFCYL = 2)     ! Cylindrical
-        parameter (EXCFSPH = 3)     ! Spherical
+      parameter (EXCFREC = 1)     ! Rectangular
+      parameter (EXCFCYL = 2)     ! Cylindrical
+      parameter (EXCFSPH = 3)     ! Spherical
 
 !
-!       Define error return codes
+!     Define error return codes
 !
-        integer EXFATL, EXOK, EXWARN
+      integer EXFATL, EXOK, EXWARN
 
-        parameter (EXFATL = -1)  ! EXFATL - fatal error flag def
-        parameter (EXOK = 0)     ! EXOK - no err (success) flag def
-        parameter (EXWARN = 1)   ! EXWARN - warning flag def
+      parameter (EXFATL = -1)  ! EXFATL - fatal error flag def
+      parameter (EXOK = 0)     ! EXOK - no err (success) flag def
+      parameter (EXWARN = 1)   ! EXWARN - warning flag def
 !
-!       Define error return codes and flags
+!     Define error return codes and flags
 !
-        integer EXMEMF, EXBFMD, EXBFID, EXBTID, EXBPRM, EXNULL,         &
-     &          EXPMSG, EXLMSG
+      integer EXMEMF, EXBFMD, EXBFID, EXBTID, EXBPRM, EXNULL
+      integer    EXPMSG, EXLMSG
 
-        parameter (EXMEMF =  1000)   ! EXMEMF - memory allocation failure flag def
-        parameter (EXBFMD =  1001)   ! EXBFMD - wrong file mode
-        parameter (EXBFID =  1002)   ! EXBFID - bad file id def
-        parameter (EXBTID =  1004)   ! EXBTID - id table lookup failed
-        parameter (EXBPRM =  1005)   ! EXBPRM - bad parameter passed
-        parameter (EXNULL = -1006)   ! EXNULL - null entity found
-        parameter (EXPMSG = -1000)   ! EXPMSG - message print code - no error implied
-        parameter (EXLMSG = -1001)   ! EXLMSG - print last error message msg code
+      parameter (EXMEMF =  1000)   ! EXMEMF - memory allocation failure flag def
+      parameter (EXBFMD =  1001)   ! EXBFMD - wrong file mode
+      parameter (EXBFID =  1002)   ! EXBFID - bad file id def
+      parameter (EXBTID =  1004)   ! EXBTID - id table lookup failed
+      parameter (EXBPRM =  1005)   ! EXBPRM - bad parameter passed
+      parameter (EXNULL = -1006)   ! EXNULL - null entity found
+      parameter (EXPMSG = -1000)   ! EXPMSG - message print code - no error implied
+      parameter (EXLMSG = -1001)   ! EXLMSG - print last error message msg code

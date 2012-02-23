@@ -48,36 +48,26 @@ C   --   NUMLNK - IN - the number of nodes per element
       INTEGER IXELB(0:*)
       INTEGER NUMLNK(*)
 
-      data iblklst /-1/
-      data iblnklst /-1/
-      
       IDBLNK = 1
       IF ((IELBLK .LE. 0) .AND. (IEL .LE. 0)) RETURN
 
       IF (IELBLK .LE. 0) THEN
-         IELB = 0
-  100    CONTINUE
-         IF (IEL .GT. IXELB(IELB)) THEN
-            IELB = IELB + 1
-            GOTO 100
-         END IF
-         IELBLK = IELB
+        IELB = 0
+ 100    CONTINUE
+        IF (IEL .GT. IXELB(IELB)) THEN
+          IELB = IELB + 1
+          GOTO 100
+        END IF
+        IELBLK = IELB
       END IF
 
-      IDBLNK = 1
-      if (iblklst .eq. ielblk) then
-        idblnk = iblnklst
-      else
-        DO 110 IELB = 1, IELBLK-1
-          NEL = IXELB(IELB) - IXELB(IELB-1)
-          IDBLNK = IDBLNK + NEL * NUMLNK(IELB)
- 110    CONTINUE
-        iblklst = ielblk
-        iblnklst = idblnk
-      end if
+      DO 110 IELB = 1, IELBLK-1
+        NEL = IXELB(IELB) - IXELB(IELB-1)
+        IDBLNK = IDBLNK + NEL * NUMLNK(IELB)
+ 110  CONTINUE
       IF (IEL .GT. 0) THEN
-         NEL = IEL - IXELB(IELBLK-1) - 1
-         IDBLNK = IDBLNK + NEL * NUMLNK(IELBLK)
+        NEL = IEL - IXELB(IELBLK-1) - 1
+        IDBLNK = IDBLNK + NEL * NUMLNK(IELBLK)
       END IF
 
       RETURN

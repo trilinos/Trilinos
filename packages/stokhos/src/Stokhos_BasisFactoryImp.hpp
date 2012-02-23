@@ -109,10 +109,5 @@ create1DBasis(Teuchos::ParameterList& bp)
 		       "Error!  Stokhos::BasisFactory::create1DBasis():  " <<
 		       "Invalid basis type  " << type << std::endl);
 
-  if (bp.isType<int>("Sparse Grid Rule"))
-    basis->setSparseGridRule(bp.get<int>("Sparse Grid Rule"));
-  if (bp.isType<int>("Sparse Grid Growth Rule"))
-    basis->setSparseGridRule(bp.get<int>("Sparse Grid Growth Rule"));
-
   return basis;
 }

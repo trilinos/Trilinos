@@ -55,6 +55,7 @@ struct CudaTraits {
   enum { WarpIndexShift = 5       /* WarpSize == 1 << WarpShift */ };
   enum { SharedMemoryBanks_13 = 16 /* Compute device 1.3 */ };
   enum { SharedMemoryBanks_20 = 32 /* Compute device 2.0 */ };
+  enum { UpperBoundGridCount = 65535 /* Hard upper bound */ };
  
   enum { ConstantMemoryCapacity = 0x010000 /* 64k bytes */ };
   enum { ConstantMemoryCache    = 0x002000 /*  8k bytes */ };
@@ -63,6 +64,23 @@ struct CudaTraits {
     ConstantGlobalBufferType[ ConstantMemoryCapacity / sizeof(unsigned long) ];
 
   enum { ConstantMemoryUseThreshold = 0x000400 /* 1k bytes */ };
+
+  static inline
+#if defined( __CUDACC__ )
+  __device__ __host__
+#endif
+  Cuda::size_type warp_count( Cuda::size_type i )
+    { return ( i + WarpIndexMask ) >> WarpIndexShift ; }
+
+  static inline
+#if defined( __CUDACC__ )
+  __device__ __host__
+#endif
+  Cuda::size_type warp_align( Cuda::size_type i )
+    {
+      enum { Mask = ~Cuda::size_type( WarpIndexMask ) };
+      return ( i + WarpIndexMask ) & Mask ;
+    }
 };
 
 } // namespace Impl
@@ -86,6 +104,31 @@ cudaStream_t &  cuda_internal_stream( Cuda::size_type );
 Cuda::size_type * cuda_internal_reduce_multiblock_scratch_space();
 Cuda::size_type * cuda_internal_reduce_multiblock_scratch_flag();
 
+template< typename ValueType >
+inline
+__device__
+void cuda_internal_atomic_add( ValueType & update , ValueType input )
+{ atomicAdd( & update , input ); }
+
+inline
+__device__
+void cuda_internal_atomic_add( double & update , double input )
+{
+  typedef unsigned long long int UInt64 ;
+
+  UInt64 * const address = reinterpret_cast<UInt64*>( & update );
+  UInt64 test ;
+  union UType { double d ; UInt64 i ; } value ;
+
+  value.i = *address ; // Read existing value
+
+  do {
+    test = value.i ;
+    value.d += input ;
+    value.i = atomicCAS( address , test , value.i );
+  } while ( value.i != test );
+}
+
 } // namespace Impl
 } // namespace Kokkos
 
@@ -93,6 +136,12 @@ Cuda::size_type * cuda_internal_reduce_multiblock_scratch_flag();
 __device__ __constant__
 Kokkos::Impl::CudaTraits::ConstantGlobalBufferType
 kokkos_impl_cuda_constant_memory_buffer ;
+
+template< typename T >
+inline
+__device__
+T * kokkos_impl_cuda_shared_memory()
+{ extern __shared__ Kokkos::Cuda::size_type sh[]; return (T*) sh ; }
 
 namespace Kokkos {
 namespace Impl {

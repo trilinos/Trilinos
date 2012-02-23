@@ -1051,7 +1051,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, ZOLTAN_HG_EVAL *hg)
 
     printf("%s  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )): %8.3f\n", yo, hg->cutn[EVAL_GLOBAL_SUM]);
     printf("%s  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): %8.3f\n", yo, hg->cutl[EVAL_GLOBAL_SUM]);
-    printf("%s  CUTL-MAX (Max_parts( comm. volume ):       %8.3f\n", yo, hg->cutl[EVAL_GLOBAL_MAX]);
+    printf("%s  CUTL-MAX (Max_procs( comm. volume ):       %8.3f\n", yo, hg->cutl[EVAL_GLOBAL_MAX]);
 
 
     printf("\n\n");

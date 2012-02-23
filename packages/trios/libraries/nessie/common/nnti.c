@@ -76,6 +76,8 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_put_fn               = NNTI_ptl_put;
         available_transports[trans_id].ops.nnti_get_fn               = NNTI_ptl_get;
         available_transports[trans_id].ops.nnti_wait_fn              = NNTI_ptl_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_ptl_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_ptl_waitall;
         available_transports[trans_id].ops.nnti_fini_fn              = NNTI_ptl_fini;
     }
 #endif
@@ -92,6 +94,8 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_put_fn               = NNTI_ib_put;
         available_transports[trans_id].ops.nnti_get_fn               = NNTI_ib_get;
         available_transports[trans_id].ops.nnti_wait_fn              = NNTI_ib_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_ib_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_ib_waitall;
         available_transports[trans_id].ops.nnti_fini_fn              = NNTI_ib_fini;
     }
 #endif
@@ -108,6 +112,8 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_put_fn               = NNTI_luc_put;
         available_transports[trans_id].ops.nnti_get_fn               = NNTI_luc_get;
         available_transports[trans_id].ops.nnti_wait_fn              = NNTI_luc_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_luc_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_luc_waitall;
         available_transports[trans_id].ops.nnti_fini_fn              = NNTI_luc_fini;
     }
 #endif
@@ -124,6 +130,8 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_put_fn               = NNTI_gni_put;
         available_transports[trans_id].ops.nnti_get_fn               = NNTI_gni_get;
         available_transports[trans_id].ops.nnti_wait_fn              = NNTI_gni_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_gni_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_gni_waitall;
         available_transports[trans_id].ops.nnti_fini_fn              = NNTI_gni_fini;
     }
 #endif
@@ -407,6 +415,104 @@ NNTI_result_t NNTI_wait (
                 remote_op,
                 timeout,
                 status);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Wait for <tt>remote_op</tt> on any buffer in <tt>buf_list</tt> to complete.
+ *
+ * Wait for <tt>remote_op</tt> on any buffer in <tt>buf_list</tt> to complete or timeout
+ * waiting.  This is typically used to wait for a result or a bulk data
+ * transfer.  The timeout is specified in milliseconds.  A timeout of <tt>-1</tt>
+ * means wait forever.  A timeout of <tt>0</tt> means do not wait.
+ *
+ * Caveats:
+ *   1) All buffers in buf_list must be registered with the same transport.
+ *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
+ */
+NNTI_result_t NNTI_waitany (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        uint32_t             *which,
+        NNTI_status_t        *status)
+{
+    NNTI_result_t rc=NNTI_OK;
+    NNTI_transport_id_t id=-1;
+    uint32_t i=0;
+
+    for (i=0;i<buf_count;i++) {
+        if (buf_list[i]) {
+            id=buf_list[i]->transport_id;
+        }
+    }
+
+    if (id == -1) {
+        rc=NNTI_EINVAL;
+    } else {
+        if (available_transports[id].initialized==0) {
+            rc=NNTI_ENOTINIT;
+        } else {
+            rc = available_transports[id].ops.nnti_waitany_fn(
+                    buf_list,
+                    buf_count,
+                    remote_op,
+                    timeout,
+                    which,
+                    status);
+        }
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Wait for <tt>remote_op</tt> on all buffers in <tt>buf_list</tt> to complete.
+ *
+ * Wait for <tt>remote_op</tt> on all buffers in <tt>buf_list</tt> to complete or timeout
+ * waiting.  This is typically used to wait for a result or a bulk data
+ * transfer.  The timeout is specified in milliseconds.  A timeout of <tt>-1</tt>
+ * means wait forever.  A timeout of <tt>0</tt> means do not wait.
+ *
+ * Caveats:
+ *   1) All buffers in buf_list must be registered with the same transport.
+ *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
+ */
+NNTI_result_t NNTI_waitall (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        NNTI_status_t       **status)
+{
+    NNTI_result_t rc=NNTI_OK;
+    NNTI_transport_id_t id=-1;
+    uint32_t i=0;
+
+    for (i=0;i<buf_count;i++) {
+        if (buf_list[i]) {
+            id=buf_list[i]->transport_id;
+        }
+    }
+
+    if (id == -1) {
+        rc=NNTI_EINVAL;
+    } else {
+        if (available_transports[id].initialized==0) {
+            rc=NNTI_ENOTINIT;
+        } else {
+            rc = available_transports[id].ops.nnti_waitall_fn(
+                    buf_list,
+                    buf_count,
+                    remote_op,
+                    timeout,
+                    status);
+        }
     }
 
     return(rc);

@@ -35,6 +35,10 @@
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_Random.hpp"
 
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::ValueTypeSerializer;
+
 template <typename TayType>
 bool checkFadArrays(const Teuchos::Array<TayType>& x, 
 		    const Teuchos::Array<TayType>& x2, 
@@ -43,7 +47,7 @@ bool checkFadArrays(const Teuchos::Array<TayType>& x,
 
   // Check sizes match
   bool success = (x.size() == x2.size());
-  out << tag << " Fad array size test";
+  out << tag << " Taylor array size test";
   if (success)
     out << " passed";
   else
@@ -54,7 +58,7 @@ bool checkFadArrays(const Teuchos::Array<TayType>& x,
   // Check coefficients match
   for (int i=0; i<x.size(); i++) {
     bool success2 = Sacado::IsEqual<TayType>::eval(x[i], x2[i]);
-    out << tag << " Fad array comparison test " << i;
+    out << tag << " Taylor array comparison test " << i;
     if (success2)
       out << " passed";
     else
@@ -94,7 +98,10 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, Broadcast ) {				\
 									\
   int n = 7;								\
   int p = 5;								\
-  Teuchos::Array<TayType> x(n), x2(n);					\
+  ValueTypeSerializer<int,TayType> tts(					\
+    rcp(new ValueTypeSerializer<int,double>), p+1);			\
+									\
+  Teuchos::Array<TayType> x(n), x2(n), x3(n);				\
   for (int i=0; i<n; i++) {						\
     x[i] = TayType(p, rnd.number());					\
     for (int j=0; j<=p; j++)						\
@@ -103,11 +110,22 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, Broadcast ) {				\
   for (int i=0; i<n; i++) {						\
     x2[i] = TayType(p, 0.0);						\
   }									\
-  if (comm->getRank() == 0)						\
+  if (comm->getRank() == 0) {						\
     x2 = x;								\
+    x3 = x;								\
+  }									\
+									\
   Teuchos::broadcast(*comm, 0, n, &x2[0]);				\
-  success = checkFadArrays(x, x2, std::string(#TAY)+" Broadcast", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    x, x2, std::string(#TAY)+" Broadcast", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+                                                                        \
+  Teuchos::broadcast(*comm, tts, 0, n, &x3[0]);				\
+  bool success2 = checkFadArrays(					\
+    x, x3, std::string(#TAY)+" Broadcast TTS", out);			\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, GatherAll ) {				\
@@ -119,7 +137,10 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, GatherAll ) {				\
   int size = comm->getSize();						\
   int rank = comm->getRank();						\
   int N = n*size;							\
-  Teuchos::Array<TayType> x(n), x2(N), x3(N);				\
+  ValueTypeSerializer<int,TayType> tts(					\
+    rcp(new ValueTypeSerializer<int,double>), p+1);			\
+									\
+  Teuchos::Array<TayType> x(n), x2(N), x3(N), x4(N);			\
   for (int i=0; i<n; i++) {						\
     x[i] = TayType(p, (rank+1)*(i+1));					\
     for (int j=0; j<=p; j++)						\
@@ -135,9 +156,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, GatherAll ) {				\
 	x3[n*j+i].fastAccessCoeff(k) = (j+1)*(i+1)*(k+1);		\
     }									\
   }									\
+									\
   Teuchos::gatherAll(*comm, n, &x[0], N, &x2[0]);			\
-  success = checkFadArrays(x3, x2, std::string(#TAY)+" Gather All", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    x3, x2, std::string(#TAY)+" Gather All", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::gatherAll(*comm, tts, n, &x[0], N, &x4[0]);			\
+  bool success2 = checkFadArrays(					\
+    x3, x4, std::string(#TAY)+" Gather All TTS", out);			\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, SumAll ) {				\
@@ -147,8 +177,10 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, SumAll ) {				\
   int n = 7;								\
   int p = 5;								\
   int num_proc = comm->getSize();					\
+  ValueTypeSerializer<int,TayType> tts(					\
+    rcp(new ValueTypeSerializer<int,double>), p+1);			\
 									\
-  Teuchos::Array<TayType> x(n), sums(n), sums2(n);			\
+  Teuchos::Array<TayType> x(n), sums(n), sums2(n), sums3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = TayType(p, 1.0*(i+1));					\
     for (int j=0; j<=p; j++)						\
@@ -162,10 +194,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, SumAll ) {				\
   for (int i=0; i<n; i++) {						\
     sums2[i] = TayType(p, 0.0);						\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);	\
-  success = checkFadArrays(sums, sums2,					\
-			   std::string(#TAY)+" Sum All", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    sums, sums2, std::string(#TAY)+" Sum All", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, tts, Teuchos::REDUCE_SUM, n, &x[0], &sums3[0]); \
+  bool success2 = checkFadArrays(					\
+    sums, sums3, std::string(#TAY)+" Sum All TTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, MaxAll ) {				\
@@ -176,8 +216,10 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, MaxAll ) {				\
   int p = 5;								\
   int rank = comm->getRank();						\
   int num_proc = comm->getSize();					\
+  ValueTypeSerializer<int,TayType> tts(					\
+    rcp(new ValueTypeSerializer<int,double>), p+1);			\
 									\
-  Teuchos::Array<TayType> x(n), maxs(n), maxs2(n);			\
+  Teuchos::Array<TayType> x(n), maxs(n), maxs2(n), maxs3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = TayType(p, 1.0*(i+1)*(rank+1));				\
     for (int j=0; j<=p; j++)						\
@@ -191,10 +233,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, MaxAll ) {				\
   for (int i=0; i<n; i++) {						\
     maxs2[i] = TayType(p, 0.0);						\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);	\
-  success = checkFadArrays(maxs, maxs2,					\
-			   std::string(#TAY)+" Max All", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    maxs, maxs2, std::string(#TAY)+" Max All", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, tts, Teuchos::REDUCE_MAX, n, &x[0], &maxs3[0]); \
+  bool success2 = checkFadArrays(					\
+    maxs, maxs3, std::string(#TAY)+" Max All TTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, MinAll ) {				\
@@ -204,8 +254,10 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, MinAll ) {				\
   int n = 7;								\
   int p = 5;								\
   int rank = comm->getRank();						\
+  ValueTypeSerializer<int,TayType> tts(					\
+    rcp(new ValueTypeSerializer<int,double>), p+1);			\
 									\
-  Teuchos::Array<TayType> x(n), mins(n), mins2(n);			\
+  Teuchos::Array<TayType> x(n), mins(n), mins2(n), mins3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = TayType(p, 1.0*(i+1)*(rank+1));				\
     for (int j=0; j<=p; j++)						\
@@ -219,10 +271,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, MinAll ) {				\
   for (int i=0; i<n; i++) {						\
     mins2[i] = TayType(p, 0.0);						\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);	\
-  success = checkFadArrays(mins, mins2,					\
-			   std::string(#TAY)+" Min All", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    mins, mins2, std::string(#TAY)+" Min All", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, tts, Teuchos::REDUCE_MIN, n, &x[0], &mins3[0]); \
+  bool success2 = checkFadArrays(					\
+    mins, mins3, std::string(#TAY)+" Min All TTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, ScanSum ) {				\
@@ -232,8 +292,10 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, ScanSum ) {				\
   int n = 7;								\
   int p = 5;								\
   int rank = comm->getRank();						\
+  ValueTypeSerializer<int,TayType> tts(					\
+    rcp(new ValueTypeSerializer<int,double>), p+1);			\
 									\
-  Teuchos::Array<TayType> x(n), sums(n), sums2(n);			\
+  Teuchos::Array<TayType> x(n), sums(n), sums2(n), sums3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = TayType(p, 1.0*(i+1));					\
     for (int j=0; j<=p; j++)						\
@@ -247,10 +309,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, ScanSum ) {				\
   for (int i=0; i<n; i++) {						\
     sums2[i] = TayType(p, 0.0);						\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);	\
-  success = checkFadArrays(sums, sums2,					\
-			   std::string(#TAY)+" Scan Sum", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    sums, sums2, std::string(#TAY)+" Scan Sum", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, tts, Teuchos::REDUCE_SUM, n, &x[0], &sums3[0]);	\
+  bool success2 = checkFadArrays(					\
+    sums, sums3, std::string(#TAY)+" Scan Sum TTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+  									\
+  success = success1 && success2;					\
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, ScanMax ) {				\
@@ -260,8 +330,10 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, ScanMax ) {				\
   int n = 7;								\
   int p = 5;								\
   int rank = comm->getRank();						\
+  ValueTypeSerializer<int,TayType> tts(					\
+    rcp(new ValueTypeSerializer<int,double>), p+1);			\
 									\
-  Teuchos::Array<TayType> x(n), maxs(n), maxs2(n);			\
+  Teuchos::Array<TayType> x(n), maxs(n), maxs2(n), maxs3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = TayType(p, 1.0*(i+1)*(rank+1));				\
     for (int j=0; j<=p; j++)						\
@@ -275,10 +347,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, ScanMax ) {				\
   for (int i=0; i<n; i++) {						\
     maxs2[i] = TayType(p, 0.0);						\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);	\
-  success = checkFadArrays(maxs, maxs2,					\
-			   std::string(#TAY)+" Scan Max", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    maxs, maxs2, std::string(#TAY)+" Scan Max", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, tts, Teuchos::REDUCE_MAX, n, &x[0], &maxs3[0]);	\
+  bool success2 = checkFadArrays(					\
+    maxs, maxs3, std::string(#TAY)+" Scan Max TTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, ScanMin ) {				\
@@ -288,8 +368,10 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, ScanMin ) {				\
   int n = 7;								\
   int p = 5;								\
   int rank = comm->getRank();						\
+  ValueTypeSerializer<int,TayType> tts(					\
+    rcp(new ValueTypeSerializer<int,double>), p+1);			\
 									\
-  Teuchos::Array<TayType> x(n), mins(n), mins2(n);			\
+  Teuchos::Array<TayType> x(n), mins(n), mins2(n), mins3(n);		\
   for (int i=0; i<n; i++) {						\
     x[i] = TayType(p, 1.0*(i+1)*(rank+1));				\
     for (int j=0; j<=p; j++)						\
@@ -303,10 +385,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, ScanMin ) {				\
   for (int i=0; i<n; i++) {						\
     mins2[i] = TayType(p, 0.0);						\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);	\
-  success = checkFadArrays(mins, mins2,					\
-			   std::string(#TAY)+" Scan Min", out);		\
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    mins, mins2, std::string(#TAY)+" Scan Min", out);			\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, tts, Teuchos::REDUCE_MIN, n, &x[0], &mins3[0]);	\
+  bool success2 = checkFadArrays(					\
+    mins, mins3, std::string(#TAY)+" Scan Min TTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, SendReceive ) {				\
@@ -318,7 +408,10 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, SendReceive ) {				\
     int rank = comm->getRank();						\
     int n = 7;								\
     int p = 5;								\
-    Teuchos::Array<TayType> x(n), x2(n);				\
+    ValueTypeSerializer<int,TayType> tts(				\
+      rcp(new ValueTypeSerializer<int,double>), p+1);			\
+									\
+    Teuchos::Array<TayType> x(n), x2(n), x3(n);				\
     for (int i=0; i<n; i++) {						\
       x[i] = TayType(p, 1.0*(i+1));					\
       for (int j=0; j<=p; j++)						\
@@ -327,13 +420,24 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, SendReceive ) {				\
     for (int i=0; i<n; i++) {						\
       x2[i] = TayType(p, 0.0);						\
     }									\
-    if (rank != 1)							\
+    if (rank != 1) {							\
       x2 = x;								\
+      x3 = x2;								\
+    }									\
+    									\
     if (rank == 0) Teuchos::send(*comm, n, &x[0], 1);			\
     if (rank == 1) Teuchos::receive(*comm, 0, n, &x2[0]);		\
-    success = checkFadArrays(x, x2,					\
-			     std::string(#TAY)+" Send/Receive", out);	\
-    success = checkResultOnAllProcs(*comm, out, success);		\
+    bool success1 = checkFadArrays(					\
+      x, x2, std::string(#TAY)+" Send/Receive", out);			\
+    success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+    if (rank == 0) Teuchos::send(*comm, tts, n, &x[0], 1);		\
+    if (rank == 1) Teuchos::receive(*comm, tts, 0, n, &x3[0]);		\
+    bool success2 = checkFadArrays(					\
+      x, x3, std::string(#TAY)+" Send/Receive TTS", out);		\
+    success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+    success = success1 && success2;					\
   }									\
   else									\
     success = true;							\
@@ -347,7 +451,12 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedBroadcast ) {			\
   int n = 7;								\
   int p1 = 5;								\
   int p2 = 5;								\
-  Teuchos::Array<TayTayType> x(n), x2(n);				\
+  RCP< ValueTypeSerializer<int,TayType> > tts =				\
+    rcp(new ValueTypeSerializer<int,TayType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1+1));		\
+  ValueTypeSerializer<int,TayTayType> ttts(tts, p2+1);			\
+									\
+  Teuchos::Array<TayTayType> x(n), x2(n), x3(n);			\
   for (int i=0; i<n; i++) {						\
     TayType f(p1, rnd.number());					\
     for (int k=0; k<=p1; k++)						\
@@ -365,12 +474,22 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedBroadcast ) {			\
     for (int j=0; j<=p2; j++)						\
       x2[i].fastAccessCoeff(j) = TayType(p1, 0.0);			\
   }									\
-  if (comm->getRank() == 0)						\
+  if (comm->getRank() == 0) {						\
     x2 = x;								\
+    x3 = x;								\
+  }									\
+  									\
   Teuchos::broadcast(*comm, 0, n, &x2[0]);				\
-  success = checkFadArrays(x, x2,					\
-			   std::string(#TAY)+"<"+#TAY+"> Broadcast", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    x, x2, std::string(#TAY)+"<"+#TAY+"> Broadcast", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::broadcast(*comm, ttts, 0, n, &x3[0]);			\
+  bool success2 = checkFadArrays(					\
+    x, x3, std::string(#TAY)+"<"+#TAY+"> Broadcast TTS", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, NestedGatherAll ) {			\
@@ -381,10 +500,15 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedGatherAll ) {			\
   int n = 7;								\
   int p1 = 5;								\
   int p2 = 5;								\
+  RCP< ValueTypeSerializer<int,TayType> > tts =				\
+    rcp(new ValueTypeSerializer<int,TayType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1+1));		\
+  ValueTypeSerializer<int,TayTayType> ttts(tts, p2+1);			\
+									\
   int size = comm->getSize();						\
   int rank = comm->getRank();						\
   int N = n*size;							\
-  Teuchos::Array<TayTayType> x(n), x2(N), x3(N);			\
+  Teuchos::Array<TayTayType> x(n), x2(N), x3(N), x4(N);			\
   for (int i=0; i<n; i++) {						\
     TayType f(p1, (rank+1)*(i+1));					\
     for (int k=0; k<=p1; k++)						\
@@ -409,10 +533,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedGatherAll ) {			\
 	x3[n*j+i].fastAccessCoeff(k) = f;				\
     }									\
   }									\
+									\
   Teuchos::gatherAll(*comm, n, &x[0], N, &x2[0]);			\
-  success = checkFadArrays(x3, x2,					\
-			   std::string(#TAY)+"<"+#TAY+">  Gather All", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    x3, x2, std::string(#TAY)+"<"+#TAY+">  Gather All", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::gatherAll(*comm, ttts, n, &x[0], N, &x4[0]);			\
+  bool success2 = checkFadArrays(					\
+    x3, x4, std::string(#TAY)+"<"+#TAY+">  Gather All FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, NestedSumAll ) {				\
@@ -424,8 +556,12 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedSumAll ) {				\
   int p1 = 5;								\
   int p2 = 5;								\
   int num_proc = comm->getSize();					\
+  RCP< ValueTypeSerializer<int,TayType> > tts =				\
+    rcp(new ValueTypeSerializer<int,TayType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1+1));		\
+  ValueTypeSerializer<int,TayTayType> ttts(tts, p2+1);			\
 									\
-  Teuchos::Array<TayTayType> x(n), sums(n), sums2(n);			\
+  Teuchos::Array<TayTayType> x(n), sums(n), sums2(n), sums3(n);		\
   for (int i=0; i<n; i++) {						\
     TayType f(p1, 1.0*(i+1));						\
     for (int k=0; k<=p1; k++)						\
@@ -448,10 +584,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedSumAll ) {				\
     for (int j=0; j<=p2; j++)						\
       sums2[i].fastAccessCoeff(j) = TayType(p1, 0.0);			\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);	\
-  success = checkFadArrays(sums, sums2,					\
-			   std::string(#TAY)+"<"+#TAY+"> Sum All", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    sums, sums2, std::string(#TAY)+"<"+#TAY+"> Sum All", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, ttts, Teuchos::REDUCE_SUM, n, &x[0], &sums3[0]); \
+  bool success2 = checkFadArrays(					\
+    sums, sums3, std::string(#TAY)+"<"+#TAY+"> Sum All", out);		\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, NestedMaxAll ) {				\
@@ -464,8 +608,12 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedMaxAll ) {				\
   int p2 = 5;								\
   int rank = comm->getRank();						\
   int num_proc = comm->getSize();					\
+  RCP< ValueTypeSerializer<int,TayType> > tts =				\
+    rcp(new ValueTypeSerializer<int,TayType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1+1));		\
+  ValueTypeSerializer<int,TayTayType> ttts(tts, p2+1);			\
 									\
-  Teuchos::Array<TayTayType> x(n), maxs(n), maxs2(n);			\
+  Teuchos::Array<TayTayType> x(n), maxs(n), maxs2(n), maxs3(n);		\
   for (int i=0; i<n; i++) {						\
     TayType f(p1, 1.0*(i+1)*(rank+1));					\
     for (int k=0; k<=p1; k++)						\
@@ -488,10 +636,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedMaxAll ) {				\
     for (int j=0; j<=p2; j++)						\
       maxs2[i].fastAccessCoeff(j) = TayType(p1, 0.0);			\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);	\
-  success = checkFadArrays(maxs, maxs2,					\
-			   std::string(#TAY)+"<"+#TAY+"> Max All", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    maxs, maxs2, std::string(#TAY)+"<"+#TAY+"> Max All", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, ttts, Teuchos::REDUCE_MAX, n, &x[0], &maxs3[0]); \
+  bool success2 = checkFadArrays(					\
+    maxs, maxs3, std::string(#TAY)+"<"+#TAY+"> Max All FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, NestedMinAll ) {				\
@@ -503,8 +659,12 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedMinAll ) {				\
   int p1 = 5;								\
   int p2 = 5;								\
   int rank = comm->getRank();						\
+  RCP< ValueTypeSerializer<int,TayType> > tts =				\
+    rcp(new ValueTypeSerializer<int,TayType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1+1));		\
+  ValueTypeSerializer<int,TayTayType> ttts(tts, p2+1);			\
 									\
-  Teuchos::Array<TayTayType> x(n), mins(n), mins2(n);			\
+  Teuchos::Array<TayTayType> x(n), mins(n), mins2(n), mins3(n);		\
   for (int i=0; i<n; i++) {						\
     TayType f(p1, 1.0*(i+1)*(rank+1));					\
     for (int k=0; k<=p1; k++)						\
@@ -527,10 +687,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedMinAll ) {				\
     for (int j=0; j<=p2; j++)						\
       mins2[i].fastAccessCoeff(j) = TayType(p1, 0.0);			\
   }									\
+									\
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);	\
-  success = checkFadArrays(mins, mins2,					\
-			   std::string(#TAY)+"<"+#TAY+"> Min All", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    mins, mins2, std::string(#TAY)+"<"+#TAY+"> Min All", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::reduceAll(*comm, ttts, Teuchos::REDUCE_MIN, n, &x[0], &mins3[0]); \
+  bool success2 = checkFadArrays(					\
+    mins, mins3, std::string(#TAY)+"<"+#TAY+"> Min All FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, NestedScanSum ) {			\
@@ -542,8 +710,12 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedScanSum ) {			\
   int p1 = 5;								\
   int p2 = 5;								\
   int rank = comm->getRank();						\
+  RCP< ValueTypeSerializer<int,TayType> > tts =				\
+    rcp(new ValueTypeSerializer<int,TayType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1+1));		\
+  ValueTypeSerializer<int,TayTayType> ttts(tts, p2+1);			\
 									\
-  Teuchos::Array<TayTayType> x(n), sums(n), sums2(n);			\
+  Teuchos::Array<TayTayType> x(n), sums(n), sums2(n), sums3(n);		\
   for (int i=0; i<n; i++) {						\
     TayType f(p1, 1.0*(i+1));						\
     for (int k=0; k<=p1; k++)						\
@@ -566,10 +738,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedScanSum ) {			\
     for (int j=0; j<=p2; j++)						\
       sums2[i].fastAccessCoeff(j) = TayType(p1, 0.0);			\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_SUM, n, &x[0], &sums2[0]);	\
-  success = checkFadArrays(sums, sums2,					\
-			   std::string(#TAY)+"<"+#TAY+"> Scan Sum", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    sums, sums2, std::string(#TAY)+"<"+#TAY+"> Scan Sum", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, ttts, Teuchos::REDUCE_SUM, n, &x[0], &sums3[0]);	\
+  bool success2 = checkFadArrays(					\
+    sums, sums3, std::string(#TAY)+"<"+#TAY+"> Scan Sum FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, NestedScanMax ) {			\
@@ -581,8 +761,12 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedScanMax ) {			\
   int p1 = 5;								\
   int p2 = 5;								\
   int rank = comm->getRank();						\
+  RCP< ValueTypeSerializer<int,TayType> > tts =				\
+    rcp(new ValueTypeSerializer<int,TayType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1+1));		\
+  ValueTypeSerializer<int,TayTayType> ttts(tts, p2+1);			\
 									\
-  Teuchos::Array<TayTayType> x(n), maxs(n), maxs2(n);			\
+  Teuchos::Array<TayTayType> x(n), maxs(n), maxs2(n), maxs3(n);		\
   for (int i=0; i<n; i++) {						\
     TayType f(p1, 1.0*(i+1)*(rank+1));					\
     for (int k=0; k<=p1; k++)						\
@@ -605,10 +789,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedScanMax ) {			\
     for (int j=0; j<=p2; j++)						\
       maxs2[i].fastAccessCoeff(j) = TayType(p1, 0.0);			\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_MAX, n, &x[0], &maxs2[0]);	\
-  success = checkFadArrays(maxs, maxs2,					\
-			   std::string(#TAY)+"<"+#TAY+"> Scan Max", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    maxs, maxs2, std::string(#TAY)+"<"+#TAY+"> Scan Max", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, ttts, Teuchos::REDUCE_MAX, n, &x[0], &maxs3[0]);	\
+  bool success2 = checkFadArrays(					\
+    maxs, maxs3, std::string(#TAY)+"<"+#TAY+"> Scan Max FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, NestedScanMin ) {			\
@@ -620,8 +812,12 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedScanMin ) {			\
   int p1 = 5;								\
   int p2 = 5;								\
   int rank = comm->getRank();						\
+  RCP< ValueTypeSerializer<int,TayType> > tts =				\
+    rcp(new ValueTypeSerializer<int,TayType>(				\
+	  rcp(new ValueTypeSerializer<int,double>), p1+1));		\
+  ValueTypeSerializer<int,TayTayType> ttts(tts, p2+1);			\
 									\
-  Teuchos::Array<TayTayType> x(n), mins(n), mins2(n);			\
+  Teuchos::Array<TayTayType> x(n), mins(n), mins2(n), mins3(n);		\
   for (int i=0; i<n; i++) {						\
     TayType f(p1, 1.0*(i+1)*(rank+1));					\
     for (int k=0; k<=p1; k++)						\
@@ -644,10 +840,18 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedScanMin ) {			\
     for (int j=0; j<=p2; j++)						\
       mins2[i].fastAccessCoeff(j) = TayType(p1, 0.0);			\
   }									\
+									\
   Teuchos::scan(*comm, Teuchos::REDUCE_MIN, n, &x[0], &mins2[0]);	\
-  success = checkFadArrays(mins, mins2,					\
-			   std::string(#TAY)+"<"+#TAY+"> Scan Min", out); \
-  success = checkResultOnAllProcs(*comm, out, success);			\
+  bool success1 = checkFadArrays(					\
+    mins, mins2, std::string(#TAY)+"<"+#TAY+"> Scan Min", out);		\
+  success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+  Teuchos::scan(*comm, ttts, Teuchos::REDUCE_MIN, n, &x[0], &mins3[0]);	\
+  bool success2 = checkFadArrays(					\
+    mins, mins3, std::string(#TAY)+"<"+#TAY+"> Scan Min FTS", out);	\
+  success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+  success = success1 && success2;                                       \
 }									\
 									\
 TEUCHOS_UNIT_TEST( TAY##_Comm, NestedSendReceive ) {			\
@@ -661,7 +865,12 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedSendReceive ) {			\
     int n = 7;								\
     int p1 = 5;								\
     int p2 = 5;								\
-    Teuchos::Array<TayTayType> x(n), x2(n);				\
+    RCP< ValueTypeSerializer<int,TayType> > tts =			\
+      rcp(new ValueTypeSerializer<int,TayType>(				\
+	    rcp(new ValueTypeSerializer<int,double>), p1+1));		\
+    ValueTypeSerializer<int,TayTayType> ttts(tts, p2+1);		\
+									\
+    Teuchos::Array<TayTayType> x(n), x2(n), x3(n);			\
     for (int i=0; i<n; i++) {						\
       TayType f(p1, 1.0*(i+1));						\
       for (int k=0; k<=p1; k++)						\
@@ -675,13 +884,24 @@ TEUCHOS_UNIT_TEST( TAY##_Comm, NestedSendReceive ) {			\
       for (int j=0; j<=p2; j++)						\
 	x2[i].fastAccessCoeff(j) = TayType(p1, 0.0);			\
     }									\
-    if (rank != 1)							\
+    if (rank != 1) {							\
       x2 = x;								\
+      x3 = x2;								\
+    }									\
+									\
     if (rank == 0) Teuchos::send(*comm, n, &x[0], 1);			\
     if (rank == 1) Teuchos::receive(*comm, 0, n, &x2[0]);		\
-    success = checkFadArrays(x, x2,					\
-			     std::string(#TAY)+"<"+#TAY+"> Send/Receive", out);	\
-    success = checkResultOnAllProcs(*comm, out, success);		\
+    bool success1 = checkFadArrays(					\
+      x, x2, std::string(#TAY)+"<"+#TAY+"> Send/Receive", out);		\
+    success1 = checkResultOnAllProcs(*comm, out, success1);		\
+									\
+    if (rank == 0) Teuchos::send(*comm, ttts, n, &x[0], 1);		\
+    if (rank == 1) Teuchos::receive(*comm, ttts, 0, n, &x3[0]);		\
+    bool success2 = checkFadArrays(					\
+      x, x3, std::string(#TAY)+"<"+#TAY+"> Send/Receive FTS", out);	\
+    success2 = checkResultOnAllProcs(*comm, out, success2);		\
+									\
+    success = success1 && success2;					\
   }									\
   else									\
     success = true;							\

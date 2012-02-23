@@ -158,11 +158,11 @@ namespace Belos {
         innerProd(X,Y,Z);
       }
       else if ( _hasOp ) {
-        // the user has done the matrix std::vector for us
+        // the user has done the matrix vector for us
         MVT::MvTransMv(SCT::one(),X,*MY,Z);
       }
       else {
-        // there is no matrix std::vector
+        // there is no matrix vector
         MVT::MvTransMv(SCT::one(),X,Y,Z);
       }
     }

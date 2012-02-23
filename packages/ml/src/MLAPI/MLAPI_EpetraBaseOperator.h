@@ -44,9 +44,9 @@ class EpetraBaseOperator : public Epetra_Operator {
 public:
 
   //! Constructor.
-  EpetraBaseOperator(const Epetra_Map& Map,
+  EpetraBaseOperator(const Epetra_Map& inMap,
                      const BaseOperator& Op) :
-    Map_(Map),
+    Map_(inMap),
     Op_(Op)
   {}
 
@@ -63,7 +63,7 @@ public:
   }
 
   //! Sets the use of tranpose (NOT IMPLEMENTED).
-  virtual int SetUseTranspose(bool UseTranspose)
+  virtual int SetUseTranspose(bool UseTransposeFlag)
   {
     ML_CHK_ERR(-1);
   }

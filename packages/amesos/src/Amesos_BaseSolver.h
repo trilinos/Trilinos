@@ -325,7 +325,7 @@ class Amesos_BaseSolver
   virtual int Solve() = 0;
 
   //@}
-  //@{ \name Atribute set methods
+  //@{ \name Attribute set methods
 
   //! If set true, X will be set to the solution of A<SUP>T</SUP> X = B (not A X = B) 
   /*! If the implementation of this interface does not support

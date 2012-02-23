@@ -377,6 +377,7 @@ namespace Belos {
 
     private:
       typedef Teuchos::ScalarTraits<scalar_type> STS;
+      typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
     public:
       /// \brief Constructor.
@@ -643,8 +644,9 @@ namespace Belos {
 	  *out << "Reading right-hand side B from Matrix Market file" << endl;
 	  Teuchos::OSTab tab2 (out);
 	  typedef ::Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
-	  B = reader_type::readDenseFile (inRhsFilename, comm_, A->getNode(), 
-					  A->getRangeMap(), tolerant_, debug_);
+	  RCP<const map_type> map = A->getRangeMap();
+	  B = reader_type::readDenseFile (inRhsFilename, comm_, A->getNode(),
+					  map, tolerant_, debug_);
 	} else {
 	  // Our choice of exact solution and right-hand side depend on
 	  // the test problem.  If we generated the GMRES-unfriendly

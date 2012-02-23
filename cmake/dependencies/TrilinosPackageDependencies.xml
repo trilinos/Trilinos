@@ -285,8 +285,8 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="Isorropia" dir="packages/isorropia" type="PS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Zoltan"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Tpetra,Kokkos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Zoltan"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra,Kokkos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Kokkos,Tpetra"/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -674,6 +674,51 @@
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
   </Package>
+  <Package name="SEACASGen3D" dir="packages/seacas/applications/gen3d" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASGenshell" dir="packages/seacas/applications/genshell" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASGrepos" dir="packages/seacas/applications/grepos" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
   <Package name="SEACASGrope" dir="packages/seacas/applications/grope" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -795,7 +840,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACAS" dir="packages/seacas" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASExodus_for,SEACASNemesis,SEACASIoss,SEACASChaco,SEACASAprepro_lib,SEACASSupes,SEACASSuplib,SEACASAlgebra,SEACASAprepro,SEACASConjoin,SEACASEjoin,SEACASEpu,SEACASExodiff,SEACASExomatlab,SEACASExotxt,SEACASGjoin,SEACASGrope,SEACASMapvarlib,SEACASMapvar,SEACASMapvar-kd,SEACASNemslice,SEACASNemspread,SEACASTxtexo"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASExodus_for,SEACASNemesis,SEACASIoss,SEACASChaco,SEACASAprepro_lib,SEACASSupes,SEACASSuplib,SEACASAlgebra,SEACASAprepro,SEACASConjoin,SEACASEjoin,SEACASEpu,SEACASExodiff,SEACASExomatlab,SEACASExotxt,SEACASGjoin,SEACASGen3D,SEACASGenshell,SEACASGrepos,SEACASGrope,SEACASMapvarlib,SEACASMapvar,SEACASMapvar-kd,SEACASNemslice,SEACASNemspread,SEACASTxtexo"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExo2mat,SEACASMat2exo"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -1066,7 +1111,7 @@
   </Package>
   <Package name="NOX" dir="packages/nox" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,ThyraCore,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Amesos,AztecOO,Ifpack,ML,Belos,Anasazi,Stratimikos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,ThyraCore,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Amesos,AztecOO,Ifpack,ML,Belos,Anasazi,Stratimikos,Teko"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Stratimikos,Isorropia"/>
     <LIB_REQUIRED_DEP_TPLS/>

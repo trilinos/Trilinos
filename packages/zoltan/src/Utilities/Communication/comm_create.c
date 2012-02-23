@@ -289,6 +289,7 @@ Mem_Err:
     plan->total_recv_size = total_recv_size;
     plan->maxed_recvs = 0;
     plan->comm = comm;
+    plan->plan_reverse = NULL;
 
     if (MPI_RECV_LIMIT > 0){
       /* If we have a limit to the number of posted receives we are allowed,

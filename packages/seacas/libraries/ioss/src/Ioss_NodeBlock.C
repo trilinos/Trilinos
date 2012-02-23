@@ -30,14 +30,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_NodeBlock.h>
-
 #include <Ioss_DatabaseIO.h>
-#include <Ioss_Property.h>
 #include <Ioss_Field.h>
-#include <Ioss_ElementTopology.h>
+#include <Ioss_NodeBlock.h>
+#include <Ioss_Property.h>
 #include <assert.h>
+#include <stddef.h>
 #include <string>
+
+#include "Ioss_EntityBlock.h"
+#include "Ioss_FieldManager.h"
+#include "Ioss_PropertyManager.h"
 
 namespace {
   const std::string SCALAR()    { return std::string("scalar");}

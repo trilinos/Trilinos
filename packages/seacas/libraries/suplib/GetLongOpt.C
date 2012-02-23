@@ -2,14 +2,14 @@
 #include <GetLongOpt.h>
 #include <string.h>
 
-GetLongOpt::GetLongOpt(const char optmark)
+GetLongOption::GetLongOption(const char optmark)
   : table(NULL), ustring(NULL), pname(NULL), last(NULL),
     enroll_done(0), optmarker(optmark)
 {
    ustring = "[valid options and arguments]";
 }
 
-GetLongOpt::~GetLongOpt()
+GetLongOption::~GetLongOption()
 {
    Cell *t = table;
 
@@ -21,7 +21,7 @@ GetLongOpt::~GetLongOpt()
 }
 
 char *
-GetLongOpt::basename(char * const pathname)
+GetLongOption::basename(char * const pathname)
 {
    char *s;
 
@@ -33,8 +33,9 @@ GetLongOpt::basename(char * const pathname)
 }
 
 int
-GetLongOpt::enroll(const char * const opt, const OptType t,
-const char * const desc, const char * const val)
+GetLongOption::enroll(const char * const opt, const OptType t,
+		   const char * const desc,
+		   const char * const val, const char * const optval)
 {
    if ( enroll_done ) return 0;
 
@@ -43,6 +44,7 @@ const char * const desc, const char * const val)
    c->type = t;
    c->description = desc ? desc : "no description available";
    c->value = val;
+   c->opt_value = optval;
    c->next = 0;
 
    if ( last == 0 ) {
@@ -57,20 +59,20 @@ const char * const desc, const char * const val)
 }
 
 const char *
-GetLongOpt::retrieve(const char * const opt) const
+GetLongOption::retrieve(const char * const opt) const
 {
    Cell *t;
    for ( t = table; t != 0; t = t->next ) {
       if ( strcmp(opt, t->option) == 0 )
 	 return t->value;
    }
-   std::cerr << "GetLongOpt::retrieve - unenrolled option ";
+   std::cerr << "GetLongOption::retrieve - unenrolled option ";
    std::cerr << optmarker << opt << "\n";
    return 0;
 }
 
 int
-GetLongOpt::parse(int argc, char * const *argv)
+GetLongOption::parse(int argc, char * const *argv)
 {
    int my_optind = 1;
 
@@ -154,11 +156,11 @@ GetLongOpt::parse(int argc, char * const *argv)
 }
 
 int
-GetLongOpt::parse(char * const str, char * const p)
+GetLongOption::parse(char * const str, char * const p)
 {
    enroll_done = 1;
    char *token = strtok(str, " \t");
-   const char *name = p ? p : "GetLongOpt";
+   const char *name = p ? p : "GetLongOption";
 
    while ( token ) {
       if ( token[0] != optmarker || token[1] == optmarker ) {
@@ -218,19 +220,19 @@ GetLongOpt::parse(char * const str, char * const p)
 }
 
 /* ----------------------------------------------------------------
-GetLongOpt::setcell returns
+GetLongOption::setcell returns
    -1	if there was an error
     0	if the nexttoken was not consumed
     1	if the nexttoken was consumed
 ------------------------------------------------------------------- */
 
 int
-GetLongOpt::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
+GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
 {
    if ( c == 0 ) return -1;
 
    switch ( c->type ) {
-   case GetLongOpt::NoValue :
+   case GetLongOption::NoValue :
       if ( *valtoken == '=' ) {
 	 std::cerr << name << ": unsolicited value for flag ";
 	 std::cerr << optmarker << c->option << "\n";
@@ -240,7 +242,7 @@ GetLongOpt::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
       // gives out-of-range warnings on some systems...
       c->value = (char *) 1;
       return 0;
-   case GetLongOpt::OptionalValue :
+   case GetLongOption::OptionalValue :
       if ( *valtoken == '=' ) {
 	 c->value = ++valtoken;
 	 return 0;
@@ -250,9 +252,12 @@ GetLongOpt::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
 	    c->value = nexttoken;
 	    return 1;
 	 }
-	 else return 0;
+	 else {
+	   c->value = c->opt_value;
+	   return 0;
+	 }
       }
-   case GetLongOpt::MandatoryValue :
+   case GetLongOption::MandatoryValue :
       if ( *valtoken == '=' ) {
 	 c->value = ++valtoken;
 	 return 0;
@@ -275,16 +280,16 @@ GetLongOpt::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
 }
 
 void
-GetLongOpt::usage(std::ostream &outfile) const
+GetLongOption::usage(std::ostream &outfile) const
 {
    Cell *t;
 
    outfile << "\nusage: " << pname << " " << ustring << "\n";
    for ( t = table; t != 0; t = t->next ) {
       outfile << "\t" << optmarker << t->option;
-      if ( t->type == GetLongOpt::MandatoryValue )
+      if ( t->type == GetLongOption::MandatoryValue )
 	 outfile << " <$val>";
-      else if ( t->type == GetLongOpt::OptionalValue )
+      else if ( t->type == GetLongOption::OptionalValue )
 	 outfile << " [$val]";
       outfile << " (" << t->description << ")\n";
    }

@@ -981,7 +981,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   
   INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
   SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
-  SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
   SET(CTEST_USE_LAUNCHERS 1)
 
   # For coverage dashboards, send results to specialized dashboard if
@@ -1098,7 +1097,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
     FILE(WRITE "${CTEST_BINARY_DIRECTORY}/Updates.txt"
      ${EXTRA_REPO_CHANGES_STR})
-    SET(CTEST_NOTES_FILES "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
     # NOTE: Above, we are making the 'Updates.txt' file come first because
     # this will be the first Notes file shown on CDash.
 
@@ -1236,6 +1234,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n***\n"
     )
 
+  IF (EXISTS ${CTEST_BINARY_DIRECTORY}/Updates.txt)
+    SET(CTEST_NOTES_FILES "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
+  ENDIF()
   PRINT_VAR(CTEST_NOTES_FILES)
 
   # Note: We must only do the submit after we have decided if there are any
@@ -1376,6 +1377,11 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           # Overridde from this file!
           INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
         ENDIF()
+
+        IF (EXISTS ${CMAKE_CACHE_CLEAN_FILE})
+          SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
+        ENDIF()
+        PRINT_VAR(CTEST_NOTES_FILES)
       
         # Submit configure results and the notes to the dashboard 
         IF (CTEST_DO_SUBMIT)

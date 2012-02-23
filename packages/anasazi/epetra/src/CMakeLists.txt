@@ -34,10 +34,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   AnasaziEpetraAdapter.hpp 
+  AnasaziSpecializedEpetraAdapter.hpp 
   )
 
 APPEND_SET(SOURCES
   AnasaziEpetraAdapter.cpp
+  AnasaziSpecializedEpetraAdapter.cpp
   )
 
 #

@@ -1128,9 +1128,14 @@ int Epetra_CrsMatrix::OptimizeStorage() {
       }
     }
 
-    for (int i=0;i<NumMyRows_; ++i) {
-       if (Values_[i]!=0) delete [] Values_[i];
+    // Do not delete values if there is a static profile --- in this case the Values_
+    // array just points to All_Values_, not unique memory.
+    if(!Graph().StaticProfile()){
+      for (int i=0;i<NumMyRows_; ++i) {
+	if (Values_[i]!=0) delete [] Values_[i];
+      }
     }
+
     delete [] Values_alloc_lengths_; Values_alloc_lengths_ = 0;
   } // End of !Contiguous section
   else {
@@ -2174,7 +2179,7 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
           for(j=0; j<NumEntries; ++j) {
             Indices[j] = LCID(colMap.GID(Indices[j]));
           }
-	  ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
+	  ierr = ReplaceMyValues(ToRow, NumEntries, values, Indices);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }

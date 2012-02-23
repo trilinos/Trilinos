@@ -181,7 +181,7 @@ class Amesos_ComponentBaseSolver: public virtual Amesos_BaseSolver {
     */
   //@}
   
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
     //! SetRowPermutation
     virtual int SetRowPermutation( int* RowPermutation ) = 0;

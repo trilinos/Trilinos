@@ -213,7 +213,7 @@ namespace Sacado {
     private:
       
       //! How to serialize ints
-      typedef Teuchos::SerializationTraits<Ordinal,int> iSerT;
+      typedef Teuchos::SerializationTraits<Ordinal,unsigned int> iSerT;
 
       //! How to serialize ordinals
       typedef Teuchos::SerializationTraits<Ordinal,Ordinal> oSerT;
@@ -229,15 +229,31 @@ namespace Sacado {
       /** \brief Return the number of bytes for <tt>count</tt> objects. */
       static Ordinal fromCountToIndirectBytes(const Serializer& vs,
 					      const Ordinal count, 
-					      const TayType buffer[]) { 
+					      const TayType buffer[],
+					      const Ordinal sz = 0) { 
 	Ordinal bytes = 0;
+	TayType *x = NULL;
+	const TayType *cx;
 	for (Ordinal i=0; i<count; i++) {
-	  int d = buffer[i].degree();
-	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &d);
+	  unsigned int my_sz = buffer[i].degree()+1;
+	  unsigned int tot_sz = sz;
+	  if (sz == 0) tot_sz = my_sz;
+	  if (tot_sz != my_sz) {
+	    x = new TayType(buffer[i]);
+            x->resize(tot_sz-1, true);
+            cx = x;
+	  }
+          else 
+            cx = &(buffer[i]);
+	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &tot_sz);
 	  Ordinal b2 = vs.fromCountToIndirectBytes(
-	    d+1, &(buffer[i].fastAccessCoeff(0)));
+	    tot_sz, &(cx->fastAccessCoeff(0)));
 	  Ordinal b3 = oSerT::fromCountToIndirectBytes(1, &b2);
 	  bytes += b1+b2+b3;
+	  if (x != NULL) {
+	    delete x;
+	    x = NULL;
+	  }
 	}
 	return bytes;
       }
@@ -247,30 +263,46 @@ namespace Sacado {
 			     const Ordinal count, 
 			     const TayType buffer[], 
 			     const Ordinal bytes, 
-			     char charBuffer[]) { 
+			     char charBuffer[],
+			     const Ordinal sz = 0) { 
+	TayType *x = NULL;
+	const TayType *cx;
 	for (Ordinal i=0; i<count; i++) {
 	  // First serialize degree
-	  int d = buffer[i].degree();
-	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &d);
-	  iSerT::serialize(1, &d, b1, charBuffer);
+	  unsigned int my_sz = buffer[i].degree()+1;
+	  unsigned int tot_sz = sz;
+	  if (sz == 0) tot_sz = my_sz;
+	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &tot_sz);
+	  iSerT::serialize(1, &tot_sz, b1, charBuffer);
 	  charBuffer += b1;
 	
 	  // Next serialize taylor coefficients
+	  if (tot_sz != my_sz) {
+	    x = new TayType(buffer[i]);
+            x->resize(tot_sz-1, true);
+            cx = x;
+	  }
+          else 
+            cx = &(buffer[i]);
 	  Ordinal b2 = vs.fromCountToIndirectBytes(
-	    d+1, &(buffer[i].fastAccessCoeff(0)));
+	    tot_sz, &(cx->fastAccessCoeff(0)));
 	  Ordinal b3 = oSerT::fromCountToIndirectBytes(1, &b2);
 	  oSerT::serialize(1, &b2, b3, charBuffer); 
 	  charBuffer += b3;
-	  vs.serialize(d+1, &(buffer[i].fastAccessCoeff(0)), b2, 
-		       charBuffer);
+	  vs.serialize(tot_sz, &(cx->fastAccessCoeff(0)), b2, charBuffer);
 	  charBuffer += b2;
+	  if (x != NULL) {
+	    delete x;
+	    x = NULL;
+	  }
 	}
       }
 
       /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
       static Ordinal fromIndirectBytesToCount(const Serializer& vs,
 					      const Ordinal bytes, 
-					      const char charBuffer[]) {
+					      const char charBuffer[],
+					      const Ordinal sz = 0) {
 	Ordinal count = 0;
 	Ordinal bytes_used = 0;
 	while (bytes_used < bytes) {
@@ -298,22 +330,25 @@ namespace Sacado {
 			       const Ordinal bytes, 
 			       const char charBuffer[], 
 			       const Ordinal count, 
-			       TayType buffer[]) { 
+			       TayType buffer[],
+			       const Ordinal sz = 0) { 
 	for (Ordinal i=0; i<count; i++) {
 	
 	  // Deserialize degree
 	  Ordinal b1 = iSerT::fromCountToDirectBytes(1);
-	  const int *d = iSerT::convertFromCharPtr(charBuffer);
+	  const unsigned int *my_sz = iSerT::convertFromCharPtr(charBuffer);
 	  charBuffer += b1;
 	
 	  // Create empty Taylor object of given size
-	  buffer[i] = TayType(*d, 0.0);
+	  unsigned int tot_sz = sz;
+	  if (sz == 0) tot_sz = *my_sz;
+	  buffer[i] = TayType(tot_sz-1, 0.0);
 	
 	  // Deserialize taylor coefficients
 	  Ordinal b3 = oSerT::fromCountToDirectBytes(1);
 	  const Ordinal *b2 = oSerT::convertFromCharPtr(charBuffer);
 	  charBuffer += b3;
-	  vs.deserialize(*b2, charBuffer, *d+1, 
+	  vs.deserialize(*b2, charBuffer, *my_sz, 
 			 &(buffer[i].fastAccessCoeff(0)));
 	  charBuffer += *b2;
 	}
@@ -399,15 +434,29 @@ namespace Sacado {
       //! Serializer for value types
       Teuchos::RCP<const ValueSerializer> vs;
 
+      //! Specified number of derivative components;
+      Ordinal sz;
+
     public:
+
+      //! Typename of value serializer
+      typedef ValueSerializer value_serializer_type;
 
       /// \brief Whether we support direct serialization.
       static const bool supportsDirectSerialization = 
 	Imp::supportsDirectSerialization;
 
       //! Constructor
-      SerializerImp(const Teuchos::RCP<const ValueSerializer>& vs_) :
-	vs(vs_) {}
+      SerializerImp(const Teuchos::RCP<const ValueSerializer>& vs_,
+		    Ordinal sz_ = 0) :
+	vs(vs_), sz(sz_) {}
+
+      //! Return specified serializer size
+      Ordinal getSerializerSize() const { return sz; }
+      
+      //! Get nested value serializer
+      Teuchos::RCP<const value_serializer_type> getValueSerializer() const { 
+	return vs; }
 
       //! @name Indirect serialization functions (always defined and supported) 
       //@{
@@ -415,7 +464,7 @@ namespace Sacado {
       /** \brief Return the number of bytes for <tt>count</tt> objects. */
       Ordinal fromCountToIndirectBytes(const Ordinal count, 
 				       const TayType buffer[]) const { 
-	return Imp::fromCountToIndirectBytes(*vs, count, buffer);
+	return Imp::fromCountToIndirectBytes(*vs, count, buffer, sz);
       }
 
       /** \brief Serialize to an indirect <tt>char[]</tt> buffer. */
@@ -423,13 +472,13 @@ namespace Sacado {
 		      const TayType buffer[], 
 		      const Ordinal bytes, 
 		      char charBuffer[]) const { 
-	Imp::serialize(*vs, count, buffer, bytes, charBuffer);
+	Imp::serialize(*vs, count, buffer, bytes, charBuffer, sz);
       }
 
       /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
       Ordinal fromIndirectBytesToCount(const Ordinal bytes, 
 				       const char charBuffer[]) const {
-	return Imp::fromIndirectBytesToCount(*vs, bytes, charBuffer);
+	return Imp::fromIndirectBytesToCount(*vs, bytes, charBuffer, sz);
       }
 
       /** \brief Deserialize from an indirect <tt>char[]</tt> buffer. */
@@ -437,7 +486,7 @@ namespace Sacado {
 			const char charBuffer[], 
 			const Ordinal count, 
 			TayType buffer[]) const { 
-	return Imp::deserialize(*vs, bytes, charBuffer, count, buffer);
+	return Imp::deserialize(*vs, bytes, charBuffer, count, buffer, sz);
       }
   
       //@}

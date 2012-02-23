@@ -31,23 +31,21 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#include <Ioss_CodeTypes.h>
-
-#include <assert.h>
-#include <stdlib.h>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <math.h>
-#include <string>
-#include <cstring>
-
-
-#include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
+#include <Ioss_CodeTypes.h>
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Transform.h>
+#include <Ioss_Utils.h>
+#include <assert.h>
+#include <init/Ionit_Initializer.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
 
 #ifdef HAVE_MPI
 #include <mpi.h>

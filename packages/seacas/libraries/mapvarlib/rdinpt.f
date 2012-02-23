@@ -992,33 +992,6 @@ C
 C
       END
 
-C=======================================================================
-      INTEGER FUNCTION LOCINT (INT, LENLST, INTLST)
-C=======================================================================
-C   --*** LOCINT *** (ETCLIB) Find integer in list
-C   --   Written by Amy Gilkey - revised 11/10/87
-C   --
-C   --LOCINT returns the index of the given integer in a list of integers.
-C   --If the integer is not in the list, returns 0.
-C   --
-C   --Parameters:
-C   --   INT - IN - the integer to be searched for
-C   --   LENLST - IN - the number of integers in the list
-C   --   INTLST - IN - the list of integers to be searched
-
-      INTEGER INT
-      INTEGER LENLST
-      INTEGER INTLST(*)
-
-      DO 10 LOCINT = 1, LENLST
-         IF (INT .EQ. INTLST(LOCINT)) GOTO 20
-   10 CONTINUE
-      LOCINT = 0
-
-   20 CONTINUE
-      RETURN
-      END
-
       subroutine pmap(imp, mp, seabmp, nout)
       DIMENSION MP(3,*), SEABMP(*)
       

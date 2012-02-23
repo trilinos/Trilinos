@@ -159,7 +159,7 @@ ParameterList::~ParameterList()
 
 void ParameterList::unused(std::ostream& os) const
 {
-  for (ConstIterator i = params_.begin(); i != params_.end(); ++i) {
+  for (ConstIterator i = this->begin(); i != this->end(); ++i) {
     if (!(entry(i).isUsed())) {
       os << "WARNING: Parameter \"" << name(i) << "\" " << entry(i)
          << " is unused" << std::endl;
@@ -188,8 +188,8 @@ std::string ParameterList::currentParametersString() const
 
 bool ParameterList::isSublist(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name_in);
-  if (i != params_.end())
+  ConstIterator i = this->find(name_in);
+  if (i != this->end())
     return (entry(i).isList());
   return false;
 }
@@ -197,7 +197,7 @@ bool ParameterList::isSublist(const std::string& name_in) const
 
 bool ParameterList::isParameter(const std::string& name_in) const
 {
-  return (params_.find(name_in) != params_.end());
+  return (this->find(name_in) != this->end());
 }
 
 
@@ -205,13 +205,13 @@ bool ParameterList::remove(
   std::string const& name_in, bool throwIfNotExists
   )
 {
-  Iterator i = params_.find(name_in);
+  Iterator i = this->nonconstFind(name_in);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    throwIfNotExists && i == params_.end(), Exceptions::InvalidParameterName
+    throwIfNotExists && i == this->nonconstEnd(), Exceptions::InvalidParameterName
     ,"Teuchos::ParameterList::remove(name,throwIfNotExists):"
     "\n\nError, the parameter \"" << name_in << "\" does not exist!"
     );
-  if( i != params_.end() ) {
+  if( i != this->nonconstEnd() ) {
     params_.erase(i);
   }
   return false;
@@ -224,11 +224,11 @@ ParameterList& ParameterList::sublist(
   )
 {
   // Find name in list, if it exists.
-  Iterator i = params_.find(name_in);
+  Iterator i = this->nonconstFind(name_in);
 
   // If it does exist and is a list, return the list value.
   // Otherwise, throw an error.
-  if (i != params_.end()) {
+  if (i != this->nonconstEnd()) {
 #ifdef TEUCHOS_DEBUG
     const std::string actualName = this->name(i);
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -279,11 +279,11 @@ ParameterList& ParameterList::sublist(
 const ParameterList& ParameterList::sublist(const std::string& name_in) const
 {
   // Find name in list, if it exists.
-  ConstIterator i = params_.find(name_in);
+  ConstIterator i = this->find(name_in);
 
   // If it does not exist, throw an error
   TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
-    i == params_.end(), Exceptions::InvalidParameterName
+    i == this->end(), Exceptions::InvalidParameterName
     ,"Error, the sublist "<<this->name()<<"->\""<<name_in<<"\" does not exist!"
     );
 
@@ -313,12 +313,12 @@ std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOp
   RCP<FancyOStream>
     out = getFancyOStream(rcp(&os,false));
   OSTab tab(out,indent);
-  if (params_.begin() == params_.end()) {
+  if (this->begin() == this->end()) {
     *out <<"[empty list]" << std::endl;
   }
   else { 
     // Print parameters first
-    for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 
+    for (ConstIterator i = this->begin(); i != this->end(); ++i) 
     {
       const std::string &name_i = this->name(i);
       const ParameterEntry &entry_i = entry(i);
@@ -341,7 +341,7 @@ std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOp
       }
     }
     // Print sublists second
-    for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 
+    for (ConstIterator i = this->begin(); i != this->end(); ++i) 
     {
       const ParameterEntry &entry_i = entry(i);
       if(!entry_i.isList())
@@ -362,36 +362,6 @@ std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOp
 std::ostream& ParameterList::print(std::ostream& os, int indent, bool showTypes, bool showFlags) const
 {
   return this->print(os,PrintOptions().indent(indent).showTypes(showTypes).showFlags(showFlags));
-}
-
-
-ParameterList::ConstIterator ParameterList::begin() const
-{
-  return params_.begin();
-}
-
-
-ParameterList::ConstIterator ParameterList::end() const
-{
-  return params_.end();
-}
-
-
-const std::string& ParameterList::name(ConstIterator i) const
-{
-  return (i->first);
-}
-
-
-ParameterEntry& ParameterList::entry(Iterator i)
-{
-  return (i->second);
-}
-
-
-const ParameterEntry& ParameterList::entry(ConstIterator i) const
-{
-  return (i->second);
 }
 
 
@@ -618,23 +588,11 @@ void ParameterList::validateParametersAndSetDefaults(
 // private
 
 
-ParameterList::Iterator ParameterList::nonconstBegin()
-{
-  return params_.begin();
-}
-
-
-ParameterList::Iterator ParameterList::nonconstEnd()
-{
-  return params_.end();
-}
-
-
 void ParameterList::updateSubListNames(int depth)
 {
   const std::string this_name = this->name();
   Map::iterator itr;
-  for( itr = params_.begin(); itr != params_.end(); ++itr ) {
+  for( itr = this->nonconstBegin(); itr != this->nonconstEnd(); ++itr ) {
     const std::string &entryName = this->name(itr);
     const ParameterEntry &theEntry = this->entry(itr);
     if(theEntry.isList()) {

@@ -31,6 +31,7 @@ echo "
 -D MPI_BASE_DIR:PATH=/opt/local/lib/openmpi
 " > MPI_DEBUG.config
 
+#   --without-serial-release \
 
 # Test the MPI_DEBUG.  This script will do pull, configure, build, test. 
 ${TRILINOS_SRC_DIR}/checkin-test.py \
@@ -38,7 +39,6 @@ ${TRILINOS_SRC_DIR}/checkin-test.py \
    --trilinos-src-dir=${TRILINOS_SRC_DIR} \
    --enable-all-packages=off \
    --no-enable-fwd-packages \
-   --without-serial-release \
    --enable-packages=Trios \
    --extra-build=MPI_DEBUG \
    --pull \

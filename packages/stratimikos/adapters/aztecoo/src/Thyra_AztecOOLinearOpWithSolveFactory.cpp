@@ -948,7 +948,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       //
       // The preconditioner comes as an operator so let's use it as such
       //
-      // Forawrd solve
+      // Forward solve
       RCP<const Epetra_Operator>
         epetraOps[]
         = { epetra_epetraPrecOp };

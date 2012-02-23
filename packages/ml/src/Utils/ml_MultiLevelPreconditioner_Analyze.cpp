@@ -95,7 +95,7 @@ AnalyzeHierarchy(const bool AnalyzeMatrices,
   time = GetClock();
 
   if (Comm().MyPID() == 0) {
-    cout << endl;
+    std::cout << std::endl;
     ML_print_line("-",80);
   }
 
@@ -105,46 +105,46 @@ AnalyzeHierarchy(const bool AnalyzeMatrices,
       sprintf(name,"A matrix level %d", LevelID_[i]);
 #ifdef HAVE_ML_IFPACK
       ML_Epetra::RowMatrix wrapper(&(ml_->Amat[LevelID_[i]]), &(Comm()));
-      if (verbose_) cout << endl;
+      if (verbose_) std::cout << std::endl;
       wrapper.SetLabel(name);
       Ifpack_Analyze(wrapper,true,ml_->Amat[LevelID_[i]].num_PDEs);
-      if (verbose_) cout << endl;
+      if (verbose_) std::cout << std::endl;
 #else
-      cerr << ErrorMsg_ << "AnalyzeHierarchy(true) requires IFPACK" << endl;
-      cerr << ErrorMsg_ << "Please configure ML with the (at least) the following:" << endl;
-      cerr << ErrorMsg_ << "--enable-epetra" << endl;
-      cerr << ErrorMsg_ << "--enable-teuchos" << endl;
-      cerr << ErrorMsg_ << "--enable-ifpack" << endl;
+      std::cerr << ErrorMsg_ << "AnalyzeHierarchy(true) requires IFPACK" << std::endl;
+      std::cerr << ErrorMsg_ << "Please configure ML with the (at least) the following:" << std::endl;
+      std::cerr << ErrorMsg_ << "--enable-epetra" << std::endl;
+      std::cerr << ErrorMsg_ << "--enable-teuchos" << std::endl;
+      std::cerr << ErrorMsg_ << "--enable-ifpack" << std::endl;
       ML_CHK_ERR(-1);
 #endif
     }
   }
 
   if (Comm().MyPID() == 0) {
-    cout << endl;
-    cout << "Solving Ae = 0, with a random initial guess" << endl;
-    cout << "- number of pre-smoother cycle(s)  = " << PreCycles << endl;
-    cout << "- number of post-smoother cycle(s) = " << PostCycles << endl;
-    cout << "- number of ML cycle(s)            = " << MLCycles << endl;
-    cout << "- all reported data are scaled with respect to the corresponding" << endl
-         << "  value before the application of the solver" << endl;
-    cout << "  (0 == perfect solution, 1 == no effect)" << endl;
-    cout << endl;
-    cout.width(40); cout.setf(ios::left); 
-    cout << "Solver";
-    cout.width(10); cout.setf(ios::left); 
-    cout << "  Linf";
-    cout.width(10); cout.setf(ios::left); 
-    cout << "   L2";
-    cout << endl;
-    cout.width(40); cout.setf(ios::left); 
-    cout << "------";
-    cout.width(10); cout.setf(ios::left); 
-    cout << "  ----";
-    cout.width(10); cout.setf(ios::left); 
-    cout << "   --";
-    cout << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << "Solving Ae = 0, with a random initial guess" << std::endl;
+    std::cout << "- number of pre-smoother cycle(s)  = " << PreCycles << std::endl;
+    std::cout << "- number of post-smoother cycle(s) = " << PostCycles << std::endl;
+    std::cout << "- number of ML cycle(s)            = " << MLCycles << std::endl;
+    std::cout << "- all reported data are scaled with respect to the corresponding" << std::endl
+         << "  value before the application of the solver" << std::endl;
+    std::cout << "  (0 == perfect solution, 1 == no effect)" << std::endl;
+    std::cout << std::endl;
+    std::cout.width(40); std::cout.setf(std::ios::left); 
+    std::cout << "Solver";
+    std::cout.width(10); std::cout.setf(std::ios::left); 
+    std::cout << "  Linf";
+    std::cout.width(10); std::cout.setf(std::ios::left); 
+    std::cout << "   L2";
+    std::cout << std::endl;
+    std::cout.width(40); std::cout.setf(std::ios::left); 
+    std::cout << "------";
+    std::cout.width(10); std::cout.setf(std::ios::left); 
+    std::cout << "  ----";
+    std::cout.width(10); std::cout.setf(std::ios::left); 
+    std::cout << "   --";
+    std::cout << std::endl;
+    std::cout << std::endl;
   }
 
   if (PreCycles > 0 || PostCycles > 0)
@@ -156,11 +156,11 @@ AnalyzeHierarchy(const bool AnalyzeMatrices,
     AnalyzeCycle(MLCycles);
 
   if (Comm().MyPID() == 0) {
-    cout << endl;
-    cout << "*** Total time for analysis = " 
-         << GetClock() - time << " (s)" << endl;
+    std::cout << std::endl;
+    std::cout << "*** Total time for analysis = " 
+         << GetClock() - time << " (s)" << std::endl;
     ML_print_line("-",80);
-    cout << endl;
+    std::cout << std::endl;
   }
 
   return(0);
@@ -195,14 +195,14 @@ MultiLevelPreconditioner::AnalyzeSmoothers(const int NumPreCycles,
 
     ML_Smoother* ptr = ((ml_->SingleLevel[LevelID_[ilevel]]).pre_smoother);
 
-    vector<double> before_Linf(NumPDEEqns_);
-    vector<double> before_L2(NumPDEEqns_);
-    vector<double> after_Linf(NumPDEEqns_);
-    vector<double> after_L2(NumPDEEqns_);
+    std::vector<double> before_Linf(NumPDEEqns_);
+    std::vector<double> before_L2(NumPDEEqns_);
+    std::vector<double> after_Linf(NumPDEEqns_);
+    std::vector<double> after_L2(NumPDEEqns_);
 
     int n = ml_->Amat[LevelID_[ilevel]].outvec_leng;
-    vector<double> tmp_rhs(n);
-    vector<double> tmp_sol(n);
+    std::vector<double> tmp_rhs(n);
+    std::vector<double> tmp_sol(n);
 
     if (ptr != NULL) {
 
@@ -221,15 +221,15 @@ MultiLevelPreconditioner::AnalyzeSmoothers(const int NumPreCycles,
 
       if (Comm().MyPID() == 0) {
 	for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
-	  cout << "Presmoother  (level " << LevelID_[ilevel] 
+	  std::cout << "Presmoother  (level " << LevelID_[ilevel] 
 	       << ", eq " << eq << ")\t\t";
-	  cout.width(10); cout.setf(ios::left); 
-	  cout << after_Linf[eq] / before_Linf[eq];
-	  cout << ' ';
-	  cout.width(10); cout.setf(ios::left); 
-	  cout << after_L2[eq] / before_L2[eq] << endl;
+	  std::cout.width(10); std::cout.setf(std::ios::left); 
+	  std::cout << after_Linf[eq] / before_Linf[eq];
+	  std::cout << ' ';
+	  std::cout.width(10); std::cout.setf(std::ios::left); 
+	  std::cout << after_L2[eq] / before_L2[eq] << std::endl;
 	}
-        cout << endl;
+        std::cout << std::endl;
       }
     }
 
@@ -256,20 +256,20 @@ MultiLevelPreconditioner::AnalyzeSmoothers(const int NumPreCycles,
 
       if (Comm().MyPID() == 0) {
 	for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
-	  cout << "Postsmoother (level " << LevelID_[ilevel] 
+	  std::cout << "Postsmoother (level " << LevelID_[ilevel] 
 	       << ", eq " << eq << ")\t\t";
-	  cout.width(10); cout.setf(ios::left); 
-	  cout << after_Linf[eq] / before_Linf[eq];
-	  cout << ' ';
-	  cout.width(10); cout.setf(ios::left); 
-	  cout << after_L2[eq] / before_L2[eq] << endl;;
+	  std::cout.width(10); std::cout.setf(std::ios::left); 
+	  std::cout << after_Linf[eq] / before_Linf[eq];
+	  std::cout << ' ';
+	  std::cout.width(10); std::cout.setf(std::ios::left); 
+	  std::cout << after_L2[eq] / before_L2[eq] << std::endl;;
 	}
-        cout << endl;
+        std::cout << std::endl;
       }
     } 
   } // for( ilevel )
 
-  if (Comm().MyPID() == 0) cout << endl;
+  if (Comm().MyPID() == 0) std::cout << std::endl;
 
   return(0);
 
@@ -292,17 +292,17 @@ MultiLevelPreconditioner::AnalyzeCoarse()
 
   // execution begins
 
-  vector<double> before_Linf(NumPDEEqns_);
-  vector<double> before_L2(NumPDEEqns_);
-  vector<double> after_Linf(NumPDEEqns_);
-  vector<double> after_L2(NumPDEEqns_);
+  std::vector<double> before_Linf(NumPDEEqns_);
+  std::vector<double> before_L2(NumPDEEqns_);
+  std::vector<double> after_Linf(NumPDEEqns_);
+  std::vector<double> after_L2(NumPDEEqns_);
 
   int level = ml_->ML_coarsest_level;
 
   int n = ml_->Amat[level].outvec_leng;
 
-  vector<double> tmp_rhs(n);
-  vector<double> tmp_sol(n);
+  std::vector<double> tmp_rhs(n);
+  std::vector<double> tmp_sol(n);
 
   ML_Smoother* ptr;
 
@@ -319,18 +319,18 @@ MultiLevelPreconditioner::AnalyzeCoarse()
 
     if (Comm().MyPID() == 0) {
       for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
-        cout << "Coarse Solver (level " << level
+        std::cout << "Coarse Solver (level " << level
           << ", eq " << eq << ")\t\t";
-        cout.width(10); cout.setf(ios::left); 
-        cout << after_Linf[eq] / before_Linf[eq];
-        cout << ' ';
-        cout.width(10); cout.setf(ios::left); 
-        cout << after_L2[eq] / before_L2[eq] << endl;
+        std::cout.width(10); std::cout.setf(std::ios::left); 
+        std::cout << after_Linf[eq] / before_Linf[eq];
+        std::cout << ' ';
+        std::cout.width(10); std::cout.setf(std::ios::left); 
+        std::cout << after_L2[eq] / before_L2[eq] << std::endl;
       }
     }
   }
 
-  if (Comm().MyPID() == 0) cout << endl;
+  if (Comm().MyPID() == 0) std::cout << std::endl;
 
   return(0);
 
@@ -380,12 +380,12 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(const int NumCycles)
 
   if (Comm().MyPID() == 0) {
     for (int eq = 0 ; eq < NumPDEEqns_ ; ++eq) {
-      cout << "complete ML cycle (eq" << eq << ")\t\t\t";
-      cout.width(10); cout.setf(ios::left); 
-      cout << after_Linf[eq] / before_Linf[eq];
-      cout << ' ';
-      cout.width(10); cout.setf(ios::left); 
-      cout << after_L2[eq] / before_L2[eq] << endl;
+      std::cout << "complete ML cycle (eq" << eq << ")\t\t\t";
+      std::cout.width(10); std::cout.setf(std::ios::left); 
+      std::cout << after_Linf[eq] / before_Linf[eq];
+      std::cout << ' ';
+      std::cout.width(10); std::cout.setf(std::ios::left); 
+      std::cout << after_L2[eq] / before_L2[eq] << std::endl;
     }
   }
 

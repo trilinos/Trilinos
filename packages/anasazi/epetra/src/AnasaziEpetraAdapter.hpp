@@ -74,6 +74,24 @@ namespace Anasazi {
     {}};
 
   //@}
+
+  //! @name Epetra_MultiVector Accessor Interface
+  //@{
+
+  /** \brief EpetraMultiVecAccessor is an interfaceto allow any Anasazi::MultiVec implementation
+   * that is based on Epetra_MultiVector to use the various Anasazi::Operator interfaces defined for Epetra_Operator.
+   */
+  class EpetraMultiVecAccessor {
+ 
+  public:
+    /*! \brief Return the pointer to the Epetra_MultiVector object. */
+    virtual Epetra_MultiVector* GetEpetraMultiVec() { return 0; }
+
+    /*! \brief Return the pointer to the Epetra_MultiVector object. */
+    virtual const Epetra_MultiVector* GetEpetraMultiVec() const { return 0; }
+  };
+
+  //@}
   
   ///////////////////////////////////////////////////////////////
   //
@@ -87,7 +105,7 @@ namespace Anasazi {
     \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
     only provide a double-precision eigensolver.
   */
-  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraMultiVec : public MultiVec<double>, public Epetra_MultiVector {
+  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraMultiVec : public MultiVec<double>,  public Epetra_MultiVector, public EpetraMultiVecAccessor {
   public:
     //! @name Constructors/Destructors
     //@{ 
@@ -174,8 +192,6 @@ namespace Anasazi {
     //@}
 
     //! @name Attribute methods
-    //@{ 
-
     //! Obtain the vector length of *this.
     int GetNumberVecs () const { return NumVectors(); }
 
@@ -261,7 +277,18 @@ namespace Anasazi {
       TEUCHOS_TEST_FOR_EXCEPTION( this->PutScalar( alpha )!=0, EpetraMultiVecFailure,
           "Anasazi::EpetraMultiVec::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
     };
-    
+   
+    //! @name Accessor methods (inherited from EpetraMultiVecAccessor)
+    //@{
+   
+    /*! \brief Return the pointer to the Epetra_MultiVector object. */
+    Epetra_MultiVector* GetEpetraMultiVec() { return this; };
+ 
+    /*! \brief Return the pointer to the Epetra_MultiVector object. */
+    const Epetra_MultiVector* GetEpetraMultiVec() const { return this; };
+
+    //@}
+ 
     //@}
     //! @name Print method
     //@{ 

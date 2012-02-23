@@ -251,7 +251,7 @@ else()
   message("\nSkipping submit on request!")
 endif()
 
-message("\nF) Run tests (which run all everything really): PARALLEL_LEVEL ${parallel_level} from ${CTEST_BINARY_DIRECTORY} ...")
+message("\nF) Run tests (which runs everything really): PARALLEL_LEVEL ${parallel_level} from ${CTEST_BINARY_DIRECTORY} ...")
 ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}" PARALLEL_LEVEL ${parallel_level})
 
 message("\nG) Submitting Test ...")

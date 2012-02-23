@@ -522,7 +522,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 	bool HaveColMap() const {return(CrsGraphData_->HaveColMap_);}
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
     
 	//! Returns the number of matrix rows on this processor.

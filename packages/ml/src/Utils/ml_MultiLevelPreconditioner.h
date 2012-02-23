@@ -399,7 +399,7 @@ public:
 
   //@}
   
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
 
   //! Computes the multilevel hierarchy.

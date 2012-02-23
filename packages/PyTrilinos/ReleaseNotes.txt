@@ -1,3 +1,19 @@
+Release Notes for PyTrilinos 4.6 (Trilinos 10.10)
+=================================================
+
+Added support for the use case when Trilinos requests a
+Teuchos::ArrayView<>.  In Python, the user can supply a NumPy array or
+a Python sequence (input arguments only) and PyTrilinos will convert
+it to the necessary ArrayView type automatically.  This currently only
+applies to the Teuchos.Comm classes, but the infrastructure is there
+for future needs.
+
+Changed PyTrilinos string checks to accommodate older Pythons in which
+strings can only be regular strings and newer Pythons in which strings
+can be either unicode or regular strings.
+
+Added experimental support for STK package Percept mesh module.
+
 Release Notes for PyTrilinos 4.6 (Trilinos 10.8)
 ================================================
 

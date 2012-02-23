@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   // the local solvers, in this case Ifpack_BlockRelaxation.
   // Ifpack_BlockRelaxation requires as a templated a container
   // class. A container defines
-  // how to store the diagonal blocks. Two choices are avaiable:
+  // how to store the diagonal blocks. Two choices are available:
   // Ifpack_DenseContainer (to store them as dense block,
   // than use LAPACK' factorization to apply the inverse of
   // each block), of Ifpack_SparseContainer (to store

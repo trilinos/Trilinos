@@ -328,7 +328,7 @@ bool compareFloatingArrays(
   }
 
 
-/** \brief Test if two iterators are equal or not.
+/** \brief Test if two iterators are equal.
  *
  * This macro does not try to print the iterators so it is more portable (in
  * terms of types).
@@ -341,6 +341,24 @@ bool compareFloatingArrays(
   { \
     (out) << #iter1" == "#iter2" =  : "; \
     const bool l_result = (iter1) == (iter2); \
+    if (!l_result) (success) = false; \
+    (out) << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
+  }
+
+
+/** \brief Test if two iterators are NOT equal.
+ *
+ * This macro does not try to print the iterators so it is more portable (in
+ * terms of types).
+ *
+ * This macro is not complicated so take a look for yourself!
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_TEST_ITER_INEQUALITY( iter1, iter2, out, success ) \
+  { \
+    (out) << #iter1" != "#iter2" =  : "; \
+    const bool l_result = (iter1) != (iter2); \
     if (!l_result) (success) = false; \
     (out) << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
   }

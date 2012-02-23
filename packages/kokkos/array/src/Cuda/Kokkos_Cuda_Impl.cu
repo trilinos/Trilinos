@@ -237,13 +237,20 @@ void CudaInternal::initialize( int cuda_device_id )
     // Maximum number of warps,
     // at most one warp per thread in a warp for reduction.
 
-    // m_maxWarpCount = Impl::DeviceCudaTraits::WarpSize ;
-    // while ( cudaProp.maxThreadsPerBlock <
-    //         Impl::DeviceCudaTraits::WarpSize * m_maxWarpCount ) {
-    //   m_maxWarpCount >>= 1 ;
-    // }
+    // HCE 02/02/2012 :
+    // Found bug in CUDA 4.1 that sometimes a kernel launch would fail
+    // if the thread count == 1024 and a functor is passed to the kernel.
+    // Copying the kernel to constant memory and then launching with
+    // thread count == 1024 would work fine.
+    // All compute capabilities support at least 16 warps (512 threads).
 
-    m_maxWarpCount = 8 ; // For performance use fewer warps and more blocks...
+    m_maxWarpCount = 16 ;
+
+    // m_maxWarpCount = cudaProp.maxThreadsPerBlock / Impl::CudaTraits::WarpSize ;
+
+    if ( Impl::CudaTraits::WarpSize < m_maxWarpCount ) {
+      m_maxWarpCount = Impl::CudaTraits::WarpSize ;
+    }
 
     //----------------------------------
 

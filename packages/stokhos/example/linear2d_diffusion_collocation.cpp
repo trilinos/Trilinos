@@ -67,21 +67,13 @@ const int num_sg_rf = 4;
 const SG_RF sg_rf_values[] = { UNIFORM, CC_UNIFORM, RYS, LOGNORMAL };
 const char *sg_rf_names[] = { "Uniform", "CC-Uniform", "Rys", "Log-Normal" };
 
-// Sparse grid rules
-enum SG_RULE { DEFAULT_RULE, CC, GP, GL, GW, GH, GK };
-const int num_sg_rule = 7;
-const SG_RULE sg_rule_values[] = { DEFAULT_RULE, CC, GP, GL, GW, GH, GK };
-const char *sg_rule_names[] = { "Default", "Clenshaw-Curtis", "Gauss-Patterson", "Gauss-Legendre", "Golub-Welsch", "Gauss-Hermite", "Genz-Keister" };
-
 // Sparse grid growth rules
-enum SG_GROWTH { DEFAULT_GROWTH, SLOW_LIN, MOD_LIN, 
-		 SLOW_EXP, MOD_EXP, FULL_EXP };
-const int num_sg_growth = 6;
-const SG_GROWTH sg_growth_values[] = { DEFAULT_GROWTH, SLOW_LIN, MOD_LIN, 
-				       SLOW_EXP, MOD_EXP, FULL_EXP };
-const char *sg_growth_names[] = { "Default", "Slow Linear", "Moderate Linear",
-				  "Slow Exponential", "Moderate Exponential", 
-				  "Full Exponential" };
+enum SG_GROWTH { SLOW_RESTRICTED, MODERATE_RESTRICTED, UNRESTRICTED };
+const int num_sg_growth = 3;
+const SG_GROWTH sg_growth_values[] = {
+  SLOW_RESTRICTED, MODERATE_RESTRICTED, UNRESTRICTED };
+const char *sg_growth_names[] = { 
+  "Slow Restricted", "Moderate Restricted", "Unrestricted" };
 
 int main(int argc, char *argv[]) {
 
@@ -147,12 +139,7 @@ int main(int argc, char *argv[]) {
     double tol = 1e-12;
     CLP.setOption("tol", &tol, "Solver tolerance");
 
-    SG_RULE sg_rule = DEFAULT_RULE;
-    CLP.setOption("sg_rule", &sg_rule, 
-		   num_sg_rule, sg_rule_values, sg_rule_names,
-		  "Sparse grid rule");
-
-    SG_GROWTH sg_growth = DEFAULT_GROWTH;
+    SG_GROWTH sg_growth = MODERATE_RESTRICTED;
     CLP.setOption("sg_growth", &sg_growth, 
 		   num_sg_growth, sg_growth_values, sg_growth_names,
 		  "Sparse grid growth rule");
@@ -173,8 +160,6 @@ int main(int argc, char *argv[]) {
 		<< "\tprec_strategy   = " << prec_strategy_names[precStrategy] 
 		<< std::endl 
 		<< "\ttol             = " << tol << std::endl
-		<< "\tsg_rule         = " << sg_rule_names[sg_rule] 
-		<< std::endl
 		<< "\tsg_growth       = " << sg_growth_names[sg_growth]
 		<< std::endl;
     }
@@ -191,31 +176,8 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<num_KL; i++) {
       Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<int,double> > b;
       if (randField == UNIFORM) {
-	int sparse_grid_rule = Pecos::GAUSS_LEGENDRE;
-	if (sg_rule == CC)
-	  sparse_grid_rule = Pecos::CLENSHAW_CURTIS;
-	else if (sg_rule == GP)
-	  sparse_grid_rule = Pecos::GAUSS_PATTERSON;
-	else if (sg_rule == GW)
-	  sparse_grid_rule = Pecos::GOLUB_WELSCH;
-
-	int sparse_grid_growth = Pecos::DEFAULT_GROWTH;
-	if (sg_growth == SLOW_LIN)
-	  sparse_grid_growth = Pecos::SLOW_LINEAR;
-	else if (sg_growth == MOD_LIN)
-	  sparse_grid_growth = Pecos::MODERATE_LINEAR;
-	else if (sg_growth == SLOW_EXP)
-	  sparse_grid_growth = Pecos::SLOW_EXPONENTIAL;
-	else if (sg_growth == MOD_EXP)
-	  sparse_grid_growth = Pecos::MODERATE_EXPONENTIAL;
-	else if (sg_growth == FULL_EXP)
-	  sparse_grid_growth = Pecos::FULL_EXPONENTIAL;
-
 	b = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(
 				  p, normalize_basis));
-
-	b->setSparseGridRule(sparse_grid_rule);
-	b->setSparseGridGrowthRule(sparse_grid_growth);
       }
       else if (randField == CC_UNIFORM) {
 	b = 
@@ -223,51 +185,27 @@ int main(int argc, char *argv[]) {
 			 p, normalize_basis, true));
       }
       else if (randField == RYS) {
-	int sparse_grid_growth = Pecos::DEFAULT_GROWTH;
-	if (sg_growth == SLOW_LIN)
-	  sparse_grid_growth = Pecos::SLOW_LINEAR;
-	else if (sg_growth == MOD_LIN)
-	  sparse_grid_growth = Pecos::MODERATE_LINEAR;
-	else if (sg_growth == SLOW_EXP)
-	  sparse_grid_growth = Pecos::SLOW_EXPONENTIAL;
-
 	b = Teuchos::rcp(new Stokhos::RysBasis<int,double>(
 				  p, weightCut, normalize_basis));
-
-	b->setSparseGridGrowthRule(sparse_grid_growth);
       }
       else if (randField == LOGNORMAL) {
-	int sparse_grid_rule = Pecos::GAUSS_HERMITE;
-	if (sg_rule == GK)
-	  sparse_grid_rule = Pecos::GENZ_KEISTER;
-	else if (sg_rule == GW)
-	  sparse_grid_rule = Pecos::GOLUB_WELSCH;
-
-	int sparse_grid_growth = Pecos::DEFAULT_GROWTH;
-	if (sg_growth == SLOW_LIN)
-	  sparse_grid_growth = Pecos::SLOW_LINEAR;
-	else if (sg_growth == MOD_LIN)
-	  sparse_grid_growth = Pecos::MODERATE_LINEAR;
-	else if (sg_growth == SLOW_EXP)
-	  sparse_grid_growth = Pecos::SLOW_EXPONENTIAL;
-	else if (sg_growth == MOD_EXP)
-	  sparse_grid_growth = Pecos::MODERATE_EXPONENTIAL;
-	else if (sg_growth == FULL_EXP)
-	  sparse_grid_growth = Pecos::FULL_EXPONENTIAL;
-
 	b = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(
 				  p, normalize_basis));
-
-	b->setSparseGridRule(sparse_grid_rule);
-	b->setSparseGridGrowthRule(sparse_grid_growth);
       }
       bases[i] = b;
     }
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
-    // Create sparse grid
-    Stokhos::SparseGridQuadrature<int,double> quad(basis,p);
+   // Create sparse grid
+   int sparse_grid_growth = Pecos::MODERATE_RESTRICTED_GROWTH;
+   if (sg_growth == SLOW_RESTRICTED)
+     sparse_grid_growth = Pecos::SLOW_RESTRICTED_GROWTH;
+   else if (sg_growth == MODERATE_RESTRICTED)
+     sparse_grid_growth = Pecos::MODERATE_RESTRICTED_GROWTH;
+   else if (sg_growth == UNRESTRICTED)
+     sparse_grid_growth = Pecos::UNRESTRICTED_GROWTH;
+    Stokhos::SparseGridQuadrature<int,double> quad(basis,p,1e-12,sg_growth);
     const Teuchos::Array< Teuchos::Array<double> >& quad_points = 
       quad.getQuadPoints();
     const Teuchos::Array<double>& quad_weights = 

@@ -182,7 +182,7 @@ L40:
 }				/* dcopy_ */
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-doublereal chddot_(integer  *n,
+doublereal ch_ddot_(integer  *n,
 		   doublereal *dx,
 		   integer  *incx,
 		   doublereal *dy,

@@ -12,6 +12,7 @@ ADD_SUBDIRECTORIES(
   DenseMatrix
   Dependencies
   FancyOutputting
+  FilteredIterator
   FunctionObjects
   LAPACK
   MemoryManagement

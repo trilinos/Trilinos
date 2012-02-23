@@ -87,13 +87,13 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
 
   IF (NOT PARSE_SKIP_STANDARD_DEPS_CHECK)
     SET(TEST_BLOCKS ${TEST_BLOCKS}
-      "Dumping the XML dependencies file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/TrilinosPackageDependencies.xml"
-      "CDASH_SUBPROJECT_XML_FILE='${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/CDashSubprojectDependencies.xml'"
+      "Dumping the XML dependencies file .*/${TEST_FULL_NAME}/TrilinosPackageDependencies.xml"
+      "CDASH_SUBPROJECT_XML_FILE='.*/${TEST_FULL_NAME}/CDashSubprojectDependencies.xml'"
       )
     IF (PYTHON_EXECUTABLE)
       SET(TEST_BLOCKS ${TEST_BLOCKS}
-        "Dumping the HTML dependencies webpage file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/TrilinosPackageDependenciesTable.html"
-        "Dumping the CDash XML dependencies file ${CMAKE_CURRENT_BINARY_DIR}.*${TEST_NAME}/CDashSubprojectDependencies.xml"
+        "Dumping the HTML dependencies webpage file .*/${TEST_FULL_NAME}/TrilinosPackageDependenciesTable.html"
+        "Dumping the CDash XML dependencies file .*/${TEST_FULL_NAME}/CDashSubprojectDependencies.xml"
         )
     ENDIF()
   ENDIF()
@@ -266,7 +266,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 24"
     "Final set of non-enabled packages:  Stokhos 1"
-    "CTEST_NOTES_FILES=.*/Updates.txt.*/CMakeCache.clean.txt"
+    "CTEST_NOTES_FILES=.*/Updates.txt"
     "Procesing current package Phalanx: libs='ON', tests='ON'"
     "Procesing current package Stalix: libs='ON', tests='ON'"
   )

@@ -1,5 +1,6 @@
-#include "vector3d.h"
 #include <math.h>
+
+#include "vector3d.h"
 
 //----------------------------------------------------------------------------
 vector3d::vector3d ()

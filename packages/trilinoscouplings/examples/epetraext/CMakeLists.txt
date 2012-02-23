@@ -2,6 +2,10 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Isorropia)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
+
+IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
+
 IF (${PACKAGE_NAME}_ENABLE_Isorropia)
 
   TRIBITS_ADD_EXECUTABLE(
@@ -35,4 +39,6 @@ TRIBITS_ADD_EXECUTABLE(
   petsc
   SOURCES EpetraExt_petsc.cpp
   )
+ENDIF()
+
 ENDIF()

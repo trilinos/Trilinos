@@ -50,7 +50,7 @@ int symmlq_(integer *n,
 
   /* Local variables */
   static doublereal alfa, diag, dbar, beta, gbar, oldb, epsa;
-  extern doublereal chddot_();
+  extern doublereal ch_ddot_();
   static doublereal gmin, gmax, zbar, epsr, epsx, beta1;
   extern doublereal chdnrm2_();
   static integer i;
@@ -544,12 +544,12 @@ int symmlq_(integer *n,
   /*     else */
   /*        b1  = zero */
   /*     end if */
-  beta1 = chddot_(n, &r1[1], &c__1, &y[1], &c__1);
+  beta1 = ch_ddot_(n, &r1[1], &c__1, &y[1], &c__1);
   /*     See if msolve is symmetric. */
   if (*checka && *precon) {
     msolve_(n, &y[1], &r2[1], a, &vwsqrt[1], &work[1]);
-    s = chddot_(n, &y[1], &c__1, &y[1], &c__1);
-    t = chddot_(n, &r1[1], &c__1, &r2[1], &c__1);
+    s = ch_ddot_(n, &y[1], &c__1, &y[1], &c__1);
+    t = ch_ddot_(n, &r1[1], &c__1, &r2[1], &c__1);
     z = (d__1 = s - t, abs(d__1));
     epsa = (s + eps) * pow_dd(&eps, &c_b18);
     if (z > epsa) {
@@ -578,8 +578,8 @@ int symmlq_(integer *n,
   aprod_(n, &v[1], &y[1], a, &vwsqrt[1], &work[1], orthlist);
   if (*checka) {
     aprod_(n, &y[1], &r2[1], a, &vwsqrt[1], &work[1], orthlist);
-    s = chddot_(n, &y[1], &c__1, &y[1], &c__1);
-    t = chddot_(n, &v[1], &c__1, &r2[1], &c__1);
+    s = ch_ddot_(n, &y[1], &c__1, &y[1], &c__1);
+    t = ch_ddot_(n, &v[1], &c__1, &r2[1], &c__1);
     z = (d__1 = s - t, abs(d__1));
     epsa = (s + eps) * pow_dd(&eps, &c_b18);
     if (z > epsa) {
@@ -592,12 +592,12 @@ int symmlq_(integer *n,
   /*     y and beta will be zero or very small if b is an eigenvector. */
   d__1 = -(*shift);
   chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
-  alfa = chddot_(n, &v[1], &c__1, &y[1], &c__1);
+  alfa = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
   d__1 = -alfa / beta1;
   chdaxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
   /*     Make sure  r2  will be orthogonal to the first  v. */
-  z = chddot_(n, &v[1], &c__1, &y[1], &c__1);
-  s = chddot_(n, &v[1], &c__1, &v[1], &c__1);
+  z = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
+  s = ch_ddot_(n, &v[1], &c__1, &v[1], &c__1);
   d__1 = -z / s;
   chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
   chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
@@ -605,7 +605,7 @@ int symmlq_(integer *n,
     msolve_(n, &r2[1], &y[1], a, &vwsqrt[1], &work[1]);
   }
   oldb = beta1;
-  beta = chddot_(n, &r2[1], &c__1, &y[1], &c__1);
+  beta = ch_ddot_(n, &r2[1], &c__1, &y[1], &c__1);
   if (beta < 0.) {
     *istop = 8;
     goto L900;
@@ -618,7 +618,7 @@ int symmlq_(integer *n,
   /*     See if the local reorthogonalization achieved anything. */
   denom = sqrt(s) * chdnrm2_(n, &r2[1], &c__1) + eps;
   s = z / denom;
-  t = chddot_(n, &v[1], &c__1, &r2[1], &c__1) / denom;
+  t = ch_ddot_(n, &v[1], &c__1, &r2[1], &c__1) / denom;
   /*     if (nout .gt. 0  .and.  goodb) then */
   /*        write(nout, 1100) beta1, alfa, s, t */
   /*     end if */
@@ -764,7 +764,7 @@ int symmlq_(integer *n,
   chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
   d__1 = -beta / oldb;
   chdaxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
-  alfa = chddot_(n, &v[1], &c__1, &y[1], &c__1);
+  alfa = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
   /* Computing 2nd power */
   d__1 = alfa;
   /* Computing 2nd power */
@@ -778,7 +778,7 @@ int symmlq_(integer *n,
     msolve_(n, &r2[1], &y[1], a, &vwsqrt[1], &work[1]);
   }
   oldb = beta;
-  beta = chddot_(n, &r2[1], &c__1, &y[1], &c__1);
+  beta = ch_ddot_(n, &r2[1], &c__1, &y[1], &c__1);
   if (beta < 0.) {
     *istop = 6;
     goto L800;

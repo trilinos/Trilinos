@@ -46,6 +46,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialDenseVector.h"
+#include <vector>
 
 int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
 {
@@ -573,6 +574,26 @@ int fevec6(Epetra_Comm& Comm, bool verbose)
     std::cout << "Entry " << GID << " after PutScalar & set:      " 
         << x1[0][0] << std::endl;
 
+  return 0;
+}
+
+int fevec7(Epetra_Comm& Comm, bool verbose)
+{
+  const int NumVectors = 4;
+  const int NumElements = 4;
+  Epetra_Map     Map(NumElements, 0, Comm);
+  std::vector<double> mydata(NumElements*NumVectors, 1.0);
+  Epetra_FEVector x1(View, Map, &mydata[0], NumElements, NumVectors);
+
+  x1.PutScalar (0);
+
+        // let all processors set global entry 0 to 1
+  const int GID = 0;
+  const double value = 1;
+  x1.ReplaceGlobalValues(1, &GID, &value);
+  x1.GlobalAssemble (Insert);
+
+  if (Comm.MyPID()==0 && x1[0][0] != value) return -1;
   return 0;
 }
 

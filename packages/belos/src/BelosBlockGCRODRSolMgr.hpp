@@ -248,6 +248,7 @@ public:
 
   //! Get a parameter list containing the current parameters for this object.
   Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
+    // FIXME (mfh 07 Feb 2012) Should either return params_ or a copy thereof.
     Teuchos::RCP<const Teuchos::ParameterList> fooParams;
     return fooParams;
   }
@@ -322,12 +323,6 @@ public:
    * This informs the solver manager that the solver should prepare
    * for the next call to solve by resetting certain elements of the
    * iterative solver strategy.
-   *
-   * \warning (mfh 03 Jan 2012) For whatever reason, the original
-   *   author provided a trivial implementation of this method (it
-   *   just returned without doing anything).  This probably means
-   *   that it doesn't work at all.  I've done my best to provide a
-   *   sensible implementation.
    */
   void 
   reset (const ResetType type) 

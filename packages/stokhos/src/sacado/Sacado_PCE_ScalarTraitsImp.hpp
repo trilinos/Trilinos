@@ -318,13 +318,23 @@ namespace Sacado {
     template <typename Ordinal, typename PCEType, typename ValueSerializer>
     class SerializerImp {
 
+    public:
+
+      //! Typename of value serializer
+      typedef ValueSerializer value_serializer_type;
+
+      //! Typename of expansion
+      typedef typename PCEType::expansion_type expansion_type;
+      
+
     protected:
       typedef typename Sacado::ValueType<PCEType>::type ValueT;
       typedef Teuchos::SerializationTraits<Ordinal,int> iSerT;
       typedef Teuchos::SerializationTraits<Ordinal,Ordinal> oSerT;
-      typedef typename PCEType::expansion_type expansion_type;
+      
       Teuchos::RCP<expansion_type> expansion;
       Teuchos::RCP<const ValueSerializer> vs;
+      int sz;
 
     public:
 
@@ -333,7 +343,15 @@ namespace Sacado {
 
       SerializerImp(const Teuchos::RCP<expansion_type>& expansion_,
 		    const Teuchos::RCP<const ValueSerializer>& vs_) :
-	expansion(expansion_), vs(vs_) {}
+	expansion(expansion_), vs(vs_), sz(expansion->size()) {}
+
+      //! Return specified serializer size
+      Teuchos::RCP<expansion_type> getSerializerExpansion() const { 
+	return expansion; }
+      
+      //! Get nested value serializer
+      Teuchos::RCP<const value_serializer_type> getValueSerializer() const { 
+	return vs; }
 
       //! @name Indirect serialization functions (always defined and supported) 
       //@{
@@ -342,13 +360,26 @@ namespace Sacado {
       Ordinal fromCountToIndirectBytes(const Ordinal count, 
 				       const PCEType buffer[]) const { 
 	Ordinal bytes = 0;
+	PCEType *x = NULL;
+        const PCEType *cx;
 	for (Ordinal i=0; i<count; i++) {
-	  int sz = buffer[i].size();
+	  int my_sz = buffer[i].size();
+	  if (sz != my_sz) {
+            if (x == NULL)
+              x = new PCEType;
+	    *x = buffer[i];
+            x->reset(expansion);
+            cx = x;
+	  }
+          else 
+            cx = &(buffer[i]);
 	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &sz);
-	  Ordinal b2 = vs->fromCountToIndirectBytes(sz, buffer[i].coeff());
+	  Ordinal b2 = vs->fromCountToIndirectBytes(sz, cx->coeff());
 	  Ordinal b3 = oSerT::fromCountToIndirectBytes(1, &b2);
 	  bytes += b1+b2+b3;
 	}
+	if (x != NULL)
+          delete x;
 	return bytes;
       }
 
@@ -357,21 +388,34 @@ namespace Sacado {
 		      const PCEType buffer[], 
 		      const Ordinal bytes, 
 		      char charBuffer[]) const { 
+	PCEType *x = NULL;
+        const PCEType *cx;
 	for (Ordinal i=0; i<count; i++) {
 	  // First serialize size
-	  int sz = buffer[i].size();
+	  int my_sz = buffer[i].size();
+	  if (sz != my_sz) {
+            if (x == NULL)
+              x = new PCEType(expansion);
+	    *x = buffer[i];
+            x->reset(expansion);
+            cx = x;
+	  }
+          else 
+            cx = &(buffer[i]);
 	  Ordinal b1 = iSerT::fromCountToIndirectBytes(1, &sz);
 	  iSerT::serialize(1, &sz, b1, charBuffer);
 	  charBuffer += b1;
 	
 	  // Next serialize PCE coefficients
-	  Ordinal b2 = vs->fromCountToIndirectBytes(sz, buffer[i].coeff());
+	  Ordinal b2 = vs->fromCountToIndirectBytes(sz, cx->coeff());
 	  Ordinal b3 = oSerT::fromCountToIndirectBytes(1, &b2);
 	  oSerT::serialize(1, &b2, b3, charBuffer); 
 	  charBuffer += b3;
-	  vs->serialize(sz, buffer[i].coeff(), b2, charBuffer);
+	  vs->serialize(sz, cx->coeff(), b2, charBuffer);
 	  charBuffer += b2;
 	}
+	if (x != NULL)
+          delete x;
       }
 
       /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
@@ -408,17 +452,17 @@ namespace Sacado {
 	
 	  // Deserialize size
 	  Ordinal b1 = iSerT::fromCountToDirectBytes(1);
-	  const int *sz = iSerT::convertFromCharPtr(charBuffer);
+	  const int *my_sz = iSerT::convertFromCharPtr(charBuffer);
 	  charBuffer += b1;
 	
 	  // Create empty PCE object of given size
-	  buffer[i] = PCEType(expansion, *sz);
+	  buffer[i] = PCEType(expansion);
 	
 	  // Deserialize PCE coefficients
 	  Ordinal b3 = oSerT::fromCountToDirectBytes(1);
 	  const Ordinal *b2 = oSerT::convertFromCharPtr(charBuffer);
 	  charBuffer += b3;
-	  vs->deserialize(*b2, charBuffer, *sz, buffer[i].coeff());
+	  vs->deserialize(*b2, charBuffer, *my_sz, buffer[i].coeff());
 	  charBuffer += *b2;
 	}
       

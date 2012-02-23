@@ -16,7 +16,7 @@
 
 
 void 
-interpolate (
+ch_interpolate (
     double **vecs,			/* approximate eigenvectors for graph */
     double **cvecs,		/* exact eigenvectors for coarse graph */
     int ndims,		/* number of vectors to interpolate */

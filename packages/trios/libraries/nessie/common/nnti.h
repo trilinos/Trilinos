@@ -151,7 +151,7 @@ NNTI_result_t NNTI_get (
         const uint64_t       dest_offset);
 
 /**
- * @brief Wait for a specific buffer to be transfered from a peer.
+ * @brief Wait for a specific buffer to be acted on by a peer.
  *
  * \param[in]  reg_buf    The buffer that will be acted on by a peer.
  * \param[in]  remote_op  The remote operation that we expect to occur.
@@ -164,6 +164,46 @@ NNTI_result_t NNTI_wait (
         const NNTI_buf_ops_t  remote_op,
         const int             timeout,
         NNTI_status_t        *status);
+
+/**
+ * @brief Wait for any buffer in the list to be acted on by a peer.
+ *
+ * \param[in]  buf_list   The array of buffers that will be acted on by a peer.
+ * \param[in]  buf_count  The number of buffers in the array.
+ * \param[in]  remote_op  The remote operation that we expect to occur.
+ * \param[in]  timeout    The amount of time to wait before giving up.
+ * \param[out] which      The index of the buffer that completed.
+ * \param[out] status     The details of the completed (or timed out) operation.
+ * \return A result code (NNTI_OK or an error)
+ *
+ * Caveats: All buffers in buf_list must be registered with the same transport.
+ */
+NNTI_result_t NNTI_waitany (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        uint32_t             *which,
+        NNTI_status_t        *status);
+
+/**
+ * @brief Wait for all buffers in the list to be acted on by a peer.
+ *
+ * \param[in]  buf_list   The array of buffers that will be acted on by a peer.
+ * \param[in]  buf_count  The number of buffers in the array.
+ * \param[in]  remote_op  The remote operation that we expect to occur.
+ * \param[in]  timeout    The amount of time to wait before giving up.
+ * \param[out] status     The array of statuses that contain the details of the completed (or timed out) operations.
+ * \return A result code (NNTI_OK or an error)
+ *
+ * Caveats: All buffers in buf_list must be registered with the same transport.
+ */
+NNTI_result_t NNTI_waitall (
+        const NNTI_buffer_t **buf_list,
+        const uint32_t        buf_count,
+        const NNTI_buf_ops_t  remote_op,
+        const int             timeout,
+        NNTI_status_t       **status);
 
 /**
  * @brief Disable this transport.

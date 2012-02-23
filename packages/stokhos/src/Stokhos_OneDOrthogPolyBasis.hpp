@@ -40,7 +40,7 @@
 
 #include "Stokhos_ConfigDefs.h"
 #ifdef HAVE_STOKHOS_DAKOTA
-#include "pecos_global_defs.hpp"
+#include "sandia_rules.hpp"
 #endif
 
 //! Top-level namespace for Stokhos classes and functions.
@@ -169,47 +169,23 @@ namespace Stokhos {
      */
     virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const = 0;
 
-    //! Get sparse grid rule number as defined by Dakota's \c webbur package
+    //! Function pointer needed for level_to_order mappings
+    typedef int ( *LevelToOrderFnPtr ) ( int level, int growth );
+
+    //! Get sparse grid level_to_order mapping function
     /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.  The current rule definitions are:
-     * 1  Clenshaw-Curtis
-     * 2  Fejer Type 2
-     * 3  Gauss-Patterson
-     * 4  Gauss-Legendre
-     * 5  Gauss-Hermite
-     * 6  Generalized Gauss-Hermite
-     * 7  Gauss-Laguerre
-     * 8  Generalized Gauss-Laguerre
-     * 9  Gauss-Jacobi
-     * 10 Golub-Welsch (Gauss points for arbitrary weight function)
-     * 11 Genz-Keister (Gauss-Patterson-type Hermite)
-     * 12 Newton-Cotes
+     * Predefined functions are:
+     *  webbur::level_to_order_linear_wn Symmetric Gaussian linear growth
+     *  webbur::level_to_order_linear_nn Asymmetric Gaussian linear growth
+     *  webbur::level_to_order_exp_cc    Clenshaw-Curtis exponential growth
+     *  webbur::level_to_order_exp_gp    Gauss-Patterson exponential growth
+     *  webbur::level_to_order_exp_hgk   Genz-Keister exponential growth
+     *  webbur::level_to_order_exp_f2    Fejer-2 exponential growth
      */
-    virtual int getSparseGridRule() const = 0;
+    virtual LevelToOrderFnPtr getSparseGridGrowthRule() const = 0;
 
     //! Set sparse grid rule
-    virtual void setSparseGridRule(int rule) = 0;
-
-    /*! 
-     * \brief Get sparse grid rule growth rule as defined by 
-     * Dakota's \c webbur package
-     */
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.  The current rule definitions are:
-     * 1  Default growth
-     * 2  Slow linear
-     * 3  Slow linear odd
-     * 4  Moderate linear
-     * 5  Slow exponential
-     * 6  Moderate exponential
-     * 7  Full exponential
-     */
-    virtual int getSparseGridGrowthRule() const = 0;
-
-    //! Set sparse grid growth rule
-    virtual void setSparseGridGrowthRule(int rule) = 0;
+    virtual void setSparseGridGrowthRule(LevelToOrderFnPtr ptr) = 0;
 
   private:
 

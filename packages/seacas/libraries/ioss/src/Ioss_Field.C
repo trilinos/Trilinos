@@ -31,13 +31,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_Field.h>
-#include <Ioss_VariableType.h>
 #include <Ioss_Transform.h>
 #include <Ioss_Utils.h>
-
-#include <assert.h>
+#include <Ioss_VariableType.h>
+#include <stddef.h>
 #include <iostream>
 #include <string>
+#include <vector>
+
+#include "Ioss_CodeTypes.h"
 
 namespace {
   size_t internal_get_size(Ioss::Field::BasicType type, size_t count,

@@ -31,7 +31,7 @@ cmake \
 -D Boost_INCLUDE_DIRS=$BOOST_DIR \
 -D BoostLib_INCLUDE_DIRS=$BOOST_DIR/include \
 -D BoostLib_LIBRARY_DIRS=$BOOST_DIR/lib \
--D MPI4PY_INCLUDE_DIR=$MPI4PY_DIR/mpi4py/include \
+-D MPI4PY_INCLUDE_DIR=$MPI4PY_DIR/include \
 -D TPL_ENABLE_MATLAB=OFF \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
@@ -41,7 +41,7 @@ cmake \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 $EXTRA_ARGS \
-../trilinos-10.8.4-Source
+../trilinos-10.10-Source
  \
 
 #-D Trilinos_DATA_DIR:STRING=/home/bmpersc/nightly/TrilinosData \
