@@ -1,5 +1,5 @@
-#ifndef MUELU_ZOLTAN_DECL_HPP
-#define MUELU_ZOLTAN_DECL_HPP
+#ifndef MUELU_ZOLTANINTERFACE_DECL_HPP
+#define MUELU_ZOLTANINTERFACE_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -13,7 +13,7 @@
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Zoltan_fwd.hpp"
+#include "MueLu_ZoltanInterface_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
@@ -115,4 +115,4 @@ namespace MueLu {
 #define MUELU_ZOLTANINTERFACE_SHORT
 #endif //if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
-#endif // MUELU_ZOLTAN_DECL_HPP
+#endif // MUELU_ZOLTANINTERFACE_DECL_HPP

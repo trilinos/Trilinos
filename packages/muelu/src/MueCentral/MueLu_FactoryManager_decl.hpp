@@ -16,7 +16,7 @@
 #include "MueLu_UCAggregationFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
-#include "MueLu_Zoltan_fwd.hpp"
+#include "MueLu_ZoltanInterface_fwd.hpp"
 
 namespace MueLu {
 

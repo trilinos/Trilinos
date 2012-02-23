@@ -1,7 +1,7 @@
-#ifndef MUELU_ZOLTAN_DEF_HPP
-#define MUELU_ZOLTAN_DEF_HPP
+#ifndef MUELU_ZOLTANINTERFACE_DEF_HPP
+#define MUELU_ZOLTANINTERFACE_DEF_HPP
 
-#include "MueLu_Zoltan_decl.hpp"
+#include "MueLu_ZoltanInterface_decl.hpp"
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
 #include <Teuchos_Utils.hpp>
@@ -192,4 +192,4 @@ namespace MueLu {
 
 #endif //if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
-#endif // MUELU_ZOLTAN_DEF_HPP
+#endif // MUELU_ZOLTANINTERFACE_DEF_HPP

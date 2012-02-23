@@ -1,6 +1,6 @@
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
-     
+    
 #
 # Package-specific configuration options
 #

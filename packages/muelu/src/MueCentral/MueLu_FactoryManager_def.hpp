@@ -19,7 +19,7 @@
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
-#include "MueLu_Zoltan.hpp"
+#include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
  
 namespace MueLu {

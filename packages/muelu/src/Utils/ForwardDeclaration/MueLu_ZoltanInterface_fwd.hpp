@@ -1,5 +1,5 @@
-#ifndef MUELU_ZOLTAN_FWD_HPP
-#define MUELU_ZOLTAN_FWD_HPP
+#ifndef MUELU_ZOLTANINTERFACE_FWD_HPP
+#define MUELU_ZOLTANINTERFACE_FWD_HPP
 
 namespace MueLu {       
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -7,7 +7,7 @@ namespace MueLu {
 }
 
 #ifndef MUELU_ZOLTANINTERFACE_SHORT
-#define MUELU_ZOLTAN_SHORT
+#define MUELU_ZOLTANINTERFACE_SHORT
 #endif
 
-#endif // MUELU_ZOLTAN_FWD_HPP
+#endif // MUELU_ZOLTANINTERFACE_FWD_HPP
