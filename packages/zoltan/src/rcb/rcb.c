@@ -103,7 +103,7 @@ static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   struct rcb_box *, double *, int, int, int *, int *, int, int, int, int,
   int, int, int, int, int, int, int, int, MPI_Op, MPI_Datatype,
   int, ZOLTAN_GNO_TYPE *, struct rcb_tree *, int *, int, double *, double *,
-  float *, double *, int, int, double);
+  float *, double *, int, int, double, double *);
 static void compute_RCB_box(struct rcb_box *, int, struct Dot_Struct *, int *,
   MPI_Op, MPI_Datatype, MPI_Comm, int, int, int, int);
 
@@ -1106,7 +1106,7 @@ static int rcb_fn(
                box_op, box_type, average_cuts, 
                counters, treept, dim_spec, level,
                coord, wgts, part_sizes, wgtscale, rcb->Num_Dim, pivot_choice, 
-               max_aspect_ratio);
+               max_aspect_ratio, timers);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from serial_rcb");
       goto End;
@@ -1523,7 +1523,8 @@ static int serial_rcb(
                                 scaling factors for each weight dimension. */
   int ndim,                  /* number of geometric dimensions */
   int pivot_choice, 
-  double max_aspect_ratio 
+  double max_aspect_ratio,
+  double timers[]            /* as in rcb_fn */
 )
 {
   char *yo = "serial_rcb";
@@ -1550,6 +1551,7 @@ static int serial_rcb(
   double max_box;                   /* largest length of bbox */
   double *c, *w;
   double uniformWeight;
+  double start_time, end_time;
 
   wgtdim = (wgtflag>0 ? wgtflag : 1);
 
@@ -1558,6 +1560,9 @@ static int serial_rcb(
       dotpt->Part[dindx[i]] = partlower;
   }
   else {
+    if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
+      start_time = Zoltan_Time(zz->Timer);
+
     ierr = Zoltan_Divide_Parts(zz, zz->Obj_Weight_Dim, part_sizes, num_parts,
                                &partlower, &partmid, fractionlo);
 
@@ -1634,6 +1639,12 @@ static int serial_rcb(
         first_guess = 1;
       }
       else first_guess = 0;
+
+      if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
+        end_time = Zoltan_Time(zz->Timer);
+        timers[1] += end_time - start_time;
+        start_time = end_time;
+      }
   
       if (wgtflag <= 1){
         /* Call find_median with Tflops_Special == 0; avoids communication */
@@ -1755,6 +1766,11 @@ static int serial_rcb(
     }
     memcpy(dindx, tmpdindx, dotnum * sizeof(int));
 
+    if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
+      end_time = Zoltan_Time(zz->Timer);
+      timers[2] += end_time - start_time;
+    }
+
     /* If set 0 has at least one part and at least one dot,
      * call serial_rcb for set 0 */
     new_nparts = partmid - partlower;
@@ -1770,8 +1786,8 @@ static int serial_rcb(
                         recompute_box,
                         box_op, box_type, average_cuts, 
                         counters, treept, dim_spec, level,
-                        coord, wgts, part_sizes, wgtscale, ndim, pivot_choice,   
-                        max_aspect_ratio);
+                        coord, wgts, part_sizes, wgtscale, ndim, pivot_choice,
+                        max_aspect_ratio, timers);
       if (ierr < 0) {
         goto End;
       }
@@ -1792,7 +1808,7 @@ static int serial_rcb(
                         box_op, box_type, average_cuts,
                         counters, treept, dim_spec, level,
                         coord, wgts, part_sizes, wgtscale, ndim, pivot_choice,
-                        max_aspect_ratio);
+                        max_aspect_ratio, timers);
       if (ierr < 0) {
         goto End;
       }
