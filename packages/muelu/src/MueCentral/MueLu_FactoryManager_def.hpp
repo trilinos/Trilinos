@@ -66,7 +66,7 @@ namespace MueLu {
       //if (varName == "partition")     return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface())); //FIXME Change to partition to uppercase for consistency
 #ifdef HAVE_MPI
       if (varName == "Partition")     {
-        return SetAndReturnDefaultFactory(varName, rcp(new MueLu::ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>())); //FIXME Change to partition to uppercase for consistency
+        return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface())); //FIXME Change to partition to uppercase for consistency
       }
       if (varName == "Permutation") {
         return SetAndReturnDefaultFactory(varName, rcp(new RepartitionFactory()));
