@@ -101,7 +101,9 @@ int mainCuda()
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 1 , 2 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 1 , 5 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 2 , 1 );
+  unit_test::test_block_crs_matrix<Kokkos::Cuda>( 2 , 2 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 3 , 1 );
+  unit_test::test_block_crs_matrix<Kokkos::Cuda>( 3 , 2 );
 
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 2 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 5 );
@@ -109,11 +111,12 @@ int mainCuda()
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 1 );
 
   const bool print_flag = false ;
-  const int  iter_count = 10 ;
+  const int  iter_count = 5 ;
   const int  cube_size  = 3 ;
 
   unit_test::test_product_tensor_matrix<double,Kokkos::Cuda>( std::vector<int>( 5 , 3 ) , cube_size , iter_count , print_flag );
   unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Cuda>( std::vector<int>( 5 , 3 ) , cube_size , iter_count , print_flag );
+  unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Cuda>( std::vector<int>( 5 , 5 ) , cube_size , iter_count , print_flag );
 
   std::cout << "Stress tests:" << std::endl ;
 
