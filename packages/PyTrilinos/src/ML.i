@@ -112,6 +112,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialDistributor.h"
 #include "Epetra_SerialDenseSVD.h"
+#include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
 
@@ -130,12 +131,14 @@ example subdirectory of the PyTrilinos package:
 #endif
 
 // IFPACK includes
+#ifdef HAVE_IFPACK
 #include "Ifpack_IC.h"
 #include "Ifpack_ICT.h"
 #include "Ifpack_ILU.h"
 #include "Ifpack_ILUT.h"
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_Amesos.h"
+#endif
 
 // ML includes
 #undef HAVE_STDINT_H
@@ -174,8 +177,10 @@ example subdirectory of the PyTrilinos package:
 %include "Epetra_RowMatrix_Utils.i"
 %ignore Epetra_Version;
 %import  "Epetra.i"
+#ifdef HAVE_IFPACK
 %ignore Ifpack_Version;
 %import  "IFPACK.i"
+#endif
 #endif
 
 // Teuchos::RCP handling
@@ -371,6 +376,7 @@ Space.GetMyGlobalElements = Space_GetMyGlobalElements
 ///////////////////////////////
 // MLAPI_MultiVector support //
 ///////////////////////////////
+%warnfilter(503) operator<<;  // I can't get %ignore to stop this warning...
 %typemap(out) double* GetValues
 {
   npy_intp dims = (arg1)->GetMyLength();
