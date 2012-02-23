@@ -6,7 +6,7 @@ namespace MueLu {
   class ZoltanInterface;
 }
 
-#ifndef MUELU_ZOLTAN_SHORT
+#ifndef MUELU_ZOLTANINTERFACE_SHORT
 #define MUELU_ZOLTAN_SHORT
 #endif
 
