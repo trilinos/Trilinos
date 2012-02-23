@@ -111,15 +111,12 @@ namespace MueLu {
       return;
     }
     
-    if (mypid == 0) {
-        std::cout << "Repartitioning necessary:" << std::endl;
-        std::cout << "    current level = " << currentLevel.GetLevelID()
+    GetOStream(Statistics0,0) << "Repartitioning necessary:" << std::endl;
+    GetOStream(Statistics0,0) << "    current level = " << currentLevel.GetLevelID()
                   << ", first level where repartitioning can happen is "
                   << startLevel_ << std::endl;
-        std::cout << "    nonzero imbalance = " << imbalance << ", max allowable = " << nnzMaxMinRatio_ << std::endl;
-        std::cout << "    min # rows per proc = " << minNumRows << ", min allowable = " << minRowsPerProcessor_
-                  << std::endl;
-    }
+    GetOStream(Statistics0,0) << "    nonzero imbalance = " << imbalance << ", max allowable = " << nnzMaxMinRatio_ << std::endl;
+    GetOStream(Statistics0,0) << "    min # rows per proc = " << minNumRows << ", min allowable = " << minRowsPerProcessor_ << std::endl;
 
     // FIXME Quick way to figure out how many partitions there should be. (Same as what's done in ML.)
     // FIXME Should take into account nnz, maybe?  Perhaps only when user is using min #nnz per row threshold.
@@ -127,11 +124,11 @@ namespace MueLu {
     if (currentLevel.IsAvailable("number of partitions")) {
       numPartitions = currentLevel.Get<GO>("number of partitions");
     } else {
-      if (mypid == 0) std::cout << "Did not find \"number of partitions\" in Level, calculating it now!" << std::endl;
-      std::cout << "A->getGlobalNumRows() = " << A->getGlobalNumRows() << std::endl;
+
+      GetOStream(Runtime0, 0) << "Did not find \"number of partitions\" in Level, calculating it now!" << std::endl;
       if ((GO)A->getGlobalNumRows() < minRowsPerProcessor_) numPartitions = 1;
       else                                              numPartitions = A->getGlobalNumRows() / minRowsPerProcessor_;
-      std::cout << "num partitions = " << numPartitions << std::endl;
+      GetOStream(Statistics0,0) << "Number of partitions to use = " << numPartitions << std::endl;
       currentLevel.Set<GO>("number of partitions",numPartitions);
     }
 
