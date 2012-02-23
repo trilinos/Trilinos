@@ -268,7 +268,7 @@ namespace MueLu {
       if(ifpackType == "ILU") {
         ifpackList.set<int>("fact: level-of-fill", (int)paramList.get<double>("coarse: ifpack level-of-fill"));
         ifpackList.set("partitioner: overlap", paramList.get<int>("coarse: ifpack overlap"));
-        smooProto = rcp( new IfpackSmoother(ifpackType, ifpackList, paramList.get<int>("coarse: ifpack overlap")) );
+        smooProto = MueLu::GetIfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(ifpackType, ifpackList, paramList.get<int>("coarse: ifpack overlap"));
       }
       else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
@@ -361,7 +361,7 @@ namespace MueLu {
       if(ifpackType == "ILU") {
         ifpackList.set<int>("fact: level-of-fill", (int)smolevelsublist.get<double>("smoother: ifpack level-of-fill"));
         ifpackList.set("partitioner: overlap", smolevelsublist.get<int>("smoother: ifpack overlap"));
-        smooProto = rcp( new IfpackSmoother(ifpackType, ifpackList, smolevelsublist.get<int>("smoother: ifpack overlap")) );
+        smooProto = MueLu::GetIfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(ifpackType, ifpackList,smolevelsublist.get<int>("smoother: ifpack overlap"));
       }
       else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
