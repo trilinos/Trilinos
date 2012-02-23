@@ -247,7 +247,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 
   cell_part_vector.push_back ( &fixture.get_cell_part () );
   bulk.change_entity_parts ( new_cell , cell_part_vector );
-  STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_node , cell_part_vector ) , std::runtime_error );
+  //STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_node , cell_part_vector ) , std::runtime_error );
+  bulk.change_entity_parts ( new_node , cell_part_vector );
 }
 
 /************************

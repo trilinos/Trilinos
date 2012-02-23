@@ -287,16 +287,10 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
     const Part * const p = *i ;
     const unsigned part_rank = p->primary_entity_rank();
 
-    // The code below is coupled with the code in quick_verify_change_part.
-    // If we change what it means for a part to be valid, code will need to be
-    // changed in both places unfortunately.
-    const bool error_intersection = ! p->intersection_of().empty();
-    const bool error_rel_target   = ! p->relations().empty() &&
-                                    p == p->relations().begin()->m_target ;
-    const bool error_rank = entity_rank != part_rank &&
-                            undef_rank  != part_rank ;
+    bool intersection_ok, rel_target_ok, rank_ok;
+    internal_basic_part_check(p, entity_rank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
 
-    if ( error_intersection || error_rel_target || error_rank ) {
+    if ( !intersection_ok || !rel_target_ok || !rank_ok ) {
       if ( ok ) {
         ok = false ;
         msg << "change parts for entity " << print_entity_key( entity );
@@ -314,9 +308,9 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
         msg << part_rank ;
       }
       msg << "] " ;
-      if ( error_intersection ) { msg << "is_intersection " ; }
-      if ( error_rel_target )   { msg << "is_relation_target " ; }
-      if ( error_rank )         { msg << "is_bad_rank " ; }
+      if ( !intersection_ok ) { msg << "is_intersection " ; }
+      if ( !rel_target_ok )   { msg << "is_relation_target " ; }
+      if ( !rank_ok )         { msg << "is_bad_rank " ; }
     }
   }
 
@@ -478,7 +472,7 @@ void BulkData::internal_change_entity_parts(
   internal_propagate_part_changes( entity , parts_removed );
 
 #ifndef NDEBUG
-  ensure_part_superset_consistency( entity );
+  //ensure_part_superset_consistency( entity );
 #endif
 }
 

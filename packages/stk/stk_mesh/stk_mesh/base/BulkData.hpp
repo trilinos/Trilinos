@@ -455,15 +455,21 @@ private:
    */
   void internal_regenerate_shared_aura();
 
+  void internal_basic_part_check(const Part* part,
+                                 const unsigned entity_rank,
+                                 const unsigned undef_rank,
+                                 bool& intersection_ok,
+                                 bool& rel_target_ok,
+                                 bool& rank_ok) const;
+
   // Returns false if there is a problem. It is expected that
   // verify_change_parts will be called if quick_verify_change_part detects
   // a problem, therefore we leave the generation of an exception to
   // verify_change_parts. We want this function to be as fast as
   // possible.
-  inline bool internal_quick_verify_change_part(const Entity& entity,
-                                                const Part* part,
-                                                const unsigned entity_rank,
-                                                const unsigned undef_rank) const;
+  bool internal_quick_verify_change_part(const Part* part,
+                                         const unsigned entity_rank,
+                                         const unsigned undef_rank) const;
 
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity     & entity ,
@@ -523,22 +529,31 @@ void set_field_relations( Entity & e_from ,
                           Entity & e_to ,
                           const unsigned ident );
 
-inline bool BulkData::internal_quick_verify_change_part(const Entity& entity,
-                                                        const Part* part,
+inline
+void BulkData::internal_basic_part_check(const Part* part,
+                                         const unsigned entity_rank,
+                                         const unsigned undef_rank,
+                                         bool& intersection_ok,
+                                         bool& rel_target_ok,
+                                         bool& rank_ok) const
+{
+  // const unsigned part_rank = part->primary_entity_rank();
+
+  intersection_ok = part->intersection_of().empty();
+  rel_target_ok   = ( part->relations().empty() ||
+                      part != part->relations().begin()->m_target );
+  // rank_ok         = ( entity_rank == part_rank ||
+  //                     undef_rank  == part_rank );
+  rank_ok = true; // Do we allow arbitrary part changes to entities regardless of part rank? For the sake of the migration, we will for now.
+}
+
+
+inline bool BulkData::internal_quick_verify_change_part(const Part* part,
                                                         const unsigned entity_rank,
                                                         const unsigned undef_rank) const
 {
-  const unsigned part_rank = part->primary_entity_rank();
-
-  // The code below is coupled with the code in verify_change_parts. If we
-  // change what it means for a part to be valid, code will need to be
-  // changed in both places unfortunately.
-  const bool intersection_ok = part->intersection_of().empty();
-  const bool rel_target_ok   = ( part->relations().empty() ||
-                                 part != part->relations().begin()->m_target );
-  const bool rank_ok         = ( entity_rank == part_rank ||
-                                 undef_rank  == part_rank );
-
+  bool intersection_ok, rel_target_ok, rank_ok;
+  internal_basic_part_check(part, entity_rank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
   return intersection_ok && rel_target_ok && rank_ok;
 }
 
@@ -574,7 +589,7 @@ void BulkData::change_entity_parts( Entity & entity,
 
   for ( AddIterator ia = begin_add_parts; ia != end_add_parts ; ++ia ) {
     quick_verify_check = quick_verify_check &&
-      internal_quick_verify_change_part(entity, *ia, entity_rank, undef_rank);
+      internal_quick_verify_change_part(*ia, entity_rank, undef_rank);
     a_parts.insert( a_parts.end(), (*ia)->supersets().begin(),
                                    (*ia)->supersets().end() );
   }
@@ -600,7 +615,7 @@ void BulkData::change_entity_parts( Entity & entity,
     */
 
     quick_verify_check = quick_verify_check &&
-      internal_quick_verify_change_part(entity, *ir, entity_rank, undef_rank);
+      internal_quick_verify_change_part(*ir, entity_rank, undef_rank);
 
     if ( ! contain( a_parts , **ir ) ) {
       r_parts.push_back( *ir );
