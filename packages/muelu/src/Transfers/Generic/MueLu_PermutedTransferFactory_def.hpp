@@ -57,18 +57,26 @@ namespace MueLu {
 
       case MueLu::INTERPOLATION:
         {
-        RCP<Operator> originalP = coarseLevel.Get< RCP<Operator> >("P",initialTransferFact_.get());
-        RCP<Operator> permutedP = Utils::TwoMatrixMultiply(originalP,false,permMatrix,false); //P*perm
-        coarseLevel.Set< RCP<Operator> >("P",permutedP,this);
+          RCP<Operator> originalP = coarseLevel.Get< RCP<Operator> >("P",initialTransferFact_.get());
+          if (permMatrix != Teuchos::null) {
+            RCP<Operator> permutedP = Utils::TwoMatrixMultiply(originalP,false,permMatrix,false); //P*perm
+            coarseLevel.Set< RCP<Operator> >("P",permutedP,this);
+          } else {
+            coarseLevel.Set< RCP<Operator> >("P",originalP,this);
+          }
         }
         break;
 
       case MueLu::RESTRICTION:
         {
-        //TODO how do we handle implicitly transposed restriction operators?
-        RCP<Operator> originalR = coarseLevel.Get< RCP<Operator> >("R",initialTransferFact_.get());
-        RCP<Operator> permutedR = Utils::TwoMatrixMultiply(permMatrix,true,originalR,false); //transpose(perm) * R
-        coarseLevel.Set< RCP<Operator> >("R",permutedR,this);
+          //TODO how do we handle implicitly transposed restriction operators?
+          RCP<Operator> originalR = coarseLevel.Get< RCP<Operator> >("R",initialTransferFact_.get());
+          if (permMatrix != Teuchos::null) {
+            RCP<Operator> permutedR = Utils::TwoMatrixMultiply(permMatrix,true,originalR,false); //transpose(perm) * R
+            coarseLevel.Set< RCP<Operator> >("R",permutedR,this);
+          } else {
+            coarseLevel.Set< RCP<Operator> >("R",originalR,this);
+          }
         }
         break;
     } //switch
