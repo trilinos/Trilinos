@@ -13,6 +13,7 @@
 #include <Xpetra_OperatorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MPI
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
  
@@ -127,6 +128,8 @@ namespace MueLu {
   }; // class RepartitionFactory
 
 } // namespace MueLu
+
+#endif //ifdef HAVE_MPI
 
 #define MUELU_REPARTITIONFACTORY_SHORT
 #endif // MUELU_REPARTITIONFACTORY_DECL_HPP

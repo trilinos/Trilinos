@@ -1,10 +1,11 @@
 #ifndef MUELU_REPARTITIONFACTORY_DEF_HPP
 #define MUELU_REPARTITIONFACTORY_DEF_HPP
 
+#include "MueLu_RepartitionFactory_decl.hpp" // TMP JG NOTE: before other includes, otherwise I cannot test the fwd declaration in _def
+
+#ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_Hashtable.hpp>
-
-#include "MueLu_RepartitionFactory_decl.hpp" // TMP JG NOTE: before other includes, otherwise I cannot test the fwd declaration in _def
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
@@ -672,6 +673,8 @@ namespace MueLu {
   }
 
 } // namespace MueLu
+
+#endif //ifdef HAVE_MPI
 
 #define MUELU_REPARTITIONFACTORY_SHORT
 #endif // MUELU_REPARTITIONFACTORY_DEF_HPP

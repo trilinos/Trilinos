@@ -41,7 +41,6 @@ APPEND_SET(SOURCES
   SubBlockAFactory.cpp
   ParameterList/FactoryFactory.cpp
   ParameterList/ParameterListInterpreter.cpp
-  PermutedTransferFactory.cpp
   MultiVectorTransferFactory.cpp
 )
 
@@ -83,6 +82,7 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   APPEND_SET(SOURCES Zoltan.cpp
              Repartition.cpp
+             PermutedTransferFactory.cpp
   )
 ENDIF()
 
