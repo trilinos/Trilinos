@@ -109,9 +109,11 @@ int mainCuda()
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 1 );
 
   const bool print_flag = false ;
+  const int  iter_count = 10 ;
+  const int  cube_size  = 3 ;
 
-  unit_test::test_product_tensor_matrix<double,Kokkos::Cuda>( std::vector<int>( 3 , 2 ) , 3 , print_flag );
-  unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Cuda>( std::vector<int>( 3 , 2 ) , 3 , print_flag );
+  unit_test::test_product_tensor_matrix<double,Kokkos::Cuda>( std::vector<int>( 5 , 3 ) , cube_size , iter_count , print_flag );
+  unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Cuda>( std::vector<int>( 5 , 3 ) , cube_size , iter_count , print_flag );
 
   std::cout << "Stress tests:" << std::endl ;
 

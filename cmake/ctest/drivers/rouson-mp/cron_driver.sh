@@ -10,7 +10,7 @@ echo
 export TDD_GIT_EXE=/usr/local/git/bin/git
 export TDD_PARALLEL_LEVEL=2
 #export TDD_HTTP_PROXY="http://config.ca.sandia.gov/autoproxy.pac"
-export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
+export TDD_HTTP_PROXY="http://wwwproxy.ca.sandia.gov:80/"
 
 # Trilinos settings:
 #
@@ -42,8 +42,8 @@ export PYTHONPATH=/usr/bin/python
 
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py
-${TRILINOS_SRC}/cmake/ctest/drivers/rouson-mp/cron_driver_release_rouson-mp.sh
-${TRILINOS_SRC}/cmake/ctest/drivers/rouson-mp/cron_driver_rouson-mp.sh
+#${TRILINOS_SRC}/cmake/ctest/drivers/rouson-mp/cron_driver_release_rouson-mp.sh
+#${TRILINOS_SRC}/cmake/ctest/drivers/rouson-mp/cron_driver_rouson-mp.sh
 
 echo
 echo "Ending nightly Trilinos development testing on rouson-mp: `date`"

@@ -80,14 +80,13 @@ public:
 
   static void run( const dst_type & dst , const src_type & src )
   {
-    const size_t size = dst.m_length * sizeof(ValueType);
+    const Cuda::size_type size =
+      dst.m_stride * dst.m_count * sizeof(ValueType);
 
-    for ( Cuda::size_type i = 0 ; i < dst.m_count ; ++i ) {
-      MemoryManager< Cuda >::
-        copy_to_device_from_host( dst.m_ptr_on_device + i * dst.m_stride ,
-                                  src.m_ptr_on_device + i * src.m_stride ,
-                                  size );
-    }
+    MemoryManager< Cuda >::
+      copy_to_device_from_host( dst.m_ptr_on_device ,
+                                src.m_ptr_on_device ,
+                                size );
   }
 };
 
@@ -100,14 +99,13 @@ public:
 
   static void run( const dst_type & dst , const src_type & src )
   {
-    const size_t size = dst.m_length * sizeof(ValueType);
+    const Cuda::size_type size =
+      dst.m_stride * dst.m_count * sizeof(ValueType);
 
-    for ( Cuda::size_type i = 0 ; i < dst.m_count ; ++i ) {
-      MemoryManager< Cuda >::
-        copy_to_host_from_device( dst.m_ptr_on_device + i * dst.m_stride ,
-                                  src.m_ptr_on_device + i * src.m_stride ,
-                                  size );
-    }
+    MemoryManager< Cuda >::
+      copy_to_host_from_device( dst.m_ptr_on_device ,
+                                src.m_ptr_on_device ,
+                                size );
   }
 };
 
