@@ -15,7 +15,7 @@ export TDD_HTTP_PROXY="http://wwwproxy.ca.sandia.gov:80/"
 #
 
 export TDD_CTEST_TEST_TYPE=Nightly
-export CTEST_TEST_TYPE=Nightly
+export CTEST_TEST_TYPE=Experimental
 export CTEST_DO_SUBMIT=ON
 export TDD_DO_SUBMIT=ON
 export Trilinos_PACKAGES=ForTrilinos 
