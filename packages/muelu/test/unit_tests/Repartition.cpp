@@ -862,21 +862,9 @@ fos->setOutputToRootOnly(-1);
     Op->apply(*randomVec,*workVec,Teuchos::NO_TRANS,1,0);
     permMat->apply(*workVec,*P_Av,Teuchos::NO_TRANS,1,0);
 
-    sleep(1); comm->barrier();
-    if (mypid==0) std::cout << "========\n  P_Av\n========\n" << std::endl;
-    P_Av->describe(*fos,Teuchos::VERB_EXTREME);
-    sleep(1); comm->barrier();
-    if (mypid==0) std::cout << "========\n  PA_v\n========\n" << std::endl;
-    PA_v->describe(*fos,Teuchos::VERB_EXTREME);
-    sleep(1); comm->barrier();
-
     RCP<MultiVector> diff = VectorFactory::Build(PermTimesA->getRangeMap());
     //diff = P_Av + (-1.0)*(PA_v) + 0*diff
     diff->update(1.0,*P_Av,-1.0,*PA_v,0.0);
-
-    diff->describe(*fos,Teuchos::VERB_EXTREME);
-
-    sleep(1); comm->barrier();
 
     Teuchos::Array<ST::magnitudeType> norms(1);
     diff->norm2(norms);
