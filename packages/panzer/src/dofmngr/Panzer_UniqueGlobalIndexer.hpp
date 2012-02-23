@@ -66,7 +66,7 @@ public:
      */
    virtual const std::pair<std::vector<int>,std::vector<int> > & 
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
-                                                               int subcellDim,int subcellId) const = 0;
+                              int subcellDim,int subcellId) const = 0;
 
    // Methods requiring Local or Global OrdinalT
    ////////////////////////////////////////////////////////////////////////
