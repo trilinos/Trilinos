@@ -15,7 +15,9 @@ MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.2.2
 #this is also needed to build pytrilinos not just configure
 export PYTHONPATH="$MPI4PY_DIR:/home/trilinos/tpl/gcc4.1.2/numpy1.4.0/lib64/python2.4/site-packages"
 
-export PATH=/home/trilinos/tpl/gcc4.1.2/swig-2.0.0/bin:$PATH
+export PATH=/home/trilinos/tpl/gcc4.1.2/swig-2.0.0/bin:/home/trilinos/tpl/gcc4.1.2/qt-4.5.2/bin:$PATH
+which cmake
+cmake --version
 
 rm -fr CMakeCache.txt CMakeFiles/
 
@@ -98,12 +100,14 @@ cmake \
 $EXTRA_ARGS \
 $SOURCE_DIR
 
+config_error=$?
+
 #remove the faked dakota
 rm -r $DAKOTA_DIR
 
 
 #generate the tarball if configure succeeded
-if [ $? == 0 ]; then
+if [ $config_error == 0 ]; then
   make package_source
 else
   echo "Configure failed no tarballs created."

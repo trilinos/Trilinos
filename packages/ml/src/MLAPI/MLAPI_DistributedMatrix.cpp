@@ -22,10 +22,6 @@
 ostream& MLAPI::DistributedMatrix::
 Print(ostream& os, const bool verbose) const
 {
-  int Length = MaxNumEntries();
-  std::vector<double> Values(Length);
-  std::vector<int>    Indices(Length);
-
   if (GetMyPID() == 0) {
 
     os << endl;

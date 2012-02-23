@@ -1128,9 +1128,14 @@ int Epetra_CrsMatrix::OptimizeStorage() {
       }
     }
 
-    for (int i=0;i<NumMyRows_; ++i) {
-       if (Values_[i]!=0) delete [] Values_[i];
+    // Do not delete values if there is a static profile --- in this case the Values_
+    // array just points to All_Values_, not unique memory.
+    if(!Graph().StaticProfile()){
+      for (int i=0;i<NumMyRows_; ++i) {
+	if (Values_[i]!=0) delete [] Values_[i];
+      }
     }
+
     delete [] Values_alloc_lengths_; Values_alloc_lengths_ = 0;
   } // End of !Contiguous section
   else {

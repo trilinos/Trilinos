@@ -69,7 +69,7 @@ public:
       const size_type i = tensor.coord(iEntry,0);
       const size_type j = tensor.coord(iEntry,1);
       const size_type k = tensor.coord(iEntry,2);
-      const size_type v = tensor.value(iEntry);
+      const ValueType v = tensor.value(iEntry);
 
       const bool neq_ij = i != j ;
       const bool neq_jk = j != k ;
@@ -95,6 +95,48 @@ public:
 
   static size_type vector_size( const tensor_type & tensor )
   { return tensor.dimension(); }
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType >
+class Multiply< SparseProductTensor< 3 , ValueType , Host > ,
+                SymmetricDiagonalSpec< Host > , void >
+{
+public:
+  typedef Host::size_type size_type ;
+  typedef SparseProductTensor< 3 , ValueType , Host > tensor_type ;
+
+  template< typename MatrixValue >
+  static void apply( const tensor_type & tensor ,
+                     const MatrixValue * const a ,
+                           MatrixValue * const M )
+  {
+    const SymmetricDiagonalSpec< Host > spec( tensor.dimension() );
+    const size_type nEntry  = tensor.entry_count();
+    const size_type nMatrix = spec.matrix_size();
+
+    for ( size_type iMatrix = 0 ; iMatrix < nMatrix ; ++iMatrix ) {
+      M[ iMatrix ] = 0 ;
+    }
+
+    for ( size_type iEntry = 0 ; iEntry < nEntry ; ++iEntry ) {
+      const size_type i = tensor.coord(iEntry,0);
+      const size_type j = tensor.coord(iEntry,1);
+      const size_type k = tensor.coord(iEntry,2);
+      const ValueType v = tensor.value(iEntry);
+
+      M[ spec.matrix_offset(k,j) ] += v * a[i] ;
+
+      if ( i != j ) {
+        M[ spec.matrix_offset(k,i) ] += v * a[j] ;
+      }
+
+      if ( i != k && j != k ) {
+        M[ spec.matrix_offset(j,i) ] += v * a[k] ;
+      }
+    }
+  }
 };
 
 //----------------------------------------------------------------------------

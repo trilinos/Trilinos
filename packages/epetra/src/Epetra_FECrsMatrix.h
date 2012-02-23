@@ -172,6 +172,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    int InsertGlobalValues(int GlobalRow, int NumEntries,
                            const double* Values, const int* Indices);
 
+   /** override base-class Epetra_CrsMatrix::InsertGlobalValues method */
+   int InsertGlobalValues(int GlobalRow, int NumEntries,
+                           double* Values, int* Indices);
+
    /** override base-class Epetra_CrsMatrix::ReplaceGlobalValues method */
    int ReplaceGlobalValues(int GlobalRow, int NumEntries,
                            const double* Values, const int* Indices);
@@ -595,7 +599,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 					  const double* values,
 					  int mode);
 
-   int InsertNonlocalRow(int row, int offset);
+   int InsertNonlocalRow(int row, std::vector<int>::iterator offset);
 
    int InputNonlocalValue(int rowoffset,
 			  int col, double value,
@@ -606,12 +610,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    bool ignoreNonLocalEntries_;
 
-   int numNonlocalRows_;
-   int* nonlocalRows_;
-   int* nonlocalRowLengths_;
-   int* nonlocalRowAllocLengths_;
-   int** nonlocalCols_;
-   double** nonlocalCoefs_;
+   std::vector<int> nonlocalRows_;
+   std::vector<std::vector<int> > nonlocalCols_;
+   std::vector<std::vector<double> > nonlocalCoefs_;
 
    //IMPORTANT NOTE: The use of class-member work-data arrays is
    //**NOT** thread-safe.

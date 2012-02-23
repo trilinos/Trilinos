@@ -668,6 +668,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, assign_begin_end, T )
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, print_iterators, T )
+{
+  typedef typename ArrayRCP<T>::const_iterator const_iterator;
+  ECHO(ArrayRCP<T> a_arcp = arcp<T>(n));
+  ECHO(const_iterator itr = a_arcp.begin());
+  out << "itr = " << itr << "\n";
+  TEST_EQUALITY(itr, a_arcp.begin());
+  ECHO(itr += n);
+  out << "itr = " << itr << "\n";
+  TEST_EQUALITY(itr, a_arcp.end());
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, deepCopy, T )
 {
   const T val = as<T>(1);
@@ -1004,6 +1017,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assignSelf, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assign_n_val, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assign_begin_end, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, print_iterators, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, deepCopy, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, resize, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, clear, T ) \

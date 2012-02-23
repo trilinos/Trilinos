@@ -95,9 +95,11 @@ NOX.Epetra provides the following user-level classes:
 #include "Epetra_DLLExportMacro.h"
 
 // EpetraExt includes
+#ifdef HAVE_NOX_EPETRAEXT
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 #include "EpetraExt_ModelEvaluator.h"
+#endif
 
 // NOX includes
 #include "NOX_Abstract_Group.H"
@@ -125,6 +127,7 @@ NOX.Epetra provides the following user-level classes:
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPySerialDenseMatrix.h"
 #include "Epetra_NumPySerialDenseVector.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
 #include "Epetra_NumPyVector.h"
 
 // Namespace flattening
@@ -356,8 +359,10 @@ using namespace NOX::Epetra;
 %include "Epetra_Operators.i"
 
 // EpetraExt import
+#ifdef HAVE_NOX_EPETRAEXT
 %ignore EpetraExt::Add;
 %include "EpetraExt.i"
+#endif
 
 // NOX import
 %import "NOX.Abstract.i"
@@ -388,6 +393,7 @@ using namespace NOX::Epetra;
 /////////////////////////////////////////////////
 // NOX.Epetra.FiniteDifferenceColoring support //
 /////////////////////////////////////////////////
+#ifdef HAVE_NOX_EPETRAEXT
 %teuchos_rcp(NOX::Epetra::FiniteDifferenceColoring)
 namespace NOX
 {
@@ -427,6 +433,7 @@ namespace Epetra
 }
 }
 %include "NOX_Epetra_FiniteDifferenceColoring.H"
+#endif
 
 ///////////////////////////////////
 // NOX.Epetra.MatrixFree support //
@@ -462,6 +469,7 @@ namespace Epetra
 ////////////////////////////////////////////////
 // NOX.Epetra.ModelEvaluatorInterface support //
 ////////////////////////////////////////////////
+#ifdef HAVE_NOX_EPETRAEXT
 %teuchos_rcp(NOX::Epetra::ModelEvaluatorInterface)
 %import "EpetraExt.i"
 namespace NOX
@@ -481,9 +489,14 @@ namespace Epetra
 }
 }
 %include "NOX_Epetra_ModelEvaluatorInterface.H"
+#endif
 
 // Turn off the exception handling
 %exception;
+
+///////////////////////
+// Default factories //
+///////////////////////
 
 // defaultSolver() and supporting functions
 %pythoncode
