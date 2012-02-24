@@ -27,6 +27,7 @@ namespace MueLu {
   /*!
     @class PgPFactory class.
     @brief Factory for building Petrov-Galerkin Smoothed Aggregation prolongators.
+    @ingroup MueLuTransferClasses
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?

@@ -3,5 +3,8 @@
    some text
 */
 
-/*! @defgroup MueLuTransferClasses The main MueLu prolongator clases
+/*! @defgroup MueLuTransferClasses The main MueLu prolongator classes
+*/
+
+/*! @defgroup MueLuManagingDataDependencies Handling data dependencies between factories
 */
