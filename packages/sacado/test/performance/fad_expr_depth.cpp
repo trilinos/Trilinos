@@ -293,6 +293,7 @@ void print_times(const std::string& screen_name, const std::string& file_name)
   }
 }
 
+#ifdef HAVE_ADOLC
 void print_times_adolc(const std::string& screen_name, 
 		       const std::string& file_name)
 {
@@ -458,6 +459,7 @@ void print_times_adolc(const std::string& screen_name,
 
   delete [] seed;
 }
+#endif
 
 int main() {
   print_times< Sacado::Fad::DFad<double> >(
