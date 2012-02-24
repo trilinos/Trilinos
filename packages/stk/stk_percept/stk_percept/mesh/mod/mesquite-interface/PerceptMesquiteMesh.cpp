@@ -340,7 +340,8 @@ namespace stk {
                   // surface - free to move
                   else if (dof == 2)
                     {
-                      fixed=false;
+                      //fixed=false;
+                      fixed=true;
                       if (DEBUG_PRINT) std::cout << "tmp srk found surface node unfixed= " << node_ptr->identifier() << std::endl;
                     }
                   // interior/volume

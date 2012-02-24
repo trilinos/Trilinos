@@ -103,7 +103,7 @@ namespace stk {
 
       // Run untangler
       if (!get_parallel_rank()) std::cout << "\ntmp srk PMMShapeImprovementWrapper: running untangler...\n " << std::endl;
-      bool use_untangle_wrapper = false;
+      bool use_untangle_wrapper = true;
       if (use_untangle_wrapper)
         {
           PMMShapeImprover::save_or_restore_debug_state(true);
@@ -111,6 +111,7 @@ namespace stk {
           UntangleWrapper uw;
           uw.set_untangle_metric(UntangleWrapper::BETA);
           //uw.set_metric_constant( -1.e-6 );
+          uw.set_outer_iteration_limit(200);
 
           //void UntangleWrapper::set_metric_constant( double value )
           //void UntangleWrapper::set_cpu_time_limit( double seconds )
@@ -144,8 +145,8 @@ namespace stk {
       if (check_quality_after_untangler)
         {
           int num_invalid = count_invalid_elements(*mesh, pmesh, *domain);
-          if (!get_parallel_rank()) 
-            std::cout << "\ntmp srk PMMShapeImprover num_invalid after untangler= " << num_invalid << " " 
+          //if (!get_parallel_rank()) 
+          std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMShapeImprovementWrapper num_invalid after untangler= " << num_invalid << " " 
                       << (num_invalid ? " ERROR still have invalid elements after Mesquite untangle" : 
                           " SUCCESS: untangled invalid elements ")
                       << std::endl;
@@ -180,12 +181,17 @@ namespace stk {
   
       // Run shape improver
       InstructionQueue q2;
-      if (!get_parallel_rank()) std::cout << "\ntmp srk PMMShapeImprovementWrapper: running shape improver... \n" << std::endl;
+      //if (!get_parallel_rank()) 
+      std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMShapeImprovementWrapper: running shape improver... \n" << std::endl;
+
       q2.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
       q2.set_master_quality_improver( &shape_solver, err ); MSQ_ERRRTN(err);
       q2.add_quality_assessor( qa, err ); MSQ_ERRRTN(err);
       q2.run_common( mesh, pmesh, domain, settings, err ); 
-      if (!get_parallel_rank()) std::cout << "\ntmp srk PMMShapeImprovementWrapper: running shape improver... done \n" << std::endl;
+
+      //if (!get_parallel_rank()) 
+      std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMShapeImprovementWrapper: running shape improver... done \n" << std::endl;
+
       MSQ_ERRRTN(err);
     }
 
@@ -210,10 +216,13 @@ namespace stk {
       //inv_check.disable_printing_results();
       q.add_quality_assessor( &inv_check, err );  MSQ_ERRZERO(err);
       Settings settings;
-      q.run_common( &mesh, pmesh, &domain, &settings, err ); MSQ_ERRZERO(err);
+      //q.run_common( &mesh, pmesh, &domain, &settings, err ); MSQ_ERRZERO(err);
+      q.run_common( &mesh, 0, &domain, &settings, err ); MSQ_ERRZERO(err);
       //q.remove_quality_assessor( 0, err ); MSQ_ERRZERO(err);
       const QualityAssessor::Assessor* inv_b = inv_check.get_results( &metric );
       int num_invalid = inv_b->get_invalid_element_count();
+      stk::all_reduce( MPI_COMM_WORLD, stk::ReduceSum<1>( &num_invalid ) );
+      
       return num_invalid;
     }
 
@@ -283,7 +292,8 @@ namespace stk {
                 siw.run_instructions(&mesh, &domain, mErr);
             }
 
-          if (!get_parallel_rank()) std::cout << "\ntmp srk PMMShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;
+          //if (!get_parallel_rank()) 
+          std::cout << "\nP[" << get_parallel_rank() << "] tmp srk PMMShapeImprover: MsqError after ShapeImprovementWrapper: " << mErr << std::endl;
 
           if (check_quality)
             {
@@ -293,6 +303,8 @@ namespace stk {
                           << (num_invalid ? " ERROR still have invalid elements after Mesquite smoothing" : 
                               " SUCCESS: smoothed and removed invalid elements ")
                           << std::endl;
+              MPI_Barrier( MPI_COMM_WORLD );
+              std::cout << "\nP[" << Mesquite::get_parallel_rank() << "] tmp srk after barrier" << std::endl;
             }
 
           MSQ_ERRRTN(mErr);
