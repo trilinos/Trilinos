@@ -3,6 +3,17 @@
 
 typedef Kokkos::DefaultNode::DefaultNodeType node_t;
 
+// The path to the directory of test data
+
+#define STR_VALUE(path) #path
+#define PATH_NAME(path) STR_VALUE(path)
+
+#ifdef Z2_DATA_DIR
+  std::string testDataFilePath(PATH_NAME(Z2_DATA_DIR));
+#else
+  std::string testDataFilePath(".");
+#endif
+
 //
 // If Tpetra is compiled with explicit instantiation,
 // then we will use these types in our tests.

@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
   RCP<uinput_t> uinput;
 
   try{
-    uinput = rcp(new uinput_t(std::string("../data/simple.mtx"), comm));
+    uinput = rcp(new uinput_t(testDataFilePath+std::string("/simple.mtx"), comm));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
