@@ -29,52 +29,54 @@
 
 #include "fad_expr_funcs.hpp"
 
+using std::sin;
+
 template <typename T>
-void ExprFuncs<T>::mult1(const T x[], T& y) {
+void ExprFuncs::mult<T,1>::operator()(const T x[], T& y) const {
   y = 
     x[0]*x[1];
 }
 
 template <typename T>
-void ExprFuncs<T>::mult2(const T x[], T& y) {
+void ExprFuncs::mult<T,2>::operator()(const T x[], T& y) const {
   y = 
     x[0]*x[1]*x[2];
 }
 
 template <typename T>
-void ExprFuncs<T>::mult3(const T x[], T& y) {
+void ExprFuncs::mult<T,3>::operator()(const T x[], T& y) const {
   y = 
     x[0]*x[1]*x[2]*x[3];
 }
 
 template <typename T>
-void ExprFuncs<T>::mult4(const T x[], T& y) {
+void ExprFuncs::mult<T,4>::operator()(const T x[], T& y) const {
   y = 
     x[0]*x[1]*x[2]*x[3]*x[4];
 }
 
 template <typename T>
-void ExprFuncs<T>::mult5(const T x[], T& y) {
+void ExprFuncs::mult<T,5>::operator()(const T x[], T& y) const {
   y = 
     x[0]*x[1]*x[2]*x[3]*x[4]*x[5];
 }
 
 template <typename T>
-void ExprFuncs<T>::mult10(const T x[], T& y) {
+void ExprFuncs::mult<T,10>::operator()(const T x[], T& y) const {
   y = 
     x[0]*x[1]*x[2]*x[3]*x[4]*x[5]*x[6]*x[7]*
     x[8]*x[9]*x[10];
 }
 
 template <typename T>
-void ExprFuncs<T>::mult15(const T x[], T& y) {
+void ExprFuncs::mult<T,15>::operator()(const T x[], T& y) const {
   y = 
     x[0]*x[1]*x[2]*x[3]*x[4]*x[5]*x[6]*x[7]*
     x[8]*x[9]*x[10]*x[11]*x[12]*x[13]*x[14]*x[15];
 }
 
 template <typename T>
-void ExprFuncs<T>::mult20(const T x[], T& y) {
+void ExprFuncs::mult<T,20>::operator()(const T x[], T& y) const {
   y = 
     x[0]*x[1]*x[2]*x[3]*x[4]*x[5]*x[6]*x[7]*
     x[8]*x[9]*x[10]*x[11]*x[12]*x[13]*x[14]*x[15]*
@@ -82,105 +84,104 @@ void ExprFuncs<T>::mult20(const T x[], T& y) {
 }
 
 template <typename T>
-void ExprFuncs<T>::nest1(const T x[], T& y) {
-  y = std::sin(x[0]);
+void ExprFuncs::nest<T,1>::operator()(const T x[], T& y) const {
+  y = sin(x[0]);
 }
 
 template <typename T>
-void ExprFuncs<T>::nest2(const T x[], T& y) {
-  y = std::sin(std::sin(x[0]));
+void ExprFuncs::nest<T,2>::operator()(const T x[], T& y) const {
+  y = sin(sin(x[0]));
 }
 
 template <typename T>
-void ExprFuncs<T>::nest3(const T x[], T& y) {
-  y = std::sin(std::sin(std::sin(x[0])));
+void ExprFuncs::nest<T,3>::operator()(const T x[], T& y) const {
+  y = sin(sin(sin(x[0])));
 }
 
 template <typename T>
-void ExprFuncs<T>::nest4(const T x[], T& y) {
-  y = std::sin(std::sin(std::sin(std::sin(x[0]))));
+void ExprFuncs::nest<T,4>::operator()(const T x[], T& y) const {
+  y = sin(sin(sin(sin(x[0]))));
 }
 
 template <typename T>
-void ExprFuncs<T>::nest5(const T x[], T& y) {
-  y = std::sin(std::sin(std::sin(std::sin(std::sin(x[0])))));
+void ExprFuncs::nest<T,5>::operator()(const T x[], T& y) const {
+  y = sin(sin(sin(sin(sin(x[0])))));
 }
 
 template <typename T>
-void ExprFuncs<T>::nest10(const T x[], T& y) {
-  y = std::sin(std::sin(std::sin(std::sin(std::sin(
-    std::sin(std::sin(std::sin(std::sin(std::sin(x[0]))))))))));
+void ExprFuncs::nest<T,10>::operator()(const T x[], T& y) const {
+  y = sin(sin(sin(sin(sin(
+    sin(sin(sin(sin(sin(x[0]))))))))));
 }
 
 template <typename T>
-void ExprFuncs<T>::nest15(const T x[], T& y) {
-  y = std::sin(std::sin(std::sin(std::sin(std::sin(
-    std::sin(std::sin(std::sin(std::sin(std::sin(
-    std::sin(std::sin(std::sin(std::sin(std::sin(x[0])))))))))))))));
+void ExprFuncs::nest<T,15>::operator()(const T x[], T& y) const {
+  y = sin(sin(sin(sin(sin(
+    sin(sin(sin(sin(sin(
+    sin(sin(sin(sin(sin(x[0])))))))))))))));
 }
 
 template <typename T>
-void ExprFuncs<T>::nest20(const T x[], T& y) {
-  y = std::sin(std::sin(std::sin(std::sin(std::sin(
-    std::sin(std::sin(std::sin(std::sin(std::sin(
-    std::sin(std::sin(std::sin(std::sin(std::sin(
-    std::sin(std::sin(std::sin(std::sin(std::sin(x[0]))))))))))))))))))));
+void ExprFuncs::nest<T,20>::operator()(const T x[], T& y) const {
+  y = sin(sin(sin(sin(sin(
+    sin(sin(sin(sin(sin(
+    sin(sin(sin(sin(sin(
+    sin(sin(sin(sin(sin(x[0]))))))))))))))))))));
 }
 
 template <typename T>
-void ExprFuncs<T>::add1(const T x[], T& y) {
+void ExprFuncs::add<T,1>::operator()(const T x[], T& y) const {
   y = 
     x[0]+x[1];
 }
 
 template <typename T>
-void ExprFuncs<T>::add2(const T x[], T& y) {
+void ExprFuncs::add<T,2>::operator()(const T x[], T& y) const {
   y = 
     x[0]+x[1]+x[2];
 }
 
 template <typename T>
-void ExprFuncs<T>::add3(const T x[], T& y) {
+void ExprFuncs::add<T,3>::operator()(const T x[], T& y) const {
   y = 
     x[0]+x[1]+x[2]+x[3];
 }
 
 template <typename T>
-void ExprFuncs<T>::add4(const T x[], T& y) {
+void ExprFuncs::add<T,4>::operator()(const T x[], T& y) const {
   y = 
     x[0]+x[1]+x[2]+x[3]+x[4];
 }
 
 template <typename T>
-void ExprFuncs<T>::add5(const T x[], T& y) {
+void ExprFuncs::add<T,5>::operator()(const T x[], T& y) const {
   y = 
     x[0]+x[1]+x[2]+x[3]+x[4]+x[5];
 }
 
 template <typename T>
-void ExprFuncs<T>::add10(const T x[], T& y) {
+void ExprFuncs::add<T,10>::operator()(const T x[], T& y) const {
   y = 
     x[0]+x[1]+x[2]+x[3]+x[4]+x[5]+x[6]+x[7]+
     x[8]+x[9]+x[10];
 }
 
 template <typename T>
-void ExprFuncs<T>::add15(const T x[], T& y) {
+void ExprFuncs::add<T,15>::operator()(const T x[], T& y) const {
   y = 
     x[0]+x[1]+x[2]+x[3]+x[4]+x[5]+x[6]+x[7]+
     x[8]+x[9]+x[10]+x[11]+x[12]+x[13]+x[14]+x[15];
 }
 
 template <typename T>
-void ExprFuncs<T>::add20(const T x[], T& y) {
+void ExprFuncs::add<T,20>::operator()(const T x[], T& y) const {
   y = 
     x[0]+x[1]+x[2]+x[3]+x[4]+x[5]+x[6]+x[7]+
     x[8]+x[9]+x[10]+x[11]+x[12]+x[13]+x[14]+x[15]+
     x[16]+x[17]+x[18]+x[19]+x[20];
 }
 
-template <typename T> 
-const char* ExprFuncs<T>::mult_names[ExprFuncs<T>::nfunc] = { 
+const char* ExprFuncs::mult_names[ExprFuncs::nfunc] = { 
   "mult1",
   "mult2",
   "mult3",
@@ -191,8 +192,7 @@ const char* ExprFuncs<T>::mult_names[ExprFuncs<T>::nfunc] = {
   "mult20"
 };
 
-template <typename T> 
-const char* ExprFuncs<T>::nest_names[ExprFuncs<T>::nfunc] = { 
+const char* ExprFuncs::nest_names[ExprFuncs::nfunc] = { 
   "nest1",
   "nest2",
   "nest3",
@@ -203,8 +203,7 @@ const char* ExprFuncs<T>::nest_names[ExprFuncs<T>::nfunc] = {
   "nest20"
 };
 
-template <typename T> 
-const char* ExprFuncs<T>::add_names[ExprFuncs<T>::nfunc] = { 
+const char* ExprFuncs::add_names[ExprFuncs::nfunc] = { 
   "add1",
   "add2",
   "add3",
@@ -215,11 +214,42 @@ const char* ExprFuncs<T>::add_names[ExprFuncs<T>::nfunc] = {
   "add20"
 };
 
-template struct ExprFuncs< double >;
-template struct ExprFuncs< Sacado::Fad::DFad<double> >;
-template struct ExprFuncs< Sacado::ELRFad::DFad<double> >;
-template struct ExprFuncs< Sacado::CacheFad::DFad<double> >;
-template struct ExprFuncs< Sacado::ELRCacheFad::DFad<double> >;
+#define INSTANTIATE_FUNCS(TYPE) \
+  template struct ExprFuncs::mult< TYPE,1>;	\
+  template struct ExprFuncs::mult< TYPE,2>;	\
+  template struct ExprFuncs::mult< TYPE,3>;	\
+  template struct ExprFuncs::mult< TYPE,4>;	\
+  template struct ExprFuncs::mult< TYPE,5>;	\
+  template struct ExprFuncs::mult< TYPE,10>;	\
+  template struct ExprFuncs::mult< TYPE,15>;	\
+  template struct ExprFuncs::mult< TYPE,20>;	\
+						\
+  template struct ExprFuncs::nest< TYPE,1>;	\
+  template struct ExprFuncs::nest< TYPE,2>;	\
+  template struct ExprFuncs::nest< TYPE,3>;	\
+  template struct ExprFuncs::nest< TYPE,4>;	\
+  template struct ExprFuncs::nest< TYPE,5>;	\
+  template struct ExprFuncs::nest< TYPE,10>;	\
+  template struct ExprFuncs::nest< TYPE,15>;	\
+  template struct ExprFuncs::nest< TYPE,20>;	\
+						\
+  template struct ExprFuncs::add< TYPE,1>;	\
+  template struct ExprFuncs::add< TYPE,2>;	\
+  template struct ExprFuncs::add< TYPE,3>;	\
+  template struct ExprFuncs::add< TYPE,4>;	\
+  template struct ExprFuncs::add< TYPE,5>;	\
+  template struct ExprFuncs::add< TYPE,10>;	\
+  template struct ExprFuncs::add< TYPE,15>;	\
+  template struct ExprFuncs::add< TYPE,20>;
 
+INSTANTIATE_FUNCS(double)
+INSTANTIATE_FUNCS(Sacado::Fad::DFad<double>)
+INSTANTIATE_FUNCS(Sacado::ELRFad::DFad<double>)
+INSTANTIATE_FUNCS(Sacado::CacheFad::DFad<double>)
+INSTANTIATE_FUNCS(Sacado::ELRCacheFad::DFad<double>)
+INSTANTIATE_FUNCS(Sacado::Fad::SimpleFad<double>)
+#ifdef HAVE_ADOLC
+INSTANTIATE_FUNCS(adouble)
+#endif
 
-
+#undef INSTANTIATE_FUNCS
