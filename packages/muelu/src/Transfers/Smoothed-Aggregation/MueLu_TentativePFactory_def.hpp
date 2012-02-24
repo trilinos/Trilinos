@@ -69,7 +69,8 @@ namespace MueLu {
     MemUtils::ReportTimeAndMemory(*timer, *(A->getRowMap()->getComm()));
 
     // Level Set
-    coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get());
+    coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get()); //FIXME !!!!
+    //coarseLevel.Set("Nullspace", coarseNullspace, this);
     coarseLevel.Set("P", Ptentative, this);
   }
 
