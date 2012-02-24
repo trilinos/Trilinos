@@ -7,6 +7,7 @@
 #include<cmath>
 #include<sstream>
 #include<iomanip>
+#include<memory>
 
 namespace ROL{
     template <typename VS>
@@ -1722,7 +1723,7 @@ namespace ROL{
 		    // If we don't decrease, print out some diagnostic
 		    // information and reduce the size of alpha
 		    if(obj_ups > obj_u){
-			norm_s=sqrt(VS::innr(s,s));
+			norm_s=alpha*sqrt(VS::innr(s,s));
 		    	printState(state,true);
 			alpha /= Real(2.);
 		    }
@@ -1739,7 +1740,7 @@ namespace ROL{
 		    // information and restart the search at the smallest
 		    // alpha we previously searched.
 		    if(obj_ups > obj_u){
-			norm_s=sqrt(VS::innr(s,s));
+			norm_s=alpha*sqrt(VS::innr(s,s));
 		    	printState(state,true);
 			alpha = alpha/pow(Real(2.),linesearch_iter_max+1);
 		    }
