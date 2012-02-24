@@ -38,8 +38,15 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    fineLevel.DeclareInput(vectorName_,MueLu::NoFactory::get(),this);
+    if (fineLevel.GetLevelID() == 0) fineLevel.DeclareInput(vectorName_, MueLu::NoFactory::get(), this);
+    else                             fineLevel.DeclareInput(vectorName_, this                   , this);
     coarseLevel.DeclareInput(restrictionName_,restrictionFact_.get(),this);
+    /*
+    //FIXME ThreeLevels unit test dies
+    fineLevel.DeclareInput(vectorName_, restrictionFact_.get(),this);
+    coarseLevel.DeclareInput(restrictionName_,restrictionFact_.get(),this);
+    */
+
   }
 
   // ----------------------------------------------------------------------------------------
@@ -49,13 +56,25 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level &coarseLevel) const {
 
-    TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable(vectorName_,MueLu::NoFactory::get()), Exceptions::RuntimeError,
-                        "MueLu::MultiVectorTransferFactory::Build(): vector '" + vectorName_ + "' is not available.");
+    //TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable(vectorName_,MueLu::NoFactory::get()), Exceptions::RuntimeError,
+    //                    "MueLu::MultiVectorTransferFactory::Build(): vector '" + vectorName_ + "' is not available.");
 
-    RCP<MultiVector> vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,MueLu::NoFactory::get());
+    //RCP<MultiVector> vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,MueLu::NoFactory::get());
+    RCP<MultiVector> vector;
+    if (fineLevel.GetLevelID() == 0)
+      vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,MueLu::NoFactory::get());
+    else
+      vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,this);
     RCP<Operator> transferOp = coarseLevel.Get<RCP<Operator> >(restrictionName_,restrictionFact_.get());
 
+    /*
+    //FIXME ThreeLevels unit test  dies
+    RCP<MultiVector> vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,restrictionFact_.get());
+    RCP<Operator> transferOp = coarseLevel.Get<RCP<Operator> >(restrictionName_,restrictionFact_.get());
+    */
+
     RCP<MultiVector> result = MultiVectorFactory::Build(transferOp->getRangeMap(),1);
+    GetOStream(Runtime0,0) << "Transferring multivector \"" << vectorName_ << "\"" << std::endl;
     transferOp->apply(*vector,*result);
     coarseLevel.Set<RCP<MultiVector> >(vectorName_,result,this);
     
