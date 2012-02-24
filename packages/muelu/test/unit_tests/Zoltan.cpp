@@ -4,7 +4,7 @@
 
 #include "MueLu_UseDefaultTypes.hpp"
 
-#include "MueLu_Zoltan.hpp"
+#include "MueLu_ZoltanInterface.hpp"
 
 #define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include "MueLu_GalleryUtils.hpp"
