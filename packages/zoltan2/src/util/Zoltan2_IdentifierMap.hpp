@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <map>
 #include <iostream>
-using namespace std;
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_Hashtable.hpp>

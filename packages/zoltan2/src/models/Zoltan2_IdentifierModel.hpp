@@ -107,14 +107,12 @@ public:
        \param ia  the input adapter from which to build the model
        \param env   the application environment (including problem parameters)
        \param comm  the problem communicator
-       \param gnosMustBeConsecutive  if true, the Model will map the user
-               global identifiers to consecutive global numbers if they are
-               not already consecutive global numbers.
+       \param modelFlags   bit map of IdentifierModelFlags
    */
   
   IdentifierModel( const IdentifierInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-     bool gnosMustBeConsecutive=false):
+    unsigned int modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
       gids_(), weights_(), gnos_(), gnosConst_()
   {
@@ -155,7 +153,10 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env_, comm_, gids_, gnosMustBeConsecutive));
+      if (modelFlags & NEED_CONSECUTIVE_IDS)
+        idMap = rcp(new idmap_t(env_, comm_, gids_, true));
+      else
+        idMap = rcp(new idmap_t(env_, comm_, gids_, false));
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -275,7 +276,7 @@ public:
   
   IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    bool gnosMustBeConsecutive=false):
+    unsigned int modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
       comm_(comm), gids_(), weights_(), gnos_(), gnosConst_()
   {
@@ -296,7 +297,10 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      idMap = rcp(new idmap_t(env_, comm_, gids_, gnosMustBeConsecutive));
+      if (modelFlags && NEED_CONSECUTIVE_IDS) 
+        idMap = rcp(new idmap_t(env_, comm_, gids_, true));
+      else
+        idMap = rcp(new idmap_t(env_, comm_, gids_, false));
     }
     Z2_FORWARD_EXCEPTIONS;
 

@@ -11,7 +11,6 @@
     \brief The abstract interface for a computational model.
 */
 
-
 #ifndef _ZOLTAN2_MODEL_HPP_
 #define _ZOLTAN2_MODEL_HPP_
 
@@ -21,9 +20,8 @@
 
 namespace Zoltan2 {
 
-/*! Zoltan2::Model
-    to be called asynchronously.
-*/
+/*! \brief An identifier of the general type of model.
+ */
 enum ModelType {
   InvalidModel = 0,
   HypergraphModelType,
@@ -32,6 +30,31 @@ enum ModelType {
   IdentifierModelType
 };
 
+/*! \brief Flags that may be used in building a graph model.
+ */
+enum GraphModelFlags{
+  SYMMETRIZE_INPUT_TRANSPOSE,     /*!< model must symmetrize input */
+  SYMMETRIZE_INPUT_BIPARTITE,     /*!< model must symmetrize input */
+  VERTICES_ARE_MATRIX_ROWS,       /*!< use matrix rows as graph vertices */
+  VERTICES_ARE_MATRIX_COLUMNS,    /*!< use matrix columns as vertices */
+  VERTICES_ARE_MATRIX_NONZEROS,   /*!< use matrix nonzeros as vertices */
+  VERTICES_ARE_MESH_NODES,        /*!< use mesh nodes as vertices */
+  VERTICES_ARE_MESH_ELEMENTS,     /*!< use mesh elements as vertices */
+  IDS_MUST_BE_GLOBALLY_CONSECUTIVE, /*!< algorithm requires consecutive ids */
+  SELF_EDGES_MUST_BE_REMOVED,       /*!< algorithm requires no self edges */
+  GRAPH_IS_A_SUBSET_GRAPH, /*!< ignore neighbors that are not valid vertices */
+  NUM_GRAPH_MODEL_FLAGS
+};
+
+/*! \brief Flags that may be used in building an identifier model.
+ */
+enum IdentifierModelFlags{
+  NEED_CONSECUTIVE_IDS,     /*!< algorithm requires consecutive ids */
+  NUM_IDENTIFIER_MODEL_FLAGS
+};
+
+/*! \brief The base class for all model classes.
+*/
 
 template <typename Adapter>
 class Model
@@ -104,6 +127,6 @@ private:
   RCP<const idmap_t> idMap_;
 };
 
-}
+}   //  namespace Zoltan2
 
 #endif

@@ -11,9 +11,12 @@
   \brief Set up the valid parameters, their documentation, 
         their defaults, and their validators.
 
+   TODO:  Should all of our parameter values be strings, in order
+            to support reading in parameters from a file?
 */
-#include <Zoltan2_Standards.hpp>
+
 #include <Zoltan2_Parameters.hpp>
+#include <Zoltan2_Standards.hpp>
 
 #include <ostream>
 #include <sstream>
@@ -23,506 +26,738 @@ using namespace std;
 
 // TODO the ordering, coloring and non-graph partitioning parameters
 //    and many documentation strings
-//
-// This is in a .cpp file because it's not templated.  If the function
-// needs to be templated on, say, AppGID for fixed vertex id lists, then
-// it will need to be in Zoltan2_Parameters_def.hpp.
+// TODO: show an example of create a string parameter, etc
 
 namespace Zoltan2 {
 
-void createValidParameterList(Teuchos::ParameterList &pl, const Comm<int> &comm)
-{
-  using Teuchos::EnhancedNumberValidator;
-  using Teuchos::StringValidator;
-  using Teuchos::StringToIntegralParameterEntryValidator;
-  using Teuchos::AnyNumberParameterEntryValidator;
-  using Teuchos::FileNameValidator;
+/*! \brief  Create a list of all parameters.
+ *
+ *  \param pList  on return all Zoltan2 parameters with validators
+ *                  have been added to pList
+ *
+ *  Parameters should be validating and documented.
+ *
+ *  New parameters should be added to createAllParameters.  Changes
+ *  to existing parameters or their documentation should also be
+ *  made in createAllParameters.
+ *
+ *  The comments in the top of createAllParameters describe the
+ *  validators we use and what type of parameter each is for.  Find
+ *  a type that matches the type of your parameter, and copy that
+ *  definition of that parameter.
+ *
+ *  Include the comment above the parameterName definition.  Then you can
+ *  grep on "topLevel" in this source file to see the parameter structure.
+ *
+ * To add a parameter to a parameter list "pl":
+ *
+ *    \code
+ *    pl.set<data type of second argument>(
+ *        nameOfParameter,
+ *        anyValidValue,
+ *        documentationString,
+ *        validator)
+ *    \endcode
+ *
+ * "anyValidValue" is not a default value.  Defaults are set in
+ * library code if the parameter is not set by the user. The value
+ * needs to be valid, but it is ignored.
+ *
+ * "documentationString" explains everything the user needs to no in
+ * order to correctly use the parameter.  Validators can provide much
+ * of the documentationString.
+ *
+ * The validators are described in the source code.  They are run when
+ * the Environment::commitParameters() method is called.  They throw
+ * an error with an explanation if the parameter is invalid.
+ */
 
+void createAllParameters(Teuchos::ParameterList &pList)
+{
+  using Teuchos::tuple;
   using std::string;
 
-  bool isDefault=true, isNotDefault=false;
-  bool isList=true, isNotList=false;
-  string parameterName;
-  std::ostringstream docString;
-  ParameterEntry entry;
-  int intDefault;
-  double doubleDefault;
-  string strDefault;
-  Array<int> intArrayDefault;
-  Array<string> validChoices;
+  ////////////////////////////////////////////////////////////
+  // Validators:
 
-  typedef StringToIntegralParameterEntryValidator<int> str2intValidator;
+  // AnyNumber allows entry of a string, real or integer value.
+  // The value can be retrieved with getInt, getDouble, getString.
 
+  using Teuchos::AnyNumberParameterEntryValidator;
+  RCP<const AnyNumberParameterEntryValidator> anyNumValidatorP;
+
+  // EnhancedNumber specifies one data type and can specify
+  // a valid minimum, maximum and step size.
+
+  using Teuchos::EnhancedNumberValidator;
   RCP<const EnhancedNumberValidator<int> > intValidatorP;
   RCP<const EnhancedNumberValidator<size_t> > sizetValidatorP;
   RCP<const EnhancedNumberValidator<double> > doubleValidatorP;
-  RCP<const IntegerRangeListValidator<int> > intRangeValidatorP;
+
+  // StringValidator has string input and output. You can specify the 
+  // list of valid strings.
+
+  using Teuchos::StringValidator;
   RCP<const StringValidator> strValidatorP;
-  RCP<const AnyNumberParameterEntryValidator> anyNumValidatorP;
-  RCP<const str2intValidator> str2intValidatorP;
+
+  // FileNameValidator expects a file name.  You can
+  // specify whether the file must exist or not.
+
+  using Teuchos::FileNameValidator;
   RCP<const FileNameValidator > fnameValidatorP;
 
-  Array<string> yesNoWords;   // for string to int transformations
-  Array<int> yesNoNumbers;
-  yesNoWords.push_back("true");
-  yesNoWords.push_back("yes");
-  yesNoWords.push_back("1");
-  yesNoNumbers.push_back(1);
-  yesNoNumbers.push_back(1);
-  yesNoNumbers.push_back(1);
-  yesNoWords.push_back("false");
-  yesNoWords.push_back("no");
-  yesNoWords.push_back("0");
-  yesNoNumbers.push_back(0);
-  yesNoNumbers.push_back(0);
-  yesNoNumbers.push_back(0);
-
-  // levels for error checking at run-time
-
-  std::ostringstream levels;
-  levels << BASIC_ASSERTION << " - basic checking of function arguments\n";
-  levels << COMPLEX_ASSERTION << 
-    " - more in-depth checks (i.e. input graph is valid)\n";
-  levels << DEBUG_MODE_ASSERTION << 
-    " - check everything regardless of the time required\n";
-  levels << "(To turn off all run-time checking,";
-  levels << " compile with the Z2_OMIT_ALL_ERROR_CHECKING flag.)\n";
-  string assertionLevelDoc(levels.str());
-
-  // levels of verbosity for debugging, timing and memory usage messages
-
-  levels.str("");
-  levels << NO_STATUS << " - no status output\n";
-  levels << BASIC_STATUS << " - basic status information\n";
-  levels << DETAILED_STATUS << 
-    " - detailed status output (i.e. methods entered and exited for debugging,";
-  levels << "   or sub-steps in an algorithm for timing)\n";
-  levels << VERBOSE_DETAILED_STATUS << 
-    " - verbose debugging output (i.e. entire graph, entire solution)\n";
-  string statusLevelDoc(levels.str());
-
-  // does user want local status only or global reductions?
-
-  levels.str("");
-  levels << LOCAL_SUMMARY << " - display local status only\n";
-  levels << GLOBAL_SUMMARY << " - gather global results for status reporting\n";
-  string statusSummaryDoc(levels.str());
-
-  pl.setName("validatingDefaultingZoltan2Parameters");
-
-  ///////////////////////////////////////////////////////////
-  // Library configuration parameters
-  ///////////////////////////////////////////////////////////
-
-  //   The user can request:
-  //        debug messages
-  //        timing messages
-  //        memory profiling messages
+  // StringToIntegral allows you to specify a list of strings,
+  // a corresponding list of documentation strings, and a list
+  // of integers that the strings map to.  The value entered is
+  // a string. Retrieval methods are getIntegralValue, getStringValue,
+  // and getStringDocs.
   //
-  //   Each type of message has: 
-  //     a level of verbosity ("*_level")
-  //     one or more processes that do the output ("*_procs")
-  //     an output stream like std::cout and friends  ("*_output_stream")
-  //     or an output file name ("*_output_file")
+  // We use it for on/off boolean values, and for levels of verbosity.
 
-  string debugDoc("For debugging messages");
-  string timingDoc("For timing messages");
-  string memoryDoc("For memory usage messages");
+  using Teuchos::StringToIntegralParameterEntryValidator;
+  typedef StringToIntegralParameterEntryValidator<int> str2intValidator;
+  RCP<const str2intValidator> str2intValidatorP;
 
-    /*-----------------------------------------*/
-    /* level of verbosity                      */
-    /*-----------------------------------------*/
+  // allowed values for boolean-type parameters
 
-  intDefault = NO_STATUS;
-  intValidatorP = Teuchos::rcp(
-    new EnhancedNumberValidator<int>(0,NUM_STATUS_OUTPUT_LEVELS-1));
-  docString.str("amount of information to display at run-time\n");
-  docString << statusLevelDoc;
+  Tuple<string,8> yesNoStrings = 
+    tuple<string>( "true", "yes", "1", "on", "false", "no", "0", "off");
 
-  parameterName = string("debug_level");  
-  entry = ParameterEntry( intDefault, isDefault, isNotList,
-    debugDoc + docString.str(), intValidatorP); 
-  pl.setEntry(parameterName, entry);
+  Tuple<int,8> yesNoIntegrals = 
+    tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0);
 
-  parameterName = string("timing_level");  
-  entry = ParameterEntry( intDefault, isDefault, isNotList,
-    timingDoc + docString.str(), intValidatorP);
-  pl.setEntry(parameterName, entry);
+  // IntegerRangeList is a Zoltan2 validator defined in this file's
+  // header file.  An integer range list is entered as a string of 
+  // comma separted tokens.  Tokens can be integers, integer ranges 
+  // delimited by a dash ("-"), or the word "all".
+  //
+  // A specific data type is required, and valid minimum and maximum
+  // integers may be specified.
+  //
+  // Examples:
+  //    "1, 5, 10, 2, 12-15"
+  //    "all"
+  //    "0"
+  //    "2-5"
+  //    ""
+  //
+  // The integer range list is encoded as an Array<int>.  The last
+  // integer in the array indicates whether the user wants "all", "none"
+  // or whether the values are listed.  The list can be interpreted with
+  // helper methods allValuesAreInRangeList, noValuesAreInRangeList,
+  // IsInRangeList, and printIntegralRangeList.
+  //
+  // We use an IntegerRangeList for lists of MPI ranks that participate
+  // in output of profiling information, and for lists of fixed vertices.
+  //
+  // If desired, strides can be added to integer range lists, but at this 
+  // point in time we don't see a need for them.
 
-  parameterName = string("memory_profiling_level");  
-  entry = ParameterEntry( intDefault, isDefault, isNotList,
-    memoryDoc + docString.str(), intValidatorP);
-  pl.setEntry(parameterName, entry);
+  RCP<const IntegerRangeListValidator<int> > intRangeValidatorP;
 
-    /*-----------------------------------------*/
-    /* which processes do the output?          */
-    /*-----------------------------------------*/
+  ///////////////////////////////////////////////////////////
+  // Define every parameter.
+  ///////////////////////////////////////////////////////////
 
-  intArrayDefault = Array<int>(2);  
-  intArrayDefault[0] = 0;                 // node zero only
-  intArrayDefault[1] = RANGE_IS_LISTED;   // flag
-  intRangeValidatorP = Teuchos::rcp(new IntegerRangeListValidator<int>());
+  string parameterName;
+  std::ostringstream docString;
+
+  ///////////////////////////////////////////////////////////
+  // LEVEL: top level, library configuration parameters
+  ///////////////////////////////////////////////////////////
+
+  ////////// topLevel/error_check_level
+  parameterName = string("error_check_level");
+
+  str2intValidatorP = rcp(new str2intValidator(
+
+    tuple<string>("basic_assertions",
+                  "complex_assertions",
+                  "debug_mode_assertions"),
+
+    tuple<string>(
+      "those always done unless -DZ2_OMIT_ALL_ERROR_CHECKING (fast, default)",
+      "those that take more time, i.e. is input graph a valid graph (slow)",
+      "check for everything including logic errors (slowest)"),
+
+    tuple<int>(BASIC_ASSERTION, 
+               COMPLEX_ASSERTION, 
+               DEBUG_MODE_ASSERTION),
+
+    parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "the amount of error checking performed\n", docString); 
+      
+  pList.set<string>(parameterName, "basic_assertions", docString.str(),
+    str2intValidatorP);
+
+  //////////
+  // Debug, timing, and memory profiling verbosity levels
+  //////////
+
+  Tuple <string, 4> outputLevelStrings = tuple<string>(
+                  "no_status",
+                  "basic_status",
+                  "detailed_status",
+                  "verbose_detailed_status");
+
+  Tuple<string, 4> outputLevelDoc = tuple<string>(
+      "library outputs no information (timing and memory profiling default)",
+      "library outputs basic status information (debug message default)",
+      "library outputs detailed information",
+      "library outputs very detailed information");
+
+  Tuple<int, 4> outputLevelValues = tuple<int>(
+    NO_STATUS,
+    BASIC_STATUS,
+    DETAILED_STATUS,
+    VERBOSE_DETAILED_STATUS);
+
+  ////////// topLevel/debug_level
+  parameterName = string("debug_level");
+
+  str2intValidatorP = rcp(new str2intValidator(
+    outputLevelStrings, outputLevelDoc, outputLevelValues, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "the amount of status/debugging information to print\n", docString);
+
+  pList.set<string>(parameterName, "basic_status", docString.str(), 
+    str2intValidatorP);
+
+  ////////// topLevel/timing_level
+  parameterName = string("timing_level");
+
+  str2intValidatorP = rcp(new str2intValidator(
+    outputLevelStrings, outputLevelDoc, outputLevelValues, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "the amount of timing data to print\n", docString);
+
+  pList.set<string>(parameterName, "no_status", docString.str(), 
+    str2intValidatorP);
+
+  ////////// topLevel/memory_profiling_level
+  parameterName = string("memory_profiling_level");
+
+  str2intValidatorP = rcp(new str2intValidator(
+    outputLevelStrings, outputLevelDoc, outputLevelValues, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "the amount of memory profiling information to print (if available)\n", 
+     docString);
+
+  pList.set<string>(parameterName, "no_status", docString.str(), 
+    str2intValidatorP);
+
+  //////////
+  // Debug, timing, and memory profiling output streams
+  //////////
+
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>("std::cout", "std::cerr", "/dev/null")));
+
+  ////////// topLevel/debug_output_stream
+  parameterName = string("debug_output_stream");
+
+  docString.str("");
+  strValidatorP->printDoc(
+    "output stream for debug messages (default std::cout)\n",
+     docString);
+
+  pList.set<string>(parameterName, "std::cout", docString.str(), strValidatorP);
+
+  ////////// topLevel/timing_output_stream
+  parameterName = string("timing_output_stream");
+
+  docString.str("");
+  strValidatorP->printDoc(
+    "output stream for timing messages (default std::cout)\n", docString);
+
+  pList.set<string>(parameterName, "std::cout", docString.str(), strValidatorP);
+
+  ////////// topLevel/memory_profiling_output_stream
+  parameterName = string("memory_profiling_output_stream");
+
+  docString.str("");
+  strValidatorP->printDoc(
+    "output stream for memory profiling messages (default std::cout)\n",
+    docString);
+
+  pList.set<string>(parameterName, "std::cout", docString.str(), strValidatorP);
+
+  //////////
+  // Debug, timing and memory profiling file name parameters
+  //////////
+
+  fnameValidatorP = rcp(new FileNameValidator(false));
+
+  ////////// topLevel/debug_output_file
+  parameterName = string("debug_output_file");
+
+  docString.str("");
+  fnameValidatorP->printDoc(
+    "name of file to which debug/status messages should be written\n",
+     docString);
+
+  pList.set<string>(parameterName, "/dev/null", docString.str(), fnameValidatorP);
+
+  ////////// topLevel/timing_output_file
+  parameterName = string("timing_output_file");
+
+  docString.str("");
+  fnameValidatorP->printDoc(
+    "name of file to which timing information should be written\n",
+     docString);
+
+  pList.set<string>(parameterName, "/dev/null", docString.str(), fnameValidatorP);
+
+  ////////// topLevel/memory_profiling_output_file
+  parameterName = string("memory_profiling_output_file");
+
+  docString.str("");
+  fnameValidatorP->printDoc(
+    "name of file to which memory profiling information should be written\n",
+     docString);
+
+  pList.set<string>(parameterName, "/dev/null", docString.str(), fnameValidatorP);
+
+  //////////
+  // Debug, timing and memory profiling: list of processes that print
+  //////////
+
+  intRangeValidatorP = rcp(new IntegerRangeListValidator<int>);
+
+  ////////// topLevel/debug_procs
+  parameterName = string("debug_procs");
+
   docString.str("");
   intRangeValidatorP->printDoc(
-    string("the processes that will collect and output information\n"), 
-    docString); 
+    "list of ranks that output debugging/status messages (default \"0\")\n",
+     docString);
 
-  parameterName = string("debug_procs");
-  entry = ParameterEntry(intArrayDefault, isDefault, isList,
-    debugDoc + docString.str(), intRangeValidatorP);
-  pl.setEntry(parameterName, entry);
+  pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
 
+  ////////// topLevel/timing_procs
   parameterName = string("timing_procs");
-  entry = ParameterEntry( intArrayDefault, isDefault, isList,
-    timingDoc + docString.str(), intRangeValidatorP);
-  pl.setEntry(parameterName, entry);
 
+  docString.str("");
+  intRangeValidatorP->printDoc(
+    "list of ranks that output timing information (default \"0\")\n",
+     docString);
+
+  pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
+
+  ////////// topLevel/memory_profiling_procs
   parameterName = string("memory_profiling_procs");
-  entry = ParameterEntry( intArrayDefault, isDefault, isList,
-    memoryDoc + docString.str(), intRangeValidatorP);
 
-    /*-----------------------------------------*/
-    /* output to stream or a file?             */
-    /*-----------------------------------------*/
-
-  strDefault = string("std::cout");
-  validChoices.clear();
-  validChoices.push_back("std::cout");
-  validChoices.push_back("std::cerr");
-  validChoices.push_back("/dev/null");
-  strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
   docString.str("");
-  strValidatorP->printDoc(string("output stream for messages"),
-    docString); 
+  intRangeValidatorP->printDoc(
+    "list of ranks that memory profiling information (default \"0\")\n",
+     docString);
 
-  parameterName = string("debug_output_stream");
-  entry = ParameterEntry( strDefault, isDefault, isNotList,
-        debugDoc + docString.str(), strValidatorP);
-  pl.setEntry(parameterName, entry);
-
-  parameterName = string("timing_output_stream");
-  entry = ParameterEntry( strDefault, isDefault, isNotList,
-        timingDoc + docString.str(), strValidatorP);
-  pl.setEntry(parameterName, entry);
-
-  parameterName = string("memory_profiling_output_stream");
-  entry = ParameterEntry( strDefault, isDefault, isNotList,
-        memoryDoc+docString.str(), strValidatorP);
-  pl.setEntry(parameterName, entry);
-
-  strDefault = string();
-  docString.str("name of file to which messages should be written");
-  fnameValidatorP = Teuchos::rcp(new FileNameValidator(false));
-
-  parameterName = string("debug_output_file");
-  entry = ParameterEntry( strDefault, isDefault, isNotList,
-     debugDoc + docString.str(), fnameValidatorP);
-  pl.setEntry(parameterName, entry);
-
-  parameterName = string("timing_output_file");
-  entry = ParameterEntry( strDefault, isDefault, isNotList,
-     timingDoc + docString.str(), fnameValidatorP);
-  pl.setEntry(parameterName, entry);
-
-  parameterName = string("memory_profiling_output_file");
-  entry = ParameterEntry( strDefault, isDefault, isNotList,
-     memoryDoc + docString.str(), fnameValidatorP);
-  pl.setEntry(parameterName, entry);
+  pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
 
   ///////////////////////////////////////////////////////////
-  // General problem parameters
+  // LEVEL: top level, general problem parameters
   ///////////////////////////////////////////////////////////
 
+  ////////// topLevel/speed_versus_quality
   parameterName = string("speed_versus_quality");
-  validChoices.clear();
-  validChoices.push_back("speed");
-  validChoices.push_back("balance");
-  validChoices.push_back("quality");
-  strDefault = string("balance");
-  strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
-  docString.str("todo");
-  entry = ParameterEntry(
-        strDefault, isDefault, isNotList,
-        docString.str(), 
-        strValidatorP);
 
-  pl.setEntry(parameterName, entry);
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>("speed", "balance", "quality")));
 
-    /*-----------------------------------------*/
+  docString.str("");
+  strValidatorP->printDoc(
+    "When algorithm choices exist, opt for speed or solution quality?\n"
+    "(Default is a balance of speed and quality)\n",
+     docString);
 
-  parameterName = string("memory_footprint_versus_runtime");
-  validChoices.clear();
-  validChoices.push_back("memory_footprint");
-  validChoices.push_back("memory");
-  validChoices.push_back("balance");
-  validChoices.push_back("runtime");
-  strDefault = string("balance");
-  strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
-  docString.str("todo");
-  entry = ParameterEntry(
-        strDefault, isDefault, isNotList,
-        docString.str(), 
-        strValidatorP);
+  pList.set<string>(parameterName, "balance", docString.str(), strValidatorP);
 
-  pl.setEntry(parameterName, entry);
+  ////////// topLevel/memory_versus_speed
+  parameterName = string("memory_versus_speed");
 
-    /*-----------------------------------------*/
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>("memory", "balance", "speed")));
 
-  parameterName = string("error_check_level");
-  intDefault = BASIC_ASSERTION;
-  intValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<int>(0,NUM_ASSERTION_LEVELS-1));
-  entry = ParameterEntry(intDefault, isDefault, isNotList,
-        assertionLevelDoc, intValidatorP);
-  pl.setEntry(parameterName, entry);
+  docString.str("");
+  strValidatorP->printDoc(
+    "When algorithm choices exist, opt for the use of less memory\n" 
+    "at the expense of runtime\n" 
+    "(Default is a balance of memory conservation and speed)\n",
+     docString);
 
-    /*-----------------------------------------*/
+  pList.set<string>(parameterName, "balance", docString.str(), strValidatorP);
 
+  ////////// topLevel/random_seed
   parameterName = string("random_seed");
-  doubleDefault = .5;
-  // false: don't allow all types
-  Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes types(false);
-  types.allowInt();
-  types.allowDouble();
-  AnyNumberParameterEntryValidator::EPreferredType preference =
-    AnyNumberParameterEntryValidator::PREFER_DOUBLE;
-  anyNumValidatorP = 
-    Teuchos::rcp(new AnyNumberParameterEntryValidator(preference, types));
-  docString.str("todo");
-  entry = ParameterEntry(
-        doubleDefault, isDefault, isNotList,
-        docString.str(), 
-        anyNumValidatorP);
 
-  pl.setEntry(parameterName, entry);
+  anyNumValidatorP = rcp(new AnyNumberParameterEntryValidator);
+
+  docString.str("");
+  anyNumValidatorP->printDoc("random seed\n", docString);
+
+  pList.set<string>(parameterName, "0.5", docString.str(), anyNumValidatorP);
 
   ///////////////////////////////////////////////////////////
-  // Partitioning problem parameters
+  // LEVEL: Sub list, partitioning problem parameters
   ///////////////////////////////////////////////////////////
 
-  Teuchos::ParameterList &partitioning = 
-    pl.sublist("partitioning", false, string("Partitioning problem parameters"));
-    /*-----------------------------------------*/
+  ParameterList &partitioning = pList.sublist("partitioning", false, 
+    string("Partitioning problem parameters"));
 
+  ////////// topLevel/partitioning/topology
   parameterName = string("topology");
-  strDefault = string("all");
-  intRangeValidatorP = rcp(new IntegerRangeListValidator<int>(1, 10000));
-  docString.str("topology of compute node for hierarchical partitioning TODO");
-  entry = ParameterEntry(
-        strDefault, !isDefault, isNotList,
-        docString.str(), 
-        intRangeValidatorP);
 
-  partitioning.setEntry(parameterName, entry);
+  strValidatorP = rcp(new StringValidator);
+
+  docString.str("");
+  docString << "Topology of node to be used in hierarchical partitioning\n";
+  docString << "  \"2,4\"  for dual-socket quad-core\n";
+  docString << "  \"2,2,6\"  for dual-socket, dual-die, six-core\n";
+  docString << "  \"2,2,3\"  for dual-socket, dual-die, six-core but\n";
+  docString << "             with only three partitions per die\n";
+
+  partitioning.set<string>(parameterName, "", docString.str(), strValidatorP);
   
-    /*-----------------------------------------*/
-
+  ////////// topLevel/partitioning/randomize_input
   parameterName = string("randomize_input");
-  intDefault = 0;
+    
   str2intValidatorP = 
-    Teuchos::rcp(new StringToIntegralParameterEntryValidator<int>(
-      yesNoWords, yesNoNumbers, string("randomize_input")));
-  docString.str("todo");
-  entry = ParameterEntry(
-        intDefault, isDefault, isNotList,
-        docString.str(), 
-        str2intValidatorP);
+    rcp(new str2intValidator(yesNoStrings, yesNoIntegrals, parameterName));
 
-  partitioning.setEntry(parameterName, entry);
+  docString.str("");
+  str2intValidatorP->printDoc("randomize input prior to partitioning\n",
+    docString);
+  
+  partitioning.set<string>(parameterName, "no", docString.str(),
+    str2intValidatorP);
 
-    /*-----------------------------------------*/
-
+  ////////// topLevel/partitioning/objective
   parameterName = string("objective");
-  strDefault = string("balance_object_weight");
-  validChoices.clear();
-  validChoices.push_back("balance_object_count");
-  validChoices.push_back("balance_object_weight");
-  validChoices.push_back("redistribution_commvolume_tradeoff");  // doesn't this need its own param
-  validChoices.push_back("multicriteria_minimize_total_weight");
-  validChoices.push_back("multicriteria_minimize_maximum_weight");
-  validChoices.push_back("minimize_cut_edge_count");
-  validChoices.push_back("minimize_cut_edge_weight");
-  validChoices.push_back("minimize_neighboring_parts");
-  validChoices.push_back("minimize_boundary_vertices");
 
-  docString.str("todo");
-  strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
-  entry = ParameterEntry(
-        strDefault, isDefault, isList,
-        docString.str(), 
-        strValidatorP);
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>( 
+        "balance_object_count",
+        "balance_object_weight",
+        "multicriteria_minimize_total_weight",
+        "multicriteria_minimize_maximum_weight",
+        "multicriteria_balance_total_maximum",
+        "minimize_cut_edge_count",
+        "minimize_cut_edge_weight",
+        "minimize_neighboring_parts",
+        "minimize_boundary_vertices")));
 
-  partitioning.setEntry(parameterName, entry);
-
-    /*-----------------------------------------*/
-
-  parameterName = string("imbalance_tolerance");  
-  doubleDefault = 1.1;
-  doubleValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<double>(0,2.0));
-  docString.str("todo");
-  entry = ParameterEntry(
-        doubleDefault, isDefault, isNotList,
-        docString.str(), 
-        doubleValidatorP);
-
-  partitioning.setEntry(parameterName, entry);
-
-    /*-----------------------------------------*/
-
-  // num_global_parts, if set must be one or greater.  It is
-  // processed in PartitioningSolution::setPartDistribution().
-  // If set, num_global_parts must be set on all processes to
-  // the same value.
-
-  size_t veryLarge = size_t(1) << (sizeof(size_t)*8 - 2);
-  size_t minVal(1);
-  sizetValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<size_t>(minVal,veryLarge));
-
-  parameterName = string("num_global_parts");  
   docString.str("");
-  entry = ParameterEntry(minVal, !isDefault, isNotList, docString.str(), 
-    sizetValidatorP) ;
+  strValidatorP->printDoc(
+    "objective of partitioning (default depends on algorithm)\n",
+     docString);
 
-  partitioning.setEntry(parameterName, entry);
+  partitioning.set<string>(parameterName, "balance_object_weight", 
+    docString.str(), strValidatorP);
 
-    /*-----------------------------------------*/
+  ////////// topLevel/partitioning/imbalance_tolerance
+  parameterName = string("imbalance_tolerance");
 
-  // num_local_parts, if set must be zero or greater.  It is
-  // processed in PartitioningSolution::setPartDistribution().
-  // If set on any process, it must be set on all processes.
-  // If num_global_parts is also set, num_global_parts must be 
-  // the sum of the value of num_local_parts on each process.
+  anyNumValidatorP = rcp(new AnyNumberParameterEntryValidator);
 
-  minVal = 0;
-  sizetValidatorP = 
-    Teuchos::rcp(new EnhancedNumberValidator<size_t>(minVal,veryLarge));
-
-  parameterName = string("num_local_parts");  
   docString.str("");
-  entry = ParameterEntry(minVal, !isDefault, isNotList, docString.str(), 
-    sizetValidatorP);
+  anyNumValidatorP->printDoc(
+   "imbalance tolerance, ratio of maximum load over average load"
+   " (default 1.1)\n", 
+      docString);
 
-  partitioning.setEntry(parameterName, entry);
+  partitioning.set<string>(parameterName, "1.1", docString.str(), 
+    anyNumValidatorP);
+  
+  ////////// topLevel/partitioning/num_global_parts
+  parameterName = string("num_global_parts");
 
-    /*-----------------------------------------*/
+  anyNumValidatorP = rcp(new AnyNumberParameterEntryValidator);
 
+  docString.str("");
+  anyNumValidatorP->printDoc(
+   "global number of parts to compute (default is number of processes)\n",
+      docString);
+
+  partitioning.set<string>(parameterName, "0", docString.str(), 
+    anyNumValidatorP);
+  
+  ////////// topLevel/partitioning/num_local_parts
+  parameterName = string("num_local_parts");
+
+  anyNumValidatorP = rcp(new AnyNumberParameterEntryValidator);
+
+  docString.str("");
+  anyNumValidatorP->printDoc(
+   "number of parts to compute for this process(default is one)\n",
+      docString);
+
+  partitioning.set<string>(parameterName, "0", docString.str(), 
+    anyNumValidatorP);
+
+  ////////// topLevel/partitioning/approach
   parameterName = string("approach");
-  strDefault = string("partition");
-  validChoices.clear();
-  validChoices.push_back("partition");
-  validChoices.push_back("repartition");
-  validChoices.push_back("maximize_overlap");
-  docString.str("todo");
-  strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
-  entry = ParameterEntry(
-        strDefault, isDefault, isList,
-        docString.str(), 
-        strValidatorP);
 
-  partitioning.setEntry(parameterName, entry);
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>("partition", "repartition", "maximize_overlap")));
 
-    /*-----------------------------------------*/
+  docString.str("");
+  strValidatorP->printDoc(
+    "Partition from scratch, partition incrementally from current\n"
+    "partition, of partition from scratch but maximize overlap\n"
+    "with the current partition (default is \"partition\" from scratch)\n",
+     docString);
 
+  partitioning.set<string>(parameterName, "partition", docString.str(), 
+    strValidatorP);
+  
+  ////////// topLevel/partitioning/objects
   parameterName = string("objects");
-  strDefault = string("no default");
-  validChoices.clear();
-  validChoices.push_back("matrix_rows");
-  validChoices.push_back("matrix_columns");
-  validChoices.push_back("matrix_nonzeros");
-  validChoices.push_back("mesh_elements");
-  validChoices.push_back("mesh_nodes");
-  validChoices.push_back("graph_vertices");
-  validChoices.push_back("coordinates");
-  validChoices.push_back("identifiers");
-  docString.str("todo");
-  strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
-  entry = ParameterEntry(
-        strDefault, isNotDefault, isList,
-        docString.str(), 
-        strValidatorP);
 
-  partitioning.setEntry(parameterName, entry);
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>(
+      "matrix_rows",
+      "matrix_columns",
+      "matrix_nonzeros",
+      "mesh_elements",
+      "mesh_nodes",
+      "graph_edges",
+      "graph_vertices",
+      "coordinates",
+      "identifiers")));
 
-    /*-----------------------------------------*/
+  docString.str("");
+  strValidatorP->printDoc(
+    "Objects to be partitioned (defaults are \"matrix_rows\" for\n"
+    "matrix input, \"mesh_nodes\" for mesh input, and \"graph_vertices\"\n"
+    "for graph input)\n",
+     docString);
 
+  partitioning.set<string>(parameterName, "graph_vertices", docString.str(), 
+    strValidatorP);
+  
+  ////////// topLevel/partitioning/model
   parameterName = string("model");
-  strDefault = string("no default");
-  validChoices.clear();
-  validChoices.push_back("hypergraph");
-  validChoices.push_back("graph");
-  validChoices.push_back("geometry");
-  validChoices.push_back("ids");
-  docString.str("todo");
-  strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
-  entry = ParameterEntry(
-        strDefault, isNotDefault, isList,
-        docString.str(), 
-        strValidatorP);
 
-  partitioning.setEntry(parameterName, entry);
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>("hypergraph", "graph", "geometry", "ids")));
 
-    /*-----------------------------------------*/
-
+  docString.str("");
+  strValidatorP->printDoc(
+    "This is a low level parameter.  Normally the library will choose\n"
+    "a computational model based on the algorithm or objective specified\n"
+    "by the user.\n",
+     docString);
+  
+  partitioning.set<string>(parameterName, "graph", docString.str(), 
+    strValidatorP);
+  
+  ////////// topLevel/partitioning/algorithm
   parameterName = string("algorithm");
-  strDefault = string("no default");
-  validChoices.clear();
-  validChoices.push_back("rcb");
-  validChoices.push_back("rib");
-  validChoices.push_back("hsfc");
-  validChoices.push_back("patoh");
-  validChoices.push_back("phg");
-  validChoices.push_back("metis");
-  validChoices.push_back("parmetis");
-  validChoices.push_back("scotch");
-  validChoices.push_back("ptscotch");
-  validChoices.push_back("block");
-  validChoices.push_back("cyclic");
-  validChoices.push_back("random");
-  docString.str("todo");
-  strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
-  entry = ParameterEntry(
-        strDefault, isNotDefault, isList,
-        docString.str(), 
-        strValidatorP);
 
-  partitioning.setEntry(parameterName, entry);
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>(
+      "rcb",
+      "rib",
+      "hsfc",
+      "patoh",
+      "phg",
+      "metis",
+      "parmetis",
+      "scotch",
+      "ptscotch",
+      "block",
+      "cyclic",
+      "random")));
 
-  ///////////////////////////////////////////////////////////
-  // Geometric partitioning problem parameters   TODO
-  ///////////////////////////////////////////////////////////
+  docString.str("");
+  strValidatorP->printDoc("partitioning algorithm\n", docString);
+  
+  partitioning.set<string>(parameterName, "random", docString.str(), 
+    strValidatorP);
 
   ///////////////////////////////////////////////////////////
-  // Hypergraph partitioning problem parameters    TODO
+  // LEVEL: Sub sub list, geometric partitioning parameters
   ///////////////////////////////////////////////////////////
 
+  ParameterList &geom = partitioning.sublist("geometric", false, 
+    string("geometric partitioning problem parameters"));
+
   ///////////////////////////////////////////////////////////
-  // Graph partitioning problem parameters     TODO
+  // LEVEL: Sub sub list, hypergraph partitioning parameters
   ///////////////////////////////////////////////////////////
 
-  Teuchos::ParameterList &graph= 
-    partitioning.sublist("graph", false, 
-      string("graph partitioning problem parameters"));
+  ParameterList &hg = partitioning.sublist("hypergraph", false, 
+    string("hypergraph partitioning problem parameters"));
 
-    /*-----------------------------------------*/
+  ///////////////////////////////////////////////////////////
+  // LEVEL: Sub sub list, graph partitioning parameters
+  ///////////////////////////////////////////////////////////
 
+  ParameterList &graph = partitioning.sublist("graph", false, 
+    string("graph partitioning problem parameters"));
+    
+  ////////// topLevel/partitioning/graph/symmetrize_input
   parameterName = string("symmetrize_input");
-  strDefault = string("no");
-  validChoices.clear();
-  validChoices.push_back("no");
-  validChoices.push_back("transpose");
-  validChoices.push_back("bipartite");
-  docString.str("todo");
-  strValidatorP = Teuchos::rcp(new StringValidator(validChoices));
-  entry = ParameterEntry(
-        strDefault, isNotDefault, isList,
-        docString.str(), 
-        strValidatorP);
 
-  graph.setEntry(parameterName, entry);
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>( "no", "transpose", "bipartite")));
 
+  docString.str("");
+  strValidatorP->printDoc(
+    "Symmetrize input prior to partitioning.  If \"transpose\",\n"
+    "symmetrize A by computing A plus ATranspose.  If \"bipartite\",\n"
+    "A becomes [[0 A][ATranspose 0]].  \n",
+    docString);
+
+  graph.set<string>(parameterName, "no", docString.str(), 
+    strValidatorP);
+
+  ////////// topLevel/partitioning/graph/subset_graph
+  parameterName = string("subset_graph");
+    
+  str2intValidatorP = 
+    rcp(new str2intValidator(yesNoStrings, yesNoIntegrals, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "If \"yes\", the graph input is to be subsetted.  If a vertex neighbor\n"
+    "is not a valid vertex, it will be omitted from the graph.  Otherwise,\n"
+    "an invalid neighbor identifier is considered an error.\n",
+    docString);
+  
+  graph.set<string>(parameterName, "no", docString.str(),
+    str2intValidatorP);
+  
   // TODO: Parmetis and Scotch parameters.
+
+  ///////////////////////////////////////////////////////////
+  // LEVEL: Sub list, ordering problem parameters  TODO
+  ///////////////////////////////////////////////////////////
+
+  ParameterList &ordering = pList.sublist("ordering", false, 
+    string("Ordering problem parameters"));
+
+  ///////////////////////////////////////////////////////////
+  // LEVEL: Sub list, coloring problem parameters  TODO
+  ///////////////////////////////////////////////////////////
+
+  ParameterList &coloring = pList.sublist("coloring", false, 
+    string("Coloring problem parameters"));
+
+  ///////////////////////////////////////////////////////////
+  // LEVEL: Sub list, matching problem parameters  TODO
+  ///////////////////////////////////////////////////////////
+
+  ParameterList &matching = pList.sublist("matching", false, 
+    string("Matching problem parameters"));
+}
+
+/*! \brief  Create a parameter list that can validate a 
+ *          specific list of parameters.
+ *
+ *   \param plIn  the user's parameter list
+ *   \param plOut  an empty parameter list that on return will contain
+ *                    validating parameter entries for each
+ *                    parameter in the user's parameter list.
+ *
+ *  Environment::commitParameters() calls 
+ *  validateParametersAndSetDefaults() on the user's parameter list
+ *  rather than validateParameters() because we want the validators' 
+ *  validateAndModify() methods to be called rather than the validate()
+ *  methods.  But unfortunately, validateAndModify() in addition to
+ *  modifying the parameter if necessary also sets it to a default if
+ *  the parameter does not appear in the user's parameter list.
+ *
+ *  We want the user's parameters to be modified, but we do not want unset 
+ *  parameters to appear in the validated user's parameter list. To
+ *  achieve this, we create a validating list that contains only the
+ *  parameters that appear in the user's parameter list.
+ *  
+ */
+static void setValidatorsInList(
+  const Teuchos::ParameterList &plSome,   // in: user's parameters
+  const Teuchos::ParameterList &plAll,    // in: validators for all params
+  Teuchos::ParameterList &plVal)          // out: validators for user's params
+{
+  ParameterList::ConstIterator next = plSome.begin();
+
+  while (next != plSome.end()){
+
+    const std::string &name = next->first;
+    const ParameterEntry &entrySome = plSome.getEntry(name);
+    const ParameterEntry &entryAll = plAll.getEntry(name);
+
+    if (entrySome.isList()){
+      const ParameterList &sublistSome = plSome.sublist(name);   // get
+      const ParameterList &sublistAll = plAll.sublist(name);     // get
+      ParameterList &sublistVal = plVal.sublist(name);     // create & get
+      setValidatorsInList(sublistSome, sublistAll, sublistVal);
+    }
+    else{
+      plVal.setEntry(name, entryAll);
+    }
+
+    ++next;
+  }
+}
+
+void createValidatorList(
+   const Teuchos::ParameterList &plIn,
+   Teuchos::ParameterList &plOut)
+{
+  ParameterList allParameters;
+
+  createAllParameters(allParameters);
+
+  setValidatorsInList(plIn, allParameters, plOut);
+}
+
+// Why isn't there a Teuchos method that does this?
+
+void printListDocumentation(
+  const Teuchos::ParameterList &pl,
+  std::ostream &os,
+  std::string listNames)
+{
+  using std::string;
+
+  if (listNames.size() == 0)
+    listNames = string("top");
+
+  Array<string> subLists;
+  ParameterList::ConstIterator next = pl.begin();
+
+  while (next != pl.end()){
+    const string &name = next->first;
+    const ParameterEntry &entry = pl.getEntry(name);
+
+    if (entry.isList()){
+      subLists.append(name);
+    }
+    else{
+      string doc = entry.docString();
+      os << "List: "<< listNames << ", parameter: " << name << "\n";
+      if (doc.size())
+        os << doc << "\n";
+    }
+
+    ++next;
+  }
+
+  for (int i=0; i < subLists.size(); i++){
+    string newListName = listNames + string("/") + subLists[i];
+    const ParameterList &sublist = pl.sublist(subLists[i]);
+    printListDocumentation(sublist, os, newListName);
+  }
 }
 
 

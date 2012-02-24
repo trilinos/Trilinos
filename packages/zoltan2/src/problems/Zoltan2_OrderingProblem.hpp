@@ -56,7 +56,7 @@ public:
   };
 
   // Other methods
-  void solve();
+  void solve(bool updateInputData=true);
   // virtual void redistribute();
 
   OrderingSolution<gid_t, lno_t> *getSolution() {
@@ -67,12 +67,11 @@ private:
   void createOrderingProblem();
 
   RCP<OrderingSolution<gid_t, lno_t> > solution_;
-
 };
 
 ////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void OrderingProblem<Adapter>::solve()
+void OrderingProblem<Adapter>::solve(bool newData)
 {
   HELLO;
 
@@ -130,6 +129,8 @@ template <typename Adapter>
 void OrderingProblem<Adapter>::createOrderingProblem()
 {
   HELLO;
+  using Teuchos::ParameterList;
+
 //  cout << __func__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 
 //       << this->inputAdapter_->inputAdapterName() << endl;
@@ -138,10 +139,18 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   ovis_enabled(this->comm_->getRank());
 #endif
 
-  // Finalize parameters.  If the Problem wants to set or
+  // Committing the parameters is the process of validating
+  // and in some cases converting the user's parameter to
+  // and internal representation. If the Problem wants to set or
   // change any parameters, do it before this call.
 
-  this->env_->commitParameters();
+  if (!this->env_->parametersAreCommitted())
+    this->env_->commitParameters();
+
+  ParameterList *general = &(this->env_->getParametersNonConst());
+  ParameterList *ordering = NULL;
+  if (this->env_->hasOrderingParameters()){
+    ordering = &(general->sublist("ordering"));
 
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:

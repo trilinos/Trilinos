@@ -65,33 +65,53 @@ void AlgPTBlock(
 
   // Parameters that may drive algorithm choices
   //    speed_versus_quality
-  //    memory_footprint_versus_runtime
+  //    memory_versus_speed
 
-  const Teuchos::ParameterList &pl = env->getParams();
-  string mvr = pl.get<string>(string("memory_footprint_versus_runtime"));
-  string svq = pl.get<string>(string("speed_versus_quality"));
+  const Teuchos::ParameterList &pl = env->getParameters();
+  const string defaultVal("balance");
 
-  bool fastSolution = (svq==string("speed"));
-  bool goodSolution = (svq==string("quality"));
-  bool balancedSolution = (svq==string("balance"));
+  const string *mvr = pl.getPtr<string>("memory_versus_speed");
+  if (!mvr)
+    mvr = &defaultVal;
   
-  bool lowMemory = (mvr==string("memory")) || (mvr==string("memory_footprint"));
-  bool lowRunTime = (mvr==string("runtime"));
-  bool balanceMemoryRunTime = (svq==string("balance"));
+  const string *svq = pl.getPtr<string>("speed_versus_quality");
+  if (!svq)
+    svq = &defaultVal;
+
+  bool fastSolution = (*svq==string("speed"));
+  bool goodSolution = (*svq==string("quality"));
+  bool balancedSolution = (*svq==string("balance"));
+  
+  bool lowMemory = (*mvr==string("memory"));
+  bool lowRunTime = (*mvr==string("speed"));
+  bool balanceMemoryRunTime = (*mvr==string("balance"));
 
   ////////////////////////////////////////////////////////
   // Problem parameters of interest:
   //    objective
   //    imbalance_tolerance
 
-  string objective("balance_object_weight");
-  double imbalanceTolerance = 1.1;
+  const string *obj=NULL;
+  const double *tol=NULL;
 
   if (env->hasPartitioningParameters()){
-    const Teuchos::ParameterList &pl = env->getPartitioningParams();
-    objective = pl.get<string>(string("objective"));
-    imbalanceTolerance = pl.get<double>(string("imbalance_tolerance"));
+    const Teuchos::ParameterList &plPart = pl.sublist("partitioning");
+
+    obj = plPart.getPtr<string>("objective");
+    tol = plPart.getPtr<double>("imbalance_tolerance");
   }
+
+  double imbalanceTolerance = (tol ? *tol : 1.1);
+  string objective = (obj ? *obj : string("balance_object_weight"));
+
+  bool balanceCount = (objective == string("balance_object_count"));
+  bool balanceWeight = (objective == string("balance_object_weight"));
+  bool minTotalWeight = 
+    (objective == string("multicriteria_minimize_total_weight"));
+  bool minMaximumWeight = 
+    (objective == string("multicriteria_minimize_maximum_weight"));
+  bool balanceTotalMaximum = 
+    (objective == string("multicriteria_balance_total_maximum"));
 
   ////////////////////////////////////////////////////////
   // From the IdentifierModel we need:

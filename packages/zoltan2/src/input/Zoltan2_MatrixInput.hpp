@@ -73,6 +73,11 @@ public:
    */
   virtual global_size_t getGlobalNumColumns() const = 0;
 
+  /*! Return true if the sparse square matrix may globally have
+   *  diagonal entries.  Return false otherwise.
+   */
+  virtual bool diagonalEntriesMayBePresent() const = 0;
+
   /*! Sets pointers to this process' matrix entries.
       If this optional call is defined in the adapter, it can save a memory
       copy of application data.

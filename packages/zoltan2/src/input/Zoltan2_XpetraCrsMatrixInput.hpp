@@ -134,6 +134,13 @@ public:
     return matrix_->getGlobalNumCols();
   }
 
+  /*! Return true if the matrix is square with one or more diagonal entries.
+   */
+  bool diagonalEntriesMayBePresent() const {
+    return ((matrix_->getGlobalNumCols() == matrix_->getGlobalNumRows()) && 
+            (matrix_->getGlobalNumDiags() > 0));
+  }
+
   /*! Return a read only view of the data.
      \param rowIds  Global row ids.  The memory for the global 
           row IDs persists until the underlying Xpetra::CrsMatrix is deleted.

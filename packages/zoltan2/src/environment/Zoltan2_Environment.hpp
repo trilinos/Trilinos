@@ -38,35 +38,43 @@ namespace Zoltan2 {
   has the problem parameters and the configuration information that governs
   how the library should behave when reporting status information,
   testing for errors, and so on.
-*/
 
+  The environment has the application's default communicator, unless another
+  communicator is specified in the constructor or with setCommunicator().
+  Note that this communicator may differ from the problem communicator for any
+  given problem.
+*/
 
 class Environment{
 
 public:
 
+  typedef Teuchos::RCP<const Teuchos::Comm<int> > Comm_t;
+  typedef Teuchos::RCP<DebugManager>     DebugManager_t;
+  typedef Teuchos::RCP<MetricOutputManager<double> > TimerManager_t;
+  typedef Teuchos::RCP<MetricOutputManager<long> > MemoryProfilerManager_t;
+
   // These are accessed directly rather than through get methods
   // due to the frequency with which we'll be referring to them
   // all over the code.
 
-  int  myRank_;             /*!< mpi rank in original problem */
+  int  myRank_;                        /*!< mpi rank (relative to comm_) */
 
-  int  numProcs_;           /*!< number of processes in original problem */
+  int  numProcs_;           /*!< number of processes (relative to comm_) */
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm_; /*!< for application */
+  Comm_t comm_;                         /*!< communicator for environment*/
 
-  Teuchos::RCP<DebugManager> debugOut_;  /*!< output for status messages */
+  DebugManager_t debugOut_;              /*!< output for status messages */
 
-  Teuchos::RCP<MetricOutputManager<double> > timerOut_;  /*!< output for timing messages */
+  TimerManager_t timerOut_;                            /*!< timer output */
 
-  Teuchos::RCP<MetricOutputManager<long> > memoryOut_; /*!< output for memory usage messages*/
+  MemoryProfilerManager_t memoryOut_;       /*!< memory profiling output */
 
-  AssertionLevel errorCheckLevel_; /*!< level of error checking to do */
+  AssertionLevel errorCheckLevel_;      /*!< level of error checking to do */
 
   /*! \brief Constructor
    */
-  Environment( Teuchos::ParameterList &problemParams, 
-    const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+  Environment(Teuchos::ParameterList &problemParams, const Comm_t &comm);
 
   /*! \brief Default Constructor
    */
@@ -76,9 +84,9 @@ public:
    */
   ~Environment();
 
-  /*! \brief Set or reset the application communicator.
+  /*! \brief Set or reset the environment's communicator.
    */
-  void setCommunicator(const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+  void setCommunicator(const Comm_t &comm);
 
   /*! \brief Set or reset the user parameters.
    */
@@ -98,73 +106,47 @@ public:
    */
   void commitParameters();
 
-  bool hasParameters() const { return hasAnyParams_; }
+  /*! brief Returns true if the parameter list has the named sublist
+   */
+  bool hasSublist(const Teuchos::ParameterList &pl, 
+    const std::string &plname) const;
 
-  bool hasPartitioningParameters() const { return hasPartitioningParams_; }
+  /*! brief Returns true if the parameter list has the named sublist
+   */
+  bool hasPartitioningParameters() const { 
+   return hasSublist(params_, "partitioning"); }
 
-  bool hasOrderingParameters() const {return hasOrderingParams_; }
+  /*! brief Returns true if there is a "ordering" parameter sublist.
+   */
+  bool hasOrderingParameters() const {
+   return hasSublist(params_, "ordering"); }
 
-  bool hasMatchingParameters() const { return hasMatchingParams_; }
+  /*! brief Returns true if there is a "matching" parameter sublist.
+   */
+  bool hasMatchingParameters() const {
+   return hasSublist(params_, "matching"); }
 
-  bool hasColoringParameters() const { return hasColoringParams_; }
+  /*! brief Returns true if there is a "coloring" parameter sublist.
+   */
+  bool hasColoringParameters() const {
+   return hasSublist(params_, "coloring"); }
 
   /*! \brief Returns a reference to the user's parameter list.
-   *
-   *   If there are no parameters, this call throws a std::exception.
    */
-  const Teuchos::ParameterList &getParams() const { return params_; }
+  const Teuchos::ParameterList &getParameters() const { return params_; }
 
   /*! \brief Returns a reference to a non-const copy of the parameters.
-   *   If there are no parameters, this call throws a std::exception.
    */
-  Teuchos::ParameterList &getParamsNonConst() { return params_; }
-
-  /*! \brief Returns a reference to the user's partitioning parameters.
-   *   If there are no parameters, this call throws a std::exception.
-   */
-  const Teuchos::ParameterList &getPartitioningParams() const 
-  { 
-    return params_.sublist("partitioning"); 
-  }
-
-  /*! \brief Returns a reference to the user's partitioning parameters.
-   *   If there are no parameters, this call throws a std::exception.
-   */
-  Teuchos::ParameterList &getPartitioningParamsNonConst() 
-  { 
-    return params_.sublist("partitioning"); 
-  }
-
-  /*! \brief Returns a reference to the user's ordering parameters.
-   *   If there are no parameters, this call throws a std::exception.
-   */
-  const Teuchos::ParameterList &getOrderingParams() const 
-  { 
-    return params_.sublist("ordering"); 
-  }
-
-  /*! \brief Returns a reference to the user's ordering parameters.
-   *   If there are no parameters, this call throws a std::exception.
-   */
-  Teuchos::ParameterList &getOrderingParamsNonConst()
-  { 
-    return params_.sublist("ordering"); 
-  }
-
-  /*! \brief Returns a reference to the user's coloring parameters.
-   *   If there are no parameters, this call throws a std::exception.
-   */
-  const Teuchos::ParameterList &getColoringParams() const 
-  { 
-    return params_.sublist("coloring"); 
-  }
+  Teuchos::ParameterList &getParametersNonConst() { return params_; }
 
   /*! \brief Returns true if the user parameters have been processed.
    *
    * The user's parameters are processed in commitParameters(). During
    * this call they are checked for validity, and some are transformed
-   * to an internal format.  (For example "std::cout" will be transformed
-   * to a pointer to that ostream.)
+   * to an internal format.  
+   *
+   * If parameters are already committed, you can not call
+   * addParameters() or setParameters().
    */
   bool parametersAreCommitted() const { return committed_; }
 
@@ -183,26 +165,27 @@ public:
    */
   bool doMemoryProfiling() const { return memoryOut_->getMetricsOn(); }
 
+  /*! \brief Given a parameter list, convert all of the entries that
+   *     have valiator of type StringToIntegralParameterEntryValidator<int>
+   *     from their string value to their int value.
+   *
+   *    I expected this to happen in validateAndModify, but
+   *    it doesn't.
+   */
+  static void convertStringToInt(Teuchos::ParameterList &params);
+
 private:
+
   /*! \brief The Zoltan2 parameters supplied by the user.
+   *
+   *   Parameters lists are relatively small, so we keep a copy.
    */
   Teuchos::ParameterList params_;
-
-  /*! \brief The list of valid parameters against which to
-   *             check the user parameters.
-   */
-  Teuchos::ParameterList validParams_;
 
   /*! \brief The user parameters can be validated only once.  True
    *            if this validation has occured.
    */
   bool committed_;
-
-  bool hasAnyParams_;
-  bool hasPartitioningParams_;
-  bool hasOrderingParams_;
-  bool hasColoringParams_;
-  bool hasMatchingParams_;
 };
 
 /*! A helper function to return a default environment.

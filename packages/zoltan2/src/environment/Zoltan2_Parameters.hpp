@@ -36,8 +36,40 @@ typedef Teuchos::RCP<const Teuchos::Array<std::string> > ValidStringsList;
 
 namespace Zoltan2{
 
+// Namespace methods
+
+void createValidatorList(
+   const Teuchos::ParameterList &plIn, Teuchos::ParameterList &plOut);
+
+void printListDocumentation( const Teuchos::ParameterList &pl, std::ostream &os,
+  std::string listNames=std::string(""));
+
+// Parameter enumerated types.
+//
+//  If you change these enumerators, change their documentation
+//  in Zoltan2_Parameters.cpp.
+//
+
+enum AssertionLevel {
+  BASIC_ASSERTION,    /*!< checks that should always be done (user input) */
+  COMPLEX_ASSERTION,  /*!< checks that take extra time (valid input graph?) */
+  DEBUG_MODE_ASSERTION,   /*!< done when check everything incl logic errors */
+  NUM_ASSERTION_LEVELS};
+
+enum MessageOutputLevel {
+  NO_STATUS,                 /*!< don't display status/debug messages */
+  BASIC_STATUS,              /*!< the status at each high level step */
+  DETAILED_STATUS,           /*!< include status at algorithm sub-steps */
+  VERBOSE_DETAILED_STATUS,   /*!< include more detail about sub-steps */
+  NUM_STATUS_OUTPUT_LEVELS};
+
+enum MessageSummaryLevel{
+  LOCAL_SUMMARY,              /*!< messages should display local info only */
+  GLOBAL_SUMMARY,             /*!< include global min, max, avg, etc. */
+  NUM_STATUS_SUMMARY_LEVELS};
+
 ////////////////////////////////////////////////////////////////////
-// Declarations
+// IntegerRangeListValidator
 //
 // An IntegerRangeList is a concise way to provide a list of
 // identifiers.  Valid values are:
@@ -53,6 +85,12 @@ namespace Zoltan2{
 //
 // Redundant specifiers are and'ed:  "1,5,all" is just "all"
 ////////////////////////////////////////////////////////////////////
+
+enum RangeType {
+  RANGE_INCLUDES_ALL,
+  RANGE_IS_EMPTY,
+  RANGE_IS_LISTED,
+  NUM_RANGE_TYPES};
 
 template <typename Integral>
   class IntegerRangeListValidator : public Teuchos::ParameterEntryValidator
@@ -120,44 +158,9 @@ template <typename Integral>
 template <typename Integral>
   void printIntegralRangeList(std::ostream &os, Teuchos::Array<Integral> &irl);
 
-// Function declarations
-
-void createValidParameterList(Teuchos::ParameterList &pl, 
-  const Teuchos::Comm<int> &comm);
-
 ////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////
-
-// Parameter enumerated types.
-//
-//  If you change these enumerators, change their documentation
-//  in Zoltan2_Parameters.cpp.
-//
-
-enum RangeType {
-  RANGE_INCLUDES_ALL,
-  RANGE_IS_EMPTY,
-  RANGE_IS_LISTED,
-  NUM_RANGE_TYPES};
-
-enum AssertionLevel {
-  BASIC_ASSERTION,    /*!< checks that should always be done (user input) */
-  COMPLEX_ASSERTION,  /*!< checks that take extra time (valid input graph?) */
-  DEBUG_MODE_ASSERTION,   /*!< only done when check absolutely everything */
-  NUM_ASSERTION_LEVELS};
-
-enum MessageOutputLevel {
-  NO_STATUS,                 /*!< don't display status/debug messages */
-  BASIC_STATUS,              /*!< the status at each high level step */
-  DETAILED_STATUS,           /*!< include status at algorithm sub-steps */
-  VERBOSE_DETAILED_STATUS,   /*!< include more detail about sub-steps */
-  NUM_STATUS_OUTPUT_LEVELS};
-
-enum MessageSummaryLevel{
-  LOCAL_SUMMARY,              /*!< messages should display local info only */
-  GLOBAL_SUMMARY,             /*!< include global min, max, avg, etc. */
-  NUM_STATUS_SUMMARY_LEVELS};
 
 template <typename Integral>
 const std::string IntegerRangeListValidator<Integral>::listDelim_(",");

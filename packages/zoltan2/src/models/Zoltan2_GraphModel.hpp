@@ -194,23 +194,12 @@ public:
    *  \param  inputAdapter  an encapsulation of the user data
    *  \param  env           environment (library configuration settings)
    *  \param  comm       communicator for the problem
-   *  \param  graphVerticesAreMatrixRows  if true, the vertices of the graph
-   *            model will be the matrix rows, and the edges will be row
-   *            non-zeros.  This is the only model supported right now.  TODO
-   *  \param  consecutiveIdsRequired  set to true if the algorithm or
-   *           third party library requires consecutive global vertex Ids.
-   *  \param removeSelfEdges set to true if the algorithm or the third party
-   *           library cannot handle self edges
-   *  \param subsetGraph  If the graph vertices have neighbors which are not
-   *           vertices of the graph, then they will be ignored if subsetGraph
-   *           is true.  Otherwise, this will be treated as an error.
+   *  \param  modelFlags  a bit map of GraphModelFlags
    */
 
   GraphModel(const MatrixInput<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    bool graphVerticesAreMatrixRows=true,
-    bool consecutiveIdsRequired=false, bool removeSelfEdges=false,
-    bool subsetGraph=false) :
+    unsigned int modelFlags):
      input_(ia), env_(env), comm_(comm),
      gids_(), gnos_(), edgeGids_(), edgeGnos_(), procIds_(), 
      offsets_(), gnosConst_(), edgeGnosConst_(), procIdsConst_(), 
@@ -218,11 +207,7 @@ public:
      gidsAreGnos_(false), nearEdgeLnos_(), nearEdgeOffsets_(), 
      numNearLocalEdges_(0)
   {
-    initializeData(
-        graphVerticesAreMatrixRows,
-        consecutiveIdsRequired, 
-        removeSelfEdges,
-        subsetGraph);
+    initializeData(modelFlags);
   }
 
   //!  Destructor
@@ -267,6 +252,7 @@ public:
     return 0;   // TODO
   }
 
+  // TODO - move these out of definition
   size_t getVertexList( ArrayView<const gno_t> &Ids,
     ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const
   {
@@ -410,7 +396,7 @@ public:
 
 private:
 
-  void initializeData(bool, bool, bool, bool);
+  void initializeData(unsigned int);
 
   const MatrixInput<User> *input_;
   const RCP<const Environment > env_;
@@ -446,11 +432,23 @@ private:
 };
 
 template <typename User>
-  void GraphModel<MatrixInput<User> >::initializeData(
-    bool graphVerticesAreMatrixRows,
-    bool consecutiveIdsRequired, bool removeSelfEdges,
-    bool subsetGraph)
+  void GraphModel<MatrixInput<User> >::initializeData(unsigned int modelFlags)
 {
+  // Model creation flags
+
+  bool symTranspose = modelFlags & SYMMETRIZE_INPUT_TRANSPOSE;
+  bool symBipartite = modelFlags & SYMMETRIZE_INPUT_BIPARTITE;
+  bool vertexRows = modelFlags & VERTICES_ARE_MATRIX_ROWS;
+  bool vertexCols = modelFlags & VERTICES_ARE_MATRIX_COLUMNS;
+  bool vertexNz = modelFlags & VERTICES_ARE_MATRIX_NONZEROS;
+  bool consecutiveIdsRequired = modelFlags & IDS_MUST_BE_GLOBALLY_CONSECUTIVE;
+  bool removeSelfEdges = modelFlags & SELF_EDGES_MUST_BE_REMOVED;
+  bool subsetGraph = modelFlags & GRAPH_IS_A_SUBSET_GRAPH;
+
+  if (symTranspose || symBipartite || vertexCols || vertexNz){
+    throw std::runtime_error("graph build option not yet implemented");
+  }
+
   // Get the matrix from the input adapter
 
   gid_t const *vtxIds=NULL, *nborIds=NULL;
@@ -464,8 +462,7 @@ template <typename User>
 
   numLocalEdges_ = offsets[numLocalVtx_];
 
-  // If Matrix has diagonal entries, and self-edges are to be removed
-  //    do that now.
+  // Remove self edges if necessary.
 
   ArrayRCP<lno_t> tmpOffsets;
   ArrayRCP<gid_t> tmpEdges;
@@ -473,7 +470,7 @@ template <typename User>
 
   size_t numOffsets = numLocalVtx_ + 1;
 
-  if (removeSelfEdges) {
+  if (removeSelfEdges && input_->diagonalEntriesMayBePresent()) {
 
     lno_t *offArray = new lno_t [numOffsets];
     Z2_LOCAL_MEMORY_ASSERTION(*env_, numOffsets, offArray);

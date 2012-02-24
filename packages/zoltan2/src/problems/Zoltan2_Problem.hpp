@@ -24,22 +24,26 @@ class Problem {
 public:
   
 #ifdef HAVE_ZOLTAN2_MPI
-  /*! Constructor for MPI builds
+  /*! \brief Constructor for MPI builds
    */
   Problem(Adapter *, ParameterList *params, MPI_Comm comm=MPI_COMM_WORLD);
 #else
-  /*! Constructor for serial builds
+  /*! \brief Constructor for serial builds
    */
   Problem(Adapter *, ParameterList *params);
 #endif
 
-  /*! Destructor
+  /*! \brief Destructor
    */
   virtual ~Problem() {};
 
-  /*! Method that creates a solution.
+  /*! \brief Reset the list of parameters
    */
-  virtual void solve() = 0;
+  void resetParameters(ParameterList *params);
+
+  /*! \brief Method that creates a solution.
+   */
+  virtual void solve(bool updateInputData) = 0;
 
 protected:
   typedef typename Adapter::base_adapter_t base_adapter_t;
@@ -108,6 +112,14 @@ template <typename Adapter>
   env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
   envConst_ = rcp_const_cast<const Environment>(env_);
   comm_ = DefaultComm<int>::getComm();
+}
+
+template <typename Adapter>
+  void Problem<Adapter>::resetParameters(ParameterList *params)
+{
+  env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
+  envConst_ = rcp_const_cast<const Environment>(env_);
+  params_ = rcp<ParameterList>(params,false);
 }
 
 #endif
