@@ -92,7 +92,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
   RCP<PgPFactory>         Pfact = rcp( new PgPFactory(Ptentfact));
   RCP<RFactory>           Rfact = rcp( new GenericRFactory(Pfact) );
-  RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+  RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
   H->SetMaxCoarseSize(1);
 
   // setup smoothers
@@ -603,7 +603,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
   RCP<PgPFactory>        Pfact = rcp( new PgPFactory(Ptentfact));
   RCP<RFactory>          Rfact = rcp( new GenericRFactory(Pfact) );
-  RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+  RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
   H->SetMaxCoarseSize(1);
 
   Pfact->ReUseDampingParameters(true);
@@ -764,7 +764,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
   RCP<PgPFactory>        Pfact = rcp( new PgPFactory(Ptentfact));
   RCP<RFactory>          Rfact = rcp( new TransPFactory(Pfact) );
-  RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+  RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
   H->SetMaxCoarseSize(1);
 
   Pfact->ReUseDampingParameters(true);
@@ -936,7 +936,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
       RCP<PgPFactory>         Pfact = rcp( new PgPFactory(Ptentfact));
       RCP<RFactory>           Rfact = rcp( new GenericRFactory(Pfact) );
-      RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+      RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
       H->SetMaxCoarseSize(1);
 
       // setup smoothers

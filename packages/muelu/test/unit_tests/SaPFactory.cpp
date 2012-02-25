@@ -101,8 +101,8 @@ namespace MueLuTests {
 
             RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
             RCP<SaPFactory>         Pfact = rcp( new SaPFactory(Ptentfact));
-            RCP<RFactory>           Rfact = rcp( new TransPFactory() );
-            RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+            RCP<RFactory>           Rfact = rcp( new TransPFactory(Pfact) );
+            RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
             H->SetMaxCoarseSize(1);
 
             // setup smoothers

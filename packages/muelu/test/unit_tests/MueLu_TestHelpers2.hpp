@@ -76,8 +76,8 @@ namespace MueLuTests {
             RCP<TentativePFactory> tentPFact = rcp(new TentativePFactory(aggFact));
       
             RCP<SaPFactory> Pfact  = rcp(new SaPFactory(tentPFact));
-            RCP<RFactory>   Rfact  = rcp(new TransPFactory());
-            RCP<RAPFactory> Acfact = rcp(new RAPFactory());
+            RCP<RFactory>   Rfact  = rcp(new TransPFactory(Pfact));
+            RCP<RAPFactory> Acfact = rcp(new RAPFactory(Pfact,Rfact));
       
             Teuchos::ParameterList smootherParamList;
             smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");

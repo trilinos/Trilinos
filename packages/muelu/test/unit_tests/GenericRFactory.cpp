@@ -88,7 +88,7 @@ namespace MueLuTests {
     RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
     RCP<SaPFactory>         Pfact = rcp( new SaPFactory(Ptentfact));
     RCP<RFactory>           Rfact = rcp( new GenericRFactory(Pfact) );
-    RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+    RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
     H->SetMaxCoarseSize(1);
 
     // setup smoothers
@@ -207,7 +207,7 @@ namespace MueLuTests {
       RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
       RCP<PgPFactory>         Pfact = rcp( new PgPFactory(Ptentfact));
       RCP<RFactory>           Rfact = rcp( new GenericRFactory(Pfact) );
-      RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+      RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
 
       // setup smoothers
       Teuchos::ParameterList smootherParamList;

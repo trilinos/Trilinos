@@ -328,8 +328,8 @@ namespace MueLuTests {
     UCAggFact->SetPhase3AggCreation(0.5);
 
     RCP<TentativePFactory> Pfact = rcp(new TentativePFactory(UCAggFact));
-    RCP<RFactory>          Rfact = rcp( new TransPFactory() );
-    RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+    RCP<RFactory>          Rfact = rcp( new TransPFactory(Pfact) );
+    RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
     H->SetMaxCoarseSize(1);
 
     // setup smoothers
@@ -457,8 +457,8 @@ namespace MueLuTests {
             UCAggFact->SetPhase3AggCreation(0.5);
 
             RCP<TentativePFactory> Pfact = rcp(new TentativePFactory(UCAggFact));
-            RCP<RFactory>          Rfact = rcp( new TransPFactory() );
-            RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+            RCP<RFactory>          Rfact = rcp( new TransPFactory(Pfact) );
+            RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
             H->SetMaxCoarseSize(1);
 
             // setup smoothers

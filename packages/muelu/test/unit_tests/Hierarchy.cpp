@@ -93,13 +93,13 @@ TEUCHOS_UNIT_TEST(Hierarchy, FillHierarchy_BothFactories)
   RCP<Level> levelOne = H.GetLevel();
   levelOne->Set("A", A);
 
-  RCP<SaPFactory>    PFact = rcp(new SaPFactory());
-  RCP<TransPFactory> RFact = rcp(new TransPFactory(PFact));
-  RAPFactory         AcFact(PFact, RFact);
+  RCP<SaPFactory>    Pfact = rcp(new SaPFactory());
+  RCP<TransPFactory> Rfact = rcp(new TransPFactory(Pfact));
+  RAPFactory         AcFact(Pfact, Rfact);
 
   out << "Providing both factories to FillHierarchy." << std::endl;
 
-  H.FillHierarchy(*PFact, *RFact, AcFact);
+  H.FillHierarchy(*Pfact, *Rfact, AcFact);
 
 } //FillHierarchy_BothFactories
 
@@ -281,14 +281,14 @@ TEUCHOS_UNIT_TEST(Hierarchy, FullPopulate_AllArgs)
 
   Hierarchy H(A);
 
-  RCP<SaPFactory>  PFact = rcp(new SaPFactory());
-  RCP<RFactory> RFact = rcp(new TransPFactory());
-  RCP<RAPFactory>  AcFact = rcp(new RAPFactory());
+  RCP<SaPFactory>  Pfact = rcp(new SaPFactory());
+  RCP<RFactory> Rfact = rcp(new TransPFactory(Pfact));
+  RCP<RAPFactory>  AcFact = rcp(new RAPFactory(Pfact,Rfact));
 
 #ifdef HAVE_MUELU_IFPACK
   RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
-  H.FullPopulate(*PFact, *RFact, *AcFact, *SmooFact, 0, 2);
+  H.FullPopulate(*Pfact, *Rfact, *AcFact, *SmooFact, 0, 2);
 #endif
     }
 } //FullPopulate
@@ -312,16 +312,16 @@ TEUCHOS_UNIT_TEST(Hierarchy, FullPopulate_KeepAggregates)
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
 
-  RCP<TentativePFactory>  PFact = rcp(new TentativePFactory(UCAggFact));
-  RCP<RFactory> RFact = rcp(new TransPFactory());
-  RCP<RAPFactory>  AcFact = rcp(new RAPFactory());
+  RCP<TentativePFactory>  Pfact = rcp(new TentativePFactory(UCAggFact));
+  RCP<RFactory> Rfact = rcp(new TransPFactory(Pfact));
+  RCP<RAPFactory>  AcFact = rcp(new RAPFactory(Pfact,Rfact));
 
 #ifdef HAVE_MUELU_IFPACK
   RCP<SmootherPrototype> smoother = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel");
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
 
   H.GetLevel(0)->Keep("Aggregates", UCAggFact.get()); // not working since no FactoryManager available
-  H.FullPopulate(*PFact, *RFact, *AcFact, *SmooFact, 0, 2);
+  H.FullPopulate(*Pfact, *Rfact, *AcFact, *SmooFact, 0, 2);
 #endif
 
   for (LocalOrdinal l=0; l<H.GetNumLevels()-1;l++) {
@@ -367,8 +367,8 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory(TentPFact) );
-  RCP<RFactory>           Rfact = rcp( new TransPFactory());
-  RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
+  RCP<RFactory>           Rfact = rcp( new TransPFactory(Pfact));
+  RCP<RAPFactory>         Acfact = rcp( new RAPFactory(Pfact,Rfact) );
   
 
 #ifdef HAVE_MUELU_IFPACK
@@ -455,8 +455,8 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory(TentPFact) );
-  RCP<RFactory>           Rfact = rcp( new TransPFactory());
-  RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
+  RCP<RFactory>           Rfact = rcp( new TransPFactory(Pfact));
+  RCP<RAPFactory>         Acfact = rcp( new RAPFactory(Pfact,Rfact) );
   Acfact->SetImplicitTranspose(true);
 
 #ifdef HAVE_MUELU_IFPACK
