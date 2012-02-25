@@ -166,7 +166,7 @@ C) Configuring (Makefile Generator)
     options across different configure scripts and better version control of
     configure options.
 
-    NOTE: You can actually pass in a list of configuration fragement files
+    NOTE: You can actually pass in a list of configuration fragment files
     which will be read in the order they are given.
 
     NOTE: If you do not use 'FORCE' shown above, then the option can be
@@ -180,9 +180,9 @@ C) Configuring (Makefile Generator)
 
   d) Using the QT CMake configuration GUI:
 
-    On systems whre the QT CMake GUI is installed (e.g. Windows) the CMake GUI
+    On systems where the QT CMake GUI is installed (e.g. Windows) the CMake GUI
     can be a nice way to configure Trilinos if you are a user.  To make your
-    configuration easily repeatable, you might want to create a fragement file
+    configuration easily repeatable, you might want to create a fragment file
     and just load it by setting Trilinos_CONFIGURE_OPTIONS_FILE (see above) in
     the GUI.
 
@@ -290,12 +290,12 @@ C) Configuring (Makefile Generator)
 
     where <LANG> = C, CXX, Fortran and <EXTRA_COMPILER_OPTIONS> are your extra
     compiler options like "-DSOME_MACRO_TO_DEFINE -funroll-loops".  These
-    options will get appened to other internally defined compiler option and
+    options will get appended to other internally defined compiler option and
     therefore override them.
 
     NOTES:
  
-    1) Setting CMAKE_<LANG>_FLAGS with override but will not repalce any other
+    1) Setting CMAKE_<LANG>_FLAGS with override but will not replace any other
     internally set flags in CMAKE_<LANG>_FLAGS defined by the Trilinos CMake
     system.  To get rid of these default flags, see below.
 
@@ -321,7 +321,7 @@ C) Configuring (Makefile Generator)
     setting CMAKE_<LANG>_FLAGS will work well for adding extra compiler
     defines (e.g. -DSOMETHING) for example.
 
-    WARNING: Any options that you set through the cache varible
+    WARNING: Any options that you set through the cache variable
     CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE> (where <CMAKE_BUILD_TYPE> = DEBUG or
     RELEASE) will get overridden in the Trilinos CMake system for GNU
     compilers in development mode so don't try to manually set
@@ -594,14 +594,14 @@ C) Configuring (Makefile Generator)
   and *.dll on Windows systems).
 
 
-(*) Building static libraries and exectables:
+(*) Building static libraries and executables:
 
    To build static libraries, turn off the shared library support:
   
     -D BUILD_SHARED_LIBS:BOOL=OFF
 
    Some machines, such as the Cray XT5, require static executables.
-   To build trilinos package executabes as static objects, a number of
+   To build trilinos package executables as static objects, a number of
    flags must be set:
 
     -D BUILD_SHARED_LIBS:BOOL=OFF
@@ -667,7 +667,7 @@ C) Configuring (Makefile Generator)
   NOTE: In order to allow a TPL that normally requires one or more libraries
   to ignore the libraries, you can set:
 
-    -D BLAS_LIBRARY_NAMES:STIRNG=""
+    -D BLAS_LIBRARY_NAMES:STRING=""
 
   Optional package-specific support for a TPL can be turned off by passing
   into 'cmake':
@@ -776,10 +776,10 @@ C) Configuring (Makefile Generator)
     -D Trilinos_TEST_CATEGORIES:STRING="<CATEGORY1>;<CATEGORY2>;..." 
 
   Valid categories include BASIC, CONTINUOUS, NIGHTLY, and PERFORMANCE.  BASIC
-  tests get built and run for pre-push testing, CI testing, and nighly
+  tests get built and run for pre-push testing, CI testing, and nightly
   testing.  CONTINUOUS tests are for post-posh testing and nightly testing.
-  NIGHTY tests are for nighly testing only.  PERFORAMNCE tests are for
-  perforamnce testing only.
+  NIGHTLY tests are for nightly testing only.  PERFORMANCE tests are for
+  performance testing only.
 
 
 (*) Enabling support for coverage testing:
@@ -861,7 +861,7 @@ C) Configuring (Makefile Generator)
 
 (*) Adding configure timers:
 
-  To add timers to various configure steps, configuire with:
+  To add timers to various configure steps, configure with:
 
     -D Trilinos_ENABLE_CONFIGURE_TIMING:BOOL=ON
 
@@ -920,7 +920,7 @@ D) Building (Makefile generator)
 
     $ make libs
 
-  NOTE: This target depends on the <PACAKGE>_libs targets for all of the
+  NOTE: This target depends on the <PACKAGE>_libs targets for all of the
   enabled Trilinos packages.
 
   NOTE: You can also use the target name 'Trilinos_libs'.
@@ -1089,7 +1089,7 @@ There are a number of options that you can set in the environment to control
 what this script does.  This set of options can be found by doing:
 
   $ grep 'SET_DEFAULT_AND_FROM_ENV(' \
-      Trilinos/cmake/ctest/TribitsCTestDriverCore.cmake
+      Trilinos/cmake/tribits/ctest/TribitsCTestDriverCore.cmake
 
 Currently, this options includes:
 
