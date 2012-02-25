@@ -32,16 +32,6 @@ struct OpType {
   OpType( unsigned part_id , unsigned unary , unsigned count, Op op=INVALID )
     : m_part_id( part_id ), m_unary( unary ), m_count( count ), m_op(op)  {}
 
-//  OpType( const OpType & opType )
-//    : m_part_id(opType.m_part_id), m_unary(opType.m_unary), m_count(opType.m_count), m_op(opType.m_op) {}
-//
-//  OpType & operator = ( const OpType & opType )
-//  { this->m_part_id = opType.m_part_id;
-//    this->m_unary = opType.m_unary;
-//    this->m_count = opType.m_count;
-//    this->m_op    = opType.m_op;
-//    return *this;
-//  }
   bool operator == (const OpType & opType ) const
   {
     return m_part_id == opType.m_part_id &&
@@ -164,6 +154,8 @@ private:
       ) const;
 
 };
+
+std::ostream & operator<<( std::ostream & out, const Selector & selector);
 
 /** \brief .
  * \relates Selector
