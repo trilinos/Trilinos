@@ -17,6 +17,13 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
 
 IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
+
+  TRIBITS_ADD_EXECUTABLE(
+    Epetra_BD_Shift_example
+    SOURCES BlockDavidsonEpetraExGenShifted.cpp
+    COMM serial mpi
+  )
+
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
   TRIBITS_ADD_EXECUTABLE(

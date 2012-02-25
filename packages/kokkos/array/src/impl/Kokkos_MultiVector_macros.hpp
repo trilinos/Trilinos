@@ -218,7 +218,6 @@ public:
 private:
 
   typedef device_type::memory_space                     memory_space ;
-  typedef Impl::MemoryManager< memory_space >           memory_manager ;
   typedef Impl::MemoryView< value_type , memory_space > memory_view ;
 
   memory_view m_memory ;
@@ -229,16 +228,15 @@ private:
 
   inline
   MultiVector( const std::string & label ,
-               size_type arg_length , size_type arg_count )
+               size_type arg_length ,
+               size_type arg_count ,
+               size_type arg_stride )
     : m_memory()
     , m_ptr_on_device( 0 )
-    , m_stride( arg_length )
+    , m_stride( arg_stride )
     , m_length( arg_length )
     , m_count(  arg_count )
     {
-      if ( 1 < arg_count ) {
-        m_stride = memory_manager::preferred_alignment<value_type>( m_stride );
-      }
       m_memory.allocate( m_count * m_stride , label );
       m_ptr_on_device = m_memory.ptr_on_device();
 
@@ -254,6 +252,8 @@ private:
   template < typename V , class M > friend class MultiVector ;
 
   template < class DstType > friend class Impl::Initialize ;
+
+  template< class SrcType , bool > friend class Impl::CreateMirror ;
 
   template < class DstType , class SrcType > friend class Impl::DeepCopy ;
 };
