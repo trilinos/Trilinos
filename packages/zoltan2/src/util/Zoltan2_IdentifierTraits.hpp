@@ -207,10 +207,8 @@ struct IdentifierTraits {
     return UndefIdTraits<bool>::invalid();
   }
 
-  /*!
-      \brief Determine whether the data type can be used in
+  /*!  \brief Determine whether the data type can be used in
                   Teuchos communication.
-      \param T the data type
       \result true if it can be a Teuchos Packet type
 
       Packet data types used in Teuchos_CommHelpers.hpp must have a

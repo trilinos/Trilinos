@@ -136,6 +136,10 @@ public:
 
   std::string inputAdapterName() const {return std::string("BasicVector");}
 
+  size_t getLocalNumberOfObjects() const { return numIds_;}
+
+  int getNumberOfWeightsPerObject() const { return numWeights_;}
+
   ////////////////////////////////////////////////////
   // The VectorInput interface.
   ////////////////////////////////////////////////////

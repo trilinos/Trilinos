@@ -34,10 +34,12 @@ private:
 
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
   typedef StridedInput<lno_t, scalar_t> input_t;
+#endif
   
   IdentifierModel(){
     throw std::logic_error("a specific instantiation should be used");
@@ -96,23 +98,25 @@ class IdentifierModel<IdentifierInput<User> > : public Model<IdentifierInput<Use
 {
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename IdentifierInput<User>::scalar_t  scalar_t;
   typedef typename IdentifierInput<User>::gno_t     gno_t;
   typedef typename IdentifierInput<User>::lno_t     lno_t;
   typedef typename IdentifierInput<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedInput<lno_t, scalar_t> input_t;
+#endif
 
   /*! \brief Constructor
        \param ia  the input adapter from which to build the model
        \param env   the application environment (including problem parameters)
        \param comm  the problem communicator
-       \param modelFlags   bit map of IdentifierModelFlags
+       \param modelFlags   bit map of Zoltan2::IdentifierModelFlags
    */
   
   IdentifierModel( const IdentifierInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    unsigned int modelFlags):
+    std::bitset<NUM_MODEL_FLAGS> &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
       gids_(), weights_(), gnos_(), gnosConst_()
   {
@@ -153,7 +157,7 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      if (modelFlags & NEED_CONSECUTIVE_IDS)
+      if (modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE))
         idMap = rcp(new idmap_t(env_, comm_, gids_, true));
       else
         idMap = rcp(new idmap_t(env_, comm_, gids_, false));
@@ -267,16 +271,18 @@ class IdentifierModel<MatrixInput<User> > : public Model<MatrixInput<User> >
 {
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename MatrixInput<User>::scalar_t  scalar_t;
   typedef typename MatrixInput<User>::gno_t     gno_t;
   typedef typename MatrixInput<User>::lno_t     lno_t;
   typedef typename MatrixInput<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedInput<lno_t, scalar_t> input_t;
+#endif
   
   IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    unsigned int modelFlags):
+    std::bitset<NUM_MODEL_FLAGS> &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
       comm_(comm), gids_(), weights_(), gnos_(), gnosConst_()
   {
@@ -297,7 +303,7 @@ public:
     RCP<const idmap_t> idMap;
 
     try{
-      if (modelFlags && NEED_CONSECUTIVE_IDS) 
+      if (modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE) )
         idMap = rcp(new idmap_t(env_, comm_, gids_, true));
       else
         idMap = rcp(new idmap_t(env_, comm_, gids_, false));

@@ -39,11 +39,29 @@ class GraphModel : public Model<Adapter>
 {
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
+#endif
   
   GraphModel(){
+    throw std::logic_error("in non-specialized GraphModel");
+  }
+
+  /*! Constructor
+   *  All processes in the communicator must call the constructor.
+   *
+   *  \param  inputAdapter  an encapsulation of the user data
+   *  \param  env           environment (library configuration settings)
+   *  \param  comm       communicator for the problem
+   *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
+   */
+
+  GraphModel(const Adapter *ia,
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
+    std::bitset<NUM_MODEL_FLAGS> &modelFlags)
+  {
     throw std::logic_error("in non-specialized GraphModel");
   }
 
@@ -166,6 +184,7 @@ public:
   int getNumWeights() const { return 0; }
 };
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 ////////////////////////////////////////////////////////////////
 // Graph model derived from MatrixInput.
 //
@@ -194,12 +213,12 @@ public:
    *  \param  inputAdapter  an encapsulation of the user data
    *  \param  env           environment (library configuration settings)
    *  \param  comm       communicator for the problem
-   *  \param  modelFlags  a bit map of GraphModelFlags
+   *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
    */
 
   GraphModel(const MatrixInput<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    unsigned int modelFlags):
+    std::bitset<NUM_MODEL_FLAGS> &modelFlags):
      input_(ia), env_(env), comm_(comm),
      gids_(), gnos_(), edgeGids_(), edgeGnos_(), procIds_(), 
      offsets_(), gnosConst_(), edgeGnosConst_(), procIdsConst_(), 
@@ -396,7 +415,7 @@ public:
 
 private:
 
-  void initializeData(unsigned int);
+  void initializeData(std::bitset<NUM_MODEL_FLAGS> &);
 
   const MatrixInput<User> *input_;
   const RCP<const Environment > env_;
@@ -432,18 +451,19 @@ private:
 };
 
 template <typename User>
-  void GraphModel<MatrixInput<User> >::initializeData(unsigned int modelFlags)
+  void GraphModel<MatrixInput<User> >::initializeData(
+    std::bitset<NUM_MODEL_FLAGS> &modelFlags)
 {
   // Model creation flags
 
-  bool symTranspose = modelFlags & SYMMETRIZE_INPUT_TRANSPOSE;
-  bool symBipartite = modelFlags & SYMMETRIZE_INPUT_BIPARTITE;
-  bool vertexRows = modelFlags & VERTICES_ARE_MATRIX_ROWS;
-  bool vertexCols = modelFlags & VERTICES_ARE_MATRIX_COLUMNS;
-  bool vertexNz = modelFlags & VERTICES_ARE_MATRIX_NONZEROS;
-  bool consecutiveIdsRequired = modelFlags & IDS_MUST_BE_GLOBALLY_CONSECUTIVE;
-  bool removeSelfEdges = modelFlags & SELF_EDGES_MUST_BE_REMOVED;
-  bool subsetGraph = modelFlags & GRAPH_IS_A_SUBSET_GRAPH;
+  bool symTranspose = modelFlags.test(SYMMETRIZE_INPUT_TRANSPOSE);
+  bool symBipartite = modelFlags.test(SYMMETRIZE_INPUT_BIPARTITE);
+  bool vertexCols = modelFlags.test(VERTICES_ARE_MATRIX_COLUMNS);
+  bool vertexNz = modelFlags.test(VERTICES_ARE_MATRIX_NONZEROS);
+  bool consecutiveIdsRequired = 
+    modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+  bool removeSelfEdges = modelFlags.test(SELF_EDGES_MUST_BE_REMOVED);
+  bool subsetGraph = modelFlags.test(GRAPH_IS_A_SUBSET_GRAPH);
 
   if (symTranspose || symBipartite || vertexCols || vertexNz){
     throw std::runtime_error("graph build option not yet implemented");
@@ -665,16 +685,15 @@ class GraphModel<IdentifierInput<User> > : public Model<IdentifierInput<User> >
 {
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename IdentifierInput<User>::scalar_t  scalar_t;
   typedef typename IdentifierInput<User>::gno_t     gno_t;
   typedef typename IdentifierInput<User>::lno_t     lno_t;
+#endif
 
   GraphModel(const IdentifierInput<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    bool graphVerticesAreMatrixRows=true,
-    bool consecutiveIdsRequired=false, bool removeSelfEdges=false,
-    bool subsetGraph=false) 
-
+    std::bitset<NUM_MODEL_FLAGS> &flags)
   {
     throw std::runtime_error("may not build a graph with identifiers");
   }
@@ -706,6 +725,7 @@ public:
   int getNumWeights() const { return 0; }
 
 };
+#endif    // DOXYGEN_SHOULD_SKIP_THIS
 
 }   // namespace Zoltan2
 

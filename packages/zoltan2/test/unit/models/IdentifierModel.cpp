@@ -36,9 +36,9 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   int rank = comm->getRank();
   int fail = 0, gfail = 0;
 
-  unsigned int modelFlags = 0;
+  std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags = 0;
   if (consecutiveIds)
-    modelFlags |= Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE;
+    modelFlags.set(Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
   RCP<const Zoltan2::Environment> default_env = 
     Zoltan2::getDefaultEnvironment();

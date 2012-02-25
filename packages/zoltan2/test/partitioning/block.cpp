@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
   ParameterList params("test parameters");
   ParameterList &partitioningParams = params.sublist("partitioning");
-  partitioningParams.set("num_local_parts", size_t(1));
+  partitioningParams.set("num_local_parts", 1);
   partitioningParams.set("algorithm", "block");
   partitioningParams.set("approach", "partition");
   

@@ -102,8 +102,11 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  std::string inputAdapterName()const {
-    return std::string("XpetraCrsMatrix");}
+  std::string inputAdapterName()const { return std::string("XpetraCrsMatrix");}
+
+  size_t getLocalNumberOfObjects() const { return getLocalNumRows();}
+
+  int getNumberOfWeightsPerObject() const { return 0;}
 
   ////////////////////////////////////////////////////
   // The MatrixInput interface.

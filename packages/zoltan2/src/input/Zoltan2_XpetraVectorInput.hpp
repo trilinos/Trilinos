@@ -110,6 +110,10 @@ public:
 
   std::string inputAdapterName()const { return std::string("XpetraVector");}
 
+  size_t getLocalNumberOfObjects() const { return getLocalLength();}
+
+  int getNumberOfWeightsPerObject() const { return numWeights_;}
+
   ////////////////////////////////////////////////////
   // The VectorInput interface.
   ////////////////////////////////////////////////////

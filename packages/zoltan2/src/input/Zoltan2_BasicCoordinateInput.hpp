@@ -134,6 +134,10 @@ public:
 
   std::string inputAdapterName() const {return std::string("BasicCoordinate");}
 
+  size_t getLocalNumberOfObjects() const { return numIds_;}
+
+  int getNumberOfWeightsPerObject() const { return numWeights_;}
+
   ////////////////////////////////////////////////////
   // The CoordinateInput interface.
   ////////////////////////////////////////////////////

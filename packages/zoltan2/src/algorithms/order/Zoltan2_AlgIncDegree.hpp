@@ -7,7 +7,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_IncDegree.hpp
+//! \file Zoltan2_AlgIncDegree.hpp
 //! \brief Order vertices by increasing degree
 
 // Comparison function for sort.

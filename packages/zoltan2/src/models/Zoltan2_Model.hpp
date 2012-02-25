@@ -17,6 +17,7 @@
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_StridedInput.hpp>
+#include <bitset>
 
 namespace Zoltan2 {
 
@@ -28,29 +29,27 @@ enum ModelType {
   GraphModelType,
   GeometryModelType,
   IdentifierModelType
-};
+} ;
 
-/*! \brief Flags that may be used in building a graph model.
- */
-enum GraphModelFlags{
-  SYMMETRIZE_INPUT_TRANSPOSE,     /*!< model must symmetrize input */
+/*! \brief Flags are set by a Problem to tell a Model what transformations
+ *          it may need to do on the user's input.
+ */ 
+enum ModelFlags{
+  // General flags
+  IDS_MUST_BE_GLOBALLY_CONSECUTIVE, /*!< algorithm requires consecutive ids */
+
+  // Graph model flags
+  SYMMETRIZE_INPUT_TRANSPOSE,     /*!< model must symmetrize input */ 
   SYMMETRIZE_INPUT_BIPARTITE,     /*!< model must symmetrize input */
   VERTICES_ARE_MATRIX_ROWS,       /*!< use matrix rows as graph vertices */
-  VERTICES_ARE_MATRIX_COLUMNS,    /*!< use matrix columns as vertices */
-  VERTICES_ARE_MATRIX_NONZEROS,   /*!< use matrix nonzeros as vertices */
+  VERTICES_ARE_MATRIX_COLUMNS,    /*!< use matrix columns as graph vertices */
+  VERTICES_ARE_MATRIX_NONZEROS,   /*!< use matrix nonzeros as graph vertices */
   VERTICES_ARE_MESH_NODES,        /*!< use mesh nodes as vertices */
   VERTICES_ARE_MESH_ELEMENTS,     /*!< use mesh elements as vertices */
-  IDS_MUST_BE_GLOBALLY_CONSECUTIVE, /*!< algorithm requires consecutive ids */
-  SELF_EDGES_MUST_BE_REMOVED,       /*!< algorithm requires no self edges */
+  SELF_EDGES_MUST_BE_REMOVED,     /*!< algorithm requires no self edges */
   GRAPH_IS_A_SUBSET_GRAPH, /*!< ignore neighbors that are not valid vertices */
-  NUM_GRAPH_MODEL_FLAGS
-};
 
-/*! \brief Flags that may be used in building an identifier model.
- */
-enum IdentifierModelFlags{
-  NEED_CONSECUTIVE_IDS,     /*!< algorithm requires consecutive ids */
-  NUM_IDENTIFIER_MODEL_FLAGS
+  NUM_MODEL_FLAGS
 };
 
 /*! \brief The base class for all model classes.
@@ -61,8 +60,7 @@ class Model
 {
 public:
 
-   /*! Zoltan2 identifier types, user identifier types
-    */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename Adapter::lno_t    lno_t;
   typedef typename Adapter::gno_t    gno_t;
   typedef typename Adapter::gid_t    gid_t;
@@ -70,6 +68,7 @@ public:
   typedef typename Adapter::user_t    user_t;
   typedef StridedInput<lno_t, scalar_t> input_t;
   typedef IdentifierMap<user_t> idmap_t;
+#endif
 
   /*! Pure virtual destructor
    */

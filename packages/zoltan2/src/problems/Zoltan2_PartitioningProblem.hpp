@@ -44,16 +44,13 @@ public:
 
 #ifdef HAVE_ZOLTAN2_MPI
 
-  //! \brief Constructor for MPI builds.
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p, 
-    MPI_Comm comm=MPI_COMM_WORLD); 
-
-#else
-
-  //! \brief Constructor for serial builds.
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) ;
+  //! \brief Constructor where MPI communicator can be specified
+  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p, MPI_Comm comm); 
 
 #endif
+
+  //! \brief Constructor where communicator is the Teuchos default.
+  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) ;
 
   //!  \brief Reset the parameter list.
 
@@ -162,14 +159,16 @@ public:
     float *partSizes, bool makeCopy=true) ;
 
 private:
+  void initializeProblem();
+
   void createPartitioningProblem(bool newData);
 
   RCP<PartitioningSolution<user_t> > solution_;
 
   InputAdapterType inputType_;
   ModelType modelType_;
-  unsigned int graphFlags_;
-  unsigned int idFlags_;
+  std::bitset<NUM_MODEL_FLAGS> graphFlags_;
+  std::bitset<NUM_MODEL_FLAGS> idFlags_;
   std::string algorithm_;
 
   int numberOfWeights_;
@@ -200,25 +199,38 @@ template <typename Adapter>
     ParameterList *p, MPI_Comm comm):
       Problem<Adapter>(A,p,comm), solution_(),
       inputType_(InvalidAdapterType), modelType_(InvalidModel), 
-      graphFlags_(0), idFlags_(0), algorithm_(),
+      graphFlags_(), idFlags_(), algorithm_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
-#else
+{
+  initializeProblem();
+}
+#endif
+
 template <typename Adapter>
   PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
     ParameterList *p):
       Problem<Adapter>(A,p), solution_(),
       inputType_(InvalidAdapterType), modelType_(InvalidModel), 
-      graphFlags_(0), idFlags_(0), algorithm_(),
+      graphFlags_(), idFlags_(), algorithm_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false)
-#endif
+{
+  initializeProblem();
+}
+
+template <typename Adapter>
+  void PartitioningProblem<Adapter>::initializeProblem()
 {
   HELLO;
 #ifdef HAVE_ZOLTAN2_OVIS
   ovis_enabled(this->comm_->getRank());
 #endif
+
+  numberOfWeights_ = this->inputAdapter_->getNumberOfWeightsPerObject();
+
+  numberOfCriteria_ = (numberOfWeights_ > 1) ? numberOfWeights_ : 1;
 
   inputType_ = this->inputAdapter_->inputAdapterType();
 
@@ -377,11 +389,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // Save these values in order to determine if we need to create a new model.
 
   ModelType previousModel = modelType_;
-  unsigned int previousGraphModelFlags = graphFlags_;
-  unsigned int previousIdentifierModelFlags = idFlags_;
+  std::bitset<NUM_MODEL_FLAGS> previousGraphModelFlags = 
+    graphFlags_;
+  std::bitset<NUM_MODEL_FLAGS> previousIdentifierModelFlags 
+    = idFlags_;
 
   modelType_ = InvalidModel;
-  graphFlags_ = idFlags_ = NULL;
+  graphFlags_.reset();
+  idFlags_.reset();
 
   ///////////////////////////////////////////////////////////////////
   // Determine algorithm, model, and algorithm requirements.  This
@@ -556,7 +571,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   if (partitioning){
     string *objectName = partitioning->getPtr<string>(string("objects"));
     if (objectName)
-      objectOfInterest = objectName;
+      objectOfInterest = *objectName;
   }
 
   ///////////////////////////////////////////////////////////////////
@@ -577,9 +592,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         string symParameter;
         sym->getValue<string>(&symParameter);
         if (symParameter == string("transpose"))
-          graphFlags_ |= SYMMETRIZE_INPUT_TRANSPOSE;
+          graphFlags_.set(SYMMETRIZE_INPUT_TRANSPOSE);
         else if (symParameter == string("bipartite"))
-          graphFlags_ |= SYMMETRIZE_INPUT_BIPARTITE;
+          graphFlags_.set(SYMMETRIZE_INPUT_BIPARTITE);
       } 
 
       ParameterEntry *sg = graphParams->getEntryPtr("subset_graph");
@@ -587,44 +602,44 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         int sgParameter;
         sg->getValue<int>(&sgParameter);
         if (sgParameter == 1)
-          graphFlags_ |= GRAPH_IS_A_SUBSET_GRAPH;
+          graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
       }
     }
 
     // Any special behaviors required by the algorithm?
     
     if (removeSelfEdges)
-      graphFlags_ |= SELF_EDGES_MUST_BE_REMOVED;
+      graphFlags_.set(SELF_EDGES_MUST_BE_REMOVED);
 
     if (needConsecutiveGlobalIds)
-      graphFlags_ |= IDS_MUST_BE_GLOBALLY_CONSECUTIVE;
+      graphFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
     // How does user input map to vertices and edges?
 
     if (inputType_ == MatrixAdapterType){
       if (objectOfInterest == unset ||
           objectOfInterest == string("matrix_rows") )
-        graphFlags_ |= VERTICES_ARE_MATRIX_ROWS;
+        graphFlags_.set(VERTICES_ARE_MATRIX_ROWS);
       else if (objectOfInterest == string("matrix_columns"))
-        graphFlags_ |= VERTICES_ARE_MATRIX_COLUMNS;
+        graphFlags_.set(VERTICES_ARE_MATRIX_COLUMNS);
       else if (objectOfInterest == string("matrix_nonzeros"))
-        graphFlags_ |= VERTICES_ARE_MATRIX_NONZEROS;
+        graphFlags_.set(VERTICES_ARE_MATRIX_NONZEROS);
     }
 
     else if (inputType_ == MeshAdapterType){
       if (objectOfInterest == unset ||
           objectOfInterest == string("mesh_nodes") )
-        graphFlags_ |= VERTICES_ARE_MESH_NODES;
+        graphFlags_.set(VERTICES_ARE_MESH_NODES);
       else if (objectOfInterest == string("mesh_elements"))
-        graphFlags_ |= VERTICES_ARE_MESH_ELEMENTS;
+        graphFlags_.set(VERTICES_ARE_MESH_ELEMENTS);
     } 
   }
-  else if (modelType_ = IdentifierModelType){
+  else if (modelType_ == IdentifierModelType){
 
     // Any special behaviors required by the algorithm?
     
     if (needConsecutiveGlobalIds)
-      idFlags_ |= IDS_MUST_BE_GLOBALLY_CONSECUTIVE;
+      idFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
   }
 
   if (  newData ||
@@ -668,10 +683,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       cout << __func__ << " Invalid model" << modelType_ << endl;
       break;
     }
-
-    numberOfWeights_ = this->generalModel_->getNumWeights();
-
-    numberOfCriteria_ = (numberOfWeights_ > 1) ? numberOfWeights_ : 1;
   }
 }
 

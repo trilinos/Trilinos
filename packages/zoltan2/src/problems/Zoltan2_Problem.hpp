@@ -26,12 +26,12 @@ public:
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor for MPI builds
    */
-  Problem(Adapter *, ParameterList *params, MPI_Comm comm=MPI_COMM_WORLD);
-#else
-  /*! \brief Constructor for serial builds
+  Problem(Adapter *, ParameterList *params, MPI_Comm comm);
+#endif
+
+  /*! \brief Constructor where communicator is Teuchos default.
    */
   Problem(Adapter *, ParameterList *params);
-#endif
 
   /*! \brief Destructor
    */
@@ -99,7 +99,7 @@ template <typename Adapter>
   comm_ = rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
 }
 
-#else
+#endif
 
 template <typename Adapter>
   Problem<Adapter>::Problem( Adapter *input, ParameterList *params):
@@ -121,8 +121,6 @@ template <typename Adapter>
   envConst_ = rcp_const_cast<const Environment>(env_);
   params_ = rcp<ParameterList>(params,false);
 }
-
-#endif
 
 } // namespace Zoltan2
 

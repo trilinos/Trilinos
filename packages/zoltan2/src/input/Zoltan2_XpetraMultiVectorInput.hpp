@@ -104,8 +104,11 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  std::string inputAdapterName()const {
-    return std::string("XpetraMultiVector");}
+  std::string inputAdapterName()const {return std::string("XpetraMultiVector");}
+
+  size_t getLocalNumberOfObjects() const { return getLocalLength();}
+
+  int getNumberOfWeightsPerObject() const { return numWeights_;}
 
   ////////////////////////////////////////////////////
   // The VectorInput interface.

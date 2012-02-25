@@ -588,15 +588,19 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // LEVEL: Sub sub list, geometric partitioning parameters
   ///////////////////////////////////////////////////////////
 
+#if 0
   ParameterList &geom = partitioning.sublist("geometric", false, 
     string("geometric partitioning problem parameters"));
+#endif
 
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub sub list, hypergraph partitioning parameters
   ///////////////////////////////////////////////////////////
 
+#if 0
   ParameterList &hg = partitioning.sublist("hypergraph", false, 
     string("hypergraph partitioning problem parameters"));
+#endif
 
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub sub list, graph partitioning parameters
@@ -643,31 +647,39 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // LEVEL: Sub list, ordering problem parameters  TODO
   ///////////////////////////////////////////////////////////
 
+#if 0
   ParameterList &ordering = pList.sublist("ordering", false, 
     string("Ordering problem parameters"));
+#endif
 
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub list, coloring problem parameters  TODO
   ///////////////////////////////////////////////////////////
 
+#if 0
   ParameterList &coloring = pList.sublist("coloring", false, 
     string("Coloring problem parameters"));
+#endif
 
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub list, matching problem parameters  TODO
   ///////////////////////////////////////////////////////////
 
+#if 0
   ParameterList &matching = pList.sublist("matching", false, 
     string("Matching problem parameters"));
+#endif
 }
 
 /*! \brief  Create a parameter list that can validate a 
  *          specific list of parameters.
  *
- *   \param plIn  the user's parameter list
- *   \param plOut  an empty parameter list that on return will contain
+ *   \param plSome   the user's parameter list
+ *   \param plAll    an empty parameter list that on return will contain
  *                    validating parameter entries for each
  *                    parameter in the user's parameter list.
+ *   \param plVal     on return is a parameter list with all of the
+ *                       user's parameters, but with validators.
  *
  *  Environment::commitParameters() calls 
  *  validateParametersAndSetDefaults() on the user's parameter list

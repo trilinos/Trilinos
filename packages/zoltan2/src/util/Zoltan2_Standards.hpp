@@ -23,11 +23,7 @@
 //////////////////////////////////////////
 // Frequently used Trilinos symbols
 
-#include <Tpetra_ConfigDefs.hpp>
-
-namespace Zoltan2{
-using Tpetra::global_size_t;
-}
+#define global_size_t size_t
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>

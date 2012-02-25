@@ -13,12 +13,6 @@
 #ifndef _ZOLTAN2_ENVIRONMENT_CPP_
 #define _ZOLTAN2_ENVIRONMENT_CPP_
 
-/*! \file Zoltan2_Environment.cpp
-  
-  \brief Defines the Zoltan2::Environment class.
-
-*/
-
 #include <Zoltan2_Environment.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 #include <Teuchos_RCP.hpp>

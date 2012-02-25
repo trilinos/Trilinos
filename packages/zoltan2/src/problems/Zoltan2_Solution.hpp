@@ -6,9 +6,9 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Zoltan2_Model.hpp
+/*! \file Zoltan2_Solution.hpp
 
-    \brief The abstract interface for a computational model.
+    \brief The abstract interface for a solution.
 */
 
 

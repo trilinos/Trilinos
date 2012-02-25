@@ -93,11 +93,11 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   RCP<const Zoltan2::Environment> default_env = 
     Zoltan2::getDefaultEnvironment();
 
-  unsigned int modelFlags = 0;
+  std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
   if (consecutiveIdsRequested)
-    modelFlags |= Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE;
+    modelFlags.set(Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
   if (noSelfEdges)
-    modelFlags |= Zoltan2::SELF_EDGES_MUST_BE_REMOVED;
+    modelFlags.set(Zoltan2::SELF_EDGES_MUST_BE_REMOVED);
 
   if (rank==0){
     std::cout << "     Request consecutive IDs " << consecutiveIdsRequested;

@@ -265,8 +265,11 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  std::string inputAdapterName()const {
-    return std::string("XpetraCrsGraph");}
+  std::string inputAdapterName()const { return std::string("XpetraCrsGraph");}
+
+  size_t getLocalNumberOfObjects() const { return getLocalNumVertices();}
+
+  int getNumberOfWeightsPerObject() const { return 0;}
 
   ////////////////////////////////////////////////////
   // The GraphInput interface.
