@@ -39,6 +39,9 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<Teuchos::RCP<const
              "GeometricAggFieldPattern::buildPattern(): Patterns must "
              "have the same geometry!");
 
+   // copy cell topology
+   cellTopo_ = patterns[0]->getCellTopology();
+
    // grab the dimension
    dimension_ = patterns[0]->getDimension();
    patternData_.resize(dimension_+1);
@@ -103,6 +106,15 @@ int GeometricAggFieldPattern::getDimension() const
 
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
             "GeometricAggFieldPattern::getDimension() cannot be called before "
+            "GeometricAggFieldPattern::buildPattern()");
+}
+
+shards::CellTopology GeometricAggFieldPattern::getCellTopology() const
+{
+   if(patternBuilt_) return cellTopo_;
+
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+            "GeometricAggFieldPattern::getCellTopology() cannot be called before "
             "GeometricAggFieldPattern::buildPattern()");
 }
 

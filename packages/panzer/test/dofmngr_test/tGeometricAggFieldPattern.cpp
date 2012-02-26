@@ -81,6 +81,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
       TEST_THROW(gfp.getSubcellClosureIndices(0,0,indices),std::logic_error);
 
       TestFieldPattern tfp;
+      tfp.cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >());
       tfp.subcellIndices.resize(3); // two dimensional
 
       tfp.subcellIndices[0].resize(3);
@@ -112,6 +113,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
       TEST_THROW(gfp.getSubcellClosureIndices(0,0,indices),std::logic_error);
 
       TestFieldPattern tfp;
+      tfp.cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >());
       tfp.subcellIndices.resize(3); // two dimensional
 
       tfp.subcellIndices[0].resize(3);
@@ -159,6 +161,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test3d)
       TEST_THROW(gfp.getSubcellClosureIndices(0,0,indices),std::logic_error);
 
       TestFieldPattern tfp;
+      tfp.cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >());
       tfp.subcellIndices.resize(4); // three dimensional
 
       tfp.subcellIndices[0].resize(8);
@@ -196,6 +199,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test3d)
       TEST_THROW(gfp.getSubcellClosureIndices(0,0,indices),std::logic_error);
 
       TestFieldPattern tfp;
+      tfp.cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >());
       tfp.subcellIndices.resize(4); // three dimensional
 
       tfp.subcellIndices[0].resize(8);

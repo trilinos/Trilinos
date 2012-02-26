@@ -29,8 +29,12 @@ public:
    std::vector<std::vector<int> > & operator[](int v)
    { return subcellIndices[v]; } 
 
+   virtual shards::CellTopology getCellTopology() const
+   { return cellTopo; }
+
 public:
    std::vector<std::vector<std::vector<int> > > subcellIndices;
+   shards::CellTopology cellTopo;
 };
 
 }

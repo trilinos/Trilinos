@@ -4,6 +4,8 @@
 #include <ostream>
 #include <vector>
 
+#include "Shards_CellTopology.hpp"
+
 namespace panzer {
 
 class FieldPattern {
@@ -52,6 +54,10 @@ public:
      * is a purely geometric quantity.
      */
    virtual int getDimension() const = 0;
+
+   /** Get the cell topology associated with this field pattern.
+     */
+   virtual shards::CellTopology getCellTopology() const = 0;
    
    /** How many degrees of freedom are associated with
      * this pattern. In this terminology an ID is a single

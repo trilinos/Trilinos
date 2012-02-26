@@ -80,10 +80,16 @@ public:
      * <code>buildPattern</code> has been called. Otherwise it will throw an exception.
      */
    virtual int getDimension() const;
+
+   /** Returns cell topology from parent field parents
+     */
+   virtual shards::CellTopology getCellTopology() const;
+
 protected:
    bool patternBuilt_;
    std::size_t dimension_;
    std::vector<std::vector<std::vector<int> > > patternData_;
+   shards::CellTopology cellTopo_;
 };
 
 }

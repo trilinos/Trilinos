@@ -41,11 +41,12 @@ public:
      */
    virtual void buildPattern(const std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns);
 
-   // function from the abstract FieldPattern
+   // functions from the abstract FieldPattern
    virtual int getDimension() const;
    virtual int getSubcellCount(int dimension) const;
    virtual const std::vector<int> & getSubcellIndices(int dimension, int subcell) const;
    virtual void getSubcellClosureIndices(int, int, std::vector<int> &) const;
+   virtual shards::CellTopology getCellTopology() const;
 
    //! Print this pattern
    virtual void print(std::ostream & os) const;

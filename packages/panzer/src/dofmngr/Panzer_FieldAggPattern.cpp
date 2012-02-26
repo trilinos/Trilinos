@@ -54,6 +54,15 @@ int FieldAggPattern::getDimension() const
    return geomPattern->getDimension();
 }
 
+shards::CellTopology FieldAggPattern::getCellTopology() const
+{
+   FPPtr geomPattern = getGeometricAggFieldPattern();
+   TEUCHOS_TEST_FOR_EXCEPTION(geomPattern==Teuchos::null,std::logic_error,
+                      "Geometric field pattern not yet set, call buildPatterns first");
+
+   return geomPattern->getCellTopology();
+}
+
 int FieldAggPattern::getSubcellCount(int dimension) const
 {
    return patternData_[dimension].size();

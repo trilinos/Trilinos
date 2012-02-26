@@ -64,6 +64,11 @@ int IntrepidFieldPattern::getDimension() const
    return ct.getDimension();
 }
 
+shards::CellTopology IntrepidFieldPattern::getCellTopology() const
+{
+   return intrepidBasis_->getBaseCellTopology();
+}
+
 void IntrepidFieldPattern::getSubcellNodes(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
                                            std::vector<unsigned> & nodes)
 {

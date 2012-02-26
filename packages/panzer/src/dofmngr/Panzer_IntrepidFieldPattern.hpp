@@ -22,6 +22,7 @@ public:
    virtual int getSubcellCount(int dim) const;
    virtual const std::vector<int> & getSubcellIndices(int dim,int cellIndex) const;
    virtual int getDimension() const;
+   virtual shards::CellTopology getCellTopology() const;
 
    virtual void getSubcellClosureIndices(int dim,int cellIndex,std::vector<int> & indices) const;
 
