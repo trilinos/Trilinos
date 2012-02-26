@@ -14,6 +14,7 @@
 #include <stk_mesh/baseImpl/BucketImpl.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FindRestriction.hpp>
 //----------------------------------------------------------------------
 
 namespace stk {
@@ -192,80 +193,8 @@ inline unsigned align( size_t nb )
   if ( gap ) { nb += BYTE_ALIGN - gap ; }
   return nb ;
 }
+}//namespace anonymous
 
-const FieldBase::Restriction & empty_field_restriction()
-{
-  //NOT THREAD SAFE
-  static const FieldBase::Restriction empty ;
-  return empty ;
-}
-
-const FieldBase::Restriction & find_restriction( const FieldBase & field ,
-                                          EntityRank erank ,
-                                          const unsigned num_part_ord ,
-                                          const unsigned part_ord[] )
-{
-  const FieldBase::Restriction & empty = empty_field_restriction();
-  const FieldBase::Restriction * restriction = & empty ;
-
-  const std::vector<FieldBase::Restriction> & restr_vec = field.restrictions();
-  const std::vector<FieldBase::Restriction>::const_iterator iend = restr_vec.end();
-        std::vector<FieldBase::Restriction>::const_iterator ibeg = restr_vec.begin();
-
-  //NOT THREAD SAFE
-  static FieldRestriction restr;
-
-  for ( PartOrdinal i = 0 ; i < num_part_ord && iend != ibeg ; ++i ) {
-
-    restr.set_entity_rank(erank);
-    restr.set_part_ordinal(part_ord[i]);
-
-    //lower_bound returns an iterator to either the insertion point for the
-    //'restr' argument, or to a matching restriction.
-    //It only returns the 'end' iterator if 'restr' is past the end of the
-    //vector of restrictions being searched.
-    //This depends on the input part ordinals being sorted, and on the restriction
-    //vector being sorted by part ordinal.
-
-    ibeg = std::lower_bound( ibeg , iend , restr );
-
-    if ( (iend != ibeg) && (*ibeg == restr) ) {
-      if ( restriction == & empty ) { restriction = & *ibeg ; }
-
-      if ( ibeg->not_equal_stride(*restriction) ) {
-
-        Part & p_old = MetaData::get(field).get_part( ibeg->part_ordinal() );
-        Part & p_new = MetaData::get(field).get_part( restriction->part_ordinal() );
-
-        std::ostringstream msg ;
-        msg << " FAILED WITH INCOMPATIBLE DIMENSIONS FOR " ;
-        msg << field ;
-        msg << " Part[" << p_old.name() ;
-        msg << "] and Part[" << p_new.name() ;
-        msg << "]" ;
-
-        ThrowErrorMsg( msg.str() );
-      }
-    }
-  }
-
-  const std::vector<FieldBase::Restriction> & sel_res = field.selector_restrictions();
-  std::pair<const unsigned*,const unsigned*> bucket_part_range = std::make_pair(part_ord, part_ord+num_part_ord);
-  for(std::vector<FieldBase::Restriction>::const_iterator it=sel_res.begin(), it_end=sel_res.end(); it != it_end; ++it) {
-    const Selector& selector = it->selector();
-    if (it->entity_rank() == erank && selector.apply(bucket_part_range)) {
-      if (restriction == &empty) {
-        restriction = &*it;
-      }
-      if (it->not_equal_stride(*restriction)) {
-        ThrowErrorMsg("find_restriction calculation failed with different field-restriction selectors giving incompatible sizes.");
-      }
-    }
-  }
-
-  return *restriction ;
-}
-} // namespace
 //----------------------------------------------------------------------
 
 BucketImpl::BucketImpl( BulkData & arg_mesh,
@@ -298,7 +227,7 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
       unsigned num_bytes_per_entity = 0 ;
 
       const FieldBase::Restriction & restriction =
-        find_restriction( field, arg_entity_rank, m_key[0]-1, &m_key[1]);
+        find_restriction( field, arg_entity_rank, &m_key[1], &m_key[1]+(m_key[0]-1), PartOrdLess());
 
       if ( restriction.dimension() > 0 ) { // Exists
 

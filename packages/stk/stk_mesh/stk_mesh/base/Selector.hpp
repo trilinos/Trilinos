@@ -11,10 +11,57 @@
 #define stk_mesh_Selector_hpp
 
 #include <iosfwd>
+#include <algorithm>
 #include <stk_mesh/base/Types.hpp>
 
 namespace stk {
 namespace mesh {
+
+//An operator to obtain a part-ordinal from a part-iterator.
+//This general template handles cases where the part-iterator
+//iterates either stk::mesh::Part or Fmwk::MeshPart objects.
+//Specializations for part-ordinal-pointers follow below.
+template<typename PartIterator>
+struct GetPartIterOrdinal {
+unsigned operator()(PartIterator p_it) const
+{ return (*p_it)->mesh_meta_data_ordinal(); }
+};
+
+template<>
+struct GetPartIterOrdinal<const unsigned*> {
+unsigned operator()(const unsigned* p_it) const
+{ return *p_it; }
+};
+
+template<>
+struct GetPartIterOrdinal<unsigned*> {
+unsigned operator()(unsigned* p_it) const
+{ return *p_it; }
+};
+
+
+struct PartOrdLess {
+
+bool operator()(unsigned lhs, unsigned rhs) const
+{ return lhs < rhs; }
+
+};
+
+//Function to determine whether a specified part-ordinal is present
+//in a given range of parts.
+//Caller-provided comparison-operator compares a part-ordinal with
+//one obtained from whatever a PartIterator dereferences to.
+template<typename PartIterator, class Compare>
+bool part_is_present(unsigned part_ord,
+                     const std::pair<PartIterator, PartIterator>& part_range,
+                     Compare comp)
+{
+  GetPartIterOrdinal<PartIterator> get_part_ordinal;
+
+  // Search for 'part_ord' in the bucket's list of sorted integer part ords
+  PartIterator p_it = std::lower_bound(part_range.first, part_range.second, part_ord, comp);
+  return (p_it != part_range.second && get_part_ordinal(p_it) == part_ord);
+}
 
 enum Op{
         INVALID = 0,
@@ -108,8 +155,9 @@ public:
   /** \brief Is the intersection of the 'part_ords' parts a member
    * of the set defined by the selector expression.
    */
-  bool apply(const std::pair<const unsigned*,const unsigned*>& part_ords) const
-  { return apply(m_op.begin(), m_op.end(), part_ords); }
+  template<typename PartIterator, class Compare>
+  bool apply(const std::pair<PartIterator,PartIterator>& part_range, Compare comp) const
+  { return apply(m_op.begin(), m_op.end(), part_range, comp); }
 
   /** \brief  Pretty print the set-expression with part names */
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
@@ -135,17 +183,26 @@ private:
   void verify_compatible( const Bucket & B ) const;
 
   /** \brief . */
-  bool part_is_present(
-      unsigned part_ord ,
-      const std::pair<const unsigned*,const unsigned*>& part_ords
-      ) const;
-
-  /** \brief . */
+  template<typename PartIterator, class Compare>
   bool apply(
-      std::vector<OpType>::const_iterator start,
-      std::vector<OpType>::const_iterator finish,
-      const std::pair<const unsigned*,const unsigned*>& part_ords
-      ) const;
+      std::vector<OpType>::const_iterator i,
+      std::vector<OpType>::const_iterator j,
+      const std::pair<PartIterator,PartIterator>& part_range,
+      Compare comp) const
+  {
+    bool result = i != j ;
+    while ( result && i != j ) {
+      if ( i->m_count ) { // Compound statement
+        result = i->m_unary ^ apply( i + 1 , i + i->m_count , part_range , comp );
+        i += i->m_count ;
+      }
+      else { // Test for containment of bucket in this part, or not in
+        result = i->m_unary ^ part_is_present( i->m_part_id , part_range , comp );
+        ++i ;
+      }
+    }
+    return result ;
+  }
 
   /** \brief Pretty print the expression */
   std::string printExpression(

@@ -54,7 +54,7 @@ Selector & Selector::complement()
 }
 
 bool Selector::operator()( const Bucket & candidate ) const
-{ return apply( m_op.begin() , m_op.end() , candidate.superset_part_ordinals() ); }
+{ return apply( m_op.begin() , m_op.end() , candidate.superset_part_ordinals(), PartOrdLess() ); }
 
 bool Selector::operator()( const Bucket * candidate ) const{
   return operator()(*candidate);
@@ -127,36 +127,6 @@ Selector & Selector::operator |= ( const Selector & B )
   }
 
   return *this;
-}
-
-bool Selector::part_is_present(
-    unsigned part_ord,
-    const std::pair<const unsigned*, const unsigned*>& part_ords
-    ) const
-{
-  // Search for 'part_ord' in the bucket's list of sorted integer part ords
-  const unsigned* lb = std::lower_bound(part_ords.first, part_ords.second, part_ord);
-  return (lb<part_ords.second && *lb == part_ord);
-}
-
-bool Selector::apply(
-    std::vector<OpType>::const_iterator i,
-    std::vector<OpType>::const_iterator j,
-    const std::pair<const unsigned*, const unsigned*>& part_ords
-    ) const
-{
-  bool result = i != j ;
-  while ( result && i != j ) {
-    if ( i->m_count ) { // Compound statement
-      result = i->m_unary ^ apply( i + 1 , i + i->m_count , part_ords );
-      i += i->m_count ;
-    }
-    else { // Test for containment of bucket in this part, or not in
-      result = i->m_unary ^ part_is_present( i->m_part_id , part_ords );
-      ++i ;
-    }
-  }
-  return result ;
 }
 
 Selector operator & ( const Part & A , const Part & B )
