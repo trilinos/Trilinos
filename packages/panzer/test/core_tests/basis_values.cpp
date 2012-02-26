@@ -102,6 +102,7 @@ namespace panzer {
 			   1.0, 1.0e-8);
 
   }
+
   TEUCHOS_UNIT_TEST(basis_values, grad_quad)
   {
     Teuchos::RCP<shards::CellTopology> topo = 
@@ -208,4 +209,277 @@ namespace panzer {
     }
   }
 
+  TEUCHOS_UNIT_TEST(basis_values, hcurl_basis)
+  {
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int num_cells = 4;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+
+    const int cubature_degree = 4;    
+    RCP<IntegrationRule> int_rule = 
+      rcp(new IntegrationRule(cubature_degree, cell_data));
+    const int num_qp = int_rule->num_points;
+    
+    panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > int_values;
+    int_values.setupArrays(int_rule);
+
+    const int num_vertices = int_rule->topology->getNodeCount();
+    FieldContainer<double> node_coordinates(num_cells, num_vertices,
+					    base_cell_dimension);
+    const int num_edges = int_rule->topology->getEdgeCount();
+    FieldContainer<double> edge_orientation(num_cells, num_edges);
+
+    // Set up node coordinates.  Here we assume the following
+    // ordering.  This needs to be consistent with shards topology,
+    // otherwise we will get negative determinates
+ 
+    // 3(0,1)---2(1,1)
+    //   |    0  |
+    //   |       |
+    // 0(0,0)---1(1,0)
+
+    // and now the edges
+
+    //   +---2---+
+    //   |       |
+    //   3       1
+    //   |       |
+    //   +---0---+
+
+    typedef panzer::ArrayTraits<double,FieldContainer<double> >::size_type size_type;
+    const size_type x = 0;
+    const size_type y = 1;
+    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+      int xleft = cell % 2;
+      int yleft = int(cell/2);
+
+      node_coordinates(cell,0,x) = xleft*0.5;
+      node_coordinates(cell,0,y) = yleft*0.5;
+
+      node_coordinates(cell,1,x) = (xleft+1)*0.5;
+      node_coordinates(cell,1,y) = yleft*0.5; 
+
+      node_coordinates(cell,2,x) = (xleft+1)*0.5;
+      node_coordinates(cell,2,y) = (yleft+1)*0.5;
+
+      node_coordinates(cell,3,x) = xleft*0.5;
+      node_coordinates(cell,3,y) = (yleft+1)*0.5;
+
+      edge_orientation(cell,0) =  1.0;
+      edge_orientation(cell,1) = -1.0;
+      edge_orientation(cell,2) =  1.0;
+      edge_orientation(cell,3) = -1.0;
+
+      out << "Cell " << cell << " = ";
+      for(int i=0;i<4;i++)
+         out << "(" << node_coordinates(cell,i,x) << ", "
+                    << node_coordinates(cell,i,y) << ") ";
+      out << std::endl;
+    }
+
+    int_values.evaluateValues(node_coordinates);
+    
+    const std::string basis_type = "QEdge1";
+  
+    Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
+    RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+
+    panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
+
+    basis_values.setupArrays(basisIRLayout);
+    basis_values.evaluateValues(int_values.cub_points,
+				int_values.jac,
+				int_values.jac_det,
+				int_values.jac_inv,
+				int_values.weighted_measure,
+				node_coordinates,
+                                edge_orientation);
+
+    TEST_EQUALITY(basis_values.basis_ref.dimension(0),4);
+    TEST_EQUALITY(basis_values.basis_ref.dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.basis_ref.dimension(2),2);
+    TEST_EQUALITY(basis_values.weighted_basis.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis.dimension(1),4);
+    TEST_EQUALITY(basis_values.weighted_basis.dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_basis.dimension(3),2);
+
+    TEST_EQUALITY(basis_values.grad_basis_ref.size(),0);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.size(),0);
+
+    TEST_EQUALITY(basis_values.curl_basis_ref.dimension(0),4);
+    TEST_EQUALITY(basis_values.curl_basis_ref.dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.weighted_curl_basis.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_curl_basis.dimension(1),4);
+    TEST_EQUALITY(basis_values.weighted_curl_basis.dimension(2),num_qp);
+
+    double relCellVol = 0.25*0.25; // this is the relative (to the reference cell) volume
+    for(int i=0;i<num_qp;i++) {
+       double x = int_values.cub_points(i,0);
+       double y = int_values.cub_points(i,1);
+       double weight = int_values.cub_weights(i);
+
+       // check reference values
+       TEST_EQUALITY(basis_values.basis_ref(0,i,0),-0.25*(y-1.0));
+       TEST_EQUALITY(basis_values.basis_ref(0,i,1),0.0);
+       TEST_EQUALITY(basis_values.curl_basis_ref(0,i),0.25);
+
+       // check basis values
+       for(int cell=0;cell<num_cells;cell++) {
+
+          TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
+
+          int edge0_orientation =  1.0;
+          int edge1_orientation = -1.0;
+
+          // check out basis on transformed elemented
+          TEST_EQUALITY(basis_values.basis_ref(0,i,0),edge0_orientation*0.25*basis_values.basis(cell,0,i,0));
+          TEST_EQUALITY(basis_values.basis_ref(0,i,1),edge0_orientation*0.25*basis_values.basis(cell,0,i,1));
+          TEST_EQUALITY(basis_values.curl_basis_ref(0,i),edge0_orientation*relCellVol*basis_values.curl_basis(cell,0,i));
+
+          TEST_EQUALITY(basis_values.basis_ref(1,i,0),edge1_orientation*0.25*basis_values.basis(cell,1,i,0));
+          TEST_EQUALITY(basis_values.basis_ref(1,i,1),edge1_orientation*0.25*basis_values.basis(cell,1,i,1));
+          TEST_EQUALITY(basis_values.curl_basis_ref(1,i),edge1_orientation*relCellVol*basis_values.curl_basis(cell,1,i));
+
+          TEST_EQUALITY(basis_values.weighted_basis(cell,0,i,0),relCellVol*weight*basis_values.basis(cell,0,i,0));
+          TEST_EQUALITY(basis_values.weighted_basis(cell,0,i,1),relCellVol*weight*basis_values.basis(cell,0,i,1));
+
+          TEST_EQUALITY(basis_values.weighted_basis(cell,1,i,0),relCellVol*weight*basis_values.basis(cell,1,i,0));
+          TEST_EQUALITY(basis_values.weighted_basis(cell,1,i,1),relCellVol*weight*basis_values.basis(cell,1,i,1));
+
+          TEST_EQUALITY(basis_values.weighted_curl_basis(cell,0,i),relCellVol*weight*basis_values.curl_basis(cell,0,i));
+          TEST_EQUALITY(basis_values.weighted_curl_basis(cell,1,i),relCellVol*weight*basis_values.curl_basis(cell,1,i));
+       }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST(basis_values, hcurl_basis_3d)
+  {
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
+
+    const int num_cells = 4;
+    const int base_cell_dimension = 3;
+    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+
+    const int cubature_degree = 4;    
+    RCP<IntegrationRule> int_rule = 
+      rcp(new IntegrationRule(cubature_degree, cell_data));
+    const int num_qp = int_rule->num_points;
+    
+    panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > int_values;
+    int_values.setupArrays(int_rule);
+
+    const int num_vertices = int_rule->topology->getNodeCount();
+    FieldContainer<double> node_coordinates(num_cells, num_vertices,
+					    base_cell_dimension);
+    const int num_edges = int_rule->topology->getEdgeCount();
+    FieldContainer<double> edge_orientation(num_cells, num_edges);
+
+    // Set up node coordinates.  Here we assume the following
+    // ordering.  This needs to be consistent with shards topology,
+    // otherwise we will get negative determinates
+ 
+    // 3(0,1)---2(1,1)
+    //   |    0  |
+    //   |       |
+    // 0(0,0)---1(1,0)
+
+    // and now the edges
+
+    //   +---2---+
+    //   |       |
+    //   3       1
+    //   |       |
+    //   +---0---+
+
+    typedef panzer::ArrayTraits<double,FieldContainer<double> >::size_type size_type;
+    const size_type x = 0;
+    const size_type y = 1;
+    const size_type z = 2;
+    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+      int znum = cell % 4;
+      int xleft = znum % 2;
+      int yleft = int(znum/2);
+      int zleft = int(cell/4);
+
+      node_coordinates(cell,0,x) = xleft*0.5;
+      node_coordinates(cell,0,y) = yleft*0.5;
+      node_coordinates(cell,0,z) = zleft*0.5;
+
+      node_coordinates(cell,1,x) = (xleft+1)*0.5;
+      node_coordinates(cell,1,y) = yleft*0.5; 
+      node_coordinates(cell,1,z) = zleft*0.5;
+
+      node_coordinates(cell,2,x) = (xleft+1)*0.5;
+      node_coordinates(cell,2,y) = (yleft+1)*0.5;
+      node_coordinates(cell,2,z) = zleft*0.5;
+
+      node_coordinates(cell,3,x) = xleft*0.5;
+      node_coordinates(cell,3,y) = (yleft+1)*0.5;
+      node_coordinates(cell,3,z) = zleft*0.5;
+
+      node_coordinates(cell,4,x) = xleft*0.5;
+      node_coordinates(cell,4,y) = yleft*0.5;
+      node_coordinates(cell,4,z) = (zleft+1)*0.5;
+
+      node_coordinates(cell,5,x) = (xleft+1)*0.5;
+      node_coordinates(cell,5,y) = yleft*0.5; 
+      node_coordinates(cell,5,z) = (zleft+1)*0.5;
+
+      node_coordinates(cell,6,x) = (xleft+1)*0.5;
+      node_coordinates(cell,6,y) = (yleft+1)*0.5;
+      node_coordinates(cell,6,z) = (zleft+1)*0.5;
+
+      node_coordinates(cell,7,x) = xleft*0.5;
+      node_coordinates(cell,7,y) = (yleft+1)*0.5;
+      node_coordinates(cell,7,z) = (zleft+1)*0.5;
+
+      out << "Cell " << cell << " = ";
+      for(int i=0;i<8;i++)
+         out << "(" << node_coordinates(cell,i,x) << ", "
+                    << node_coordinates(cell,i,y) << ", "
+                    << node_coordinates(cell,i,z) << ") ";
+      out << std::endl;
+    }
+
+    int_values.evaluateValues(node_coordinates);
+    
+    const std::string basis_type = "QEdge1";
+  
+    Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
+    RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+
+    panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
+
+    basis_values.setupArrays(basisIRLayout);
+    basis_values.evaluateValues(int_values.cub_points,
+				int_values.jac,
+				int_values.jac_det,
+				int_values.jac_inv,
+				int_values.weighted_measure,
+				node_coordinates,
+                                edge_orientation);
+
+    TEST_EQUALITY(basis_values.basis_ref.dimension(0),12);
+    TEST_EQUALITY(basis_values.basis_ref.dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.basis_ref.dimension(2),3);
+    TEST_EQUALITY(basis_values.weighted_basis.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis.dimension(1),12);
+    TEST_EQUALITY(basis_values.weighted_basis.dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_basis.dimension(3),3);
+
+    TEST_EQUALITY(basis_values.grad_basis_ref.size(),0);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.size(),0);
+
+    TEST_EQUALITY(basis_values.curl_basis_ref.dimension(0),12);
+    TEST_EQUALITY(basis_values.curl_basis_ref.dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.curl_basis_ref.dimension(2),3);
+    TEST_EQUALITY(basis_values.weighted_curl_basis.dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_curl_basis.dimension(1),12);
+    TEST_EQUALITY(basis_values.weighted_curl_basis.dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_curl_basis.dimension(3),3);
+  }
 }

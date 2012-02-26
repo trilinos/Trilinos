@@ -1,4 +1,3 @@
-
 #ifndef PANZER_BASIS_VALUES_DECL_HPP
 #define PANZER_BASIS_VALUES_DECL_HPP
 
@@ -17,7 +16,7 @@ namespace panzer {
       * particular basis.
       */
     void extendOrientationToBasis(panzer::PureBasis::EElementSpace space,
-                                  const Intrepid::Basis<double,Array> & intrBasis,
+                                  Intrepid::Basis<double,Array> & intrBasis,
                                   const Array & inOrientation,
                                   Array & outOrientation) const;
     
@@ -65,6 +64,13 @@ namespace panzer {
       */
     Array subcell_orientation;         // <Cell,Edges> or <Cell,Faces>
 
+    /** Orientation of each basis (built from subcell_orientation)
+      *
+      * NOTE: This will be either empty (for HGRAD bases), edge orientations
+      * (for HCURL bases), or face orientations (for HDIV bases).
+      */
+    Array basis_orientation;         // <Cell,BASIS> or <Cell,BASIS>
+
     Teuchos::RCP<panzer::BasisIRLayout> basis_layout;
     
     Teuchos::RCP<Intrepid::Basis<double,Array> > intrepid_basis;
@@ -75,4 +81,3 @@ namespace panzer {
 #include "Panzer_BasisValues_impl.hpp"
 
 #endif
-

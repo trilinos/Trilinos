@@ -119,6 +119,28 @@ namespace panzer {
     TEST_EQUALITY(basis->getDimension(),base_cell_dimension);
     TEST_EQUALITY(basis->name(),basis_type);
     TEST_ASSERT(basis->getIntrepidBasis()!=Teuchos::null);
+    TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
+  }
+
+  TEUCHOS_UNIT_TEST(basis, QEdge1_2D_volume)
+  {
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+    
+    const int num_cells = 20;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const std::string basis_type = "QEdge1";
+
+    Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
+
+    TEST_EQUALITY(basis->getElementSpace(),PureBasis::HCURL);
+    TEST_EQUALITY(basis->getCardinality(),4);
+    TEST_EQUALITY(basis->getNumCells(),num_cells);
+    TEST_EQUALITY(basis->getDimension(),base_cell_dimension);
+    TEST_EQUALITY(basis->name(),basis_type);
+    TEST_ASSERT(basis->getIntrepidBasis()!=Teuchos::null);
+    TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
   }
 
 }

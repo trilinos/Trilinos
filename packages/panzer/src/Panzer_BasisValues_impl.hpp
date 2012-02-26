@@ -45,6 +45,7 @@ namespace panzer {
     if(elmtspace==panzer::PureBasis::HCURL) {
        // allocate orientations
        subcell_orientation = Intrepid::FieldContainer<double>(numcells,cellTopo->getEdgeCount());
+       basis_orientation = Intrepid::FieldContainer<double>(numcells,intrepid_basis->getCardinality());
     }
   
     // compute basis fields
@@ -120,20 +121,25 @@ namespace panzer {
   {    
     // first grab basis descriptor
     PureBasis::EElementSpace elmtspace = getElementSpace();
+    int spaceDim = basis_layout->getDimension();
 
     intrepid_basis->getValues(basis_ref, cub_points, 
 			      Intrepid::OPERATOR_VALUE);
+
 
     // make sure edge orientations are included for HCURL bases
     if(elmtspace==panzer::PureBasis::HCURL) {
        TEUCHOS_TEST_FOR_EXCEPTION(&orientation==&dummyArray,std::invalid_argument,
                                   "BasisValues::evaluateValues using HCURL bases requires edge orientations");
-       TEUCHOS_TEST_FOR_EXCEPTION(subcell_orientation.size()==orientation.size(),std::invalid_argument,
-                                  "BasisValues::evaluateValues oreintation is the wrong size for HCURL bases.");
+       TEUCHOS_TEST_FOR_EXCEPTION(subcell_orientation.size()!=orientation.size(),std::invalid_argument,
+                                  "BasisValues::evaluateValues orientation is the wrong size for HCURL bases: " 
+                                 << subcell_orientation.size() << " " << orientation.size());
 
        // simply copy orientations
        for(int i=0;i<subcell_orientation.size();i++)
           subcell_orientation[i] = orientation[i];
+
+       extendOrientationToBasis(PureBasis::HCURL,*intrepid_basis,orientation,basis_orientation);
     }
     
     if(elmtspace==PureBasis::HGRAD) {
@@ -167,12 +173,34 @@ namespace panzer {
          HCURLtransformVALUE<double>(basis,
                                      jac_inv,
    		  		     basis_ref);
-       
+
        Intrepid::FunctionSpaceTools::
-         HCURLtransformCURL<double>(curl_basis,
-   				    jac,
-   				    jac_det,
-   				    curl_basis_ref);
+         applyFieldSigns<double>(basis,basis_orientation);
+
+       // the CURL transform differs depending on spactial dimension
+       // "In 2D the de Rham complex collapses." But I look at it like this:
+       // In 2D the curl is simply  $-\partial_x u_1+\partial_y u_0$ which
+       // has the same derivative structure as the divergence in 2D 
+       // $\partial_x u_0 + \partial_y u_1$ which means the transformation
+       // is the same.
+       if(spaceDim==2) 
+          Intrepid::FunctionSpaceTools::
+            HDIVtransformDIV<double>(curl_basis,
+   			             jac_det,   // note only volume deformation is needed!
+                                                // this relates directly to this being in
+                                                // the divergence space in 2D!
+   			             curl_basis_ref);
+       else if(spaceDim==3)
+          Intrepid::FunctionSpaceTools::
+            HCURLtransformCURL<double>(curl_basis,
+   	                               jac,
+   				       jac_det,
+   				       curl_basis_ref);
+       else
+          TEUCHOS_ASSERT(false); // what you doin?
+
+       Intrepid::FunctionSpaceTools::
+         applyFieldSigns<double>(curl_basis,basis_orientation);
 
        Intrepid::FunctionSpaceTools::
          multiplyMeasure<double>(weighted_basis, 
@@ -210,13 +238,13 @@ namespace panzer {
   template<typename Scalar, typename Array>
   void BasisValues<Scalar,Array>::
   extendOrientationToBasis(panzer::PureBasis::EElementSpace space,
-                           const Intrepid::Basis<double,Array> & intrBasis,
+                           Intrepid::Basis<double,Array> & intrBasis,
                            const Array & inOrientation,
                            Array & outOrientation) const
   {
      TEUCHOS_ASSERT(space==panzer::PureBasis::HCURL || space==panzer::PureBasis::HDIV);
 
-     shards::CellTopology cellTopo = intrepid_basis = intrBasis.getBasisCellTopology();
+     shards::CellTopology cellTopo = intrBasis.getBaseCellTopology();
 
      TEUCHOS_TEST_FOR_EXCEPTION(inOrientation.dimension(0)!=outOrientation.dimension(0),std::invalid_argument,
                                 "BasisValues::extendOrientationToBasis workset size for in/out orientations do not match");
@@ -239,9 +267,9 @@ namespace panzer {
         outOrientation[i] = 1.0;
 
      // loop over subcells of appropriate dimension
-     for(std::size_t d=0;ordinalData.size();d++) {
+     for(std::size_t d=0;d<ordinalData.size();d++) {
         // basis on sub cell index
-        for(std::size_t b=0;ordinalData[d].size();b++) {
+        for(std::size_t b=0;b<ordinalData[d].size();b++) {
            int fieldIndex = ordinalData[d][b];
 
            // loop over cells

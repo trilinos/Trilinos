@@ -22,6 +22,8 @@
 #include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid_HGRAD_LINE_C1_FEM.hpp"
 #include <Intrepid_HCURL_TRI_I1_FEM.hpp>
+#include <Intrepid_HCURL_QUAD_I1_FEM.hpp>
+#include <Intrepid_HCURL_HEX_I1_FEM.hpp>
 
 namespace panzer {
 
@@ -36,6 +38,8 @@ namespace panzer {
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_HEX_C1_FEM<ScalarT,ArrayT> );
       else if (type == "Q2")
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_HEX_C2_FEM<ScalarT,ArrayT> );
+      else if (type == "QEdge1") 
+	basis = Teuchos::rcp( new Intrepid::Basis_HCURL_HEX_I1_FEM<ScalarT,ArrayT> );
       else if (type == "T1")
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TET_C1_FEM<ScalarT,ArrayT> );
       else if (type == "T2")
@@ -46,7 +50,9 @@ namespace panzer {
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<ScalarT,ArrayT> );
       else if (type == "Q2")
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_QUAD_C2_FEM<ScalarT,ArrayT> );
-      if (type == "T1")
+      else if (type == "QEdge1") 
+	basis = Teuchos::rcp( new Intrepid::Basis_HCURL_QUAD_I1_FEM<ScalarT,ArrayT> );
+      else if (type == "T1")
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TRI_C1_FEM<ScalarT,ArrayT> );
       else if (type == "T2")
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TRI_C2_FEM<ScalarT,ArrayT> );

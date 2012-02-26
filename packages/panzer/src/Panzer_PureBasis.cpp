@@ -14,6 +14,7 @@ PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const s
 {
   dimension = cellTopo->getDimension();
 
+  topology = cellTopo;
   intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, dimension, cellTopo);
 
   cardinality = intrepid_basis->getCardinality();
@@ -34,6 +35,7 @@ PureBasis(const std::string & basis_type,const CellData & cell_data) :
 {
   dimension = cell_data.baseCellDimension();
 
+  topology = cell_data.getCellTopology();
   intrepid_basis = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, dimension, cell_data.getCellTopology());
 
   cardinality = intrepid_basis->getCardinality();
@@ -92,6 +94,8 @@ void panzer::PureBasis::initializeIntrospection(const std::string & name)
      || name=="T1" || name=="T2")
       elementSpace = HGRAD;
    else if(name=="TEdge1")
+      elementSpace = HCURL;
+   else if(name=="QEdge1")
       elementSpace = HCURL;
    else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                      "PureBasis::initializeIntrospection - Invalid basis name \"" 
