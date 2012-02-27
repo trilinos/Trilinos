@@ -156,6 +156,11 @@
 using namespace Intrepid;
 
 namespace {
+  /// \class MultiVectorFillerData
+  /// \brief Implementation of fill and local assembly for \c MultiVectorFiller.
+  /// \author Mark Hoemmen
+  ///
+  /// \tparam MV Specialization of \c Tpetra::MultiVector.
   template<class MV>
   class MultiVectorFillerData {
   public:
@@ -309,6 +314,279 @@ namespace {
 
     size_t getNumColumns() const { return numCols_; }
   };
+
+
+
+  /// \class MultiVectorFillerData2
+  /// \brief Second implementation of fill and local assembly for \c MultiVectorFiller.
+  /// \author Mark Hoemmen
+  ///
+  /// \tparam MV Specialization of \c Tpetra::MultiVector.
+  template<class MV>
+  class MultiVectorFillerData2 {
+  public:
+    typedef typename MV::scalar_type scalar_type;
+    typedef typename MV::local_ordinal_type local_ordinal_type;
+    typedef typename MV::global_ordinal_type global_ordinal_type;
+    typedef typename MV::node_type node_type;
+
+    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+
+    /// \brief Default constructor (sets number of columns to zero).
+    ///
+    /// \param map [in] Map over which to distribute the initial fill.
+    ///
+    /// Before using this object, you should call \c setNumColumns()
+    /// to set the number of columns in the output multivector.
+    /// Otherwise, the two-argument version of \c
+    /// sumIntoGlobalValues() won't actually do anything.
+    MultiVectorFillerData2 (const Teuchos::RCP<const map_type>& map) : 
+      map_ (map),
+      numCols_ (0)
+    {}
+
+    /// \brief Constructor.
+    ///
+    /// \param map [in] Map over which to distribute the initial fill.
+    ///
+    /// \param numColumns [in] The (expected) number of columns in the
+    ///   output multivector.  You can always change this later by
+    ///   calling \c setNumColumns().
+    ///
+    /// \note If the number of columns given here is not the same as
+    ///   the number of columns in the output multivector, you should
+    ///   call \c setNumColumns() first before inserting any data.
+    ///   Otherwise, the two-argument version of \c
+    ///   sumIntoGlobalValues() won't do the right thing.
+    MultiVectorFillerData2 (const Teuchos::RCP<const map_type>& map,
+			    const size_t numColumns) : 
+      map_ (map),
+      numCols_ (numColumns),
+      localVec_ (new MV (map, numColumns)),
+      nonlocalIndices_ (numColumns),
+      nonlocalValues_ (numColumns)
+    {}
+
+    //! Set the number of columns in the output multivector.
+    void
+    setNumColumns (const size_t newNumColumns) 
+    {
+      using Teuchos::Array;
+      using Teuchos::Range1D;
+      using Teuchos::RCP;
+      typedef global_ordinal_type GO;
+      typedef scalar_type ST;
+
+      const size_t oldNumColumns = numCols_;
+      if (newNumColumns == oldNumColumns) {
+	return; // No side effects if no change.
+      }
+
+      RCP<MV> newLocalVec;
+      if (newNumColumns > oldNumColumns) {
+	newLocalVec = (new MV (map_, newNumColumns));
+	// Assign the contents of the old local multivector to the
+	// first oldNumColumns columns of the new local multivector,
+	// then get rid of the old local multivector.
+	RCP<MV> newLocalVecView = 
+	  newLocalVec.subViewNonConst (Range1D (0, oldNumColumns-1));
+	*newLocalVecView = *localVec_;
+      } 
+      else {
+	if (newNumColumns == 0) {
+	  // Tpetra::MultiVector doesn't let you construct a
+	  // multivector with zero columns.
+	  newLocalVec = Teuchos::null;
+	}
+	else {
+	  newLocalVec = 
+	    localVec_.subViewNonConst (Range1D (0, newNumColumns-1));
+	}
+      }
+
+      // Leave most side effects until the end, for exception safety.
+      nonlocalIndices_.resize (newNumColumns);
+      nonlocalValues_.resize (newNumColumns);
+      localVec_ = newLocalVec;
+      numCols_ = newNumColumns;
+    }
+
+    void
+    sumIntoGlobalValues (Teuchos::ArrayView<const global_ordinal_type> rows, 
+			 size_t columnIndex,
+			 Teuchos::ArrayView<const scalar_type> values)
+    {
+      using Teuchos::ArrayRCP;
+      using Teuchos::ArrayView;
+      typedef local_ordinal_type LO;
+      typedef global_ordinal_type GO;
+      typedef scalar_type ST;
+
+      if (columnIndex >= getNumColumns()) {
+	// Automatically expand the number of columns.  This
+	// implicitly ensures that localVec_ is not null.
+	setNumColumns (columnIndex + 1);
+      }
+      
+      typename ArrayView<const GO>::const_iterator rowIter = rows.begin();
+      typename ArrayView<const ST>::const_iterator valIter = values.begin();
+      for ( ; rowIter != rows.end() && valIter != values.end(); ++rowIter, ++valIter) {
+	const GO globalRowIndex = *rowIter;
+	// Converting from global to local index could be logarithmic
+	// in the number of global indices that this process owns,
+	// depending on the Map implementation.  However, the lookup
+	// allows us to store data in the local multivector, rather
+	// than in a separate data structure.
+	const LO localRowIndex = map_->getLocalElement (globalRowIndex);
+	if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid()) {
+	  nonlocalIndices_[columnIndex].push_back (globalRowIndex);
+	  nonlocalValues_[columnIndex].push_back (*valIter);
+	}
+	else {
+	  // FIXME (mfh 27 Feb 2012) This will be very slow for GPU
+	  // Node types.  In that case, we should hold on to the view
+	  // of localVec_ as long as the number of columns doesn't
+	  // change, and make modifications to the view until
+	  // localAssemble() is called.
+	  ArrayRCP<ST> X_j = localVec_->getDataNonConst (columnIndex);
+	  // FIXME (mfh 27 Feb 2012) Allow different combine modes.
+	  // The current combine mode just adds to the current value
+	  // at that location.
+	  X_j[localRowIndex] += *valIter;
+	}
+      }
+    }
+
+    /// Data for each column are stored contiguously in rows and in
+    /// values.  Thus, rows and values are in rowwise order, even
+    /// though they may be stored in columnwise order in the
+    /// multivector.
+    ///
+    /// Be sure that the number of columns is set correctly before
+    /// calling this.
+    void
+    sumIntoGlobalValues (Teuchos::ArrayView<const global_ordinal_type> rows, 
+			 Teuchos::ArrayView<const scalar_type> values)
+    {
+      using Teuchos::ArrayView;
+      typedef typename ArrayView<const global_ordinal_type>::size_type size_type;
+
+      const size_t numCols = getNumColumns();
+      for (size_t j = 0; j < numCols; ++j) {
+	const size_type offset = numCols*j;
+	const size_type len = numCols;
+	sumIntoGlobalValues (rows.view (offset, len), j, values.view (offset, len));
+      }
+    }
+
+    /// \brief Locally assemble into X.
+    ///
+    /// \param X [in/out] Multivector (overlapping source distribution).
+    ///
+    /// \param f [in/out] Binary function that defines the combine
+    ///   mode.  It must define scalar_type operator (const
+    ///   scalar_type&, const scalar_type&).  It need not necessarily
+    ///   be commutative or even associative, but it should be
+    ///   thread-safe in case we decide to parallelize local assembly.
+    ///   We call it via X(i,j) = f(X(i,j), Y(i,j)), so write your
+    ///   possibly nonassociative or noncommutative operation
+    ///   accordingly.
+    ///
+    /// X is distributed by the source Map (with possible overlap) of
+    /// the Export operation.  The source Map of the Export includes
+    /// both the elements owned by this object's constructor's input
+    /// Map, and the indices inserted by \c sumIntoGlobalValues().
+    ///
+    /// Precondition: The set of global indices in X's Map equals the
+    /// union of the global indices in map_ and (the union of the
+    /// entries of nonlocalIndices_[j] for all valid columns j).
+    ///
+    /// \note You can get the usual ADD combine mode by supplying f =
+    ///   std::plus<scalar_type>.
+    template<class BinaryFunction>
+    void 
+    locallyAssemble (MV& X, BinaryFunction& f)
+    {
+      using Teuchos::ArrayRCP;
+      using Teuchos::ArrayView;
+      using Teuchos::RCP;
+      typedef local_ordinal_type LO;
+      typedef global_ordinal_type GO;
+      typedef scalar_type ST;
+
+      RCP<const map_type> srcMap = X.getMap();
+      ArrayView<const GO> localIndices = map_->getNodeElementList ();
+
+      for (size_t j = 0; j < X.getNumVectors(); ++j) {
+	ArrayRCP<ST> X_j = X.getDataNonConst (j);
+
+	// First add all the local data into X_j.
+	ArrayRCP<const ST> local_j = localVec_.getDataNonConst (j);
+	for (typename ArrayView<const GO>::const_iterator it = localIndices.begin(); 
+	     it != localIndices.end(); ++it) {
+	  const LO rowIndLocal = map_->getLocalElement (*it);
+	  const LO rowIndX = srcMap->getLocalElement (*it);
+
+	  TEUCHOS_TEST_FOR_EXCEPTION(rowIndX == Teuchos::OrdinalTraits<LO>::invalid(), 
+            std::invalid_argument, "locallyAssemble(): Input multivector X does "
+            "not own the global index " << *it << ".  This probably means that "
+            "X was not constructed with the right Map.");
+	  // FIXME (mfh 27 Feb 2012) We hard-code the ADD combine mode
+	  // for now.  Later, accept other combine modes.
+	  X_j[rowIndX] = f (X_j[rowIndX], local_j[rowIndLocal]);
+	}
+
+	// Now add the nonlocal data into X_j.
+	ArrayView<const GO> nonlocalIndices = nonlocalIndices_[j].view();
+	typename ArrayView<const GO>::const_iterator indexIter = nonlocalIndices.begin(); 
+	ArrayView<const ST> nonlocalValues = nonlocalValues_[j].view();
+	typename ArrayView<const ST>::const_iterator valueIter = nonlocalValues.begin();
+	for ( ; indexIter != nonlocalIndices.end() && valueIter != nonlocalValues.end();
+	      ++indexIter, ++valueIter) {
+	  const LO rowIndX = srcMap->getLocalElement (*indexIter);
+	  X_j[rowIndX] = f (X_j[rowIndX], *valueIter);
+	}
+      }
+    }
+
+    //! \c locallyAssemble() for the usual ADD combine mode.
+    void 
+    locallyAssemble (MV& X)
+    {
+      std::plus<double> f;
+      locallyAssemble<std::plus<scalar_type> > (X, f);
+    }
+
+    /// \brief Clear the contents of the vector.
+    /// 
+    /// This fills the vector with zeros, and also removes nonlocal data.
+    void clear() {
+      Teuchos::Array<Teuchos::Array<global_ordinal_type> > newNonlocalIndices;
+      Teuchos::Array<Teuchos::Array<scalar_type> > newNonlocalValues;
+      // The standard STL idiom for clearing the contents of a vector
+      // completely.  Setting the size to zero may not necessarily
+      // deallocate data.
+      std::swap (nonlocalIndices_, newNonlocalIndices);
+      std::swap (nonlocalValues_, newNonlocalValues);
+
+      // Don't actually deallocate the multivector of local entries.
+      // Just fill it with zero.  This is because the caller hasn't
+      // reset the number of columns.
+      if (! localVec_.is_null()) {
+	localVec_.putScalar (Teuchos::ScalarTraits<scalar_type>::zero());
+      }
+    }
+
+  private:
+    Teuchos::RCP<const map_type> map_;
+    size_t numCols_;
+    Teuchos::RCP<MV> localVec_;
+    Teuchos::Array<Teuchos::Array<global_ordinal_type> > nonlocalIndices_;
+    Teuchos::Array<Teuchos::Array<scalar_type> > nonlocalValues_;
+
+    size_t getNumColumns() const { return numCols_; }
+  };
+
 
 
   template<class MV>
