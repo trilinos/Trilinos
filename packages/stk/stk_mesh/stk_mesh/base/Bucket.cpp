@@ -191,17 +191,6 @@ bool field_data_valid( const FieldBase & f ,
 }
 
 //----------------------------------------------------------------------
-
-Bucket::Bucket( BulkData & arg_mesh ,
-                EntityRank arg_entity_rank,
-                const std::vector<unsigned> & arg_key,
-                size_t arg_capacity
-        )
-  : m_bucketImpl(arg_mesh,arg_entity_rank,arg_key,arg_capacity)
-{}
-//----------------------------------------------------------------------
-
-//----------------------------------------------------------------------
 bool Bucket::assert_correct() const {
   // test equivalent() method
   const Bucket* bucket = this;

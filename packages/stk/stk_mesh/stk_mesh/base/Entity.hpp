@@ -541,6 +541,22 @@ std::string print_entity_key(const Entity& entity);
 
 std::string print_entity_key(const Entity* entity);
 
+inline
+Entity::Entity()
+  : m_entityImpl()
+#ifdef SIERRA_MIGRATION
+   , m_fmwk_attrs(NULL)
+#endif
+{}
+
+inline
+Entity::Entity( const EntityKey & arg_key )
+  : m_entityImpl( arg_key )
+#ifdef SIERRA_MIGRATION
+   , m_fmwk_attrs(NULL)
+#endif
+{}
+
 /** \} */
 
 } // namespace mesh

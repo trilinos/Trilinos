@@ -21,31 +21,6 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-EntityImpl::EntityImpl( const EntityKey & arg_key )
-  : m_key(arg_key),
-    m_relation(),
-    m_comm(),
-    m_bucket( NULL ),
-    m_bucket_ord(0),
-    m_owner_rank(0),
-    m_sync_count(0),
-    m_mod_log( EntityLogCreated )
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
-}
-
-EntityImpl::EntityImpl()
-  : m_key(),
-    m_relation(),
-    m_comm(),
-    m_bucket( NULL ),
-    m_bucket_ord(0),
-    m_owner_rank(0),
-    m_sync_count(0),
-    m_mod_log( EntityLogCreated )
-{
-}
-
 PairIterRelation EntityImpl::relations( unsigned rank ) const
 {
   RelationVector::const_iterator i = m_relation.begin();

@@ -343,8 +343,18 @@ std::ostream & operator << ( std::ostream & , const Relation & );
 /** \} */
 
 inline
-bool Relation::operator == ( const Relation & rhs ) const
+Relation::Relation() :
+  m_raw_relation(),
+  m_attribute(),
+  m_target_entity(NULL)
+{
+#ifdef SIERRA_MIGRATION
+  setRelationType(INVALID);
+#endif
+}
 
+inline
+bool Relation::operator == ( const Relation & rhs ) const
 {
   return m_raw_relation.value == rhs.m_raw_relation.value && m_target_entity == rhs.m_target_entity
 #ifdef SIERRA_MIGRATION

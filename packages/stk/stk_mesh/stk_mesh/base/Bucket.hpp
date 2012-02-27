@@ -248,6 +248,15 @@ std::vector<Bucket*>::iterator
 lower_bound( std::vector<Bucket*> & v , const unsigned * key )
 { return std::lower_bound( v.begin() , v.end() , key , BucketLess() ); }
 
+inline
+Bucket::Bucket( BulkData & arg_mesh ,
+                EntityRank arg_entity_rank,
+                const std::vector<unsigned> & arg_key,
+                size_t arg_capacity
+        )
+  : m_bucketImpl(arg_mesh,arg_entity_rank,arg_key,arg_capacity)
+{}
+
 /** \} */
 
 struct To_Ptr : std::unary_function<Entity&, Entity*>

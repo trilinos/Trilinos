@@ -42,16 +42,6 @@ operator << ( std::ostream & s , const Relation & rel )
 
 //----------------------------------------------------------------------
 
-Relation::Relation() :
-  m_raw_relation(),
-  m_attribute(),
-  m_target_entity(NULL)
-{
-#ifdef SIERRA_MIGRATION
-  setRelationType(INVALID);
-#endif
-}
-
 Relation::Relation( Entity & entity , RelationIdentifier identifier )
   : m_raw_relation( Relation::raw_relation_id( entity.entity_rank() , identifier ) ),
     m_target_entity( & entity )
