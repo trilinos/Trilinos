@@ -821,7 +821,7 @@ static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
   }
 
   Zoltan_evals3(m, &eval1, &eval2, &eval3);
-  Zoltan_eigenvec3(m, eval1, evecs, &res);
+  Zoltan_eigenvec3(m, eval1, evecs[0], &res);
   Zoltan_eigenvec3(m, eval2, evecs[1], &res);
   Zoltan_eigenvec3(m, eval3, evecs[2], &res);
 
