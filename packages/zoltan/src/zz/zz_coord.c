@@ -809,7 +809,6 @@ static void order_decreasing(double *d, int *order)
 #define SIGN(a,b) ((b) < 0 ? -fabs(a) : fabs(a))
 static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
 {
-  double d[3], e[3];
   double eval1, eval2, eval3;    /* eigenvalue and error in eval calculation */
   double res;
   int i, j, rc = 0;
