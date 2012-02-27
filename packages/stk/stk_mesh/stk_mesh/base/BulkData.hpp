@@ -542,11 +542,14 @@ void BulkData::internal_basic_part_check(const Part* part,
   intersection_ok = part->intersection_of().empty();
   rel_target_ok   = ( part->relations().empty() ||
                       part != part->relations().begin()->m_target );
-  // rank_ok         = ( entity_rank == part_rank ||
-  //                     undef_rank  == part_rank );
-  rank_ok = true; // Do we allow arbitrary part changes to entities regardless of part rank? For the sake of the migration, we will for now.
+  // Do we allow arbitrary part changes to entities regardless of part rank? For the sake of the migration, we will for now.
+#ifdef SIERRA_MIGRATION
+  rank_ok = true;
+#else
+  rank_ok         = ( entity_rank == part_rank ||
+                      undef_rank  == part_rank );
+#endif
 }
-
 
 inline bool BulkData::internal_quick_verify_change_part(const Part* part,
                                                         const unsigned entity_rank,
