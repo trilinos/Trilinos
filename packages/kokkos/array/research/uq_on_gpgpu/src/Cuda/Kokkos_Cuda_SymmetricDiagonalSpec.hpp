@@ -55,85 +55,102 @@ template<>
 class Multiply< SymmetricDiagonalSpec< Cuda > , void , void >
 {
 public:
-  typedef Cuda                    device_type ;
-  typedef device_type::size_type  size_type ;
-  typedef SymmetricDiagonalSpec< Cuda > block_type ;
+  typedef Cuda                           device_type ;
+  typedef device_type::size_type         size_type ;
+  typedef SymmetricDiagonalSpec< Cuda >  block_type ;
+
+  __host__
+  static dim3 thread_block( const block_type & block )
+  {
+    const int y = ( cuda_internal_maximum_warp_count() * CudaTraits::WarpSize )
+                / block.dimension();
+
+    if ( y < 2 ) {
+      throw std::runtime_error( std::string("Kokkos::Impl::Multiply< SymmetricDiagonalSpec<Cuda> > ERROR: block too large") );
+    }
+    return dim3( block.dimension() , y , 1 );
+  }
 
   template< typename VectorValue >
   __host__
   static size_type shmem_size( const block_type & block )
   {
-    return 2 * sizeof(VectorValue) *
-           Impl::CudaTraits::warp_align( block.dimension() );
+    const dim3 d = thread_block( block );
+
+    return sizeof(VectorValue) * d.x * d.y ;
   }
 
   __host__
   static size_type matrix_size( const block_type & block )
     { return block.matrix_size(); }
 
-  // Required: block.dimension() == blockDim.x
+  // Required: blockDim.x == block.dimension()
+  // Required: blockDim.y > 1
   template< typename MatrixValue , typename VectorValue >
   __device__
-  static void apply( const block_type  & block ,
-                     const MatrixValue *       a ,
-                     const VectorValue * const x ,
-                           VectorValue & y )
+  static VectorValue apply( const block_type  & block ,
+                            const MatrixValue * const a ,
+                            const VectorValue * const x )
   {
-    VectorValue * const sh = kokkos_impl_cuda_shared_memory<VectorValue>();
-    const size_type dimension     = block.dimension();
-    const size_type shared_offset = Impl::CudaTraits::warp_align( dimension );
+    const int  dimension = block.dimension();
+    const int  dim_half  = ( dimension + 1 ) >> 1 ;
 
-    // Number of full diagonals
-    // If even number of diagonals then the last diagonal is half length
-    const size_type dim_half = ( dimension + 1 ) >> 1 ;
+    VectorValue * const shX = kokkos_impl_cuda_shared_memory<VectorValue>();
 
-    // Coalesced memory load of input vector
-    sh[ threadIdx.x ] = x[ threadIdx.x ];
+    int ia = -1 ;
+    int ix = -1 ;
 
-    // Multiply the main diagonal (first diagonal)
-    y += a[ threadIdx.x ] * sh[ threadIdx.x ] ;
-
-    // Multiply remaining full diagionals, each diagonal is accessed twice
-    size_type kx  = threadIdx.x ;
-    size_type kxr = threadIdx.x ;
-
-    for ( size_type d = 1 ; d < dim_half ; ++d ) {
-
-      a += dimension ; // next diagonal
-
-      sh[ threadIdx.x + shared_offset ] = a[ threadIdx.x ];
-
-      ++kx ;
-      if ( dimension == kx ) kx = 0 ;
-      if ( 0 == kxr ) kxr = dimension ;
-      --kxr ;
-
-      __syncthreads(); // Wait for matrix diagonal to load
-
-      y += sh[ threadIdx.x + shared_offset ] * sh[ kx ];
-      y += sh[ kxr         + shared_offset ] * sh[ kxr ];
+    if ( 0 == threadIdx.y ) {
+      // Multiply the main diagonal (first diagonal)
+      ix = threadIdx.x ;
+      ia = threadIdx.x ;
+      shX[ threadIdx.x ] = x[ threadIdx.x ]; // Load 'x'
     }
-
-    // If even number of diagonals then the last diagonal is half-length
-    if ( ! ( dimension & 01 ) ) {
-
-      a += dimension ; // next diagonal
-
-      ++kx ;
-      if ( dimension == kx ) kx = 0 ;
+    else if ( blockDim.y == 1 + threadIdx.y && ! ( dimension & 01 ) ) {
+      // If even number of diagonals then the last diagonal is half-length
+      ix = threadIdx.x ;
+      ia = threadIdx.x + dim_half * dimension ;
 
       if ( threadIdx.x < dim_half ) {
-        sh[ threadIdx.x + shared_offset ] = a[ threadIdx.x ];
-        kxr = threadIdx.x ;
+        ix += dim_half ;
       }
       else {
-        kxr = threadIdx.x - dim_half ;
+        ix -= dim_half ;
+        ia -= dim_half ;
       }
-
-      __syncthreads(); // Wait for matrix diagonal to load
-
-      y += sh[ kxr + shared_offset ] * sh[ kx ];
     }
+
+    __syncthreads(); // Wait for load of 'x'
+
+    VectorValue y = ( ia < 0 ) ? 0 : shX[ ix ] * a[ ia ];
+
+    for ( int d = 1 + threadIdx.y ; d < dim_half ; d += blockDim.y ) {
+
+      ix = threadIdx.x + d ; if ( dimension <= ix ) ix -= dimension ;
+      ia = threadIdx.x - d ; if ( ia < 0 ) ia += dimension ;
+
+      const MatrixValue * const A = a + d * dimension ;
+
+      // A 'threadIdx.y' group accesses the matrix diagonal
+      // A[ 0 .. dimension - 1 ] twice in the following statement.
+      // Spatial and temporal locality are excellent for L1 cache reuse
+      // for the second access.
+
+      y += shX[ ix ] * A[ threadIdx.x ] +
+           shX[ ia ] * A[ ia ];
+    }
+
+    if ( 0 < threadIdx.y ) {
+      shX[ threadIdx.x + threadIdx.y * dimension ] = y ;
+    }
+
+    __syncthreads(); // Wait for load of contributions to 'y'
+
+    for ( ix = 1 ; ix < blockDim.y ; ++ix ) {
+      y += shX[ threadIdx.x + ix * dimension ];
+    }
+
+    return y ;
   }
 };
 

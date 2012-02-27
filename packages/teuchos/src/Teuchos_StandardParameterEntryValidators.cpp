@@ -535,6 +535,9 @@ void StringValidator::printDoc(std::string const &docString,
   Teuchos::StrUtils::printLines(out,"# ",docString);
   out << "#  Validator Used: " << std::endl;
   out << "#  String Validator" << std::endl;
+  if (validStrings_.get() && validStrings_->size()){
+    out << "#  Acceptable Values: " << *validStrings_ << std::endl;
+  }
 }
 
 
