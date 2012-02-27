@@ -220,7 +220,9 @@ private:
    */
   BulkData & bulk_data() const { return m_bucketImpl.mesh(); }
 
-  ~Bucket();
+  // Only reason to define this at all is to ensure it's private
+  ~Bucket() {}
+
   Bucket();
   Bucket( const Bucket & );
   Bucket & operator = ( const Bucket & );
@@ -231,10 +233,8 @@ private:
           size_t arg_capacity
         );
 
-
   friend class ::stk::mesh::BulkData;
 };
-
 
 
 struct BucketLess {
@@ -247,8 +247,6 @@ inline
 std::vector<Bucket*>::iterator
 lower_bound( std::vector<Bucket*> & v , const unsigned * key )
 { return std::lower_bound( v.begin() , v.end() , key , BucketLess() ); }
-
-
 
 /** \} */
 
@@ -268,8 +266,4 @@ typedef Bucket::iterator BucketIterator;
 } // namespace mesh
 } // namespace stk
 
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
 #endif
-

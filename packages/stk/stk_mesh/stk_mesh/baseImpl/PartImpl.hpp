@@ -91,10 +91,7 @@ public:
   PartImpl( MetaData * meta, const std::string & name,
             EntityRank rank, size_t ordinal);
 
-  ~PartImpl();
-
   void set_primary_entity_rank( EntityRank entity_rank );
-
 
 private:
 

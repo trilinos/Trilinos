@@ -31,8 +31,6 @@ std::size_t stride( std::size_t size , std::size_t align )
 
 }
 
-DataTraits::~DataTraits() {}
-
 DataTraits::DataTraits( const std::type_info & arg_type ,
                         const char * const     arg_name ,
                         std::size_t            arg_size ,

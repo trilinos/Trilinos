@@ -48,10 +48,6 @@ Entity::Entity( const EntityKey & arg_key )
 #endif
 {}
 
-Entity::~Entity()
-{
-}
-
 std::string print_entity_key(const Entity& entity)
 {
   return print_entity_key(MetaData::get(entity),

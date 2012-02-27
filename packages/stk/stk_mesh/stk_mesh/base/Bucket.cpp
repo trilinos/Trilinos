@@ -201,10 +201,6 @@ Bucket::Bucket( BulkData & arg_mesh ,
 {}
 //----------------------------------------------------------------------
 
-Bucket::~Bucket()
-{
-}
-
 //----------------------------------------------------------------------
 bool Bucket::assert_correct() const {
   // test equivalent() method

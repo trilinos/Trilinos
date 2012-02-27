@@ -60,9 +60,6 @@ public:
   typedef uint32_t raw_relation_id_type ;
   typedef uint32_t attribute_type;
 
-  /** \brief  Destructor */
-  ~Relation() {}
-
   /** \brief  Constructor */
   Relation();
 

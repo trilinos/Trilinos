@@ -21,10 +21,6 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-EntityImpl::~EntityImpl()
-{
-}
-
 EntityImpl::EntityImpl( const EntityKey & arg_key )
   : m_key(arg_key),
     m_relation(),

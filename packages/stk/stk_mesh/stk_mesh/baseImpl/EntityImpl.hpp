@@ -30,7 +30,6 @@ namespace impl {
 class EntityImpl {
 public:
 
-  ~EntityImpl();
   EntityImpl( const EntityKey & arg_key );
   EntityImpl();
 

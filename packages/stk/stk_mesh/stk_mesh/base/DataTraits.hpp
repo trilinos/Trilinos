@@ -157,7 +157,7 @@ protected:
   /** \brief  CTOR for pointer type */
   DataTraits( const std::type_info & arg_type , const DataTraits & );
 
-  virtual ~DataTraits();
+  virtual ~DataTraits() {}
 private:
   DataTraits();
   DataTraits( const DataTraits & );

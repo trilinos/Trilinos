@@ -178,7 +178,6 @@ private:
 
   // WORKAROUND 5/19/2010 [DGB]: intel 10.? and pgi do not link if this is made virtual
   //  virtual ~FieldBase();
-  ~FieldBase();
 
   impl::FieldBaseImpl  m_impl;
 

@@ -16,10 +16,6 @@
 namespace stk {
 namespace mesh {
 
-FieldBase::~FieldBase()
-{}
-
-
 std::ostream & operator << ( std::ostream & s , const FieldBase & field )
 {
   s << "FieldBase<" ;
