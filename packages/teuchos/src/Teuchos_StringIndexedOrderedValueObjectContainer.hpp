@@ -180,7 +180,7 @@ private:
   /** \brief . */
   typedef KeyObjectPair<ObjType> key_and_obj_t;
   /** \brief . */
-  typedef Array<key_and_obj_t> key_and_obj_array_t;
+  typedef std::deque<key_and_obj_t> key_and_obj_array_t; // See notes below!
   /** \brief . */
   typedef std::map<std::string, OrdinalIndex> key_to_idx_map_t;
 
@@ -572,6 +572,25 @@ StringIndexedOrderedValueObjectContainer<ObjType>::assertKeyGetOrdinal(const std
   
 } // end of Teuchos namespace
 
+/* Notes:
+ *
+ * This class may have a bit of a fragile implemenation.  It uses std::deque
+ * instead of std::vector to hold the stored objects.  This is so that once an
+ * object is added, it will keep the exact same address no matter how many
+ * other objects are added.  This is not the case with std::vector because
+ * when the memory is resized it will copy the value objects making the old
+ * objects invalid.  My guess with the std::deque class is that it would
+ * allocate and store the chunks such that once an objects was added to a
+ * chunk that it would not get reallocated and moved like in std::vector.  I
+ * don't feel very good about relying on this behavior but my guess is that
+ * this will be pretty portable.  If this turns out not to be portable, we can
+ * always just use RCP<ObjType> to store the object and that will guarantee
+ * that the object address will never be moved.  Going with an RCP<ObjType>
+ * implementation would also allow the Ptr<ObjType> views to catch dangling
+ * references in a debug-mode build.
+ */
+
 
 #endif // TEUCHOS_STRING_INDEXED_ORDERED_VALUE_OBJECT_CONTAINER_HPP
+
 
