@@ -90,7 +90,7 @@ void Entity::internal_swap_in_real_entity(const int globalId)
 void Entity::reserve_relation(const unsigned num)
 {
   if (num == 0 && aux_relations().empty()) {
-    std::vector<Relation> tmp;
+    RelationVector tmp;
     aux_relations().swap(tmp); // clear memory of m_relations.
   }
   else {
@@ -219,7 +219,7 @@ void Entity::erase_and_clear_if_empty(RelationIterator rel_itr)
 {
   ThrowRequire(!internal_is_handled_generically(rel_itr->getRelationType()));
 
-  std::vector<Relation>& aux_relations = m_fmwk_attrs->aux_relations;
+  RelationVector& aux_relations = m_fmwk_attrs->aux_relations;
   aux_relations.erase(aux_relations.begin() + (rel_itr - aux_relations.begin())); // Need to convert to non-const iterator
 
   if (aux_relations.empty()) {
@@ -236,8 +236,8 @@ void Entity::internal_verify_meshobj_invariant() const
     ThrowRequireMsg(stk_relations->getMeshObj() != NULL, "Problem with: " << *stk_relations);
   }
 
-  std::vector<Relation>& aux_relations = m_fmwk_attrs->aux_relations;
-  for (std::vector<Relation>::const_iterator itr = aux_relations.begin(), end = aux_relations.end(); itr != end; ++itr) {
+  RelationVector& aux_relations = m_fmwk_attrs->aux_relations;
+  for (RelationVector::const_iterator itr = aux_relations.begin(), end = aux_relations.end(); itr != end; ++itr) {
     ThrowRequireMsg(itr->getMeshObj() != NULL, "Problem with: " << *itr);
   }
 }

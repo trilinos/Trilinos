@@ -157,8 +157,8 @@ typedef int ( * relation_stencil_ptr )( unsigned  from_type ,
  *  -# relation identifier, and
  *  -# range entity global identifier.
  */
-typedef PairIter< std::vector<Relation>::const_iterator > PairIterRelation ;
 typedef std::vector<Relation> RelationVector;
+typedef PairIter< RelationVector::const_iterator > PairIterRelation ;
 
 //----------------------------------------------------------------------
 

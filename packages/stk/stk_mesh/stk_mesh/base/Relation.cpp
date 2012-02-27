@@ -271,8 +271,7 @@ void induced_part_membership( const Entity           & entity_from ,
       ThrowAssertMsg( *i < all_parts.size(), "Index " << *i << " out of bounds" );
       Part & part = * all_parts[*i] ;
 
-      if ( part.primary_entity_rank() == entity_rank_from &&
-           ! contain( omit , part )) {
+      if ( part.primary_entity_rank() == entity_rank_from && ! contain( omit , part )) {
         induced_part_membership( part,
                                  entity_rank_from ,
                                  entity_rank_to ,

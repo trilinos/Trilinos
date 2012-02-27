@@ -48,8 +48,8 @@ EntityImpl::EntityImpl()
 
 PairIterRelation EntityImpl::relations( unsigned rank ) const
 {
-  std::vector<Relation>::const_iterator i = m_relation.begin();
-  std::vector<Relation>::const_iterator e = m_relation.end();
+  RelationVector::const_iterator i = m_relation.begin();
+  RelationVector::const_iterator e = m_relation.end();
 
   //Nodes
   if ( rank != 0 ) {
@@ -240,7 +240,7 @@ bool EntityImpl::destroy_relation( Entity& e_to, const RelationIdentifier local_
   TraceIfWatching("stk::mesh::impl::EntityImpl::destroy_relation", LOG_ENTITY, key());
 
   bool destroyed_relations = false;
-  for ( std::vector<Relation>::iterator
+  for ( RelationVector::iterator
         i = m_relation.begin() ; i != m_relation.end() ; ++i ) {
     if ( i->entity() == & e_to && i->identifier() == local_id ) {
       i = m_relation.erase( i ); // invalidates iterators, but we're breaking so it's OK
@@ -262,9 +262,9 @@ bool EntityImpl::declare_relation( Entity & e_to,
 
   const Relation new_relation( e_to , local_id );
 
-  const std::vector<Relation>::iterator rel_end   = m_relation.end();
-        std::vector<Relation>::iterator rel_begin = m_relation.begin();
-        std::vector<Relation>::iterator lower;
+  const RelationVector::iterator rel_end   = m_relation.end();
+        RelationVector::iterator rel_begin = m_relation.begin();
+        RelationVector::iterator lower;
 
   lower = std::lower_bound( rel_begin , rel_end , new_relation , LessRelation() );
 
@@ -293,11 +293,11 @@ bool EntityImpl::declare_relation( Entity & e_to,
     // Since LessRelation takes the related entity into account, we must check
     // the result of lower_bound AND the iter before to be sure this isn't a
     // bad degenerate relation.
-    std::vector<Relation>::iterator start, end;
+    RelationVector::iterator start, end;
     start = (lower == rel_begin) ? rel_begin : lower - 1;
     end   = (lower == rel_end)   ? rel_end   : lower + 1;
 
-    for (std::vector<Relation>::iterator itr = start; itr != end; ++itr) {
+    for (RelationVector::iterator itr = start; itr != end; ++itr) {
       ThrowErrorMsgIf( is_degenerate_relation ( new_relation , *itr ),
                        "Could not declare relation from " <<
                        print_entity_key( meta_data, key() ) << " to " <<

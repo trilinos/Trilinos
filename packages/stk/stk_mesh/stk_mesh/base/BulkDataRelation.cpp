@@ -286,6 +286,8 @@ void BulkData::internal_propagate_part_changes(
 
   PairIterRelation rel = entity.relations();
 
+  PartVector to_del , to_add , empty ;
+
   for ( ; ! rel.empty() ; ++rel ) {
     const unsigned rel_type  = rel->entity_rank();
     const unsigned rel_ident = rel->identifier();
@@ -294,7 +296,9 @@ void BulkData::internal_propagate_part_changes(
 
       Entity & e_to = * rel->entity();
 
-      PartVector to_del , to_add , empty ;
+      to_del.clear();
+      to_add.clear();
+      empty.clear();
 
       // Induce part membership from this relationship to
       // pick up any additions.

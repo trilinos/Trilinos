@@ -41,8 +41,8 @@ public:
   PairIterRelation relations( unsigned rank ) const ;
   PairIterRelation node_relations( ) const
   {
-    std::vector<Relation>::const_iterator i = m_relation.begin();
-    std::vector<Relation>::const_iterator e = m_relation.end();
+    RelationVector::const_iterator i = m_relation.begin();
+    RelationVector::const_iterator e = m_relation.end();
 
     const Relation::raw_relation_id_type hi = Relation::raw_relation_id(1, 0);
     e = std::lower_bound( i , e , hi , LessRelation() );
@@ -50,7 +50,7 @@ public:
     return PairIterRelation( i , e );
   }
 
-  std::vector<Relation>::const_iterator node_relation(unsigned ordinal) const
+  RelationVector::const_iterator node_relation(unsigned ordinal) const
   { return m_relation.begin() + ordinal; }
 
   PairIterEntityComm comm() const { return PairIterEntityComm( m_comm ); }

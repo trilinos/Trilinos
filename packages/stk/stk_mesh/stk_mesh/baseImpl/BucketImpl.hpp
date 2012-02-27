@@ -15,6 +15,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
+#include <boost/pool/pool_alloc.hpp>
 //----------------------------------------------------------------------
 
 namespace stk {

@@ -24,7 +24,7 @@
 
 namespace stk {
 namespace mesh {
-typedef std::vector<Relation>::const_iterator   RelationIterator;
+typedef RelationVector::const_iterator   RelationIterator;
 typedef boost::iterator_range<RelationIterator> RelationRange;
 class Entity;
 
@@ -32,7 +32,7 @@ class Entity;
 //fmwk stuff on an entity, just to help us through the sierra migration.
 //Move along folks, there's nothing to see here.
 struct fmwk_attributes {
-  std::vector<Relation> aux_relations;
+  RelationVector aux_relations;
   const void*           shared_attr;
 
   // Cannot just use the id embedded in the entity-key because of negative global-ids
@@ -305,7 +305,7 @@ private:
   RelationIterator aux_relation_begin() const { return m_fmwk_attrs->aux_relations.begin(); }
   RelationIterator aux_relation_end() const { return m_fmwk_attrs->aux_relations.end(); }
 
-  std::vector<Relation>& aux_relations() { return m_fmwk_attrs->aux_relations; }
+  RelationVector& aux_relations() { return m_fmwk_attrs->aux_relations; }
 
   /**
    * iterator to first relationship within the collection that mananges
