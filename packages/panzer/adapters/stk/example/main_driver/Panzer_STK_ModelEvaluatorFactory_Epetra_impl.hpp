@@ -14,7 +14,6 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
-#include "Panzer_ClosureModel_Factory.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
@@ -111,14 +110,16 @@ namespace panzer_stk {
   
   template<typename ScalarT>
   void  ModelEvaluatorFactory_Epetra<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+							    const Teuchos::RCP<panzer::GlobalData>& global_data,
                                                             const panzer::EquationSetFactory & eqset_factory,
                                                             const panzer::BCStrategyFactory & bc_factory,
                                                             const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
-							    const Teuchos::RCP<panzer::GlobalData>& global_data)
+							    const Teuchos::Ptr<const panzer::ResponseAggregatorFactory<panzer::Traits> > ra_factory)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(this->getParameterList()), std::runtime_error,
 		       "ParameterList must be set before objects can be built!");
 
+    TEUCHOS_ASSERT(nonnull(comm));
     TEUCHOS_ASSERT(nonnull(global_data));
     TEUCHOS_ASSERT(nonnull(global_data->os));
     TEUCHOS_ASSERT(nonnull(global_data->pl));
@@ -299,6 +300,8 @@ namespace panzer_stk {
 
     m_response_library = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
     m_response_library->defineDefaultAggregators();
+    if (nonnull(ra_factory))
+      ra_factory->addResponseTypes(m_response_library->getAggregatorManager());
     addVolumeResponses(*m_response_library,*mesh,volume_responses);
 
     {

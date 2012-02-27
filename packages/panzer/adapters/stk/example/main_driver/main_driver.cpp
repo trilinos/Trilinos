@@ -23,6 +23,7 @@
 #include "user_app_BCStrategy_Factory.hpp"
 #include "user_app_NOXObserverFactory_Epetra.hpp"
 #include "user_app_RythmosObserverFactory_Epetra.hpp"
+#include "user_app_ResponseAggregatorFactory.hpp"
 
 #include <Ioss_SerializeIO.h>
 
@@ -115,8 +116,10 @@ int main(int argc, char *argv[])
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
     {
       panzer_stk::ModelEvaluatorFactory_Epetra<double> me_factory;
+      Teuchos::RCP<user_app::MyResponseAggregatorFactory<panzer::Traits> > ra_factory = 
+	Teuchos::rcp(new user_app::MyResponseAggregatorFactory<panzer::Traits>);
       me_factory.setParameterList(input_params);
-      me_factory.buildObjects(comm,eqset_factory,bc_factory,cm_factory,global_data); 
+      me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory,ra_factory.ptr()); 
       physics = me_factory.getPhysicsModelEvaluator();
       solver = me_factory.getResponseOnlyModelEvaluator();
       rLibrary = me_factory.getResponseLibrary();

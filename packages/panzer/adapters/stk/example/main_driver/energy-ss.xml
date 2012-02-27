@@ -45,6 +45,12 @@
          <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
          <Parameter name="Evaluation Types" type="string" value="Residual"/>
       </ParameterList>
+      <ParameterList name="Integration Point Coordinates">
+         <Parameter name="Type" type="string" value="IP Coordinates"/>
+         <Parameter name="Field Name" type="string" value="My IP Coordinates"/>
+         <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
+         <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="Block ID to Physics ID Mapping">
@@ -116,6 +122,11 @@
         <ParameterList name="function data one">
 
         </ParameterList>
+
+        <ParameterList name="IP Coordinates">
+            <Parameter name="Integration Order" type="int" value="2"/> 
+        </ParameterList>
+
 
     </ParameterList>
 

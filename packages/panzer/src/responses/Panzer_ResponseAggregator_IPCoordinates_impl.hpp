@@ -53,11 +53,13 @@ registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<
 {
    typedef ResponseAggregator_IPCoordinates<panzer::Traits::Residual,TraitsT> ThisType;
 
+   int ip_order = p.sublist("IP Coordinates").get<int>("Integration Order");
+
    Teuchos::RCP<ResponseAggregator_IPCoordinates_Data<panzer::Traits::Residual,TraitsT> > ipc_data =
      Teuchos::rcp_dynamic_cast<ResponseAggregator_IPCoordinates_Data<panzer::Traits::Residual,TraitsT> >(data);
 
    typename Teuchos::RCP<IPCoordinates<panzer::Traits::Residual,TraitsT> > eval = 
-     Teuchos::rcp(new panzer::IPCoordinates<panzer::Traits::Residual,TraitsT>(1,ipc_data->getNonconstCoords()));
+     Teuchos::rcp(new panzer::IPCoordinates<panzer::Traits::Residual,TraitsT>(ip_order,ipc_data->getNonconstCoords()));
 
    fm.template registerEvaluator<panzer::Traits::Residual>(eval);
 
