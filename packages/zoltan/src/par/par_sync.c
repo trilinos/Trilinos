@@ -108,9 +108,8 @@ void Zoltan_Print_Sync_End(MPI_Comm communicator, int do_print_line)
  * Author: John Shadid (9221, SNL)
  */
 
-int         flag = 1, from, type, to;
+int         flag = 1, type, to;
 static int  offset = 0;
-MPI_Status  st;
 int proc, num_proc;
 char *yo = "Zoltan_Print_Sync_End";
 char msg[256];
