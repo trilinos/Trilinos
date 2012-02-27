@@ -220,6 +220,11 @@ namespace stk {
         {
 #if !defined(SIERRA_PTMALLOC3_ALLOCATOR) && !defined(SIERRA_PTMALLOC2_ALLOCATOR)
           std::cout << "WARNING: ptmalloc2|3 not compiled in so malloc_used info unavailable.  Recompile with e.g. 'bake allocator=ptmalloc2 (or 3)'.  Printing zeros..." << std::endl;
+
+          //  intelcray
+
+#else
+
 #endif
 
           if (dump_level > 1)
