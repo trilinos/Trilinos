@@ -1,105 +1,134 @@
 // @HEADER
 // ***********************************************************************
 //
-//                Copyright message goes here.   TODO
+//                Copyright message goes here.
 //
 // ***********************************************************************
 // @HEADER
 
 /*! \file Zoltan2_DebugManager.hpp
 
-    \brief Debug Manager for Zoltan2
+    \brief Debug output manager for Zoltan2
 
     \author Siva Rajamanickam
 */
-#ifndef _ZOLTAN2_DEBUG_MANAGER_HPP_
-#define _ZOLTAN2_DEBUG_MANAGER_HPP_
-
-// Using the #define for ZOLTAN2_DEBUG makes the print() much faster when there
-// is nothing to print. However, it would be nice to allow print() even in the
-// release build. We can revisit this if the "if (debug level)" check 
-// becomes too expensive, especially while printing something in the innermost
-// loop.
-//#define ZOLTAN2_DEBUG
+#ifndef ZOLTAN2_DEBUGMANAGER_HPP
+#define ZOLTAN2_DEBUGMANAGER_HPP
 
 #include <string>
 #include <iostream>
-#include "Teuchos_oblackholestream.hpp"
 
 namespace Zoltan2
 {
-/*! Zoltan2::DebugManager
-    \brief Methods to display debugging statements.
+/*! \brief DebugManager contains the methods that perform output of
+                      debug and status messages.
 
+   An Environment has a DebugManager.
+
+   Parameters governing debug/status output:
+
+     \li \c debug_level
+     \li \c debug_procs
+     \li \c debug_output_stream
+     \li \c debug_output_file
+
+   For more information see at their definitions in 
+   createAllParameters() in Zoltan2_Parameters.cpp.
+
+   If Zoltan2 is compiled with \b Z2_OMIT_ALL_STATUS_MESSAGES, no status
+   messages will be displayed and status message code is ifdef'd out.
 */
 
 class DebugManager
 {
     public:
 
-    DebugManager ( int rank, bool doPrinting, std::ostream &debugOs, int debugLevel){
+    /*! \brief Constructor
+     *   \param rank  the MPI rank of this process.
+     *   \param doPrinting  true if this process is one that outputs messages.
+     *   \param debugOs      the output stream for debug messages.
+     *   \param debugLevel   the highest level of message to print, messages
+     *                      that are below this level will be ignored.
+     */
+    DebugManager ( int rank, bool doPrinting, std::ostream &debugOs, 
+      int debugLevel){
       myPID_ = rank;
       iPrint_ = doPrinting;
       myOS_ = &debugOs;
       debugLevel_ = debugLevel;
     }
 
+    /*! \brief Destructor
+     */
     virtual ~DebugManager() {};
 
-    inline void setRank(int p)
-    {
-      myPID_ = p;
-    }
-
-    inline void setIPrint(bool p)
-    {
-      iPrint_ = p;
-    }
-
-    inline void setOStream(std::ostream &os)
-    {
-      myOS_ = &os;
-    };
-
-    inline void setDebugLevel(int debugLevel) { debugLevel_ = debugLevel; };
-
+    /*! \brief Return the output stream for debug/status messages.
+     */
     inline std::ostream *getOStream() const { return myOS_; };
 
+    /*! \brief Return the highest level of message that will be printed.
+     */
     inline int getDebugLevel() const { return debugLevel_; };
 
+    /*! \brief Print a debug or status message, if this process 
+     *         is one of those that is supposed to be doing output.
+     *
+     *  \param  debugLevel  The level of this message.  If it is higher than
+     *                 the debugLevel stated in the constructor, it will be
+     *                 ignored.
+     *  \param  output      The message.
+     */
     inline void print(int debugLevel, const std::string &output){
-//#ifdef ZOLTAN2_DEBUG
+#ifndef Z2_OMIT_ALL_STATUS_MESSAGES
       if (debugLevel <= debugLevel_ && iPrint_)
         *myOS_ << output << std::endl;
-//#endif
+#endif
     }
 
+    /*! \brief Print a debug or status message regardless of 
+     *   whether this process is one of those that is supposed to be 
+     *    doing output.
+     *
+     *  \param  debugLevel  The level of this message.  If it is higher than
+     *                 the debugLevel stated in the constructor, it will be
+     *                 ignored.
+     *  \param  output      The message.
+     */
     inline void printInAllTasks(int debugLevel, const std::string &output){
-//#ifdef ZOLTAN2_DEBUG
+#ifndef Z2_OMIT_ALL_STATUS_MESSAGES
       if (debugLevel <= debugLevel_)
         *myOS_ << output << std::endl;
-//#endif
+#endif
     }
 
-    // The const char * versions of print functions are needed to avoid the
-    // expensive conversion in code like
-    //          print(5, "I am here");
+    /*! \brief The const char * versions of print functions are needed to 
+     *      avoid the expensive conversion to string.
+     *
+     *  \param  debugLevel  The level of this message.  If it is higher than
+     *                 the debugLevel stated in the constructor, it will be
+     *                 ignored.
+     *  \param  output      The message.
+     */
     inline void print(int debugLevel, const char *output){
-//#ifdef ZOLTAN2_DEBUG
-        if (debugLevel <= debugLevel_ && iPrint_)
-            *myOS_ << output << std::endl;
-//#endif
+#ifndef Z2_OMIT_ALL_STATUS_MESSAGES
+      if (debugLevel <= debugLevel_ && iPrint_)
+        *myOS_ << output << std::endl;
+#endif
     }
 
+    /*! \brief The const char * versions of print functions are needed to 
+     *      avoid the expensive conversion to string.
+     *
+     *  \param  debugLevel  The level of this message.  If it is higher than
+     *                 the debugLevel stated in the constructor, it will be
+     *                 ignored.
+     *  \param  output      The message.
+     */
     inline void printInAllTasks(int debugLevel, const char *output) {
-//#ifdef ZOLTAN2_DEBUG
+#ifndef Z2_OMIT_ALL_STATUS_MESSAGES
     if (debugLevel <= debugLevel_)
         *myOS_ << "PID =" << myPID_ << " " << output << std::endl;
-//#endif
-    }
-
-    inline void error(const std::string &output) {
-      *myOS_ << "PID =" << myPID_ << " " << output << std::endl;
+#endif
     }
 
     private:
@@ -107,7 +136,6 @@ class DebugManager
     int myPID_;
     int debugLevel_;
     std::ostream *myOS_;
-    Teuchos::oblackholestream myBHS_;
     bool iPrint_;
 };
 
