@@ -53,60 +53,34 @@
 # ************************************************************************
 # @HEADER
 
-  
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rouson-mp.gcc.cmake")
 
 #
-# Platform/compiler specific options for rouson-mp using gcc 
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+SET(COMM_TYPE SERIAL)
+SET(BUILD_TYPE DEBUG)
+SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_GCC)
+SET(CTEST_PARALLEL_LEVEL 8)
+#SET(CTEST_TEST_TIMEOUT 900)
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+# Exclude Sundance because of strange segfault (see bug 4382)
+SET(EXTRA_EXCLUDE_PACKAGES Sundance PyTrilinos STK)
 
-  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DForTrilinos_ENABLE_TESTS:BOOL=ON"
+  "-DForTrilinos_ENABLE_EXAMPLES:BOOL=ON"
+  "-DForTrilinos_ENABLE_OBJECT_ORIENTED:BOOL=ON"
+  "-DForTrilinos_DISABLE_DEFERRED_LENGTH_CHARACTERS:BOOL=ON"
+  "-DForTrilinos_DISABLE_FINAL_SUBROUTINES:BOOL=ON"
+  "-DForTrilinos_DISABLE_TYPE_BOUND_CONSTRUCTOR:BOOL=ON"
+  )
 
-  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  
-#  SET( CTEST_BUILD_FLAGS "-j8 -i" )
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
-
-  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-  
-  # Only turn on PyTrilinos for shared libraries
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-  
-  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=ON"
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
-    )
-
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.7")
-  
-  IF (COMM_TYPE STREQUAL MPI)
-  
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/usr/local/openmpi/GCC47"
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/openmpi/GCC47/bin/mpicxx"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/openmpi/GCC47/bin/mpicc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/openmpi/GCC47/bin/mpif90"
-      )
-  
-  ELSE()
-  
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-gfortran"
-      )
-  
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

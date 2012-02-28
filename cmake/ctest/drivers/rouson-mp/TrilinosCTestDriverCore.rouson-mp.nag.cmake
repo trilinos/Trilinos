@@ -57,7 +57,7 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Platform/compiler specific options for rouson-mp using gcc 
+# Platform/compiler specific options for rouson-mp using gcc and nagfor
 #
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
@@ -90,19 +90,21 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/usr/local/openmpi/GCC47"
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/openmpi/GCC47/bin/mpicxx"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/openmpi/GCC47/bin/mpicc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/openmpi/GCC47/bin/mpif90"
+      "-DMPI_BASE_DIR:PATH=/usr/local/openmpi/nagfor"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/openmpi/nagfor/bin/mpicxx"
+      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/openmpi/nagfor/bin/mpicc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/openmpi/nagfor/bin/mpif90"
+      "-DCMAKE_Fortran_FLAGS:STRING=-f2003 -g -C=all -wmismatch=mpi_scatterv,mpi_alltoallv,mpi_gatherv,mpi_allgatherv,mpi_bcast" 
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/nagfor"
+      "-DCMAKE_Fortran_FLAGS:STRING=-f2003 -g -C=all"
       )
   
   ENDIF()
