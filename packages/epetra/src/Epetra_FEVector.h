@@ -47,6 +47,9 @@
 #include <Epetra_CombineMode.h>
 #include <Epetra_Map.h>
 #include <Epetra_MultiVector.h>
+
+#include <vector>
+
 class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseVector;
 
@@ -242,13 +245,23 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   int myFirstID_;
   int myNumIDs_;
 
-  int* nonlocalIDs_;
-  int* nonlocalElementSize_;
-  int numNonlocalIDs_;
-  int numNonlocalIDsAlloc_;
-  double** nonlocalCoefs_;
-  int numNonlocalCoefs_;
-  int numNonlocalCoefsAlloc_;
+  std::vector<int> nonlocalIDs_;
+  std::vector<int> nonlocalElementSize_;
+
+  /// \brief Array of arrays (one per column) of nonlocal coefficients.
+  ///
+  /// Entry j in this array is an array of nonlocal coefficients for
+  /// column j of the multivector.  \c nonlocalCoefs_[j] in turn
+  /// contains the data for all the nonlocal block entries.  Entries
+  /// within a block are stored in column-major order (Fortran style),
+  /// in contiguous chunks of \c Map().MaxElementSize() entries.
+  ///
+  /// In summary: for k = 0 to numNonlocalIDs_ - 1,
+  /// nonlocalCoefs_[j][j*M + i] contains the entries of nonlocal
+  /// block entry k, for i = 0 to nonlocalElementSize_[k] - 1.
+  std::vector<std::vector<double> > nonlocalCoefs_;
+
+  //! Map describing distribution of nonlocal data.
   Epetra_BlockMap* nonlocalMap_;
   Epetra_Export* exporter_;
   Epetra_MultiVector* nonlocalVector_;
