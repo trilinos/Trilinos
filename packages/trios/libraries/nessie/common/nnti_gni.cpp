@@ -2573,7 +2573,24 @@ static int need_wc_mem_cq(const gni_memory_handle *gni_mem_hdl)
     log_debug(nnti_ee_debug_level, "enter");
 
 #if !defined(USE_RDMA_TARGET_ACK)
-    need_cq=0;
+    switch (gni_mem_hdl->type) {
+        case RDMA_TARGET_BUFFER:
+        case GET_SRC_BUFFER:
+        case PUT_DST_BUFFER:
+        case GET_DST_BUFFER:
+        case PUT_SRC_BUFFER:
+        case SEND_BUFFER:
+            need_cq=0;
+            break;
+        case RECEIVE_BUFFER:
+        case REQUEST_BUFFER:
+            need_cq=1;
+            break;
+        case UNKNOWN_BUFFER:
+        default:
+            need_cq=0;
+            break;
+    }
 #else
     switch (gni_mem_hdl->type) {
         case GET_DST_BUFFER:
