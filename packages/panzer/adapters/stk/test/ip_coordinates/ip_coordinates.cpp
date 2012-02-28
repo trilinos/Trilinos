@@ -161,6 +161,8 @@ namespace panzer {
     user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
     user_data.set<int>("Workset Size",workset_size);
 
+    user_data.sublist("IP Coordinates").set<int>("Integration Order",1);
+
     // setup and evaluate ResponseLibrary
     ///////////////////////////////////////////////////
  

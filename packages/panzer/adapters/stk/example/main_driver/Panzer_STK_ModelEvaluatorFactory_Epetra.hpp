@@ -5,6 +5,7 @@
 #include <map>
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Ptr.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -20,6 +21,7 @@
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_BCStrategy_Factory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
+#include "Panzer_ResponseAggregator_Factory.hpp"
 
 namespace Thyra {
   template<typename ScalarT> class ModelEvaluator;
@@ -42,11 +44,21 @@ namespace panzer_stk {
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
     //@}
 
-    void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+    /** \brief Builds the model evaluators for a panzer assembly
+        
+	\param comm [in] (Required) Teuchos communicator.  Must be non-null.
+	\param global_data [in] (Required) A fully constructed (all members allocated) global data object used to control parameter library and output support. Must be non-null.
+	\param eqset_factory [in] (Required) Equation set factory to provide user defined equation sets.
+	\param bc_factory [in] (Required) Boundary condition factory to provide user defined boundary conditions.
+	\param cm_factory [in] (Required) Closure model factory to provide user defined closure models.
+	\param ra_factory [in] (Optional) Response aggregator factory to provide user defined response aggregator types.
+    */
+    void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+		      const Teuchos::RCP<panzer::GlobalData>& global_data,
                       const panzer::EquationSetFactory & eqset_factory,
                       const panzer::BCStrategyFactory & bc_factory,
-                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
-		      const Teuchos::RCP<panzer::GlobalData>& global_data);
+		      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
+		      const Teuchos::Ptr<const panzer::ResponseAggregatorFactory<panzer::Traits> > ra_factory = Teuchos::null);
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
     
