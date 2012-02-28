@@ -58,6 +58,10 @@
 #include "Teko_StratimikosFactory.hpp"
 #endif
 
+#ifdef HAVE_MUELU
+#include <Thyra_MueLuPreconditionerFactory.hpp>
+#endif
+
 namespace panzer_stk {
   
   template<typename ScalarT>
@@ -460,6 +464,11 @@ namespace panzer_stk {
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
     }
     #endif
+
+    #ifdef HAVE_MUELU
+    Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);     // Register MueLu as a Stratimikos preconditioner strategy.
+    #endif
+
     linearSolverBuilder.setParameterList(strat_params);
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
