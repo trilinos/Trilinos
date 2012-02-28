@@ -51,8 +51,10 @@ void AlgPTBlock(
   //    are we computing memory used
 
   bool debug = env->doStatus();
+#if 0
   bool timing = env->doTiming();
   bool memstats = env->doMemoryProfiling();
+#endif
 
   if (debug)
     env->debugOut_->print(DETAILED_STATUS, string("Entering AlgBlock"));
@@ -65,33 +67,57 @@ void AlgPTBlock(
 
   // Parameters that may drive algorithm choices
   //    speed_versus_quality
-  //    memory_footprint_versus_runtime
+  //    memory_versus_speed
 
-  const Teuchos::ParameterList &pl = env->getParams();
-  string mvr = pl.get<string>(string("memory_footprint_versus_runtime"));
-  string svq = pl.get<string>(string("speed_versus_quality"));
+#if 0
+  const Teuchos::ParameterList &pl = env->getParameters();
+  const string defaultVal("balance");
 
-  bool fastSolution = (svq==string("speed"));
-  bool goodSolution = (svq==string("quality"));
-  bool balancedSolution = (svq==string("balance"));
+  const string *mvr = pl.getPtr<string>("memory_versus_speed");
+  if (!mvr)
+    mvr = &defaultVal;
   
-  bool lowMemory = (mvr==string("memory")) || (mvr==string("memory_footprint"));
-  bool lowRunTime = (mvr==string("runtime"));
-  bool balanceMemoryRunTime = (svq==string("balance"));
+  const string *svq = pl.getPtr<string>("speed_versus_quality");
+  if (!svq)
+    svq = &defaultVal;
+
+  bool fastSolution = (*svq==string("speed"));
+  bool goodSolution = (*svq==string("quality"));
+  bool balancedSolution = (*svq==string("balance"));
+ 
+  bool lowMemory = (*mvr==string("memory"));
+  bool lowRunTime = (*mvr==string("speed"));
+  bool balanceMemoryRunTime = (*mvr==string("balance"));
+#endif
 
   ////////////////////////////////////////////////////////
   // Problem parameters of interest:
   //    objective
   //    imbalance_tolerance
 
-  string objective("balance_object_weight");
-  double imbalanceTolerance = 1.1;
+#if 0
+  const string *obj=NULL;
+  const double *tol=NULL;
 
   if (env->hasPartitioningParameters()){
-    const Teuchos::ParameterList &pl = env->getPartitioningParams();
-    objective = pl.get<string>(string("objective"));
-    imbalanceTolerance = pl.get<double>(string("imbalance_tolerance"));
+    const Teuchos::ParameterList &plPart = pl.sublist("partitioning");
+
+    obj = plPart.getPtr<string>("objective");
+    tol = plPart.getPtr<double>("imbalance_tolerance");
   }
+
+  double imbalanceTolerance = (tol ? *tol : 1.1);
+  string objective = (obj ? *obj : string("balance_object_weight"));
+
+  bool balanceCount = (objective == string("balance_object_count"));
+  bool balanceWeight = (objective == string("balance_object_weight"));
+  bool minTotalWeight = 
+    (objective == string("multicriteria_minimize_total_weight"));
+  bool minMaximumWeight = 
+    (objective == string("multicriteria_minimize_maximum_weight"));
+  bool balanceTotalMaximum = 
+    (objective == string("multicriteria_balance_total_maximum"));
+#endif
 
   ////////////////////////////////////////////////////////
   // From the IdentifierModel we need:
@@ -117,16 +143,19 @@ void AlgPTBlock(
   //   part sizes are the same.
 
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
+#if 0
   size_t numLocalParts = solution->getLocalNumberOfParts();
 
-  //const int *partDist = solution->getPartDistribution();
-  //const size_t *procDist = solution->getProcsParts();
-  //double *partSizes0 = getCriteriaPartSizes(0);
+  const int *partDist = solution->getPartDistribution();
+  const size_t *procDist = solution->getProcsParts();
+  double *partSizes0 = getCriteriaPartSizes(0);
+#endif
   
   ////////////////////////////////////////////////////////
   // What is the objective.
   // TODO: consider the objective in the algorithm
 
+#if 0
   enum {object_weight,     // balance on first weight
         object_count,      // ignore weight, balance on object count
         total_weight,      // balance on total of weights
@@ -142,6 +171,7 @@ void AlgPTBlock(
     else if (objective == string("multicriteria_minimize_maximum_weight"))
       balanceObjective = maximum_weight;
   }
+#endif
 
   ////////////////////////////////////////////////////////
   // The algorithm
@@ -181,11 +211,13 @@ void AlgPTBlock(
 
   if (debug){
     ostringstream oss("Part sizes: ");
-    for (int i=0; i <= nprocs; i++)
-      oss << part_sizes[i];
+    for (int i=0; i < numGlobalParts; i++)
+      oss << part_sizes[i] << " ";
+    oss << "\n";
     oss << std::endl << "Weights : ";
     for (int i=0; i <= nprocs; i++)
-      oss << scansum[i];
+      oss << scansum[i] << " ";
+    oss << "\n";
     env->debugOut_->print(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
@@ -239,16 +271,20 @@ void AlgPTBlock(
   // Done
   
   if (debug){
+#if 0
     if (imbalance[0] > Teuchos::as<scalar_t>(imbalanceTolerance)){
       ostringstream oss("Warning: imbalance is ");
       oss << imbalance[0] << std::endl;
       env->debugOut_->print(BASIC_STATUS, oss.str());
     }
     else{
+#endif
       ostringstream oss("Imbalance: ");
       oss << imbalance[0] << std::endl;
       env->debugOut_->print(DETAILED_STATUS, oss.str());
+#if 0
     }
+#endif
   }
 
   // Done, update the solution

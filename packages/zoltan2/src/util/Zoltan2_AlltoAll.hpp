@@ -14,9 +14,6 @@
 #ifndef _ZOLTAN2_ALLTOALL_HPP_
 #define _ZOLTAN2_ALLTOALL_HPP_
 
-/*! \file Zoltan2_AlltoAll.hpp
-*/
-
 #include <Zoltan2_Standards.hpp>
 
 #include <vector>

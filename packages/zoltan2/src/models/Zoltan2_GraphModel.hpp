@@ -39,11 +39,29 @@ class GraphModel : public Model<Adapter>
 {
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
+#endif
   
   GraphModel(){
+    throw std::logic_error("in non-specialized GraphModel");
+  }
+
+  /*! Constructor
+   *  All processes in the communicator must call the constructor.
+   *
+   *  \param  inputAdapter  an encapsulation of the user data
+   *  \param  env           environment (library configuration settings)
+   *  \param  comm       communicator for the problem
+   *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
+   */
+
+  GraphModel(const Adapter *ia,
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
+    std::bitset<NUM_MODEL_FLAGS> &modelFlags)
+  {
     throw std::logic_error("in non-specialized GraphModel");
   }
 
@@ -166,6 +184,7 @@ public:
   int getNumWeights() const { return 0; }
 };
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 ////////////////////////////////////////////////////////////////
 // Graph model derived from MatrixInput.
 //
@@ -190,156 +209,24 @@ public:
 
   /*! Constructor
    *  All processes in the communicator must call the constructor.
+   *
    *  \param  inputAdapter  an encapsulation of the user data
    *  \param  env           environment (library configuration settings)
    *  \param  comm       communicator for the problem
-   *  \param  consecutiveIdsRequired  set to true if the algorithm or
-   *           third party library requires consecutive global vertex Ids.
-   *  \param removeSelfEdges set to true if the algorithm or the third party
-   *           library cannot handle self edges
+   *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
    */
+
   GraphModel(const MatrixInput<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    bool consecutiveIdsRequired=false, bool removeSelfEdges=false) :
-     input_(ia), env_(env), comm_(comm), 
-     gids_(), gnos_(), edgeGnos_(), procIds_(), 
+    std::bitset<NUM_MODEL_FLAGS> &modelFlags):
+     input_(ia), env_(env), comm_(comm),
+     gids_(), gnos_(), edgeGids_(), edgeGnos_(), procIds_(), 
      offsets_(), gnosConst_(), edgeGnosConst_(), procIdsConst_(), 
      numLocalEdges_(0), numGlobalEdges_(0), numLocalVtx_(0), 
      gidsAreGnos_(false), nearEdgeLnos_(), nearEdgeOffsets_(), 
      numNearLocalEdges_(0)
-
   {
-    // Get the matrix from the input adapter
-
-    gid_t const *vtxIds=NULL, *nborIds=NULL;
-    lno_t const  *offsets=NULL;
-    try{
-      numLocalVtx_ = input_->getRowListView(vtxIds, offsets, nborIds);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    gids_ = arcp(vtxIds, 0, numLocalVtx_, false);
-
-    numLocalEdges_ = offsets[numLocalVtx_];
-
-    // If Matrix has diagonal entries, and self-edges are to be removed
-    //    do that now.
-
-    ArrayRCP<lno_t> tmpOffsets;
-    ArrayRCP<gid_t> tmpEdges;
-    lno_t nSelfEdges = 0;
-
-    size_t numOffsets = numLocalVtx_ + 1;
-
-    if (removeSelfEdges) {
-
-      lno_t *offArray = new lno_t [numOffsets];
-      Z2_LOCAL_MEMORY_ASSERTION(*env, numOffsets, offArray);
-      gid_t *edArray = new gid_t [numLocalEdges_];
-      Z2_LOCAL_MEMORY_ASSERTION(*env, numLocalEdges_, !numLocalEdges_||edArray);
-
-      for (lno_t i=0; i < numLocalVtx_; i++){
-
-        offArray[i] = offsets[i] - nSelfEdges;
-
-        for (lno_t j = offsets[i]; j < offsets[i+1]; j++) {
-          if (gids_[i] == nborIds[j]) { // self edge; remove it
-            nSelfEdges++;
-          }
-          else {  // Not a self-edge; keep it.
-            edArray[j-nSelfEdges] = nborIds[j];
-          }
-        }
-      }
-      numLocalEdges_ -= nSelfEdges;
-      offArray[numLocalVtx_] = numLocalEdges_;
-
-      if (nSelfEdges > 0){
-        tmpOffsets = arcp(offArray, 0, numLocalVtx_+1);
-        tmpEdges = arcp(edArray, 0, numLocalEdges_);
-      }
-      else{
-        delete [] offArray;
-        if (numLocalEdges_) delete [] edArray;
-      }
-    }
-
-    if (nSelfEdges == 0){
-      offsets_ = arcp(const_cast<lno_t *>(offsets), 0, numOffsets, false);
-      edgeGids_ = arcp(const_cast<gno_t *>(nborIds), 0, numLocalEdges_, false);
-    }
-    else{
-      offsets_ = tmpOffsets;
-      edgeGids_ =  tmpEdges;
-    }
-
-    reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_SUM, 1,
-      &numLocalEdges_, &numGlobalEdges_);
-
-    // Create an IdentifierMap, which will map the user's global IDs to
-    //   Zoltan2 internal global numbers if neccesary.
-    //   The map can also give us owners of our vertex neighbors.
-
-    RCP<const idmap_t> idMap;
-
-    try{
-      idMap = rcp(new idmap_t(env, comm_, gids_, consecutiveIdsRequired));
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    gidsAreGnos_ = idMap->gnosAreGids();
-
-    if (numLocalVtx_ && !gidsAreGnos_){
-      gno_t *tmp = new gno_t [numLocalVtx_];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalVtx_, tmp)
-      gnos_ = arcp(tmp, 0, numLocalVtx_);
-
-      try{
-        // Because gidTranslate can translate gids to gnos or
-        // gnos to gids depending on a flag, neither the gids nor
-        // the gnos are declared to be const.
-        ArrayRCP<gid_t> tmpGids = arcp_const_cast<gid_t>(gids_);
-
-        idMap->gidTranslate(tmpGids(0,numLocalVtx_), gnos_(0,numLocalVtx_), 
-          TRANSLATE_APP_TO_LIB);
-      }
-      Z2_FORWARD_EXCEPTIONS;
-
-      if (numLocalEdges_){
-        tmp = new gno_t [numLocalEdges_];
-        Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, tmp)
-        edgeGnos_ = arcp(tmp, 0, numLocalEdges_);
-      }
-    }
-
-    if (numLocalEdges_){
-      int *p = new int [numLocalEdges_];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, p)
-      procIds_ = arcp(p, 0, numLocalEdges_);
-    }
-
-    ArrayView<const gid_t> gidArray(Teuchos::null);
-    ArrayView<gno_t> gnoArray(Teuchos::null);
-    ArrayView<int> procArray(Teuchos::null);
-
-    if (numLocalEdges_){
-      gidArray = edgeGids_.view(0, numLocalEdges_);
-      procArray = procIds_.view(0, numLocalEdges_);
-      if (!gidsAreGnos_)
-        gnoArray = edgeGnos_.view(0, numLocalEdges_);
-    }
-      
-    try{
-      // All processes must make this call.
-      idMap->gidGlobalTranslate(gidArray, gnoArray, procArray);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    this->setIdentifierMap(idMap);   // Zoltan2::Model method
-
-    gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
-    edgeGnosConst_ = arcp_const_cast<const gno_t>(edgeGnos_);
-    procIdsConst_ = arcp_const_cast<const int>(procIds_);
+    initializeData(modelFlags);
   }
 
   //!  Destructor
@@ -384,6 +271,7 @@ public:
     return 0;   // TODO
   }
 
+  // TODO - move these out of definition
   size_t getVertexList( ArrayView<const gno_t> &Ids,
     ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const
   {
@@ -413,7 +301,7 @@ public:
     wgts = ArrayView<const scalar_t>(Teuchos::null);
 
     if (numLocalEdges_){
-      if (edgeGnos_.size() == 0)
+      if (gidsAreGnos_)
         edgeIds = edgeGids_(0, numLocalEdges_);
       else
         edgeIds = edgeGnosConst_(0, numLocalEdges_);
@@ -464,7 +352,7 @@ public:
           }
 
           const gno_t *graphGnos = NULL;
-          if (edgeGnos_.size() == 0)
+          if (gidsAreGnos_)
             graphGnos = reinterpret_cast<const gno_t *>(edgeGids_.getRawPtr());
           else
             graphGnos = edgeGnosConst_.getRawPtr();
@@ -527,12 +415,17 @@ public:
 
 private:
 
+  void initializeData(std::bitset<NUM_MODEL_FLAGS> &);
+
   const MatrixInput<User> *input_;
   const RCP<const Environment > env_;
   const RCP<const Comm<int> > comm_;
 
   ArrayRCP<const gid_t> gids_;
   ArrayRCP<gno_t> gnos_;
+
+  // Note: in case of graph subsetting, size of these arrays
+  // may be larger than numLocalEdges_.  So do not use .size().
 
   ArrayRCP<const gid_t> edgeGids_;
   ArrayRCP<gno_t> edgeGnos_;
@@ -557,6 +450,222 @@ private:
   size_t numNearLocalEdges_;
 };
 
+template <typename User>
+  void GraphModel<MatrixInput<User> >::initializeData(
+    std::bitset<NUM_MODEL_FLAGS> &modelFlags)
+{
+  // Model creation flags
+
+  bool symTranspose = modelFlags.test(SYMMETRIZE_INPUT_TRANSPOSE);
+  bool symBipartite = modelFlags.test(SYMMETRIZE_INPUT_BIPARTITE);
+  bool vertexCols = modelFlags.test(VERTICES_ARE_MATRIX_COLUMNS);
+  bool vertexNz = modelFlags.test(VERTICES_ARE_MATRIX_NONZEROS);
+  bool consecutiveIdsRequired = 
+    modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+  bool removeSelfEdges = modelFlags.test(SELF_EDGES_MUST_BE_REMOVED);
+  bool subsetGraph = modelFlags.test(GRAPH_IS_A_SUBSET_GRAPH);
+
+  if (symTranspose || symBipartite || vertexCols || vertexNz){
+    throw std::runtime_error("graph build option not yet implemented");
+  }
+
+  // Get the matrix from the input adapter
+
+  gid_t const *vtxIds=NULL, *nborIds=NULL;
+  lno_t const  *offsets=NULL;
+  try{
+    numLocalVtx_ = input_->getRowListView(vtxIds, offsets, nborIds);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  gids_ = arcp(vtxIds, 0, numLocalVtx_, false);
+
+  numLocalEdges_ = offsets[numLocalVtx_];
+
+  // Remove self edges if necessary.
+
+  ArrayRCP<lno_t> tmpOffsets;
+  ArrayRCP<gid_t> tmpEdges;
+  lno_t nSelfEdges = 0;
+
+  size_t numOffsets = numLocalVtx_ + 1;
+
+  if (removeSelfEdges && input_->diagonalEntriesMayBePresent()) {
+
+    lno_t *offArray = new lno_t [numOffsets];
+    Z2_LOCAL_MEMORY_ASSERTION(*env_, numOffsets, offArray);
+    gid_t *edArray = new gid_t [numLocalEdges_];
+    Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, !numLocalEdges_||edArray);
+
+    for (lno_t i=0; i < numLocalVtx_; i++){
+
+      offArray[i] = offsets[i] - nSelfEdges;
+
+      for (lno_t j = offsets[i]; j < offsets[i+1]; j++) {
+        if (gids_[i] == nborIds[j]) { // self edge; remove it
+          nSelfEdges++;
+        }
+        else {  // Not a self-edge; keep it.
+          edArray[j-nSelfEdges] = nborIds[j];
+        }
+      }
+    }
+    numLocalEdges_ -= nSelfEdges;
+    offArray[numLocalVtx_] = numLocalEdges_;
+
+    if (nSelfEdges > 0){
+      tmpOffsets = arcp(offArray, 0, numLocalVtx_+1);
+      tmpEdges = arcp(edArray, 0, numLocalEdges_);
+    }
+    else{
+      delete [] offArray;
+      if (numLocalEdges_) delete [] edArray;
+    }
+  }
+
+  if (nSelfEdges == 0){
+    offsets_ = arcp(const_cast<lno_t *>(offsets), 0, numOffsets, false);
+    edgeGids_ = arcp(const_cast<gno_t *>(nborIds), 0, numLocalEdges_, false);
+  }
+  else{
+    offsets_ = tmpOffsets;
+    edgeGids_ =  tmpEdges;
+  }
+
+  // Create an IdentifierMap, which will map the user's global IDs to
+  //   Zoltan2 internal global numbers if neccesary.
+  //   The map can also give us owners of our vertex neighbors.
+
+  RCP<const idmap_t> idMap;
+
+  try{
+    idMap = rcp(new idmap_t(env_, comm_, gids_, consecutiveIdsRequired));
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  gidsAreGnos_ = idMap->gnosAreGids();
+
+  if (numLocalVtx_ && !gidsAreGnos_){
+    gno_t *tmp = new gno_t [numLocalVtx_];
+    Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalVtx_, tmp)
+    gnos_ = arcp(tmp, 0, numLocalVtx_);
+
+    try{
+      // Because gidTranslate can translate gids to gnos or
+      // gnos to gids depending on a flag, neither the gids nor
+      // the gnos are declared to be const.
+      ArrayRCP<gid_t> tmpGids = arcp_const_cast<gid_t>(gids_);
+
+      idMap->gidTranslate(tmpGids(0,numLocalVtx_), gnos_(0,numLocalVtx_), 
+        TRANSLATE_APP_TO_LIB);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    if (numLocalEdges_){
+      tmp = new gno_t [numLocalEdges_];
+      Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, tmp)
+      edgeGnos_ = arcp(tmp, 0, numLocalEdges_);
+    }
+  }
+
+  if (numLocalEdges_){
+    int *p = new int [numLocalEdges_];
+    Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, p)
+    procIds_ = arcp(p, 0, numLocalEdges_);
+  }
+
+  ArrayView<const gid_t> gidArray(Teuchos::null);
+  ArrayView<gno_t> gnoArray(Teuchos::null);
+  ArrayView<int> procArray(Teuchos::null);
+
+  if (numLocalEdges_){
+    gidArray = edgeGids_.view(0, numLocalEdges_);
+    procArray = procIds_.view(0, numLocalEdges_);
+    if (!gidsAreGnos_)
+      gnoArray = edgeGnos_.view(0, numLocalEdges_);
+  }
+    
+  try{
+    // All processes must make this call.
+    idMap->gidGlobalTranslate(gidArray, gnoArray, procArray);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  this->setIdentifierMap(idMap);   // Zoltan2::Model method
+
+  // Check for edges that are not in our list of global Ids.  If
+  // we are subsetting a graph that is not an error, otherwise
+  // it is an error.
+
+  int *nborProc = procIds_.getRawPtr();
+  size_t numRemoteEdges = 0;
+  for (size_t i=0; i < numLocalEdges_; i++){
+    if (nborProc[i] < 0)
+      numRemoteEdges++;
+  }
+
+  if (numRemoteEdges > 0){
+
+    if (!subsetGraph){
+      Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid edge ids", 1, BASIC_ASSERTION)
+    }
+    else{ // Remove edges that are not in the sub graph
+
+      size_t numNewEdges = numLocalEdges_ - numRemoteEdges;
+
+      const lno_t *offFrom = offsets_.getRawPtr();
+      lno_t *offTo = const_cast<lno_t *>(offFrom);
+
+      if (offFrom == offsets){  // can't overwrite user's data
+        offTo = new lno_t [numLocalVtx_ + 1];
+        Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalVtx_+1, offTo);
+      }
+  
+      const gid_t *egidFrom = edgeGids_.getRawPtr();
+      gid_t *egidTo = const_cast<gid_t *>(egidFrom);
+
+      if (egidFrom == nborIds){ // can't overwrite user's data
+        egidTo = new gid_t [numNewEdges];
+        Z2_LOCAL_MEMORY_ASSERTION(*env_, numNewEdges, egidTo);
+      }
+
+      gno_t *egno = NULL;
+      if (!gidsAreGnos_)
+        egno = edgeGnos_.getRawPtr();
+
+      offTo[0] = 0;
+
+      for (lno_t i=0, idx=0; i < numLocalVtx_; i++){
+        for (lno_t j=offFrom[i]; j < offFrom[i+1]; j++){
+          if (nborProc[j] >= 0){
+            egidTo[idx] = egidFrom[j];
+            nborProc[idx] = nborProc[j];
+            if (egno)
+              egno[idx] = egno[j];
+            idx++;
+          }
+        }
+        offTo[i+1] = idx;
+      }
+
+      if (offTo != offFrom)
+        offsets_ = arcp(offTo, 0, numLocalVtx_+1, true);
+
+      if (egidTo != egidFrom)
+        edgeGids_ = arcp(egidTo, 0, numNewEdges, true);
+
+      numLocalEdges_ = numNewEdges;
+    }
+  }
+
+  reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_SUM, 1,
+    &numLocalEdges_, &numGlobalEdges_);
+
+  gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+  edgeGnosConst_ = arcp_const_cast<const gno_t>(edgeGnos_);
+  procIdsConst_ = arcp_const_cast<const int>(procIds_);
+}
+
 ////////////////////////////////////////////////////////////////
 // Graph model derived from IdentifierInput.
 //
@@ -576,14 +685,15 @@ class GraphModel<IdentifierInput<User> > : public Model<IdentifierInput<User> >
 {
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename IdentifierInput<User>::scalar_t  scalar_t;
   typedef typename IdentifierInput<User>::gno_t     gno_t;
   typedef typename IdentifierInput<User>::lno_t     lno_t;
+#endif
 
   GraphModel(const IdentifierInput<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    bool consecutiveIdsRequired=false, bool removeSelfEdges=false) 
-
+    std::bitset<NUM_MODEL_FLAGS> &flags)
   {
     throw std::runtime_error("may not build a graph with identifiers");
   }
@@ -615,6 +725,7 @@ public:
   int getNumWeights() const { return 0; }
 
 };
+#endif    // DOXYGEN_SHOULD_SKIP_THIS
 
 }   // namespace Zoltan2
 

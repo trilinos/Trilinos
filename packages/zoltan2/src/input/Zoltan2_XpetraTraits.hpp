@@ -6,9 +6,9 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Zoltan2_XpetraCrsMatrixInput.hpp
+/*! \file Zoltan2_XpetraTraits.hpp
 
-    \brief An input adapter for a Xpetra::CrsMatrix.
+    \brief Behaviors of Xpetra classes, including migration.
 */
 
 #ifndef _ZOLTAN2_XPETRATRAITS_HPP_

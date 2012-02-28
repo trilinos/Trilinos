@@ -32,6 +32,7 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 
+//#include <Teuchos_ScalarTraits.hpp>    // TODO LRIESEN
 #include <MatrixMarket_Tpetra.hpp>
 #include <MueLu_MatrixFactory.hpp>
 #include <MueLu_GalleryParameters.hpp>

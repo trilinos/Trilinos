@@ -27,7 +27,7 @@
 
 /*! \file Zoltan2_Parameters.hpp
 
-  This file contains parameter-related definitions.
+  This file contains parameter-related declarations and definitions.
 */
 
 // Had to redefine this type from Teuchos_ParameterEntryValidator.hpp.
@@ -36,9 +36,88 @@ typedef Teuchos::RCP<const Teuchos::Array<std::string> > ValidStringsList;
 
 namespace Zoltan2{
 
+// Namespace methods
+
+void createValidatorList(
+   const Teuchos::ParameterList &plIn, Teuchos::ParameterList &plOut);
+
+void printListDocumentation( const Teuchos::ParameterList &pl, std::ostream &os,
+  std::string listNames=std::string(""));
+
+// Parameter enumerated types.
+//
+//  If you change these enumerators, change their documentation
+//  in Zoltan2_Parameters.cpp.
+//
+
+/*! \brief Level of error checking or assertions desired.
+ *
+ *  Each assertion in the code must have a level. Tests for
+ *  logic errors should always be level DEBUG_MODE_ASSERTION.
+ *  Quick tests are BASIC, longer tests for common errors are
+ *  COMPLEX, and tests for unlikely errors are only done in DEBUG_MODE.
+ *  The user sets the assertion level with the parameter \c error_check_level.
+ */
+
+enum AssertionLevel {
+  BASIC_ASSERTION,    /*!< checks that should always be done (user input) */
+  COMPLEX_ASSERTION,  /*!< checks that take extra time (validate a graph) */
+  DEBUG_MODE_ASSERTION, /*!< done when checking everything incl logic errors */
+  NUM_ASSERTION_LEVELS};
+
+/*! \brief The amount of debugging or status output to print.
+ *
+ *  Each debug/status message must have an output level.  The
+ *  user specfies the level desired with the \c debug_level parameter.
+ *
+ *  If Zoltan2 is compiled with \b Z2_OMIT_ALL_STATUS_MESSAGES, no
+ *  messages will be displayed, \c debug_level is ignored,
+ *  and status message code is ifdef'd out.
+ */
+ 
+enum MessageOutputLevel {
+  NO_STATUS,                 /*!< don't display status/debug messages */
+  BASIC_STATUS,              /*!< the status at each high level step */
+  DETAILED_STATUS, /*!< include sub-steps, plus each method's entry and exit */
+  VERBOSE_DETAILED_STATUS,   /*!< include more detail about sub-steps */
+  NUM_STATUS_OUTPUT_LEVELS};
+
+/*! \brief Whether profiling information should be local or should include
+ *             global reductions.
+ *
+ *  This is unused.
+ * \todo It would be good for timing and memory profiling to include an
+ *          option to print out local values (which would be faster) or
+ *          includes global min, max, average, total, etc.
+ */
+enum MessageSummaryLevel{
+  LOCAL_SUMMARY,              /*!< messages should display local info only */
+  GLOBAL_SUMMARY,             /*!< include global min, max, avg, etc. */
+  NUM_STATUS_SUMMARY_LEVELS};
+
 ////////////////////////////////////////////////////////////////////
-// Declarations
+// IntegerRangeListValidator
+//
+// An IntegerRangeList is a concise way to provide a list of
+// identifiers.  Valid values are:
+//
+// a comma separated list of integers
+// a range of integers given as two integers separated by a dash
+// the word "all"
+// any comma separated list of the above three
+//
+// Examples:
+//    1,5,12,30-39,101
+//    all
+//
+// Redundant specifiers are and'ed:  "1,5,all" is just "all"
 ////////////////////////////////////////////////////////////////////
+
+enum RangeType {
+  RANGE_INCLUDES_ALL,
+  RANGE_IS_EMPTY,
+  RANGE_IS_LISTED,
+  NUM_RANGE_TYPES};
 
 template <typename Integral>
   class IntegerRangeListValidator : public Teuchos::ParameterEntryValidator
@@ -106,44 +185,9 @@ template <typename Integral>
 template <typename Integral>
   void printIntegralRangeList(std::ostream &os, Teuchos::Array<Integral> &irl);
 
-// Function declarations
-
-void createValidParameterList(Teuchos::ParameterList &pl, 
-  const Teuchos::Comm<int> &comm);
-
 ////////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////////
-
-// Parameter enumerated types.
-//
-//  If you change these enumerators, change their documentation
-//  in Zoltan2_Parameters.cpp.
-//
-
-enum RangeType {
-  RANGE_INCLUDES_ALL,
-  RANGE_IS_EMPTY,
-  RANGE_IS_LISTED,
-  NUM_RANGE_TYPES};
-
-enum AssertionLevel {
-  BASIC_ASSERTION,    /*!< checks that should always be done (user input) */
-  COMPLEX_ASSERTION,  /*!< checks that take extra time (valid input graph?) */
-  DEBUG_MODE_ASSERTION,   /*!< only done when check absolutely everything */
-  NUM_ASSERTION_LEVELS};
-
-enum MessageOutputLevel {
-  NO_STATUS,                 /*!< don't display status/debug messages */
-  BASIC_STATUS,              /*!< the status at each high level step */
-  DETAILED_STATUS,           /*!< include status at algorithm sub-steps */
-  VERBOSE_DETAILED_STATUS,   /*!< include more detail about sub-steps */
-  NUM_STATUS_OUTPUT_LEVELS};
-
-enum MessageSummaryLevel{
-  LOCAL_SUMMARY,              /*!< messages should display local info only */
-  GLOBAL_SUMMARY,             /*!< include global min, max, avg, etc. */
-  NUM_STATUS_SUMMARY_LEVELS};
 
 template <typename Integral>
 const std::string IntegerRangeListValidator<Integral>::listDelim_(",");

@@ -43,20 +43,25 @@ public:
   // Destructor
   virtual ~OrderingProblem() {};
 
-  //! Constructor with InputAdapter Interface
+  //! Constructor with InputAdapter Interface with communicator arg
 #ifdef HAVE_ZOLTAN2_MPI
-  OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm comm=MPI_COMM_WORLD) 
+  OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm comm) 
                       : Problem<Adapter>(A, p, comm) 
-#else
-  OrderingProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
+  {
+    HELLO;
+    createOrderingProblem();
+  };
 #endif
+
+  //! Constructor where communicator is Teuchos default
+  OrderingProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
   {
     HELLO;
     createOrderingProblem();
   };
 
   // Other methods
-  void solve();
+  void solve(bool updateInputData=true);
   // virtual void redistribute();
 
   OrderingSolution<gid_t, lno_t> *getSolution() {
@@ -67,12 +72,11 @@ private:
   void createOrderingProblem();
 
   RCP<OrderingSolution<gid_t, lno_t> > solution_;
-
 };
 
 ////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void OrderingProblem<Adapter>::solve()
+void OrderingProblem<Adapter>::solve(bool newData)
 {
   HELLO;
 
@@ -130,6 +134,8 @@ template <typename Adapter>
 void OrderingProblem<Adapter>::createOrderingProblem()
 {
   HELLO;
+  using Teuchos::ParameterList;
+
 //  cout << __func__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 
 //       << this->inputAdapter_->inputAdapterName() << endl;
@@ -138,10 +144,19 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   ovis_enabled(this->comm_->getRank());
 #endif
 
-  // Finalize parameters.  If the Problem wants to set or
+  // Committing the parameters is the process of validating
+  // and in some cases converting the user's parameter to
+  // and internal representation. If the Problem wants to set or
   // change any parameters, do it before this call.
 
-  this->env_->commitParameters();
+  if (!this->env_->parametersAreCommitted())
+    this->env_->commitParameters();
+
+  ParameterList *general = &(this->env_->getParametersNonConst());
+  ParameterList *ordering = NULL;
+  if (this->env_->hasOrderingParameters()){
+    ordering = &(general->sublist("ordering"));
+  }
 
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
@@ -153,11 +168,16 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // Select Model based on parameters and InputAdapter type
+
+  std::bitset<NUM_MODEL_FLAGS> graphFlags;
+  std::bitset<NUM_MODEL_FLAGS> idFlags;
+
   switch (modelType) {
 
   case GraphModelType:
+    graphFlags.set(SELF_EDGES_MUST_BE_REMOVED);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, this->comm_, false, true));
+      this->baseInputAdapter_, this->envConst_, this->comm_, graphFlags));
 
     this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->graphModel_);
@@ -167,8 +187,9 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
 
   case IdentifierModelType:
+    idFlags.set(SELF_EDGES_MUST_BE_REMOVED);
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, this->comm_, false));
+      this->baseInputAdapter_, this->envConst_, this->comm_, idFlags));
 
     this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->identifierModel_);
@@ -186,6 +207,5 @@ void OrderingProblem<Adapter>::createOrderingProblem()
     break;
   }
 }
-
-}
+} //namespace Zoltan2
 #endif

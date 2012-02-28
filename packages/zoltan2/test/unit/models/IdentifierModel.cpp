@@ -36,6 +36,10 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   int rank = comm->getRank();
   int fail = 0, gfail = 0;
 
+  std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags = 0;
+  if (consecutiveIds)
+    modelFlags.set(Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+
   RCP<const Zoltan2::Environment> default_env = 
     Zoltan2::getDefaultEnvironment();
 
@@ -72,7 +76,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   try{
     model = new Zoltan2::IdentifierModel<base_adapter_t>(
-      base_ia, default_env, comm, consecutiveIds);
+      base_ia, default_env, comm, modelFlags);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -146,8 +150,8 @@ int main(int argc, char *argv[])
   std::string nullString;
   std::vector<std::string> mtxFiles;
   
-  mtxFiles.push_back("../data/simple.mtx");
-  mtxFiles.push_back("../data/cage10.mtx");
+  mtxFiles.push_back(testDataFilePath+string("/simple.mtx"));
+  mtxFiles.push_back(testDataFilePath+string("/cage10.mtx"));
 
   bool wishConsecutiveIds = true;
 

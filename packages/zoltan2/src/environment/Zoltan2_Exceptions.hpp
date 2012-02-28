@@ -6,12 +6,6 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Zoltan2_Exceptions.hpp
-
-    \brief Exception handling macros
-*/
-
-
 #ifndef _ZOLTAN2_EXCEPTIONS_HPP_
 #define _ZOLTAN2_EXCEPTIONS_HPP_
 

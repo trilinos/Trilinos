@@ -78,6 +78,10 @@ public:
 
   std::string inputAdapterName() const {return std::string("BasicIdentifier");}
 
+  size_t getLocalNumberOfObjects() const { return numIds_;}
+
+  int getNumberOfWeightsPerObject() const { return weights_.size();}
+
   ////////////////////////////////////////////////////////////////
   // The IdentifierInput interface.
   // This is the interface that would be called by a model or a problem .

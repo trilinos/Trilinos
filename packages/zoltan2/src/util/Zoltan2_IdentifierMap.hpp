@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <map>
 #include <iostream>
-using namespace std;
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_Hashtable.hpp>
@@ -166,7 +165,11 @@ public:
           we assume global numbers are not needed.
       \param out_proc output, an array of the process ranks corresponding with
                          the in_gid and out_gno, out_proc[i] is the process
-                         that supplied in_gid[i] to Zoltan2.
+                         that supplied in_gid[i] to Zoltan2.  
+
+      If in_gid[i] is not one of the global Ids supplied, then
+      out_proc[i] will be -1, and out_gno[i] (if requested) is undefined.
+      This behavior supports graph subsetting.
 
       All processes must call this.  The global IDs 
       supplied may belong to another process.  
@@ -450,7 +453,10 @@ template< typename User>
         out_gno[i] = gno;
 
       gno_t *ub = std::upper_bound(gnos, final, gno);
-      out_proc[i] = (ub - gnos - 1);
+      if (ub !=final)
+        out_proc[i] = (ub - gnos - 1);
+      else
+        out_proc[i] = -1;   // globally not one of our gids
     }
 
     return;
@@ -578,8 +584,9 @@ template< typename User>
   ///////////////////////////////////////////////////////////////////////
   // Send a request for information to the "answer process" for each 
   // of the gid_ts in in_gid.  First remove duplicate gid_ts from the list.
+  //
+  // It is possible that some of the gids do not belong to any process.
   ///////////////////////////////////////////////////////////////////////
-
   
   Array<double> uniqueGidQueries;
   Array<Array<lno_t> > uniqueGidQueryIndices;
@@ -691,20 +698,29 @@ template< typename User>
       for (lno_t i=0; i < countInBuf[p]; i++, total++){
         double k(IdentifierTraits<gid_t>::key(gidInBuf[total]));
         lno_t index(0);
+        bool badGid = false;
         try{
           index = gidToIndex.get(k);
         }
-        Z2_THROW_OUTSIDE_ERROR(*env_, e);
+        catch (std::exception &e){
+          badGid = true;
+        }
 
         Z2_LOCAL_BUG_ASSERTION(*env_, "gidToIndex table", 
-          (index >= 0)&&(index<=indexTotal), BASIC_ASSERTION);
+          badGid || ((index >= 0)&&(index<=indexTotal)), BASIC_ASSERTION);
 
         
-        indexFound = upper_bound(firstIndex.begin(), firstIndex.end(), index);
-        procOutBuf[total] = sendProc[indexFound - firstIndex.begin() - 1];
-  
-        if (needGnoInfo){
-          gnoOutBuf[total] = gnoInBuf[index];
+        if (!badGid){
+          indexFound = upper_bound(firstIndex.begin(), firstIndex.end(), index);
+          procOutBuf[total] = sendProc[indexFound - firstIndex.begin() - 1];
+    
+          if (needGnoInfo){
+            gnoOutBuf[total] = gnoInBuf[index];
+          }
+        }
+        else{
+          // globally not one of our gids, can happen in subsetting
+          procOutBuf[total] = -1; 
         }
       }
     }

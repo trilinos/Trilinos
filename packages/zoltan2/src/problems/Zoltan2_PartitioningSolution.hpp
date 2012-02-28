@@ -11,7 +11,6 @@
 
     \brief A solution to a partitioning problem
 
-TODO: The partitioning solution needs the problem communicator.
 */
 
 
@@ -351,20 +350,28 @@ template <typename User_t>
   
   // Did the caller define num_global_parts and/or num_local_parts?
 
-  const ParameterList &params = env_->getPartitioningParams();
   size_t haveGlobalNumParts=0, haveLocalNumParts=0;
 
-  const size_t *entry1 = params.getPtr<size_t>(string("num_global_parts"));
-  const size_t *entry2 = params.getPtr<size_t>(string("num_local_parts"));
+  const ParameterList *params = NULL;
+  if (env_->hasPartitioningParameters()){
+    const ParameterList &allParams = env_->getParameters();
+    const ParameterList &partitioningParams = allParams.sublist("partitioning");
+    params = &partitioningParams;
 
-  if (entry1){
-    haveGlobalNumParts = 1;
-    nGlobalParts_ = *entry1;
-  }
-
-  if (entry2){
-    haveLocalNumParts = 1;
-    nLocalParts_ = *entry2;
+    const double *entry1 = params->getPtr<double>(string("num_global_parts"));
+    const double *entry2 = params->getPtr<double>(string("num_local_parts"));
+  
+    if (entry1){
+      haveGlobalNumParts = 1;
+      double val = *entry1;
+      nGlobalParts_ = static_cast<size_t>(val);
+    }
+  
+    if (entry2){
+      haveLocalNumParts = 1;
+      double val = *entry2;
+      nLocalParts_ = static_cast<size_t>(val);
+    }
   }
 
   size_t vals[4] = {haveGlobalNumParts, haveLocalNumParts, 
@@ -420,7 +427,7 @@ template <typename User_t>
       }
     }
     else{
-      if (sumHaveGlobal == nprocs){
+      if (maxGlobal == nprocs){
         onePartPerProc_ = true;   // user specified num parts is num procs
         nLocalParts_ = 1;
         return;
@@ -445,6 +452,7 @@ template <typename User_t>
 
   }
   else{
+    // TODO: number of parts is less than number of processes
     //
     // We will divide the global number of parts across the processes.
     //

@@ -1,13 +1,13 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  block
-#  SOURCES block.cpp
-#  NUM_MPI_PROCS 4
-#  COMM serial mpi
-#  PASS_REGULAR_EXPRESSION "PASS"
-#  FAIL_REGULAR_EXPRESSION "FAIL"
-#  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  block
+  SOURCES block.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Partitioning1
@@ -15,7 +15,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS 
-   "--inputFile=../data/simple.mtx"
+   "--inputFile=simple.mtx"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )

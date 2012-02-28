@@ -93,6 +93,12 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   RCP<const Zoltan2::Environment> default_env = 
     Zoltan2::getDefaultEnvironment();
 
+  std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
+  if (consecutiveIdsRequested)
+    modelFlags.set(Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+  if (noSelfEdges)
+    modelFlags.set(Zoltan2::SELF_EDGES_MUST_BE_REMOVED);
+
   if (rank==0){
     std::cout << "     Request consecutive IDs " << consecutiveIdsRequested;
     std::cout << ", remove self edges " << noSelfEdges << std::endl;;
@@ -109,7 +115,7 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   try{
     model = new Zoltan2::GraphModel<base_adapter_t>(baseTmi, default_env, 
-      comm, consecutiveIdsRequested, noSelfEdges);
+      comm, modelFlags);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -299,8 +305,8 @@ int main(int argc, char *argv[])
 #if 0
   vector<string> mtxFiles;
   
-  mtxFiles.push_back("../data/simple.mtx");
-  mtxFiles.push_back("../data/cage10.mtx");
+  mtxFiles.push_back(testDataFilePath+string("/simple.mtx"));
+  mtxFiles.push_back(testDataFilePath+string("/cage10.mtx"));
 
   for (int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
     if (rank==0)

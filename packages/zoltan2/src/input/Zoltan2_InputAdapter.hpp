@@ -55,6 +55,16 @@ public:
    */
   virtual std::string inputAdapterName() const = 0;
 
+  /*! \brief Returns the number of objects in the input.
+   *
+   *  Objects may be coordinates, graph vertices, matrix rows, etc.
+   *  They are the objects to be partitioned, ordered, or colored.
+   */
+  virtual size_t getLocalNumberOfObjects() const = 0;
+
+  /*! \brief Returns the number of weights per object.
+   */ 
+  virtual int getNumberOfWeightsPerObject() const = 0;
 };
   
   

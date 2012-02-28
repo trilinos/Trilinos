@@ -197,7 +197,7 @@ template <typename SCALAR>
  *  \param  partNums  is the list of part numbers for the weights
  *     which are provided in partWeights.
  *
- *  \param  partWeights[i] is the weight for part partNums[i].
+ *  \param  partWeights  partWeights[i] is the weight for part partNums[i].
  *     Other processes may also have contributions to the weight of partNums[i].
  *
  *  \param result On return, result will have the global imbalance.

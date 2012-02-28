@@ -102,8 +102,11 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  std::string inputAdapterName()const {
-    return std::string("XpetraCrsMatrix");}
+  std::string inputAdapterName()const { return std::string("XpetraCrsMatrix");}
+
+  size_t getLocalNumberOfObjects() const { return getLocalNumRows();}
+
+  int getNumberOfWeightsPerObject() const { return 0;}
 
   ////////////////////////////////////////////////////
   // The MatrixInput interface.
@@ -132,6 +135,13 @@ public:
    */
   global_size_t getGlobalNumColumns() const { 
     return matrix_->getGlobalNumCols();
+  }
+
+  /*! Return true if the matrix is square with one or more diagonal entries.
+   */
+  bool diagonalEntriesMayBePresent() const {
+    return ((matrix_->getGlobalNumCols() == matrix_->getGlobalNumRows()) && 
+            (matrix_->getGlobalNumDiags() > 0));
   }
 
   /*! Return a read only view of the data.

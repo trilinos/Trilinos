@@ -1,6 +1,9 @@
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 
+# Path to test and example data directory
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DZ2_DATA_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/test/data\"")
+
 #
 # A) Define the package
 #

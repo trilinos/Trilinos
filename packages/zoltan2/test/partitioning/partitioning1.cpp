@@ -116,10 +116,12 @@ int main(int narg, char** arg)
 
   RCP<UserInputForTests> uinput;
 
-  if (inputFile != "")  // Input file specified; read a matrix
-
-    uinput = rcp(new UserInputForTests(inputFile, comm));
-
+  if (inputFile != ""){  // Input file specified; read a matrix
+    string slash("/");
+    string fname(inputFile);
+    string pathName(testDataFilePath+slash+fname);
+    uinput = rcp(new UserInputForTests(pathName, comm));
+  }
   else                  // Let MueLu generate a matrix
 
     uinput = rcp(new UserInputForTests(xdim, ydim, zdim, comm));

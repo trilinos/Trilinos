@@ -53,7 +53,7 @@ int AlgRCM(
   lno_t root = 0;
 
   // Do BFS from root
-  queue<lno_t> Q;
+  std::queue<lno_t> Q;
   lno_t count = 0; // CM label, reversed later
   lno_t next = 0;
 
