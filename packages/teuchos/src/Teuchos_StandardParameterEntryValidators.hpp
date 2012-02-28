@@ -450,7 +450,7 @@ std::string getVerbosityLevelParameterValueName(
 RCP<StringToIntegralParameterEntryValidator<EVerbosityLevel> >
 verbosityLevelParameterEntryValidator(std::string const& defaultParameterName);
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * StringToIntegralParameterEntryValidator<IntegralType>.
  *
  * \relates StringToIntegralParameterEntryValidator
@@ -874,7 +874,7 @@ TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
   std::string const& paramName
   );
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * AnyNumberParameterEntryValidator.
  *
  * \relates AnyNumberParameterEntryValidator
@@ -1316,7 +1316,7 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
     (any_cast<T>(anyValue)) << std::endl << std::endl);
 }
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * EnhancedNumberValidator<T>.
  *
  * \relates EnhancedNumberValidator<T>
@@ -1438,7 +1438,7 @@ private:
 
 };
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * FileNameValidator.
  *
  * \relates FileNameValidator
@@ -1532,7 +1532,7 @@ private:
 
 };
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * StringValidator.
  *
  * \relates StringValidator
@@ -1715,7 +1715,7 @@ void TwoDArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const
 }
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * TwoDArrayValidator.
  *
  * \relates TwoDArrayValidator
@@ -1903,7 +1903,7 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
   }
 }
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * ArrayValidator.
  *
  * \relates ArrayValidator
