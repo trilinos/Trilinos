@@ -27,13 +27,13 @@ namespace MueLu {
 
       Scalar delta_x, delta_y, delta_z;
 
-      Scalar lx = list.get("lx", 1.0);
-      Scalar ly = list.get("ly", 1.0);
-      Scalar lz = list.get("lz", 1.0);
+      Scalar lx = list.get<Scalar>("lx", 1.0);
+      Scalar ly = list.get<Scalar>("ly", 1.0);
+      Scalar lz = list.get<Scalar>("lz", 1.0);
 
-      GlobalOrdinal nx = list.get("nx", -1);
-      GlobalOrdinal ny = list.get("ny", -1);
-      GlobalOrdinal nz = list.get("nz", -1);
+      GlobalOrdinal nx = list.get<GlobalOrdinal>("nx", -1);
+      GlobalOrdinal ny = list.get<GlobalOrdinal>("ny", -1);
+      GlobalOrdinal nz = list.get<GlobalOrdinal>("nz", -1);
 
       GlobalOrdinal ix, iy, iz;
 
