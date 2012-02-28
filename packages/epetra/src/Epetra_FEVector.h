@@ -47,6 +47,9 @@
 #include <Epetra_CombineMode.h>
 #include <Epetra_Map.h>
 #include <Epetra_MultiVector.h>
+
+#include <vector>
+
 class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseVector;
 
@@ -250,10 +253,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   int myFirstID_;
   int myNumIDs_;
 
-  int* nonlocalIDs_;
-  int* nonlocalElementSize_;
-  int numNonlocalIDs_;
-  int numNonlocalIDsAlloc_;
+  std::vector<int> nonlocalIDs_;
+  std::vector<int> nonlocalElementSize_;
 
   /// \brief Array of arrays (one per column) of nonlocal coefficients.
   ///
@@ -266,10 +267,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   /// In summary: for k = 0 to numNonlocalIDs_ - 1,
   /// nonlocalCoefs_[j][j*M + i] contains the entries of nonlocal
   /// block entry k, for i = 0 to nonlocalElementSize_[k] - 1.
-  double** nonlocalCoefs_;
-
-  int numNonlocalCoefs_;
-  int numNonlocalCoefsAlloc_;
+  std::vector<std::vector<double> > nonlocalCoefs_;
 
   //! Map describing distribution of nonlocal data.
   Epetra_BlockMap* nonlocalMap_;
