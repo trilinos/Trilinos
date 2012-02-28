@@ -151,7 +151,21 @@ public:
   /** \brief  Log that this entity was created as a parallel copy. */
   void log_created_parallel_copy();
 
-  bool marked_for_destruction() const;
+  bool marked_for_destruction() const
+  {
+    // The original implementation of this method checked bucket capacity. In
+    // order to ensure that the addition of EntityLogDeleted does not change
+    // behavior, we put error check here.
+    //  ThrowErrorMsgIf((bucket().capacity() == 0) != (m_mod_log == EntityLogDeleted),
+    //      "Inconsistent destruction state; " <<
+    //      "destroyed entities should be in the nil bucket and vice versa.\n" <<
+    //      "Problem is with entity: " <<
+    //      print_entity_key( MetaData::get( bucket() ), key() ) <<
+    //      "\nWas in nil bucket: " << (bucket().capacity() == 0) << ", " <<
+    //      "was in destroyed state: " << (m_mod_log == EntityLogDeleted) );
+  
+    return m_mod_log == EntityLogDeleted;
+  }
 
   //set_key is only to be used for setting a key on a newly-constructed entity.
   void set_key(EntityKey key);
