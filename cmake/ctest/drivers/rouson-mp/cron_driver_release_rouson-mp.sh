@@ -36,13 +36,13 @@ echo
 echo "Doing mpi optimized Release 10.10 build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_mpi_opt_release_rouson-mp.cmake -VV &> "MPI_OPT_RELEASE_10.10_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_mpi_opt_release_nag_rouson-mp.cmake -VV &> "MPI_OPT_RELEASE_NAG_10.10_$DATE.log"
 
 echo
 echo "Doing serial debug Release 10.10 build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_serial_debug_release_rouson-mp.cmake -VV &> "SERIAL_DEBUG_RELEASE_10.10_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_serial_debug_release_nag_rouson-mp.cmake -VV &> "SERIAL_DEBUG_RELEASE_NAG_10.10_$DATE.log"
 
 echo
 echo "Ending nightly Trilinos Release 10.10 testing on rouson-mp: `date`"

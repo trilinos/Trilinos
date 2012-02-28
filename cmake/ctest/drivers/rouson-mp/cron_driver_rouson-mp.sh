@@ -35,13 +35,13 @@ echo
 echo "Doing mpi optimized development build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_mpi_opt_rouson-mp.cmake -VV &> "MPI_OPT_DEV_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_mpi_opt_nag_rouson-mp.cmake -VV &> "MPI_OPT_DEV_NAG_$DATE.log"
 
 echo
 echo "Doing serial debug development build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_serial_debug_rouson-mp.cmake -VV &> "SERIAL_DEBUG_DEV_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_serial_debug_nag_rouson-mp.cmake -VV &> "SERIAL_DEBUG_DEV_NAG_$DATE.log"
 
 echo
 echo "Ending nightly Trilinos development testing on rouson-mp: `date`"
