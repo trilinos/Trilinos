@@ -6098,6 +6098,12 @@ const double *Values, const int *Indices)
 
 override base-class Epetra_CrsMatrix::InsertGlobalValues method ";
 
+%feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
+Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
+double *Values, int *Indices)
+
+override base-class Epetra_CrsMatrix::InsertGlobalValues method ";
+
 %feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
 Epetra_FECrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
 const double *Values, const int *Indices)
