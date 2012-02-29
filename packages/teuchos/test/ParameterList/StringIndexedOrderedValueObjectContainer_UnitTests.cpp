@@ -166,6 +166,22 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, basic_set_get )
 }
 
 
+TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, set_two_keep_ref )
+{
+  // Test test makes sure that objects keep the same address when adding new
+  // objects.
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  typedef SIOVOCB::Ordinal Ordinal;
+  ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
+  ECHO(const Ordinal my_int_1_idx = oc.setObj("my_int_1", 3));
+  ECHO(const int &my_int_1 = *oc.getObjPtr(my_int_1_idx));
+  ECHO(oc.setObj("my_int_2", 4));
+  TEST_EQUALITY_CONST(*oc.getObjPtr(my_int_1_idx), 3);
+  TEST_EQUALITY(&my_int_1, oc.getObjPtr(my_int_1_idx).get());
+  TEST_EQUALITY_CONST(my_int_1, 3);
+}
+
+
 TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getObjOrdinalIndex )
 {
 
@@ -260,9 +276,11 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, removeObj_idx_first
   ECHO(oc.setObj("b", 3));
   TEST_EQUALITY_CONST(oc.numObjects(), 3);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
+  ECHO(const OI &b = *oc.getObjPtr("b"));
   ECHO(oc.removeObj(0));
   TEST_EQUALITY_CONST(oc.numObjects(), 2);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
+  TEST_EQUALITY(&b, oc.getObjPtr("b").get());
   ECHO(ConstIterator itr = oc.begin());
   TEST_EQUALITY_CONST(itr->first, "a");
   TEST_EQUALITY_CONST(itr->second.idx, 2);
@@ -287,9 +305,11 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, removeObj_key_first
   ECHO(oc.setObj("b", 3));
   TEST_EQUALITY_CONST(oc.numObjects(), 3);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
+  ECHO(const OI &b = *oc.getObjPtr("b"));
   ECHO(oc.removeObj("c"));
   TEST_EQUALITY_CONST(oc.numObjects(), 2);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
+  TEST_EQUALITY(&b, oc.getObjPtr("b").get());
   ECHO(ConstIterator itr = oc.begin());
   TEST_EQUALITY_CONST(itr->first, "a");
   TEST_EQUALITY_CONST(itr->second.idx, 2);
@@ -314,7 +334,9 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, removeObj_idx_middl
   ECHO(oc.setObj("b", 3));
   TEST_EQUALITY_CONST(oc.numObjects(), 3);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
+  ECHO(const OI &c = *oc.getObjPtr("c"));
   ECHO(oc.removeObj(1));
+  TEST_EQUALITY(&c, oc.getObjPtr("c").get());
   ECHO(ConstIterator itr = oc.begin());
   TEST_EQUALITY_CONST(oc.numObjects(), 2);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
@@ -341,7 +363,9 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, removeObj_key_middl
   ECHO(oc.setObj("b", 3));
   TEST_EQUALITY_CONST(oc.numObjects(), 3);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
+  ECHO(const OI &c = *oc.getObjPtr("c"));
   ECHO(oc.removeObj("a"));
+  TEST_EQUALITY(&c, oc.getObjPtr("c").get());
   TEST_EQUALITY_CONST(oc.numObjects(), 2);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
   ECHO(ConstIterator itr = oc.begin());
@@ -368,9 +392,11 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, removeObj_idx_last 
   ECHO(oc.setObj("b", 3));
   TEST_EQUALITY_CONST(oc.numObjects(), 3);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
+  ECHO(const OI &a = *oc.getObjPtr("a"));
   ECHO(oc.removeObj(2));
   TEST_EQUALITY_CONST(oc.numObjects(), 2);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
+  TEST_EQUALITY(&a, oc.getObjPtr("a").get());
   ECHO(ConstIterator itr = oc.begin());
   TEST_EQUALITY_CONST(itr->first, "c");
   TEST_EQUALITY_CONST(itr->second.idx, 1);
@@ -395,9 +421,11 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, removeObj_key_last 
   ECHO(oc.setObj("b", 3));
   TEST_EQUALITY_CONST(oc.numObjects(), 3);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
+  ECHO(const OI &a = *oc.getObjPtr("a"));
   ECHO(oc.removeObj("b"));
   TEST_EQUALITY_CONST(oc.numObjects(), 2);
   TEST_EQUALITY_CONST(oc.numStorage(), 3);
+  TEST_EQUALITY(&a, oc.getObjPtr("a").get());
   ECHO(ConstIterator itr = oc.begin());
   TEST_EQUALITY_CONST(itr->first, "c");
   TEST_EQUALITY_CONST(itr->second.idx, 1);
