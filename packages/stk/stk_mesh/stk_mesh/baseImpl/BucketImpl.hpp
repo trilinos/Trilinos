@@ -123,6 +123,8 @@ class BucketImpl {
   Entity*const* begin() const { return &m_entities[0]; }
   Entity*const* end() const { return &m_entities[0] + m_size; }
 
+  ~BucketImpl() { delete m_field_data; }
+
   private:
   BucketImpl();
 
@@ -135,11 +137,7 @@ class BucketImpl {
   std::vector<DataMap>   m_field_map ;   // Field value data map, shared
   std::vector<Entity*>   m_entities ;    // Array of entity pointers,
                                          // beginning of field value memory.
-  struct data_chars {
-    unsigned char field_data[16];
-  };
-
-  std::vector<data_chars> m_field_data;
+  unsigned char* m_field_data;
 
   unsigned char * field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
   {
@@ -147,8 +145,7 @@ class BucketImpl {
     const DataMap & data_map = m_field_map[ field_ordinal ];
     unsigned char * ptr = NULL;
     if ( data_map.m_size ) {
-//      ptr = (const_cast<unsigned char*>(&m_field_data[data_map.m_base + data_map.m_size * entity_ordinal]));
-      ptr = reinterpret_cast<unsigned char*>(const_cast<data_chars*>(&m_field_data[0])) + data_map.m_base + data_map.m_size * entity_ordinal;
+      ptr = const_cast<unsigned char*>(m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
     }
     return ptr ;
   }
@@ -157,8 +154,7 @@ class BucketImpl {
     typedef unsigned char * byte_p ;
     const DataMap & data_map = m_field_map[ field_ordinal ];
     ThrowAssertMsg(data_map.m_size>0,"Field doesn't exist on bucket.");
-//    return const_cast<unsigned char*>(&m_field_data[data_map.m_base + data_map.m_size * entity_ordinal]);
-    return reinterpret_cast<unsigned char*>(const_cast<data_chars*>(&m_field_data[0])) + data_map.m_base + data_map.m_size * entity_ordinal;
+    return const_cast<unsigned char*>(m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
   }
   Bucket * last_bucket_in_family_impl() const;
 };
