@@ -195,7 +195,8 @@ namespace MueLu {
     //out0 << ""; // remove warning
 
     Teuchos::TabularOutputter outputter(out0);
-    outputter.pushFieldSpec("name",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 32);
+    outputter.pushFieldSpec("data name",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
+    outputter.pushFieldSpec("generating factory type",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 30);
     outputter.pushFieldSpec("gen. factory addr.", Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 18);
     outputter.pushFieldSpec("req",                Teuchos::TabularOutputter::INT,    Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 3);
     outputter.pushFieldSpec("keep",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 5);
@@ -208,6 +209,11 @@ namespace MueLu {
       std::vector<std::string> enames = needs_.RequestedKeys(*kt);
       for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); it++) {
         outputter.outputField(*it);   // variable name
+
+        // factory name
+        std::stringstream ss1;
+        ss1 << (*kt)->description();
+        outputter.outputField((ss1.str()).substr(0,30));
 
         // factory ptr
         if (*kt == NoFactory::get())
