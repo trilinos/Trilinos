@@ -275,7 +275,7 @@ namespace stk {
       eMesh.createEntities( stk::mesh::fem::FEMMetaData::NODE_RANK, n_nodes, new_nodes);
       std::cout << "... done creating " << n_nodes << " nodes" << std::endl;
 
-      MemorySizeType num_prints = std::min(100ul, n_elements);
+      MemorySizeType num_prints = std::min(static_cast<MemorySizeType>(100ul), n_elements);
       MemorySizeType print_mod = n_elements/num_prints;
       MemorySizeType i_node = 0;
       int n_node_per_element = 8; 
