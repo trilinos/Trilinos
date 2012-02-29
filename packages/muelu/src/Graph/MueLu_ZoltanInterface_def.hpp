@@ -18,6 +18,10 @@ namespace MueLu {
     : AFact_(AFact), TransferFact_(TransferFact)
   {}
 
+  //-------------------------------------------------------------------------------------------------------------
+  // DeclareInput
+  //-------------------------------------------------------------------------------------------------------------
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   DeclareInput(Level & level) const
@@ -25,6 +29,10 @@ namespace MueLu {
     level.DeclareInput("A", AFact_.get());
     level.DeclareInput("Coordinates", TransferFact_.get());
   } //DeclareInput()
+
+  //-------------------------------------------------------------------------------------------------------------
+  // Build
+  //-------------------------------------------------------------------------------------------------------------
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
@@ -108,6 +116,10 @@ namespace MueLu {
 
   } //Build()
 
+  //-------------------------------------------------------------------------------------------------------------
+  // GetLocalNumberOfRows
+  //-------------------------------------------------------------------------------------------------------------
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   GetLocalNumberOfRows(void *data, int *ierr)
@@ -122,6 +134,10 @@ namespace MueLu {
     Operator *A = (Operator*) data;
     return A->getRowMap()->getNodeNumElements();
   } //GetLocalNumberOfRows()
+
+  //-------------------------------------------------------------------------------------------------------------
+  // GetLocalNumberOfNonzeros
+  //-------------------------------------------------------------------------------------------------------------
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
@@ -148,6 +164,10 @@ namespace MueLu {
 
   } //GetLocalNumberOfNonzeros()
 
+  //-------------------------------------------------------------------------------------------------------------
+  // GetProblemDimension
+  //-------------------------------------------------------------------------------------------------------------
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   GetProblemDimension(void *data, int *ierr)
@@ -157,6 +177,10 @@ namespace MueLu {
     *ierr = ZOLTAN_OK; /* set error flag */
     return(dim);
   } //GetProblemDimension
+
+  //-------------------------------------------------------------------------------------------------------------
+  // GetProblemGeometry
+  //-------------------------------------------------------------------------------------------------------------
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
