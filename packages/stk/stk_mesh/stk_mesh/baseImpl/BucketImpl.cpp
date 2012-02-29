@@ -129,7 +129,7 @@ void BucketImpl::initialize_fields( unsigned i_dst )
   const std::vector<FieldBase*> & field_set =
     MetaData::get(m_mesh).get_fields();
 
-  unsigned char * const p = &m_field_data[0];
+  unsigned char * const p = reinterpret_cast<unsigned char * const>(&m_field_data[0]);
   const DataMap *       i = &m_field_map[0];
   const DataMap * const e = i + field_set.size();
 
@@ -153,8 +153,8 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
   const std::vector<FieldBase*> & field_set =
     MetaData::get(m_mesh).get_fields();
 
-  unsigned char * const s = &(k_src.m_bucketImpl.m_field_data[0]);
-  unsigned char * const d = &m_field_data[0];
+  unsigned char * const s = reinterpret_cast<unsigned char* const>(&(k_src.m_bucketImpl.m_field_data[0]));
+  unsigned char * const d = reinterpret_cast<unsigned char* const>(&m_field_data[0]);
   const DataMap *       j = &(k_src.m_bucketImpl.m_field_map[0]);
   const DataMap *       i = &m_field_map[0];
   const DataMap * const e = i + field_set.size();
@@ -210,7 +210,7 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
   , m_bucket(NULL)
   , m_field_map( m_mesh.mesh_meta_data().get_fields().size()+1)
   , m_entities(arg_capacity)
-  , m_field_data(0)
+  , m_field_data()
 {
   //calculate the size of the field_data
 
@@ -262,8 +262,10 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
     m_field_map[ num_fields ].m_stride = NULL ;
   }
 
+  ThrowAssert(sizeof(data_chars)==16);
+
   //allocate space for the fields
-  m_field_data.resize(field_data_size);
+  m_field_data.resize(field_data_size/sizeof(data_chars));
 
 }
 
