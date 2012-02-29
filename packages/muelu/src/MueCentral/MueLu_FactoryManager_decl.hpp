@@ -21,7 +21,7 @@
 namespace MueLu {
 
   /*!
-    @class FactoryManager
+    @class FactoryManager class.
     @brief This class specifies the default factory that should generate some data on a Level if the data does not exist and
     the generating factory has not been specified.
     
@@ -46,6 +46,7 @@ namespace MueLu {
       
   public:
 
+    //! @name Constructor/Destructors
     //@{
 
     /*! @brief Constructor.
@@ -67,7 +68,8 @@ namespace MueLu {
 
     //@}
 
-    //@{ Get/Set functions.
+    //! @name Get/Set functions.
+    //@{ 
 
     /*! @brief Set Factory
 
