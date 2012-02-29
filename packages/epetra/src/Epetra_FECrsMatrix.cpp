@@ -561,8 +561,8 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
       nonlocalRowLengths[i] = nonlocalCols_[i].size();
     }
 
-    tempMat = new Epetra_CrsMatrix(Copy, *sourceMap, *colMap,
-          &nonlocalRowLengths[0]);
+    int* nlRLptr = nonlocalRowLengths.size()>0 ? &nonlocalRowLengths[0] : NULL;
+    tempMat = new Epetra_CrsMatrix(Copy, *sourceMap, *colMap, nlRLptr);
 
 
     for(size_t i=0; i<nonlocalRows_.size(); ++i) {
