@@ -788,8 +788,13 @@ Teuchos::RCP<const shards::CellTopology> STK_Interface::getCellTopology(const st
    std::map<std::string, Teuchos::RCP<shards::CellTopology> >::const_iterator itr;
    itr = elementBlockCT_.find(eBlock);
 
-   TEUCHOS_TEST_FOR_EXCEPTION(itr==elementBlockCT_.end(),std::logic_error,
-                              "STK_Interface::getCellTopology: No such element block \"" +eBlock +"\" available.");              
+   if(itr==elementBlockCT_.end()) {
+      std::stringstream ss;
+      printMetaData(ss);
+      TEUCHOS_TEST_FOR_EXCEPTION(itr==elementBlockCT_.end(),std::logic_error,
+                                 "STK_Interface::getCellTopology: No such element block \"" +eBlock +"\" available.\n\n"
+                              << "STK Meta Data follows: \n" << ss.str());              
+   }
 
    return itr->second;
 }
