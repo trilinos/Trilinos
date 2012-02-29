@@ -114,14 +114,14 @@ int mainHost()
   std::pair<double,double> performance ;
 
   performance =
-    unit_test::test_product_tensor_matrix<double,Kokkos::Host>( std::vector<int>( 5 , 5 ) , cube_size , iter_count , print_flag );
+    unit_test::test_product_tensor_matrix<double,Kokkos::Host>( std::vector<int>( 5 , 3 ) , cube_size , iter_count , print_flag );
 
   std::cout << "test_product_tensor_matrix time = " << performance.first
             << " , effective Gflops = " << performance.second / double(1e9)
             << std::endl ;
 
   performance =
-    unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Host>( std::vector<int>( 5 , 5 ) , cube_size , iter_count , print_flag );
+    unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Host>( std::vector<int>( 5 , 3 ) , cube_size , iter_count , print_flag );
 
   std::cout << "test_product_tensor_diagonal_matrix time = " << performance.first
             << " , effective Gflops = " << performance.second / double(1e9)
