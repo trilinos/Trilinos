@@ -80,8 +80,6 @@ int mainHost()
 //  unit_test::test_diagonal<Kokkos::Host>();
 //  unit_test::test_other<Kokkos::Host>();
 
-
-
   unit_test::test_integration<1>();
   unit_test::test_integration<2>();
   unit_test::test_integration<3>();
@@ -111,10 +109,23 @@ int mainHost()
 
   const bool print_flag = false ;
   const int  iter_count = 10 ;
-  const int  cube_size  = 3 ;
+  const int  cube_size  = 5 ;
 
-  unit_test::test_product_tensor_matrix<double,Kokkos::Host>( std::vector<int>( 5 , 3 ) , cube_size , iter_count , print_flag );
-  unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Host>( std::vector<int>( 5 , 3 ) , cube_size , iter_count , print_flag );
+  std::pair<double,double> performance ;
+
+  performance =
+    unit_test::test_product_tensor_matrix<double,Kokkos::Host>( std::vector<int>( 5 , 5 ) , cube_size , iter_count , print_flag );
+
+  std::cout << "test_product_tensor_matrix time = " << performance.first
+            << " , effective Gflops = " << performance.second / double(1e9)
+            << std::endl ;
+
+  performance =
+    unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Host>( std::vector<int>( 5 , 5 ) , cube_size , iter_count , print_flag );
+
+  std::cout << "test_product_tensor_diagonal_matrix time = " << performance.first
+            << " , effective Gflops = " << performance.second / double(1e9)
+            << std::endl ;
 
   std::cout << "Stress tests:" << std::endl ;
 
