@@ -169,17 +169,30 @@ namespace {
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
 
+    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+
     /// \brief Default constructor (sets number of columns to zero).
+    ///
+    /// \param map [in] Map, which this object may or may not use as a
+    ///   hint to separate local from nonlocal data.  This need not be
+    ///   the same Map as that of the multivector output of \c
+    ///   globalAssemble().
     ///
     /// Before using this object, you should call \c setNumColumns()
     /// to set the number of columns in the output multivector.
     /// Otherwise, the two-argument version of \c
     /// sumIntoGlobalValues() won't actually do anything.
-    MultiVectorFillerData () : 
+    MultiVectorFillerData (const Teuchos::RCP<const map_type>& map) : 
+      map_ (map),
       numCols_ (0)
     {}
 
     /// \brief Constructor.
+    ///
+    /// \param map [in] Map, which this object may or may not use as a
+    ///   hint to separate local from nonlocal data.  This need not be
+    ///   the same Map as that of the multivector output of \c
+    ///   globalAssemble().
     ///
     /// \param numColumns [in] The (expected) number of columns in the
     ///   output multivector.  You can always change this later by
@@ -190,7 +203,9 @@ namespace {
     ///   call \c setNumColumns() first before inserting any data.
     ///   Otherwise, the two-argument version of \c
     ///   sumIntoGlobalValues() won't do the right thing.
-    MultiVectorFillerData (const size_t numColumns) : 
+    MultiVectorFillerData (const Teuchos::RCP<const map_type>& map,
+			   const size_t numColumns) : 
+      map_ (map),
       numCols_ (numColumns),
       sourceIndices_ (numColumns),
       sourceValues_ (numColumns)
@@ -259,8 +274,33 @@ namespace {
       }
     }
 
+    /// \brief Locally assemble into X.
+    ///
+    /// \param X [in/out] Multivector (overlapping source distribution).
+    ///
+    /// \param f [in/out] Binary function that defines the combine
+    ///   mode.  It must define scalar_type operator (const
+    ///   scalar_type&, const scalar_type&).  It need not necessarily
+    ///   be commutative or even associative, but it should be
+    ///   thread-safe in case we decide to parallelize local assembly.
+    ///   We call it via X(i,j) = f(X(i,j), Y(i,j)), so write your
+    ///   possibly nonassociative or noncommutative operation
+    ///   accordingly.
+    ///
+    /// X is distributed by the source Map (with possible overlap) of
+    /// the Export operation.  The source Map of the Export includes
+    /// both the elements owned by this object's constructor's input
+    /// Map, and the indices inserted by \c sumIntoGlobalValues().
+    ///
+    /// Precondition: The set of global indices in X's Map equals the
+    /// the union of the entries of nonlocalIndices_[j] for all valid
+    /// columns j.
+    ///
+    /// \note You can get the usual ADD combine mode by supplying f =
+    ///   std::plus<scalar_type>.
+    template<class BinaryFunction>
     void
-    locallyAssemble (MV& X)
+    locallyAssemble (MV& X, BinaryFunction& f)
     {
       using Teuchos::Array;
       using Teuchos::ArrayRCP;
@@ -293,9 +333,18 @@ namespace {
 	ArrayRCP<ST> X_j = X->getDataNonConst (j);
 	ArrayView<const ST> localValues = sourceValues_[j].view (0, numIndices);
 	for (typename ArrayView<const GO>::size_type i = 0; i < numIndices; ++i) {
-	  X_j[localIndices[i]] = localValues[i];
+	  const LO localInd = localIndices[i];
+	  X_j[localInd] = f (X_j[localInd], localValues[i]);
 	}
       }
+    }
+
+    //! \c locallyAssemble() for the usual ADD combine mode.
+    void 
+    locallyAssemble (MV& X)
+    {
+      std::plus<double> f;
+      locallyAssemble<std::plus<scalar_type> > (X, f);
     }
 
     //! Clear the contents of the vector, making it implicitly a vector of zeros.
@@ -308,6 +357,7 @@ namespace {
     }
 
   private:
+    Teuchos::RCP<const map_type> map_;
     size_t numCols_;
     Teuchos::Array<Teuchos::Array<global_ordinal_type> > sourceIndices_;
     Teuchos::Array<Teuchos::Array<scalar_type> > sourceValues_;
@@ -335,6 +385,8 @@ namespace {
     /// \brief Default constructor (sets number of columns to zero).
     ///
     /// \param map [in] Map over which to distribute the initial fill.
+    ///   This need not be the same Map as that of the multivector
+    ///   output of \c globalAssemble().
     ///
     /// Before using this object, you should call \c setNumColumns()
     /// to set the number of columns in the output multivector.
@@ -348,6 +400,8 @@ namespace {
     /// \brief Constructor.
     ///
     /// \param map [in] Map over which to distribute the initial fill.
+    ///   This need not be the same Map as that of the multivector
+    ///   output of \c globalAssemble().
     ///
     /// \param numColumns [in] The (expected) number of columns in the
     ///   output multivector.  You can always change this later by
@@ -367,7 +421,11 @@ namespace {
       nonlocalValues_ (numColumns)
     {}
 
-    //! Set the number of columns in the output multivector.
+    /// \brief Set the number of columns in the output multivector.
+    ///
+    /// Setting the number of columns to zero effectively clears out
+    /// all local storage, but may not necessarily deallocate nonlocal
+    /// storage.  Call \c clear() to clear out all nonlocal storage.
     void
     setNumColumns (const size_t newNumColumns) 
     {
@@ -557,9 +615,11 @@ namespace {
       locallyAssemble<std::plus<scalar_type> > (X, f);
     }
 
-    /// \brief Clear the contents of the vector.
+    /// \brief Clear the contents of the multivector.
     /// 
-    /// This fills the vector with zeros, and also removes nonlocal data.
+    /// This fills the vector with zeros, and also removes nonlocal
+    /// data.  It does <i>not</i> deallocate all storage.  For that,
+    /// you need to set the number of columns to zero.
     void clear() {
       Teuchos::Array<Teuchos::Array<global_ordinal_type> > newNonlocalIndices;
       Teuchos::Array<Teuchos::Array<scalar_type> > newNonlocalValues;
@@ -573,7 +633,7 @@ namespace {
       // Just fill it with zero.  This is because the caller hasn't
       // reset the number of columns.
       if (! localVec_.is_null()) {
-	localVec_.putScalar (Teuchos::ScalarTraits<scalar_type>::zero());
+	localVec_->putScalar (Teuchos::ScalarTraits<scalar_type>::zero());
       }
     }
 
@@ -581,7 +641,9 @@ namespace {
     Teuchos::RCP<const map_type> map_;
     size_t numCols_;
     Teuchos::RCP<MV> localVec_;
+    //! Nonlocal global indices: one array for each column of the multivector.
     Teuchos::Array<Teuchos::Array<global_ordinal_type> > nonlocalIndices_;
+    //! Nonlocal global values: one array for each column of the multivector.
     Teuchos::Array<Teuchos::Array<scalar_type> > nonlocalValues_;
 
     size_t getNumColumns() const { return numCols_; }
@@ -589,6 +651,11 @@ namespace {
 
 
 
+  /// \class MultiVectorFiller
+  /// \brief Adds nonlocal sum-into functionality to Tpetra::MultiVector.
+  /// \author Mark Hoemmen
+  ///
+  /// \tparam MV Specialization of Tpetra::MultiVector.
   template<class MV>
   class MultiVectorFiller {
   public:
@@ -598,7 +665,11 @@ namespace {
     typedef typename MV::node_type node_type;
     typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
-    /// \brief Constructor
+    /// \brief Constructor.
+    ///
+    /// The constructor takes the same arguments as MV's constructor.
+    /// We did this on purpose, so that you can construct
+    /// MultiVectorFiller as you would a standard MV.
     ///
     /// \param map [in] A Map with the same communicator and Kokkos
     ///   Node as the output multivector of \c globalAssemble().
@@ -811,8 +882,10 @@ namespace {
 
   template<class MV>
   MultiVectorFiller<MV>::MultiVectorFiller (const Teuchos::RCP<const typename MultiVectorFiller<MV>::map_type>& map, const size_t numCols) 
-    : ctorMap_ (map), sourceMap_ (Teuchos::null), 
-      targetMap_ (Teuchos::null), data_ (numCols), 
+    : ctorMap_ (map), 
+      sourceMap_ (Teuchos::null), 
+      targetMap_ (Teuchos::null), 
+      data_ (map, numCols), 
       exporter_ (Teuchos::null)
   {}
 
@@ -942,7 +1015,7 @@ namespace {
 	// expensive than calling isSameAs() (which requires just a
 	// few reductions and reading through the lists of owned
 	// global indices), so it's worth checking.
-	if (targetMap_.isSameAs (X_out.getMap())) {
+	if (targetMap_->isSameAs (X_out.getMap())) {
 	  assumeSameTargetMap = true;
 	  targetMap = targetMap_;
 	}
@@ -1092,7 +1165,7 @@ namespace {
 	  }
 	  ArrayView<const ST> valuesView = values.view (start, len);
 	  // Convert rowsView to const view.
-	  filler->sumIntoGlobalValues (rowsView.view(), j, valuesView);
+	  filler->sumIntoGlobalValues (rowsView(), j, valuesView);
 	}
       }
 
@@ -1133,7 +1206,7 @@ namespace {
 
 	const typename Array<GO>::size_type localNumErrors = errorLocations.size();
 	typename Array<GO>::size_type globalNumErrors = 0;
-	RCP<Comm<int> > comm = targetMap->getComm();
+	RCP<const Comm<int> > comm = targetMap->getComm();
 	reduceAll (*comm, REDUCE_SUM, localNumErrors, ptr (&globalNumErrors));
 
 	if (globalNumErrors != 0) {
@@ -1147,7 +1220,7 @@ namespace {
 	  // Iterate through all processes in the communicator,
 	  // printing out each process' local errors.
 	  for (int p = 0; p < comm->getSize(); ++p) {
-	    if (p = comm->getRank()) {
+	    if (p == comm->getRank()) {
 	      cerr << os.str() << endl;
 	    }
 	    // Barriers to let output finish.
@@ -1162,6 +1235,47 @@ namespace {
       } // for each column j
     }
   };
+
+
+  // Instantiate a MultiVectorFillerTester and run the test.
+  void 
+  testMultiVectorFiller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+  {
+    using Tpetra::createContigMapWithNode;
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef double ST;
+    typedef int LO;
+    typedef int GO;
+    typedef Kokkos::SerialNode NT;
+    typedef Tpetra::Map<LO, GO, NT> MT;
+    typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
+
+    const size_t numEltsPerNode = 20;
+
+    // Make a Kokkos Node instance.
+    RCP<NT> node;
+    {
+      ParameterList pl;
+      node = rcp (new NT (pl));
+    }
+    const Tpetra::global_size_t invalid = 
+      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+    RCP<const MT> targetMap = 
+      createContigMapWithNode<LO, GO, NT> (invalid, numEltsPerNode, comm, node);
+
+    const GO eltSize = 3;
+    const size_t numCols = 0; // For now, to trigger the exception so the test doesn't run.
+    try {
+      MultiVectorFillerTester<MV>::testSameMap (targetMap, eltSize, numCols);
+    } catch (std::invalid_argument& e) {
+      // Do nothing for now, since we're just testing whether the test
+      // builds.  Later, when we actually care about the test passing,
+      // we'll do something here.
+    }
+  }
+
 
 } // namespace (anonymous)
 
