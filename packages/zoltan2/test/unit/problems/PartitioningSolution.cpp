@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 
   /////////////
   // A default environment
-  RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
   /////////////
   // A simple identifier map.

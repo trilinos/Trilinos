@@ -327,7 +327,7 @@ public:
     }
     else{
       lno_t *offs = new lno_t [nvtx + 1];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, nvtx+1, offs);
+      env_->localMemoryAssertion(__FILE__, __LINE__, nvtx+1, offs);
       numNearLocalEdges_ = 0;
 
       offs[0] = 0;
@@ -344,7 +344,8 @@ public:
 
         if (numNearLocalEdges_ > 0){
           gno_t *gnos = new gno_t [numNearLocalEdges_];
-          Z2_LOCAL_MEMORY_ASSERTION(*env_, numNearLocalEdges_, gnos);
+          env_->localMemoryAssertion(__FILE__, __LINE__, numNearLocalEdges_, 
+            gnos);
           ArrayView<gno_t> gnoList(gnos, numNearLocalEdges_);
 
           for (lno_t i=2; i < nvtx; i++){
@@ -367,7 +368,8 @@ public:
           }
 
           lno_t *lnos = new lno_t [numNearLocalEdges_];
-          Z2_LOCAL_MEMORY_ASSERTION(*env_, numNearLocalEdges_, lnos);
+          env_->localMemoryAssertion(__FILE__, __LINE__, numNearLocalEdges_, 
+            lnos);
           ArrayRCP<lno_t> lnoList(lnos, 0, numNearLocalEdges_, true);
           RCP<const idmap_t > idMap = this->getIdentifierMap();
 
@@ -493,9 +495,10 @@ template <typename User>
   if (removeSelfEdges && input_->diagonalEntriesMayBePresent()) {
 
     lno_t *offArray = new lno_t [numOffsets];
-    Z2_LOCAL_MEMORY_ASSERTION(*env_, numOffsets, offArray);
+    env_->localMemoryAssertion(__FILE__, __LINE__, numOffsets, offArray);
     gid_t *edArray = new gid_t [numLocalEdges_];
-    Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, !numLocalEdges_||edArray);
+    env_->localMemoryAssertion(__FILE__, __LINE__, numLocalEdges_,
+      !numLocalEdges_||edArray);
 
     for (lno_t i=0; i < numLocalVtx_; i++){
 
@@ -547,7 +550,7 @@ template <typename User>
 
   if (numLocalVtx_ && !gidsAreGnos_){
     gno_t *tmp = new gno_t [numLocalVtx_];
-    Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalVtx_, tmp)
+    env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVtx_, tmp);
     gnos_ = arcp(tmp, 0, numLocalVtx_);
 
     try{
@@ -563,14 +566,14 @@ template <typename User>
 
     if (numLocalEdges_){
       tmp = new gno_t [numLocalEdges_];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, tmp)
+      env_->localMemoryAssertion(__FILE__, __LINE__, numLocalEdges_, tmp);
       edgeGnos_ = arcp(tmp, 0, numLocalEdges_);
     }
   }
 
   if (numLocalEdges_){
     int *p = new int [numLocalEdges_];
-    Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalEdges_, p)
+    env_->localMemoryAssertion(__FILE__, __LINE__, numLocalEdges_, p);
     procIds_ = arcp(p, 0, numLocalEdges_);
   }
 
@@ -607,7 +610,8 @@ template <typename User>
   if (numRemoteEdges > 0){
 
     if (!subsetGraph){
-      Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid edge ids", 1, BASIC_ASSERTION)
+      env_->localInputAssertion(__FILE__, __LINE__, "invalid edge ids", 1, 
+        BASIC_ASSERTION);
     }
     else{ // Remove edges that are not in the sub graph
 
@@ -618,7 +622,7 @@ template <typename User>
 
       if (offFrom == offsets){  // can't overwrite user's data
         offTo = new lno_t [numLocalVtx_ + 1];
-        Z2_LOCAL_MEMORY_ASSERTION(*env_, numLocalVtx_+1, offTo);
+        env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVtx_+1, offTo);
       }
   
       const gid_t *egidFrom = edgeGids_.getRawPtr();
@@ -626,7 +630,7 @@ template <typename User>
 
       if (egidFrom == nborIds){ // can't overwrite user's data
         egidTo = new gid_t [numNewEdges];
-        Z2_LOCAL_MEMORY_ASSERTION(*env_, numNewEdges, egidTo);
+        env_->localMemoryAssertion(__FILE__, __LINE__, numNewEdges, egidTo);
       }
 
       gno_t *egno = NULL;

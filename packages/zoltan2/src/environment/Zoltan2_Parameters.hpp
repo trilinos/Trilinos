@@ -60,9 +60,9 @@ void printListDocumentation( const Teuchos::ParameterList &pl, std::ostream &os,
  */
 
 enum AssertionLevel {
-  BASIC_ASSERTION,    /*!< checks that should always be done (user input) */
-  COMPLEX_ASSERTION,  /*!< checks that take extra time (validate a graph) */
-  DEBUG_MODE_ASSERTION, /*!< done when checking everything incl logic errors */
+  BASIC_ASSERTION,    /*!< \brief checks that should always be done (user input) */
+  COMPLEX_ASSERTION,  /*!< \brief checks that take extra time (validate a graph) */
+  DEBUG_MODE_ASSERTION, /*!< \brief done when checking everything incl logic errors */
   NUM_ASSERTION_LEVELS};
 
 /*! \brief The amount of debugging or status output to print.
@@ -76,10 +76,10 @@ enum AssertionLevel {
  */
  
 enum MessageOutputLevel {
-  NO_STATUS,                 /*!< don't display status/debug messages */
-  BASIC_STATUS,              /*!< the status at each high level step */
-  DETAILED_STATUS, /*!< include sub-steps, plus each method's entry and exit */
-  VERBOSE_DETAILED_STATUS,   /*!< include more detail about sub-steps */
+  NO_STATUS,                 /*!< \brief don't display status/debug messages */
+  BASIC_STATUS,              /*!< \brief the status at each high level step */
+  DETAILED_STATUS, /*!< \brief include sub-steps, plus each method's entry and exit */
+  VERBOSE_DETAILED_STATUS,   /*!< \brief include more detail about sub-steps */
   NUM_STATUS_OUTPUT_LEVELS};
 
 /*! \brief Whether profiling information should be local or should include
@@ -91,8 +91,8 @@ enum MessageOutputLevel {
  *          includes global min, max, average, total, etc.
  */
 enum MessageSummaryLevel{
-  LOCAL_SUMMARY,              /*!< messages should display local info only */
-  GLOBAL_SUMMARY,             /*!< include global min, max, avg, etc. */
+  LOCAL_SUMMARY,              /*!< \brief messages should display local info only */
+  GLOBAL_SUMMARY,             /*!< \brief include global min, max, avg, etc. */
   NUM_STATUS_SUMMARY_LEVELS};
 
 ////////////////////////////////////////////////////////////////////

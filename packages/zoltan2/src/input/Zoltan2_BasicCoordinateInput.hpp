@@ -95,6 +95,7 @@ public:
       numWeights_(numWeights), weights_(numWeights)
   {
     typedef StridedInput<lno_t,scalar_t> input_t;
+    RCP<const Environment> envConst = rcp_const_cast<const Environment>(env_);
 
     gno_t tmp = numIds;
     try{
@@ -108,7 +109,7 @@ public:
       for (int x=0; x < dim; x++){
         if (valueStrides)
           stride = valueStrides[x];
-        coords_[x] = rcp<input_t>(new input_t(env_,
+        coords_[x] = rcp<input_t>(new input_t(envConst,
           ArrayView<const scalar_t>(values[x], stride*numIds), stride));
       }
 
@@ -117,7 +118,7 @@ public:
         for (int w=0; w < numWeights; w++){
           if (weightStrides)
             stride = weightStrides[w];
-          weights_[w] = rcp<input_t>(new input_t(env_,
+          weights_[w] = rcp<input_t>(new input_t(envConst,
             ArrayView<const scalar_t>(weights[w], stride*numIds), stride));
         }
       }
@@ -155,7 +156,7 @@ public:
   size_t getCoordinates(int dim, const gid_t *&gids, const scalar_t *&coords, 
     int &stride) const
   {
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid dimension",
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid dimension",
       dim >= 0 && dim < dimension_, BASIC_ASSERTION);
 
     gids = idList_;
@@ -170,7 +171,7 @@ public:
   size_t getCoordinateWeights(int dim, const scalar_t *&weights, 
     int &stride) const
   {
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid dimension",
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid dimension",
       dim >= 0 && dim < numWeights_, BASIC_ASSERTION);
     
     size_t length;

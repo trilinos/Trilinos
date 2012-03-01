@@ -21,13 +21,13 @@ namespace Zoltan2 {
 /*! \brief An enum to identify general types of input adapters.
  */
 enum InputAdapterType {
-  InvalidAdapterType = 0,    /*!< unused value */
-  IdentifierAdapterType,    /*!< plain identifier input, just a list of Ids*/
-  VectorAdapterType,    /*!< vector input*/
-  CoordinateAdapterType,    /*!< coordinate input */
-  GraphAdapterType,    /*!< graph input */
-  MeshAdapterType,    /*!< mesh input */
-  MatrixAdapterType    /*!< matrix input */
+  InvalidAdapterType = 0,    /*!< \brief unused value */
+  IdentifierAdapterType,    /*!< \brief plain identifier input, just a list of Ids*/
+  VectorAdapterType,    /*!< \brief vector input*/
+  CoordinateAdapterType,    /*!< \brief coordinate input */
+  GraphAdapterType,    /*!< \brief graph input */
+  MeshAdapterType,    /*!< \brief mesh input */
+  MatrixAdapterType    /*!< \brief matrix input */
 };
 
 

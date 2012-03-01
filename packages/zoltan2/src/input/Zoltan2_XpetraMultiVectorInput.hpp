@@ -78,6 +78,7 @@ public:
     vector_ = XpetraTraits<User>::convertToXpetra(invector);
     map_ = vector_->getMap();
     base_ = map_->getIndexBase();
+    RCP<const Environment> envConst = rcp_const_cast<const Environment>(env_);
 
     size_t length = vector_->getLocalLength();
 
@@ -86,7 +87,7 @@ public:
       for (int w=0; w < numWeights; w++){
         if (weightStrides)
           stride = weightStrides[w];
-        weights_[w] = rcp<input_t>(new input_t(env_,
+        weights_[w] = rcp<input_t>(new input_t(envConst,
           ArrayView<const scalar_t>(weights[w], stride*length), stride));
       }
     }
@@ -165,7 +166,7 @@ public:
 
   size_t getVectorWeights(int dim, const scalar_t *&weights, int &stride) const
   {
-   Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid dimension",
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid dimension",
       dim >= 0 && dim < numWeights_, BASIC_ASSERTION);
 
     size_t length;

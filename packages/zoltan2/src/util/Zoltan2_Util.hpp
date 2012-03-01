@@ -85,7 +85,7 @@ template <typename GID, typename LNO, typename EXTRA>
   }
 
   ArrayRCP<LNO> recvCounts;
-  RCP<const Environment> env = getDefaultEnvironment();
+  RCP<const Environment> env = rcp(new Environment);
 
   try{
     AlltoAllv<GID, LNO>(comm, *env, gidList(), counts(), imports, recvCounts);

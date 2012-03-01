@@ -290,11 +290,12 @@ template< typename User>
     return;
   }
 
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid TranslationType", 
+  env_->localInputAssertion(__FILE__, __LINE__, "invalid TranslationType", 
     (tt==TRANSLATE_APP_TO_LIB) || (tt==TRANSLATE_LIB_TO_APP), 
     BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "Destination array is too small",
+  env_->localInputAssertion(__FILE__, __LINE__, 
+    "Destination array is too small",
     ((tt==TRANSLATE_LIB_TO_APP) && (gid.size() >= gno.size())) || 
      ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= gid.size())),
     BASIC_ASSERTION);
@@ -314,7 +315,7 @@ template< typename User>
     if (tt == TRANSLATE_LIB_TO_APP){
       for (size_t i=0; i < len; i++){
 
-        Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number", 
+        env_->localInputAssertion(__FILE__, __LINE__, "invalid global number", 
         (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
 
         gid[i] = myGids_[gno[i] - firstGno];
@@ -326,7 +327,7 @@ template< typename User>
         for (size_t i=0; i < len; i++){
           gno[i] = firstGno + IdentifierTraits<gid_t>::difference(
             myGids_[0], gid[i]);
-          Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global id", 
+          env_->localInputAssertion(__FILE__, __LINE__, "invalid global id", 
             (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
         }
       }
@@ -337,7 +338,7 @@ template< typename User>
             idx = gidHash_->get(key);
           }
           catch (const std::exception &e) {
-            Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global id", 
+            env_->localInputAssertion(__FILE__, __LINE__, "invalid global id", 
               false, BASIC_ASSERTION);
           }
           
@@ -360,11 +361,12 @@ template< typename User>
   if (len == 0){
     return;
   }
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid TranslationType", 
+  env_->localInputAssertion(__FILE__, __LINE__, "invalid TranslationType", 
     (tt==TRANSLATE_LIB_TO_APP) || (tt==TRANSLATE_APP_TO_LIB), 
     BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "Destination array is too small",
+  env_->localInputAssertion(__FILE__, __LINE__, 
+    "Destination array is too small",
     ((tt==TRANSLATE_LIB_TO_APP) && (lno.size() >= gno.size())) || 
     ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= lno.size())),
     BASIC_ASSERTION);
@@ -378,7 +380,7 @@ template< typename User>
   if (tt == TRANSLATE_LIB_TO_APP){
     if (gnoDist_.size() > 0) {   // gnos are consecutive
       for (size_t i=0; i < len; i++){
-        Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number", 
+        env_->localInputAssertion(__FILE__, __LINE__, "invalid global number", 
           (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
         lno[i] = gno[i] - firstGno;
       }
@@ -388,7 +390,7 @@ template< typename User>
         for (size_t i=0; i < len; i++){ 
           gid_t tmp = Teuchos::as<gid_t>(gno[i]);
           lno[i] = IdentifierTraits<gid_t>::difference(myGids_[0], tmp);
-          Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number",
+          env_->localInputAssertion(__FILE__, __LINE__, "invalid global number",
             (lno[i] >= 0) && (lno[i] < localNumberOfIds_), BASIC_ASSERTION);
         }
       }
@@ -399,8 +401,8 @@ template< typename User>
             lno[i] = gidHash_->get(IdentifierTraits<gid_t>::key(keyArg));
           }
           catch (const std::exception &e) {
-            Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number",
-              false, BASIC_ASSERTION);
+            env_->localInputAssertion(__FILE__, __LINE__, 
+              "invalid global number", false, BASIC_ASSERTION);
           }
         }
       }
@@ -434,7 +436,8 @@ template< typename User>
 
   bool skipGno = (out_gno.size() == 0);
 
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "Destination array is too small", 
+  env_->localInputAssertion(__FILE__, __LINE__, 
+    "Destination array is too small", 
     (out_proc.size() >= len) && (skipGno || (out_gno.size() >= len)),
     BASIC_ASSERTION);
 
@@ -487,14 +490,16 @@ template< typename User>
     try{ 
       hashProc.resize(localNumberOfIds_, 0);
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, localNumberOfIds_, false); 
+    }
 
     try{ 
       gidOutBuf.resize(localNumberOfIds_); 
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, localNumberOfIds_, false); 
+    }
 
     for (size_t i=0; i < localNumberOfIds_; i++){
       hashProc[i] = IdentifierTraits<gid_t>::hashCode(myGids_[i]) % numProcs_;
@@ -617,14 +622,18 @@ template< typename User>
     try{ 
       gidOutBuf.resize(numberOfUniqueGids); 
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, numberOfUniqueGids, 
+        false); 
+    }
 
     try{ 
       hashProc.resize(numberOfUniqueGids, 0);
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, numberOfUniqueGids, 
+        false); 
+    }
   
     lno_t idx = 0;
     for (next = gidIndices.begin(); next != gidIndices.end(); ++next, ++idx){
@@ -643,8 +652,10 @@ template< typename User>
     try{ 
       gidLocation.resize(numberOfUniqueGids, 0);
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, numberOfUniqueGids, 
+        false); 
+    }
   
     idx = 0;
     for (next = gidIndices.begin(); next != gidIndices.end(); ++next, ++idx){
@@ -685,8 +696,9 @@ template< typename User>
     try{ 
       gnoOutBuf.resize(total, 0);
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, total, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, total, false); 
+    }
   }
 
   if (total > 0){
@@ -706,7 +718,7 @@ template< typename User>
           badGid = true;
         }
 
-        Z2_LOCAL_BUG_ASSERTION(*env_, "gidToIndex table", 
+        env_->localBugAssertion(__FILE__, __LINE__, "gidToIndex table", 
           badGid || ((index >= 0)&&(index<=indexTotal)), BASIC_ASSERTION);
 
         
@@ -784,9 +796,10 @@ template< typename User>
 template< typename User> 
   void IdentifierMap<User>::setupMap(void)
 {
-  Z2_GLOBAL_INPUT_ASSERTION(*env_, 
-           "application global ID type is not supported yet",
-           IdentifierTraits<gid_t>::is_valid_id_type() == true, BASIC_ASSERTION);
+  env_->globalInputAssertion(__FILE__, __LINE__, 
+       "application global ID type is not supported yet",
+       IdentifierTraits<gid_t>::is_valid_id_type() == true, BASIC_ASSERTION,
+       comm_);
 
   numProcs_ = comm_->getSize(); 
   myRank_ = comm_->getRank(); 
@@ -838,8 +851,10 @@ template< typename User>
       try{
         p = new id2index_hash_t(localNumberOfIds_);
       }
-      catch (const std::exception &e)
-        Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false);
+      catch (const std::exception &e){
+        env_->localMemoryAssertion(__FILE__, __LINE__, localNumberOfIds_, 
+          false);
+      }
     }
 
     for (size_t i=0; i < localNumberOfIds_; i++){

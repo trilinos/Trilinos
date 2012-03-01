@@ -129,7 +129,8 @@ public:
     if (nLocalIds && weightDim){
       wgts = new const scalar_t * [weightDim];
       wgtStrides = new int [weightDim];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, nLocalIds, wgts && wgtStrides);
+      env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, 
+        wgts && wgtStrides);
     }
 
     const gid_t *gids=NULL;
@@ -174,7 +175,7 @@ public:
 
     if (!gnosAreGids_ && nLocalIds>0){
       gno_t *tmpGno = new gno_t [nLocalIds];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, nLocalIds, tmpGno);
+      env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
       gnos_ = arcp(tmpGno, 0, nLocalIds);
 
       try{
@@ -320,7 +321,7 @@ public:
 
     if (!gnosAreGids_ && nLocalIds>0){
       gno_t *tmpGno = new gno_t [nLocalIds];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, nLocalIds, tmpGno);
+      env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
       gnos_ = arcp(tmpGno, 0, gids_.size());
 
       try{

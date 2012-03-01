@@ -39,7 +39,6 @@ int main(int argc, char *argv[])
   myParams.set("debug_procs", "all");   
   myParams.set("debug_output_stream", "std::cout");
 
-  myParams.set("timing_level", "basic_status");  
   myParams.set("timing_procs", "0"); 
   myParams.set("timing_output_file", "appPerformance.txt");
 
@@ -105,8 +104,6 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList all("setAllParametersList");
   all.set("debug_level", "basic_status");
-  all.set("timing_level", "no_status");
-  all.set("memory_profiling_level", "detailed_status");
 
   all.set("debug_procs", "1,2,5-10,2");
   all.set("timing_procs", "10-2");

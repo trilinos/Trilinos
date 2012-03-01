@@ -192,7 +192,7 @@ template <typename User>
   size_t BasicVectorInput<User>::getVector(int i, const gid_t *&ids, 
     const scalar_t *&element, int &stride) const
 {
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid vector number",
+  env_->localInputAssertion(__FILE__, __LINE__, "invalid vector number",
     i >= 0 && i < numVectors_, BASIC_ASSERTION);
   
   ids = idList_;
@@ -208,7 +208,7 @@ template <typename User>
   size_t BasicVectorInput<User>::getVectorWeights(int dimension, 
     const scalar_t *&weights, int &stride) const
 {
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid weight dimension",
+  env_->localInputAssertion(__FILE__, __LINE__,  "invalid weight dimension",
     dimension >= 0 && dimension < numWeights_, BASIC_ASSERTION);
 
   size_t length;
@@ -231,6 +231,7 @@ template <typename User>
   elements_ = Array<RCP<StridedInput<lno_t, scalar_t> > >(numVectors);
   numWeights_ = numWeights;
   weights_ = Array<RCP<StridedInput<lno_t, scalar_t> > >(numWeights);
+  RCP<const Environment> envConst = rcp_const_cast<const Environment>(env_);
 
   typedef StridedInput<lno_t,scalar_t> input_t;
 
@@ -246,7 +247,7 @@ template <typename User>
     for (int v=0; v < numVectors; v++){
       if (elementStrides)
         stride = elementStrides[v];
-      elements_[v] = rcp<input_t>(new input_t(env_,
+      elements_[v] = rcp<input_t>(new input_t(envConst,
         ArrayView<const scalar_t>(elements[v], stride*numIds), stride));
     }
 
@@ -255,7 +256,7 @@ template <typename User>
       for (int w=0; w < numWeights; w++){
         if (weightStrides)
           stride = weightStrides[w];
-        weights_[w] = rcp<input_t>(new input_t(env_,
+        weights_[w] = rcp<input_t>(new input_t(envConst,
           ArrayView<const scalar_t>(weights[w], stride*numIds), stride));
       }
     }

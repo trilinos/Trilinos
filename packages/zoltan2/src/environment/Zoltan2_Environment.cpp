@@ -30,72 +30,35 @@ static void makeDebugManager(int rank, bool iPrint,
   int level, std::string fname, std::string osname,
   Teuchos::RCP<DebugManager> &mgr);
 
+static void addRankToFileName(int rank, std::string fname, std::string &newf);
+
 #define UNSET std::string("notSet")
 
 Environment::Environment( Teuchos::ParameterList &problemParams,
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm):
-  myRank_(0), numProcs_(1), comm_(comm),
-  debugOut_(), timerOut_(), memoryOut_(),
-  errorCheckLevel_(BASIC_ASSERTION),
-  params_(problemParams), committed_(false)
-
+  myRank_(0), numProcs_(1), comm_(comm), errorCheckLevel_(BASIC_ASSERTION),
+  unvalidatedParams_(problemParams), params_(problemParams),
+  debugOut_(), timerOut_(), memoryOut_()
 {
   myRank_ = comm->getRank();
   numProcs_ = comm->getSize();
+  commitParameters();
 }
 
 Environment::Environment():
-  myRank_(0), numProcs_(1), comm_(),
-  debugOut_(), timerOut_(), memoryOut_(),
-  errorCheckLevel_(BASIC_ASSERTION),
-  params_(), committed_(false)
+  myRank_(0), numProcs_(1), comm_(), errorCheckLevel_(BASIC_ASSERTION),
+  unvalidatedParams_(), params_(),
+  debugOut_(), timerOut_(), memoryOut_()
 {
   comm_ = Teuchos::DefaultComm<int>::getComm();
   myRank_ = comm_->getRank();
   numProcs_ = comm_->getSize();
+
+  commitParameters();
 }
 
 Environment::~Environment()
 {
-}
-
-void Environment::setCommunicator(
-  const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-{
-  if (committed_){
-    std::ostringstream msg;
-    msg<<myRank_<<" "<<__FILE__<<", "<<__LINE__; 
-    msg<<", error: parameters are already committed";
-    throw std::runtime_error(msg.str()); 
-  }
-
-  comm_ = comm;
-  myRank_ = comm_->getRank();
-  numProcs_ = comm_->getSize();
-}
-
-void Environment::setParameters(Teuchos::ParameterList &params)
-{
-  if (committed_){
-    std::ostringstream msg;
-    msg<<myRank_<<" "<<__FILE__<<", "<<__LINE__; 
-    msg<<", error: parameters are already committed";
-    throw std::runtime_error(msg.str()); 
-  }
-
-  params_ = params;
-}
-
-void Environment::addParameters(Teuchos::ParameterList &params)
-{
-  if (committed_){
-    std::ostringstream msg;
-    msg<<myRank_<<" "<<__FILE__<<", "<<__LINE__; 
-    msg<<", error: parameters are already committed";
-    throw std::runtime_error(msg.str()); 
-  }
-
-  params_.setParameters(params);
 }
 
 void Environment::convertStringToInt(Teuchos::ParameterList &params)
@@ -148,27 +111,33 @@ void Environment::commitParameters()
   nodeZeroOnly[0] = 0;
   nodeZeroOnly[1] = RANGE_IS_LISTED;
 
-  ParameterList validParams;
+  bool emptyList = (params_.begin() == params_.end());
 
-  createValidatorList(params_, validParams);
+  if (!emptyList){
 
-  // Note that since validParams only contains parameters that
-  // appear in params_, there are no defaults being set.  We
-  // call ParameterList::validateParametersAndSetDefaults() instead of
-  // ParameterList::validateParameters() because we want the
-  // the validators' validateAndModify() to be called instead
-  // of validate().  validateAndModify() "fixes" some of the
-  // parameters for us.
-
-  params_.validateParametersAndSetDefaults(validParams);
-
-  // For all of the true/false, yes/no, 0/1 string parameters, 
-  // convert them to integers zero or one.  I would have
-  // expected validateAndModify() to do this.
-
-  convertStringToInt(params_);
+    ParameterList validParams;
+    createValidatorList(params_, validParams);
+  
+    // Note that since validParams only contains parameters that
+    // appear in params_, there are no defaults being set.  We
+    // call ParameterList::validateParametersAndSetDefaults() instead of
+    // ParameterList::validateParameters() because we want the
+    // the validators' validateAndModify() to be called instead
+    // of validate().  validateAndModify() "fixes" some of the
+    // parameters for us.
+  
+    params_.validateParametersAndSetDefaults(validParams);
+  
+    // For all of the true/false, yes/no, 0/1 string parameters, 
+    // convert them to integers zero or one.  I would have
+    // expected validateAndModify() to do this.
+  
+    convertStringToInt(params_);
+  }
 
   /////////////////////////////////////////////////////////////////////
+
+  // Set up for debugging/status output.
 
   int &level = params_.get<int>("debug_level", BASIC_STATUS);
 
@@ -193,18 +162,18 @@ void Environment::commitParameters()
     debugOut_ = rcp(new DebugManager(myRank_, false, std::cout, NO_STATUS));
   }
 
-  // TODO instead of level, either do timing or don't do timing
-  level = params_.get<int>("timing_level", BASIC_STATUS);
+  // Set up for timing output.
 
-  if (level > NO_STATUS){
+  string &f1 = params_.get<string>("timing_output_file", UNSET);
+  string &os1 = params_.get<string>("timing_output_stream", UNSET);
+
+  if (f1 != UNSET || os1 != UNSET){
     Array<int> &reporters = 
       params_.get<Array<int> >("timing_procs", nodeZeroOnly);
     bool iPrint = IsInRangeList(myRank_, reporters);
-    string &fname = params_.get<string>("timing_output_file", UNSET);
-    string &osname = params_.get<string>("timing_output_stream", UNSET);
 
     try{
-      makeMetricOutputManager<double>(myRank_, iPrint, fname, osname, timerOut_);
+      makeMetricOutputManager<double>(myRank_, iPrint, f1, os1, timerOut_);
     }
     catch (std::exception &e){
       std::ostringstream oss;
@@ -214,24 +183,23 @@ void Environment::commitParameters()
     }
   }
   else{
+    // Says no processes output timing metrics.
     timerOut_ = 
       rcp(new MetricOutputManager<double>(myRank_, false, std::cout, false));
   }
 
-  // TODO instead of level, either output memory used info or don't
-  level = params_.get<int>("memory_profiling_level", BASIC_STATUS);
+  // Set up for memory usage output.
+  
+  string &f2 = params_.get<string>("memory_profiling_output_file", UNSET);
+  string &os2 = params_.get<string>("memory_profiling_output_stream", UNSET);
 
-  if (level > NO_STATUS){
+  if (f2 != UNSET || os2 != UNSET){
     Array<int> &reporters = 
       params_.get<Array<int> >("memory_profiling_procs", nodeZeroOnly);
     bool iPrint = IsInRangeList(myRank_, reporters);
-    string &fname = 
-      params_.get<string>("memory_profiling_output_file", UNSET);
-    string &osname = 
-      params_.get<string>("memory_profiling_output_stream", UNSET);
 
     try{
-      makeMetricOutputManager<long>(myRank_, iPrint, fname, osname, memoryOut_);
+      makeMetricOutputManager<long>(myRank_, iPrint, f2, os2, memoryOut_);
     }
     catch (std::exception &e){
       std::ostringstream oss;
@@ -241,14 +209,13 @@ void Environment::commitParameters()
     }
   }
   else{
+    // Says no processes output memory usage metrics.
     memoryOut_ = 
       rcp(new MetricOutputManager<long>(myRank_, false, std::cout, false));
   }
 
   errorCheckLevel_ = static_cast<AssertionLevel>( 
     params_.get<int>("error_check_level", BASIC_ASSERTION));
-
-  committed_ = true;
 }
   
 bool Environment::hasSublist(const Teuchos::ParameterList &pl, 
@@ -261,14 +228,37 @@ bool Environment::hasSublist(const Teuchos::ParameterList &pl,
   return false;
 }
 
+static void addRankToFileName(int rank, std::string fname, std::string &newf)
+{
+  std::ostringstream id;
+  id << "_";
+  id.width(6);
+  id.fill('0');
+  id << rank;
+
+  std::ostringstream localFileName;
+  std::string::size_type loc = fname.find('.');
+
+  if (loc == std::string::npos)
+    localFileName << fname << id.str();
+  else
+    localFileName << fname.substr(0, loc) << id.str() << fname.substr(loc);
+
+  newf = localFileName.str();
+}
+
 template<typename metric_t>
   static void makeMetricOutputManager(int rank, bool iPrint, std::string fname, 
     std::string osname, Teuchos::RCP<MetricOutputManager<metric_t> > &mgr)
 {
   std::ofstream oFile;
+
   if (fname != UNSET){
+    std::string newFname;
+    addRankToFileName(rank, fname, newFname);
+
     try{
-      oFile.open(fname.c_str(), std::ios::out|std::ios::trunc);
+      oFile.open(newFname.c_str(), std::ios::out|std::ios::trunc);
     }
     catch(std::exception &e){
       throw std::runtime_error(e.what());
@@ -293,8 +283,10 @@ static void makeDebugManager(int rank, bool iPrint,
 {
   std::ofstream dbgFile;
   if (fname != UNSET){
+    std::string newFname;
+    addRankToFileName(rank, fname, newFname);
     try{
-      dbgFile.open(fname.c_str(), std::ios::out|std::ios::trunc);
+      dbgFile.open(newFname.c_str(), std::ios::out|std::ios::trunc);
     }
     catch(std::exception &e){
       throw std::runtime_error(e.what());
@@ -311,30 +303,6 @@ static void makeDebugManager(int rank, bool iPrint,
     mgr = Teuchos::rcp(new DebugManager(rank, iPrint, dbgFile, lvl));
   else
     mgr = Teuchos::rcp(new DebugManager(rank, false, std::cout, lvl));
-}
-
-// A helper function to return a default environment.
-
-Teuchos::RCP<const Environment> getDefaultEnvironment()
-{
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-    Teuchos::DefaultComm<int>::getComm();
-
-  Teuchos::ParameterList params;   // an empty parameter list;
-
-  Environment *defaultEnv = NULL;
-
-  try{
-    defaultEnv = new Environment(params, comm);
-  }
-  catch (std::exception &e){
-    throw std::runtime_error("getDefaultEnvironment");
-  }
-
-  defaultEnv->commitParameters();   // will set parameters to defaults
-
-  Teuchos::RCP<const Environment> env = Teuchos::rcp(defaultEnv);
-  return env;
 }
   
 }  //namespace Zoltan2

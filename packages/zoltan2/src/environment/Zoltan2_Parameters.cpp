@@ -193,66 +193,34 @@ void createAllParameters(Teuchos::ParameterList &pList)
   pList.set<string>(parameterName, "basic_assertions", docString.str(),
     str2intValidatorP);
 
-  //////////
-  // Debug, timing, and memory profiling verbosity levels
-  //////////
-
-  Tuple <string, 4> outputLevelStrings = tuple<string>(
-                  "no_status",
-                  "basic_status",
-                  "detailed_status",
-                  "verbose_detailed_status");
-
-  Tuple<string, 4> outputLevelDoc = tuple<string>(
-      "library outputs no information (timing and memory profiling default)",
-      "library outputs basic status information (debug message default)",
-      "library outputs detailed information",
-      "library outputs very detailed information");
-
-  Tuple<int, 4> outputLevelValues = tuple<int>(
-    NO_STATUS,
-    BASIC_STATUS,
-    DETAILED_STATUS,
-    VERBOSE_DETAILED_STATUS);
-
   ////////// topLevel/debug_level
   parameterName = string("debug_level");
 
   str2intValidatorP = rcp(new str2intValidator(
-    outputLevelStrings, outputLevelDoc, outputLevelValues, parameterName));
+     tuple<string>("no_status",
+                  "basic_status",
+                  "detailed_status",
+                  "verbose_detailed_status"),
+
+     tuple<string>(
+      "library outputs no information (timing and memory profiling default)",
+      "library outputs basic status information (debug message default)",
+      "library outputs detailed information",
+      "library outputs very detailed information"),
+
+     tuple<int>(
+        NO_STATUS,
+        BASIC_STATUS,
+        DETAILED_STATUS,
+        VERBOSE_DETAILED_STATUS),
+   
+     parameterName));
 
   docString.str("");
   str2intValidatorP->printDoc(
     "the amount of status/debugging information to print\n", docString);
 
   pList.set<string>(parameterName, "basic_status", docString.str(), 
-    str2intValidatorP);
-
-  ////////// topLevel/timing_level
-  parameterName = string("timing_level");
-
-  str2intValidatorP = rcp(new str2intValidator(
-    outputLevelStrings, outputLevelDoc, outputLevelValues, parameterName));
-
-  docString.str("");
-  str2intValidatorP->printDoc(
-    "the amount of timing data to print\n", docString);
-
-  pList.set<string>(parameterName, "no_status", docString.str(), 
-    str2intValidatorP);
-
-  ////////// topLevel/memory_profiling_level
-  parameterName = string("memory_profiling_level");
-
-  str2intValidatorP = rcp(new str2intValidator(
-    outputLevelStrings, outputLevelDoc, outputLevelValues, parameterName));
-
-  docString.str("");
-  str2intValidatorP->printDoc(
-    "the amount of memory profiling information to print (if available)\n", 
-     docString);
-
-  pList.set<string>(parameterName, "no_status", docString.str(), 
     str2intValidatorP);
 
   //////////
@@ -294,6 +262,13 @@ void createAllParameters(Teuchos::ParameterList &pList)
   //////////
   // Debug, timing and memory profiling file name parameters
   //////////
+
+  /*! 
+    \todo Add a parameter that says each process should a separate file.
+  
+     For now all processes write to the same file without synchronizing.
+   */
+     
 
   fnameValidatorP = rcp(new FileNameValidator(false));
 

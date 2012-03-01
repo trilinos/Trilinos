@@ -70,12 +70,12 @@ public:
 
     size_t n = nvtx + 1;
     lno_t *offs = new lno_t [n];
-    Z2_LOCAL_MEMORY_ASSERTION(env, n, offs);
+    env.localMemoryAssertion(__FILE__, __LINE__, n, offs);
 
     gid_t *eids = NULL;
     if (nedges){
       eids = new gid_t [nedges];
-      Z2_LOCAL_MEMORY_ASSERTION(env, nedges, eids);
+      env.localMemoryAssertion(__FILE__, __LINE__, nedges, eids);
     }
 
     offs[0] = 0;

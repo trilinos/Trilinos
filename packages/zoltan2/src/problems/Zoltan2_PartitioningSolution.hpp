@@ -388,7 +388,7 @@ template <typename User_t>
   size_t sumGlobal = reducevals[2];
   size_t sumLocal = reducevals[3];
 
-  Z2_LOCAL_INPUT_ASSERTION(*env_, 
+  env_->localInputAssertion(__FILE__, __LINE__,
     "Either all procs specify num_global/local_parts or none do",
     (sumHaveGlobal == 0 || sumHaveGlobal == nprocs) &&
     (sumHaveLocal == 0 || sumHaveLocal == nprocs), 
@@ -412,12 +412,12 @@ template <typename User_t>
     size_t maxGlobal = reducevals[0];
     size_t maxLocal = reducevals[1];
 
-    Z2_LOCAL_INPUT_ASSERTION(*env_, 
+    env_->localInputAssertion(__FILE__, __LINE__,
       "Value for num_global_parts is different on different processes.",
       maxGlobal * nprocs == sumGlobal, BASIC_ASSERTION);
 
     if (sumLocal){
-      Z2_LOCAL_INPUT_ASSERTION(*env_, 
+      env_->localInputAssertion(__FILE__, __LINE__,
         "Sum of num_local_parts does not equal requested num_global_parts",
         sumLocal == nGlobalParts_, BASIC_ASSERTION);
 
@@ -436,7 +436,7 @@ template <typename User_t>
   }
 
   size_t *nparts = new size_t [nprocs];
-  Z2_GLOBAL_MEMORY_ASSERTION(*env_, nprocs, nparts);
+  env_->globalMemoryAssertion(__FILE__, __LINE__, nprocs, nparts, comm_);
 
   if (sumHaveLocal == nprocs){
     //
@@ -479,8 +479,8 @@ template <typename User_t>
   int *partArray = new int [nGlobalParts_+1];
   size_t *procArray = new size_t [nprocs+1];
 
-  Z2_GLOBAL_MEMORY_ASSERTION(*env_, nprocs+nGlobalParts_+2,
-    partArray && procArray);
+  env_->globalMemoryAssertion(__FILE__, __LINE__, nprocs+nGlobalParts_+2,
+    partArray && procArray, comm_);
 
   partDist_ = arcp(partArray, 0, nGlobalParts_+1, true);
   procDist_ = arcp(procArray, 0, nprocs+1, true);
@@ -514,8 +514,8 @@ template <typename User_t>
     if (ids[w].size() != sizes[w].size()) fail=true;
   }
 
-  Z2_GLOBAL_BUG_ASSERTION(*env_, "bad argument arrays", fail==0, 
-    COMPLEX_ASSERTION);
+  env_->globalBugAssertion(__FILE__, __LINE__, "bad argument arrays", fail==0, 
+    COMPLEX_ASSERTION, comm_);
 
   // Are all part sizes the same?  This is the common case.
 
@@ -596,7 +596,8 @@ template <typename User_t>
 template <typename User_t>
   void PartitioningSolution<User_t>::broadcastPartSizes(int wdim)
 {
-  Z2_LOCAL_BUG_ASSERTION(*env_, "preallocations", pSize_.size()>wdim && 
+  env_->localBugAssertion(__FILE__, __LINE__, "preallocations", 
+    pSize_.size()>wdim && 
     pSizeUniform_.size()>wdim && pCompactIndex_.size()>wdim, 
     COMPLEX_ASSERTION);
 
@@ -638,10 +639,10 @@ template <typename User_t>
 
     if (rank > 0){
       idxbuf = new unsigned char [nparts];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, nparts, idxbuf);
+      env_->localMemoryAssertion(__FILE__, __LINE__, nparts, idxbuf);
     }
     else{
-      Z2_LOCAL_BUG_ASSERTION(*env_, "index list size", 
+      env_->localBugAssertion(__FILE__, __LINE__, "index list size", 
         pCompactIndex_[wdim].size() == nparts, COMPLEX_ASSERTION);
       idxbuf = pCompactIndex_[wdim].getRawPtr();
     }
@@ -668,10 +669,10 @@ template <typename User_t>
 
     if (rank > 0){
       sizeList = new float [numSizes];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, numSizes, sizeList);
+      env_->localMemoryAssertion(__FILE__, __LINE__, numSizes, sizeList);
     }
     else{
-      Z2_LOCAL_BUG_ASSERTION(*env_, "wrong number of sizes", 
+      env_->localBugAssertion(__FILE__, __LINE__, "wrong number of sizes", 
         numSizes == pSize_[wdim].size(), COMPLEX_ASSERTION);
 
       sizeList = pSize_[wdim].getRawPtr();
@@ -696,10 +697,10 @@ template <typename User_t>
 
     if (rank > 0){
       sizeList = new float [nparts];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, nparts, sizeList);
+      env_->localMemoryAssertion(__FILE__, __LINE__, nparts, sizeList);
     }
     else{
-      Z2_LOCAL_BUG_ASSERTION(*env_, "wrong number of sizes", 
+      env_->localBugAssertion(__FILE__, __LINE__, "wrong number of sizes", 
         nparts == pSize_[wdim].size(), COMPLEX_ASSERTION);
 
       sizeList = pSize_[wdim].getRawPtr();
@@ -728,11 +729,14 @@ template <typename User_t>
     return;
   }
 
-  Z2_LOCAL_BUG_ASSERTION(*env_, "bad array sizes", len>0 && sizes.size()==len,
-    COMPLEX_ASSERTION);
-  Z2_LOCAL_BUG_ASSERTION(*env_, "bad index", wdim>=0 && wdim<weightDim_,
-    COMPLEX_ASSERTION);
-  Z2_LOCAL_BUG_ASSERTION(*env_, "preallocations", pSize_.size()>wdim && 
+  env_->localBugAssertion(__FILE__, __LINE__, "bad array sizes", 
+    len>0 && sizes.size()==len, COMPLEX_ASSERTION);
+
+  env_->localBugAssertion(__FILE__, __LINE__, "bad index", 
+    wdim>=0 && wdim<weightDim_, COMPLEX_ASSERTION);
+
+  env_->localBugAssertion(__FILE__, __LINE__, "preallocations", 
+    pSize_.size()>wdim && 
     pSizeUniform_.size()>wdim && pCompactIndex_.size()>wdim, 
     COMPLEX_ASSERTION);
 
@@ -740,7 +744,7 @@ template <typename User_t>
 
   size_t nparts = nGlobalParts_;
   unsigned char *buf = new unsigned char [nparts];
-  Z2_LOCAL_MEMORY_ASSERTION(*env_, nparts, buf);
+  env_->localMemoryAssertion(__FILE__, __LINE__, nparts, buf);
   memset(buf, 0, nparts);
   ArrayRCP<unsigned char> partIdx(buf, 0, nparts, true);
 
@@ -750,17 +754,18 @@ template <typename User_t>
     size_t id = ids[i];
     float size = sizes[i];
 
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid part id", id>=0 && id<nparts,
-      BASIC_ASSERTION);
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid part size", size>=0,
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid part id", 
+      id>=0 && id<nparts, BASIC_ASSERTION);
+
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid part size", size>=0,
       BASIC_ASSERTION);
 
     // TODO: we could allow users to specify multiple sizes for the same
     // part if we add a parameter that says what we are to do with them:
     // add them or take the max.
 
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "multiple sizes provided for one part",
-      partIdx[id]==0, BASIC_ASSERTION);
+    env_->localInputAssertion(__FILE__, __LINE__, 
+      "multiple sizes provided for one part", partIdx[id]==0, BASIC_ASSERTION);
 
     partIdx[id] = 1;
 
@@ -772,7 +777,7 @@ template <typename User_t>
   if (sum == 0){   // user has given us a list of parts of size 0
     
     float *allSizes = new float [2];
-    Z2_LOCAL_MEMORY_ASSERTION(*env_, 2, allSizes);
+    env_->localMemoryAssertion(__FILE__, __LINE__, 2, allSizes);
 
     ArrayRCP<float> sizeArray(allSizes, 0, 2, true);
 
@@ -806,7 +811,7 @@ template <typename User_t>
   // be some parts are size 1 and all the rest are size 2.
 
   float *tmp = new float [len];
-  Z2_LOCAL_MEMORY_ASSERTION(*env_, len, tmp);
+  env_->localMemoryAssertion(__FILE__, __LINE__, len, tmp);
   memcpy(tmp, sizes.getRawPtr(), sizeof(float) * len);
   ArrayRCP<float> partSizes(tmp, 0, len, true);
 
@@ -848,7 +853,7 @@ template <typename User_t>
     if (!haveAvg) sizeArrayLen++;   // need to include average
     
     float *allSizes = new float [sizeArrayLen];
-    Z2_LOCAL_MEMORY_ASSERTION(*env_, sizeArrayLen, allSizes);
+    env_->localMemoryAssertion(__FILE__, __LINE__, sizeArrayLen, allSizes);
     ArrayRCP<float> sizeArray(allSizes, 0, sizeArrayLen, true);
 
     int newAvgIndex = sizeArrayLen;
@@ -869,7 +874,7 @@ template <typename User_t>
       allSizes[idx++] = nextUniqueSize[i];
     }
 
-    Z2_LOCAL_BUG_ASSERTION(*env_, "finding average in list", 
+    env_->localBugAssertion(__FILE__, __LINE__, "finding average in list", 
       newAvgIndex < sizeArrayLen, COMPLEX_ASSERTION);
 
     for (int i=0; i < nparts; i++){
@@ -891,8 +896,8 @@ template <typename User_t>
         ArrayRCP<float>::iterator found = std::lower_bound(sizeArray.begin(),
           sizeArray.end(), size);
 
-        Z2_LOCAL_BUG_ASSERTION(*env_, "size array", found != sizeArray.end(),
-          COMPLEX_ASSERTION);
+        env_->localBugAssertion(__FILE__, __LINE__, "size array", 
+          found != sizeArray.end(), COMPLEX_ASSERTION);
 
         index = found - sizeArray.begin();
       }
@@ -915,7 +920,7 @@ template <typename User_t>
     partIdx.clear();
 
     tmp = new float [nparts];
-    Z2_LOCAL_MEMORY_ASSERTION(*env_, nparts, tmp);
+    env_->localMemoryAssertion(__FILE__, __LINE__, nparts, tmp);
 
     sum += ((nparts - len) * avg);
 
@@ -950,7 +955,7 @@ template <typename User_t>
       ArrayView<gno_t> gnoView = av_const_cast<gno_t>(gnoList);
   
       gid_t *gidList = new gid_t [gnoList.size()];
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, ngnos, gidList);
+      env_->localMemoryAssertion(__FILE__, __LINE__, ngnos, gidList);
   
       gids_ = arcp<const gid_t>(gidList, 0, ngnos);
    
@@ -963,7 +968,7 @@ template <typename User_t>
     // Create list of corresponding parts: parts_
   
     size_t *parts = new size_t [ngnos];
-    Z2_LOCAL_MEMORY_ASSERTION(*env_, ngnos, parts);
+    env_->localMemoryAssertion(__FILE__, __LINE__, ngnos, parts);
   
     memcpy(parts, partList.getRawPtr(), sizeof(size_t) * ngnos);
   
@@ -973,7 +978,7 @@ template <typename User_t>
   // Create imbalance list: one for each weight dimension: weights_
   
   float *imbList = new float [weightDim_];
-  Z2_LOCAL_MEMORY_ASSERTION(*env_, weightDim_, imbList);
+  env_->localMemoryAssertion(__FILE__, __LINE__, weightDim_, imbList);
   memcpy(imbList, imbalance.getRawPtr(), sizeof(float) * weightDim_);
   
   imbalance_ = arcp<float>(imbList, 0, weightDim_);

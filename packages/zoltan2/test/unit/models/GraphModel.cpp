@@ -29,6 +29,7 @@
 
 using namespace std;
 using Teuchos::RCP;
+using Teuchos::rcp;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::ArrayView;
@@ -90,8 +91,7 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 {
   int fail=0;
   int rank = comm->getRank();
-  RCP<const Zoltan2::Environment> default_env = 
-    Zoltan2::getDefaultEnvironment();
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
   if (consecutiveIdsRequested)
@@ -114,7 +114,7 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   const base_adapter_t *baseTmi = &tmi;
 
   try{
-    model = new Zoltan2::GraphModel<base_adapter_t>(baseTmi, default_env, 
+    model = new Zoltan2::GraphModel<base_adapter_t>(baseTmi, env, 
       comm, modelFlags);
   }
   catch (std::exception &e){
@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
   int rank = comm->getRank();
 
   string nullString;
-#if 0
+
   vector<string> mtxFiles;
   
   mtxFiles.push_back(testDataFilePath+string("/simple.mtx"));
@@ -313,11 +313,6 @@ int main(int argc, char *argv[])
       std::cout << mtxFiles[fileNum] << std::endl;
     testGraphModel(mtxFiles[fileNum], 0, 0, 0, comm);
   }
-#endif
-
-  if (rank==0)
-    std::cout << "4x4x4 mesh generated matrix:" << std::endl;
-  testGraphModel(nullString, 4, 4, 4, comm);
 
   if (rank==0)
     std::cout << "PASS" << std::endl;

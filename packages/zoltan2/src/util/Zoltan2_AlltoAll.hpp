@@ -15,6 +15,7 @@
 #define _ZOLTAN2_ALLTOALL_HPP_
 
 #include <Zoltan2_Standards.hpp>
+#include <Zoltan2_Environment.hpp>
 
 #include <vector>
 
@@ -58,7 +59,7 @@ void AlltoAll(const Comm<int> &comm,
 
   LNO n = nprocs * count;
   T *ptr = new T [n]; 
-  Z2_GLOBAL_MEMORY_ASSERTION(env, n, ptr);
+  env.globalMemoryAssertion(__FILE__, __LINE__, n, ptr, rcp(&comm, false));
   recvBuf = Teuchos::arcp<T>(ptr, 0, n);
 
   // Do self messages
@@ -171,7 +172,9 @@ void AlltoAllv(const Comm<int> &comm,
   if (totalIn){
     ptr = new T [totalIn]; 
   }
-  Z2_GLOBAL_MEMORY_ASSERTION(env, totalIn, !totalIn||ptr);
+  env.globalMemoryAssertion(__FILE__, __LINE__, totalIn, !totalIn||ptr, 
+    rcp(&comm, false));
+
   recvBuf = Teuchos::arcp<T>(ptr, 0, totalIn, true);
 
   T *in = recvBuf.get() + offsetIn;           // Copy self messages
@@ -416,7 +419,8 @@ void AlltoAllv(const Comm<int>     &comm,
   using Teuchos::is_null;
 
   LNO *sendSize = new LNO [nprocs];
-  Z2_GLOBAL_MEMORY_ASSERTION(env, nprocs, sendSize);
+  env.globalMemoryAssertion(__FILE__, __LINE__, nprocs, sendSize,
+    rcp(&comm, false));
 
   for (int p=0; p < nprocs; p++){
     if (sendCount[p] > 0){
@@ -438,7 +442,8 @@ void AlltoAllv(const Comm<int>     &comm,
   if (bufSize)
     buf = new T [bufSize];
   
-  Z2_GLOBAL_MEMORY_ASSERTION(env, bufSize, !bufSize || buf);
+  env.globalMemoryAssertion(__FILE__, __LINE__, bufSize, !bufSize || buf,
+    rcp(&comm, false));
 
   const std::vector<T> *vptr = sendBuf.getRawPtr();
 
@@ -468,7 +473,8 @@ void AlltoAllv(const Comm<int>     &comm,
     delete [] buf;
 
   LNO *vectorCount = new LNO [nprocs];
-  Z2_GLOBAL_MEMORY_ASSERTION(env, nprocs, vectorCount);
+  env.globalMemoryAssertion(__FILE__, __LINE__, nprocs, vectorCount,
+    rcp(&comm, false));
 
   LNO totalCount = 0;
 
@@ -491,7 +497,9 @@ void AlltoAllv(const Comm<int>     &comm,
   std::vector<T> *inVectors = NULL;
   if (totalCount)
     inVectors = new std::vector<T> [totalCount];
-  Z2_GLOBAL_MEMORY_ASSERTION(env, nprocs, !totalCount || inVectors);
+
+  env.globalMemoryAssertion(__FILE__, __LINE__, nprocs, 
+    !totalCount || inVectors, rcp(&comm, false));
 
   charBuf = reinterpret_cast<char *>(recvT.get());
   std::vector<T> *inv = inVectors;

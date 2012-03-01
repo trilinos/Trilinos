@@ -36,18 +36,18 @@ enum ModelType {
  */ 
 enum ModelFlags{
   // General flags
-  IDS_MUST_BE_GLOBALLY_CONSECUTIVE, /*!< algorithm requires consecutive ids */
+  IDS_MUST_BE_GLOBALLY_CONSECUTIVE, /*!< \brief algorithm requires consecutive ids */
 
   // Graph model flags
-  SYMMETRIZE_INPUT_TRANSPOSE,     /*!< model must symmetrize input */ 
-  SYMMETRIZE_INPUT_BIPARTITE,     /*!< model must symmetrize input */
-  VERTICES_ARE_MATRIX_ROWS,       /*!< use matrix rows as graph vertices */
-  VERTICES_ARE_MATRIX_COLUMNS,    /*!< use matrix columns as graph vertices */
-  VERTICES_ARE_MATRIX_NONZEROS,   /*!< use matrix nonzeros as graph vertices */
-  VERTICES_ARE_MESH_NODES,        /*!< use mesh nodes as vertices */
-  VERTICES_ARE_MESH_ELEMENTS,     /*!< use mesh elements as vertices */
-  SELF_EDGES_MUST_BE_REMOVED,     /*!< algorithm requires no self edges */
-  GRAPH_IS_A_SUBSET_GRAPH, /*!< ignore neighbors that are not valid vertices */
+  SYMMETRIZE_INPUT_TRANSPOSE,     /*!< \brief model must symmetrize input */ 
+  SYMMETRIZE_INPUT_BIPARTITE,     /*!< \brief model must symmetrize input */
+  VERTICES_ARE_MATRIX_ROWS,       /*!< \brief use matrix rows as graph vertices */
+  VERTICES_ARE_MATRIX_COLUMNS,    /*!< \brief use matrix columns as graph vertices */
+  VERTICES_ARE_MATRIX_NONZEROS,   /*!< \brief use matrix nonzeros as graph vertices */
+  VERTICES_ARE_MESH_NODES,        /*!< \brief use mesh nodes as vertices */
+  VERTICES_ARE_MESH_ELEMENTS,     /*!< \brief use mesh elements as vertices */
+  SELF_EDGES_MUST_BE_REMOVED,     /*!< \brief algorithm requires no self edges */
+  GRAPH_IS_A_SUBSET_GRAPH, /*!< \brief ignore neighbors that are not valid vertices */
 
   NUM_MODEL_FLAGS
 };

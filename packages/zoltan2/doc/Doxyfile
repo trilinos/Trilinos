@@ -49,8 +49,11 @@ EXTRACT_ALL            = YES
 
 # If the EXTRACT_PRIVATE tag is set to YES all private members of a class 
 # will be included in the documentation. 
+#
+# Zoltan2: Because HIDE_UNDOC_MEMBERS=YES only private members that are 
+# documented will appear.
 
-EXTRACT_PRIVATE        = NO
+EXTRACT_PRIVATE        = YES
 
 # If the EXTRACT_STATIC tag is set to YES all static members of a file 
 # will be included in the documentation. 

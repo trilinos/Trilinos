@@ -10,10 +10,11 @@
 
 namespace Zoltan2{
 
-/*!  *  \brief The StridedInput class manages lists of weights or coordinates.
+/*!  \brief The StridedInput class manages lists of weights or coordinates.
  *
  * A likely representation for multi-dimensional weights or coordinates is
- *  an array ordered by identifier by dimension. The purposes of this class:
+ *  an array ordered by identifier by dimension, or vice versa. The purposes 
+ *  of this class:
  *
  *   \li to make it easy for applications to supply these arrays to Zoltan2.
  *   \li to provide a [] operator for algorithm's access to strided arrays.
@@ -39,12 +40,11 @@ public:
    *    x[0] is the first element of the array.  The subsequent
    *  elements are at x[i*stride].
    */
-  StridedInput(RCP<const Environment> env, ArrayView<const scalar_t> x, 
+  StridedInput(RCP<const Environment> &env, ArrayView<const scalar_t> x, 
     lno_t stride) :  env_(env), vec_(x), stride_(stride) 
-  {
-  }
+  { }
 
-  /*! \brief Constructor
+  /*! \brief Default constructor
    */
   StridedInput(): env_(rcp(new Environment)), vec_(), stride_(0) { }
 
@@ -71,18 +71,12 @@ public:
       \param stride is describes the layout of the input in \c vec.
           
    */
-  void getStridedList(size_t &len, const scalar_t *&vec, int &stride)
+  void getStridedList(size_t &len, const scalar_t *&vec, int &stride) const
   {
     len = vec_.size();
     vec = vec_.getRawPtr();
     stride = stride_;
   }
-
-#if 0
-  /*! \brief Return the Environment object for the list.
-      \return The Environment with which the list was contructed.
-   */
-  RCP<const Environment> getEnv() { return env_;}
 
   /*! \brief Assignment operator
    */
@@ -93,14 +87,11 @@ public:
       size_t length;
       const scalar_t *vec;
       sInput.getStridedList(length, vec, stride_);
-      vec_ = ArrayView(vec, length);
+      vec_ = ArrayView<scalar_t>(vec, length);
     }
 
     return *this;
   }
-#endif
-
-
 };
 
 template<typename lno_t, typename scalar_t>
@@ -117,7 +108,7 @@ template<typename lno_t, typename scalar_t>
   }
   else{
     T *tmp = new T [n];
-    Z2_LOCAL_MEMORY_ASSERTION(*env_, n, tmp);
+    env_->localMemoryAssertion(__FILE__, __LINE__, n, tmp);
     for (lno_t i=0,j=0; i < n; i++,j+=stride_){
       tmp[i] = Teuchos::as<T>(vec_[j]);
     }

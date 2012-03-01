@@ -15,13 +15,15 @@
 #define ZOLTAN2_METRIC_HPP
 
 #include <Zoltan2_Standards.hpp>
+#include <Zoltan2_Environment.hpp>
 
 namespace Zoltan2{
 
-/*! Compute the global imbalance, one per weight dimension.
+/*! \brief Compute the global imbalance, one per weight dimension.
+ *
  *  All processes in the communicator must call this.
  *
- *  TODO: as written now this function uses buffers on the
+ *  \todo as written now this function uses buffers on the
  *    order of numGlobalParts.  This should be fixed eventually,
  *    when numGlobalParts may be very large.
  *
@@ -74,7 +76,8 @@ template <typename SCALAR>
   void imbalances(const RCP<const Environment> &env, 
     const RCP<const Comm<int> > &comm, 
     size_t numGlobalParts, Array<ArrayView<float> > &partSizes,
-    ArrayView<size_t> partNums, Array<ArrayView<SCALAR> > &partWeights, 
+    ArrayView<size_t> partNums, 
+    Array<ArrayView<SCALAR> > &partWeights, 
     ArrayView<float> result)
 {
   // Minimum and maximum actual part numbers
@@ -113,8 +116,8 @@ template <typename SCALAR>
   reduceAll<int, size_t>(*comm, Teuchos::REDUCE_MAX, 5,
     lval.getRawPtr(), gval.getRawPtr());
 
-  Z2_GLOBAL_INPUT_ASSERTION(*env, "invalid arguments",
-    gval[0]==0 && gval[1]==-gval[2], BASIC_ASSERTION);
+  env->globalInputAssertion(__FILE__, __LINE__, "invalid arguments",
+    gval[0]==0 && gval[1]==-gval[2], BASIC_ASSERTION, comm);
 
   // Get global total weight for all parts
 
@@ -181,7 +184,7 @@ template <typename SCALAR>
   }
 }
 
-/*! Compute the global imbalance.  Number of weights per object is one.
+/*! \brief Compute the global imbalance.  Number of weights per object is one.
  *
  *  \param  env    library environment information
  *

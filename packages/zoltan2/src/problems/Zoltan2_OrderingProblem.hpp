@@ -144,14 +144,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   ovis_enabled(this->comm_->getRank());
 #endif
 
-  // Committing the parameters is the process of validating
-  // and in some cases converting the user's parameter to
-  // and internal representation. If the Problem wants to set or
-  // change any parameters, do it before this call.
-
-  if (!this->env_->parametersAreCommitted())
-    this->env_->commitParameters();
-
   ParameterList *general = &(this->env_->getParametersNonConst());
   ParameterList *ordering = NULL;
   if (this->env_->hasOrderingParameters()){

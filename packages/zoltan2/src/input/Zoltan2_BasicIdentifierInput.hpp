@@ -58,16 +58,18 @@ public:
       numIds_(numIds), idList_(idPtr), weights_(numWeights)
   {
     env_ = rcp(new Environment);    // for error messages
+    RCP<const Environment> envConst = rcp_const_cast<const Environment>(env_);
+
     if (numWeights){
       typedef StridedInput<lno_t,scalar_t> input_t;
       if (strides)
         for (int i=0; i < numWeights; i++)
-          weights_[i] = rcp<input_t>(new input_t(env_, 
+          weights_[i] = rcp<input_t>(new input_t(envConst,
             ArrayView<const scalar_t>(wgtPtr[i], strides[i]*numIds), 
             strides[i]));
       else
         for (int i=0; i < numWeights; i++)
-          weights_[i] = rcp<input_t>(new input_t(env_, 
+          weights_[i] = rcp<input_t>(new input_t(envConst,
             ArrayView<const scalar_t>(wgtPtr[i], numIds), 1));
     }
   }
@@ -100,7 +102,7 @@ public:
   size_t getIdentifierWeights(int dimension,
      const scalar_t *&weights, int &stride) const
   {
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid weight dimension",
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight dimension",
       dimension >= 0 && dimension < weights_.size(), BASIC_ASSERTION);
 
     size_t length;
