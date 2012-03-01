@@ -128,7 +128,7 @@ public:
 
     if (nLocalIds && weightDim){
       wgts = new const scalar_t * [weightDim];
-      wgtStrides = new int [weightDim];
+      wgtStrides = new lno_t [weightDim];
       env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, 
         wgts && wgtStrides);
     }
@@ -149,7 +149,7 @@ public:
         input_t *w = new input_t [weightDim];
         for (int i=0; i < weightDim; i++){
           ArrayView<const scalar_t> wgtArray(wgts[i], nLocalIds*wgtStrides[i]);
-          w[i] = input_t(env_, wgtArray, wgtStrides[i]);
+          w[i] = input_t(wgtArray, wgtStrides[i]);
         }
         weights_ = arcp<const input_t>(w, 0, weightDim);
       }

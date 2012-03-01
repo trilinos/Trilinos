@@ -14,6 +14,7 @@
 #define _ZOLTAN2_ENVIRONMENT_CPP_
 
 #include <Zoltan2_Environment.hpp>
+
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 #include <Teuchos_RCP.hpp>
 
@@ -22,17 +23,55 @@
 
 namespace Zoltan2 {
 
+//////////////////////////////////////////////////////////////////////
+// Prototypes for static namespace methods used by the Environment
+
+/*! \brief A value to indicate a string parameter that was not set by the user.
+ */
+#define Z2_UNSET std::string("notSet")
+
+/*! \brief Create an output manager for a metric value.
+ *
+ *  \param rank  the MPI rank of the calling process in the application
+ *  \param iPrint   true if this process should print metric information
+ *  \param fname    name of file to which output is to be appended, or
+ *                      or Z2_UNSET
+ *  \param osname   "std::cout", "std::cerr", "/dev/null", or Z2_UNSET
+ *  \param mgr     on return, a pointer to the created output manager
+ *
+ * The template parameter is the data type of the entity being measured.
+ */
+
 template <typename metric_t>
   static void makeMetricOutputManager(int rank, bool iPrint, std::string fname,
     std::string osname, Teuchos::RCP<MetricOutputManager<metric_t> > &mgr);
+
+/*! \brief Create an output manager for debugging or status information
+ *
+ *  \param rank  the MPI rank of the calling process in the application
+ *  \param iPrint   true if this process should output information
+ *  \param fname    name of file to which output is to be appended, or
+ *                      or Z2_UNSET
+ *  \param osname   "std::cout", "std::cerr", "/dev/null", or Z2_UNSET
+ *  \param mgr     on return, a pointer to the created output manager
+ */
 
 static void makeDebugManager(int rank, bool iPrint,
   int level, std::string fname, std::string osname,
   Teuchos::RCP<DebugManager> &mgr);
 
+/*! \brief Helper method to add process rank to a file name.
+ *    \param rank   the rank of the calling process
+ *    \param fname  the file name to modify
+ *    \param newf   on return newf is fname with the rank added to the name.
+ *
+ *   If fname has no dot in it, then the rank is added to the end of the name.
+ *   Otherwise the rank is added before the first dot in fname.
+ */
 static void addRankToFileName(int rank, std::string fname, std::string &newf);
 
-#define UNSET std::string("notSet")
+//////////////////////////////////////////////////////////////////////
+// Environment definitions
 
 Environment::Environment( Teuchos::ParameterList &problemParams,
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm):
@@ -59,44 +98,6 @@ Environment::Environment():
 
 Environment::~Environment()
 {
-}
-
-void Environment::convertStringToInt(Teuchos::ParameterList &params)
-{
-  using Teuchos::ParameterList;
-  using Teuchos::ParameterEntry;
-  using Teuchos::RCP;
-  using Teuchos::rcp_dynamic_cast;
-  using std::string;
-  ParameterList::ConstIterator next = params.begin();
-
-  // Data type of these parameters will now change from string to int
-
-  string validatorName("StringIntegralValidator(int)");
-  typedef Teuchos::StringToIntegralParameterEntryValidator<int> s2i_t;
-
-  while (next != params.end()){
-
-    const std::string &name = next->first;
-    ParameterEntry &entry = params.getEntry(name);
-
-    if (entry.isList()){
-      ParameterList &pl = entry.getValue<ParameterList>(&pl);
-      convertStringToInt(pl);
-    }
-    else{
-      if ((entry.validator()).get()){
-        if (entry.validator()->getXMLTypeName() == validatorName){
-          string &entryValue = entry.getValue<string>(&entryValue);
-          RCP<const s2i_t> s2i =
-            Teuchos::rcp_dynamic_cast<const s2i_t>(entry.validator(), true);
-          int val = s2i->getIntegralValue(entryValue);
-          entry.setValue<int>(val);
-        }
-      }
-    }
-    ++next;
-  }
 }
 
 void Environment::commitParameters()
@@ -145,8 +146,8 @@ void Environment::commitParameters()
     Array<int> &reporters = 
       params_.get<Array<int> >("debug_procs", nodeZeroOnly);
     bool iPrint = IsInRangeList(myRank_, reporters);
-    string &fname = params_.get<string>("debug_output_file", UNSET);
-    string &osname = params_.get<string>("debug_output_stream", UNSET);
+    string &fname = params_.get<string>("debug_output_file", Z2_UNSET);
+    string &osname = params_.get<string>("debug_output_stream", Z2_UNSET);
 
     try{
       makeDebugManager(myRank_, iPrint, level, fname, osname, debugOut_);
@@ -164,10 +165,10 @@ void Environment::commitParameters()
 
   // Set up for timing output.
 
-  string &f1 = params_.get<string>("timing_output_file", UNSET);
-  string &os1 = params_.get<string>("timing_output_stream", UNSET);
+  string &f1 = params_.get<string>("timing_output_file", Z2_UNSET);
+  string &os1 = params_.get<string>("timing_output_stream", Z2_UNSET);
 
-  if (f1 != UNSET || os1 != UNSET){
+  if (f1 != Z2_UNSET || os1 != Z2_UNSET){
     Array<int> &reporters = 
       params_.get<Array<int> >("timing_procs", nodeZeroOnly);
     bool iPrint = IsInRangeList(myRank_, reporters);
@@ -190,10 +191,10 @@ void Environment::commitParameters()
 
   // Set up for memory usage output.
   
-  string &f2 = params_.get<string>("memory_profiling_output_file", UNSET);
-  string &os2 = params_.get<string>("memory_profiling_output_stream", UNSET);
+  string &f2 = params_.get<string>("memory_profiling_output_file", Z2_UNSET);
+  string &os2 = params_.get<string>("memory_profiling_output_stream", Z2_UNSET);
 
-  if (f2 != UNSET || os2 != UNSET){
+  if (f2 != Z2_UNSET || os2 != Z2_UNSET){
     Array<int> &reporters = 
       params_.get<Array<int> >("memory_profiling_procs", nodeZeroOnly);
     bool iPrint = IsInRangeList(myRank_, reporters);
@@ -228,6 +229,48 @@ bool Environment::hasSublist(const Teuchos::ParameterList &pl,
   return false;
 }
 
+void Environment::convertStringToInt(Teuchos::ParameterList &params)
+{
+  using Teuchos::ParameterList;
+  using Teuchos::ParameterEntry;
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using std::string;
+  ParameterList::ConstIterator next = params.begin();
+
+  // Data type of these parameters will now change from string to int
+
+  string validatorName("StringIntegralValidator(int)");
+  typedef Teuchos::StringToIntegralParameterEntryValidator<int> s2i_t;
+
+  while (next != params.end()){
+
+    const std::string &name = next->first;
+    ParameterEntry &entry = params.getEntry(name);
+
+    if (entry.isList()){
+      ParameterList &pl = entry.getValue<ParameterList>(&pl);
+      convertStringToInt(pl);
+    }
+    else{
+      if ((entry.validator()).get()){
+        if (entry.validator()->getXMLTypeName() == validatorName){
+          string &entryValue = entry.getValue<string>(&entryValue);
+          RCP<const s2i_t> s2i =
+            Teuchos::rcp_dynamic_cast<const s2i_t>(entry.validator(), true);
+          int val = s2i->getIntegralValue(entryValue);
+          entry.setValue<int>(val);
+        }
+      }
+    }
+    ++next;
+  }
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// Definitions static methods used by the Environment
+
 static void addRankToFileName(int rank, std::string fname, std::string &newf)
 {
   std::ostringstream id;
@@ -253,7 +296,7 @@ template<typename metric_t>
 {
   std::ofstream oFile;
 
-  if (fname != UNSET){
+  if (fname != Z2_UNSET){
     std::string newFname;
     addRankToFileName(rank, fname, newFname);
 
@@ -282,7 +325,7 @@ static void makeDebugManager(int rank, bool iPrint,
   Teuchos::RCP<DebugManager> &mgr)
 {
   std::ofstream dbgFile;
-  if (fname != UNSET){
+  if (fname != Z2_UNSET){
     std::string newFname;
     addRankToFileName(rank, fname, newFname);
     try{
@@ -304,7 +347,8 @@ static void makeDebugManager(int rank, bool iPrint,
   else
     mgr = Teuchos::rcp(new DebugManager(rank, false, std::cout, lvl));
 }
-  
+
+
 }  //namespace Zoltan2
 
 #endif

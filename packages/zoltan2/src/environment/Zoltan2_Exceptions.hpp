@@ -20,8 +20,7 @@
 
 #include <stdexcept>
 
-/*!  \def Z2_THROW_OUTSIDE_ERROR(env, e)
- * Throw an error returned from outside the Zoltan2 library.
+/*!  \brief Throw an error returned from outside the Zoltan2 library.
  *
  *   A \c try block that calls another library should be followed
  *   by this \c catch block.  The error message if any is printed and the
@@ -33,8 +32,7 @@
     throw e; \
   }
 
-/*! \def Z2_FORWARD_EXCEPTIONS
- *  Forward an exception back through call stack.
+/*! \brief  Forward an exception back through call stack.
  *
  *  A \c try block that calls another Zoltan2 function should
  *  be followed by this \c catch series.  It ensures that the

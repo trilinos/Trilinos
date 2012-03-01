@@ -95,7 +95,6 @@ public:
       numWeights_(numWeights), weights_(numWeights)
   {
     typedef StridedInput<lno_t,scalar_t> input_t;
-    RCP<const Environment> envConst = rcp_const_cast<const Environment>(env_);
 
     gno_t tmp = numIds;
     try{
@@ -109,7 +108,7 @@ public:
       for (int x=0; x < dim; x++){
         if (valueStrides)
           stride = valueStrides[x];
-        coords_[x] = rcp<input_t>(new input_t(envConst,
+        coords_[x] = rcp<input_t>(new input_t(
           ArrayView<const scalar_t>(values[x], stride*numIds), stride));
       }
 
@@ -118,7 +117,7 @@ public:
         for (int w=0; w < numWeights; w++){
           if (weightStrides)
             stride = weightStrides[w];
-          weights_[w] = rcp<input_t>(new input_t(envConst,
+          weights_[w] = rcp<input_t>(new input_t(
             ArrayView<const scalar_t>(weights[w], stride*numIds), stride));
         }
       }

@@ -231,7 +231,6 @@ template <typename User>
   elements_ = Array<RCP<StridedInput<lno_t, scalar_t> > >(numVectors);
   numWeights_ = numWeights;
   weights_ = Array<RCP<StridedInput<lno_t, scalar_t> > >(numWeights);
-  RCP<const Environment> envConst = rcp_const_cast<const Environment>(env_);
 
   typedef StridedInput<lno_t,scalar_t> input_t;
 
@@ -247,7 +246,7 @@ template <typename User>
     for (int v=0; v < numVectors; v++){
       if (elementStrides)
         stride = elementStrides[v];
-      elements_[v] = rcp<input_t>(new input_t(envConst,
+      elements_[v] = rcp<input_t>(new input_t(
         ArrayView<const scalar_t>(elements[v], stride*numIds), stride));
     }
 
@@ -256,7 +255,7 @@ template <typename User>
       for (int w=0; w < numWeights; w++){
         if (weightStrides)
           stride = weightStrides[w];
-        weights_[w] = rcp<input_t>(new input_t(envConst,
+        weights_[w] = rcp<input_t>(new input_t(
           ArrayView<const scalar_t>(weights[w], stride*numIds), stride));
       }
     }

@@ -18,7 +18,7 @@
 
 #include <Zoltan2_DebugManager.hpp>
 #include <Zoltan2_Parameters.hpp>
-#include <ErrorHandlingForTests.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
 #include <Teuchos_DefaultComm.hpp>
 

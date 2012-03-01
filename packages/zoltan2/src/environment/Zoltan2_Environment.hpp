@@ -441,13 +441,19 @@ public:
   const Teuchos::ParameterList &getUnvalidatedParameters() const { 
     return unvalidatedParams_; }
 
-  /*! \brief Given a parameter list, convert all of the entries that
-   *     have valiator of type StringToIntegralParameterEntryValidator<int>
-   *     from their string value to their int value.
+  /*! \brief Convert parameters of type 
+   *  Teuchos::StringToIntegralParameterEntryValidator<int> to integer.
    *
-   *    I expected this to happen in validateAndModify, but
-   *    it doesn't.
+   * \param params  on input, a list of parameter, on return, all of the
+   *                     StringToIntegral parameters have been converted
+   *                     to integer values.
+   *
+   *    Given a parameter list, this function converts all of the entries that
+   *    have valiator of type StringToIntegralParameterEntryValidator<int>
+   *    from their string value to their int value.
+   *
    */
+
   static void convertStringToInt(Teuchos::ParameterList &params);
 
 private:

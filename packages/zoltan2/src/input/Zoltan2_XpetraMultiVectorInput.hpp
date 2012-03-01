@@ -78,7 +78,6 @@ public:
     vector_ = XpetraTraits<User>::convertToXpetra(invector);
     map_ = vector_->getMap();
     base_ = map_->getIndexBase();
-    RCP<const Environment> envConst = rcp_const_cast<const Environment>(env_);
 
     size_t length = vector_->getLocalLength();
 
@@ -87,7 +86,7 @@ public:
       for (int w=0; w < numWeights; w++){
         if (weightStrides)
           stride = weightStrides[w];
-        weights_[w] = rcp<input_t>(new input_t(envConst,
+        weights_[w] = rcp<input_t>(new input_t(
           ArrayView<const scalar_t>(weights[w], stride*length), stride));
       }
     }

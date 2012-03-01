@@ -58,18 +58,17 @@ public:
       numIds_(numIds), idList_(idPtr), weights_(numWeights)
   {
     env_ = rcp(new Environment);    // for error messages
-    RCP<const Environment> envConst = rcp_const_cast<const Environment>(env_);
 
     if (numWeights){
       typedef StridedInput<lno_t,scalar_t> input_t;
       if (strides)
         for (int i=0; i < numWeights; i++)
-          weights_[i] = rcp<input_t>(new input_t(envConst,
+          weights_[i] = rcp<input_t>(new input_t(
             ArrayView<const scalar_t>(wgtPtr[i], strides[i]*numIds), 
             strides[i]));
       else
         for (int i=0; i < numWeights; i++)
-          weights_[i] = rcp<input_t>(new input_t(envConst,
+          weights_[i] = rcp<input_t>(new input_t(
             ArrayView<const scalar_t>(wgtPtr[i], numIds), 1));
     }
   }

@@ -21,15 +21,24 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 
-#include <Teuchos_Ptr.hpp>
-
 #ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
 #endif
 
 namespace Zoltan2{
 
-////////////////////////////////////////////////////////////////////////
+/*! \brief PartitioningProblem sets up partitioning problems for the user.
+ *
+ *  The PartitioningProblem is the core of the Zoltan2 partitioning API.
+ *  Based on the the user's input and parameters, the PartitioningProblem
+ *  sets up a computational Model, and a Solution object.  When the user
+ *  calls the solve() method, the PartitioningProblem runs the algorithm,
+ *  after which the Solution object may be obtained by the user.
+ *  \todo include pointers to examples
+ *
+ *  The template parameter is the InputAdapter containing the data that
+ *  is to be partitioned.
+ */
 template<typename Adapter>
 class PartitioningProblem : public Problem<Adapter>
 {
@@ -44,7 +53,8 @@ public:
 
 #ifdef HAVE_ZOLTAN2_MPI
 
-  //! \brief Constructor where MPI communicator can be specified
+  /*! \brief Constructor where MPI communicator can be specified
+   */
   PartitioningProblem(Adapter *A, Teuchos::ParameterList *p, MPI_Comm comm); 
 
 #endif
