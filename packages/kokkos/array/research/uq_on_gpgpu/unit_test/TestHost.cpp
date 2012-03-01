@@ -74,7 +74,8 @@
 
 int mainHost()
 {
-  Kokkos::Host::initialize( Kokkos::Host::SetThreadCount(4) );
+  const int nthread = 4 ;
+  Kokkos::Host::initialize( Kokkos::Host::SetThreadCount(nthread) );
 
 //  unit_test::test_dense<Kokkos::Host>();
 //  unit_test::test_diagonal<Kokkos::Host>();
@@ -106,27 +107,9 @@ int mainHost()
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 1 , 5 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 2 , 1 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 5 , 1 );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 5 , 5 );
 
-  const bool print_flag = false ;
-  const int  iter_count = 10 ;
-  const int  cube_size  = 5 ;
-
-  std::pair<double,double> performance ;
-
-  performance =
-    unit_test::test_product_tensor_matrix<double,Kokkos::Host>( std::vector<int>( 5 , 3 ) , cube_size , iter_count , print_flag );
-
-  std::cout << "test_product_tensor_matrix time = " << performance.first
-            << " , effective Gflops = " << performance.second / double(1e9)
-            << std::endl ;
-
-  performance =
-    unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Host>( std::vector<int>( 5 , 3 ) , cube_size , iter_count , print_flag );
-
-  std::cout << "test_product_tensor_diagonal_matrix time = " << performance.first
-            << " , effective Gflops = " << performance.second / double(1e9)
-            << std::endl ;
-
+/*
   std::cout << "Stress tests:" << std::endl ;
 
   unit_test::test_block_crs_matrix<Kokkos::Host>( 10 , 8 );
@@ -134,6 +117,14 @@ int mainHost()
   unit_test::test_block_crs_matrix<Kokkos::Host>( 12 , 10 );
   unit_test::test_block_crs_matrix<Kokkos::Host>( 13 , 10 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 100 , 10 );
+*/
+
+  const int pDeg = 3 ;
+  const int nGrid = 5 ;
+
+  std::cout << std::endl << "\"Host Performance with "
+            << nthread << " threads\"" << std::endl ;
+  unit_test::performance_test_driver<Kokkos::Host>( pDeg , nGrid );
 
   Kokkos::Host::finalize();
 
