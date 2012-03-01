@@ -23,7 +23,7 @@ extern "C" {
 #include <limits.h>
 
 /*
- * Values indicating how partition remapping should be done.
+ * Values indicating how part remapping should be done.
  */
 #define ZOLTAN_LB_REMAP_NONE 0
 #define ZOLTAN_LB_REMAP_PROCESSORS 1
@@ -56,10 +56,10 @@ int Zoltan_LB_Remap(
                              proc contains old proc assignment
                           Upon return, proc contains remapped new proc 
                           assignment regardless of export_list_flag's value. */
-  int *old_part,       /* old partition assignments for the objs */
-  int *new_part,       /* new partition assignments for the objs.
+  int *old_part,       /* old part assignments for the objs */
+  int *new_part,       /* new part assignments for the objs.
                           Upon return, new_part contains remapped new
-                          partition assignments */
+                          part assignments */
   int export_list_flag /* Flag indicating whether the algorithm computes
                           export lists or import lists. The HG for matching
                           is built differently depending on whether 
@@ -106,7 +106,7 @@ int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and
     }
   
     if (*new_map) {
-      /* Update partition and processor information for algorithms */
+      /* Update part and processor information for algorithms */
       for (i = 0; i < nobj; i++) {
         new_part[i] = zz->LB.Remap[new_part[i]];
         proc[i] = Zoltan_LB_Part_To_Proc(zz, new_part[i], NULL);
@@ -128,16 +128,16 @@ static int local_HEs_from_import_lists(
   int *proc,           /* On input, old processor assignment for each obj; 
                           Upon return, remapped new proc assignment for
                           each obj. */
-  int *old_part,       /* old partition assignments for each objs */
-  int *new_part,       /* On input, new partition assignments for each objs.
-                          Upon return, remapped new partition assignments */
+  int *old_part,       /* old part assignments for each objs */
+  int *new_part,       /* On input, new part assignments for each objs.
+                          Upon return, remapped new part assignments */
   int *HEcnt,          /* # of HEs allocated. */
   int **HEinfo         /* Array of HE info; for each HE, two pins and 
                           one edge weight. Stored as a single vector
                           to minimize communication calls.  */
 )
 {
-/*  Routine to remap partitions (to new processors or new partition numbers)
+/*  Routine to remap parts (to new processors or new part numbers)
  *  to reduce data movement.
  *  This routine assumes the load-balancing algorithm built import lists.
  *  Objects described are those that ENDED UP on my_proc due to load balancing.
@@ -149,16 +149,16 @@ int i, cnt, tmp;
 int *tmp_HEinfo;
 int old_size;                 /* # of old entries to remap to. If remapping
                                  parts to processors, old_size = Num_Procs;
-                                 if renumbering partitions, old_size = old 
+                                 if renumbering parts, old_size = old 
                                  num parts. */
-int fp;                       /* First partition on this processor in new
+int fp;                       /* First part on this processor in new
                                  decomposition. */
-int np;                       /* # of partitions on this processor in new
+int np;                       /* # of parts on this processor in new
                                  decomposition. */
 int my_proc = zz->Proc;       /* This processor's rank. */
-int minp, maxp;               /* Lowest and highest partition numbers on this
+int minp, maxp;               /* Lowest and highest part numbers on this
                                  processor in old decomposition;
-                                 partition numbers are assumed to be dense,
+                                 part numbers are assumed to be dense,
                                  but no particular distribution is assumed. */
 int HEwgt_size;               /* # of HE weights allocated. */
 int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
@@ -203,16 +203,16 @@ int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
 
   else {  /* ZOLTAN_LB_REMAP_PARTS */
 
-    /* Renumber new partitions to minimize changes in partition assignment */
+    /* Renumber new parts to minimize changes in part assignment */
 
     for (minp = INT_MAX, maxp = 0, i = 0; i < nobj; i++) {
       if (old_part[i] < minp) minp = old_part[i];
       if (old_part[i] > maxp) maxp = old_part[i];
     }
 
-    /* Don't include old partition numbers that are greater than 
+    /* Don't include old part numbers that are greater than 
      * zz->LB.Num_Global_Parts - 1; they are not valid values for 
-     * remapping of new partition numbers. 
+     * remapping of new part numbers. 
      */
     if (minp >= zz->LB.Num_Global_Parts)
       minp = zz->LB.Num_Global_Parts-1;
@@ -234,9 +234,9 @@ int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
 
     for (i = 0; i < nobj; i++) {
       if (old_part[i] < zz->LB.Num_Global_Parts) {  
-        /* Include only HEs to old partitions numbered 
+        /* Include only HEs to old parts numbered 
          * 0 to zz->LB.Num_Global_Parts-1; these are the only valid
-         * remapping values for the new partition numbers.
+         * remapping values for the new part numbers.
          */
         tmp = (new_part[i]-fp) * old_size;
         HEwgt[tmp + (old_part[i]-minp)]++;
@@ -256,8 +256,8 @@ int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
     for (i = 0; i < HEwgt_size; i++) {
       if (HEwgt[i] != 0) {
         tmp = cnt * HEINFO_ENTRIES;
-        tmp_HEinfo[tmp] = i%old_size + minp;  /* Old partition number */
-        tmp_HEinfo[tmp+1] = i/old_size + fp;  /* New partition number */
+        tmp_HEinfo[tmp] = i%old_size + minp;  /* Old part number */
+        tmp_HEinfo[tmp+1] = i/old_size + fp;  /* New part number */
         tmp_HEinfo[tmp+2] = HEwgt[i];         /* shift non-zero weights down. */
         cnt++;
       }
@@ -279,16 +279,16 @@ static int local_HEs_from_export_lists(
   int *new_proc,       /* On input, new processor assignment for each obj; 
                           Upon return, remapped new proc assignment for
                           each obj. */
-  int *old_part,       /* old partition assignments for each objs */
-  int *new_part,       /* On input, new partition assignments for each objs.
-                          Upon return, remapped new partition assignments */
+  int *old_part,       /* old part assignments for each objs */
+  int *new_part,       /* On input, new part assignments for each objs.
+                          Upon return, remapped new part assignments */
   int *HEcnt,          /* # of HEs allocated. */
   int **HEinfo         /* Array of HE info; for each HE, two pins and 
                           one edge weight. Stored as a single vector
                           to minimize communication calls.  */
 ) 
 {
-/*  Routine to remap partitions (to new processors or new partition numbers)
+/*  Routine to remap parts (to new processors or new part numbers)
  *  to reduce data movement.
  *  This routine assumes the load-balancing algorithm built export lists.
  *  Objects described are those that STARTED on zz->Proc due to load balancing.
@@ -315,7 +315,7 @@ int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
      * export objects -- it is my_proc!
      * We also know the new processor number for all objects initially on
      * my_proc (since we built export lists.)
-     * This case is a special case of partition remapping; it is easy to 
+     * This case is a special case of part remapping; it is easy to 
      * build the hyperedges in this special case.
      */
 
@@ -352,10 +352,10 @@ int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
   }
 
   else {  /* ZOLTAN_LB_REMAP_PARTS */
-    /* Cannot renumber partitions given export lists without summing HE weights
+    /* Cannot renumber parts given export lists without summing HE weights
      * across processors.  This summation is not straightforward.  Also, a 
      * potentially large number of HEs may exist 
-     * (max_old_partition_number * zz->Num_Global_Parts).  Rather than build
+     * (max_old_part_number * zz->Num_Global_Parts).  Rather than build
      * this large matrix, just compute import lists from the export lists
      * and run the import-list algorithm.
      */
@@ -410,29 +410,29 @@ static int set_remap_type(
 {
 int ierr = ZOLTAN_OK;
 
-/* Set remap type based on distribution of partitions to processors. */
+/* Set remap type based on distribution of parts to processors. */
 
   if (zz->LB.Remap_Flag == 0) {
     /* No remapping requested */
     *remap_type = ZOLTAN_LB_REMAP_NONE;
   }
   else if (!(zz->LB.Uniform_Parts)) {
-    /* Remapping does not respect requested non-uniform partition sizes;
+    /* Remapping does not respect requested non-uniform part sizes;
        no remapping done. */
     *remap_type = ZOLTAN_LB_REMAP_NONE;
     ierr = ZOLTAN_WARN;
   }
   else if (!(zz->LB.Single_Proc_Per_Part)) {
-    /* Some partitions spread across >1 processor; remapping not supported. */
+    /* Some parts spread across >1 processor; remapping not supported. */
     *remap_type = ZOLTAN_LB_REMAP_NONE;
     ierr = ZOLTAN_WARN;
   }
   else if (zz->LB.PartDist == NULL) {
-    /* # Partitions == # Processors, uniformly distributed; remap processors */
+    /* # Parts == # Processors, uniformly distributed; remap processors */
     *remap_type = ZOLTAN_LB_REMAP_PROCESSORS;
   }
   else {
-    /* # Partitions != # processors, or partitions not uniformly distributed */
+    /* # Parts != # processors, or parts not uniformly distributed */
     *remap_type = ZOLTAN_LB_REMAP_PARTS;
   }
 
@@ -510,7 +510,7 @@ int max0, max1;               /* Max values of pin 0 and pin 1 for each HE. */
 int *match = NULL;            /* Vector describing the matching. 
                                  match[i] = j ==> match[j] = i ==> 
                                  vertices i and j are matched. */
-int *used = NULL;             /* Vector indicating which partitions are used
+int *used = NULL;             /* Vector indicating which parts are used
                                  in the matching. */
 int limit;                    /* Maximum number of matches that are allowed */
 HGraph hg;                    /* Hypergraph for matching */
@@ -566,7 +566,7 @@ float with_oldremap = 0;      /* Amount of data that overlaps between old and
   
   /* Sanity check */
   /* Ideally, max1 should equal LB.Num_Global_Parts, but ParMETIS3 sometimes
-   * does not return the correct number of non-empty partitions, allowing
+   * does not return the correct number of non-empty parts, allowing
    * max1 to be less than LB.Num_Global_Parts. 
    * (e.g., ewgt.adaptive-partlocal1-v3.4.?).
    */
@@ -666,12 +666,12 @@ float with_oldremap = 0;      /* Amount of data that overlaps between old and
     }
   
     /* Third, process remaining unmatched parts; assign them to 
-       unused partitions.*/
+       unused parts.*/
   
     for (uidx = 0, i = 0; i < zz->LB.Num_Global_Parts; i++) {
       if (zz->LB.Remap[i] > -1) continue;  /* Already processed part i */
       /* match[i+max0] == i+max0 */
-      while (used[uidx]) uidx++;   /* Find next unused partition */
+      while (used[uidx]) uidx++;   /* Find next unused part */
       zz->LB.Remap[i] = uidx;
       used[uidx] = 1;
     }

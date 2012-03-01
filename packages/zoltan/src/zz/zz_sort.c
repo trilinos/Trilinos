@@ -293,7 +293,7 @@ int  equal, larger;
 static void quickpart_list_inc_one_int (
   int *list, int start, int end, int *equal, int *larger)
 {
-int i, key, change, parchange;
+int i, key, change;
 
   key = list ? list[(end+start)/2] : 1;
 

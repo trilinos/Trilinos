@@ -53,33 +53,34 @@
 # ************************************************************************
 # @HEADER
 
-#
-# A) Define your project name and set up major project options
-#
 
-# Must set the project name as a varaible at very beginning before including anything else
-# We set the project name in a separate file so CTest scripts can use it.
-INCLUDE(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
-
-# To prevent most code being run before we know we have a compatible CMake the
-# required version check needs to be the first thing done. However, the version 
-# required by tribits is defined in this include which has some simple code. I
-# believe that it is reasonable to assume any version of cmake can handle IF
-# though.
-INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch/TribitsConstants.cmake)
-
-# CMake requires this be in the top file and not in an include file :-(
-CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED} FATAL_ERROR)
-
-# CMake requires that you declare the CMake project in the top-level file and
-# not in an include file :-(
-PROJECT(${PROJECT_NAME} NONE)
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rouson-mp.gcc.cmake")
 
 #
-# B) Pull in the TriBITS system and execute
+# Set the options specific to this build case
 #
 
-INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch/TribitsProject.cmake)
+SET(COMM_TYPE SERIAL)
+SET(BUILD_TYPE DEBUG)
+SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_GCC)
+SET(CTEST_PARALLEL_LEVEL 8)
+#SET(CTEST_TEST_TIMEOUT 900)
 
-# Do all of the processing for this Tribits project
-TRIBITS_PROJECT()
+# Exclude Sundance because of strange segfault (see bug 4382)
+SET(EXTRA_EXCLUDE_PACKAGES Sundance PyTrilinos STK)
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DForTrilinos_ENABLE_TESTS:BOOL=ON"
+  "-DForTrilinos_ENABLE_EXAMPLES:BOOL=ON"
+  "-DForTrilinos_ENABLE_OBJECT_ORIENTED:BOOL=ON"
+  "-DForTrilinos_DISABLE_DEFERRED_LENGTH_CHARACTERS:BOOL=ON"
+  "-DForTrilinos_DISABLE_FINAL_SUBROUTINES:BOOL=ON"
+  "-DForTrilinos_DISABLE_TYPE_BOUND_CONSTRUCTOR:BOOL=ON"
+  )
+
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
+
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

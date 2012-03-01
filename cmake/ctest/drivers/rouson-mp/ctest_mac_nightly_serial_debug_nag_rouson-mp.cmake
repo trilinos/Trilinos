@@ -54,22 +54,20 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rouson-mp.gcc.cmake")
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rouson-mp.nag.cmake")
 
 #
 # Set the options specific to this build case
 #
 
 SET(COMM_TYPE SERIAL)
-SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME "SERIAL_DEBUG_${Trilinos_VERSION}")
-SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
-SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
+SET(BUILD_TYPE DEBUG)
+SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_NAG)
+SET(CTEST_PARALLEL_LEVEL 8)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 # Exclude Sundance because of strange segfault (see bug 4382)
-SET(EXTRA_EXCLUDE_PACKAGES Sundance PyTrilinos)
+SET(EXTRA_EXCLUDE_PACKAGES Sundance PyTrilinos STK)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"

@@ -809,7 +809,6 @@ static void order_decreasing(double *d, int *order)
 #define SIGN(a,b) ((b) < 0 ? -fabs(a) : fabs(a))
 static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
 {
-  double d[3], e[3];
   double eval1, eval2, eval3;    /* eigenvalue and error in eval calculation */
   double res;
   int i, j, rc = 0;
@@ -821,7 +820,7 @@ static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
   }
 
   Zoltan_evals3(m, &eval1, &eval2, &eval3);
-  Zoltan_eigenvec3(m, eval1, evecs, &res);
+  Zoltan_eigenvec3(m, eval1, evecs[0], &res);
   Zoltan_eigenvec3(m, eval2, evecs[1], &res);
   Zoltan_eigenvec3(m, eval3, evecs[2], &res);
 

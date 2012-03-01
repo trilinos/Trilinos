@@ -2430,8 +2430,7 @@ IntegralType Teuchos::getIntegralValue(
       entry, paramList, paramName
       );
   return integralValidator->getIntegralValue(
-    entry, paramName, paramList.name(), true
-    );
+    entry, paramName, paramList.name(), true );
 }
 
 
@@ -2458,8 +2457,7 @@ Teuchos::getStringToIntegralParameterEntryValidator(
   std::string const& paramName
   )
 {
-  RCP<const ParameterEntryValidator>
-    validator = entry.validator();
+  const RCP<const ParameterEntryValidator> validator = entry.validator();
   TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
     is_null(validator), Exceptions::InvalidParameterType,
     "Error!  The parameter \""<<paramName<<"\" exists\n"
@@ -2467,9 +2465,7 @@ Teuchos::getStringToIntegralParameterEntryValidator(
     "but it does not contain any validator needed to extract\n"
     "an integral value of type \""<<TypeNameTraits<IntegralType>::name()<<"\"!"
     );
-  RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
-    integralValidator
-    =
+  const RCP<const StringToIntegralParameterEntryValidator<IntegralType> > integralValidator =
     rcp_dynamic_cast<const StringToIntegralParameterEntryValidator<IntegralType> >(
       validator
       );

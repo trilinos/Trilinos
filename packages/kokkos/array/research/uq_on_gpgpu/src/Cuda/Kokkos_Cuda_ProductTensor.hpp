@@ -127,8 +127,8 @@ public:
 
     if ( nWarp  > Impl::cuda_internal_maximum_warp_count() ||
          nGridX > Impl::CudaTraits::UpperBoundGridCount ||
-         shared_size * sizeof(size_type) >
-            Impl::cuda_internal_maximum_shared_words() ) {
+         shared_size >
+            Impl::cuda_internal_maximum_shared_words() * sizeof(size_type) ) {
 
       std::ostringstream msg ;
       msg << "Kokkos::Multiply< BlockCrsMatrix< SparseProductTensor<> ... > > "
@@ -141,9 +141,9 @@ public:
         msg << " : tensor-entry-count = " << A.block.entry_count()
             << " > " << Impl::CudaTraits::UpperBoundGridCount * WARP_SIZE ;
       }
-      if ( shared_size * sizeof(size_type) >
-             Impl::cuda_internal_maximum_shared_words() ) {
-        msg << " : shared_memory " << shared_size << " > " 
+      if ( shared_size >
+             Impl::cuda_internal_maximum_shared_words() * sizeof(size_type) ) {
+        msg << " : requested shared_memory " << shared_size << " > " 
             <<  Impl::cuda_internal_maximum_shared_words() * sizeof(size_type);
       }
       throw std::runtime_error( msg.str() );

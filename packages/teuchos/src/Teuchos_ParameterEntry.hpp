@@ -262,7 +262,7 @@ private:
 template<typename T>
 inline T& getValue( const ParameterEntry &entry )
 {
-  return entry.getValue((T*)NULL);
+  return entry.getValue(static_cast<T*>(0));
 }
 
 /*! \relates ParameterEntry 
@@ -273,7 +273,7 @@ inline T& getValue( const ParameterEntry &entry )
 template<typename T>
 inline T& getValue(RCP<const ParameterEntry> entry)
 {
-  return entry->getValue((T*)NULL);
+  return entry->getValue(static_cast<T*>(0));
 }
 
 /*! \relates ParameterEntry 

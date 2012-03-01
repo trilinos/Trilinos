@@ -433,7 +433,7 @@ Marzio Sala, SNL 9214.
 
 C++ includes: MLAPI_EpetraBaseOperator.h ";
 
-%feature("docstring")  MLAPI::EpetraBaseOperator::EpetraBaseOperator "MLAPI::EpetraBaseOperator::EpetraBaseOperator(const Epetra_Map &Map,
+%feature("docstring")  MLAPI::EpetraBaseOperator::EpetraBaseOperator "MLAPI::EpetraBaseOperator::EpetraBaseOperator(const Epetra_Map &inMap,
 const BaseOperator &Op)
 
 Constructor. ";
@@ -452,7 +452,7 @@ Applies the operator to X, returns the results in Y.
 Apply() and ApplyInverse() are the SAME function! ";
 
 %feature("docstring")  MLAPI::EpetraBaseOperator::SetUseTranspose "virtual int MLAPI::EpetraBaseOperator::SetUseTranspose(bool
-UseTranspose)
+UseTransposeFlag)
 
 Sets the use of tranpose (NOT IMPLEMENTED). ";
 

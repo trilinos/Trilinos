@@ -555,6 +555,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/zz)
 
 APPEND_SET(NOINSTALLHEADERS
   zz/zz_const.h
+  zz/zz_hash.h
   zz/zz_heap.h
   zz/zz_id_const.h
   zz/zz_rand.h

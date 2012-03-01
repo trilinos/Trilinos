@@ -64,7 +64,7 @@ bool WriteHeaderToContFile( const string & fileName,
   oFile << "#" << setw(6) << "ID";
 
   // Looping on the parameters
-  Teuchos::map<string, Teuchos::ParameterEntry>::const_iterator i;
+  Teuchos::ParameterList::ConstIterator i;
   for (i = fileParams.begin(); i !=fileParams.end(); ++i) 
     oFile << setw(15) << fileParams.name(i);
   oFile << std::endl;
@@ -87,7 +87,7 @@ bool UpdateContFile( const string & fileName,
   oFile << scientific << setw(7)  << idStep;
 
   // Looping on the parameters
-  Teuchos::map<string, Teuchos::ParameterEntry>::const_iterator i;
+  Teuchos::ParameterList::ConstIterator i;
   for (i = fileParams.begin(); i !=fileParams.end(); ++i) 
     oFile << scientific << setw(15) << fileParams.entry(i);
   oFile << std::endl;
@@ -124,7 +124,7 @@ bool TouchContFileParameters( Teuchos::ParameterList & fileParams )
   double dummyDouble;
 
   // Looping the list
-  Teuchos::map<string, Teuchos::ParameterEntry>::const_iterator i;
+  Teuchos::ParameterList::ConstIterator i;
   for (i = fileParams.begin(); i !=fileParams.end(); ++i) {
 
     if (fileParams.isType<int>(fileParams.name(i)))

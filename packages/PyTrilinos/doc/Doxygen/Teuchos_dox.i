@@ -969,15 +969,20 @@ An iterator pointing to the first entry. ";
 
 An iterator pointing beyond the last entry. ";
 
-%feature("docstring")  Teuchos::ParameterList::entry "const
-ParameterEntry & Teuchos::ParameterList::entry(ConstIterator i) const
+%feature("docstring")  Teuchos::ParameterList::find "ParameterList::ConstIterator Teuchos::ParameterList::find(const
+std::string &name) const
 
-Access to ParameterEntry (i.e., returns i->second) ";
+Find a parameter with a given name. ";
 
 %feature("docstring")  Teuchos::ParameterList::name "const
 std::string & Teuchos::ParameterList::name(ConstIterator i) const
 
 Access to name (i.e., returns i->first) ";
+
+%feature("docstring")  Teuchos::ParameterList::entry "const
+ParameterEntry & Teuchos::ParameterList::entry(ConstIterator i) const
+
+Access to ParameterEntry (i.e., returns i->second) ";
 
 /*  Validation Functions  */
 

@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rouson-mp.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rouson-mp.nag.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
 
 #
@@ -63,7 +63,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME "MPI_OPT_${Trilinos_VERSION}")
+SET(BUILD_DIR_NAME "MPI_OPT_NAG${Trilinos_VERSION}")
 SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 #SET(CTEST_TEST_TIMEOUT 900)
