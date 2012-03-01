@@ -18,6 +18,7 @@
 #include <Zoltan2_Environment.hpp>
 
 #include <vector>
+#include <climits>
 
 namespace Zoltan2
 {
@@ -39,10 +40,6 @@ namespace Zoltan2
  * AlltoAll uses only point-to-point messages.  This is to avoid the MPI 
  * limitation of integer offsets and counters in collective operations.
  * In other words, LNO can be a 64-bit integer.
- *
- * TODO: AlltoAll will fail if packetSize does not fit into a 32-bit
- *   integer.  At this point in time, I don't think we need to check
- *   for this and break up packetSizes.  But some day...
  */
 
 template <typename T, typename LNO>
@@ -72,6 +69,11 @@ void AlltoAll(const Comm<int> &comm,
   // Post receives
 
   size_t packetSize = sizeof(T) * count;
+
+  env.globalInputAssertion(__FILE__, __LINE__,
+      "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
+      packetSize <= INT_MAX, BASIC_ASSERTION, comm);
+  
   RCP<CommRequest> r;
   Array<RCP<CommRequest> > req(nprocs-1);
 
@@ -134,11 +136,8 @@ void AlltoAll(const Comm<int> &comm,
  *
  * AlltoAllv uses only point-to-point messages.  This is to avoid the MPI 
  * limitation of integer offsets and counters in collective operations.
- * In other words, LNO can be a 64-bit integer.
- *
- * TODO: AlltoAllv will fail if packetSize does not fit into a 32-bit
- *   integer.  At this point in time, I don't think we need to check
- *   for this and break up packetSizes.  But some day...
+ * In other words, LNO can be a 64-bit integer.  (But the size of a single
+ * message must still fit in an int.)
  */
 
 template <typename T, typename LNO>
@@ -194,6 +193,11 @@ void AlltoAllv(const Comm<int> &comm,
 
   for (int p=0; p < nprocs; p++){
     LNO packetSize = recvCount[p] * sizeof(T);
+
+    env.globalInputAssertion(__FILE__, __LINE__,
+      "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
+      packetSize <= INT_MAX, BASIC_ASSERTION, comm);
+
     if (p != rank && packetSize > 0){
       LNO packetSize = recvCount[p] * sizeof(T);
       ArrayRCP<char> recvBufPtr(
