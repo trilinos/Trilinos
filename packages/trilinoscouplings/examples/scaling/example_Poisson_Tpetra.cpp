@@ -218,8 +218,8 @@ namespace {
       const size_t oldNumColumns = getNumColumns();
       if (newNumColumns >= oldNumColumns) {
 	for (size_t j = oldNumColumns; j < newNumColumns; ++j) {
-	  sourceIndices_.push_back (Teuchos::Array<const global_ordinal_type> ());
-	  sourceValues_.push_back (Teuchos::Array<const scalar_type> ());
+	  sourceIndices_.push_back (Teuchos::Array<global_ordinal_type> ());
+	  sourceValues_.push_back (Teuchos::Array<scalar_type> ());
 	}
       } 
       else {
@@ -237,8 +237,8 @@ namespace {
     {
       if (column >= getNumColumns()) {
 	for (size_t j = column; j < getNumColumns(); ++j) {
-	  sourceIndices_.push_back (Teuchos::Array<const global_ordinal_type> ());
-	  sourceValues_.push_back (Teuchos::Array<const scalar_type> ());
+	  sourceIndices_.push_back (Teuchos::Array<global_ordinal_type> ());
+	  sourceValues_.push_back (Teuchos::Array<scalar_type> ());
 	}
       }
       std::copy (rows.begin(), rows.end(), std::back_inserter (sourceIndices_[column]));
@@ -312,7 +312,7 @@ namespace {
       typedef node_type NT;
       typedef Tpetra::Map<LO, GO, NT> map_type;
 
-      RCP<const map_type> map = X->getMap();
+      RCP<const map_type> map = X.getMap();
       Array<LO> localIndices;
       const size_t numColumns = getNumColumns();
       for (size_t j = 0; j < numColumns; ++j) {
@@ -330,7 +330,7 @@ namespace {
 	  localIndices[i] = map->getLocalElement (globalIndicesView[i]);
 	}
 
-	ArrayRCP<ST> X_j = X->getDataNonConst (j);
+	ArrayRCP<ST> X_j = X.getDataNonConst (j);
 	ArrayView<const ST> localValues = sourceValues_[j].view (0, numIndices);
 	for (typename ArrayView<const GO>::size_type i = 0; i < numIndices; ++i) {
 	  const LO localInd = localIndices[i];
@@ -354,6 +354,77 @@ namespace {
       // The standard STL idiom for clearing the contents of a vector completely.
       std::swap (sourceIndices_, newSourceIndices);
       std::swap (sourceValues_, newSourceValues);
+    }
+
+    //! All source indices (local and nonlocal) of the source Map, sorted and unique.
+    Teuchos::Array<global_ordinal_type> 
+    getSourceIndices () const 
+    {
+      using Teuchos::Array;
+      using Teuchos::ArrayView;
+      using Teuchos::as;
+      typedef global_ordinal_type GO;
+      typedef typename Array<GO>::iterator iter_type;
+      typedef typename Array<GO>::size_type size_type;
+
+      Array<GO> allInds (0); // will resize below
+      const size_t numCols = getNumColumns();
+
+      if (numCols == 1) {
+	// Special case for 1 column avoids copying indices.  Pick the
+	// size of the array exactly the first time so there are at
+	// most two allocations (the constructor may choose to
+	// allocate).
+	allInds.resize (sourceIndices_[0].size());
+	std::copy (sourceIndices_[0].begin(), sourceIndices_[0].end(),
+		   allInds.begin());
+	std::sort (allInds.begin(), allInds.end());
+	iter_type it = std::unique (allInds.begin(), allInds.end());
+	const size_type curSize = as<size_type> (it - allInds.begin());
+	allInds.resize (curSize);
+      }
+      else {
+	// Carefully collect all the row indices one column at a time.
+	// This ensures that the total allocation size in this routine
+	// is independent of the number of columns.  Also, only sort
+	// the current column's indices.  Use merges to ensure sorted
+	// order in the collected final result.
+	Array<GO> curInds;
+	for (size_t j = 0; j < numCols; ++j) {
+	  // Collect the current column's source indices into curInds.
+	  // Sort it and make the entries unique.
+	  curInds.resize (sourceIndices_[j].size());
+	  std::copy (sourceIndices_[j].begin(), sourceIndices_[j].end(),
+		     curInds.begin());
+	  std::sort (curInds.begin(), curInds.end());
+	  iter_type it = std::unique (curInds.begin(), curInds.end());
+	  const size_type curSize = as<size_type> (it - curInds.begin());
+	  curInds.resize (curSize);
+
+	  if (curSize > 0) {
+	    // Assume inductively that the entries of allInds are
+	    // sorted and unique.  Make more space in allInds for the
+	    // new entries (since std::inplace_merge can only work in
+	    // one array), copy them in, merge, and make the results
+	    // unique.
+	    const size_type oldSize = allInds.size();
+	    allInds.resize (oldSize + curSize);
+
+	    //iter_type middle = &allInds[oldSize];
+	    iter_type middle;
+	    {
+	      ArrayView<GO> oldAllInds = allInds.view (oldSize, curSize);
+	      middle = oldAllInds.begin();
+	    }
+	    std::copy (curInds.begin(), curInds.end(), middle);
+	    std::inplace_merge (allInds.begin(), middle, allInds.end());
+	    iter_type it2 = std::unique (allInds.begin(), allInds.end());
+	    const size_type newSize = as<size_type> (it2 - allInds.begin());
+	    allInds.resize (newSize);
+	  }
+	}
+      }
+      return allInds;
     }
 
   private:
@@ -421,6 +492,45 @@ namespace {
       nonlocalValues_ (numColumns)
     {}
 
+
+    //! All source indices (local and nonlocal) of the source Map, sorted and unique.
+    Teuchos::Array<global_ordinal_type> 
+    getSourceIndices () const 
+    {
+      using Teuchos::Array;
+      using Teuchos::ArrayView;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Tpetra::global_size_t;
+      typedef global_ordinal_type GO;
+      typedef typename Array<GO>::iterator iter_type;
+
+      // Get the nonlocal row indices, sorted and made unique.
+      // It's fair to assume that these are not contiguous.
+      Array<GO> nonlocalIndices = getSortedUniqueNonlocalIndices();
+
+      // Get the local row indices, not necessarily sorted or unique.
+      ArrayView<const GO> localIndices = getLocalIndices ();
+
+      Array<GO> indices (localIndices.size() + nonlocalIndices.size());
+      std::copy (localIndices.begin(), localIndices.end(), indices.begin());
+      std::sort (indices.begin(), indices.end());
+
+      // Merge the local and nonlocal indices.
+      if (nonlocalIndices.size() > 0) {
+	//iter_type middle = &indices[nonlocalIndices.size()];
+	iter_type middle;
+	{
+	  ArrayView<GO> indView = indices.view (0, nonlocalIndices.size());
+	  middle = indView.end();
+	}
+	std::copy (nonlocalIndices.begin(), nonlocalIndices.end(), middle);
+	std::inplace_merge (indices.begin(), middle, indices.end());
+      }
+      return indices;
+    }
+
+
     /// \brief Set the number of columns in the output multivector.
     ///
     /// Setting the number of columns to zero effectively clears out
@@ -442,12 +552,12 @@ namespace {
 
       RCP<MV> newLocalVec;
       if (newNumColumns > oldNumColumns) {
-	newLocalVec = (new MV (map_, newNumColumns));
+	newLocalVec = rcp (new MV (map_, newNumColumns));
 	// Assign the contents of the old local multivector to the
 	// first oldNumColumns columns of the new local multivector,
 	// then get rid of the old local multivector.
 	RCP<MV> newLocalVecView = 
-	  newLocalVec.subViewNonConst (Range1D (0, oldNumColumns-1));
+	  newLocalVec->subViewNonConst (Range1D (0, oldNumColumns-1));
 	*newLocalVecView = *localVec_;
       } 
       else {
@@ -458,7 +568,7 @@ namespace {
 	}
 	else {
 	  newLocalVec = 
-	    localVec_.subViewNonConst (Range1D (0, newNumColumns-1));
+	    localVec_->subViewNonConst (Range1D (0, newNumColumns-1));
 	}
       }
 
@@ -537,7 +647,7 @@ namespace {
       }
     }
 
-    /// \brief Locally assemble into X.
+    /// \brief Locally assemble into X, with user-specified combine mode.
     ///
     /// \param X [in/out] Multivector (overlapping source distribution).
     ///
@@ -559,8 +669,8 @@ namespace {
     /// union of the global indices in map_ and (the union of the
     /// entries of nonlocalIndices_[j] for all valid columns j).
     ///
-    /// \note You can get the usual ADD combine mode by supplying f =
-    ///   std::plus<scalar_type>.
+    /// \note You can get the usual Tpetra::ADD combine mode by
+    ///   supplying f = std::plus<scalar_type>.
     template<class BinaryFunction>
     void 
     locallyAssemble (MV& X, BinaryFunction& f)
@@ -579,7 +689,7 @@ namespace {
 	ArrayRCP<ST> X_j = X.getDataNonConst (j);
 
 	// First add all the local data into X_j.
-	ArrayRCP<const ST> local_j = localVec_.getDataNonConst (j);
+	ArrayRCP<const ST> local_j = localVec_->getDataNonConst (j);
 	for (typename ArrayView<const GO>::const_iterator it = localIndices.begin(); 
 	     it != localIndices.end(); ++it) {
 	  const LO rowIndLocal = map_->getLocalElement (*it);
@@ -595,9 +705,9 @@ namespace {
 	}
 
 	// Now add the nonlocal data into X_j.
-	ArrayView<const GO> nonlocalIndices = nonlocalIndices_[j].view();
+	ArrayView<const GO> nonlocalIndices = nonlocalIndices_[j]();
 	typename ArrayView<const GO>::const_iterator indexIter = nonlocalIndices.begin(); 
-	ArrayView<const ST> nonlocalValues = nonlocalValues_[j].view();
+	ArrayView<const ST> nonlocalValues = nonlocalValues_[j]();
 	typename ArrayView<const ST>::const_iterator valueIter = nonlocalValues.begin();
 	for ( ; indexIter != nonlocalIndices.end() && valueIter != nonlocalValues.end();
 	      ++indexIter, ++valueIter) {
@@ -607,7 +717,7 @@ namespace {
       }
     }
 
-    //! \c locallyAssemble() for the usual ADD combine mode.
+    //! \c locallyAssemble() for the usual Tpetra::ADD combine mode.
     void 
     locallyAssemble (MV& X)
     {
@@ -638,15 +748,101 @@ namespace {
     }
 
   private:
+    //! Map that tells us which entries are locally owned.
     Teuchos::RCP<const map_type> map_;
+
+    //! The number of columns in the (output) multivector.
     size_t numCols_;
+
+    //! Multivector of locally stored (i.e., owned by \c map_) entries.
     Teuchos::RCP<MV> localVec_;
+
     //! Nonlocal global indices: one array for each column of the multivector.
     Teuchos::Array<Teuchos::Array<global_ordinal_type> > nonlocalIndices_;
+
     //! Nonlocal global values: one array for each column of the multivector.
     Teuchos::Array<Teuchos::Array<scalar_type> > nonlocalValues_;
 
+    //! The number of columns in the (output) multivector.
     size_t getNumColumns() const { return numCols_; }
+
+    //! The locally owned row indices, not necessarily sorted or unique.
+    Teuchos::ArrayView<const global_ordinal_type> 
+    getLocalIndices() const
+    {
+      return map_->getNodeElementList ();
+    }
+
+    //! The inserted nonlocal row indices, sorted and made unique.
+    Teuchos::Array<global_ordinal_type> 
+    getSortedUniqueNonlocalIndices() const
+    {
+      using Teuchos::Array;
+      using Teuchos::ArrayView;
+      using Teuchos::as;
+      typedef global_ordinal_type GO;
+      typedef typename Array<GO>::iterator iter_type;
+      typedef typename Array<GO>::size_type size_type;
+
+      Array<GO> allNonlocals (0); // will resize below
+      const size_t numCols = getNumColumns();
+
+      if (numCols == 1) {
+	// Special case for 1 column avoids copying indices.  Pick the
+	// size of the array exactly the first time so there are at
+	// most two allocations (the constructor may choose to
+	// allocate).
+	allNonlocals.resize (nonlocalIndices_[0].size());
+	std::copy (nonlocalIndices_[0].begin(), nonlocalIndices_[0].end(),
+		   allNonlocals.begin());
+	std::sort (allNonlocals.begin(), allNonlocals.end());
+	iter_type it = std::unique (allNonlocals.begin(), allNonlocals.end());
+	const size_type curSize = as<size_type> (it - allNonlocals.begin());
+	allNonlocals.resize (curSize);
+      }
+      else {
+	// Carefully collect all the row indices one column at a time.
+	// This ensures that the total allocation size in this routine
+	// is independent of the number of columns.  Also, only sort
+	// the current column's indices.  Use merges to ensure sorted
+	// order in the collected final result.
+	Array<GO> curNonlocals;
+	for (size_t j = 0; j < numCols; ++j) {
+	  // Collect the current column's nonlocal indices into
+	  // curNonlocals.  Sort it and make the entries unique.
+	  curNonlocals.resize (nonlocalIndices_[j].size());
+	  std::copy (nonlocalIndices_[j].begin(), nonlocalIndices_[j].end(),
+		     curNonlocals.begin());
+	  std::sort (curNonlocals.begin(), curNonlocals.end());
+	  iter_type it = std::unique (curNonlocals.begin(), curNonlocals.end());
+	  const size_type curSize = as<size_type> (it - curNonlocals.begin());
+	  curNonlocals.resize (curSize);
+
+	  if (curSize > 0) {
+	    // Assume inductively that the entries of allNonlocals are
+	    // sorted and unique.  Make more space in allNonlocals for
+	    // the new entries (since std::inplace_merge can only work
+	    // in one array), copy them in, merge, and make the results
+	    // unique.
+	    const size_type oldSize = allNonlocals.size();
+	    allNonlocals.resize (oldSize + curSize);
+
+	    //iter_type middle = &allInds[oldSize];
+	    iter_type middle;
+	    {
+	      ArrayView<GO> oldAllNonlocals = allNonlocals.view (oldSize, curSize);
+	      middle = oldAllNonlocals.begin();
+	    }
+	    std::copy (curNonlocals.begin(), curNonlocals.end(), middle);
+	    std::inplace_merge (allNonlocals.begin(), middle, allNonlocals.end());
+	    iter_type it2 = std::unique (allNonlocals.begin(), allNonlocals.end());
+	    const size_type newSize = as<size_type> (it2 - allNonlocals.begin());
+	    allNonlocals.resize (newSize);
+	  }
+	}
+      }
+      return allNonlocals;
+    }
   };
 
 
@@ -732,7 +928,7 @@ namespace {
 			 size_t column,
 			 Teuchos::ArrayView<const scalar_type> values)
     {
-      data_->sumIntoGlobalValues (rows, column, values);
+      data_.sumIntoGlobalValues (rows, column, values);
     }
 
     /// \brief Sum data into the multivector.
@@ -754,7 +950,7 @@ namespace {
     sumIntoGlobalValues (Teuchos::ArrayView<const global_ordinal_type> rows, 
 			 Teuchos::ArrayView<const scalar_type> values)
     {
-      data_->sumIntoGlobalValues (rows, values);
+      data_.sumIntoGlobalValues (rows, values);
     }
 
   private:
@@ -792,7 +988,7 @@ namespace {
     ///
     /// We separate this to facilitate experimentation with different
     /// storage formats.
-    MultiVectorFillerData<MV> data_;
+    MultiVectorFillerData2<MV> data_;
 
     typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
     Teuchos::RCP<export_type> exporter_;
@@ -803,81 +999,26 @@ namespace {
     /// is the multivector with the (possibly overlapping) source
     /// distribution.
     void locallyAssemble (MV& X_in) {
-      data_->locallyAssemble (X_in);
+      data_.locallyAssemble (X_in);
     }
 
-    /// \brief Compute the Map from the source indices, if necessary.
+    //! All source indices (local and nonlocal) of the source Map.
+    Teuchos::Array<global_ordinal_type> getSourceIndices () const {
+      return data_.getSourceIndices();
+    }
+
+    /// \brief Compute the source Map (for the Export) from the source indices.
     ///
     /// indexBase, comm, and node are the same as the input arguments
     /// of the Map constructors.
     ///
-    /// \param initialMap [in] A previously computed Map, if
-    ///   available.  If you pass in \c Teuchos::null, this method
-    ///   will always compute the Map.  If forceReuseMap is true and
-    ///   initialMap is not null, this method will not compute the
-    ///   Map, even if that results in an incorrect Map (that does not
-    ///   match the source indices).
-    ///
-    /// \param sourceIndices [in] Global indices, some of which may
-    ///   not be owned by sourceOwnedMap.  We assume that they are
-    ///   sorted and unique (this is fair because the order of indices
-    ///   is irrelevant in finite element assembly, once the local
-    ///   assembly is done).
-    ///
-    /// \param forceReuseMap [in] If true and if initialMap is not
-    ///   null, this method will not compute the Map, even if that
-    ///   results in an incorrect Map (that does not match the source
-    ///   indices).
-    ///
     /// \note This is a collective operation.
     ///
-    /// \return (the nonlocal Map, whether we had to compute the Map).
-    static std::pair<Teuchos::RCP<const map_type>, bool> 
-    computeMap (const global_ordinal_type indexBase,
-		const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
-		const Teuchos::RCP<node_type>& node,
-		const Teuchos::RCP<const map_type>& initialMap, 
-		Teuchos::ArrayView<const global_ordinal_type> sourceIndices,
-		const bool forceReuseMap);
-
-    /// \brief The inserted row indices, possibly unsorted and with duplicates.
-    ///
-    /// If \c indices is the view returned by this method, and \c
-    /// values is the view returned by \c getSourceValues(), then
-    /// indices[i] is the row index of values[i].
-    ///
-    /// \note This method is "conceptually const."  It may do caching,
-    ///   so we didn't declare this const, to avoid "mutable" data.
-    Teuchos::ArrayView<const global_ordinal_type> 
-    getSourceIndices() 
-    {
-      return data_->getSourceIndices();
-    }
-
-    /// \brief The inserted values.
-    ///  
-    /// If \c indices is the view returned by \c getSourceIndices(),
-    /// and \c values is the view returned by this method, then
-    /// indices[i] is the row index of values[i].
-    ///
-    /// \note This method is "conceptually const."  It may do caching,
-    ///   so we didn't declare this const, to avoid "mutable" data.
-    Teuchos::ArrayView<const scalar_type> 
-    getSourceValues() 
-    {
-      return data_->getSourceValues();
-    }
-
-    /// \brief Get a copy of all the inserted row indices, sorted and made unique.
-    ///
-    /// This method is suited for assembling the right-hand sides of
-    /// the element systems in the finite element method.  In that
-    /// case, the order of insertions doesn't matter, and duplicate
-    /// insertions get merged addditively.
-    ///
-    /// \note This method is "conceptually const."  It may do caching,
-    ///   so we didn't declare this const, to avoid "mutable" data.
-    Teuchos::Array<global_ordinal_type> getSortedUniqueSourceIndices();
+    /// \return The (possibly overlapping) source Map.
+    Teuchos::RCP<const map_type>
+    computeSourceMap (const global_ordinal_type indexBase,
+		      const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+		      const Teuchos::RCP<node_type>& node);
   };
 
   template<class MV>
@@ -890,85 +1031,25 @@ namespace {
   {}
 
   template<class MV>
-  Teuchos::Array<typename MultiVectorFiller<MV>::global_ordinal_type>
-  MultiVectorFiller<MV>::getSortedUniqueSourceIndices() 
-  {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
-    typedef global_ordinal_type GO;
-
-    // We've chosen for now to decouple sourceIndices from the
-    // actual representation of data.  This is why
-    // getSourceIndices() returns an Array rather than an ArrayView.
-    // Later, this method may which to cache the Array internally,
-    // to avoid copying out of the internal representation each
-    // time.  The current getSourceIndices() interface requires
-    // copying sourceIndices twice (possibly), so that it can return
-    // an Array instead of an ArrayView.
-    ArrayView<const GO> sourceIndices = getSourceIndices();
-    Array<GO> src (sourceIndices.size());
-    std::copy (sourceIndices.begin(), sourceIndices.end(), src.begin());
-    //if (! std::is_sorted (src.begin(), src.end())) {
-    std::sort (src.begin(), src.end());
-    //}
-    typename Array<GO>::const_iterator it = std::unique (src.begin(), src.end());
-    const size_t newSize = Teuchos::as<size_t> (it - sourceIndices.begin());
-    src.resize (newSize);
-    return src;
-  }
-
-
-  template<class MV>
-  std::pair<Teuchos::RCP<const typename MultiVectorFiller<MV>::map_type>, bool> 
+  Teuchos::RCP<const typename MultiVectorFiller<MV>::map_type>
   MultiVectorFiller<MV>::
-  computeMap (const global_ordinal_type indexBase,
-	      const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
-	      const Teuchos::RCP<node_type>& node,
-	      const Teuchos::RCP<const map_type>& initialMap, 
-	      Teuchos::ArrayView<const global_ordinal_type> sourceIndices,
-	      const bool forceReuseMap)
+  computeSourceMap (const global_ordinal_type indexBase,
+		    const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+		    const Teuchos::RCP<node_type>& node)
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
-    using Teuchos::RCP;
     using Teuchos::rcp;
-    using Tpetra::global_size_t;
     typedef global_ordinal_type GO;
 
-    // Passing "invalid" for the numGlobalElements argument of the
-    // Map constructor tells the Map to compute the global number of
+    Array<GO> indices = getSourceIndices ();
+
+    // Passing "invalid" for the numGlobalElements argument of the Map
+    // constructor tells the Map to compute the global number of
     // elements itself.
-    const global_size_t invalid = Teuchos::OrdinalTraits<global_size_t>::invalid();
-#if 0
-    //
-    // Split source indices into owned and nonowned.
-    //
-    ArrayView<const GO> ownedIndices, nonownedIndices;
-    {
-      std::pair<Array<GO>, Array<GO> > result = 
-	splitSourceIndices (sourceIndices, ownedIndices);
-      // Swapping avoids array copies.
-      std::swap (ownedIndices, result.first);
-      std::swap (nonownedIndices, result.second);
-    }
-#endif // 0
-    RCP<const map_type> map;
-    bool computedMap = false;
-    if (forceReuseMap && ! initialMap.is_null()) {
-      map = initialMap;
-      computedMap = false;
-    }
-    else {
-      // Future optimization: Check whether the input Map has the same
-      // global indices and index base on all processes.  (We assume
-      // that the input Map has the same communicator and Kokkos
-      // Node.)  If so, we can reuse the input Map.  This check would
-      // look very much like Map::isSameAs(), except that we only have
-      // one Map here.
-      map = rcp (new map_type (invalid, sourceIndices, indexBase, comm, node));
-      computedMap = true;
-    }
-    return std::make_pair (map, computedMap);
+    const Tpetra::global_size_t invalid = 
+      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+    return rcp (new map_type (invalid, indices, indexBase, comm, node));
   }
 
   template<class MV>
@@ -1015,7 +1096,7 @@ namespace {
 	// expensive than calling isSameAs() (which requires just a
 	// few reductions and reading through the lists of owned
 	// global indices), so it's worth checking.
-	if (targetMap_->isSameAs (X_out.getMap())) {
+	if (targetMap_->isSameAs (*(X_out.getMap()))) {
 	  assumeSameTargetMap = true;
 	  targetMap = targetMap_;
 	}
@@ -1033,19 +1114,10 @@ namespace {
 	sourceMap = sourceMap_;
       }
       else {
-	// This reads all of the index data and forms a sorted unique
-	// Array as a copy.  That makes the operation expensive, which
-	// is why we check whether we want to and can reuse the Map
-	// before asking for the list.  We want a deep copy because
-	// the original order of the indices matters for local
-	// assembly.
-	Array<const GO> sourceIndices = getSortedUniqueSourceIndices();
-	std::pair<RCP<const map_type>, bool> result = 
-	  computeMap (ctorMap_.getIndexBase(), ctorMap_.getComm(), 
-		      ctorMap_.getNode(), sourceMap_, sourceIndices, 
-		      forceReuseMap);
-	sourceMap = result.first;
-	computedSourceMap = result.second;
+	sourceMap = computeSourceMap (ctorMap_->getIndexBase(), 
+				      ctorMap_->getComm(), 
+				      ctorMap_->getNode());
+        computedSourceMap = true;
       }
     }
     if (computedSourceMap) {
@@ -1068,23 +1140,23 @@ namespace {
 
     if (mustReallocateVec) {
       // Reallocating nonlocalVec_ ensures that it has the right Map.
-      sourceVec_ = rcp (new MV (X_out, numVecs));
+      sourceVec_ = rcp (new MV (sourceMap_, numVecs));
       X_in = sourceVec_;
     } else {
       if (sourceVec_->getNumVectors() == numVecs) {
 	X_in = sourceVec_;
       } else { // sourceVec_ has more vectors than needed.
-	X_in = sourceVec_->subView (Range1D (0, numVecs-1));
+	X_in = sourceVec_->subViewNonConst (Range1D (0, numVecs-1));
       }
     }
 
     // "Locally assemble" the data into X_in by summing together
     // entries with the same indices.
-    locallyAssemble (X_in);
+    locallyAssemble (*X_in);
     
     // Do the Export.
     const Tpetra::CombineMode combineMode = Tpetra::ADD;
-    X_in->doExport (X_out, exporter_, combineMode);
+    X_in->doExport (X_out, *exporter_, combineMode);
   }
 
   /// \class MultiVectorFillerTester
