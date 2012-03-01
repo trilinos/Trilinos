@@ -10,6 +10,8 @@
 #include "Teuchos_Comm.hpp"
 
 namespace panzer {
+
+class GlobalData;
     
 PHX_EVALUATOR_CLASS_PP(GlobalStatistics)
   
@@ -34,6 +36,8 @@ PHX_EVALUATOR_CLASS_PP(GlobalStatistics)
   std::size_t ir_index;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm;
+
+  Teuchos::RCP<panzer::GlobalData> global_data;
 
   void postprocess(std::ostream& os);
 
