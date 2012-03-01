@@ -23,7 +23,7 @@
 
 \section overview Overview
 
-Panzer is a multiphysics assembly engine for solving large-scale systems of partial differntial equations.
+Panzer is a multiphysics assembly engine for solving large-scale systems of partial differential equations.
 
 \section news News
 

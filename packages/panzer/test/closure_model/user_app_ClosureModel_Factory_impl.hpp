@@ -137,6 +137,7 @@ buildClosureModels(const std::string& model_id,
 	  input.set("Comm", user_data.get<Teuchos::RCP<const Teuchos::Comm<int> > >("Comm"));
 	  input.set("Names", value);
 	  input.set("IR", default_params.get<RCP<panzer::IntegrationRule> >("IR"));
+	  input.set("Global Data", global_data);
 	  RCP< panzer::GlobalStatistics<EvalT,panzer::Traits> > e = 
 	    rcp(new panzer::GlobalStatistics<EvalT,panzer::Traits>(input));
 	  evaluators->push_back(e);

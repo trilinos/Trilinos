@@ -490,6 +490,10 @@ namespace panzer_stk {
       Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(mesh,dofManager,ep_lof);
       piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
       piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
+      // override printing to use panzer ostream
+      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Output Stream",global_data->os);
+      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);
+      piro_params->sublist("NOX").sublist("Printing").set<int>("Output Processor",global_data->os->getOutputToRootOnly());
     }
     else if (solver=="Rythmos") {
       Teuchos::RCP<const panzer_stk::RythmosObserverFactory> observer_factory = 
@@ -503,6 +507,11 @@ namespace panzer_stk {
          Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(mesh,dofManager,ep_lof);
          piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
       }
+
+      // override printing to use panzer ostream
+      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Output Stream",global_data->os);
+      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);
+      piro_params->sublist("NOX").sublist("Printing").set<int>("Output Processor",global_data->os->getOutputToRootOnly());
 
       piro = Teuchos::rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer_factory->buildRythmosObserver(mesh,dofManager,linObjFactory)));
     } 

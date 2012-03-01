@@ -5,6 +5,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_GlobalData.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -17,6 +18,8 @@ namespace panzer {
 PHX_EVALUATOR_CTOR(GlobalStatistics,p)
 {
   comm = p.get< Teuchos::RCP<const Teuchos::Comm<int> > >("Comm");
+
+  global_data = p.get<Teuchos::RCP<panzer::GlobalData> >("Global Data");
 
   // Expects a string that is a Colon separated list of field names to compute statistics on.
   // for example the string "UX:UY:UZ:PRESSURE" would be separated into a vector with
@@ -128,7 +131,7 @@ PHX_PRE_EVALUATE_FIELDS(GlobalStatistics,data)
 //**********************************************************************
 PHX_POST_EVALUATE_FIELDS(GlobalStatistics,data)
 {
-  this->postprocess(std::cout);
+  this->postprocess(*(global_data->os));
 }
 
 //**********************************************************************
@@ -171,10 +174,10 @@ void GlobalStatistics<panzer::Traits::Residual, panzer::Traits>::postprocess(std
        << std::endl;
     
     for (std::vector<ScalarT>::size_type i = 0; i < field_values.size(); ++i) {
-      std::cout << std::setw(name_width) <<  field_values[i].fieldTag().name() 
-		<< " " << std::setw(value_width) << global_averages[i]
-		<< " " << std::setw(value_width) << global_maxs[i]
-		<< " " << std::setw(value_width) << global_mins[i] << std::endl;
+      os << std::setw(name_width) <<  field_values[i].fieldTag().name() 
+	 << " " << std::setw(value_width) << global_averages[i]
+	 << " " << std::setw(value_width) << global_maxs[i]
+	 << " " << std::setw(value_width) << global_mins[i] << std::endl;
     }
 
   }
