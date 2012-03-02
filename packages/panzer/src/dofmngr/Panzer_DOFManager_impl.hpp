@@ -7,6 +7,7 @@
 #include <map>
 
 #include "Panzer_GeometricAggFieldPattern.hpp"
+#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 
@@ -308,6 +309,9 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos
    std::vector<GlobalOrdinal> ownedIndices;
    getOwnedIndices(ownedIndices);
    ownedGIDHashTable_.insert(ownedIndices.begin(),ownedIndices.end());  
+
+   // now that everything is built, build the global Orientations
+   buildUnknownsOrientation();
 }
 
 // build the global unknown numberings
@@ -333,6 +337,58 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 
    // using new geometric pattern, build global unknowns
    buildGlobalUnknowns(aggFieldPattern);
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildUnknownsOrientation()
+{
+   orientation_.clear(); // clean up previous work
+
+   std::vector<std::string> elementBlockIds;
+   connMngr_->getElementBlockIds(elementBlockIds);
+
+   // figure out how many total elements are owned by this processor (why is this so hard!)
+   std::size_t myElementCount = 0;
+   for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin();
+       blockItr!=elementBlockIds.end();++blockItr)
+      myElementCount += connMngr_->getElementBlock(*blockItr).size();
+
+   // allocate for each block
+   orientation_.resize(myElementCount);
+   
+   // loop over all element blocks
+   for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin();
+       blockItr!=elementBlockIds.end();++blockItr) {
+      const std::string & blockName = *blockItr; 
+
+      // this block has no unknowns (or elements)
+      std::map<std::string,Teuchos::RCP<FieldAggPattern> >::const_iterator fap = fieldAggPattern_.find(blockName);
+      if(fap==fieldAggPattern_.end() || fap->second==Teuchos::null) 
+         continue;
+
+      // grab field patterns, will be necessary to compute orientations
+      const FieldPattern & fieldPattern = *fap->second;
+
+      std::vector<std::pair<int,int> > topEdgeIndices;
+      orientation_helpers::computePatternEdgeIndices(*geomPattern_,topEdgeIndices);
+
+      std::size_t numGIDs = getElementBlockGIDCount(blockName);
+      const std::vector<LocalOrdinal> & elmts = getElementBlock(blockName);
+      for(std::size_t e=0;e<elmts.size();e++) {
+         // this is the vector of orientations to fill
+         std::vector<char> & eOrientation = orientation_[elmts[e]];
+
+         // allocate correct sizes
+         eOrientation.resize(numGIDs,1);
+
+         // get geometry ids
+         LocalOrdinalT connSz = connMngr_->getConnectivitySize(elmts[e]);
+         const GlobalOrdinalT * connPtr = connMngr_->getConnectivity(elmts[e]); 
+         const std::vector<GlobalOrdinalT> connectivity(connPtr,connPtr+connSz);
+
+         orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
+      }
+   }
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -452,9 +508,10 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT loca
    // has been initialized. So if this DOFManager has no fields on
    // the block it should be ignored (hence dof>0)
    if(dof>0) {
-
       getGIDsFromMatrixGraph(blockIndex,dof,localElmtId,*matrixGraph_,gids);
    }
+   else
+      gids.resize(0); // no DOFs available, so shrink it
 }
 
 /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
@@ -537,6 +594,24 @@ std::size_t DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndex(const std::
    }
  
    return (*blockIdToIndex_)[blockId];
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+const std::map<std::string,std::size_t> & DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndexMap() const
+{
+   // use lazy evaluation to build block indices
+   if(blockIdToIndex_==Teuchos::null) {
+
+      std::vector<std::string> elementBlockIds;
+      connMngr_->getElementBlockIds(elementBlockIds);
+
+      // build ID to Index map
+      blockIdToIndex_ = Teuchos::rcp(new std::map<std::string,std::size_t>);
+      for(std::size_t i=0;i<elementBlockIds.size();i++)
+         (*blockIdToIndex_)[elementBlockIds[i]] = i;
+   }
+ 
+   return *blockIdToIndex_;
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>

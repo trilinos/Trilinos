@@ -11,6 +11,7 @@
 #include <Tpetra_MultiVector.hpp>
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_FieldPattern.hpp"
 
 namespace panzer {
 
@@ -107,6 +108,44 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
 template <typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
 getFieldMap(int fieldNum,const Tpetra::Vector<int,int,GlobalOrdinalT,Node> & fieldVector);
+
+
+namespace orientation_helpers {
+
+/** For a given field pattern compute the offsets that give 
+  * the beginning and end dimension-0-subcell index for each edge.
+  *
+  * \param[in] pattern Pattern specifying the layout of IDs. Note that
+  *                    this pattern must have dimension-0-subcell indices.
+  * \param[in,out] edgeIndices Empty vector that on exit will have a pair
+  *                            containing start and end indices for each
+  *                            edge in a cell.
+  */
+void computePatternEdgeIndices(const FieldPattern & pattern,std::vector<std::pair<int,int> > & edgeIndices);
+
+/** This function computes the edge orientation for a cell given its global topology.
+  * It is most often called in conjunction with <code>computePatternEdgeIndices</code>. The
+  * general model is to call <code>computePatternEdgeIndices</code> once for a given topology
+  * field pattern. These edge indices are used with the topology vector of GIDs (which is laid out 
+  * using the topology field pattern) for particular to define the orientation for that element.
+  * The layout of the orientation vector is defined to satisfy yet another field pattern whose
+  * structure defines the global unknowns for that element. This function can then be called
+  * repeatedly for each element that satisfies the topology used in the 
+  * <code>computePatternEdgeIndices</code> call.
+  *
+  * \param[in] topEdgeIndices Computed by <code>computePatternEdgeIndices</code>
+  * \param[in] topology Global topology of this element satisfying field pattern used to construct
+  *                     the <code>edgeIndices</code> vector.
+  * \param[in] fieldPattern Field pattern used to define the orientation layout
+  * \param[in,out] orientation Orientation vector satisfying the field pattern layout
+  */
+template <typename GlobalOrdinalT>
+void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
+                                 const std::vector<GlobalOrdinalT> & topology,
+                                 const FieldPattern & fieldPattern, 
+                                 std::vector<char> & orientation);
+
+} // end orientations_helpers
 
 
 /** This class assists in mapping arrays of field data to field vectors.

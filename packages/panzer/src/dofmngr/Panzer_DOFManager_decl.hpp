@@ -185,7 +185,6 @@ public:
      *          manager.
      */
    int getNumFields() const;
-
    
    /**  Returns the connection manager current being used.
      */
@@ -217,6 +216,12 @@ public:
      *       and CRS matrix graph.
      */
    virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern);
+
+   /** Builds the orientations for each unknown. Notice that unknowns
+     * will be either 1 or -1. If the orientation is not required then
+     * the rule is for the orientation is to be 1.
+     */
+   virtual void buildUnknownsOrientation();
 
    /** Prints to an output stream the information about
      * the aggregated field.
@@ -361,6 +366,10 @@ protected:
      */
    std::size_t blockIdToIndex(const std::string & blockId) const;
 
+   /** Access the block Id to index vector directly.
+     */
+   const std::map<std::string,std::size_t> & blockIdToIndexMap() const;
+
    //! build the pattern associated with this manager
    bool buildPattern(const std::vector<std::string> & fieldOrder,
                      const std::string & blockId);
@@ -413,6 +422,11 @@ protected:
 
    Teuchos::RCP<const FieldPattern> geomPattern_;
    Teuchos::RCP<Teuchos::Comm<int> > communicator_;
+
+   // this vector will be # of local elements, by number of GIDs on element block
+   std::vector<std::vector<char> > orientation_; // we are using chars here
+                                                 // to minimize storage and also
+                                                 // we need only to store +/-1
 };
 
 }

@@ -200,6 +200,50 @@ getFieldMap(int fieldNum,const Tpetra::Vector<int,int,GlobalOrdinalT,Node> & fie
    return finalMap;
 }
 
+namespace orientation_helpers {
+
+template <typename GlobalOrdinalT>
+void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
+                                 const std::vector<GlobalOrdinalT> & topology,
+                                 const FieldPattern & fieldPattern, 
+                                 std::vector<char> & orientation)
+{
+   // LOCAL element orientations are always set so that they flow in the positive
+   // direction along an edge from node 0 to node 1. As a result if the GID of
+   // node 0 is larger then node 1 then the GLOBAL orientation is -1 (and positive
+   // otherwise). The local definition of the edge direction is defined by 
+   // the shards cell topology.
+
+   TEUCHOS_ASSERT(orientation.size()==std::size_t(fieldPattern.numberIds()));
+
+   int edgeDim = 1;
+
+   for(std::size_t e=0;e<topEdgeIndices.size();e++) {
+      // grab topological nodes
+      const std::pair<int,int> nodes = topEdgeIndices[e]; 
+
+      // extract global values of topological nodes
+      GlobalOrdinalT v0 = topology[nodes.first];
+      GlobalOrdinalT v1 = topology[nodes.second];
+
+      // using simple rule make a decision about orientation
+      char edgeOrientation = 1; 
+      if(v1>v0)
+         edgeOrientation = 1; 
+      else if(v0>v1)
+         edgeOrientation = -1; 
+      else
+      { TEUCHOS_ASSERT(false); }
+      
+      // grab edgeIndices to be set to compute orientation
+      const std::vector<int> & edgeIndices = fieldPattern.getSubcellIndices(edgeDim,e);
+      for(std::size_t s=0;s<edgeIndices.size();s++)
+         orientation[edgeIndices[s]] = edgeOrientation;
+   }
+}
+
+}
+
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi)
