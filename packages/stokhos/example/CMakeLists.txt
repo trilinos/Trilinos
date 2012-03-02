@@ -10,6 +10,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS stokhos
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  division_example
+  SOURCES division_example.cpp
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Example Passed"
+  NUM_MPI_PROCS 1
+  DEPLIBS stokhos
+  )
+
 TRIBITS_ADD_EXECUTABLE(
   exp_moment_example
   SOURCES exp_moment_example.cpp
@@ -374,4 +383,4 @@ IF (Stokhos_ENABLE_Thrust)
 
 ENDIF()
 
-
+#ADD_SUBDIRECTORY(experimental)

@@ -112,7 +112,10 @@ struct GramSchmidt_PCE_Setup {
       basis->computeTripleProductTensor(basis->size());
     
     // Quadrature expansion
-    exp = Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk, quad, true));
+    Teuchos::RCP<Teuchos::ParameterList> exp_params =
+      Teuchos::rcp(new Teuchos::ParameterList);
+    exp_params->set("Use Quadrature for Times", true);
+    exp = Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk, quad, exp_params));
     
     // Compute PCE via quadrature expansion
     u.reset(basis);
@@ -172,7 +175,7 @@ struct GramSchmidt_PCE_Setup {
     Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> gs_exp(gs_basis, 
 								   gs_Cijk,
 								   gs_quad,
-								   true);
+								   exp_params);
     
     u_gs.reset(gs_basis);
     v_gs.reset(gs_basis);
