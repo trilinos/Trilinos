@@ -56,6 +56,7 @@ makeSerialNode (const Teuchos::RCP<Teuchos::ParameterList>& nodeParams)
 int 
 main (int argc, char *argv[]) 
 {
+  using Teuchos::as;
   using Teuchos::Comm;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -79,12 +80,17 @@ main (int argc, char *argv[])
   //
   // Read in command line arguments.
   //  
-  //int M = 10000;
-  //int N = 1000;
+  int unknownsPerNode = 20; // number of unknowns per process
+  int unknownsPerElt = 3; // number of unknowns per (overlapping) element
+  int numCols = 1;
 
   Teuchos::CommandLineProcessor cmdp (false, true);
-  //cmdp.setOption ("M", &M, "Global matrix num rows.");
-  //cmdp.setOption ("N", &N, "Global matrix num cols.");
+  cmdp.setOption ("unknownsPerNode", &unknownsPerNode, 
+		  "Number of unknowns per process");
+  cmdp.setOption ("unknownsPerElt", &unknownsPerElt, 
+		  "Number of unknowns per (overlapping) element.");
+  cmdp.setOption ("numCols", &numCols, 
+		  "Number of columns in the multivector.  Must be positive.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return EXIT_FAILURE;
   }
@@ -95,16 +101,21 @@ main (int argc, char *argv[])
   // Run the test.
   bool succeeded = true;
   try {
-    Tpetra::Test::testMultiVectorFiller<scalar_type, local_ordinal_type, 
-      global_ordinal_type, node_type> (comm, node);
+    Tpetra::Test::testMultiVectorFiller<scalar_type, 
+      local_ordinal_type, 
+      global_ordinal_type, 
+      node_type> (comm, node, as<size_t> (unknownsPerNode),
+		  as<global_ordinal_type> (unknownsPerElt), 
+		  as<size_t> (numCols));
     succeeded = true;
   } catch (std::exception& e) {
     succeeded = false;
   }
 
-  const int localSuccess = succeeded : 1 : 0;
+  const int localSuccess = succeeded ? 1 : 0;
   int globalSuccess = localSuccess;
-  Teuchos::reduceAll (*comm, Teuchos::SUM, localSuccess, Teuchos::ptr (&globalSuccess));
+  Teuchos::reduceAll (*comm, Teuchos::REDUCE_SUM, localSuccess, 
+		      Teuchos::ptr (&globalSuccess));
   
   if (globalSuccess) {
     out << "End Result: TEST PASSED" << endl;

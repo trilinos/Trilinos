@@ -1109,6 +1109,10 @@ namespace Tpetra {
 	RCP<MultiVectorFiller<MV> > filler = 
 	  rcp (new MultiVectorFiller<MV> (targetMap, numCols));
 
+	TEUCHOS_TEST_FOR_EXCEPTION(! targetMap->isContiguous(), 
+          std::invalid_argument, "MultiVectorFiller test currently only works "
+          "for contiguous Maps.");
+
 	const GO minGlobalIndex = targetMap->getMinGlobalIndex();
 	const GO maxGlobalIndex = targetMap->getMaxGlobalIndex();
 	const GO minAllGlobalIndex = targetMap->getMinAllGlobalIndex();
@@ -1120,13 +1124,14 @@ namespace Tpetra {
 	    const GO end = std::min (i + eltSize/2, maxAllGlobalIndex);
 	    const GO len = end - start + 1;
 
-	    ArrayView<GO> rowsView = rows.view (start, len);
+	    TEUCHOS_TEST_FOR_EXCEPTION(len > eltSize, std::logic_error,
+              "At start,end = " << start << "," << end << ", len = " << len 
+              << " > eltSize = " << eltSize << ".");
+
 	    for (GO k = 0; k < len; ++k) {
-	      rowsView[k] = start + k;
+	      rows[k] = start + k;
 	    }
-	    ArrayView<const ST> valuesView = values.view (start, len);
-	    // Convert rowsView to const view.
-	    filler->sumIntoGlobalValues (rowsView(), j, valuesView);
+	    filler->sumIntoGlobalValues (rows.view(0, len), j, values.view(0, len));
 	  }
 	}
 
@@ -1204,12 +1209,18 @@ namespace Tpetra {
 	     class NodeType>
     void 
     testMultiVectorFiller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-			   const Teuchos::RCP<NodeType>& node)
+			   const Teuchos::RCP<NodeType>& node,
+			   const size_t unknownsPerNode,
+			   const GlobalOrdinalType unknownsPerElt,
+			   const size_t numCols)
     {
       using Tpetra::createContigMapWithNode;
       using Teuchos::ParameterList;
       using Teuchos::RCP;
       using Teuchos::rcp;
+      using std::cerr;
+      using std::endl;
+
       typedef ScalarType ST;
       typedef LocalOrdinalType LO;
       typedef GlobalOrdinalType GO;
@@ -1217,22 +1228,28 @@ namespace Tpetra {
       typedef Tpetra::Map<LO, GO, NT> MT;
       typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
 
-      const size_t numEltsPerNode = 20;
-
       const Tpetra::global_size_t invalid = 
 	Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
       RCP<const MT> targetMap = 
-	createContigMapWithNode<LO, GO, NT> (invalid, numEltsPerNode, comm, node);
+	createContigMapWithNode<LO, GO, NT> (invalid, unknownsPerNode, comm, node);
 
-      const GO eltSize = 3;
-      // For now, to trigger the exception so the test doesn't run.
-      const size_t numCols = 0; 
+      std::ostringstream os;
+      int success = 1;
       try {
-	MultiVectorFillerTester<MV>::testSameMap (targetMap, eltSize, numCols);
-      } catch (std::invalid_argument& e) {
-	// Do nothing for now, since we're just testing whether the test
-	// builds.  Later, when we actually care about the test passing,
-	// we'll do something here.
+	MultiVectorFillerTester<MV>::testSameMap (targetMap, unknownsPerElt, numCols);
+	success = 1;
+      } catch (std::exception& e) {
+	success = 0;
+	os << e.what();
+      }
+
+      for (int p = 0; p < comm->getSize(); ++p) {
+	if (p == comm->getRank()) {
+	  cerr << "On process " << comm->getRank() << ": " << os.str() << endl;
+	}
+	comm->barrier();
+	comm->barrier();
+	comm->barrier();
       }
     }
   } // namespace Test
