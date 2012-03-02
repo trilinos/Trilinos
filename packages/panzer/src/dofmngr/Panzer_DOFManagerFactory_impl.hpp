@@ -21,6 +21,9 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
    Teuchos::RCP<panzer::DOFManager<LO,GO> > dofManager 
          = Teuchos::rcp(new panzer::DOFManager<LO,GO>(connMngr,mpiComm));
 
+   // by default assume orientations are not required
+   bool orientationsRequired = false;
+
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
    for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
       Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
@@ -34,6 +37,10 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
       // add basis to DOF manager: block specific
       std::set<StrPureBasisPair,StrPureBasisComp>::const_iterator fieldItr; 
       for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
+         // determine if orientations are required
+         PureBasis::EElementSpace space = fieldItr->second->getElementSpace();
+         orientationsRequired |= ((space==PureBasis::HDIV) || (space==PureBasis::HCURL)); 
+
          Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepidBasis 
                = fieldItr->second->getIntrepidBasis();
          Teuchos::RCP<IntrepidFieldPattern> fp = Teuchos::rcp(new IntrepidFieldPattern(intrepidBasis));
@@ -43,6 +50,9 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
          // fp->print(*pout);
       }
    } 
+
+   // set orientations required flag
+   dofManager->setOrientationsRequired(orientationsRequired);
 
    if(fieldOrder!="") {
       std::vector<std::string> fieldOrderV;

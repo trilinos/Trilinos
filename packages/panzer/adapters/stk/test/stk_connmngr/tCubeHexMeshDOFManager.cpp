@@ -81,6 +81,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
+   TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);

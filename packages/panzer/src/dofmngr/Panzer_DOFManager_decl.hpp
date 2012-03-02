@@ -352,6 +352,16 @@ public:
      return cnt;
    }
 
+   /** Return if the orientations have been set to required.
+     */
+   bool getOrientationsRequired() const
+   { return requireOrientations_; }
+
+   /** Enable computation of the orientations.
+     */
+   void setOrientationsRequired(bool ro) 
+   { requireOrientations_ = ro; }
+
 protected:
    
    /** Get ordered field IDs associated with a particular element
@@ -423,6 +433,7 @@ protected:
    Teuchos::RCP<const FieldPattern> geomPattern_;
    Teuchos::RCP<Teuchos::Comm<int> > communicator_;
 
+   bool requireOrientations_;
    // this vector will be # of local elements, by number of GIDs on element block
    std::vector<std::vector<char> > orientation_; // we are using chars here
                                                  // to minimize storage and also

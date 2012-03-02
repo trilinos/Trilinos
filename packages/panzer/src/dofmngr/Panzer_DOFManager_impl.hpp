@@ -21,12 +21,12 @@ namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager()
-   : numFields_(0), fieldsRegistered_(false)
+   : numFields_(0), fieldsRegistered_(false), requireOrientations_(false)
 { }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
-   : numFields_(0), fieldsRegistered_(false)
+   : numFields_(0), fieldsRegistered_(false), requireOrientations_(false)
 {
    setConnManager(connMngr,mpiComm);
 }
@@ -57,7 +57,6 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP
    vectorSpace_ = feiFactory_->createVectorSpace(mpiComm,"problem_vs");
    matrixGraph_ = feiFactory_->createMatrixGraph(vectorSpace_,vectorSpace_,"problem_mg");
 
-   // define a single id type: node
    nodeType_ = 0; 
    vectorSpace_->defineIDTypes(1,&nodeType_);
    edgeType_ = 1; 
@@ -311,7 +310,8 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos
    ownedGIDHashTable_.insert(ownedIndices.begin(),ownedIndices.end());  
 
    // now that everything is built, build the global Orientations
-   buildUnknownsOrientation();
+   if(getOrientationsRequired())
+      buildUnknownsOrientation();
 }
 
 // build the global unknown numberings
@@ -375,11 +375,11 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildUnknownsOrientation()
       std::size_t numGIDs = getElementBlockGIDCount(blockName);
       const std::vector<LocalOrdinal> & elmts = getElementBlock(blockName);
       for(std::size_t e=0;e<elmts.size();e++) {
-         // this is the vector of orientations to fill
+         // this is the vector of orientations to fill: initialize it correctly
          std::vector<char> & eOrientation = orientation_[elmts[e]];
-
-         // allocate correct sizes
-         eOrientation.resize(numGIDs,1);
+         eOrientation.resize(numGIDs);
+         for(std::size_t s=0;s<eOrientation.size();s++)
+            eOrientation[s] = 1; // put in 1 by default 
 
          // get geometry ids
          LocalOrdinalT connSz = connMngr_->getConnectivitySize(elmts[e]);
@@ -520,7 +520,12 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::
 getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
 {
-   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
+   // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
+   const std::vector<char> & local_o = orientation_[localElmtId];
+   gidsOrientation.resize(local_o.size());
+   for(std::size_t i=0;i<local_o.size();i++) {
+      gidsOrientation[i] = int(local_o[i]);
+   }
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>

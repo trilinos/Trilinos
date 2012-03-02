@@ -76,6 +76,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
+   TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
