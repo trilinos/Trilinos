@@ -1563,7 +1563,8 @@ int main(int argc, char *argv[]) {
    List_Coarse.set("z-coordinates",Nz.Values());
    List_Coarse.set("ML output",10);
    List_Coarse.set("smoother: type","Chebyshev");
-   List_Coarse.set("smoother: sweeps",4);
+   List_Coarse.set("smoother: sweeps",2);
+   List_Coarse.set("coarse: max size",1000);//CMS
   
    Teuchos::ParameterList List11,List11c,List22,List22c;
    ML_Epetra::UpdateList(List_Coarse,List11,true); 
@@ -1586,6 +1587,7 @@ int main(int argc, char *argv[]) {
    List22c.set("repartition: max min ratio",1.4);
    List22c.set("repartition: min per proc",1000);
 #endif
+
    List11.set("face matrix free: coarse",List11c);
    List22.set("edge matrix free: coarse",List22c);
    ListHdiv.setName("graddiv list");
@@ -1610,6 +1612,8 @@ int main(int argc, char *argv[]) {
    ListHgrad.set("coarse: max size",200);  
    ListHgrad.set("ML output",10);
    ListHgrad.set("ML label","Poisson solver");
+   ListHgrad.set("aggregation: threshold",0.01);
+
 #ifdef HAVE_ML_ZOLTAN
    ListHgrad.set("aggregation: type","Uncoupled");
    ListHgrad.set("repartition: enable",1);
@@ -1622,7 +1626,6 @@ int main(int argc, char *argv[]) {
 #endif
 
    RCP<MultiLevelPreconditioner> Prec1=rcp(new MultiLevelPreconditioner(*A11,ListHgrad));
-
 
    // Build the linear ops with the Apply/ApplyInverse switcheroo
    RCP<const EpetraLinearOp> invD0=epetraLinearOp(Prec0, NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE);
