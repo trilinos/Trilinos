@@ -7,10 +7,8 @@
 // @HEADER
 
 /*! \file Zoltan2_BasicVectorInput.hpp
-    An input adapter for a vector that the user provides as a
-     pointer to a strided array.
+    \brief Defines the BasicVectorInput class. 
 */
-
 
 #ifndef _ZOLTAN2_BASICVECTORINPUT_HPP_
 #define _ZOLTAN2_BASICVECTORINPUT_HPP_
@@ -47,7 +45,7 @@ namespace Zoltan2 {
     same global identifiers and the same distribution across processes.
 
 
-  TODO: Global identifiers should be optional.  If the user gives us
+ \todo Global identifiers should be optional.  If the user gives us
     gids in the input adapter, we will include them in the solution.
 
 */
@@ -57,6 +55,8 @@ template <typename User>
 
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
@@ -64,6 +64,8 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef VectorInput<User>   base_adapter_t;
   typedef User user_t;
+
+#endif
 
   /*! \brief Constructor for one vector.
    *

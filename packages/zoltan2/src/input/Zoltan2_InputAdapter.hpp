@@ -7,8 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_InputAdapter.hpp
-
-    \brief The abstract interface for an input adapter.
+    \brief Defines the InputAdapter interface.
 */
 
 #ifndef _ZOLTAN2_INPUTADAPTER_HPP_
@@ -37,6 +36,8 @@ enum InputAdapterType {
     methods in the interface must be defined by users.  Many built-in
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
+
+    \todo Add add a MeshInput adapter
  */
 
 class InputAdapter {
@@ -47,7 +48,7 @@ public:
    */
   virtual enum InputAdapterType inputAdapterType()const = 0;
 
-  /*! \brief Pure virtual destructor
+  /*! \brief Desstructor
    */
   virtual ~InputAdapter() {};
 

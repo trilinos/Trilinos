@@ -7,8 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_InputTraits.hpp
-
-    Traits for application input objects.
+    \brief Traits for application input objects.
 */
 
 #ifndef ZOLTAN2_INPUTTRAITS_HPP
@@ -50,7 +49,7 @@ namespace Zoltan2{
  *  for global identifiers. Often this is the same data type that you use for
  *  this purpose, but if you have non-integral global identifiers (such as
  *  std::pair<int, int>) then Zoltan2 needs you to supply an integral data
- *  type that is large enough to enumerate your global number of objects.
+ *  type that is large enough to globally enumerate your objects.
  *  In this example let's say that you want Zoltan2 to use \c unsigned \c long
  *  for its global Identifiers.  Then you would do the following:
  *
@@ -62,7 +61,7 @@ namespace Zoltan2{
  * In particular, the BasicUserTypes template parameters are:
 
     \li \c scalar is the data type for element values, weights and coordinates.
-    \li \c gid (global id) is the data type used by the application for global Ids.  If the application's global Id data type is a Teuchos Ordinal, then \c gid and \c gno can the same.  Otherwise, the application global Ids will be mapped to Teuchos Ordinals for use by Zoltan2 internally.  (Teuchos Ordinals are those data types for which traits are defined in Trilinos/packages/teuchos/src/Teuchos_OrdinalTraits.hpp.)
+    \li \c gid (global id) is the data type used by the application for global Ids.  If the application's global Id data type is a Teuchos Ordinal, then \c gid and \c gno can the same.  Otherwise, the application global Ids will be mapped to Teuchos Ordinals for use by Zoltan2 internally.  (Teuchos Ordinals are those data types for which traits are defined in Teuchos_OrdinalTraits.hpp.)
     \li \c lno (local number) is the integral data type used by the application and by Zoltan2 for local indices and local counts.
     \li \c gno (global number) is the integral data type used by Zoltan2 to represent global indices and global counts.
  */  
@@ -73,18 +72,19 @@ class BasicUserTypes{
 
 /*! \brief The traits required of User input classes or structures.
  *
- *  The InputAdapter classes are templated on something we call the
- *  User object.  If the User object is an instance of a C++ class,
+ *  We use the symbol \em User as an abtraction of the user's input.
+ *  If the User's is an instance of a C++ class,
  *  or is a C-language struct,
- *  then it should have an InputTraits specialization.  Zoltan2 uses
- *  this specialization to get the user's data types.
+ *  then it should have an InputTraits specialization.  The InputAdapter
+ *  is templated on the User object, and Zoltan2 uses the User object
+ *  traits to get the user's data types.
  *
- *  If the User object is not a C++ class or C-language struct, and
+ *  If the User object is \em not a C++ class or C-language struct, and
  *  particularly if you do not plan to pass your User object as an
  *  argument to the InputAdapter constructor, you can use the 
  *  BasicUserTypes class as your User class.
  *
- *  Specializations already exist for:
+ *  InputTraits already exist for:
  *
  *  \li Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
  *  \li Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
@@ -99,7 +99,6 @@ class BasicUserTypes{
  *  \li Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
  *  \li Epetra_MultiVector
  *  \li BasicUserTypes
- *
  */
 template <typename User>
 struct InputTraits {

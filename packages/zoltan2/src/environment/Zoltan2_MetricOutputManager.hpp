@@ -7,18 +7,13 @@
 // @HEADER
 
 /*! \file Zoltan2_MetricOutputManager.hpp
-
-    \brief Metric output manager for Zoltan2 (timing, memory use, etc.)
-
-    Derived from DebugManager
-    
+    \brief Defines the MetricOutputManager class.
 */
 #ifndef _ZOLTAN2_METRICOUTPUT_MANAGER_CPP_
 #define _ZOLTAN2_METRICOUTPUT_MANAGER_CPP_
 
 #include <string>
 #include <iostream>
-#include "Teuchos_oblackholestream.hpp"
 
 namespace Zoltan2
 {

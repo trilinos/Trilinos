@@ -7,10 +7,8 @@
 // @HEADER
 
 /*! \file Zoltan2_BasicCoordinateInput.hpp
-    An input adapter for a geometric coordinates (and optional weights)
-      that are supplied by the user as pointers to strided arrays.
+    \brief Defines the BasicCoordinateInput class.
 */
-
 
 #ifndef _ZOLTAN2_BASICCOORDINATEINPUT_HPP_
 #define _ZOLTAN2_BASICCOORDINATEINPUT_HPP_
@@ -42,14 +40,20 @@ namespace Zoltan2 {
     the empty helper class \c BasicUserTypes with which a Zoltan2 user
     can easily supply the data types for the library.
 
-  TODO: Global identifiers should be optional.  If the user gives us
+  \todo ensure that there is no limit on dimension
+
+  \todo Global identifiers should be optional.  If the user gives us
     gids in the input adapter, we will include them in the solution.
+
+  \todo Add simpler constructors specifically for dimension 1, 2 and 3.
 */
 
 template <typename User>
   class BasicCoordinateInput : public CoordinateInput<User> {
 
 public:
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
@@ -58,6 +62,8 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef CoordinateInput<User>   base_adapter_t;
   typedef User user_t;
+
+#endif
 
   /*! \brief Constructor
    *

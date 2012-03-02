@@ -7,9 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_XpetraVectorInput.hpp
-
-    \brief An input adapter for a Xpetra::Vector, Epetra_Vector and 
-            Tpetra::Vector.
+    \brief Defines the XpetraVectorInput adapter class.
 */
 
 #ifndef _ZOLTAN2_XPETRAVECTORINPUT_HPP_
@@ -25,20 +23,20 @@
 
 namespace Zoltan2 {
 
-//////////////////////////////////////////////////////////////////////////////
-/*! Zoltan2::XpetraVectorInput
-    \brief Provides access for Zoltan2 to an Xpetra::Vector .
 
-    The template parameter is the user's input object: 
-     Epetra_Vector
-     Tpetra::Vector
-     Xpetra::Vector
+/*!  \brief Provides access for Zoltan2 to an Xpetra::Vector.
+
+    The template parameter is the user's input data type, which can be:
+   \li Epetra_Vector
+   \li Tpetra::Vector
+   \li Xpetra::Vector
 */
 
 template <typename User>
 class XpetraVectorInput : public VectorInput<User> {
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
@@ -52,12 +50,13 @@ public:
   typedef Xpetra::TpetraVector<
     scalar_t, lno_t, gno_t, node_t> xt_vector_t;
   typedef Xpetra::EpetraVector xe_vector_t;
+#endif
 
-  /*! Destructor
+  /*! \brief Destructor
    */
   ~XpetraVectorInput() { }
 
-  /*! Constructor   
+  /*! \brief Constructor   
    *
    *  \param invector  the user's Xpetra, Tpetra or Epetra Vector object
    *  \param numWeights the number of weights per element, which may be zero
@@ -96,7 +95,7 @@ public:
     }
   };
 
-  /*! Access to xpetra vector
+  /*! \brief Access to xpetra vector
    */
 
   const RCP<const x_vector_t> &getVector() const

@@ -7,10 +7,8 @@
 // @HEADER
 
 /*! \file Zoltan2_IdentifierModel.hpp
-
-    \brief The interface and implementations of a simple identifier model.
+    \brief Defines the IdentifierModel interface.
 */
-
 
 #ifndef _ZOLTAN2_IDENTIFIERMODEL_HPP_
 #define _ZOLTAN2_IDENTIFIERMODEL_HPP_
@@ -22,11 +20,23 @@
 
 namespace Zoltan2 {
 
-/*!  \brief This class provides simple IDs and weights to the Zoltan2 algorithm.
+/*!  \brief IdentifierModel defines the interface for all identifier models.
 
-    The template parameter is an Input Adapter.  Input adapters are
-    templated on the basic user input type.
+    The constructor of the IdentifierModel can be a global call, requiring
+    all processes in the application to call it.  The rest of the
+    methods should be local methods.
+
+    The template parameter is an InputAdapter, which is an object that
+    provides a uniform interface for models to the user's input data.
+
+    Explicit instantiations exist for:
+      \li MatrixInput
+      \li IdentifierInput
+
+    \todo Add instantiations for CoordinateInput, GraphInput, VectorInput
+               and MeshInput
 */
+
 template <typename Adapter>
 class IdentifierModel : public Model<Adapter> 
 {
@@ -62,6 +72,7 @@ public:
   int getIdentifierWeightDim() const { return 0; }
 
   /*! \brief Sets pointers to this process' identifier Ids and their weights.
+
       \param Ids will on return point to the list of the global Ids for
         each identifier on this process.
       \param wgts will on return point to a list of the weight or weights
@@ -93,21 +104,22 @@ public:
   int getNumWeights() const { return 0; }
 };
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
 template <typename User>
 class IdentifierModel<IdentifierInput<User> > : public Model<IdentifierInput<User> >
 {
 public:
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename IdentifierInput<User>::scalar_t  scalar_t;
   typedef typename IdentifierInput<User>::gno_t     gno_t;
   typedef typename IdentifierInput<User>::lno_t     lno_t;
   typedef typename IdentifierInput<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedInput<lno_t, scalar_t> input_t;
-#endif
 
   /*! \brief Constructor
+
        \param ia  the input adapter from which to build the model
        \param env   the application environment (including problem parameters)
        \param comm  the problem communicator
@@ -272,14 +284,12 @@ class IdentifierModel<MatrixInput<User> > : public Model<MatrixInput<User> >
 {
 public:
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename MatrixInput<User>::scalar_t  scalar_t;
   typedef typename MatrixInput<User>::gno_t     gno_t;
   typedef typename MatrixInput<User>::lno_t     lno_t;
   typedef typename MatrixInput<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
   typedef StridedInput<lno_t, scalar_t> input_t;
-#endif
   
   IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
@@ -413,6 +423,8 @@ private:
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 };
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 }  // namespace Zoltan2
 

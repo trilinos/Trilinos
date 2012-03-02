@@ -7,7 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_XpetraMultiVectorInput.hpp
-
+    \brief Defines the XpetraMultiVectorInput adapter.
 */
 
 #ifndef _ZOLTAN2_XPETRAMULTIVECTORINPUT_HPP_
@@ -35,6 +35,7 @@ template <typename User>
 class XpetraMultiVectorInput : public VectorInput<User> {
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
@@ -48,12 +49,13 @@ public:
   typedef Xpetra::TpetraMultiVector<
     scalar_t, lno_t, gno_t, node_t> xt_mvector_t;
   typedef Xpetra::EpetraMultiVector xe_mvector_t;
+#endif
 
-  /*! Destructor
+  /*! \brief Destructor
    */
   ~XpetraMultiVectorInput() { }
 
-  /*! Constructor   
+  /*! \brief Constructor   
    *
    *  \param invector  the user's Xpetra, Tpetra or Epetra MultiVector object
    *  \param numWeights the number of weights per element, which may be zero
@@ -92,7 +94,7 @@ public:
     }
   };
 
-  /*! Access to xpetra vector
+  /*! \brief Access to xpetra vector
    */
 
   const RCP<const x_mvector_t> &getVector() const

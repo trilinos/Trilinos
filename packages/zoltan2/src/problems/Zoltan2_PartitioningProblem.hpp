@@ -7,9 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_PartitioningProblem.hpp
-
-  This file contains the PartitioningProblem class, which derives from 
-  the Problem class.
+    \brief Defines the PartitioningProblem class.
 */
 
 #ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
@@ -38,6 +36,10 @@ namespace Zoltan2{
  *
  *  The template parameter is the InputAdapter containing the data that
  *  is to be partitioned.
+ *
+ *  \todo hierarchical partitioning
+ *  \todo repartition given an initial solution
+ *  \todo follow partitioning with global or local ordering
  */
 template<typename Adapter>
 class PartitioningProblem : public Problem<Adapter>

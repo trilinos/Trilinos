@@ -7,7 +7,7 @@
 #include <Zoltan2_Version.hpp>
 
 /*! \file Zoltan2_Version.cpp
-    \brief Simple function for returning the current version number
+    \brief Implementation of a Trilinow convention.
 */
 
 namespace Zoltan2 {

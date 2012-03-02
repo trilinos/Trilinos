@@ -7,8 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_Environment.hpp
-
-    \brief The Environment object, which governs library behavior.
+    \brief Defines the Environment class.
 */
 
 #ifndef _ZOLTAN2_ENVIRONMENT_HPP_
@@ -57,13 +56,15 @@ public:
 
   Comm_t comm_;   /*!< \brief communicator for environment*/
 
-  AssertionLevel errorCheckLevel_;      /*!< level of error checking to do */
+  AssertionLevel errorCheckLevel_; /*!< \brief level of error checking to do */
 
   /*! \brief Constructor
    *
    *  \param problemParams  the parameters supplied by the user, and
    *                          not yet validated by the Environment
-   *  \param comm        the default Teuchos communicator for the application
+   *  \param comm           the default communicator for the application
+   *
+   *   Note that the communicator is for the application, not the problem.
    */
   Environment(Teuchos::ParameterList &problemParams, const Comm_t &comm);
 

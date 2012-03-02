@@ -6,10 +6,9 @@
 About unit tests in Zoltan2
 ===========================
 
-Algorithms, Problems, and Solutions are tested with system
-tests rather than unit tests.  System tests are in directories
-like "partitioning" and "ordering".  All other classes shouldl
-be tested with unit tests.
+Algorithms and Problems are tested with system tests rather 
+than unit tests.  System tests are in directories like "partitioning" 
+and "ordering".  All other classes should be tested with unit tests.
 
 The names of the unit test subdirectories mirror the names of
 the source file subdirectories.  The name of each class unit test

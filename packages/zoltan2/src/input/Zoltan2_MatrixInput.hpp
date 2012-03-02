@@ -7,8 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_MatrixInput.hpp
-
-    \brief The abstract interface for a graph input adapter.
+    \brief Defines the MatrixInput adapter interface.
 */
 
 #ifndef _ZOLTAN2_MATRIXINPUT_HPP_
@@ -20,19 +19,30 @@
 
 namespace Zoltan2 {
 
-/*! Zoltan2::MatrixInput
-    \brief MatrixInput defines the interface for input adapters for
-            matrices.
+/*!  \brief MatrixInput defines the interface for input adapters for matrices.
 
-    The Matrix accessor methods defined here mimic those of 
-    Tpetra::CrsMatrix and Tpetra::Map.
+    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Many built-in adapters are already defined for common data structures,
+    such as Tpetra and Epetra objects and C-language pointers to arrays.
 
-    scalar_t: This data type is used for matrix non-zeros
-    gid_t: the type for the application's global Ids
-    lno_t: the integral type that Zoltan2 will use for local counters.
-    gno_t: the integral type that Zoltan2 will use for the global 
-           counts and identifiers.  It needs to be large enough for the
-           problem's number of objects.
+    Data types:
+    \li \c scalar_t row, column or non-zero weights
+    \li \c lno_t    local indices and local counts
+    \li \c gno_t    global indices and global counts
+    \li \c gid_t    application global Ids
+    \li \c node_t is a sub class of Kokkos::StandardNodeMemoryModel
+
+    See IdentifierTraits to understand why the user's global ID type (\c gid_t)
+    may differ from that used by Zoltan2 (\c gno_t).
+
+    The Kokkos node type can be safely ignored.
+
+    The template parameter \c User is a user-defined data type
+    which, through a traits mechanism, provides the actual data types
+    with which the Zoltan2 library will be compiled.
+    \c User may be the actual class or structure used by application to
+    represent a vector, or it may be the helper class BasicUserTypes.
+    See InputTraits for more information.
 */
 
 template <typename User>
@@ -41,44 +51,43 @@ private:
 
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
+#endif
 
-  // adapterType == MatrixAdapterType
-  // Function must return one of Zoltan2's enumerated types in InputAdapter
-  // User should not rewrite this function.
   enum InputAdapterType inputAdapterType() const {return MatrixAdapterType;}
 
-  /*! Pure virtual Destructor
+  /*! \brief Destructor
    */
   virtual ~MatrixInput(){};
 
-  /*! Returns the number rows on this process.
+  /*! \brief Returns the number rows on this process.
    */
   virtual size_t getLocalNumRows() const = 0;
 
-  /*! Returns the global number rows.
+  /*! \brief Returns the global number rows.
    */
   virtual global_size_t getGlobalNumRows() const = 0;
 
-  /*! Returns the number columns on this process.
+  /*! \brief Returns the number columns on this process.
    */
   virtual size_t getLocalNumColumns() const = 0;
 
-  /*! Returns the global number columns.
+  /*! \brief Returns the global number columns.
    */
   virtual global_size_t getGlobalNumColumns() const = 0;
 
-  /*! Return true if the sparse square matrix may globally have
+  /*! \brief Return true if the sparse square matrix may globally have
    *  diagonal entries.  Return false otherwise.
    */
   virtual bool diagonalEntriesMayBePresent() const = 0;
 
-  /*! Sets pointers to this process' matrix entries.
+  /*! \brief Sets pointers to this process' matrix entries.
       If this optional call is defined in the adapter, it can save a memory
       copy of application data.
       \param rowIds will on return a pointer to row global Ids
@@ -93,7 +102,7 @@ public:
   virtual size_t getRowListView(const gid_t *&rowIds, 
     const lno_t *&offsets, const gid_t *& colIds) const = 0;
 
-  /*! Apply the solution to a partitioning problem to an input.  
+  /*! \brief Apply the solution to a partitioning problem to an input.  
    *
    *  This is not a required part of the MatrixInput interface.  
    *

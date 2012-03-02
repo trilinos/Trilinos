@@ -7,8 +7,8 @@
 // @HEADER
 
 /*! \file Zoltan2_Metric.hpp
- *
- *  namespace methods to compute quality metrics
+ *  \brief namespace methods to compute quality metrics
+ *  \todo We need graph and hypergraph metrics.
  */
 
 #ifndef ZOLTAN2_METRIC_HPP

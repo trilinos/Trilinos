@@ -7,10 +7,8 @@
 // @HEADER
 
 /*! \file Zoltan2_BasicIdentifierInput.hpp
-
-    \brief An input adapter for a simple array of identifiers and weights.
+    \brief Defines the BasicIdentifierInput class.
 */
-
 
 #ifndef _ZOLTAN2_BASICIDENTIFIERINPUT_HPP_
 #define _ZOLTAN2_BASICIDENTIFIERINPUT_HPP_
@@ -40,7 +38,7 @@ public:
   typedef IdentifierInput<User>       base_adapter_t;
   typedef User user_t;
 
-  /*! Constructor
+  /*! \brief Constructor
       \param numIds is the number of identifiers in the list
       \param numWeights is the number of weights provided for each
                         identifier.  Weights are optional.

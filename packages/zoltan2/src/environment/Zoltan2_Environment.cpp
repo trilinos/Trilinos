@@ -6,7 +6,6 @@
 // ***********************************************************************
 // @HEADER
 /*! \file Zoltan2_Environment.cpp
-
     \brief The definition of the Environment object.
 */
 

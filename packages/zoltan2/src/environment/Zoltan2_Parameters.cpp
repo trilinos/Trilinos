@@ -7,12 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_Parameters.cpp
-  
-  \brief Set up the valid parameters, their documentation, 
-        their defaults, and their validators.
-
-   TODO:  Should all of our parameter values be strings, in order
-            to support reading in parameters from a file?
+    \brief Methods that support the Zoltan2 ParameterList
 */
 
 #include <Zoltan2_Parameters.hpp>
@@ -70,6 +65,9 @@ namespace Zoltan2 {
  * The validators are described in the source code.  They are run when
  * the Environment::commitParameters() method is called.  They throw
  * an error with an explanation if the parameter is invalid.
+ *
+ *  \todo Should all of our parameter values be strings, in order
+            to support reading in parameters from a file?
  */
 
 void createAllParameters(Teuchos::ParameterList &pList)

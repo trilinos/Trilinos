@@ -7,8 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_Model.hpp
-
-    \brief The abstract interface for a computational model.
+    \brief Defines the Model interface.
 */
 
 #ifndef _ZOLTAN2_MODEL_HPP_
@@ -21,7 +20,7 @@
 
 namespace Zoltan2 {
 
-/*! \brief An identifier of the general type of model.
+/*! \brief An identifier for the general type of model.
  */
 enum ModelType {
   InvalidModel = 0,
@@ -53,6 +52,17 @@ enum ModelFlags{
 };
 
 /*! \brief The base class for all model classes.
+
+  The Model is the computational model created by a Problem based on
+  the user's input data and parameters.  Graphs, hypergraph, and 
+  collections of geometric coordinates are examples of computational
+  models.
+
+  The Problem passes the Model to an algorithm.
+  The algorithm queries the Model for input to its calculation.
+
+  \todo Add HypergraphModel, CoordinateModel
+
 */
 
 template <typename Adapter>
@@ -70,7 +80,7 @@ public:
   typedef IdentifierMap<user_t> idmap_t;
 #endif
 
-  /*! Pure virtual destructor
+  /*! Destructor
    */
   virtual ~Model() {};
 

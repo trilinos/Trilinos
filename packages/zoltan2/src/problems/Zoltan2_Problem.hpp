@@ -1,3 +1,15 @@
+// @HEADER
+// ***********************************************************************
+//
+//                Copyright message goes here.   TODO
+//
+// ***********************************************************************
+// @HEADER
+
+/*! \file Zoltan2_Problem.cpp
+    \brief Defines the Problem base class.
+*/
+
 #ifndef _ZOLTAN2_PROBLEM_HPP_
 #define _ZOLTAN2_PROBLEM_HPP_
 
@@ -5,18 +17,12 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 
-////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_Problem.hpp
-//! \brief Problem base class from which other classes (PartitioningProblem, 
-//!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
-
 using std::cout;
 using std::endl;
 
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
-//! \class Problem
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
 template<typename Adapter>

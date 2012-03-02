@@ -7,9 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_DebugManager.hpp
-
     \brief Debug output manager for Zoltan2
-
     \author Siva Rajamanickam
 */
 #ifndef ZOLTAN2_DEBUGMANAGER_HPP

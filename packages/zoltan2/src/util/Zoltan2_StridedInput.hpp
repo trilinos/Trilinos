@@ -41,7 +41,7 @@ public:
    *
    *  \param x  x[0] is the first element of the array.  The subsequent
    *               elements are at x[i * \c stride].
-   *  \stride   the stride of the elements in the strided array.
+   *  \param stride   the stride of the elements in the strided array.
    */
   StridedInput(ArrayView<const scalar_t> x, lno_t stride) :  
     vec_(x), stride_(stride) { }
@@ -52,7 +52,7 @@ public:
 
   /*! \brief Access an element of the input array. 
    *
-   *   \idx  The logical index of the element in the strided array. 
+   *   \param idx  The logical index of the element in the strided array. 
    *
    *    For performance, this is inline and no error checking.
    */

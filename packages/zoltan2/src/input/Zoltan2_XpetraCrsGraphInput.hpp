@@ -7,8 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_XpetraCrsGraphInput.hpp
-
-    \brief An input adapter for a Xpetra::CrsGraph.
+    \brief Defines XpetraCrsGraphInput class.
 */
 
 #ifndef _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
@@ -24,8 +23,8 @@ namespace Zoltan2 {
 
 /*!  \brief Provides access for Zoltan2 to Xpetra::CrsGraph data.
 
-    TODO -test for memory alloc failure when we resize a vector
-    TODO: we assume FillComplete has been called.  We should support
+    \todo test for memory alloc failure when we resize a vector
+    \todo we assume FillComplete has been called.  We should support
                 objects that are not FillCompleted.
 
     The template parameter is the user's input object - an Epetra
@@ -38,6 +37,7 @@ class XpetraCrsGraphInput : public GraphInput<User> {
 
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
@@ -46,6 +46,7 @@ public:
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
   typedef GraphInput<User>       base_adapter_t;
   typedef User user_t;
+#endif
 
   /*! \brief Destructor
    */
@@ -256,6 +257,8 @@ public:
     return graph_;
   }
 
+  /*! \brief Access to user's graph 
+   */ 
   RCP<const User> getUserGraph() const
   {
     return ingraph_;
@@ -275,7 +278,7 @@ public:
   // The GraphInput interface.
   ////////////////////////////////////////////////////
 
-  /*! Returns the number vertices on this process.
+  /*! \brief Returns the number vertices on this process.
    */
   size_t getLocalNumVertices() const { 
     return graph_->getNodeNumRows(); 

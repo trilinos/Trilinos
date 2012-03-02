@@ -6,11 +6,9 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Zoltan2_Solution.hpp
-
-    \brief The abstract interface for a solution.
+/*! \file Zoltan2_Solution.cpp
+    \brief Defines the Solution base class.
 */
-
 
 #ifndef _ZOLTAN2_SOLUTION_HPP_
 #define _ZOLTAN2_SOLUTION_HPP_
@@ -19,8 +17,7 @@
 
 namespace Zoltan2 {
 
-/*! Zoltan2::Solution
-    Just a placeholder for now.
+/*! \brief Just a placeholder for now.
 */
 
 class Solution

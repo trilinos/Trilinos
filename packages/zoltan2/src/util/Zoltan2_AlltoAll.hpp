@@ -7,7 +7,6 @@
 // @HEADER
 
 /*! \file Zoltan2_AlltoAll.hpp
-
     \brief AlltoAll communication methods
 */
 
@@ -40,6 +39,9 @@ namespace Zoltan2
  * AlltoAll uses only point-to-point messages.  This is to avoid the MPI 
  * limitation of integer offsets and counters in collective operations.
  * In other words, LNO can be a 64-bit integer.
+ *
+ * \todo We need to know the reasonable limit of receives to post, and
+ *         post no more than that number at a time.
  */
 
 template <typename T, typename LNO>
@@ -72,7 +74,7 @@ void AlltoAll(const Comm<int> &comm,
 
   env.globalInputAssertion(__FILE__, __LINE__,
       "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
-      packetSize <= INT_MAX, BASIC_ASSERTION, comm);
+      packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
   
   RCP<CommRequest> r;
   Array<RCP<CommRequest> > req(nprocs-1);
@@ -138,6 +140,9 @@ void AlltoAll(const Comm<int> &comm,
  * limitation of integer offsets and counters in collective operations.
  * In other words, LNO can be a 64-bit integer.  (But the size of a single
  * message must still fit in an int.)
+ *
+ * \todo We need to know the reasonable limit of receives to post, and
+ *         post no more than that number at a time.
  */
 
 template <typename T, typename LNO>
@@ -176,12 +181,11 @@ void AlltoAllv(const Comm<int> &comm,
 
   recvBuf = Teuchos::arcp<T>(ptr, 0, totalIn, true);
 
-  T *in = recvBuf.get() + offsetIn;           // Copy self messages
-  const T *out = sendBuf.getRawPtr() + offsetOut;
+  // Copy self messages
 
-  for (LNO i=0; i < recvCount[rank]; i++){
-    in[i] = out[i];
-  }
+  memcpy(recvBuf.get() + offsetIn,
+         sendBuf.getRawPtr() + offsetOut,
+         sizeof(T) * recvCount[rank]);
 
 #ifdef HAVE_ZOLTAN2_MPI
   // Post receives
@@ -196,7 +200,7 @@ void AlltoAllv(const Comm<int> &comm,
 
     env.globalInputAssertion(__FILE__, __LINE__,
       "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
-      packetSize <= INT_MAX, BASIC_ASSERTION, comm);
+      packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
 
     if (p != rank && packetSize > 0){
       LNO packetSize = recvCount[p] * sizeof(T);

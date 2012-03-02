@@ -8,11 +8,8 @@
 //
 
 /*! \file Zoltan2_PartitioningSolution.hpp
-
-    \brief A solution to a partitioning problem
-
+    \brief Defines the PartitioningSolution class.
 */
-
 
 #ifndef _ZOLTAN2_PARTITIONINGSOLUTION_HPP_
 #define _ZOLTAN2_PARTITIONINGSOLUTION_HPP_
@@ -29,6 +26,10 @@ namespace Zoltan2 {
     It is initialized by a PartitioningProblem,
     written to by an algorithm, and may be read by the user or by
     a data migration routine in an input adapter.
+    
+    \todo handle the case where number of parts does not equal 
+                     number of processes
+    \todo handle more metrics
 */
 
 template <typename User_t>
@@ -40,7 +41,7 @@ public:
   typedef typename InputTraits<User_t>::lno_t lno_t;
   typedef typename InputTraits<User_t>::gid_t gid_t;
 
-/*! Constructor when part sizes are not supplied.
+/*! \brief Constructor when part sizes are not supplied.
  *
  *   The Solution constructor may require global communication.
  *   The rest of the Solution methods do not.
@@ -64,7 +65,7 @@ public:
     RCP<const IdentifierMap<User_t> > &idMap,
     int userWeightDim);
 
-/*! Constructor when part sizes are supplied.
+/*! \brief Constructor when part sizes are supplied.
  *
  *   The Solution constructor may require global communication.
  *   The rest of the Solution methods do not.
@@ -153,14 +154,17 @@ public:
  */
   bool criteriaHasUniformPartSizes(int idx) const { return pSizeUniform_[idx];}
   
-/*! \brief Get the size for a given weight dimension and a given part.
-                parts.
+/*! \brief Get the size for a given weight dimension and a given part. 
+
     \param idx   A value from 0 to one less than the number of weights per 
                        object.
     \param part  A value from 0 to one less than the global number of parts 
                    to be computed
     \return   The size for that part.  Part sizes for a given weight 
                     dimension sum to 1.0.
+
+      \todo It would be useful to algorithms to get the sum of
+           part sizes from a to b, or the sum or a list of parts.
  */
   float getCriteriaPartSize(int idx, size_t part) const { 
     if (pSizeUniform_[idx]) 
@@ -171,8 +175,6 @@ public:
       return pSize_[idx][part];
   }
 
-  // TODO: It would be useful to algorithms to get the sum of
-  //         part sizes from a to b, or the sum or a list of parts.
   
   ////////////////////////////////////////////////////////////////////
   // Method used by the algorithm to set results.
@@ -194,8 +196,6 @@ public:
    *   \param  imbalance  The algorithm computes one imbalance for each
    *      weight dimension.  It allocates and writes the imbalance array.
    *
-   *  TODO: add edge cuts and other metrics of interest as well.
-   *      
    */
   
   void setParts(ArrayView<const gno_t> gnoList, ArrayRCP<size_t> &partList,
@@ -206,12 +206,20 @@ public:
   // We return raw pointers so users don't have to learn about our
   // pointer wrappers.
 
+  /*! \brief Returns the local number of Ids.
+   */
   size_t getNumberOfIds() const { return gids_.size(); }
 
+  /*! \brief Returns the user's global ID list.
+   */
   const gid_t *getGlobalIdList() const { return gids_.getRawPtr(); }
 
+  /*! \brief Returns the part list corresponding to the global ID list.
+   */
   const size_t *getPartList() const { return parts_.getRawPtr();}
 
+  /*! \brief Returns the imbalance of the solution.
+   */
   const float *getImbalance() const { return imbalance_.getRawPtr(); }
 
 private:
@@ -452,7 +460,6 @@ template <typename User_t>
 
   }
   else{
-    // TODO: number of parts is less than number of processes
     //
     // We will divide the global number of parts across the processes.
     //

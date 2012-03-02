@@ -10,15 +10,11 @@
 #define _ZOLTAN2_EXCEPTIONS_HPP_
 
 /*! \file Zoltan2_Exceptions.hpp
-
-  Exception handling macros.  Zoltan2 throws 3 types of error:
-
-   \li \c  std::runtime_error   for an error in input
-   \li \c  std::bad_alloc       for failure to allocate memory
-   \li \c  std::logic_error     for an apparent bug in the code
+    \brief Defines exception handling macros.
 */
 
 #include <stdexcept>
+#include <iostream>
 
 /*!  \brief Throw an error returned from outside the Zoltan2 library.
  *

@@ -5,6 +5,10 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file Zoltan2_IdentifierTraits.hpp
+   \brief Defines basic traits for user global identifiers.
+*/
+
 #ifndef _ZOLTAN2_IDENTIFIERTRAITS
 #define _ZOLTAN2_IDENTIFIERTRAITS
 
@@ -21,32 +25,15 @@
 
 using Teuchos::SerializationTraits;
 
-/*! \file Zoltan2_IdentifierTraits.hpp
-  \brief Defines basic traits for application supplied global IDs.
-
-  The data types permitted for global identifiers for Zoltan2 callers include
-  some that are not represented in Teuchos::OrdinalTraits.  A common case is
-  when a matrix nonzero is represented as an (i,j) pair.
-
-  Zoltan2 uses the IdentifierTraits structures to manage the application
-  supplied identifiers.
-*/
-
-/*! \namespace Zoltan2
-  \brief Internal Zoltan2 namespace.
-
-  This namespace contains all symbols in the Zoltan2 library.
-*/
 namespace Zoltan2
 {
 
-
-/*! \brief helper function to find min and max of values
+/*! \brief helper function to find min and max of array of user Ids
  */
 template <typename T>
   std::pair<T, T> z2LocalMinMax(const T *val, size_t n)
 {
-  if (n < 1) return std::pair<T,T>(0,0);  // TODO
+  if (n < 1) return std::pair<T,T>(0,0);
 
   T min = val[0], max = val[0];
   for (size_t i=1; i < n; i++){
@@ -56,7 +43,7 @@ template <typename T>
   return std::pair<T,T>(min,max);
 }
 
-/*! \brief helper function to find global min and max
+/*! \brief helper function to find global min and max of array of user Ids
  */
 template <typename T>
   void z2GlobalMinMax(const Comm<int> &comm, 
@@ -103,7 +90,7 @@ template <typename T>
   }
 }
 
-/*! \brief helper function to determine if values are consecutive
+/*! \brief helper function to determine if list of user Ids are consecutive
  */
 template <typename T>
   bool z2AreConsecutive(const T *val, size_t n)
@@ -122,7 +109,7 @@ template <typename T>
   return true;
 }
 
-/*! \brief helper function write value to a string
+/*! \brief helper function write a user ID to a string
  */
 template <typename T>
   std::string stringifyOrdinal(T ordinal)
@@ -132,7 +119,7 @@ template <typename T>
   return oss.str();
 }
 
-/*!  \brief Structure to catch invalid Indentifier types.
+/*!  \brief Structure to catch invalid user ID types.
  */
 template<typename T>
 struct UndefIdTraits
@@ -143,33 +130,84 @@ static inline T invalid() {
 };
 
 
-/*! \struct IdentifierTraits
-    \brief The functions to be defined for each valid id type.
-    \param  T the identifier data type
+/*!  \brief The functions to be defined for users' global ID types.
+
+  The template parameter is the user's global ID data type.
+
+  The data types permitted for global identifiers for Zoltan2 callers 
+  may include those that are not represented in Teuchos::OrdinalTraits.  
+  A common case is
+  when a matrix nonzero is represented as an (i,j) pair.
+
+  In such a case, Zoltan2 will map them to
+  a list of new IDs that \em are Teuchos Ordinals.  All computation will
+  be in the space of the new global numbers.  When the Solution object
+  is written, the internal global numbers are mapped back to the user's
+  global IDs.
+
+  During this process of determining if the user's IDs can be used by
+  Zoltan2, and mapping them to new global numbers if they can not,
+  the Traits defined here are used to manipulate the user's IDs.
+
+  Traits are defined for the following types:
+    \li char
+    \li unsigned char
+    \li short
+    \li unsigned short
+    \li int
+    \li unsigned int
+    \li long
+    \li unsigned long
+    \li long long
+    \li unsigned long long
+    \li std::pair<T1, T2>
+
+  The <tt> long long </tt>  and <tt> unsigned long long </tt> traits are only 
+  defined if Trilinos was configured with the TEUCHOS_ENABLE_LONG_LONG_INT
+  option.
+
+  The translation mechanism relies on the ability to assign each
+  global ID a locally unique key, which is type \c double.  For this reason
+  we assume that if the global ID is integral, its size is not greater
+  than the size of a double.  And, in the case of \c std::pair<T1, T2>,
+  the sum of the sizes of \c T1 and \c T2 is not greater than the
+  size of a double.
+
+  If the user's global ID type does not appear in the above list, it
+  can be added by the user in his or her application code.  See the example
+  in tobeWritten.cpp.
+
+  \todo write an example where user's global ID is a C-struct containing
+        \c i and \c j indices.
+
+  Developer note: By convention we use \c gid_t as the users global ID
+  data type and \c gno_t as the data type used internally by Zoltan2.
 */
 
 template<typename T>
 struct IdentifierTraits {
 
-  /*! \brief Compute an integer hash code for the id.
-      \param the id
-      \result the integer code, need not be unique for each id
+  /*! \brief Compute an integer hash code for the user's global ID.
+
+      \param id  the user's global id
+      \result the integer code, which need not be unique for each id
    */
   static int hashCode(const T id) {
    return UndefIdTraits<int>::invalid();
   }
 
   /*! \brief Compute a key which will be unique for each id.
-      \param the id
+
+      \param id  the user's global id
       \result the key
-      Assumption: Any integer value can fit in a double.
    */
   static double key(const T id){
    return UndefIdTraits<double>::invalid();
   }
 
   /*! \brief Convert a key back to the identifier that generated it.
-      \param the key
+
+      \param x the key
       \result the identifier that would have generated this key
    */
   static T keyToGid(const double x){
@@ -177,20 +215,24 @@ struct IdentifierTraits {
   }
 		
   /*! \brief The name of the identifier data type.
+
       \result The name
    */
   static inline std::string name() {
     return UndefIdTraits<std::string>::invalid();
   }
 		
-  /*! \brief A string representing the value.
-      \result The  string
+  /*! \brief A string displaying the value.
+
+      \param  val  the value to represent as a string
+      \result The string
    */
   static std::string stringify(T val) {
     return UndefIdTraits<std::string>::invalid();
   }
 
   /*! \brief Determine whether the data type can be used by Teuchos::hashCode.
+
       \result true if the data type can be used with Teuchos::hashCode
    */
   static inline bool isHashKeyType() {
@@ -198,27 +240,28 @@ struct IdentifierTraits {
   }
 
   /*! \brief Determine whether the data type can be a Teuchos Ordinal
+
       \result true if it can be a Teuchos Ordinal
 
-      Only data types with definitions in Teuchos_OrdinalTraits.hpp
-      can be used as Ordinals in Teuchos.
+     Data types are those with a definition in Teuchos::OrdinalTraits.
    */
   static inline bool isGlobalOrdinal() {
     return UndefIdTraits<bool>::invalid();
   }
 
-  /*!  \brief Determine whether the data type can be used in
-                  Teuchos communication.
+  /*!  \brief Determine whether the data type can be used in 
+                 Teuchos communication.
+
       \result true if it can be a Teuchos Packet type
 
-      Packet data types used in Teuchos_CommHelpers.hpp must have a
-     definition in SerializationTraits.
+  Packet data types are those with a definition in Teuchos::SerializationTraits.
    */
   static inline bool isPacketType() {
     return UndefIdTraits<bool>::invalid();
   }
 
   /*! \brief Determine if two identifiers of the same type are equal.
+
       \result true if they are the same.
    */
   static inline bool equal(const T a, const T b) {
@@ -226,47 +269,74 @@ struct IdentifierTraits {
   }
 
   /*! \brief Determine if a < b.
-      \result true if a < b, false if !(a<b), and a
-             compile error if T is not a data type that
-             can be ordered
+
+      \param a  The \em a of a<b
+      \param b  The \em b of a<b
+      \result true if a < b, false if !(a<b)
+
+       A \c std::logic_error is throw at runtime if T is a type
+            that can not be ordered.
    */
   static inline bool lessThan(const T a, const T b) {
     return UndefIdTraits<bool>::invalid();
   }
 
   /*! \brief Compute b - a, if possible
-      \result b-a if that's a valid operation, throw an error otherwise.
+
+      \param a  The \em a of b-a
+      \param b  The \em b of b-a
+      \result the value b-a 
+
+       A \c std::logic_error is throw at runtime if the operation
+                 is not valid for T.
    */
   static inline T difference(const T a, const T b) {
     return UndefIdTraits<bool>::invalid();
   }
 
-  /*! \brief Determine if data type can be used by Zoltan2 caller an
-        application global ID.
-      \result true if they can.
+  /*! \brief Determine if the data type is one for which IdentifierTraits are 
+                   defined
+
+      \result true if data type has definition
    */
   static inline bool is_valid_id_type() { return false; }
 
   /*! \brief Return the minimum and maximum of a list of values.
-      \result A pair with the minimum value followed by the
-        maximum value if T can be ordered, otherwise an error.
+      \param values   a pointer to \c numValues values
+      \param numValues   the number of values to consider
+      \result A pair with the minimum value followed by the maximum value 
+
+       A \c std::logic_error is throw at runtime if T is a type
+            that can not be ordered.
    */
   static std::pair<T, T> minMax(const T *values, size_t numValues) {
     return UndefIdTraits<std::pair<T, T> >::invalid();
   }
 
   /*! \brief Find global minimum and maximum
+
+      \param comm  Communicator for global operation
+      \param localMin  The local minimum
+      \param localMax  The local maximum
+      \param globalMin  On return, the global minimum
+      \param globalMax  On return, the global maximum
+
+       A \c std::logic_error is throw at runtime if T is a type
+            that can not be ordered.
    */
   static void globalMinMax(const Comm<int> &comm,
       const T &localMin, const T &localMax, T &globalMin, T &globalMax)
         {UndefIdTraits<std::pair<T, T> >::invalid();}
 
-  /*! \brief Determine if the values are increasing consecutive
-      \param val - the list of values
-      \param n - the number of values in the list
-      \result Return true if the values are increasing consecutive,
-            false if not, and if data type T can not be ordered,
-            create a run time error
+  /*! \brief Determine if the values are locally increasing consecutive
+      
+      \param val  a pointer to \c n values
+      \param n  the number of values in the list
+      \result true if the values are increasing consecutive,
+            false if otherwise
+
+       A \c std::logic_error is throw at runtime if T is a type
+            that can not be ordered.
    */
   static bool areConsecutive(const T *val, size_t n){
     return UndefIdTraits<bool>::invalid();
@@ -274,8 +344,7 @@ struct IdentifierTraits {
 
 };
 
-/*! \cond IdentifierTraits_definitions
- */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 template<>
 struct IdentifierTraits<char> {
@@ -742,8 +811,7 @@ template <typename T>
   return globallyConsecutive;
 }
 
-/*! \endcond
- */
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace Z2
 

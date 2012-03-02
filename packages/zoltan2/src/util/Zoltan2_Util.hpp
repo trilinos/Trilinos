@@ -1,10 +1,14 @@
 // @HEADER
 // ***********************************************************************
-//
-//                Copyright message goes here.   TODO
-//
+//                Copyright message goes here. 
 // ***********************************************************************
 // @HEADER
+
+/*! \file Zoltan2_Util.hpp
+ *  \brief A gathering of useful namespace methods.
+ *  \todo Should each class of utility functions be in a separate source file
+ *         instead of having a source file with the unhelpful name of Util?
+ */
 
 #ifndef ZOLTAN2_UTIL_HPP
 #define ZOLTAN2_UTIL_HPP
@@ -17,7 +21,7 @@
 
 namespace Zoltan2{
 
-/*! Convert an MPI communicator to a MpiComm object.
+/*! \brief Convert an MPI communicator to a MpiComm object.
  */
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -43,6 +47,8 @@ template <typename Ordinal>
  * Otherwise xtraInfo.size() must be zero.
  *
  * return the size of the import list
+ *
+ *  \todo handle the case where #parts does not equal #procs.
  */
 
 template <typename GID, typename LNO, typename EXTRA>
