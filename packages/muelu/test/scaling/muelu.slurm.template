@@ -13,7 +13,7 @@ maxCoarseSize=3000                  # max number of DOFs allowed in coarsest lev
 maxLevels=15                        # max number of levels allowed in AMG hierarchy
 
 outfile="screen.out.$SLURM_JOB_ID"
-touch outfile
+touch $outfile
 
 echo "===========================================" >> $outfile
 echo "Start Time: " `date` >> $outfile
