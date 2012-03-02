@@ -8,6 +8,7 @@
 
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_NodalFieldPattern.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 
@@ -251,6 +252,16 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getNumFields() const
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
 {
+   // this is a safety check to make sure that nodes are included
+   // in the geometric field pattern when orientations are required
+   if(getOrientationsRequired()) {
+      std::size_t sz = geomPattern->getSubcellIndices(0,0).size();
+      
+      TEUCHOS_TEST_FOR_EXCEPTION(sz==0,std::logic_error,
+                                 "DOFManager::buildGlobalUnknowns requires a geometric pattern including "
+                                 "the nodes when orientations are needed!");
+   }
+
    if(!fieldsRegistered_)
       registerFields();
 
@@ -330,6 +341,15 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
    std::map<std::pair<std::string,int>,Teuchos::RCP<const FieldPattern> >::iterator f2p_itr;
    for(f2p_itr=fieldIntToPattern_.begin();f2p_itr!=fieldIntToPattern_.end();f2p_itr++)
       patVector.push_back(f2p_itr->second);
+
+   // if you need orientations, be sure to extend your
+   // geometry pattern to include the nodes this is done using
+   // NodeFieldPattern class (and is basically the sole reason for
+   // its existance).
+   if(getOrientationsRequired())
+      patVector.push_back(Teuchos::rcp(new NodalFieldPattern(patVector[0]->getCellTopology())));
+
+   // build aggregate field pattern
    aggFieldPattern->buildPattern(patVector);
 
    // setup connectivity mesh

@@ -402,7 +402,6 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager,getDofCoords)
    #endif
 
    int numProcs = stk::parallel_machine_size(Comm);
-   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
    // build DOF manager
@@ -573,6 +572,115 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
       for(std::size_t i=0;i<4;i++)
          TEST_EQUALITY(orientation[i+4],standardO[i]);
    }
+}
+
+// quad tests
+TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+   #else
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+   #endif
+
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
+
+   TEUCHOS_ASSERT(numProcs==2);
+
+   // build a geometric pattern from a single basis
+   RCP<const panzer::FieldPattern> patternI1 
+         = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
+
+   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+
+   dofManager->setOrientationsRequired(true);
+   TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
+   TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
+
+   dofManager->setConnManager(connManager,MPI_COMM_WORLD);
+   TEST_EQUALITY(dofManager->getConnManager(),connManager);
+
+   dofManager->addField("b",patternI1);
+
+   dofManager->buildGlobalUnknowns();
+   dofManager->printFieldInformation(out);
+
+   const std::vector<int> & b_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("b"));
+
+   TEST_EQUALITY(b_offsets.size(),4);
+
+   // unfortunatly this mesh is completly uniform
+   double standardO[] = { 1.0, 1.0, -1.0, -1.0 };
+   if(myRank==0) {
+      std::vector<double> orientation;
+
+      // element 0
+      dofManager->getElementOrientation(0,orientation);
+      TEST_EQUALITY(orientation.size(),4);
+
+      for(std::size_t i=0;i<4;i++)
+         TEST_EQUALITY(orientation[i],standardO[i]);
+
+      // element 1
+      dofManager->getElementOrientation(1,orientation);
+      TEST_EQUALITY(orientation.size(),4);
+
+      for(std::size_t i=0;i<4;i++)
+         TEST_EQUALITY(orientation[i],standardO[i]);
+   }
+   else if(myRank==1) {
+      std::vector<double> orientation;
+
+      // element 0
+      dofManager->getElementOrientation(0,orientation);
+      TEST_EQUALITY(orientation.size(),4);
+
+      for(std::size_t i=0;i<4;i++)
+         TEST_EQUALITY(orientation[i],standardO[i]);
+
+      // element 1
+      dofManager->getElementOrientation(1,orientation);
+      TEST_EQUALITY(orientation.size(),4);
+
+      for(std::size_t i=0;i<4;i++)
+         TEST_EQUALITY(orientation[i],standardO[i]);
+   }
+}
+
+// quad tests
+TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations_fail)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+   #else
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+   #endif
+
+   int numProcs = stk::parallel_machine_size(Comm);
+
+   TEUCHOS_ASSERT(numProcs==2);
+
+   // build a geometric pattern from a single basis
+   RCP<const panzer::FieldPattern> patternI1 
+         = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
+
+   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+
+   dofManager->setOrientationsRequired(true);
+   TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
+   TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
+
+   dofManager->setConnManager(connManager,MPI_COMM_WORLD);
+   TEST_EQUALITY(dofManager->getConnManager(),connManager);
+
+   dofManager->addField("b",patternI1);
+
+   TEST_THROW(dofManager->buildGlobalUnknowns(patternI1),std::logic_error);
 }
 
 }
