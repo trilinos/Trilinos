@@ -7,10 +7,8 @@
 // @HEADER
 
 /*! \file Zoltan2_GraphModel.hpp
-
-    \brief The interface and implementations of a graph model.
+    \brief Defines the GraphModel interface.
 */
-
 
 #ifndef _ZOLTAN2_GRAPHMODEL_HPP_
 #define _ZOLTAN2_GRAPHMODEL_HPP_
@@ -18,21 +16,27 @@
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_IdentifierInput.hpp>
+#include <Zoltan2_CoordinateInput.hpp>
+#include <Zoltan2_VectorInput.hpp>
 
 #include <vector>
 #include <Teuchos_Hashtable.hpp>
 
 namespace Zoltan2 {
 
-/*! Zoltan2::GraphModel
-    \brief GraphModel defines the interface required for graph models.  
+/*!  \brief GraphModel defines the interface required for graph models.  
 
     The constructor of the GraphModel can be a global call, requiring
     all processes in the application to call it.  The rest of the
     methods should be local methods.
 
-    The template parameter is an Input Adapter.  Input adapters are
-    templated on the basic user input type.
+    The template parameter is an InputAdapter, which is an object that
+    provides a uniform interface for models to the user's input data.
+
+    Explicit instantiations of the GraphModel exist for:
+      \li MatrixInput
+
+    \todo instantiations for GraphInput, MeshInput
 */
 template <typename Adapter>
 class GraphModel : public Model<Adapter>
@@ -44,18 +48,15 @@ public:
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
 #endif
-  
-  GraphModel(){
-    throw std::logic_error("in non-specialized GraphModel");
-  }
 
-  /*! Constructor
-   *  All processes in the communicator must call the constructor.
+  /*! \brief Constructor
    *
-   *  \param  inputAdapter  an encapsulation of the user data
-   *  \param  env           environment (library configuration settings)
-   *  \param  comm       communicator for the problem
-   *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
+   *  \param  inputAdapter  a pointer to the user's data
+   *  \param  env           object containing the parameters
+   *  \param  comm          communicator for the problem
+   *  \param  modelFlags    a bit map of Zoltan2::GraphModelFlags
+   *
+   *  All processes in the communicator must call the constructor.
    */
 
   GraphModel(const Adapter *ia,
@@ -65,41 +66,42 @@ public:
     throw std::logic_error("in non-specialized GraphModel");
   }
 
-  /*! Returns the number vertices on this process.
+  /*! \brief Returns the number vertices on this process.
    */
   size_t getLocalNumVertices() const { return 0; }
 
-  /*! Returns the global number vertices.
+  /*! \brief Returns the global number vertices.
    */
   global_size_t getGlobalNumVertices() const { return 0; }
 
-  /*! Returns the number of global edges on this process.
+  /*! \brief Returns the number of global edges on this process.
    *  Includes remote edges.
    */
   size_t getLocalNumGlobalEdges() const { return 0; }
 
-  /*! Returns the number of local edges on this process.
+  /*! \brief Returns the number of local edges on this process.
    *  Does not include remote edges.
    */
   size_t getLocalNumLocalEdges() const { return 0; }
 
-  /*! Returns the global number edges.
+  /*! \brief Returns the global number edges.
    */
   global_size_t getGlobalNumEdges() const { return 0; }
 
-  /*! Returns the dimension (0 or greater) of vertex weights.
+  /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
   int getVertexWeightDim() const { return 0; }
 
-  /*! Returns the dimension (0 or greater) of edge weights.
+  /*! \brief Returns the dimension (0 or greater) of edge weights.
    */
   int getEdgeWeightDim() const { return 0; }
 
-  /*! Returns the dimension (0 to 3) of vertex coordinates.
+  /*! \brief Returns the dimension (0 to 3) of vertex coordinates.
    */
   int getCoordinateDim() const { return 0; }
 
-  /*! Sets pointers to this process' vertex Ids and their weights.
+  /*! \brief Sets pointers to this process' vertex Ids and their weights.
+
       \param Ids will on return point to the list of the global Ids for
         each vertex on this process.
       \param xyz will on return point to a list coordinates for
@@ -121,9 +123,9 @@ public:
     ArrayView<const scalar_t> &xyz, ArrayView<const scalar_t> &wgts) const {
       return 0; }
 
-  /*! getEdgeList:
-      Sets pointers to this process' edge (neighbor) global Ids, including
+  /*! \brief Sets pointers to this process' edge (neighbor) global Ids, including
       off-process edges.
+
       \param edgeIds This is the list of global neighbor Ids corresponding
         to the vertices listed in getVertexList.
       \param procIds lists the process owning each neighbor in the edgeIds
@@ -143,9 +145,9 @@ public:
     ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
     ArrayView<const scalar_t> &wgts) const { return 0; }
 
-  /*! getLocalEdgeList:
-      Sets pointers to this process' local-only edge (neighbor) LNOs, using
+  /*! \brief Sets pointers to this process' local-only edge (neighbor) LNOs, using
       the same implied vertex LNOs returned in getVertexList.
+
       \param edgeIds lists the only neighbors of the vertices in getVertexList
         which are on this process.  The Id returned is not the neighbor's 
         global Id, but rather the index of the neighbor in the list 
@@ -185,15 +187,10 @@ public:
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
+
 ////////////////////////////////////////////////////////////////
 // Graph model derived from MatrixInput.
-//
-//   TODO: support a flag that says the vertices are columns or
-//           non-zeros rather than rows
 ////////////////////////////////////////////////////////////////
-
-/*!  \brief A specialization of GraphModel for Zoltan2::MatrixInput.
-*/
 
 template <typename User>
 class GraphModel<MatrixInput<User> > : public Model<MatrixInput<User> >
@@ -671,31 +668,22 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from IdentifierInput.
+// Graph model derived from CoordinateInput.
 //
-//  We do not build a graph model from identifiers.  We include
+//  We do not build a graph model from coordinates.  We include
 //  this definition so that other code will compile.
 ////////////////////////////////////////////////////////////////
 
-/*!  \brief An empty specialization of GraphModel for IdentifierInput
-
-    We do not build graphs from identifier lists, but this definition
-    must exist in order for other code to compile.
-*/
-
-
 template <typename User>
-class GraphModel<IdentifierInput<User> > : public Model<IdentifierInput<User> >
+class GraphModel<CoordinateInput<User> > : public Model<CoordinateInput<User> >
 {
 public:
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename IdentifierInput<User>::scalar_t  scalar_t;
-  typedef typename IdentifierInput<User>::gno_t     gno_t;
-  typedef typename IdentifierInput<User>::lno_t     lno_t;
-#endif
+  typedef typename CoordinateInput<User>::scalar_t  scalar_t;
+  typedef typename CoordinateInput<User>::gno_t     gno_t;
+  typedef typename CoordinateInput<User>::lno_t     lno_t;
 
-  GraphModel(const IdentifierInput<User> *ia,
+  GraphModel(const CoordinateInput<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     std::bitset<NUM_MODEL_FLAGS> &flags)
   {
@@ -729,6 +717,109 @@ public:
   int getNumWeights() const { return 0; }
 
 };
+
+////////////////////////////////////////////////////////////////
+// Graph model derived from VectorInput.
+//
+//  We do not build a graph model from a vector.  We include
+//  this definition so that other code will compile.
+////////////////////////////////////////////////////////////////
+
+template <typename User>
+class GraphModel<VectorInput<User> > : public Model<VectorInput<User> >
+{
+public:
+
+  typedef typename VectorInput<User>::scalar_t  scalar_t;
+  typedef typename VectorInput<User>::gno_t     gno_t;
+  typedef typename VectorInput<User>::lno_t     lno_t;
+
+  GraphModel(const VectorInput<User> *ia,
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    std::bitset<NUM_MODEL_FLAGS> &flags)
+  {
+    throw std::runtime_error("can not build a graph from a vector");
+  }
+
+  // GraphModel interface
+
+  size_t getLocalNumVertices() const { return 0;}
+  global_size_t getGlobalNumVertices() const { return 0;}
+  size_t getLocalNumEdges() const { return 0;}
+  global_size_t getGlobalNumEdges() const {return 0;}
+  int getVertexWeightDim() const { return 0; }
+  int getEdgeWeightDim() const { return 0; }
+  int getCoordinateDim() const { return 0; }
+  size_t getVertexList( ArrayView<const gno_t> &Ids,
+    ArrayView<const scalar_t> &xyz, 
+    ArrayView<const scalar_t> &wgts) const { return 0; }
+  size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
+    ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) const { return 0; }
+  size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
+    ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) { return 0; }
+
+  // Model interface
+
+  size_t getLocalNumObjects() const { return 0; }
+  global_size_t getGlobalNumObjects() const { return 0; }
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {}
+  int getNumWeights() const { return 0; }
+
+};
+
+////////////////////////////////////////////////////////////////
+// Graph model derived from IdentifierInput.
+//
+//  We do not build a graph model from identifiers.  We include
+//  this definition so that other code will compile.
+////////////////////////////////////////////////////////////////
+
+template <typename User>
+class GraphModel<IdentifierInput<User> > : public Model<IdentifierInput<User> >
+{
+public:
+
+  typedef typename IdentifierInput<User>::scalar_t  scalar_t;
+  typedef typename IdentifierInput<User>::gno_t     gno_t;
+  typedef typename IdentifierInput<User>::lno_t     lno_t;
+
+  GraphModel(const IdentifierInput<User> *ia,
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    std::bitset<NUM_MODEL_FLAGS> &flags)
+  {
+    throw std::runtime_error("can not build a graph with identifiers");
+  }
+
+  // GraphModel interface
+
+  size_t getLocalNumVertices() const { return 0;}
+  global_size_t getGlobalNumVertices() const { return 0;}
+  size_t getLocalNumEdges() const { return 0;}
+  global_size_t getGlobalNumEdges() const {return 0;}
+  int getVertexWeightDim() const { return 0; }
+  int getEdgeWeightDim() const { return 0; }
+  int getCoordinateDim() const { return 0; }
+  size_t getVertexList( ArrayView<const gno_t> &Ids,
+    ArrayView<const scalar_t> &xyz, 
+    ArrayView<const scalar_t> &wgts) const { return 0; }
+  size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
+    ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) const { return 0; }
+  size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
+    ArrayView<const lno_t> &offsets,
+    ArrayView<const scalar_t> &wgts) { return 0; }
+
+  // Model interface
+
+  size_t getLocalNumObjects() const { return 0; }
+  global_size_t getGlobalNumObjects() const { return 0; }
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {}
+  int getNumWeights() const { return 0; }
+
+};
+
 #endif    // DOXYGEN_SHOULD_SKIP_THIS
 
 }   // namespace Zoltan2
