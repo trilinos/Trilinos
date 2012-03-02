@@ -55,10 +55,21 @@ bool Relation::operator < ( const Relation & rhs ) const
 {
   bool result = false;
 
-  // STK_Mesh version of relation comparison
+#ifdef SIERRA_MIGRATION
+  if (entity_rank() != rhs.entity_rank()) {
+    result = entity_rank() < rhs.entity_rank();
+  }
+  else if (getRelationType() != rhs.getRelationType()) {
+    result = getRelationType() < rhs.getRelationType();
+  }
+  else if (identifier() != rhs.identifier()) {
+    result = identifier() < rhs.identifier();
+  }
+#else
   if ( m_raw_relation.value != rhs.m_raw_relation.value ) {
     result = m_raw_relation.value < rhs.m_raw_relation.value ;
   }
+#endif
   else {
     const EntityKey lhs_key = m_target_entity     ? m_target_entity->key()     : EntityKey();
     const EntityKey rhs_key = rhs.m_target_entity ? rhs.m_target_entity->key() : EntityKey();

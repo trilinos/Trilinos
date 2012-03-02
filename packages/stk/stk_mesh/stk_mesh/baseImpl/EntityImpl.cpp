@@ -220,7 +220,10 @@ bool EntityImpl::declare_relation( Entity & e_to,
 
   const MetaData & meta_data = MetaData::get( bucket() );
 
-  const Relation new_relation( e_to , local_id );
+  Relation new_relation( e_to , local_id );
+#ifdef SIERRA_MIGRATION
+  new_relation.setRelationType( e_to.entity_rank() > entity_rank() ? Relation::USED_BY : Relation::USES );
+#endif
 
   const RelationVector::iterator rel_end   = m_relation.end();
         RelationVector::iterator rel_begin = m_relation.begin();

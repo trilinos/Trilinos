@@ -421,24 +421,22 @@ verify_relation_ordering(Iterator begin, Iterator end)
 {
   for (Iterator itr = begin; itr != end; ) {
     Iterator prev = itr;
-    ++itr; if (itr != end) {
+    ++itr;
+    if (itr != end) {
 
       if (itr->entity_rank() < prev->entity_rank()) {
-        ThrowAssert(itr->entity_rank() >= prev->entity_rank());
         return false ;
       }
 
       if (itr->entity_rank() == prev->entity_rank()) {
 
         if (itr->getRelationType() < prev->getRelationType()) {
-          ThrowAssert(itr->getRelationType() >= prev->getRelationType());
           return false ;
         }
 
         if (itr->getRelationType() == prev->getRelationType()) {
 
           if (itr->getOrdinal() < prev->getOrdinal()) {
-            ThrowAssert(itr->getOrdinal() >= prev->getOrdinal());
             return false ;
           }
         }
@@ -446,6 +444,13 @@ verify_relation_ordering(Iterator begin, Iterator end)
     }
   }
   return true ;
+}
+
+template <class Range>
+bool
+verify_relation_ordering(Range range)
+{
+  return verify_relation_ordering(boost::const_begin(range), boost::const_end(range));
 }
 
 #endif
