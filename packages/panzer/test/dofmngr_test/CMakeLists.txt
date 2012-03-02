@@ -25,6 +25,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tNodalFieldPattern
+  SOURCES tNodalFieldPattern.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tFieldAggPattern
   SOURCES tFieldAggPattern.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
