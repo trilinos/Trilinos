@@ -809,8 +809,10 @@ static void order_decreasing(double *d, int *order)
 #define SIGN(a,b) ((b) < 0 ? -fabs(a) : fabs(a))
 static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
 {
+  double temp[2][2];
   double eval1, eval2, eval3;    /* eigenvalue and error in eval calculation */
   double res;
+  double tmp;
   int i, j, rc = 0;
 
   for (i=0; i<3; i++){
@@ -819,10 +821,32 @@ static int eigenvectors(double (*m)[3], double (*evecs)[3], int dim)
     }
   }
 
-  Zoltan_evals3(m, &eval1, &eval2, &eval3);
-  Zoltan_eigenvec3(m, eval1, evecs[0], &res);
-  Zoltan_eigenvec3(m, eval2, evecs[1], &res);
-  Zoltan_eigenvec3(m, eval3, evecs[2], &res);
+  if (dim == 3) {
+      Zoltan_evals3(m, &eval1, &eval2, &eval3);
+      Zoltan_eigenvec3(m, eval1, evecs, &res);
+      Zoltan_eigenvec3(m, eval2, evecs[1], &res);
+      Zoltan_eigenvec3(m, eval3, evecs[2], &res);
+  }
+  else if (dim == 2) {
+      for (i=0; i<2; i++){
+        for (j=0; j<2; j++){
+            temp[i][j] = m[i][j];
+        }
+      }
+      Zoltan_evals2(temp, &eval1, &eval2);
+      Zoltan_eigenvec2(temp, eval1, evecs, &res);
+      Zoltan_eigenvec2(temp, eval2, evecs[1], &res);
+  }
+
+  for (i=0; i<3; i++){
+    for (j=0; j<3; j++){
+        if (i < j){
+        tmp = evecs[i][j];
+        evecs[i][j] = evecs[j][i];
+        evecs[j][i] = tmp;
+        }
+    }
+  }
 
   return rc;
 }
