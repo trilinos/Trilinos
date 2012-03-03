@@ -527,9 +527,10 @@ namespace Tpetra {
     }
 
     // Sort remoteImageIDs in ascending order.  Apply the resulting
-    // permutation to remoteGIDs_, so that remoteImageIDs[i] and
-    // remoteGIDs_[i] refer to the same thing.
-    sort2(remoteImageIDs.begin(), remoteImageIDs.end(), remoteGIDs.begin());
+    // permutation to remoteGIDs_ and remoteLIDs_, so that
+    // remoteImageIDs[i], remoteGIDs_[i], and remoteLIDs_[i] refer to
+    // the same thing.
+    sort3(remoteImageIDs.begin(), remoteImageIDs.end(), remoteGIDs.begin(), ImportData_->remoteLIDs_.begin());
 
     // Call the Distributor's createFromRecvs() method to turn the
     // remote GIDs and their owning processes into a send-and-receive
