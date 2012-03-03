@@ -297,7 +297,7 @@ void Epetra_Import::Print(ostream & os) const
   // NOTE: Do NOT sort the arrays in place!  Only sort in the copy.
   // Epetra depends on the order being preserved, and some arrays'
   // orders are coupled.
-  const bool sortIDs = true;
+  const bool sortIDs = false;
 
   const Epetra_Comm& comm = SourceMap_.Comm();
   const int myRank = comm.MyPID();
@@ -326,7 +326,7 @@ void Epetra_Import::Print(ostream & os) const
 	for (int i = 0; i < NumPermuteIDs_; ++i) {
 	  os << permuteFromLIDs[i];
 	  if (i < NumPermuteIDs_ - 1) {
-	    os << " ";
+	    os << ", ";
 	  }
 	}
 	os << "}";
@@ -347,7 +347,7 @@ void Epetra_Import::Print(ostream & os) const
 	for (int i = 0; i < NumPermuteIDs_; ++i) {
 	  os << permuteToLIDs[i];
 	  if (i < NumPermuteIDs_ - 1) {
-	    os << " ";
+	    os << ", ";
 	  }
 	}
 	os << "}";
@@ -368,7 +368,7 @@ void Epetra_Import::Print(ostream & os) const
 	for (int i = 0; i < NumRemoteIDs_; ++i) {
 	  os << remoteLIDs[i];
 	  if (i < NumRemoteIDs_ - 1) {
-	    os << " ";
+	    os << ", ";
 	  }
 	}
 	os << "}";
@@ -400,7 +400,7 @@ void Epetra_Import::Print(ostream & os) const
 	for (int i = 0; i < NumExportIDs_; ++i) {
 	  os << exportLIDs[i];
 	  if (i < NumExportIDs_ - 1) {
-	    os << " ";
+	    os << ", ";
 	  }
 	}
 	os << "}";
@@ -415,7 +415,7 @@ void Epetra_Import::Print(ostream & os) const
 	for (int i = 0; i < NumExportIDs_; ++i) {
 	  os << exportPIDs[i];
 	  if (i < NumExportIDs_ - 1) {
-	    os << " ";
+	    os << ", ";
 	  }
 	}
 	os << "}";
@@ -440,22 +440,25 @@ void Epetra_Import::Print(ostream & os) const
     comm.Barrier();
   } // for each rank p
 
-  // The original implementation printed the Maps first.  We moved
-  // printing the Maps to the end, for easy comparison with the output
-  // of Tpetra::Import::print().
-  if (myRank == 0) {
-    os << endl << endl << "Source Map:" << endl << std::flush;
-  }
-  comm.Barrier();
-  SourceMap_.Print(os);
-  comm.Barrier();
+  const bool printMaps = false;
+  if (printMaps) {
+    // The original implementation printed the Maps first.  We moved
+    // printing the Maps to the end, for easy comparison with the
+    // output of Tpetra::Import::print().
+    if (myRank == 0) {
+      os << endl << endl << "Source Map:" << endl << std::flush;
+    }
+    comm.Barrier();
+    SourceMap_.Print(os);
+    comm.Barrier();
   
-  if (myRank == 0) {
-    os << endl << endl << "Target Map:" << endl << std::flush;
+    if (myRank == 0) {
+      os << endl << endl << "Target Map:" << endl << std::flush;
+    }
+    comm.Barrier();
+    TargetMap_.Print(os);
+    comm.Barrier();
   }
-  comm.Barrier();
-  TargetMap_.Print(os);
-  comm.Barrier();
 
   if (myRank == 0) {
     os << endl << endl << "Distributor:" << endl << std::flush;

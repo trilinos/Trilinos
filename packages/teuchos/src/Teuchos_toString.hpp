@@ -50,7 +50,7 @@ namespace Teuchos {
 
 /** \brief Default traits class for converting objects into strings.
  *
- * NOTE: This default implementation relies on opeator<<(std::ostream&, ...) 
+ * NOTE: This default implementation relies on operator<<(std::ostream&, ...) 
  * being defined for the data type T.
  *
  * \ingroup teuchos_language_support_grp
