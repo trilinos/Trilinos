@@ -36,7 +36,7 @@ namespace MueLu {
       Runtime      = Runtime0 | Runtime1,                               //!< Print description of what is going on
       Parameters   = Parameters0 | Parameters1,                         //!< Print parameters
       Statistics   = Statistics0 | Statistics1,                         //!< Print all statistics
-      Timings      = Timings0 | Timings1,                               //!< Print all timing information
+      Timings      = Timings0 | Timings1 | RuntimeTimings,                               //!< Print all timing information
 
       //
       None    = 0,

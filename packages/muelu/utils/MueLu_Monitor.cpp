@@ -14,6 +14,8 @@ namespace MueLu {
     MPI_Comm rawMpiComm = (*mpiComm.getRawMpiComm())();
     //
 
+    // DEBUG std::cout << comm.getRank() << ": " << localValue << std::endl;
+
     int ntimers=1;
     MPI_Reduce(&localValue, &maxTime, ntimers, MPI_DOUBLE, MPI_MAX, rootNode, rawMpiComm);
     MPI_Reduce(&localValue, &minTime, ntimers, MPI_DOUBLE, MPI_MIN, rootNode, rawMpiComm);
