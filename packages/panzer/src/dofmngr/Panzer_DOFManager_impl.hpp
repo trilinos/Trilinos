@@ -541,10 +541,14 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::
 getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
 {
    // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
+
+   TEUCHOS_TEST_FOR_EXCEPTION(orientation_.size()==0,std::logic_error,
+                              "DOFManager::getElementOrientations: Orientations were not constructed!");
+
    const std::vector<char> & local_o = orientation_[localElmtId];
    gidsOrientation.resize(local_o.size());
    for(std::size_t i=0;i<local_o.size();i++) {
-      gidsOrientation[i] = int(local_o[i]);
+      gidsOrientation[i] = double(local_o[i]);
    }
 }
 

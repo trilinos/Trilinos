@@ -11,10 +11,13 @@ namespace panzer {
 PHX_EVALUATOR_CLASS(DOF)
   
   PHX::MDField<ScalarT,Cell,Point> dof_basis;
-  PHX::MDField<ScalarT,Cell,Point> dof_ip;
+  PHX::MDField<ScalarT> dof_ip;
 
   std::string basis_name;
   std::size_t basis_index;
+
+  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
+  bool requires_orientation;
 
 PHX_EVALUATOR_CLASS_END
 

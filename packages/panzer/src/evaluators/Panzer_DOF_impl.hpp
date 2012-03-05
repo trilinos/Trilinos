@@ -13,12 +13,33 @@ namespace panzer {
 PHX_EVALUATOR_CTOR(DOF,p) :
   dof_basis( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  dof_ip( p.get<std::string>("Name"), 
-	  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
+  Teuchos::RCP<const PureBasis> basis 
+     = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+  requires_orientation = basis->requiresOrientations();
+
+  // swap between scalar basis value, or vector basis value
+  if(basis->isScalarBasis())
+     dof_ip = PHX::MDField<ScalarT>(
+                p.get<std::string>("Name"), 
+     	        p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+  else if(basis->isVectorBasis())
+     dof_ip = PHX::MDField<ScalarT>(
+                p.get<std::string>("Name"), 
+     	        p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector);
+  else
+  { TEUCHOS_ASSERT(false); }
+
   this->addEvaluatedField(dof_ip);
   this->addDependentField(dof_basis);
+
+  if(requires_orientation) {
+     dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(p.get<std::string>("Name")+" Orientation", 
+	                                                basis->functional);
+     
+     this->addDependentField(dof_orientation);
+  }
   
   std::string n = "DOF: " + dof_basis.fieldTag().name();
   this->setName(n);
@@ -30,62 +51,43 @@ PHX_POST_REGISTRATION_SETUP(DOF,sd,fm)
   this->utils.setFieldData(dof_basis,fm);
   this->utils.setFieldData(dof_ip,fm);
 
+  if(requires_orientation)
+     this->utils.setFieldData(dof_orientation,fm);
+
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DOF,workset)
 { 
-/*
-  if (typeid(EvalT) == typeid(panzer::Traits::Jacobian)) {
-     std::cout << dof_basis.fieldTag().name() << " BASIS =\n";
-     for (int i=0; i < dof_basis.dimension(0); ++i) {
-        std::cout << "   Cell " << workset.cell_local_ids[i] << std::endl;
-        for (int j=0; j < dof_basis.dimension(1); ++j)
-            std::cout << "      " << dof_basis(i,j) << std::endl;
-     }
-
-     for (int i=0; i < (workset.bases[basis_index])->basis.dimension(0);i++) {
-        std::cout << "   Cell " << workset.cell_local_ids[i] << std::endl;
-        for (int j=0; j < (workset.bases[basis_index])->basis.dimension(1);j++) {
-           std::cout << "      basis " << j << " = ";
-           for (int ip=0; ip<(workset.bases[basis_index])->basis.dimension(2);ip++)
-              std::cout << (workset.bases[basis_index])->basis(i,j,ip) << " ";
-           std::cout << std::endl;
-        }
-     }
-  }
-*/
-
   // Zero out arrays (intrepid does a sum! 1/17/2012)
   for (int i = 0; i < dof_ip.size(); ++i)
     dof_ip[i] = 0.0;
 
-/*
-  if (typeid(EvalT) == typeid(panzer::Traits::Jacobian)) {
-     std::cout << "BEFORE " << dof_ip.fieldTag().name() << " IP =\n";
-     for (int i=0; i < dof_ip.dimension(0); ++i) {
-        std::cout << "   Cell " << workset.cell_local_ids[i] << std::endl;
-        for (int j=0; j < dof_ip.dimension(1); ++j)
-            std::cout << "      " << dof_ip(i,j) << std::endl;
-     }
-  }
-*/
+  if(workset.num_cells>0) {
+    if(requires_orientation) {
+       Intrepid::FieldContainer<double> bases = (workset.bases[basis_index])->basis;
 
-  if(workset.num_cells>0)
-    Intrepid::FunctionSpaceTools::
-      evaluate<ScalarT>(dof_ip,dof_basis,(workset.bases[basis_index])->basis);
+       // assign ScalarT "dof_orientation" to double "orientation"
+       Intrepid::FieldContainer<double> orientation(dof_orientation.dimension(0),
+                                                    dof_orientation.dimension(1));
+       for(int i=0;i<dof_orientation.dimension(0);i++)
+          for(int j=0;j<dof_orientation.dimension(1);j++)
+             orientation(i,j) = Sacado::ScalarValue<ScalarT>::eval(dof_orientation(i,j));
 
-/*
-  if (typeid(EvalT) == typeid(panzer::Traits::Jacobian)) {
-     std::cout << "AFTER " << dof_ip.fieldTag().name() << " IP =\n";
-     for (int i=0; i < dof_ip.dimension(0); ++i) {
-        std::cout << "   Cell " << workset.cell_local_ids[i] << std::endl;
-        for (int j=0; j < dof_ip.dimension(1); ++j)
-            std::cout << "      " << dof_ip(i,j) << std::endl;
-     }
+
+       // make sure things are orientated correctly
+       Intrepid::FunctionSpaceTools::
+          applyFieldSigns<ScalarT>(bases,orientation);
+
+       // evaluate at quadrature points
+       Intrepid::FunctionSpaceTools::
+         evaluate<ScalarT>(dof_ip,dof_basis,bases);
+    }
+    else // no orientation needed
+       Intrepid::FunctionSpaceTools::
+         evaluate<ScalarT>(dof_ip,dof_basis,(workset.bases[basis_index])->basis);
   }
-*/
 }
 
 //**********************************************************************

@@ -16,6 +16,13 @@ PHX_EVALUATOR_CTOR(Integrator_GradBasisDotVector,p) :
 	p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector ),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
+  Teuchos::RCP<const PureBasis> basis 
+     = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+
+  // Verify that this basis supports the gradient operation
+  TEUCHOS_TEST_FOR_EXCEPTION(!basis->supportsGrad(),std::logic_error,
+                             "Integrator_GradBasisDotVector: Basis of type \"" << basis->name() << "\" does not support GRAD");
+
   this->addEvaluatedField(residual);
   this->addDependentField(flux);
   

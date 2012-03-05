@@ -19,6 +19,14 @@ PHX_EVALUATOR_CTOR(Integrator_BasisTimesScalar,p) :
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
 
+  Teuchos::RCP<const PureBasis> basis 
+     = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+
+  // Verify that this basis supports the gradient operation
+  TEUCHOS_TEST_FOR_EXCEPTION(!basis->isScalarBasis(),std::logic_error,
+                             "Integrator_BasisTimesScalar: Basis of type \"" << basis->name() << "\" is not "
+                             "a scalar basis");
+
   this->addEvaluatedField(residual);
   this->addDependentField(scalar);
     
