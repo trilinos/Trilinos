@@ -12,14 +12,6 @@ namespace panzer {
   struct BasisValues { 
     static const Array dummyArray;    
  
-    /** Take orientations defined on a cell and extend them to a 
-      * particular basis.
-      */
-    void extendOrientationToBasis(panzer::PureBasis::EElementSpace space,
-                                  Intrepid::Basis<double,Array> & intrBasis,
-                                  const Array & inOrientation,
-                                  Array & outOrientation) const;
-    
     //! Sizes/allocates memory for arrays
     void setupArrays(const Teuchos::RCP<panzer::BasisIRLayout>& basis);
 
@@ -28,8 +20,7 @@ namespace panzer {
 			const Array& jac_det,
 			const Array& jac_inv,
 			const Array& weighted_measure,
-			const Array& node_coordinates,
-                        const Array & orientation=dummyArray);
+			const Array& node_coordinates);
 
     PureBasis::EElementSpace getElementSpace() const; 
 
@@ -56,20 +47,6 @@ namespace panzer {
         may not have a corresponding coordiante value
     */
     Array basis_coordinates;         // <Cell,BASIS,Dim>
-
-    /** Sub cell orientation on each cell.
-      *
-      * NOTE: This will be either empty (for HGRAD bases), edge orientations
-      * (for HCURL bases), or face orienations (for HDIV bases).
-      */
-    Array subcell_orientation;         // <Cell,Edges> or <Cell,Faces>
-
-    /** Orientation of each basis (built from subcell_orientation)
-      *
-      * NOTE: This will be either empty (for HGRAD bases), edge orientations
-      * (for HCURL bases), or face orientations (for HDIV bases).
-      */
-    Array basis_orientation;         // <Cell,BASIS> or <Cell,BASIS>
 
     Teuchos::RCP<panzer::BasisIRLayout> basis_layout;
     

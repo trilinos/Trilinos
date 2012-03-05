@@ -230,7 +230,7 @@ namespace panzer {
     FieldContainer<double> node_coordinates(num_cells, num_vertices,
 					    base_cell_dimension);
     const int num_edges = int_rule->topology->getEdgeCount();
-    FieldContainer<double> edge_orientation(num_cells, num_edges);
+    // FieldContainer<double> edge_orientation(num_cells, num_edges);
 
     // Set up node coordinates.  Here we assume the following
     // ordering.  This needs to be consistent with shards topology,
@@ -268,10 +268,10 @@ namespace panzer {
       node_coordinates(cell,3,x) = xleft*0.5;
       node_coordinates(cell,3,y) = (yleft+1)*0.5;
 
-      edge_orientation(cell,0) =  1.0;
-      edge_orientation(cell,1) = -1.0;
-      edge_orientation(cell,2) =  1.0;
-      edge_orientation(cell,3) = -1.0;
+      // edge_orientation(cell,0) =  1.0;
+      // edge_orientation(cell,1) = -1.0;
+      // edge_orientation(cell,2) =  1.0;
+      // edge_orientation(cell,3) = -1.0;
 
       out << "Cell " << cell << " = ";
       for(int i=0;i<4;i++)
@@ -295,8 +295,7 @@ namespace panzer {
 				int_values.jac_det,
 				int_values.jac_inv,
 				int_values.weighted_measure,
-				node_coordinates,
-                                edge_orientation);
+				node_coordinates);
 
     TEST_EQUALITY(basis_values.basis_ref.dimension(0),4);
     TEST_EQUALITY(basis_values.basis_ref.dimension(1),num_qp);
@@ -331,17 +330,14 @@ namespace panzer {
 
           TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
 
-          int edge0_orientation =  1.0;
-          int edge1_orientation = -1.0;
-
           // check out basis on transformed elemented
-          TEST_EQUALITY(basis_values.basis_ref(0,i,0),edge0_orientation*0.25*basis_values.basis(cell,0,i,0));
-          TEST_EQUALITY(basis_values.basis_ref(0,i,1),edge0_orientation*0.25*basis_values.basis(cell,0,i,1));
-          TEST_EQUALITY(basis_values.curl_basis_ref(0,i),edge0_orientation*relCellVol*basis_values.curl_basis(cell,0,i));
+          TEST_EQUALITY(basis_values.basis_ref(0,i,0),0.25*basis_values.basis(cell,0,i,0));
+          TEST_EQUALITY(basis_values.basis_ref(0,i,1),0.25*basis_values.basis(cell,0,i,1));
+          TEST_EQUALITY(basis_values.curl_basis_ref(0,i),relCellVol*basis_values.curl_basis(cell,0,i));
 
-          TEST_EQUALITY(basis_values.basis_ref(1,i,0),edge1_orientation*0.25*basis_values.basis(cell,1,i,0));
-          TEST_EQUALITY(basis_values.basis_ref(1,i,1),edge1_orientation*0.25*basis_values.basis(cell,1,i,1));
-          TEST_EQUALITY(basis_values.curl_basis_ref(1,i),edge1_orientation*relCellVol*basis_values.curl_basis(cell,1,i));
+          TEST_EQUALITY(basis_values.basis_ref(1,i,0),0.25*basis_values.basis(cell,1,i,0));
+          TEST_EQUALITY(basis_values.basis_ref(1,i,1),0.25*basis_values.basis(cell,1,i,1));
+          TEST_EQUALITY(basis_values.curl_basis_ref(1,i),relCellVol*basis_values.curl_basis(cell,1,i));
 
           TEST_EQUALITY(basis_values.weighted_basis(cell,0,i,0),relCellVol*weight*basis_values.basis(cell,0,i,0));
           TEST_EQUALITY(basis_values.weighted_basis(cell,0,i,1),relCellVol*weight*basis_values.basis(cell,0,i,1));
@@ -376,7 +372,7 @@ namespace panzer {
     FieldContainer<double> node_coordinates(num_cells, num_vertices,
 					    base_cell_dimension);
     const int num_edges = int_rule->topology->getEdgeCount();
-    FieldContainer<double> edge_orientation(num_cells, num_edges);
+    // FieldContainer<double> edge_orientation(num_cells, num_edges);
 
     // Set up node coordinates.  Here we assume the following
     // ordering.  This needs to be consistent with shards topology,
@@ -460,8 +456,7 @@ namespace panzer {
 				int_values.jac_det,
 				int_values.jac_inv,
 				int_values.weighted_measure,
-				node_coordinates,
-                                edge_orientation);
+				node_coordinates);
 
     TEST_EQUALITY(basis_values.basis_ref.dimension(0),12);
     TEST_EQUALITY(basis_values.basis_ref.dimension(1),num_qp);
