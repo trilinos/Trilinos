@@ -52,6 +52,9 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
+// Scalar types
+#include "linear2d_diffusion_scalar_types.hpp"
+
 // Random field types
 enum SG_RF { UNIFORM, LOGNORMAL };
 const int num_sg_rf = 2;
@@ -82,13 +85,8 @@ const char *sg_div_names[] = { "Direct",
 			       "Quadrature" };
 
 int main(int argc, char *argv[]) {
-  typedef Stokhos::StandardStorage<int,double> Storage;
-  typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
-  typedef pce_type Scalar;
   typedef double MeshScalar;
   typedef double BasisScalar;
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
