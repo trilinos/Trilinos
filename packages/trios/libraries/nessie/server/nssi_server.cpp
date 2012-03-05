@@ -1661,7 +1661,7 @@ int nssi_service_start(
 
         rc=NNTI_wait(
                 &req_queue,
-                NNTI_RECV_DST,
+                NNTI_RECV_QUEUE,
                 progress_timeout,
                 &status);
         if (rc != NNTI_OK) {
