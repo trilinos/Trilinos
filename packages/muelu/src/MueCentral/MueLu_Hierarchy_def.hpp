@@ -245,7 +245,9 @@ namespace MueLu {
 
     // 2011/12 JG: Requests on the fine level are now posted at the beginning of the subroutine: Setup(fineLevelManager, coarseLevelManager, nextLevelManager)
 
-    Monitor h(*this, "Setup");
+    // Monitor h(*this, "Setup"); Use a MonitorBase instead to avoid printing "{numLevels = 1}" as numLevels will increase...
+    MonitorBase h("Setup (" + this->description() + ")", this->GetVerbLevel(), this->getOStream(), this->shortClassName() + ": Setup", this->IsPrint(Timings0));
+
     //TODO Xpetra::global_size_t sumCoarseNnz = 0;
 
     TEUCHOS_TEST_FOR_EXCEPTION(numDesiredLevels < 2, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): numDesiredLevels < 2");

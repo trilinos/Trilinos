@@ -18,7 +18,7 @@ namespace MueLu {
 
   public:
 
-    MonitorBase(const std::string& descr, VerbLevel verbLevel, const RCP<Teuchos::FancyOStream> & out, bool runTimer = true)
+    MonitorBase(const std::string& descr, VerbLevel verbLevel, const RCP<Teuchos::FancyOStream> & out, const std::string& timerDesc, bool runTimer = true)
       : descr_(descr)
     {
 
@@ -33,7 +33,7 @@ namespace MueLu {
       
       if (runTimer) {
         // Start the timer
-        timer_ = Teuchos::TimeMonitor::getNewTimer("MueLu: " + descr_);
+        timer_ = Teuchos::TimeMonitor::getNewTimer("MueLu: " + timerDesc);
         timeMonitor_ = rcp(new Teuchos::TimeMonitor(*timer_));
       }
     }
@@ -75,7 +75,7 @@ namespace MueLu {
   class Monitor: public MonitorBase {
   public:
     Monitor(const BaseClass& object, const std::string & descr) 
-      : MonitorBase(descr + " (" + object.description() + ")", object.GetVerbLevel(), object.getOStream(), object.IsPrint(Timings0))
+      : MonitorBase(descr + " (" + object.description() + ")", object.GetVerbLevel(), object.getOStream(), object.shortClassName() + ": " + descr, object.IsPrint(Timings0))
     { }
   };
 
@@ -83,8 +83,8 @@ namespace MueLu {
   // A timer is created only if Timings1 == true
   class SubMonitor: public MonitorBase {
   public:
-    SubMonitor(const VerboseObject& object, const std::string & descr, MsgType timerLevel = Timings1)
-      : MonitorBase(descr, object.GetVerbLevel(), object.getOStream(), object.IsPrint(Timings1))
+    SubMonitor(const BaseClass& object, const std::string & descr, MsgType timerLevel = Timings1)
+      : MonitorBase(descr, object.GetVerbLevel(), object.getOStream(), object.shortClassName() + ": " + descr, object.IsPrint(Timings1))
     { }
   };
   

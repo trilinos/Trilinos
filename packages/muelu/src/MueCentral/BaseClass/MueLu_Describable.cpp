@@ -26,6 +26,26 @@ namespace MueLu {
     
     void Describable::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const { describe(out, toMueLuVerbLevel(verbLevel)); }
 
+    std::string Describable::shortClassName() const {
+      std::string str = Teuchos::Describable::description();
+      
+      // remove template parameters
+      {
+        size_t found = str.find_first_of("<");
+        if (found != std::string::npos)
+          str = str.substr(0, found);
+      }
+
+      // remove namespace
+      {
+        size_t found = str.find_last_of(":");
+        if (found != std::string::npos)
+          str = str.substr(found+1);
+      }
+
+      return str;
+    }
+
 } // namespace MueLu
 
 #define MUELU_DESCRIBABLE_SHORT
