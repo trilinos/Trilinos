@@ -46,6 +46,56 @@
 #include <iterator>
 
 namespace {
+
+  // \param allEntries [in/out]: Array in which current entries have
+  //   already been stored, and in which the new entries are to be
+  //   stored.  Passed by reference in case we need to resize it.
+  //
+  // \param currentEntries [in/out]: Current entries, which we assume
+  //   have already been sorted and made unique.  Aliases the
+  //   beginning of allEntries.
+  //
+  // \param newEntries [in/out] New entries, which have not yet been
+  //   sorted or made unique.  This does <i>not</i> alias allEntries.
+  //
+  // Sort and make entries of newEntries unique.  Resize allEntries if
+  // necessary to fit the unique entries of newEntries.  Merge
+  // newEntries into allEntries and make the results unique.  (This is
+  // cheaper than sorting the whole array.)
+  //
+  // \return A view of all the entries (current and new) in allEntries.
+  template<class T>
+  Teuchos::ArrayView<T>
+  sortAndMergeIn (Teuchos::Array<T>& allEntries,
+		  Teuchos::ArrayView<T> currentEntries, 
+		  Teuchos::ArrayView<T> newEntries)
+  {
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    typedef typename ArrayView<T>::iterator iter_type;
+    typedef typename ArrayView<T>::size_type size_type;
+
+    std::unique (newEntries.begin(), newEntries.end());
+    iter_type it = std::unique (newEntries.begin(), newEntries.end());
+    const size_type numNew = as<size_type> (it - newEntries.begin());
+    // View of the sorted, made-unique new entries to merge in.
+    ArrayView<T> newEntriesView = newEntries.view (0, numNew);
+    
+    const size_type numCur = currentEntries.size();
+    if (allEntries.size() < numCur + numNew) {
+      allEntries.resize (numCur + numNew);
+    }
+    ArrayView<T> allView = allEntries.view (0, numCur + numNew);
+    ArrayView<T> newView = allEntries.view (numCur, numNew); // target of copy
+
+    std::copy (newEntries.begin(), newEntries.end(), newView.begin());
+    std::inplace_merge (allView.begin(), newView.begin(), allView.end());
+    iter_type it2 = std::unique (allView.begin(), allView.end());
+    const size_type numTotal = as<size_type> (it2 - allView.begin());
+
+    return allEntries.view (0, numTotal);
+  }
+
   /// \class MultiVectorFillerData
   /// \brief Implementation of fill and local assembly for \c MultiVectorFiller.
   /// \author Mark Hoemmen
@@ -261,17 +311,19 @@ namespace {
       const size_t numCols = getNumColumns();
 
       if (numCols == 1) {
-	// Special case for 1 column avoids copying indices.  Pick the
-	// size of the array exactly the first time so there are at
-	// most two allocations (the constructor may choose to
+	// Special case for 1 column avoids copying indices twice.
+	// Pick the size of the array exactly the first time so there
+	// are at most two allocations (the constructor may choose to
 	// allocate).
-	allInds.resize (sourceIndices_[0].size());
+	const size_type numNew = sourceIndices_[0].size();
+	allInds.resize (allInds.size() + numNew);
 	std::copy (sourceIndices_[0].begin(), sourceIndices_[0].end(),
 		   allInds.begin());
 	std::sort (allInds.begin(), allInds.end());
-	iter_type it = std::unique (allInds.begin(), allInds.end());
-	const size_type curSize = as<size_type> (it - allInds.begin());
-	allInds.resize (curSize);
+	typename Array<GO>::iterator it = 
+	  std::unique (allInds.begin(), allInds.end());
+	const size_type numFinal = as<size_type> (it - allInds.begin());
+	allInds.resize (numFinal);
       }
       else {
 	// Carefully collect all the row indices one column at a time.
@@ -279,39 +331,17 @@ namespace {
 	// is independent of the number of columns.  Also, only sort
 	// the current column's indices.  Use merges to ensure sorted
 	// order in the collected final result.
-	Array<GO> curInds;
+	ArrayView<GO> curIndsView = allInds.view (0, 0); // will grow
+	Array<GO> newInds;
 	for (size_t j = 0; j < numCols; ++j) {
-	  // Collect the current column's source indices into curInds.
-	  // Sort it and make the entries unique.
-	  curInds.resize (sourceIndices_[j].size());
-	  std::copy (sourceIndices_[j].begin(), sourceIndices_[j].end(),
-		     curInds.begin());
-	  std::sort (curInds.begin(), curInds.end());
-	  iter_type it = std::unique (curInds.begin(), curInds.end());
-	  const size_type curSize = as<size_type> (it - curInds.begin());
-	  curInds.resize (curSize);
-
-	  if (curSize > 0) {
-	    // Assume inductively that the entries of allInds are
-	    // sorted and unique.  Make more space in allInds for the
-	    // new entries (since std::inplace_merge can only work in
-	    // one array), copy them in, merge, and make the results
-	    // unique.
-	    const size_type oldSize = allInds.size();
-	    allInds.resize (oldSize + curSize);
-
-	    //iter_type middle = &allInds[oldSize];
-	    iter_type middle;
-	    {
-	      ArrayView<GO> oldAllInds = allInds.view (oldSize, curSize);
-	      middle = oldAllInds.begin();
-	    }
-	    std::copy (curInds.begin(), curInds.end(), middle);
-	    std::inplace_merge (allInds.begin(), middle, allInds.end());
-	    iter_type it2 = std::unique (allInds.begin(), allInds.end());
-	    const size_type newSize = as<size_type> (it2 - allInds.begin());
-	    allInds.resize (newSize);
+	  const size_type numNew = sourceIndices_[j].size();
+	  if (numNew > newInds.size()) {
+	    newInds.resize (numNew);
 	  }
+	  ArrayView<GO> newIndsView = newInds.view (0, numNew);
+	  std::copy (sourceIndices_[j].begin(), sourceIndices_[j].end(),
+		     newIndsView.begin());
+	  curIndsView = sortAndMergeIn<GO> (allInds, curIndsView, newIndsView);
 	}
       }
       return allInds;
@@ -390,7 +420,6 @@ namespace {
       using Teuchos::rcp;
       using Tpetra::global_size_t;
       typedef global_ordinal_type GO;
-      typedef typename Array<GO>::iterator iter_type;
 
       // Get the nonlocal row indices, sorted and made unique.
       // It's fair to assume that these are not contiguous.
@@ -399,20 +428,30 @@ namespace {
       // Get the local row indices, not necessarily sorted or unique.
       ArrayView<const GO> localIndices = getLocalIndices ();
 
+      // Copy the local indices into the full indices array, and sort
+      // them there.  We'll merge in the nonlocal indices below.  This
+      // can be more efficient than just sorting all the indices, if
+      // there are a lot of nonlocal indices.
       Array<GO> indices (localIndices.size() + nonlocalIndices.size());
-      std::copy (localIndices.begin(), localIndices.end(), indices.begin());
-      std::sort (indices.begin(), indices.end());
+      ArrayView<GO> localIndView = indices.view (0, localIndices.size());
+      std::copy (localIndices.begin(), localIndices.end(), localIndView.begin());
+      std::sort (localIndView.begin(), localIndView.end());
 
       // Merge the local and nonlocal indices.
       if (nonlocalIndices.size() > 0) {
+	typedef typename ArrayView<GO>::iterator iter_type;
+
+	iter_type middle = localIndView.end();	
+	// We need a view, because std::inplace_merge needs all its
+	// iterator inputs to have the same type.  Debug mode builds
+	// are pickier than release mode builds, because the iterators
+	// in a debug mode build are of a different type that does
+	// run-time checking (they aren't just raw pointers).
+	ArrayView<GO> indView = indices.view (0, indices.size());
+
 	//iter_type middle = &indices[nonlocalIndices.size()];
-	iter_type middle;
-	{
-	  ArrayView<GO> indView = indices.view (0, nonlocalIndices.size());
-	  middle = indView.end();
-	}
 	std::copy (nonlocalIndices.begin(), nonlocalIndices.end(), middle);
-	std::inplace_merge (indices.begin(), middle, indices.end());
+	std::inplace_merge (indView.begin(), middle, indView.end());
       }
       return indices;
     }
@@ -667,24 +706,25 @@ namespace {
       using Teuchos::ArrayView;
       using Teuchos::as;
       typedef global_ordinal_type GO;
-      typedef typename Array<GO>::iterator iter_type;
       typedef typename Array<GO>::size_type size_type;
 
       Array<GO> allNonlocals (0); // will resize below
       const size_t numCols = getNumColumns();
 
       if (numCols == 1) {
-	// Special case for 1 column avoids copying indices.  Pick the
-	// size of the array exactly the first time so there are at
-	// most two allocations (the constructor may choose to
+	// Special case for 1 column avoids copying indices twice.
+	// Pick the size of the array exactly the first time so there
+	// are at most two allocations (the constructor may choose to
 	// allocate).
-	allNonlocals.resize (nonlocalIndices_[0].size());
+	const size_type numNew = nonlocalIndices_[0].size();
+	allNonlocals.resize (allNonlocals.size() + numNew);
 	std::copy (nonlocalIndices_[0].begin(), nonlocalIndices_[0].end(),
 		   allNonlocals.begin());
 	std::sort (allNonlocals.begin(), allNonlocals.end());
-	iter_type it = std::unique (allNonlocals.begin(), allNonlocals.end());
-	const size_type curSize = as<size_type> (it - allNonlocals.begin());
-	allNonlocals.resize (curSize);
+	typename Array<GO>::iterator it = 
+	  std::unique (allNonlocals.begin(), allNonlocals.end());
+	const size_type numFinal = as<size_type> (it - allNonlocals.begin());
+	allNonlocals.resize (numFinal);
       }
       else {
 	// Carefully collect all the row indices one column at a time.
@@ -692,39 +732,18 @@ namespace {
 	// is independent of the number of columns.  Also, only sort
 	// the current column's indices.  Use merges to ensure sorted
 	// order in the collected final result.
-	Array<GO> curNonlocals;
+	ArrayView<GO> curNonlocalsView = allNonlocals.view (0, 0); // will grow
+	Array<GO> newNonlocals;
 	for (size_t j = 0; j < numCols; ++j) {
-	  // Collect the current column's nonlocal indices into
-	  // curNonlocals.  Sort it and make the entries unique.
-	  curNonlocals.resize (nonlocalIndices_[j].size());
-	  std::copy (nonlocalIndices_[j].begin(), nonlocalIndices_[j].end(),
-		     curNonlocals.begin());
-	  std::sort (curNonlocals.begin(), curNonlocals.end());
-	  iter_type it = std::unique (curNonlocals.begin(), curNonlocals.end());
-	  const size_type curSize = as<size_type> (it - curNonlocals.begin());
-	  curNonlocals.resize (curSize);
-
-	  if (curSize > 0) {
-	    // Assume inductively that the entries of allNonlocals are
-	    // sorted and unique.  Make more space in allNonlocals for
-	    // the new entries (since std::inplace_merge can only work
-	    // in one array), copy them in, merge, and make the results
-	    // unique.
-	    const size_type oldSize = allNonlocals.size();
-	    allNonlocals.resize (oldSize + curSize);
-
-	    //iter_type middle = &allInds[oldSize];
-	    iter_type middle;
-	    {
-	      ArrayView<GO> oldAllNonlocals = allNonlocals.view (oldSize, curSize);
-	      middle = oldAllNonlocals.begin();
-	    }
-	    std::copy (curNonlocals.begin(), curNonlocals.end(), middle);
-	    std::inplace_merge (allNonlocals.begin(), middle, allNonlocals.end());
-	    iter_type it2 = std::unique (allNonlocals.begin(), allNonlocals.end());
-	    const size_type newSize = as<size_type> (it2 - allNonlocals.begin());
-	    allNonlocals.resize (newSize);
+	  const size_type numNew = nonlocalIndices_[j].size();
+	  if (numNew > newNonlocals.size()) {
+	    newNonlocals.resize (numNew);
 	  }
+	  ArrayView<GO> newNonlocalsView = newNonlocals.view (0, numNew);
+	  std::copy (nonlocalIndices_[j].begin(), nonlocalIndices_[j].end(),
+		     newNonlocalsView.begin());
+	  curNonlocalsView = sortAndMergeIn<GO> (allNonlocals, curNonlocalsView, 
+						 newNonlocalsView);
 	}
       }
       return allNonlocals;
