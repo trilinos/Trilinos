@@ -31,9 +31,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-#IF (Tpetra_ENABLE_Bug5430)
-#ENDIF ()
-
 IF (${PROJECT_NAME}_ENABLE_Epetra)
   # Tpetra bug 5430:
   # https://software.sandia.gov/bugzilla/show_bug.cgi?id=5430

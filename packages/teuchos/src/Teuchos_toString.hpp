@@ -107,6 +107,41 @@ public:
     }
 };
 
+/** \brief Specialization for double. */
+template<>
+class ToStringTraits<double> {
+public:
+  static std::string toString (const double& t) {
+    std::ostringstream os;
+    os.setf (std::ios::scientific);
+    // 17 = round(52 * log10(2)) + 1.  That's one decimal digit more
+    // than the binary precision justifies, which should be plenty.
+    // Guy Steele et al. have a better algorithm for floating-point
+    // I/O, but using a lot of digits is the lazy approach.
+    os.precision (17);
+    os << t;
+    return os.str();
+  }
+};
+
+/** \brief Specialization for float. */
+template<>
+class ToStringTraits<float> {
+public:
+  static std::string toString (const float& t) {
+    std::ostringstream os;
+    os.setf (std::ios::scientific);
+    // 8 = round(23 * log10(2)) + 1.  That's one decimal digit more
+    // than the binary precision justifies, which should be plenty.
+    // Guy Steele et al. have a better algorithm for floating-point
+    // I/O, but using a lot of digits is the lazy approach.
+    os.precision (8);
+    os << t;
+    return os.str();
+  }
+};
+
+
 
 } // end namespace Teuchos
 
