@@ -163,7 +163,7 @@ public:
           ArrayView<const scalar_t> wgtArray(wgts[i], nLocalIds*wgtStrides[i]);
           w[i] = input_t(wgtArray, wgtStrides[i]);
         }
-        weights_ = arcp<const input_t>(w, 0, weightDim);
+        weights_ = arcp<input_t>(w, 0, weightDim);
       }
     }
 
