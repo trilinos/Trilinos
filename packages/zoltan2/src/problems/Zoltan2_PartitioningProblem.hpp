@@ -95,14 +95,14 @@ public:
     return *(solution_.getRawPtr());
   };
 
-  /*! Set or reset relative sizes for the partitions that Zoltan2 will create.
+  /*! \brief Set or reset relative sizes for the partitions that Zoltan2 will create.
    *
-   *  \param len  The size of the partIds and partSizes lists
-   *  \param partIds   A list of len partition identifiers.  Partition
+   *  \param len  The size of the \c partIds and \c partSizes lists
+   *  \param partIds   A list of \c len partition identifiers.  Partition
    *           identifiers range from zero to one less than the global
    *           number of identifiers.  
-   *  \param partSizes  A list of len relative sizes corresponding to
-   *           the partIds.
+   *  \param partSizes  A list of \c len relative sizes corresponding to
+   *           the \c partIds.
    *  \param makeCopy  If true, Zoltan2 will make a copy of the ids and sizes
    *      that are provided in this call.  If false, Zoltan2 will just save
    *      the pointers to to the caller's lists.  If the pointers will remain
@@ -133,19 +133,19 @@ public:
     setPartSizesForCritiera(0, len, partIds, partSizes, makeCopy);
   }
 
-  /*! Set or reset the relative sizes (per weight) for the partitions 
+  /*! \brief Set or reset the relative sizes (per weight) for the partitions 
    *    that Zoltan2 will create.
    *
    *  \param criteria the criteria (weight dimension) for which these 
    *      part sizes apply.  Criteria range from zero to one less than
    *     the number of weights per object specified in the 
    *     caller's InputAdapter.
-   *  \param len  The size of the partIds and partSizes lists
-   *  \param partIds   A list of len partition identifiers.  Partition
+   *  \param len  The size of the \c partIds and \c partSizes lists
+   *  \param partIds   A list of \c len partition identifiers.  Partition
    *           identifiers range from zero to one less than the global
    *           number of identifiers.  
-   *  \param partSizes  A list of len relative sizes corresponding to
-   *           the partIds.
+   *  \param partSizes  A list of \c len relative sizes corresponding to
+   *           the \c partIds.
    *  \param makeCopy  If true, Zoltan2 will make a copy of the ids and sizes
    *      that are provided in this call.  If false, Zoltan2 will just save
    *      the pointers to to the caller's lists.  If the pointers will remain
