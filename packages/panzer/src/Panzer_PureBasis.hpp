@@ -42,6 +42,24 @@ namespace panzer {
     EElementSpace getElementSpace() const
     { return elementSpace; }
 
+    bool requiresOrientations() const
+    { return getElementSpace()==HCURL || getElementSpace()==HDIV; }
+
+    bool supportsGrad() const
+    { return getElementSpace()==HGRAD; }
+
+    bool supportsCurl() const
+    { return getElementSpace()==HCURL; }
+
+    bool supportsDiv() const
+    { return getElementSpace()==HDIV; }
+
+    bool isVectorBasis() const
+    { return getElementSpace()==HCURL || getElementSpace()==HDIV; }
+
+    bool isScalarBasis() const
+    { return getElementSpace()==HGRAD; }
+
     int getBasisRank() const
     { return basisRank; }
 
