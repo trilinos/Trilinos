@@ -51,9 +51,8 @@ namespace MueLu {
           
           //FIXME: Not very important for now, but timer will be printed even if verboseLevel of Monitor/Object changed
           //       between Monitor constructor and destructor.
-          tab_ = Teuchos::null;
           if (GetProcRankVerbose() == 0)
-            *getOStream() << "... time: " << " max=" << stats[0] << " min=" << stats[1] << " avg=" << stats[2] << std::endl;
+            *getOStream() << "Timer: " << " max=" << stats[0] << " min=" << stats[1] << " avg=" << stats[2] << std::endl;
         }
       }
     }

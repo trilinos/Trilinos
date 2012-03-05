@@ -7,7 +7,6 @@
 
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Memory.hpp"
 
 namespace MueLu {
 
@@ -47,11 +46,6 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildR(Level & fineLevel, Level & coarseLevel) const {
-
-    std::ostringstream buf; buf << coarseLevel.GetLevelID();
-    RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("GenericRFactory::BuildR_"+buf.str()));
-    timer->start(true);
-
     Monitor m(*this, "Call prolongator factory for calculating restrictor");
 
     // BuildR
@@ -64,9 +58,6 @@ namespace MueLu {
     PFact_->setRestrictionMode(rmode);    // reset restriction mode flag
 
     coarseLevel.Set("R", R, this);
-
-    timer->stop();
-    MemUtils::ReportTimeAndMemory(*timer, *(R->getRowMap()->getComm()));
 
   } //BuildR
 

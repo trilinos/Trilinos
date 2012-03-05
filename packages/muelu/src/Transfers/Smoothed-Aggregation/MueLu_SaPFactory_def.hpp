@@ -10,7 +10,6 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Memory.hpp"
 
 namespace MueLu {
 
@@ -61,16 +60,17 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
-    std::ostringstream buf; buf << coarseLevel.GetLevelID();
-    RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("SaPFactory::BuildP_"+buf.str()));
-    timer->start(true);
 
     // Level Get
     RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
     RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
 
-    if(restrictionMode_)
+    Monitor m(*this, "Prolongator smoothing");
+
+    if(restrictionMode_) {
+      SubMonitor m(*this, "Transpose A");
       A = Utils2::Transpose(A,true); // build transpose of A explicitely
+    }
 
     //Build final prolongator
     RCP<Operator> finalP; // output
@@ -79,74 +79,59 @@ namespace MueLu {
     //FIXME SC lambdaMax = A->GetDinvALambda();
 
     if (dampingFactor_ != 0) {
-      Monitor m(*this, "Prolongator smoothing");
 
-      RCP<Teuchos::Time> sapTimer;
-      //sapTimer = rcp(new Teuchos::Time("SaPFactory:I * Ptent"));
-      //sapTimer->start(true);
       //Teuchos::ParameterList matrixList;
       //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.Get< RCP<Operator> >("A")->getRowMap(),matrixList);
       //RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
       //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
-      //sapTimer->stop();
-      //MemUtils::ReportTimeAndMemory(*sapTimer, *(A->getRowMap()->getComm()));
 
-      sapTimer = rcp(new Teuchos::Time("SaPFactory:APtent_"+buf.str()));
-      sapTimer->start(true);
-
-      //JJH -- If I switch doFillComplete to false, the resulting matrix seems weird when printed with describe.
-      //JJH -- The final prolongator is wrong, to boot.  So right now, I fillComplete AP, but avoid fillComplete
-      //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
-      bool doFillComplete=true;
-      bool optimizeStorage=false;
-      RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
-      sapTimer->stop();
-      MemUtils::ReportTimeAndMemory(*sapTimer, *(A->getRowMap()->getComm()));
-
-      sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_APtent_"+buf.str()));
-      sapTimer->start(true);
-      doFillComplete=false;
-      optimizeStorage=false;
-      Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(A);
-      Utils::MyOldScaleMatrix(AP,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
-      sapTimer->stop();
-      MemUtils::ReportTimeAndMemory(*sapTimer, *(A->getRowMap()->getComm()));
-
-      sapTimer = rcp(new Teuchos::Time("SaPFactory:eigen_estimate_"+buf.str()));
-      sapTimer->start(true);
-      Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 10,(Scalar)1e-4);
-      //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50,(Scalar)1e-7, true);
-      sapTimer->stop();
-      MemUtils::ReportTimeAndMemory(*sapTimer, *(A->getRowMap()->getComm()));
-      RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-
-      GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor_/lambdaMax << " (" << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
-
-      sapTimer = rcp(new Teuchos::Time("SaPFactory:Pt_plus_DinvAPtent_"+buf.str()));
-      sapTimer->start(true);
-
-      bool doTranspose=false; 
-      if (AP->isFillComplete())
-        Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,doTranspose,-dampingFactor_/lambdaMax,finalP);
-      else {
-        Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,-dampingFactor_/lambdaMax);
-        finalP = AP;
+      RCP<Operator> AP;
+      {
+        SubMonitor m2(*this, "MxM: A x Ptentative");
+        //JJH -- If I switch doFillComplete to false, the resulting matrix seems weird when printed with describe.
+        //JJH -- The final prolongator is wrong, to boot.  So right now, I fillComplete AP, but avoid fillComplete
+        //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
+        bool doFillComplete=true;
+        bool optimizeStorage=false;
+        AP = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
       }
-      sapTimer->stop();
-      MemUtils::ReportTimeAndMemory(*sapTimer, *(A->getRowMap()->getComm()));
 
-      sapTimer = rcp(new Teuchos::Time("SaPFactory:finalP_fillComplete_"+buf.str()));
-      sapTimer->start(true);
-      finalP->fillComplete( Ptent->getDomainMap(), Ptent->getRangeMap() );
-      sapTimer->stop();
-      MemUtils::ReportTimeAndMemory(*sapTimer, *(A->getRowMap()->getComm()));
-    }
-    else {
+      {
+        SubMonitor m2(*this, "Scaling (A x Ptentative) by D^{-1}");
+        bool doFillComplete=false;
+        bool optimizeStorage=false;
+        Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(A);
+        Utils::MyOldScaleMatrix(AP,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
+      }
+
+      Scalar lambdaMax;
+      {
+        SubMonitor m2(*this, "Eigenvalue estimate");
+        lambdaMax = Utils::PowerMethod(*A, true, (LO) 10,(Scalar)1e-4);
+        //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50,(Scalar)1e-7, true);
+        GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor_/lambdaMax << " (" << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
+      }
+
+      {
+        SubMonitor m2(*this, "M+M: P = (Ptentative) + (D^{-1} x A x Ptentative)");
+        
+        bool doTranspose=false; 
+        if (AP->isFillComplete())
+          Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,doTranspose,-dampingFactor_/lambdaMax,finalP);
+        else {
+          Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,-dampingFactor_/lambdaMax);
+          finalP = AP;
+        }
+      }
+
+      {
+        SubMonitor m2(*this, "FillComplete() of P");
+        finalP->fillComplete( Ptent->getDomainMap(), Ptent->getRangeMap() );
+      }
+      
+    } else {
       finalP = Ptent;
     }
-
-    timer->stop();
-    MemUtils::ReportTimeAndMemory(*timer, *(finalP->getRowMap()->getComm()));
 
     // Level Set
     if(!restrictionMode_)

@@ -8,7 +8,7 @@
 
 #include "MueLu_TransPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_Memory.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -33,9 +33,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildR(Level & fineLevel, Level & coarseLevel) const {
 
-    std::ostringstream buf; buf << coarseLevel.GetLevelID();
-    RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR_"+buf.str()));
-    timer->start(true);
+    Monitor m(*this, "Transpose P");
 
     Teuchos::OSTab tab(this->getOStream());
     Teuchos::ParameterList matrixList;
@@ -50,9 +48,6 @@ namespace MueLu {
     RCP<Operator> R = Utils2::Transpose(P,true);
 
     coarseLevel.Set("R", R, this);
-
-    timer->stop();
-    MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
   } //BuildR
 

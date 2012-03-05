@@ -6,7 +6,6 @@
 #include "MueLu_Graph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Memory.hpp"
 
 namespace MueLu {
 
@@ -27,37 +26,38 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void UCAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
   {
-    Monitor m(*this, "Aggregation");
 
-    //TODO check for reuse of aggregates here
-    //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
-    //FIXME there ever be more than one graph?
-    //FIXME TAW: The graph is always labeled with "Graph". There can be more than one graph of course
-    //FIXME TAW: We can distinguish them by their factory!
-
-    RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("UCAggregationFactory::Build_" + Teuchos::toString(currentLevel.GetLevelID())));
-    timer->start(true);
-
-    // Level Get
-    RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_.get());
-
-    // Build
-    RCP<Aggregates> aggregates = rcp(new Aggregates(*graph)); 
-    aggregates->setObjectLabel("UC");
-
-    algo1_.CoarsenUncoupled(*graph, *aggregates);
-    algo2_.AggregateLeftovers(*graph, *aggregates);
-
-    // transfer amalgamation information from graph to aggregates
-    // note: if matrix has not been amalgamated, the amalgamation information is just Teuchos::null
-    aggregates->SetAmalgamationInformation(graph->GetAmalgamationParams());
+    RCP<Aggregates> aggregates;
+    {
+      Monitor m(*this, "Aggregation");
+      
+      //TODO check for reuse of aggregates here
+      //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
+      //FIXME there ever be more than one graph?
+      //FIXME TAW: The graph is always labeled with "Graph". There can be more than one graph of course
+      //FIXME TAW: We can distinguish them by their factory!
+      
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("UCAggregationFactory::Build_" + Teuchos::toString(currentLevel.GetLevelID())));
+      timer->start(true);
+      
+      // Level Get
+      RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_.get());
+      
+      // Build
+      aggregates = rcp(new Aggregates(*graph)); 
+      aggregates->setObjectLabel("UC");
+      
+      algo1_.CoarsenUncoupled(*graph, *aggregates);
+      algo2_.AggregateLeftovers(*graph, *aggregates);
+      
+      // transfer amalgamation information from graph to aggregates
+      // note: if matrix has not been amalgamated, the amalgamation information is just Teuchos::null
+      aggregates->SetAmalgamationInformation(graph->GetAmalgamationParams());
+      
+    }
 
     // Level Set
     currentLevel.Set("Aggregates", aggregates, this);
-
-    //
-    timer->stop();
-    MemUtils::ReportTimeAndMemory(*timer, *(graph->GetComm()));
 
     if (IsPrint(Statistics0)) {
       aggregates->describe(GetOStream(Statistics0, 0), getVerbLevel());

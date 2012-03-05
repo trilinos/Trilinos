@@ -14,7 +14,6 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Memory.hpp"
 
 namespace MueLu {
 
@@ -78,20 +77,17 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Declare
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level &coarseLevel) const {
-  Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  std::ostringstream buf; buf << coarseLevel.GetLevelID();
-  RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("PgPFactory::BuildP_"+buf.str()));
-  timer->start(true);
-
   // Level Get
   RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
   RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
 
-  /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
-  if(restrictionMode_)
-    A = Utils2::Transpose(A,true); // build transpose of A explicitely
+  SubMonitor m(*this, "Prolongator smoothing (PG-AMG)");
 
-  Monitor m(*this, "prolongator smoothing (PG-AMG)");
+  /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
+  if(restrictionMode_) {
+    SubMonitor m(*this, "Transpose A");
+    A = Utils2::Transpose(A,true); // build transpose of A explicitely
+  }
 
   /////////////////// calculate D^{-1} A Ptent (needed for smoothing)
   bool doFillComplete=true;
@@ -165,9 +161,6 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
     RCP<Operator> R = Utils2::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
     coarseLevel.Set("R", R, this);
   }
-
-  timer->stop();
-  MemUtils::ReportTimeAndMemory(*timer, *(P_smoothed->getRowMap()->getComm()));
 
 }
 

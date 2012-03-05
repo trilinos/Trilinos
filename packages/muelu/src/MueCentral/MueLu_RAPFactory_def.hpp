@@ -4,7 +4,6 @@
 #include "MueLu_RAPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Memory.hpp"
 
 #include "Xpetra_BlockedCrsOperator.hpp"
 
@@ -34,59 +33,59 @@ namespace MueLu {
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
     typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass; // TODO move me
 
-    Monitor m(*this, "Computing Ac = RAP");
-
-    std::ostringstream buf; buf << coarseLevel.GetLevelID();
-    RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("RAP::Build_"+buf.str()));
-    timer->start(true);
-
-    Teuchos::OSTab tab(this->getOStream());
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",AFact_.get());
-
-    const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);
-    if(bA!=Teuchos::null) {
-      RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
-      BuildRAPBlock(fineLevel,coarseLevel, R, A, P);
-    }
-    else {
-
-      if (implicitTranspose_) {
-        BuildRAPImplicit(fineLevel,coarseLevel,A,P);
-      } else {
-        // explicit version
+    {
+      Monitor m(*this, "Computing Ac = RAP");
+      
+      Teuchos::OSTab tab(this->getOStream());
+      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
+      RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",AFact_.get());
+      
+      const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);
+      if(bA!=Teuchos::null) {
         RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
-        BuildRAPExplicit(fineLevel,coarseLevel,R,A,P);
+        BuildRAPBlock(fineLevel,coarseLevel, R, A, P);
+      }
+      else {
+        
+        if (implicitTranspose_) {
+          BuildRAPImplicit(fineLevel,coarseLevel,A,P);
+        } else {
+          // explicit version
+          RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
+          BuildRAPExplicit(fineLevel,coarseLevel,R,A,P);
+        }
       }
     }
 
-    timer->stop();
-    MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
+    if (TransferFacts_.begin() != TransferFacts_.end()) {
+      Monitor m(*this, "Projections");
 
-    // call Build of all user-given transfer factories
-    std::vector<RCP<FactoryBase> >::const_iterator it;
-    for(it=TransferFacts_.begin(); it!=TransferFacts_.end(); it++) {
-      GetOStream(Runtime0, 0) << "Ac: call transfer factory " << (*it).get() << ": " << (*it)->description() << std::endl;
-      (*it)->CallBuild(coarseLevel);
+      // call Build of all user-given transfer factories
+      std::vector<RCP<FactoryBase> >::const_iterator it;
+      for(it=TransferFacts_.begin(); it!=TransferFacts_.end(); it++) {
+        GetOStream(Runtime0, 0) << "Ac: call transfer factory " << (*it).get() << ": " << (*it)->description() << std::endl;
+        (*it)->CallBuild(coarseLevel);
+      }
     }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPExplicit(Level &fineLevel, Level &coarseLevel, const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const {
-    std::ostringstream buf; buf << coarseLevel.GetLevelID();
-    RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P_"+buf.str()));
-    apTimer->start(true);
-    RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,P,false);
-    apTimer->stop();
-    MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
-    //std::string filename="AP.dat";
-    //Utils::Write(filename,AP);
+    SubMonitor m(*this, "Build RAP explicitly");
 
-    RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP_"+buf.str()));
-    rapTimer->start(true);
-    RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
-    rapTimer->stop();
-    MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
+    RCP<Operator> AP;
+    {
+      SubMonitor m2(*this, "MxM: A x P");
+      AP = Utils::TwoMatrixMultiply(A,false,P,false);
+      //std::string filename="AP.dat";
+      //Utils::Write(filename,AP);
+    }
+
+    RCP<Operator> RAP;
+    {
+      SubMonitor m2(*this, "MxM: R x (AP)");
+      RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
+    }
 
     coarseLevel.Set("A", RAP, this);
     GetOStream(Statistics0, 0) << "Ac (explicit): # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;

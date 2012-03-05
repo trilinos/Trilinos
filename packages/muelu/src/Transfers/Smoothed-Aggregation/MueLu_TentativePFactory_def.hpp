@@ -14,7 +14,6 @@
 #include "MueLu_TentativePFactory_decl.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Memory.hpp"
 
 namespace MueLu {
 
@@ -48,7 +47,6 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level & fineLevel, Level & coarseLevel) const {
-    //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     // get data from fine level
     RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
@@ -58,15 +56,8 @@ namespace MueLu {
     Monitor m(*this, "Tentative prolongator");
 
     // Build
-    std::ostringstream buf; buf << coarseLevel.GetLevelID(); //TODO remove/hide
-    RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TentativePFactory::MakeTentative_"+buf.str()));
-    timer->start(true);
-
     RCP<MultiVector> coarseNullspace; RCP<Operator> Ptentative; // output of MakeTentative()
     MakeTentative(*A, *aggregates, *nullspace, coarseNullspace, Ptentative);
-
-    timer->stop();
-    MemUtils::ReportTimeAndMemory(*timer, *(A->getRowMap()->getComm()));
 
     // Level Set
     coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get()); //FIXME !!!!
