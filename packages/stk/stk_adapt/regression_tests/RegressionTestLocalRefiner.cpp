@@ -66,6 +66,13 @@ namespace stk
     namespace regression_tests
     {
 
+#if !defined(__IBMCPP__)
+      bool DO_TESTS=true;
+#else
+      // maybe it takes too long on dawn so we turn off these long-running tests...
+      bool DO_TESTS=false;
+#endif
+
       bool LARGE_TEST_ONLY=false;
 
       const std::string input_files_loc="./input_files/";
@@ -226,7 +233,7 @@ namespace stk
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        if (LARGE_TEST_ONLY) return;
+        if (LARGE_TEST_ONLY && !DO_TESTS) return;
 
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
@@ -332,7 +339,7 @@ namespace stk
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        if (LARGE_TEST_ONLY) return;
+        if (LARGE_TEST_ONLY && !DO_TESTS) return;
 
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
@@ -527,7 +534,7 @@ namespace stk
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        if (LARGE_TEST_ONLY) return;
+        if (LARGE_TEST_ONLY && !DO_TESTS) return;
 
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
@@ -700,7 +707,7 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_EdgeBased_moving_shock)
       {
         const bool do_full_demo = false;
-        if (LARGE_TEST_ONLY) return;
+        if (LARGE_TEST_ONLY && !DO_TESTS) return;
         if (do_full_demo)
           {
             int num_time_steps = 10;  // 10 for stress testing
@@ -831,7 +838,7 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_EdgeBased_moving_shock_cyl_sidesets)
       {
         const bool do_full_demo = false;
-        if (LARGE_TEST_ONLY) return;
+        if (LARGE_TEST_ONLY && !DO_TESTS) return;
         if (do_full_demo)
           {
             int num_time_steps = 10;  // 10 for stress testing
@@ -960,7 +967,7 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_EdgeBased_moving_shock_large_test)
       {
         const bool do_full_demo = false;
-        if (!LARGE_TEST_ONLY) return;
+        if (!LARGE_TEST_ONLY && !DO_TESTS) return;
         if (do_full_demo)
           {
             int num_time_steps = 10;  // 10 for stress testing
