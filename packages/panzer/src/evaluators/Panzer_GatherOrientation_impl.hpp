@@ -40,14 +40,12 @@ void panzer::GatherOrientation<EvalT, Traits,LO,GO>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
   TEUCHOS_ASSERT(gatherFieldOrientations_.size() == indexerNames_->size());
 
   fieldIds_.resize(gatherFieldOrientations_.size());
 
   for (std::size_t fd = 0; fd < gatherFieldOrientations_.size(); ++fd) {
     // get field ID from DOF manager
-    //std::string fieldName = gatherFieldOrientations_[fd].fieldTag().name();
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
@@ -90,7 +88,7 @@ evaluateFields(typename Traits::EvalData workset)
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
-            (gatherFieldOrientations_[fieldIndex])(worksetCellIndex,basis) =orientation[offset];
+            (gatherFieldOrientations_[fieldIndex])(worksetCellIndex,basis) = orientation[offset];
          }
       }
    }

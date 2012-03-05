@@ -38,8 +38,9 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
       std::set<StrPureBasisPair,StrPureBasisComp>::const_iterator fieldItr; 
       for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
          // determine if orientations are required
-         PureBasis::EElementSpace space = fieldItr->second->getElementSpace();
-         orientationsRequired |= ((space==PureBasis::HDIV) || (space==PureBasis::HCURL)); 
+         // PureBasis::EElementSpace space = fieldItr->second->getElementSpace();
+         // orientationsRequired |= ((space==PureBasis::HDIV) || (space==PureBasis::HCURL)); 
+         orientationsRequired |= fieldItr->second->requiresOrientations();
 
          Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepidBasis 
                = fieldItr->second->getIntrepidBasis();

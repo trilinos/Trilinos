@@ -132,7 +132,8 @@ namespace panzer {
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
     RCP<panzer::IntegrationRule> ir;
-    RCP<panzer::BasisIRLayout> basis;
+    RCP<panzer::PureBasis> basis;
+    RCP<panzer::BasisIRLayout> basisLayout;
     {
       std::size_t numCells = 10;
       int baseCellDim = 2;
@@ -140,13 +141,14 @@ namespace panzer {
       panzer::CellData cellData(numCells,baseCellDim,topo);
       ir = rcp(new IntegrationRule(cubatureDegree,cellData));
       std::string basisType = "Q1";
-      basis = rcp(new BasisIRLayout(basisType,*ir));
+      basis = rcp(new PureBasis(basisType,cellData));
+      basisLayout = rcp(new BasisIRLayout(basis,*ir));
     }
 
     ParameterList p("DOF Test");
     p.set("Name", "TEMP");
     p.set("IR", ir);
-    p.set("Basis", basis);
+    p.set("Basis", basisLayout);
 
     panzer::DOF<panzer::Traits::Residual,panzer::Traits> e_r(p);
     panzer::DOF<panzer::Traits::Jacobian,panzer::Traits> e_J(p);
@@ -159,26 +161,58 @@ namespace panzer {
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-    RCP<panzer::IntegrationRule> ir;
-    RCP<panzer::BasisIRLayout> basis;
     {
-      std::size_t numCells = 10;
-      int baseCellDim = 2;
-      int cubatureDegree = 2;
-      panzer::CellData cellData(numCells,baseCellDim,topo);
-      ir = rcp(new IntegrationRule(cubatureDegree,cellData));
-      std::string basisType = "Q1";
-      basis = rcp(new BasisIRLayout(basisType,*ir));
+      RCP<panzer::IntegrationRule> ir;
+      RCP<panzer::BasisIRLayout> basisLayout;
+      RCP<panzer::PureBasis> basis;
+      {
+        std::size_t numCells = 10;
+        int baseCellDim = 2;
+        int cubatureDegree = 2;
+        panzer::CellData cellData(numCells,baseCellDim,topo);
+        ir = rcp(new IntegrationRule(cubatureDegree,cellData));
+        std::string basisType = "Q1";
+        basis = rcp(new PureBasis(basisType,cellData));
+        basisLayout = rcp(new BasisIRLayout(basis,*ir));
+      }
+  
+      ParameterList p("DOFGradient Test");
+      p.set("Name", "TEMP");
+      p.set("Gradient Name", "GRAD_TEMP");
+      p.set("IR", ir);
+      p.set("Basis", basisLayout);
+  
+      panzer::DOFGradient<panzer::Traits::Residual,panzer::Traits> e_r(p);
+      panzer::DOFGradient<panzer::Traits::Jacobian,panzer::Traits> e_J(p);
     }
 
-    ParameterList p("DOFGradient Test");
-    p.set("Name", "TEMP");
-    p.set("Gradient Name", "GRAD_TEMP");
-    p.set("IR", ir);
-    p.set("Basis", basis);
-
-    panzer::DOFGradient<panzer::Traits::Residual,panzer::Traits> e_r(p);
-    panzer::DOFGradient<panzer::Traits::Jacobian,panzer::Traits> e_J(p);
+    // test failure case (HCURL has no Grad)
+    {
+      RCP<panzer::IntegrationRule> ir;
+      RCP<panzer::BasisIRLayout> basisLayout;
+      RCP<panzer::PureBasis> basis;
+      {
+        std::size_t numCells = 10;
+        int baseCellDim = 2;
+        int cubatureDegree = 2;
+        panzer::CellData cellData(numCells,baseCellDim,topo);
+        ir = rcp(new IntegrationRule(cubatureDegree,cellData));
+        std::string basisType = "QEdge1";
+        basis = rcp(new PureBasis(basisType,cellData));
+        basisLayout = rcp(new BasisIRLayout(basis,*ir));
+      }
+  
+      ParameterList p("DOFGradient Test");
+      p.set("Name", "TEMP");
+      p.set("Gradient Name", "GRAD_TEMP");
+      p.set("IR", ir);
+      p.set("Basis", basisLayout);
+  
+      typedef panzer::DOFGradient<panzer::Traits::Residual,panzer::Traits> DOFRes;
+      typedef panzer::DOFGradient<panzer::Traits::Jacobian,panzer::Traits> DOFJac;
+      TEST_THROW(DOFRes e_r(p),std::logic_error);
+      TEST_THROW(DOFJac e_J(p),std::logic_error);
+    }
   }
 
   TEUCHOS_UNIT_TEST(evaluators, Integrator_BasisTimesScalar)
