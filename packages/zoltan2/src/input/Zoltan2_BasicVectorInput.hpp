@@ -47,6 +47,7 @@ namespace Zoltan2 {
 
  \todo Global identifiers should be optional.  If the user gives us
     gids in the input adapter, we will include them in the solution.
+  \todo Is there any reason to specify coordinates for vector elements?
 
 */
 
@@ -66,6 +67,26 @@ public:
   typedef User user_t;
 
 #endif
+
+  /*! \brief Constructor for one vector with no weights.
+   *
+   *  \param numIds  the local length of the vector
+   *  \param ids     pointer to the global ids of the local vector elements
+   *  \param elements  pointer to the elements corresponding to the ids
+   *  \param elementStrides  the k'th element is at elements[k*elementStride]
+   *                 and elements is of lenth numIds * elementStride
+   *  
+   *  The values pointed to the arguments must remain valid for the
+   *  lifetime of this InputAdapter.
+   */
+
+  BasicVectorInput(lno_t numIds, const gid_t *ids, const scalar_t *elements, 
+    int elementStride=1):
+      env_(rcp(new Environment)), numIds_(0), globalNumIds_(0), idList_(NULL),
+      numVectors_(1), elements_(1), numWeights_(0), weights_(0)
+  {
+    createBasicVector(&elements, &elementStride, NULL, NULL);
+  }
 
   /*! \brief Constructor for one vector.
    *
@@ -89,10 +110,12 @@ public:
 
   BasicVectorInput(lno_t numIds, const gid_t *ids, 
     const scalar_t *elements, int elementStride,
-    int numWeights, const scalar_t * const * weights, int *weightStrides)
+    int numWeights, const scalar_t * const * weights, int *weightStrides):
+      env_(rcp(new Environment)), numIds_(numIds), globalNumIds_(0), 
+      idList_(ids), numVectors_(1), elements_(1), 
+      numWeights_(numWeights), weights_(numWeights)
   {
-    createBasicVector(1, numIds, ids, &elements, &elementStride,
-       numWeights, weights, weightStrides);
+    createBasicVector(&elements, &elementStride, weights, weightStrides);
   }
 
   /*! \brief Constructor for a set of vectors.
@@ -122,10 +145,12 @@ public:
 
   BasicVectorInput(int numVectors, lno_t numIds, const gid_t *ids, 
     const scalar_t * const *elements, int *elementStrides,
-    int numWeights, const scalar_t * const *weights, int *weightStrides)
+    int numWeights, const scalar_t * const *weights, int *weightStrides):
+      env_(rcp(new Environment)), numIds_(numIds), globalNumIds_(0), 
+      idList_(ids), numVectors_(numVectors), elements_(numVectors), 
+      numWeights_(numWeights), weights_(numWeights)
   {
-    createBasicVector(numVectors, numIds, ids, elements, elementStrides,
-      numWeights, weights, weightStrides);
+    createBasicVector(elements, elementStrides, weights, weightStrides);
   }
 
   /*! Destructor
@@ -185,10 +210,13 @@ private:
   int numWeights_;
   Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
 
-  void createBasicVector(int numVectors, lno_t numIds, 
-    const gid_t *ids, const scalar_t * const *elements, int *elementStrides,
-    int numWeights, const scalar_t * const *weights, int *weightStrides);
+  void createBasicVector(const scalar_t * const *elements, int *elementStrides,
+    const scalar_t * const *weights, int *weightStrides);
 };
+
+////////////////////////////////////////////////////////////////
+// Definitions
+////////////////////////////////////////////////////////////////
 
 template <typename User>
   size_t BasicVectorInput<User>::getVector(int i, const gid_t *&ids, 
@@ -221,49 +249,39 @@ template <typename User>
 }
 
 template <typename User>
-  void BasicVectorInput<User>::createBasicVector(int numVectors, lno_t numIds, 
-    const gid_t *ids, const scalar_t * const *elements, int *elementStrides,
-    int numWeights, const scalar_t * const *weights, int *weightStrides)
+  void BasicVectorInput<User>::createBasicVector(
+    const scalar_t * const *elements, int *elementStrides,
+    const scalar_t * const *weights, int *weightStrides)
 {
-  env_ = rcp(new Environment);
-  numIds_ = numIds; 
-  globalNumIds_ = 0;
-  idList_ = ids;
-  numVectors_ = numVectors;
-  elements_ = Array<RCP<StridedInput<lno_t, scalar_t> > >(numVectors);
-  numWeights_ = numWeights;
-  weights_ = Array<RCP<StridedInput<lno_t, scalar_t> > >(numWeights);
-
   typedef StridedInput<lno_t,scalar_t> input_t;
 
-  gno_t tmp = numIds;
+  gno_t tmp = numIds_;
   try{
     reduceAll<int, gno_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1, 
        &tmp, &globalNumIds_);
   }
   Z2_THROW_OUTSIDE_ERROR(*env_, e);
 
-  if (numIds){
+  if (numIds_){
     int stride = 1;
-    for (int v=0; v < numVectors; v++){
+    for (int v=0; v < numVectors_; v++){
       if (elementStrides)
         stride = elementStrides[v];
       elements_[v] = rcp<input_t>(new input_t(
-        ArrayView<const scalar_t>(elements[v], stride*numIds), stride));
+        ArrayView<const scalar_t>(elements[v], stride*numIds_), stride));
     }
 
-    if (numWeights){
+    if (numWeights_){
       stride = 1;
-      for (int w=0; w < numWeights; w++){
+      for (int w=0; w < numWeights_; w++){
         if (weightStrides)
           stride = weightStrides[w];
         weights_[w] = rcp<input_t>(new input_t(
-          ArrayView<const scalar_t>(weights[w], stride*numIds), stride));
+          ArrayView<const scalar_t>(weights[w], stride*numIds_), stride));
       }
     }
   }
 }
-  
   
 }  //namespace Zoltan2
   

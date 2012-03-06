@@ -140,7 +140,7 @@ public:
 
   template <typename User2>
     size_t applyPartitioningSolution(User &in, User *&out,
-      const PartitioningSolution<User2> &solution)
+      const PartitioningSolution<User2> &solution) const
   {
     return 0;
   } 
