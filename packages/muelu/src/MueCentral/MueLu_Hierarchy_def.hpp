@@ -246,7 +246,7 @@ namespace MueLu {
     // 2011/12 JG: Requests on the fine level are now posted at the beginning of the subroutine: Setup(fineLevelManager, coarseLevelManager, nextLevelManager)
 
     // Monitor h(*this, "Setup"); Use a MonitorBase instead to avoid printing "{numLevels = 1}" as numLevels will increase...
-    MonitorBase h("Setup (" + this->description() + ")", this->GetVerbLevel(), this->getOStream(), this->shortClassName() + ": Setup", Runtime0, this->IsPrint(Timings0));
+    MonitorBase h("Setup (" + this->MueLu::Describable::description() + ")", this->GetVerbLevel(), this->getOStream(), this->shortClassName() + ": Setup", Runtime0, this->IsPrint(Timings0));
 
     //TODO Xpetra::global_size_t sumCoarseNnz = 0;
 
@@ -378,6 +378,11 @@ namespace MueLu {
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value = 1
                                                                                   const bool &InitialGuessIsZero, const CycleType &Cycle, const LO &startLevel)
   {
+
+    RCP<Monitor> h;
+    if (startLevel == 0)
+      h = rcp( new Monitor(*this, "Iterate", (nIts == 1) ? None : Runtime0)); // Do not issue msg if part of an iterative method
+
     //Teuchos::Array<Magnitude> norms(1);
     bool zeroGuess=InitialGuessIsZero;
 

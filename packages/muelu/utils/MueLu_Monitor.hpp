@@ -29,7 +29,8 @@ namespace MueLu {
       GetOStream(verbLevelRuntimeMsg, 0) << descr_ << std::endl;
       // verbObject.describe(getOStream(), getVerbLevel()); //TODO
       
-      tab_ = rcp(new Teuchos::OSTab(getOStream()));
+      if (IsPrint(verbLevelRuntimeMsg))
+        tab_ = rcp(new Teuchos::OSTab(getOStream()));
       
       if (runTimer) {
         // Start the timer
@@ -74,8 +75,8 @@ namespace MueLu {
   // - Timer is printed on the go if RuntimeTimings)) == true
   class Monitor: public MonitorBase {
   public:
-    Monitor(const BaseClass& object, const std::string & descr) 
-      : MonitorBase(descr + " (" + object.description() + ")", object.GetVerbLevel(), object.getOStream(), object.shortClassName() + ": " + descr, Runtime0, object.IsPrint(Timings0))
+    Monitor(const BaseClass& object, const std::string & descr, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0) 
+      : MonitorBase(descr + " (" + object.description() + ")", object.GetVerbLevel(), object.getOStream(), object.shortClassName() + ": " + descr, msgLevel, object.IsPrint(timerLevel))
     { }
   };
 
