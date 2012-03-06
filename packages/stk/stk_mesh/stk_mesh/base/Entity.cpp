@@ -86,37 +86,6 @@ void Entity::reserve_relation(const unsigned num)
 
 // ---------------------------------------------------------------------
 
-namespace {
-
-// In order to preserve relation order, we need to use fmwk-style relation
-// comparing when dealing with a fmwk-managed relation; otherwise, use
-// stk-style relation ordering.
-struct relation_compare
-{
-  relation_compare(bool use_stk_compare) : m_use_stk_compare(use_stk_compare) {}
-
-  bool operator()(const Relation& lhs, const Relation& rhs) const
-  {
-    if (m_use_stk_compare) {
-      return lhs < rhs;
-    }
-    else {
-      // Fmwk version of relation comparison
-      if ( lhs.entity_rank() < rhs.entity_rank()) return true;
-      if ( rhs.entity_rank() < lhs.entity_rank()) return false;
-
-      if ( lhs.getRelationType() < rhs.getRelationType() ) return true;
-      if ( rhs.getRelationType() < lhs.getRelationType() ) return false;
-
-      return lhs.getOrdinal() < rhs.getOrdinal();
-    }
-  }
-
-  bool m_use_stk_compare;
-};
-
-}
-
 RelationIterator Entity::find_relation(const Relation& relation) const
 {
   // Extremely hacky: It would be better to set up the < operator for relations so that lower_bound
@@ -135,8 +104,7 @@ RelationIterator Entity::find_relation(const Relation& relation) const
 
   RelationIterator rel = std::lower_bound(internal_begin_relation(relation_type),
                                           internal_end_relation(relation_type),
-                                          relation,
-                                          relation_compare(internal_is_handled_generically(relation_type)));
+                                          relation);
 
   while (rel != internal_end_relation(relation_type) &&
          rel->entity_rank()     == relation.entity_rank() &&
