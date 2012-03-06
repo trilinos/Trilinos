@@ -76,7 +76,8 @@
 
 int mainHost()
 {
-  const int nthread = 4 ;
+  const int nthread = Kokkos::Host::detect_core_count() / 2 ;
+
   Kokkos::Host::initialize( Kokkos::Host::SetThreadCount(nthread) );
 
 //  unit_test::test_dense<Kokkos::Host>();
@@ -119,12 +120,9 @@ int mainHost()
   unit_test::test_block_crs_matrix<Kokkos::Host>( 13 , 10 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 100 , 10 );
 
-  const int pDeg = 3 ;
-  const int nGrid = 5 ;
-
   std::cout << std::endl << "\"Host Performance with "
             << nthread << " threads\"" << std::endl ;
-  unit_test::performance_test_driver<Kokkos::Host>( pDeg , nGrid );
+  unit_test::performance_test_driver<Kokkos::Host>();
 
   Kokkos::Host::finalize();
 

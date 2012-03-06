@@ -122,11 +122,8 @@ int mainCuda()
 
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 100 , 10 );
 
-  const int pDeg = 3 ;
-  const int nGrid = 5 ;
-
   std::cout << std::endl << "\"Cuda Performance\"" << std::endl ;
-  unit_test::performance_test_driver<Kokkos::Cuda>( pDeg , nGrid );
+  unit_test::performance_test_driver<Kokkos::Cuda>();
 
   Kokkos::Cuda::finalize();
 
