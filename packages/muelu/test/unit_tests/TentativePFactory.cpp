@@ -56,6 +56,7 @@ namespace MueLuTests {
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(/*199*/29);
+    A->SetFixedBlockSize(1);
     fineLevel.Set("A",A);
 
       LO NSdim = 2;
@@ -64,7 +65,6 @@ namespace MueLuTests {
       fineLevel.Set("Nullspace",nullSpace);
 
       RCP<CoalesceDropFactory> amalgFact = rcp(new CoalesceDropFactory(Teuchos::null, Teuchos::null));
-      amalgFact->SetFixedBlockSize(1);
 
       RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(amalgFact));
       UCAggFact->SetMinNodesPerAggregate(3);

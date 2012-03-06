@@ -52,9 +52,6 @@ namespace MueLu {
 
     void DeclareInput(Level &currentLevel) const;
 
-    /// set fixed block size
-    void SetFixedBlockSize(LocalOrdinal blksize);
-
     /// set variable block size
     void SetVariableBlockSize();
 
@@ -93,9 +90,6 @@ namespace MueLu {
     //! nullspace factory
     //! The nullspace dimension is necessary for setting the block size in amalgamation routine
     RCP<const FactoryBase> nullspaceFact_;
-
-    /// blocksize for fixed blocksize setup
-    LocalOrdinal blksize_;
 
     /// are we doing fixed or variable blocks
     mutable bool fixedBlkSize_;

@@ -54,7 +54,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    MLParameterListInterpreter() : nullspace_(NULL) { }
+    MLParameterListInterpreter() : nullspace_(NULL), blksize_(1) { }
 
     //! Constructor.
     //! @param paramList: parameter list with ML parameters
@@ -135,6 +135,16 @@ namespace MueLu {
     //! This way the user can extend the standard functionality of the MLParameterListInterpreter beyond the
     //! capabibilities of ML.
     std::vector<RCP<FactoryBase> > TransferFacts_;
+
+    //@{ Operator configuration
+
+    //! Setup Operator object
+    virtual void SetupOperator(Operator & Op) const;
+
+    //! Operator configuration storage
+    int blksize_;
+
+    //@}
 
   }; // class MLParameterListInterpreter
 

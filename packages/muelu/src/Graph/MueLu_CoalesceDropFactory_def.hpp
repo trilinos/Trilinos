@@ -25,7 +25,7 @@ static const std::string color_purple = "35m";
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceDropFactory(RCP<const FactoryBase> AFact, RCP<const FactoryBase> nullspaceFact)
-: AFact_(AFact), nullspaceFact_(nullspaceFact), blksize_(1), fixedBlkSize_(true), blkSizeInfo_(Teuchos::null)
+: AFact_(AFact), nullspaceFact_(nullspaceFact), fixedBlkSize_(true), blkSizeInfo_(Teuchos::null)
   {
   predrop_ = Teuchos::null;  // no pre-dropping filter
   }
@@ -36,13 +36,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(), this);
   if(fixedBlkSize_ == false && currentLevel.GetLevelID() == 0)
     currentLevel.DeclareInput("VariableBlockSizeInfo", MueLu::NoFactory::get(), this);
-}
-
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFixedBlockSize(LocalOrdinal blksize) {
-  blksize_ = blksize;
-  fixedBlkSize_ = true;
-  GetOStream(Debug, 0) << color_esc << color_purple << "CoalesceDropFactory::SetFixedBlockSize()" << color_esc << color_std << std::endl;
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -79,7 +72,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
       TEUCHOS_TEST_FOR_EXCEPTION(blkSizeInfo_->getMap()->isSameAs(*(A->getColMap()))==false, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Build: map of blkSizeInfo does not match the column map of A. Error.");
     } else {
       // constant block size
-      blockdim = blksize_;
+      blockdim = A->GetFixedBlockSize();
       blkSizeInfo_ = Teuchos::null;
     }
   } else {
