@@ -85,7 +85,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
 
   /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
   if(restrictionMode_) {
-    SubMonitor m(*this, "Transpose A");
+    SubMonitor m2(*this, "Transpose A");
     A = Utils2::Transpose(A,true); // build transpose of A explicitely
   }
 

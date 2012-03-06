@@ -68,7 +68,7 @@ namespace MueLu {
     Monitor m(*this, "Prolongator smoothing");
 
     if(restrictionMode_) {
-      SubMonitor m(*this, "Transpose A");
+      SubMonitor m2(*this, "Transpose A");
       A = Utils2::Transpose(A,true); // build transpose of A explicitely
     }
 
