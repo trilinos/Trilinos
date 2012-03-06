@@ -111,7 +111,6 @@ int mainHost()
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 5 , 1 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 5 , 5 );
 
-/*
   std::cout << "Stress tests:" << std::endl ;
 
   unit_test::test_block_crs_matrix<Kokkos::Host>( 10 , 8 );
@@ -119,7 +118,6 @@ int mainHost()
   unit_test::test_block_crs_matrix<Kokkos::Host>( 12 , 10 );
   unit_test::test_block_crs_matrix<Kokkos::Host>( 13 , 10 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 100 , 10 );
-*/
 
   const int pDeg = 3 ;
   const int nGrid = 5 ;

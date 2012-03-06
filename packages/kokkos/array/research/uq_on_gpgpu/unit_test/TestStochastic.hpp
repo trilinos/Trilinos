@@ -521,7 +521,7 @@ void performance_test_driver( int pdeg , int nGrid )
 
   std::cout.precision(8);
 
-  for ( int nvar = 1 ; nvar <= 9 ; ++nvar ) {
+  for ( int nvar = 1 ; nvar <= 10 ; ++nvar ) {
     std::vector<int> var_degree( nvar , pdeg );
 
     {
