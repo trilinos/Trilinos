@@ -1,11 +1,12 @@
 #ifndef PANZER_EQUATIONSET_DEFAULT_IMPL_IMPL_HPP
 #define PANZER_EQUATIONSET_DEFAULT_IMPL_IMPL_HPP
 
-#include "Panzer_GatherOrientation.hpp"
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOFGradient.hpp"
+#include "Panzer_DOFCurl.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_GatherIntegrationCoordinates.hpp"
+#include "Panzer_GatherOrientation.hpp"
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -27,6 +28,7 @@ EquationSet_DefaultImpl(const panzer::InputEquationSet& ies,
 { 
   m_dof_names = Teuchos::rcp(new std::vector<std::string>);
   m_dof_gradient_names = Teuchos::rcp(new std::vector<std::string>);
+  m_dof_curl_names = Teuchos::rcp(new std::vector<std::string>);
   m_dof_time_derivative_names = Teuchos::rcp(new std::vector<std::string>);
   m_residual_names = Teuchos::rcp(new std::vector<std::string>);
   m_eval_plist = Teuchos::rcp(new Teuchos::ParameterList);
@@ -137,10 +139,10 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     fm.template registerEvaluator<EvalT>(op);
   }
 
-  TEUCHOS_ASSERT(this->m_dof_names->size() == this->m_dof_gradient_names->size());
-
   // Gradients of DOFs: Scalar value @ basis --> Vector value @ IP
-  {
+  if(this->m_pure_basis->supportsGrad()) {
+    TEUCHOS_ASSERT(this->m_dof_names->size() == this->m_dof_gradient_names->size());
+
     std::vector<std::string>::const_iterator dof_name = this->m_dof_names->begin();
     std::vector<std::string>::const_iterator dof_grad_name = this->m_dof_gradient_names->begin();
     for (;dof_grad_name != this->m_dof_gradient_names->end(); ++dof_grad_name,++dof_name) {
@@ -152,6 +154,27 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       
       RCP< PHX::Evaluator<panzer::Traits> > op = 
 	rcp(new panzer::DOFGradient<EvalT,panzer::Traits>(p));
+
+      fm.template registerEvaluator<EvalT>(op);
+    }
+  }
+
+
+  // Curl of DOFs: Vector value @ basis --> Vector value @ IP (3D) or Scalar value @ IP (2D)
+  if(this->m_pure_basis->supportsCurl()) {
+    TEUCHOS_ASSERT(this->m_dof_names->size() == this->m_dof_curl_names->size());
+ 
+    std::vector<std::string>::const_iterator dof_name = this->m_dof_names->begin();
+    std::vector<std::string>::const_iterator dof_curl_name = this->m_dof_curl_names->begin();
+    for (;dof_curl_name != this->m_dof_curl_names->end(); ++dof_curl_name,++dof_name) {
+      ParameterList p;
+      p.set("Name", *dof_name);
+      p.set("Curl Name", *dof_curl_name);
+      p.set("Basis", this->m_basis); 
+      p.set("IR", this->m_int_rule);
+      
+      RCP< PHX::Evaluator<panzer::Traits> > op = 
+	rcp(new panzer::DOFCurl<EvalT,panzer::Traits>(p));
 
       fm.template registerEvaluator<EvalT>(op);
     }
@@ -204,6 +227,21 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
+  }
+
+  // **************************
+  // Orientation terms
+  // **************************
+
+  if(this->m_pure_basis->requiresOrientations())  {
+    ParameterList p("Gather Orientation");
+    p.set("Basis", m_pure_basis);
+    p.set("DOF Names", m_dof_names);
+    p.set("Indexer Names", m_dof_names);
+    
+    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
     
     fm.template registerEvaluator<EvalT>(op);
   }
