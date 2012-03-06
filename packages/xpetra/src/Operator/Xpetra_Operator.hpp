@@ -45,8 +45,10 @@ namespace Xpetra {
     //! @name Constructor/Destructor Methods
     //@{
 
+    Operator() : blksize_(1) { }
+
     //! Destructor
-    virtual ~Operator() {}
+    virtual ~Operator() { }
 
     //@}
 
@@ -94,7 +96,7 @@ namespace Xpetra {
         \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
         \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
     */
-    virtual void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) =0;
+    virtual void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) = 0;
 
     //@}
 
@@ -333,7 +335,17 @@ namespace Xpetra {
   
     viewLabel_t defaultViewLabel_;  // label of the view associated with inital Operator construction
     viewLabel_t currentViewLabel_;  // label of the current view
-  
+
+    // ----------------------------------------------------------------------------------
+    // "TEMPORARY" VIEW MECHANISM
+    // TODO: the view mechanism should be implemented as in MueMat.
+    LocalOrdinal blksize_; 
+    // RCP<GOVector> variableBlockSizeInfo_; TODO: should be moved from CoalesceDropFactory to here.
+
+    void         SetFixedBlockSize(LocalOrdinal blksize) { blksize_ = blksize; }
+    LocalOrdinal GetFixedBlockSize() const               { return blksize_;    };
+    // ----------------------------------------------------------------------------------
+
   }; //class Operator
 
 } //namespace Xpetra

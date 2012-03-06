@@ -26,6 +26,16 @@ namespace MueLu {
     std::cout << "Parameter List:" << std::endl
               << paramList
               << std::endl;
+    
+    // Parameter List Parsing:
+    // ---------
+    //   <ParameterList name="MueLu">
+    //    <ParameterList name="Operator">
+    //   </ParameterList>
+    if (paramList.isSublist("Operator")) {
+      operatorList_ = paramList.sublist("Operator");
+      //TODO: should be validate here.
+    }
 
     // Parameter List Parsing:
     // ---------
@@ -118,6 +128,14 @@ namespace MueLu {
       //TODO: do not allow name of existing MueLu classes (can be tested using FactoryFactory)
 
       factoryMapOut[paramName] = FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>().BuildFactory(paramValue, factoryMapIn);
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupOperator(Operator & Op) const {
+    if(operatorList_.isParameter("PDE equations")) {
+      int nPDE = operatorList_.get<int>("PDE equations");
+      Op.SetFixedBlockSize(nPDE);
     }
   }
 

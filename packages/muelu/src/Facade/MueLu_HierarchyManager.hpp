@@ -6,11 +6,15 @@
 
 #include <Teuchos_Array.hpp>
 
+#include <Xpetra_Operator.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyFactory.hpp"
 
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_Exceptions.hpp"
+
+#include "MueLu_Level.hpp"
 
 namespace MueLu {
 
@@ -70,6 +74,15 @@ namespace MueLu {
     
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy & H) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
+
+      // Setup Operator
+      // TODO: I should certainly undo this somewhere...
+      RCP<Level> l = H.GetLevel(0);
+      RCP<Operator> Op = l->Get<RCP<Operator> >("A");
+      SetupOperator(*Op);
+
+      // Setup Hierarchy
       H.SetDefaultVerbLevel(verbLevel_);
       H.SetMaxCoarseSize(maxCoarseSize_);
 
@@ -102,6 +115,9 @@ namespace MueLu {
 
   protected: //TODO: access function
 
+    //! Setup Operator object
+    virtual void SetupOperator(Operator & Op) const { }
+    
     // Hierarchy parameters
     VerbLevel             verbLevel_;
     int                   numDesiredLevel_; 

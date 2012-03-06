@@ -46,6 +46,16 @@ namespace MueLu {
 
     void BuildFactoryMap(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, FactoryMap & factoryMapOut) const;
 
+    //@{ Operator configuration
+
+    //! Setup Operator object
+    virtual void SetupOperator(Operator & Op) const;
+
+    // Operator configuration storage
+    Teuchos::ParameterList operatorList_; //TODO: should it be stored in another format to avoid xml parsing in SetupOperator()?
+
+    //@}
+
   }; // class
 
 } // namespace MueLu
@@ -60,7 +70,3 @@ namespace MueLu {
 // - build per level
 // - comments/docs
 // - use FactoryManager instead of FactoryMap
-
-// TODO:
-// - adapt MLInterpreter to this new architecture
-
