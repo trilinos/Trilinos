@@ -1,6 +1,10 @@
 INCLUDE(TribitsCopyFilesToBinaryDir)
+INCLUDE(TribitsLibraryMacros)
+
+SET(TESTDATA "")
+APPEND_GLOB(TESTDATA ${CMAKE_CURRENT_SOURCE_DIR} *.mtx)
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(zoltan2_test_data_files
-  SOURCE_FILES cage10.mtx  diag500_4.mtx  simple.mtx
+  SOURCE_FILES ${TESTDATA}
   NOEXEPREFIX
 )
