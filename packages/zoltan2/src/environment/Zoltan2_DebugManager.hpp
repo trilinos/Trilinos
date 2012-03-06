@@ -7,9 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_DebugManager.hpp
-
     \brief Debug output manager for Zoltan2
-
     \author Siva Rajamanickam
 */
 #ifndef ZOLTAN2_DEBUGMANAGER_HPP
@@ -37,6 +35,8 @@ namespace Zoltan2
 
    If Zoltan2 is compiled with \b Z2_OMIT_ALL_STATUS_MESSAGES, no status
    messages will be displayed and status message code is ifdef'd out.
+
+   \todo For nightly testing, add a build for -DZ2_OMIT_ALL_STATUS_MESSAGES.
 */
 
 class DebugManager

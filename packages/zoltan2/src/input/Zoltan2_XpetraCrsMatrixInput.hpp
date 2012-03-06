@@ -7,8 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_XpetraCrsMatrixInput.hpp
-
-    \brief An input adapter for a Xpetra::CrsMatrix.
+    \brief Defines the XpetraCrsMatrixInput adapter class.
 */
 
 #ifndef _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
@@ -23,22 +22,22 @@
 namespace Zoltan2 {
 
 //////////////////////////////////////////////////////////////////////////////
-/*! Zoltan2::XpetraCrsMatrixInput
-    \brief Provides access for Zoltan2 to Xpetra::CrsMatrix data.
+/*!  \brief Provides access for Zoltan2 to Xpetra::CrsMatrix data.
 
-    TODO: we assume FillComplete has been called.  We should support
+    \todo we assume FillComplete has been called.  We should support
                 objects that are not FillCompleted.
+    \todo add RowMatrix
 
     The template parameter is the user's input object - an Epetra
     matrix or a templated Tpetra::CrsMatrix 
     or a templated Xpetra::CrsMatrix.
-    TODO add RowMatrix
 */
 
 template <typename User>
 class XpetraCrsMatrixInput : public MatrixInput<User> {
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
@@ -47,12 +46,14 @@ public:
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
   typedef MatrixInput<User>       base_adapter_t;
   typedef User user_t;
+#endif
 
-  /*! Destructor
+  /*! \brief Destructor
    */
   ~XpetraCrsMatrixInput() { }
 
-  /*! Constructor   
+  /*! \brief Constructor   
+   *    \param The users Epetra, Tpetra, or Xpetra CrsMatrix object 
    */
   // Constructor 
   XpetraCrsMatrixInput(const RCP<const User> &inmatrix):
@@ -90,7 +91,7 @@ public:
     } 
   };
 
-  /*! Access to xpetra matrix
+  /*! \brief Access to xpetra matrix
    */
 
   const RCP<const xmatrix_t> &getMatrix() const
@@ -112,50 +113,26 @@ public:
   // The MatrixInput interface.
   ////////////////////////////////////////////////////
 
-  /*! Returns the number rows on this process.
-   */
   size_t getLocalNumRows() const { 
     return matrix_->getNodeNumRows();
   }
 
-  /*! Returns the number rows in the entire matrix.
-   */
   global_size_t getGlobalNumRows() const { 
     return matrix_->getGlobalNumRows();
   }
 
-  /*! Returns the number columns on this process.
-   */
   size_t getLocalNumColumns() const { 
     return matrix_->getNodeNumCols();
   }
 
-  /*! Returns the number columns on this entire matrix.
-   *    what about directional columns, count twice?
-   */
   global_size_t getGlobalNumColumns() const { 
     return matrix_->getGlobalNumCols();
   }
 
-  /*! Return true if the matrix is square with one or more diagonal entries.
-   */
   bool diagonalEntriesMayBePresent() const {
     return ((matrix_->getGlobalNumCols() == matrix_->getGlobalNumRows()) && 
             (matrix_->getGlobalNumDiags() > 0));
   }
-
-  /*! Return a read only view of the data.
-     \param rowIds  Global row ids.  The memory for the global 
-          row IDs persists until the underlying Xpetra::CrsMatrix is deleted.
-     \param offsets The columns for rowIds[i] begin at colIds[offsets[i]].  
-        There are numRows+1 offsets.  The last offset is the length of the 
-        colIds array.  The memory pointed to by offsets persists 
-        in the GraphModel is deleted.
-     \param colIds The global column Ids. The memory pointed to by colIds 
-          persists until the GraphModel is deleted.
-
-     \return  The number rows in the rowIds list is returned.
-   */
 
   size_t getRowListView(const gid_t *&rowIds,
     const lno_t *&offsets, const gid_t *& colIds) const
@@ -173,12 +150,6 @@ public:
   // End of MatrixInput interface.
   ////////////////////////////////////////////////////
 
-  /*! Apply a partitioning solution to the matrix.
-   *   Every gid that was belongs to this process must
-   *   be on the list, or the Import will fail.
-   *
-   *   TODO : params etc
-   */
   template <typename User2>
     size_t applyPartitioningSolution(const User &in, User *&out,
          const PartitioningSolution<User2> &solution)

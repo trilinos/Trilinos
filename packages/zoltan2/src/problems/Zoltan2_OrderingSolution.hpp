@@ -7,10 +7,8 @@
 // @HEADER
 
 /*! \file Zoltan2_OrderingSolution.hpp
-
-    \brief The solution to a ordering problem.
+    \brief Defines the OrderingSolution class.
 */
-
 
 #ifndef _ZOLTAN2_ORDERINGSOLUTION_HPP_
 #define _ZOLTAN2_ORDERINGSOLUTION_HPP_
@@ -20,7 +18,13 @@
 
 namespace Zoltan2 {
 
-/*! Zoltan2::OrderingSolution
+/*! \brief The class containing ordering solutions and metrics.
+
+    Template parameters:
+    \li \c gid_t    data type for application global Ids
+    \li \c lno_t    data type for local indices and local counts
+
+   \todo documentation
 */
 
 template <typename gid_t, typename lno_t>
@@ -28,8 +32,8 @@ template <typename gid_t, typename lno_t>
 {
 public:
 
-  //////////////////////////////////////////////
-  // Constructor allocates memory for the solution.
+  /*! \brief Constructor allocates memory for the solution.
+   */
   OrderingSolution(
     size_t perm_size, // TODO: Is this always equal to nlids ?
     size_t ngids
@@ -46,25 +50,43 @@ public:
   // Accessor functions, allowing algorithms to get ptrs to solution memory.
   // Algorithms can then load the memory.
   // Non-RCP versions are provided for applications to use.
+
+  /*! \brief TODO.
+   */
   inline size_t getPermutationSize() {return perm_size_;}
 
+  /*! \brief TODO.
+   */
   inline ArrayRCP<gid_t>  &getGidsRCP()  {return gids_;}
+
+  /*! \brief TODO.
+   */
   inline ArrayRCP<lno_t> &getPermutationRCP() {return perm_;}
 
+  /*! \brief TODO.
+   */
   inline ArrayRCP<gid_t>  &getGidsRCPConst()  const
   {
     return const_cast<ArrayRCP<gid_t>& > (gids_);
   }
+
+  /*! \brief TODO.
+   */
   inline ArrayRCP<lno_t> &getPermutationRCPConst() const
   {
     return const_cast<ArrayRCP<lno_t>& > (perm_);
   }
 
+  /*! \brief TODO.
+   */
   inline gid_t  *getGids(size_t *length)
   {
     *length = gids_.size();
     return gids_.getRawPtr();
   }
+
+  /*! \brief TODO.
+   */
   inline lno_t *getPermutation(size_t *length)
   {
     *length = perm_.size();

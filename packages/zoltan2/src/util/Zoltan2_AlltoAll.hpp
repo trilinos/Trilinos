@@ -7,7 +7,6 @@
 // @HEADER
 
 /*! \file Zoltan2_AlltoAll.hpp
-
     \brief AlltoAll communication methods
 */
 
@@ -15,8 +14,10 @@
 #define _ZOLTAN2_ALLTOALL_HPP_
 
 #include <Zoltan2_Standards.hpp>
+#include <Zoltan2_Environment.hpp>
 
 #include <vector>
+#include <climits>
 
 namespace Zoltan2
 {
@@ -39,9 +40,8 @@ namespace Zoltan2
  * limitation of integer offsets and counters in collective operations.
  * In other words, LNO can be a 64-bit integer.
  *
- * TODO: AlltoAll will fail if packetSize does not fit into a 32-bit
- *   integer.  At this point in time, I don't think we need to check
- *   for this and break up packetSizes.  But some day...
+ * \todo We need to know the reasonable limit of receives to post, and
+ *         post no more than that number at a time.
  */
 
 template <typename T, typename LNO>
@@ -58,7 +58,7 @@ void AlltoAll(const Comm<int> &comm,
 
   LNO n = nprocs * count;
   T *ptr = new T [n]; 
-  Z2_GLOBAL_MEMORY_ASSERTION(env, n, ptr);
+  env.globalMemoryAssertion(__FILE__, __LINE__, n, ptr, rcp(&comm, false));
   recvBuf = Teuchos::arcp<T>(ptr, 0, n);
 
   // Do self messages
@@ -71,6 +71,11 @@ void AlltoAll(const Comm<int> &comm,
   // Post receives
 
   size_t packetSize = sizeof(T) * count;
+
+  env.globalInputAssertion(__FILE__, __LINE__,
+      "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
+      packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
+  
   RCP<CommRequest> r;
   Array<RCP<CommRequest> > req(nprocs-1);
 
@@ -133,11 +138,11 @@ void AlltoAll(const Comm<int> &comm,
  *
  * AlltoAllv uses only point-to-point messages.  This is to avoid the MPI 
  * limitation of integer offsets and counters in collective operations.
- * In other words, LNO can be a 64-bit integer.
+ * In other words, LNO can be a 64-bit integer.  (But the size of a single
+ * message must still fit in an int.)
  *
- * TODO: AlltoAllv will fail if packetSize does not fit into a 32-bit
- *   integer.  At this point in time, I don't think we need to check
- *   for this and break up packetSizes.  But some day...
+ * \todo We need to know the reasonable limit of receives to post, and
+ *         post no more than that number at a time.
  */
 
 template <typename T, typename LNO>
@@ -171,15 +176,16 @@ void AlltoAllv(const Comm<int> &comm,
   if (totalIn){
     ptr = new T [totalIn]; 
   }
-  Z2_GLOBAL_MEMORY_ASSERTION(env, totalIn, !totalIn||ptr);
+  env.globalMemoryAssertion(__FILE__, __LINE__, totalIn, !totalIn||ptr, 
+    rcp(&comm, false));
+
   recvBuf = Teuchos::arcp<T>(ptr, 0, totalIn, true);
 
-  T *in = recvBuf.get() + offsetIn;           // Copy self messages
-  const T *out = sendBuf.getRawPtr() + offsetOut;
+  // Copy self messages
 
-  for (LNO i=0; i < recvCount[rank]; i++){
-    in[i] = out[i];
-  }
+  memcpy(recvBuf.get() + offsetIn,
+         sendBuf.getRawPtr() + offsetOut,
+         sizeof(T) * recvCount[rank]);
 
 #ifdef HAVE_ZOLTAN2_MPI
   // Post receives
@@ -191,6 +197,11 @@ void AlltoAllv(const Comm<int> &comm,
 
   for (int p=0; p < nprocs; p++){
     LNO packetSize = recvCount[p] * sizeof(T);
+
+    env.globalInputAssertion(__FILE__, __LINE__,
+      "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
+      packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
+
     if (p != rank && packetSize > 0){
       LNO packetSize = recvCount[p] * sizeof(T);
       ArrayRCP<char> recvBufPtr(
@@ -416,7 +427,8 @@ void AlltoAllv(const Comm<int>     &comm,
   using Teuchos::is_null;
 
   LNO *sendSize = new LNO [nprocs];
-  Z2_GLOBAL_MEMORY_ASSERTION(env, nprocs, sendSize);
+  env.globalMemoryAssertion(__FILE__, __LINE__, nprocs, sendSize,
+    rcp(&comm, false));
 
   for (int p=0; p < nprocs; p++){
     if (sendCount[p] > 0){
@@ -438,7 +450,8 @@ void AlltoAllv(const Comm<int>     &comm,
   if (bufSize)
     buf = new T [bufSize];
   
-  Z2_GLOBAL_MEMORY_ASSERTION(env, bufSize, !bufSize || buf);
+  env.globalMemoryAssertion(__FILE__, __LINE__, bufSize, !bufSize || buf,
+    rcp(&comm, false));
 
   const std::vector<T> *vptr = sendBuf.getRawPtr();
 
@@ -468,7 +481,8 @@ void AlltoAllv(const Comm<int>     &comm,
     delete [] buf;
 
   LNO *vectorCount = new LNO [nprocs];
-  Z2_GLOBAL_MEMORY_ASSERTION(env, nprocs, vectorCount);
+  env.globalMemoryAssertion(__FILE__, __LINE__, nprocs, vectorCount,
+    rcp(&comm, false));
 
   LNO totalCount = 0;
 
@@ -491,7 +505,9 @@ void AlltoAllv(const Comm<int>     &comm,
   std::vector<T> *inVectors = NULL;
   if (totalCount)
     inVectors = new std::vector<T> [totalCount];
-  Z2_GLOBAL_MEMORY_ASSERTION(env, nprocs, !totalCount || inVectors);
+
+  env.globalMemoryAssertion(__FILE__, __LINE__, nprocs, 
+    !totalCount || inVectors, rcp(&comm, false));
 
   charBuf = reinterpret_cast<char *>(recvT.get());
   std::vector<T> *inv = inVectors;

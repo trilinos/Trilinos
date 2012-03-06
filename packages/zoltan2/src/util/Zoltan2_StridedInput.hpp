@@ -2,6 +2,7 @@
 #define _ZOLTAN2_STRIDEDINPUT_HPP_
 
 #include <Zoltan2_Standards.hpp>
+#include <Zoltan2_Environment.hpp>
 #include <typeinfo>
 
 /*! \file Zoltan2_StridedInput.hpp
@@ -10,10 +11,11 @@
 
 namespace Zoltan2{
 
-/*!  *  \brief The StridedInput class manages lists of weights or coordinates.
+/*!  \brief The StridedInput class manages lists of weights or coordinates.
  *
  * A likely representation for multi-dimensional weights or coordinates is
- *  an array ordered by identifier by dimension. The purposes of this class:
+ *  an array ordered by identifier by dimension, or vice versa. The purposes 
+ *  of this class:
  *
  *   \li to make it easy for applications to supply these arrays to Zoltan2.
  *   \li to provide a [] operator for algorithm's access to strided arrays.
@@ -36,21 +38,23 @@ private:
 public:
 
   /*! \brief Constructor
-   *    x[0] is the first element of the array.  The subsequent
-   *  elements are at x[i*stride].
+   *
+   *  \param x  x[0] is the first element of the array.  The subsequent
+   *               elements are at x[i * \c stride].
+   *  \param stride   the stride of the elements in the strided array.
    */
-  StridedInput(RCP<const Environment> env, ArrayView<const scalar_t> x, 
-    lno_t stride) :  env_(env), vec_(x), stride_(stride) 
-  {
-  }
+  StridedInput(ArrayView<const scalar_t> x, lno_t stride) :  
+    vec_(x), stride_(stride) { }
 
-  /*! \brief Constructor
+  /*! \brief Default constructor
    */
-  StridedInput(): env_(rcp(new Environment)), vec_(), stride_(0) { }
+  StridedInput(): vec_(), stride_(0) { }
 
   /*! \brief Access an element of the input array. 
    *
-   *   For performance, no error checking.
+   *   \param idx  The logical index of the element in the strided array. 
+   *
+   *    For performance, this is inline and no error checking.
    */
   scalar_t operator[](lno_t idx) const { return vec_[idx*stride_]; }
 
@@ -71,53 +75,43 @@ public:
       \param stride is describes the layout of the input in \c vec.
           
    */
-  void getStridedList(size_t &len, const scalar_t *&vec, int &stride)
+  void getStridedList(size_t &len, const scalar_t *&vec, int &stride) const
   {
     len = vec_.size();
     vec = vec_.getRawPtr();
     stride = stride_;
   }
 
-#if 0
-  /*! \brief Return the Environment object for the list.
-      \return The Environment with which the list was contructed.
-   */
-  RCP<const Environment> getEnv() { return env_;}
-
   /*! \brief Assignment operator
    */
   StridedInput & operator= (const StridedInput &sInput)
   {
     if (this != &sInput){
-      env_ = sInput.getEnv();
       size_t length;
       const scalar_t *vec;
       sInput.getStridedList(length, vec, stride_);
-      vec_ = ArrayView(vec, length);
+      vec_ = ArrayView<const scalar_t>(vec, length);
     }
 
     return *this;
   }
-#endif
-
-
 };
 
 template<typename lno_t, typename scalar_t>
   template<typename T>
      void StridedInput<lno_t, scalar_t>::getInputArray(ArrayRCP<const T> &array)
 {
-  size_t n = vec_.size();
-
-  if (n < 1){
+  if (vec_.size() < 1){
     array = ArrayRCP<const T>();
   }
   else if (stride_==1 && typeid(T()) == typeid(scalar_t())){
     array = Teuchos::arcpFromArrayView<const T>(vec_);
   }
   else{
+    Environment env;           // a default environment for error reporting
+    size_t n = vec_.size() / stride_;
     T *tmp = new T [n];
-    Z2_LOCAL_MEMORY_ASSERTION(*env_, n, tmp);
+    env.localMemoryAssertion(__FILE__, __LINE__, n, tmp);
     for (lno_t i=0,j=0; i < n; i++,j+=stride_){
       tmp[i] = Teuchos::as<T>(vec_[j]);
     }

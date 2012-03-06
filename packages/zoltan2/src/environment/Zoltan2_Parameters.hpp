@@ -6,6 +6,10 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file Zoltan2_Parameters.hpp
+    \brief Defines Parameter related enumerators, methods, and validators.
+*/
+
 #ifndef _ZOLTAN2_PARAMETERS_HPP_
 #define _ZOLTAN2_PARAMETERS_HPP_
 
@@ -25,26 +29,38 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Comm.hpp>
 
-/*! \file Zoltan2_Parameters.hpp
-
-  This file contains parameter-related declarations and definitions.
-*/
-
 // Had to redefine this type from Teuchos_ParameterEntryValidator.hpp.
 // Compiler stumbled on it.
 typedef Teuchos::RCP<const Teuchos::Array<std::string> > ValidStringsList;
 
 namespace Zoltan2{
 
-// Namespace methods
+////////////////////////////////////////////////////////////////////
+// Parameter-related namespace methods 
 
+/*! \brief Create a ParameterList suitable for validating another list.
+ *
+ *   \param  plIn   a ParameterList that has not been validated yet.
+ *   \param  plOut  on return, plOut has exactly the same parameters are
+ *                      plIn, but it also has a validator for each parameter.
+ *
+ *   The validating ParameterList is required to verify that the
+ *   input ParameterList is valid.
+ */
 void createValidatorList(
    const Teuchos::ParameterList &plIn, Teuchos::ParameterList &plOut);
 
+/*! \brief Print out the ParameterList's built in documenation.
+ *
+ *   \param  pl      a ParameterList
+ *   \param  os      the output stream to which the documentation should go
+ *   \param listNames  leave this unset - it is set in recursive calls
+ */
 void printListDocumentation( const Teuchos::ParameterList &pl, std::ostream &os,
   std::string listNames=std::string(""));
 
-// Parameter enumerated types.
+////////////////////////////////////////////////////////////////////
+// Parameter-related enumerated types.
 //
 //  If you change these enumerators, change their documentation
 //  in Zoltan2_Parameters.cpp.
@@ -60,9 +76,9 @@ void printListDocumentation( const Teuchos::ParameterList &pl, std::ostream &os,
  */
 
 enum AssertionLevel {
-  BASIC_ASSERTION,    /*!< checks that should always be done (user input) */
-  COMPLEX_ASSERTION,  /*!< checks that take extra time (validate a graph) */
-  DEBUG_MODE_ASSERTION, /*!< done when checking everything incl logic errors */
+  BASIC_ASSERTION,    /*!< \brief checks that should always be done (user input) */
+  COMPLEX_ASSERTION,  /*!< \brief checks that take extra time (validate a graph) */
+  DEBUG_MODE_ASSERTION, /*!< \brief done when checking everything incl logic errors */
   NUM_ASSERTION_LEVELS};
 
 /*! \brief The amount of debugging or status output to print.
@@ -76,10 +92,10 @@ enum AssertionLevel {
  */
  
 enum MessageOutputLevel {
-  NO_STATUS,                 /*!< don't display status/debug messages */
-  BASIC_STATUS,              /*!< the status at each high level step */
-  DETAILED_STATUS, /*!< include sub-steps, plus each method's entry and exit */
-  VERBOSE_DETAILED_STATUS,   /*!< include more detail about sub-steps */
+  NO_STATUS,                 /*!< \brief don't display status/debug messages */
+  BASIC_STATUS,              /*!< \brief the status at each high level step */
+  DETAILED_STATUS, /*!< \brief include sub-steps, plus each method's entry and exit */
+  VERBOSE_DETAILED_STATUS,   /*!< \brief include more detail about sub-steps */
   NUM_STATUS_OUTPUT_LEVELS};
 
 /*! \brief Whether profiling information should be local or should include
@@ -91,38 +107,77 @@ enum MessageOutputLevel {
  *          includes global min, max, average, total, etc.
  */
 enum MessageSummaryLevel{
-  LOCAL_SUMMARY,              /*!< messages should display local info only */
-  GLOBAL_SUMMARY,             /*!< include global min, max, avg, etc. */
+  LOCAL_SUMMARY,              /*!< \brief messages should display local info only */
+  GLOBAL_SUMMARY,             /*!< \brief include global min, max, avg, etc. */
   NUM_STATUS_SUMMARY_LEVELS};
 
 ////////////////////////////////////////////////////////////////////
-// IntegerRangeListValidator
-//
-// An IntegerRangeList is a concise way to provide a list of
-// identifiers.  Valid values are:
-//
-// a comma separated list of integers
-// a range of integers given as two integers separated by a dash
-// the word "all"
-// any comma separated list of the above three
-//
-// Examples:
-//    1,5,12,30-39,101
-//    all
-//
-// Redundant specifiers are and'ed:  "1,5,all" is just "all"
-////////////////////////////////////////////////////////////////////
+// A validator for integer range lists.
 
+
+/*! \brief Codes that indicate how to interpret the Array<int> representing
+ *            the user's integer range list
+ */
 enum RangeType {
-  RANGE_INCLUDES_ALL,
-  RANGE_IS_EMPTY,
-  RANGE_IS_LISTED,
+  RANGE_INCLUDES_ALL,    /*!< \brief all values were listed */
+  RANGE_IS_EMPTY,        /*!< \brief no values were listed */
+  RANGE_IS_LISTED,       /*!< \brief the listed values are in the Array<int> */
   NUM_RANGE_TYPES};
+
+/*! \class IntegerRangeListValidator
+ *  \brief A ParameterList validator for integer range lists
+ *
+ * An integer range list is a concise way to provide a list of
+ * identifiers.  It is set as a string.  Valid values are:
+ *
+ * The template parameter is the data type of the values in the list.
+ *
+ * \li an integer
+ * \li a range of integers given as two integers separated by a dash
+ * \li the word "all"
+ * \li any comma separated list of the above three
+ *
+ * Examples:
+ *    \li "1,5,12,30-39,101"
+ *    \li "all"
+ *
+ * Redundant specifiers are and'ed:  "1,5,all" is just "all".
+ *
+ * Typical use cases for an integer range list are:
+ *   \li the list of processes that are to output debugging information
+ *   \li the list of fixed vertex IDs in a partitioning operation
+ *
+ * At the call to validateAndModify(), the integer range list parameter 
+ * value is changed from a string to an Array<Integral> which encodes
+ * the meaning of the string.
+ *
+ * Helper functions for interpreting the integer range list after it has
+ * been validated are:
+ *
+ *\li validIntegralRangeList(const Teuchos::Array<Integral> &vals)
+ *
+ *\li allValuesAreInRangeList(const Teuchos::Array<Integral> &vals)
+ *
+ *\li allValuesAreInRangeList(const Teuchos::ParameterEntry &e)
+ *
+ *\li noValuesAreInRangeList(const Teuchos::Array<Integral> &vals)
+ *
+ *\li noValuesAreInRangeList(const Teuchos::ParameterEntry &e)
+ *
+ *\li IsInRangeList(const Integral val, const Teuchos::Array<Integral> &valList)
+ *
+ *\li IsInRangeList(const Integral val, const Teuchos::ParameterEntry &e)
+ *
+ *\li printIntegralRangeList(std::ostream &os, Teuchos::Array<Integral> &irl)
+ */
 
 template <typename Integral>
   class IntegerRangeListValidator : public Teuchos::ParameterEntryValidator
 {
 private:
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
   Integral min_;
   Integral max_;
 
@@ -134,11 +189,19 @@ private:
   static bool listSaysAll(std::string &l);
   static int breakRange(std::string &range, std::string &from, std::string &to);
 
+#endif
+
 public:
-  // Constructor: any Integral is valid
+  /*! \brief Constructor: any Integral is valid
+   */
   IntegerRangeListValidator();
 
-  // Constructor: only Integrals in [validMin,validMax] are valid
+  /*! \brief Constructor: only Integrals in the specified range are valid.
+   *   \param validMin  all values implied by the integer range list
+   *                          must be bounded by this minimum.
+   *   \param validMax  all values implied by the integer range list
+   *                          must be bounded by this maximum.
+   */
   IntegerRangeListValidator(Integral validMin, Integral validMax); 
 
   // Implementation of ParameterEntryValidator interface
@@ -147,7 +210,6 @@ public:
 
   void printDoc(std::string const& docString, std::ostream &out) const;
 
-  //Teuchos::ValidStringsList validStringValues() const ;
   ValidStringsList validStringValues() const ;
 
   void validate( Teuchos::ParameterEntry  const& entry,
@@ -159,29 +221,117 @@ public:
     ) const;
 }; // end class
 
-// Helpers for IntegralRangeList parameter type
-
+/*! \brief A helper function that indicates whether an array is a valid
+ *           integer range list.
+ *
+ *    \param vals   An array that may encode an integer range list.
+ *    \return        true if the array encodes such a list, false otherwise.
+ */
 template <typename Integral>
   bool validIntegralRangeList(const Teuchos::Array<Integral> &vals);
 
+/*! \brief  A helper function that determines if all values are in the list.
+ *
+ *    \param vals   An array encoding an integer range list.
+ *    \return        true if the array encoding implies all values,
+ *                  false otherwise.
+ *
+ *  If the array is not a valid encoding of an integer range list,
+ *  a std::runtime_error will be thrown.
+ *
+ *   If the user's parameter value was "all", then after validation
+ *   the parameter value will be an array of size one containing
+ *   a code that indicates all values are included, and this
+ *   function will return \c true.  
+ */
 template <typename Integral>
   bool allValuesAreInRangeList(const Teuchos::Array<Integral> &vals);
 
+/*! \brief  A helper function that determines if all values are in the list.
+ *
+ *    \param e    A parameter entry
+ *    \return     true if the entry value is an array encoding all values,
+ *                  false otherwise.
+ *
+ *  If the entry value is not a valid encoding of an integer range list,
+ *  a std::runtime_error will be thrown.
+ *
+ *   If the user's parameter value was "all", then after validation
+ *   the parameter value will be an array of size one containing
+ *   a code that indicates all values are included, and this
+ *   function will return \c true.  
+ */
 template <typename Integral>
   bool allValuesAreInRangeList(const Teuchos::ParameterEntry &e);
 
+/*! \brief  A helper function that determines if no values are in the list.
+ *
+ *    \param vals   An array encoding an integer range list.
+ *    \return        true if the array encoding implies no values,
+ *                  false otherwise.
+ *
+ *  If the array is not a valid encoding of an integer range list,
+ *  a std::runtime_error will be thrown.
+ *
+ *   If the user's parameter value was empty, then after validation
+ *   the parameter value will be an array of size one containing
+ *   a code that indicates no values are included, and this
+ *   function will return \c true.  
+ */
 template <typename Integral>
   bool noValuesAreInRangeList(const Teuchos::Array<Integral> &vals);
 
+/*! \brief  A helper function that determines if no values are in the list.
+ *
+ *    \param e    A parameter entry
+ *    \return     true if the entry value is an array encoding no values,
+ *                  false otherwise.
+ *
+ *  If the entry value is not a valid encoding of an integer range list,
+ *  a std::runtime_error will be thrown.
+ *
+ *   If the user's parameter value was empty, then after validation
+ *   the parameter value will be an array of size one containing
+ *   a code that indicates no values are included, and this
+ *   function will return \c true.  
+ */
 template <typename Integral>
   bool noValuesAreInRangeList(const Teuchos::ParameterEntry &e);
 
+/*! \brief  A helper function that determines if a value is in the list.
+ *
+ *    \param val  A value that could be in the list.
+ *    \param e    A parameter entry
+ *    \return     true if the entry value implies \c val is in the list,
+ *                  false otherwise.
+ *
+ *  If the entry value is not a valid encoding of an integer range list,
+ *  a std::runtime_error will be thrown.
+ */
 template <typename Integral>
   bool IsInRangeList(const Integral val, const Teuchos::ParameterEntry &e);
 
+/*! \brief  A helper function that determines if a value is in the list.
+ *
+ *    \param val  A value that could be in the list.
+ *    \param vals   An array encoding an integer range list.
+ *    \return     true if the encoding of \c vals implies \c val is in the list,
+ *                  false otherwise.
+ *
+ *  If \c vals is not a valid encoding of an integer range list,
+ *  a std::runtime_error will be thrown.
+ */
 template <typename Integral>
   bool IsInRangeList(const Integral val, const Teuchos::Array<Integral> &vals);
 
+/*! \brief  A helper function that prints the meaning of an encoded
+ *             integer range list
+ *
+ *    \param os   An output stream to which the list will be printed.
+ *    \param val  A value of an integer range list parameter after it has
+ *                     been validated.
+ *
+ */
 template <typename Integral>
   void printIntegralRangeList(std::ostream &os, Teuchos::Array<Integral> &irl);
 

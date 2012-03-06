@@ -1,10 +1,14 @@
 // @HEADER
 // ***********************************************************************
-//
-//                Copyright message goes here.   TODO
-//
+//                Copyright message goes here. 
 // ***********************************************************************
 // @HEADER
+
+/*! \file Zoltan2_Util.hpp
+ *  \brief A gathering of useful namespace methods.
+ *  \todo Should each class of utility functions be in a separate source file
+ *         instead of having a source file with the unhelpful name of Util?
+ */
 
 #ifndef ZOLTAN2_UTIL_HPP
 #define ZOLTAN2_UTIL_HPP
@@ -17,9 +21,7 @@
 
 namespace Zoltan2{
 
-// Using C-language MPI rather than C++ because it seems to be more portable.
-
-/*! Convert an MPI communicator to a MpiComm object.
+/*! \brief Convert an MPI communicator to a MpiComm object.
  */
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -34,15 +36,20 @@ template <typename Ordinal>
 }
 #endif
 
-// Given a list of global IDs and their assigned parts, return
-// a list of all the global IDs that are mine.  Assumption is that
-// parts are 0 through nprocs-1, and process p gets part p.
-//
-// If there are sizes associated with the IDs (like number of non-zeros)
-// include that in xtraInfo array.  Get back new sizes in newXtraInfo.
-// Otherwise xtraInfo.size() must be zero.
-//
-// return the size of the import list
+/*! \brief Convert an export part list to an import list.
+ *
+ * Given a list of global IDs and their assigned parts, return
+ * a list of all the global IDs that are mine.  Assumption is that
+ * parts are 0 through nprocs-1, and process p gets part p.
+ *
+ * If there are sizes associated with the IDs (like number of non-zeros)
+ * include that in xtraInfo array.  Get back new sizes in newXtraInfo.
+ * Otherwise xtraInfo.size() must be zero.
+ *
+ * return the size of the import list
+ *
+ *  \todo handle the case where #parts does not equal #procs.
+ */
 
 template <typename GID, typename LNO, typename EXTRA>
   size_t convertPartListToImportList(
@@ -85,7 +92,7 @@ template <typename GID, typename LNO, typename EXTRA>
   }
 
   ArrayRCP<LNO> recvCounts;
-  RCP<const Environment> env = getDefaultEnvironment();
+  RCP<const Environment> env = rcp(new Environment);
 
   try{
     AlltoAllv<GID, LNO>(comm, *env, gidList(), counts(), imports, recvCounts);
@@ -106,6 +113,6 @@ template <typename GID, typename LNO, typename EXTRA>
   return imports.size();
 }
 
-}//namespace Zoltan2
+} // namespace Zoltan2
 
 #endif

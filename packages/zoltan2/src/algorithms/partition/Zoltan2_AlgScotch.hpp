@@ -105,9 +105,10 @@ struct SCOTCH_Num_Traits {
   {
     // Assign a = b; make sure SCOTCH_Num is large enough to accept zno_t.
     if (b <= SCOTCH_NUMMAX) a = b;
-    else Z2_LOCAL_INPUT_ASSERTION(*env,"Value too large for SCOTCH_Num"
-                                       "Rebuild Scotch with larger SCOTCH_Num",
-                                        1,0);
+    else 
+      env->localInputAssertion(__FILE__, __LINE__, 
+       "Value too large for SCOTCH_Num, Rebuild Scotch with larger SCOTCH_Num",
+       false, BASIC_ASSERTION);
     return a;
   }
 
@@ -212,7 +213,8 @@ void AlgPTScotch(
   SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
   ierr = SCOTCH_dgraphInit(gr, mpicomm);
 
-  Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphInit", !ierr, BASIC_ASSERTION);
+  env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphInit", 
+    !ierr, BASIC_ASSERTION, problemComm);
 
   // Get vertex info
   ArrayView<const gno_t> vtxID;
@@ -261,7 +263,8 @@ void AlgPTScotch(
                             edgelocnbr, edgelocsize,
                             edgeloctab, edgegsttab, edloloctab);
 
-  Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphBuild", !ierr, BASIC_ASSERTION);
+  env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphBuild", 
+    !ierr, BASIC_ASSERTION, problemComm);
 
   // Create array for Scotch to return results in.
   ArrayRCP<size_t> partList(new size_t [nVtx], 0, nVtx,true);
@@ -279,7 +282,8 @@ void AlgPTScotch(
   // TODO:  Use SCOTCH_dgraphMap so can include a machine model in partitioning
   ierr = SCOTCH_dgraphPart(gr, partnbr, &stratstr, partloctab);
 
-  Z2_GLOBAL_INPUT_ASSERTION(*env, "SCOTCH_dgraphPart", !ierr, BASIC_ASSERTION);
+  env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphPart", 
+    !ierr, BASIC_ASSERTION, problemComm);
 
   // TODO - use metric output facility of environment
 #ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY

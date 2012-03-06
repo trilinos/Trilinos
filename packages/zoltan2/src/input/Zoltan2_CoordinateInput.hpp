@@ -7,9 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_CoordinateInput.hpp
-
-    \brief The abstract interface for an input adapter representing geometric
-               coordinates with optional weights.
+    \brief Defines the CoordinateInput interface.     
 */
 
 #ifndef _ZOLTAN2_COORDINATEINPUT_HPP_
@@ -23,27 +21,37 @@
 
 namespace Zoltan2 {
 
-/*!  \brief CoordinateInput defines the interface for input of geometric 
-                coordinates with optional weights.
+/*!  \brief CoordinateInput defines the interface for input geometric
+                coordinates.
+
+    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Many built-in adapters are already defined for common data structures,
+    such as Tpetra and Epetra objects and C-language pointers to arrays.
+
+    Data types:
+    \li \c scalar_t coordinate values and weights
+    \li \c lno_t    local indices and local counts
+    \li \c gno_t    global indices and global counts
+    \li \c gid_t    application global Ids
+    \li \c node_t is a sub class of Kokkos::StandardNodeMemoryModel
+
+    See IdentifierTraits to understand why the user's global ID type (\c gid_t)
+    may differ from that used by Zoltan2 (\c gno_t).
+
+    The Kokkos node type can be safely ignored.
+
+    The template parameter \c User is a user-defined data type
+    which, through a traits mechanism, provides the actual data types
+    with which the Zoltan2 library will be compiled.
+    \c User may be the actual class or structure used by application to
+    represent a vector, or it may be the helper class BasicUserTypes.
+    See InputTraits for more information.
 
     Input adapters provide access for Zoltan2 to the user's data.  The
     methods in the interface must be defined by users.  Many built-in
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
 
-    Data types:
-    \li \c scalar_t is the data type for weights and coordinates.
-    \li \c lno_t is the integral data type used by Zoltan2 for local indices and local counts.
-    \li \c gno_t is the integral data type used by Zoltan2 to represent global indices and global counts.
-    \li \c gid_t is the data type used by the application for global Ids.  If the application's global Id data type is a Teuchos Ordinal, then \c gid_t and \c gno_t are the same.  Otherwise, the application global Ids will be mapped to Teuchos Ordinals for use by Zoltan2 internally.  (Teuchos Ordinals are those data types for which traits are defined in Trilinos/packages/teuchos/src/Teuchos_OrdinalTraits.hpp.)
-    \li \c node_t is a sub class of Kokkos::StandardNodeMemoryModel, which is used to optimize performance on many-core and multi-core architectures.  If you don't use Kokkos, you can ignore this data type.
-
-    The template parameter (\c User) is a C++ class type which provides the
-    actual data types with which the Zoltan2 library will be compiled, through
-    a Traits mechanism.  \c User may be the
-    actual class used by application to represent coordinates, or it may be
-    the empty helper class \c BasicUserTypes with which a Zoltan2 user
-    can easily supply the data types for the library.
 */
 
 template <typename User>
@@ -52,14 +60,16 @@ private:
 
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
+#endif
 
-  /*! \brief Pure virtual destructor
+  /*! \brief Destructor
    */
   virtual ~CoordinateInput() {};
 
@@ -84,17 +94,17 @@ public:
    */
   virtual int getNumberOfWeights() const = 0;
 
-  /*! Return the number of coordinates on this process.
+  /*! \brief Return the number of coordinates on this process.
    *   \return  the count of coordinates on the local process.
    */
   virtual size_t getLocalNumberOfCoordinates() const = 0;
 
-  /*! Return the number of coordinates in the entire problem.
+  /*! \brief Return the number of coordinates in the entire problem.
    *   \return  the global count of coordinates.
    */
   virtual size_t getGlobalNumberOfCoordinates() const = 0;
 
-  /*! Provide a pointer to one dimension of this process' coordinates.
+  /*! \brief Provide a pointer to one dimension of this process' coordinates.
       \param dim  is a value from 0 to one less than 
          getLocalNumberOfCoordinates() specifying which dimension is
          being provided in the coords list.

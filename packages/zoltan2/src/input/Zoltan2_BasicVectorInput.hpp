@@ -7,10 +7,8 @@
 // @HEADER
 
 /*! \file Zoltan2_BasicVectorInput.hpp
-    An input adapter for a vector that the user provides as a
-     pointer to a strided array.
+    \brief Defines the BasicVectorInput class. 
 */
-
 
 #ifndef _ZOLTAN2_BASICVECTORINPUT_HPP_
 #define _ZOLTAN2_BASICVECTORINPUT_HPP_
@@ -47,7 +45,7 @@ namespace Zoltan2 {
     same global identifiers and the same distribution across processes.
 
 
-  TODO: Global identifiers should be optional.  If the user gives us
+ \todo Global identifiers should be optional.  If the user gives us
     gids in the input adapter, we will include them in the solution.
 
 */
@@ -57,6 +55,8 @@ template <typename User>
 
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
@@ -64,6 +64,8 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef VectorInput<User>   base_adapter_t;
   typedef User user_t;
+
+#endif
 
   /*! \brief Constructor for one vector.
    *
@@ -192,7 +194,7 @@ template <typename User>
   size_t BasicVectorInput<User>::getVector(int i, const gid_t *&ids, 
     const scalar_t *&element, int &stride) const
 {
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid vector number",
+  env_->localInputAssertion(__FILE__, __LINE__, "invalid vector number",
     i >= 0 && i < numVectors_, BASIC_ASSERTION);
   
   ids = idList_;
@@ -208,7 +210,7 @@ template <typename User>
   size_t BasicVectorInput<User>::getVectorWeights(int dimension, 
     const scalar_t *&weights, int &stride) const
 {
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid weight dimension",
+  env_->localInputAssertion(__FILE__, __LINE__,  "invalid weight dimension",
     dimension >= 0 && dimension < numWeights_, BASIC_ASSERTION);
 
   size_t length;
@@ -246,7 +248,7 @@ template <typename User>
     for (int v=0; v < numVectors; v++){
       if (elementStrides)
         stride = elementStrides[v];
-      elements_[v] = rcp<input_t>(new input_t(env_,
+      elements_[v] = rcp<input_t>(new input_t(
         ArrayView<const scalar_t>(elements[v], stride*numIds), stride));
     }
 
@@ -255,7 +257,7 @@ template <typename User>
       for (int w=0; w < numWeights; w++){
         if (weightStrides)
           stride = weightStrides[w];
-        weights_[w] = rcp<input_t>(new input_t(env_,
+        weights_[w] = rcp<input_t>(new input_t(
           ArrayView<const scalar_t>(weights[w], stride*numIds), stride));
       }
     }

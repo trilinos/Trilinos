@@ -1,5 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
+
+
 #
 # Tests for src/algorithms
 #
@@ -7,6 +9,34 @@ INCLUDE(TribitsAddExecutableAndTest)
 #
 # Tests for src/environment
 #
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  DebugManager
+  SOURCES environment/DebugManager.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Environment
+  SOURCES environment/Environment.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MetricOutputManager
+  SOURCES environment/MetricOutputManager.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Parameters
@@ -131,6 +161,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #
 # Tests for src/util
 #
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  StridedInput
+  SOURCES util/StridedInput.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Metric

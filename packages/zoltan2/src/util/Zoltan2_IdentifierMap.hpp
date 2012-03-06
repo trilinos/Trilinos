@@ -1,18 +1,18 @@
 // @HEADER
 // ***********************************************************************
 //
-//                Copyright message goes here.   TODO
+//                Copyright message goes here.
 //
 // ***********************************************************************
 // @HEADER
 
+/*! \file Zoltan2_IdentifierMap.hpp
+    \brief Defines the IdentifierMap class.
+*/
+
 #ifndef _ZOLTAN2_IDENTIFIERMAP_HPP_
 #define _ZOLTAN2_IDENTIFIERMAP_HPP_
 
-/*! \file Zoltan2_IdentifierMap.hpp
-
-    \brief IdentifierMap class.
-*/
 #include <Zoltan2_IdentifierTraits.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_AlltoAll.hpp>
@@ -28,39 +28,48 @@
 namespace Zoltan2
 {
 /*! \brief Identifier translations available from IdentifierMap.
-
-  TRANSLATE_APP_TO_LIB  Translate the applications identifiers to
-                          Zoltan's internal identifiers
-
-  TRANSLATE_LIB_TO_APP  Translate Zoltan's internal identifiers back
-                          to the application's original identifiers
 */
 
 enum TranslationType {
-  TRANSLATE_APP_TO_LIB,
-  TRANSLATE_LIB_TO_APP
+  TRANSLATE_APP_TO_LIB,  /*!< \brief convert user ids to internal ids */
+  TRANSLATE_LIB_TO_APP   /*!< \brief convert internal ids to user ids */
 };
 
-/*! Zoltan2::IdentifierMap
-    \brief An IdentifierMap manages a global space of unique object identifiers.
+/*!  \brief An IdentifierMap manages a global space of object identifiers.
 
-    gid_t is the data type used by application for globls IDs
-    lno_t is the data type used by Zoltan2 for local counts and indexes.
-    gid_t is the integral data type used by Zoltan2 for global counts.
+    Data types:
+    \li \c lno_t    local indices and local counts
+    \li \c gno_t    global indices and global counts
+    \li \c gid_t    application global Ids
+
+    The template parameter \c User is a user-defined data type
+    which, through a traits mechanism, provides the actual data types
+    with which the Zoltan2 library will be compiled.
+    \c User may be the actual class or structure used by application to
+    represent a vector, or it may be the helper class BasicUserTypes.
+    See InputTraits for more information.
+
+      \todo test for global IDs that are std::pair<T1, T2>
+
+  \todo we require that user's gid_ts have base zero if we are to
+     use them as consecutive gno_ts.  This can be fixed if needed.
+     We are not getting the efficiency
+     advantage of using the user's gids simply because
+     those IDs do not have base 0.  We can add a flag
+     about base 0 being required, and then map only
+     if base 0 is required.
 */
 
 ////////////////////////////////////////////////////////////////////
 // Declarations
 ////////////////////////////////////////////////////////////////////
 
-// TODO: can we template on User object?
-
 template<typename User>
     class IdentifierMap{
 
 public:
 
-  /*! Constructor - Must be called by all processes 
+  /*! \brief Constructor - Must be called by all processes 
    *
    * \param env  the problem and library environment
    * \param comm the problem communicator
@@ -80,37 +89,37 @@ public:
                           const ArrayRCP<const gid_t> &gids, 
                           bool gidsMustBeConsecutive=false);
 
-  /*! Destructor */
+  /*! \brief Destructor */
   ~IdentifierMap() {};
 
-  /*! Copy Constructor */
+  /*! \brief Copy Constructor */
   IdentifierMap(const IdentifierMap &id);
 
-  /*! Assignment operator */
+  /*! \brief Assignment operator */
   IdentifierMap &operator=(const IdentifierMap &id);
 
-  /*! Return true if we are using the application global IDs 
+  /*! \brief Return true if we are using the application global IDs 
    *  for our internal global numbers 
    */
   bool gnosAreGids() const;
 
-  /*! Return true if our internal global numbers are consecutive.
+  /*! \brief Return true if our internal global numbers are consecutive.
    */
   bool gnosAreConsecutive() const;
 
-  /*! Return true if consecutive Gids are required.
+  /*! \brief Return true if consecutive Gids are required.
    */
   bool consecutiveGnosAreRequired() const;
 
-  /*! Return the minimum Zoltan2 global Id across all processes.
+  /*! \brief Return the minimum Zoltan2 global Id across all processes.
    */
   gno_t getMinimumGlobalId() const;
 
-  /*! Return the maximum Zoltan2 global Id across all processes.
+  /*! \brief Return the maximum Zoltan2 global Id across all processes.
    */
   gno_t getMaximumGlobalId() const;
 
-  /*! Map the application global IDs to internal global numbers or vice versa.
+  /*! \brief Map the application global IDs to internal global numbers or vice versa.
 
       \param gid an array of caller's global IDs
       \param gno an array of Zoltan2 global numbers
@@ -124,7 +133,7 @@ public:
       to application global IDs.  The application global IDs must be from
       those supplied by this process.
 
-      TODO:  If the gnos need to be translated to gids, check first to
+      \todo If the gnos need to be translated to gids, check first to
       see if the gnos are in their original order.  If so, we can 
       save memory by returning an arrayview of the gids.
    */
@@ -132,7 +141,7 @@ public:
                     ArrayView<gno_t> gno,
                     TranslationType tt) const;
 
-  /*! Map application indices to internal global numbers or vice versa.
+  /*! \brief Map application indices to internal global numbers or vice versa.
 
       \param lno an array of indices
       \param gno an array of Zoltan2 global numbers
@@ -157,7 +166,7 @@ public:
                     ArrayView<gno_t> gno,
                     TranslationType tt) const;
 
-  /*! Map application global IDs to internal global numbers.
+  /*! \brief Map application global IDs to internal global numbers.
 
       \param in_gid input, an array of the global IDs
       \param out_gno output, an optional array of the corresponding 
@@ -290,11 +299,12 @@ template< typename User>
     return;
   }
 
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid TranslationType", 
+  env_->localInputAssertion(__FILE__, __LINE__, "invalid TranslationType", 
     (tt==TRANSLATE_APP_TO_LIB) || (tt==TRANSLATE_LIB_TO_APP), 
     BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "Destination array is too small",
+  env_->localInputAssertion(__FILE__, __LINE__, 
+    "Destination array is too small",
     ((tt==TRANSLATE_LIB_TO_APP) && (gid.size() >= gno.size())) || 
      ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= gid.size())),
     BASIC_ASSERTION);
@@ -314,7 +324,7 @@ template< typename User>
     if (tt == TRANSLATE_LIB_TO_APP){
       for (size_t i=0; i < len; i++){
 
-        Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number", 
+        env_->localInputAssertion(__FILE__, __LINE__, "invalid global number", 
         (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
 
         gid[i] = myGids_[gno[i] - firstGno];
@@ -326,7 +336,7 @@ template< typename User>
         for (size_t i=0; i < len; i++){
           gno[i] = firstGno + IdentifierTraits<gid_t>::difference(
             myGids_[0], gid[i]);
-          Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global id", 
+          env_->localInputAssertion(__FILE__, __LINE__, "invalid global id", 
             (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
         }
       }
@@ -337,7 +347,7 @@ template< typename User>
             idx = gidHash_->get(key);
           }
           catch (const std::exception &e) {
-            Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global id", 
+            env_->localInputAssertion(__FILE__, __LINE__, "invalid global id", 
               false, BASIC_ASSERTION);
           }
           
@@ -360,11 +370,12 @@ template< typename User>
   if (len == 0){
     return;
   }
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid TranslationType", 
+  env_->localInputAssertion(__FILE__, __LINE__, "invalid TranslationType", 
     (tt==TRANSLATE_LIB_TO_APP) || (tt==TRANSLATE_APP_TO_LIB), 
     BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "Destination array is too small",
+  env_->localInputAssertion(__FILE__, __LINE__, 
+    "Destination array is too small",
     ((tt==TRANSLATE_LIB_TO_APP) && (lno.size() >= gno.size())) || 
     ((tt==TRANSLATE_APP_TO_LIB) && (gno.size() >= lno.size())),
     BASIC_ASSERTION);
@@ -378,7 +389,7 @@ template< typename User>
   if (tt == TRANSLATE_LIB_TO_APP){
     if (gnoDist_.size() > 0) {   // gnos are consecutive
       for (size_t i=0; i < len; i++){
-        Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number", 
+        env_->localInputAssertion(__FILE__, __LINE__, "invalid global number", 
           (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
         lno[i] = gno[i] - firstGno;
       }
@@ -388,7 +399,7 @@ template< typename User>
         for (size_t i=0; i < len; i++){ 
           gid_t tmp = Teuchos::as<gid_t>(gno[i]);
           lno[i] = IdentifierTraits<gid_t>::difference(myGids_[0], tmp);
-          Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number",
+          env_->localInputAssertion(__FILE__, __LINE__, "invalid global number",
             (lno[i] >= 0) && (lno[i] < localNumberOfIds_), BASIC_ASSERTION);
         }
       }
@@ -399,8 +410,8 @@ template< typename User>
             lno[i] = gidHash_->get(IdentifierTraits<gid_t>::key(keyArg));
           }
           catch (const std::exception &e) {
-            Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid global number",
-              false, BASIC_ASSERTION);
+            env_->localInputAssertion(__FILE__, __LINE__, 
+              "invalid global number", false, BASIC_ASSERTION);
           }
         }
       }
@@ -434,7 +445,8 @@ template< typename User>
 
   bool skipGno = (out_gno.size() == 0);
 
-  Z2_LOCAL_INPUT_ASSERTION(*env_, "Destination array is too small", 
+  env_->localInputAssertion(__FILE__, __LINE__, 
+    "Destination array is too small", 
     (out_proc.size() >= len) && (skipGno || (out_gno.size() >= len)),
     BASIC_ASSERTION);
 
@@ -487,14 +499,16 @@ template< typename User>
     try{ 
       hashProc.resize(localNumberOfIds_, 0);
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, localNumberOfIds_, false); 
+    }
 
     try{ 
       gidOutBuf.resize(localNumberOfIds_); 
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, localNumberOfIds_, false); 
+    }
 
     for (size_t i=0; i < localNumberOfIds_; i++){
       hashProc[i] = IdentifierTraits<gid_t>::hashCode(myGids_[i]) % numProcs_;
@@ -617,14 +631,18 @@ template< typename User>
     try{ 
       gidOutBuf.resize(numberOfUniqueGids); 
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, numberOfUniqueGids, 
+        false); 
+    }
 
     try{ 
       hashProc.resize(numberOfUniqueGids, 0);
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, numberOfUniqueGids, 
+        false); 
+    }
   
     lno_t idx = 0;
     for (next = gidIndices.begin(); next != gidIndices.end(); ++next, ++idx){
@@ -643,8 +661,10 @@ template< typename User>
     try{ 
       gidLocation.resize(numberOfUniqueGids, 0);
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, numberOfUniqueGids, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, numberOfUniqueGids, 
+        false); 
+    }
   
     idx = 0;
     for (next = gidIndices.begin(); next != gidIndices.end(); ++next, ++idx){
@@ -685,8 +705,9 @@ template< typename User>
     try{ 
       gnoOutBuf.resize(total, 0);
     }
-    catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(*env_, total, false); 
+    catch(...){
+      env_->localMemoryAssertion(__FILE__, __LINE__, total, false); 
+    }
   }
 
   if (total > 0){
@@ -706,7 +727,7 @@ template< typename User>
           badGid = true;
         }
 
-        Z2_LOCAL_BUG_ASSERTION(*env_, "gidToIndex table", 
+        env_->localBugAssertion(__FILE__, __LINE__, "gidToIndex table", 
           badGid || ((index >= 0)&&(index<=indexTotal)), BASIC_ASSERTION);
 
         
@@ -784,9 +805,10 @@ template< typename User>
 template< typename User> 
   void IdentifierMap<User>::setupMap(void)
 {
-  Z2_GLOBAL_INPUT_ASSERTION(*env_, 
-           "application global ID type is not supported yet",
-           IdentifierTraits<gid_t>::is_valid_id_type() == true, BASIC_ASSERTION);
+  env_->globalInputAssertion(__FILE__, __LINE__, 
+       "application global ID type is not supported yet",
+       IdentifierTraits<gid_t>::is_valid_id_type() == true, BASIC_ASSERTION,
+       comm_);
 
   numProcs_ = comm_->getSize(); 
   myRank_ = comm_->getRank(); 
@@ -838,13 +860,14 @@ template< typename User>
       try{
         p = new id2index_hash_t(localNumberOfIds_);
       }
-      catch (const std::exception &e)
-        Z2_LOCAL_MEMORY_ASSERTION(*env_, localNumberOfIds_, false);
+      catch (const std::exception &e){
+        env_->localMemoryAssertion(__FILE__, __LINE__, localNumberOfIds_, 
+          false);
+      }
     }
 
     for (size_t i=0; i < localNumberOfIds_; i++){
       try{
-        // CRASH here when gid_ts are std::pair<int,int> TODO
         p->put(IdentifierTraits<gid_t>::key(gidPtr[i]), i);
       }
       Z2_THROW_OUTSIDE_ERROR(*env_, e);
@@ -855,16 +878,8 @@ template< typename User>
   // Can we use the user's global IDs as our internal global numbers?
   // If so, we can save memory.
 
-  // TODO: we require that user's gid_ts have base zero if we are to
-  //    use them as consecutive gno_ts.  This can be fixed if needed.
-
   if (consecutiveGidsAreRequired_ && userGidsAreConsecutive_ &&
        !baseZeroConsecutiveIds){
-     // TODO - warning that we are not getting the efficiency
-     //    advantage of using the user's gids simply because
-     //   those IDs do not have base 0.  We can add a flag
-     //     about base 0 being required, and then map only
-     //     if base 0 is required.
 
   } 
 

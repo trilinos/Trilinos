@@ -7,9 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_OrderingProblem.hpp
-
-  This file contains the OrderingProblem class, which derives from 
-  the Problem class.
+    \brief Defines the OrderingProblem class.
 */
 
 #ifndef _ZOLTAN2_ORDERINGPROBLEM_HPP_
@@ -32,6 +30,22 @@ using namespace std;
 namespace Zoltan2{
 
 ////////////////////////////////////////////////////////////////////////
+
+/*! \brief OrderingProblem sets up ordering problems for the user.
+ *
+ *  The OrderingProblem is the core of the Zoltan2 ordering API.
+ *  Based on the the user's input and parameters, the OrderingProblem
+ *  sets up a computational Model, and a Solution object.  When the user
+ *  calls the solve() method, the OrderingProblem runs the algorithm,
+ *  after which the Solution object may be obtained by the user.
+ *  \todo include pointers to examples
+ *
+ *  The template parameter is the InputAdapter containing the data that
+ *  is to be partitioned.
+ *
+ *  \todo follow ordering with partitioning
+ */
+
 template<typename Adapter>
 class OrderingProblem : public Problem<Adapter>
 {
@@ -40,11 +54,14 @@ public:
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::lno_t lno_t;
 
-  // Destructor
+  /*! \brief Destructor
+   */
   virtual ~OrderingProblem() {};
 
-  //! Constructor with InputAdapter Interface with communicator arg
+
 #ifdef HAVE_ZOLTAN2_MPI
+  /*! \brief Constructor that takes an MPI communicator
+   */
   OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm comm) 
                       : Problem<Adapter>(A, p, comm) 
   {
@@ -53,16 +70,35 @@ public:
   };
 #endif
 
-  //! Constructor where communicator is Teuchos default
+  /*! \brief Constructor that uses a default communicator
+   */
   OrderingProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
   {
     HELLO;
     createOrderingProblem();
   };
 
-  // Other methods
+  //!  \brief Direct the problem to create a solution.
+  //
+  //    \param updateInputData   If true this indicates that either
+  //          this is the first attempt at solution, or that we
+  //          are computing a new solution and the input data has
+  //          changed since the previous solution was computed.
+  //          If false, this indicates that we are computing a
+  //          new solution using the same input data was used for
+  //          the previous solution, even though the parameters
+  //          may have been changed.
+  //
+  //  For the sake of performance, we ask the caller to set \c updateInputData
+  //  to false if he/she is computing a new solution using the same input data,
+  //  but different problem parameters, than that which was used to compute
+  //  the most recent solution.
+  
   void solve(bool updateInputData=true);
-  // virtual void redistribute();
+
+  //!  \brief Get the solution to the problem.
+  //
+  //   \return  a reference to the solution to the most recent solve().
 
   OrderingSolution<gid_t, lno_t> *getSolution() {
     return solution_.getRawPtr();
@@ -143,14 +179,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 #ifdef HAVE_ZOLTAN2_OVIS
   ovis_enabled(this->comm_->getRank());
 #endif
-
-  // Committing the parameters is the process of validating
-  // and in some cases converting the user's parameter to
-  // and internal representation. If the Problem wants to set or
-  // change any parameters, do it before this call.
-
-  if (!this->env_->parametersAreCommitted())
-    this->env_->commitParameters();
 
   ParameterList *general = &(this->env_->getParametersNonConst());
   ParameterList *ordering = NULL;

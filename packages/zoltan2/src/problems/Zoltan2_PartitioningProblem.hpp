@@ -7,9 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_PartitioningProblem.hpp
-
-  This file contains the PartitioningProblem class, which derives from 
-  the Problem class.
+    \brief Defines the PartitioningProblem class.
 */
 
 #ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
@@ -21,15 +19,28 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 
-#include <Teuchos_Ptr.hpp>
-
 #ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
 #endif
 
 namespace Zoltan2{
 
-////////////////////////////////////////////////////////////////////////
+/*! \brief PartitioningProblem sets up partitioning problems for the user.
+ *
+ *  The PartitioningProblem is the core of the Zoltan2 partitioning API.
+ *  Based on the the user's input and parameters, the PartitioningProblem
+ *  sets up a computational Model, and a Solution object.  When the user
+ *  calls the solve() method, the PartitioningProblem runs the algorithm,
+ *  after which the Solution object may be obtained by the user.
+ *  \todo include pointers to examples
+ *
+ *  The template parameter is the InputAdapter containing the data that
+ *  is to be partitioned.
+ *
+ *  \todo hierarchical partitioning
+ *  \todo repartition given an initial solution
+ *  \todo follow partitioning with global or local ordering
+ */
 template<typename Adapter>
 class PartitioningProblem : public Problem<Adapter>
 {
@@ -44,7 +55,8 @@ public:
 
 #ifdef HAVE_ZOLTAN2_MPI
 
-  //! \brief Constructor where MPI communicator can be specified
+  /*! \brief Constructor where MPI communicator can be specified
+   */
   PartitioningProblem(Adapter *A, Teuchos::ParameterList *p, MPI_Comm comm); 
 
 #endif
@@ -161,6 +173,8 @@ public:
 private:
   void initializeProblem();
 
+  /*! \brief  TODO
+   */
   void createPartitioningProblem(bool newData);
 
   RCP<PartitioningSolution<user_t> > solution_;
@@ -249,9 +263,10 @@ template <typename Adapter>
   void PartitioningProblem<Adapter>::setPartSizesForCritiera(
     int criteria, int len, size_t *partIds, float *partSizes, bool makeCopy) 
 {
-  Z2_LOCAL_INPUT_ASSERTION(*this->env_, "invalid length", len>= 0, BASIC_ASSERTION);
+  this->env_->localInputAssertion(__FILE__, __LINE__, "invalid length", 
+    len>= 0, BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(*this->env_, "invalid criteria", 
+  this->env_->localInputAssertion(__FILE__, __LINE__, "invalid criteria", 
     criteria >= 0 && criteria < numberOfWeights_, BASIC_ASSERTION);
 
   if (len == 0){
@@ -260,8 +275,8 @@ template <typename Adapter>
     return;
   }
 
-  Z2_LOCAL_INPUT_ASSERTION(*this->env_, "invalid arrays", partIds && partSizes, 
-    BASIC_ASSERTION);
+  this->env_->localInputAssertion(__FILE__, __LINE__, "invalid arrays", 
+    partIds && partSizes, BASIC_ASSERTION);
 
   // The global validity of the partIds and partSizes arrays is performed
   // by the PartitioningSolution, which computes global part distribution and
@@ -274,10 +289,10 @@ template <typename Adapter>
   if (makeCopy){
     z2_partIds = NULL;
     z2_partIds = new size_t [len];
-    Z2_LOCAL_MEMORY_ASSERTION(*this->env_, len, z2_partIds);
+    this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partIds);
     z2_partSizes = NULL;
     z2_partSizes = new float [len];
-    Z2_LOCAL_MEMORY_ASSERTION(*this->env_, len, z2_partSizes);
+    this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partSizes);
     bool own_memory = true;
   }
 
@@ -342,18 +357,27 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   using std::string;
   using Teuchos::ParameterList;
 
-  Environment &env = *(this->env_);
-
-  // Committing the parameters is the process of validating
-  // and in some cases converting the user's parameter to
-  // and internal representation. If the Problem wants to set or
-  // change any parameters, do it before this call.
+  /////////////////////////////////////////////////////////////////////////////
+  // It's possible at this point that the Problem may want to
+  // add problem parameters to the parameter list in the Environment. 
   //
-  // Note that caller may have called Problem::resetParameters()
-  // since the most recent call to PartitioningProblem::solve().
+  // Since the parameters in the Environment have already been
+  // validated in its constructor, a new Environment must be created:
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  // Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->env_->comm_;
+  // const ParameterList &oldParams = this->env_->getUnvalidatedParameters();
+  // 
+  // ParameterList newParams = oldParams;
+  // newParams.set("new_parameter", "new_value");
+  // 
+  // ParameterList &newPartParams = newParams.sublist("partitioning");
+  // newPartParams.set("new_partitioning_parameter", "its_value");
+  // 
+  // this->env_ = rcp(new Environment(oldParams, oldComm));
+  /////////////////////////////////////////////////////////////////////////////
 
-  if (!env.parametersAreCommitted())
-    env.commitParameters();
+  Environment &env = *(this->env_);
 
   ParameterList *general = &(env.getParametersNonConst());
   ParameterList *partitioning = NULL;
@@ -496,8 +520,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else{
       // Parameter list should ensure this does not happen.
-      Z2_LOCAL_BUG_ASSERTION(env,
-         "parameter list model type is invalid", 1, BASIC_ASSERTION);
+      env.localBugAssertion(__FILE__, __LINE__, 
+        "parameter list model type is invalid", 1, BASIC_ASSERTION);
     }
   }
   else{   
@@ -542,8 +566,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     topo = partitioning->getEntryPtr("topology");
 
   if (topo){
-    Array<int> *values = NULL;
-    Array<int> &valueList = topo->getValue(values);
+    Array<int> *aiVar = NULL;
+    Array<int> &valueList = topo->getValue(aiVar);
     if (!Zoltan2::noValuesAreInRangeList(valueList)){
       int *n = new int [valueList.size() + 1];
       levelNumberParts_ = arcp(n, 0, valueList.size() + 1, true);
@@ -589,8 +613,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     if (graphParams){
       ParameterEntry *sym= graphParams->getEntryPtr("symmetrize_input");
       if (sym){
-        string symParameter;
-        sym->getValue<string>(&symParameter);
+        string *strVar=NULL;
+        string &symParameter = sym->getValue<string>(strVar);
         if (symParameter == string("transpose"))
           graphFlags_.set(SYMMETRIZE_INPUT_TRANSPOSE);
         else if (symParameter == string("bipartite"))
@@ -599,8 +623,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
       ParameterEntry *sg = graphParams->getEntryPtr("subset_graph");
       if (sg){
-        int sgParameter;
-        sg->getValue<int>(&sgParameter);
+        int *intVar = NULL;
+        int &sgParameter = sg->getValue<int>(intVar);
         if (sgParameter == 1)
           graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
       }

@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
   int nprocs = comm->getSize();
 
   Teuchos::RCP<const Zoltan2::Environment> envPtr = 
-    Zoltan2::getDefaultEnvironment();
+    Teuchos::rcp(new Zoltan2::Environment);
 
   // In this test, our local IDs are ints and our global IDs are longs.
 

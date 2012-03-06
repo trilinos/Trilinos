@@ -4,6 +4,10 @@
 // ************************************************************************
 //@HEADER
 
+/*! \file Zoltan2_Version.hpp
+    \brief Implementation of Trilinos convention for versioning.
+ */
+
 
 #ifndef ZOLTAN2_VERSION_HPP
 #define ZOLTAN2_VERSION_HPP

@@ -7,10 +7,8 @@
 // @HEADER
 
 /*! \file Zoltan2_BasicCoordinateInput.hpp
-    An input adapter for a geometric coordinates (and optional weights)
-      that are supplied by the user as pointers to strided arrays.
+    \brief Defines the BasicCoordinateInput class.
 */
-
 
 #ifndef _ZOLTAN2_BASICCOORDINATEINPUT_HPP_
 #define _ZOLTAN2_BASICCOORDINATEINPUT_HPP_
@@ -42,14 +40,20 @@ namespace Zoltan2 {
     the empty helper class \c BasicUserTypes with which a Zoltan2 user
     can easily supply the data types for the library.
 
-  TODO: Global identifiers should be optional.  If the user gives us
+  \todo ensure that there is no limit on dimension
+
+  \todo Global identifiers should be optional.  If the user gives us
     gids in the input adapter, we will include them in the solution.
+
+  \todo Add simpler constructors specifically for dimension 1, 2 and 3.
 */
 
 template <typename User>
   class BasicCoordinateInput : public CoordinateInput<User> {
 
 public:
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
@@ -58,6 +62,8 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef CoordinateInput<User>   base_adapter_t;
   typedef User user_t;
+
+#endif
 
   /*! \brief Constructor
    *
@@ -108,7 +114,7 @@ public:
       for (int x=0; x < dim; x++){
         if (valueStrides)
           stride = valueStrides[x];
-        coords_[x] = rcp<input_t>(new input_t(env_,
+        coords_[x] = rcp<input_t>(new input_t(
           ArrayView<const scalar_t>(values[x], stride*numIds), stride));
       }
 
@@ -117,7 +123,7 @@ public:
         for (int w=0; w < numWeights; w++){
           if (weightStrides)
             stride = weightStrides[w];
-          weights_[w] = rcp<input_t>(new input_t(env_,
+          weights_[w] = rcp<input_t>(new input_t(
             ArrayView<const scalar_t>(weights[w], stride*numIds), stride));
         }
       }
@@ -155,7 +161,7 @@ public:
   size_t getCoordinates(int dim, const gid_t *&gids, const scalar_t *&coords, 
     int &stride) const
   {
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid dimension",
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid dimension",
       dim >= 0 && dim < dimension_, BASIC_ASSERTION);
 
     gids = idList_;
@@ -170,7 +176,7 @@ public:
   size_t getCoordinateWeights(int dim, const scalar_t *&weights, 
     int &stride) const
   {
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid dimension",
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid dimension",
       dim >= 0 && dim < numWeights_, BASIC_ASSERTION);
     
     size_t length;

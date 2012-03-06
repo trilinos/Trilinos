@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int nprocs = comm->getSize();
   int rank = comm->getRank();
-  RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
   lno_t numLocalObjects = 10;
   long numRemoteObjects = 3;   // numRemoteObjects < numLocalObjects

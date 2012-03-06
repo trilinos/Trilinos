@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
   typedef Zoltan2::IdentifierMap<tvector_t> idmap_t;
   typedef Zoltan2::PartitioningSolution<tvector_t> soln_t;
 
-  RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
   ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
   RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));

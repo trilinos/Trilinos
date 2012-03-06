@@ -7,8 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_XpetraTraits.hpp
-
-    \brief Behaviors of Xpetra classes, including migration.
+    \brief Traits of Xpetra classes, including migration method.
 */
 
 #ifndef _ZOLTAN2_XPETRATRAITS_HPP_
@@ -28,20 +27,49 @@ namespace Zoltan2 {
 
 //////////////////////////////////////////////////////////////////////////////
 // Extra traits needed only for Xpetra matrices and graphs
+
+/*! \brief  Defines the traits required for Tpetra, Eptra and Xpetra objects.
+ *
+ *    Definitions are provided for:
+ *
+ * \li Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> 
+ * \li Epetra_CrsMatrix
+ * \li Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> 
+ * \li Xpetra::CrsMatrix<double, int, int, node_t> 
+ * \li Tpetra::CrsGraph<lno_t, gno_t, node_t> 
+ * \li Epetra_CrsGraph
+ * \li Xpetra::CrsGraph<lno_t, gno_t, node_t> 
+ * \li Xpetra::CrsGraph<int, int, node_t> 
+ * \li Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> 
+ * \li Epetra_Vector
+ * \li Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> 
+ * \li Xpetra::Vector<double, int, int, node_t> 
+ * \li Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> 
+ * \li Epetra_MultiVector
+ * \li Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> 
+ * \li Xpetra::MultiVector<double, int, int, node_t> 
+ */
+
 template <typename User>
 struct XpetraTraits
 {
+  /*! \brief Convert the object to its Xpetra wrapped version.
+   */
   static inline RCP<const User> convertToXpetra(const RCP<const User> &a) 
   {
-    return a;  // Default implementation
+    return a;
   }
 
+  /*! \brief The objects global ordinal data type.
+   */
   typedef long gno_t;
+
+  /*! \brief The objects local ordinal data type.
+   */
   typedef int lno_t;
 
-  //TODO generate a compile time error if we end up here
-
-  /*! Given a user object and a new row distribution, create and
+  /*! \brief Migrate the object
+   *  Given a user object and a new row distribution, create and
    *  return a new user object with the new distribution.
    */
 
@@ -51,6 +79,8 @@ struct XpetraTraits
     return from;
   }
 };
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 //////////////////////////////////////////////////////////////////////////////
 // Tpetra::CrsMatrix
@@ -894,6 +924,8 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
     }
   }
 };
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 }  //namespace Zoltan2
 

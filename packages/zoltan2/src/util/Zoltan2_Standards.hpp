@@ -7,7 +7,6 @@
 // @HEADER
 
 /*! \file Zoltan2_Standards.hpp
-
     \brief Gathering definitions used in software development.
 */
 

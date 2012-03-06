@@ -14,6 +14,7 @@
 #include <Zoltan2_TestHelpers.hpp>
 
 using Teuchos::RCP;
+using Teuchos::rcp;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::Array;
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
   int fail = 0;
   float epsilon = 1e-5;
 
-  RCP<const Zoltan2::Environment> env = Zoltan2::getDefaultEnvironment();
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
   // The PART NUMBERS.  
 

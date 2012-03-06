@@ -7,10 +7,8 @@
 // @HEADER
 
 /*! \file Zoltan2_BasicIdentifierInput.hpp
-
-    \brief An input adapter for a simple array of identifiers and weights.
+    \brief Defines the BasicIdentifierInput class.
 */
-
 
 #ifndef _ZOLTAN2_BASICIDENTIFIERINPUT_HPP_
 #define _ZOLTAN2_BASICIDENTIFIERINPUT_HPP_
@@ -40,7 +38,7 @@ public:
   typedef IdentifierInput<User>       base_adapter_t;
   typedef User user_t;
 
-  /*! Constructor
+  /*! \brief Constructor
       \param numIds is the number of identifiers in the list
       \param numWeights is the number of weights provided for each
                         identifier.  Weights are optional.
@@ -58,16 +56,17 @@ public:
       numIds_(numIds), idList_(idPtr), weights_(numWeights)
   {
     env_ = rcp(new Environment);    // for error messages
+
     if (numWeights){
       typedef StridedInput<lno_t,scalar_t> input_t;
       if (strides)
         for (int i=0; i < numWeights; i++)
-          weights_[i] = rcp<input_t>(new input_t(env_, 
+          weights_[i] = rcp<input_t>(new input_t(
             ArrayView<const scalar_t>(wgtPtr[i], strides[i]*numIds), 
             strides[i]));
       else
         for (int i=0; i < numWeights; i++)
-          weights_[i] = rcp<input_t>(new input_t(env_, 
+          weights_[i] = rcp<input_t>(new input_t(
             ArrayView<const scalar_t>(wgtPtr[i], numIds), 1));
     }
   }
@@ -100,7 +99,7 @@ public:
   size_t getIdentifierWeights(int dimension,
      const scalar_t *&weights, int &stride) const
   {
-    Z2_LOCAL_INPUT_ASSERTION(*env_, "invalid weight dimension",
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight dimension",
       dimension >= 0 && dimension < weights_.size(), BASIC_ASSERTION);
 
     size_t length;

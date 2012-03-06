@@ -57,10 +57,7 @@ void AlgPTBlock(
 #endif
 
   if (debug)
-    env->debugOut_->print(DETAILED_STATUS, string("Entering AlgBlock"));
-
-  Z2_GLOBAL_BUG_ASSERTION(*env, "parameters are not committed",
-    env->parametersAreCommitted(), DEBUG_MODE_ASSERTION);
+    env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
 
   int rank = env->myRank_;
   int nprocs = env->numProcs_;
@@ -218,7 +215,7 @@ void AlgPTBlock(
     for (int i=0; i <= nprocs; i++)
       oss << scansum[i] << " ";
     oss << "\n";
-    env->debugOut_->print(VERBOSE_DETAILED_STATUS, oss.str());
+    env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
   /* Loop over objects and assign partition. */
@@ -275,13 +272,13 @@ void AlgPTBlock(
     if (imbalance[0] > Teuchos::as<scalar_t>(imbalanceTolerance)){
       ostringstream oss("Warning: imbalance is ");
       oss << imbalance[0] << std::endl;
-      env->debugOut_->print(BASIC_STATUS, oss.str());
+      env->debug(BASIC_STATUS, oss.str());
     }
     else{
 #endif
       ostringstream oss("Imbalance: ");
       oss << imbalance[0] << std::endl;
-      env->debugOut_->print(DETAILED_STATUS, oss.str());
+      env->debug(DETAILED_STATUS, oss.str());
 #if 0
     }
 #endif
@@ -292,7 +289,7 @@ void AlgPTBlock(
   solution->setParts(idList, gnoPart, imbalance);
 
   if (debug)
-    env->debugOut_->print(DETAILED_STATUS, string("Exiting AlgBlock"));
+    env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
 }
 
 }   // namespace Zoltan2

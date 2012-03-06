@@ -7,8 +7,7 @@
 // @HEADER
 
 /*! \file Zoltan2_GraphInput.hpp
-
-    \brief The abstract interface for a graph input adapter.
+    \brief Defines the GraphInput interface.
 */
 
 
@@ -21,8 +20,34 @@
 
 namespace Zoltan2 {
 
-/*!  \brief GraphInput defines the interface for input adapters for
-            graphs that may have vertex and edge weight. 
+/*!  \brief GraphInput defines the interface for graph input adapters.
+
+    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Many built-in adapters are already defined for common data structures,
+    such as Tpetra and Epetra objects and C-language pointers to arrays.
+
+    Data types:
+    \li \c scalar_t vertex and edge weights 
+    \li \c lno_t    local indices and local counts
+    \li \c gno_t    global indices and global counts
+    \li \c gid_t    application global Ids
+    \li \c node_t is a sub class of Kokkos::StandardNodeMemoryModel
+
+    See IdentifierTraits to understand why the user's global ID type (\c gid_t)
+    may differ from that used by Zoltan2 (\c gno_t).
+
+    The Kokkos node type can be safely ignored.
+
+    The template parameter \c User is a user-defined data type
+    which, through a traits mechanism, provides the actual data types
+    with which the Zoltan2 library will be compiled.
+    \c User may be the actual class or structure used by application to
+    represent a vector, or it may be the helper class BasicUserTypes.
+    See InputTraits for more information.
+
+\todo add weights
+\todo how do we want to handle graphs that have coordinates for the
+        vertices? 
 */
 
 template <typename User>
@@ -31,26 +56,18 @@ private:
 
 public:
 
-  /*! \brief Data type for weights. */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User>::scalar_t scalar_t;
-
-  /*! \brief Data type for Zoltan2's indices and local counts. */
   typedef typename InputTraits<User>::lno_t    lno_t;
-
-  /*! \brief Data type for Zoltan2's global identifiers and counts. */
   typedef typename InputTraits<User>::gno_t    gno_t;
-
-  /*! \brief The application's global identifier data type. */
   typedef typename InputTraits<User>::gid_t    gid_t;
-
-  /*! \brief The Kokkos node type. */
   typedef typename InputTraits<User>::node_t   node_t;
+  typedef User user_t;
+#endif
 
   enum InputAdapterType inputAdapterType() const {return GraphAdapterType;}
 
-  typedef User user_t;
-
-  /*! \brief Pure virtual destructor
+  /*! \brief Destructor
    */
   virtual ~GraphInput() {};
 

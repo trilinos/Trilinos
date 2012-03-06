@@ -27,6 +27,7 @@
 
 using namespace std;
 using Teuchos::RCP;
+using Teuchos::rcp;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
@@ -40,8 +41,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   if (consecutiveIds)
     modelFlags.set(Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
-  RCP<const Zoltan2::Environment> default_env = 
-    Zoltan2::getDefaultEnvironment();
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
   //////////////////////////////////////////////////////////////
   // Use an Tpetra::CrsMatrix for the user data.
@@ -76,7 +76,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   try{
     model = new Zoltan2::IdentifierModel<base_adapter_t>(
-      base_ia, default_env, comm, modelFlags);
+      base_ia, env, comm, modelFlags);
   }
   catch (std::exception &e){
     std::cerr << rank << ") " << e.what() << std::endl;
@@ -169,18 +169,6 @@ int main(int argc, char *argv[])
     }
     testIdentifierModel(mtxFiles[fileNum], 0,0,0,comm,  wishConsecutiveIds);
   }
-
-  if (rank == 0){
-    std::cout << "5x5x5 mesh";
-    std::cout << ", consecutive IDs not requested" << std::endl;
-  }
-  testIdentifierModel(nullString, 5, 5, 5, comm, !wishConsecutiveIds);
-
-  if (rank == 0){
-    std::cout << "5x5x5 mesh";
-    std::cout << ", consecutive IDs are requested" << std::endl;
-  }
-  testIdentifierModel(nullString, 5, 5, 5, comm, wishConsecutiveIds);
 
   if (rank==0) std::cout << "PASS" << std::endl;
 
