@@ -54,6 +54,10 @@
 
 #include "add_to_log.h"
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 #define OUTPUT std::cerr
 #define FOUTPUT std::cout
 
@@ -83,6 +87,9 @@ namespace {
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
   time_t begin_time = time(NULL);
   std::string in_type = "exodusII";
 
@@ -111,6 +118,9 @@ int main(int argc, char *argv[])
   OUTPUT << "\n" << codename << " execution " << success << ".\n";
   time_t end_time = time(NULL);
   add_to_log(codename.c_str(), (int)(end_time - begin_time));
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 

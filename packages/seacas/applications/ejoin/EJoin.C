@@ -69,6 +69,10 @@
 #include "EJ_vector3d.h"
 #include "EJ_Version.h"
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 namespace {
   bool valid_variable(const std::string variable, int id, const StringIdVector &variable_list);
   void define_global_fields(Ioss::Region &output_region, RegionVector &part_mesh,
@@ -149,6 +153,10 @@ unsigned int debug_level = 0;
 
 int main(int argc, char* argv[])
 {
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
 #if defined(__LIBCATAMOUNT__)
   setlinebuf(stderr);
 #endif
@@ -223,6 +231,11 @@ int main(int argc, char* argv[])
   
   time_t end_time = time(NULL);
   add_to_log(argv[0], (int)(end_time-begin_time));
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+
   return (error);
   }
   catch (std::exception &e) {
