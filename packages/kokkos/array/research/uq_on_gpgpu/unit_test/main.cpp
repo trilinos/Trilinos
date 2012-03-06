@@ -47,7 +47,7 @@ extern int mainCuda();
 
 int main()
 {
-  // mainHost();
+  mainHost();
   mainCuda();
   return 0 ;
 }

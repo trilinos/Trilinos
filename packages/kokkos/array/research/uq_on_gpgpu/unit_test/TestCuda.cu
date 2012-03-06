@@ -107,22 +107,12 @@ int mainCuda()
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 3 , 1 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 3 , 2 );
 
-  std::cout << "tensor_crs_matrix(1,2):" << std::endl ;
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 2 );
-
-  std::cout << "tensor_crs_matrix(1,5):" << std::endl ;
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 5 );
-
-  std::cout << "tensor_crs_matrix(2,1):" << std::endl ;
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 2 , 1 );
-
-  std::cout << "tensor_crs_matrix(5,1):" << std::endl ;
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 1 );
-
-  std::cout << "tensor_crs_matrix(5,5):" << std::endl ;
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 5 );
 
-/*
   std::cout << "Stress tests:" << std::endl ;
 
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 10 , 8 );
@@ -131,7 +121,6 @@ int mainCuda()
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 13 , 10 );
 
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 100 , 10 );
-*/
 
   const int pDeg = 3 ;
   const int nGrid = 5 ;
