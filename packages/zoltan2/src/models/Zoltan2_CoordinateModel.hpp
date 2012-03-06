@@ -1,0 +1,292 @@
+// @HEADER
+// ***********************************************************************
+//                Copyright message goes here.   
+// ***********************************************************************
+// @HEADER
+
+/*! \file Zoltan2_CoordinateModel.hpp
+    \brief Defines the CoordinateModel classes.
+*/
+
+
+#ifndef _ZOLTAN2_COORDINATEMODEL_HPP_
+#define _ZOLTAN2_COORDINATEMODEL_HPP_
+
+#include <Zoltan2_Model.hpp>
+#include <Zoltan2_MatrixInput.hpp>
+#include <Zoltan2_GraphInput.hpp>
+#include <Zoltan2_CoordinateInput.hpp>
+#include <Zoltan2_StridedInput.hpp>
+
+namespace Zoltan2 {
+
+/*!  \brief This class provides geometric coordinates with optional weights 
+           to the Zoltan2 algorithm.
+
+    The template parameter is an Input Adapter.  Input adapters are
+    templated on the basic user input type.
+*/
+template <typename Adapter>
+class CoordinateModel : public Model<Adapter> 
+{
+public:
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  typedef typename Adapter::scalar_t  scalar_t;
+  typedef typename Adapter::gno_t     gno_t;
+  typedef typename Adapter::lno_t     lno_t;
+  typedef StridedInput<lno_t, scalar_t> input_t;
+#endif
+  
+  CoordinateModel(){
+    throw std::logic_error("a specific instantiation should be used");
+  }
+
+  ////////////////////////////////////////////////////
+  // The CoordinateModel interface.
+  ////////////////////////////////////////////////////
+
+  /*! \brief Returns the dimension of the coordinates.
+   */
+  size_t getCoordinateDim() const { return 0; }
+
+  /*! \brief Returns the number of coordinates on this process.
+   */
+  size_t getLocalNumCoordinates() const { return 0; }
+
+  /*! \brief Returns the global number coordinates.
+   */
+  global_size_t getGlobalNumCoordinates() const { return 0; }
+
+  /*! \brief Returns the dimension (0 or greater) of coordinate weights.
+   */
+  int getCoordinateWeightDim() const { return 0; }
+
+  /*! \brief Returns the coordinate ids, values and optional weights.
+
+      \param Ids will on return point to the list of the global Ids for
+        each coordinate on this process.
+
+      \param xyz on return is a list of getCoordinateDim() 
+          StridedInput objects, each containing the coordinates for 
+          one dimension. If the coordinate dimension is three, then
+          the coordinates for Ids[k] are xyz[0][k], xyz[1][k], xyz[2][k].
+
+      \param wgts on return is a list of getCoordinateWeightDim() 
+          StridedInput objects, each containing the weights for 
+          one weight dimension.  If there is one weight per coordinate,
+          then the weight for Ids[k] is wgts[0][k].
+
+       \return The number of ids in the Ids list.
+
+      Memory for this data is allocated either by the user or the Model.
+      The caller gets a view of the data.
+   */
+
+  size_t getCoordinates(ArrayView<const gno_t>  &Ids,
+    ArrayView<const input_t> &xyz,
+    ArrayView<const input_t> &wgts) const {return 0;}
+
+  ////////////////////////////////////////////////////
+  // The Model interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumObjects() const
+  {
+    return getLocalNumCoordinates();
+  }
+
+  size_t getGlobalNumObjects() const
+  {
+    return getGlobalNumCoordinates();
+  }
+
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return ; }
+
+  int getNumWeights() const { return 0; }
+};
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
+
+////////////////////////////////////////////////////////////////
+// Coordinate model derived from CoordinateInput.
+////////////////////////////////////////////////////////////////
+
+template <typename User>
+class CoordinateModel<CoordinateInput<User> > : public Model<CoordinateInput<User> >
+{
+public:
+
+  typedef typename CoordinateInput<User>::scalar_t  scalar_t;
+  typedef typename CoordinateInput<User>::gno_t     gno_t;
+  typedef typename CoordinateInput<User>::lno_t     lno_t;
+  typedef typename CoordinateInput<User>::gid_t     gid_t;
+  typedef IdentifierMap<User> idmap_t;
+  typedef StridedInput<lno_t, scalar_t> input_t;
+
+  /*! \brief Constructor
+
+       \param ia  the input adapter from which to build the model
+       \param env   the application environment (including problem parameters)
+       \param comm  the problem communicator
+       \param  modelFlags    a bit map of ModelFlags
+   */
+  
+  CoordinateModel( const CoordinateInput<User> *ia, 
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    ModelFlags flags);
+
+  size_t getCoordinateDim() const { return coordinateDim_; }
+
+  size_t getLocalNumCoordinates() const { return gids_.size(); }
+
+  global_size_t getGlobalNumCoordinates() const {return numGlobalCoordinates_;}
+
+  int getCoordinateWeightDim() const { return weightDim_; }
+
+  size_t getCoordinates(ArrayView<const gno_t>  &Ids,
+    ArrayView<const input_t> &xyz,
+    ArrayView<const input_t> &wgts) const {return 0;}
+  {
+    size_t n = getLocalNumCoordinates();
+
+    Ids =  ArrayView<const gno_t>();
+    xyz = ArrayView<const input_t>();
+    wgts = ArrayView<const input_t>();
+
+    if (n){
+      if (gnosAreGids_)
+        Ids = ArrayView::av_reinterpret_cast<const gno_t>(gids_.view(0, n));
+      else
+        Ids = gnosConst_.view(0, n);
+
+      xyz =  xyz_.view(0, coordinateDim_);
+
+      if (weightDim_)
+        wgts = weights_.view(0, weightDim_);
+    }
+    
+    return n;
+  }
+
+  ////////////////////////////////////////////////////
+  // The Model interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumObjects() const
+  {
+    return getLocalNumCoordinates();
+  }
+
+  size_t getGlobalNumObjects() const
+  {
+    return getGlobalNumCoordinates();
+  }
+
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
+  { 
+    ArrayView<const input_t> xyz;
+    ArrayView<const input_t> weights;
+    getCoordinates(gnos, xyz, weights);
+  }
+
+  int getNumWeights() const { return weightDim_; }
+
+private:
+
+  bool gnosAreGids_;
+  gno_t numGlobalCoordinates_;
+  const RCP<const Environment> env_;
+  const RCP<const Comm<int> > comm_;
+  int coordinateDim_;
+  ArrayRCP<const gid_t> gids_;
+  ArrayRCP<const input_t> xyz_;
+  int weightDim_;
+  ArrayRCP<const input_t> weights_;
+  ArrayRCP<gno_t> gnos_;
+  ArrayRCP<const gno_t> gnosConst_;
+};
+
+template <typename User>
+  CoordinateModel( const CoordinateInput<User> *ia, 
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    ModelFlags flags):
+      gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
+      coordinateDim_(), gids_(), xyz_(), weightDim_(), weights_(), 
+      gnos_(), gnosConst_()
+{
+  bool consecutiveIds = modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+  numGlobalCoordinates_ = ia->getGlobalNumberOfCoordinates();
+  coordinateDim_ = ia->getCoordinateDimension();
+  weightDim_ = ia->getWeightDimension();
+
+  xyz_.resize(coordinateDim_);
+  weights_resize(weightDim_);
+
+  size_t nLocalIds = ia->getLocalNumberOfCoordinates();
+
+  if (nlocalIds){
+    for (int dim=0; dim < coordinateDim_; dim++){
+      int stride;
+      const gid_t *gids=NULL;
+      const scalar_t *coords=NULL;
+      try{
+        ia->getCoordinates(0, gids, coords, stride);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+
+      xyz_[dim] = rcp<const input_t>(new StridedInput(coords, stride));
+
+      if (dim==0)
+        gids_ = arcp(gids, 0, nLocalIds, false);
+    }
+
+    for (int wdim=0; wdim < weightDim_; wdim++){
+      int stride;
+      const scalar *weights;
+      try{
+        ia->getCoordinateWeights(wdim, weights, stride);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+
+      weights_[0] = rcp<const input_t>(new StridedInput(weights, stride));
+    }
+  }
+
+  // Create identifier map.
+
+  RCP<const idmap_t> idMap;
+
+  try{
+    idMap = rcp(new idmap_t(env_, comm_, gids_, consecutiveIds));
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  gnosAreGids_ = idMap->gnosAreGids();
+
+  this->setIdentifierMap(idMap);
+
+  if (!gnosAreGids_ && nLocalIds>0){
+    gno_t *tmpGno = new gno_t [nLocalIds];
+    Z2_LOCAL_MEMORY_ASSERTION(*env_, nLocalIds, tmpGno);
+    gnos_ = arcp(tmpGno, 0, nLocalIds);
+
+    try{
+      ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
+      idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds), 
+        TRANSLATE_APP_TO_LIB);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+  }
+
+  gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+}
+
+
+
+#endif   // DOXYGEN_SHOULD_SKIP_THIS
+
+}   // namespace Zoltan2
+
+#endif
