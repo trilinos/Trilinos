@@ -188,7 +188,7 @@ namespace MueLu {
     // Build coarse level
     //
 
-    SubMonitor m(*this, "Level " + Teuchos::toString(coarseLevelID));
+    SubMonitor m(*this, "Level " + Teuchos::toString(coarseLevelID), Runtime0, Timings0);
     Level & level = *Levels_[coarseLevelID];
 
     // Build coarse level hierarchy
@@ -246,7 +246,7 @@ namespace MueLu {
     // 2011/12 JG: Requests on the fine level are now posted at the beginning of the subroutine: Setup(fineLevelManager, coarseLevelManager, nextLevelManager)
 
     // Monitor h(*this, "Setup"); Use a MonitorBase instead to avoid printing "{numLevels = 1}" as numLevels will increase...
-    MonitorBase h("Setup (" + this->description() + ")", this->GetVerbLevel(), this->getOStream(), this->shortClassName() + ": Setup", this->IsPrint(Timings0));
+    MonitorBase h("Setup (" + this->description() + ")", this->GetVerbLevel(), this->getOStream(), this->shortClassName() + ": Setup", Runtime0, this->IsPrint(Timings0));
 
     //TODO Xpetra::global_size_t sumCoarseNnz = 0;
 
