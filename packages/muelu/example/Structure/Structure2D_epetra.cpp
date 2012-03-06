@@ -59,8 +59,6 @@
  *  (Nearly) Symmetric problem (except of Dirichlet boundaries) solved with AMG solver using a
  *  3 level multigrid with smoothed aggregation transfer operators.
  *
- *  TODO: There's no matrix amalgamation implemented yet! The example has 1701 nodes, but the graph
- *  of the matrix has 3402 nodes!
  */
 
 
